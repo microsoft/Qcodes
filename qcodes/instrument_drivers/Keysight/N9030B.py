@@ -250,12 +250,6 @@ class SpectrumAnalyzerMode(InstrumentChannel):
         self.start()
         self.stop()
 
-    def setup(self) -> None:
-        """
-        Sets up Spectrum Analyzer mode for the instrument.
-        """
-        self.mode("SA")
-
     def setup_swept_sa_sweep(self,
                              start: float,
                              stop: float,
@@ -263,6 +257,7 @@ class SpectrumAnalyzerMode(InstrumentChannel):
         """
         Sets up the Swept SA measurement sweep for Spectrum Analyzer Mode.
         """
+        self.mode("SA")
         if "SANalyzer" in self._available_meas():
             self.measurement("SANalyzer")
         else:
@@ -403,12 +398,6 @@ class PhaseNoiseMode(InstrumentChannel):
 
         return data
 
-    def setup(self) -> None:
-        """
-        Sets up Phase Noise mode for the instrument.
-        """
-        self.mode("PNOISE")
-
     def setup_log_plot_sweep(self,
                              start_offset: float,
                              stop_offset: float,
@@ -417,6 +406,7 @@ class PhaseNoiseMode(InstrumentChannel):
         """
         Sets up the Log Plot measurement sweep for Phase Noise Mode.
         """
+        self.mode("PNOISE")
         if "LPLot" in self._available_meas():
             self.measurement("LPLot")
         else:
@@ -491,8 +481,9 @@ class N9030B(VisaInstrument):
         )
 
         if "SA" in self._available_modes():
+            swept_sa = SpectrumAnalyzerMode(self, name="swept_sa")
             sa_mode = ChannelList(
-                self, "sa", self.CHANNEL_CLASS_1, snapshotable=True
+                self, "sa", self.CHANNEL_CLASS_1, [swept_sa], snapshotable=True
             )
             self.add_submodule("sa", sa_mode)
         else:
@@ -500,8 +491,9 @@ class N9030B(VisaInstrument):
                           "instrument.")
 
         if "PNOISE" in self._available_modes():
+            log_plot = PhaseNoiseMode(self, name="log_plot")
             pnoise_mode = ChannelList(
-                self, "pn", self.CHANNEL_CLASS_2, snapshotable=True
+                self, "pn", self.CHANNEL_CLASS_2, [log_plot], snapshotable=True
             )
             self.add_submodule("pn", pnoise_mode)
         else:
