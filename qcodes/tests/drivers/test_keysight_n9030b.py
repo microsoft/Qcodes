@@ -17,12 +17,12 @@ def _make_driver():
 
 @pytest.fixture(name="sa")
 def _activate_sa_mode(driver):
-    sa = driver.SA
+    sa = driver.sa
     yield sa
 
 @pytest.fixture(name="pnoise")
 def _activate_pnoise_mode(driver):
-    pn = driver.PNoise
+    pn = driver.pn
     yield pn
 
 

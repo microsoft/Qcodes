@@ -25,13 +25,13 @@ class Trace(ParameterWithSetpoints):
 
     def __init__(self, number: int, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.instrument: Union["SpectrumAnalyzer", "PhaseNoise"]
+        self.instrument: Union["SpectrumAnalyzerMode", "PhaseNoiseMode"]
         self.root_instrument: "N9030B"
 
         self.number = number
 
     def get_raw(self) -> ParamRawDataType:
-        return self.instrument._get_data(trace_num=self.n)
+        return self.instrument._get_data(trace_num=self.number)
 
 
 class SpectrumAnalyzerMode(InstrumentChannel):
@@ -292,9 +292,9 @@ class PhaseNoiseMode(InstrumentChannel):
                                                   "513": 13799999995,
                                                   "526": 26999999995}
         opt: str
-        for freq in self._valid_max_freq.keys():
-            if freq in self._options():
-                opt = freq
+        for hw_opt_for_max_freq in self._valid_max_freq.keys():
+            if hw_opt_for_max_freq in self._options():
+                opt = hw_opt_for_max_freq
         self._max_freq = self._valid_max_freq[opt]
 
         self.add_parameter(
@@ -432,8 +432,8 @@ class N9030B(VisaInstrument):
     Driver for Keysight N9030B PXA signal analyzer.
     """
 
-    CHANNEL_CLASS_1 = SpectrumAnalyzer
-    CHANNEL_CLASS_2 = PhaseNoise
+    CHANNEL_CLASS_1 = SpectrumAnalyzerMode
+    CHANNEL_CLASS_2 = PhaseNoiseMode
 
     def __init__(self, name: str, address: str, **kwargs: Any) -> None:
         super().__init__(name, address, terminator='\n', **kwargs)
@@ -484,18 +484,18 @@ class N9030B(VisaInstrument):
 
         if "SA" in self._available_modes():
             sa_mode = ChannelList(
-                self, "SA", self.CHANNEL_CLASS_1, snapshotable=True
+                self, "sa", self.CHANNEL_CLASS_1, snapshotable=True
             )
-            self.add_submodule("SA", sa_mode)
+            self.add_submodule("sa", sa_mode)
         else:
             self.log.info("Spectrum Analyzer mode is not available on this "
                           "instrument.")
 
         if "PNOISE" in self._available_modes():
             pnoise_mode = ChannelList(
-                self, "PNoise", self.CHANNEL_CLASS_2, snapshotable=True
+                self, "pn", self.CHANNEL_CLASS_2, snapshotable=True
             )
-            self.add_submodule("PNoise", pnoise_mode)
+            self.add_submodule("pn", pnoise_mode)
         else:
             self.log.info("Phase Noise mode is not available on this "
                           "instrument.")

@@ -44,7 +44,7 @@ devices:
           q: ":INITiate:CONTinuous {}"
 
     channels:
-      SA:
+      sa:
         dialogues:
           - q: ":SENS:FREQuency:TUNE:IMMediate"
           - q: ":READ:SANalyzer1?"
@@ -152,7 +152,7 @@ devices:
               type: str
               valid: ["FFT", "SWE"]
 
-      PNoise:
+      pn:
         dialogues:
           - q: ":SENSe:FREQuency:CARRier:SEARch"
           - q: ":READ:LPLot1?"
