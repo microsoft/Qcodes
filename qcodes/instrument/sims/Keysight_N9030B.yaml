@@ -10,11 +10,11 @@ devices:
       - q: "*RST"
       - q: ":ABORt"
       - q: ":INSTrument:CATalog?"
-        r: "SA,PNOISE"
+        r: '"SA 1, PNOISE 14"'
       - q: ":CONFigure:CATalog?"
-        r: "SAN,LPL"
+        r: '"SAN, LPL"'
       - q: "*OPT?"
-        r: "526"
+        r: '"544"'
       - q: "*IDN?"
         r: "Keysight Technologies,N9030B,1000,0.1"
 
