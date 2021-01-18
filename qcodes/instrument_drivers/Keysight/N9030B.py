@@ -41,8 +41,17 @@ class SpectrumAnalyzerMode(InstrumentChannel):
     def __init__(self, parent: "N9030B", name: str, *arg: Any, **kwargs: Any):
         super().__init__(parent, name, *arg, **kwargs)
 
-        self._min_freq = 2
-        self._max_freq = 50e9
+        self._min_freq = -8e7
+        self._valid_max_freq: Dict[str, float] = {"503": 3.7e9,
+                                                  "508": 8.5e9,
+                                                  "513": 13.8e9,
+                                                  "526": 27e9,
+                                                  "544": 44.5e9}
+        opt: str
+        for hw_opt_for_max_freq in self._valid_max_freq.keys():
+            if hw_opt_for_max_freq in self.root_instrument._options():
+                opt = hw_opt_for_max_freq
+        self._max_freq = self._valid_max_freq[opt]
 
         self.add_parameter(
             name="start",
@@ -231,14 +240,16 @@ class SpectrumAnalyzerMode(InstrumentChannel):
         """
         Gets data from the measurement.
         """
-        self.cont_meas("OFF")
+        self.root_instrument.cont_meas("OFF")
         try:
-            timeout = self.sweep_time() + self._additional_wait
+            timeout = self.root_instrument.sweep_time() + \
+                      self.root_instrument._additional_wait
             with self.timeout.set_to(timeout):
-                data_str = self.ask(f":READ:{self.measurement}{trace_num}?")
+                data_str = self.ask(f":READ:{self.root_instrument.measurement}"
+                                    f"{trace_num}?")
                 data = np.array(data_str.rstrip()).astype("float64")
         finally:
-            self.cont_meas("ON")
+            self.root_instrument.cont_meas("ON")
 
         return data
 
@@ -257,9 +268,9 @@ class SpectrumAnalyzerMode(InstrumentChannel):
         """
         Sets up the Swept SA measurement sweep for Spectrum Analyzer Mode.
         """
-        self.mode("SA")
-        if "SANalyzer" in self._available_meas():
-            self.measurement("SANalyzer")
+        self.root_instrument.mode("SA")
+        if "SANalyzer" in self.root_instrument._available_meas():
+            self.root_instrument.measurement("SANalyzer")
         else:
             raise RuntimeError("Swept SA measurement is not available on your "
                                "Keysight N9030B instrument with Spectrum "
@@ -287,10 +298,11 @@ class PhaseNoiseMode(InstrumentChannel):
         self._valid_max_freq: Dict[str, float] = {"503": 3699999995,
                                                   "508": 8499999995,
                                                   "513": 13799999995,
-                                                  "526": 26999999995}
+                                                  "526": 26999999995,
+                                                  "544": 44499999995}
         opt: str
         for hw_opt_for_max_freq in self._valid_max_freq.keys():
-            if hw_opt_for_max_freq in self._options():
+            if hw_opt_for_max_freq in self.root_instrument._options():
                 opt = hw_opt_for_max_freq
         self._max_freq = self._valid_max_freq[opt]
 
@@ -317,7 +329,7 @@ class PhaseNoiseMode(InstrumentChannel):
             get_cmd=":SENSe:LPLot:FREQuency:OFFSet:STOP?",
             set_cmd=self._set_stop_offset,
             get_parser=float,
-            vals=Numbers(self._min_freq + 100, self._max_freq),
+            vals=Numbers(self._min_freq + 99, self._max_freq),
             docstring="stop frequency offset for the plot"
         )
 
@@ -389,12 +401,13 @@ class PhaseNoiseMode(InstrumentChannel):
         """
         Gets data from the measurement.
         """
-        self.cont_meas("OFF")
+        self.root_instrument.cont_meas("OFF")
         try:
-            data_str = self.ask(f":READ:{self.measurement}{trace_num}?")
+            data_str = self.ask(f":READ:{self.root_instrument.measurement}"
+                                f"{trace_num}?")
             data = np.array(data_str.rstrip()).astype("float64")
         finally:
-            self.cont_meas("ON")
+            self.root_instrument.cont_meas("ON")
 
         return data
 
@@ -406,9 +419,9 @@ class PhaseNoiseMode(InstrumentChannel):
         """
         Sets up the Log Plot measurement sweep for Phase Noise Mode.
         """
-        self.mode("PNOISE")
-        if "LPLot" in self._available_meas():
-            self.measurement("LPLot")
+        self.root_instrument.mode("PNOISE")
+        if "LPLot" in self.root_instrument._available_meas():
+            self.root_instrument.measurement("LPLot")
         else:
             raise RuntimeError("Log Plot measurement is not available on your "
                                "Keysight N9030B instrument with Phase Noise "
