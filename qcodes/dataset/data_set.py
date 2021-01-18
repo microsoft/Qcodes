@@ -14,6 +14,7 @@ from typing import (TYPE_CHECKING, Any, Callable, Dict, List, Mapping,
 
 import numpy
 from numpy.core.fromnumeric import _put_dispatcher
+from numpy.lib import stride_tricks
 
 import qcodes
 from qcodes.dataset.descriptions.dependencies import (DependencyError,
@@ -1146,9 +1147,9 @@ class DataSet(Sized):
 
         xds = xr.Dataset(data_arrs)
         for dim in xds.dims:
-            paramspec_dict = self.paramspecs[dim]._to_dict()
+            paramspec_dict = self.paramspecs[str(dim)]._to_dict()
             for key in paramspec_dict:
-                xds.coords[dim].attrs[key] = paramspec_dict[key]
+                xds.coords[str(dim)].attrs[key] = paramspec_dict[key]
 
         xds.attrs["sample_name"] = self.sample_name
         xds.attrs["exp_name"] = self.exp_name
