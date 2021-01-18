@@ -439,7 +439,15 @@ class PhaseNoiseMode(InstrumentChannel):
 
 class N9030B(VisaInstrument):
     """
-    Driver for Keysight N9030B PXA signal analyzer.
+    Driver for Keysight N9030B PXA signal analyzer. Keysight N9030B PXA
+    siganl analyzer is part of Keysight X-Series Multi-touch Signal
+    Analyzers.
+    This driver allows Swept SA measurements in Spectrum Analyzer mode and
+    Log Plot measurements in Phase Noise mode of the instrument.
+
+    Args:
+        name
+        address
     """
 
     CHANNEL_CLASS_1 = SpectrumAnalyzerMode
@@ -519,7 +527,7 @@ class N9030B(VisaInstrument):
         """
         available_modes = self.ask(":INSTrument:CATalog?")
         av_modes = available_modes[1:-1].split(',')
-        modes = ()
+        modes: Tuple[str, ...] = ()
         for i in range(len(av_modes)):
             if i == 0:
                 modes = modes + (av_modes[i].split(' ')[0],)
@@ -533,7 +541,7 @@ class N9030B(VisaInstrument):
         """
         available_meas = self.ask(":CONFigure:CATalog?")
         av_meas = available_meas[1:-1].split(',')
-        meas = ()
+        meas: Tuple[str, ...] = ()
         for i in range(len(av_meas)):
             if i == 0:
                 meas = meas + (av_meas[i],)
