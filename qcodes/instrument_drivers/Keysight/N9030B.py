@@ -247,7 +247,7 @@ class SpectrumAnalyzerMode(InstrumentChannel):
                 data_str = self.ask(f":READ:"
                                     f"{self.root_instrument.measurement()}"
                                     f"{trace_num}?")
-                data = np.array(data_str.rstrip()).astype("float64")
+                data = np.array(data_str.rstrip().split(",")).astype("float64")
         except TimeoutError:
             pass
 
@@ -404,7 +404,7 @@ class PhaseNoiseMode(InstrumentChannel):
         try:
             data_str = self.ask(f":READ:{self.root_instrument.measurement()}"
                                 f"{trace_num}?")
-            data = np.array(data_str.rstrip()).astype("float64")
+            data = np.array(data_str.rstrip().split(",")).astype("float64")
         except TimeoutError:
             pass
 
