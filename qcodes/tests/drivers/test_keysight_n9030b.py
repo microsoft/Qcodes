@@ -19,7 +19,7 @@ def _make_driver():
 def _activate_swept_sa_measurement(driver):
     yield driver.sa.swept_sa
 
-@pytest.fixture(name="pn")
+@pytest.fixture(name="log_plot")
 def _activate_log_plot_measurement(driver):
     yield driver.pn.log_plot
 
