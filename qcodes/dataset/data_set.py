@@ -13,6 +13,7 @@ from typing import (TYPE_CHECKING, Any, Callable, Dict, List, Mapping,
                     Optional, Sequence, Set, Sized, Tuple, Union)
 
 import numpy
+from numpy.core.fromnumeric import _put_dispatcher
 
 import qcodes
 from qcodes.dataset.descriptions.dependencies import (DependencyError,
@@ -1145,8 +1146,10 @@ class DataSet(Sized):
 
         xds = xr.Dataset(data_arrs)
         for dim in xds.dims:
-            xds.coords[dim].attrs["label"] = self.paramspecs[dim].label
-            xds.coords[dim].attrs["unit"] = self.paramspecs[dim].unit
+            paramspec_dict = self.paramspecs[dim]._to_dict()
+            for key in paramspec_dict:
+                xds.coords[dim].attrs[key] = paramspec_dict[key]
+
         xds.attrs["sample_name"] = self.sample_name
         xds.attrs["exp_name"] = self.exp_name
 
