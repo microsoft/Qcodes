@@ -102,6 +102,7 @@ class SpectrumAnalyzerMode(InstrumentChannel):
             name="sweep_time",
             label="Sweep time",
             get_cmd=":SENSe:SWEep:TIME?",
+            set_cmd=":SENSe:SWEep:TIME {}",
             get_parser=float,
             unit="s",
             docstring="gets sweep time"
