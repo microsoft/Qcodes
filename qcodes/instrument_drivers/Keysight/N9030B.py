@@ -242,9 +242,8 @@ class SpectrumAnalyzerMode(InstrumentChannel):
         """
         self.root_instrument.cont_meas("OFF")
         try:
-            timeout = self.root_instrument.sweep_time() + \
-                      self.root_instrument._additional_wait
-            with self.timeout.set_to(timeout):
+            timeout = self.sweep_time() + self.root_instrument._additional_wait
+            with self.root_instrument.timeout.set_to(timeout):
                 data_str = self.ask(f":READ:{self.root_instrument.measurement}"
                                     f"{trace_num}?")
                 data = np.array(data_str.rstrip()).astype("float64")
@@ -269,7 +268,7 @@ class SpectrumAnalyzerMode(InstrumentChannel):
         Sets up the Swept SA measurement sweep for Spectrum Analyzer Mode.
         """
         self.root_instrument.mode("SA")
-        if "SANalyzer" in self.root_instrument._available_meas():
+        if "SAN" in self.root_instrument._available_meas():
             self.root_instrument.measurement("SANalyzer")
         else:
             raise RuntimeError("Swept SA measurement is not available on your "
@@ -420,7 +419,7 @@ class PhaseNoiseMode(InstrumentChannel):
         Sets up the Log Plot measurement sweep for Phase Noise Mode.
         """
         self.root_instrument.mode("PNOISE")
-        if "LPLot" in self.root_instrument._available_meas():
+        if "LPL" in self.root_instrument._available_meas():
             self.root_instrument.measurement("LPLot")
         else:
             raise RuntimeError("Log Plot measurement is not available on your "
@@ -519,14 +518,18 @@ class N9030B(VisaInstrument):
         Returns present and licensed modes for the instrument.
         """
         available_modes = self.ask(":INSTrument:CATalog?")
-        return tuple(available_modes.split(','))
+        av_modes = available_modes[1:-1].split(',')
+        modes = ()
+        for i in range(len(av_modes)):
+            modes = modes + (av_modes[i].split(' ')[0],)
+        return modes
 
     def _available_meas(self) -> Tuple[str, ...]:
         """
         Gives available measurement with a given mode for the instrument
         """
         available_meas = self.ask(":CONFigure:CATalog?")
-        return tuple(available_meas.split(','))
+        return tuple(available_meas[1:-1].split(','))
 
     def _enable_cont_meas(self, val: str) -> None:
         """
@@ -539,7 +542,7 @@ class N9030B(VisaInstrument):
         Returns installed options numbers.
         """
         options_raw = self.ask('*OPT?')
-        return tuple(options_raw.split(','))
+        return tuple(options_raw[1:-1].split(','))
 
     def reset(self) -> None:
         """

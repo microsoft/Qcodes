@@ -12,7 +12,7 @@ devices:
       - q: ":INSTrument:CATalog?"
         r: "SA,PNOISE"
       - q: ":CONFigure:CATalog?"
-        r: "SANalyzer,LPLot"
+        r: "SAN,LPL"
       - q: "*OPT?"
         r: "526"
       - q: "*IDN?"
