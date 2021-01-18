@@ -531,7 +531,14 @@ class N9030B(VisaInstrument):
         Gives available measurement with a given mode for the instrument
         """
         available_meas = self.ask(":CONFigure:CATalog?")
-        return tuple(available_meas[1:-1].split(','))
+        av_meas = available_meas[1:-1].split(',')
+        meas = ()
+        for i in range(len(av_meas)):
+            if i == 0:
+                meas = meas + (av_meas[i],)
+            else:
+                meas = meas + (av_meas[i][1:],)
+        return meas
 
     def _enable_cont_meas(self, val: str) -> None:
         """
