@@ -251,7 +251,8 @@ class SpectrumAnalyzerMode(InstrumentChannel):
         except TimeoutError:
             pass
 
-        return data
+        trace_data = data[0::2]
+        return trace_data
 
     def update_trace(self) -> None:
         """
@@ -408,7 +409,8 @@ class PhaseNoiseMode(InstrumentChannel):
         except TimeoutError:
             pass
 
-        return data
+        trace_data = data[0::2]
+        return trace_data
 
     def setup_log_plot_sweep(self,
                              start_offset: float,
