@@ -269,7 +269,7 @@ class SpectrumAnalyzerMode(InstrumentChannel):
         """
         self.root_instrument.mode("SA")
         if "SAN" in self.root_instrument._available_meas():
-            self.root_instrument.measurement("SANalyzer")
+            self.root_instrument.measurement("SAN")
         else:
             raise RuntimeError("Swept SA measurement is not available on your "
                                "Keysight N9030B instrument with Spectrum "
@@ -420,7 +420,7 @@ class PhaseNoiseMode(InstrumentChannel):
         """
         self.root_instrument.mode("PNOISE")
         if "LPL" in self.root_instrument._available_meas():
-            self.root_instrument.measurement("LPLot")
+            self.root_instrument.measurement("LPL")
         else:
             raise RuntimeError("Log Plot measurement is not available on your "
                                "Keysight N9030B instrument with Phase Noise "
