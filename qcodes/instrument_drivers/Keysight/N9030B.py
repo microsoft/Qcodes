@@ -522,7 +522,10 @@ class N9030B(VisaInstrument):
         av_modes = available_modes[1:-1].split(',')
         modes = ()
         for i in range(len(av_modes)):
-            modes = modes + (av_modes[i].split(' ')[0],)
+            if i == 0:
+                modes = modes + (av_modes[i].split(' ')[0],)
+            else:
+                modes = modes + (av_modes[i].split(' ')[1],)
         return modes
 
     def _available_meas(self) -> Tuple[str, ...]:
