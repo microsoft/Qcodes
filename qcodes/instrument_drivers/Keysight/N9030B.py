@@ -241,15 +241,14 @@ class SpectrumAnalyzerMode(InstrumentChannel):
         """
         Gets data from the measurement.
         """
-        self.root_instrument.cont_meas("OFF")
         try:
             timeout = self.sweep_time() + self.root_instrument._additional_wait
             with self.root_instrument.timeout.set_to(timeout):
                 data_str = self.ask(f":READ:{self.root_instrument.measurement}"
                                     f"{trace_num}?")
                 data = np.array(data_str.rstrip()).astype("float64")
-        finally:
-            self.root_instrument.cont_meas("ON")
+        except TimeoutError:
+            pass
 
         return data
 
@@ -401,13 +400,12 @@ class PhaseNoiseMode(InstrumentChannel):
         """
         Gets data from the measurement.
         """
-        self.root_instrument.cont_meas("OFF")
         try:
             data_str = self.ask(f":READ:{self.root_instrument.measurement}"
                                 f"{trace_num}?")
             data = np.array(data_str.rstrip()).astype("float64")
-        finally:
-            self.root_instrument.cont_meas("ON")
+        except TimeoutError:
+            pass
 
         return data
 
