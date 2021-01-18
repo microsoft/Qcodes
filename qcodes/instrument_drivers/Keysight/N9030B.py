@@ -528,7 +528,7 @@ class N9030B(VisaInstrument):
         available_modes = self.ask(":INSTrument:CATalog?")
         av_modes = available_modes[1:-1].split(',')
         modes: Tuple[str, ...] = ()
-        for i in range(len(av_modes)):
+        for i, _ in enumerate(av_modes):
             if i == 0:
                 modes = modes + (av_modes[i].split(' ')[0],)
             else:
@@ -542,7 +542,7 @@ class N9030B(VisaInstrument):
         available_meas = self.ask(":CONFigure:CATalog?")
         av_meas = available_meas[1:-1].split(',')
         meas: Tuple[str, ...] = ()
-        for i in range(len(av_meas)):
+        for i, _ in enumerate(av_meas):
             if i == 0:
                 meas = meas + (av_meas[i],)
             else:
