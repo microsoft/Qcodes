@@ -18,7 +18,7 @@ class DMC41x3(VisaInstrument):
         self.connect_message()
 
     def get_idn(self) -> Dict[str, Optional[str]]:
-        with self.timeout.set_to(self.receive_time):
+        with self.timeout.set_to(5):
             self.write("ID")
             data = str(self.visa_handle.read_raw()).split(" ")
 
