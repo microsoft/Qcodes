@@ -350,7 +350,7 @@ class PhaseNoiseMode(InstrumentChannel):
             name="trace",
             label="Trace",
             unit="dB",
-            number=1,
+            number=3,
             vals=Arrays(shape=(self.npts.get_latest,)),
             setpoints=(self.freq_axis,),
             parameter_class=Trace,
