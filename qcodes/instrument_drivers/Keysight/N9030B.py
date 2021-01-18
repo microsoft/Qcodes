@@ -244,7 +244,8 @@ class SpectrumAnalyzerMode(InstrumentChannel):
         try:
             timeout = self.sweep_time() + self.root_instrument._additional_wait
             with self.root_instrument.timeout.set_to(timeout):
-                data_str = self.ask(f":READ:{self.root_instrument.measurement}"
+                data_str = self.ask(f":READ:"
+                                    f"{self.root_instrument.measurement()}"
                                     f"{trace_num}?")
                 data = np.array(data_str.rstrip()).astype("float64")
         except TimeoutError:
@@ -401,7 +402,7 @@ class PhaseNoiseMode(InstrumentChannel):
         Gets data from the measurement.
         """
         try:
-            data_str = self.ask(f":READ:{self.root_instrument.measurement}"
+            data_str = self.ask(f":READ:{self.root_instrument.measurement()}"
                                 f"{trace_num}?")
             data = np.array(data_str.rstrip()).astype("float64")
         except TimeoutError:
@@ -464,7 +465,7 @@ class N9030B(VisaInstrument):
             name="measurement",
             get_cmd=":CONFigure?",
             set_cmd=":CONFigure:{}",
-            vals=Enum(*self._available_meas()),
+            vals=Enum("SAN", "LPL"),
             docstring="Sets measurement type from among the available "
                       "measurement types."
         )
