@@ -33,10 +33,10 @@ MarkupSafe==1.1.1
 mistune==0.8.4
 nbclient==0.5.1
 nbconvert==6.0.7
-nbformat==5.0.8
+nbformat==5.1.2
 nbsphinx==0.8.0
 nest-asyncio==1.4.3
-notebook==6.1.6
+notebook==6.2.0
 numpy==1.19.5
 packaging==20.8
 pandas==1.2.0
@@ -56,7 +56,7 @@ PyVISA-sim==0.4.0
 pywin32==300; sys_platform == 'win32'
 pywinpty==0.5.7; sys_platform == 'win32'
 PyYAML==5.3.1
-pyzmq==20.0.0
+pyzmq==21.0.1
 qtconsole==5.0.1
 QtPy==1.9.0
 requests==2.25.1
