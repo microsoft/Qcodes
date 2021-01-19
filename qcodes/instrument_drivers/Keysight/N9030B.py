@@ -402,6 +402,16 @@ class PhaseNoiseMode(InstrumentChannel):
         """
         Gets data from the measurement.
         """
+        raw_data = self.ask(f":READ:{self.root_instrument.measurement()}{1}?")
+        trace_res_details = np.array(
+            raw_data.rstrip().split(",")
+        ).astype("float64")
+
+        if len(trace_res_details) != 7 or (
+                len(trace_res_details) >= 1 and trace_res_details[0] < -50
+        ):
+            raise RuntimeError("Carrier(s) Incorrect or Missing!")
+
         try:
             data_str = self.ask(f":READ:{self.root_instrument.measurement()}"
                                 f"{trace_num}?")
@@ -437,6 +447,8 @@ class PhaseNoiseMode(InstrumentChannel):
         Autotunes frequency
         """
         self.write(":SENSe:FREQuency:CARRier:SEARch")
+        self.start_offset()
+        self.stop_offset()
 
 
 class N9030B(VisaInstrument):
