@@ -13,12 +13,12 @@ class FrequencyAxis(Parameter):
     def __init__(self, start: float, stop: float, npts: int, *args: Any,
                  **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self._start: float = start
-        self._stop: float = stop
-        self._npts: int = npts
+        self._strt: float = start
+        self._stp: float = stop
+        self._npt: int = npts
 
     def get_raw(self) -> ParamRawDataType:
-        return np.linspace(self._start, self._stop, self._npts)
+        return np.linspace(self._strt, self._stp, self._npt)
 
 
 class Trace(ParameterWithSetpoints):
