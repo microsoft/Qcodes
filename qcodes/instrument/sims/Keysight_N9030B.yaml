@@ -183,6 +183,17 @@ devices:
             specs:
               type: float
 
+          signal_tracking_enabled:
+            default: "ON"
+            getter:
+              q: ":SENSe:FREQuency:CARRier:TRACk?"
+              r: "{}"
+            setter:
+              q: ":SENSe:FREQuency:CARRier:TRACk {}"
+            specs:
+              type: str
+              valid: ["ON", "OFF"]
+
 resources:
   GPIB::1::INSTR:
     device: KeysightN9030B
