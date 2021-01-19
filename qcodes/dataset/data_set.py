@@ -1116,7 +1116,7 @@ class DataSet(Sized):
                 None
 
         Returns:
-            Dictionary from requested parameter names to :py:class:`xr.DataArray` s 
+            Dictionary from requested parameter names to :py:class:`xr.DataArray` s
             with the requested parameter(s) as a column(s) and coordinates
             formed by the dependencies.
 
