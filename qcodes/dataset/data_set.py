@@ -9,16 +9,14 @@ import uuid
 from dataclasses import dataclass
 from queue import Empty, Queue
 from threading import Thread
-from typing import (TYPE_CHECKING, Any, Callable, Dict, List, Mapping,
-                    Optional, Sequence, Set, Sized, Tuple, Union)
+from typing import (Hashable, Iterator, TYPE_CHECKING, Any, Callable, Dict, List, 
+                    Mapping, MutableMapping, Optional, Sequence, Set, Sized, Tuple, Union)
 
 import numpy
 from numpy.core.fromnumeric import _put_dispatcher
-from numpy.lib import stride_tricks
 
 import qcodes
-from qcodes.dataset.descriptions.dependencies import (DependencyError,
-                                                      InterDependencies_)
+from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning.converters import (new_to_old,
@@ -946,7 +944,7 @@ class DataSet(Sized):
 
     def _same_setpoints(self, datadict: ParameterData) -> bool:
 
-        def _get_setpoints(dd):
+        def _get_setpoints(dd: ParameterData) -> Iterator[Dict[str, numpy.ndarray]]:
 
             for dep_name, param_dict in dd.items():
                 out = {
@@ -1083,7 +1081,7 @@ class DataSet(Sized):
                            concat: Optional[bool] = False,
                            start: Optional[int] = None,
                            end: Optional[int] = None) -> \
-            Union[Dict[str, "xr.DataArray"], "xr.Dataset"]:
+            Union[Mapping[Hashable, "xr.DataArray"], "xr.Dataset"]:
         """
         Returns the values stored in the :class:`.DataSet` for the specified parameters
         and their dependencies as a dict of :py:class:`xr.DataArray`s
@@ -1128,15 +1126,14 @@ class DataSet(Sized):
                                            start=start,
                                            end=end)
 
-        data_arrs = {}
+        data_arrs: MutableMapping[Hashable, xr.DataArray]= {}
+        new: Dict[Hashable, Any] = {}
+
         for name, subdict in datadict.items():
             index = self._generate_pandas_index(subdict)
-            arr = self._data_to_dataframe(subdict, index).to_xarray()[name]
-
+            arr: xr.DataArray = self._data_to_dataframe(subdict, index).to_xarray()[name]
             paramspec_dict = self.paramspecs[name]._to_dict()
-            for key in paramspec_dict:
-                arr.attrs[key] = paramspec_dict[key]
-
+            arr.attrs.update(paramspec_dict.items())
             data_arrs[name] = arr
 
         if not concat:
@@ -1148,8 +1145,7 @@ class DataSet(Sized):
         xds = xr.Dataset(data_arrs)
         for dim in xds.dims:
             paramspec_dict = self.paramspecs[str(dim)]._to_dict()
-            for key in paramspec_dict:
-                xds.coords[str(dim)].attrs[key] = paramspec_dict[key]
+            xds.coords[str(dim)].attrs.update(paramspec_dict.items())
 
         xds.attrs["sample_name"] = self.sample_name
         xds.attrs["exp_name"] = self.exp_name
