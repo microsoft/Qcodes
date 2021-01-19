@@ -335,6 +335,14 @@ class PhaseNoiseMode(InstrumentChannel):
         )
 
         self.add_parameter(
+            name="signal_tracking_enabled",
+            get_cmd=":SENSe:FREQuency:CARRier:TRACk?",
+            set_cmd=":SENSe:FREQuency:CARRier:TRACk {}",
+            val_mapping=create_on_off_val_mapping(on_val="ON", off_val="OFF"),
+            docstring="Gets/Sets signal tracking"
+        )
+
+        self.add_parameter(
             name="freq_axis",
             label="Frequency",
             unit="Hz",
