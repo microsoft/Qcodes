@@ -419,7 +419,7 @@ class PhaseNoiseMode(InstrumentChannel):
                 len(trace_res_details) >= 1 and trace_res_details[0] < -50
         ):
             self.log.warning("Carrier(s) Incorrect or Missing!")
-            return -1 * np.ones(self.npts)
+            return -1 * np.ones(self.npts())
 
         try:
             data_str = self.ask(f":READ:{self.root_instrument.measurement()}"
