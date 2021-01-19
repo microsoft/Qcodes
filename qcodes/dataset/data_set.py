@@ -1089,7 +1089,7 @@ class DataSet(Sized):
             Union[Mapping[Hashable, "xr.DataArray"], "xr.Dataset"]:
         """
         Returns the values stored in the :class:`.DataSet` for the specified parameters
-        and their dependencies as a dict of :py:class:`xr.DataArray`s
+        and their dependencies as a dict of :py:class:`xr.DataArray` s
         Each element in the dict is indexed by the names of the requested
         parameters.
 
@@ -1100,7 +1100,7 @@ class DataSet(Sized):
         If provided, the start and end arguments select a range of results
         by result count (index). If the range is empty - that is, if the end is
         less than or equal to the start, or if start is after the current end
-        of the :class:`.DataSet` – then a dict of empty :py:class:`xr.DataArray`s is
+        of the :class:`.DataSet` – then a dict of empty :py:class:`xr.DataArray` s is
         returned.
 
         Args:
@@ -1131,7 +1131,6 @@ class DataSet(Sized):
                                            end=end)
 
         data_arrs: MutableMapping[Hashable, xr.DataArray] = {}
-        new: Dict[Hashable, Any] = {}
 
         for name, subdict in datadict.items():
             index = self._generate_pandas_index(subdict)
