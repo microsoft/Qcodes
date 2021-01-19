@@ -9,8 +9,9 @@ import uuid
 from dataclasses import dataclass
 from queue import Empty, Queue
 from threading import Thread
-from typing import (Hashable, Iterator, TYPE_CHECKING, Any, Callable, Dict, List,
-                    Mapping, MutableMapping, Optional, Sequence, Set, Sized, Tuple, Union)
+from typing import (Hashable, Iterator, TYPE_CHECKING, Any, Callable, Dict,
+                    List, Mapping, MutableMapping, Optional, Sequence, Set,
+                    Sized, Tuple, Union)
 
 import numpy
 
@@ -1006,15 +1007,14 @@ class DataSet(Sized):
                 None
 
         Returns:
-            Dictionary from requested parameter names (or `all` if concat is
-            True) to :py:class:`pandas.DataFrame` s with the
-            requested parameter(s) as a column(s) and indexed by a
+            Dictionary from requested parameter names to :py:class:`pandas.DataFrame` s 
+            with the requested parameter(s) as a column(s) and indexed by a
             :py:class:`pandas.MultiIndex` formed by the dependencies.
 
         Example:
-            Unpack a concatenated DataFrame with
+            Return a concatenated DataFrame with
 
-                df, = ds.get_data_as_pandas_dataframe(concat=True).values()
+                df = ds.get_data_as_pandas_dataframe(concat=True)
 
         """
         import pandas as pd
@@ -1116,15 +1116,14 @@ class DataSet(Sized):
                 None
 
         Returns:
-            Dictionary from requested parameter names (or `__all__` if concat is
-            True) to :py:class:`xr.DataArray` s with the
-            requested parameter(s) as a column(s) and coordinates
+            Dictionary from requested parameter names to :py:class:`xr.DataArray` s 
+            with the requested parameter(s) as a column(s) and coordinates
             formed by the dependencies.
 
         Example:
-            Unpack a concatenated xr.Dataset with
+            Return a concatenated xr.Dataset with
 
-                xds, = ds.get_data_as_xarray(concat=True).values()
+                xds = ds.get_data_as_xarray(concat=True)
         """
         import xarray as xr
         datadict = self.get_parameter_data(*params,
