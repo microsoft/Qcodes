@@ -9,11 +9,10 @@ import uuid
 from dataclasses import dataclass
 from queue import Empty, Queue
 from threading import Thread
-from typing import (Hashable, Iterator, TYPE_CHECKING, Any, Callable, Dict, List, 
+from typing import (Hashable, Iterator, TYPE_CHECKING, Any, Callable, Dict, List,
                     Mapping, MutableMapping, Optional, Sequence, Set, Sized, Tuple, Union)
 
 import numpy
-from numpy.core.fromnumeric import _put_dispatcher
 
 import qcodes
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
@@ -55,7 +54,6 @@ if TYPE_CHECKING:
     import xarray as xr
 
 
-
 log = logging.getLogger(__name__)
 
 
@@ -90,8 +88,10 @@ ParameterData = Dict[str, Dict[str, numpy.ndarray]]
 class CompletedError(RuntimeError):
     pass
 
+
 class DataLengthException(Exception):
     pass
+
 
 class DataPathException(Exception):
     pass
@@ -110,6 +110,7 @@ class _Subscriber(Thread):
     NOTE: Special care shall be taken when using the *state* object: it is the
     user's responsibility to operate with it in a thread-safe way.
     """
+
     def __init__(self,
                  dataSet: 'DataSet',
                  id_: str,
@@ -235,7 +236,8 @@ class _BackgroundWriter(Thread):
             elif item['keys'] == 'finalize':
                 _WRITERS[self.path].active_datasets.remove(item['values'])
             else:
-                self.write_results(item['keys'], item['values'], item['table_name'])
+                self.write_results(
+                    item['keys'], item['values'], item['table_name'])
             self.queue.task_done()
 
     def write_results(self, keys: Sequence[str],
@@ -765,7 +767,8 @@ class DataSet(Sized):
         if start_bg_writer:
             writer_status.write_in_background = True
             if writer_status.bg_writer is None:
-                writer_status.bg_writer = _BackgroundWriter(writer_status.data_write_queue, self.conn)
+                writer_status.bg_writer = _BackgroundWriter(
+                    writer_status.data_write_queue, self.conn)
             if not writer_status.bg_writer.is_alive():
                 writer_status.bg_writer.start()
         else:
@@ -838,7 +841,8 @@ class DataSet(Sized):
         writer_status = self._writer_status
 
         if writer_status.write_in_background:
-            writer_status.data_write_queue.put({'keys': 'finalize', 'values': self.run_id})
+            writer_status.data_write_queue.put(
+                {'keys': 'finalize', 'values': self.run_id})
             while self.run_id in writer_status.active_datasets:
                 time.sleep(self.background_sleep_time)
         else:
@@ -948,7 +952,7 @@ class DataSet(Sized):
 
             for dep_name, param_dict in dd.items():
                 out = {
-                    name: vals for name, vals in param_dict.items() if name!=dep_name
+                    name: vals for name, vals in param_dict.items() if name != dep_name
                 }
                 yield out
 
@@ -1023,7 +1027,8 @@ class DataSet(Sized):
             return dfs
 
         if not self._same_setpoints(datadict):
-            warnings.warn('Independent parameter setpoints are not equal. Check concatenated output carefully.')
+            warnings.warn(
+                'Independent parameter setpoints are not equal. Check concatenated output carefully.')
 
         concat_df = pd.concat(list(dfs.values()), axis=1)
         return concat_df
@@ -1126,12 +1131,13 @@ class DataSet(Sized):
                                            start=start,
                                            end=end)
 
-        data_arrs: MutableMapping[Hashable, xr.DataArray]= {}
+        data_arrs: MutableMapping[Hashable, xr.DataArray] = {}
         new: Dict[Hashable, Any] = {}
 
         for name, subdict in datadict.items():
             index = self._generate_pandas_index(subdict)
-            arr: xr.DataArray = self._data_to_dataframe(subdict, index).to_xarray()[name]
+            arr: xr.DataArray = self._data_to_dataframe(
+                subdict, index).to_xarray()[name]
             paramspec_dict = self.paramspecs[name]._to_dict()
             arr.attrs.update(paramspec_dict.items())
             data_arrs[name] = arr
@@ -1140,7 +1146,8 @@ class DataSet(Sized):
             return data_arrs
 
         if not self._same_setpoints(datadict):
-            warnings.warn('Independent parameter setpoints are not equal. Check concatenated output carefully.')
+            warnings.warn(
+                'Independent parameter setpoints are not equal. Check concatenated output carefully.')
 
         xds = xr.Dataset(data_arrs)
         for dim in xds.dims:
@@ -1331,8 +1338,8 @@ class DataSet(Sized):
                     result_dict, all_params)
             elif toplevel_param.type in ('numeric', 'text', 'complex'):
                 res_list = self._finalize_res_dict_numeric_text_or_complex(
-                               result_dict, toplevel_param,
-                               inff_params, deps_params)
+                    result_dict, toplevel_param,
+                    inff_params, deps_params)
             else:
                 res_dict = {ps.name: result_dict[ps] for ps in all_params}
                 res_list = [res_dict]
