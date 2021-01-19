@@ -15,7 +15,22 @@ class DMC41x3(VisaInstrument):
     def __init__(self, name: str, address: str, **kwargs: Any) -> None:
         super().__init__(name=name, address=address, **kwargs)
 
+        self.add_parameter(
+            name="motor_pos",
+            label="Current Motor Position",
+            get_cmd=self._get_motor_position,
+            docstring="Gets current position of the motor."
+        )
+
         self.connect_message()
+
+    def _get_motor_position(self) -> Dict[str, float]:
+        """
+        Gets current position of the motor.
+        """
+        self.write("TP")
+        data = str(self.visa_handle.read_raw()).split(", ")
+        return {"A": float(data[0]), "B": float(data[1]), "C": float(data[2])}
 
     def get_idn(self) -> Dict[str, Optional[str]]:
         with self.timeout.set_to(5):
