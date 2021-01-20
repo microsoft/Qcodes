@@ -47,13 +47,10 @@ devices:
       card:
         ids: ['sa', 'pn']
         can_select: True
-      #sa:
-      #  dialogues:
-      #    - q: ":SENS:FREQuency:TUNE:IMMediate"
-      #    - q: ":READ:SANalyzer1?"
 
         properties:
 
+        #sa:
           start:
             default: 100
             getter:
@@ -65,7 +62,7 @@ devices:
               type: float
 
           stop:
-            default: 1000
+            default: 10000
             getter:
               q: ":SENSe:FREQuency:STOP?"
               r: "{}"
@@ -146,13 +143,7 @@ devices:
             specs:
               type: str
               valid: ["FFT", "SWE"]
-
-      #pn:
-      #  dialogues:
-      #    - q: ":SENSe:FREQuency:CARRier:SEARch"
-      #    - q: ":READ:LPLot1?"
-      #  properties:
-
+        #pn
           lognpts:
             default: 601
             getter:
