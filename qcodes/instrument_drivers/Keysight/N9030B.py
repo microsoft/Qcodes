@@ -1,8 +1,9 @@
 import numpy as np
 from typing import Any, Tuple, Dict, Union
 
-from qcodes import (VisaInstrument, InstrumentChannel, Parameter,
-                    ParameterWithSetpoints, ChannelList)
+from qcodes import (
+    VisaInstrument, InstrumentChannel, Parameter, ParameterWithSetpoints
+)
 from qcodes.instrument.parameter import ParamRawDataType
 from qcodes.utils.validators import Enum, Numbers, Arrays, Ints
 from qcodes.utils.helpers import create_on_off_val_mapping
@@ -10,12 +11,17 @@ from qcodes.utils.helpers import create_on_off_val_mapping
 
 class FrequencyAxis(Parameter):
 
-    def __init__(self, start: float, stop: float, npts: int, *args: Any,
-                 **kwargs: Any) -> None:
+    def __init__(self,
+                 start: Parameter,
+                 stop: Parameter,
+                 npts: Parameter,
+                 *args: Any,
+                 **kwargs: Any
+                 ) -> None:
         super().__init__(*args, **kwargs)
-        self._strt: float = start
-        self._stp: float = stop
-        self._npt: int = npts
+        self._strt: float = start()
+        self._stp: float = stop()
+        self._npt: int = npts()
 
     def get_raw(self) -> ParamRawDataType:
         return np.linspace(self._strt, self._stp, self._npt)
@@ -143,9 +149,9 @@ class SpectrumAnalyzerMode(InstrumentChannel):
             name="freq_axis",
             label="Frequency",
             unit="Hz",
-            start=self.start(),
-            stop=self.stop(),
-            npts=self.npts(),
+            start=self.start,
+            stop=self.stop,
+            npts=self.npts,
             vals=Arrays(shape=(self.npts.get_latest,)),
             parameter_class=FrequencyAxis,
             docstring="Sets frequency axis for the sweep."
@@ -347,9 +353,9 @@ class PhaseNoiseMode(InstrumentChannel):
             name="freq_axis",
             label="Frequency",
             unit="Hz",
-            start=self.start_offset(),
-            stop=self.stop_offset(),
-            npts=self.lognpts(),
+            start=self.start_offset,
+            stop=self.stop_offset,
+            npts=self.lognpts,
             vals=Arrays(shape=(self.lognpts.get_latest,)),
             parameter_class=FrequencyAxis,
             docstring="Sets frequency axis for the sweep."
@@ -420,7 +426,7 @@ class PhaseNoiseMode(InstrumentChannel):
                 len(trace_res_details) >= 1 and trace_res_details[0] < -50
         ):
             self.log.warning("Carrier(s) Incorrect or Missing!")
-            return -1 * np.ones(self.npts())
+            return -1 * np.ones(self.lognpts())
 
         try:
             data_str = self.ask(f":READ:{self.root_instrument.measurement()}"
@@ -450,7 +456,7 @@ class PhaseNoiseMode(InstrumentChannel):
 
         self.start_offset(start_offset)
         self.stop_offset(stop_offset)
-        self.npts(npts)
+        self.lognpts(npts)
 
     def autotune(self) -> None:
         """
@@ -526,9 +532,6 @@ class N9030B(VisaInstrument):
 
         if "SA" in self._available_modes():
             sa_mode = SpectrumAnalyzerMode(self, name="sa")
-            # sa_mode = ChannelList(
-            #    self, "sa", self.CHANNEL_CLASS_1, [swept_sa], snapshotable=True
-            # )
             self.add_submodule("sa", sa_mode)
         else:
             self.log.info("Spectrum Analyzer mode is not available on this "
@@ -536,9 +539,6 @@ class N9030B(VisaInstrument):
 
         if "PNOISE" in self._available_modes():
             pnoise_mode = PhaseNoiseMode(self, name="pn")
-            # pnoise_mode = ChannelList(
-            #    self, "pn", self.CHANNEL_CLASS_2, [log_plot], snapshotable=True
-            # )
             self.add_submodule("pn", pnoise_mode)
         else:
             self.log.info("Phase Noise mode is not available on this "
