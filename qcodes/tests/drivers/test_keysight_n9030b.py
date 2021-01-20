@@ -34,16 +34,14 @@ def test_idn(driver):
 def test_swept_sa_setup(sa):
     assert isinstance(sa, SpectrumAnalyzerMode)
 
-    sa.setup_swept_sa_sweep(1e3, 1e6, 501)
-    assert sa.start() == 1e3
-    assert sa.stop() == 1e6
-    assert sa.npts() == 501
+    sa.setup_swept_sa_sweep(100, 10e3, 501)
+    assert sa.root_instrument.mode() == "SA"
+    assert sa.root_instrument.measurement() == "SAN"
 
 
 def test_log_plot_setup(pn):
     assert isinstance(pn, PhaseNoiseMode)
 
-    pn.setup_log_plot_sweep(100, 1000, 10001)
-    assert pn.start_offset() == 100
-    assert pn.stop_offset() == 1000
-    assert pn.lognpts() == 10001
+    pn.setup_log_plot_sweep(100, 1e6, 10001)
+    assert pn.root_instrument.mode() == "PNOISE"
+    assert pn.root_instrument.measurement() == "LPL"
