@@ -19,9 +19,9 @@ class FrequencyAxis(Parameter):
                  **kwargs: Any
                  ) -> None:
         super().__init__(*args, **kwargs)
-        self._strt: float = start()
-        self._stp: float = stop()
-        self._npt: int = npts()
+        self._strt: float = start.get()
+        self._stp: float = stop.get()
+        self._npt: int = npts.get()
 
     def get_raw(self) -> ParamRawDataType:
         return np.linspace(self._strt, self._stp, self._npt)
