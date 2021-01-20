@@ -38,6 +38,7 @@ class SpectrumAnalyzerMode(InstrumentChannel):
     """
     Spectrum Analyzer Mode for Keysight N9030B instrument.
     """
+
     def __init__(self, parent: "N9030B", name: str, *arg: Any, **kwargs: Any):
         super().__init__(parent, name, *arg, **kwargs)
 
@@ -308,7 +309,7 @@ class PhaseNoiseMode(InstrumentChannel):
         self._max_freq = self._valid_max_freq[opt]
 
         self.add_parameter(
-            name="npts",
+            name="lognpts",
             get_cmd=":SENSe:LPLot:SWEep:POINts?",
             set_cmd=":SENSe:LPLot:SWEep:POINts {}",
             get_parser=int,
@@ -348,8 +349,8 @@ class PhaseNoiseMode(InstrumentChannel):
             unit="Hz",
             start=self.start_offset(),
             stop=self.stop_offset(),
-            npts=self.npts(),
-            vals=Arrays(shape=(self.npts.get_latest,)),
+            npts=self.lognpts(),
+            vals=Arrays(shape=(self.lognpts.get_latest,)),
             parameter_class=FrequencyAxis,
             docstring="Sets frequency axis for the sweep."
         )
@@ -359,7 +360,7 @@ class PhaseNoiseMode(InstrumentChannel):
             label="Trace",
             unit="dB",
             number=3,
-            vals=Arrays(shape=(self.npts.get_latest,)),
+            vals=Arrays(shape=(self.lognpts.get_latest,)),
             setpoints=(self.freq_axis,),
             parameter_class=Trace,
             docstring="Gets trace data."
@@ -524,20 +525,20 @@ class N9030B(VisaInstrument):
         )
 
         if "SA" in self._available_modes():
-            swept_sa = SpectrumAnalyzerMode(self, name="swept_sa")
-            sa_mode = ChannelList(
-                self, "sa", self.CHANNEL_CLASS_1, [swept_sa], snapshotable=True
-            )
+            sa_mode = SpectrumAnalyzerMode(self, name="sa")
+            # sa_mode = ChannelList(
+            #    self, "sa", self.CHANNEL_CLASS_1, [swept_sa], snapshotable=True
+            # )
             self.add_submodule("sa", sa_mode)
         else:
             self.log.info("Spectrum Analyzer mode is not available on this "
                           "instrument.")
 
         if "PNOISE" in self._available_modes():
-            log_plot = PhaseNoiseMode(self, name="log_plot")
-            pnoise_mode = ChannelList(
-                self, "pn", self.CHANNEL_CLASS_2, [log_plot], snapshotable=True
-            )
+            pnoise_mode = PhaseNoiseMode(self, name="pn")
+            # pnoise_mode = ChannelList(
+            #    self, "pn", self.CHANNEL_CLASS_2, [log_plot], snapshotable=True
+            # )
             self.add_submodule("pn", pnoise_mode)
         else:
             self.log.info("Phase Noise mode is not available on this "

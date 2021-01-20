@@ -44,10 +44,13 @@ devices:
           q: ":INITiate:CONTinuous {}"
 
     channels:
-      sa:
-        dialogues:
-          - q: ":SENS:FREQuency:TUNE:IMMediate"
-          - q: ":READ:SANalyzer1?"
+      card:
+        ids: ['sa', 'pn']
+        can_select: True
+      #sa:
+      #  dialogues:
+      #    - q: ":SENS:FREQuency:TUNE:IMMediate"
+      #    - q: ":READ:SANalyzer1?"
 
         properties:
 
@@ -144,14 +147,13 @@ devices:
               type: str
               valid: ["FFT", "SWE"]
 
-      pn:
-        dialogues:
-          - q: ":SENSe:FREQuency:CARRier:SEARch"
-          - q: ":READ:LPLot1?"
+      #pn:
+      #  dialogues:
+      #    - q: ":SENSe:FREQuency:CARRier:SEARch"
+      #    - q: ":READ:LPLot1?"
+      #  properties:
 
-        properties:
-
-          npts:
+          lognpts:
             default: 601
             getter:
               q: ":SENSe:LPLot:SWEep:POINts?"
