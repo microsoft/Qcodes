@@ -15,13 +15,13 @@ def _make_driver():
     driver.close()
 
 
-@pytest.fixture(name="swept_sa")
+@pytest.fixture(name="sa")
 def _activate_swept_sa_measurement(driver):
-    yield driver.sa.swept_sa
+    yield driver.sa
 
-@pytest.fixture(name="log_plot")
+@pytest.fixture(name="pn")
 def _activate_log_plot_measurement(driver):
-    yield driver.pn.log_plot
+    yield driver.pn
 
 
 def test_idn(driver):
@@ -31,19 +31,19 @@ def test_idn(driver):
             'vendor': 'Keysight Technologies'} == driver.IDN()
 
 
-def test_swept_sa_setup(swept_sa):
-    assert isinstance(swept_sa, SpectrumAnalyzerMode)
+def test_swept_sa_setup(sa):
+    assert isinstance(sa, SpectrumAnalyzerMode)
 
-    swept_sa.setup_swept_sa_sweep(1e3, 1e6, 501)
-    assert swept_sa.start() == 1e3
-    assert swept_sa.stop() == 1e6
-    assert swept_sa.npts() == 501
+    sa.setup_swept_sa_sweep(1e3, 1e6, 501)
+    assert sa.start() == 1e3
+    assert sa.stop() == 1e6
+    assert sa.npts() == 501
 
 
-def test_log_plot_setup(log_plot):
-    assert isinstance(log_plot, PhaseNoiseMode)
+def test_log_plot_setup(pn):
+    assert isinstance(pn, PhaseNoiseMode)
 
-    log_plot.setup_log_plot_sweep(100, 1000, 10001)
-    assert log_plot.start_offset() == 100
-    assert log_plot.stop_offset() == 1000
-    assert log_plot.npts() == 10001
+    pn.setup_log_plot_sweep(100, 1000, 10001)
+    assert pn.start_offset() == 100
+    assert pn.stop_offset() == 1000
+    assert pn.lognpts() == 10001
