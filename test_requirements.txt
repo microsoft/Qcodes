@@ -31,7 +31,7 @@ pytest-rerunfailures==9.1.1
 pytest-xdist==2.2.0
 PyVISA==1.11.3
 PyVISA-sim==0.4.0
-PyYAML==5.3.1
+PyYAML==5.4
 requests==2.25.1
 six==1.15.0
 smmap==3.0.4
