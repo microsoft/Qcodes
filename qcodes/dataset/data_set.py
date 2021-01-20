@@ -1007,7 +1007,7 @@ class DataSet(Sized):
                 None
 
         Returns:
-            Dictionary from requested parameter names to :py:class:`pandas.DataFrame` s 
+            Dictionary from requested parameter names to :py:class:`pandas.DataFrame` s
             with the requested parameter(s) as a column(s) and indexed by a
             :py:class:`pandas.MultiIndex` formed by the dependencies.
 
