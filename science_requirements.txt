@@ -9,7 +9,7 @@ Babel==2.9.0
 backcall==0.2.0
 bcrypt==3.2.0
 black==20.8b1
-bleach==3.2.1
+bleach==3.2.2
 cffi==1.14.4
 chardet==4.0.0
 click==7.1.2
