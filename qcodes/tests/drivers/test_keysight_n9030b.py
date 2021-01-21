@@ -41,11 +41,17 @@ def test_swept_sa_setup(sa):
 
     assert sa.start() == 123
     assert sa.stop() == 11e3
+    assert sa.npts() == 501
 
 
 def test_log_plot_setup(pn):
     assert isinstance(pn, PhaseNoiseMode)
 
-    pn.setup_log_plot_sweep(100, 1e6, 10001)
+    pn.setup_log_plot_sweep(1000, 1e7, 10001)
     assert pn.root_instrument.mode() == "PNOISE"
     assert pn.root_instrument.measurement() == "LPL"
+
+    assert pn.start_offset() == 1000
+    assert pn.stop_offset() == 1e7
+    assert pn.npts() == 10001
+
