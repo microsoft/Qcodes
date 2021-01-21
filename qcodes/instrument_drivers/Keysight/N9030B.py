@@ -1,3 +1,4 @@
+from qcodes.instrument.channel import ChannelList
 import numpy as np
 from typing import Any, Tuple, Dict, Union
 
@@ -315,7 +316,7 @@ class PhaseNoiseMode(InstrumentChannel):
         self._max_freq = self._valid_max_freq[opt]
 
         self.add_parameter(
-            name="lognpts",
+            name="npts",
             get_cmd=":SENSe:LPLot:SWEep:POINts?",
             set_cmd=":SENSe:LPLot:SWEep:POINts {}",
             get_parser=int,
@@ -355,8 +356,8 @@ class PhaseNoiseMode(InstrumentChannel):
             unit="Hz",
             start=self.start_offset,
             stop=self.stop_offset,
-            npts=self.lognpts,
-            vals=Arrays(shape=(self.lognpts.get_latest,)),
+            npts=self.npts,
+            vals=Arrays(shape=(self.npts.get_latest,)),
             parameter_class=FrequencyAxis,
             docstring="Sets frequency axis for the sweep."
         )
@@ -366,7 +367,7 @@ class PhaseNoiseMode(InstrumentChannel):
             label="Trace",
             unit="dB",
             number=3,
-            vals=Arrays(shape=(self.lognpts.get_latest,)),
+            vals=Arrays(shape=(self.npts.get_latest,)),
             setpoints=(self.freq_axis,),
             parameter_class=Trace,
             docstring="Gets trace data."
@@ -426,7 +427,7 @@ class PhaseNoiseMode(InstrumentChannel):
                 len(trace_res_details) >= 1 and trace_res_details[0] < -50
         ):
             self.log.warning("Carrier(s) Incorrect or Missing!")
-            return -1 * np.ones(self.lognpts())
+            return -1 * np.ones(self.npts())
 
         try:
             data_str = self.ask(f":READ:{self.root_instrument.measurement()}"
@@ -456,7 +457,7 @@ class PhaseNoiseMode(InstrumentChannel):
 
         self.start_offset(start_offset)
         self.stop_offset(stop_offset)
-        self.lognpts(npts)
+        self.npts(npts)
 
     def autotune(self) -> None:
         """

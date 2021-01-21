@@ -19,6 +19,7 @@ def _make_driver():
 def _activate_swept_sa_measurement(driver):
     yield driver.sa
 
+
 @pytest.fixture(name="pn")
 def _activate_log_plot_measurement(driver):
     yield driver.pn
@@ -34,9 +35,12 @@ def test_idn(driver):
 def test_swept_sa_setup(sa):
     assert isinstance(sa, SpectrumAnalyzerMode)
 
-    sa.setup_swept_sa_sweep(100, 10e3, 501)
+    sa.setup_swept_sa_sweep(123, 11e3, 501)
     assert sa.root_instrument.mode() == "SA"
     assert sa.root_instrument.measurement() == "SAN"
+
+    assert sa.start() == 123
+    assert sa.stop() == 11e3
 
 
 def test_log_plot_setup(pn):

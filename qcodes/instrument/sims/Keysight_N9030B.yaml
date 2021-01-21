@@ -44,13 +44,12 @@ devices:
           q: ":INITiate:CONTinuous {}"
 
     channels:
-      card:
-        ids: ['sa', 'pn']
+      sa:
+        ids: ['sa']
         can_select: True
 
         properties:
 
-        #sa:
           start:
             default: 100
             getter:
@@ -143,8 +142,12 @@ devices:
             specs:
               type: str
               valid: ["FFT", "SWE"]
-        #pn
-          lognpts:
+      pn:
+        ids: ['pn']
+        can_select: True
+
+        properties:
+          npts:
             default: 601
             getter:
               q: ":SENSe:LPLot:SWEep:POINts?"
