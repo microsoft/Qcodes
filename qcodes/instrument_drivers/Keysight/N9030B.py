@@ -62,6 +62,7 @@ class SpectrumAnalyzerMode(InstrumentChannel):
 
         self.add_parameter(
             name="start",
+            unit="Hz",
             get_cmd=":SENSe:FREQuency:STARt?",
             set_cmd=self._set_start,
             get_parser=float,
@@ -71,6 +72,7 @@ class SpectrumAnalyzerMode(InstrumentChannel):
 
         self.add_parameter(
             name="stop",
+            unit="Hz",
             get_cmd=":SENSe:FREQuency:STOP?",
             set_cmd=self._set_stop,
             get_parser=float,
@@ -80,6 +82,7 @@ class SpectrumAnalyzerMode(InstrumentChannel):
 
         self.add_parameter(
             name="center",
+            unit="Hz",
             get_cmd=":SENSe:FREQuency:CENTer?",
             set_cmd=self._set_center,
             get_parser=float,
@@ -89,6 +92,7 @@ class SpectrumAnalyzerMode(InstrumentChannel):
 
         self.add_parameter(
             name="span",
+            unit="Hz",
             get_cmd=":SENSe:FREQuency:SPAN?",
             set_cmd=self._set_span,
             get_parser=float,
@@ -326,6 +330,7 @@ class PhaseNoiseMode(InstrumentChannel):
 
         self.add_parameter(
             name="start_offset",
+            unit="Hz",
             get_cmd=":SENSe:LPLot:FREQuency:OFFSet:STARt?",
             set_cmd=self._set_start_offset,
             get_parser=float,
@@ -335,6 +340,7 @@ class PhaseNoiseMode(InstrumentChannel):
 
         self.add_parameter(
             name="stop_offset",
+            unit="Hz",
             get_cmd=":SENSe:LPLot:FREQuency:OFFSet:STOP?",
             set_cmd=self._set_stop_offset,
             get_parser=float,
