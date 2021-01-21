@@ -54,4 +54,3 @@ def test_log_plot_setup(pn):
     assert pn.start_offset() == 1000
     assert pn.stop_offset() == 1e7
     assert pn.npts() == 10001
-
