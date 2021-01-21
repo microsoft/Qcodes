@@ -11,7 +11,7 @@ from queue import Empty, Queue
 from threading import Thread
 from typing import (Hashable, Iterator, TYPE_CHECKING, Any, Callable, Dict,
                     List, Mapping, MutableMapping, Optional, Sequence, Set,
-                    Sized, Tuple, Union)
+                    Sized, Tuple, Union, cast)
 
 import numpy
 
@@ -1079,14 +1079,37 @@ class DataSet(Sized):
             dfs[name] = self._data_to_dataframe(subdict, index)
         return dfs
 
-    def get_data_as_xarray(self,
-                           *params: Union[str,
-                                          ParamSpec,
-                                          _BaseParameter],
-                           concat: Optional[bool] = False,
-                           start: Optional[int] = None,
-                           end: Optional[int] = None) -> \
-            Union[Mapping[Hashable, "xr.DataArray"], "xr.Dataset"]:
+    def _load_to_xarray_dataarray_dict(self,
+                                       *params: Union[str,
+                                                      ParamSpec,
+                                                      _BaseParameter],
+                                       start: Optional[int] = None,
+                                       end: Optional[int] = None) -> \
+            Dict[str, "xr.DataArray"]:
+        import xarray as xr
+        datadict = self.get_parameter_data(*params,
+                                           start=start,
+                                           end=end)
+
+        data_xrdarray_dict: Dict[str, xr.DataArray] = {}
+
+        for name, subdict in datadict.items():
+            index = self._generate_pandas_index(subdict)
+            xrdarray: xr.DataArray = self._data_to_dataframe(
+                subdict, index).to_xarray()[name]
+            paramspec_dict = self.paramspecs[name]._to_dict()
+            xrdarray.attrs.update(paramspec_dict.items())
+            data_xrdarray_dict[name] = xrdarray
+
+        return data_xrdarray_dict
+
+    def to_xarray_dataarray_dict(self,
+                                 *params: Union[str,
+                                                ParamSpec,
+                                                _BaseParameter],
+                                 start: Optional[int] = None,
+                                 end: Optional[int] = None) -> \
+            Dict[str, "xr.DataArray"]:
         """
         Returns the values stored in the :class:`.DataSet` for the specified parameters
         and their dependencies as a dict of :py:class:`xr.DataArray` s
@@ -1108,8 +1131,6 @@ class DataSet(Sized):
                 ParamSpec objects. If no parameters are supplied data for
                 all parameters that are not a dependency of another
                 parameter will be returned.
-            concat: if True individual DataArrays are concatenated and returned
-                as a single xr.Dataset
             start: start value of selection range (by result count); ignored
                 if None
             end: end value of selection range (by results count); ignored if
@@ -1121,41 +1142,75 @@ class DataSet(Sized):
             formed by the dependencies.
 
         Example:
+            Return a dict of xr.DataArray with 
+
+                dataarray_dict = ds.to_xarray_dataarray_dict()
+        """
+        return self._load_to_xarray_dataarray_dict(*params, start=start, end=end)
+
+    def to_xarray_dataset(self, *params: Union[str,
+                                               ParamSpec,
+                                               _BaseParameter],
+                          start: Optional[int] = None,
+                          end: Optional[int] = None) -> "xr.Dataset":
+        """
+        Returns the values stored in the :class:`.DataSet` for the specified parameters
+        and their dependencies as a :py:class:`xr.Dataset` object.
+
+        If no parameters are supplied data will be be
+        returned for all parameters in the :class:`.DataSet` that are not then self
+        dependencies of other parameters.
+
+        If provided, the start and end arguments select a range of results
+        by result count (index). If the range is empty - that is, if the end is
+        less than or equal to the start, or if start is after the current end
+        of the :class:`.DataSet` – then a empty :py:class:`xr.Dataset` s is
+        returned.
+
+        Args:
+            *params: string parameter names, QCoDeS Parameter objects, and
+                ParamSpec objects. If no parameters are supplied data for
+                all parameters that are not a dependency of another
+                parameter will be returned.
+            start: start value of selection range (by result count); ignored
+                if None
+            end: end value of selection range (by results count); ignored if
+                None
+
+        Returns:
+            :py:class:`xr.Dataset` with the requested parameter(s) data as 
+            :py:class:`xr.DataArray` s and coordinates formed by the dependencies.
+
+        Example:
             Return a concatenated xr.Dataset with
 
-                xds = ds.get_data_as_xarray(concat=True)
+                xds = ds.to_xarray_dataset()
         """
         import xarray as xr
-        datadict = self.get_parameter_data(*params,
-                                           start=start,
-                                           end=end)
 
-        data_arrs: MutableMapping[Hashable, xr.DataArray] = {}
-
-        for name, subdict in datadict.items():
-            index = self._generate_pandas_index(subdict)
-            arr: xr.DataArray = self._data_to_dataframe(
-                subdict, index).to_xarray()[name]
-            paramspec_dict = self.paramspecs[name]._to_dict()
-            arr.attrs.update(paramspec_dict.items())
-            data_arrs[name] = arr
-
-        if not concat:
-            return data_arrs
-
-        if not self._same_setpoints(datadict):
+        if not self._same_setpoints(self.get_parameter_data(*params,
+                                                            start=start,
+                                                            end=end)):
             warnings.warn(
-                'Independent parameter setpoints are not equal. Check concatenated output carefully.')
+                'Independent parameter setpoints are not equal. \
+                Check concatenated output carefully.')
 
-        xds = xr.Dataset(data_arrs)
-        for dim in xds.dims:
+        data_xrdarray_dict = self._load_to_xarray_dataarray_dict(
+            *params, start=start, end=end)
+
+        # Casting Hashable for the key type until python/mypy#1114
+        # and python/typing#445 are resolved.
+        xrdataset = xr.Dataset(
+            cast(Dict[Hashable, xr.DataArray], data_xrdarray_dict))
+
+        for dim in xrdataset.dims:
             paramspec_dict = self.paramspecs[str(dim)]._to_dict()
-            xds.coords[str(dim)].attrs.update(paramspec_dict.items())
+            xrdataset.coords[str(dim)].attrs.update(paramspec_dict.items())
 
-        xds.attrs["sample_name"] = self.sample_name
-        xds.attrs["exp_name"] = self.exp_name
+        xrdataset.attrs["sample_name"] = self.sample_name
+        xrdataset.attrs["exp_name"] = self.exp_name
 
-        return xds
+        return xrdataset
 
     def write_data_to_text_file(self, path: str,
                                 single_file: bool = False,
