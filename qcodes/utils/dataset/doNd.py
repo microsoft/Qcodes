@@ -64,7 +64,7 @@ def _instrument_to_param(
     output: Dict[Optional[str], Tuple[_BaseParameter, ...]] = defaultdict(tuple)
     for param in real_parameters:
         if param.root_instrument:
-            output[param.root_instrument.name] += (param,)
+            output[param.root_instrument.full_name] += (param,)
         else:
             output[None] += (param,)
 
