@@ -1,7 +1,8 @@
 import logging
 import os
+from collections import defaultdict
 from contextlib import contextmanager
-from typing import Callable, Iterator, List, Optional, Sequence, Tuple, Union
+from typing import Callable, Iterator, List, Optional, Sequence, Tuple, Union, Dict
 
 import matplotlib
 import numpy as np
@@ -13,7 +14,7 @@ from qcodes.dataset.descriptions.detect_shapes import \
 from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.measurements import Measurement, res_type
 from qcodes.dataset.plotting import plot_dataset
-from qcodes.instrument.base import _BaseParameter
+from qcodes.instrument.parameter import _BaseParameter, ParamDataType
 from qcodes.dataset.experiment_container import Experiment
 from qcodes.utils.threading import RespondingThread
 
@@ -36,34 +37,59 @@ class UnsafeThreadingException(Exception):
     pass
 
 
-def _check_threadsafe(param_meas: Sequence[ParamMeasT]) -> None:
+class _ParamCaller:
 
-    real_parameters = [param for param in param_meas if isinstance(param, _BaseParameter)]
+    def __init__(self, *parameters: _BaseParameter):
 
-    insts = [param.root_instrument for param in real_parameters if param.root_instrument]
-    if len(set(insts)) != len(insts):
-        duplicates = [param for param in real_parameters
-                      if param.root_instrument and insts.count(param.root_instrument) > 1]
-        raise UnsafeThreadingException('Can not use threading to '
-                                       'read '
-                                       'several things from the same '
-                                       'instrument. Specifically, you '
-                                       'asked for'
-                                       ' {}.'.format(duplicates))
+        self._parameters = parameters
+
+    def __call__(self) -> Tuple[ParamDataType, ...]:
+        output = []
+        for param in self._parameters:
+            output.append(param.get())
+            output.append(param.get())
+        return tuple(output)
+
+    def __repr__(self) -> str:
+        names = tuple(param.full_name for param in self._parameters)
+        return f"ParamCaller of {names}"
+
+
+def _instrument_to_param(
+        params: Sequence[ParamMeasT]
+) -> Dict[Optional[str], Tuple[_BaseParameter, ...]]:
+
+    real_parameters = [param for param in params if isinstance(param, _BaseParameter)]
+
+    output: Dict[Optional[str], Tuple[_BaseParameter, ...]] = defaultdict(tuple)
+    for param in real_parameters:
+        if param.root_instrument:
+            output[param.root_instrument.name] += (param,)
+        else:
+            output[None] += (param,)
+
+    return output
 
 
 def _call_params_threaded(param_meas: Sequence[ParamMeasT]) -> OutType:
 
+    inst_param_mapping = _instrument_to_param(param_meas)
+    executors = tuple(_ParamCaller(*param_list)
+                      for param_list in
+                      inst_param_mapping.values())
+
     output: OutType = []
-    threads = [RespondingThread(target=param)
-               for param in param_meas]
+    threads = [RespondingThread(target=executor)
+               for executor in executors]
 
     for t in threads:
         t.start()
 
-    for t, param in zip(threads, param_meas):
-        if isinstance(param, _BaseParameter):
-            output.append((param, t.output()))
+    for t, executor, param_list in zip(threads, executors, inst_param_mapping.values()):
+        thread_output = t.output()
+        assert thread_output is not None
+        for param, value in zip(param_list, thread_output):
+            output.append((param, value))
 
     return output
 
@@ -161,13 +187,13 @@ def do0d(
         exp: The experiment to use for this measurement.
         do_plot: should png and pdf versions of the images be saved after the
             run. If None the setting will be read from ``qcodesrc.json``
+        use_threads: If True measurements from each instrument will be done on
+            separate threads. If you are measuring from several instruments
+            this may give a significant speedup.
 
     Returns:
         The QCoDeS dataset.
     """
-    if use_threads:
-        _check_threadsafe(param_meas)
-
     if do_plot is None:
         do_plot = config.dataset.dond_plot
     meas = Measurement(name=measurement_name, exp=exp)
@@ -236,14 +262,14 @@ def do1d(
             value of 'results' is used for the dataset.
         exp: The experiment to use for this measurement.
         do_plot: should png and pdf versions of the images be saved after the
-            run. If None the setting will be read from ``qcodesrc.json``
+            run. If None the setting will be read from ``qcodesrc.json`
+        use_threads: If True measurements from each instrument will be done on
+            separate threads. If you are measuring from several instruments
+            this may give a significant speedup.
 
     Returns:
         The QCoDeS dataset.
     """
-    if use_threads:
-        _check_threadsafe(param_meas)
-
     if do_plot is None:
         do_plot = config.dataset.dond_plot
     meas = Measurement(name=measurement_name, exp=exp)
@@ -345,12 +371,13 @@ def do2d(
             the measurement but not scanned.
         do_plot: should png and pdf versions of the images be saved after the
             run. If None the setting will be read from ``qcodesrc.json``
+        use_threads: If True measurements from each instrument will be done on
+            separate threads. If you are measuring from several instruments
+            this may give a significant speedup.
 
     Returns:
         The QCoDeS dataset.
     """
-    if use_threads:
-        _check_threadsafe(param_meas)
 
     if do_plot is None:
         do_plot = config.dataset.dond_plot
