@@ -260,9 +260,8 @@ class SpectrumAnalyzerMode(InstrumentChannel):
                                     f"{self.root_instrument.measurement()}"
                                     f"{trace_num}?")
                 data = np.array(data_str.rstrip().split(",")).astype("float64")
-        except TimeoutError as e:
-            raise RuntimeError("Couldn't receive any data. Command timed "
-                               "out.") from e
+        except TimeoutError:
+            raise TimeoutError("Couldn't receive any data. Command timed out.")
 
         trace_data = data[1::2]
         return trace_data
@@ -446,9 +445,8 @@ class PhaseNoiseMode(InstrumentChannel):
             data_str = self.ask(f":READ:{self.root_instrument.measurement()}"
                                 f"{trace_num}?")
             data = np.array(data_str.rstrip().split(",")).astype("float64")
-        except TimeoutError as e:
-            raise RuntimeError("Couldn't receive any data. Command timed "
-                               "out.") from e
+        except TimeoutError:
+            raise TimeoutError("Couldn't receive any data. Command timed out.")
 
         trace_data = data[1::2]
         return trace_data
