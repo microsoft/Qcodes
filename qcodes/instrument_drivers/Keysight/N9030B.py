@@ -1,4 +1,3 @@
-from qcodes.instrument.channel import ChannelList
 import numpy as np
 from typing import Any, Tuple, Dict, Union
 
@@ -257,7 +256,7 @@ class SpectrumAnalyzerMode(InstrumentChannel):
                                     f"{trace_num}?")
                 data = np.array(data_str.rstrip().split(",")).astype("float64")
         except TimeoutError:
-            pass
+            raise RuntimeError("Couldn't receive data. Command timed out.")
 
         trace_data = data[1::2]
         return trace_data
@@ -434,7 +433,7 @@ class PhaseNoiseMode(InstrumentChannel):
                                 f"{trace_num}?")
             data = np.array(data_str.rstrip().split(",")).astype("float64")
         except TimeoutError:
-            pass
+            raise RuntimeError("Couldn't receive any data. Command timed out.")
 
         trace_data = data[1::2]
         return trace_data
