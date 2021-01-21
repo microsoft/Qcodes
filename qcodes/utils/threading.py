@@ -2,11 +2,13 @@
 # we want to happen simultaneously within one process (namely getting
 # several parameters in parallel), we can parallelize them with threads.
 # That way the things we call need not be rewritten explicitly async.
-
+import logging
 import threading
 from typing import Any, Callable, Dict, List, Optional, Sequence, TypeVar
 
 T = TypeVar("T")
+
+log = logging.getLogger(__name__)
 
 
 class RespondingThread(threading.Thread):
@@ -40,6 +42,7 @@ class RespondingThread(threading.Thread):
         self._output: Optional[T] = None
 
     def run(self) -> None:
+        log.warning(f"Executing {self._target} on thread: {threading.get_ident()}")
         try:
             self._output = self._target(*self._args, **self._kwargs)
         except Exception as e:
