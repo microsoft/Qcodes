@@ -554,11 +554,11 @@ class N9030B(VisaInstrument):
         available_modes = self.ask(":INSTrument:CATalog?")
         av_modes = available_modes[1:-1].split(',')
         modes: Tuple[str, ...] = ()
-        for i, _ in enumerate(av_modes):
+        for i, mode in enumerate(av_modes):
             if i == 0:
-                modes = modes + (av_modes[i].split(' ')[0],)
+                modes = modes + (mode.split(' ')[0], )
             else:
-                modes = modes + (av_modes[i].split(' ')[1],)
+                modes = modes + (mode.split(' ')[1], )
         return modes
 
     def _available_meas(self) -> Tuple[str, ...]:
@@ -567,13 +567,13 @@ class N9030B(VisaInstrument):
         """
         available_meas = self.ask(":CONFigure:CATalog?")
         av_meas = available_meas[1:-1].split(',')
-        meas: Tuple[str, ...] = ()
-        for i, _ in enumerate(av_meas):
+        measurements: Tuple[str, ...] = ()
+        for i, meas in enumerate(av_meas):
             if i == 0:
-                meas = meas + (av_meas[i],)
+                measurements = measurements + (meas, )
             else:
-                meas = meas + (av_meas[i][1:],)
-        return meas
+                measurements = measurements + (meas[1:], )
+        return measurements
 
     def _enable_cont_meas(self, val: str) -> None:
         """
