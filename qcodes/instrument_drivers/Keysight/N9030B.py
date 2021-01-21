@@ -494,9 +494,6 @@ class N9030B(VisaInstrument):
         address
     """
 
-    CHANNEL_CLASS_1 = SpectrumAnalyzerMode
-    CHANNEL_CLASS_2 = PhaseNoiseMode
-
     def __init__(self, name: str, address: str, **kwargs: Any) -> None:
         super().__init__(name, address, terminator='\n', **kwargs)
 
