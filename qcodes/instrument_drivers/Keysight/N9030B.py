@@ -158,7 +158,8 @@ class SpectrumAnalyzerMode(InstrumentChannel):
             npts=self.npts,
             vals=Arrays(shape=(self.npts.get_latest,)),
             parameter_class=FrequencyAxis,
-            docstring="Sets frequency axis for the sweep."
+            docstring="Creates frequency axis for the sweep from start, "
+                      "stop and npts values."
         )
 
         self.add_parameter(
@@ -294,9 +295,11 @@ class SpectrumAnalyzerMode(InstrumentChannel):
 
     def autotune(self) -> None:
         """
-        Autotunes frequency
+        Autotune quickly get to the most likely signal of interest, and
+        position it optimally on the display.
         """
         self.write(":SENS:FREQuency:TUNE:IMMediate")
+        self.center()
 
 
 class PhaseNoiseMode(InstrumentChannel):
@@ -353,7 +356,10 @@ class PhaseNoiseMode(InstrumentChannel):
             get_cmd=":SENSe:FREQuency:CARRier:TRACk?",
             set_cmd=":SENSe:FREQuency:CARRier:TRACk {}",
             val_mapping=create_on_off_val_mapping(on_val="ON", off_val="OFF"),
-            docstring="Gets/Sets signal tracking"
+            docstring="Gets/Sets signal tracking. When signal tracking is "
+                      "enabled carrier signal is repeatedly realigned. Signal "
+                      "Tracking assumes the new acquisition occurs repeatedly "
+                      "without pause."
         )
 
         self.add_parameter(
@@ -365,7 +371,8 @@ class PhaseNoiseMode(InstrumentChannel):
             npts=self.npts,
             vals=Arrays(shape=(self.npts.get_latest,)),
             parameter_class=FrequencyAxis,
-            docstring="Sets frequency axis for the sweep."
+            docstring="Creates frequency axis for the sweep from "
+                      "start_offset, stop_offset and npts values."
         )
 
         self.add_parameter(
@@ -468,7 +475,8 @@ class PhaseNoiseMode(InstrumentChannel):
 
     def autotune(self) -> None:
         """
-        Autotunes frequency
+        On autotune, the measurement automatically searches for and tunes to
+        the strongest signal in the full span of the analyzer.
         """
         self.write(":SENSe:FREQuency:CARRier:SEARch")
         self.start_offset()
