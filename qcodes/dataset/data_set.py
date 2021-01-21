@@ -978,17 +978,21 @@ class DataSet(Sized):
         and their dependencies as a dict of :py:class:`pandas.DataFrame` s
         Each element in the dict is indexed by the names of the requested
         parameters.
+
         Each DataFrame contains a column for the data and is indexed by a
         :py:class:`pandas.MultiIndex` formed from all the setpoints
         of the parameter.
+
         If no parameters are supplied data will be be
         returned for all parameters in the :class:`.DataSet` that are not them self
         dependencies of other parameters.
+
         If provided, the start and end arguments select a range of results
         by result count (index). If the range is empty - that is, if the end is
         less than or equal to the start, or if start is after the current end
         of the :class:`.DataSet` – then a dict of empty :py:class:`pandas.DataFrame` s is
         returned.
+
         Args:
             *params: string parameter names, QCoDeS Parameter objects, and
                 ParamSpec objects. If no parameters are supplied data for
@@ -998,6 +1002,7 @@ class DataSet(Sized):
                 if None
             end: end value of selection range (by results count); ignored if
                 None
+
         Returns:
             Dictionary from requested parameter names to
             :py:class:`pandas.DataFrame` s with the requested parameter as
