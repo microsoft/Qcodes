@@ -31,20 +31,26 @@ OutType = List[res_type]
 
 LOG = logging.getLogger(__name__)
 
+
 class UnsafeThreadingException(Exception):
     pass
 
+
 def _check_threadsafe(param_meas: Sequence[ParamMeasT]) -> None:
 
-    insts = [param.root_instrument for param in param_meas if param.root_instrument]
-    if (len(set(insts)) != len(insts)):
-        duplicates = [param for param in param_meas if insts.count(param.root_instrument) > 1]
+    real_parameters = [param for param in param_meas if isinstance(param, _BaseParameter)]
+
+    insts = [param.root_instrument for param in real_parameters if param.root_instrument]
+    if len(set(insts)) != len(insts):
+        duplicates = [param for param in real_parameters
+                      if param.root_instrument and insts.count(param.root_instrument) > 1]
         raise UnsafeThreadingException('Can not use threading to '
                                        'read '
                                        'several things from the same '
                                        'instrument. Specifically, you '
                                        'asked for'
                                        ' {}.'.format(duplicates))
+
 
 def _call_params_threaded(param_meas: Sequence[ParamMeasT]) -> OutType:
 
@@ -61,6 +67,7 @@ def _call_params_threaded(param_meas: Sequence[ParamMeasT]) -> OutType:
 
     return output
 
+
 def _call_params(param_meas: Sequence[ParamMeasT]) -> OutType:
 
     output: OutType = []
@@ -72,6 +79,7 @@ def _call_params(param_meas: Sequence[ParamMeasT]) -> OutType:
             parameter()
 
     return output
+
 
 def _process_params_meas(param_meas: Sequence[ParamMeasT], use_threads: bool = False) -> OutType:
 
