@@ -2,7 +2,8 @@ import logging
 import os
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import Callable, Iterator, List, Optional, Sequence, Tuple, Union, Dict
+from typing import (Callable, Iterator, List, Optional,
+                    Sequence, Tuple, Union, Dict)
 
 import matplotlib
 import numpy as np
@@ -59,7 +60,8 @@ def _instrument_to_param(
         params: Sequence[ParamMeasT]
 ) -> Dict[Optional[str], Tuple[_BaseParameter, ...]]:
 
-    real_parameters = [param for param in params if isinstance(param, _BaseParameter)]
+    real_parameters = [param for param in params
+                       if isinstance(param, _BaseParameter)]
 
     output: Dict[Optional[str], Tuple[_BaseParameter, ...]] = defaultdict(tuple)
     for param in real_parameters:
@@ -85,7 +87,7 @@ def _call_params_threaded(param_meas: Sequence[ParamMeasT]) -> OutType:
     for t in threads:
         t.start()
 
-    for t, executor, param_list in zip(threads, executors, inst_param_mapping.values()):
+    for t, param_list in zip(threads, inst_param_mapping.values()):
         thread_output = t.output()
         assert thread_output is not None
         for param, value in zip(param_list, thread_output):
@@ -107,7 +109,10 @@ def _call_params(param_meas: Sequence[ParamMeasT]) -> OutType:
     return output
 
 
-def _process_params_meas(param_meas: Sequence[ParamMeasT], use_threads: bool = False) -> OutType:
+def _process_params_meas(
+    param_meas: Sequence[ParamMeasT],
+        use_threads: bool = False
+    ) -> OutType:
 
     if use_threads:
         return _call_params_threaded(param_meas)
@@ -215,7 +220,12 @@ def do0d(
     _set_write_period(meas, write_period)
 
     with meas.run() as datasaver:
-        datasaver.add_result(*_process_params_meas(param_meas, use_threads=use_threads))
+        datasaver.add_result(
+            *_process_params_meas(
+                param_meas,
+                use_threads=use_threads
+            )
+        )
         dataset = datasaver.dataset
 
     return _handle_plotting(dataset, do_plot)
@@ -305,9 +315,11 @@ def do1d(
         additional_setpoints_data = _process_params_meas(additional_setpoints)
         for set_point in np.linspace(start, stop, num_points):
             param_set.set(set_point)
-            datasaver.add_result((param_set, set_point),
-                                 *_process_params_meas(param_meas, use_threads=use_threads),
-                                 *additional_setpoints_data)
+            datasaver.add_result(
+                (param_set, set_point),
+                *_process_params_meas(param_meas, use_threads=use_threads),
+                *additional_setpoints_data
+            )
         dataset = datasaver.dataset
     return _handle_plotting(dataset, do_plot, interrupted())
 

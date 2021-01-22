@@ -42,7 +42,9 @@ class RespondingThread(threading.Thread):
         self._output: Optional[T] = None
 
     def run(self) -> None:
-        log.warning(f"Executing {self._target} on thread: {threading.get_ident()}")
+        log.warning(
+            f"Executing {self._target} on thread: {threading.get_ident()}"
+        )
         try:
             self._output = self._target(*self._args, **self._kwargs)
         except Exception as e:
@@ -59,9 +61,11 @@ class RespondingThread(threading.Thread):
         return self._output
 
 
-def thread_map(callables: Sequence[Callable[..., T]],
-               args: Optional[Sequence[Sequence[Any]]] = None,
-               kwargs: Optional[Sequence[Dict[str, Any]]] = None) -> List[Optional[T]]:
+def thread_map(
+        callables: Sequence[Callable[..., T]],
+        args: Optional[Sequence[Sequence[Any]]] = None,
+        kwargs: Optional[Sequence[Dict[str, Any]]] = None
+) -> List[Optional[T]]:
     """
     Evaluate a sequence of callables in separate threads, returning
     a list of their return values.
