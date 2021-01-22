@@ -42,7 +42,7 @@ class RespondingThread(threading.Thread):
         self._output: Optional[T] = None
 
     def run(self) -> None:
-        log.warning(
+        log.debug(
             f"Executing {self._target} on thread: {threading.get_ident()}"
         )
         try:
