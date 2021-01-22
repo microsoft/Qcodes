@@ -1,7 +1,7 @@
 import re
 
 import hypothesis.strategies as hst
-from hypothesis import given
+from hypothesis import HealthCheck, given, settings
 import hypothesis.extra.numpy as hypnumpy
 import pytest
 import numpy as np
@@ -166,6 +166,7 @@ def test_list_of_strings(experiment):
         test_set.conn.close()
 
 
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(
     p_values=hypnumpy.arrays(
         dtype=hst.sampled_from(

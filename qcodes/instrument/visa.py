@@ -15,8 +15,6 @@ from qcodes.utils.deprecate import deprecate
 from qcodes.logger.instrument_logger import get_instrument_logger
 from qcodes.utils.delaykeyboardinterrupt import DelayedKeyboardInterrupt
 
-pyvisa_is_1_11_or_higher = Version(pyvisa.__version__) >= Version('1.11.0')
-
 VISA_LOGGER = '.'.join((InstrumentBase.__module__, 'com', 'visa'))
 
 log = logging.getLogger(__name__)
@@ -142,17 +140,10 @@ class VisaInstrument(Instrument):
         if self.visabackend == 'sim':
             return
 
-        if pyvisa_is_1_11_or_higher:
-            flush_operation = (
-                    vi_const.BufferOperation.discard_read_buffer_no_io |
-                    vi_const.BufferOperation.discard_write_buffer
-            )
-        else:
-            # This can be dropped once we drop support for pyvisa 1.10
-            flush_operation = cast(
-                Any,
-                vi_const.VI_READ_BUF_DISCARD | vi_const.VI_WRITE_BUF_DISCARD
-            )
+        flush_operation = (
+                vi_const.BufferOperation.discard_read_buffer_no_io |
+                vi_const.BufferOperation.discard_write_buffer
+        )
 
         if isinstance(self.visa_handle, pyvisa.resources.SerialInstrument):
             self.visa_handle.flush(flush_operation)

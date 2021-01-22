@@ -7,7 +7,7 @@ from typing import List
 
 import numpy as np
 import pytest
-from hypothesis import given, settings
+from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import floats, tuples
 
 import qcodes.instrument.sims as sims
@@ -108,7 +108,7 @@ random_coordinates = {
 
 
 @given(set_target=random_coordinates["cartesian"])
-@settings(max_examples=10)
+@settings(max_examples=10, suppress_health_check=(HealthCheck.function_scoped_fixture,))
 def test_cartesian_sanity(current_driver, set_target):
     """
     A sanity check to see if the driver remember vectors in any random
@@ -127,7 +127,7 @@ def test_cartesian_sanity(current_driver, set_target):
 
 
 @given(set_target=random_coordinates["spherical"])
-@settings(max_examples=10)
+@settings(max_examples=10, suppress_health_check=(HealthCheck.function_scoped_fixture,))
 def test_spherical_sanity(current_driver, set_target):
     """
     A sanity check to see if the driver remember vectors in any random
@@ -146,7 +146,7 @@ def test_spherical_sanity(current_driver, set_target):
 
 
 @given(set_target=random_coordinates["cylindrical"])
-@settings(max_examples=10)
+@settings(max_examples=10, suppress_health_check=(HealthCheck.function_scoped_fixture,))
 def test_cylindrical_sanity(current_driver, set_target):
     """
     A sanity check to see if the driver remember vectors in any random
@@ -165,7 +165,7 @@ def test_cylindrical_sanity(current_driver, set_target):
 
 
 @given(set_target=random_coordinates["cartesian"])
-@settings(max_examples=10)
+@settings(max_examples=10, suppress_health_check=(HealthCheck.function_scoped_fixture,))
 def test_cartesian_setpoints(current_driver, set_target):
     """
     Check that the individual x, y, z instruments are getting the set
@@ -186,7 +186,7 @@ def test_cartesian_setpoints(current_driver, set_target):
 
 
 @given(set_target=random_coordinates["spherical"])
-@settings(max_examples=10)
+@settings(max_examples=10, suppress_health_check=(HealthCheck.function_scoped_fixture,))
 def test_spherical_setpoints(current_driver, set_target):
     """
     Check that the individual x, y, z instruments are getting the set
@@ -208,7 +208,8 @@ def test_spherical_setpoints(current_driver, set_target):
 
 
 @given(set_target=random_coordinates["cylindrical"])
-@settings(max_examples=10, deadline=500)
+@settings(max_examples=10, deadline=500,
+          suppress_health_check=(HealthCheck.function_scoped_fixture,))
 def test_cylindrical_setpoints(current_driver, set_target):
     """
     Check that the individual x, y, z instruments are getting the set
@@ -230,7 +231,8 @@ def test_cylindrical_setpoints(current_driver, set_target):
 
 
 @given(set_target=random_coordinates["cartesian"])
-@settings(max_examples=10, deadline=500)
+@settings(max_examples=10, deadline=500,
+          suppress_health_check=(HealthCheck.function_scoped_fixture,))
 def test_measured(current_driver, set_target):
     """
     Simply call the measurement methods and verify that no exceptions

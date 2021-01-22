@@ -3,7 +3,7 @@ import time
 from uuid import uuid4
 
 import hypothesis.strategies as hst
-from hypothesis import assume, given, settings
+from hypothesis import HealthCheck, assume, given, settings
 
 import numpy as np
 import pytest
@@ -42,7 +42,8 @@ def test_generate_guid(loc, stat, smpl):
         assert comps['time'] - gen_time < 2
 
 
-@settings(max_examples=50, deadline=None)
+@settings(max_examples=50, deadline=None,
+          suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(loc=hst.integers(-10, 350))
 def test_set_guid_location_code(loc, monkeypatch):
     monkeypatch.setattr('builtins.input', lambda x: str(loc))
@@ -60,7 +61,8 @@ def test_set_guid_location_code(loc, monkeypatch):
             assert cfg['GUID_components']['location'] == original_loc
 
 
-@settings(max_examples=50, deadline=1000)
+@settings(max_examples=50, deadline=1000,
+          suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(ws=hst.integers(-10, 17000000))
 def test_set_guid_workstation_code(ws, monkeypatch):
     monkeypatch.setattr('builtins.input', lambda x: str(ws))

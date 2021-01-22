@@ -115,7 +115,7 @@ class FixedFrequencyPointIQ(MultiParameter):
         """
         assert isinstance(self.instrument, ZNBChannel)
         i, q = self.instrument._get_cw_data()
-        return np.mean(i), np.mean(q)
+        return float(np.mean(i)), float(np.mean(q))
 
 
 class FixedFrequencyPointMagPhase(MultiParameter):

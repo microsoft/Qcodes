@@ -321,9 +321,11 @@ def make_sweep(start: float,
                 'the the given `start`, `stop`, and `step` '
                 'values. \nNumber of points is {:d} or {:d}.'
                 .format(steps_lo + 1, steps_hi + 1))
-        num = steps_lo + 1
+        num_steps = steps_lo + 1
+    elif num is not None:
+        num_steps = num
 
-    output_list = np.linspace(start, stop, num=num).tolist()
+    output_list = np.linspace(start, stop, num=num_steps).tolist()
     return cast(List[float], output_list)
 
 

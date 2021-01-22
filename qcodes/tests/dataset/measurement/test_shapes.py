@@ -2,14 +2,14 @@ import logging
 
 import numpy as np
 import hypothesis.strategies as hst
-from hypothesis import given, example, settings
+from hypothesis import HealthCheck, given, example, settings
 
 from qcodes.dataset.measurements import Measurement
 
 
 @given(n_points=hst.integers(min_value=1, max_value=100))
 @example(n_points=5)
-@settings(deadline=None)
+@settings(deadline=None, suppress_health_check=(HealthCheck.function_scoped_fixture,))
 def test_datasaver_1d(experiment, DAC, DMM, caplog,
                       n_points):
     meas = Measurement()
@@ -58,7 +58,7 @@ def test_datasaver_1d(experiment, DAC, DMM, caplog,
                                                           n_points_expected))
 
 
-@settings(deadline=None)
+@settings(deadline=None, suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(n_points_1=hst.integers(min_value=1, max_value=50),
        n_points_2=hst.integers(min_value=1, max_value=50))
 @example(n_points_1=5, n_points_2=10)

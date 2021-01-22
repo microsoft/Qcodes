@@ -2372,7 +2372,7 @@ class CombinedParameter(Metadatable):
         Creates a new combined parameter to be iterated over.
         One can sweep over either:
 
-         - n array of lenght m
+         - n array of length m
          - one nxm array
 
         where n is the number of combined parameters

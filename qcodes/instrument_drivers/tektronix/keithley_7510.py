@@ -49,7 +49,14 @@ class GeneratedSetPoints(Parameter):
         self._n_points = n_points
 
     def get_raw(self) -> np.ndarray:
-        return np.linspace(self._start(), self._stop(), self._n_points())
+        start = self._start()
+        assert start is not None
+        stop = self._stop()
+        assert stop is not None
+        n_points = self._n_points()
+        assert n_points is not None
+
+        return np.linspace(start, stop, n_points)
 
 
 class Buffer7510(InstrumentChannel):
