@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 import numpy as np
 import pytest
-from hypothesis import given, settings
+from hypothesis import HealthCheck, given, settings
 
 from qcodes import config
 from qcodes.dataset.data_set import DataSet
@@ -170,7 +170,7 @@ def test_do0d_output_data(_param):
                                             Multi2DSetPointParam,
                                             Multi2DSetPointParam2Sizes])
 @given(n_points_pws=hst.integers(min_value=1, max_value=1000))
-@settings(deadline=None)
+@settings(deadline=None, suppress_health_check=(HealthCheck.function_scoped_fixture,))
 def test_do0d_verify_shape(_param, _param_complex, multiparamtype,
                            dummyinstrument, n_points_pws):
     arrayparam = ArraySetPointParam(name='arrayparam')
@@ -316,7 +316,7 @@ def test_do1d_output_data(_param, _param_set):
                                             Multi2DSetPointParam2Sizes])
 @given(num_points=hst.integers(min_value=1, max_value=10),
        n_points_pws=hst.integers(min_value=1, max_value=1000))
-@settings(deadline=None)
+@settings(deadline=None, suppress_health_check=(HealthCheck.function_scoped_fixture,))
 def test_do1d_verify_shape(_param, _param_complex, _param_set, multiparamtype,
                            dummyinstrument, num_points, n_points_pws):
     arrayparam = ArraySetPointParam(name='arrayparam')
@@ -525,7 +525,7 @@ def test_do2d_output_data(_param, _param_complex, _param_set, _param_set_2):
 @given(num_points_p1=hst.integers(min_value=1, max_value=10),
        num_points_p2=hst.integers(min_value=1, max_value=10),
        n_points_pws=hst.integers(min_value=1, max_value=1000))
-@settings(deadline=None)
+@settings(deadline=None, suppress_health_check=(HealthCheck.function_scoped_fixture,))
 def test_do2d_verify_shape(_param, _param_complex, _param_set, _param_set_2,
                            multiparamtype,
                            dummyinstrument,
@@ -601,6 +601,7 @@ def test_do1d_additional_setpoints(_param, _param_complex, _param_set):
             plt.close('all')
 
 
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(num_points_p1=hst.integers(min_value=1, max_value=10))
 @pytest.mark.usefixtures("experiment")
 def test_do1d_additional_setpoints_shape(_param, _param_complex, _param_set,
@@ -664,7 +665,7 @@ def test_do2d_additional_setpoints(_param, _param_complex,
 
 @given(num_points_p1=hst.integers(min_value=1, max_value=10),
        num_points_p2=hst.integers(min_value=1, max_value=10))
-@settings(deadline=None)
+@settings(deadline=None, suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @pytest.mark.usefixtures("experiment")
 def test_do2d_additional_setpoints_shape(
         _param, _param_complex,

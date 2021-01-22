@@ -3,7 +3,7 @@ import logging
 import hypothesis.strategies as hst
 import numpy as np
 import pytest
-from hypothesis import given, settings
+from hypothesis import HealthCheck, given, settings
 from numpy.testing import assert_allclose, assert_array_equal
 from qcodes.data.location import FormatLocation
 from qcodes.instrument.channel import ChannelList
@@ -43,6 +43,7 @@ def test_channels_get(dci):
     assert len(temperatures) == 6
 
 
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(value=hst.floats(0, 300), channel=hst.integers(0, 3))
 def test_channel_access_is_identical(dci, value, channel):
     channel_to_label = {0: 'A', 1: 'B', 2: 'C', 3: "D"}
@@ -186,6 +187,7 @@ def test_remove_tupled_channel(dci):
         channels.remove(chan_a)
 
 
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(setpoints=hst.lists(hst.floats(0, 300), min_size=4, max_size=4))
 def test_combine_channels(dci, setpoints):
     assert len(dci.channels) == 6
@@ -205,6 +207,7 @@ def test_combine_channels(dci, setpoints):
     assert dci.channels.temperature() == expected
 
 
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(start=hst.integers(-8, 7), stop=hst.integers(-8, 7),
        step=hst.integers(1, 7))
 def test_access_channels_by_slice(dci, start, stop, step):
@@ -222,6 +225,7 @@ def test_access_channels_by_slice(dci, start, stop, step):
         assert chan.name == f'dci_Chan{exp_chan}'
 
 
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(myindexs=hst.lists(elements=hst.integers(-8, 7), min_size=1))
 def test_access_channels_by_tuple(dci, myindexs):
     names = ('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H')
@@ -337,7 +341,7 @@ def test_loop_measure_channels_individually(dci):
 
 
 @given(values=hst.lists(hst.floats(0, 300), min_size=4, max_size=4))
-@settings(max_examples=10, deadline=None)
+@settings(max_examples=10, deadline=None, suppress_health_check=(HealthCheck.function_scoped_fixture,))
 def test_loop_measure_channels_by_name(dci, values):
     p1 = Parameter(name='p1', vals=Numbers(-10, 10), get_cmd=None,
                    set_cmd=None)
@@ -369,7 +373,8 @@ def test_loop_measure_channels_by_name(dci, values):
 @given(loop_channels=hst.lists(hst.integers(0, 3), min_size=2, max_size=2,
                                unique=True),
        measure_channel=hst.integers(0, 3))
-@settings(max_examples=10, deadline=800)
+@settings(max_examples=10, deadline=800,
+          suppress_health_check=(HealthCheck.function_scoped_fixture,))
 def test_nested_loop_over_channels(dci, loop_channels, measure_channel):
     channel_to_label = {0: 'A', 1: 'B', 2: 'C', 3: "D"}
     loc_fmt = 'data/{date}/#{counter}_{name}_{date}_{time}'

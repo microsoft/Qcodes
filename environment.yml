@@ -12,7 +12,7 @@ dependencies:
  - QtPy
  - jsonschema
  - jupyter=1.0.0
- - hypothesis=5.38.1
+ - hypothesis=6.0.0
  - pytest
  - pytest-runner
  - spyder

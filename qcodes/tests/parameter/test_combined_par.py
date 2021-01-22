@@ -3,7 +3,7 @@ from collections import OrderedDict
 import hypothesis.strategies as hst
 import numpy as np
 import pytest
-from hypothesis import given
+from hypothesis import HealthCheck, given, settings
 from qcodes.instrument.parameter import combine
 from qcodes.utils.helpers import full_class
 
@@ -59,6 +59,7 @@ def testSet(parameters, mocker):
         )
 
 
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(npoints=hst.integers(1, 100),
        x_start_stop=hst.lists(hst.integers(), min_size=2, max_size=2).map(sorted),
        y_start_stop=hst.lists(hst.integers(), min_size=2, max_size=2).map(sorted),
