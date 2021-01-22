@@ -107,7 +107,7 @@ tornado==6.1
 traitlets==5.0.5
 typed-ast==1.4.2
 typing-extensions==3.7.4.3
-ujson==4.0.1
+ujson==4.0.2
 urllib3==1.26.2
 watchdog==1.0.2
 wcwidth==0.2.5
