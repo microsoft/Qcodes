@@ -83,13 +83,13 @@ pywin32-ctypes==0.2.0; sys_platform == 'win32'
 pyzmq==21.0.1
 QDarkStyle==2.8.1
 QtAwesome==1.0.2
-qtconsole==5.0.1
+qtconsole==5.0.2
 QtPy==1.9.0
 regex==2020.11.13
 requests==2.25.1
 rope==0.18.0
 six==1.15.0
-snowballstemmer==2.0.0
+snowballstemmer==2.1.0
 sortedcontainers==2.3.0
 Sphinx==3.4.3
 sphinxcontrib-applehelp==1.0.2
@@ -107,7 +107,7 @@ tornado==6.1
 traitlets==5.0.5
 typed-ast==1.4.2
 typing-extensions==3.7.4.3
-ujson==4.0.1
+ujson==4.0.2
 urllib3==1.26.2
 watchdog==1.0.2
 wcwidth==0.2.5

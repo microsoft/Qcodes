@@ -57,13 +57,13 @@ pywin32==300; sys_platform == 'win32'
 pywinpty==0.5.7; sys_platform == 'win32'
 PyYAML==5.3.1
 pyzmq==21.0.1
-qtconsole==5.0.1
+qtconsole==5.0.2
 QtPy==1.9.0
 requests==2.25.1
 scipy==1.6.0
 Send2Trash==1.5.0
 six==1.15.0
-snowballstemmer==2.0.0
+snowballstemmer==2.1.0
 Sphinx==3.4.3
 sphinx-jsonschema==1.16.7
 sphinx-rtd-theme==0.5.1
