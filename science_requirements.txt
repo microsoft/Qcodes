@@ -83,7 +83,7 @@ pywin32-ctypes==0.2.0; sys_platform == 'win32'
 pyzmq==21.0.1
 QDarkStyle==2.8.1
 QtAwesome==1.0.2
-qtconsole==5.0.1
+qtconsole==5.0.2
 QtPy==1.9.0
 regex==2020.11.13
 requests==2.25.1
