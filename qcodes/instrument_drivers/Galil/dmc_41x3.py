@@ -8,14 +8,14 @@ from qcodes.instrument.visa import Instrument
 
 try:
     import gclib
-except ImportError:
+except ImportError as e:
     raise ImportError(
         "Cannot find gclib library. Download gclib installer from "
         "https://www.galil.com/sw/pub/all/rn/gclib.html for your OS and "
         "install Galil motion controller software for your OS. Afterwards go "
         "to https://www.galil.com/sw/pub/all/doc/gclib/html/python.html and "
         "follow instruction to be able to import gclib package in your "
-        "environment.")
+        "environment.") from e
 
 
 class GalilInstrument(Instrument):
@@ -34,17 +34,17 @@ class GalilInstrument(Instrument):
         ips = {}
         self.log.info('Listening for controllers requesting IP addresses...')
         ip_requests = self.g.GIpRequests()
-        for id in ip_requests.keys():
-            self.log.info(id, 'at mac', ip_requests[id])
+        for i in ip_requests.keys():
+            self.log.info(i, 'at mac', ip_requests[i])
 
         # assuming one device attached
         ips[ip_requests.keys()[0]] = self.address
 
-        for id in ips.keys():
-            if id in ip_requests:  # if our controller needs an IP
-                self.log.info("Assigning", ips[id], "to", ip_requests[id])
-                self.g.GAssign(ips[id], ip_requests[id])
-                self.g.GOpen(ips[id] + ' --direct')
+        for i in ips.keys():
+            if i in ip_requests:
+                self.log.info("Assigning", ips[i], "to", ip_requests[i])
+                self.g.GAssign(ips[i], ip_requests[i])
+                self.g.GOpen(ips[i] + ' --direct')
                 self.log.info(self.g.GInfo())
 
         available = self.g.GAddresses()
