@@ -121,7 +121,6 @@ class SpectrumAnalyzerMode(InstrumentChannel):
 
         self.add_parameter(
             name="auto_sweep_time_enabled",
-            initial_value=False,
             get_cmd=":SENSe:SWEep:TIME:AUTO?",
             set_cmd=self._enable_auto_sweep_time,
             val_mapping=create_on_off_val_mapping(on_val="ON", off_val="OFF"),
@@ -130,7 +129,6 @@ class SpectrumAnalyzerMode(InstrumentChannel):
 
         self.add_parameter(
             name="auto_sweep_type_enabled",
-            initial_value=False,
             get_cmd=":SENSe:SWEep:TYPE:AUTO?",
             set_cmd=self._enable_auto_sweep_type,
             val_mapping=create_on_off_val_mapping(on_val="ON", off_val="OFF"),
