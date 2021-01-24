@@ -5,6 +5,7 @@ import sys
 
 import versioneer
 
+
 def readme():
     with open('README.rst') as f:
         return f.read()
@@ -28,6 +29,7 @@ install_requires = [
     'ruamel.yaml!=0.16.6',
     'wrapt',
     'pandas',
+    'xarray~=0.16.2',
     'tabulate',
     'tqdm',
     'opencensus>=0.7.10, <0.8.0',
