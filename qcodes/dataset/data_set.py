@@ -8,6 +8,7 @@ import time
 import uuid
 from dataclasses import dataclass
 from queue import Empty, Queue
+from itertools import starmap
 from threading import Thread
 from typing import (Hashable, Iterator, TYPE_CHECKING, Any, Callable, Dict,
                     List, Mapping, MutableMapping, Optional, Sequence, Set,
@@ -949,7 +950,7 @@ class DataSet(Sized):
 
     def _same_setpoints(self, datadict: ParameterData) -> bool:
 
-        def _get_setpoints(dd: ParameterData) -> Iterator[Dict[str, numpy.ndarray]]:
+        def _sp_iterator(dd: ParameterData) -> Iterator[Dict[str, numpy.ndarray]]:
 
             for dep_name, param_dict in dd.items():
                 out = {
@@ -957,14 +958,9 @@ class DataSet(Sized):
                 }
                 yield out
 
-        iterator = _get_setpoints(datadict)
+        iterator = _sp_iterator(datadict)
 
-        try:
-            first = next(iterator)
-        except StopIteration:
-            return True
-
-        return all(self._parameter_data_identical(first, rest) for rest in iterator)
+        return all(starmap(self._parameter_data_identical, iterator))
 
     def get_data_as_pandas_dataframe(self,
                                      *params: Union[str,
