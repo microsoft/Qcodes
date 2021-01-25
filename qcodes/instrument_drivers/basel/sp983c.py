@@ -1,7 +1,8 @@
 from typing import Any, Optional, Dict
 
+from qcodes import ManualParameter
 from qcodes.instrument.base import Instrument
-from qcodes.utils.validators import Enum
+from qcodes.utils.validators import Enum, Numbers
 
 
 class SP983C(Instrument):
@@ -37,6 +38,12 @@ class SP983C(Instrument):
                            get_cmd=None, set_cmd=None,
                            vals=Enum(30., 100., 300., 1e3, 3e3, 10e3, 30e3,
                                      100e3, 1e6))
+
+        self.add_parameter('bias_volt',
+                           initial_value=0,
+                           unit='mV',
+                           vals=Numbers(-100, 100),
+                           parameter_class=ManualParameter)
 
     def get_idn(self) -> Dict[str, Optional[str]]:
         vendor = 'Physics Basel'
