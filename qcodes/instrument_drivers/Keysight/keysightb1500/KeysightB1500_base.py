@@ -611,8 +611,12 @@ class IVSweepMeasurement(MultiParameter, StatusMixin):
             for n in range(n_channels)
         )
 
-        self.source_voltage = _FMTResponse(
-            *[parsed_data[i][n_channels::n_all_data_channels] for i in range(0, n_items_per_data_point)])
+        source_voltage_index = n_channels
+        parsed_source_voltage_items = [
+            parsed_data[i][source_voltage_index::n_all_data_channels]
+            for i in range(0, n_items_per_data_point)
+        ]
+        self.source_voltage = _FMTResponse(*parsed_source_voltage_items)
 
         self.shapes = ((len(self.source_voltage.value),),) * n_channels
         self.setpoints = ((self.source_voltage.value,),) * n_channels
