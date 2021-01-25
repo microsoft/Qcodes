@@ -35,14 +35,12 @@ class GalilInstrument(Instrument):
         self.log.info('Listening for controllers requesting IP addresses...')
         ip_requests = self.g.GIpRequests()
         for i in ip_requests.keys():
-            self.log.info(i, 'at mac', ip_requests[i])
-
-        # assuming one device attached
-        ips[ip_requests.keys()[0]] = self.address
+            self.log.info(i + ' at mac' + ip_requests[i])
+            ips[i] = self.address
 
         for i in ips.keys():
             if i in ip_requests:
-                self.log.info("Assigning", ips[i], "to", ip_requests[i])
+                self.log.info("Assigning " + ips[i] + " to " + ip_requests[i])
                 self.g.GAssign(ips[i], ip_requests[i])
                 self.g.GOpen(ips[i] + ' --direct')
                 self.log.info(self.g.GInfo())
