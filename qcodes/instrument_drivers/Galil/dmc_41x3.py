@@ -58,6 +58,12 @@ class GalilInstrument(Instrument):
         """
         self.g.GCommand(cmd)
 
+    def ask_raw(self, cmd: str) -> str:
+        """
+        Asks/Reads data from Galil motion controller
+        """
+        return self.g.GCommand(cmd)
+
     def close(self) -> None:
         """
         Close connection to the instrument
