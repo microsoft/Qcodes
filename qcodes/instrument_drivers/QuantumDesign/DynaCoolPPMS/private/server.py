@@ -10,6 +10,8 @@ else:
 from qcodes.instrument_drivers.QuantumDesign.\
     DynaCoolPPMS.private.commandhandler import CommandHandler
 
+assert sys.platform == 'win32'
+
 command_handler = CommandHandler()
 
 log = logging.getLogger(__name__)
