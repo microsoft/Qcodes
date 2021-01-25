@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from .KeysightB1500_base import KeysightB1500
 
 
-_FMTResponse = namedtuple('FMTResponse', 'value status channel type')
+_FMTResponse = namedtuple('_FMTResponse', 'value status channel type')
 
 
 class MeasurementNotTaken(Exception):
