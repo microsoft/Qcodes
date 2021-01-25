@@ -37,7 +37,7 @@ jsonschema==3.2.0
 jupyter-client==6.1.11
 jupyter-core==4.7.0
 jupyterlab-pygments==0.1.2
-keyring==21.8.0
+keyring==22.0.0
 lazy-object-proxy==1.4.3
 MarkupSafe==1.1.1
 mccabe==0.6.1
@@ -57,7 +57,7 @@ pathtools==0.1.2
 pexpect==4.8.0
 pickleshare==0.7.5
 pluggy==0.13.1
-prompt-toolkit==3.0.11
+prompt-toolkit==3.0.14
 psutil==5.8.0
 ptyprocess==0.7.0
 pycodestyle==2.6.0
