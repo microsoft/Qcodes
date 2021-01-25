@@ -47,6 +47,7 @@ from qcodes.dataset.sqlite.query_helpers import (VALUE, VALUES,
                                                  length, one,
                                                  select_one_where)
 from qcodes.instrument.parameter import _BaseParameter
+from qcodes.utils.deprecate import deprecate
 
 from .data_set_cache import DataSetCache
 from .descriptions.versioning import serialization as serial
@@ -962,6 +963,59 @@ class DataSet(Sized):
 
         return all(starmap(self._parameter_data_identical, iterator))
 
+    def to_pandas_dataframe_dict(self,
+                                 *params: Union[str,
+                                                ParamSpec,
+                                                _BaseParameter],
+                                 start: Optional[int] = None,
+                                 end: Optional[int] = None) ->\
+            Dict[str, "pd.DataFrame"]:
+        """
+        Returns the values stored in the :class:`.DataSet` for the specified parameters
+        and their dependencies as a dict of :py:class:`pandas.DataFrame` s
+        Each element in the dict is indexed by the names of the requested
+        parameters.
+
+        Each DataFrame contains a column for the data and is indexed by a
+        :py:class:`pandas.MultiIndex` formed from all the setpoints
+        of the parameter.
+
+        If no parameters are supplied data will be be
+        returned for all parameters in the :class:`.DataSet` that are not them self
+        dependencies of other parameters.
+
+        If provided, the start and end arguments select a range of results
+        by result count (index). If the range is empty - that is, if the end is
+        less than or equal to the start, or if start is after the current end
+        of the :class:`.DataSet` – then a dict of empty :py:class:`pandas.DataFrame` s is
+        returned.
+
+        Args:
+            *params: string parameter names, QCoDeS Parameter objects, and
+                ParamSpec objects. If no parameters are supplied data for
+                all parameters that are not a dependency of another
+                parameter will be returned.
+            start: start value of selection range (by result count); ignored
+                if None
+            end: end value of selection range (by results count); ignored if
+                None
+
+        Returns:
+            Dictionary from requested parameter names to
+            :py:class:`pandas.DataFrame` s with the requested parameter as
+            a column and a indexed by a :py:class:`pandas.MultiIndex` formed
+            by the dependencies.
+        """
+        import pandas as pd
+        datadict = self.get_parameter_data(*params,
+                                           start=start,
+                                           end=end)
+        dfs_dict = self._load_to_dataframe_dict(datadict)
+        return dfs_dict
+
+    @deprecate(reason='This method will be removed due to inconcise naming, please '
+               'use the renamed method to_pandas_dataframe_dict',
+               alternative='to_pandas_dataframe_dict')
     def get_data_as_pandas_dataframe(self,
                                      *params: Union[str,
                                                     ParamSpec,
@@ -1005,13 +1059,71 @@ class DataSet(Sized):
             a column and a indexed by a :py:class:`pandas.MultiIndex` formed
             by the dependencies.
         """
+        import pandas as pd
         datadict = self.get_parameter_data(*params,
                                            start=start,
                                            end=end)
-        dfs = self._load_to_dataframes(datadict)
-        return dfs
+        dfs_dict = self._load_to_dataframe_dict(datadict)
+        return dfs_dict
 
-    @staticmethod
+    def to_pandas_dataframe(self,
+                            *params: Union[str,
+                                           ParamSpec,
+                                           _BaseParameter],
+                            start: Optional[int] = None,
+                            end: Optional[int] = None) -> "pd.DataFrame":
+        """
+        Returns the values stored in the :class:`.DataSet` for the specified parameters
+        and their dependencies as a concatinated :py:class:`pandas.DataFrame` s
+
+        The DataFrame contains a column for the data and is indexed by a
+        :py:class:`pandas.MultiIndex` formed from all the setpoints
+        of the parameter.
+
+        If no parameters are supplied data will be be
+        returned for all parameters in the :class:`.DataSet` that are not them self
+        dependencies of other parameters.
+
+        If provided, the start and end arguments select a range of results
+        by result count (index). If the range is empty - that is, if the end is
+        less than or equal to the start, or if start is after the current end
+        of the :class:`.DataSet` – then a dict of empty :py:class:`pandas.DataFrame` s is
+        returned.
+
+        Args:
+            *params: string parameter names, QCoDeS Parameter objects, and
+                ParamSpec objects. If no parameters are supplied data for
+                all parameters that are not a dependency of another
+                parameter will be returned.
+            start: start value of selection range (by result count); ignored
+                if None
+            end: end value of selection range (by results count); ignored if
+                None
+
+        Returns:
+            :py:class:`pandas.DataFrame` s with the requested parameter as
+            a column and a indexed by a :py:class:`pandas.MultiIndex` formed
+            by the dependencies.
+
+        Example:
+            Return a pandas DataFrame with
+                df = ds.get_data_as_pandas_dataframe()
+        """
+        import pandas as pd
+        datadict = self.get_parameter_data(*params,
+                                           start=start,
+                                           end=end)
+
+        if not self._same_setpoints(datadict):
+            warnings.warn(
+                'Independent parameter setpoints are not equal. Check concatenated output carefully.')
+
+        dfs_dict = self._load_to_dataframe_dict(datadict)
+        df = pd.concat(list(dfs_dict.values()), axis=1)
+
+        return df
+
+    @ staticmethod
     def _data_to_dataframe(data: Dict[str, numpy.ndarray], index: Union["pd.Index", "pd.MultiIndex"]) -> "pd.DataFrame":
         import pandas as pd
         if len(data) == 0:
@@ -1030,7 +1142,7 @@ class DataSet(Sized):
                           columns=[dependent_col_name])
         return df
 
-    @staticmethod
+    @ staticmethod
     def _generate_pandas_index(data: Dict[str, numpy.ndarray]) -> Union["pd.Index", "pd.MultiIndex"]:
         # the first element in the dict given by parameter_tree is always the dependent
         # parameter and the index is therefore formed from the rest
@@ -1050,7 +1162,7 @@ class DataSet(Sized):
                 names=keys[1:])
         return index
 
-    def _load_to_dataframes(self, datadict: ParameterData) -> Dict[str, "pd.DataFrame"]:
+    def _load_to_dataframe_dict(self, datadict: ParameterData) -> Dict[str, "pd.DataFrame"]:
         dfs = {}
         for name, subdict in datadict.items():
             index = self._generate_pandas_index(subdict)
@@ -1120,7 +1232,7 @@ class DataSet(Sized):
             formed by the dependencies.
 
         Example:
-            Return a dict of xr.DataArray with 
+            Return a dict of xr.DataArray with
 
                 dataarray_dict = ds.to_xarray_dataarray_dict()
         """
@@ -1156,7 +1268,7 @@ class DataSet(Sized):
                 None
 
         Returns:
-            :py:class:`xr.Dataset` with the requested parameter(s) data as 
+            :py:class:`xr.Dataset` with the requested parameter(s) data as
             :py:class:`xr.DataArray` s and coordinates formed by the dependencies.
 
         Example:
@@ -1385,7 +1497,7 @@ class DataSet(Sized):
             stdln_dict = {st: result_dict[st] for st in standalones}
             self._results += self._finalize_res_dict_standalones(stdln_dict)
 
-    @staticmethod
+    @ staticmethod
     def _finalize_res_dict_array(
             result_dict: Mapping[ParamSpecBase, values_type],
             all_params: Set[ParamSpecBase]) -> List[Dict[str, VALUE]]:
@@ -1417,7 +1529,7 @@ class DataSet(Sized):
 
         return [res_dict]
 
-    @staticmethod
+    @ staticmethod
     def _finalize_res_dict_numeric_text_or_complex(
             result_dict: Mapping[ParamSpecBase, numpy.ndarray],
             toplevel_param: ParamSpecBase,
@@ -1466,7 +1578,7 @@ class DataSet(Sized):
 
         return res_list
 
-    @staticmethod
+    @ staticmethod
     def _finalize_res_dict_standalones(
             result_dict: Mapping[ParamSpecBase, numpy.ndarray]
     ) -> List[Dict[str, VALUE]]:
