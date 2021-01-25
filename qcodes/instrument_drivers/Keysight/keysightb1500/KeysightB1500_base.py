@@ -586,13 +586,21 @@ class IVSweepMeasurement(MultiParameter, StatusMixin):
 
         parsed_data = fmt_response_base_parser(raw_data)
 
-        n_items_per_data_point = 4  # == len(_FMTResponse(None, None, None, None))
-        n_all_data_channels = n_channels + 1  # because sourced voltage values are also returned
+        # The `4` comes from the len(_FMTResponse(None, None, None, None)),
+        # the _FMTResponse tuple declares these items that the instrument
+        # gives for each data point
+        n_items_per_data_point = 4
+
+        # sourced voltage values are also returned, hence the `+1`
+        n_all_data_channels = n_channels + 1
 
         for n in range(n_channels):
             single_channel_data = _FMTResponse(
                 *[parsed_data[i][n::n_all_data_channels] for i in range(0, n_items_per_data_point)])
             convert_dummy_val_to_nan(single_channel_data)
+
+            # Store the results to `.param#` attributes for convenient access
+            # to all the data, e.g. status of each value in the arrays
             setattr(self, f"param{n+1}", single_channel_data)
 
         channel_values_to_return = tuple(
