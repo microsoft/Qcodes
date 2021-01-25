@@ -1,6 +1,6 @@
 import socket
 import select
-from msvcrt import kbhit, getch  # type: ignore[attr-defined]
+from msvcrt import kbhit, getch
 import logging
 
 from qcodes.instrument_drivers.QuantumDesign.\
