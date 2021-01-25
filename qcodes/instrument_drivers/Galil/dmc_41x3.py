@@ -48,7 +48,7 @@ class GalilInstrument(Instrument):
         available = self.g.GAddresses()
         data = available[self.address].split(" ")
         idparts: List[Optional[str]] = ["Galil Motion Control, Inc.",
-                                        data[0], None, data[2]]
+                                        data[1], None, data[3]]
 
         return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
 
