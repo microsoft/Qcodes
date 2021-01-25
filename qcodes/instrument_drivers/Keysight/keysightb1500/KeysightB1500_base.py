@@ -532,7 +532,7 @@ class IVSweepMeasurement(MultiParameter, StatusMixin):
         channels = measurement_mode['channels']
         n_channels = len(channels)
 
-        if n_channels >= 1:
+        if n_channels < 1:
             raise ValueError('At least one measurement channel is needed for '
                              'an IV sweep.')
 
