@@ -1,4 +1,4 @@
-name: Verify that qcodes requirements are compatible with Spyder
+name: Run pytest with minium requirements
 
 on:
   push:
@@ -24,6 +24,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+      with:
+        fetch-depth: '0'
+    - name: setup ubuntu-latest xvfb
+      uses: ./.github/actions/setup-ubuntu-latest-xvfb
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
@@ -35,14 +39,21 @@ jobs:
       uses: actions/cache@v2
       with:
         path: ${{ steps.prepare-cache-pip.outputs.cache-dir }}
-        key: ${{ runner.os }}-${{ matrix.python-version }}-pip-${{ hashFiles('**/requirements.txt') }}-${{ hashFiles('**/science_requirements.txt') }}-${{ hashFiles('**/setup.py') }}
+        key: ${{ runner.os }}-${{ matrix.python-version }}-pip-${{ hashFiles('**/min-requirements.txt') }}-${{ hashFiles('**/setup.py') }}
         restore-keys: |
           ${{ runner.os }}-${{ matrix.python-version }}-pip-
-    - name: install requirements.txt
+    - name: generate min_requirements.txt
       run: |
-        pip install -r requirements.txt
-    - name: install science_requirements.txt
+        pip install requirements-builder
+        requirements-builder -l min -e test setup.py -o min_requirements.txt
+    - name: install min_requirements.txt
       run: |
-        pip install -r science_requirements.txt
+        pip install -r min_requirements.txt
+    - name: generate test dbs
+      uses: ./.github/actions/generate-test-dbs
     - name: install qcodes
       run: pip install .
+    - name: Run tests
+      run: |
+        cd qcodes
+        py.test --hypothesis-profile ci

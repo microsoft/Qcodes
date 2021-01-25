@@ -628,14 +628,6 @@ class DataSet(Sized):
         self.conn.close()
         self.conn = connect(self.path_to_db, self._debug)
 
-    def add_parameter(self, spec: ParamSpec) -> None:
-        """
-        Old method; don't use it.
-        """
-        raise NotImplementedError('This method has been removed. '
-                                  'Please use DataSet.set_interdependencies '
-                                  'instead.')
-
     def set_interdependencies(self,
                               interdeps: InterDependencies_,
                               shapes: Shapes = None) -> None:

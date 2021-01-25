@@ -1,7 +1,4 @@
 from setuptools import setup, find_packages
-from distutils.version import StrictVersion
-from importlib import import_module
-import sys
 
 import versioneer
 
@@ -12,34 +9,48 @@ def readme():
 
 
 extras = {
-    'MatPlot': ('matplotlib', '2.2.3'),
-    'QtPlot': ('pyqtgraph', '0.11.0'),
-    'coverage tests': ('coverage', '4.0'),
-    'Slack': ('slacker', '0.9.42'),
-    'ZurichInstruments': ('zhinst-qcodes', '0.1.1')
-}
-extras_require = {k: '>='.join(v) for k, v in extras.items()}
+    'MatPlot': {'matplotlib': '2.2.3'},
+    'QtPlot': {'pyqtgraph': '0.11.0'},
+    'coverage tests': {'coverage': '4.0'},
+    'Slack': {'slacker': '0.9.42'},
+    'ZurichInstruments': {'zhinst-qcodes': '0.1.1'},
+    'test': {'pytest': '6.0.0',
+             'PyVisa-sim': '0.4.0',
+             'hypothesis': '5.49.0',
+             'pytest-xdist': '2.0.0',
+             'deepdiff': '5.0.2',
+             'pytest-mock': "3.0.0",
+             'pytest-rerunfailures': "5.0.0",
+             'lxml': "4.3.0",
+             'GitPython': "3.0.6"
+             }}
+
+extras_require = {}
+for extra_name, extra_packages in extras.items():
+    extras_require[extra_name] = [
+        f'{k}>={v}' for k, v in extra_packages.items()
+        ]
+
 
 install_requires = [
-    'numpy>=1.10',
-    'pyvisa>=1.10.1, <1.12',
-    'h5py>=2.6',
+    'numpy>=1.15',
+    'pyvisa>=1.11.0, <1.12.0',
+    'h5py>=2.8.0',
     'websockets>=7.0',
-    'jsonschema',
-    'ruamel.yaml!=0.16.6',
-    'wrapt',
-    'pandas',
-    'xarray~=0.16.2',
-    'tabulate',
-    'tqdm',
+    'jsonschema>=3.0.0',
+    'ruamel.yaml>=0.16.0,!=0.16.6',
+    'wrapt>=1.10.4',
+    'pandas>=0.24.0',
+    'tabulate>=0.8.0',
+    'tqdm>=4.20.0',
     'opencensus>=0.7.10, <0.8.0',
     'opencensus-ext-azure>=1.0.4, <2.0.0',
     'matplotlib>=2.2.3',
-    "requirements-parser",
-    "importlib-metadata<4.0.0;python_version<'3.8'",
-    "typing_extensions",
+    "requirements-parser>=0.2.0",
+    "importlib-metadata>=1.0.0,<4.0.0;python_version<'3.8'",
+    "typing_extensions>=3.7.4 ",
     "packaging>=20.0",
-    "ipywidgets",
+    "ipywidgets>=7.5.0",
     "broadbean>=0.9.1",
 ]
 
@@ -82,49 +93,3 @@ setup(name='qcodes',
       # zip_safe=False is required for mypy
       # https://mypy.readthedocs.io/en/latest/installed_packages.html#installed-packages
       zip_safe=False)
-
-version_template = '''
-*****
-***** package {0} must be at least version {1}.
-***** Please upgrade it (pip install -U {0} or conda install {0})
-***** in order to use {2}
-*****
-'''
-
-missing_template = '''
-*****
-***** package {0} not found
-***** Please install it (pip install {0} or conda install {0})
-***** in order to use {1}
-*****
-'''
-
-valueerror_template = '''
-*****
-***** package {0} version not understood
-***** Please make sure the installed version ({1})
-***** is compatible with the minimum required version ({2})
-***** in order to use {3}
-*****
-'''
-
-othererror_template = '''
-*****
-***** could not import package {0}. Please try importing it from
-***** the commandline to diagnose the issue.
-*****
-'''
-
-# now test the versions of extras
-for extra, (module_name, min_version) in extras.items():
-    try:
-        module = import_module(module_name)
-        if StrictVersion(module.__version__) < StrictVersion(min_version):
-            print(version_template.format(module_name, min_version, extra))
-    except ImportError:
-        print(missing_template.format(module_name, extra))
-    except ValueError:
-        print(valueerror_template.format(
-            module_name, module.__version__, min_version, extra))
-    except:
-        print(othererror_template.format(module_name))

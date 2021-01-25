@@ -9,7 +9,7 @@ from unittest.mock import patch
 import hypothesis.strategies as hst
 import numpy as np
 import pytest
-from hypothesis import given, settings
+from hypothesis import HealthCheck, given, settings
 
 import qcodes as qc
 from qcodes import (experiments, load_by_counter, load_by_id, new_data_set,
@@ -25,6 +25,7 @@ from qcodes.dataset.sqlite.queries import _unicode_categories
 from qcodes.tests.common import error_caused_by
 from qcodes.tests.dataset.test_links import generate_some_links
 from qcodes.utils.deprecate import QCoDeSDeprecationWarning
+from qcodes.utils.types import numpy_ints, numpy_floats
 
 pytest.register_assert_rewrite('qcodes.tests.dataset.helper_functions')
 from qcodes.tests.dataset.helper_functions import verify_data_dict
@@ -73,6 +74,26 @@ def test_has_attributes_after_init():
     for attr in attrs:
         assert hasattr(ds, attr)
         getattr(ds, attr)
+
+
+@pytest.mark.usefixtures("experiment")
+def test_dataset_length():
+
+    path_to_db = get_DB_location()
+    ds = DataSet(path_to_db, run_id=None)
+
+    assert len(ds) == 0
+
+    parameter = ParamSpecBase(name='single', paramtype='numeric',
+                              label='', unit='N/A')
+    idps = InterDependencies_(standalones=(parameter,))
+    ds.set_interdependencies(idps)
+
+    ds.mark_started()
+    ds.add_results([{parameter.name: 1}])
+    ds.mark_completed()
+
+    assert len(ds) == 1
 
 
 def test_dataset_location(empty_temp_db_connection):
@@ -494,11 +515,6 @@ def test_numpy_ints(dataset):
     dataset.set_interdependencies(idps)
     dataset.mark_started()
 
-    numpy_ints = [
-        np.int, np.int8, np.int16, np.int32, np.int64,
-        np.uint, np.uint8, np.uint16, np.uint32, np.uint64
-    ]
-
     results = [{"x": tp(1)} for tp in numpy_ints]
     dataset.add_results(results)
     expected_result = np.ones(len(numpy_ints))
@@ -514,7 +530,6 @@ def test_numpy_floats(dataset):
     dataset.set_interdependencies(idps)
     dataset.mark_started()
 
-    numpy_floats = [np.float, np.float16, np.float32, np.float64]
     results = [{"y": tp(1.2)} for tp in numpy_floats]
     dataset.add_results(results)
     expected_result = np.array([tp(1.2) for tp in numpy_floats])
@@ -795,7 +810,7 @@ class TestGetData:
             np.testing.assert_array_equal(data, expected)
 
 
-@settings(deadline=600)
+@settings(deadline=600, suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(start=hst.one_of(hst.integers(1, 10**3), hst.none()),
        end=hst.one_of(hst.integers(1, 10**3), hst.none()))
 def test_get_parameter_data(scalar_dataset, start, end):
@@ -947,6 +962,7 @@ def test_get_multi_parameter_data(multi_dataset):
                           expected_values)
 
 
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(start=hst.one_of(hst.integers(1, 9), hst.none()),
        end=hst.one_of(hst.integers(1, 9), hst.none()))
 def test_get_array_in_scalar_param_data(array_in_scalar_dataset,
@@ -1028,6 +1044,7 @@ def test_get_varlen_array_in_scalar_param_data(varlen_array_in_scalar_dataset):
                           expected_values)
 
 
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(start=hst.one_of(hst.integers(1, 45), hst.none()),
        end=hst.one_of(hst.integers(1, 45), hst.none()))
 def test_get_array_in_scalar_param_unrolled(array_in_scalar_dataset_unrolled,

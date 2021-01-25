@@ -1,7 +1,9 @@
 import logging
 import os
+from collections import defaultdict
 from contextlib import contextmanager
-from typing import Callable, Iterator, List, Optional, Sequence, Tuple, Union
+from typing import (Callable, Iterator, List, Optional,
+                    Sequence, Tuple, Union, Dict)
 
 import matplotlib
 import numpy as np
@@ -13,7 +15,9 @@ from qcodes.dataset.descriptions.detect_shapes import \
 from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.measurements import Measurement, res_type
 from qcodes.dataset.plotting import plot_dataset
-from qcodes.instrument.base import _BaseParameter
+from qcodes.instrument.parameter import _BaseParameter, ParamDataType
+from qcodes.dataset.experiment_container import Experiment
+from qcodes.utils.threading import RespondingThread
 
 ActionsT = Sequence[Callable[[], None]]
 
@@ -30,14 +34,90 @@ OutType = List[res_type]
 LOG = logging.getLogger(__name__)
 
 
-def _process_params_meas(param_meas: Sequence[ParamMeasT]) -> OutType:
+class UnsafeThreadingException(Exception):
+    pass
+
+
+class _ParamCaller:
+
+    def __init__(self, *parameters: _BaseParameter):
+
+        self._parameters = parameters
+
+    def __call__(self) -> Tuple[ParamDataType, ...]:
+        output = []
+        for param in self._parameters:
+            output.append(param.get())
+            output.append(param.get())
+        return tuple(output)
+
+    def __repr__(self) -> str:
+        names = tuple(param.full_name for param in self._parameters)
+        return f"ParamCaller of {names}"
+
+
+def _instrument_to_param(
+        params: Sequence[ParamMeasT]
+) -> Dict[Optional[str], Tuple[_BaseParameter, ...]]:
+
+    real_parameters = [param for param in params
+                       if isinstance(param, _BaseParameter)]
+
+    output: Dict[Optional[str], Tuple[_BaseParameter, ...]] = defaultdict(tuple)
+    for param in real_parameters:
+        if param.root_instrument:
+            output[param.root_instrument.full_name] += (param,)
+        else:
+            output[None] += (param,)
+
+    return output
+
+
+def _call_params_threaded(param_meas: Sequence[ParamMeasT]) -> OutType:
+
+    inst_param_mapping = _instrument_to_param(param_meas)
+    executors = tuple(_ParamCaller(*param_list)
+                      for param_list in
+                      inst_param_mapping.values())
+
     output: OutType = []
+    threads = [RespondingThread(target=executor)
+               for executor in executors]
+
+    for t in threads:
+        t.start()
+
+    for t, param_list in zip(threads, inst_param_mapping.values()):
+        thread_output = t.output()
+        assert thread_output is not None
+        for param, value in zip(param_list, thread_output):
+            output.append((param, value))
+
+    return output
+
+
+def _call_params(param_meas: Sequence[ParamMeasT]) -> OutType:
+
+    output: OutType = []
+
     for parameter in param_meas:
         if isinstance(parameter, _BaseParameter):
             output.append((parameter, parameter.get()))
         elif callable(parameter):
             parameter()
+
     return output
+
+
+def _process_params_meas(
+    param_meas: Sequence[ParamMeasT],
+        use_threads: bool = False
+    ) -> OutType:
+
+    if use_threads:
+        return _call_params_threaded(param_meas)
+
+    return _call_params(param_meas)
 
 
 def _register_parameters(
@@ -90,7 +170,10 @@ def _catch_keyboard_interrupts() -> Iterator[Callable[[], bool]]:
 def do0d(
         *param_meas: ParamMeasT,
         write_period: Optional[float] = None,
-        do_plot: bool = True
+        measurement_name: str = "",
+        exp: Optional[Experiment] = None,
+        do_plot: Optional[bool] = None,
+        use_threads: bool = False,
         ) -> AxesTupleListWithDataSet:
     """
     Perform a measurement of a single parameter. This is probably most
@@ -103,13 +186,22 @@ def do0d(
           supplied.
         write_period: The time after which the data is actually written to the
             database.
+        measurement_name: Name of the measurement. This will be passed down to
+            the dataset produced by the measurement. If not given, a default
+            value of 'results' is used for the dataset.
+        exp: The experiment to use for this measurement.
         do_plot: should png and pdf versions of the images be saved after the
-            run.
+            run. If None the setting will be read from ``qcodesrc.json``
+        use_threads: If True measurements from each instrument will be done on
+            separate threads. If you are measuring from several instruments
+            this may give a significant speedup.
 
     Returns:
         The QCoDeS dataset.
     """
-    meas = Measurement()
+    if do_plot is None:
+        do_plot = config.dataset.dond_plot
+    meas = Measurement(name=measurement_name, exp=exp)
 
     measured_parameters = tuple(param for param in param_meas
                                 if isinstance(param, _BaseParameter))
@@ -128,7 +220,12 @@ def do0d(
     _set_write_period(meas, write_period)
 
     with meas.run() as datasaver:
-        datasaver.add_result(*_process_params_meas(param_meas))
+        datasaver.add_result(
+            *_process_params_meas(
+                param_meas,
+                use_threads=use_threads
+            )
+        )
         dataset = datasaver.dataset
 
     return _handle_plotting(dataset, do_plot)
@@ -141,7 +238,10 @@ def do1d(
         enter_actions: ActionsT = (),
         exit_actions: ActionsT = (),
         write_period: Optional[float] = None,
-        do_plot: bool = True,
+        measurement_name: str = "",
+        exp: Optional[Experiment] = None,
+        do_plot: Optional[bool] = None,
+        use_threads: bool = False,
         additional_setpoints: Sequence[ParamMeasT] = tuple(),
         ) -> AxesTupleListWithDataSet:
     """
@@ -167,13 +267,22 @@ def do1d(
             database.
         additional_setpoints: A list of setpoint parameters to be registered in
             the measurement but not scanned.
+        measurement_name: Name of the measurement. This will be passed down to
+            the dataset produced by the measurement. If not given, a default
+            value of 'results' is used for the dataset.
+        exp: The experiment to use for this measurement.
         do_plot: should png and pdf versions of the images be saved after the
-            run.
+            run. If None the setting will be read from ``qcodesrc.json`
+        use_threads: If True measurements from each instrument will be done on
+            separate threads. If you are measuring from several instruments
+            this may give a significant speedup.
 
     Returns:
         The QCoDeS dataset.
     """
-    meas = Measurement()
+    if do_plot is None:
+        do_plot = config.dataset.dond_plot
+    meas = Measurement(name=measurement_name, exp=exp)
 
     all_setpoint_params = (param_set,) + tuple(
         s for s in additional_setpoints)
@@ -206,9 +315,11 @@ def do1d(
         additional_setpoints_data = _process_params_meas(additional_setpoints)
         for set_point in np.linspace(start, stop, num_points):
             param_set.set(set_point)
-            datasaver.add_result((param_set, set_point),
-                                 *_process_params_meas(param_meas),
-                                 *additional_setpoints_data)
+            datasaver.add_result(
+                (param_set, set_point),
+                *_process_params_meas(param_meas, use_threads=use_threads),
+                *additional_setpoints_data
+            )
         dataset = datasaver.dataset
     return _handle_plotting(dataset, do_plot, interrupted())
 
@@ -225,8 +336,11 @@ def do2d(
         before_inner_actions: ActionsT = (),
         after_inner_actions: ActionsT = (),
         write_period: Optional[float] = None,
+        measurement_name: str = "",
+        exp: Optional[Experiment] = None,
         flush_columns: bool = False,
-        do_plot: bool = True,
+        do_plot: Optional[bool] = None,
+        use_threads: bool = False,
         additional_setpoints: Sequence[ParamMeasT] = tuple(),
         ) -> AxesTupleListWithDataSet:
     """
@@ -259,21 +373,29 @@ def do2d(
         after_inner_actions: Actions executed after each run of the inner loop
         write_period: The time after which the data is actually written to the
             database.
+        measurement_name: Name of the measurement. This will be passed down to
+            the dataset produced by the measurement. If not given, a default
+            value of 'results' is used for the dataset.
+        exp: The experiment to use for this measurement.
         flush_columns: The data is written after a column is finished
             independent of the passed time and write period.
         additional_setpoints: A list of setpoint parameters to be registered in
             the measurement but not scanned.
         do_plot: should png and pdf versions of the images be saved after the
-            run.
+            run. If None the setting will be read from ``qcodesrc.json``
+        use_threads: If True measurements from each instrument will be done on
+            separate threads. If you are measuring from several instruments
+            this may give a significant speedup.
 
     Returns:
         The QCoDeS dataset.
     """
 
-    meas = Measurement()
+    if do_plot is None:
+        do_plot = config.dataset.dond_plot
+    meas = Measurement(name=measurement_name, exp=exp)
     all_setpoint_params = (param_set1, param_set2,) + tuple(
             s for s in additional_setpoints)
-
 
     measured_parameters = tuple(param for param in param_meas
                                 if isinstance(param, _BaseParameter))
@@ -319,7 +441,7 @@ def do2d(
 
                 datasaver.add_result((param_set1, set_point1),
                                      (param_set2, set_point2),
-                                     *_process_params_meas(param_meas),
+                                     *_process_params_meas(param_meas, use_threads=use_threads),
                                      *additional_setpoints_data)
             for action in after_inner_actions:
                 action()

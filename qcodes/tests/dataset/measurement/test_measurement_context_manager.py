@@ -9,7 +9,7 @@ from time import sleep
 import hypothesis.strategies as hst
 import numpy as np
 import pytest
-from hypothesis import given, settings
+from hypothesis import HealthCheck, given, settings
 from numpy.testing import assert_allclose, assert_array_equal
 
 import qcodes as qc
@@ -22,7 +22,7 @@ from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.sqlite.connection import atomic_transaction
 from qcodes.instrument.parameter import (ArrayParameter, Parameter,
                                          expand_setpoints_helper)
-from qcodes.tests.common import retry_until_does_not_throw
+from qcodes.tests.common import retry_until_does_not_throw, reset_config_on_exit
 # pylint: disable=unused-import
 from qcodes.tests.test_station import set_default_station_to_none
 from qcodes.utils.validators import Arrays
@@ -309,6 +309,40 @@ def test_setting_write_period(wp):
             assert datasaver.write_period == float(wp)
 
 
+@settings(deadline=None)
+@given(wp=hst.one_of(hst.integers(), hst.floats(allow_nan=False),
+                     hst.text()))
+@pytest.mark.usefixtures("experiment")
+def test_setting_write_period_from_config(wp):
+    with reset_config_on_exit():
+        qc.config.dataset.write_period = wp
+
+        if isinstance(wp, str):
+            with pytest.raises(ValueError):
+                Measurement()
+        elif wp < 1e-3:
+            with pytest.raises(ValueError):
+                Measurement()
+        else:
+            meas = Measurement()
+            assert meas.write_period == float(wp)
+            meas.register_custom_parameter(name='dummy')
+            with meas.run() as datasaver:
+                assert datasaver.write_period == float(wp)
+
+
+@pytest.mark.parametrize("write_in_background", [True, False])
+@pytest.mark.usefixtures("experiment")
+def test_setting_write_in_background_from_config(write_in_background):
+    with reset_config_on_exit():
+        qc.config.dataset.write_in_background = write_in_background
+
+        meas = Measurement()
+        meas.register_custom_parameter(name='dummy')
+        with meas.run() as datasaver:
+            assert datasaver.dataset._writer_status.write_in_background is write_in_background
+
+
 @pytest.mark.usefixtures("experiment")
 def test_method_chaining(DAC):
     meas = (
@@ -324,7 +358,7 @@ def test_method_chaining(DAC):
 
 
 @pytest.mark.usefixtures("experiment")
-@settings(deadline=None)
+@settings(deadline=None, suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(words=hst.lists(elements=hst.text(), min_size=4, max_size=10))
 def test_enter_and_exit_actions(DAC, words):
     # we use a list to check that the functions executed
@@ -511,7 +545,8 @@ def test_subscribers_called_at_exiting_context_if_queue_is_not_empty(experiment,
 
 @pytest.mark.serial
 @pytest.mark.flaky(reruns=5)
-@settings(deadline=None, max_examples=25)
+@settings(deadline=None, max_examples=25,
+          suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(N=hst.integers(min_value=2000, max_value=3000))
 def test_subscribers_called_for_all_data_points(experiment, DAC, DMM, N):
     def sub_get_x_vals(results, length, state):
@@ -548,7 +583,8 @@ def test_subscribers_called_for_all_data_points(experiment, DAC, DMM, N):
 
 # There is no way around it: this test is slow. We test that write_period
 # works and hence we must wait for some time to elapse. Sorry.
-@settings(max_examples=5, deadline=None)
+@settings(max_examples=5, deadline=None,
+          suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(breakpoint=hst.integers(min_value=1, max_value=19),
        write_period=hst.floats(min_value=0.1, max_value=1.5),
        set_values=hst.lists(elements=hst.floats(), min_size=20, max_size=20),
@@ -848,7 +884,8 @@ def test_datasaver_unsized_arrays(N, storage_type, bg_writing):
     assert_allclose(loaded_data['signal'], expected_signal)
 
 
-@settings(max_examples=5, deadline=None)
+@settings(max_examples=5, deadline=None,
+          suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(N=hst.integers(min_value=5, max_value=6),
        M=hst.integers(min_value=4, max_value=5),
        seed=hst.integers(min_value=0, max_value=np.iinfo(np.uint32).max))
@@ -928,7 +965,8 @@ def test_datasaver_arrayparams(SpectrumAnalyzer, DAC, N, M,
     assert_allclose(data[spectrum_name], expected_output)
 
 
-@settings(max_examples=5, deadline=None)
+@settings(max_examples=5, deadline=None,
+          suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(N=hst.integers(min_value=5, max_value=500))
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("storage_type", ['numeric', 'array'])
@@ -993,7 +1031,8 @@ def test_datasaver_array_parameters_channel(channel_array_instrument,
         assert datadict['data'].shape == (N * M,)
 
 
-@settings(max_examples=5, deadline=None)
+@settings(max_examples=5, deadline=None,
+          suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(n=hst.integers(min_value=5, max_value=500))
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("storage_type", ['numeric', 'array'])
@@ -1064,7 +1103,8 @@ def test_datasaver_parameter_with_setpoints(channel_array_instrument,
                     expected_data)
 
 
-@settings(max_examples=5, deadline=None)
+@settings(max_examples=5, deadline=None,
+          suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(n=hst.integers(min_value=5, max_value=500))
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("storage_type", ['numeric', 'array'])
@@ -1169,7 +1209,8 @@ def test_datasaver_parameter_with_setpoints_partially_expanded_raises(channel_ar
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
-@settings(max_examples=5, deadline=None)
+@settings(max_examples=5, deadline=None,
+          suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(n=hst.integers(min_value=5, max_value=500))
 @pytest.mark.usefixtures("experiment")
 def test_datasaver_parameter_with_setpoints_complex(channel_array_instrument,
@@ -1221,7 +1262,8 @@ def test_datasaver_parameter_with_setpoints_complex(channel_array_instrument,
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
-@settings(max_examples=5, deadline=None)
+@settings(max_examples=5, deadline=None,
+          suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(n=hst.integers(min_value=5, max_value=500))
 @pytest.mark.usefixtures("experiment")
 def test_datasaver_parameter_with_setpoints_complex_explicitly_expanded(channel_array_instrument,
@@ -1399,7 +1441,8 @@ def test_datasaver_parameter_with_setpoints_reg_but_missing(
             datasaver.add_result((param, param.get()))
 
 
-@settings(max_examples=5, deadline=None)
+@settings(max_examples=5, deadline=None,
+          suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(N=hst.integers(min_value=5, max_value=500))
 @pytest.mark.usefixtures("experiment")
 @pytest.mark.parametrize("storage_type", ['numeric', 'array'])
@@ -1498,7 +1541,8 @@ def test_datasaver_array_parameters_array(channel_array_instrument, DAC, N,
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
-@settings(max_examples=5, deadline=None)
+@settings(max_examples=5, deadline=None,
+          suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(N=hst.integers(min_value=5, max_value=500))
 @pytest.mark.usefixtures("experiment")
 def test_datasaver_complex_array_parameters_array(channel_array_instrument,

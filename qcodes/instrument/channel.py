@@ -22,13 +22,6 @@ class InstrumentChannel(InstrumentBase):
 
         name: The name of this channel.
 
-    Attributes:
-
-        parameters (Dict[Parameter]): All the parameters supported by this
-          channel. Usually populated via ``add_parameter``.
-
-        functions (Dict[Function]): All the functions supported by this
-          channel. Usually populated via ``add_function``.
     """
 
     def __init__(self,
