@@ -1796,18 +1796,19 @@ def remove_trigger(conn: ConnectionPlus, trigger_id: str) -> None:
     transaction(conn, f"DROP TRIGGER IF EXISTS {trigger_id};")
 
 
-def append_shaped_parameter_data_to_existing_arrays(
-        conn: ConnectionPlus,
-        table_name: str,
-        rundescriber: RunDescriber,
-        write_status: Dict[str, Optional[int]],
-        read_status: Dict[str, int],
-        data: Dict[str, Dict[str, np.ndarray]],
-) -> Tuple[Dict[str, Optional[int]],
-           Dict[str, int],
-           Dict[str, Dict[str, np.ndarray]]]:
+def load_new_data_from_db_and_append(
+            conn: ConnectionPlus,
+            table_name: str,
+            rundescriber: RunDescriber,
+            write_status: Dict[str, Optional[int]],
+            read_status: Dict[str, int],
+            existing_data: Mapping[str, Mapping[str, np.ndarray]],
+    ) -> Tuple[Dict[str, Optional[int]],
+               Dict[str, int],
+               Dict[str, Dict[str, np.ndarray]]]:
     """
-    Append newly loaded data to an already existing cache.
+    Append any new data in the db to an already existing datadict and return the merged
+    data.
 
     Args:
         conn: The connection to the sqlite database
@@ -1817,9 +1818,49 @@ def append_shaped_parameter_data_to_existing_arrays(
           written to the cache previously.
         read_status: Mapping from dependent parameter name to number of rows
           read from the db previously.
-        data: Mapping from dependent parameter name to mapping
+        existing_data: Mapping from dependent parameter name to mapping
           from parameter name to numpy arrays that the data should be
           inserted into.
+          appended to.
+
+    Returns:
+        Updated write and read status, and the updated ``data``
+
+    """
+    new_data, updated_read_status = _load_new_data(
+        conn, table_name, rundescriber, read_status
+    )
+
+    (updated_write_status,
+     merged_data) = append_shaped_parameter_data_to_existing_arrays(
+        rundescriber,
+        write_status,
+        existing_data,
+        new_data
+    )
+    return updated_write_status, updated_read_status, merged_data
+
+
+def append_shaped_parameter_data_to_existing_arrays(
+        rundescriber: RunDescriber,
+        write_status: Dict[str, Optional[int]],
+        existing_data: Mapping[str, Mapping[str, np.ndarray]],
+        new_data: Mapping[str, Mapping[str, np.ndarray]],
+) -> Tuple[Dict[str, Optional[int]],
+           Dict[str, Dict[str, np.ndarray]]]:
+    """
+    Append datadict to an already existing datadict and return the merged
+    data.
+
+    Args:
+        rundescriber: The rundescriber that describes the run
+        write_status: Mapping from dependent parameter name to number of rows
+          written to the cache previously.
+        new_data: Mapping from dependent parameter name to mapping
+          from parameter name to numpy arrays that the data should be
+          appended to.
+        existing_data: Mapping from dependent parameter name to mapping
+          from parameter name to numpy arrays of new data.
 
     Returns:
         Updated write and read status, and the updated ``data``
@@ -1829,11 +1870,41 @@ def append_shaped_parameter_data_to_existing_arrays(
     merged_data = {}
 
     updated_write_status = copy(write_status)
-    updated_read_status = copy(read_status)
 
     for meas_parameter in parameters:
 
-        existing_data = data.get(meas_parameter, {})
+        existing_data_1_tree = existing_data.get(meas_parameter, {})
+
+        new_data_1_tree = new_data.get(meas_parameter, {})
+
+        shapes = rundescriber.shapes
+        if shapes is not None:
+            shape = shapes.get(meas_parameter, None)
+        else:
+            shape = None
+
+        (merged_data[meas_parameter],
+         updated_write_status[meas_parameter]) = _merge_data(
+            existing_data_1_tree,
+            new_data_1_tree,
+            shape,
+            single_tree_write_status=write_status.get(meas_parameter)
+        )
+    return updated_write_status, merged_data
+
+
+def _load_new_data(
+        conn: ConnectionPlus,
+        table_name: str,
+        rundescriber: RunDescriber,
+        read_status: Mapping[str, int],
+) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, int]]:
+    parameters = tuple(ps.name for ps in
+                       rundescriber.interdeps.non_dependencies)
+    updated_read_status: Dict[str, int] = dict(read_status)
+    new_data_dict: Dict[str, Dict[str, np.ndarray]] = {}
+
+    for meas_parameter in parameters:
 
         start = read_status.get(meas_parameter, 0) + 1
         new_data, n_rows_read = get_parameter_data_for_one_paramtree(
@@ -1844,22 +1915,9 @@ def append_shaped_parameter_data_to_existing_arrays(
             start=start,
             end=None
         )
+        new_data_dict[meas_parameter] = new_data
         updated_read_status[meas_parameter] = start + n_rows_read - 1
-
-        shapes = rundescriber.shapes
-        if shapes is not None:
-            shape = shapes.get(meas_parameter, None)
-        else:
-            shape = None
-
-        (merged_data[meas_parameter],
-         updated_write_status[meas_parameter]) = _merge_data(
-            existing_data,
-            new_data,
-            shape,
-            single_tree_write_status=write_status.get(meas_parameter)
-        )
-    return updated_write_status, updated_read_status, merged_data
+    return new_data_dict, updated_read_status
 
 
 def _merge_data(existing_data: Mapping[str, np.ndarray],
