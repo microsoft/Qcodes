@@ -842,12 +842,12 @@ class DataSet(Sized):
 
     @staticmethod
     def _validate_parameters(
-            *params: Union[str, ParamSpec, ParamSpecBase, _BaseParameter]
+            *params: Union[str, ParamSpecBase, _BaseParameter]
     ) -> List[str]:
         """
         Validate that the provided parameters have a name and return those
         names as a list.
-        The Parameters may be a mix of strings, ParamSpecs, ParamSpecBase or
+        The Parameters may be a mix of strings, ParamSpecBase or
         ordinary QCoDeS parameters.
         """
 
@@ -867,7 +867,7 @@ class DataSet(Sized):
 
     def get_parameter_data(
             self,
-            *params: Union[str, ParamSpec, ParamSpecBase, _BaseParameter],
+            *params: Union[str, ParamSpecBase, _BaseParameter],
             start: Optional[int] = None,
             end: Optional[int] = None) -> ParameterData:
         """
@@ -901,7 +901,7 @@ class DataSet(Sized):
 
         Args:
             *params: string parameter names, QCoDeS Parameter objects, and
-                ParamSpec or ParamSpecBase objects. If no parameters are
+                ParamSpecBase objects. If no parameters are
                 supplied, data for all parameters that are not a dependency
                 of another parameter will be returned.
             start: start value of selection range (by result count); ignored
@@ -924,7 +924,6 @@ class DataSet(Sized):
 
     def get_data_as_pandas_dataframe(self,
                                      *params: Union[str,
-                                                    ParamSpec,
                                                     ParamSpecBase,
                                                     _BaseParameter],
                                      start: Optional[int] = None,
@@ -952,7 +951,7 @@ class DataSet(Sized):
 
         Args:
             *params: string parameter names, QCoDeS Parameter objects, and
-                ParamSpec or ParamSpecBase objects. If no parameters are
+                ParamSpecBase objects. If no parameters are
                 supplied, data for all parameters that are not a dependency
                 of another parameter will be returned.
             start: start value of selection range (by result count); ignored
