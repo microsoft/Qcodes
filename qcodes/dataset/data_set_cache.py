@@ -43,7 +43,8 @@ class DataSetCache:
         """
         if self._loaded_from_completed_ds:
             return
-        self._dataset._completed = completed(self._dataset.conn, self._dataset.run_id)
+        self._dataset._completed = completed(
+            self._dataset.conn, self._dataset.run_id)
         if self._dataset.completed:
             self._loaded_from_completed_ds = True
 
@@ -86,5 +87,5 @@ class DataSetCache:
         self.load_data_from_db()
         if self._data is None:
             return None
-        dfs = self._dataset._load_to_dataframes(self._data)
+        dfs = self._dataset._load_to_dataframe_dict(self._data)
         return dfs
