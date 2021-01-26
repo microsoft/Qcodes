@@ -8,7 +8,6 @@ import time
 import uuid
 from dataclasses import dataclass
 from queue import Empty, Queue
-from itertools import starmap
 from threading import Thread
 from typing import (Hashable, Iterator, TYPE_CHECKING, Any, Callable, Dict,
                     List, Mapping, MutableMapping, Optional, Sequence, Set,
@@ -943,7 +942,7 @@ class DataSet(Sized):
 
     def _same_setpoints(self, datadict: ParameterData) -> bool:
 
-        def _sp_iterator(dd: ParameterData) -> Iterator[Dict[str, numpy.ndarray]]:
+        def _get_setpoints(dd: ParameterData) -> Iterator[Dict[str, numpy.ndarray]]:
 
             for dep_name, param_dict in dd.items():
                 out = {
@@ -951,9 +950,14 @@ class DataSet(Sized):
                 }
                 yield out
 
-        iterator = _sp_iterator(datadict)
+        sp_iterator = _get_setpoints(datadict)
 
-        return all(starmap(self._parameter_data_identical, iterator))
+        try:
+            first = next(sp_iterator)
+        except StopIteration:
+            return True
+
+        return all(self._parameter_data_identical(first, rest) for rest in sp_iterator)
 
     def to_pandas_dataframe_dict(self,
                                  *params: Union[str,
@@ -998,7 +1002,6 @@ class DataSet(Sized):
             a column and a indexed by a :py:class:`pandas.MultiIndex` formed
             by the dependencies.
         """
-        import pandas as pd
         datadict = self.get_parameter_data(*params,
                                            start=start,
                                            end=end)
@@ -1051,7 +1054,6 @@ class DataSet(Sized):
             a column and a indexed by a :py:class:`pandas.MultiIndex` formed
             by the dependencies.
         """
-        import pandas as pd
         datadict = self.get_parameter_data(*params,
                                            start=start,
                                            end=end)
