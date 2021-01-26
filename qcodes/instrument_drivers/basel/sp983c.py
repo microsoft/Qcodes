@@ -22,7 +22,7 @@ class SP983C(Instrument):
     """
 
     def __init__(self, name: str,
-                 input_offset_voltage: Optional[Parameter],
+                 input_offset_voltage: Optional[Parameter] = None,
                  **kwargs: Any):
         super().__init__(name, **kwargs)
 
