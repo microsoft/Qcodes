@@ -39,7 +39,7 @@ class SP983C(Instrument):
                            vals=Enum(30., 100., 300., 1e3, 3e3, 10e3, 30e3,
                                      100e3, 1e6))
 
-        self.add_parameter('bias_volt',
+        self.add_parameter('bias_voltage',
                            initial_value=0,
                            label="Bias Voltage",
                            unit='V',
