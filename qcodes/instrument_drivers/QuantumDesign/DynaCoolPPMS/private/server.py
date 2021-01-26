@@ -1,10 +1,16 @@
-import socket
-import select
-from msvcrt import kbhit, getch  # type: ignore[attr-defined]
 import logging
+import select
+import socket
+import sys
+if sys.platform == "win32":
+    from msvcrt import kbhit, getch
+else:
+    raise RuntimeError("Dynacool server only supported on Windows")
 
 from qcodes.instrument_drivers.QuantumDesign.\
     DynaCoolPPMS.private.commandhandler import CommandHandler
+
+assert sys.platform == 'win32'
 
 command_handler = CommandHandler()
 
