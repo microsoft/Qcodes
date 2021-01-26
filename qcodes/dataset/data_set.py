@@ -1452,7 +1452,7 @@ class DataSet(Sized):
         Enqueue the results into self._results
 
         Before we can enqueue the results, all values of the results dict
-        must have the same length. We enqueue each parameter tree seperately,
+        must have the same length. We enqueue each parameter tree separately,
         effectively mimicking making one call to add_results per parameter
         tree.
 
