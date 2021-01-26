@@ -40,7 +40,7 @@ install_requires = [
     'jsonschema>=3.0.0',
     'ruamel.yaml>=0.16.0,!=0.16.6',
     'wrapt>=1.10.4',
-    'pandas>=0.24.0',
+    'pandas>=1.2.1',
     'xarray>=0.16.2',
     'tabulate>=0.8.0',
     'tqdm>=4.20.0',
