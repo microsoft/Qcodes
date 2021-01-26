@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Dict, Optional
 
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.sqlite.queries import (
-    append_shaped_parameter_data_to_existing_arrays, completed)
+    load_new_data_from_db_and_append, completed)
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -50,7 +50,7 @@ class DataSetCache:
 
         (self._write_status,
          self._read_status,
-         self._data) = append_shaped_parameter_data_to_existing_arrays(
+         self._data) = load_new_data_from_db_and_append(
             self._dataset.conn,
             self._dataset.table_name,
             self.rundescriber,
