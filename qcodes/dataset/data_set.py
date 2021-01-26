@@ -849,13 +849,14 @@ class DataSet(Sized):
                 writer_status.bg_writer = None
 
     @staticmethod
-    def _validate_parameters(*params: Union[str, ParamSpec, _BaseParameter]
-                             ) -> List[str]:
+    def _validate_parameters(
+            *params: Union[str, ParamSpecBase, _BaseParameter]
+    ) -> List[str]:
         """
         Validate that the provided parameters have a name and return those
         names as a list.
-        The Parameters may be a mix of strings, ParamSpecs or ordinary
-        QCoDeS parameters.
+        The Parameters may be a mix of strings, ParamSpecBase or
+        ordinary QCoDeS parameters.
         """
 
         valid_param_names = []
@@ -874,7 +875,7 @@ class DataSet(Sized):
 
     def get_parameter_data(
             self,
-            *params: Union[str, ParamSpec, _BaseParameter],
+            *params: Union[str, ParamSpecBase, _BaseParameter],
             start: Optional[int] = None,
             end: Optional[int] = None) -> ParameterData:
         """
@@ -908,9 +909,9 @@ class DataSet(Sized):
 
         Args:
             *params: string parameter names, QCoDeS Parameter objects, and
-                ParamSpec objects. If no parameters are supplied data for
-                all parameters that are not a dependency of another
-                parameter will be returned.
+                ParamSpecBase objects. If no parameters are
+                supplied, data for all parameters that are not a dependency
+                of another parameter will be returned.
             start: start value of selection range (by result count); ignored
                 if None
             end: end value of selection range (by results count); ignored if
@@ -1013,7 +1014,7 @@ class DataSet(Sized):
                alternative='to_pandas_dataframe_dict')
     def get_data_as_pandas_dataframe(self,
                                      *params: Union[str,
-                                                    ParamSpec,
+                                                    ParamSpecBase,
                                                     _BaseParameter],
                                      start: Optional[int] = None,
                                      end: Optional[int] = None) -> \
@@ -1040,9 +1041,9 @@ class DataSet(Sized):
 
         Args:
             *params: string parameter names, QCoDeS Parameter objects, and
-                ParamSpec objects. If no parameters are supplied data for
-                all parameters that are not a dependency of another
-                parameter will be returned.
+                ParamSpecBase objects. If no parameters are
+                supplied, data for all parameters that are not a dependency
+                of another parameter will be returned.
             start: start value of selection range (by result count); ignored
                 if None
             end: end value of selection range (by results count); ignored if
