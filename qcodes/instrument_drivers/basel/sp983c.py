@@ -41,8 +41,9 @@ class SP983C(Instrument):
 
         self.add_parameter('bias_volt',
                            initial_value=0,
-                           unit='mV',
-                           vals=Numbers(-100, 100),
+                           label="Bias Voltage",
+                           unit='V',
+                           vals=Numbers(-0.1, 0.1),
                            parameter_class=ManualParameter)
 
     def get_idn(self) -> Dict[str, Optional[str]]:
