@@ -14,7 +14,7 @@ cycler~=0.10.0
 decorator~=4.4.2
 defusedxml~=0.6.0
 entrypoints~=0.3
-google-api-core~=1.25.0
+google-api-core~=1.25.1
 google-auth~=1.24.0
 googleapis-common-protos~=1.52.0
 h5py~=3.1.0
@@ -42,7 +42,7 @@ notebook~=6.2.0
 numpy~=1.19.5
 opencensus~=0.7.12
 opencensus-context~=0.1.2
-opencensus-ext-azure~=1.0.6
+opencensus-ext-azure~=1.0.7
 packaging~=20.8
 pandas~=1.2.1
 pandocfilters~=1.4.3
@@ -64,7 +64,7 @@ pytz~=2020.5
 PyVISA~=1.11.3
 pywin32==300; sys_platform == 'win32'
 pywinpty~=0.5.7; sys_platform == 'win32'
-pyzmq~=21.0.1
+pyzmq~=21.0.2
 requests~=2.25.1
 requirements-parser~=0.2.0
 rsa~=4.7
