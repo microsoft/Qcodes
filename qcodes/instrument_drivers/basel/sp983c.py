@@ -41,14 +41,13 @@ class SP983C(Instrument):
                            vals=Enum(30., 100., 300., 1e3, 3e3, 10e3, 30e3,
                                      100e3, 1e6))
 
-        if input_offset_voltage is not None:
-            self.add_parameter('offset_voltage',
-                               label="Offset Voltage",
-                               unit='V',
-                               vals=Numbers(-0.1, 0.1),
-                               scale=100,
-                               source=input_offset_voltage,
-                               parameter_class=DelegateParameter)
+        self.add_parameter('offset_voltage',
+                           label="Offset Voltage",
+                           unit='V',
+                           vals=Numbers(-0.1, 0.1),
+                           scale=100,
+                           source=input_offset_voltage,
+                           parameter_class=DelegateParameter)
 
     def get_idn(self) -> Dict[str, Optional[str]]:
         vendor = 'Physics Basel'
