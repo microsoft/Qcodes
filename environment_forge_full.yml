@@ -16,6 +16,8 @@ dependencies:
  - hypothesis=6.0.0
  - pytest
  - pytest-runner
+ - pytest-xdist
+ - pytest-mock
  - spyder
  - pyzmq
  - wrapt
@@ -35,3 +37,5 @@ dependencies:
  - pyvisa==1.11.3
  - ruamel.yaml!=0.16.6
  - opencensus-ext-azure
+ - pip:
+   - pyvisa-sim
