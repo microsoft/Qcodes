@@ -436,8 +436,8 @@ class KeysightB1500(VisaInstrument):
 
 class IVSweepMeasurement(MultiParameter, StatusMixin):
     """
-    IV sweep measurement outputs a list of primary and secondary
-    parameter.
+    IV sweep measurement outputs a list of measured current parameters
+    as a result of voltage sweep.
 
     Args:
         name: Name of the Parameter.
@@ -470,6 +470,34 @@ class IVSweepMeasurement(MultiParameter, StatusMixin):
                                    labels: Optional[Sequence[str]] = None,
                                    units: Optional[Sequence[str]] = None
                                    ) -> None:
+        """
+        Set names, labels, and units of the measured parts of the MultiParameter.
+
+        If units are not provided, "A" will be used because this parameter
+        measures currents.
+
+        If labels are not provided, names will be used.
+
+        If names are not provided, ``param#`` will be used as names; the number
+        of those names will be the same as the number of measured channels
+        that ``B1500.get_measurement_mode`` method returns. Note that it is
+        possible to not provide names and provide labels at the same time.
+        In case, neither names nor labels are provided, the labels will be
+        generated as ``Param# Current``.
+
+        The number of provided names, labels, and units must be the same.
+        Moreover, that number has to be equal to the number of channels
+        that ``B1500.get_measurement_mode`` method returns. It is
+        recommended to set measurement mode and number of channels first,
+        and only then call this method to provide names/labels/units.
+
+        The name/label/unit of the setpoint of this parameter will also be
+        updated to defaults dictated by the
+        ``set_setpoint_name_label_and_unit`` method.
+
+        Note that ``.shapes`` of this parameter will also be updated to
+        be in sync with the number of names.
+        """
         measurement_mode = self.instrument.get_measurement_mode()
         channels = measurement_mode['channels']
 
@@ -516,10 +544,24 @@ class IVSweepMeasurement(MultiParameter, StatusMixin):
             label: Optional[str] = None,
             unit: Optional[str] = None
     ) -> None:
+        """
+        Set name, label, and unit of the setpoint of the MultiParameter.
+
+        If unit is not provided, "V" will be used because this parameter
+        sweeps voltage.
+
+        If label is not provided, "Voltage" will be used.
+
+        If name are not provided, ``voltage`` will be used.
+
+        The attributes describing the setpoints of this MultiParameter
+        will be updated to match the number of measured parameters of
+        this MultiParameter, as dictated by ``.names``.
+        """
         # number of measured parameters of this MultiParameter
         n_names = len(self.names)
 
-        name = name if name is not None else "Voltage"
+        name = name if name is not None else "voltage"
         label = label if label is not None else "Voltage"
         unit = unit if unit is not None else "V"
 
