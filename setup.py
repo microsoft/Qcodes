@@ -2,6 +2,7 @@ from setuptools import setup, find_packages
 
 import versioneer
 
+
 def readme():
     with open('README.rst') as f:
         return f.read()
@@ -28,7 +29,7 @@ extras_require = {}
 for extra_name, extra_packages in extras.items():
     extras_require[extra_name] = [
         f'{k}>={v}' for k, v in extra_packages.items()
-        ]
+    ]
 
 
 install_requires = [
@@ -39,7 +40,8 @@ install_requires = [
     'jsonschema>=3.0.0',
     'ruamel.yaml>=0.16.0,!=0.16.6',
     'wrapt>=1.10.4',
-    'pandas>=0.24.0',
+    'pandas>=0.25.0',
+    'xarray>=0.16.2',
     'tabulate>=0.8.0',
     'tqdm>=4.20.0',
     'opencensus>=0.7.10, <0.8.0',

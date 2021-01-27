@@ -9,7 +9,7 @@ Babel==2.9.0
 backcall==0.2.0
 bcrypt==3.2.0
 black==20.8b1
-bleach==3.2.1
+bleach==3.2.3
 cffi==1.14.4
 chardet==4.0.0
 click==7.1.2
@@ -37,7 +37,7 @@ jsonschema==3.2.0
 jupyter-client==6.1.11
 jupyter-core==4.7.0
 jupyterlab-pygments==0.1.2
-keyring==21.8.0
+keyring==22.0.1
 lazy-object-proxy==1.4.3
 MarkupSafe==1.1.1
 mccabe==0.6.1
@@ -57,7 +57,7 @@ pathtools==0.1.2
 pexpect==4.8.0
 pickleshare==0.7.5
 pluggy==0.13.1
-prompt-toolkit==3.0.10
+prompt-toolkit==3.0.14
 psutil==5.8.0
 ptyprocess==0.7.0
 pycodestyle==2.6.0
@@ -80,16 +80,16 @@ python-language-server==0.36.2
 pytz==2020.5
 pywin32==300; sys_platform == 'win32'
 pywin32-ctypes==0.2.0; sys_platform == 'win32'
-pyzmq==21.0.1
+pyzmq==21.0.2
 QDarkStyle==2.8.1
 QtAwesome==1.0.2
-qtconsole==5.0.1
+qtconsole==5.0.2
 QtPy==1.9.0
 regex==2020.11.13
 requests==2.25.1
 rope==0.18.0
 six==1.15.0
-snowballstemmer==2.0.0
+snowballstemmer==2.1.0
 sortedcontainers==2.3.0
 Sphinx==3.4.3
 sphinxcontrib-applehelp==1.0.2
@@ -107,8 +107,8 @@ tornado==6.1
 traitlets==5.0.5
 typed-ast==1.4.2
 typing-extensions==3.7.4.3
-ujson==4.0.1
-urllib3==1.26.2
+ujson==4.0.2
+urllib3==1.26.3
 watchdog==1.0.2
 wcwidth==0.2.5
 webencodings==0.5.1
