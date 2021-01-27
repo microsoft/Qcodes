@@ -22,6 +22,7 @@ dependencies:
  - scipy
  - gitpython
  - pandas
+ - xarray
  - testpath>=0.4.4
  - tqdm
  - tabulate
