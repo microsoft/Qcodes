@@ -300,22 +300,23 @@ class DataSet(Sized):
 
         Args:
             path_to_db: path to the sqlite file on disk. If not provided, the
-              path will be read from the config.
+                path will be read from the config.
             run_id: provide this when loading an existing run, leave it
-              as None when creating a new run
+                as None when creating a new run
             conn: connection to the DB; if provided and ``path_to_db`` is
-              provided as well, then a ``ValueError`` is raised (this is to
-              prevent the possibility of providing a connection to a DB
-              file that is different from ``path_to_db``)
+                provided as well, then a ``ValueError`` is raised (this is to
+                prevent the possibility of providing a connection to a DB
+                file that is different from ``path_to_db``)
             exp_id: the id of the experiment in which to create a new run.
-              Ignored if ``run_id`` is provided.
+                Ignored if ``run_id`` is provided.
             name: the name of the dataset. Ignored if ``run_id`` is provided.
             specs: paramspecs belonging to the dataset or an ``InterDependencies_``
-              object that describes the dataset. Ignored if ``run_id`` is provided.
+                object that describes the dataset. Ignored if ``run_id``
+                is provided.
             values: values to insert into the dataset. Ignored if ``run_id`` is
-              provided.
+                provided.
             metadata: metadata to insert into the dataset. Ignored if ``run_id``
-              is provided.
+                is provided.
             shapes:
                 An optional dict from names of dependent parameters to the shape
                 of the data captured as a list of integers. The list is in the
