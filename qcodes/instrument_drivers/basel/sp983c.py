@@ -26,7 +26,9 @@ class SP983C(Instrument):
         input_offset_voltage: (Optional) A source input offset voltage
             parameter. The range for input is -10 to 10 Volts and it is
             user's responsibility to ensure this. This source parameter is
-            used to set offset voltage parameter of the preamp.
+            used to set offset voltage parameter of the preamp and the
+            source parameter should represent a voltage source that is
+            connected to the "Offset Input Volgate" connector of the SP983C.
     """
 
     def __init__(self, name: str,
