@@ -292,7 +292,8 @@ class DataSet(Sized):
                  specs: Optional[SpecsOrInterDeps] = None,
                  values: Optional[VALUES] = None,
                  metadata: Optional[Mapping[str, Any]] = None,
-                 shapes: Optional[Shapes] = None) -> None:
+                 shapes: Optional[Shapes] = None,
+                 in_memory_cache: bool = True) -> None:
         """
         Create a new :class:`.DataSet` object. The object can either hold a new run or
         an already existing run. If a ``run_id`` is provided, then an old run is
@@ -331,6 +332,7 @@ class DataSet(Sized):
         #: In memory representation of the data in the dataset.
         self.cache: DataSetCache = DataSetCache(self)
         self._results: List[Dict[str, VALUE]] = []
+        self._in_memory_cache = in_memory_cache
 
         if run_id is not None:
             if not run_exists(self.conn, run_id):
@@ -1465,13 +1467,18 @@ class DataSet(Sized):
 
         toplevel_params = (set(interdeps.dependencies)
                            .intersection(set(result_dict)))
+        new_results: Dict[str, Dict[str, numpy.ndarray]] = {}
         for toplevel_param in toplevel_params:
             inff_params = set(interdeps.inferences.get(toplevel_param, ()))
             deps_params = set(interdeps.dependencies.get(toplevel_param, ()))
             all_params = (inff_params
                           .union(deps_params)
                           .union({toplevel_param}))
-            res_dict: Dict[str, VALUE] = {}  # the dict to append to _results
+            new_results[toplevel_param.name] = {
+                param.name: numpy.atleast_1d(result_dict[param])
+                for param in all_params
+            }
+
             if toplevel_param.type == 'array':
                 res_list = self._finalize_res_dict_array(
                     result_dict, all_params)
@@ -1491,7 +1498,12 @@ class DataSet(Sized):
 
         if standalones:
             stdln_dict = {st: result_dict[st] for st in standalones}
+            for st in standalones:
+                new_results[st.name] = {st.name: result_dict[st]}
             self._results += self._finalize_res_dict_standalones(stdln_dict)
+
+        if self._in_memory_cache:
+            self.cache.add_data(new_results)
 
     @staticmethod
     def _finalize_res_dict_array(
