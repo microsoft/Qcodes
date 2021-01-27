@@ -14,7 +14,8 @@ class SP983C(Instrument):
     in their handling of input offset voltage. It is the responsibility of the
     user to capture the input offset, (from the voltage supply) and compensate
     that as needed for SP 983. For SP 983C model, 'input_offset_voltage'
-    argument can be used to set up offset.
+    argument can be used to set up offset (This doesn't work for SP 983c01
+    model).
 
     Note that, as this is a purely virtual driver, there is no support
     for the the remote control interface (SP 983a). It is the responsibility of
