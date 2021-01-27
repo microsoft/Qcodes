@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from queue import Empty, Queue
 from threading import Thread
 from typing import (Hashable, Iterator, TYPE_CHECKING, Any, Callable, Dict,
-                    List, Mapping, MutableMapping, Optional, Sequence, Set,
+                    List, Mapping, Optional, Sequence, Set,
                     Sized, Tuple, Union, cast)
 
 import numpy
@@ -1117,7 +1117,7 @@ class DataSet(Sized):
 
         return df
 
-    @ staticmethod
+    @staticmethod
     def _data_to_dataframe(data: Dict[str, numpy.ndarray], index: Union["pd.Index", "pd.MultiIndex"]) -> "pd.DataFrame":
         import pandas as pd
         if len(data) == 0:
@@ -1136,7 +1136,7 @@ class DataSet(Sized):
                           columns=[dependent_col_name])
         return df
 
-    @ staticmethod
+    @staticmethod
     def _generate_pandas_index(data: Dict[str, numpy.ndarray]) -> Union["pd.Index", "pd.MultiIndex"]:
         # the first element in the dict given by parameter_tree is always the dependent
         # parameter and the index is therefore formed from the rest
@@ -1491,7 +1491,7 @@ class DataSet(Sized):
             stdln_dict = {st: result_dict[st] for st in standalones}
             self._results += self._finalize_res_dict_standalones(stdln_dict)
 
-    @ staticmethod
+    @staticmethod
     def _finalize_res_dict_array(
             result_dict: Mapping[ParamSpecBase, values_type],
             all_params: Set[ParamSpecBase]) -> List[Dict[str, VALUE]]:
@@ -1523,7 +1523,7 @@ class DataSet(Sized):
 
         return [res_dict]
 
-    @ staticmethod
+    @staticmethod
     def _finalize_res_dict_numeric_text_or_complex(
             result_dict: Mapping[ParamSpecBase, numpy.ndarray],
             toplevel_param: ParamSpecBase,
@@ -1572,7 +1572,7 @@ class DataSet(Sized):
 
         return res_list
 
-    @ staticmethod
+    @staticmethod
     def _finalize_res_dict_standalones(
             result_dict: Mapping[ParamSpecBase, numpy.ndarray]
     ) -> List[Dict[str, VALUE]]:
