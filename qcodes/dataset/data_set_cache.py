@@ -35,6 +35,7 @@ class DataSetCache:
         #: number of rows written per parameter tree (by the name of the dependent parameter)
         self._write_status: Dict[str, Optional[int]] = {}
         self._loaded_from_completed_ds = False
+        self._live: Optional[bool] = None
 
     @property
     def rundescriber(self) -> RunDescriber:
@@ -49,12 +50,18 @@ class DataSetCache:
         If the dataset is marked completed and data has already been loaded
         no load will be performed.
         """
+        # todo add force reload
+        if self.live:
+            raise RuntimeError("TODO")
+
         if self._loaded_from_completed_ds:
             return
         self._dataset._completed = completed(
             self._dataset.conn, self._dataset.run_id)
         if self._dataset.completed:
             self._loaded_from_completed_ds = True
+
+        old_write_status = self._write_status
 
         (self._write_status,
          self._read_status,
@@ -66,6 +73,18 @@ class DataSetCache:
             self._read_status,
             self._data
         )
+        if old_write_status != self._write_status:
+            self._live = False
+
+    @property
+    def live(self) -> Optional[bool]:
+        """
+        TODO docstring
+
+        Returns:
+
+        """
+        return self._live
 
     def data(self) -> 'ParameterData':
         """
@@ -79,8 +98,24 @@ class DataSetCache:
         Returns:
             The cached dataset.
         """
-        self.load_data_from_db()
+        if not self.live:
+            self.load_data_from_db()
+
         return self._data
+
+    def add_data(self, new_data: Dict[str, Dict[str, np.ndarray]]) -> None:
+
+        old_write_status = self._write_status
+
+        self._write_status, self._data = append_shaped_parameter_data_to_existing_arrays(
+            self.rundescriber,
+            self._write_status,
+            self._data,
+            new_data=new_data
+        )
+
+        if old_write_status != self._write_status:
+            self._live = True
 
     def to_pandas(self) -> Optional[Dict[str, "pd.DataFrame"]]:
         """
