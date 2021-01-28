@@ -89,4 +89,13 @@ class DMC4133(GalilInstrument):
     def __init__(self, name: str, address: str, **kwargs: Any) -> None:
         super().__init__(name=name, address=address, **kwargs)
 
+        self.add_parameter("stop",
+                           label="Stop Motion",
+                           set_cmd="ST",
+                           docstring="stop the motion of all motors")
+
+        self.add_parameter("abort",
+                           label="Abort all functions",
+                           set_cmd="AB",
+                           docstring="aborts motion and the program operation")
         self.connect_message()
