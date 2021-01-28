@@ -11,8 +11,8 @@ try:
 except ImportError as e:
     raise ImportError(
         "Cannot find gclib library. Download gclib installer from "
-        "https://www.galil.com/sw/pub/all/rn/gclib.html for your OS and "
-        "install Galil motion controller software for your OS. Afterwards go "
+        "https://www.galil.com/sw/pub/all/rn/gclib.html and install Galil "
+        "motion controller software for your OS. Afterwards go "
         "to https://www.galil.com/sw/pub/all/doc/gclib/html/python.html and "
         "follow instruction to be able to import gclib package in your "
         "environment.") from e
@@ -31,24 +31,22 @@ class GalilInstrument(Instrument):
         """
         Get Galil motion controller hardware information
         """
-        ips = {}
         self.log.info('Listening for controllers requesting IP addresses...')
         ip_requests = self.g.GIpRequests()
-        for i in ip_requests.keys():
-            self.log.info(i + ' at mac' + ip_requests[i])
-            ips[i] = self.address
+        if len(ip_requests) != 1:
+            raise RuntimeError("Multiple or No controllers connected!")
 
-        for i in ips.keys():
-            if i in ip_requests:
-                self.log.info("Assigning " + ips[i] + " to " + ip_requests[i])
-                self.g.GAssign(ips[i], ip_requests[i])
-                self.g.GOpen(ips[i] + ' --direct')
-                self.log.info(self.g.GInfo())
+        instrument = list(ip_requests.keys())[0]
+        self.log.info(instrument + " at mac" + ip_requests[instrument])
 
-        available = self.g.GAddresses()
-        data = available[self.address].split(" ")
+        self.log.info("Assigning " + self.address +
+                      " to mac" + ip_requests[instrument])
+        self.g.GAssign(self.address, ip_requests[instrument])
+        self.g.GOpen(self.address + ' --direct')
+
+        data = self.g.GInfo().split(" ")
         idparts: List[Optional[str]] = ["Galil Motion Control, Inc.",
-                                        data[1], None, data[3]]
+                                        data[1], data[4], data[3][:-1]]
 
         return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
 
