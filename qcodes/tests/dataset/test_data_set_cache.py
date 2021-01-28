@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Dict
 from math import ceil
 import hypothesis.strategies as hst
 import numpy as np
@@ -31,17 +31,18 @@ def test_cache_1d(experiment, DAC, DMM, n_points, bg_writing,
 
     meas1.register_parameter(setpoints_param)
 
-    meas_parameters1 = (DMM.v1,
-                        channel_array_instrument.A.dummy_multi_parameter,
-                        channel_array_instrument.A.dummy_scalar_multi_parameter,
-                        channel_array_instrument.A.dummy_2d_multi_parameter,
-                        channel_array_instrument.A.dummy_2d_multi_parameter_2,
-                        channel_array_instrument.A.dummy_array_parameter,
-                        channel_array_instrument.A.dummy_complex_array_parameter,
-                        channel_array_instrument.A.dummy_complex,
-                        channel_array_instrument.A.dummy_parameter_with_setpoints,
-                        channel_array_instrument.A.dummy_parameter_with_setpoints_complex,
-                        )
+    meas_parameters1 = (
+        DMM.v1,
+        channel_array_instrument.A.dummy_multi_parameter,
+        channel_array_instrument.A.dummy_scalar_multi_parameter,
+        channel_array_instrument.A.dummy_2d_multi_parameter,
+        channel_array_instrument.A.dummy_2d_multi_parameter_2,
+        channel_array_instrument.A.dummy_array_parameter,
+        channel_array_instrument.A.dummy_complex_array_parameter,
+        channel_array_instrument.A.dummy_complex,
+        channel_array_instrument.A.dummy_parameter_with_setpoints,
+        channel_array_instrument.A.dummy_parameter_with_setpoints_complex,
+    )
     pws_shape_1 = 10
     pws_shape_2 = 3
     channel_array_instrument.A.dummy_start(0)
