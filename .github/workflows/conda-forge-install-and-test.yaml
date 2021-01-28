@@ -1,0 +1,36 @@
+name: Install all deps from conda-forge  and run pytest
+
+on:
+  push:
+    branches:
+      - 'master'
+      - 'release/*'
+    tags:
+      - 'v*'
+  pull_request:
+
+jobs:
+  build:
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+    env:
+      DISPLAY: ':99.0'
+      OS: ${{ matrix.os }}
+
+    steps:
+    - name: checkout source code
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: '0'
+    - name: get conda
+      uses: s-weigand/setup-conda@v1.0.5
+    - name: install dependencies and qcodes
+      run: |
+        conda env create -f environment_forge_full.yml
+        pip install . --no-deps
+    - name: run tests
+      run: |
+        pytest
