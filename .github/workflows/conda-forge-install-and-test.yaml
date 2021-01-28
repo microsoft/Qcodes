@@ -30,6 +30,7 @@ jobs:
     - name: install dependencies and qcodes
       run: |
         conda env create -f environment_forge_full.yml
+        conda activate qcodesforge
         pip install . --no-deps
     - name: run tests
       run: |
