@@ -23,7 +23,7 @@ New:
 
 - Add native and convenient XArray data export methods to ``DataSet`` supporting
   concatenation, also improve the Pandas DataFrames export methods (#2507)
-- Possibility to measure parameters in a separate thread per instrument 
+- Possibility to measure parameters in a separate thread per instrument
   inside ``doNd`` functions (#2616)
 - guid_helpers: Extracting guids from database files and list of strings (#2541)
 
