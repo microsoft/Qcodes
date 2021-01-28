@@ -54,13 +54,25 @@ class GalilInstrument(Instrument):
         """
         Write for Galil motion controller
         """
-        self.g.GCommand(cmd)
+        self.g.GCommand(cmd+"\r")
 
     def ask_raw(self, cmd: str) -> str:
         """
         Asks/Reads data from Galil motion controller
         """
-        return self.g.GCommand(cmd)
+        return self.g.GCommand(cmd+"\r")
+
+    def timeout(self, val: float) -> None:
+        """
+        Sets timeout for the instrument
+
+        Args:
+            val: time in seconds
+        """
+        if val < 0.001:
+            raise RuntimeError("Timeout can not be less than 0.001s")
+
+        self.g.GTimeout(val*1000)
 
     def close(self) -> None:
         """
