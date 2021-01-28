@@ -25,11 +25,11 @@ def test_cache_1d(experiment, DAC, DMM, n_points, bg_writing,
         n_points, setpoints_type
     )
 
-    meas = Measurement()
+    meas1 = Measurement()
 
-    meas.register_parameter(setpoints_param)
+    meas1.register_parameter(setpoints_param)
 
-    meas_parameters = (DMM.v1,
+    meas_parameters1 = (DMM.v1,
                        channel_array_instrument.A.dummy_multi_parameter,
                        channel_array_instrument.A.dummy_scalar_multi_parameter,
                        channel_array_instrument.A.dummy_2d_multi_parameter,
@@ -43,30 +43,56 @@ def test_cache_1d(experiment, DAC, DMM, n_points, bg_writing,
     channel_array_instrument.A.dummy_start(0)
     channel_array_instrument.A.dummy_stop(10)
     channel_array_instrument.A.dummy_n_points(10)
-    for param in meas_parameters:
-        meas.register_parameter(param, setpoints=(setpoints_param,))
+    channel_array_instrument.A.dummy_start_2(2)
+    channel_array_instrument.A.dummy_stop_2(7)
+    channel_array_instrument.A.dummy_n_points_2(3)
 
-    with meas.run(write_in_background=bg_writing) as datasaver:
-        dataset = datasaver.dataset
-        _assert_parameter_data_is_identical(dataset.get_parameter_data(), dataset.cache.data())
-        for i, v in enumerate(setpoints_values):
-            setpoints_param.set(v)
+    for param in meas_parameters1:
+        meas1.register_parameter(param, setpoints=(setpoints_param,))
 
-            meas_vals = [(param, param.get()) for param in meas_parameters[:-2]]
-            meas_vals += expand_setpoints_helper(meas_parameters[-2])
-            meas_vals += expand_setpoints_helper(meas_parameters[-1])
+    meas2 = Measurement()
 
-            datasaver.add_result((setpoints_param, v),
-                                 *meas_vals)
-            datasaver.flush_data_to_database(block=True)
-            data = dataset.cache.data()
-            _assert_parameter_data_is_identical(dataset.get_parameter_data(),
-                                                data)
-    _assert_parameter_data_is_identical(dataset.get_parameter_data(),
-                                        dataset.cache.data())
-    assert dataset.cache._loaded_from_completed_ds is True
-    _assert_parameter_data_is_identical(dataset.get_parameter_data(),
-                                        dataset.cache.data())
+    meas2.register_parameter(setpoints_param)
+
+    meas_parameters2 = (channel_array_instrument.A.dummy_parameter_with_setpoints_2d,)
+
+    for param in meas_parameters2:
+        meas2.register_parameter(param, setpoints=(setpoints_param,))
+
+    with meas1.run(write_in_background=bg_writing) as datasaver1:
+        with meas2.run(write_in_background=bg_writing) as datasaver2:
+
+            dataset1 = datasaver1.dataset
+            dataset2 = datasaver2.dataset
+            _assert_parameter_data_is_identical(dataset1.get_parameter_data(), dataset1.cache.data())
+            _assert_parameter_data_is_identical(dataset2.get_parameter_data(), dataset2.cache.data())
+            for i, v in enumerate(setpoints_values):
+                setpoints_param.set(v)
+
+                meas_vals1 = [(param, param.get()) for param in meas_parameters1[:-2]]
+                meas_vals1 += expand_setpoints_helper(meas_parameters1[-2])
+                meas_vals1 += expand_setpoints_helper(meas_parameters1[-1])
+
+                datasaver1.add_result((setpoints_param, v),
+                                      *meas_vals1)
+                datasaver1.flush_data_to_database(block=True)
+
+                meas_vals2 = [(param, param.get()) for param in meas_parameters2]
+
+                datasaver2.add_result((setpoints_param, v),
+                                      *meas_vals2)
+                datasaver2.flush_data_to_database(block=True)
+
+                _assert_parameter_data_is_identical(dataset1.get_parameter_data(),
+                                                    dataset1.cache.data())
+                _assert_parameter_data_is_identical(dataset2.get_parameter_data(),
+                                                    dataset2.cache.data())
+    _assert_parameter_data_is_identical(dataset1.get_parameter_data(),
+                                        dataset1.cache.data())
+    assert dataset1.cache._loaded_from_completed_ds is True
+    _assert_parameter_data_is_identical(dataset2.get_parameter_data(),
+                                        dataset2.cache.data())
+    assert dataset2.cache._loaded_from_completed_ds is True
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
