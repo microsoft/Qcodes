@@ -1894,7 +1894,7 @@ def _create_new_data_dict(new_values: np.ndarray,
         if new_values.dtype.kind == "f" or new_values.dtype.kind == "c":
             data[:] = np.nan
 
-        data.ravel()[0:n_values] = new_values
+        data.ravel()[0:n_values] = new_values.ravel()
         return data, n_values
 
 
@@ -1923,5 +1923,5 @@ def _insert_into_data_dict(
                               new_values.flatten(), axis=0),
                     new_write_status)
         else:
-            existing_values.ravel()[write_status:new_write_status] = new_values
+            existing_values.ravel()[write_status:new_write_status] = new_values.ravel()
             return existing_values, new_write_status
