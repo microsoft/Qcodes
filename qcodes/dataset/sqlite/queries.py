@@ -1923,5 +1923,5 @@ def _insert_into_data_dict(
                               new_values.flatten(), axis=0),
                     new_write_status)
         else:
-            existing_values.ravel()[write_status:new_write_status] = new_values
+            existing_values.ravel()[write_status:new_write_status] = new_values.ravel()
             return existing_values, new_write_status
