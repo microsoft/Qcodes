@@ -29,7 +29,6 @@ dependencies:
  - tqdm
  - tabulate
  - pandoc
- - contextlib2 # for broadbean
  - websockets=8.1
  - schema
  - requirements-parser
