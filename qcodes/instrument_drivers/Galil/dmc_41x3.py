@@ -4,7 +4,8 @@ colloquially known as the "stepper motors".
 """
 from typing import Any, Dict, Optional, List
 
-from qcodes.instrument.visa import Instrument
+from qcodes import Instrument
+from qcodes.utils.validators import Enum, Numbers, Ints
 
 try:
     import gclib
@@ -95,7 +96,155 @@ class DMC4133(GalilInstrument):
         self.chip_design = chip_design
         self.load_chip_design(self.chip_design)
 
+        self.add_parameter("move_a",
+                           set_cmd=self._move_motor_a,
+                           units="microns",
+                           vals=Numbers(-107374182.4, 107374182.35),  # 0.05 res
+                           docstring="moves motor a along x-axis. negative "
+                                     "value indicates movement along -x axis.")
+
+        self.add_parameter("move_b",
+                           set_cmd=self._move_motor_b,
+                           units="microns",
+                           vals=Numbers(-107374182.4, 107374182.35),
+                           docstring="moves motor b along y-axis. negative "
+                                     "value indicates movement along -y axis.")
+
+        self.add_parameter("move_c",
+                           set_cmd=self._move_motor_c,
+                           units="microns",
+                           vals=Numbers(-107374182.4, 107374182.35),
+                           docstring="moves motor c along z-axis. negative "
+                                     "value indicates movement along -z axis.")
+
+        self.add_parameter("position_format_decimals",
+                           set_cmd="PF 10.{}",
+                           vals=Ints(0, 4),
+                           docstring="sets number of decimals in the format "
+                                     "of the position")
+
+        self.add_parameter("absolute_position",
+                           get_cmd=self._get_absolute_position,
+                           units="microns",
+                           docstring="gets absolute position of the motors "
+                                     "from the set origin")
+
+        self.add_parameter("motor_off",
+                           get_cmd="MG _MO",
+                           get_parser=self._motor_on_off_status,
+                           set_cmd="MO {}",
+                           vals=Enum("A", "B", "C"),
+                           docstring="turns given motors off and when called "
+                                     "without argument tells the status of "
+                                     "motors")
+
+        self.add_parameter("begin_motor",
+                           set_cmd="BG {}",
+                           vals=Enum("A", "B", "C"),
+                           docstring="begins the specified motor motion")
+
+        self.add_parameter("servo_at_motor",
+                           set_cmd="SH {}",
+                           vals=Enum("A", "B", "C"),
+                           docstring="servo at the specified motor"
+                           )
+
+        self.add_parameter("after_motion_of_motor",
+                           set_cmd="AM {}",
+                           vals=Enum("A", "B", "C"),
+                           docstring="wait till motion of given motor finishes")
+
+        self.add_parameter("wait",
+                           set_cmd="WT {}",
+                           units="ms",
+                           vals=Ints(2, 2147483646),  # resolution is 2 find how
+                           docstring="controller will wait for the amount of "
+                                     "time specified before executing the next "
+                                     "command")
+
         self.connect_message()
+
+    def _move_motor_a(self, val: int) -> None:
+        """
+        this method converts the given distance in microns into quadrature
+        counts and moves motor A to that amount from the current position
+
+        note: 50 microns equals 1000 quadrature counts
+        """
+        self.motor_off("A")
+        self.servo_at_motor("A")
+        self.write(f"PRA={val*20}")
+        self.write("SPA=1000")
+        self.write("ACA=500000")
+        self.write("DCA=500000")
+        self.begin_motor("A")
+
+    def _move_motor_b(self, val: int) -> None:
+        """
+        this method converts the given distance in microns into quadrature
+        counts and moves motor B to that amount from the current position
+
+        note: 50 microns equals 1000 quadrature counts
+        """
+        self.motor_off("B")
+        self.servo_at_motor("B")
+        self.write(f"PRB={val*20}")
+        self.write("SPB=1000")
+        self.write("ACB=500000")
+        self.write("DCB=500000")
+        self.begin_motor("B")
+
+    def _move_motor_c(self, val: int) -> None:
+        """
+        this method converts the given distance in microns into quadrature
+        counts and moves motor C to that amount from the current position
+
+        note: 50 microns equals 1000 quadrature counts
+        """
+        self.motor_off("C")
+        self.servo_at_motor("C")
+        self.write(f"PRC={val*20}")
+        self.write("SPC=1000")
+        self.write("ACC=500000")
+        self.write("DCC=500000")
+        self.begin_motor("C")
+
+    @staticmethod
+    def _motor_on_off_status(val: str) -> Dict[str, str]:
+        """
+        motor on off status parser
+        """
+        result = dict()
+        data = val.split(" ")
+
+        if int(data[0][:-1]) == 1:
+            result["A"] = "OFF"
+        else:
+            result["A"] = "ON"
+
+        if int(data[1][:-1]) == 1:
+            result["B"] = "OFF"
+        else:
+            result["B"] = "ON"
+
+        if int(data[2]) == 1:
+            result["C"] = "OFF"
+        else:
+            result["C"] = "ON"
+
+        return result
+
+    def _get_absolute_position(self) -> Dict[str, float]:
+        """
+        gets absolution position of the motors from the defined origin
+        """
+        result = dict()
+        data = self.ask("PA ?,?,?").split(" ")
+        result["A"] = int(data[0][:-1])/20
+        result["B"] = int(data[1][:-1])/20
+        result["C"] = int(data[2])/20
+
+        return result
 
     def _define_position_as_origin(self) -> None:
         """
