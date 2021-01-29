@@ -64,7 +64,7 @@ pytz~=2020.5
 PyVISA~=1.11.3
 pywin32==300; sys_platform == 'win32'
 pywinpty~=0.5.7; sys_platform == 'win32'
-pyzmq~=22.0.0
+pyzmq~=22.0.2
 requests~=2.25.1
 requirements-parser~=0.2.0
 rsa~=4.7
