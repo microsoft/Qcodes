@@ -86,10 +86,59 @@ class DMC4133(GalilInstrument):
     Driver for Galil DMC-4133 Motor Controller
     """
 
-    def __init__(self, name: str, address: str, **kwargs: Any) -> None:
+    def __init__(self,
+                 name: str,
+                 address: str,
+                 chip_design: str,
+                 **kwargs: Any) -> None:
         super().__init__(name=name, address=address, **kwargs)
+        self.chip_design = chip_design
+        self.load_chip_design(self.chip_design)
 
         self.connect_message()
+
+    def _define_position_as_origin(self) -> None:
+        """
+        defines current motors position as origin
+        """
+        self.write("DP 0,0,0")
+
+    def _move_to_next_row(self) -> int:
+        """
+        moves motors to next row of pads
+        """
+        pass
+
+    def set_begin_position(self) -> None:
+        """
+        sets first row of pads in chip as begin position
+        """
+        pass
+
+    def set_end_position(self) -> None:
+        """
+        sets last row of pads in chip as end position
+        """
+        pass
+
+    def begin_motion(self) -> str:
+        """
+        begins motion of motors after setup
+        """
+        pass
+
+    def load_chip_design(self, filename: str) -> None:
+        """
+        loads chip design features such as width and height of the chip,
+        pads dimensions and intra-pads measurements
+        """
+        pass
+
+    def tell_error(self) -> str:
+        """
+        reads error
+        """
+        return self.ask("TC1")
 
     def stop(self) -> None:
         """
