@@ -23,7 +23,7 @@ class DataSetCache:
     The DataSetCache contains a in memory representation of the
     data in this dataset as well a a method to progressively read data
     from the db as it is written. The cache is available in the same formats
-    as :py:class:`.DataSet.get_parameter_data` and :py:class:`.DataSet.get_data_as_pandas_dataframe`
+    as :py:class:`.DataSet.get_parameter_data` and :py:class:`.DataSet.to_pandas_dataframe_dict`
 
     """
 
@@ -85,7 +85,7 @@ class DataSetCache:
     def to_pandas(self) -> Optional[Dict[str, "pd.DataFrame"]]:
         """
         Convert the cached dataset to Pandas dataframes. The returned dataframes
-        are in the same format :py:class:`.DataSet.get_data_as_pandas_dataframe`.
+        are in the same format :py:class:`.DataSet.to_pandas_dataframe_dict`.
 
         Returns:
             A dict from parameter name to Pandas Dataframes. Each dataframe
