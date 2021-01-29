@@ -1198,12 +1198,12 @@ def parameter_test_helper(ds: DataSet,
     """
 
     data = ds.get_parameter_data(*toplevel_names, start=start, end=end)
-    dataframe = ds.get_data_as_pandas_dataframe(*toplevel_names,
-                                                start=start,
-                                                end=end)
+    dataframe = ds.to_pandas_dataframe_dict(*toplevel_names,
+                                            start=start,
+                                            end=end)
 
     all_data = ds.get_parameter_data(start=start, end=end)
-    all_dataframe = ds.get_data_as_pandas_dataframe(start=start, end=end)
+    all_dataframe = ds.to_pandas_dataframe_dict(start=start, end=end)
 
     all_parameters = list(all_data.keys())
     assert set(data.keys()).issubset(set(all_parameters))
@@ -1228,9 +1228,9 @@ def parameter_test_helper(ds: DataSet,
 
         subset_data = ds.get_parameter_data(*subset_names,
                                             start=start, end=end)
-        subset_dataframe = ds.get_data_as_pandas_dataframe(*subset_names,
-                                                           start=start,
-                                                           end=end)
+        subset_dataframe = ds.to_pandas_dataframe_dict(*subset_names,
+                                                       start=start,
+                                                       end=end)
         verify_data_dict(subset_data, subset_dataframe, subset_names,
                          expected_names, expected_shapes, expected_values)
 
