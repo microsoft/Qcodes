@@ -1069,7 +1069,7 @@ class DataSet(Sized):
                             end: Optional[int] = None) -> "pd.DataFrame":
         """
         Returns the values stored in the :class:`.DataSet` for the specified parameters
-        and their dependencies as a concatinated :py:class:`pandas.DataFrame` s
+        and their dependencies as a concatenated :py:class:`pandas.DataFrame` s
 
         The DataFrame contains a column for the data and is indexed by a
         :py:class:`pandas.MultiIndex` formed from all the setpoints
@@ -1102,7 +1102,7 @@ class DataSet(Sized):
 
         Example:
             Return a pandas DataFrame with
-                df = ds.get_data_as_pandas_dataframe()
+                df = ds.to_pandas_dataframe()
         """
         import pandas as pd
         datadict = self.get_parameter_data(*params,
@@ -1335,7 +1335,7 @@ class DataSet(Sized):
                                in a single file but no filename provided.
         """
         import pandas as pd
-        dfdict = self.get_data_as_pandas_dataframe()
+        dfdict = self.to_pandas_dataframe_dict()
         dfs_to_save = list()
         for parametername, df in dfdict.items():
             if not single_file:
