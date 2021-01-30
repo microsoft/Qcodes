@@ -49,8 +49,10 @@ New drivers:
 Improved drivers:
 -----------------
 
+- Keysight B1500: support measuring any number of channels during IV sweep (#2649)
 - Add checks for signal current level and voltage level queries in Keysight E4980A (#2561)
 - Set signal mode and snapshot_exclude in Keysight E4980A (#2612)
+- Add input offset voltage parameter to Basel SP983C (#2648)
 - Add test to ensure that AWG70000A driver throws a warning when waveform is clipped (#2585)
 
 ---------------
