@@ -24,7 +24,13 @@ class FrequencyAxis(Parameter):
         self._npts: Parameter = npts
 
     def get_raw(self) -> ParamRawDataType:
-        return np.linspace(self._start(), self._stop(), self._npts())
+        start_val = self._start()
+        stop_val = self._stop()
+        npts_val = self._npts()
+        assert start_val is not None
+        assert stop_val is not None
+        assert npts_val is not None
+        return np.linspace(start_val, stop_val, npts_val)
 
 
 class Trace(ParameterWithSetpoints):
