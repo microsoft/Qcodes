@@ -32,7 +32,7 @@ ipython==7.19.0
 ipython-genutils==0.2.0
 isort==5.7.0
 jedi==0.17.2
-Jinja2==2.11.2
+Jinja2==2.11.3
 jsonschema==3.2.0
 jupyter-client==6.1.11
 jupyter-core==4.7.0
