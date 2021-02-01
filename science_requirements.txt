@@ -35,7 +35,7 @@ jedi==0.17.2
 Jinja2==2.11.2
 jsonschema==3.2.0
 jupyter-client==6.1.11
-jupyter-core==4.7.0
+jupyter-core==4.7.1
 jupyterlab-pygments==0.1.2
 keyring==22.0.1
 lazy-object-proxy==1.4.3
