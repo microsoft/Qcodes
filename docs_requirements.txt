@@ -50,7 +50,7 @@ Pygments==2.7.4
 pyparsing==2.4.7
 pyrsistent==0.17.3
 python-dateutil==2.8.1
-pytz==2020.5
+pytz==2021.1
 PyVISA==1.11.3
 PyVISA-sim==0.4.0
 pywin32==300; sys_platform == 'win32'
