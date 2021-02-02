@@ -160,7 +160,45 @@ class DMC4133(GalilInstrument):
                            docstring="controller will wait for the amount of "
                                      "time specified before executing the next "
                                      "command")
-
+        self.add_parameter("vector_mode",
+                           set_cmd="VM {}",
+                           vals=Enum("AB", "BC", "AC"),
+                           docstring="sets plane of motion for the motors")
+        self.add_parameter("vector_position",
+                           set_cmd="VP {},{}", #make group param
+                           vals=Ints(-2147483648, 2147483647),
+                           units="quadrature counts",
+                           docstring="can set initial and final vector "
+                                     "positions for the motion")
+        self.add_parameter("vector_acceleration",
+                           get_cmd="VA ?",
+                           get_parser=int,
+                           set_cmd="VA {}",
+                           vals=Ints(1024, 1073740800),  #res 1024
+                           units="counts/sec2",
+                           docstring="sets and gets the defined vector's "
+                                     "acceleration")
+        self.add_parameter("vector_deceleration",
+                           get_cmd="VD ?",
+                           get_parser=int,
+                           set_cmd="VD {}",
+                           vals=Ints(1024, 1073740800),  # res 1024
+                           units="counts/sec2",
+                           docstring="sets and gets the defined vector's "
+                                     "deceleration")
+        self.add_parameter("vector_speed",
+                           get_cmd="VS ?",
+                           get_parser=int,
+                           set_cmd="VS {}",
+                           vals=Ints(2, 15000000), # res 2
+                           units="counts/sec",
+                           docstring="sets and gets defined vector's speed")
+        self.add_parameter("vector_seq_end",
+                           set_cmd="VE",
+                           docstring="indicates to the controller that the end"
+                                     " of the vector is coming up. is "
+                                     "required to exit the vector mode "
+                                     "gracefully")
         self.connect_message()
 
     def _move_motor_a(self, val: int) -> None:
