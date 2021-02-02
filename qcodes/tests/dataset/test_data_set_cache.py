@@ -259,12 +259,13 @@ def test_cache_2d(experiment, DAC, DMM, n_points_outer,
 
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("storage_type", ['numeric', 'array', None])
+@pytest.mark.parametrize("in_memory_cache", [True, False])
 @settings(deadline=None, max_examples=10,
           suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(n_points_outer=hst.integers(min_value=1, max_value=11),
        n_points_inner=hst.integers(min_value=1, max_value=11))
 def test_cache_2d_num_with_multiple_storage_types(experiment, DAC, DMM, n_points_outer,
-                      n_points_inner, bg_writing, storage_type):
+                      n_points_inner, bg_writing, storage_type, in_memory_cache):
     meas = Measurement()
 
     meas.register_parameter(DAC.ch1, paramtype=storage_type)
@@ -272,7 +273,8 @@ def test_cache_2d_num_with_multiple_storage_types(experiment, DAC, DMM, n_points
     meas.register_parameter(DMM.v1, setpoints=(DAC.ch1, DAC.ch2), paramtype=storage_type)
     array_used = _array_param_used_in_tree(meas)
     n_rows_written = 0
-    with meas.run(write_in_background=bg_writing) as datasaver:
+    with meas.run(write_in_background=bg_writing,
+                  in_memory_cache=in_memory_cache) as datasaver:
         dataset = datasaver.dataset
         _assert_parameter_data_is_identical(dataset.get_parameter_data(), dataset.cache.data())
         for v1 in np.linspace(-1, 1, n_points_outer):
@@ -285,7 +287,7 @@ def test_cache_2d_num_with_multiple_storage_types(experiment, DAC, DMM, n_points
                 datasaver.flush_data_to_database(block=True)
                 n_rows_written += 1
                 data = dataset.cache.data()
-                if array_used:
+                if array_used and not in_memory_cache:
                     shape = (n_rows_written, 1)
                 else:
                     shape = (n_rows_written,)
@@ -299,10 +301,12 @@ def test_cache_2d_num_with_multiple_storage_types(experiment, DAC, DMM, n_points
 
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("storage_type", ['numeric', 'array', None])
+@pytest.mark.parametrize("in_memory_cache", [True, False])
 @settings(deadline=None, max_examples=10,
           suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(n_points=hst.integers(min_value=1, max_value=21))
-def test_cache_1d_array_in_1d(experiment, DAC, channel_array_instrument, n_points, bg_writing, storage_type):
+def test_cache_1d_array_in_1d(experiment, DAC, channel_array_instrument,
+                              n_points, bg_writing, storage_type, in_memory_cache):
     param = channel_array_instrument.A.dummy_array_parameter
     meas = Measurement()
     meas.register_parameter(DAC.ch1, paramtype=storage_type)
@@ -311,7 +315,8 @@ def test_cache_1d_array_in_1d(experiment, DAC, channel_array_instrument, n_point
 
     setpoint_name = "_".join((param.instrument.full_name, param.setpoint_names[0]))
 
-    with meas.run(write_in_background=bg_writing) as datasaver:
+    with meas.run(write_in_background=bg_writing,
+                  in_memory_cache=in_memory_cache) as datasaver:
         dataset = datasaver.dataset
         for i, v1 in enumerate(np.linspace(-1, 1, n_points)):
             datasaver.add_result((DAC.ch1, v1),
@@ -319,7 +324,7 @@ def test_cache_1d_array_in_1d(experiment, DAC, channel_array_instrument, n_point
             datasaver.flush_data_to_database(block=True)
             data = dataset.cache.data()
             n_rows_written = i+1
-            if array_used:
+            if array_used and not in_memory_cache:
                 shape = (n_rows_written, param.shape[0])
             else:
                 shape = (n_rows_written * param.shape[0],)
