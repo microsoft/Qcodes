@@ -202,12 +202,14 @@ def test_cache_1d_every_other_point(experiment, DAC, DMM, n_points, bg_writing,
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
+@pytest.mark.parametrize("in_memory_cache", [True, False])
 @settings(deadline=None, max_examples=10,
           suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(n_points_outer=hst.integers(min_value=1, max_value=11),
        n_points_inner=hst.integers(min_value=1, max_value=11))
 def test_cache_2d(experiment, DAC, DMM, n_points_outer,
-                      n_points_inner, bg_writing, channel_array_instrument):
+                  n_points_inner, bg_writing, channel_array_instrument,
+                  in_memory_cache):
     meas = Measurement()
 
     meas.register_parameter(DAC.ch1)
@@ -230,7 +232,9 @@ def test_cache_2d(experiment, DAC, DMM, n_points_outer,
     for param in meas_parameters:
         meas.register_parameter(param, setpoints=(DAC.ch1, DAC.ch2))
     n_rows_written = 0
-    with meas.run(write_in_background=bg_writing) as datasaver:
+    with meas.run(
+            write_in_background=bg_writing,
+            in_memory_cache=in_memory_cache) as datasaver:
         dataset = datasaver.dataset
         _assert_parameter_data_is_identical(dataset.get_parameter_data(), dataset.cache.data())
         for v1 in np.linspace(-1, 1, n_points_outer):
