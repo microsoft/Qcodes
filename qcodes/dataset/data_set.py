@@ -2,20 +2,21 @@ import functools
 import importlib
 import json
 import logging
+import warnings
 import os
 import time
 import uuid
 from dataclasses import dataclass
 from queue import Empty, Queue
 from threading import Thread
-from typing import (TYPE_CHECKING, Any, Callable, Dict, List, Mapping,
-                    Optional, Sequence, Set, Sized, Tuple, Union)
+from typing import (Hashable, Iterator, TYPE_CHECKING, Any, Callable, Dict,
+                    List, Mapping, Optional, Sequence, Set,
+                    Sized, Tuple, Union, cast)
 
 import numpy
 
 import qcodes
-from qcodes.dataset.descriptions.dependencies import (DependencyError,
-                                                      InterDependencies_)
+from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning.converters import (new_to_old,
@@ -45,13 +46,14 @@ from qcodes.dataset.sqlite.query_helpers import (VALUE, VALUES,
                                                  length, one,
                                                  select_one_where)
 from qcodes.instrument.parameter import _BaseParameter
+from qcodes.utils.deprecate import deprecate
 
 from .data_set_cache import DataSetCache
 from .descriptions.versioning import serialization as serial
 
 if TYPE_CHECKING:
     import pandas as pd
-
+    import xarray as xr
 
 
 log = logging.getLogger(__name__)
@@ -88,8 +90,10 @@ ParameterData = Dict[str, Dict[str, numpy.ndarray]]
 class CompletedError(RuntimeError):
     pass
 
+
 class DataLengthException(Exception):
     pass
+
 
 class DataPathException(Exception):
     pass
@@ -108,6 +112,7 @@ class _Subscriber(Thread):
     NOTE: Special care shall be taken when using the *state* object: it is the
     user's responsibility to operate with it in a thread-safe way.
     """
+
     def __init__(self,
                  dataSet: 'DataSet',
                  id_: str,
@@ -233,7 +238,8 @@ class _BackgroundWriter(Thread):
             elif item['keys'] == 'finalize':
                 _WRITERS[self.path].active_datasets.remove(item['values'])
             else:
-                self.write_results(item['keys'], item['values'], item['table_name'])
+                self.write_results(
+                    item['keys'], item['values'], item['table_name'])
             self.queue.task_done()
 
     def write_results(self, keys: Sequence[str],
@@ -294,22 +300,23 @@ class DataSet(Sized):
 
         Args:
             path_to_db: path to the sqlite file on disk. If not provided, the
-              path will be read from the config.
+                path will be read from the config.
             run_id: provide this when loading an existing run, leave it
-              as None when creating a new run
+                as None when creating a new run
             conn: connection to the DB; if provided and ``path_to_db`` is
-              provided as well, then a ``ValueError`` is raised (this is to
-              prevent the possibility of providing a connection to a DB
-              file that is different from ``path_to_db``)
+                provided as well, then a ``ValueError`` is raised (this is to
+                prevent the possibility of providing a connection to a DB
+                file that is different from ``path_to_db``)
             exp_id: the id of the experiment in which to create a new run.
-              Ignored if ``run_id`` is provided.
+                Ignored if ``run_id`` is provided.
             name: the name of the dataset. Ignored if ``run_id`` is provided.
             specs: paramspecs belonging to the dataset or an ``InterDependencies_``
-              object that describes the dataset. Ignored if ``run_id`` is provided.
+                object that describes the dataset. Ignored if ``run_id``
+                is provided.
             values: values to insert into the dataset. Ignored if ``run_id`` is
-              provided.
+                provided.
             metadata: metadata to insert into the dataset. Ignored if ``run_id``
-              is provided.
+                is provided.
             shapes:
                 An optional dict from names of dependent parameters to the shape
                 of the data captured as a list of integers. The list is in the
@@ -755,7 +762,8 @@ class DataSet(Sized):
         if start_bg_writer:
             writer_status.write_in_background = True
             if writer_status.bg_writer is None:
-                writer_status.bg_writer = _BackgroundWriter(writer_status.data_write_queue, self.conn)
+                writer_status.bg_writer = _BackgroundWriter(
+                    writer_status.data_write_queue, self.conn)
             if not writer_status.bg_writer.is_alive():
                 writer_status.bg_writer.start()
         else:
@@ -828,7 +836,8 @@ class DataSet(Sized):
         writer_status = self._writer_status
 
         if writer_status.write_in_background:
-            writer_status.data_write_queue.put({'keys': 'finalize', 'values': self.run_id})
+            writer_status.data_write_queue.put(
+                {'keys': 'finalize', 'values': self.run_id})
             while self.run_id in writer_status.active_datasets:
                 time.sleep(self.background_sleep_time)
         else:
@@ -921,6 +930,88 @@ class DataSet(Sized):
         return get_parameter_data(self.conn, self.table_name,
                                   valid_param_names, start, end)
 
+    @staticmethod
+    def _parameter_data_identical(param_dict_a: Dict[str, numpy.ndarray],
+                                  param_dict_b: Dict[str, numpy.ndarray]) -> bool:
+
+        try:
+            numpy.testing.assert_equal(param_dict_a, param_dict_b)
+        except AssertionError:
+            return False
+
+        return True
+
+    def _same_setpoints(self, datadict: ParameterData) -> bool:
+
+        def _get_setpoints(dd: ParameterData) -> Iterator[Dict[str, numpy.ndarray]]:
+
+            for dep_name, param_dict in dd.items():
+                out = {
+                    name: vals for name, vals in param_dict.items() if name != dep_name
+                }
+                yield out
+
+        sp_iterator = _get_setpoints(datadict)
+
+        try:
+            first = next(sp_iterator)
+        except StopIteration:
+            return True
+
+        return all(self._parameter_data_identical(first, rest) for rest in sp_iterator)
+
+    def to_pandas_dataframe_dict(self,
+                                 *params: Union[str,
+                                                ParamSpec,
+                                                _BaseParameter],
+                                 start: Optional[int] = None,
+                                 end: Optional[int] = None) ->\
+            Dict[str, "pd.DataFrame"]:
+        """
+        Returns the values stored in the :class:`.DataSet` for the specified parameters
+        and their dependencies as a dict of :py:class:`pandas.DataFrame` s
+        Each element in the dict is indexed by the names of the requested
+        parameters.
+
+        Each DataFrame contains a column for the data and is indexed by a
+        :py:class:`pandas.MultiIndex` formed from all the setpoints
+        of the parameter.
+
+        If no parameters are supplied data will be be
+        returned for all parameters in the :class:`.DataSet` that are not them self
+        dependencies of other parameters.
+
+        If provided, the start and end arguments select a range of results
+        by result count (index). If the range is empty - that is, if the end is
+        less than or equal to the start, or if start is after the current end
+        of the :class:`.DataSet` – then a dict of empty :py:class:`pandas.DataFrame` s is
+        returned.
+
+        Args:
+            *params: string parameter names, QCoDeS Parameter objects, and
+                ParamSpec objects. If no parameters are supplied data for
+                all parameters that are not a dependency of another
+                parameter will be returned.
+            start: start value of selection range (by result count); ignored
+                if None
+            end: end value of selection range (by results count); ignored if
+                None
+
+        Returns:
+            Dictionary from requested parameter names to
+            :py:class:`pandas.DataFrame` s with the requested parameter as
+            a column and a indexed by a :py:class:`pandas.MultiIndex` formed
+            by the dependencies.
+        """
+        datadict = self.get_parameter_data(*params,
+                                           start=start,
+                                           end=end)
+        dfs_dict = self._load_to_dataframe_dict(datadict)
+        return dfs_dict
+
+    @deprecate(reason='This method will be removed due to inconcise naming, please '
+               'use the renamed method to_pandas_dataframe_dict',
+               alternative='to_pandas_dataframe_dict')
     def get_data_as_pandas_dataframe(self,
                                      *params: Union[str,
                                                     ParamSpec,
@@ -967,8 +1058,175 @@ class DataSet(Sized):
         datadict = self.get_parameter_data(*params,
                                            start=start,
                                            end=end)
-        dfs = self._load_to_dataframes(datadict)
-        return dfs
+        dfs_dict = self._load_to_dataframe_dict(datadict)
+        return dfs_dict
+
+    def to_pandas_dataframe(self,
+                            *params: Union[str,
+                                           ParamSpec,
+                                           _BaseParameter],
+                            start: Optional[int] = None,
+                            end: Optional[int] = None) -> "pd.DataFrame":
+        """
+        Returns the values stored in the :class:`.DataSet` for the specified parameters
+        and their dependencies as a concatenated :py:class:`pandas.DataFrame` s
+
+        The DataFrame contains a column for the data and is indexed by a
+        :py:class:`pandas.MultiIndex` formed from all the setpoints
+        of the parameter.
+
+        If no parameters are supplied data will be be
+        returned for all parameters in the :class:`.DataSet` that are not them self
+        dependencies of other parameters.
+
+        If provided, the start and end arguments select a range of results
+        by result count (index). If the range is empty - that is, if the end is
+        less than or equal to the start, or if start is after the current end
+        of the :class:`.DataSet` – then a dict of empty :py:class:`pandas.DataFrame` s is
+        returned.
+
+        Args:
+            *params: string parameter names, QCoDeS Parameter objects, and
+                ParamSpec objects. If no parameters are supplied data for
+                all parameters that are not a dependency of another
+                parameter will be returned.
+            start: start value of selection range (by result count); ignored
+                if None
+            end: end value of selection range (by results count); ignored if
+                None
+
+        Returns:
+            :py:class:`pandas.DataFrame` s with the requested parameter as
+            a column and a indexed by a :py:class:`pandas.MultiIndex` formed
+            by the dependencies.
+
+        Example:
+            Return a pandas DataFrame with
+                df = ds.to_pandas_dataframe()
+        """
+        import pandas as pd
+        datadict = self.get_parameter_data(*params,
+                                           start=start,
+                                           end=end)
+
+        if not self._same_setpoints(datadict):
+            warnings.warn(
+                'Independent parameter setpoints are not equal. \
+                Check concatenated output carefully.')
+
+        dfs_dict = self._load_to_dataframe_dict(datadict)
+        df = pd.concat(list(dfs_dict.values()), axis=1)
+
+        return df
+
+    def to_xarray_dataarray_dict(self,
+                                 *params: Union[str,
+                                                ParamSpec,
+                                                _BaseParameter],
+                                 start: Optional[int] = None,
+                                 end: Optional[int] = None) -> \
+            Dict[str, "xr.DataArray"]:
+        """
+        Returns the values stored in the :class:`.DataSet` for the specified parameters
+        and their dependencies as a dict of :py:class:`xr.DataArray` s
+        Each element in the dict is indexed by the names of the requested
+        parameters.
+
+        If no parameters are supplied data will be be
+        returned for all parameters in the :class:`.DataSet` that are not them self
+        dependencies of other parameters.
+
+        If provided, the start and end arguments select a range of results
+        by result count (index). If the range is empty - that is, if the end is
+        less than or equal to the start, or if start is after the current end
+        of the :class:`.DataSet` – then a dict of empty :py:class:`xr.DataArray` s is
+        returned.
+
+        Args:
+            *params: string parameter names, QCoDeS Parameter objects, and
+                ParamSpec objects. If no parameters are supplied data for
+                all parameters that are not a dependency of another
+                parameter will be returned.
+            start: start value of selection range (by result count); ignored
+                if None
+            end: end value of selection range (by results count); ignored if
+                None
+
+        Returns:
+            Dictionary from requested parameter names to :py:class:`xr.DataArray` s
+            with the requested parameter(s) as a column(s) and coordinates
+            formed by the dependencies.
+
+        Example:
+            Return a dict of xr.DataArray with
+
+                dataarray_dict = ds.to_xarray_dataarray_dict()
+        """
+        return self._load_to_xarray_dataarray_dict(*params, start=start, end=end)
+
+    def to_xarray_dataset(self, *params: Union[str,
+                                               ParamSpec,
+                                               _BaseParameter],
+                          start: Optional[int] = None,
+                          end: Optional[int] = None) -> "xr.Dataset":
+        """
+        Returns the values stored in the :class:`.DataSet` for the specified parameters
+        and their dependencies as a :py:class:`xr.Dataset` object.
+
+        If no parameters are supplied data will be be
+        returned for all parameters in the :class:`.DataSet` that are not then self
+        dependencies of other parameters.
+
+        If provided, the start and end arguments select a range of results
+        by result count (index). If the range is empty - that is, if the end is
+        less than or equal to the start, or if start is after the current end
+        of the :class:`.DataSet` – then a empty :py:class:`xr.Dataset` s is
+        returned.
+
+        Args:
+            *params: string parameter names, QCoDeS Parameter objects, and
+                ParamSpec objects. If no parameters are supplied data for
+                all parameters that are not a dependency of another
+                parameter will be returned.
+            start: start value of selection range (by result count); ignored
+                if None
+            end: end value of selection range (by results count); ignored if
+                None
+
+        Returns:
+            :py:class:`xr.Dataset` with the requested parameter(s) data as
+            :py:class:`xr.DataArray` s and coordinates formed by the dependencies.
+
+        Example:
+            Return a concatenated xr.Dataset with
+
+                xds = ds.to_xarray_dataset()
+        """
+        import xarray as xr
+
+        if not self._same_setpoints(self.get_parameter_data(*params,
+                                                            start=start,
+                                                            end=end)):
+            warnings.warn(
+                'Independent parameter setpoints are not equal. \
+                Check concatenated output carefully.')
+
+        data_xrdarray_dict = self._load_to_xarray_dataarray_dict(
+            *params, start=start, end=end)
+
+        # Casting Hashable for the key type until python/mypy#1114
+        # and python/typing#445 are resolved.
+        xrdataset = xr.Dataset(
+            cast(Dict[Hashable, xr.DataArray], data_xrdarray_dict))
+
+        for dim in xrdataset.dims:
+            paramspec_dict = self.paramspecs[str(dim)]._to_dict()
+            xrdataset.coords[str(dim)].attrs.update(paramspec_dict.items())
+
+        xrdataset.attrs["sample_name"] = self.sample_name
+        xrdataset.attrs["exp_name"] = self.exp_name
+
+        return xrdataset
 
     @staticmethod
     def _data_to_dataframe(data: Dict[str, numpy.ndarray], index: Union["pd.Index", "pd.MultiIndex"]) -> "pd.DataFrame":
@@ -1009,12 +1267,36 @@ class DataSet(Sized):
                 names=keys[1:])
         return index
 
-    def _load_to_dataframes(self, datadict: ParameterData) -> Dict[str, "pd.DataFrame"]:
+    def _load_to_dataframe_dict(self, datadict: ParameterData) -> Dict[str, "pd.DataFrame"]:
         dfs = {}
         for name, subdict in datadict.items():
             index = self._generate_pandas_index(subdict)
             dfs[name] = self._data_to_dataframe(subdict, index)
         return dfs
+
+    def _load_to_xarray_dataarray_dict(self,
+                                       *params: Union[str,
+                                                      ParamSpec,
+                                                      _BaseParameter],
+                                       start: Optional[int] = None,
+                                       end: Optional[int] = None) -> \
+            Dict[str, "xr.DataArray"]:
+        import xarray as xr
+        datadict = self.get_parameter_data(*params,
+                                           start=start,
+                                           end=end)
+
+        data_xrdarray_dict: Dict[str, xr.DataArray] = {}
+
+        for name, subdict in datadict.items():
+            index = self._generate_pandas_index(subdict)
+            xrdarray: xr.DataArray = self._data_to_dataframe(
+                subdict, index).to_xarray()[name]
+            paramspec_dict = self.paramspecs[name]._to_dict()
+            xrdarray.attrs.update(paramspec_dict.items())
+            data_xrdarray_dict[name] = xrdarray
+
+        return data_xrdarray_dict
 
     def write_data_to_text_file(self, path: str,
                                 single_file: bool = False,
@@ -1053,7 +1335,7 @@ class DataSet(Sized):
                                in a single file but no filename provided.
         """
         import pandas as pd
-        dfdict = self.get_data_as_pandas_dataframe()
+        dfdict = self.to_pandas_dataframe_dict()
         dfs_to_save = list()
         for parametername, df in dfdict.items():
             if not single_file:
@@ -1170,7 +1452,7 @@ class DataSet(Sized):
         Enqueue the results into self._results
 
         Before we can enqueue the results, all values of the results dict
-        must have the same length. We enqueue each parameter tree seperately,
+        must have the same length. We enqueue each parameter tree separately,
         effectively mimicking making one call to add_results per parameter
         tree.
 
@@ -1195,8 +1477,8 @@ class DataSet(Sized):
                     result_dict, all_params)
             elif toplevel_param.type in ('numeric', 'text', 'complex'):
                 res_list = self._finalize_res_dict_numeric_text_or_complex(
-                               result_dict, toplevel_param,
-                               inff_params, deps_params)
+                    result_dict, toplevel_param,
+                    inff_params, deps_params)
             else:
                 res_dict = {ps.name: result_dict[ps] for ps in all_params}
                 res_list = [res_dict]

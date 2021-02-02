@@ -154,8 +154,8 @@ class DataSaver:
                 if (parameter.vals.shape is not None
                         and data.shape != parameter.vals.shape):
                     raise TypeError(
-                        "Expected data with shape {parameter.vals.shape}, "
-                        "but got {data.shape}"
+                        f"Expected data with shape {parameter.vals.shape}, "
+                        f"but got {data.shape} for parameter: {parameter.full_name}"
                     )
 
             if isinstance(parameter, ArrayParameter):
