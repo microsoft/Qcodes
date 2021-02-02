@@ -129,10 +129,18 @@ def test_cache_1d(experiment, DAC, DMM, n_points, bg_writing,
                                                     shaped_partial=set_shape)
     _assert_parameter_data_is_identical(dataset1.get_parameter_data(),
                                         dataset1.cache.data())
-    assert dataset1.cache._loaded_from_completed_ds is True
+    if in_memory_cache is False:
+        assert dataset1.cache._loaded_from_completed_ds is True
+    else:
+        # todo enable live cache to set this
+        assert dataset1.cache._loaded_from_completed_ds is False
     _assert_parameter_data_is_identical(dataset2.get_parameter_data(),
                                         dataset2.cache.data())
-    assert dataset2.cache._loaded_from_completed_ds is True
+    if in_memory_cache is False:
+        assert dataset2.cache._loaded_from_completed_ds is True
+    else:
+        # todo enable live cache to set this
+        assert dataset2.cache._loaded_from_completed_ds is False
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
