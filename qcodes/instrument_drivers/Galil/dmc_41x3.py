@@ -289,7 +289,7 @@ class DMC4133(GalilInstrument):
 
         return result
 
-    def define_position_as_origin(self):
+    def define_position_as_origin(self) -> None:
         """
         defines current motors position as origin
         """
