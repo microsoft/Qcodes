@@ -106,12 +106,15 @@ class DataSetCache:
     def add_data(self, new_data: Dict[str, Dict[str, np.ndarray]]) -> None:
 
         old_write_status = self._write_status
+        expanded_data = {}
+        for param_name, single_param_dict in new_data.items():
+            expanded_data[param_name] = _expand_single_param_dict(single_param_dict)
 
         self._write_status, self._data = append_shaped_parameter_data_to_existing_arrays(
             self.rundescriber,
             self._write_status,
             self._data,
-            new_data=new_data
+            new_data=expanded_data
         )
 
         if old_write_status != self._write_status:
@@ -307,3 +310,22 @@ def _insert_into_data_dict(
         else:
             existing_values.ravel()[write_status:new_write_status] = new_values.ravel()
             return existing_values, new_write_status
+
+
+def _expand_single_param_dict(single_param_dict: Mapping[str, np.ndarray]) -> Dict[str, np.ndarray]:
+    sizes = {name: array.size for name, array in single_param_dict.items()}
+    maxsize = max(sizes.values())
+    max_names = tuple(name for name, size in sizes.items() if size == maxsize)
+
+    expanded_param_dict = {}
+    for name, array in single_param_dict.items():
+        if name in max_names:
+            expanded_param_dict[name] = array
+        else:
+            assert array.size == 1
+            expanded_param_dict[name] = np.full_like(
+                single_param_dict[max_names[0]],
+                array.ravel()[0], dtype=array.dtype
+            )
+
+    return expanded_param_dict
