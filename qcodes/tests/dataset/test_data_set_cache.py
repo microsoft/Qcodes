@@ -15,12 +15,13 @@ from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measuremen
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("set_shape", [True, False])
 @pytest.mark.parametrize("setpoints_type", ['text', 'numeric'])
+@pytest.mark.parametrize("in_memory_cache", [True, False])
 @settings(deadline=None, max_examples=10,
           suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(n_points=hst.integers(min_value=1, max_value=11))
 def test_cache_1d(experiment, DAC, DMM, n_points, bg_writing,
                   channel_array_instrument, setpoints_type,
-                  set_shape):
+                  set_shape, in_memory_cache):
 
     setpoints_param, setpoints_values = _prepare_setpoints_1d(
         DAC, channel_array_instrument,
@@ -90,8 +91,14 @@ def test_cache_1d(experiment, DAC, DMM, n_points, bg_writing,
     for param in meas_parameters2:
         meas2.register_parameter(param, setpoints=(setpoints_param,))
 
-    with meas1.run(write_in_background=bg_writing) as datasaver1:
-        with meas2.run(write_in_background=bg_writing) as datasaver2:
+    with meas1.run(
+            write_in_background=bg_writing,
+            in_memory_cache=in_memory_cache
+    ) as datasaver1:
+        with meas2.run(
+                write_in_background=bg_writing,
+                in_memory_cache=in_memory_cache
+        ) as datasaver2:
 
             dataset1 = datasaver1.dataset
             dataset2 = datasaver2.dataset
