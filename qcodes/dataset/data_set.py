@@ -1499,7 +1499,7 @@ class DataSet(Sized):
         if standalones:
             stdln_dict = {st: result_dict[st] for st in standalones}
             for st in standalones:
-                new_results[st.name] = {st.name: result_dict[st]}
+                new_results[st.name] = {st.name: numpy.atleast_1d(result_dict[st])}
             self._results += self._finalize_res_dict_standalones(stdln_dict)
 
         if self._in_memory_cache:
