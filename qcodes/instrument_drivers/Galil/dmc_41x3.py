@@ -90,11 +90,8 @@ class DMC4133(GalilInstrument):
     def __init__(self,
                  name: str,
                  address: str,
-                 chip_design: str,
                  **kwargs: Any) -> None:
         super().__init__(name=name, address=address, **kwargs)
-        self.chip_design = chip_design
-        self.load_chip_design(self.chip_design)
 
         self.add_parameter("move_a",
                            set_cmd=self._move_motor_a,
@@ -140,8 +137,9 @@ class DMC4133(GalilInstrument):
 
         self.add_parameter("begin_motor",
                            set_cmd="BG {}",
-                           vals=Enum("A", "B", "C"),
-                           docstring="begins the specified motor motion")
+                           vals=Enum("A", "B", "C", "S"),
+                           docstring="begins the specified motor or sequence "
+                                     "motion")
 
         self.add_parameter("servo_at_motor",
                            set_cmd="SH {}",
@@ -151,8 +149,9 @@ class DMC4133(GalilInstrument):
 
         self.add_parameter("after_motion_of_motor",
                            set_cmd="AM {}",
-                           vals=Enum("A", "B", "C"),
-                           docstring="wait till motion of given motor finishes")
+                           vals=Enum("A", "B", "C", "S"),
+                           docstring="wait till motion of given motor or "
+                                     "sequence finishes")
 
         self.add_parameter("wait",
                            set_cmd="WT {}",
@@ -246,13 +245,46 @@ class DMC4133(GalilInstrument):
 
         return result
 
-    def _define_position_as_origin(self) -> None:
+    def define_position_as_origin(self):
         """
         defines current motors position as origin
         """
         self.write("DP 0,0,0")
 
-    def _move_to_next_row(self) -> int:
+    def tell_error(self) -> str:
+        """
+        reads error
+        """
+        return self.ask("TC1")
+
+    def stop(self) -> None:
+        """
+        stop the motion of all motors
+        """
+        self.write("ST")
+
+    def abort(self) -> None:
+        """
+        aborts motion and the program operation
+        """
+        self.write("AB")
+
+
+class Arm:
+
+    def __init__(self, driver: DMC4133, chip_design: str):
+        self.driver = driver
+        self.chip_design = chip_design
+        self.load_chip_design(self.chip_design)
+
+    def load_chip_design(self, filename: str) -> None:
+        """
+        loads chip design features such as width and height of the chip,
+        pads dimensions and intra-pads measurements
+        """
+        pass
+
+    def move_to_next_row(self) -> int:
         """
         moves motors to next row of pads
         """
@@ -275,28 +307,3 @@ class DMC4133(GalilInstrument):
         begins motion of motors after setup
         """
         pass
-
-    def load_chip_design(self, filename: str) -> None:
-        """
-        loads chip design features such as width and height of the chip,
-        pads dimensions and intra-pads measurements
-        """
-        pass
-
-    def tell_error(self) -> str:
-        """
-        reads error
-        """
-        return self.ask("TC1")
-
-    def stop(self) -> None:
-        """
-        stop the motion of all motors
-        """
-        self.write("ST")
-
-    def abort(self) -> None:
-        """
-        aborts motion and the program operation
-        """
-        self.write("AB")
