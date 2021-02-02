@@ -201,17 +201,6 @@ def test_cache_1d_every_other_point(experiment, DAC, DMM, n_points, bg_writing,
                                         dataset.cache.data())
 
 
-def _prepare_setpoints_1d(DAC, channel_array_instrument, n_points, setpoints_type):
-    if setpoints_type == 'numeric':
-        setpoints_param = DAC.ch1
-        setpoints_values = np.linspace(-1, 1, n_points)
-    else:
-        setpoints_param = channel_array_instrument.A.dummy_text
-        setpoints_values = [l*(i+1) for i, l in
-                            enumerate(ascii_uppercase*(n_points//26+1))][0:n_points]
-    return setpoints_param, setpoints_values
-
-
 @pytest.mark.parametrize("bg_writing", [True, False])
 @settings(deadline=None, max_examples=10,
           suppress_health_check=(HealthCheck.function_scoped_fixture,))
@@ -714,3 +703,14 @@ def _array_param_used_in_tree(measurement: Measurement) -> bool:
         if paramspecbase.type == 'array':
             found_array = True
     return found_array
+
+
+def _prepare_setpoints_1d(DAC, channel_array_instrument, n_points, setpoints_type):
+    if setpoints_type == 'numeric':
+        setpoints_param = DAC.ch1
+        setpoints_values = np.linspace(-1, 1, n_points)
+    else:
+        setpoints_param = channel_array_instrument.A.dummy_text
+        setpoints_values = [l*(i+1) for i, l in
+                            enumerate(ascii_uppercase*(n_points//26+1))][0:n_points]
+    return setpoints_param, setpoints_values
