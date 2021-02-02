@@ -450,7 +450,8 @@ class Runner:
             parent_datasets: Sequence[Dict[Any, Any]] = (),
             extra_log_info: str = '',
             write_in_background: bool = False,
-            shapes: Optional[Shapes] = None) -> None:
+            shapes: Optional[Shapes] = None,
+            in_memory_cache: bool = True) -> None:
 
         self.write_period = self._calculate_write_period(write_in_background,
                                                          write_period)
@@ -470,6 +471,7 @@ class Runner:
         self._parent_datasets = parent_datasets
         self._extra_log_info = extra_log_info
         self._write_in_background = write_in_background
+        self._in_memory_cache = in_memory_cache
 
     @staticmethod
     def _calculate_write_period(
@@ -499,10 +501,10 @@ class Runner:
         # next set up the "datasaver"
         if self.experiment is not None:
             self.ds = qc.new_data_set(
-                self.name, self.experiment.exp_id, conn=self.experiment.conn
+                self.name, self.experiment.exp_id, conn=self.experiment.conn,
             )
         else:
-            self.ds = qc.new_data_set(self.name)
+            self.ds = qc.new_data_set(self.name, in_memory_cache=self._in_memory_cache)
 
         # .. and give the dataset a snapshot as metadata
         if self.station is None:
@@ -1102,7 +1104,8 @@ class Measurement:
                                              shapes=shapes)
         self._shapes = shapes
 
-    def run(self, write_in_background: Optional[bool] = None) -> Runner:
+    def run(self, write_in_background: Optional[bool] = None,
+            in_memory_cache: bool = True) -> Runner:
         """
         Returns the context manager for the experimental run
 
@@ -1113,6 +1116,7 @@ class Measurement:
                 main thread that is executing the context manager.
                 By default the setting for write in background will be
                 read from the ``qcodesrc.json`` config file.
+            in_memory_cache: TODO
         """
         if write_in_background is None:
             write_in_background = qc.config.dataset.write_in_background
@@ -1125,4 +1129,5 @@ class Measurement:
                       parent_datasets=self._parent_datasets,
                       extra_log_info=self._extra_log_info,
                       write_in_background=write_in_background,
-                      shapes=self._shapes)
+                      shapes=self._shapes,
+                      in_memory_cache=in_memory_cache)

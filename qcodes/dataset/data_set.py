@@ -1806,7 +1806,9 @@ def new_data_set(name: str,
                  specs: Optional[SPECS] = None,
                  values: Optional[VALUES] = None,
                  metadata: Optional[Any] = None,
-                 conn: Optional[ConnectionPlus] = None) -> DataSet:
+                 conn: Optional[ConnectionPlus] = None,
+                 in_memory_cache: bool = True,
+                 ) -> DataSet:
     """
     Create a new dataset in the currently active/selected database.
 
@@ -1819,6 +1821,7 @@ def new_data_set(name: str,
         specs: list of parameters to create this dataset with
         values: the values to associate with the parameters
         metadata: the metadata to associate with the dataset
+        in_memory_cache: TODO
 
     Return:
         the newly created :class:`.DataSet`
@@ -1827,7 +1830,7 @@ def new_data_set(name: str,
     # in `Runner` to pass a connection from an existing `Experiment`.
     d = DataSet(path_to_db=None, run_id=None, conn=conn,
                 name=name, specs=specs, values=values,
-                metadata=metadata, exp_id=exp_id)
+                metadata=metadata, exp_id=exp_id, in_memory_cache=in_memory_cache)
 
     return d
 
