@@ -326,7 +326,13 @@ class Arm:
         loads chip design features such as width and height of the chip,
         pads dimensions and intra-pads measurements
         """
-        pass
+        self._chip_length: float
+        self._chip_width: float
+        self._rows: int
+        self._num_terminals_in_row: int
+        self._terminal_length: float
+        self._terminal_width: float
+        self._inter_terminal_distance_for_adjacent_rows: float
 
     def move_to_next_row(self) -> int:
         """
