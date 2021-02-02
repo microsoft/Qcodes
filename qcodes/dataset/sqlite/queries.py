@@ -338,7 +338,7 @@ def _expand_data_to_arrays(data: List[List[Any]], paramspecs: Sequence[ParamSpec
 
         for row in data:
             # now expand all one element arrays to match the expected size
-            # one element arrays are introduced if numeric values are storred
+            # one element arrays are introduced if scalar values are stored
             # with an explicit array storage type
             sizes = tuple(array.size for array in row)
             max_size = max(sizes)
