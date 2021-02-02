@@ -305,34 +305,54 @@ def _expand_data_to_arrays(data: List[List[Any]], paramspecs: Sequence[ParamSpec
     types = [param.type for param in paramspecs]
     # if we have array type parameters expand all other parameters
     # to arrays
-    if 'array' in types and ('numeric' in types or 'text' in types
-                             or 'complex' in types):
-        first_array_element = types.index('array')
-        numeric_elms = [i for i, x in enumerate(types)
-                        if x == "numeric"]
-        complex_elms = [i for i, x in enumerate(types)
-                        if x == 'complex']
-        text_elms = [i for i, x in enumerate(types)
-                     if x == "text"]
+    if 'array' in types:
+
+        if ('numeric' in types or 'text' in types
+                or 'complex' in types):
+            first_array_element = types.index('array')
+            numeric_elms = [i for i, x in enumerate(types)
+                            if x == "numeric"]
+            complex_elms = [i for i, x in enumerate(types)
+                            if x == 'complex']
+            text_elms = [i for i, x in enumerate(types)
+                         if x == "text"]
+            for row in data:
+                for element in numeric_elms:
+                    row[element] = np.full_like(row[first_array_element],
+                                                row[element],
+                                                dtype=np.dtype(np.float64))
+                    # todo should we handle int/float types here
+                    # we would in practice have to perform another
+                    # loop to check that all elements of a given can be cast to
+                    # int without loosing precision before choosing an integer
+                    # representation of the array
+                for element in complex_elms:
+                    row[element] = np.full_like(row[first_array_element],
+                                                row[element],
+                                                dtype=np.dtype(np.complex128))
+                for element in text_elms:
+                    strlen = len(row[element])
+                    row[element] = np.full_like(row[first_array_element],
+                                                row[element],
+                                                dtype=np.dtype(f'U{strlen}'))
+
         for row in data:
-            for element in numeric_elms:
-                row[element] = np.full_like(row[first_array_element],
-                                            row[element],
-                                            dtype=np.dtype(np.float64))
-                # todo should we handle int/float types here
-                # we would in practice have to perform another
-                # loop to check that all elements of a given can be cast to
-                # int without loosing precision before choosing an integer
-                # representation of the array
-            for element in complex_elms:
-                row[element] = np.full_like(row[first_array_element],
-                                            row[element],
-                                            dtype=np.dtype(np.complex128))
-            for element in text_elms:
-                strlen = len(row[element])
-                row[element] = np.full_like(row[first_array_element],
-                                            row[element],
-                                            dtype=np.dtype(f'U{strlen}'))
+            # now expand all one element arrays to match the expected size
+            # one element arrays are introduced if scalar values are stored
+            # with an explicit array storage type
+            sizes = tuple(array.size for array in row)
+            max_size = max(sizes)
+            max_index = sizes.index(max_size)
+
+            for i, array in enumerate(row):
+                if array.size != max_size:
+                    if array.size == 1:
+                        row[i] = np.full_like(row[max_index],
+                                              row[i],
+                                              dtype=row[i].dtype)
+                    else:
+                        log.warning(f"Cannot expand array of size {array.size} "
+                                    f"to size {row[max_index].size}")
 
 
 def _get_data_for_one_param_tree(conn: ConnectionPlus, table_name: str,

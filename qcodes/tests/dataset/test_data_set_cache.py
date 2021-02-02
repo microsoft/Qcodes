@@ -306,10 +306,7 @@ def test_cache_1d_array_in_1d(experiment, DAC, channel_array_instrument, n_point
                 shape = (n_rows_written, param.shape[0])
             else:
                 shape = (n_rows_written * param.shape[0],)
-            if storage_type != 'array':
-                # with explicit array types the shape is incorrect
-                # https://github.com/QCoDeS/Qcodes/issues/2105
-                assert data[param.full_name][DAC.ch1.full_name].shape == shape
+            assert data[param.full_name][DAC.ch1.full_name].shape == shape
             assert data[param.full_name][setpoint_name].shape == shape
             assert data[param.full_name][param.full_name].shape == shape
             _assert_parameter_data_is_identical(dataset.get_parameter_data(),
@@ -344,10 +341,7 @@ def test_cache_multiparam_in_1d(experiment, DAC, channel_array_instrument, n_poi
                 else:
                     expected_shape = n_rows_written * np.prod(param.shapes[j])
                 assert data[subparam][subparam].shape == expected_shape
-                if storage_type != 'array':
-                    # with explicit array types the shape is incorrect
-                    # https://github.com/QCoDeS/Qcodes/issues/2105
-                    assert data[subparam][DAC.ch1.full_name].shape == expected_shape
+                assert data[subparam][DAC.ch1.full_name].shape == expected_shape
                 for setpoint_name in param.setpoint_full_names[j]:
                     assert data[subparam][setpoint_name].shape == expected_shape
             _assert_parameter_data_is_identical(dataset.get_parameter_data(),
@@ -390,10 +384,7 @@ def test_cache_complex_array_param_in_1d(experiment, DAC, channel_array_instrume
             else:
                 expected_shape = n_rows_written * np.prod(param.shape)
             assert data[param.full_name][param.full_name].shape == expected_shape
-            if storage_type != 'array':
-                # with explicit array types the shape is incorrect
-                # https://github.com/QCoDeS/Qcodes/issues/2105
-                assert data[param.full_name][outer_param.full_name].shape == expected_shape
+            assert data[param.full_name][outer_param.full_name].shape == expected_shape
             for setpoint_name in param.setpoint_full_names:
                 assert data[param.full_name][setpoint_name].shape == expected_shape
             _assert_parameter_data_is_identical(dataset.get_parameter_data(),
