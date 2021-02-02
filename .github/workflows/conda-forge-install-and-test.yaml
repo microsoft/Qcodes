@@ -31,5 +31,5 @@ jobs:
         activate-environment: qcodesforge
         environment-file: environment_forge_full.yml
         auto-activate-base: false
-     - run: |
-        pip install . --no-deps
+    - run: |
+      pip install . --no-deps
