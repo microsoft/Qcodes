@@ -193,6 +193,12 @@ class DMC4133(GalilInstrument):
                            vals=Ints(2, 15000000), # res 2
                            units="counts/sec",
                            docstring="sets and gets defined vector's speed")
+        self.add_parameter("half_circle_move_of_radius",
+                           set_cmd="CR {},0,180",
+                           vals=Ints(10, 6000000),  # res 1
+                           units="quadrature counts",
+                           docstring="defines half circle move in the "
+                                     "set vector mode")
         self.add_parameter("vector_seq_end",
                            set_cmd="VE",
                            docstring="indicates to the controller that the end"
