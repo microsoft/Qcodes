@@ -25,11 +25,11 @@ jobs:
       uses: actions/checkout@v2
       with:
         fetch-depth: '0'
-    - name: install dependencies
+    - name: install dependencies and qcodes
       uses: conda-incubator/setup-miniconda@v2
       with:
         activate-environment: qcodesforge
         environment-file: environment_forge_full.yml
-    - name: Install qcodes
-      run: |
+        auto-activate-base: false
+     - run: |
         pip install . --no-deps
