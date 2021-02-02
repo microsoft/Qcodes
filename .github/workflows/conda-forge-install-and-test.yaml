@@ -1,4 +1,4 @@
-name: Install all deps from conda-forge  and run pytest
+name: Install all deps from conda-forge and run pytest
 
 on:
   push:
@@ -25,16 +25,3 @@ jobs:
       uses: actions/checkout@v2
       with:
         fetch-depth: '0'
-    - name: install dependencies and qcodes
-      uses: conda-incubator/setup-miniconda@v2
-      with:
-        activate-environment: qcodesforge
-      run: |
-        conda env create --force -f environment_forge_full.yml
-        pip install . --no-deps
-    - name: run tests
-      uses: conda-incubator/setup-miniconda@v2
-      with:
-        activate-environment: qcodesforge
-      run: |
-        pytest
