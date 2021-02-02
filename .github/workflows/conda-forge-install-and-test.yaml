@@ -31,5 +31,7 @@ jobs:
         activate-environment: qcodesforge
         environment-file: environment_forge_full.yml
         auto-activate-base: false
-    - run: |
-      pip install . --no-deps
+    - name: install qcodes
+      run: |
+        conda info
+        pip install . --no-deps
