@@ -654,6 +654,9 @@ def _assert_parameter_data_is_identical(
         shaped_partial: bool = False
 ):
     assert expected.keys() == actual.keys()
+    # there is a tiny round trip loss in accuracy
+    # when serializing float types
+    approx_kinds = ('f', 'c')
 
     for outer_key in expected.keys():
         expected_inner = expected[outer_key]
@@ -665,11 +668,27 @@ def _assert_parameter_data_is_identical(
             if shaped_partial:
                 if len(expected_np_array.shape) > 1:
                     assert expected_np_array.shape[1:] == actual_np_array.shape[1:]
-                np.testing.assert_array_equal(expected_np_array.ravel(),
-                                              actual_np_array.ravel()[:expected_np_array.size])
+                if expected_np_array.dtype.kind in approx_kinds:
+                    np.testing.assert_array_almost_equal(
+                        expected_np_array.ravel(),
+                        actual_np_array.ravel()[:expected_np_array.size]
+                    )
+                else:
+                    np.testing.assert_array_equal(
+                        expected_np_array.ravel(),
+                        actual_np_array.ravel()[:expected_np_array.size]
+                    )
             else:
-                np.testing.assert_array_equal(expected_np_array.ravel(),
-                                              actual_np_array.ravel())
+                if expected_np_array.dtype.kind in approx_kinds:
+                    np.testing.assert_array_almost_equal(
+                        expected_np_array.ravel(),
+                        actual_np_array.ravel()
+                    )
+                else:
+                    np.testing.assert_array_equal(
+                        expected_np_array.ravel(),
+                        actual_np_array.ravel()
+                    )
 
 
 def _array_param_used_in_tree(measurement: Measurement) -> bool:
