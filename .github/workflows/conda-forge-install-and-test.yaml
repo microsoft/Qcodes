@@ -27,8 +27,8 @@ jobs:
         fetch-depth: '0'
     - name: install dependencies and qcodes
       uses: conda-incubator/setup-miniconda@v2
-        with:
-          activate-environment: qcodesforge
+      with:
+        activate-environment: qcodesforge
       run: |
         conda env create --force -f environment_forge_full.yml
         pip install . --no-deps
