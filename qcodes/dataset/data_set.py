@@ -1487,7 +1487,9 @@ class DataSet(Sized):
                     result_dict, toplevel_param,
                     inff_params, deps_params)
             else:
-                res_dict = {ps.name: result_dict[ps] for ps in all_params}
+                res_dict: Dict[str, Union[
+                    str, complex, List[Any], numpy.ndarray, bool, None
+                ]] = {ps.name: result_dict[ps] for ps in all_params}
                 res_list = [res_dict]
             self._results += res_list
 
