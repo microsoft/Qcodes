@@ -145,11 +145,13 @@ def test_cache_1d(experiment, DAC, DMM, n_points, bg_writing,
 
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("setpoints_type", ['text', 'numeric'])
+@pytest.mark.parametrize("in_memory_cache", [True, False])
 @settings(deadline=None, max_examples=10,
           suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(n_points=hst.integers(min_value=1, max_value=101))
 def test_cache_1d_every_other_point(experiment, DAC, DMM, n_points, bg_writing,
-                                    channel_array_instrument, setpoints_type):
+                                    channel_array_instrument, setpoints_type,
+                                    in_memory_cache):
 
     setpoints_param, setpoints_values = _prepare_setpoints_1d(DAC, channel_array_instrument,
                                                                                    n_points, setpoints_type)
@@ -165,7 +167,10 @@ def test_cache_1d_every_other_point(experiment, DAC, DMM, n_points, bg_writing,
     for param in meas_parameters:
         meas.register_parameter(param, setpoints=(setpoints_param,))
 
-    with meas.run(write_in_background=bg_writing) as datasaver:
+    with meas.run(
+            write_in_background=bg_writing,
+            in_memory_cache=in_memory_cache
+    ) as datasaver:
         dataset = datasaver.dataset
         _assert_parameter_data_is_identical(dataset.get_parameter_data(), dataset.cache.data())
         for i, v in enumerate(setpoints_values):
@@ -187,7 +192,11 @@ def test_cache_1d_every_other_point(experiment, DAC, DMM, n_points, bg_writing,
                                                 data)
     _assert_parameter_data_is_identical(dataset.get_parameter_data(),
                                         dataset.cache.data())
-    assert dataset.cache._loaded_from_completed_ds is True
+    if in_memory_cache is False:
+        assert dataset.cache._loaded_from_completed_ds is True
+    else:
+        # todo enable live cache to set this
+        assert dataset.cache._loaded_from_completed_ds is False
     _assert_parameter_data_is_identical(dataset.get_parameter_data(),
                                         dataset.cache.data())
 
