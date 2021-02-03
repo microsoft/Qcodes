@@ -3,6 +3,7 @@ This file holds the QCoDeS driver for the Galil DMC-41x3 motor controllers,
 colloquially known as the "stepper motors".
 """
 from typing import Any, Dict, Optional, List
+import numpy as np
 
 from qcodes import Instrument
 from qcodes.utils.validators import Enum, Numbers, Ints
@@ -156,49 +157,56 @@ class DMC4133(GalilInstrument):
         self.add_parameter("wait",
                            set_cmd="WT {}",
                            units="ms",
-                           vals=Ints(2, 2147483646),  # resolution is 2 find how
+                           vals=Enum(np.linespace(2, 2147483646, 2)),
                            docstring="controller will wait for the amount of "
                                      "time specified before executing the next "
                                      "command")
+
         self.add_parameter("vector_mode",
                            set_cmd="VM {}",
                            vals=Enum("AB", "BC", "AC"),
                            docstring="sets plane of motion for the motors")
+
         self.add_parameter("vector_position",
                            set_cmd="VP {},{}", #make group param
                            vals=Ints(-2147483648, 2147483647),
                            units="quadrature counts",
                            docstring="can set initial and final vector "
                                      "positions for the motion")
+
         self.add_parameter("vector_acceleration",
                            get_cmd="VA ?",
                            get_parser=int,
                            set_cmd="VA {}",
-                           vals=Ints(1024, 1073740800),  #res 1024
+                           vals=Enum(np.linespace(1024, 1073740800, 1024)),
                            units="counts/sec2",
                            docstring="sets and gets the defined vector's "
                                      "acceleration")
+
         self.add_parameter("vector_deceleration",
                            get_cmd="VD ?",
                            get_parser=int,
                            set_cmd="VD {}",
-                           vals=Ints(1024, 1073740800),  # res 1024
+                           vals=Enum(np.linspace(1024, 1073740800, 1024)),
                            units="counts/sec2",
                            docstring="sets and gets the defined vector's "
                                      "deceleration")
+
         self.add_parameter("vector_speed",
                            get_cmd="VS ?",
                            get_parser=int,
                            set_cmd="VS {}",
-                           vals=Ints(2, 15000000), # res 2
+                           vals=Enum(np.linespace(2, 15000000, 2)),
                            units="counts/sec",
                            docstring="sets and gets defined vector's speed")
+
         self.add_parameter("half_circle_move_of_radius",
                            set_cmd="CR {},0,180",
-                           vals=Ints(10, 6000000),  # res 1
+                           vals=Ints(10, 6000000),
                            units="quadrature counts",
                            docstring="defines half circle move in the "
                                      "set vector mode")
+
         self.add_parameter("vector_seq_end",
                            set_cmd="VE",
                            docstring="indicates to the controller that the end"
