@@ -297,7 +297,7 @@ def _insert_into_data_dict(
             n_existing = existing_values.shape[0]
             n_new = new_values.shape[0]
             n_rows = n_existing + n_new
-            data = np.ndarray(n_rows, dtype=object)
+            data = np.ndarray((n_rows,), dtype=object)
 
             for i in range(n_existing):
                 data[i] = np.atleast_1d(existing_values[i])
