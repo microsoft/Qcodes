@@ -290,7 +290,20 @@ def _insert_into_data_dict(
         shape: Optional[Tuple[int, ...]]
 ) -> Tuple[np.ndarray, Optional[int]]:
     if shape is None or write_status is None:
-        return np.append(existing_values, new_values, axis=0), None
+        try:
+            data = np.append(existing_values, new_values, axis=0)
+        except ValueError:
+            # we cannot append into a ragged array so make that manually
+            n_existing = existing_values.shape[0]
+            n_new = new_values.shape[0]
+            n_rows = n_existing + n_new
+            data = np.ndarray(n_rows, dtype=object)
+
+            for i in range(n_existing):
+                data[i] = np.atleast_1d(existing_values[i])
+            for i, j in enumerate(range(n_existing, n_existing+n_new)):
+                data[j] = np.atleast_1d(new_values[i])
+        return data, None
     else:
         if existing_values.dtype.kind in ('U', 'S'):
             # string type arrays may be too small for the new data
