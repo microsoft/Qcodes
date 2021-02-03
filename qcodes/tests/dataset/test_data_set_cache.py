@@ -286,7 +286,7 @@ def test_cache_2d_num_with_multiple_storage_types(experiment, DAC, DMM, n_points
                 datasaver.flush_data_to_database(block=True)
                 n_rows_written += 1
                 data = dataset.cache.data()
-                if array_used and not in_memory_cache:
+                if array_used:
                     shape = (n_rows_written, 1)
                 else:
                     shape = (n_rows_written,)
@@ -323,7 +323,7 @@ def test_cache_1d_array_in_1d(experiment, DAC, channel_array_instrument,
             datasaver.flush_data_to_database(block=True)
             data = dataset.cache.data()
             n_rows_written = i+1
-            if array_used and not in_memory_cache:
+            if array_used:
                 shape = (n_rows_written, param.shape[0])
             else:
                 shape = (n_rows_written * param.shape[0],)
@@ -360,7 +360,7 @@ def test_cache_multiparam_in_1d(experiment, DAC, channel_array_instrument,
             data = dataset.cache.data()
             n_rows_written = i+1
             for j, subparam in enumerate(param.full_names):
-                if array_used and not in_memory_cache:
+                if array_used:
                     expected_shape = (n_rows_written,) + param.shapes[j]
                 elif in_memory_cache:
                     # todo fix this
@@ -410,7 +410,7 @@ def test_cache_complex_array_param_in_1d(experiment, DAC, channel_array_instrume
             data = dataset.cache.data()
             n_rows_written = i+1
 
-            if array_used and not in_memory_cache:
+            if array_used:
                 expected_shape = (n_rows_written,) + param.shape
             elif in_memory_cache:
                 # todo fix this
