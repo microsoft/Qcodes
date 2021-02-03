@@ -1474,10 +1474,18 @@ class DataSet(Sized):
             all_params = (inff_params
                           .union(deps_params)
                           .union({toplevel_param}))
-            new_results[toplevel_param.name] = {
-                param.name: numpy.atleast_1d(result_dict[param])
-                for param in all_params
-            }
+
+            new_results[toplevel_param.name] = {}
+            for param in all_params:
+                param_data = numpy.atleast_1d(result_dict[param])
+                if param.type == "array":
+                    # make array type look like the do when loaded from the db
+                    new_results[toplevel_param.name][param.name] = numpy.reshape(
+                        param_data,
+                        (1, ) + param_data.shape
+                    )
+                else:
+                    new_results[toplevel_param.name][param.name] = param_data
 
             if toplevel_param.type == 'array':
                 res_list = self._finalize_res_dict_array(
@@ -1501,7 +1509,15 @@ class DataSet(Sized):
         if standalones:
             stdln_dict = {st: result_dict[st] for st in standalones}
             for st in standalones:
-                new_results[st.name] = {st.name: numpy.atleast_1d(result_dict[st])}
+                st_data = numpy.atleast_1d(result_dict[st])
+                if st.type == "array":
+                    # make array type look like the do when loaded from the db
+                    new_results[st.name][st.name] = numpy.reshape(
+                        st_data,
+                        (1, ) + st_data.shape
+                    )
+                else:
+                    new_results[st.name][st.name] = st_data
             self._results += self._finalize_res_dict_standalones(stdln_dict)
 
         if self._in_memory_cache:
