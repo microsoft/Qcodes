@@ -95,23 +95,23 @@ class DMC4133(GalilInstrument):
 
         self.add_parameter("move_a",
                            set_cmd=self._move_motor_a,
-                           units="microns",
-                           vals=Numbers(-107374182.4, 107374182.35),  # 0.05 res
-                           docstring="moves motor a along x-axis. negative "
+                           vals=Ints(-2147483648, 2147483647),
+                           units="quadrature counts",
+                           docstring="moves motor A along x-axis. negative "
                                      "value indicates movement along -x axis.")
 
         self.add_parameter("move_b",
                            set_cmd=self._move_motor_b,
-                           units="microns",
-                           vals=Numbers(-107374182.4, 107374182.35),
-                           docstring="moves motor b along y-axis. negative "
+                           vals=Ints(-2147483648, 2147483647),
+                           units="quadrature counts",
+                           docstring="moves motor B along y-axis. negative "
                                      "value indicates movement along -y axis.")
 
         self.add_parameter("move_c",
                            set_cmd=self._move_motor_c,
-                           units="microns",
-                           vals=Numbers(-107374182.4, 107374182.35),
-                           docstring="moves motor c along z-axis. negative "
+                           vals=Ints(-2147483648, 2147483647),
+                           units="quadrature counts",
+                           docstring="moves motor C along z-axis. negative "
                                      "value indicates movement along -z axis.")
 
         self.add_parameter("position_format_decimals",
@@ -122,7 +122,7 @@ class DMC4133(GalilInstrument):
 
         self.add_parameter("absolute_position",
                            get_cmd=self._get_absolute_position,
-                           units="microns",
+                           units="quadrature counts",
                            docstring="gets absolute position of the motors "
                                      "from the set origin")
 
@@ -135,7 +135,7 @@ class DMC4133(GalilInstrument):
                                      "without argument tells the status of "
                                      "motors")
 
-        self.add_parameter("begin_motor",
+        self.add_parameter("begin",
                            set_cmd="BG {}",
                            vals=Enum("A", "B", "C", "S"),
                            docstring="begins the specified motor or sequence "
@@ -147,7 +147,7 @@ class DMC4133(GalilInstrument):
                            docstring="servo at the specified motor"
                            )
 
-        self.add_parameter("after_motion_of_motor",
+        self.add_parameter("after_motion",
                            set_cmd="AM {}",
                            vals=Enum("A", "B", "C", "S"),
                            docstring="wait till motion of given motor or "
@@ -209,48 +209,39 @@ class DMC4133(GalilInstrument):
 
     def _move_motor_a(self, val: int) -> None:
         """
-        this method converts the given distance in microns into quadrature
-        counts and moves motor A to that amount from the current position
-
-        note: 50 microns equals 1000 quadrature counts
+        moves motor A to the given amount from the current position
         """
         self.motor_off("A")
         self.servo_at_motor("A")
-        self.write(f"PRA={val*20}")
+        self.write(f"PRA={val}")
         self.write("SPA=1000")
         self.write("ACA=500000")
         self.write("DCA=500000")
-        self.begin_motor("A")
+        self.begin("A")
 
     def _move_motor_b(self, val: int) -> None:
         """
-        this method converts the given distance in microns into quadrature
-        counts and moves motor B to that amount from the current position
-
-        note: 50 microns equals 1000 quadrature counts
+        moves motor B to the given amount from the current position
         """
         self.motor_off("B")
         self.servo_at_motor("B")
-        self.write(f"PRB={val*20}")
+        self.write(f"PRB={val}")
         self.write("SPB=1000")
         self.write("ACB=500000")
         self.write("DCB=500000")
-        self.begin_motor("B")
+        self.begin("B")
 
     def _move_motor_c(self, val: int) -> None:
         """
-        this method converts the given distance in microns into quadrature
-        counts and moves motor C to that amount from the current position
-
-        note: 50 microns equals 1000 quadrature counts
+        moves motor C to the given amount from the current position
         """
         self.motor_off("C")
         self.servo_at_motor("C")
-        self.write(f"PRC={val*20}")
+        self.write(f"PRC={val}")
         self.write("SPC=1000")
         self.write("ACC=500000")
         self.write("DCC=500000")
-        self.begin_motor("C")
+        self.begin("C")
 
     @staticmethod
     def _motor_on_off_status(val: str) -> Dict[str, str]:
@@ -277,15 +268,15 @@ class DMC4133(GalilInstrument):
 
         return result
 
-    def _get_absolute_position(self) -> Dict[str, float]:
+    def _get_absolute_position(self) -> Dict[str, int]:
         """
         gets absolution position of the motors from the defined origin
         """
         result = dict()
         data = self.ask("PA ?,?,?").split(" ")
-        result["A"] = int(data[0][:-1])/20
-        result["B"] = int(data[1][:-1])/20
-        result["C"] = int(data[2])/20
+        result["A"] = int(data[0][:-1])
+        result["B"] = int(data[1][:-1])
+        result["C"] = int(data[2])
 
         return result
 
