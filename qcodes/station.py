@@ -184,7 +184,8 @@ class Station(Metadatable, DelegateAttributes):
             elif isinstance(itm, (Parameter,
                                   ManualParameter
                                   )):
-                snap['parameters'][name] = itm.snapshot(update=update)
+                if not itm.snapshot_exclude:
+                    snap['parameters'][name] = itm.snapshot(update=update)
             else:
                 snap['components'][name] = itm.snapshot(update=update)
 
