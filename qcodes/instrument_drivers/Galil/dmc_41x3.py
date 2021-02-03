@@ -162,6 +162,19 @@ class DMC4133(GalilInstrument):
                                      "time specified before executing the next "
                                      "command")
 
+        self.add_parameter("coordinate_system",
+                           get_cmd="CA ?",
+                           get_parser=self._parse_coordinate_system_active,
+                           set_cmd="CA {}",
+                           vals=Enum("S", "T"),
+                           docstring="sets coordinate system for the motion")
+
+        self.add_parameter("clear_sequence",
+                           set_cmd="CS {}",
+                           vals=Enum("S", "T"),
+                           docstring="clears vectors specified in the given "
+                                     "coordinate system")
+
         self.add_parameter("vector_mode",
                            set_cmd="VM {}",
                            vals=Enum("AB", "BC", "AC"),
@@ -287,6 +300,22 @@ class DMC4133(GalilInstrument):
         result["C"] = int(data[2])
 
         return result
+
+    @staticmethod
+    def _parse_coordinate_system_active(val: str) -> str:
+        """
+        parses the the current active coordinate system
+        """
+        if int(val):
+            return "T"
+        else:
+            return "S"
+
+    def end_program(self) -> None:
+        """
+        ends the program
+        """
+        self.write("EN")
 
     def define_position_as_origin(self) -> None:
         """
