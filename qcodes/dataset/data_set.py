@@ -1509,6 +1509,7 @@ class DataSet(Sized):
         if standalones:
             stdln_dict = {st: result_dict[st] for st in standalones}
             for st in standalones:
+                new_results[st.name] = {}
                 st_data = numpy.atleast_1d(result_dict[st])
                 if st.type == "array":
                     # make array type look like the do when loaded from the db
