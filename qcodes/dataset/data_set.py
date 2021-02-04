@@ -1515,9 +1515,13 @@ class DataSet(Sized):
             param: ParamSpecBase,
             param_data: numpy.ndarray
     ) -> numpy.ndarray:
+        """
+        Shape cache data so it matches data read from dd.
+        Add an extra singleton dim to array data and flatten
+        non array data into a linear array.
+        """
         param_data = numpy.atleast_1d(param_data)
         if param.type == "array":
-            # make array type look like the do when loaded from the db
             new_data = numpy.reshape(
                 param_data,
                 (1,) + param_data.shape
@@ -1842,7 +1846,8 @@ def new_data_set(name: str,
         specs: list of parameters to create this dataset with
         values: the values to associate with the parameters
         metadata: the metadata to associate with the dataset
-        in_memory_cache: TODO
+        in_memory_cache: Should measured data be keep in memory
+            and available as part of the `dataset.cache` object.
 
     Return:
         the newly created :class:`.DataSet`

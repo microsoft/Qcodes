@@ -1116,7 +1116,8 @@ class Measurement:
                 main thread that is executing the context manager.
                 By default the setting for write in background will be
                 read from the ``qcodesrc.json`` config file.
-            in_memory_cache: TODO
+            in_memory_cache: Should measured data be keep in memory
+                and available as part of the `dataset.cache` object.
         """
         if write_in_background is None:
             write_in_background = qc.config.dataset.write_in_background
