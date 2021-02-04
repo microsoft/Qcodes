@@ -157,7 +157,7 @@ class DMC4133(GalilInstrument):
         self.add_parameter("wait",
                            set_cmd="WT {}",
                            units="ms",
-                           vals=Enum(np.linespace(2, 2147483646, 2)),
+                           vals=Enum(np.linspace(2, 2147483646, 2)),
                            docstring="controller will wait for the amount of "
                                      "time specified before executing the next "
                                      "command")
@@ -191,7 +191,7 @@ class DMC4133(GalilInstrument):
                            get_cmd="VA ?",
                            get_parser=int,
                            set_cmd="VA {}",
-                           vals=Enum(np.linespace(1024, 1073740800, 1024)),
+                           vals=Enum(np.linspace(1024, 1073740800, 1024)),
                            units="counts/sec2",
                            docstring="sets and gets the defined vector's "
                                      "acceleration")
@@ -209,7 +209,7 @@ class DMC4133(GalilInstrument):
                            get_cmd="VS ?",
                            get_parser=int,
                            set_cmd="VS {}",
-                           vals=Enum(np.linespace(2, 15000000, 2)),
+                           vals=Enum(np.linspace(2, 15000000, 2)),
                            units="counts/sec",
                            docstring="sets and gets defined vector's speed")
 
