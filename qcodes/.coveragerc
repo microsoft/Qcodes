@@ -1,8 +1,0 @@
-[run]
-omit =
-    __init__.py
-    */__init__.py
-    _version.py
-    test.py
-    tests/*
-    instrument_drivers/test.py
