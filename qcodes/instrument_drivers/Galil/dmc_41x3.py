@@ -6,7 +6,7 @@ from typing import Any, Dict, Optional, List
 import numpy as np
 
 from qcodes import Instrument
-from qcodes.utils.validators import Enum, Numbers, Ints
+from qcodes.utils.validators import Enum, Ints
 
 try:
     import gclib
@@ -340,6 +340,90 @@ class DMC4133(GalilInstrument):
         aborts motion and the program operation
         """
         self.write("AB")
+
+    def home(self) -> None:
+        """
+         performs a three stage homing sequence for servo systems and a two
+         stage sequence for stepper motors.
+
+         Step One. Servos and Steppers
+            - During the first stage of the homing sequence, the motor moves at
+            the user-programmed speed until detecting a transition on the
+            homing input for that axis. The speed for step one is set with the
+            SP command.
+
+            - The direction for this first stage is determined by the
+            initial state of the homing input. The state of the homing input
+            can be configured using the second field of the CN command.
+
+            - Once the homing input changes state, the motor decelerates to a
+            stop.
+
+        Step Two. Servos and Steppers
+            - At the second stage, the motor changes directions and
+            approaches the transition again at the speed set with the
+            HV command. When the transition is detected, the motor is stopped
+            instantaneously.
+
+        Step Three. Servos only
+            - At the third stage, the motor moves in the positive direction
+            at the speed set with the HV command until it detects an index
+            pulse via latch from the encoder. It returns to the latched
+            position and defines it as position 0.
+        """
+        # setup for homing
+        self.write("SP 2000,2000,2000")
+        self.write("CN ,-1")
+        self.write("HV 256,256,256")
+
+        # home command
+        self.write("HM")
+
+        # begin motion
+        self.write("BG")
+
+        # wait for motion to finish
+        self.write("AM")
+
+    def error_magnitude(self) -> Dict[str, int]:
+        """
+        gives the magnitude of error, in drive step counts, for axes in
+        Stepper Position Maintenance mode.
+
+        a step count is directly proportional to the micro-stepping
+        resolution of the stepper drive.
+        """
+        data = self.ask("QS").split(",")
+        return {"A": int(data[0]), "B": int(data[1]), "C": int(data[2])}
+
+    def _setup_spm(self) -> None:
+        """
+        sets up for Stepper Position Maintenance (SPM) mode
+        """
+        self.write("OE 1,1,1")   # Set the profiler to stop axis upon error
+        self.write("KS 16,16,16")  # Set step smoothing
+        self.write("MT -2,-2,-2")  # Motor type set to stepper
+        self.write("YA 1,1,1")     # Step resolution of the drive
+        self.write("YB 200,200,200")   # Motor resolution (full steps per revolution)
+        self.write("YC 4000,4000,4000")  # Encoder resolution (counts per revolution)
+
+    def enable_stepper_position_maintenance_mode(self, motor: str) -> None:
+        """
+        enables Stepper Position Maintenance mode and allows for error
+        correction when error happens
+        """
+        cmd = "YS"
+        if motor == "A":
+            cmd = cmd + " 1"
+        elif motor == "B":
+            cmd = cmd + ",1"
+        else:
+            cmd = cmd + ",,1"
+
+        self._setup_spm()
+        self.servo_at_motor(motor)  # Enable axis
+        self.wait(50)  # Allow slight settle time
+        self.write(cmd)
 
 
 class Arm:
