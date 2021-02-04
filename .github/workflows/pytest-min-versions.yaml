@@ -55,5 +55,4 @@ jobs:
       run: pip install .
     - name: Run tests
       run: |
-        cd qcodes
-        py.test --hypothesis-profile ci
+        pytest --hypothesis-profile ci qcodes
