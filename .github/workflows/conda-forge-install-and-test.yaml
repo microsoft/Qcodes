@@ -36,3 +36,7 @@ jobs:
       run: |
         conda info
         pip install . --no-deps
+    - name: run tests
+      shell: bash -l {0}
+      run: |
+        pytest
