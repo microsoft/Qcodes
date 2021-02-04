@@ -50,9 +50,9 @@ class DataSetCache:
         If the dataset is marked completed and data has already been loaded
         no load will be performed.
         """
-        # todo add force reload
         if self.live:
-            raise RuntimeError("TODO")
+            raise RuntimeError("Cannot read data into this cache from the database "
+                               "as the dataset is build directly from measured data." )
 
         if self._loaded_from_completed_ds:
             return
@@ -79,10 +79,8 @@ class DataSetCache:
     @property
     def live(self) -> Optional[bool]:
         """
-        TODO docstring
-
-        Returns:
-
+        If true this cache has been produced by appending data as measured.
+        If false the data has been read from disk.
         """
         return self._live
 
