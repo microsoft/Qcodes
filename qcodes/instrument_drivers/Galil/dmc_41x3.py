@@ -416,9 +416,9 @@ class DMC4133(GalilInstrument):
         if motor == "A":
             cmd = cmd + " 1"
         elif motor == "B":
-            cmd = cmd + ",1"
+            cmd = cmd + " ,1"
         else:
-            cmd = cmd + ",,1"
+            cmd = cmd + " ,,1"
 
         self._setup_spm()
         self.servo_at_motor(motor)  # Enable axis
