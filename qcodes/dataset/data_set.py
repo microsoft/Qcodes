@@ -1525,7 +1525,7 @@ class DataSet(Sized):
             new_data = numpy.reshape(
                 param_data,
                 (1,) + param_data.shape
-        )
+            )
         else:
             new_data = param_data.ravel()
         return new_data
