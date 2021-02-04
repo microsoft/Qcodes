@@ -23,17 +23,19 @@ class Agilent_E8527D(VisaInstrument):
         self._options = self.ask_raw('DIAG:CPU:INFO:OPT:DET?')
 
         # Determine installed frequency option
-        f_option = None
+        frequency_option = None
         for f_option in ['513', '520', '521', '532', '540', '550', '567']:
             if f_option in self._options:
                 frequency_option = f_option
-        if f_option == None:
+        if frequency_option == None:
             raise RuntimeError('Could not determine the frequency option')
 
-        # convert installed frequency option to frequency ranges, based on: 
-        # https://www.keysight.com/us/en/assets/7018-01233/configuration-guides/5989-1325.pdf
-        # the frequency range here is the max range and not the specified (calibrated) one
-        frequency_options_dict = {
+        # convert installed frequency option to frequency ranges, based on:
+        # https://www.keysight.com/us/en/assets/7018-01233/configuration-guides
+        # /5989-1325.pdf
+        # the frequency range here is the max range and not the specified 
+        # (calibrated) one
+        f_options_dict = {
             "513": (100e3, 13e9),
             "520": (100e3, 20e9),
             "521": (10e6, 20e9),
@@ -46,14 +48,17 @@ class Agilent_E8527D(VisaInstrument):
         # assign min and max frequencies
         self._min_freq: float
         self._max_freq: float
-        self._min_freq, self._max_freq = frequency_options_dict[frequency_option]
+        self._min_freq, self._max_freq = f_options_dict[frequency_option]
 
-        # Based on installed frequency option and presence/absence of step attenuator (option '1E1')
-        # determine power range based on: https://www.keysight.com/us/en/assets/7018-01211/data-sheets/5989-0698.pdf
+        # Based on installed frequency option and presence/absence of step 
+        # attenuator (option '1E1') determine power range based on:
+        # https://www.keysight.com/us/en/assets/7018-01211/data-sheets
+        # /5989-0698.pdf
 
+        # assign min and max powers
         self._min_power: float
         self._max_power: float
-        
+
         if '1E1' in self._options:
             if frequency_option in ['513', '520', '521', '532', '540']:
                 self._min_power = -135
