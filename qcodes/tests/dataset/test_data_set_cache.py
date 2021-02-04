@@ -362,9 +362,6 @@ def test_cache_multiparam_in_1d(experiment, DAC, channel_array_instrument,
             for j, subparam in enumerate(param.full_names):
                 if array_used:
                     expected_shape = (n_rows_written,) + param.shapes[j]
-                elif in_memory_cache:
-                    # todo fix this
-                    expected_shape = (param.shapes[j][0] * n_rows_written,) + param.shapes[j][1:]
                 else:
                     expected_shape = (n_rows_written * np.prod(param.shapes[j]), )
                 assert data[subparam][subparam].shape == expected_shape
@@ -412,9 +409,6 @@ def test_cache_complex_array_param_in_1d(experiment, DAC, channel_array_instrume
 
             if array_used:
                 expected_shape = (n_rows_written,) + param.shape
-            elif in_memory_cache:
-                # todo fix this
-                expected_shape = (param.shape[0] * n_rows_written,) + param.shape[1:]
             else:
                 expected_shape = n_rows_written * np.prod(param.shape)
             assert data[param.full_name][param.full_name].shape == expected_shape
