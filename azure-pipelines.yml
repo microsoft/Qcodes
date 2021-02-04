@@ -95,30 +95,28 @@ jobs:
         condition: succeededOrFailed()
       - bash: |
           source activate qcodes &&
-          cd qcodes &&
-          pytest -m "not serial" --junitxml=test-parallel-results.xml --cov=qcodes --cov-report=xml --cov-config=.coveragerc --hypothesis-profile ci &&
-          pytest -n 0 --dist no -m serial --junitxml=test-serial-results.xml --cov-append --cov=qcodes --cov-report=xml --cov-config=.coveragerc --hypothesis-profile ci
+          pytest -m "not serial" --junitxml=test-parallel-results.xml --cov=qcodes --cov-report=xml --cov-config=setup.cfg --hypothesis-profile ci qcodes &&
+          pytest -n 0 --dist no -m serial --junitxml=test-serial-results.xml --cov-append --cov=qcodes --cov-report=xml--cov-config=setup.cfg --hypothesis-profile ci qcodes
         displayName: "Pytest on Windows"
         condition: and(succeededOrFailed(), eq( variables['Agent.OS'], 'Windows_NT' ))
       - bash: |
           source activate qcodes &&
-          cd qcodes &&
           xvfb-run --server-args="-screen 0 1024x768x24" \
-            pytest --junitxml=test-parallel-results.xml --cov=qcodes --cov-report=xml --cov-config=.coveragerc --hypothesis-profile ci
+            pytest --junitxml=test-parallel-results.xml --cov=qcodes --cov-report=xml --cov-config=setup.cfg --hypothesis-profile ci qcodes
         displayName: "Pytest on Linux"
         condition: and(succeededOrFailed(), eq( variables['Agent.OS'], 'Linux' ))
       - task: PublishTestResults@2
         displayName: "Publish test results"
         condition: succeededOrFailed()
         inputs:
-          testResultsFiles: '**/test-*.xml'
+          testResultsFiles: 'test-*.xml'
           testRunTitle: 'Publish test results'
       - task: PublishCodeCoverageResults@1
         displayName: "Publish code coverage results"
         condition: succeededOrFailed()
         inputs:
           codeCoverageTool: Cobertura
-          summaryFileLocation: '$(System.DefaultWorkingDirectory)/qcodes/coverage.xml'
+          summaryFileLocation: '$(System.DefaultWorkingDirectory)/coverage.xml'
       - script: |
           CALL C:\Miniconda\condabin\conda_hook.bat && ^
           CALL conda activate qcodes && ^
