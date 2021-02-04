@@ -29,8 +29,6 @@ from qcodes.utils.types import numpy_ints, numpy_floats
 
 from qcodes.tests.dataset.helper_functions import verify_data_dict
 
-pytest.register_assert_rewrite('qcodes.tests.dataset.helper_functions')
-
 n_experiments = 0
 
 
