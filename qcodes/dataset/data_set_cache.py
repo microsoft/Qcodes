@@ -51,8 +51,9 @@ class DataSetCache:
         no load will be performed.
         """
         if self.live:
-            raise RuntimeError("Cannot read data into this cache from the database "
-                               "as the dataset is build directly from measured data." )
+            raise RuntimeError("Cannot read data into this cache from the "
+                               "database as the dataset is build "
+                               "directly from measured data.")
 
         if self._loaded_from_completed_ds:
             return
@@ -106,9 +107,14 @@ class DataSetCache:
         old_write_status = self._write_status
         expanded_data = {}
         for param_name, single_param_dict in new_data.items():
-            expanded_data[param_name] = _expand_single_param_dict(single_param_dict)
+            expanded_data[param_name] = _expand_single_param_dict(
+                single_param_dict
+            )
 
-        self._write_status, self._data = append_shaped_parameter_data_to_existing_arrays(
+        (
+            self._write_status,
+            self._data
+        ) = append_shaped_parameter_data_to_existing_arrays(
             self.rundescriber,
             self._write_status,
             self._data,
@@ -323,7 +329,9 @@ def _insert_into_data_dict(
             return existing_values, new_write_status
 
 
-def _expand_single_param_dict(single_param_dict: Mapping[str, np.ndarray]) -> Dict[str, np.ndarray]:
+def _expand_single_param_dict(
+        single_param_dict: Mapping[str, np.ndarray]
+) -> Dict[str, np.ndarray]:
     sizes = {name: array.size for name, array in single_param_dict.items()}
     maxsize = max(sizes.values())
     max_names = tuple(name for name, size in sizes.items() if size == maxsize)

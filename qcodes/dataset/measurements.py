@@ -504,7 +504,10 @@ class Runner:
                 self.name, self.experiment.exp_id, conn=self.experiment.conn,
             )
         else:
-            self.ds = qc.new_data_set(self.name, in_memory_cache=self._in_memory_cache)
+            self.ds = qc.new_data_set(
+                self.name,
+                in_memory_cache=self._in_memory_cache
+            )
 
         # .. and give the dataset a snapshot as metadata
         if self.station is None:
