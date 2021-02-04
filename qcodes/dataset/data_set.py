@@ -1485,7 +1485,7 @@ class DataSet(Sized):
                         (1, ) + param_data.shape
                     )
                 else:
-                    new_results[toplevel_param.name][param.name] = param_data
+                    new_results[toplevel_param.name][param.name] = param_data.ravel()
 
             if toplevel_param.type == 'array':
                 res_list = self._finalize_res_dict_array(
@@ -1518,7 +1518,7 @@ class DataSet(Sized):
                         (1, ) + st_data.shape
                     )
                 else:
-                    new_results[st.name][st.name] = st_data
+                    new_results[st.name][st.name] = st_data.ravel()
             self._results += self._finalize_res_dict_standalones(stdln_dict)
 
         if self._in_memory_cache:
