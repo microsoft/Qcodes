@@ -1477,15 +1477,10 @@ class DataSet(Sized):
 
             new_results[toplevel_param.name] = {}
             for param in all_params:
-                param_data = numpy.atleast_1d(result_dict[param])
-                if param.type == "array":
-                    # make array type look like the do when loaded from the db
-                    new_results[toplevel_param.name][param.name] = numpy.reshape(
-                        param_data,
-                        (1, ) + param_data.shape
-                    )
-                else:
-                    new_results[toplevel_param.name][param.name] = param_data.ravel()
+                new_results[toplevel_param.name][param.name] = self._reshape_array_for_cache(
+                    param,
+                    result_dict[param]
+                )
 
             if toplevel_param.type == 'array':
                 res_list = self._finalize_res_dict_array(
@@ -1507,20 +1502,29 @@ class DataSet(Sized):
         if standalones:
             stdln_dict = {st: result_dict[st] for st in standalones}
             for st in standalones:
-                new_results[st.name] = {}
-                st_data = numpy.atleast_1d(result_dict[st])
-                if st.type == "array":
-                    # make array type look like the do when loaded from the db
-                    new_results[st.name][st.name] = numpy.reshape(
-                        st_data,
-                        (1, ) + st_data.shape
-                    )
-                else:
-                    new_results[st.name][st.name] = st_data.ravel()
+                new_results[st.name] = {
+                    st.name: self._reshape_array_for_cache(st, result_dict[st])
+                }
             self._results += self._finalize_res_dict_standalones(stdln_dict)
 
         if self._in_memory_cache:
             self.cache.add_data(new_results)
+
+    @staticmethod
+    def _reshape_array_for_cache(
+            param: ParamSpecBase,
+            param_data: numpy.ndarray
+    ) -> numpy.ndarray:
+        param_data = numpy.atleast_1d(param_data)
+        if param.type == "array":
+            # make array type look like the do when loaded from the db
+            new_data = numpy.reshape(
+                param_data,
+                (1,) + param_data.shape
+        )
+        else:
+            new_data = param_data.ravel()
+        return new_data
 
     @staticmethod
     def _finalize_res_dict_array(
