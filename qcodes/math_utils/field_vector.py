@@ -331,6 +331,8 @@ class FieldVector:
 
     @property
     def theta(self) -> Optional[float]:
+        if self._theta is None:
+            return None
         return float(np.degrees(self._theta))
 
     @property
@@ -339,6 +341,8 @@ class FieldVector:
 
     @property
     def phi(self) -> Optional[float]:
+        if self._phi is None:
+            return None
         return float(np.degrees(self._phi))
 
     # Representation Methods #

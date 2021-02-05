@@ -5,11 +5,14 @@ import numpy as np
 
 from qcodes import IPInstrument, MultiParameter
 from qcodes.utils.validators import Enum, Bool
+from qcodes.utils.deprecate import deprecate
 
 import logging
 
 log = logging.getLogger(__name__)
 
+
+@deprecate(alternative="MercuryiPS_VISA.MercuryiPS")
 class MercuryiPSArray(MultiParameter):
     """
     This parameter holds the MercuryiPS's 3 dimensional parameters
@@ -35,6 +38,7 @@ class MercuryiPSArray(MultiParameter):
         return self._set(setpoint)
 
 
+@deprecate(alternative="MercuryiPS_VISA.MercuryiPS")
 class MercuryiPS(IPInstrument):
     """
     This is the qcodes driver for the Oxford MercuryiPS magnet power supply.

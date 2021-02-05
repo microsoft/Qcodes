@@ -1,4 +1,5 @@
 from collections import namedtuple
+from typing import Any
 
 import pytest
 
@@ -109,7 +110,7 @@ class GetSetRawParameter(Parameter):
         pass
 
 
-class BookkeepingValidator(vals.Validator):
+class BookkeepingValidator(vals.Validator[Any]):
     """
     Validator that keeps track of what it validates
     """

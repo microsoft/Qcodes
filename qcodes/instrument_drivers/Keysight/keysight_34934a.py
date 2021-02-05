@@ -117,7 +117,7 @@ class Keysight34934A(KeysightSwitchMatrixSubModule):
             rows: int,
             columns: int,
             wiring_config: Optional[str] = ''
-    ) -> Callable:
+    ) -> Callable[[int, int], str]:
         """
         to select the correct numbering function based on the matrix layout.
         On P168 of the user's guide for Agilent 34934A High Density Matrix

@@ -3,6 +3,7 @@ import re
 from functools import partial
 import logging
 from traceback import format_exc
+from typing import Optional, Any, Union, List, Dict
 
 from qcodes import IPInstrument
 from qcodes.utils.validators import Enum, Ints
@@ -26,8 +27,15 @@ class Triton(IPInstrument):
         fetch registry directly from fridge-computer
     """
 
-    def __init__(self, name, address=None, port=None, terminator='\r\n',
-                 tmpfile=None, timeout=20, **kwargs):
+    def __init__(
+            self,
+            name: str,
+            address: Optional[str] = None,
+            port: Optional[int] = None,
+            terminator: str = '\r\n',
+            tmpfile: Optional[str] = None,
+            timeout: float = 20,
+            **kwargs: Any):
         super().__init__(name, address=address, port=port,
                          terminator=terminator, timeout=timeout, **kwargs)
 
@@ -142,8 +150,8 @@ class Triton(IPInstrument):
                            unit='T/min',
                            get_cmd=partial(self._get_control_B_param, 'RVST:TIME'))
 
-        self.chan_alias = {}
-        self.chan_temp_names = {}
+        self.chan_alias: Dict[str, str] = {}
+        self.chan_temp_names: Dict[str, Dict[str, Optional[str]]] = {}
         if tmpfile is not None:
             self._get_temp_channel_names(tmpfile)
         self._get_temp_channels()
@@ -157,7 +165,7 @@ class Triton(IPInstrument):
 
         self.connect_message()
 
-    def set_B(self, x, y, z, s):
+    def set_B(self, x: float, y: float, z: float, s: float) -> None:
         if 0 < s <= 0.2:
             self.write('SET:SYS:VRM:COO:CART:RVST:MODE:RATE:RATE:' + str(s) +
                        ':VSET:[' + str(x) + ' ' + str(y) + ' ' + str(z) + ']\r\n')
@@ -169,18 +177,27 @@ class Triton(IPInstrument):
         else:
             print('Warning: set magnet sweep rate in range (0 , 0.2] T/min')
 
-    def _get_control_B_param(self, param):
+    def _get_control_B_param(
+            self,
+            param: str
+    ) -> Optional[Union[float, str, List[float]]]:
         cmd = f'READ:SYS:VRM:{param}'
         return self._get_response_value(self.ask(cmd))
 
-    def _get_control_Bcomp_param(self, param):
+    def _get_control_Bcomp_param(
+            self,
+            param: str
+    ) -> Optional[Union[float, str, List[float]]]:
         cmd = f'READ:SYS:VRM:{param}'
         return self._get_response_value(self.ask(cmd[:-2]) + cmd[-2:])
 
-    def _get_response(self, msg):
+    def _get_response(self, msg: str) -> str:
         return msg.split(':')[-1]
 
-    def _get_response_value(self, msg):
+    def _get_response_value(
+            self,
+            msg: str
+    ) -> Optional[Union[float, str, List[float]]]:
         msg = self._get_response(msg)
         if msg.endswith('NOT_FOUND'):
             return None
@@ -201,14 +218,14 @@ class Triton(IPInstrument):
         except Exception:
             return msg
 
-    def get_idn(self):
+    def get_idn(self) -> Dict[str, Optional[str]]:
         """ Return the Instrument Identifier Message """
         idstr = self.ask('*IDN?')
         idparts = [p.strip() for p in idstr.split(':', 4)][1:]
 
         return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
 
-    def _get_control_channel(self, force_get=False):
+    def _get_control_channel(self, force_get: bool = False) -> int:
 
         # verify current channel
         if self._control_channel and not force_get:
@@ -225,22 +242,25 @@ class Triton(IPInstrument):
                 break
         return self._control_channel
 
-    def _set_control_channel(self, channel):
+    def _set_control_channel(self, channel: int) -> None:
         self._control_channel = channel
         self.write('SET:DEV:T{}:TEMP:LOOP:HTR:H1'.format(
             self._get_control_channel()))
 
-    def _get_control_param(self, param):
+    def _get_control_param(
+            self,
+            param: str
+    ) -> Optional[Union[float, str, List[float]]]:
         chan = self._get_control_channel()
         cmd = f'READ:DEV:T{chan}:TEMP:LOOP:{param}'
         return self._get_response_value(self.ask(cmd))
 
-    def _set_control_param(self, param, value):
+    def _set_control_param(self, param: str, value: float) -> None:
         chan = self._get_control_channel()
         cmd = f'SET:DEV:T{chan}:TEMP:LOOP:{param}:{value}'
         self.write(cmd)
 
-    def _set_control_magnet_sweeprate_param(self, s):
+    def _set_control_magnet_sweeprate_param(self, s: float) -> None:
         if 0 < s <= 0.2:
             x = round(self.Bx(), 4)
             y = round(self.By(), 4)
@@ -251,7 +271,7 @@ class Triton(IPInstrument):
             print(
                 'Warning: set sweeprate in range (0 , 0.2] T/min, not setting sweeprate')
 
-    def _set_control_Bx_param(self, x):
+    def _set_control_Bx_param(self, x: float) -> None:
         s = self.magnet_sweeprate()
         y = round(self.By(), 4)
         z = round(self.Bz(), 4)
@@ -264,7 +284,7 @@ class Triton(IPInstrument):
         while self.magnet_status() != 'IDLE':
             pass
 
-    def _set_control_By_param(self, y):
+    def _set_control_By_param(self, y: float) -> None:
         s = self.magnet_sweeprate()
         x = round(self.Bx(), 4)
         z = round(self.Bz(), 4)
@@ -277,7 +297,7 @@ class Triton(IPInstrument):
         while self.magnet_status() != 'IDLE':
             pass
 
-    def _set_control_Bz_param(self, z):
+    def _set_control_Bz_param(self, z: float) -> None:
         s = self.magnet_sweeprate()
         x = round(self.Bx(), 4)
         y = round(self.By(), 4)
@@ -290,9 +310,9 @@ class Triton(IPInstrument):
         while self.magnet_status() != 'IDLE':
             pass
 
-    def _get_named_channels(self):
-        allchans = self.ask('READ:SYS:DR:CHAN')
-        allchans = allchans.replace('STAT:SYS:DR:CHAN:', '', 1).split(':')
+    def _get_named_channels(self) -> None:
+        allchans_str = self.ask('READ:SYS:DR:CHAN')
+        allchans = allchans_str.replace('STAT:SYS:DR:CHAN:', '', 1).split(':')
         for ch in allchans:
             msg = 'READ:SYS:DR:CHAN:%s' % ch
             rep = self.ask(msg)
@@ -304,18 +324,18 @@ class Triton(IPInstrument):
                                    get_cmd='READ:DEV:%s:TEMP:SIG:TEMP' % chan,
                                    get_parser=self._parse_temp)
 
-    def _get_pressure_channels(self):
-        self.chan_pressure = []
+    def _get_pressure_channels(self) -> None:
+        chan_pressure_list = []
         for i in range(1, 7):
             chan = 'P%d' % i
-            self.chan_pressure.append(chan)
+            chan_pressure_list.append(chan)
             self.add_parameter(name=chan,
                                unit='bar',
                                get_cmd='READ:DEV:%s:PRES:SIG:PRES' % chan,
                                get_parser=self._parse_pres)
-        self.chan_pressure = set(self.chan_pressure)
+        self.chan_pressure = set(chan_pressure_list)
 
-    def _get_temp_channel_names(self, file):
+    def _get_temp_channel_names(self, file: str) -> None:
         config = configparser.ConfigParser()
         with open(file, encoding='utf16') as f:
             next(f)
@@ -332,24 +352,24 @@ class Triton(IPInstrument):
                 name = config.get(section, '"m_lpszname"').strip("\"")
                 self.chan_temp_names[chan] = {'name': name, 'value': None}
 
-    def _get_temp_channels(self):
-        self.chan_temps = []
+    def _get_temp_channels(self) -> None:
+        chan_temps_list = []
         for i in range(1, 17):
             chan = 'T%d' % i
-            self.chan_temps.append(chan)
+            chan_temps_list.append(chan)
             self.add_parameter(name=chan,
                                unit='K',
                                get_cmd='READ:DEV:%s:TEMP:SIG:TEMP' % chan,
                                get_parser=self._parse_temp)
-        self.chan_temps = set(self.chan_temps)
+        self.chan_temps = set(chan_temps_list)
 
-    def _parse_action(self, msg):
+    def _parse_action(self, msg: str) -> str:
         """ Parse message and return action as a string
 
         Args:
-            msg (str): message string
+            msg: message string
         Returns
-            action (str): string describing the action
+            action: string describing the action
         """
         action = msg[17:]
         if action == 'PCL':
@@ -369,21 +389,21 @@ class Triton(IPInstrument):
             action = 'Unknown'
         return action
 
-    def _parse_status(self, msg):
+    def _parse_status(self, msg: str) -> str:
         return msg[19:]
 
-    def _parse_time(self, msg):
+    def _parse_time(self, msg: str) -> str:
         return msg[14:]
 
-    def _parse_temp(self, msg):
+    def _parse_temp(self, msg: str) -> Optional[float]:
         if 'NOT_FOUND' in msg:
             return None
         return float(msg.split('SIG:TEMP:')[-1].strip('K'))
 
-    def _parse_pres(self, msg):
+    def _parse_pres(self, msg: str) -> Optional[float]:
         if 'NOT_FOUND' in msg:
             return None
         return float(msg.split('SIG:PRES:')[-1].strip('mB')) * 1e3
 
-    def _recv(self):
+    def _recv(self) -> str:
         return super()._recv().rstrip()

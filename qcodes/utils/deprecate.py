@@ -1,7 +1,7 @@
 import warnings
 import types
 from contextlib import contextmanager
-from typing import Optional, Callable, Any, cast
+from typing import Optional, Callable, Any, cast, Iterator, List
 
 import wrapt
 
@@ -39,7 +39,7 @@ def issue_deprecation_warning(
 def deprecate(
         reason: Optional[str] = None,
         alternative: Optional[str] = None
-) -> Callable:
+) -> Callable[..., Any]:
     """
     A utility function to decorate deprecated functions and classes.
 
@@ -50,8 +50,9 @@ def deprecate(
 
     """
 
-    @wrapt.decorator
-    def decorate_callable(func, instance, args, kwargs):
+    @wrapt.decorator  # type: ignore[misc]
+    def decorate_callable(func: Callable[..., Any],
+                          instance: object, args: Any, kwargs: Any) -> Any:
         t, n = (('class', instance.__class__.__name__)
                 if func.__name__ == '__init__'
                 else ('function', func.__name__))
@@ -60,7 +61,7 @@ def deprecate(
 
     def actual_decorator(obj: Any) -> Any:
         if isinstance(obj, (types.FunctionType, types.MethodType)):
-            func = cast(Callable, obj)
+            func = cast(Callable[..., Any], obj)
             # pylint: disable=no-value-for-parameter
             return decorate_callable(func)
             # pylint: enable=no-value-for-parameter
@@ -69,7 +70,7 @@ def deprecate(
             for m_name in dir(obj):
                 m = getattr(obj, m_name)
                 if isinstance(m, (types.FunctionType, types.MethodType)):
-                    # skip static methods, since they are not wrapped corectly
+                    # skip static methods, since they are not wrapped correctly
                     # by wrapt.
                     # if anyone reading this knows how the following line
                     # works please let me know.
@@ -84,7 +85,7 @@ def deprecate(
 
 
 @contextmanager
-def _catch_deprecation_warnings():
+def _catch_deprecation_warnings() -> Iterator[List[warnings.WarningMessage]]:
     with warnings.catch_warnings(record=True) as ws:
         warnings.simplefilter("ignore")
         warnings.filterwarnings("always", category=QCoDeSDeprecationWarning)
@@ -92,15 +93,17 @@ def _catch_deprecation_warnings():
 
 
 @contextmanager
-def assert_not_deprecated():
+def assert_not_deprecated() -> Iterator[None]:
     with _catch_deprecation_warnings() as ws:
         yield
     assert len(ws) == 0
 
 
 @contextmanager
-def assert_deprecated(message: str):
+def assert_deprecated(message: str) -> Iterator[None]:
     with _catch_deprecation_warnings() as ws:
         yield
     assert len(ws) == 1
-    assert ws[0].message.args[0] == message
+    recorded_message = ws[0].message
+    assert isinstance(recorded_message, Warning)
+    assert recorded_message.args[0] == message

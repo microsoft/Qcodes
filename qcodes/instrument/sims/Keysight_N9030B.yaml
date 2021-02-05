@@ -1,0 +1,195 @@
+spec: "1.0"
+devices:
+  KeysightN9030B:
+    eom:
+      GPIB INSTR:
+        q: "\n"
+        r: "\n"
+    error: ERROR
+    dialogues:
+      - q: "*RST"
+      - q: ":ABORt"
+      - q: ":INSTrument:CATalog?"
+        r: '"SA 1, PNOISE 14"'
+      - q: ":CONFigure:CATalog?"
+        r: '"SAN, LPL"'
+      - q: "*OPT?"
+        r: '"544"'
+      - q: "*IDN?"
+        r: "Keysight Technologies,N9030B,1000,0.1"
+
+    properties:
+
+      mode:
+        default: "SA"
+        getter:
+          q: ":INSTrument:SELect?"
+          r: "{}"
+        setter:
+          q: ":INSTrument:SELect {}"
+
+      measurement:
+        default: "SAN"
+        getter:
+          q: ":CONFigure?"
+          r: "{}"
+        setter:
+          q: ":CONFigure:{}"
+
+      cont_meas:
+        getter:
+          q: ":INITiate:CONTinuous?"
+          r: "{}"
+        setter:
+          q: ":INITiate:CONTinuous {}"
+
+    channels:
+      sa:
+        ids: ['sa']
+        can_select: True
+
+        properties:
+
+          start:
+            default: 100
+            getter:
+              q: ":SENSe:FREQuency:STARt?"
+              r: "{}"
+            setter:
+              q: ":SENSe:FREQuency:STARt {}"
+            specs:
+              type: float
+
+          stop:
+            default: 10000
+            getter:
+              q: ":SENSe:FREQuency:STOP?"
+              r: "{}"
+            setter:
+              q: ":SENSe:FREQuency:STOP {}"
+            specs:
+              type: float
+
+          center:
+            default: 1.805e9
+            getter:
+              q: ":SENSe:FREQuency:CENTer?"
+              r: "{}"
+            setter:
+              q: ":SENSe:FREQuency:CENTer {}"
+            specs:
+              type: float
+
+          span:
+            default: 3.59e9
+            getter:
+              q: ":SENSe:FREQuency:SPAN?"
+              r: "{}"
+            setter:
+              q: ":SENSe:FREQuency:SPAN {}"
+            specs:
+              type: float
+
+          npts:
+            default: 1001
+            getter:
+              q: ":SENSe:SWEep:POINts?"
+              r: "{}"
+            setter:
+              q: ":SENSe:SWEep:POINts {}"
+            specs:
+              min: 1
+              max: 20001
+              type: int
+
+          sweep_time:
+            default: 20
+            getter:
+              q: ":SENSe:SWEep:TIME?"
+              r: "{}"
+            specs:
+              type: float
+
+          auto_sweep_time_enabled:
+            default: "ON"
+            getter:
+              q: ":SENSe:SWEep:TIME:AUTO?"
+              r: "{}"
+            setter:
+              q: ":SENSe:SWEep:TIME:AUTO {}"
+            specs:
+              type: str
+              valid: ["ON", "OFF"]
+
+          auto_sweep_type_enabled:
+            default: "OFF"
+            getter:
+              q: ":SENSe:SWEep:TYPE:AUTO?"
+              r: "{}"
+            setter:
+              q: ":SENSe:SWEep:TYPE:AUTO {}"
+            specs:
+              type: str
+              valid: ["ON", "OFF"]
+
+          sweep_type:
+            default: "SWE"
+            getter:
+              q: ":SENSe:SWEep:TYPE?"
+              r: "{}"
+            setter:
+              q: ":SENSe:SWEep:TYPE {}"
+            specs:
+              type: str
+              valid: ["FFT", "SWE"]
+      pn:
+        ids: ['pn']
+        can_select: True
+
+        properties:
+          npts:
+            default: 601
+            getter:
+              q: ":SENSe:LPLot:SWEep:POINts?"
+              r: "{}"
+            setter:
+              q: ":SENSe:LPLot:SWEep:POINts {}"
+            specs:
+              min: 601
+              max: 20001
+              type: int
+
+          start_offset:
+            default: 100
+            getter:
+              q: ":SENSe:LPLot:FREQuency:OFFSet:STARt?"
+              r: "{}"
+            setter:
+              q: ":SENSe:LPLot:FREQuency:OFFSet:STARt {}"
+            specs:
+              type: float
+
+          stop_offset:
+            default: 1e6
+            getter:
+              q: ":SENSe:LPLot:FREQuency:OFFSet:STOP?"
+              r: "{}"
+            setter:
+              q: ":SENSe:LPLot:FREQuency:OFFSet:STOP {}"
+            specs:
+              type: float
+
+          signal_tracking_enabled:
+            default: "ON"
+            getter:
+              q: ":SENSe:FREQuency:CARRier:TRACk?"
+              r: "{}"
+            setter:
+              q: ":SENSe:FREQuency:CARRier:TRACk {}"
+            specs:
+              type: str
+              valid: ["ON", "OFF"]
+
+resources:
+  GPIB::1::INSTR:
+    device: KeysightN9030B

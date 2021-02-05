@@ -9,8 +9,9 @@ import unicodedata
 import warnings
 from typing import (Any, Callable, Dict, List, Mapping, Optional, Sequence,
                     Tuple, Union, cast)
-
+from copy import copy
 import numpy as np
+from numpy import VisibleDeprecationWarning
 
 import qcodes as qc
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
@@ -176,9 +177,57 @@ def get_parameter_data(conn: ConnectionPlus,
 
     # loop over all the requested parameters
     for output_param in columns:
-        one_param_output, _ = get_parameter_data_for_one_paramtree(conn, table_name, rundescriber, output_param, start, end)
-        output[output_param] = one_param_output
+        output[output_param] = get_shaped_parameter_data_for_one_paramtree(
+            conn,
+            table_name,
+            rundescriber,
+            output_param,
+            start,
+            end)
     return output
+
+
+def get_shaped_parameter_data_for_one_paramtree(
+        conn: ConnectionPlus,
+        table_name: str,
+        rundescriber: RunDescriber,
+        output_param: str,
+        start: Optional[int],
+        end: Optional[int]
+) -> Dict[str, np.ndarray]:
+    """
+    Get the data for a parameter tree and reshape it according to the
+    metadata about the dataset. This will only reshape the loaded data if
+    the number of points in the loaded data matches the expected number of
+    points registered in the metadata.
+    If there are more measured datapoints
+    than expected a warning will be given.
+    """
+
+    one_param_output, _ = get_parameter_data_for_one_paramtree(
+        conn,
+        table_name,
+        rundescriber,
+        output_param,
+        start,
+        end
+    )
+    if rundescriber.shapes is not None:
+        shape = rundescriber.shapes.get(output_param)
+
+        if shape is not None:
+            total_len_shape = np.prod(shape)
+            for name, paramdata in one_param_output.items():
+                total_data_shape = np.prod(paramdata.shape)
+                if total_data_shape == total_len_shape:
+                    one_param_output[name] = paramdata.reshape(shape)
+                elif total_data_shape > total_len_shape:
+                    log.warning(f"Tried to set data shape for {name} in "
+                                f"dataset {output_param} "
+                                f"from metadata when "
+                                f"loading but found inconsistent lengths "
+                                f"{total_data_shape} and {total_len_shape}")
+    return one_param_output
 
 
 def get_rundescriber_from_result_table_name(
@@ -216,12 +265,39 @@ def get_parameter_data_for_one_paramtree(
         raise ValueError("output_param should always be the first "
                          "parameter in a parameter tree. It is not")
     _expand_data_to_arrays(data, paramspecs)
+
+    param_data = {}
     # Benchmarking shows that transposing the data with python types is
     # faster than transposing the data using np.array.transpose
     res_t = map(list, zip(*data))
-    param_data = {paramspec.name: np.array(column_data)
-                  for paramspec, column_data
-                  in zip(paramspecs, res_t)}
+
+    for paramspec, column_data in zip(paramspecs, res_t):
+        try:
+            if paramspec.type == "numeric":
+                # there is no reliable way to
+                # tell the difference between a float and and int loaded
+                # from sqlite numeric columns so always fall back to float
+                dtype: Optional[type] = np.float64
+            else:
+                dtype = None
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    "ignore",
+                    category=VisibleDeprecationWarning,
+                    message="Creating an ndarray from ragged nested sequences"
+                )
+                # numpy warns here and coming versions
+                # will eventually raise
+                # for ragged arrays if you don't explicitly set
+                # dtype=object
+                # It is time consuming to detect ragged arrays here
+                # and it is expected to be a relatively rare situation
+                # so fallback to object if the regular dtype fail
+                param_data[paramspec.name] = np.array(column_data, dtype=dtype)
+        except:
+            # Not clear which error to catch here. This will only be clarified
+            # once numpy actually starts to raise here.
+            param_data[paramspec.name] = np.array(column_data, dtype=object)
     return param_data, n_rows
 
 
@@ -229,34 +305,54 @@ def _expand_data_to_arrays(data: List[List[Any]], paramspecs: Sequence[ParamSpec
     types = [param.type for param in paramspecs]
     # if we have array type parameters expand all other parameters
     # to arrays
-    if 'array' in types and ('numeric' in types or 'text' in types
-                             or 'complex' in types):
-        first_array_element = types.index('array')
-        numeric_elms = [i for i, x in enumerate(types)
-                        if x == "numeric"]
-        complex_elms = [i for i, x in enumerate(types)
-                        if x == 'complex']
-        text_elms = [i for i, x in enumerate(types)
-                     if x == "text"]
+    if 'array' in types:
+
+        if ('numeric' in types or 'text' in types
+                or 'complex' in types):
+            first_array_element = types.index('array')
+            numeric_elms = [i for i, x in enumerate(types)
+                            if x == "numeric"]
+            complex_elms = [i for i, x in enumerate(types)
+                            if x == 'complex']
+            text_elms = [i for i, x in enumerate(types)
+                         if x == "text"]
+            for row in data:
+                for element in numeric_elms:
+                    row[element] = np.full_like(row[first_array_element],
+                                                row[element],
+                                                dtype=np.dtype(np.float64))
+                    # todo should we handle int/float types here
+                    # we would in practice have to perform another
+                    # loop to check that all elements of a given can be cast to
+                    # int without loosing precision before choosing an integer
+                    # representation of the array
+                for element in complex_elms:
+                    row[element] = np.full_like(row[first_array_element],
+                                                row[element],
+                                                dtype=np.dtype(np.complex128))
+                for element in text_elms:
+                    strlen = len(row[element])
+                    row[element] = np.full_like(row[first_array_element],
+                                                row[element],
+                                                dtype=np.dtype(f'U{strlen}'))
+
         for row in data:
-            for element in numeric_elms:
-                row[element] = np.full_like(row[first_array_element],
-                                            row[element],
-                                            dtype=np.float)
-                # todo should we handle int/float types here
-                # we would in practice have to perform another
-                # loop to check that all elements of a given can be cast to
-                # int without loosing precision before choosing an integer
-                # representation of the array
-            for element in complex_elms:
-                row[element] = np.full_like(row[first_array_element],
-                                            row[element],
-                                            dtype=np.complex)
-            for element in text_elms:
-                strlen = len(row[element])
-                row[element] = np.full_like(row[first_array_element],
-                                            row[element],
-                                            dtype=f'U{strlen}')
+            # now expand all one element arrays to match the expected size
+            # one element arrays are introduced if scalar values are stored
+            # with an explicit array storage type
+            sizes = tuple(array.size for array in row)
+            max_size = max(sizes)
+            max_index = sizes.index(max_size)
+
+            for i, array in enumerate(row):
+                if array.size != max_size:
+                    if array.size == 1:
+                        row[i] = np.full_like(row[max_index],
+                                              row[i],
+                                              dtype=row[i].dtype)
+                    else:
+                        log.warning(f"Cannot expand array of size {array.size} "
+                                    f"to size {row[max_index].size}")
 
 
 def _get_data_for_one_param_tree(conn: ConnectionPlus, table_name: str,
@@ -280,7 +376,7 @@ def _get_data_for_one_param_tree(conn: ConnectionPlus, table_name: str,
 
 
 @deprecate('This method does not accurately represent the dataset.',
-               'Use `get_parameter_data` instead.')
+           'Use `get_parameter_data` instead.')
 def get_values(conn: ConnectionPlus,
                table_name: str,
                param_name: str) -> List[List[Any]]:
@@ -1518,7 +1614,9 @@ def get_metadata(conn: ConnectionPlus, tag: str, table_name: str) -> str:
                             "result_table_name", table_name)
 
 
-def get_metadata_from_run_id(conn: ConnectionPlus, run_id: int) -> Dict:
+def get_metadata_from_run_id(
+        conn: ConnectionPlus, run_id: int
+) -> Dict[str, Any]:
     """
     Get all metadata associated with the specified run
     """
@@ -1688,7 +1786,8 @@ def update_GUIDs(conn: ConnectionPlus) -> None:
 
         log.info(f'Succesfully updated run number {run_id}.')
 
-    actions: Dict[Tuple[bool, bool], Callable]
+    actions: Dict[Tuple[bool, bool],
+                  Callable[[int, ConnectionPlus, Dict[str, Any]], None]]
     actions = {(True, True): _both_zero,
                (False, True): _workstation_only_zero,
                (True, False): _location_only_zero,
@@ -1715,3 +1814,45 @@ def remove_trigger(conn: ConnectionPlus, trigger_id: str) -> None:
         trigger_id: id of the trigger
     """
     transaction(conn, f"DROP TRIGGER IF EXISTS {trigger_id};")
+
+
+def load_new_data_for_rundescriber(
+        conn: ConnectionPlus,
+        table_name: str,
+        rundescriber: RunDescriber,
+        read_status: Mapping[str, int],
+) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, int]]:
+    """
+    Load all new data for a given rundesciber since the rows given by read_status.
+
+    Args:
+        conn: The connection to the sqlite database
+        table_name: The name of the table the data is stored in
+        rundescriber: The rundescriber that describes the run
+        read_status: Mapping from dependent parameter name to number of rows
+          read from the db previously.
+
+    Returns:
+        new data and an updated number of rows read.
+
+    """
+
+    parameters = tuple(ps.name for ps in
+                       rundescriber.interdeps.non_dependencies)
+    updated_read_status: Dict[str, int] = dict(read_status)
+    new_data_dict: Dict[str, Dict[str, np.ndarray]] = {}
+
+    for meas_parameter in parameters:
+
+        start = read_status.get(meas_parameter, 0) + 1
+        new_data, n_rows_read = get_parameter_data_for_one_paramtree(
+            conn,
+            table_name,
+            rundescriber=rundescriber,
+            output_param=meas_parameter,
+            start=start,
+            end=None
+        )
+        new_data_dict[meas_parameter] = new_data
+        updated_read_status[meas_parameter] = start + n_rows_read - 1
+    return new_data_dict, updated_read_status

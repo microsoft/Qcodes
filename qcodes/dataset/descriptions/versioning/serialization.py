@@ -31,7 +31,7 @@ convention where "*" stands for the storage format. Also note the
 """
 import io
 import json
-from typing import Callable, Dict, Tuple, cast
+from typing import Callable, Dict, Tuple, cast, Any
 
 from qcodes.utils.helpers import YAML
 
@@ -48,7 +48,7 @@ STORAGE_VERSION = 3
 # infrastructure of :mod:`qcodes`
 
 # keys: (from_version, to_version)
-_converters: Dict[Tuple[int, int], Callable] = {
+_converters: Dict[Tuple[int, int], Callable[..., Any]] = {
     (0, 0): lambda x: x,
     (0, 1): v0_to_v1,
     (0, 2): v0_to_v2,

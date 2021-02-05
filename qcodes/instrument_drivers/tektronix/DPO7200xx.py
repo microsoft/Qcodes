@@ -6,7 +6,7 @@ MSO70000/C/DX Series Digital Oscilloscopes
 import textwrap
 import time
 from functools import partial
-from typing import Union, Callable, cast
+from typing import Union, Callable, cast, Any
 
 import numpy as np
 
@@ -48,7 +48,7 @@ class TektronixDPO7000xx(VisaInstrument):
             self,
             name: str,
             address: str,
-            **kwargs
+            **kwargs: Any
     ) -> None:
 
         super().__init__(name, address, terminator="\n", **kwargs)
@@ -297,18 +297,18 @@ class TekronixDPOWaveform(InstrumentChannel):
             parameter_class=ParameterWithSetpoints
         )
 
-    def _get_cmd(self, cmd_string: str) -> Callable:
+    def _get_cmd(self, cmd_string: str) -> Callable[[], str]:
         """
         Parameters defined in this submodule require the correct
         data source being selected first.
         """
-        def inner():
+        def inner() -> str:
             self.root_instrument.data.source(self._identifier)
             return self.ask(cmd_string)
 
         return inner
 
-    def _get_trace_data(self):
+    def _get_trace_data(self)  -> np.ndarray:
 
         self.root_instrument.data.source(self._identifier)
         waveform = self.root_instrument.waveform
@@ -603,7 +603,7 @@ class TektronixDPOHorizontal(InstrumentChannel):
 
         self.write(f"HORizontal:MODE:RECOrdlength {value}")
 
-    def _set_scale(self, value):
+    def _set_scale(self, value: float) -> None:
         if self.mode() == "manual":
             raise ModeError(
                 "The scale cannot be changed in manual mode"
@@ -691,7 +691,7 @@ class TekronixDPOTrigger(InstrumentChannel):
             vals=Enum(*trigger_sources)
         )
 
-    def _trigger_type(self, value: str):
+    def _trigger_type(self, value: str) -> None:
         if value != "edge":
             raise NotImplementedError(
                 "We currently only support the 'edge' trigger type"
@@ -740,7 +740,7 @@ class TektronixDPOMeasurementParameter(Parameter):
     def get_raw(self) -> float:
         return self._get("VALue")
 
-    def set_raw(self, value):
+    def set_raw(self, value: Any) -> None:
         raise ValueError("A measurement cannot be set")
 
 
@@ -851,7 +851,7 @@ class TektronixDPOMeasurement(InstrumentChannel):
 
 
 class TektronixDPOMeasurementStatistics(InstrumentChannel):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
 
         self.add_parameter(

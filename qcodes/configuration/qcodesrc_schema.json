@@ -1,5 +1,5 @@
 {
-    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$schema": "http://json-schema.org/draft-07/schema#",
     "type" : "object",
     "description": "schema for a qcodes config file",
     "properties":{
@@ -9,7 +9,7 @@
             "properties" : {
                 "default_fmt": {
                     "type" : "string",
-                    "description": "default location formatter",
+                    "description": "default location formatter used for the legacy dataset",
                     "default": "data/{date}/#{counter}_{name}_{time}"
                 },
                 "loglevel" :{
@@ -37,7 +37,8 @@
                     ]
                 },
                 "register_magic" : {
-                    "description": "Register QCoDeS magic when in iPython. Can be set to True, False, or a list of magic commands to be registered",
+                    "description": "Register QCoDeS magic when in IPython. Can be set to True, False, or a list of magic commands to be registered",
+
                     "anyOf" : [
                         {"type": "boolean"},
                         {"type": "array"}
@@ -188,10 +189,10 @@
         },
         "plotting" : {
             "type" : "object",
-            "description": "controls plotting functions i.e. `plot_by_id`",
+            "description": "controls plotting functions i.e. `plot_dataset`",
             "properties" : {
                 "default_color_map":{
-                    "description": "Default colormap to use for `plot_by_id`.",
+                    "description": "Default colormap to use for `plot_dataset`.",
                     "type": "string",
                     "default": "viridis"
                 },
@@ -293,6 +294,28 @@
         },
         "description": "Identifiers for creating a GUID per run in the dataset database."
         },
+        "dataset": {
+            "type": "object",
+            "properties": {
+                "write_in_background": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Should the data be written from a background thread"
+                },
+                "write_period": {
+                    "type": "number",
+                    "default": 5.0,
+                    "description": "How often should data be written to disk (s)"
+                },
+                "dond_plot": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Should dond functions automatically open a plot after the measurement completes"
+                }
+            },
+            "description": "Settings related to the DataSet and Measurement Context manager",
+            "required":[ "write_in_background", "write_period", "dond_plot"]
+        },
         "telemetry":{
             "type": "object",
             "properties": {
@@ -309,5 +332,5 @@
             }
         }
     },
-    "required":[ "gui", "core", "GUID_components", "telemetry"]
+    "required":[ "gui", "core", "GUID_components", "dataset", "telemetry"]
 }

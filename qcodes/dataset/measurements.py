@@ -44,6 +44,12 @@ from qcodes.utils.helpers import NumpyJSONEncoder
 log = logging.getLogger(__name__)
 
 
+ActionType = Tuple[Callable[..., Any], Sequence[Any]]
+SubscriberType = Tuple[Callable[..., Any],
+                       Union[MutableSequence[Any],
+                             MutableMapping[Any, Any]]]
+
+
 class ParameterTypeError(Exception):
     pass
 
@@ -54,7 +60,7 @@ class DataSaver:
     datasaving to the database.
     """
 
-    default_callback: Optional[dict] = None
+    default_callback: Optional[Dict[Any,Any]] = None
 
     def __init__(self, dataset: DataSet,
                  write_period: float,
@@ -148,8 +154,8 @@ class DataSaver:
                 if (parameter.vals.shape is not None
                         and data.shape != parameter.vals.shape):
                     raise TypeError(
-                        "Expected data with shape {parameter.vals.shape}, "
-                        "but got {data.shape}"
+                        f"Expected data with shape {parameter.vals.shape}, "
+                        f"but got {data.shape} for parameter: {parameter.full_name}"
                     )
 
             if isinstance(parameter, ArrayParameter):
@@ -304,12 +310,12 @@ class DataSaver:
         return result_dict
 
     def _unpack_setpoints_from_parameter(
-        self, parameter: _BaseParameter, setpoints: Sequence,
+        self, parameter: _BaseParameter, setpoints: Sequence[Any],
         sp_names: Optional[Sequence[str]], fallback_sp_name: str
             ) -> Dict[ParamSpecBase, np.ndarray]:
         """
         Unpack the `setpoints` and their values from a
-        :class:`ParameterWithSetpoints`
+        :class:`ArrayParameter` or :class:`MultiParameter`
         into a standard results dict form and return that dict
         """
         setpoint_axes = []
@@ -432,30 +438,26 @@ class Runner:
     """
 
     def __init__(
-            self, enteractions: List, exitactions: List,
+            self,
+            enteractions:  List[ActionType],
+            exitactions: List[ActionType],
             experiment: Optional[Experiment] = None,
             station: Optional[Station] = None,
             write_period: Optional[float] = None,
             interdeps: InterDependencies_ = InterDependencies_(),
             name: str = '',
-            subscribers: Optional[Sequence[Tuple[Callable,
-                                        Union[MutableSequence,
-                                              MutableMapping]]]] = None,
-            parent_datasets: Sequence[Dict] = (),
+            subscribers: Optional[Sequence[SubscriberType]] = None,
+            parent_datasets: Sequence[Dict[Any, Any]] = (),
             extra_log_info: str = '',
             write_in_background: bool = False,
             shapes: Optional[Shapes] = None) -> None:
 
-        if write_in_background and (write_period is not None):
-            warnings.warn(f"The specified write period of {write_period} s "
-                          "will be ignored, since write_in_background==True")
-
+        self.write_period = self._calculate_write_period(write_in_background,
+                                                         write_period)
 
         self.enteractions = enteractions
         self.exitactions = exitactions
-        self.subscribers: Sequence[Tuple[Callable,
-                                         Union[MutableSequence,
-                                               MutableMapping]]]
+        self.subscribers: Sequence[SubscriberType]
         if subscribers is None:
             self.subscribers = []
         else:
@@ -464,16 +466,28 @@ class Runner:
         self.station = station
         self._interdependencies = interdeps
         self._shapes: Shapes = shapes
-        # here we use 5 s as a sane default, but that value should perhaps
-        # be read from some config file
-        self.write_period = float(write_period) \
-            if write_period is not None else 5.0
-        if write_in_background:
-            self.write_period = 0.0
         self.name = name if name else 'results'
         self._parent_datasets = parent_datasets
         self._extra_log_info = extra_log_info
         self._write_in_background = write_in_background
+
+    @staticmethod
+    def _calculate_write_period(
+            write_in_background: bool,
+            write_period: Optional[float]
+    ) -> float:
+        write_period_changed_from_default = (
+                write_period is not None and
+                write_period != qc.config.defaults.dataset.write_period
+        )
+        if write_in_background and write_period_changed_from_default:
+            warnings.warn(f"The specified write period of {write_period} s "
+                          "will be ignored, since write_in_background==True")
+        if write_in_background:
+            return 0.0
+        if write_period is None:
+            write_period = qc.config.dataset.write_period
+        return float(write_period)
 
     def __enter__(self) -> DataSaver:
         # TODO: should user actions really precede the dataset?
@@ -581,7 +595,7 @@ class Measurement:
             is the latest one created.
         station: The QCoDeS station to snapshot. If not given, the
             default one is used.
-        name: Name of the experiment. This will be passed down to the dataset
+        name: Name of the measurement. This will be passed down to the dataset
             produced by the measurement. If not given, a default value of
             'results' is used for the dataset.
     """
@@ -589,18 +603,17 @@ class Measurement:
     def __init__(self, exp: Optional[Experiment] = None,
                  station: Optional[qc.Station] = None,
                  name: str = '') -> None:
-        self.exitactions: List[Tuple[Callable, Sequence]] = []
-        self.enteractions: List[Tuple[Callable, Sequence]] = []
-        self.subscribers: List[Tuple[Callable, Union[MutableSequence,
-                                                     MutableMapping]]] = []
+        self.exitactions: List[ActionType] = []
+        self.enteractions: List[ActionType] = []
+        self.subscribers: List[SubscriberType] = []
 
         self.experiment = exp
         self.station = station
         self.name = name
-        self._write_period: Optional[float] = None
+        self.write_period: float = qc.config.dataset.write_period
         self._interdeps = InterDependencies_()
         self._shapes: Shapes = None
-        self._parent_datasets: List[Dict] = []
+        self._parent_datasets: List[Dict[str, str]] = []
         self._extra_log_info: str = ''
 
     @property
@@ -608,7 +621,7 @@ class Measurement:
         return deepcopy(self._interdeps._id_to_paramspec)
 
     @property
-    def write_period(self) -> Optional[float]:
+    def write_period(self) -> float:
         return self._write_period
 
     @write_period.setter
@@ -1021,7 +1034,7 @@ class Measurement:
 
         log.info(f'Removed {param} from Measurement.')
 
-    def add_before_run(self: T, func: Callable, args: tuple) -> T:
+    def add_before_run(self: T, func: Callable[..., Any], args: Sequence[Any]) -> T:
         """
         Add an action to be performed before the measurement.
 
@@ -1039,7 +1052,8 @@ class Measurement:
 
         return self
 
-    def add_after_run(self: T, func: Callable, args: tuple) -> T:
+    def add_after_run(self: T,
+                      func: Callable[..., Any], args: Sequence[Any]) -> T:
         """
         Add an action to be performed after the measurement.
 
@@ -1057,9 +1071,11 @@ class Measurement:
 
         return self
 
-    def add_subscriber(self: T,
-                       func: Callable,
-                       state: Union[MutableSequence, MutableMapping]) -> T:
+    def add_subscriber(
+            self: T,
+            func: Callable[..., Any],
+            state: Union[MutableSequence[Any], MutableMapping[Any, Any]]
+    ) -> T:
         """
         Add a subscriber to the dataset of the measurement.
 
@@ -1086,7 +1102,7 @@ class Measurement:
                                              shapes=shapes)
         self._shapes = shapes
 
-    def run(self, write_in_background: bool = False) -> Runner:
+    def run(self, write_in_background: Optional[bool] = None) -> Runner:
         """
         Returns the context manager for the experimental run
 
@@ -1095,7 +1111,11 @@ class Measurement:
                 within the context manager with ``DataSaver.add_result``
                 will be stored in background, without blocking the
                 main thread that is executing the context manager.
+                By default the setting for write in background will be
+                read from the ``qcodesrc.json`` config file.
         """
+        if write_in_background is None:
+            write_in_background = qc.config.dataset.write_in_background
         return Runner(self.enteractions, self.exitactions,
                       self.experiment, station=self.station,
                       write_period=self._write_period,

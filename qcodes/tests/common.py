@@ -1,6 +1,6 @@
 import os
 import tempfile
-from typing import Callable, Type, TYPE_CHECKING, Optional
+from typing import Any, Callable, Type, TYPE_CHECKING, Optional
 from contextlib import contextmanager
 from functools import wraps
 from time import sleep
@@ -29,7 +29,7 @@ def retry_until_does_not_throw(
         exception_class_to_expect: Type[Exception] = AssertionError,
         tries: int = 5,
         delay: float = 0.1
-) -> Callable:
+) -> Callable[..., Any]:
     """
     Call the decorated function given number of times with given delay between
     the calls until it does not throw an exception of a given class.
@@ -61,7 +61,7 @@ def retry_until_does_not_throw(
         A callable that runs the decorated function until it does not throw
         a given exception
     """
-    def retry_until_passes_decorator(func: Callable):
+    def retry_until_passes_decorator(func: Callable[..., Any]):
 
         @wraps(func)
         def func_retry(*args, **kwargs):
@@ -103,7 +103,7 @@ def profile(func):
     return wrapper
 
 
-def error_caused_by(excinfo: 'ExceptionInfo', cause: str) -> bool:
+def error_caused_by(excinfo: 'ExceptionInfo[Any]', cause: str) -> bool:
     """
     Helper function to figure out whether an exception was caused by another
     exception with the message provided.
@@ -196,3 +196,20 @@ def default_config(user_config: Optional[str] = None):
             Config.schema_cwd_file_name = schema_cwd_file_name
 
             qcodes.config.current_config = default_config_obj
+
+
+@contextmanager
+def reset_config_on_exit():
+    """
+    Context manager to clean any modefication of the in memory config on exit
+
+    """
+
+    default_config_obj: Optional[DotDict] = copy.deepcopy(
+        qcodes.config.current_config
+    )
+
+    try:
+        yield
+    finally:
+        qcodes.config.current_config = default_config_obj

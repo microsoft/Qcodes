@@ -9,7 +9,7 @@ from unittest.mock import patch
 import hypothesis.strategies as hst
 import numpy as np
 import pytest
-from hypothesis import given, settings
+from hypothesis import HealthCheck, given, settings
 
 import qcodes as qc
 from qcodes import (experiments, load_by_counter, load_by_id, new_data_set,
@@ -25,8 +25,8 @@ from qcodes.dataset.sqlite.queries import _unicode_categories
 from qcodes.tests.common import error_caused_by
 from qcodes.tests.dataset.test_links import generate_some_links
 from qcodes.utils.deprecate import QCoDeSDeprecationWarning
+from qcodes.utils.types import numpy_ints, numpy_floats
 
-pytest.register_assert_rewrite('qcodes.tests.dataset.helper_functions')
 from qcodes.tests.dataset.helper_functions import verify_data_dict
 
 n_experiments = 0
@@ -75,6 +75,26 @@ def test_has_attributes_after_init():
         getattr(ds, attr)
 
 
+@pytest.mark.usefixtures("experiment")
+def test_dataset_length():
+
+    path_to_db = get_DB_location()
+    ds = DataSet(path_to_db, run_id=None)
+
+    assert len(ds) == 0
+
+    parameter = ParamSpecBase(name='single', paramtype='numeric',
+                              label='', unit='N/A')
+    idps = InterDependencies_(standalones=(parameter,))
+    ds.set_interdependencies(idps)
+
+    ds.mark_started()
+    ds.add_results([{parameter.name: 1}])
+    ds.mark_completed()
+
+    assert len(ds) == 1
+
+
 def test_dataset_location(empty_temp_db_connection):
     """
     Test that an dataset and experiment points to the correct db file when
@@ -83,7 +103,7 @@ def test_dataset_location(empty_temp_db_connection):
     exp = new_experiment("test", "test1", conn=empty_temp_db_connection)
     ds = DataSet(conn=empty_temp_db_connection)
     assert path_to_dbfile(empty_temp_db_connection) == \
-           empty_temp_db_connection.path_to_dbfile
+        empty_temp_db_connection.path_to_dbfile
     assert exp.path_to_db == empty_temp_db_connection.path_to_dbfile
     assert ds.path_to_db == empty_temp_db_connection.path_to_dbfile
 
@@ -150,6 +170,19 @@ def test_dataset_states():
 
     with pytest.raises(CompletedError, match=match):
         ds.add_results([{parameter.name: 1}])
+
+
+@pytest.mark.parametrize("start_bg_writer", (True, False))
+@pytest.mark.usefixtures('experiment')
+def test_mark_completed_twice(start_bg_writer):
+    """
+    Ensure that its not an error to call mark_completed
+    on an already completed dataset
+    """
+    ds = DataSet()
+    ds.mark_started(start_bg_writer=start_bg_writer)
+    ds.mark_completed()
+    ds.mark_completed()
 
 
 @pytest.mark.usefixtures('experiment')
@@ -350,10 +383,14 @@ def test_add_data_1d():
 
     shadow_ds = make_shadow_dataset(mydataset)
 
-    np.testing.assert_array_equal(mydataset.get_parameter_data()['y']['x'], expected_x)
-    np.testing.assert_array_equal(mydataset.get_parameter_data()['y']['y'], expected_y)
-    np.testing.assert_array_equal(shadow_ds.get_parameter_data()['y']['x'], expected_x)
-    np.testing.assert_array_equal(shadow_ds.get_parameter_data()['y']['y'], expected_y)
+    np.testing.assert_array_equal(
+        mydataset.get_parameter_data()['y']['x'], expected_x)
+    np.testing.assert_array_equal(
+        mydataset.get_parameter_data()['y']['y'], expected_y)
+    np.testing.assert_array_equal(
+        shadow_ds.get_parameter_data()['y']['x'], expected_x)
+    np.testing.assert_array_equal(
+        shadow_ds.get_parameter_data()['y']['y'], expected_y)
 
     assert mydataset.completed is False
     mydataset.mark_completed()
@@ -391,8 +428,10 @@ def test_add_data_array():
 
     shadow_ds = make_shadow_dataset(mydataset)
 
-    np.testing.assert_array_equal(mydataset.get_parameter_data()['x']['x'], np.array(expected_x))
-    np.testing.assert_array_equal(shadow_ds.get_parameter_data()['x']['x'], np.array(expected_x))
+    np.testing.assert_array_equal(mydataset.get_parameter_data()[
+                                  'x']['x'], np.array(expected_x))
+    np.testing.assert_array_equal(shadow_ds.get_parameter_data()[
+                                  'x']['x'], np.array(expected_x))
 
     y_data = mydataset.get_parameter_data()['y']['y']
     np.testing.assert_allclose(y_data, expected_y)
@@ -481,15 +520,11 @@ def test_numpy_ints(dataset):
     dataset.set_interdependencies(idps)
     dataset.mark_started()
 
-    numpy_ints = [
-        np.int, np.int8, np.int16, np.int32, np.int64,
-        np.uint, np.uint8, np.uint16, np.uint32, np.uint64
-    ]
-
     results = [{"x": tp(1)} for tp in numpy_ints]
     dataset.add_results(results)
     expected_result = np.ones(len(numpy_ints))
-    np.testing.assert_array_equal(dataset.get_parameter_data()["x"]["x"], expected_result)
+    np.testing.assert_array_equal(dataset.get_parameter_data()[
+                                  "x"]["x"], expected_result)
 
 
 def test_numpy_floats(dataset):
@@ -501,7 +536,6 @@ def test_numpy_floats(dataset):
     dataset.set_interdependencies(idps)
     dataset.mark_started()
 
-    numpy_floats = [np.float, np.float16, np.float32, np.float64]
     results = [{"y": tp(1.2)} for tp in numpy_floats]
     dataset.add_results(results)
     expected_result = np.array([tp(1.2) for tp in numpy_floats])
@@ -585,7 +619,6 @@ def test_missing_keys(dataset):
 
 def test_get_description(experiment, some_interdeps):
 
-
     ds = DataSet()
 
     assert ds.run_id == 1
@@ -601,7 +634,7 @@ def test_get_description(experiment, some_interdeps):
     # so now no description should be stored in the database
     prematurely_loaded_ds = DataSet(run_id=1)
     assert prematurely_loaded_ds.description == RunDescriber(
-                                                    InterDependencies_())
+        InterDependencies_())
 
     ds.mark_started()
 
@@ -638,7 +671,7 @@ def test_metadata(experiment, request):
     sorry_metadata = {'superman': 1, badtag: None, 'spiderman': 'two'}
 
     bad_tag_msg = (f'Tag {badtag} has value None. '
-                    ' That is not a valid metadata value!')
+                   ' That is not a valid metadata value!')
 
     with pytest.raises(RuntimeError,
                        match='Rolling back due to unhandled exception') as e:
@@ -774,7 +807,8 @@ class TestGetData:
     )
     def test_get_data_with_start_and_end_args(self, ds_with_vals,
                                               start, end, expected):
-        data = ds_with_vals.get_parameter_data(self.x, start=start, end=end)['x']
+        data = ds_with_vals.get_parameter_data(
+            self.x, start=start, end=end)['x']
         if len(expected) == 0:
             assert data == {}
         else:
@@ -782,7 +816,7 @@ class TestGetData:
             np.testing.assert_array_equal(data, expected)
 
 
-@settings(deadline=600)
+@settings(deadline=600, suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(start=hst.one_of(hst.integers(1, 10**3), hst.none()),
        end=hst.one_of(hst.integers(1, 10**3), hst.none()))
 def test_get_parameter_data(scalar_dataset, start, end):
@@ -874,12 +908,13 @@ def test_get_array_parameter_data(array_dataset):
     expected_shapes[par_name] = [(expected_len,), (expected_len,)]
     expected_values = {}
     expected_values[par_name] = [np.ones(expected_len) + 1,
-                                        np.linspace(5, 9, expected_len)]
+                                 np.linspace(5, 9, expected_len)]
     if 'array' in types:
         expected_shapes[par_name] = [(1, expected_len),
                                      (1, expected_len)]
         for i in range(len(expected_values[par_name])):
-            expected_values[par_name][i] = expected_values[par_name][i].reshape(1, expected_len)
+            expected_values[par_name][i] = expected_values[par_name][i].reshape(
+                1, expected_len)
     parameter_test_helper(array_dataset,
                           input_names,
                           expected_names,
@@ -906,11 +941,13 @@ def test_get_multi_parameter_data(multi_dataset):
     this_data = np.zeros((shape_1, shape_2))
     that_data = np.ones((shape_1, shape_2))
     sp_1_data = np.tile(np.linspace(5, 9, shape_1).reshape(shape_1, 1),
-                                           (1, shape_2))
+                        (1, shape_2))
     sp_2_data = np.tile(np.linspace(9, 11, shape_2), (shape_1, 1))
     if 'array' in types:
-        expected_shapes['this'] = [(1, shape_1, shape_2), (1, shape_1, shape_2)]
-        expected_shapes['that'] = [(1, shape_1, shape_2), (1, shape_1, shape_2)]
+        expected_shapes['this'] = [
+            (1, shape_1, shape_2), (1, shape_1, shape_2)]
+        expected_shapes['that'] = [
+            (1, shape_1, shape_2), (1, shape_1, shape_2)]
         expected_values['this'] = [this_data.reshape(1, shape_1, shape_2),
                                    sp_1_data.reshape(1, shape_1, shape_2),
                                    sp_2_data.reshape(1, shape_1, shape_2)]
@@ -934,6 +971,7 @@ def test_get_multi_parameter_data(multi_dataset):
                           expected_values)
 
 
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(start=hst.one_of(hst.integers(1, 9), hst.none()),
        end=hst.one_of(hst.integers(1, 9), hst.none()))
 def test_get_array_in_scalar_param_data(array_in_scalar_dataset,
@@ -1015,6 +1053,7 @@ def test_get_varlen_array_in_scalar_param_data(varlen_array_in_scalar_dataset):
                           expected_values)
 
 
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(start=hst.one_of(hst.integers(1, 45), hst.none()),
        end=hst.one_of(hst.integers(1, 45), hst.none()))
 def test_get_array_in_scalar_param_unrolled(array_in_scalar_dataset_unrolled,
@@ -1157,12 +1196,12 @@ def parameter_test_helper(ds: DataSet,
     """
 
     data = ds.get_parameter_data(*toplevel_names, start=start, end=end)
-    dataframe = ds.get_data_as_pandas_dataframe(*toplevel_names,
-                                                start=start,
-                                                end=end)
+    dataframe = ds.to_pandas_dataframe_dict(*toplevel_names,
+                                            start=start,
+                                            end=end)
 
     all_data = ds.get_parameter_data(start=start, end=end)
-    all_dataframe = ds.get_data_as_pandas_dataframe(start=start, end=end)
+    all_dataframe = ds.to_pandas_dataframe_dict(start=start, end=end)
 
     all_parameters = list(all_data.keys())
     assert set(data.keys()).issubset(set(all_parameters))
@@ -1187,9 +1226,9 @@ def parameter_test_helper(ds: DataSet,
 
         subset_data = ds.get_parameter_data(*subset_names,
                                             start=start, end=end)
-        subset_dataframe = ds.get_data_as_pandas_dataframe(*subset_names,
-                                                           start=start,
-                                                           end=end)
+        subset_dataframe = ds.to_pandas_dataframe_dict(*subset_names,
+                                                       start=start,
+                                                       end=end)
         verify_data_dict(subset_data, subset_dataframe, subset_names,
                          expected_names, expected_shapes, expected_values)
 
@@ -1238,7 +1277,7 @@ def test_write_data_to_text_file_save(tmp_path_factory):
     dataset.write_data_to_text_file(path=path)
     assert os.listdir(path) == ['y.dat']
     with open(os.path.join(path, "y.dat")) as f:
-        assert f.readlines() == ['0\t1\n']
+        assert f.readlines() == ['0.0\t1.0\n']
 
 
 @pytest.mark.usefixtures('experiment')
@@ -1247,7 +1286,8 @@ def test_write_data_to_text_file_save_multi_keys(tmp_path_factory):
     xparam = ParamSpecBase("x", 'numeric')
     yparam = ParamSpecBase("y", 'numeric')
     zparam = ParamSpecBase("z", 'numeric')
-    idps = InterDependencies_(dependencies={yparam: (xparam,), zparam: (xparam,)})
+    idps = InterDependencies_(
+        dependencies={yparam: (xparam,), zparam: (xparam,)})
     dataset.set_interdependencies(idps)
 
     dataset.mark_started()
@@ -1259,9 +1299,9 @@ def test_write_data_to_text_file_save_multi_keys(tmp_path_factory):
     dataset.write_data_to_text_file(path=path)
     assert sorted(os.listdir(path)) == ['y.dat', 'z.dat']
     with open(os.path.join(path, "y.dat")) as f:
-        assert f.readlines() == ['0\t1\n']
+        assert f.readlines() == ['0.0\t1.0\n']
     with open(os.path.join(path, "z.dat")) as f:
-        assert f.readlines() == ['0\t2\n']
+        assert f.readlines() == ['0.0\t2.0\n']
 
 
 @pytest.mark.usefixtures('experiment')
@@ -1270,7 +1310,8 @@ def test_write_data_to_text_file_save_single_file(tmp_path_factory):
     xparam = ParamSpecBase("x", 'numeric')
     yparam = ParamSpecBase("y", 'numeric')
     zparam = ParamSpecBase("z", 'numeric')
-    idps = InterDependencies_(dependencies={yparam: (xparam,), zparam: (xparam,)})
+    idps = InterDependencies_(
+        dependencies={yparam: (xparam,), zparam: (xparam,)})
     dataset.set_interdependencies(idps)
 
     dataset.mark_started()
@@ -1283,7 +1324,7 @@ def test_write_data_to_text_file_save_single_file(tmp_path_factory):
                                     single_file_name='yz')
     assert os.listdir(path) == ['yz.dat']
     with open(os.path.join(path, "yz.dat")) as f:
-        assert f.readlines() == ['0\t1\t2\n']
+        assert f.readlines() == ['0.0\t1.0\t2.0\n']
 
 
 @pytest.mark.usefixtures('experiment')
@@ -1292,7 +1333,8 @@ def test_write_data_to_text_file_length_exception(tmp_path):
     xparam = ParamSpecBase("x", 'numeric')
     yparam = ParamSpecBase("y", 'numeric')
     zparam = ParamSpecBase("z", 'numeric')
-    idps = InterDependencies_(dependencies={yparam: (xparam,), zparam: (xparam,)})
+    idps = InterDependencies_(
+        dependencies={yparam: (xparam,), zparam: (xparam,)})
     dataset.set_interdependencies(idps)
 
     dataset.mark_started()
@@ -1316,7 +1358,8 @@ def test_write_data_to_text_file_name_exception(tmp_path):
     xparam = ParamSpecBase("x", 'numeric')
     yparam = ParamSpecBase("y", 'numeric')
     zparam = ParamSpecBase("z", 'numeric')
-    idps = InterDependencies_(dependencies={yparam: (xparam,), zparam: (xparam,)})
+    idps = InterDependencies_(
+        dependencies={yparam: (xparam,), zparam: (xparam,)})
     dataset.set_interdependencies(idps)
 
     dataset.mark_started()
@@ -1328,3 +1371,15 @@ def test_write_data_to_text_file_name_exception(tmp_path):
     with pytest.raises(Exception, match='desired file name'):
         dataset.write_data_to_text_file(path=temp_dir, single_file=True,
                                         single_file_name=None)
+
+
+def test_same_setpoint_warning_for_df_and_xarray(different_setpoint_dataset):
+
+    warning_mesage = ('Independent parameter setpoints are not equal. \
+                Check concatenated output carefully.')
+
+    with pytest.warns(UserWarning, match=warning_mesage):
+        different_setpoint_dataset.to_pandas_dataframe()
+
+    with pytest.warns(UserWarning, match=warning_mesage):
+        different_setpoint_dataset.to_xarray_dataset()

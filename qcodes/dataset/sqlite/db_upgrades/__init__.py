@@ -14,7 +14,7 @@ principle, the upgrade functions should not have dependecies from
 """
 import logging
 from functools import wraps
-from typing import Dict, Callable
+from typing import Dict, Callable, Any
 import sys
 
 import numpy as np
@@ -40,7 +40,7 @@ TUpgraderFunction = Callable[[ConnectionPlus], None]
 # The newest database version is thus determined by the number of upgrades
 # in this module
 # The key is the TARGET VERSION of the upgrade, i.e. the first key is 1
-_UPGRADE_ACTIONS: Dict[int, Callable] = {}
+_UPGRADE_ACTIONS: Dict[int, Callable[..., Any]] = {}
 
 
 def _latest_available_version() -> int:

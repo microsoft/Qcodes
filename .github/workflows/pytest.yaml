@@ -28,8 +28,6 @@ jobs:
         fetch-depth: '0'
     - name: setup ubuntu-latest xvfb
       uses: ./.github/actions/setup-ubuntu-latest-xvfb
-    - name: install 3.9 build deps ubuntu
-      run: sudo apt install libhdf5-dev libxml2-dev libxml2 libxslt1.1 libxslt1-dev
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
@@ -46,22 +44,21 @@ jobs:
           ${{ runner.os }}-${{ matrix.python-version }}-pip-
     - name: install requirements.txt
       run: |
-        pip install -r requirements.txt --use-feature=2020-resolver
+        pip install -r requirements.txt
     - name: install test_requirements.txt
       run: |
-        pip install -r test_requirements.txt --use-feature=2020-resolver
+        pip install -r test_requirements.txt
     - name: generate test dbs
       uses: ./.github/actions/generate-test-dbs
     - name: install qcodes
-      run: pip install . --use-feature=2020-resolver
+      run: pip install .
     - name: Run Mypy
       run: mypy qcodes
     - name: Run tests
       run: |
-        cd qcodes
-        py.test --cov=qcodes --cov-report xml --cov-config=.coveragerc --hypothesis-profile ci
+        pytest --cov=qcodes --cov-report xml --cov-config=setup.cfg --hypothesis-profile ci qcodes
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1
       with:
-        file: ./qcodes/coverage.xml
+        file: ./coverage.xml
         env_vars: OS,PYTHON

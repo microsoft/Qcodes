@@ -3,10 +3,10 @@ Driver for the Tekronix S46 RF switch
 """
 import re
 from itertools import product
-from functools import partial
 
 from typing import Any, Dict, List, Optional
-from qcodes import Instrument, VisaInstrument, Parameter
+from qcodes import Instrument, VisaInstrument
+from qcodes.instrument.parameter import ParamRawDataType, Parameter
 
 
 class LockAcquisitionError(Exception):
@@ -82,19 +82,19 @@ class S46Parameter(Parameter):
                     "Refusing to initialize driver!"
                 ) from e
 
-    def _get(self, get_cached):
-
-        closed_channels = self._instrument.closed_channels.get_latest()
+    def _get(self, get_cached: bool) -> str:
+        assert isinstance(self.instrument, S46)
+        closed_channels = self.instrument.closed_channels.get_latest()
 
         if not get_cached or closed_channels is None:
-            closed_channels = self._instrument.closed_channels.get()
+            closed_channels = self.instrument.closed_channels.get()
 
         return "close" if self.name in closed_channels else "open"
 
-    def get_raw(self):
+    def get_raw(self) -> ParamRawDataType:
         return self._get(get_cached=False)
 
-    def set_raw(self, value) -> None:
+    def set_raw(self, value: ParamRawDataType) -> None:
 
         if value == "close":
             self._lock.acquire(self._channel_number)
@@ -119,7 +119,8 @@ class S46Parameter(Parameter):
 
 class S46(VisaInstrument):
 
-    relay_names: list = ["A", "B", "C", "D"] + [f"R{j}" for j in range(1, 9)]
+    relay_names: List[str] = (["A", "B", "C", "D"] +
+                              [f"R{j}" for j in range(1, 9)])
 
     # Make a dictionary where keys are channel aliases (e.g. 'A1', 'B3', etc)
     # and values are corresponding channel numbers.

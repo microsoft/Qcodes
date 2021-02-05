@@ -1,9 +1,9 @@
 import logging
 from functools import partial
-from typing import Dict, cast, Union, Any
+from typing import Any, Dict, List, Union, cast
 
-from qcodes import VisaInstrument, validators as vals
-from qcodes import InstrumentChannel, ChannelList
+from qcodes import ChannelList, InstrumentChannel, VisaInstrument
+from qcodes import validators as vals
 from qcodes.utils.helpers import partial_with_docstring
 
 log = logging.getLogger(__name__)
@@ -243,7 +243,7 @@ class DG1062Channel(InstrumentChannel):
         """
         self._set_waveform_params(**kwargs)
 
-    def current_waveform(self) -> Dict:
+    def current_waveform(self) -> Dict[Any, Any]:
         """Public interface to get the current waveform"""
         return self._get_waveform_params()
 
@@ -255,11 +255,11 @@ class DG1062Channel(InstrumentChannel):
         params_dict = self._get_waveform_params()
         return params_dict.get(param, None)
 
-    def _get_waveform_params(self) -> Dict:
+    def _get_waveform_params(self) -> Dict[Any, Any]:
         """
         Get all the parameters of the current waveform and
         """
-        def to_float(string):
+        def to_float(string: str) -> Union[float, str]:
             try:
                 return float(string)
             except ValueError:
@@ -269,7 +269,8 @@ class DG1062Channel(InstrumentChannel):
         parts = waveform_str.strip("\"").split(",")
 
         current_waveform = self.waveform_translate[parts[0]]
-        param_vals = [current_waveform] + [to_float(i) for i in parts[1:]]
+        param_vals: List[Union[str, float]] = [current_waveform]
+        param_vals += [to_float(i) for i in parts[1:]]
         param_names = ["waveform"] + self.waveform_params[current_waveform]
         params_dict = dict(zip(param_names, param_vals))
 
@@ -327,7 +328,7 @@ class DG1062Channel(InstrumentChannel):
 
         return duty_cycle
 
-    def _set_duty_cycle(self,duty_cycle):
+    def _set_duty_cycle(self, duty_cycle: float) -> None:
         """
         Sets the duty cycle after checking waveform
         """
@@ -348,7 +349,7 @@ class DG1062(VisaInstrument):
     waveforms = DG1062Channel.waveforms
 
     def __init__(self, name: str, address: str,
-                 **kwargs):
+                 **kwargs: Any):
 
         super().__init__(name, address, terminator="\n", **kwargs)
 

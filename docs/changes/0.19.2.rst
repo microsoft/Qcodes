@@ -1,0 +1,7 @@
+Changelog for QCoDeS 0.19.2
+===========================
+
+Patch:
+______
+
+Patch release to support backwards compatibility with pyvisa 1.10 (#2371)

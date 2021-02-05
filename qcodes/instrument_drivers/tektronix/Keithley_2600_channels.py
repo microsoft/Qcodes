@@ -2,7 +2,7 @@ import logging
 import struct
 import numpy as np
 import warnings
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 
 import qcodes as qc
 from qcodes import VisaInstrument
@@ -559,7 +559,7 @@ class Keithley_2600(VisaInstrument):
     tested with Keithley_2614B
 
     """
-    def __init__(self, name: str, address: str, **kwargs) -> None:
+    def __init__(self, name: str, address: str, **kwargs: Any) -> None:
         """
         Args:
             name: Name to use internally in QCoDeS

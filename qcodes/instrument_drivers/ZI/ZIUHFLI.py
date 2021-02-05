@@ -5,7 +5,7 @@ import numpy as np
 from functools import partial
 from math import sqrt
 
-from typing import Callable, List, Union, cast, Optional, Sequence, Dict
+from typing import Any, Callable, List, Union, cast, Optional, Sequence, Dict
 
 from qcodes.utils.helpers import create_on_off_val_mapping
 
@@ -345,7 +345,7 @@ class Scope(MultiParameter):
         self._instrument = instrument
         self._scopeactions = []  # list of callables
 
-    def add_post_trigger_action(self, action: Callable) -> None:
+    def add_post_trigger_action(self, action: Callable[..., Any]) -> None:
         """
         Add an action to be performed immediately after the trigger
         has been armed. The action must be a callable taking zero
@@ -355,7 +355,7 @@ class Scope(MultiParameter):
             self._scopeactions.append(action)
 
     @property
-    def post_trigger_actions(self) -> List[Callable]:
+    def post_trigger_actions(self) -> List[Callable[..., Any]]:
         return self._scopeactions
 
     def prepare_scope(self):
@@ -1656,7 +1656,7 @@ class ZIUHFLI(Instrument):
 
     def snapshot_base(self, update: Optional[bool] = True,
                       params_to_skip_update: Optional[Sequence[str]] = None
-                      ) -> Dict:
+                      ) -> Dict[Any, Any]:
         """ Override the base method to ignore 'sweeper_sweeptime' if no signals selected."""
         params_to_skip = []
         if not self._sweeper_signals:
@@ -1691,7 +1691,7 @@ class ZIUHFLI(Instrument):
             self.daq.setDouble(setstr, value)
 
     def _getter(self, module: str, number: int,
-                mode: int, setting: str) -> Union[float, int, str, dict]:
+                mode: int, setting: str) -> Union[float, int, str, Dict[Any, Any]]:
         """
         General get function for generic parameters. Note that some parameters
         use more specialised setter/getters.
@@ -1731,7 +1731,7 @@ class ZIUHFLI(Instrument):
         setting = 'sample'
         if demod_param not in ['x', 'y', 'R', 'phi']:
             raise RuntimeError("Invalid demodulator parameter")
-        datadict = cast(dict, self._getter(module, number, mode, setting))
+        datadict = cast(Dict[Any, Any], self._getter(module, number, mode, setting))
         datadict['R'] = np.abs(datadict['x'] + 1j * datadict['y'])
         datadict['phi'] = np.angle(datadict['x'] + 1j * datadict['y'], deg=True)
         return datadict[demod_param]

@@ -22,13 +22,6 @@ class InstrumentChannel(InstrumentBase):
 
         name: The name of this channel.
 
-    Attributes:
-
-        parameters (Dict[Parameter]): All the parameters supported by this
-          channel. Usually populated via ``add_parameter``.
-
-        functions (Dict[Function]): All the functions supported by this
-          channel. Usually populated via ``add_function``.
     """
 
     def __init__(self,
@@ -213,7 +206,7 @@ class ChannelList(Metadatable):
                 raise TypeError("All items in this channel list must be of "
                                 "type {}.".format(chan_type.__name__))
 
-    def __getitem__(self, i: Union[int, slice, tuple]) -> \
+    def __getitem__(self, i: Union[int, slice, Tuple[int, ...]]) -> \
             Union['InstrumentChannel', 'ChannelList']:
         """
         Return either a single channel, or a new :class:`ChannelList`
@@ -298,7 +291,7 @@ class ChannelList(Metadatable):
         if self._locked:
             raise AttributeError("Cannot clear a locked channel list")
         # when not locked the _channels seq is a list
-        channels = cast(list, self._channels)
+        channels = cast(List['InstrumentChannel'], self._channels)
         channels.clear()
         self._channel_mapping.clear()
 
@@ -391,7 +384,7 @@ class ChannelList(Metadatable):
 
     def snapshot_base(self, update: Optional[bool] = True,
                       params_to_skip_update: Optional[Sequence[str]] = None
-                      ) -> Dict:
+                      ) -> Dict[Any, Any]:
         """
         State of the instrument as a JSON-compatible dict (everything that
         the custom JSON encoder class
@@ -507,7 +500,7 @@ class ChannelList(Metadatable):
         raise AttributeError('\'{}\' object has no attribute \'{}\''
                              ''.format(self.__class__.__name__, name))
 
-    def __dir__(self) -> list:
+    def __dir__(self) -> List[Any]:
         names = list(super().__dir__())
         if self._channels:
             names += list(self._channels[0].parameters.keys())
@@ -523,7 +516,7 @@ class ChannelList(Metadatable):
                                                 max_chars=max_chars)
 
 
-class ChannelListValidator(Validator):
+class ChannelListValidator(Validator[InstrumentChannel]):
     """
     A validator that checks that the returned object is a member of the
     channel list with which the validator was constructed.
@@ -607,7 +600,7 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
 
     @classmethod
     def _discover_from_instrument(
-            cls, parent: Instrument, **kwargs: Any) -> List[dict]:
+            cls, parent: Instrument, **kwargs: Any) -> List[Dict[Any, Any]]:
         """
         Discover channels on the instrument and return a list kwargs to create
         these channels in memory
@@ -675,7 +668,7 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
 
     @classmethod
     def _get_new_instance_kwargs(cls, parent: Optional[Instrument] = None,
-                                 **kwargs: Any) -> dict:
+                                 **kwargs: Any) -> Dict[Any, Any]:
         """
         Returns a dictionary which is used as keyword args when instantiating a
         channel

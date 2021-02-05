@@ -22,7 +22,7 @@ class MockBackendBase:
     expressions and on match the corresponding callable is called.
     """
     def __init__(self) -> None:
-        self._command_dict: Dict[str, Callable] = {}
+        self._command_dict: Dict[str, Callable[..., Any]] = {}
 
     def send(self, cmd: str) -> Any:
         """
@@ -96,7 +96,7 @@ class SimpleTestChannel(AutoLoadableInstrumentChannel):
 
     @classmethod
     def _discover_from_instrument(
-            cls, parent: Instrument, **kwargs) -> List[dict]:
+            cls, parent: Instrument, **kwargs) -> List[Dict[Any, Any]]:
         """
         New channels need `name` and `channel` keyword arguments.
         """
@@ -124,7 +124,8 @@ class SimpleTestChannel(AutoLoadableInstrumentChannel):
 
     @classmethod
     def _get_new_instance_kwargs(
-            cls, parent: Optional[Instrument] = None, **kwargs) -> dict:
+            cls, parent: Optional[Instrument] = None, **kwargs
+    ) -> Dict[Any, Any]:
         """
         Find the smallest channel number not yet occupied. An optional keyword
         `greeting` is extracted from the kwargs. The default is "Hello"

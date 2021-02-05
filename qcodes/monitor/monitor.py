@@ -56,7 +56,7 @@ def _get_metadata(*parameters: Parameter) -> Dict[str, Any]:
     """
     metadata_timestamp = time.time()
     # group metadata by instrument
-    metas: dict = defaultdict(list)
+    metas: Dict[Any, Any] = defaultdict(list)
     for parameter in parameters:
         # Get the latest value from the parameter,
         # respecting the max_val_age parameter

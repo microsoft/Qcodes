@@ -122,12 +122,12 @@ def _all_steps_multiples_of_min_step(rows: np.ndarray) -> bool:
         The answer to the question
     """
 
-    steps: List[np.ndarray] = []
+    steps_list: List[np.ndarray] = []
     for row in rows:
         # TODO: What is an appropriate precision?
-        steps += list(np.unique(np.diff(row).round(decimals=15)))
+        steps_list += list(np.unique(np.diff(row).round(decimals=15)))
 
-    steps = np.unique(steps)
+    steps = np.unique(steps_list)
     remainders = np.mod(steps[1:]/steps[0], 1)
 
     # TODO: What are reasonable tolerances for allclose?
@@ -384,8 +384,8 @@ def reshape_2D_data(x: np.ndarray, y: np.ndarray, z: np.ndarray
         z_to_plot = np.full((ny, nx), '', dtype=z.dtype)
     else:
         z_to_plot = np.full((ny, nx), np.nan)
-    x_index = np.zeros_like(x, dtype=np.int)
-    y_index = np.zeros_like(y, dtype=np.int)
+    x_index = np.zeros_like(x, dtype=np.dtype(np.int_))
+    y_index = np.zeros_like(y, dtype=np.dtype(np.int_))
     for i, xval in enumerate(xrow):
         x_index[np.where(x == xval)[0]] = i
     for i, yval in enumerate(yrow):
@@ -396,7 +396,9 @@ def reshape_2D_data(x: np.ndarray, y: np.ndarray, z: np.ndarray
     return xrow, yrow, z_to_plot
 
 
-def get_shaped_data_by_runid(run_id: int) -> List:
+def get_shaped_data_by_runid(
+        run_id: int
+) -> List[List[Dict[str, Union[str, np.ndarray]]]]:
     """
     Get data for a given run ID, but shaped according to its nature
 

@@ -17,7 +17,7 @@ from qcodes.utils.validators import Numbers
 logger = logging.getLogger()
 
 
-def chain(*functions: Callable) -> Callable:
+def chain(*functions: Callable[..., Any]) -> Callable[..., Any]:
     """
     The output of the first callable is piped to the input of the second, etc.
 
@@ -27,7 +27,7 @@ def chain(*functions: Callable) -> Callable:
         >>> chain(f, float)()  # return 1.2 as float
     """
 
-    def make_iter(args: Any) -> Iterable:
+    def make_iter(args: Any) -> Iterable[Any]:
         if not isinstance(args, Iterable) or isinstance(args, str):
             return args,
         return args
@@ -216,7 +216,7 @@ class Stahl(VisaInstrument):
                 "with a QCoDeS core developer"
             )
 
-        converters: Dict[str, Callable] = OrderedDict({
+        converters: Dict[str, Callable[..., Any]] = OrderedDict({
             "model": str,
             "serial_number": str,
             "voltage_range": float,

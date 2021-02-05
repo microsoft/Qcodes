@@ -1,6 +1,6 @@
 QCoDeS |PyPi| |DOCS| |PyPI python versions| |DOI|
 =================================================
-|Build Status Azure| |Build Status Travis| |Codacy badge|
+|Build Status Azure| |Build Status Github| |Build Status Github Docs| |Codacy badge|
 
 QCoDeS is a Python-based data acquisition framework developed by the
 Copenhagen / Delft / Sydney / Microsoft quantum computing consortium.
@@ -78,8 +78,10 @@ See `License <https://github.com/QCoDeS/Qcodes/tree/master/LICENSE.rst>`__.
 
 .. |Build Status Azure| image:: https://dev.azure.com/ms-quantum-public/Microsoft%20Quantum%20(public)/_apis/build/status/QCoDeS.Qcodes%20(public)?branchName=master
     :target: https://dev.azure.com/ms-quantum-public/Microsoft%20Quantum%20(public)/_build/latest?definitionId=8&branchName=master
-.. |Build Status Travis| image:: https://travis-ci.com/QCoDeS/Qcodes.svg?branch=master
-    :target: https://travis-ci.com/QCoDeS/Qcodes
+.. |Build Status Github| image:: https://github.com/QCoDeS/Qcodes/workflows/Run%20mypy%20and%20pytest/badge.svg
+    :target: https://github.com/QCoDeS/Qcodes/actions?query=workflow%3A%22Run+mypy+and+pytest%22
+.. |Build Status Github Docs| image:: https://github.com/QCoDeS/Qcodes/workflows/build%20docs/badge.svg
+    :target: https://github.com/QCoDeS/Qcodes/actions?query=workflow%3A%22build+docs%22
 .. |Codacy badge| image:: https://api.codacy.com/project/badge/Grade/6c9e0e5712bf4c6285d6f717aa8e84fa
     :alt: Codacy Badge
     :target: https://app.codacy.com/manual/qcodes/Qcodes?utm_source=github.com&utm_medium=referral&utm_content=QCoDeS/Qcodes&utm_campaign=Badge_Grade_Settings
@@ -89,5 +91,5 @@ See `License <https://github.com/QCoDeS/Qcodes/tree/master/LICENSE.rst>`__.
     :target: https://pypi.python.org/pypi/qcodes/
 .. |DOCS| image:: https://img.shields.io/badge/read%20-thedocs-ff66b4.svg
    :target: http://qcodes.github.io/Qcodes
-.. |DOI| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.4136154.svg
-   :target: https://doi.org/10.5281/zenodo.4136154
+.. |DOI| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.4476114.svg
+   :target: https://doi.org/10.5281/zenodo.4476114

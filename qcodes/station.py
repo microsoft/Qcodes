@@ -74,7 +74,7 @@ class ValidationWarning(Warning):
     pass
 
 
-class StationConfig(UserDict):
+class StationConfig(Dict[Any, Any]):
     def snapshot(self, update: bool = True) -> 'StationConfig':
         return self
 
@@ -141,7 +141,7 @@ class Station(Metadatable, DelegateAttributes):
 
     def snapshot_base(self, update: Optional[bool] = True,
                       params_to_skip_update: Optional[Sequence[str]] = None
-                      ) -> Dict:
+                      ) -> Dict[Any, Any]:
         """
         State of the station as a JSON-compatible dictionary (everything that
         the custom JSON encoder class :class:`qcodes.utils.helpers.NumpyJSONEncoder`
@@ -163,7 +163,7 @@ class Station(Metadatable, DelegateAttributes):
         Returns:
             dict: Base snapshot.
         """
-        snap: Dict = {
+        snap: Dict[str, Any] = {
             'instruments': {},
             'parameters': {},
             'components': {},

@@ -1,6 +1,6 @@
 from functools import partial
 import logging
-from typing import Sequence, Dict, Optional
+from typing import Any, Sequence, Dict, Optional
 
 import numpy as np
 
@@ -104,7 +104,7 @@ class MockMetaParabola(InstrumentBase):
 class DummyInstrument(Instrument):
 
     def __init__(self, name: str = 'dummy',
-                 gates: Sequence = ('dac1', 'dac2', 'dac3'), **kwargs):
+                 gates: Sequence[str] = ('dac1', 'dac2', 'dac3'), **kwargs):
 
         """
         Create a dummy instrument that can be used for testing
@@ -692,7 +692,7 @@ class SnapShotTestInstrument(Instrument):
 
     def snapshot_base(self, update: Optional[bool] = True,
                       params_to_skip_update: Optional[Sequence[str]] = None
-                      ) -> Dict:
+                      ) -> Dict[Any, Any]:
         if params_to_skip_update is None:
             params_to_skip_update = self._params_to_skip
         snap = super().snapshot_base(

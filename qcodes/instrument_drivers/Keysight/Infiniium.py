@@ -560,7 +560,7 @@ class Infiniium(VisaInstrument):
         meassubsys = MeasurementSubsystem(self, 'measure')
         self.add_submodule('measure', meassubsys)
 
-    def _cmd_and_invalidate(self, cmd: str) -> Callable:
+    def _cmd_and_invalidate(self, cmd: str) -> Callable[..., Any]:
         return partial(Infiniium._cmd_and_invalidate_call, self, cmd)
 
     def _cmd_and_invalidate_call(self, cmd: str, val: float) -> None:
@@ -578,8 +578,10 @@ class Infiniium(VisaInstrument):
         """
         self.write(f'SAV:WAV "{filename}"')
 
-    def get_current_traces(self, channels: Optional[Sequence[int]] = None
-                          ) -> Dict:
+    def get_current_traces(
+            self,
+            channels: Optional[Sequence[int]] = None
+    ) -> Dict[Any, Any]:
         """
         Get the current traces of 'channels' on the oscillsocope.
 

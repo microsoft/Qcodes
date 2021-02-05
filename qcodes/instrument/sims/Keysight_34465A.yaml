@@ -14,6 +14,21 @@ devices:
         r: null_response
       - q: "SAMPle:TIMer? MIN"
         r: 0.1
+      - q: "TRIGger:DELay MIN"
+        r: null_response
+      - q: "TRIGger:DELay MAX"
+        r: null_response
+      - q: "TRIGger:DELay DEF"
+        r: null_response
+      - q: "TRIGger:LEVel MIN"
+        r: null_response
+      - q: "TRIGger:LEVel MAX"
+        r: null_response
+      - q: "TRIGger:LEVel DEF"
+        r: null_response
+      - q: "*RST"
+      - q: "*OPC?"
+        r: null_response
     properties:
       voltage:
         default: 10
@@ -62,6 +77,30 @@ devices:
           r: "{}"
         setter:
           q: "TRIGger:SOURce {}"
+      trigger_delay:
+        default: 0
+        getter:
+          q: "TRIGger:DELay?"
+          r: "{}"
+        setter:
+          q: "TRIGger:DELay {}"
+      trigger_auto_delay_enabled:
+        default: 0
+        getter:
+          q: "TRIGger:DELay:AUTO?"
+          r: "{}"
+        setter:
+          q: "TRIGger:DELay:AUTO {}"
+        specs:
+          valid: [0, 1]
+          type: int
+      trigger_level:
+        default: 0
+        getter:
+          q: "TRIGger:LEVel?"
+          r: "{}"
+        setter:
+          q: "TRIGger:LEVel {}"
       sample_timer:
         default: 1.0
         getter:
@@ -116,6 +155,20 @@ devices:
           r: "{}"
         setter:
           q: "SENSe:VOLTage:DC:APERture:ENABled {}"
+      apterture_time:
+        default: 0
+        getter:
+          q: "SENSe:VOLTage:DC:APERture?"
+          r: "{}"
+        setter:
+          q: "SENSe:VOLTage:DC:APERture {}"
+      autozero:
+        default: 0
+        getter:
+          q: "SENSe:VOLTage:DC:ZERO:AUTO?"
+          r: "{}"
+        setter:
+          q: "SENSe:VOLTage:DC:ZERO:AUTO {}"
       licenses:
         default: "DIG"
         getter:
@@ -142,7 +195,16 @@ devices:
           type: string
         setter:
           q: "DISPLAY:TEXT \"{}\""
-
+      display_enable:
+        default: 1
+        getter:
+          q: "DISPlay:STATe?"
+          r: "{}"
+        setter:
+          q: "DISPlay:STATe {}"
+        specs:
+          valid: [0, 1]
+          type: int
 
 resources:
   GPIB::1::INSTR:

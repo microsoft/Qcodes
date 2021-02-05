@@ -1,7 +1,8 @@
 """Visa instrument driver based on pyvisa."""
-from typing import Sequence, Optional, Dict, Union, Any
+from typing import Sequence, Optional, Dict, Union, Any, cast
 import warnings
 import logging
+from packaging.version import Version
 
 import pyvisa as visa
 import pyvisa.constants as vi_const
@@ -139,10 +140,13 @@ class VisaInstrument(Instrument):
         if self.visabackend == 'sim':
             return
 
+        flush_operation = (
+                vi_const.BufferOperation.discard_read_buffer_no_io |
+                vi_const.BufferOperation.discard_write_buffer
+        )
+
         if isinstance(self.visa_handle, pyvisa.resources.SerialInstrument):
-            self.visa_handle.flush(
-                vi_const.BufferOperation.discard_read_buffer_no_io | vi_const.BufferOperation.discard_write_buffer
-            )
+            self.visa_handle.flush(flush_operation)
         else:
             self.visa_handle.clear()
 
@@ -234,7 +238,7 @@ class VisaInstrument(Instrument):
 
     def snapshot_base(self, update: Optional[bool] = True,
                       params_to_skip_update: Optional[Sequence[str]] = None
-                      ) -> Dict:
+                      ) -> Dict[Any, Any]:
         """
         State of the instrument as a JSON-compatible dict (everything that
         the custom JSON encoder class :class:`qcodes.utils.helpers.NumpyJSONEncoder`

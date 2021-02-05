@@ -1,5 +1,5 @@
 # Test some subscription scenarios
-from typing import List, Tuple, Dict, Union
+from typing import List, Tuple, Dict, Union, Any
 from numbers import Number
 
 import pytest
@@ -17,7 +17,7 @@ from qcodes.tests.common import retry_until_does_not_throw
 
 log = logging.getLogger(__name__)
 
-VALUE = Union[str, Number, List, ndarray, bool]
+VALUE = Union[str, Number, List[Any], ndarray, bool]
 
 
 class MockSubscriber():
@@ -35,7 +35,7 @@ class MockSubscriber():
         self.ds = ds
 
     def __call__(self, results: List[Tuple[VALUE]],
-                 length: int, state: Dict) -> None:
+                 length: int, state: Dict[Any, Any]) -> None:
         log.debug(f'got log {self.lg} and dataset {self.ds.completed}.')
         state[length] = results
 

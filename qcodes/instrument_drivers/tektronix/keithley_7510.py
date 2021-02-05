@@ -1,9 +1,10 @@
 import numpy as np
-from typing import cast, Optional, List, Union, Sequence, Any, Tuple, Dict
+from typing import cast, Optional, List, Union, Sequence, Any, Tuple, Dict, Type, Set
+from types import TracebackType
 
 from qcodes import VisaInstrument, InstrumentChannel
 from qcodes.instrument.parameter import invert_val_mapping, Parameter, \
-    DelegateParameter, MultiParameter
+    DelegateParameter, MultiParameter, ParamRawDataType
 from qcodes.utils.validators import Enum, Numbers, Ints, Lists, Arrays
 from qcodes.utils.helpers import create_on_off_val_mapping
 
@@ -17,7 +18,7 @@ class DataArray7510(MultiParameter):
     def __init__(self,
                  names: Sequence[str],
                  shapes: Sequence[Sequence[int]],
-                 setpoints: Optional[Sequence[Sequence]],
+                 setpoints: Optional[Sequence[Sequence[Any]]],
                  **kwargs: Any):
         super().__init__(name='data_array_7510',
                          names=names,
@@ -27,7 +28,7 @@ class DataArray7510(MultiParameter):
         for param_name in self.names:
             self.__dict__.update({param_name: []})
 
-    def get_raw(self) -> Optional[tuple]:
+    def get_raw(self) -> Optional[Tuple[ParamRawDataType, ...]]:
         return self._data
 
 
@@ -47,8 +48,15 @@ class GeneratedSetPoints(Parameter):
         self._stop = stop
         self._n_points = n_points
 
-    def get_raw(self):
-        return np.linspace(self._start(), self._stop(), self._n_points())
+    def get_raw(self) -> np.ndarray:
+        start = self._start()
+        assert start is not None
+        stop = self._stop()
+        assert stop is not None
+        n_points = self._n_points()
+        assert n_points is not None
+
+        return np.linspace(start, stop, n_points)
 
 
 class Buffer7510(InstrumentChannel):
@@ -237,14 +245,16 @@ class Buffer7510(InstrumentChannel):
         if label is not None:
             self.setpoints.label = label
 
-    def __enter__(self):
+    def __enter__(self) -> "Buffer7510":
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exception_type: Optional[Type[BaseException]],
+                 value: Optional[BaseException],
+                 traceback: Optional[TracebackType]) -> None:
         self.delete()
 
     @property
-    def available_elements(self) -> set:
+    def available_elements(self) -> Set[str]:
         return set(self.buffer_elements.keys())
 
     @property
@@ -668,7 +678,8 @@ class Keithley7510(VisaInstrument):
     """
     The QCoDeS driver for the Keithley 7510 DMM
     """
-    def __init__(self, name: str, address: str, terminator='\n', **kwargs: Any):
+    def __init__(self, name: str, address: str,
+                 terminator: str = '\n', **kwargs: Any):
         """
         Create an instance of the instrument.
 

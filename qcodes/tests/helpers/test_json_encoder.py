@@ -4,6 +4,7 @@ import json
 import numpy as np
 import pytest
 from qcodes.utils.helpers import NumpyJSONEncoder
+from qcodes.utils.types import numpy_ints, numpy_floats, numpy_complex
 
 
 def test_python_types():
@@ -30,19 +31,13 @@ def test_complex_types():
     e = NumpyJSONEncoder()
     assert e.encode(complex(1, 2)) == \
            '{"__dtype__": "complex", "re": 1.0, "im": 2.0}'
-    assert e.encode(np.complex(1, 2)) == \
-           '{"__dtype__": "complex", "re": 1.0, "im": 2.0}'
-    assert e.encode(np.complex64(complex(1, 2))) == \
-           '{"__dtype__": "complex", "re": 1.0, "im": 2.0}'
+    for complex_type in numpy_complex:
+        assert e.encode(complex_type(complex(1, 2))) == \
+               '{"__dtype__": "complex", "re": 1.0, "im": 2.0}'
 
 
 def test_numpy_int_types():
     e = NumpyJSONEncoder()
-
-    numpy_ints = (np.int, np.int_, np.int8, np.int16, np.int32,
-                  np.int64, np.intc, np.intp,
-                  np.uint, np.uint8, np.uint16, np.uint32, np.uint64,
-                  np.uintc, np.uintp)
 
     for int_type in numpy_ints:
         assert e.encode(int_type(3)) == '3'
@@ -50,9 +45,6 @@ def test_numpy_int_types():
 
 def test_numpy_float_types():
     e = NumpyJSONEncoder()
-
-    numpy_floats = (np.float, np.float_, np.float16, np.float32,
-                    np.float64)
 
     for float_type in numpy_floats:
         assert e.encode(float_type(2.5)) == '2.5'
@@ -115,7 +107,7 @@ def test_object_with_serialization_method():
            '{"i_am_actually": "a_dict_addict"}'
 
 
-class SomeUserDict(UserDict):
+class SomeUserDict(UserDict):   # type:ignore[type-arg]
     pass
 
 EXAMPLEMETADATA = {
