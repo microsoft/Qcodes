@@ -1,5 +1,5 @@
 import warnings
-from typing import Any
+from typing import Any, Optional
 
 from numpy import pi
 
@@ -34,7 +34,7 @@ class Agilent_E8527D(VisaInstrument):
         for f_option in ['513', '520', '521', '532', '540', '550', '567']:
             if f_option in self._options:
                 frequency_option = f_option
-        if frequency_option == None:
+        if frequency_option is None:
             raise RuntimeError('Could not determine the frequency option')
 
         # convert installed frequency option to frequency ranges, based on:
