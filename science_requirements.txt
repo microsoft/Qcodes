@@ -4,7 +4,7 @@ astroid==2.4.2
 async-generator==1.10
 atomicwrites==1.4.0
 attrs==20.3.0
-autopep8==1.5.4
+autopep8==1.5.5
 Babel==2.9.0
 backcall==0.2.0
 bcrypt==3.2.0
