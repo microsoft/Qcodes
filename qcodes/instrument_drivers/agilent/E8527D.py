@@ -1,3 +1,4 @@
+import warnings
 from typing import Any
 
 from numpy import pi
@@ -15,9 +16,15 @@ class Agilent_E8527D(VisaInstrument):
     only the ones most commonly used.
     """
     def __init__(self, name: str, address: str,
+                 step_attenuator: Optional[bool] = None,
                  terminator: str = '\n',
                  **kwargs: Any) -> None:
         super().__init__(name, address, terminator=terminator, **kwargs)
+
+        if step_attenuator is not None:
+            warnings.warn("step_attenuator argument to E8527D is deprecated "
+                          "and has no effect. It will be removed in the "
+                          "future.")
 
         # Query installed options
         self._options = self.ask_raw('DIAG:CPU:INFO:OPT:DET?')
@@ -33,7 +40,7 @@ class Agilent_E8527D(VisaInstrument):
         # convert installed frequency option to frequency ranges, based on:
         # https://www.keysight.com/us/en/assets/7018-01233/configuration-guides
         # /5989-1325.pdf
-        # the frequency range here is the max range and not the specified 
+        # the frequency range here is the max range and not the specified
         # (calibrated) one
         f_options_dict = {
             "513": (100e3, 13e9),
@@ -50,7 +57,7 @@ class Agilent_E8527D(VisaInstrument):
         self._max_freq: float
         self._min_freq, self._max_freq = f_options_dict[frequency_option]
 
-        # Based on installed frequency option and presence/absence of step 
+        # Based on installed frequency option and presence/absence of step
         # attenuator (option '1E1') determine power range based on:
         # https://www.keysight.com/us/en/assets/7018-01211/data-sheets
         # /5989-0698.pdf
@@ -101,6 +108,7 @@ class Agilent_E8527D(VisaInstrument):
                            get_parser=float,
                            set_parser=float,
                            vals=vals.Numbers(self._min_power, self._max_power))
+
         self.add_parameter('status',
                            get_cmd=':OUTP?',
                            set_cmd='OUTP {}',
