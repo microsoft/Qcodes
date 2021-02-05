@@ -51,9 +51,9 @@ class DataSetCache:
         no load will be performed.
         """
         if self.live:
-            raise RuntimeError("Cannot read data into this cache from the "
-                               "database as the dataset is build "
-                               "directly from measured data.")
+            raise RuntimeError("Cannot load data into this cache from the "
+                               "database because this dataset is being built "
+                               "in-memory.")
 
         if self._loaded_from_completed_ds:
             return
@@ -82,6 +82,7 @@ class DataSetCache:
         """
         If true this cache has been produced by appending data as measured.
         If false the data has been read from disk.
+        If None, then the cache does not yet have any data.
         """
         return self._live
 

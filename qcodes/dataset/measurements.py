@@ -501,7 +501,9 @@ class Runner:
         # next set up the "datasaver"
         if self.experiment is not None:
             self.ds = qc.new_data_set(
-                self.name, self.experiment.exp_id, conn=self.experiment.conn,
+                self.name, self.experiment.exp_id,
+                conn=self.experiment.conn,
+                in_memory_cache=self._in_memory_cache
             )
         else:
             self.ds = qc.new_data_set(

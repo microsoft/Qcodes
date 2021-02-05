@@ -1516,9 +1516,11 @@ class DataSet(Sized):
             param_data: numpy.ndarray
     ) -> numpy.ndarray:
         """
-        Shape cache data so it matches data read from dd.
-        Add an extra singleton dim to array data and flatten
-        non array data into a linear array.
+        Shape cache data so it matches data read from database.
+        This means:
+        
+        - Add an extra singleton dim to array data
+        - flatten non array data into a linear array.
         """
         param_data = numpy.atleast_1d(param_data)
         if param.type == "array":
