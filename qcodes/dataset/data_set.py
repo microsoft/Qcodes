@@ -1518,7 +1518,7 @@ class DataSet(Sized):
         """
         Shape cache data so it matches data read from database.
         This means:
-        
+
         - Add an extra singleton dim to array data
         - flatten non array data into a linear array.
         """
