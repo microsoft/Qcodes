@@ -1470,7 +1470,8 @@ class DataSet(Sized):
 
         toplevel_params = (set(interdeps.dependencies)
                            .intersection(set(result_dict)))
-        new_results: Dict[str, Dict[str, numpy.ndarray]] = {}
+        if self._in_memory_cache:
+            new_results: Dict[str, Dict[str, numpy.ndarray]] = {}
         for toplevel_param in toplevel_params:
             inff_params = set(interdeps.inferences.get(toplevel_param, ()))
             deps_params = set(interdeps.dependencies.get(toplevel_param, ()))
@@ -1478,12 +1479,13 @@ class DataSet(Sized):
                           .union(deps_params)
                           .union({toplevel_param}))
 
-            new_results[toplevel_param.name] = {}
-            for param in all_params:
-                new_results[toplevel_param.name][param.name] = self._reshape_array_for_cache(
-                    param,
-                    result_dict[param]
-                )
+            if self._in_memory_cache:
+                new_results[toplevel_param.name] = {}
+                for param in all_params:
+                    new_results[toplevel_param.name][param.name] = self._reshape_array_for_cache(
+                        param,
+                        result_dict[param]
+                    )
 
             if toplevel_param.type == 'array':
                 res_list = self._finalize_res_dict_array(
@@ -1504,11 +1506,12 @@ class DataSet(Sized):
 
         if standalones:
             stdln_dict = {st: result_dict[st] for st in standalones}
-            for st in standalones:
-                new_results[st.name] = {
-                    st.name: self._reshape_array_for_cache(st, result_dict[st])
-                }
             self._results += self._finalize_res_dict_standalones(stdln_dict)
+            if self._in_memory_cache:
+                for st in standalones:
+                    new_results[st.name] = {
+                        st.name: self._reshape_array_for_cache(st, result_dict[st])
+                    }
 
         if self._in_memory_cache:
             self.cache.add_data(new_results)
