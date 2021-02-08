@@ -65,7 +65,6 @@ class DataSetCache:
         if self._dataset.completed:
             self._loaded_from_completed_ds = True
 
-        old_write_status = self._write_status
 
         (self._write_status,
          self._read_status,
@@ -113,7 +112,6 @@ class DataSetCache:
                 "been fully or partially loaded from a database."
             )
 
-        old_write_status = self._write_status
         expanded_data = {}
         for param_name, single_param_dict in new_data.items():
             expanded_data[param_name] = _expand_single_param_dict(
@@ -130,7 +128,7 @@ class DataSetCache:
             new_data=expanded_data
         )
 
-        if old_write_status != self._write_status:
+        if not all(status is None for status in self._write_status.values()):
             self._live = True
 
     def to_pandas(self) -> Optional[Dict[str, "pd.DataFrame"]]:
