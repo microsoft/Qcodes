@@ -22,9 +22,12 @@ class DataSetCache:
     """
     The DataSetCache contains a in memory representation of the
     data in this dataset as well a a method to progressively read data
-    from the db as it is written. The cache is available in the same formats
-    as :py:class:`.DataSet.get_parameter_data` and :py:class:`.DataSet.to_pandas_dataframe_dict`
-
+    from the db as it is written and methods to append data as it is received
+    without writing it to disk. The cache can either be loaded from the db
+    or produced as an in memory cache. It is not possible to combine these
+    two ways of producing a dataset cache. The cache is available in the
+    same formats as :py:class:`.DataSet.get_parameter_data` and
+    :py:class:`.DataSet.to_pandas_dataframe_dict`
     """
 
     def __init__(self, dataset: 'DataSet'):
@@ -104,6 +107,11 @@ class DataSetCache:
         return self._data
 
     def add_data(self, new_data: Dict[str, Dict[str, np.ndarray]]) -> None:
+        if self.live is False:
+            raise RuntimeError(
+                "Cannot append live data to a dataset that has "
+                "been fully or partially loaded from a database."
+            )
 
         old_write_status = self._write_status
         expanded_data = {}
