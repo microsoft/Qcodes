@@ -130,17 +130,14 @@ def test_cache_1d(experiment, DAC, DMM, n_points, bg_writing,
                                         dataset1.cache.data())
     if in_memory_cache is False:
         assert dataset1.cache._loaded_from_completed_ds is True
-    else:
-        # todo enable live cache to set this
-        assert dataset1.cache._loaded_from_completed_ds is False
+    assert dataset1.completed is True
     assert dataset1.cache.live is in_memory_cache
     _assert_parameter_data_is_identical(dataset2.get_parameter_data(),
                                         dataset2.cache.data())
     if in_memory_cache is False:
         assert dataset2.cache._loaded_from_completed_ds is True
-    else:
-        # todo enable live cache to set this
-        assert dataset2.cache._loaded_from_completed_ds is False
+    assert dataset2.completed is True
+    assert dataset1.cache.live is in_memory_cache
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
@@ -194,9 +191,8 @@ def test_cache_1d_every_other_point(experiment, DAC, DMM, n_points, bg_writing,
                                         dataset.cache.data())
     if in_memory_cache is False:
         assert dataset.cache._loaded_from_completed_ds is True
-    else:
-        # todo enable live cache to set this
-        assert dataset.cache._loaded_from_completed_ds is False
+    assert dataset.completed is True
+    assert dataset.cache.live is in_memory_cache
     _assert_parameter_data_is_identical(dataset.get_parameter_data(),
                                         dataset.cache.data())
 
