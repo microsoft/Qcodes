@@ -133,6 +133,7 @@ def test_cache_1d(experiment, DAC, DMM, n_points, bg_writing,
     else:
         # todo enable live cache to set this
         assert dataset1.cache._loaded_from_completed_ds is False
+    assert dataset1.cache.live is in_memory_cache
     _assert_parameter_data_is_identical(dataset2.get_parameter_data(),
                                         dataset2.cache.data())
     if in_memory_cache is False:
