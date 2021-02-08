@@ -323,6 +323,9 @@ class DataSet(Sized):
                 of the data captured as a list of integers. The list is in the
                 same order as the interdependencies or paramspecs provided.
                 Ignored if ``run_id`` is provided.
+            in_memory_cache: Should measured data be keep in memory
+                and available as part of the `dataset.cache` object.
+
         """
         self.conn = conn_from_dbpath_or_conn(conn, path_to_db)
 
