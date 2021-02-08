@@ -77,7 +77,8 @@ class DataSetCache:
             self._read_status,
             self._data
         )
-        if old_write_status != self._write_status:
+        if not all(status is None for status in self._write_status.values()):
+            print(f"write status changed from {old_write_status} to {self._write_status}")
             self._live = False
 
     @property
