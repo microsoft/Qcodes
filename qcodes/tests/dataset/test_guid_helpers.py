@@ -57,3 +57,15 @@ def test_guids_from_list_str() -> None:
     assert guids_from_list_str(str([guids[0]])) == (guids[0],)
     assert guids_from_list_str(str(tuple(guids))) == tuple(guids)
     assert guids_from_list_str(str(guids[0])) == (guids[0],)
+
+
+def test_many_guids_from_list_str() -> None:
+    guids = [
+        'aaaaaaaa-0d00-000d-0000-017662aded3d',
+        'aaaaaaaa-0d00-000d-0000-017662ae5fec',
+        'aaaaaaaa-0d00-000d-0000-017662b01bb7',
+        'aaaaaaaa-0d00-000d-0000-017662b18452', 
+        'aaaaaaaa-0d00-000d-0000-017662b298c2',
+        'aaaaaaaa-0d00-000d-0000-017662b2a878', 
+        'aaaaaaaa-0d00-000d-0000-01766827cfaf']
+    assert guids_from_list_str(str(guids)) == tuple(guids)

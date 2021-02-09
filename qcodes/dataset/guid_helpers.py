@@ -2,7 +2,7 @@ from typing import Tuple, Union, Dict, Optional, List, Iterable
 
 from pathlib import Path
 import gc
-import re
+import ast
 
 from sqlite3 import DatabaseError
 
@@ -77,16 +77,10 @@ def guids_from_list_str(s: str) -> Optional[Tuple[str, ...]]:
         ('07fd7195-c51e-44d6-a085-fa8274cf00d6',
         '070d7195-c51e-44d6-a085-fa8274cf00d6')
     """
-    guid = r"[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}"
-    captured_guid = fr"(?:\s*['\"]?({guid})['\"]?\s*)"
-    open_parens = r"[\[\(\{]"
-    close_parens = r"[\]\)\}]"
-    m = re.match(
-        fr"^\s*{open_parens}?"
-        fr"(?:{captured_guid},)*{captured_guid}?"
-        fr"{close_parens}?\s*$",
-        s,
-    )
-    if m is None:
+    parsed = (ast.parse(s, mode='eval')).body
+    if not isinstance(parsed, (ast.List, ast.Tuple, ast.Set)):
         return None
-    return tuple(v for v in m.groups() if v is not None)
+    if not all([isinstance(e, ast.Constant) for e in parsed.elts]):
+        return None
+    return tuple (v.value for v in parsed.elts)
+
