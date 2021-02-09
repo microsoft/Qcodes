@@ -39,4 +39,4 @@ jobs:
     - name: run tests
       shell: bash -l {0}
       run: |
-        pytest
+        pytest -n 1
