@@ -340,7 +340,9 @@ class KeysightE4980A(VisaInstrument):
             names=("capacitance", "conductance"),
             units=("F", "S"),
             parameter_class=MultiParameter,
-            docstring="gets data for the cpg measurement"
+            docstring="gets data for the cpg measurement. make sure "
+                      "`measurement_function` param is set with 'CPG' before "
+                      "calling this parameter"
         )
 
         self.add_submodule(
