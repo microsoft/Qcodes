@@ -334,6 +334,15 @@ class KeysightE4980A(VisaInstrument):
                       "set."
         )
 
+        self.add_parameter(
+            "CPG_meas",
+            get_cmd=self._get_data,
+            names=("capacitance", "conductance"),
+            units=("F", "S"),
+            parameter_class=MultiParameter,
+            docstring="gets data for the cpg measurement"
+        )
+
         self.add_submodule(
             "_correction",
             Correction4980A(self, "correction")
@@ -357,6 +366,15 @@ class KeysightE4980A(VisaInstrument):
     def _set_range(self, val: str) -> None:
         self.write(f":FUNCtion:IMPedance:RANGe {val}")
         self.imp_autorange_enabled.get()
+
+    def _get_data(self) -> Tuple[ParamRawDataType, ...]:
+        """
+        Gets data for the set measurement function
+        """
+        measurement = self.ask(":FETCH:IMPedance:FORMatted?")
+        val1, val2, _ = [float(n) for n in measurement.split(",")]
+
+        return tuple(val1, val2)
 
     def _get_complex_impedance(self) -> MeasurementPair:
         """
