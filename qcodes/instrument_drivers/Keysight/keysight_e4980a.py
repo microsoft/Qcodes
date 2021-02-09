@@ -376,7 +376,7 @@ class KeysightE4980A(VisaInstrument):
         measurement = self.ask(":FETCH:IMPedance:FORMatted?")
         val1, val2, _ = [float(n) for n in measurement.split(",")]
 
-        return tuple(val1, val2)
+        return val1, val2
 
     def _get_complex_impedance(self) -> MeasurementPair:
         """
