@@ -9,7 +9,7 @@ coverage==5.4
 deepdiff==5.2.2
 execnet==1.8.0
 gitdb==4.0.5
-GitPython==3.1.12
+GitPython==3.1.13
 hypothesis==6.1.1
 idna==2.10
 importlib-metadata==3.4.0;python_version<'3.8'
