@@ -15,7 +15,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, windows-latest]
     env:
       DISPLAY: ':99.0'
       OS: ${{ matrix.os }}
@@ -27,6 +27,7 @@ jobs:
         fetch-depth: '0'
     - name: setup ubuntu-latest xvfb
       uses: ./.github/actions/setup-ubuntu-latest-xvfb
+      if: runner.os == 'Linux'
     - name: install dependencies
       uses: conda-incubator/setup-miniconda@v2
       with:
