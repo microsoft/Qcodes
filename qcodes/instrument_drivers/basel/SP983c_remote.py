@@ -3,7 +3,7 @@ from qcodes.instrument.visa import VisaInstrument
 from qcodes.utils import validators as vals
 
 
-class baselAmp(VisaInstrument):
+class SP893c(VisaInstrument):
     def __init__(self, name, address):
         super().__init__(name, address, terminator="\r\n")
 
