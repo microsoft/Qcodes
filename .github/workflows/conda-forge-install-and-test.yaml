@@ -41,4 +41,4 @@ jobs:
     - name: run tests
       shell: bash -l {0}
       run: |
-        pytest -n 0 --dist no
+        pytest --hypothesis-profile ci qcodes
