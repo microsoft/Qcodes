@@ -3,7 +3,7 @@ from qcodes.instrument.visa import VisaInstrument
 from qcodes.utils import validators as vals
 
 
-class SP893c(VisaInstrument):
+class SP983c(VisaInstrument):
     def __init__(self, name, address):
         super().__init__(name, address, terminator="\r\n")
 
