@@ -1,15 +1,18 @@
+from typing import Any, Dict
+
 import numpy as np
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.utils import validators as vals
 
 
 class SP983c(VisaInstrument):
-    def __init__(self, name, address):
-        super().__init__(name, address, terminator="\r\n")
+    def __init__(self, name: str, address: str, **kwargs: Any) -> None:
+        super().__init__(name, address, terminator="\r\n", **kwargs)
 
         self.add_parameter(
             "gain",
             label="Gain",
+            unit="V/A",
             set_cmd=self.set_gain,
             get_cmd=self.get_gain,
             vals=vals.Enum(1e5, 1e6, 1e7, 1e8, 1e9),
@@ -26,22 +29,22 @@ class SP983c(VisaInstrument):
             "overload_status", label="Overload Status", set_cmd=None, get_cmd="GET O"
         )
 
-    def set_gain(self, value):
+    def set_gain(self, value: float) -> None:
         r = self.ask(f"SET G 1E{int(np.log10(value))}")
         if r != "OK":
             raise ValueError(f"Expected OK return but got: {r}")
 
-    def get_gain(self):
+    def get_gain(self) -> float:
         s = self.ask("GET G")
         r = s.split("Gain: ")[1]
         return float(r)
 
-    def set_filter(self, value):
+    def set_filter(self, value: Dict[str, float]) -> None:
         r = self.ask(f"SET F {value}")
         if r != "OK":
             raise ValueError(f"Expected OK return but got: {r}")
 
-    def get_filter(self):
+    def get_filter(self) -> Dict[str, float]:
         s = self.ask("GET F")
         r = s.split("Filter: ")[1]
         if r == "Full":
