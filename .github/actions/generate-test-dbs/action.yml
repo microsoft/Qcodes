@@ -24,4 +24,4 @@ runs:
         cd Qcodes
         pip uninstall -y qcodes
         pip install .
-      shell: bash
+      shell: bash -l {0}
