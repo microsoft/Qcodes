@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Union
 
 import numpy as np
 from qcodes.instrument.visa import VisaInstrument
@@ -39,12 +39,12 @@ class SP983c(VisaInstrument):
         r = s.split("Gain: ")[1]
         return float(r)
 
-    def set_filter(self, value: Dict[str, float]) -> None:
+    def set_filter(self, value: Union[str, float]) -> None:
         r = self.ask(f"SET F {value}")
         if r != "OK":
             raise ValueError(f"Expected OK return but got: {r}")
 
-    def get_filter(self) -> Dict[str, float]:
+    def get_filter(self) -> Union[str, float]:
         s = self.ask("GET F")
         r = s.split("Filter: ")[1]
         if r == "Full":
