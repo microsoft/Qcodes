@@ -78,13 +78,21 @@ def guids_from_list_str(s: str) -> Optional[Tuple[str, ...]]:
         ('07fd7195-c51e-44d6-a085-fa8274cf00d6',
         '070d7195-c51e-44d6-a085-fa8274cf00d6')
     """
-    parsed_expression = ast.parse(s, mode='eval')
+    try:
+        parsed_expression = ast.parse(s, mode='eval')
+    except SyntaxError:
+        return None
+
     if not hasattr(parsed_expression, 'body'):
         return None
+
     parsed = cast(ast.Expression, parsed_expression).body
+
     if not isinstance(parsed, (ast.List, ast.Tuple, ast.Set)):
         return None
+
     if not all(isinstance(e, ast.Constant) for e in parsed.elts):
         return None
+
     constant_elts = cast(Tuple[ast.Constant, ...], tuple(parsed.elts))
     return tuple(v.value for v in constant_elts)
