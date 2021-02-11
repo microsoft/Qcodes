@@ -39,5 +39,7 @@ dependencies:
  - testpath
  - pandoc
  - schema
+ - mypy
+ - mypy_extensions
  - pip:
    - pyvisa-sim

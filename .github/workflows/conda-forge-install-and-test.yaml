@@ -49,6 +49,9 @@ jobs:
       run: |
         pip uninstall qcodes -y
         pip install . --no-deps
+    - name: Run Mypy
+      shell: bash -l {0}
+      run: mypy qcodes
     - name: run tests
       shell: bash -l {0}
       run: |
