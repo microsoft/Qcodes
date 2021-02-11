@@ -590,7 +590,7 @@ class Station(Metadatable, DelegateAttributes):
                 instruments are loaded.
 
         Returns:
-            The bames of the loaded instruments
+            The names of the loaded instruments
         """
         config = self.config
         if config is None:
