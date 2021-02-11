@@ -78,7 +78,7 @@ def guids_from_list_str(s: str) -> Optional[Tuple[str, ...]]:
         ('07fd7195-c51e-44d6-a085-fa8274cf00d6',
         '070d7195-c51e-44d6-a085-fa8274cf00d6')
     """
-    if s == "":
+    if s == "" or s == "''" or s == '""':
         return tuple()
 
     try:
