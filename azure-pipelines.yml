@@ -72,10 +72,6 @@ jobs:
           pip install twine &&
           pip install -e .
         displayName: "Install environment, qcodes"
-      - bash: |
-          source activate qcodes &&
-          mypy qcodes --junit-xml test-mypy-results.xml
-        displayName: "mypy"
       - script: |
           CALL C:\Miniconda\condabin\conda_hook.bat && ^
           CALL conda activate qcodes && ^
