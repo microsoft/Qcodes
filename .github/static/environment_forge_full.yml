@@ -3,7 +3,9 @@ channels:
  - conda-forge
 dependencies:
  - python=3.7.9
+ # recommended to be explicitly specified by conda-incubator/setup-miniconda@v2
  - pip
+ # dependencies for setup.cfg
  - numpy>=1.15
  - pyvisa>=1.11.0, <1.12.0
  - h5py>=2.8.0
@@ -24,22 +26,19 @@ dependencies:
  - packaging>=20.0
  - ipywidgets>=7.5.0
  - broadbean>=0.9.1
+ # test requirements from setup.cfg
  - deepdiff>=5.0.2
- - pyqtgraph
- - pyqt
- - QtPy
  - hypothesis>=5.49.0
  - pytest>=6.0.0
  - pytest-rerunfailures>=5.0.0
  - pytest-xdist>=2.0.0
  - pytest-mock>=3.0.0
- - pyzmq
  - lxml>=4.3.0
  - gitpython>=3.0.6
- - testpath
- - pandoc
- - schema
+ # extra relevant requirements from setup.cfg
+ - pyqtgraph>=0.11.0
+ # for running mypy type checking
  - mypy
  - mypy_extensions
  - pip:
-   - pyvisa-sim
+   - pyvisa-sim>=0.4.0  # required for testing
