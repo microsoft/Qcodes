@@ -109,19 +109,3 @@ jobs:
           git push
         displayName: "Publish docs to gh-pages"
         condition: and(succeeded(), eq( variables['Agent.OS'], 'Linux' ), eq(variables['Build.SourceBranch'], 'refs/heads/master'), eq(variables['Build.Reason'], 'IndividualCI'))
-
-      - task: TwineAuthenticate@1
-        inputs:
-          pythonUploadServiceConnection: qcodes_upload_to_pypi
-        condition: and(succeeded(), eq( variables['Agent.OS'], 'Linux' ), contains(variables['Build.SourceBranch'], 'refs/tags/'))
-      - script: |
-          source activate qcodes &&
-          python setup.py bdist_wheel &&
-          python setup.py sdist
-        condition: and(succeeded(), eq( variables['Agent.OS'], 'Linux' ))
-        displayName: "Build dist artifacts"
-      - script: |
-          source activate qcodes &&
-          twine upload -r "qcodes" --config-file $(PYPIRC_PATH) dist/*
-        condition: and(succeeded(), eq( variables['Agent.OS'], 'Linux' ), contains(variables['Build.SourceBranch'], 'refs/tags/'))
-        displayName: "Upload tagged release to PyPi"
