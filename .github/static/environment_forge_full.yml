@@ -37,8 +37,6 @@ dependencies:
  - gitpython>=3.0.6
  # extra relevant requirements from setup.cfg
  - pyqtgraph>=0.11.0
- # required for building docs
- - pandoc
  # for running mypy type checking
  - mypy
  - mypy_extensions
