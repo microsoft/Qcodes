@@ -5,7 +5,6 @@ runs:
   steps:
     - name: generate test dbs
       run: |
-        pip install -e .
         pwd
         cd ..
         git clone https://github.com/QCoDeS/qcodes_generate_test_db.git
@@ -20,8 +19,4 @@ runs:
         python generate_version_6.py
         python generate_version_7.py
         python generate_version_8.py
-        cd ..
-        cd Qcodes
-        pip uninstall -y qcodes
-        pip install .
       shell: bash -l {0}
