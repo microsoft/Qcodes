@@ -62,11 +62,18 @@ jobs:
         pip install -r docs_requirements.txt
     - name: install qcodes
       run: pip install .
-    - name: Build docs
+    - name: Build docs on linux
       run: |
         cd docs
         export SPHINXOPTS="-W -v"
         make html
+      if: runner.os == 'Linux'
+    - name: Build docs on windows
+      run: |
+        cd docs
+        export SPHINXOPTS="-W -v"
+        ./make.bat html
+      if: runner.os == 'Windows'
     - name: Upload build docs
       uses: actions/upload-artifact@v2
       with:
