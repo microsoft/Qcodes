@@ -54,7 +54,6 @@ jobs:
       uses: ./.github/actions/generate-test-dbs
     - name: install qcodes
       run: |
-        pwd
         pip uninstall qcodes -y
         pip install .
     - name: Run Mypy
