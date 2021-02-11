@@ -187,8 +187,8 @@ def test_do0d_verify_shape(_param, _param_complex, multiparamtype,
     for i, name in enumerate(multiparam.full_names):
         expected_shapes[name] = tuple(multiparam.shapes[i])
     expected_shapes['arrayparam'] = tuple(arrayparam.shape)
-    expected_shapes['simple_parameter'] = ()
-    expected_shapes['simple_complex_parameter'] = ()
+    expected_shapes['simple_parameter'] = (1,)
+    expected_shapes['simple_complex_parameter'] = (1,)
     expected_shapes[paramwsetpoints.full_name] = (n_points_pws, )
     assert results[0].description.shapes == expected_shapes
 

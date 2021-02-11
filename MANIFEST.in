@@ -1,2 +1,4 @@
 include versioneer.py
 include qcodes/_version.py
+include LICENSE
+include LICENSE.rst
