@@ -82,4 +82,4 @@ def guids_from_list_str(s: str) -> Optional[Tuple[str, ...]]:
         return None
     if not all(isinstance(e, ast.Constant) for e in parsed.elts):
         return None
-    return tuple (v.value for v in parsed.elts)
+    return tuple(v.value for v in parsed.elts)
