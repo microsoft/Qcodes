@@ -5,7 +5,7 @@ Station objects - collect all the equipment you use to do an experiment.
 
 from contextlib import suppress
 from typing import (
-    Dict, List, Optional, Sequence, Any, cast, AnyStr, IO, Tuple)
+    Dict, Iterable, List, Optional, Sequence, Any, cast, AnyStr, IO, Tuple)
 from types import ModuleType
 from functools import partial
 import importlib
@@ -569,6 +569,59 @@ class Station(Metadatable, DelegateAttributes):
         self.add_component(instr)
         update_monitor()
         return instr
+
+    def load_all_instruments(self,
+                             only_names: Optional[Iterable[str]] = None,
+                             only_types: Optional[Iterable[str]] = None,
+                             ) -> Tuple[str, ...]:
+        """
+        Load all instruments specified in the loaded YAML station configuration.
+
+        Optionally, the instruments to be loaded can be filtered by their
+        names or types, use ``only_names`` and ``only_types``
+        arguments for that. It is an error to supply both ``only_names``
+        and ``only_types``.
+
+        Args:
+            only_names: List of instrument names to load from the config.
+                If left as None, then all instruments are loaded.
+            only_types: List of instrument types e.g. the class names
+                of the instruments to load. If left as None, then all
+                instruments are loaded.
+
+        Returns:
+            The bames of the loaded instruments
+        """
+        config = self.config
+        if config is None:
+            raise ValueError("Station has no config")
+
+        instrument_names_to_load = set()
+
+        if only_names is None and only_types is None:
+            instrument_names_to_load = set(config["instruments"].keys())
+        elif only_types is None and only_names is not None:
+            instrument_names_to_load = set(only_names)
+        elif only_types is not None and only_names is None:
+            for inst_name, inst_dict in config["instruments"].items():
+                if "driver" in inst_dict.keys():
+                    # fallback for old format where type was used
+                    # together with the driver key.
+                    inst_type = inst_dict["type"]
+                else:
+                    inst_type = inst_dict["type"].split(".")[-1]
+                if inst_type in only_types:
+                    instrument_names_to_load.add(inst_name)
+        else:
+            raise ValueError(
+                "It is an error to supply both ``only_names`` "
+                "and ``only_types`` arguments."
+            )
+
+        for instrument in instrument_names_to_load:
+            self.load_instrument(instrument)
+
+        return tuple(instrument_names_to_load)
 
 
 def update_config_schema(
