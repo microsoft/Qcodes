@@ -1,4 +1,5 @@
 from io import StringIO, BytesIO
+import logging
 import zipfile
 
 import pytest
@@ -59,8 +60,8 @@ def random_wfm_m1_m2_package():
     return make
 
 
-@pytest.fixture(scope='module')
-def forged_sequence():
+@pytest.fixture(scope='module', name="forged_sequence")
+def _make_forged_sequence():
     """
     Return an example forged sequence containing a
     subsequence
@@ -118,7 +119,7 @@ def test_SML_successful_generation_vary_length(N):
     ejs = [0]*N
     ejt = [0]*N
     goto = [0]*N
-    wfm_names = [['pos{}ch{}'.format(pos, ch)
+    wfm_names = [[f'pos{pos}ch{ch}'
                   for ch in range(1, 3)] for pos in range(N)]
 
     seqname = 'seq'
@@ -177,6 +178,21 @@ def test_seqxfilefromfs_failing(forged_sequence):
                   channel_mapping={1: 10, 2: 8, 3: -1})
 
 
+def test_seqxfilefromfs_warns(forged_sequence, caplog):
+    """
+    Test that a warning is logged when waveform is clipped
+    """
+    make_seqx = AWG70000A.make_SEQX_from_forged_sequence
+
+    max_elem = forged_sequence[1]['content'][1]['data'][1]['wfm'].max()
+    amplitude = max_elem/2
+    with caplog.at_level(logging.WARNING):
+        make_seqx(forged_sequence, [amplitude, amplitude, amplitude], 'myseq')
+    assert len(caplog.messages) > 0
+    for message in caplog.messages:
+        assert "Waveform exceeds specified channel range" in message
+
+
 def test_seqxfile_from_fs(forged_sequence):
 
     # typing convenience
@@ -185,7 +201,7 @@ def test_seqxfile_from_fs(forged_sequence):
     path_to_schema = auxfiles.__file__.replace('__init__.py',
                                                'awgSeqDataSets.xsd')
 
-    with open(path_to_schema, 'r') as fid:
+    with open(path_to_schema) as fid:
         raw_schema = fid.read()
 
     schema = etree.XMLSchema(etree.XML(raw_schema.encode('utf-8')))

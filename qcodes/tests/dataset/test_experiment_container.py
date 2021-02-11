@@ -11,9 +11,6 @@ from qcodes.dataset.experiment_container import (load_experiment_by_name,
                                                  Experiment,
                                                  load_last_experiment)
 from qcodes.dataset.measurements import Measurement
-# pylint: disable=unused-import
-from qcodes.tests.dataset.temporary_databases import empty_temp_db, dataset, \
-    experiment
 
 
 def assert_experiments_equal(exp, exp_2):

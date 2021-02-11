@@ -23,11 +23,11 @@ class MyInstrument(Instrument):
         return self.value
 
     def setx(self, val):
-        logging.debug("set {}".format(val))
+        logging.debug(f"set {val}")
         self.value = val
         # simulate delay 5 seconds
         time.sleep(5)
-        logging.debug("done {}".format(val))
+        logging.debug(f"done {val}")
         return
 
 
@@ -69,7 +69,7 @@ class Meta(Instrument):
         return value
 
     def _set(self, value, gate):
-        logging.debug('Meta set gate %s @ value %s' % (gate, value))
+        logging.debug(f'Meta set gate {gate} @ value {value}')
         i = self._instrument_list[gate]
         i.set('x', value)
 

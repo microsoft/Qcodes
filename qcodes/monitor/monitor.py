@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# -*- coding: utf-8 -*-
 # vim:fenc=utf-8
 #
 # Copyright © 2017 unga <giulioungaretti@me.com>
@@ -57,7 +56,7 @@ def _get_metadata(*parameters: Parameter) -> Dict[str, Any]:
     """
     metadata_timestamp = time.time()
     # group metadata by instrument
-    metas: dict = defaultdict(list)
+    metas: Dict[Any, Any] = defaultdict(list)
     for parameter in parameters:
         # Get the latest value from the parameter,
         # respecting the max_val_age parameter
@@ -88,7 +87,7 @@ def _get_metadata(*parameters: Parameter) -> Dict[str, Any]:
     return state
 
 
-def _handler(parameters: Sequence[Parameter], interval: int) \
+def _handler(parameters: Sequence[Parameter], interval: float) \
         -> Callable[[websockets.WebSocketServerProtocol, str], Awaitable[None]]:
     """
     Return the websockets server handler.
@@ -125,7 +124,7 @@ class Monitor(Thread):
     """
     running = None
 
-    def __init__(self, *parameters: Parameter, interval: int = 1):
+    def __init__(self, *parameters: Parameter, interval: float = 1):
         """
         Monitor qcodes parameters.
 
@@ -256,7 +255,7 @@ class Monitor(Thread):
             webbrowser.open_new(url)
 
         """
-        webbrowser.open("http://localhost:{}".format(SERVER_PORT))
+        webbrowser.open(f"http://localhost:{SERVER_PORT}")
 
 
 if __name__ == "__main__":
@@ -270,7 +269,7 @@ if __name__ == "__main__":
         with socketserver.TCPServer(("", SERVER_PORT),
                                     http.server.SimpleHTTPRequestHandler) as httpd:
             log.debug("serving directory %s", STATIC_DIR)
-            webbrowser.open("http://localhost:{}".format(SERVER_PORT))
+            webbrowser.open(f"http://localhost:{SERVER_PORT}")
             httpd.serve_forever()
     except KeyboardInterrupt:
         log.info("Shutting Down HTTP Server")

@@ -1,5 +1,5 @@
 # Test some subscription scenarios
-from typing import List, Tuple, Dict, Union
+from typing import List, Tuple, Dict, Union, Any
 from numbers import Number
 
 import pytest
@@ -9,20 +9,15 @@ import logging
 import qcodes
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
-# pylint: disable=unused-import
 from qcodes.dataset.sqlite.connection import atomic_transaction
-from qcodes.tests.dataset.temporary_databases import (
-    empty_temp_db, experiment, dataset)
-# pylint: enable=unused-import
-from qcodes.tests.dataset.test_dataset_basic import make_shadow_dataset
 
-from qcodes.tests.test_config import default_config
+from qcodes.tests.common import default_config
 from qcodes.tests.common import retry_until_does_not_throw
 
 
 log = logging.getLogger(__name__)
 
-VALUE = Union[str, Number, List, ndarray, bool]
+VALUE = Union[str, Number, List[Any], ndarray, bool]
 
 
 class MockSubscriber():
@@ -40,7 +35,7 @@ class MockSubscriber():
         self.ds = ds
 
     def __call__(self, results: List[Tuple[VALUE]],
-                 length: int, state: Dict) -> None:
+                 length: int, state: Dict[Any, Any]) -> None:
         log.debug(f'got log {self.lg} and dataset {self.ds.completed}.')
         state[length] = results
 
@@ -66,6 +61,8 @@ def basic_subscriber():
     return subscriber
 
 
+@pytest.mark.flaky(reruns=5)
+@pytest.mark.serial
 def test_basic_subscription(dataset, basic_subscriber):
     xparam = ParamSpecBase(name='x',
                            paramtype='numeric',
@@ -93,7 +90,7 @@ def test_basic_subscription(dataset, basic_subscriber):
         expected_state[x+1] = [(x, y)]
 
         @retry_until_does_not_throw(
-            exception_class_to_expect=AssertionError, delay=0, tries=10)
+            exception_class_to_expect=AssertionError, delay=0.5, tries=10)
         def assert_expected_state():
             assert dataset.subscribers[sub_id].state == expected_state
 

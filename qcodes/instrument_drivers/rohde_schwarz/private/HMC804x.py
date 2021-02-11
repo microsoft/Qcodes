@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Any
 
 from qcodes import VisaInstrument, validators as vals, Instrument
 from qcodes import InstrumentChannel, ChannelList
@@ -69,7 +69,7 @@ class _RohdeSchwarzHMC804x(VisaInstrument):
     _max_currents = {3: 3.0, 2: 5.0, 1: 10.0}
 
     def __init__(self, name: str, address: str,
-                 num_channels: int, **kwargs) -> None:
+                 num_channels: int, **kwargs: Any) -> None:
         super().__init__(name, address, **kwargs)
 
         self.max_current = _RohdeSchwarzHMC804x._max_currents[num_channels]

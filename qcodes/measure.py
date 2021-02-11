@@ -146,7 +146,7 @@ class Measure(Metadatable):
 
         return data_set
 
-    def snapshot_base(self, update: bool = False,
+    def snapshot_base(self, update: Optional[bool] = False,
                       params_to_skip_update: Optional[Sequence[str]] = None):
         return {
             '__class__': full_class(self),

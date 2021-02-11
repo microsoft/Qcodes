@@ -1,5 +1,5 @@
 import os
-from typing import Optional
+from typing import Optional, Any, Dict
 
 # QCoDeS imports
 from qcodes.instrument_drivers.Minicircuits.Base_SPDT import (
@@ -14,12 +14,12 @@ except ImportError:
 
 
 class SwitchChannelUSB(SwitchChannelBase):
-    def _set_switch(self, switch):
+    def _set_switch(self, switch: int) -> None:
         self._parent.switch.Set_Switch(self.channel_letter, switch - 1)
 
-    def _get_switch(self):
+    def _get_switch(self) -> int:
         status = self._parent.switch.GetSwitchesStatus(self._parent.address)[1]
-        return int("{0:04b}".format(status)[-1 - self.channel_number]) + 1
+        return int(f"{status:04b}"[-1 - self.channel_number]) + 1
 
 
 class USB_SPDT(SPDT_Base):
@@ -37,12 +37,12 @@ class USB_SPDT(SPDT_Base):
     CHANNEL_CLASS = SwitchChannelUSB
     PATH_TO_DRIVER = r'mcl_RF_Switch_Controller64'
 
-    def __init__(self, name: str, driver_path: Optional[str]=None,
-                 serial_number: Optional[str]=None, **kwargs):
+    def __init__(self, name: str, driver_path: Optional[str] = None,
+                 serial_number: Optional[str] = None, **kwargs: Any):
         # we are eventually overwriting this but since it's called
         # in __getattr__ of `SPDT_Base` it's important that it's
         # always set to something to avoid infinite recursion
-        self._deprecated_attributes = None
+        self._deprecated_attributes = {}
         # import .net exception so we can catch it below
         # we keep this import local so that the module can be imported
         # without a working .net install
@@ -74,7 +74,7 @@ class USB_SPDT(SPDT_Base):
         self.connect_message()
         self.add_channels()
 
-    def get_idn(self):
+    def get_idn(self) -> Dict[str, Optional[str]]:
         # the arguments in those functions is the serial number or none if
         # there is only one switch.
         fw = self.switch.GetFirmware()

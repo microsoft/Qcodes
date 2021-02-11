@@ -9,4 +9,4 @@ def get_user_version(conn: ConnectionPlus) -> int:
 
 
 def set_user_version(conn: ConnectionPlus, version: int) -> None:
-    atomic_transaction(conn, 'PRAGMA user_version({})'.format(version))
+    atomic_transaction(conn, f'PRAGMA user_version({version})')

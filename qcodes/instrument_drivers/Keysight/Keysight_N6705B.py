@@ -1,3 +1,5 @@
+from typing import Any
+
 from qcodes import VisaInstrument
 from qcodes import Instrument
 from qcodes.instrument.channel import InstrumentChannel
@@ -59,7 +61,7 @@ class N6705BChannel(InstrumentChannel):
 
 
 class N6705B(VisaInstrument):
-    def __init__(self, name, address, **kwargs) -> None:
+    def __init__(self, name: str, address: str, **kwargs: Any) -> None:
         super().__init__(name, address, terminator='\n', **kwargs)
         self.channels:  List[N6705BChannel] = []
         for ch_num in [1, 2, 3, 4]:

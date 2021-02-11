@@ -10,10 +10,10 @@ from matplotlib import pyplot as plt
 # by itself so we also need to import all the fixtures this one is dependent
 # on
 # pylint: disable=unused-import
-from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
-                                                      experiment, dataset)
+from qcodes.tests.dataset.conftest import (empty_temp_db,
+                                           experiment, dataset)
 
-from qcodes.tests.test_config import default_config
+from qcodes.tests.common import default_config
 from qcodes.dataset.plotting import plot_by_id
 from .dataset_generators import dataset_with_outliers_generator
 import qcodes
@@ -21,18 +21,22 @@ import qcodes
 @fixture(scope='function')
 def dataset_with_data_outside_iqr_high_outlier(dataset):
     return dataset_with_outliers_generator(dataset, data_offset=2, low_outlier=-2,
-                                          high_outlier=3 )
+                                           high_outlier=3)
+
 
 @fixture(scope='function')
 def dataset_with_data_outside_iqr_low_outlier(dataset):
     return dataset_with_outliers_generator(dataset, data_offset=2, low_outlier=-2,
-                                          high_outlier=3 )
+                                           high_outlier=3)
+
 
 @fixture(scope='function')
 def dataset_with_outliers(dataset):
     return dataset_with_outliers_generator(dataset, low_outlier=-3,
                                            high_outlier=3,
-                                           background_noise = False)
+                                           background_noise=False)
+
+
 def test_extend(dataset_with_outliers):
     # this one should clipp the upper values
     run_id = dataset_with_outliers.run_id
@@ -43,6 +47,7 @@ def test_extend(dataset_with_outliers):
     _, cb = plot_by_id(run_id, auto_color_scale=True, cutoff_percentile=(0.5, 0))
     assert cb[0].extend == 'max'
     plt.close()
+
 
 def test_defaults(dataset_with_outliers):
     run_id = dataset_with_outliers.run_id

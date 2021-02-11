@@ -513,7 +513,7 @@ class QtPlot(BasePlot):
         Args:
             filename (Optional[str]): Location of the file
         """
-        default = "{}.png".format(self.get_default_title())
+        default = f"{self.get_default_title()}.png"
         filename = filename or default
         image = self.win.grab()
         image.save(filename, "PNG", 0)
@@ -621,4 +621,3 @@ class QtPlot(BasePlot):
                         and arrmin is not None
                         and arrmax is not None):
                         rangesetter(arrmin, arrmax)
-

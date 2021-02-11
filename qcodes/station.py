@@ -35,10 +35,7 @@ from qcodes.instrument.parameter import (
     DelegateParameter, _BaseParameter)
 import qcodes.utils.validators as validators
 from qcodes.monitor.monitor import Monitor
-from qcodes.utils.deprecate import deprecate
-from qcodes.actions import _actions_snapshot
 
-ActionType = Any
 
 log = logging.getLogger(__name__)
 
@@ -77,7 +74,7 @@ class ValidationWarning(Warning):
     pass
 
 
-class StationConfig(UserDict):
+class StationConfig(Dict[Any, Any]):
     def snapshot(self, update: bool = True) -> 'StationConfig':
         return self
 
@@ -137,15 +134,14 @@ class Station(Metadatable, DelegateAttributes):
         self.use_monitor = use_monitor
         self.config_file = config_file
 
-        self.default_measurement: Tuple[ActionType, ...] = ()
         self._added_methods: List[str] = []
         self._monitor_parameters: List[Parameter] = []
 
         self.load_config_file(self.config_file)
 
-    def snapshot_base(self, update: bool = True,
+    def snapshot_base(self, update: Optional[bool] = True,
                       params_to_skip_update: Optional[Sequence[str]] = None
-                      ) -> Dict:
+                      ) -> Dict[Any, Any]:
         """
         State of the station as a JSON-compatible dictionary (everything that
         the custom JSON encoder class :class:`qcodes.utils.helpers.NumpyJSONEncoder`
@@ -158,20 +154,20 @@ class Station(Metadatable, DelegateAttributes):
         Args:
             update: If ``True``, update the state by querying the
                 all the children: f.ex. instruments, parameters,
-                components, etc. If ``False``, just use the latest
-                values in memory.
+                components, etc. If None only update if the state
+                is known to be invalid.
+                If ``False``, just use the latest
+                values in memory and never update the state.
             params_to_skip_update: Not used.
 
         Returns:
             dict: Base snapshot.
         """
-        snap: Dict = {
+        snap: Dict[str, Any] = {
             'instruments': {},
             'parameters': {},
             'components': {},
             'config': self.config,
-            'default_measurement': _actions_snapshot(
-                self.default_measurement, update)
         }
 
         components_to_remove = []
@@ -197,7 +193,7 @@ class Station(Metadatable, DelegateAttributes):
 
         return snap
 
-    def add_component(self, component: Metadatable, name: str = None,
+    def add_component(self, component: Metadatable, name: Optional[str] = None,
                       update_snapshot: bool = True) -> str:
         """
         Record one component as part of this Station.
@@ -249,54 +245,6 @@ class Station(Metadatable, DelegateAttributes):
                 raise KeyError(f'Component {name} is not part of the station')
             else:
                 raise e
-
-    @deprecate("Default measurements on a station will "
-               "be removed in a future release")
-    def set_measurement(self, *actions: ActionType) -> None:
-        """
-        Save a set ``*actions`` as the default measurement for this Station.
-
-        These actions will be executed by default by a Loop if this is the
-        default Station, and any measurements among them can be done once
-        by ``.measure``.
-
-        Args:
-            *actions: parameters to set as default  measurement
-        """
-        # Validate now so the user gets an error message ASAP
-        # and so we don't accept `Loop` as an action here, where
-        # it would cause infinite recursion.
-        # We need to import Loop inside here to avoid circular import
-        from .loops import Loop
-        Loop.validate_actions(*actions)
-
-        self.default_measurement = actions
-
-    @deprecate("Default measurements on a station will "
-               "be removed in a future release")
-    def measure(self, *actions: ActionType) -> Any:
-        """
-        Measure the default measurement, or parameters in actions.
-
-        Args:
-            *actions: Parameters to mesure.
-        """
-        if not actions:
-            actions = self.default_measurement
-
-        out = []
-
-        # this is a stripped down, uncompiled version of how
-        # ActiveLoop handles a set of actions
-        # callables (including Wait) return nothing, but can
-        # change system state.
-        for action in actions:
-            if hasattr(action, 'get'):
-                out.append(action.get())
-            elif callable(action):
-                action()
-
-        return out
 
     # station['someitem'] and station.someitem are both
     # shortcuts to station.components['someitem']
@@ -359,7 +307,7 @@ class Station(Metadatable, DelegateAttributes):
                         '`qcodesrc.json`.')
                 return
 
-        with open(path, 'r') as f:
+        with open(path) as f:
             self.load_config(f)
 
     def load_config(self, config: Union[str, IO[AnyStr]]) -> None:
@@ -407,12 +355,7 @@ class Station(Metadatable, DelegateAttributes):
         try:
             jsonschema.validate(yaml, schema)
         except jsonschema.exceptions.ValidationError as e:
-            message = e.message + '\n config:\n'
-            if isinstance(config, str):
-                message += config
-            else:
-                config.seek(0)
-                message += config.read()
+            message = str(e)
             warnings.warn(message, ValidationWarning)
 
         self._config = yaml
@@ -511,7 +454,7 @@ class Station(Metadatable, DelegateAttributes):
             instr_class_name = instr_cfg['type'].split('.')[-1]
         module = importlib.import_module(module_name)
         instr_class = getattr(module, instr_class_name)
-        instr = instr_class(name, **instr_kwargs)
+        instr = instr_class(name=name, **instr_kwargs)
 
         def resolve_instrument_identifier(
             instrument: ChannelOrInstrumentBase,

@@ -6,7 +6,7 @@ MSO70000/C/DX Series Digital Oscilloscopes
 import textwrap
 import time
 from functools import partial
-from typing import Union, Callable, cast
+from typing import Union, Callable, cast, Any
 
 import numpy as np
 
@@ -48,7 +48,7 @@ class TektronixDPO7000xx(VisaInstrument):
             self,
             name: str,
             address: str,
-            **kwargs
+            **kwargs: Any
     ) -> None:
 
         super().__init__(name, address, terminator="\n", **kwargs)
@@ -185,9 +185,9 @@ class TektronixDPOData(InstrumentChannel):
                 "SFPbinary",
             ),
             docstring=textwrap.dedent("""
-            For a detailed explanation of the 
-            set arguments, please consult the 
-            programmers manual at page 263/264. 
+            For a detailed explanation of the
+            set arguments, please consult the
+            programmers manual at page 263/264.
 
             http://download.tek.com/manual/077001022.pdf
             """)
@@ -227,9 +227,9 @@ class TekronixDPOWaveform(InstrumentChannel):
             get_cmd=self._get_cmd("WFMOutPRE:YOFF?"),
             get_parser=float,
             docstring=textwrap.dedent("""
-                Raw acquisition values range from min to max. 
-                For instance, for unsigned binary values of one 
-                byte, min=0 and max=255. The data offset specifies 
+                Raw acquisition values range from min to max.
+                For instance, for unsigned binary values of one
+                byte, min=0 and max=255. The data offset specifies
                 the center of this range
                 """)
         )
@@ -297,18 +297,18 @@ class TekronixDPOWaveform(InstrumentChannel):
             parameter_class=ParameterWithSetpoints
         )
 
-    def _get_cmd(self, cmd_string: str) -> Callable:
+    def _get_cmd(self, cmd_string: str) -> Callable[[], str]:
         """
         Parameters defined in this submodule require the correct
         data source being selected first.
         """
-        def inner():
+        def inner() -> str:
             self.root_instrument.data.source(self._identifier)
             return self.ask(cmd_string)
 
         return inner
 
-    def _get_trace_data(self):
+    def _get_trace_data(self)  -> np.ndarray:
 
         self.root_instrument.data.source(self._identifier)
         waveform = self.root_instrument.waveform
@@ -526,16 +526,16 @@ class TektronixDPOHorizontal(InstrumentChannel):
             vals=Enum("auto", "constant", "manual"),
             get_parser=str.lower,
             docstring="""
-            Auto mode attempts to keep record length 
-            constant as you change the time per division 
+            Auto mode attempts to keep record length
+            constant as you change the time per division
             setting. Record length is read only.
 
-            Constant mode attempts to keep sample rate 
-            constant as you change the time per division 
+            Constant mode attempts to keep sample rate
+            constant as you change the time per division
             setting. Record length is read only.
 
-            Manual mode lets you change sample mode and 
-            record length. Time per division or Horizontal 
+            Manual mode lets you change sample mode and
+            record length. Time per division or Horizontal
             scale is read only.
             """
         )
@@ -576,10 +576,10 @@ class TektronixDPOHorizontal(InstrumentChannel):
             get_parser=float,
             unit="%",
             docstring=textwrap.dedent("""
-            The horizontal position relative to a 
+            The horizontal position relative to a
             received trigger. E.g. a value of '10'
-            sets the trigger position of the waveform 
-            such that 10% of the display is to the 
+            sets the trigger position of the waveform
+            such that 10% of the display is to the
             left of the trigger position.
             """)
         )
@@ -590,7 +590,7 @@ class TektronixDPOHorizontal(InstrumentChannel):
             set_cmd="HORizontal:ROLL {}",
             vals=Enum("Auto", "On", "Off"),
             docstring=textwrap.dedent("""
-            Use Roll Mode when you want to view data at 
+            Use Roll Mode when you want to view data at
             very slow sweep speeds.
             """)
         )
@@ -603,7 +603,7 @@ class TektronixDPOHorizontal(InstrumentChannel):
 
         self.write(f"HORizontal:MODE:RECOrdlength {value}")
 
-    def _set_scale(self, value):
+    def _set_scale(self, value: float) -> None:
         if self.mode() == "manual":
             raise ModeError(
                 "The scale cannot be changed in manual mode"
@@ -691,7 +691,7 @@ class TekronixDPOTrigger(InstrumentChannel):
             vals=Enum(*trigger_sources)
         )
 
-    def _trigger_type(self, value: str):
+    def _trigger_type(self, value: str) -> None:
         if value != "edge":
             raise NotImplementedError(
                 "We currently only support the 'edge' trigger type"
@@ -740,7 +740,7 @@ class TektronixDPOMeasurementParameter(Parameter):
     def get_raw(self) -> float:
         return self._get("VALue")
 
-    def set_raw(self, value):
+    def set_raw(self, value: Any) -> None:
         raise ValueError("A measurement cannot be set")
 
 
@@ -851,7 +851,7 @@ class TektronixDPOMeasurement(InstrumentChannel):
 
 
 class TektronixDPOMeasurementStatistics(InstrumentChannel):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
 
         self.add_parameter(

@@ -1,0 +1,14 @@
+Changelog for QCoDeS 0.19.1
+===========================
+
+Patch:
+______
+
+This release is a patch fix to enable the QDAC driver with pyvisa 1.11 (#2336)
+
+Features:
+---------
+
+Automatically expand setpoints of ``ParameterWithSetpoints`` when added
+to a measurement. This feature was included in 0.19.0 but not mentioned
+in the changelog (#2181)

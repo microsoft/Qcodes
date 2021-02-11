@@ -1,7 +1,9 @@
 from functools import partial
-from typing import Optional, Union
+from typing import Optional, Union, Any
 
-from qcodes import VisaInstrument, InstrumentChannel
+from qcodes.instrument.parameter import DelegateParameter
+from qcodes.instrument.visa import VisaInstrument
+from qcodes.instrument.channel import InstrumentChannel
 from qcodes.utils.validators import Numbers, Bool, Enum, Ints
 
 
@@ -107,12 +109,12 @@ class GS200_Monitor(InstrumentChannel):
                                get_cmd=':SENS:INT?',
                                get_parser=float)
 
-    def off(self):
+    def off(self) -> None:
         """Turn measurement off"""
         self.write(':SENS 0')
         self._enabled = False
 
-    def on(self):
+    def on(self) -> None:
         """Turn measurement on"""
         self.write(':SENS 1')
         self._enabled = True
@@ -161,19 +163,81 @@ class GS200_Monitor(InstrumentChannel):
             self.measure.unit = 'V'
 
 
+class GS200Program(InstrumentChannel):
+    """
+    """
+    def __init__(self, parent: 'GS200', name: str) -> None:
+        super().__init__(parent, name)
+        self._repeat = 1
+        self._file_name = None
+
+        self.add_parameter("interval",
+                           label="the program interval time",
+                           unit='s',
+                           vals=Numbers(0.1, 3600.0),
+                           get_cmd=":PROG:INT?",
+                           set_cmd=":PROG:INT {}")
+
+        self.add_parameter("slope",
+                           label="the program slope time",
+                           unit='s',
+                           vals=Numbers(0.1, 3600.0),
+                           get_cmd=":PROG:SLOP?",
+                           set_cmd=":PROG:SLOP {}")
+
+        self.add_parameter("trigger",
+                           label="the program trigger",
+                           get_cmd=":PROG:TRIG?",
+                           set_cmd=":PROG:TRIG {}",
+                           vals=Enum('normal', 'mend'))
+
+        self.add_parameter("save",
+                           set_cmd=":PROG:SAVE '{}'",
+                           docstring="save the program to the system memory "
+                                     "(.csv file)")
+
+        self.add_parameter("load",
+                           get_cmd=":PROG:LOAD?",
+                           set_cmd=":PROG:LOAD '{}'",
+                           docstring="load the program (.csv file) from the "
+                                     "system memory")
+
+        self.add_parameter("repeat",
+                           label="program execution repetition",
+                           get_cmd=":PROG:REP?",
+                           set_cmd=":PROG:REP {}",
+                           val_mapping={'OFF': 0,
+                                        'ON': 1})
+        self.add_parameter("count",
+                           label="step of the current program",
+                           get_cmd=":PROG:COUN?",
+                           set_cmd=":PROG:COUN {}",
+                           vals=Ints(1, 10000))
+
+        self.add_function('start',
+                          call_cmd=":PROG:EDIT:STAR",
+                          docstring="start program editing")
+        self.add_function('end',
+                          call_cmd=":PROG:EDIT:END",
+                          docstring="end program editing")
+        self.add_function('run',
+                          call_cmd=":PROG:RUN",
+                          docstring="run the program",)
+
+
 class GS200(VisaInstrument):
     """
     This is the QCoDeS driver for the Yokogawa GS200 voltage and current source.
 
     Args:
       name: What this instrument is called locally.
-      address: The GPIB address of this instrument
+      address: The GPIB or USB address of this instrument
       kwargs: kwargs to be passed to VisaInstrument class
       terminator: read terminator for reads/writes to the instrument.
     """
 
     def __init__(self, name: str, address: str, terminator: str = "\n",
-                 **kwargs) -> None:
+                 **kwargs: Any) -> None:
         super().__init__(name, address, terminator=terminator, **kwargs)
 
         self.add_parameter('output',
@@ -191,64 +255,75 @@ class GS200(VisaInstrument):
                            set_cmd=self._set_source_mode,
                            vals=Enum('VOLT', 'CURR'))
 
-        # When getting the mode internally in the driver, look up the mode as
-        # recorded by the _cached_mode property, instead of calling source
-        # _mode(). This will prevent frequent VISA calls to the instrument.
-        # Calling _set_source_mode will change the chased value.
-        self._cached_mode = "VOLT"
-
-        # We want to cache the range value so communication with the instrument
-        # only happens when the set the range. Getting the range always returns
-        # the cached value. This value is adjusted when calling self._set_range.
-        self._cached_range_value: Optional[float] = None
+        # We need to get the source_mode value here as we cannot rely on the
+        # default value that may have been changed before we connect to the
+        # instrument (in a previous session or via the frontpanel).
+        self.source_mode()
 
         self.add_parameter('voltage_range',
                            label='Voltage Source Range',
                            unit='V',
                            get_cmd=partial(self._get_range, "VOLT"),
                            set_cmd=partial(self._set_range, "VOLT"),
-                           vals=Enum(10e-3, 100e-3, 1e0, 10e0, 30e0))
+                           vals=Enum(10e-3, 100e-3, 1e0, 10e0, 30e0),
+                           snapshot_exclude=self.source_mode() == 'CURR'
+                           )
 
-        # The driver is initialized in the volt mode. In this mode we cannot
-        # get 'current_range'. Hence the snapshot is excluded.
         self.add_parameter('current_range',
                            label='Current Source Range',
                            unit='I',
                            get_cmd=partial(self._get_range, "CURR"),
                            set_cmd=partial(self._set_range, "CURR"),
                            vals=Enum(1e-3, 10e-3, 100e-3, 200e-3),
-                           snapshot_exclude=True
+                           snapshot_exclude=self.source_mode() == "VOLT"
                            )
 
-        # This is changed through the source_mode interface
-        self.range = self.voltage_range
+        self.add_parameter('range',
+                           parameter_class=DelegateParameter,
+                           source=None
+                           )
 
-        self._auto_range = False
+        # The instrument does not support auto range. The parameter
+        # auto_range is introduced to add this capability with
+        # setting the initial state at False mode.
         self.add_parameter('auto_range',
                            label='Auto Range',
                            set_cmd=self._set_auto_range,
-                           get_cmd=lambda: self._auto_range,
-                           vals=Bool())
+                           get_cmd=None,
+                           initial_cache_value=False,
+                           vals=Bool()
+                           )
 
         self.add_parameter('voltage',
                            label='Voltage',
                            unit='V',
                            set_cmd=partial(self._get_set_output, "VOLT"),
-                           get_cmd=partial(self._get_set_output, "VOLT")
+                           get_cmd=partial(self._get_set_output, "VOLT"),
+                           snapshot_exclude=self.source_mode() == "CURR"
                            )
-        # Again, at init we are in "VOLT" mode. Hence, exclude the snapshot of
-        # 'current' as instrument does not support this parameter in
-        # "VOLT" mode.
+
         self.add_parameter('current',
                            label='Current',
                            unit='I',
                            set_cmd=partial(self._get_set_output, "CURR"),
                            get_cmd=partial(self._get_set_output, "CURR"),
-                           snapshot_exclude=True
+                           snapshot_exclude=self.source_mode() == 'VOLT'
                            )
 
-        # This is changed through the source_mode interface
-        self.output_level = self.voltage
+        self.add_parameter('output_level',
+                           parameter_class=DelegateParameter,
+                           source=None
+                           )
+
+        # We need to pass the source parameter for delegate parameters
+        # (range and output_level) here according to the present
+        # source_mode.
+        if self.source_mode() == 'VOLT':
+            self.range.source = self.voltage_range
+            self.output_level.source = self.voltage
+        else:
+            self.range.source = self.current_range
+            self.output_level.source = self.current
 
         self.add_parameter('voltage_limit',
                            label='Voltage Protection Limit',
@@ -276,16 +351,15 @@ class GS200(VisaInstrument):
                               'off': 0,
                               'on': 1,
                            })
+
         # Note: The guard feature can be used to remove common mode noise.
         # Read the manual to see if you would like to use it
         self.add_parameter('guard',
                            label='Guard Terminal',
                            get_cmd=':SENS:GUAR?',
                            set_cmd=':SENS:GUAR {}',
-                           val_mapping={
-                              'off': 0,
-                              'on': 1,
-                          })
+                           val_mapping={'off': 0,
+                                        'on': 1})
 
         # Return measured line frequency
         self.add_parameter("line_freq",
@@ -302,14 +376,37 @@ class GS200(VisaInstrument):
         # Reset function
         self.add_function('reset', call_cmd='*RST')
 
+        self.add_submodule('program', GS200Program(self, 'program'))
+
+        self.add_parameter("BNC_out",
+                           label="BNC trigger out",
+                           get_cmd=":ROUT:BNCO?",
+                           set_cmd=":ROUT:BNCO {}",
+                           vals=Enum("trigger", "output", "ready"),
+                           docstring="Sets or queries the output BNC signal")
+
+        self.add_parameter("BNC_in",
+                           label="BNC trigger in",
+                           get_cmd=":ROUT:BNCI?",
+                           set_cmd=":ROUT:BNCI {}",
+                           vals=Enum("trigger", "output"),
+                           docstring="Sets or queries the input BNC signal")
+
+        self.add_parameter(
+            "system_errors",
+            get_cmd=":SYSTem:ERRor?",
+            docstring="returns the oldest unread error message from the event "
+                      "log and removes it from the log."
+        )
+
         self.connect_message()
 
-    def on(self):
+    def on(self) -> None:
         """Turn output on"""
         self.write('OUTPUT 1')
         self.measure._output = True
 
-    def off(self):
+    def off(self) -> None:
         """Turn output off"""
         self.write('OUTPUT 0')
         self.measure._output = False
@@ -367,7 +464,8 @@ class GS200(VisaInstrument):
         self.output_level.inter_delay = saved_inter_delay
 
     def _get_set_output(self, mode: str,
-                        output_level: float = None) -> Optional[float]:
+                        output_level: Optional[float] = None
+                        ) -> Optional[float]:
         """
         Get or set the output level.
 
@@ -393,25 +491,23 @@ class GS200(VisaInstrument):
         auto_enabled = self.auto_range()
 
         if not auto_enabled:
-            self_range = self._cached_range_value
+            self_range = self.range()
             if self_range is None:
                 raise RuntimeError("Trying to set output but not in"
                                    " auto mode and range is unknown.")
         else:
-            mode = self._cached_mode
+            mode = self.source_mode.get_latest()
             if mode == "CURR":
                 self_range = 200E-3
             else:
-                self_range = 30
+                self_range = 30.0
 
         # Check we are not trying to set an out of range value
-        if self._cached_range_value is None or abs(output_level)\
+        if self.range() is None or abs(output_level)\
                 > abs(self_range):
             # Check that the range hasn't changed
             if not auto_enabled:
-                # Update range
-                self.range()
-                self_range = self._cached_range_value
+                self_range = self.range.get_latest()
                 if self_range is None:
                     raise RuntimeError("Trying to set output but not in"
                                        " auto mode and range is unknown.")
@@ -425,11 +521,12 @@ class GS200(VisaInstrument):
             auto_str = ":AUTO"
         else:
             auto_str = ""
-        cmd_str = ":SOUR:LEV{} {:.5e}".format(auto_str, output_level)
+        cmd_str = f":SOUR:LEV{auto_str} {output_level:.5e}"
         self.write(cmd_str)
 
-    def _update_measurement_module(self, source_mode: str = None,
-                                   source_range: float = None) -> None:
+    def _update_measurement_module(self, source_mode: Optional[str] = None,
+                                   source_range: Optional[float] = None
+                                   ) -> None:
         """
         Update validators/units as source mode/range changes.
 
@@ -441,7 +538,7 @@ class GS200(VisaInstrument):
             return
 
         if source_mode is None:
-            source_mode = self._cached_mode
+            source_mode = self.source_mode.get_latest()
         # Get source range if auto-range is off
         if source_range is None and not self.auto_range():
             source_range = self.range()
@@ -466,21 +563,21 @@ class GS200(VisaInstrument):
     def _assert_mode(self, mode: str) -> None:
         """
         Assert that we are in the correct mode to perform an operation.
-        If check is True, we double check the instrument if this check fails.
 
         Args:
             mode: "CURR" or "VOLT"
         """
-        if self._cached_mode != mode:
+        if self.source_mode.get_latest() != mode:
             raise ValueError("Cannot get/set {} settings while in {} mode".
-                             format(mode, self._cached_mode))
+                             format(mode, self.source_mode.get_latest()))
 
     def _set_source_mode(self, mode: str) -> None:
         """
-        Set output mode. Also, exclude/include the parameters from snapshot
-        depending on the mode. The instrument does not support
-        'current', 'current_range' parameters in "VOLT" mode and 'voltage',
-        'voltage_range' parameters in "CURR" mode.
+        Set output mode and change delegate parameters' source accordingly.
+        Also, exclude/include the parameters from snapshot depending on the
+        mode. The instrument does not support 'current', 'current_range'
+        parameters in "VOLT" mode and 'voltage', 'voltage_range' parameters
+        in "CURR" mode.
 
         Args:
             mode: "CURR" or "VOLT"
@@ -490,22 +587,25 @@ class GS200(VisaInstrument):
             raise GS200Exception("Cannot switch mode while source is on")
 
         if mode == "VOLT":
-            self.range = self.voltage_range
-            self.output_level = self.voltage
+            self.range.source = self.voltage_range
+            self.output_level.source = self.voltage
             self.voltage_range.snapshot_exclude = False
             self.voltage.snapshot_exclude = False
             self.current_range.snapshot_exclude = True
             self.current.snapshot_exclude = True
         else:
-            self.range = self.current_range
-            self.output_level = self.current
+            self.range.source = self.current_range
+            self.output_level.source = self.current
             self.voltage_range.snapshot_exclude = True
             self.voltage.snapshot_exclude = True
             self.current_range.snapshot_exclude = False
             self.current.snapshot_exclude = False
 
-        self.write("SOUR:FUNC {}".format(mode))
-        self._cached_mode = mode
+        self.write(f"SOUR:FUNC {mode}")
+        # We set the cache here since `_update_measurement_module`
+        # needs the current value which would otherwise only be set
+        # after this method exits
+        self.source_mode.cache.set(mode)
         # Update the measurement mode
         self._update_measurement_module(source_mode=mode)
 
@@ -515,35 +615,30 @@ class GS200(VisaInstrument):
 
         Args:
             mode: "CURR" or "VOLT"
-            output_range: Range to set. For voltage we have the ranges [10e-3,
-                100e-3, 1e0, 10e0, 30e0]. For current we have the ranges [1e-3,
-                10e-3, 100e-3, 200e-3]. If auto_range = False then setting the
-                output can only happen if the set value is smaller then the
+            output_range: Range to set. For voltage, we have the ranges [10e-3,
+                100e-3, 1e0, 10e0, 30e0]. For current, we have the ranges [1e-3,
+                10e-3, 100e-3, 200e-3]. If auto_range = False, then setting the
+                output can only happen if the set value is smaller than the
                 present range.
         """
         self._assert_mode(mode)
         output_range = float(output_range)
         self._update_measurement_module(source_mode=mode,
                                         source_range=output_range)
-        self._cached_range_value = output_range
-        self.write(':SOUR:RANG {}'.format(output_range))
+        self.write(f':SOUR:RANG {output_range}')
 
     def _get_range(self, mode: str) -> float:
         """
         Query the present range.
-        Note: we do not return the cached value here to ensure snapshots
-        correctly update range. In fact, we update the cached value when
-        calling this method.
 
         Args:
             mode: "CURR" or "VOLT"
 
         Returns:
-            range: For voltage we have the ranges [10e-3, 100e-3, 1e0, 10e0,
-                30e0]. For current we have the ranges [1e-3, 10e-3, 100e-3,
-                200e-3]. If auto_range = False then setting the output can only
-                happen if the set value is smaller then the present range.
+            range: For voltage, we have the ranges [10e-3, 100e-3, 1e0, 10e0,
+                30e0]. For current, we have the ranges [1e-3, 10e-3, 100e-3,
+                200e-3]. If auto_range = False, then setting the output can only
+                happen if the set value is smaller than the present range.
         """
         self._assert_mode(mode)
-        self._cached_range_value = float(self.ask(":SOUR:RANG?"))
-        return self._cached_range_value
+        return float(self.ask(":SOUR:RANG?"))

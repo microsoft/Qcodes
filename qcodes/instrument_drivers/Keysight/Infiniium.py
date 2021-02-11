@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Callable, List, Optional, Sequence
+from typing import Dict, Callable, Optional, Sequence, Any
 from functools import partial
 
 import numpy as np
@@ -8,6 +8,7 @@ from qcodes import VisaInstrument, validators as vals
 from qcodes import InstrumentChannel, ChannelList, Instrument
 from qcodes import ArrayParameter
 from qcodes.utils.validators import Enum, Numbers
+from qcodes.instrument.parameter import ParamRawDataType
 
 
 log = logging.getLogger(__name__)
@@ -26,21 +27,21 @@ class RawTrace(ArrayParameter):
     raw_trace will return a trace from OSCIL
     """
 
-    def __init__(self, name, instrument, channel):
+    def __init__(self, name: str, instrument: Instrument, channel: int):
         super().__init__(name,
                          shape=(1024,),
                          label='Voltage',
                          unit='V',
                          setpoint_names=('Time',),
                          setpoint_labels=(
-                             'Channel {} time series'.format(channel),),
+                             f'Channel {channel} time series',),
                          setpoint_units=('s',),
                          docstring='raw trace from the scope',
+                         instrument=instrument
                          )
         self._channel = channel
-        self._instrument = instrument
 
-    def prepare_curvedata(self):
+    def prepare_curvedata(self) -> None:
         """
         Prepare the scope for returning curve data
         """
@@ -50,6 +51,8 @@ class RawTrace(ArrayParameter):
 
         # shorthand
         instr = self._instrument
+        assert isinstance(instr, InfiniiumChannel)
+
         # number of set points
         self.npts = int(instr.ask("WAV:POIN?"))
         # first set point
@@ -65,14 +68,18 @@ class RawTrace(ArrayParameter):
         self.shape = (self.npts, )
 
         # make this on a per channel basis?
-        self._instrument._parent.trace_ready = True
+        root_instrument = instr.root_instrument
+        assert isinstance(root_instrument, Infiniium)
+        root_instrument.trace_ready = True
 
-    def get_raw(self):
+    def get_raw(self) -> ParamRawDataType:
         # when get is called the setpoints have to be known already
         # (saving data issue). Therefor create additional prepare function that
         # queries for the size.
         # check if already prepared
-        if not self._instrument._parent.trace_ready:
+        assert isinstance(self._instrument, InfiniiumChannel)
+
+        if not self._instrument.root_instrument.trace_ready:
             raise TraceNotReady('Please run prepare_curvedata to prepare '
                                 'the scope for acquiring a trace.')
 
@@ -94,13 +101,13 @@ class RawTrace(ArrayParameter):
         # ---------------------------------------------------------------------
 
         # digitize is the actual call for acquisition, blocks
-        instr.write(':DIGitize CHANnel{}'.format(self._channel))
+        instr.write(f':DIGitize CHANnel{self._channel}')
 
         # transfer the data
         # ---------------------------------------------------------------------
 
         # select the channel from which to read
-        instr._parent.data_source('CHAN{}'.format(self._channel))
+        instr._parent.data_source(f'CHAN{self._channel}')
         # specifiy the data format in which to read
         instr.write(':WAVeform:FORMat WORD')
         instr.write(":waveform:byteorder LSBFirst")
@@ -143,7 +150,7 @@ class RawTrace(ArrayParameter):
         # ---------------------------------------------------------------------
 
         # switch display back on
-        instr.write(':CHANnel{}:DISPlay ON'.format(self._channel))
+        instr.write(f':CHANnel{self._channel}:DISPlay ON')
         # continue refresh
         if state == 'RUN':
             instr.write(':RUN')
@@ -159,7 +166,7 @@ class MeasurementSubsystem(InstrumentChannel):
     # note: this is not really a channel, but InstrumentChannel does everything
     # a 'Submodule' class should do
 
-    def __init__(self, parent: Instrument, name: str, **kwargs) -> None:
+    def __init__(self, parent: Instrument, name: str, **kwargs: Any) -> None:
         super().__init__(parent, name, **kwargs)
 
         self.add_parameter(name='source_1',
@@ -295,21 +302,21 @@ class MeasurementSubsystem(InstrumentChannel):
 
 class InfiniiumChannel(InstrumentChannel):
 
-    def __init__(self, parent, name, channel):
+    def __init__(self, parent: "Infiniium", name: str, channel: int):
         super().__init__(parent, name)
         # display
         self.add_parameter(name='display',
-                           label='Channel {} display on/off'.format(channel),
-                           set_cmd='CHANnel{}:DISPlay {{}}'.format(channel),
-                           get_cmd='CHANnel{}:DISPlay?'.format(channel),
+                           label=f'Channel {channel} display on/off',
+                           set_cmd=f'CHANnel{channel}:DISPlay {{}}',
+                           get_cmd=f'CHANnel{channel}:DISPlay?',
                            val_mapping={True: 1, False: 0},
                            )
         # scaling
         self.add_parameter(name='offset',
-                           label='Channel {} offset'.format(channel),
-                           set_cmd='CHAN{}:OFFS {{}}'.format(channel),
+                           label=f'Channel {channel} offset',
+                           set_cmd=f'CHAN{channel}:OFFS {{}}',
                            unit='V',
-                           get_cmd='CHAN{}:OFFS?'.format(channel),
+                           get_cmd=f'CHAN{channel}:OFFS?',
                            get_parser=float
                            )
 
@@ -326,20 +333,20 @@ class InfiniiumChannel(InstrumentChannel):
         #                    )
 
         self.add_parameter(name='range',
-                           label='Channel {} range'.format(channel),
+                           label=f'Channel {channel} range',
                            unit='V',
-                           set_cmd='CHAN{}:RANG {{}}'.format(channel),
-                           get_cmd='CHAN{}:RANG?'.format(channel),
+                           set_cmd=f'CHAN{channel}:RANG {{}}',
+                           get_cmd=f'CHAN{channel}:RANG?',
                            get_parser=float,
                            vals=vals.Numbers()
                            )
         # trigger
         self.add_parameter(
             'trigger_level',
-            label='Tirgger level channel {}'.format(channel),
+            label=f'Tirgger level channel {channel}',
             unit='V',
-            get_cmd=':TRIGger:LEVel? CHANnel{}'.format(channel),
-            set_cmd=':TRIGger:LEVel CHANnel{},{{}}'.format(channel),
+            get_cmd=f':TRIGger:LEVel? CHANnel{channel}',
+            set_cmd=f':TRIGger:LEVel CHANnel{channel},{{}}',
             get_parser=float,
             vals=Numbers(),
         )
@@ -357,14 +364,16 @@ class Infiniium(VisaInstrument):
      - tested for MSOS104A of the Infiniium S-series.
     """
 
-    def __init__(self, name, address, timeout=20, **kwargs):
+    def __init__(self, name: str, address: str,
+                 timeout: float = 20,
+                 **kwargs: Any):
         """
         Initialises the oscilloscope.
 
         Args:
-            name (str): Name of the instrument used by QCoDeS
-        address (string): Instrument address as used by VISA
-            timeout (float): visa timeout, in secs.
+            name: Name of the instrument used by QCoDeS
+            address: Instrument address as used by VISA
+            timeout: visa timeout, in secs.
         """
 
         super().__init__(name, address, timeout=timeout,
@@ -436,10 +445,10 @@ class Infiniium(VisaInstrument):
                            get_cmd=':TRIGger:EDGE:SOURce?',
                            set_cmd=':TRIGger:EDGE:SOURce {}',
                            vals=Enum(*(
-                               ['CHANnel{}'.format(i) for i in range(1, 4 + 1)] +
-                               ['CHAN{}'.format(i) for i in range(1, 4 + 1)] +
-                               ['DIGital{}'.format(i) for i in range(16 + 1)] +
-                               ['DIG{}'.format(i) for i in range(16 + 1)] +
+                               [f'CHANnel{i}' for i in range(1, 4 + 1)] +
+                               [f'CHAN{i}' for i in range(1, 4 + 1)] +
+                               [f'DIGital{i}' for i in range(16 + 1)] +
+                               [f'DIG{i}' for i in range(16 + 1)] +
                                ['AUX', 'LINE']))
                            )  # add enum for case insesitivity
         self.add_parameter('trigger_edge_slope',
@@ -483,16 +492,16 @@ class Infiniium(VisaInstrument):
                            get_cmd=':WAVeform:SOURce?',
                            set_cmd=':WAVeform:SOURce {}',
                            vals = Enum( *(\
-                                ['CHANnel{}'.format(i) for i in range(1, 4+1)]+\
-                                ['CHAN{}'.format(i) for i in range(1, 4+1)]+\
-                                ['DIFF{}'.format(i) for i in range(1, 2+1)]+\
-                                ['COMMonmode{}'.format(i) for i in range(3, 4+1)]+\
-                                ['COMM{}'.format(i) for i in range(3, 4+1)]+\
-                                ['FUNCtion{}'.format(i) for i in range(1, 16+1)]+\
-                                ['FUNC{}'.format(i) for i in range(1, 16+1)]+\
-                                ['WMEMory{}'.format(i) for i in range(1, 4+1)]+\
-                                ['WMEM{}'.format(i) for i in range(1, 4+1)]+\
-                                ['BUS{}'.format(i) for i in range(1, 4+1)]+\
+                                [f'CHANnel{i}' for i in range(1, 4+1)]+\
+                                [f'CHAN{i}' for i in range(1, 4+1)]+\
+                                [f'DIFF{i}' for i in range(1, 2+1)]+\
+                                [f'COMMonmode{i}' for i in range(3, 4+1)]+\
+                                [f'COMM{i}' for i in range(3, 4+1)]+\
+                                [f'FUNCtion{i}' for i in range(1, 16+1)]+\
+                                [f'FUNC{i}' for i in range(1, 16+1)]+\
+                                [f'WMEMory{i}' for i in range(1, 4+1)]+\
+                                [f'WMEM{i}' for i in range(1, 4+1)]+\
+                                [f'BUS{i}' for i in range(1, 4+1)]+\
                                 ['HISTogram', 'HIST', 'CLOCK']+\
                                 ['MTRend', 'MTR']))
                            )
@@ -538,12 +547,12 @@ class Infiniium(VisaInstrument):
                            )
         # Channels
         channels = ChannelList(self, "Channels", InfiniiumChannel,
-                                snapshotable=False)
+                               snapshotable=False)
 
         for i in range(1,5):
-            channel = InfiniiumChannel(self, 'chan{}'.format(i), i)
+            channel = InfiniiumChannel(self, f'chan{i}', i)
             channels.append(channel)
-            self.add_submodule('ch{}'.format(i), channel)
+            self.add_submodule(f'ch{i}', channel)
         channels.lock()
         self.add_submodule('channels', channels)
 
@@ -551,10 +560,10 @@ class Infiniium(VisaInstrument):
         meassubsys = MeasurementSubsystem(self, 'measure')
         self.add_submodule('measure', meassubsys)
 
-    def _cmd_and_invalidate(self, cmd: str) -> Callable:
+    def _cmd_and_invalidate(self, cmd: str) -> Callable[..., Any]:
         return partial(Infiniium._cmd_and_invalidate_call, self, cmd)
 
-    def _cmd_and_invalidate_call(self, cmd: str, val) -> None:
+    def _cmd_and_invalidate_call(self, cmd: str, val: float) -> None:
         """
         executes command and sets trace_ready status to false
         any command that effects the number of setpoints should invalidate the trace
@@ -562,15 +571,17 @@ class Infiniium(VisaInstrument):
         self.trace_ready = False
         self.write(cmd.format(val))
 
-    def save_data(self, filename):
+    def save_data(self, filename: str) -> None:
         """
         Saves the channels currently shown on oscilloscope screen to a USB.
         Must set data_format parameter prior to calling this
         """
         self.write(f'SAV:WAV "{filename}"')
 
-    def get_current_traces(self, channels: Optional[Sequence[int]] = None
-                          ) -> Dict:
+    def get_current_traces(
+            self,
+            channels: Optional[Sequence[int]] = None
+    ) -> Dict[Any, Any]:
         """
         Get the current traces of 'channels' on the oscillsocope.
 
@@ -615,13 +626,13 @@ class Infiniium(VisaInstrument):
 
         for i in channels:
             all_data['ch%d' % i] = all_data['ch%d' % i] * y_incr + y_origin
-            self.write(':CHANnel{}:DISPlay ON'.format(i))
+            self.write(f':CHANnel{i}:DISPlay ON')
         all_data['time'] = np.arange(0, len(all_data['ch%s' % channels[0]])) \
             * x_incr
 
         self.write(':RUN')
         # turn the channels that were not requested off
         for ch in [i for i in [1, 2, 3, 4] if i not in channels]:
-            self.write(':CHANnel{}:DISPlay OFF'.format(ch))
+            self.write(f':CHANnel{ch}:DISPlay OFF')
 
         return all_data

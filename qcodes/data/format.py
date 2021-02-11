@@ -96,7 +96,7 @@ class Formatter:
 
         data_files = io_manager.list(location)
         if not data_files:
-            raise IOError('no data found at ' + location)
+            raise OSError('no data found at ' + location)
 
         # in case the DataArrays exist but haven't been initialized
         for array in data_set.arrays.values():
@@ -302,8 +302,8 @@ class Formatter:
               the setpoint array ids.
         """
 
-        set_array_sets = tuple(set(array.set_arrays
-                                   for array in arrays.values()))
+        set_array_sets = tuple({array.set_arrays
+                                   for array in arrays.values()})
         all_set_arrays = set()
         for set_array_set in set_array_sets:
             all_set_arrays.update(set_array_set)

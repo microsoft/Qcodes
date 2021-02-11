@@ -1,15 +1,17 @@
 """Visa instrument driver based on pyvisa."""
-from typing import Sequence, Optional, Dict, Union, Any
+from typing import Sequence, Optional, Dict, Union, Any, cast
 import warnings
 import logging
+from packaging.version import Version
 
-import visa
+import pyvisa as visa
 import pyvisa.constants as vi_const
 import pyvisa.resources
 
 from .base import Instrument, InstrumentBase
 
 import qcodes.utils.validators as vals
+from qcodes.utils.deprecate import deprecate
 from qcodes.logger.instrument_logger import get_instrument_logger
 from qcodes.utils.delaykeyboardinterrupt import DelayedKeyboardInterrupt
 
@@ -52,7 +54,7 @@ class VisaInstrument(Instrument):
         super().__init__(name, **kwargs)
         self.visa_log = get_instrument_logger(self, VISA_LOGGER)
         self.visabackend: str
-        self.visa_handle: visa.ResourceManager
+        self.visa_handle: visa.resources.MessageBasedResource
         self.visalib: Optional[str]
 
         self.add_parameter('timeout',
@@ -118,8 +120,12 @@ class VisaInstrument(Instrument):
             resource_manager = visa.ResourceManager()
             self.visabackend = 'ni'
 
-        self.visa_log.info('Opening PyVISA resource at address: {}'.format(address))
-        self.visa_handle = resource_manager.open_resource(address)
+        self.visa_log.info(f'Opening PyVISA resource at address: {address}')
+        resource = resource_manager.open_resource(address)
+        if not isinstance(resource, visa.resources.MessageBasedResource):
+            raise TypeError("QCoDeS only support MessageBasedResource "
+                            "Visa resources")
+        self.visa_handle = resource
         self._address = address
 
     def device_clear(self) -> None:
@@ -134,14 +140,15 @@ class VisaInstrument(Instrument):
         if self.visabackend == 'sim':
             return
 
+        flush_operation = (
+                vi_const.BufferOperation.discard_read_buffer_no_io |
+                vi_const.BufferOperation.discard_write_buffer
+        )
+
         if isinstance(self.visa_handle, pyvisa.resources.SerialInstrument):
-            self.visa_handle.flush(
-                vi_const.VI_READ_BUF_DISCARD | vi_const.VI_WRITE_BUF_DISCARD)
+            self.visa_handle.flush(flush_operation)
         else:
-            status_code = self.visa_handle.clear()
-            if status_code is not None:
-                self.visa_log.warning(
-                    f"Cleared visa buffer with status code {status_code}")
+            self.visa_handle.clear()
 
     def set_terminator(self, terminator: str) -> None:
         r"""
@@ -158,10 +165,12 @@ class VisaInstrument(Instrument):
         if self.visabackend == 'sim':
             self.visa_handle.write_termination = terminator
 
-    def _set_visa_timeout(self, timeout: Optional[Union[float, int]]) -> None:
-
+    def _set_visa_timeout(self, timeout: Optional[float]) -> None:
+        # according to https://pyvisa.readthedocs.io/en/latest/introduction/resources.html#timeout
+        # both float('+inf') and None are accepted as meaning infinite timeout
+        # however None does not pass the typechecking in 1.11.1
         if timeout is None:
-            self.visa_handle.timeout = None
+            self.visa_handle.timeout = float('+inf')
         else:
             # pyvisa uses milliseconds but we use seconds
             self.visa_handle.timeout = timeout * 1000.0
@@ -181,10 +190,10 @@ class VisaInstrument(Instrument):
             self.visa_handle.close()
         super().close()
 
+    @deprecate(reason="pyvisa already checks the error code itself")
     def check_error(self, ret_code: int) -> None:
         """
         Default error checking, raises an error if return code ``!=0``.
-
         Does not differentiate between warnings or specific error messages.
         Override this function in your driver if you want to add specific
         error messages.
@@ -209,8 +218,7 @@ class VisaInstrument(Instrument):
         """
         with DelayedKeyboardInterrupt():
             self.visa_log.debug(f"Writing: {cmd}")
-            nr_bytes_written, ret_code = self.visa_handle.write(cmd)
-            self.check_error(ret_code)
+            self.visa_handle.write(cmd)
 
     def ask_raw(self, cmd: str) -> str:
         """
@@ -228,9 +236,9 @@ class VisaInstrument(Instrument):
             self.visa_log.debug(f"Response: {response}")
         return response
 
-    def snapshot_base(self, update: bool = True,
+    def snapshot_base(self, update: Optional[bool] = True,
                       params_to_skip_update: Optional[Sequence[str]] = None
-                      ) -> Dict:
+                      ) -> Dict[Any, Any]:
         """
         State of the instrument as a JSON-compatible dict (everything that
         the custom JSON encoder class :class:`qcodes.utils.helpers.NumpyJSONEncoder`
@@ -238,7 +246,9 @@ class VisaInstrument(Instrument):
 
         Args:
             update: If True, update the state by querying the
-                instrument. If False, just use the latest values in memory.
+                instrument. If None only update if the state is known to be
+                invalid. If False, just use the latest values in memory and
+                never update.
             params_to_skip_update: List of parameter names that will be skipped
                 in update even if update is True. This is useful if you have
                 parameters that are slow to update but can be updated in a

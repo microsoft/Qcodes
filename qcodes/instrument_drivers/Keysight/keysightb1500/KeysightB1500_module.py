@@ -1,24 +1,32 @@
 import re
-from typing import Optional, Tuple, TYPE_CHECKING, Dict, Union, cast
+from typing import Optional, Tuple, TYPE_CHECKING, Dict, Union, cast, Any
+from typing_extensions import TypedDict
 from collections import namedtuple
+import numpy as np
 
 from qcodes import InstrumentChannel
 from .message_builder import MessageBuilder
 from . import constants
-from .constants import ModuleKind, SlotNr
+from .constants import ModuleKind, SlotNr, MeasurementStatus, ChannelName, ChNr
+
 if TYPE_CHECKING:
-    from .KeysightB1500 import KeysightB1500
+    from .KeysightB1500_base import KeysightB1500
 
 
-_FMTResponse = namedtuple('FMTResponse', 'value status channel type')
+_FMTResponse = namedtuple('_FMTResponse', 'value status channel type')
 
 
-def parse_fmt_1_0_response(raw_data_val: str) -> _FMTResponse:
+class MeasurementNotTaken(Exception):
+    pass
+
+
+def fmt_response_base_parser(raw_data_val: str) -> _FMTResponse:
     """
     Parse the response from SPA for `FMT 1,0` format  into a named tuple
     with names, value (value of the data), status (Normal or with compliance
     error such as C, T, V), channel (channel number of the output data such
-    as CH1,CH2), type (current 'I' or voltage 'V').
+    as CH1,CH2), type (current 'I' or voltage 'V'). This parser is tested
+    for FMT1,0 and FMT1,1 response.
 
     Args:
         raw_data_val: Unparsed (raw) data for the instrument.
@@ -68,14 +76,48 @@ def parse_module_query_response(response: str) -> Dict[SlotNr, str]:
     }
 
 
+# pattern to match dcv experiment
+_pattern_lrn = re.compile(
+    r"(?P<status_dc>\w{1,3})(?P<chnr_dc>\w),(?P<voltage_dc>\d{1,3}.\d{1,4});"
+    r"(?P<status_ac>\w{1,3})(?P<chnr_ac>\w),(?P<voltage_ac>\d{1,3}.\d{1,4});"
+    r"(?P<status_fc>\w{1,2})(?P<chnr_fc>\w),(?P<frequency>\d{1,6}.\d{1,4})"
+)
+
+
+def parse_dcv_measurement_response(response: str) -> Dict[str, Union[str,
+                                                                     float]]:
+    """
+    Extract status, channel number, value  and accompanying metadata from
+    the string and return them as a dictionary.
+
+    Args:
+        response: Response str to lrn_query For the MFCMU.
+    """
+
+    match = re.match(_pattern_lrn, response)
+    if match is None:
+        raise ValueError(f"{response!r} didn't match {_pattern_lrn!r} pattern")
+
+    dd = match.groupdict()
+    d = cast(Dict[str, Union[str, float]], dd)
+    return d
+
+
 # Pattern to match the spot measurement response against
 _pattern = re.compile(
-    r"((?P<status>\w)(?P<chnr>\w)(?P<dtype>\w))?"
+    r"((?P<status>\w)(?P<channel>\w)(?P<dtype>\w))?"
     r"(?P<value>[+-]\d{1,3}\.\d{3,6}E[+-]\d{2})"
 )
 
 
-def parse_spot_measurement_response(response: str) -> dict:
+class SpotResponse(TypedDict):
+    value: float
+    status: MeasurementStatus
+    channel: ChannelName
+    dtype: str
+
+
+def parse_spot_measurement_response(response: str) -> SpotResponse:
     """
     Extract measured value and accompanying metadata from the string
     and return them as a dictionary.
@@ -92,8 +134,13 @@ def parse_spot_measurement_response(response: str) -> dict:
         raise ValueError(f"{response!r} didn't match {_pattern!r} pattern")
 
     dd = match.groupdict()
-    d = cast(Dict[str, Union[str, float]], dd)
-    d["value"] = float(d["value"])
+
+    d = SpotResponse(
+        value=_convert_to_nan_if_dummy_value(float(dd["value"])),
+        status=MeasurementStatus[dd["status"]],
+        channel=ChannelName[dd["channel"]],
+        dtype=dd["dtype"]
+    )
 
     return d
 
@@ -113,6 +160,24 @@ def parse_dcorr_query_response(response: str) -> _DCORRResponse:
                           secondary=float(secondary))
 
 
+def fixed_negative_float(response: str) -> float:
+    """
+    Keysight sometimes responds for ex. '-0.-1' as an output when you input
+    '-0.1'. This function can convert such strings also to float.
+    """
+    if len(response.split('.')) > 2:
+        raise ValueError('String must of format `a` or `a.b`')
+
+    parts = response.split('.')
+    number = parts[0]
+    decimal = parts[1] if len(parts) > 1 else '0'
+
+    decimal = decimal.replace("-", "")
+
+    output = ".".join([number, decimal])
+    return float(output)
+
+
 _dcorr_labels_units_map = {
     constants.DCORR.Mode.Cp_G: dict(
         primary=dict(label='Cp', unit='F'),
@@ -126,7 +191,7 @@ _dcorr_labels_units_map = {
 
 def format_dcorr_response(r: _DCORRResponse) -> str:
     """
-    Format a given response tuple :class:`_DCORRResponse` from
+    Format a given response tuple ``_DCORRResponse`` from
     ``DCORR?`` command as a human-readable string.
     """
     labels_units = _dcorr_labels_units_map[r.mode]
@@ -141,9 +206,62 @@ def format_dcorr_response(r: _DCORRResponse) -> str:
     return result_str
 
 
+def get_name_label_unit_of_impedance_model(
+        mode: constants.IMP.MeasurementMode
+) -> Tuple[Tuple[str, str], Tuple[str, str], Tuple[str, str]]:
+    params = mode.name.split('_')
+
+    param1 = params[0]
+    param2 = '_'.join(params[1:])
+
+    label = (constants.IMP.Name[param1].value,
+             constants.IMP.Name[param2].value)
+
+    unit = (constants.IMP.Unit[param1].value,
+            constants.IMP.Unit[param2].value)
+
+    name = (label[0].lower().replace(' ', '_'),
+            label[1].lower().replace(' ', '_'))
+
+    return name, label, unit
+
+
 # TODO notes:
 # - [ ] Instead of generating a Qcodes InstrumentChannel for each **module**,
 #   it might make more sense to generate one for each **channel**
+
+
+def get_measurement_summary(status_array: np.ndarray) -> str:
+    unique_error_statuses = np.unique(status_array[status_array != "N"])
+    if len(unique_error_statuses) > 0:
+        summary = " ".join(
+            constants.MeasurementStatus[err] for err in
+            unique_error_statuses
+        )
+    else:
+        summary = constants.MeasurementStatus["N"]
+
+    return summary
+
+
+def convert_dummy_val_to_nan(param: _FMTResponse) -> None:
+    """
+    Converts dummy value to NaN. Instrument may output dummy value (
+    199.999E+99) if measurement data is over the measurement range. Or the
+    sweep measurement was aborted by the automatic stop function or power
+    compliance. Or if any abort condition is detected. Dummy data
+    199.999E+99 will be returned for the data after abort."
+
+    Args:
+        param: This must be of type named tuple _FMTResponse.
+
+    """
+    for index, value in enumerate(param.value):
+        param.value[index] = _convert_to_nan_if_dummy_value(param.value[index])
+
+
+def _convert_to_nan_if_dummy_value(value: float) -> float:
+    return float('nan') if value > 1e99 else value
 
 
 class B1500Module(InstrumentChannel):
@@ -165,11 +283,12 @@ class B1500Module(InstrumentChannel):
     """
     MODULE_KIND: ModuleKind
 
-    def __init__(self, parent: 'KeysightB1500', name: Optional[str], slot_nr,
-                 **kwargs):
+    def __init__(self, parent: 'KeysightB1500', name: Optional[str],
+                 slot_nr: int,
+                 **kwargs: Any):
         # self.channels will be populated in the concrete module subclasses
         # because channel count is module specific
-        self.channels: Tuple
+        self.channels: Tuple[ChNr, ...]
         self.slot_nr = SlotNr(slot_nr)
 
         if name is None:
@@ -182,7 +301,7 @@ class B1500Module(InstrumentChannel):
     parse_spot_measurement_response = parse_spot_measurement_response
     parse_module_query_response = parse_module_query_response
 
-    def enable_outputs(self):
+    def enable_outputs(self) -> None:
         """
         Enables all outputs of this module by closing the output relays of its
         channels.
@@ -193,7 +312,7 @@ class B1500Module(InstrumentChannel):
         msg = MessageBuilder().cn(self.channels).message
         self.write(msg)
 
-    def disable_outputs(self):
+    def disable_outputs(self) -> None:
         """
         Disables all outputs of this module by opening the output relays of its
         channels.
@@ -222,6 +341,40 @@ class B1500Module(InstrumentChannel):
         activated_channels = re.sub(r"[^,\d]", "", response).split(",")
 
         is_enabled = set(self.channels).issubset(
-            int(x) for x in activated_channels
+            int(x) for x in activated_channels if x != ''
         )
         return is_enabled
+
+    def clear_timer_count(self) -> None:
+        """
+        This command clears the timer count. This command is effective for
+        all measurement modes, regardless of the TSC setting. This command
+        is not effective for the 4 byte binary data output format
+        (FMT3 and FMT4).
+        """
+        self.root_instrument.clear_timer_count(chnum=self.channels)
+
+
+class StatusMixin:
+    def __init__(self) -> None:
+        self.names = tuple(['param1', 'param2'])
+
+    def status_summary(self) -> Dict[str, str]:
+        return_dict: Dict[str, str] = {}
+
+        for name_index, name in enumerate(self.names):
+            param_data: _FMTResponse = getattr(self, f"param{name_index+1}")
+
+            status_array = param_data.status
+            if status_array is None:
+                self_full_name = getattr(self, "full_name", "this")
+                raise MeasurementNotTaken(
+                    f"First run sweep measurement with {self_full_name} "
+                    f"parameter to obtain the data; then it will be possible "
+                    f"to obtain status summary for that data."
+                )
+
+            summary = get_measurement_summary(status_array)
+            return_dict[name] = summary
+
+        return return_dict

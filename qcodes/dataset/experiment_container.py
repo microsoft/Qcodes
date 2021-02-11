@@ -19,12 +19,12 @@ log = logging.getLogger(__name__)
 
 
 class Experiment(Sized):
-    def __init__(self, path_to_db: Optional[str]=None,
-                 exp_id: Optional[int]=None,
-                 name: Optional[str]=None,
-                 sample_name: Optional[str]=None,
-                 format_string: str="{}-{}-{}",
-                 conn: Optional[ConnectionPlus]=None) -> None:
+    def __init__(self, path_to_db: Optional[str] = None,
+                 exp_id: Optional[int] = None,
+                 name: Optional[str] = None,
+                 sample_name: Optional[str] = None,
+                 format_string: str = "{}-{}-{}",
+                 conn: Optional[ConnectionPlus] = None) -> None:
         """
         Create or load an experiment. If exp_id is None, a new experiment is
         created. If exp_id is not None, an experiment is loaded.
@@ -66,7 +66,7 @@ class Experiment(Sized):
                 raise ValueError("Invalid format string. Can not format "
                                  "(name, exp_id, run_counter)") from e
 
-            log.info("creating new experiment in {}".format(self.path_to_db))
+            log.info(f"creating new experiment in {self.path_to_db}")
 
             name = name or f"experiment_{max_id+1}"
             sample_name = sample_name or "some_sample"
@@ -108,7 +108,7 @@ class Experiment(Sized):
                                 "exp_id", self.exp_id)
 
     def new_data_set(self, name: str,
-                     specs: SPECS = None,
+                     specs: Optional[SPECS] = None,
                      values: Optional[VALUES] = None,
                      metadata: Optional[Any] = None) -> DataSet:
         """
@@ -186,7 +186,7 @@ def experiments(conn: Optional[ConnectionPlus] = None) -> List[Experiment]:
         All the experiments in the container
     """
     conn = conn_from_dbpath_or_conn(conn=conn, path_to_db=None)
-    log.info("loading experiments from {}".format(conn.path_to_dbfile))
+    log.info(f"loading experiments from {conn.path_to_dbfile}")
     rows = get_experiments(conn)
     return [load_experiment(row['exp_id'], conn) for row in rows]
 
@@ -194,7 +194,7 @@ def experiments(conn: Optional[ConnectionPlus] = None) -> List[Experiment]:
 def new_experiment(name: str,
                    sample_name: Optional[str],
                    format_string: str = "{}-{}-{}",
-                   conn: Optional[ConnectionPlus]=None) -> Experiment:
+                   conn: Optional[ConnectionPlus] = None) -> Experiment:
     """
     Create a new experiment (in the database file from config)
 

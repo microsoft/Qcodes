@@ -55,4 +55,3 @@ def test_burst(driver):
     # set to something else?
     # driver.ch1.burst_ncycles('INF')
     # assert driver.ch1.burst_ncycles() == 'INF'
-

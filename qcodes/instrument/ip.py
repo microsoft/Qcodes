@@ -201,12 +201,9 @@ class IPInstrument(Instrument):
             self._send(cmd)
             return self._recv()
 
-    def __del__(self) -> None:
-        self.close()
-
-    def snapshot_base(self, update: bool = False,
+    def snapshot_base(self, update: Optional[bool] = False,
                       params_to_skip_update: Optional[Sequence[str]] = None
-                      ) -> Dict:
+                      ) -> Dict[Any, Any]:
         """
         State of the instrument as a JSON-compatible dict (everything that
         the custom JSON encoder class
@@ -214,14 +211,17 @@ class IPInstrument(Instrument):
         supports).
 
         Args:
-            update (bool): If True, update the state by querying the
-                instrument. If False, just use the latest values in memory.
-            params_to_skip_update: List of parameter names that will be skipped
-                in update even if update is True. This is useful if you have
-                parameters that are slow to update but can be updated in a
-                different way (as in the qdac). If you want to skip the
-                update of certain parameters in all snapshots, use the
-                `snapshot_get`  attribute of those parameters: instead.
+            update: If True, update the state by querying the
+                instrument. If None only update if the state is known to be
+                invalid. If False, just use the latest values in memory and
+                never update.
+            params_to_skip_update: List of parameter names that will be
+                skipped in update even if update is True. This is useful
+                if you have parameters that are slow to update but can
+                be updated in a different way (as in the qdac). If you
+                want to skip the update of certain parameters in all
+                snapshots, use the `snapshot_get`  attribute of those
+                parameters: instead.
 
         Returns:
             dict: base snapshot

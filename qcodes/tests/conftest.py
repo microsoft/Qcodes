@@ -2,6 +2,10 @@ import sys
 import pytest
 import qcodes as qc
 
+from hypothesis import settings
+
+settings.register_profile("ci", deadline=1000)
+
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "win32: tests that only run under windows")
@@ -29,11 +33,12 @@ def disable_telemetry():
     finally:
         qc.config.telemetry.enabled = original_state
 
+
 @pytest.fixture(scope="session", autouse=True)
 def disable_config_subscriber():
     """
     We do not want the tests to send generate subscription events unless specifically
-    enabled in the test. So disable any default subscriber defined
+    enabled in the test. So disable any default subscriber defined.
     """
 
     original_state = qc.config.subscription.default_subscribers

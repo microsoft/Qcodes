@@ -23,6 +23,3 @@ qcodes.plots
    colors
    pyqtgraph
    qcmatplotlib
-
-
-

@@ -219,7 +219,7 @@ class Slack(threading.Thread):
         if len(users) != len(usernames):
             remaining_names = [name for name in usernames if name not in users]
             raise RuntimeError(
-                'Could not find names {}'.format(remaining_names))
+                f'Could not find names {remaining_names}')
         return users
 
     def get_im_ids(self, users):
@@ -239,8 +239,11 @@ class Slack(threading.Thread):
             if user_id in im_ids:
                 users[username]['im_id'] = im_ids[user_id]
                 # update last ts
-                users[username]['last_ts'] = float(
-                    self.get_im_messages(username=username, count=1)[0]['ts'])
+                messages = self.get_im_messages(username=username, count=1)
+                if messages:
+                    users[username]['last_ts'] = float(messages[0]['ts'])
+                else:
+                    users[username]['last_ts'] = None
 
     def get_im_messages(self, username, **kwargs):
         """
@@ -323,11 +326,11 @@ class Slack(threading.Thread):
                 # Extract command (first word) and possible args
                 command, args, kwargs = convert_command(message['text'])
                 if command in self.commands:
-                    msg = 'Executing {}'.format(command)
+                    msg = f'Executing {command}'
                     if args:
-                        msg += ' {}'.format(args)
+                        msg += f' {args}'
                     if kwargs:
-                        msg += ' {}'.format(kwargs)
+                        msg += f' {kwargs}'
                     self.slack.chat.post_message(text=msg, channel=channel)
 
                     func = self.commands[command]
@@ -346,12 +349,12 @@ class Slack(threading.Thread):
 
                         if results is not None:
                             self.slack.chat.post_message(
-                                text='Results: {}'.format(results),
+                                text=f'Results: {results}',
                                 channel=channel)
 
                     except:
                         self.slack.chat.post_message(
-                            text='Error: {}'.format(traceback.format_exc()),
+                            text=f'Error: {traceback.format_exc()}',
                             channel=channel)
                 else:
                     self.slack.chat.post_message(
@@ -373,13 +376,13 @@ class Slack(threading.Thread):
         """
         if command in self.task_commands:
             self.slack.chat.post_message(
-                text='Added task "{}"'.format(command),
+                text=f'Added task "{command}"',
                 channel=channel)
             func = self.task_commands[command]
             self.tasks.append(partial(func, *args, channel=channel, **kwargs))
         else:
             self.slack.chat.post_message(
-                text='Task command {} not understood'.format(command),
+                text=f'Task command {command} not understood',
                 channel=channel)
 
     def upload_latest_plot(self, channel, **kwargs):

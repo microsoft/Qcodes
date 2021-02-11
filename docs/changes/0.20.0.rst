@@ -1,0 +1,74 @@
+Changelog for QCoDeS 0.20.0
+===========================
+
+The November 2020 release of QCoDeS.
+
+-----------------
+Breaking Changes:
+-----------------
+
+- When performing a measurement with ``MultiParameter`` the parameters are now registered under their ``full_name`` including any instrument and channels that the parameter is bound to. This makes the ``MultiParameter`` consistent with all other parameters (#2317)
+- The Keysight ``SD_common`` module is now deprecated in favour of the one in ``qcodes_contrib_drivers`` (#2395)
+- The deprecated HP33210A driver has been removed (#2334)
+- The deprecated Tektronix AWG5200 driver has been removed (#2335)
+- Deprecated methods removed from ``DataSet`` (#2422)
+
+----
+New:
+----
+- The ``DataSet`` shape is used when loading data; this impacts the ``DataSet.get_parameter_data`` and ``DataSet.cache.data`` methods. See also `the measurement docs <https://qcodes.github.io/Qcodes/examples/DataSet/Performing-measurements-using-qcodes-parameters-and-dataset.html#Specifying-shape-of-measurement>`_ for more info on how data are loaded (#2264)
+- The ``Measurement`` now captures exception info in the ``DataSet`` s metadata if an exception occured during measurement (#2327)
+- There is now an explicit API for marking the ``cache`` of a ``Parameter`` as invalid (#2012)
+- New support email introduced (#2366)
+
+---------
+Improved:
+---------
+- The documentation for ``ParameterWithSetpoints`` now shows how to make sweeps (#2351)
+- Bugfix: calling ``mark_complete()`` on a completed ``DataSet`` no longer throws an exception (#2376)
+- The documentation no longer references the legacy module (#2408)
+
+------------
+New drivers:
+------------
+- Keysight E4980A Precision LCR Meter (#2253)
+
+-----------------
+Improved drivers:
+-----------------
+- The Alazar drivers received various minor fixes (#2301)
+- The Rohde & Schwarz ZNB vector network analyzer now supports CW readout mode (#2007)
+- The Keithley 7510 now has a settable buffer name (#2370)
+- Bugfix: Ithaco ``CurrentParameter`` (#2416)
+- Keysight B1500 no longer has master/slave terminology in its API (#2423)
+- Agilent E8527D now has a default terminator (#2434)
+
+---------------
+Under the hood:
+---------------
+
+- Legacy datasets can have a name (#2328)
+- Typing was added to the drivers of the following vendors:
+  - Lakeshore (#2340)
+  - Keysight (#2342)
+  - DynaCool (#2338)
+  - AimTTi (#2338)
+  - Hewlett-Packard (#2337)
+  - Yokogawa (#2339)
+  - Basel (#2339)
+  - Minicircuits (#2355)
+  - Signal Hound (#2359)
+  - Agilent (#2359)
+  - American Magnetics (#2362)
+  - Stanford Research Systems (#2365)
+  - Stahl (#2368)
+  - Oxford (#2375)
+  - Rigol (#2380)
+  - Rohde & Schwarz (#2384)
+  - Ithaco (#2384)
+  - Tektronix (#2386, #2393)
+  - QDev & QDevil (#2341)
+  - AlazarTech (#2396)
+- For developers: we now disallow implicit optional with ``mypy`` (#2361) and all new code must be typed (#2397)
+- Typing added to various modules (#2404, #2406, #2417)
+- Prepare for ``numpy`` 1.19 way of handling ragged arrays (#2369)

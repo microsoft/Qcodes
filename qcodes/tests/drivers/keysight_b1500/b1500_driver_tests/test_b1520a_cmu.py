@@ -1,11 +1,14 @@
-from unittest.mock import MagicMock
-
+import re
+from unittest.mock import MagicMock, call
+import numpy as np
 import pytest
 
 from qcodes.instrument_drivers.Keysight.keysightb1500 import constants
 from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1520A import \
     B1520A
 
+
+# pylint: disable=redefined-outer-name
 
 @pytest.fixture
 def mainframe():
@@ -16,6 +19,10 @@ def mainframe():
 def cmu(mainframe):
     slot_nr = 3
     cmu = B1520A(parent=mainframe, name='B1520A', slot_nr=slot_nr)
+    # GroupParameter with initial values write at the init so reset the mock
+    # to not count those write
+    mainframe.reset_mock()
+
     yield cmu
 
 
@@ -43,21 +50,218 @@ def test_set_ac_frequency(cmu):
     mainframe.write.assert_called_once_with('FC 3,100000.0')
 
 
+def test_get_dc_voltage(cmu):
+    mainframe = cmu.parent
+    mainframe.ask.return_value = 'DCV3,0.000;ACV3,0.0;FC3,1000.000'
+    response = cmu.voltage_dc()
+    assert response == 0.0
+
+    mainframe.reset_mock()
+    mainframe.ask.return_value = 'DCV3,0.001;ACV3,0.0;FC3,1000.000'
+    response = cmu.voltage_dc()
+    assert response == 0.001
+
+    mainframe.reset_mock()
+    mainframe.ask.return_value = 'DCV3,13.051;ACV3,0.0;FC3,1000.000'
+    response = cmu.voltage_dc()
+    assert response == 13.051
+
+
+def test_get_ac_voltage(cmu):
+    mainframe = cmu.parent
+    mainframe.ask.return_value = 'DCV3,0.000;ACV3,0.000;FC3,1000.000'
+    response = cmu.voltage_ac()
+    assert response == 0.0
+
+    mainframe.reset_mock()
+    mainframe.ask.return_value = 'DCV3,0.001;ACV3,0.01;FC3,1000.000'
+    response = cmu.voltage_ac()
+    assert response == 0.01
+
+    mainframe.reset_mock()
+    mainframe.ask.return_value = 'DCV3,13.051;ACV3,3.045;FC3,1000.000'
+    response = cmu.voltage_ac()
+    assert response == 3.045
+
+
+def test_get_frequency(cmu):
+    mainframe = cmu.parent
+    mainframe.ask.return_value = 'DCV3,0.000;ACV3,0.000;FC3,100000.000'
+    response = cmu.frequency()
+    assert response == 100000.0
+
+    mainframe.reset_mock()
+    mainframe.ask.return_value = 'DCV3,0.001;ACV3,0.01;FC3,1000.033'
+    response = cmu.frequency()
+    assert response == 1000.033
+
+    mainframe.reset_mock()
+    mainframe.ask.return_value = 'DCV3,13.051;ACV3,3.045;FC3,1540.40'
+    response = cmu.frequency()
+    assert response == 1540.40
+
+
 def test_get_capacitance(cmu):
     mainframe = cmu.parent
 
-    mainframe.ask.return_value = "NCC-1.45713E-06,NCY-3.05845E-03"
+    mainframe.ask.return_value = "NCC-1.45713E-06,NCD-3.05845E-03"
 
     assert pytest.approx((-1.45713E-06, -3.05845E-03)) == cmu.capacitance()
+
+    mainframe.ask.return_value = "NCC-1.55713E-06,NCD-3.15845E-03," \
+                                 "NCV-1.52342E-03,NCV+0.14235E-03"
+
+    assert pytest.approx((-1.55713E-06, -3.15845E-03)) == cmu.capacitance()
 
 
 def test_raise_error_on_unsupported_result_format(cmu):
     mainframe = cmu.parent
 
-    mainframe.ask.return_value = "NCR-1.1234E-03,NCX-4.5677E-03"
+    mainframe.ask.return_value = "NCR-1.1234E-03,NCX-4.5677E-03,NCV+0.14235E-03"
 
     with pytest.raises(ValueError):
         cmu.capacitance()
+
+
+def test_ranging_mode(cmu):
+    mainframe = cmu.parent
+
+    cmu.ranging_mode(constants.RangingMode.AUTO)
+
+    mainframe.write.assert_called_once_with('RC 3,0')
+
+
+def test_set_sweep_auto_abort(cmu):
+    mainframe = cmu.parent
+
+    cmu.cv_sweep.sweep_auto_abort(constants.Abort.ENABLED)
+
+    mainframe.write.assert_called_once_with("WMDCV 2")
+
+
+def test_get_sweep_auto_abort(cmu):
+    mainframe = cmu.parent
+
+    mainframe.ask.return_value = "WMDCV2,2;WTDCV1.0,0.0,0.0,0.0,0.0"
+    condition = cmu.cv_sweep.sweep_auto_abort()
+    assert condition == constants.Abort.ENABLED
+
+
+def test_set_post_sweep_voltage_cond(cmu):
+    mainframe = cmu.parent
+    mainframe.ask.return_value = "WMDCV2,2;WTDCV1.0,0.0,0.0,0.0,0.0"
+    cmu.cv_sweep.post_sweep_voltage_condition.set(constants.WMDCV.Post.STOP)
+
+    mainframe.write.assert_called_once_with("WMDCV 2,2")
+
+
+def test_get_post_sweep_voltage_cond(cmu):
+    mainframe = cmu.parent
+
+    mainframe.ask.return_value = "WMDCV2,2;WTDCV1.0,0.0,0.0,0.0,0.0"
+    condition = cmu.cv_sweep.post_sweep_voltage_condition()
+    assert condition == constants.WMDCV.Post.STOP
+
+    mainframe.reset_mock()
+
+    mainframe.ask.return_value = "WMDCV2;WTDCV1.0,0.0,0.0,0.0,0.0"
+    msg = re.escape("Received None. Set the parameter"
+                    "``post_sweep_voltage_condition`` first.")
+    with pytest.raises(ValueError, match=msg):
+        cmu.cv_sweep.post_sweep_voltage_condition()
+
+
+def test_cv_sweep_delay(cmu):
+    mainframe = cmu.root_instrument
+
+    mainframe.ask.return_value = "WTDCV0.0,0.0,0.0,0.0,0.0"
+
+    cmu.cv_sweep.hold_time(1.0)
+    cmu.cv_sweep.delay(1.0)
+
+    mainframe.write.assert_has_calls([call("WTDCV 1.0,0.0,0.0,0.0,0.0"),
+                                      call("WTDCV 1.0,1.0,0.0,0.0,0.0")])
+
+
+def test_cmu_sweep_steps(cmu):
+    mainframe = cmu.root_instrument
+    mainframe.ask.return_value = "WDCV3,1,0.0,0.0,1"
+    cmu.cv_sweep.sweep_start(2.0)
+    cmu.cv_sweep.sweep_end(4.0)
+
+    mainframe.write.assert_has_calls([call("WDCV 3,1,2.0,0.0,1"),
+                                      call("WDCV 3,1,2.0,4.0,1")])
+
+
+def test_cv_sweep_voltages(cmu):
+
+    mainframe = cmu.root_instrument
+
+    start = -1.0
+    end = 1.0
+    steps = 5
+    return_string = f'WDCV3,1,{start},{end},{steps}'
+    mainframe.ask.return_value = return_string
+
+    cmu.cv_sweep.sweep_start(start)
+    cmu.cv_sweep.sweep_end(end)
+    cmu.cv_sweep.sweep_steps(steps)
+    voltages = cmu.cv_sweep_voltages()
+
+    assert all([a == b for a, b in zip(np.linspace(start, end, steps),
+                                       voltages)])
+
+
+def test_sweep_modes(cmu):
+
+    mainframe = cmu.root_instrument
+
+    start = -1.0
+    end = 1.0
+    steps = 5
+    mode = constants.SweepMode.LINEAR_TWO_WAY
+    return_string = f'WDCV3,{mode},{start},{end},{steps}'
+    mainframe.ask.return_value = return_string
+
+    cmu.cv_sweep.sweep_start(start)
+    cmu.cv_sweep.sweep_end(end)
+    cmu.cv_sweep.sweep_steps(steps)
+    cmu.cv_sweep.sweep_mode(mode)
+    voltages = cmu.cv_sweep_voltages()
+
+    assert all([a == b for a, b in zip((-1.0, 0.0, 1.0, 0.0, -1.0), voltages)])
+
+
+def test_run_sweep(cmu):
+    mainframe = cmu.root_instrument
+
+    start = -1.0
+    end = 1.0
+    steps = 5
+
+    return_string = f'WMDCV2,2;WTDCV0.00,0.0000,0.2250,0.0000,' \
+                    f'0.0000;WDCV3,' \
+                    f'1,{start},{end},{steps};ACT0,1'
+    mainframe.ask.return_value = return_string
+    cmu.setup_fnc_already_run = True
+    cmu.impedance_model(constants.IMP.MeasurementMode.G_X)
+    cmu.cv_sweep.sweep_start(start)
+    cmu.cv_sweep.sweep_end(end)
+    cmu.cv_sweep.sweep_steps(steps)
+    cmu.adc_mode(constants.ACT.Mode.PLC)
+    cmu.adc_coef(5)
+    cmu.run_sweep()
+    mainframe.write.assert_has_calls([
+        call('WDCV 3,1,-1.0,0.0,1'),
+        call('WDCV 3,1,-1.0,1.0,1'),
+        call('WDCV 3,1,-1.0,1.0,5'),
+        call('ACT 2,1'),
+        call('ACT 2,5')])
+    assert cmu.run_sweep.names == ('conductance', 'reactance')
+    assert cmu.run_sweep.labels == ('Conductance', 'Reactance')
+    assert cmu.run_sweep.units == ('S', 'ohms')
+
+
 
 
 def test_phase_compensation_mode(cmu):

@@ -4,10 +4,11 @@ between the parameters of that run. Most importantly, the information about
 which parameters depend on each other is handled here.
 """
 from copy import deepcopy
-from typing import (Dict, Any, Tuple, Optional, FrozenSet, List, Set,
-                    Type, Sequence, Iterable)
+from typing import (Any, Dict, FrozenSet, Iterable, List, Optional, Sequence,
+                    Set, Tuple, Type)
 
-from .param_spec import ParamSpecBase, ParamSpec
+from .param_spec import ParamSpec, ParamSpecBase
+from .versioning.rundescribertypes import InterDependencies_Dict
 
 ParamSpecTree = Dict[ParamSpecBase, Tuple[ParamSpecBase, ...]]
 ParamNameTree = Dict[str, Tuple[str, ...]]
@@ -155,7 +156,7 @@ class InterDependencies_:
 
     @staticmethod
     def validate_paramspectree(
-        paramspectree: ParamSpecTree) -> Optional[ErrorTuple]:
+            paramspectree: ParamSpecTree) -> Optional[ErrorTuple]:
         """
         Validate a ParamSpecTree. Apart from adhering to the type, a
         ParamSpecTree must not have any cycles.
@@ -184,7 +185,7 @@ class InterDependencies_:
         # check for cycles
 
         roots = set(paramspectree.keys())
-        leafs = set(ps for tup in paramspectree.values() for ps in tup)
+        leafs = {ps for tup in paramspectree.values() for ps in tup}
 
         if roots.intersection(leafs) != set():
             return (ValueError, 'ParamSpecTree can not have cycles')
@@ -240,25 +241,28 @@ class InterDependencies_:
             raise ValueError(f'Unknown parameter: {ps}')
         return self._inferences_inv.get(ps, ())
 
-    def _to_dict(self) -> Dict[str, Any]:
+    def _to_dict(self) -> InterDependencies_Dict:
         """
         Write out this object as a dictionary
         """
-        output: Dict[str, Any] = {}
-        output['parameters'] = {key: value._to_dict() for key, value in
-                                self._id_to_paramspec.items()}
+        parameters = {key: value._to_dict() for key, value in
+                      self._id_to_paramspec.items()}
+        dependencies = self._construct_subdict('dependencies')
+        inferences = self._construct_subdict('inferences')
+        standalones = [self._paramspec_to_id[ps] for ps in
+                       self.standalones]
+        output: InterDependencies_Dict = {"parameters": parameters,
+                                          "dependencies": dependencies,
+                                          "inferences": inferences,
+                                          "standalones": standalones}
+        return output
 
-        trees = ['dependencies', 'inferences']
-        for tree in trees:
-            output[tree] = {}
-            for key, value in getattr(self, tree).items():
-                ps_id = self._paramspec_to_id[key]
-                ps_ids = [self._paramspec_to_id[ps] for ps in value]
-                output[tree].update({ps_id: ps_ids})
-
-        output['standalones'] = [self._paramspec_to_id[ps] for ps in
-                                 self.standalones]
-
+    def _construct_subdict(self, treename: str) -> Dict[str, Any]:
+        output = {}
+        for key, value in getattr(self, treename).items():
+            ps_id = self._paramspec_to_id[key]
+            ps_ids = [self._paramspec_to_id[ps] for ps in value]
+            output.update({ps_id: ps_ids})
         return output
 
     @property
@@ -375,9 +379,9 @@ class InterDependencies_:
         # add new standalones
         new_standalones = tuple(standalones_mut.union(set(standalones)))
 
-        new_idps =  InterDependencies_(dependencies=new_deps,
-                                       inferences=new_inffs,
-                                       standalones=new_standalones)
+        new_idps = InterDependencies_(dependencies=new_deps,
+                                      inferences=new_inffs,
+                                      standalones=new_standalones)
 
         return new_idps
 
@@ -391,10 +395,10 @@ class InterDependencies_:
 
         if parameter in self._dependencies_inv:
             raise ValueError(f'Cannot remove {parameter.name}, other '
-                                'parameters depend on it.')
+                             'parameters depend on it.')
         if parameter in self._inferences_inv:
             raise ValueError(f'Cannot remove {parameter.name}, other '
-                                'parameters are inferred from it.')
+                             'parameters are inferred from it.')
 
         if parameter in self.standalones:
             new_standalones = tuple(deepcopy(self.standalones).
@@ -420,6 +424,11 @@ class InterDependencies_:
             new_inffs.pop(parameter, None)
             new_standalones = tuple(set(new_standalones_l)
                                     .union(old_standalones))
+        else:
+            raise ValueError(f'Inconsistent InterDependencies_ object '
+                             f'parameter: {parameter} is in list of'
+                             f'parameters but is neither a "standalone", '
+                             f'"dependency" or "inference"')
 
         idps = InterDependencies_(dependencies=new_deps, inferences=new_inffs,
                                   standalones=new_standalones)
@@ -433,13 +442,13 @@ class InterDependencies_:
         dependencies/inferences.
 
         Args:
-            params: The collection of ParamSpecBases to validate
+            parameters: The collection of ParamSpecBases to validate
 
         Raises:
             DependencyError, if a dependency is missing
             InferenceError, if an inference is missing
         """
-        params = set(p.name for p in parameters)
+        params = {p.name for p in parameters}
 
         for param in params:
             ps = self._id_to_paramspec.get(param, None)
@@ -457,11 +466,36 @@ class InterDependencies_:
                 raise InferenceError(param, missing_inffs)
 
     @classmethod
-    def _from_dict(cls, ser: Dict[str, Any]) -> 'InterDependencies_':
+    def _from_dict(cls, ser: InterDependencies_Dict) -> 'InterDependencies_':
         """
         Construct an InterDependencies_ object from a dictionary
         representation of such an object
         """
+        params = ser['parameters']
+        deps = cls._extract_deps_from_dict(ser)
+
+        inffs = cls._extract_inffs_from_dict(ser)
+
+        stdls = tuple(ParamSpecBase._from_dict(params[ps_id]) for
+                      ps_id in ser['standalones'])
+
+        return cls(dependencies=deps, inferences=inffs, standalones=stdls)
+
+    @classmethod
+    def _extract_inffs_from_dict(cls,
+                                 ser: InterDependencies_Dict) -> ParamSpecTree:
+        params = ser['parameters']
+        inffs = {}
+        for key, value in ser['inferences'].items():
+            inffs_key = ParamSpecBase._from_dict(params[key])
+            inffs_vals = tuple(ParamSpecBase._from_dict(params[val]) for
+                               val in value)
+            inffs.update({inffs_key: inffs_vals})
+        return inffs
+
+    @classmethod
+    def _extract_deps_from_dict(cls,
+                                ser: InterDependencies_Dict) -> ParamSpecTree:
         params = ser['parameters']
         deps = {}
         for key, value in ser['dependencies'].items():
@@ -469,18 +503,7 @@ class InterDependencies_:
             deps_vals = tuple(ParamSpecBase._from_dict(params[val]) for
                               val in value)
             deps.update({deps_key: deps_vals})
-
-        inffs = {}
-        for key, value in ser['inferences'].items():
-            inffs_key = ParamSpecBase._from_dict(params[key])
-            inffs_vals = tuple(ParamSpecBase._from_dict(params[val]) for
-                               val in value)
-            inffs.update({inffs_key: inffs_vals})
-
-        stdls = tuple(ParamSpecBase._from_dict(params[ps_id]) for
-                      ps_id in ser['standalones'])
-
-        return cls(dependencies=deps, inferences=inffs, standalones=stdls)
+        return deps
 
     def __repr__(self) -> str:
         rep = (f"InterDependencies_(dependencies={self.dependencies}, "

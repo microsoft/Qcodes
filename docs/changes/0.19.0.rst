@@ -1,0 +1,111 @@
+Changelog for QCoDeS 0.19.0
+===========================
+
+The October 2020 release of QCoDeS.
+
+
+Breaking Changes:
+_________________
+
+- A number of long deprecated drivers have been removed:
+
+    * ``Keysight_344xxA`` drivers: Use ``Keysight_344xxA_submodules`` drivers (#2325)
+    * ``QDac`` driver: Use ``QDac_channels`` driver as an alternative (#2314)
+    * ``keithley_2600``: Use ``keithley_2600_channels`` as an alternative (#2315)
+
+- In the ``QDac_channels`` driver a deprecated parameter (``fast_voltage_set``)
+  and a deprecated method (``read_state``) has been removed (#2314)
+
+
+New:
+____
+
+- Add optional shape metadata to dataset (#2145)
+- Allow string and time/datetime data to be stored in array measurements (#2313)
+- ``KeysightB1511B`` SMU driver has been added for support with the B1500 (#2278)
+- Notebook: Example of how buffered sweep could be done on param with setpoints (#2263)
+- Add ``allow_changes`` option to ``set_to`` method of ``Parameter``, and
+  add another context manager for restoring current value (#2220)
+
+
+Improved:
+_________
+
+- Station: Take verbose error message when validating station yaml against
+  schema (#2282)
+- Fix ``Sequence`` validator ``sorted`` check to work correctly with sequence
+  types other than list (#2271)
+- Experiemnt widget: sort ``None`` timestamps as oldest (#2275)
+- Use predefined mock instruments in docs (#2190)
+- Support pyvisa 1.11 (#2304)
+
+
+New drivers:
+____________
+
+- Alazar ATS9440 card (#2258)
+
+
+Improved drivers:
+_________________
+
+- AMI430: ``has_current_rating`` has been removed in the driver to work with the new
+  firmware version (#2291, #2312)
+- Small typo fix in alazer drivers (#2296)
+- Yokogawa GS200: ``source_mode`` bug fix (#2143) and update its example notebook (#2197)
+- Keysight B1517A: Improvments for valid voltage and current output ranges (#2278)
+- Keithley 3706A: improvements / warnings cleanup (#2318)
+- Yokogawa GS200: Add trigger, and program features (#2138)
+- Keithley 7510: Add digitizer feature (#2138)
+
+Under the hood:
+_______________
+
+- Filter out telemetry messages in console handler (#2322)
+- Docs: add title to home page, and make version bar appear (#2323)
+- Small improvements in legacy data notebook (#2295)
+- Station example doc: update update_config_schema example to refer to
+  qcodes_contrib_drivers (#2272)
+- Fix header levels in example notebooks (#2265)
+- Fix legacy imports in driver examples (#2249)
+- rework 2d tests to sweep over two separate parameters (#2187)
+- Update test for ``get_data`` method (#2196)
+- Fix some of the warnings triggered by numpy 1.19 (#2239)
+- Pylint and it's dependencies removed from test_requirements (#2297)
+- Expand documentation requirments.txt (#2289)
+- Move tests related to qcodes.data loop etc to a legacy folder (#2238)
+- Legacy: ensure that datasets have unique names to avoid potential race
+  condition (#2276)
+- Don't exclude instrument drivers from codecov (#2326)
+
+
+Dependencies:
+_____________
+
+Please note that these dependencies are only related to `requirements.txt`
+
+- Update lxml requirement from ~=4.5.1 to ~=6.0.0 (#2300)
+- Update traitlets requirement from ~=5.0.4 to ~=5.0.5 (#2298)
+- Update nbclient requirement from ~=0.5.0 to ~=0.5.1 (#2299)
+- Update zipp requirement from ~=3.3.0 to ~=3.3.1 (#2294)
+- Update hypothesis requirement from ~=5.37.1 to ~= 5.37.3 (#2287)
+- Update pillow requirement from ~=7.2.0 to ~=8.0.0 (#2286)
+- Update nbformat requirement from ~=5.0.7 to ~=5.0.8 (#2288)
+- Update iniconfig requirement from ~=1.0.1 to ~=1.1.1 (#2283)
+- Update opencensus-ext-azure requirement from ~=1.0.4 to ~=1.0.5 (#2279)
+- Update opencensus-context requirement from ~=0.1.1 to ~=0.1.2 (#2167)
+- Update opencensus requirement from ~=0.7.10 to ~=0.7.11 (#2280)
+- Update prompt-toolkit requirement from ~=3.0.7 to ~=3.0.8 (#2273)
+- Update colorama requirement from ~=0.4.3 to ~=0.4.4 (#2274)
+- Update codecov requirement from ~=2.1.9 to ~=2.1.10 (#2267)
+- Update sphinx-jsonschema requirement from ~=1.16.4 to ~=1.16.5 (#2266)
+- Update tqdm requirement from ~=4.50.1 to ~=4.50.2 (#2260)
+- Update google-api-core requirement from ~=1.22.3 to ~=1.22.4 (#2246)
+- Update pandas requirement from ~=1.1.2 to ~=1.1.3 (#2248)
+- Update google-auth requirement from ~=1.22.0 to ~=1.22.1 (#2245)
+- Update sphinx-jsonschema requirement from ~=1.16.3 to ~=1.16.4 (#2247)
+- Update pytest requirement from ~=6.1.0 to ~=6.1.1 (#2241)
+- Update gitpython requirement from ~=3.1.8 to ~=3.1.9 (#2229)
+- Update jupyterlab-pygments requirement from ~=0.1.1 to ~=0.1.2 (#2226)
+- Update nest-asyncio requirement from ~=1.4.0 to ~=1.4.1 (#2224)
+- Update tqdm requirement from ~=4.49.0 to ~=4.50.0 (#2219)

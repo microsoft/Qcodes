@@ -1,7 +1,6 @@
 import pytest
 from contextlib import contextmanager
 import tempfile
-import json
 import warnings
 from pathlib import Path
 import os
@@ -21,16 +20,17 @@ from qcodes.instrument.parameter import Parameter
 from qcodes.monitor.monitor import Monitor
 from qcodes.tests.instrument_mocks import (
     DummyInstrument)
-from qcodes.tests.test_combined_par import DumyPar
-from qcodes.tests.test_config import default_config
+from qcodes.tests.common import default_config
 from qcodes.utils.helpers import NumpyJSONEncoder
 from qcodes.utils.helpers import YAML
+from .common import DumyPar
 
 
 @pytest.fixture(autouse=True)
 def use_default_config():
     with default_config():
         yield
+
 
 @pytest.fixture(autouse=True)
 def set_default_station_to_none():
@@ -169,7 +169,6 @@ def test_snapshot():
             'parameters': {},
             'components': {},
             'config': None,
-            'default_measurement': []
             } == empty_snapshot
 
     instrument = DummyInstrument('instrument', gates=['one'])
@@ -192,7 +191,6 @@ def test_snapshot():
             'parameters',
             'components',
             'config',
-            'default_measurement'
             ] == list(snapshot.keys())
 
     assert ['instrument'] == list(snapshot['instruments'].keys())
@@ -203,8 +201,6 @@ def test_snapshot():
 
     assert ['component'] == list(snapshot['components'].keys())
     assert component_snapshot == snapshot['components']['component']
-
-    assert [] == snapshot['default_measurement']
 
 
 def test_station_after_instrument_is_closed():
@@ -236,7 +232,6 @@ def test_station_after_instrument_is_closed():
             'parameters': {},
             'components': {},
             'config': None,
-            'default_measurement': []
             } == snapshot
 
     # check that 'bob' has been removed from the station
@@ -254,7 +249,6 @@ def test_update_config_schema():
     with open(SCHEMA_PATH) as f:
         schema = json.load(f)
     assert len(schema['definitions']['instruments']['enum']) > 1
-
 
 
 @contextmanager
@@ -299,7 +293,7 @@ def test_dynamic_reload_of_file(example_station_config):
     st = Station(config_file=example_station_config)
     mock_dac = st.load_instrument('mock_dac')
     assert 'ch1' in mock_dac.parameters
-    with open(example_station_config, 'r') as f:
+    with open(example_station_config) as f:
         filedata = f.read().replace('ch1', 'gate1')
     with open(example_station_config, 'w') as f:
         f.write(filedata)
@@ -411,6 +405,7 @@ instruments:
   mock:
     type: qcodes.tests.instrument_mocks.DummyInstrument
         """)
+
 
 def test_simple_mock_config(simple_mock_station):
     st = simple_mock_station
@@ -527,7 +522,6 @@ instruments:
     assert "TestGate" in mock.parameters.keys()
     assert len(mock.parameters) == 2  # there is also IDN
 
-
     # test address
     sims_path = get_qcodes_path('instrument', 'sims')
     st = station_from_config_str(f"""
@@ -548,6 +542,42 @@ def test_name_init_kwarg(simple_mock_station):
     mock = st.load_instrument('mock', name='test')
     assert mock.name == 'test'
     assert st.components['test'] is mock
+
+
+def test_name_specified_in_init_in_yaml_is_used():
+    st = station_from_config_str(
+        """
+instruments:
+  mock:
+    type: qcodes.tests.instrument_mocks.DummyInstrument
+    init:
+      name: dummy
+        """)
+
+    mock = st.load_instrument('mock')
+    assert isinstance(mock, DummyInstrument)
+    assert mock.name == 'dummy'
+    assert st.components['dummy'] is mock
+
+
+class InstrumentWithNameAsNotFirstArgument(Instrument):
+    def __init__(self, first_arg, name):
+        super().__init__(name)
+        self._first_arg = first_arg
+
+
+def test_able_to_load_instrument_with_name_argument_not_being_the_first():
+    st = station_from_config_str(
+        """
+instruments:
+  name_goes_second:
+    type: qcodes.tests.test_station.InstrumentWithNameAsNotFirstArgument
+        """)
+
+    instr = st.load_instrument('name_goes_second', first_arg=42)
+    assert isinstance(instr, InstrumentWithNameAsNotFirstArgument)
+    assert instr.name == 'name_goes_second'
+    assert st.components['name_goes_second'] is instr
 
 
 def test_setup_alias_parameters():
@@ -585,6 +615,7 @@ instruments:
     assert mock.ch1() == 3
     assert p.raw_value == 7
     assert mock.ch1.raw_value == 7
+
 
 def test_setup_delegate_parameters():
     st = station_from_config_str("""
@@ -717,6 +748,7 @@ instruments:
                         ' to it')):
         st.load_instrument('mock')
 
+
 def test_deprecated_limits_keyword_as_string():
     st = station_from_config_str("""
 instruments:
@@ -758,6 +790,7 @@ invalid_keyword:
     """
         with config_file_context(test_config) as filename:
             Station(config_file=filename)
+
 
 def test_config_validation_comprehensive_config():
     Station(config_file=os.path.join(

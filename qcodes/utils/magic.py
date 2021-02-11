@@ -9,7 +9,7 @@ class QCoDeSMagic(Magics):
         Setup Magic. All args and kwargs are passed to super class.
         """
         self._knowntemps = set()
-        super(QCoDeSMagic, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     @line_cell_magic
     def measurement(self, line, cell=None):
@@ -84,7 +84,7 @@ class QCoDeSMagic(Magics):
         lines = cell.splitlines()
         assert lines[0][:3] == 'for', "Measurement must start with for loop"
 
-        contents = 'import qcodes\n{} = '.format(loop_name)
+        contents = f'import qcodes\n{loop_name} = '
         previous_level = 0
         for k, line in enumerate(lines):
             line, level = line.lstrip(), int((len(line)-len(line.lstrip())) / 4)
@@ -116,7 +116,7 @@ class QCoDeSMagic(Magics):
                                                 ''.format(for_code))
                 else:
                     # Action in current loop
-                    line_representation += '{},\n'.format(line)
+                    line_representation += f'{line},\n'
                 contents += line_representation
 
                 # Remember level for next iteration (might exit inner loop)

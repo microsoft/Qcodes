@@ -1,8 +1,8 @@
+from typing import Any, Dict, Optional, Tuple
+
 from qcodes.instrument.base import Instrument
-from qcodes.instrument.parameter import MultiParameter
+from qcodes.instrument.parameter import MultiParameter, Parameter, ParamRawDataType
 from qcodes.utils.validators import Bool, Enum
-
-
 
 
 class VoltageParameter(MultiParameter):
@@ -16,27 +16,31 @@ class VoltageParameter(MultiParameter):
     ``VoltageParameter.get()`` returns ``(voltage_raw, voltage)``
 
     Args:
-        measured_param (Parameter): a gettable parameter returning the
+        measured_param: a gettable parameter returning the
             voltage read from the SR560 output.
-
-        v_amp_ins (SR560): an SR560 instance where you manually
+        v_amp_ins: an SR560 instance where you manually
             maintain the present settings of the real SR560 amp.
 
             Note: it should be possible to use other voltage preamps, if they
             define parameters ``gain`` (V_out / V_in) and ``invert``
             (bool, output is inverted)
 
-        name (str): the name of the current output. Default 'curr'.
+        name: the name of the current output. Default 'volt'.
             Also used as the name of the whole parameter.
     """
-    def __init__(self, measured_param, v_amp_ins, name='volt',
-                 snapshot_value=True):
+    def __init__(self,
+                 measured_param: Parameter,
+                 v_amp_ins: "SR560",
+                 name: str = 'volt',
+                 snapshot_value: bool = True):
         p_name = measured_param.name
 
-        super().__init__(name=name, names=(p_name+'_raw', name), shapes=((), ()))
+        super().__init__(name=name,
+                         names=(p_name+'_raw', name),
+                         shapes=((), ()),
+                         instrument=v_amp_ins)
 
         self._measured_param = measured_param
-        self._instrument = v_amp_ins
 
         p_label = getattr(measured_param, 'label', None)
         p_unit = getattr(measured_param, 'unit', None)
@@ -44,8 +48,9 @@ class VoltageParameter(MultiParameter):
         self.labels = (p_label, 'Voltage')
         self.units = (p_unit, 'V')
 
-    def get_raw(self):
+    def get_raw(self) -> Tuple[ParamRawDataType, ParamRawDataType]:
         volt = self._measured_param.get()
+        assert isinstance(self._instrument, SR560)
         volt_amp = (volt / self._instrument.gain.get())
 
         if self._instrument.invert.get():
@@ -72,7 +77,7 @@ class SR560(Instrument):
       output. We restrict this driver to only the predefined gain values.
 
     """
-    def __init__(self, name, **kwargs):
+    def __init__(self, name: str, **kwargs: Any):
         super().__init__(name, **kwargs)
 
         cutoffs = ['DC', 0.03, 0.1, 0.3, 1, 3, 10, 30, 100, 300, 1000,
@@ -108,7 +113,7 @@ class SR560(Instrument):
                            unit=None,
                            vals=Enum(*gains))
 
-    def get_idn(self):
+    def get_idn(self) -> Dict[str, Optional[str]]:
         vendor = 'Stanford Research Systems'
         model = 'SR560'
         serial = None

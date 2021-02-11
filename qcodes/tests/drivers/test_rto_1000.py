@@ -30,4 +30,3 @@ def test_trigger_source_level(driver):
     driver.trigger_level(1.0)
     assert driver.trigger_level() == 1
     driver.trigger_level(0)
-

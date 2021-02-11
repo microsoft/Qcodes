@@ -4,8 +4,8 @@ devices:
     error:
       error_queue:
         - q: 'ERRX?'
-          default: '0, No Error'
-          command_error: '1, Command error'
+          default: '+0,"No Error."'
+          command_error: '+1,"Command error"'
       status_register:
         - q: "*STB?"
           command_error: 32
@@ -61,9 +61,31 @@ devices:
       - q: "*IDN?"
         r: "Agilent Technologies,B1500A,0,A.04.03.2010.0130"
       - q: "UNT? 0"
-        r: "B1517A,0;B1517A,0;B1520A,0;0,0;0,0;B1530A,0;0,0;0,0;0,0;0,0"
+        r: "B1511B,0;B1517A,0;B1520A,0;0,0;0,0;B1530A,0;0,0;0,0;0,0;0,0"
       - q: "TI 1,-16"
         r: "NAI+000.000E-06"
+      - q: "WTDCV 0.0,0.0,0.0,0.0,0.0"
+      - q: "WDCV 3,1,0.0,0.0,1"
+      - q: "ACT 2,1"
+      - q: "IMP 101"
+      - q: "LMN 0"
+      - q: "MT 0,0.1,7"
+      - q: "FMT 1,0"
+      - q: "FL 1"
+      - q: "WV 1,1,0,0,0,1,0.1,2"
+      - q: "WT 0.0,0.0,0.0,0.0,0.0"
+      - q: "WV 1,1,0,0.0,0.0,1,0.1,2.0"
+      - q: "WV 2,1,0,0.0,0.0,1,0.1,2.0"
+      - q: "*LRN? 32"
+        r: "RI 1,0;RI 2,0"
+      - q: "*LRN? 33"
+        r: "WT 0.0,0.0,0.0,0.0,0.0;WV 1,1,0,0.0,0.0,1,0.1,2.0;WTDCV 0.0,0.0,0.0,0.0,0.0"
+      - q: "*LRN? 46"
+        r: "CMM 1,0;CMM 2,0"
+      - q: "*LRN? 100"
+        r: "WDCV 3,1,0.0,0.0,1;WMDCV2,1;WTDCV 0.0,0.0,0.0,0.0,0.0"
+      - q: "*LRN? 72"
+        r: "ACT 2,1"
 
 resources:
   GPIB::1::INSTR:

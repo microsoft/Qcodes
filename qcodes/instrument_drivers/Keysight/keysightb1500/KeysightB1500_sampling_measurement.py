@@ -1,15 +1,19 @@
 import warnings
+from typing import TYPE_CHECKING, Any, List
 
 import numpy
 
 from qcodes.instrument.parameter import ParameterWithSetpoints
 from .message_builder import MessageBuilder
 from . import constants
-from .KeysightB1500_module import parse_fmt_1_0_response, _FMTResponse
+from .KeysightB1500_module import fmt_response_base_parser, _FMTResponse, \
+    MeasurementNotTaken, convert_dummy_val_to_nan
 
-
-class MeasurementNotTaken(Exception):
-    pass
+if TYPE_CHECKING:
+    from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1517A \
+        import B1517A
+    from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_base \
+        import KeysightB1500
 
 
 class SamplingMeasurement(ParameterWithSetpoints):
@@ -23,11 +27,15 @@ class SamplingMeasurement(ParameterWithSetpoints):
     # the measured measurement-time and the calculated measurement
     # (from the user input). Check :get_raw: method to find its usage.
 
-    def __init__(self, name, **kwargs):
+    def __init__(self, name: str, **kwargs: Any):
         super().__init__(name, **kwargs)
+
+        self.instrument: "B1517A"
+        self.root_instrument: "KeysightB1500"
+
         self.data = _FMTResponse(None, None, None, None)
 
-    def get_raw(self):
+    def get_raw(self) -> numpy.ndarray:
         """
         This performs sampling  measurements. However since the measurement
         time can vary from few seconds to hundreds of minutes we first set
@@ -59,17 +67,18 @@ class SamplingMeasurement(ParameterWithSetpoints):
             raw_data = self.root_instrument.ask(
                 MessageBuilder().xe().message)
 
-        self.data = parse_fmt_1_0_response(raw_data)
+        self.data = fmt_response_base_parser(raw_data)
+        convert_dummy_val_to_nan(self.data)
         return numpy.array(self.data.value)
 
-    def compliance(self):
+    def compliance(self) -> List[int]:
         """
         check for the status other than "N" (normal) and output the
         number of data values which were not measured under "N" (normal)
         status.
 
         For the list of all the status values and their meaning refer to
-        :class:`constants.ComplianceStatus`.
+        :class:`.constants.MeasurementStatus`.
 
         """
 
@@ -79,7 +88,7 @@ class SamplingMeasurement(ParameterWithSetpoints):
         else:
             data = self.data
             total_count = len(data.status)
-            normal_count = data.status.count(constants.ComplianceStatus.N.name)
+            normal_count = data.status.count(constants.MeasurementStatus.N.name)
             exception_count = total_count - normal_count
             if total_count == normal_count:
                 print('All measurements are normal')
@@ -89,6 +98,6 @@ class SamplingMeasurement(ParameterWithSetpoints):
                 warnings.warn(f'{str(exception_count)} measurements were '
                               f'out of compliance at {str(indices)}')
 
-            compliance_list = [constants.ComplianceError[key].value
+            compliance_list = [constants.MeasurementError[key].value
                                for key in data.status]
             return compliance_list

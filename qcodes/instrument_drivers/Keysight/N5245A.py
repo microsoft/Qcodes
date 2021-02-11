@@ -1,7 +1,9 @@
+from typing import Any
+
 from . import N52xx
 
 class N5245A(N52xx.PNAxBase):
-    def __init__(self, name, address, **kwargs):
+    def __init__(self, name: str, address: str, **kwargs: Any):
         super().__init__(name, address,
                          min_freq=10e6, max_freq=50e9,
                          min_power=-30, max_power=13,

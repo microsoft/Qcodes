@@ -3,10 +3,10 @@ Driver for the Tekronix S46 RF switch
 """
 import re
 from itertools import product
-from functools import partial
 
 from typing import Any, Dict, List, Optional
-from qcodes import Instrument, VisaInstrument, Parameter
+from qcodes import Instrument, VisaInstrument
+from qcodes.instrument.parameter import ParamRawDataType, Parameter
 
 
 class LockAcquisitionError(Exception):
@@ -70,7 +70,6 @@ class S46Parameter(Parameter):
 
         self._lock = lock
         self._channel_number = channel_number
-        self.get = partial(self._get, get_cached=False)
 
         if self._get(get_cached=True) == "close":
             try:
@@ -83,28 +82,29 @@ class S46Parameter(Parameter):
                     "Refusing to initialize driver!"
                 ) from e
 
-        self.set = self._set
-
-    def _get(self, get_cached):
-
-        closed_channels = self._instrument.closed_channels.get_latest()
+    def _get(self, get_cached: bool) -> str:
+        assert isinstance(self.instrument, S46)
+        closed_channels = self.instrument.closed_channels.get_latest()
 
         if not get_cached or closed_channels is None:
-            closed_channels = self._instrument.closed_channels.get()
+            closed_channels = self.instrument.closed_channels.get()
 
         return "close" if self.name in closed_channels else "open"
 
-    def _set(self, new_state) -> None:
+    def get_raw(self) -> ParamRawDataType:
+        return self._get(get_cached=False)
 
-        if new_state == "close":
+    def set_raw(self, value: ParamRawDataType) -> None:
+
+        if value == "close":
             self._lock.acquire(self._channel_number)
-        elif new_state == "open":
+        elif value == "open":
             self._lock.release(self._channel_number)
 
         if self._instrument is None:
             raise RuntimeError("Cannot set the value on a parameter "
                                "that is not attached to an instrument.")
-        self._instrument.write(f":{new_state} (@{self._channel_number})")
+        self._instrument.write(f":{value} (@{self._channel_number})")
 
     def is_closed(self) -> bool:
         """
@@ -119,7 +119,8 @@ class S46Parameter(Parameter):
 
 class S46(VisaInstrument):
 
-    relay_names: list = ["A", "B", "C", "D"] + [f"R{j}" for j in range(1, 9)]
+    relay_names: List[str] = (["A", "B", "C", "D"] +
+                              [f"R{j}" for j in range(1, 9)])
 
     # Make a dictionary where keys are channel aliases (e.g. 'A1', 'B3', etc)
     # and values are corresponding channel numbers.
@@ -131,7 +132,7 @@ class S46(VisaInstrument):
     }
     channel_numbers.update({f"R{i}": i + 24 for i in range(1, 9)})
     # Make a reverse dict for efficient alias lookup given a channel number
-    aliases = dict((v, k) for k, v in channel_numbers.items())
+    aliases = {v: k for k, v in channel_numbers.items()}
 
     def __init__(
             self,

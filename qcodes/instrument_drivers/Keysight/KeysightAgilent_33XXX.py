@@ -1,6 +1,6 @@
 from functools import partial
 import logging
-from typing import Union
+from typing import Union, Any
 
 from qcodes import VisaInstrument, validators as vals
 from qcodes.instrument.channel import InstrumentChannel
@@ -56,9 +56,9 @@ class OutputChannel(InstrumentChannel):
         self.model = self._parent.model
 
         self.add_parameter('function_type',
-                           label='Channel {} function type'.format(channum),
-                           set_cmd='SOURce{}:FUNCtion {{}}'.format(channum),
-                           get_cmd='SOURce{}:FUNCtion?'.format(channum),
+                           label=f'Channel {channum} function type',
+                           set_cmd=f'SOURce{channum}:FUNCtion {{}}',
+                           get_cmd=f'SOURce{channum}:FUNCtion?',
                            get_parser=str.rstrip,
                            vals=vals.Enum('SIN', 'SQU', 'TRI', 'RAMP',
                                           'PULS', 'PRBS', 'NOIS', 'ARB',
@@ -66,18 +66,18 @@ class OutputChannel(InstrumentChannel):
                            )
 
         self.add_parameter('frequency_mode',
-                           label='Channel {} frequency mode'.format(channum),
-                           set_cmd='SOURce{}:FREQuency:MODE {{}}'.format(channum),
-                           get_cmd='SOURce{}:FREQuency:MODE?'.format(channum),
+                           label=f'Channel {channum} frequency mode',
+                           set_cmd=f'SOURce{channum}:FREQuency:MODE {{}}',
+                           get_cmd=f'SOURce{channum}:FREQuency:MODE?',
                            get_parser=str.rstrip,
                            vals=vals.Enum('CW', 'LIST', 'SWEEP', 'FIXED')
                            )
 
         max_freq = self._parent._max_freqs[self.model]
         self.add_parameter('frequency',
-                           label='Channel {} frequency'.format(channum),
-                           set_cmd='SOURce{}:FREQuency {{}}'.format(channum),
-                           get_cmd='SOURce{}:FREQuency?'.format(channum),
+                           label=f'Channel {channum} frequency',
+                           set_cmd=f'SOURce{channum}:FREQuency {{}}',
+                           get_cmd=f'SOURce{channum}:FREQuency?',
                            get_parser=float,
                            unit='Hz',
                            # TODO: max. freq. actually really tricky
@@ -85,71 +85,71 @@ class OutputChannel(InstrumentChannel):
                            )
 
         self.add_parameter('phase',
-                           label='Channel {} phase'.format(channum),
-                           set_cmd='SOURce{}:PHASe {{}}'.format(channum),
-                           get_cmd='SOURce{}:PHASe?'.format(channum),
+                           label=f'Channel {channum} phase',
+                           set_cmd=f'SOURce{channum}:PHASe {{}}',
+                           get_cmd=f'SOURce{channum}:PHASe?',
                            get_parser=float,
                            unit='deg',
                            vals=vals.Numbers(0, 360)
                            )
         self.add_parameter('amplitude_unit',
-                           label='Channel {} amplitude unit'.format(channum),
-                           set_cmd='SOURce{}:VOLTage:UNIT {{}}'.format(channum),
-                           get_cmd='SOURce{}:VOLTage:UNIT?'.format(channum),
+                           label=f'Channel {channum} amplitude unit',
+                           set_cmd=f'SOURce{channum}:VOLTage:UNIT {{}}',
+                           get_cmd=f'SOURce{channum}:VOLTage:UNIT?',
                            vals=vals.Enum('VPP', 'VRMS', 'DBM'),
                            get_parser=str.rstrip
                            )
 
         self.add_parameter('amplitude',
-                           label='Channel {} amplitude'.format(channum),
-                           set_cmd='SOURce{}:VOLTage {{}}'.format(channum),
-                           get_cmd='SOURce{}:VOLTage?'.format(channum),
+                           label=f'Channel {channum} amplitude',
+                           set_cmd=f'SOURce{channum}:VOLTage {{}}',
+                           get_cmd=f'SOURce{channum}:VOLTage?',
                            unit='',  # see amplitude_unit
                            get_parser=float)
 
         self.add_parameter('offset',
-                           label='Channel {} voltage offset'.format(channum),
-                           set_cmd='SOURce{}:VOLTage:OFFSet {{}}'.format(channum),
-                           get_cmd='SOURce{}:VOLTage:OFFSet?'.format(channum),
+                           label=f'Channel {channum} voltage offset',
+                           set_cmd=f'SOURce{channum}:VOLTage:OFFSet {{}}',
+                           get_cmd=f'SOURce{channum}:VOLTage:OFFSet?',
                            unit='V',
                            get_parser=float
                            )
         self.add_parameter('output',
-                           label='Channel {} output state'.format(channum),
-                           set_cmd='OUTPut{} {{}}'.format(channum),
-                           get_cmd='OUTPut{}?'.format(channum),
+                           label=f'Channel {channum} output state',
+                           set_cmd=f'OUTPut{channum} {{}}',
+                           get_cmd=f'OUTPut{channum}?',
                            val_mapping={'ON': 1, 'OFF': 0}
                            )
 
         self.add_parameter('ramp_symmetry',
-                           label='Channel {} ramp symmetry'.format(channum),
-                           set_cmd='SOURce{}:FUNCtion:RAMP:SYMMetry {{}}'.format(channum),
-                           get_cmd='SOURce{}:FUNCtion:RAMP:SYMMetry?'.format(channum),
+                           label=f'Channel {channum} ramp symmetry',
+                           set_cmd=f'SOURce{channum}:FUNCtion:RAMP:SYMMetry {{}}',
+                           get_cmd=f'SOURce{channum}:FUNCtion:RAMP:SYMMetry?',
                            get_parser=float,
                            unit='%',
                            vals=vals.Numbers(0, 100)
                            )
 
         self.add_parameter('pulse_width',
-                           label="Channel {} pulse width".format(channum),
-                           set_cmd='SOURce{}:FUNCtion:PULSE:WIDTh {{}}'.format(channum),
-                           get_cmd='SOURce{}:FUNCtion:PULSE:WIDTh?'.format(channum),
+                           label=f"Channel {channum} pulse width",
+                           set_cmd=f'SOURce{channum}:FUNCtion:PULSE:WIDTh {{}}',
+                           get_cmd=f'SOURce{channum}:FUNCtion:PULSE:WIDTh?',
                            get_parser=float,
                            unit='S')
 
         # TRIGGER MENU
         self.add_parameter('trigger_source',
-                           label='Channel {} trigger source'.format(channum),
-                           set_cmd='TRIGger{}:SOURce {{}}'.format(channum),
-                           get_cmd='TRIGger{}:SOURce?'.format(channum),
+                           label=f'Channel {channum} trigger source',
+                           set_cmd=f'TRIGger{channum}:SOURce {{}}',
+                           get_cmd=f'TRIGger{channum}:SOURce?',
                            vals=vals.Enum('IMM', 'EXT', 'TIM', 'BUS'),
                            get_parser=str.rstrip,
                            )
 
         self.add_parameter('trigger_slope',
-                           label='Channel {} trigger slope'.format(channum),
-                           set_cmd='TRIGger{}:SLOPe {{}}'.format(channum),
-                           get_cmd='TRIGger{}:SLOPe?'.format(channum),
+                           label=f'Channel {channum} trigger slope',
+                           set_cmd=f'TRIGger{channum}:SLOPe {{}}',
+                           get_cmd=f'TRIGger{channum}:SLOPe?',
                            vals=vals.Enum('POS', 'NEG'),
                            get_parser=str.rstrip
                            )
@@ -157,25 +157,25 @@ class OutputChannel(InstrumentChannel):
         # Older models do not have all the fancy trigger options
         if self._parent.model[2] in ['5', '6']:
             self.add_parameter('trigger_count',
-                               label='Channel {} trigger count'.format(channum),
-                               set_cmd='TRIGger{}:COUNt {{}}'.format(channum),
-                               get_cmd='TRIGger{}:COUNt?'.format(channum),
+                               label=f'Channel {channum} trigger count',
+                               set_cmd=f'TRIGger{channum}:COUNt {{}}',
+                               get_cmd=f'TRIGger{channum}:COUNt?',
                                vals=vals.Ints(1, 1000000),
                                get_parser=partial(val_parser, int)
                                )
 
             self.add_parameter('trigger_delay',
-                               label='Channel {} trigger delay'.format(channum),
-                               set_cmd='TRIGger{}:DELay {{}}'.format(channum),
-                               get_cmd='TRIGger{}:DELay?'.format(channum),
+                               label=f'Channel {channum} trigger delay',
+                               set_cmd=f'TRIGger{channum}:DELay {{}}',
+                               get_cmd=f'TRIGger{channum}:DELay?',
                                vals=vals.Numbers(0, 1000),
                                get_parser=float,
                                unit='s')
 
             self.add_parameter('trigger_timer',
-                               label='Channel {} trigger timer'.format(channum),
-                               set_cmd='TRIGger{}:TIMer {{}}'.format(channum),
-                               get_cmd='TRIGger{}:TIMer?'.format(channum),
+                               label=f'Channel {channum} trigger timer',
+                               set_cmd=f'TRIGger{channum}:TIMer {{}}',
+                               get_cmd=f'TRIGger{channum}:TIMer?',
                                vals=vals.Numbers(1e-6, 8000),
                                get_parser=float)
 
@@ -183,34 +183,34 @@ class OutputChannel(InstrumentChannel):
 
         # output menu
         self.add_parameter('output_polarity',
-                           label='Channel {} output polarity'.format(channum),
-                           set_cmd='OUTPut{}:POLarity {{}}'.format(channum),
-                           get_cmd='OUTPut{}:POLarity?'.format(channum),
+                           label=f'Channel {channum} output polarity',
+                           set_cmd=f'OUTPut{channum}:POLarity {{}}',
+                           get_cmd=f'OUTPut{channum}:POLarity?',
                            get_parser=str.rstrip,
                            vals=vals.Enum('NORM', 'INV')
                            )
         # BURST MENU
         self.add_parameter('burst_state',
-                           label='Channel {} burst state'.format(channum),
-                           set_cmd='SOURce{}:BURSt:STATe {{}}'.format(channum),
-                           get_cmd='SOURce{}:BURSt:STATe?'.format(channum),
+                           label=f'Channel {channum} burst state',
+                           set_cmd=f'SOURce{channum}:BURSt:STATe {{}}',
+                           get_cmd=f'SOURce{channum}:BURSt:STATe?',
                            val_mapping={'ON': 1, 'OFF': 0},
                            vals=vals.Enum('ON', 'OFF')
                            )
 
         self.add_parameter('burst_mode',
-                           label='Channel {} burst mode'.format(channum),
-                           set_cmd='SOURce{}:BURSt:MODE {{}}'.format(channum),
-                           get_cmd='SOURce{}:BURSt:MODE?'.format(channum),
+                           label=f'Channel {channum} burst mode',
+                           set_cmd=f'SOURce{channum}:BURSt:MODE {{}}',
+                           get_cmd=f'SOURce{channum}:BURSt:MODE?',
                            get_parser=str.rstrip,
                            val_mapping={'N Cycle': 'TRIG', 'Gated': 'GAT'},
                            vals=vals.Enum('N Cycle', 'Gated')
                            )
 
         self.add_parameter('burst_ncycles',
-                           label='Channel {} burst no. of cycles'.format(channum),
-                           set_cmd='SOURce{}:BURSt:NCYCles {{}}'.format(channum),
-                           get_cmd='SOURce{}:BURSt:NCYCLes?'.format(channum),
+                           label=f'Channel {channum} burst no. of cycles',
+                           set_cmd=f'SOURce{channum}:BURSt:NCYCles {{}}',
+                           get_cmd=f'SOURce{channum}:BURSt:NCYCLes?',
                            get_parser=partial(val_parser, int),
                            vals=vals.MultiType(vals.Ints(1),
                                                vals.Enum('MIN', 'MAX',
@@ -218,26 +218,26 @@ class OutputChannel(InstrumentChannel):
                            )
 
         self.add_parameter('burst_phase',
-                           label='Channel {} burst start phase'.format(channum),
-                           set_cmd='SOURce{}:BURSt:PHASe {{}}'.format(channum),
-                           get_cmd='SOURce{}:BURSt:PHASe?'.format(channum),
+                           label=f'Channel {channum} burst start phase',
+                           set_cmd=f'SOURce{channum}:BURSt:PHASe {{}}',
+                           get_cmd=f'SOURce{channum}:BURSt:PHASe?',
                            vals=vals.Numbers(-360, 360),
                            unit='degrees',
                            get_parser=float
                            )
 
         self.add_parameter('burst_polarity',
-                           label='Channel {} burst gated polarity'.format(channum),
-                           set_cmd='SOURce{}:BURSt:GATE:POLarity {{}}'.format(channum),
-                           get_cmd='SOURce{}:BURSt:GATE:POLarity?'.format(channum),
+                           label=f'Channel {channum} burst gated polarity',
+                           set_cmd=f'SOURce{channum}:BURSt:GATE:POLarity {{}}',
+                           get_cmd=f'SOURce{channum}:BURSt:GATE:POLarity?',
                            vals=vals.Enum('NORM', 'INV')
                            )
 
         self.add_parameter('burst_int_period',
-                           label=('Channel {}'.format(channum) +
+                           label=(f'Channel {channum}' +
                                   ' burst internal period'),
-                           set_cmd='SOURce{}:BURSt:INTernal:PERiod {{}}'.format(channum),
-                           get_cmd='SOURce{}:BURSt:INTernal:PERiod?'.format(channum),
+                           set_cmd=f'SOURce{channum}:BURSt:INTernal:PERiod {{}}',
+                           get_cmd=f'SOURce{channum}:BURSt:INTernal:PERiod?',
                            unit='s',
                            vals=vals.Numbers(1e-6, 8e3),
                            get_parser=float,
@@ -253,7 +253,7 @@ class SyncChannel(InstrumentChannel):
     single channel instruments
     """
 
-    def __init__(self, parent, name):
+    def __init__(self, parent: Instrument, name: str):
 
         super().__init__(parent, name)
 
@@ -281,13 +281,14 @@ class WaveformGenerator_33XXX(KeysightErrorQueueMixin, VisaInstrument):
     waveform generators
     """
 
-    def __init__(self, name, address, silent=False, **kwargs):
+    def __init__(self, name: str, address: str,
+                 silent: bool = False, **kwargs: Any):
         """
         Args:
-            name (str): The name of the instrument used internally
+            name: The name of the instrument used internally
                 by QCoDeS. Must be unique.
-            address (str): The VISA resource name.
-            silent (Optional[bool]): If True, no connect message is printed.
+            address: The VISA resource name.
+            silent: If True, no connect message is printed.
         """
 
         super().__init__(name, address, terminator='\n', **kwargs)
@@ -318,8 +319,8 @@ class WaveformGenerator_33XXX(KeysightErrorQueueMixin, VisaInstrument):
         self.num_channels = no_of_channels[self.model]
 
         for i in range(1, self.num_channels+1):
-            channel = OutputChannel(self, 'ch{}'.format(i), i)
-            self.add_submodule('ch{}'.format(i), channel)
+            channel = OutputChannel(self, f'ch{i}', i)
+            self.add_submodule(f'ch{i}', channel)
 
         sync = SyncChannel(self, 'sync')
         self.add_submodule('sync', sync)

@@ -4,7 +4,7 @@ QCodes FAQ
 Usage
 -----
 
-Check out  the notebooks in  `examples <docs/examples/Tutorial.ipynb>`__ .
+To know about the usage, checkout  `15 mins to QCoDeS <../examples/15_minutes_to_QCoDeS.ipynb>`__ .
 
 How to abort a running measurement ?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

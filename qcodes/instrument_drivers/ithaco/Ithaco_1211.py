@@ -1,40 +1,48 @@
+from typing import Dict, Any, Optional, Tuple
+
 from qcodes.instrument.base import Instrument
-from qcodes.instrument.parameter import MultiParameter
+from qcodes.instrument.parameter import MultiParameter, Parameter, ParamRawDataType
 from qcodes.utils.validators import Enum, Bool
 
 
 class CurrentParameter(MultiParameter):
     """
-    Current measurement via an Ithaco preamp and a measured voltage.
+    Voltage measurement via an Ithaco preamp and converting volt to current.
 
     To be used when you feed a current into the Ithaco, send the Ithaco's
     output voltage to a lockin or other voltage amplifier, and you have
     the voltage reading from that amplifier as a qcodes parameter.
 
-    ``CurrentParameter.get()`` returns ``(voltage_raw, current)``
+    ``CurrentParameter.get()`` returns ``(volt_raw, curr)``
 
     Args:
-        measured_param (Parameter): a gettable parameter returning the
+        measured_param: a gettable parameter returning the
             voltage read from the Ithaco output.
 
-        c_amp_ins (Ithaco_1211): an Ithaco instance where you manually
+        c_amp_ins: an Ithaco instance where you manually
             maintain the present settings of the real Ithaco amp.
 
             Note: it should be possible to use other current preamps, if they
             define parameters ``sens`` (sensitivity, in A/V), ``sens_factor``
             (an additional gain) and ``invert`` (bool, output is inverted)
 
-        name (str): the name of the current output. Default 'curr'.
+        name: the name of the current output. Default 'curr'.
             Also used as the name of the whole parameter.
     """
-    def __init__(self, measured_param, c_amp_ins, name='curr'):
+    def __init__(self,
+                 measured_param: Parameter,
+                 c_amp_ins: "Ithaco_1211",
+                 name: str = 'curr'):
         p_name = measured_param.name
 
-        super().__init__(name=name, names=(p_name+'_raw', name), shapes=((), ()),
+        super().__init__(name=name,
+                         names=(p_name+'_raw', name),
+                         shapes=((), ()),
+                         setpoints=((), ()),
+                         instrument=c_amp_ins,
                          snapshot_value=True)
 
         self._measured_param = measured_param
-        self._instrument = c_amp_ins
 
         p_label = getattr(measured_param, 'label', None)
         p_unit = getattr(measured_param, 'unit', None)
@@ -42,12 +50,13 @@ class CurrentParameter(MultiParameter):
         self.labels = (p_label, 'Current')
         self.units = (p_unit, 'A')
 
-    def get_raw(self):
+    def get_raw(self) -> Tuple[ParamRawDataType, ...]:
+        assert isinstance(self.instrument, Ithaco_1211)
         volt = self._measured_param.get()
-        current = (self._instrument.sens.get() *
-                   self._instrument.sens_factor.get()) * volt
+        current = (self.instrument.sens.get() *
+                   self.instrument.sens_factor.get()) * volt
 
-        if self._instrument.invert.get():
+        if self.instrument.invert.get():
             current *= -1
 
         value = (volt, current)
@@ -60,7 +69,7 @@ class Ithaco_1211(Instrument):
 
     This is a virtual driver only and will not talk to your instrument.
     """
-    def __init__(self, name, **kwargs):
+    def __init__(self, name: str, **kwargs: Any):
         super().__init__(name, **kwargs)
 
         self.add_parameter('sens',
@@ -100,7 +109,7 @@ class Ithaco_1211(Instrument):
                            vals=Enum(0.01, 0.03, 0.1, 0.3, 1, 3, 10, 30,
                                      100, 300, 1000))
 
-    def get_idn(self):
+    def get_idn(self) -> Dict[str, Optional[str]]:
         vendor = 'Ithaco (DL Instruments)'
         model = '1211'
         serial = None

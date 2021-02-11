@@ -2,21 +2,16 @@
 This module contains functions which implement conversion between different
 (neighbouring) versions of RunDescriber.
 
-RunDescriber version log:
 
-- 0: The run_describer has a single attribute, interdeps, which is an instance
-of InterDependencies (which contains ParamSpecs)
-- 1: The run_describer has a single attribute, interdeps, which is an instance
-of InterDependencies_ (which contains ParamSpecBases)
 
 """
 from typing import Dict, List
 
-from ..param_spec import ParamSpec, ParamSpecBase
 from ..dependencies import InterDependencies_
+from ..param_spec import ParamSpec, ParamSpecBase
+from .rundescribertypes import (RunDescriberV0Dict, RunDescriberV1Dict,
+                                RunDescriberV2Dict, RunDescriberV3Dict)
 from .v0 import InterDependencies
-from . import v0
-from .. import rundescriber as current
 
 
 def old_to_new(idps: InterDependencies) -> InterDependencies_:
@@ -93,31 +88,89 @@ def new_to_old(idps: InterDependencies_) -> InterDependencies:
     return InterDependencies(*tuple(paramspecs.values()))
 
 
-def v0_to_v1(old: v0.RunDescriber) -> current.RunDescriber:
+def v0_to_v1(old: RunDescriberV0Dict) -> RunDescriberV1Dict:
     """
-    Convert a v0 RunDescriber to a v1 RunDescriber
+    Convert a v0 RunDescriber Dict to a v1 RunDescriber Dict
     """
-
-    if old.version != 0:
-        raise ValueError(f'Cannot convert {old} to version 1, {old} is not '
-                         'a version 0 RunDescriber.')
-
-    old_idps = old.interdeps
-    new_idps = old_to_new(old_idps)
-
-    return current.RunDescriber(interdeps=new_idps)
+    old_idps = InterDependencies._from_dict(old["interdependencies"])
+    new_idps_dict = old_to_new(old_idps)._to_dict()
+    return RunDescriberV1Dict(version=1, interdependencies=new_idps_dict)
 
 
-def v1_to_v0(new: current.RunDescriber) -> v0.RunDescriber:
+def v1_to_v2(old: RunDescriberV1Dict) -> RunDescriberV2Dict:
     """
-    Convert a v1 RunDescriber to a v0 RunDescriber
+    Convert a v1 RunDescriber Dict to a v2 RunDescriber Dict
     """
+    interdeps_dict = old['interdependencies']
+    interdeps_ = InterDependencies_._from_dict(interdeps_dict)
+    interdepsdict = new_to_old(interdeps_)._to_dict()
+    return RunDescriberV2Dict(version=2, interdependencies_=interdeps_dict,
+                              interdependencies=interdepsdict)
 
-    if new.version != 1:
-        raise ValueError(f'Cannot convert {new} to version 0, {new} is not '
-                         'a version 1 RunDescriber.')
 
-    new_idps = new.interdeps
-    old_idps = new_to_old(new_idps)
+def v2_to_v3(old: RunDescriberV2Dict) -> RunDescriberV3Dict:
+    return RunDescriberV3Dict(version=3,
+                              interdependencies=old['interdependencies'],
+                              interdependencies_=old['interdependencies_'],
+                              shapes=None
+                              )
 
-    return v0.RunDescriber(interdeps=old_idps)
+
+def v0_to_v2(old: RunDescriberV0Dict) -> RunDescriberV2Dict:
+    """
+    Convert a v0 RunDescriber Dict to a v2 RunDescriber Dict
+    """
+    return v1_to_v2(v0_to_v1(old))
+
+
+def v0_to_v3(old: RunDescriberV0Dict) -> RunDescriberV3Dict:
+    return v2_to_v3(v0_to_v2(old))
+
+
+def v1_to_v3(old: RunDescriberV1Dict) -> RunDescriberV3Dict:
+    return v2_to_v3(v1_to_v2(old))
+
+
+def v3_to_v2(new: RunDescriberV3Dict) -> RunDescriberV2Dict:
+    return RunDescriberV2Dict(version=2,
+                              interdependencies=new['interdependencies'],
+                              interdependencies_=new['interdependencies_'],
+                              )
+
+
+def v2_to_v1(new: RunDescriberV2Dict) -> RunDescriberV1Dict:
+    """
+    Convert a v2 RunDescriber Dict to a v1 RunDescriber Dict
+    """
+    rundescriberdictv1 = RunDescriberV1Dict(
+        version=1,
+        interdependencies=new['interdependencies_']
+    )
+    return rundescriberdictv1
+
+
+def v1_to_v0(new: RunDescriberV1Dict) -> RunDescriberV0Dict:
+    """
+    Convert a v1 RunDescriber Dict to a v0 RunDescriber Dict
+    """
+    interdeps_dict = new['interdependencies']
+    interdeps_ = InterDependencies_._from_dict(interdeps_dict)
+    interdepsdict = new_to_old(interdeps_)._to_dict()
+    rundescriberv0dict = RunDescriberV0Dict(version=0,
+                                            interdependencies=interdepsdict)
+    return rundescriberv0dict
+
+
+def v3_to_v1(new: RunDescriberV3Dict) -> RunDescriberV1Dict:
+    return v2_to_v1(v3_to_v2(new))
+
+
+def v2_to_v0(new: RunDescriberV2Dict) -> RunDescriberV0Dict:
+    """
+    Convert a v2 RunDescriber Dict to a v0 RunDescriber Dict
+    """
+    return v1_to_v0(v2_to_v1(new))
+
+
+def v3_to_v0(new: RunDescriberV3Dict) -> RunDescriberV0Dict:
+    return v1_to_v0(v3_to_v1(new))

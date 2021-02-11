@@ -70,14 +70,14 @@ class Config:
                                                  schema_file_name)
     """Filename of cwd schema"""
 
-    current_schema: Optional[dict] = None
+    current_schema: Optional['DotDict'] = None
     """Validators and descriptions of config values"""
-    current_config: Optional[dict] = None
+    current_config: Optional['DotDict'] = None
     """Valid config values"""
 
-    defaults: dict
+    defaults: 'DotDict'
     """The default configuration"""
-    defaults_schema: dict
+    defaults_schema: 'DotDict'
     """The default schema"""
 
     _diff_config: Dict[str, Any] = {}
@@ -93,13 +93,13 @@ class Config:
         self.defaults, self.defaults_schema = self.load_default()
         self.update_config()
 
-    def load_default(self) -> Tuple[dict, dict]:
+    def load_default(self) -> Tuple['DotDict', 'DotDict']:
         defaults = self.load_config(self.default_file_name)
         defaults_schema = self.load_config(self.schema_default_file_name)
         self.validate(defaults, defaults_schema)
         return defaults, defaults_schema
 
-    def update_config(self, path: Optional[str] = None) -> dict:
+    def update_config(self, path: Optional[str] = None) -> Dict[str, Any]:
         """
         Load defaults updates with cwd, env, home and the path specified
         and validates.
@@ -155,7 +155,9 @@ class Config:
 
         return config
 
-    def _update_config_from_file(self, file_path: str, schema: str, config: dict
+    def _update_config_from_file(self, file_path: str,
+                                 schema: str,
+                                 config: Dict[str, Any]
                                  ) -> None:
         """
         Updated ``config`` dictionary with config information from file in
@@ -173,8 +175,8 @@ class Config:
             self.validate(config, self.current_schema, schema)
 
     def validate(self,
-                 json_config: Optional[dict] = None,
-                 schema: Optional[dict] = None,
+                 json_config: Optional[Dict[str, Any]] = None,
+                 schema: Optional[Dict[str, Any]] = None,
                  extra_schema_path: Optional[str] = None
                  ) -> None:
         """
@@ -320,7 +322,7 @@ class Config:
         Raises:
             FileNotFoundError: if config is missing
         """
-        with open(path, "r") as fp:
+        with open(path) as fp:
             config = json.load(fp)
 
         logger.debug(f'Loading config from {path}')
@@ -416,7 +418,7 @@ class Config:
         return output
 
 
-class DotDict(dict):
+class DotDict(Dict[Any, Any]):
     """
     Wrapper dict that allows to get dotted attributes
 
@@ -454,15 +456,24 @@ class DotDict(dict):
         target = dict.__getitem__(self, myKey)
         return restOfKey in target
 
-    def __deepcopy__(self, memo: Optional[dict]) -> 'DotDict':
+    def __deepcopy__(self, memo: Optional[Dict[Any, Any]]) -> 'DotDict':
         return DotDict(copy.deepcopy(dict(self)))
 
-    # dot access baby
-    __setattr__ = __setitem__
-    __getattr__ = __getitem__
+    def __getattr__(self, name: str) -> Any:
+        """
+        Overwrite ``__getattr__`` to provide dot access
+        """
+        return self.__getitem__(name)
+
+    def __setattr__(self, key: str, value: Any) -> None:
+        """
+        Overwrite ``__setattr__`` to provide dot access
+        """
+        self.__setitem__(key, value)
 
 
-def update(d: dict, u: Mapping) -> dict:
+def update(d: Dict[Any, Any],
+           u: Mapping[Any, Any]) -> Dict[Any, Any]:
     for k, v in u.items():
         if isinstance(v, collections.abc.Mapping):
             r = update(d.get(k, {}), v)

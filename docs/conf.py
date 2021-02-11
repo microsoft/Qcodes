@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 #
 # QCoDeS documentation build configuration file, created by
 # sphinx-quickstart on Thu Jun  2 10:41:37 2016.
@@ -63,6 +62,7 @@ source_suffix = '.rst'
 # Add link to Binder in Prolog of the notebooks
 # -- Get version information  ----------------------------
 
+version = qcodes.__version__
 release = parse(qcodes.__version__).public
 
 # Add link to Binder in Prolog (WRITE MORE DETAILS ONCE FIXED)
@@ -73,13 +73,13 @@ nbsphinx_prolog = r"""
 
     <div class="admonition note">
       <p>This page was generated from
-        <a class="reference external" 
+        <a class="reference external"
         href="https://github.com/qcodes/qcodes/blob/master/{{docname|e}}">{{ docname|replace("\\","/") }}</a>.
         Interactive online version:
-        <a href="https://mybinder.org/v2/gh/qcodes/qcodes/master?filepath={{ 
-        docname|replace("\\","/") }}"><img 
-    alt="Binder badge" 
-        src="https://mybinder.org/badge_logo.svg" 
+        <a href="https://mybinder.org/v2/gh/qcodes/qcodes/master?filepath={{
+        docname|replace("\\","/") }}"><img
+    alt="Binder badge"
+        src="https://mybinder.org/badge_logo.svg"
         style="vertical-align:text-bottom"></a>.
       </p>
       <script>
@@ -176,7 +176,7 @@ html_theme = "sphinx_rtd_theme"
 # html_theme_options = {}
 
 # Add any paths that contain custom themes here, relative to this directory.
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+# html_theme_path = []
 
 # The name for this set of Sphinx documents.
 # "<project> v<release> documentation" by default.
@@ -376,8 +376,8 @@ texinfo_show_urls = 'footnote'
 intersphinx_mapping = {
     'pandas': ('https://pandas.pydata.org/pandas-docs/stable/', None),
     'matplotlib': ('https://matplotlib.org/', None),
-    'python': ('https://docs.python.org/3.6', None),
-    'numpy': ('https://docs.scipy.org/doc/numpy', None),
+    'python': ('https://docs.python.org/3.7/', None),
+    'numpy': ('https://numpy.org/doc/stable/', None),
     'py': ('https://pylib.readthedocs.io/en/stable/', None),
     'pyvisa': ('https://pyvisa.readthedocs.io/en/master/', None),
     'IPython': ('https://ipython.readthedocs.io/en/stable/', None)}
@@ -403,7 +403,7 @@ templates_path = ['_templates']
 # want to store them locally.
 suppress_warnings = ['image.nonlocal_uri']
 
-nitpicky = True
+nitpicky = False
 
 # we allow most types from the typing modules to be used in
 # docstrings even if they don't resolve

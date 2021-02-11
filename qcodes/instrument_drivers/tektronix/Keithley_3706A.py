@@ -1,7 +1,7 @@
 import itertools
 import textwrap
 import warnings
-from typing import List, Dict, Optional, Union, Tuple
+from typing import List, Dict, Optional, Union, Tuple, Any
 
 import qcodes.utils.validators as vals
 from qcodes import VisaInstrument
@@ -23,7 +23,7 @@ class Keithley_3706A(VisaInstrument):
     """
 
     def __init__(self, name: str, address: str,
-                 terminator: str = '\n', **kwargs) -> None:
+                 terminator: str = '\n', **kwargs: Any) -> None:
         """
         Args:
             name: Name to use internally in QCoDeS
@@ -35,19 +35,19 @@ class Keithley_3706A(VisaInstrument):
                            get_cmd=self._get_channel_connect_rule,
                            set_cmd=self._set_channel_connect_rule,
                            docstring=textwrap.dedent("""\
-                                    Controls the connection rule for closing 
-                                    and opening channels when using 
+                                    Controls the connection rule for closing
+                                    and opening channels when using
                                     `exclusive_close` and `exclusive_slot_close`
                                     parameters.
-                                    
-                                    If it is set to break before make, 
-                                    it is ensured that all channels open 
+
+                                    If it is set to break before make,
+                                    it is ensured that all channels open
                                     before any channels close.
-                                    
+
                                     If it is set to make before break, it is
                                     ensured that all channels close before any
                                     channels open.
-                                    
+
                                     If it is off, channels open and close
                                     simultaneously."""),
                            vals=vals.Enum('BREAK_BEFORE_MAKE',
@@ -101,18 +101,7 @@ class Keithley_3706A(VisaInstrument):
             val: A string representing the channels, channel ranges,
                 backplane relays, slots or channel patterns to be queried.
         """
-        states = self.get_interlock_state()
-        backplanes = self.get_analog_backplane_specifiers()
-        val_specifiers = val.split(',')
-        for item in val_specifiers:
-            if item in backplanes:
-                for element in states:
-                    if element['state'] == 'Interlock is disengaged':
-                        warnings.warn(f'The hardware interlock in Slot '
-                                      f'{element["slot_no"]} is disengaged. '
-                                      'The corresponding analog backplane '
-                                      'relays cannot be energized.',
-                                      UserWarning, 2)
+
         if not self._validator(val):
             raise InvalidValue(f'{val} is not a valid specifier. '
                                'The specifier should be channels, channel '
@@ -138,7 +127,46 @@ class Keithley_3706A(VisaInstrument):
         if val in forbidden_channels.split(','):
             warnings.warn('You are attempting to close channels that are '
                           'forbidden to close.', UserWarning, 2)
+
+        self._warn_on_disengaged_interlocks(val)
+
         self.write(f"channel.close('{val}')")
+
+    def _warn_on_disengaged_interlocks(self, val: str) -> None:
+        """
+        Checks if backplance channels among the given specifiers can be
+        energized dependening on respective hardware interlocks being
+        engaged, and raises a warning for those backplane channels which
+        cannot be energized.
+
+        Args:
+            val: A string representing the channels, channel ranges,
+                backplane relays.
+        """
+        states = self.get_interlock_state()
+        val_specifiers = val.split(",")
+        for channel in val_specifiers:
+            if self._is_backplane_channel(channel):
+                slot = channel[0]
+                interlock_state = [
+                    state for state in states if state["slot_no"] == slot
+                ][0]
+                if interlock_state["state"] == "Interlock is disengaged":
+                    warnings.warn(
+                        f"The hardware interlock in Slot "
+                        f'{interlock_state["slot_no"]} is disengaged. '
+                        f"The analog backplane relay {channel} "
+                        "cannot be energized.",
+                        UserWarning,
+                        2,
+                    )
+
+    def _is_backplane_channel(self, channel_id: str) -> bool:
+        if len(channel_id) != 4:
+            raise InvalidValue(f"{channel_id} is not a valid channel id")
+        if channel_id[1] == "9":
+            return True
+        return False
 
     def exclusive_close(self, val: str) -> None:
         """
@@ -697,11 +725,12 @@ class Keithley_3706A(VisaInstrument):
                             1: 'Interlock is engaged'}
         states: List[Dict[str, str]] = []
         for i in slot_id:
-            state = self.ask(f'slot[{int(i)}].interlock.state')
-            state_dict = {'slot_no': i,
-                          'state': interlock_status[int(float(state))]}
-            states.append(state_dict)
+            state = self.get_interlock_state_by_slot(i)
+            states.append({"slot_no": i, "state": interlock_status[state]})
         return tuple(states)
+
+    def get_interlock_state_by_slot(self, slot: Union[str, int]) -> int:
+        return int(float(self.ask(f"slot[{int(slot)}].interlock.state")))
 
     def get_ip_address(self) -> str:
         """
@@ -760,7 +789,7 @@ class Keithley_3706A(VisaInstrument):
         return True
 
     def connect_message(self, idn_param: str = 'IDN',
-                        begin_time: float = None) -> None:
+                        begin_time: Optional[float] = None) -> None:
         """
         Overwrites the generic QCoDeS instrument connect message.
         Here, additionally, we provide information about
@@ -791,4 +820,4 @@ class Keithley_3706A(VisaInstrument):
         Override of normal ask. This is important, since queries to the
         instrument must be wrapped in 'print()'
         """
-        return super().ask('print({:s})'.format(cmd))
+        return super().ask(f'print({cmd:s})')

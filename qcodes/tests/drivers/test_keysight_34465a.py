@@ -55,6 +55,10 @@ def test_model_flag(driver):
     assert True is driver.is_34465A_34470A
 
 
+def test_reset(driver):
+    driver.reset()
+
+
 def test_NPLC(driver):
     assert driver.NPLC.get() == 10.0
     driver.NPLC.set(0.2)
@@ -101,6 +105,21 @@ def test_set_get_autorange(driver):
     driver.autorange.set('OFF')
     ar = driver.autorange.get()
     assert ar == 'OFF'
+
+
+def test_increase_decrease_range(driver):
+    driver_range_user = driver.ranges[4]
+    driver.increase_range(driver_range_user)
+    assert driver.range.get() == driver.ranges[5]
+    driver.increase_range(driver_range_user, 2)
+    assert driver.range() == driver.ranges[6]
+    driver.decrease_range(driver_range_user)
+    assert driver.range() == driver.ranges[3]
+    driver.decrease_range(driver_range_user, -2)
+    assert driver.range() == driver.ranges[2]
+    driver_range_user = driver.ranges[3]
+    driver.decrease_range(driver_range_user, -2)
+    assert driver.range() == driver.ranges[1]
 
 
 def test_display_text(driver):

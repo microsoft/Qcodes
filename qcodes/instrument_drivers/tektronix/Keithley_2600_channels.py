@@ -2,7 +2,7 @@ import logging
 import struct
 import numpy as np
 import warnings
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 
 import qcodes as qc
 from qcodes import VisaInstrument
@@ -53,14 +53,14 @@ class LuaSweepParameter(ArrayParameter):
             self.setpoint_names = ('Voltage',)
             self.setpoint_units = ('V',)
             self.label = 'current'
-            self.name = 'iv_sweep'
+            self._short_name = 'iv_sweep'
 
         if mode == 'VI':
             self.unit = 'V'
             self.setpoint_names = ('Current',)
             self.setpoint_units = ('A',)
             self.label = 'voltage'
-            self.name = 'vi_sweep'
+            self._short_name = 'vi_sweep'
 
         self.setpoints = (tuple(np.linspace(start, stop, steps)),)
 
@@ -141,16 +141,16 @@ class TimeTrace(ParameterWithSetpoints):
 
         mode_map = {"current": "i", "voltage": "v"}
 
-        script = ['{}.measure.count={}'.format(channel, npts),
-                  'oldint={}.measure.interval'.format(channel),
-                  '{}.measure.interval={}'.format(channel, dt),
-                  '{}.nvbuffer1.clear()'.format(channel),
+        script = [f'{channel}.measure.count={npts}',
+                  f'oldint={channel}.measure.interval',
+                  f'{channel}.measure.interval={dt}',
+                  f'{channel}.nvbuffer1.clear()',
                   '{}.measure.{}({}.nvbuffer1)'.format(channel, mode_map[mode], channel),
-                  '{}.measure.interval=oldint'.format(channel),
-                  '{}.measure.count=1'.format(channel),
+                  f'{channel}.measure.interval=oldint',
+                  f'{channel}.measure.count=1',
                   'format.data = format.REAL32',
                   'format.byteorder = format.LITTLEENDIAN',
-                  'printbuffer(1, {}, {}.nvbuffer1.readings)'.format(npts, channel)]
+                  f'printbuffer(1, {npts}, {channel}.nvbuffer1.readings)']
 
         return self.instrument._execute_lua(script, npts)
 
@@ -411,9 +411,9 @@ class KeithleyChannel(InstrumentChannel):
         Reset instrument to factory defaults.
         This resets only the relevant channel.
         """
-        self.write('{}.reset()'.format(self.channel))
+        self.write(f'{self.channel}.reset()')
         # remember to update all the metadata
-        log.debug('Reset channel {}.'.format(self.channel) +
+        log.debug(f'Reset channel {self.channel}.' +
                   'Updating settings...')
         self.snapshot(update=True)
 
@@ -471,18 +471,18 @@ class KeithleyChannel(InstrumentChannel):
             sour = 'i'
             func = '0'
 
-        script = ['{}.measure.nplc = {:.12f}'.format(channel, nplc),
-                  '{}.source.output = 1'.format(channel),
-                  'startX = {:.12f}'.format(start),
-                  'dX = {:.12f}'.format(dV),
-                  '{}.source.output = 1'.format(channel),
-                  '{}.source.func = {}'.format(channel, func),
-                  '{}.measure.count = 1'.format(channel),
-                  '{}.nvbuffer1.clear()'.format(channel),
-                  '{}.nvbuffer1.appendmode = 1'.format(channel),
-                  'for index = 1, {} do'.format(steps),
+        script = [f'{channel}.measure.nplc = {nplc:.12f}',
+                  f'{channel}.source.output = 1',
+                  f'startX = {start:.12f}',
+                  f'dX = {dV:.12f}',
+                  f'{channel}.source.output = 1',
+                  f'{channel}.source.func = {func}',
+                  f'{channel}.measure.count = 1',
+                  f'{channel}.nvbuffer1.clear()',
+                  f'{channel}.nvbuffer1.appendmode = 1',
+                  f'for index = 1, {steps} do',
                   '  target = startX + (index-1)*dX',
-                  '  {}.source.level{} = target'.format(channel, sour),
+                  f'  {channel}.source.level{sour} = target',
                   '  {}.measure.{}({}.nvbuffer1)'.format(channel, meas,
                                                          channel),
                   'end',
@@ -559,7 +559,7 @@ class Keithley_2600(VisaInstrument):
     tested with Keithley_2614B
 
     """
-    def __init__(self, name: str, address: str, **kwargs) -> None:
+    def __init__(self, name: str, address: str, **kwargs: Any) -> None:
         """
         Args:
             name: Name to use internally in QCoDeS
@@ -636,7 +636,7 @@ class Keithley_2600(VisaInstrument):
         # Add the channel to the instrument
         self.channels: List[KeithleyChannel] = []
         for ch in ['a', 'b']:
-            ch_name = 'smu{}'.format(ch)
+            ch_name = f'smu{ch}'
             channel = KeithleyChannel(self, ch_name, ch_name)
             self.add_submodule(ch_name, channel)
             self.channels.append(channel)
@@ -649,7 +649,7 @@ class Keithley_2600(VisaInstrument):
         self.connect_message()
 
     def _display_settext(self, text: str) -> None:
-        self.visa_handle.write('display.settext("{}")'.format(text))
+        self.visa_handle.write(f'display.settext("{text}")')
 
     def get_idn(self) -> Dict[str, Optional[str]]:
         IDNstr = self.ask_raw('*IDN?')
@@ -694,7 +694,7 @@ class Keithley_2600(VisaInstrument):
         Override of normal ask. This is important, since queries to the
         instrument must be wrapped in 'print()'
         """
-        return super().ask('print({:s})'.format(cmd))
+        return super().ask(f'print({cmd:s})')
 
     @staticmethod
     def _scriptwrapper(program: List[str], debug: bool=False) -> str:
@@ -708,7 +708,7 @@ class Keithley_2600(VisaInstrument):
             list item, e.g. ['for ii = 1, 10 do', 'print(ii)', 'end' ]
         """
         mainprog = '\r\n'.join(program) + '\r\n'
-        wrapped = 'loadandrunscript\r\n{}endscript\n'.format(mainprog)
+        wrapped = f'loadandrunscript\r\n{mainprog}endscript'
         if debug:
             log.debug('Wrapped the following script:')
             log.debug(wrapped)

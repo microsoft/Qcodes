@@ -6,6 +6,7 @@ the default configuration.
 """
 
 import io
+import platform
 from datetime import datetime
 import logging
 # logging.handlers is not imported by logging. This extra import is necessary
@@ -18,18 +19,13 @@ from copy import copy
 
 from typing import Optional, Union, Sequence, TYPE_CHECKING, Iterator, Type
 from types import TracebackType
-
-if TYPE_CHECKING:
-    from applicationinsights.logging.LoggingHandler import LoggingHandler
+from opencensus.ext.azure.log_exporter import AzureLogHandler
+from opencensus.ext.azure.common.protocol import Envelope
 
 import qcodes as qc
 import qcodes.utils.installation_info as ii
 from qcodes.utils.helpers import get_qcodes_user_path
 
-if TYPE_CHECKING:
-    # We need to declare the type of this global variable up here. See
-    # https://github.com/python/mypy/issues/5732 for reference
-    telemetry_handler: LoggingHandler
 
 log: logging.Logger = logging.getLogger(__name__)
 
@@ -60,6 +56,20 @@ FORMAT_STRING_DICT = OrderedDict([
 # console hander.
 console_handler: Optional[logging.Handler] = None
 file_handler: Optional[logging.Handler] = None
+telemetry_handler: Optional[AzureLogHandler] = None
+
+
+_opencensus_filter = logging.Filter(name="opencensus")
+_urllib3_connection_filter = logging.Filter(name="urllib3.connection")
+
+
+def filter_out_telemetry_log_records(record: logging.LogRecord) -> int:
+    """
+    here we filter any message that is likely to be thrown from
+    opencensus so it is not shown in the user console
+    """
+    return (not _opencensus_filter.filter(record)
+            and not _urllib3_connection_filter.filter(record))
 
 
 def get_formatter() -> logging.Formatter:
@@ -69,6 +79,18 @@ def get_formatter() -> logging.Formatter:
     """
     format_string_items = [f'%({name}){fmt}'
                            for name, fmt in FORMAT_STRING_DICT.items()]
+    format_string = LOGGING_SEPARATOR.join(format_string_items)
+    return logging.Formatter(format_string)
+
+
+def get_formatter_for_telemetry() -> logging.Formatter:
+    """
+    Returns :class:`logging.Formatter` with only name, function name and
+    message keywords from FORMAT_STRING_DICT
+    """
+    format_string_items = [f'%({name}){fmt}'
+                           for name, fmt in FORMAT_STRING_DICT.items()
+                           if name in ['message', 'name', 'funcName']]
     format_string = LOGGING_SEPARATOR.join(format_string_items)
     return logging.Formatter(format_string)
 
@@ -157,8 +179,8 @@ def flush_telemetry_traces() -> None:
     Flush the traces of the telemetry logger. If telemetry is not enabled, this
     function does nothing.
     """
-    if qc.config.telemetry.enabled:
-        global telemetry_handler
+    global telemetry_handler
+    if qc.config.telemetry.enabled and telemetry_handler is not None:
         telemetry_handler.flush()
 
 
@@ -176,6 +198,7 @@ def start_logger() -> None:
     """
     global console_handler
     global file_handler
+    global telemetry_handler
 
     # set loggers to the supplied levels
     for name, level in qc.config.logger.logger_levels.items():
@@ -185,7 +208,7 @@ def start_logger() -> None:
     root_logger.setLevel(logging.DEBUG)
 
     # remove previously set handlers
-    for handler in (console_handler, file_handler):
+    for handler in (console_handler, file_handler, telemetry_handler):
         if handler is not None:
             handler.close()
             root_logger.removeHandler(handler)
@@ -195,6 +218,7 @@ def start_logger() -> None:
     console_handler = logging.StreamHandler()
     console_handler.setLevel(qc.config.logger.console_level)
     console_handler.setFormatter(get_formatter())
+    console_handler.addFilter(filter_out_telemetry_log_records)
     root_logger.addHandler(console_handler)
 
     # file
@@ -212,30 +236,27 @@ def start_logger() -> None:
     logging.captureWarnings(capture=True)
 
     if qc.config.telemetry.enabled:
-
-        from applicationinsights import channel
-        from applicationinsights.logging import enable
-
-        # the telemetry_handler can be flushed
-        global telemetry_handler
+        # Transport module of opencensus-ext-azure logs info 'transmission
+        # succeeded' which is also exported to azure if AzureLogHandler is
+        # in root_logger. The following lines stops that.
+        logging.getLogger('opencensus.ext.azure.common.transport').setLevel(
+            logging.WARNING)
 
         loc = qc.config.GUID_components.location
         stat = qc.config.GUID_components.work_station
-        sender = channel.AsynchronousSender()
-        queue = channel.AsynchronousQueue(sender)
-        appin_channel = channel.TelemetryChannel(context=None, queue=queue)
-        appin_channel.context.user.id = f'{loc:02x}-{stat:06x}'
 
-        # it is not completely clear which context fields get sent up.
-        # Here we shuffle some info from one field to another.
-        acc_name = appin_channel.context.device.id
-        appin_channel.context.user.account_id = acc_name
+        def callback_function(envelope: Envelope) -> bool:
+            envelope.tags['ai.user.accountId'] = platform.node()
+            envelope.tags['ai.user.id'] = f'{loc:02x}-{stat:06x}'
+            return True
 
-        # note that the following function will simply silently fail if an
-        # invalid instrumentation key is used. There is thus no exception to
-        # catch
-        telemetry_handler = enable(qc.config.telemetry.instrumentation_key,
-                                   telemetry_channel=appin_channel)
+        telemetry_handler = AzureLogHandler(
+            connection_string=f'InstrumentationKey='
+                              f'{qc.config.telemetry.instrumentation_key}')
+        telemetry_handler.add_telemetry_processor(callback_function)
+        telemetry_handler.setLevel(logging.INFO)
+        telemetry_handler.setFormatter(get_formatter_for_telemetry())
+        root_logger.addHandler(telemetry_handler)
 
     log.info("QCoDes logger setup completed")
 

@@ -15,7 +15,7 @@ class SafeFormatter(string.Formatter):
         try:
             return super().get_value(key, args, kwargs)
         except:
-            return '{{{}}}'.format(key)
+            return f'{{{key}}}'
 
 
 class FormatLocation:

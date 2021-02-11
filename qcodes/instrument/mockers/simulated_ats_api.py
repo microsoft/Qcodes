@@ -27,7 +27,7 @@ class SimulatedATS9360API(AlazarATSAPI):
 
     def __init__(
             self,
-            dll_path: str = None,  # Need this for meta super class
+            dll_path: Optional[str] = None,  # Need this for meta super class
             buffer_generator: Optional[Callable[[np.ndarray], None]] = None,
             dtype: type = np.uint16
     ):

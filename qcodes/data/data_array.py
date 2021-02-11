@@ -486,7 +486,7 @@ class DataArray(DelegateAttributes):
         self.synced_index = stop
 
     def __repr__(self):
-        array_id_or_none = ' {}'.format(self.array_id) if self.array_id else ''
+        array_id_or_none = f' {self.array_id}' if self.array_id else ''
         return '{}[{}]:{}\n{}'.format(self.__class__.__name__,
                                       ','.join(map(str, self.shape)),
                                       array_id_or_none, repr(self.ndarray))

@@ -134,7 +134,7 @@ def time_difference(firsttimes: Series,
 
 @contextmanager
 def capture_dataframe(level: LevelType = logging.DEBUG,
-                      logger: logging.Logger = None) -> \
+                      logger: Optional[logging.Logger] = None) -> \
         Iterator[Tuple[logging.StreamHandler, Callable[[], pandas.DataFrame]]]:
     """
     Context manager to capture the logs in a :class:`pandas.DataFrame`

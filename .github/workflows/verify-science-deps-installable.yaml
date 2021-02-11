@@ -1,0 +1,48 @@
+name: Verify that qcodes requirements are compatible with Spyder
+
+on:
+  push:
+    branches:
+      - 'master'
+      - 'release/*'
+    tags:
+      - 'v*'
+  pull_request:
+
+jobs:
+  build:
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        python-version: [3.7]
+    env:
+      DISPLAY: ':99.0'
+      OS: ${{ matrix.os }}
+      PYTHON: ${{ matrix.python-version }}
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: prepare pip cache
+      id: prepare-cache-pip
+      uses: ./.github/actions/prepare-cache-pip
+    - name: pip cache
+      uses: actions/cache@v2.1.4
+      with:
+        path: ${{ steps.prepare-cache-pip.outputs.cache-dir }}
+        key: ${{ runner.os }}-${{ matrix.python-version }}-pip-${{ hashFiles('**/requirements.txt') }}-${{ hashFiles('**/science_requirements.txt') }}-${{ hashFiles('**/setup.py') }}
+        restore-keys: |
+          ${{ runner.os }}-${{ matrix.python-version }}-pip-
+    - name: install requirements.txt
+      run: |
+        pip install -r requirements.txt
+    - name: install science_requirements.txt
+      run: |
+        pip install -r science_requirements.txt
+    - name: install qcodes
+      run: pip install .

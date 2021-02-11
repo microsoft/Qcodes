@@ -8,7 +8,7 @@ This is a bug fix release fixing the following issues
 * Make sure `start_all_logging` does not try to reach the internet (#1847)
 * Fix type annotation for `Parameter.__call__` (#1839)
 * Add Keysight 34410A driver (#1835)
-* Keysight 344xxA driver: support the fact that DIG option is always enabled 
+* Keysight 344xxA driver: support the fact that DIG option is always enabled
   with firmware version 3.0, also add support for MEM option (#1845)
 
 

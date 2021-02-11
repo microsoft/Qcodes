@@ -1,3 +1,5 @@
+from typing import Iterable, Any
+
 from functools import wraps
 from operator import xor
 from typing import List, Union, Callable, TypeVar, cast, Optional
@@ -5,7 +7,7 @@ from typing import List, Union, Callable, TypeVar, cast, Optional
 from . import constants
 
 
-def as_csv(l, sep=','):
+def as_csv(l: Iterable[Any], sep: str = ',') -> str:
     """Returns items in iterable ls as comma-separated string"""
     return sep.join(format(x) for x in l)
 
@@ -16,7 +18,7 @@ MessageBuilderMethodT = TypeVar('MessageBuilderMethodT',
 
 def final_command(f: MessageBuilderMethodT) -> MessageBuilderMethodT:
     @wraps(f)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: Any, **kwargs: Any) -> "MessageBuilder":
         res: 'MessageBuilder' = f(*args, **kwargs)
         res._msg.set_final()
 
@@ -25,12 +27,12 @@ def final_command(f: MessageBuilderMethodT) -> MessageBuilderMethodT:
     return cast(MessageBuilderMethodT, wrapper)
 
 
-class CommandList(list):
-    def __init__(self):
+class CommandList(List[Any]):
+    def __init__(self) -> None:
         super().__init__()
         self.is_final = False
 
-    def append(self, obj):
+    def append(self, obj: Any) -> None:
         if self.is_final:
             raise ValueError(f'Cannot add commands after `{self[-1]}`. '
                              f'`{self[-1]}` must be the last command in the '
@@ -38,14 +40,14 @@ class CommandList(list):
         else:
             super().append(obj)
 
-    def set_final(self):
+    def set_final(self) -> None:
         self.is_final = True
 
-    def clear(self):
+    def clear(self) -> None:
         self.is_final = False
         super().clear()
 
-    def __str__(self):
+    def __str__(self) -> str:
         return as_csv(self, ';')
 
 
@@ -59,7 +61,7 @@ class MessageBuilder:
     constants that the commands expect as arguments.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._msg = CommandList()
 
     @property
@@ -73,7 +75,7 @@ class MessageBuilder:
                 f"programs.)")
         return joined
 
-    def clear_message_queue(self):
+    def clear_message_queue(self) -> None:
         self._msg.clear()
 
     def aad(self,
@@ -398,7 +400,7 @@ class MessageBuilder:
     def als(self,
             chnum: Union[constants.ChNr, int],
             n_bytes: int,
-            block: bytes):
+            block: bytes) -> None:
         # The format specification in the manual is a bit unclear, and I do
         # not have the module installed to test this command, hence:
         raise NotImplementedError
@@ -431,7 +433,7 @@ class MessageBuilder:
     def alw(self,
             chnum: Union[constants.ChNr, int],
             n_bytes: int,
-            block: bytes):
+            block: bytes) -> None:
         # The format specification in the manual is a bit unclear, and I do
         # not have the module installed to test this command, hence:
         raise NotImplementedError
@@ -1211,7 +1213,7 @@ class MessageBuilder:
         Args:
             chnum: SMU search source channel number. Integer expression. 1
                 to 10 or 101 to 1001. See Table 4-1 on page 16.
-            mode: clear correction mode (:class:`constants.CLCORR.Mode`),
+            mode: clear correction mode (:class:`.constants.CLCORR.Mode`),
                 Mode options 1 or 2.
 
                     - 1. Just clears the frequency list.
@@ -2589,10 +2591,10 @@ class MessageBuilder:
         return self
 
     def pch(self,
-            master: Union[constants.ChNr, int],
-            slave: Union[constants.ChNr, int]
+            controller: Union[constants.ChNr, int],
+            worker: Union[constants.ChNr, int],
             ) -> 'MessageBuilder':
-        cmd = f'PCH {master},{slave}'
+        cmd = f'PCH {controller},{worker}'
 
         self._msg.append(cmd)
         return self
@@ -3436,7 +3438,7 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def tsr(self, chnum=None) -> 'MessageBuilder':
+    def tsr(self, chnum: Optional[int] = None) -> 'MessageBuilder':
         cmd = f'TSR' if chnum is None else f'TSR {chnum}'
 
         self._msg.append(cmd)
@@ -3583,6 +3585,52 @@ class MessageBuilder:
              step: float,
              i_comp: Optional[float] = None
              ) -> 'MessageBuilder':
+        """
+        This command sets the DC bias sweep source used for the CV (DC bias)
+        sweep measurement (MM18). The sweep source will be MFCMU or SMU.
+        Execution Conditions: The CN/CNX command has been executed for the
+        specified channel. If you want to apply DC voltage over +/- 25 V using
+        the SCUU, the SCUU must be connected correctly. The SCUU can be used
+        with the MFCMU and two SMUs (MPSMU or HRSMU). The SCUU cannot be
+        used if the HPSMU is connected to the SCUU or if the number of SMUs
+        connected to the SCUU is only one. If the output voltage is greater
+        than the allowable voltage for the interlock open condition,
+        the interlock circuit must be shorted.
+
+        Args:
+            chnum : MFCMU or SMU channel number.
+                Integer expression. 1 to 10 or 101 to 1001.
+                See Table 4-1 on page 16.
+            mode : Sweep mode. Integer expression.
+                1: Linear sweep (single stair, start to stop.)
+                2: Log sweep (single stair, start to stop.)
+                3: Linear sweep (double stair, start to stop to start.)
+                4: Log sweep (double stair, start to stop to start.)
+            start : Start value of the DC bias sweep (in V). Numeric expression.
+                For the log sweep, start and stop must have the same polarity.
+                See Table 4-7 on page 24, Table 4-9 on page 26, or Table
+                4-12 on page 27 for each measurement resource type. For
+                MFCMU, 0 (initial setting) to +/- 25 V (MFCMU) or +/- 100 V (
+                with SCUU) With the SCUU, the source module is automatically
+                selected by the setting value. The MFCMU is used if the
+                start and stop values are below +/- 25 V
+                (setting resolution: 0.001 V), or the SMU is used if they
+                are greater than +/- 25 V (setting resolution: 0.005 V). The
+                SMU connected to the SCUU will operate with the 100 V
+                limited auto ranging and 20 mA compliance settings.
+            stop : Stop value of the DC bias sweep (in V).
+            step : Number of steps for staircase sweep.
+                Numeric expression. 1 to 1001.
+            i_comp : Available only for SMU. An error occurs if the Icomp
+                value is specified for the MFCMU.
+                Current compliance (in A). Numeric expression.
+                See Table 4-7 on page 24, Table 4-9 on page 26, or Table 4-12
+                on page 27 for each measurement resource type.
+                If you do not set Icomp, the previous value is used.
+                Compliance polarity is automatically set to the same
+                polarity as the output value, regardless of the specified Icomp.
+                If the output value is 0, the compliance polarity is positive.
+        """
         cmd = f'WDCV {chnum},{mode},{start},{stop},{step}'
 
         if i_comp is not None:
@@ -3670,6 +3718,33 @@ class MessageBuilder:
               abort: Union[bool, constants.Abort],
               post: Optional[Union[constants.WMDCV.Post, int]] = None
               ) -> 'MessageBuilder':
+        """
+        This command enables or disables the automatic abort function for
+        the CV (AC level) sweep measurement. The automatic abort
+        function stops the measurement when one of the following conditions
+        occurs.
+
+            - NULL loop unbalance condition
+            - IV amplifier saturation condition
+            - Overflow on the AD converter
+
+        This command also sets the post measurement condition of the MFCMU.
+        After the measurement is normally completed, the MFCMU forces the
+        value specified by the post parameter.
+
+        If the measurement is stopped by the automatic abort function,
+        the  MFCMU forces the start value.
+
+        Args:
+            abort: Automatic abort function. Integer expression. 1 or 2.
+                - 1: Disables the function. Initial setting.
+                - 2 Enables the function.
+            post: AC level value after the measurement is normally
+                completed. Possible values,
+                - ``constants.WMDCV.Post.START``: Initial setting.
+                - ``constants.WMDCV.Post.STOP``: Stop value.
+                If this parameter is not set, the MFCMU forces the start value.
+        """
         if isinstance(abort, bool):
             _abort = constants.Abort.ENABLED if abort \
                 else constants.Abort.DISABLED

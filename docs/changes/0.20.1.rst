@@ -1,0 +1,7 @@
+Changelog for QCoDeS 0.20.1
+===========================
+
+Patch:
+______
+
+This release is a patch for fixing unwanted debug messages shown in the Spyder's console (#2444)

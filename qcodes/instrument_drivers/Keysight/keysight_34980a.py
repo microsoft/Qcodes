@@ -2,6 +2,7 @@ import logging
 import warnings
 import re
 from functools import wraps
+from typing import Any, TypeVar, Dict
 from .keysight_34980a_submodules import KeysightSubModule
 from .keysight_34934a import Keysight34934A
 from qcodes.instrument.visa import VisaInstrument
@@ -12,7 +13,10 @@ from typing import Callable, Optional
 KEYSIGHT_MODELS = {'34934A': Keysight34934A}
 
 
-def post_execution_status_poll(func: Callable) -> Callable:
+T = TypeVar('T')
+
+
+def post_execution_status_poll(func: Callable[..., T]) -> Callable[..., T]:
     """
     Generates a decorator that clears the instrument's status registers
     before executing the actual call and reads the status register after the
@@ -22,7 +26,7 @@ def post_execution_status_poll(func: Callable) -> Callable:
         func: function to wrap
     """
     @wraps(func)
-    def wrapper(self, *args, **kwargs):
+    def wrapper(self: "Keysight34980A", *args: Any, **kwargs: Any) -> T:
         self.clear_status()
         retval = func(self, *args, **kwargs)
 
@@ -41,7 +45,11 @@ class Keysight34980A(VisaInstrument):
     """
     QCodes driver for 34980A switch/measure unit
     """
-    def __init__(self, name, address, terminator='\n', **kwargs):
+    def __init__(self,
+                 name: str,
+                 address: str,
+                 terminator: str = '\n',
+                 **kwargs: Any):
         """
         Create an instance of the instrument.
 
@@ -52,7 +60,7 @@ class Keysight34980A(VisaInstrument):
         super().__init__(name, address, terminator=terminator, **kwargs)
 
         self._total_slot = 8
-        self._system_slots_info_dict: Optional[dict] = None
+        self._system_slots_info_dict: Optional[Dict[int, Dict[str, str]]] = None
         self.module = dict.fromkeys(self.system_slots_info.keys())
         self.scan_slots()
         self.connect_message()
@@ -126,15 +134,15 @@ class Keysight34980A(VisaInstrument):
                                 f'in slot {slot}')
 
     @property
-    def system_slots_info(self):
+    def system_slots_info(self) -> Dict[int, Dict[str, str]]:
         if self._system_slots_info_dict is None:
             self._system_slots_info_dict = self._system_slots_info()
         return self._system_slots_info_dict
 
-    def _system_slots_info(self) -> dict:
+    def _system_slots_info(self) -> Dict[int, Dict[str, str]]:
         """
         the command SYST:CTYP? returns the following:
-        Agilent	Technologies,<Model Number>,<Serial Number>,<Firmware Rev>
+        Agilent Technologies,<Model Number>,<Serial Number>,<Firmware Rev>
         where <Model Number> is '0' if there is no module connected to the
         given slot
 

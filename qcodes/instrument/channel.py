@@ -22,14 +22,6 @@ class InstrumentChannel(InstrumentBase):
 
         name: The name of this channel.
 
-    Attributes:
-        name (str): The name of this channel.
-
-        parameters (Dict[Parameter]): All the parameters supported by this
-          channel. Usually populated via ``add_parameter``.
-
-        functions (Dict[Function]): All the functions supported by this
-          channel. Usually populated via ``add_function``.
     """
 
     def __init__(self,
@@ -214,7 +206,7 @@ class ChannelList(Metadatable):
                 raise TypeError("All items in this channel list must be of "
                                 "type {}.".format(chan_type.__name__))
 
-    def __getitem__(self, i: Union[int, slice, tuple]) -> \
+    def __getitem__(self, i: Union[int, slice, Tuple[int, ...]]) -> \
             Union['InstrumentChannel', 'ChannelList']:
         """
         Return either a single channel, or a new :class:`ChannelList`
@@ -299,7 +291,7 @@ class ChannelList(Metadatable):
         if self._locked:
             raise AttributeError("Cannot clear a locked channel list")
         # when not locked the _channels seq is a list
-        channels = cast(list, self._channels)
+        channels = cast(List['InstrumentChannel'], self._channels)
         channels.clear()
         self._channel_mapping.clear()
 
@@ -390,9 +382,9 @@ class ChannelList(Metadatable):
         self._channels = tuple(self._channels)
         self._locked = True
 
-    def snapshot_base(self, update: bool = True,
+    def snapshot_base(self, update: Optional[bool] = True,
                       params_to_skip_update: Optional[Sequence[str]] = None
-                      ) -> Dict:
+                      ) -> Dict[Any, Any]:
         """
         State of the instrument as a JSON-compatible dict (everything that
         the custom JSON encoder class
@@ -400,14 +392,22 @@ class ChannelList(Metadatable):
 
         Args:
             update: If True, update the state by querying the
-                instrument. If False, just use the latest values in memory..
+                instrument. If None only update if the state is known to be
+                invalid. If False, just use the latest values in memory
+                and never update.
+            params_to_skip_update: List of parameter names that will be skipped
+                in update even if update is True. This is useful if you have
+                parameters that are slow to update but can be updated in a
+                different way (as in the qdac). If you want to skip the
+                update of certain parameters in all snapshots, use the
+                ``snapshot_get``  attribute of those parameters instead.
 
         Returns:
             dict: base snapshot
         """
         if self._snapshotable:
-            snap = {'channels': dict((chan.name, chan.snapshot(update=update))
-                                     for chan in self._channels),
+            snap = {'channels': {chan.name: chan.snapshot(update=update)
+                                     for chan in self._channels},
                     'snapshotable': self._snapshotable,
                     '__class__': full_class(self),
                     }
@@ -442,7 +442,7 @@ class ChannelList(Metadatable):
                                           "supported for MultiParameters")
             parameters = cast(List[Union[Parameter, ArrayParameter]],
                               [chan.parameters[name] for chan in self._channels])
-            names = tuple("{}_{}".format(chan.name, name)
+            names = tuple(f"{chan.name}_{name}"
                           for chan in self._channels)
             labels = tuple(parameter.label
                            for parameter in parameters)
@@ -471,7 +471,7 @@ class ChannelList(Metadatable):
 
             param = self._paramclass(self._channels,
                                      param_name=name,
-                                     name="Multi_{}".format(name),
+                                     name=f"Multi_{name}",
                                      names=names,
                                      shapes=shapes,
                                      instrument=self._parent,
@@ -500,7 +500,7 @@ class ChannelList(Metadatable):
         raise AttributeError('\'{}\' object has no attribute \'{}\''
                              ''.format(self.__class__.__name__, name))
 
-    def __dir__(self) -> list:
+    def __dir__(self) -> List[Any]:
         names = list(super().__dir__())
         if self._channels:
             names += list(self._channels[0].parameters.keys())
@@ -516,7 +516,7 @@ class ChannelList(Metadatable):
                                                 max_chars=max_chars)
 
 
-class ChannelListValidator(Validator):
+class ChannelListValidator(Validator[InstrumentChannel]):
     """
     A validator that checks that the returned object is a member of the
     channel list with which the validator was constructed.
@@ -570,7 +570,7 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
     @classmethod
     def load_from_instrument(
             cls, parent: Instrument,
-            channel_list: 'AutoLoadableChannelList' = None,
+            channel_list: Optional['AutoLoadableChannelList'] = None,
             **kwargs: Any
     ) -> List['AutoLoadableInstrumentChannel']:
         """
@@ -600,7 +600,7 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
 
     @classmethod
     def _discover_from_instrument(
-            cls, parent: Instrument, **kwargs: Any) -> List[dict]:
+            cls, parent: Instrument, **kwargs: Any) -> List[Dict[Any, Any]]:
         """
         Discover channels on the instrument and return a list kwargs to create
         these channels in memory
@@ -620,7 +620,8 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
     @classmethod
     def new_instance(
             cls, parent: Instrument, create_on_instrument: bool = True,
-            channel_list: 'AutoLoadableChannelList' = None, **kwargs: Any
+            channel_list: Optional['AutoLoadableChannelList'] = None,
+            **kwargs: Any
     ) -> 'AutoLoadableInstrumentChannel':
         """
         Create a new instance of the channel on the instrument: This involves
@@ -666,8 +667,8 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
         return new_instance
 
     @classmethod
-    def _get_new_instance_kwargs(cls, parent: Instrument = None,
-                                 **kwargs: Any) -> dict:
+    def _get_new_instance_kwargs(cls, parent: Optional[Instrument] = None,
+                                 **kwargs: Any) -> Dict[Any, Any]:
         """
         Returns a dictionary which is used as keyword args when instantiating a
         channel
@@ -699,7 +700,7 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
             parent: Union[Instrument, 'InstrumentChannel'],
             name: str,
             exists_on_instrument: bool = False,
-            channel_list: 'AutoLoadableChannelList' = None,
+            channel_list: Optional['AutoLoadableChannelList'] = None,
             **kwargs: Any):
         """
         Instantiate a channel object. Note that this is not the same as actually

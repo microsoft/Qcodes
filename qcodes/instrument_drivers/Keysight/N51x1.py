@@ -1,4 +1,5 @@
-# -*- coding: utf-8 -*-
+from typing import Any, Dict, Optional
+
 from qcodes import VisaInstrument
 from qcodes.utils.validators import Numbers
 
@@ -9,7 +10,7 @@ class N51x1(VisaInstrument):
     It has been tested with N5171B, N5181A, N5171B, N5183B
     """
 
-    def __init__(self, name, address, **kwargs):
+    def __init__(self, name: str, address: str, **kwargs: Any):
         super().__init__(name, address, terminator='\n', **kwargs)
 
         self.add_parameter('power',
@@ -30,8 +31,8 @@ class N51x1(VisaInstrument):
                            get_parser=float,
                            set_cmd='SOUR:FREQ {:.2f}',
                            unit='Hz',
-                           vals=Numbers(min_value=9e3,max_value=max_freq))   
-        
+                           vals=Numbers(min_value=9e3,max_value=max_freq))
+
         self.add_parameter('phase_offset',
                            label='Phase Offset',
                            get_cmd='SOUR:PHAS?',
@@ -44,14 +45,13 @@ class N51x1(VisaInstrument):
                            get_cmd='OUTP:STAT?',
                            set_cmd='OUTP:STAT {}',
                            val_mapping={'on': 1, 'off': 0})
-                            
+
         self.connect_message()
-        
 
-    def get_idn(self):
-        IDN = self.ask_raw('*IDN?')
-        vendor, model, serial, firmware = map(str.strip, IDN.split(','))
-        IDN = {'vendor': vendor, 'model': model,
-               'serial': serial, 'firmware': firmware}
+    def get_idn(self) -> Dict[str, Optional[str]]:
+        IDN_str = self.ask_raw('*IDN?')
+        vendor, model, serial, firmware = map(str.strip, IDN_str.split(','))
+        IDN: Dict[str, Optional[str]] = {
+            'vendor': vendor, 'model': model,
+            'serial': serial, 'firmware': firmware}
         return IDN
-

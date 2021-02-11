@@ -64,5 +64,3 @@ def test_simulated_alazar(simulated_alazar, alazar_ctrl):
     assert len(data) == buffers_per_acquisition
     for d in data:
         assert np.allclose(d, np.ones(d.shape))
-
-

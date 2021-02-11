@@ -34,7 +34,7 @@ class ConnectionPlus(wrapt.ObjectProxy):
     path_to_dbfile = ''
 
     def __init__(self, sqlite3_connection: sqlite3.Connection):
-        super(ConnectionPlus, self).__init__(sqlite3_connection)
+        super().__init__(sqlite3_connection)
 
         if isinstance(sqlite3_connection, ConnectionPlus):
             raise ValueError('Attempted to create `ConnectionPlus` from a '

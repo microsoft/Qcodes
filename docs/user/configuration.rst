@@ -92,4 +92,3 @@ For a overview of the API, read this: :ref:`config_api` .
 
 .. note::  for now are supported all the JSON types MINUS enum
 .. todo:: add GUI for creating config, explain saving (note on config loaded at module import so no effect if changed at runtime).
-

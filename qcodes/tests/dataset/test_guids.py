@@ -1,35 +1,20 @@
 import time
-from copy import deepcopy
-from contextlib import contextmanager
+
 from uuid import uuid4
 
-import pytest
-from hypothesis import given, settings, assume
 import hypothesis.strategies as hst
+from hypothesis import HealthCheck, assume, given, settings
+
 import numpy as np
+import pytest
 
-from qcodes.dataset.guids import (generate_guid, parse_guid,
-                                  set_guid_location_code,
+import qcodes as qc
+from qcodes.dataset.guids import (filter_guids_by_parts, generate_guid,
+                                  parse_guid, set_guid_location_code,
                                   set_guid_work_station_code,
-                                  validate_guid_format,
-                                  filter_guids_by_parts)
-from qcodes.configuration import Config, DotDict
+                                  validate_guid_format)
+from qcodes.tests.common import default_config
 
-@contextmanager
-def protected_config():
-    """
-    Context manager to be used in all tests that modify the config to ensure
-    that the config is left untouched even if the tests fail
-    """
-    ocfg: DotDict = Config().current_config
-    original_config = deepcopy(ocfg)
-
-    try:
-        yield
-    finally:
-        cfg = Config()
-        cfg.current_config = original_config
-        cfg.save_to_home()
 
 
 @settings(max_examples=50, deadline=1000)
@@ -37,12 +22,11 @@ def protected_config():
        smpl=hst.integers(0, 4294967295))
 def test_generate_guid(loc, stat, smpl):
     # update config to generate a particular guid. Read it back to verify
-    with protected_config():
-        cfg = Config()
+    with default_config():
+        cfg = qc.config
         cfg['GUID_components']['location'] = loc
         cfg['GUID_components']['work_station'] = stat
         cfg['GUID_components']['sample'] = smpl
-        cfg.save_to_home()
 
         guid = generate_guid()
         gen_time = int(np.round(time.time()*1000))
@@ -58,19 +42,18 @@ def test_generate_guid(loc, stat, smpl):
         assert comps['time'] - gen_time < 2
 
 
-@settings(max_examples=50, deadline=None)
+@settings(max_examples=50, deadline=None,
+          suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(loc=hst.integers(-10, 350))
 def test_set_guid_location_code(loc, monkeypatch):
     monkeypatch.setattr('builtins.input', lambda x: str(loc))
 
-    orig_cfg = Config().current_config
-
-    original_loc = orig_cfg['GUID_components']['location']
-
-    with protected_config():
+    with default_config():
+        orig_cfg = qc.config
+        original_loc = orig_cfg['GUID_components']['location']
         set_guid_location_code()
 
-        cfg = Config().current_config
+        cfg = qc.config
 
         if 257 > loc > 0:
             assert cfg['GUID_components']['location'] == loc
@@ -78,19 +61,19 @@ def test_set_guid_location_code(loc, monkeypatch):
             assert cfg['GUID_components']['location'] == original_loc
 
 
-@settings(max_examples=50, deadline=1000)
+@settings(max_examples=50, deadline=1000,
+          suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(ws=hst.integers(-10, 17000000))
-def test_set_guid_workstatio_code(ws, monkeypatch):
+def test_set_guid_workstation_code(ws, monkeypatch):
     monkeypatch.setattr('builtins.input', lambda x: str(ws))
 
-    orig_cfg = Config().current_config
+    with default_config():
+        orig_cfg = qc.config
+        original_ws = orig_cfg['GUID_components']['work_station']
 
-    original_ws = orig_cfg['GUID_components']['work_station']
-
-    with protected_config():
         set_guid_work_station_code()
 
-        cfg = Config().current_config
+        cfg = qc.config
 
         if 16777216 > ws > 0:
             assert cfg['GUID_components']['work_station'] == ws
@@ -99,9 +82,12 @@ def test_set_guid_workstatio_code(ws, monkeypatch):
 
 
 @settings(max_examples=50, deadline=1000)
-@given(locs=hst.lists(hst.integers(0, 255), min_size=2, max_size=2, unique=True),
-       stats=hst.lists(hst.integers(0, 65535), min_size=2, max_size=2, unique=True),
-       smpls=hst.lists(hst.integers(0, 4294967295), min_size=2, max_size=2, unique=True),
+@given(locs=hst.lists(hst.integers(0, 255), min_size=2, max_size=2,
+                      unique=True),
+       stats=hst.lists(hst.integers(0, 65535), min_size=2, max_size=2,
+                       unique=True),
+       smpls=hst.lists(hst.integers(0, 4294967295), min_size=2, max_size=2,
+                       unique=True),
        )
 def test_filter_guid(locs, stats, smpls):
 
@@ -109,7 +95,6 @@ def test_filter_guid(locs, stats, smpls):
         cfg['GUID_components']['location'] = loc
         cfg['GUID_components']['work_station'] = stat
         cfg['GUID_components']['sample'] = smpl
-        cfg.save_to_home()
 
         guid = generate_guid()
         gen_time = int(np.round(time.time() * 1000))
@@ -123,10 +108,10 @@ def test_filter_guid(locs, stats, smpls):
 
         return guid
 
-    with protected_config():
+    with default_config():
 
         guids = []
-        cfg = Config()
+        cfg = qc.config
 
         corrected_smpls = [smpl if smpl != 0 else int('a' * 8, base=16)
                            for smpl in smpls]

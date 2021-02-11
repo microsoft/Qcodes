@@ -1,5 +1,7 @@
 import logging
 import binascii
+from typing import Any, Tuple, Union, Dict
+from typing_extensions import TypedDict
 
 import numpy as np
 from pyvisa.errors import VisaIOError
@@ -7,7 +9,7 @@ from functools import partial
 
 from qcodes import VisaInstrument, validators as vals
 from qcodes import InstrumentChannel, ChannelList
-from qcodes import ArrayParameter
+from qcodes.instrument.parameter import ArrayParameter, ParamRawDataType
 
 log = logging.getLogger(__name__)
 
@@ -16,8 +18,28 @@ class TraceNotReady(Exception):
     pass
 
 
+class OutputDict(TypedDict):
+    no_of_bytes: int
+    no_of_bits: int
+    encoding: str
+    binary_format: str
+    byte_order: str
+    no_of_points: int
+    waveform_ID: str
+    point_format: str
+    x_incr: float
+    x_zero: float
+    x_unit: str
+    y_multiplier: float
+    y_zero: float
+    y_offset: float
+    y_unit: str
+
+
 class ScopeArray(ArrayParameter):
-    def __init__(self, name, instrument, channel):
+    def __init__(self, name: str,
+                 instrument: "TPS2012Channel",
+                 channel: int):
         super().__init__(name=name,
                          shape=(2500,),
                          label='Voltage',
@@ -25,12 +47,13 @@ class ScopeArray(ArrayParameter):
                          setpoint_names=('Time', ),
                          setpoint_labels=('Time', ),
                          setpoint_units=('s',),
-                         docstring='holds an array from scope')
+                         docstring='holds an array from scope',
+                         instrument=instrument)
         self.channel = channel
-        self._instrument = instrument
 
-    def calc_set_points(self):
-        message = self._instrument.ask('WFMPre?')
+    def calc_set_points(self) -> Tuple[np.ndarray, int]:
+        assert isinstance(self.instrument, TPS2012Channel)
+        message = self.instrument.ask('WFMPre?')
         preamble = self._preambleparser(message)
         xstart = preamble['x_zero']
         xinc = preamble['x_incr']
@@ -38,25 +61,27 @@ class ScopeArray(ArrayParameter):
         xdata = np.linspace(xstart, no_of_points * xinc + xstart, no_of_points)
         return xdata, no_of_points
 
-    def prepare_curvedata(self):
+    def prepare_curvedata(self) -> None:
         """
         Prepare the scope for returning curve data
         """
         # To calculate set points, we must have the full preamble
         # For the instrument to return the full preamble, the channel
         # in question must be displayed
-
-        self._instrument.parameters['state'].set('ON')
-        self._instrument._parent.data_source('CH{}'.format(self.channel))
+        assert isinstance(self.instrument, TPS2012Channel)
+        assert isinstance(self.root_instrument, TPS2012)
+        self.instrument.parameters['state'].set('ON')
+        self.root_instrument.data_source(f'CH{self.channel}')
 
         xdata, no_of_points = self.calc_set_points()
         self.setpoints = (tuple(xdata), )
         self.shape = (no_of_points, )
 
-        self._instrument._parent.trace_ready = True
+        self.root_instrument.trace_ready = True
 
-    def get_raw(self):
-        if not self._instrument._parent.trace_ready:
+    def get_raw(self) -> ParamRawDataType:
+        assert isinstance(self.root_instrument, TPS2012)
+        if not self.root_instrument.trace_ready:
             raise TraceNotReady('Please run prepare_curvedata to prepare '
                                 'the scope for giving a trace.')
         message = self._curveasker(self.channel)
@@ -69,84 +94,90 @@ class ScopeArray(ArrayParameter):
         # self.shape = (npoints,)
         return ydata
 
-    def _curveasker(self, ch):
-        self._instrument.write('DATa:SOURce CH{}'.format(ch))
-        message = self._instrument.ask('WAVFrm?')
-        self._instrument.write('*WAI')
+    def _curveasker(self, ch: int) -> str:
+        assert isinstance(self.instrument, TPS2012Channel)
+        self.instrument.write(f'DATa:SOURce CH{ch}')
+        message = self.instrument.ask('WAVFrm?')
+        self.instrument.write('*WAI')
         return message
 
     @staticmethod
-    def _binaryparser(curve):
+    def _binaryparser(curve: str) -> np.ndarray:
         """
         Helper function for parsing the curve data
 
         Args:
-            curve (str): the return value of 'CURVe?' when
+            curve: the return value of 'CURVe?' when
               DATa:ENCdg is set to RPBinary.
               Note: The header and final newline character
               must be removed.
 
         Returns:
-            nparray: the curve in units where the digitisation range
-              is mapped to (-32768, 32767).
+            The curve in units where the digitisation range
+            is mapped to (-32768, 32767).
         """
         # TODO: Add support for data width = 1 mode?
         output = np.zeros(int(len(curve)/2))  # data width 2
         # output = np.zeros(int(len(curve)))  # data width 1
         for ii, _ in enumerate(output):
             # casting FTWs
-            temp = curve[2*ii:2*ii+1].encode('latin-1')  # data width 2
-            temp = binascii.b2a_hex(temp)
-            temp = (int(temp, 16)-128)*256  # data width 2 (1)
-            output[ii] = temp
+            temp_1 = curve[2*ii:2*ii+1].encode('latin-1')  # data width 2
+            temp_2 = binascii.b2a_hex(temp_1)
+            temp_3 = (int(temp_2, 16)-128)*256  # data width 2 (1)
+            output[ii] = temp_3
         return output
 
     @staticmethod
-    def _preambleparser(response):
+    def _preambleparser(response: str) -> OutputDict:
         """
         Parser function for the curve preamble
 
         Args:
-            response (str): The response of WFMPre?
+            response: The response of WFMPre?
 
         Returns:
-            dict: a dictionary containing the following keys:
+            A dictionary containing the following keys:
               no_of_bytes, no_of_bits, encoding, binary_format,
               byte_order, no_of_points, waveform_ID, point_format,
               x_incr, x_zero, x_unit, y_multiplier, y_zero, y_offset, y_unit
         """
-        response = response.split(';')
-        outdict = {}
-        outdict['no_of_bytes'] = int(response[0])
-        outdict['no_of_bits'] = int(response[1])
-        outdict['encoding'] = response[2]
-        outdict['binary_format'] = response[3]
-        outdict['byte_order'] = response[4]
-        outdict['no_of_points'] = int(response[5])
-        outdict['waveform_ID'] = response[6]
-        outdict['point_format'] = response[7]
-        outdict['x_incr'] = float(response[8])
-        # outdict['point_offset'] = response[9]  # Always zero
-        outdict['x_zero'] = float(response[10])
-        outdict['x_unit'] = response[11]
-        outdict['y_multiplier'] = float(response[12])
-        outdict['y_zero'] = float(response[13])
-        outdict['y_offset'] = float(response[14])
-        outdict['y_unit'] = response[15]
+        response_list = response.split(';')
 
+        outdict: OutputDict = {
+            'no_of_bytes': int(response_list[0]),
+            'no_of_bits': int(response_list[1]),
+            'encoding':  response_list[2],
+            'binary_format': response_list[3],
+            'byte_order': response_list[4],
+            'no_of_points': int(response_list[5]),
+            'waveform_ID':  response_list[6],
+            'point_format': response_list[7],
+            'x_incr': float(response_list[8]),
+            # outdict['point_offset'] = response_list[9]  # Always zero
+            'x_zero': float(response_list[10]),
+            'x_unit': response_list[11],
+            'y_multiplier': float(response_list[12]),
+            'y_zero': float(response_list[13]),
+            'y_offset': float(response_list[14]),
+            'y_unit': response_list[15]
+        }
         return outdict
 
-    def _curveparameterparser(self, waveform):
+    def _curveparameterparser(
+            self,
+            waveform: str
+            ) -> Tuple[np.ndarray, np.ndarray, int]:
         """
         The parser for the curve parameter. Note that WAVFrm? is equivalent
         to WFMPre?; CURVe?
 
         Args:
-            waveform (str): The return value of WAVFrm?
+            waveform: The return value of WAVFrm?
 
         Returns:
-            (np.array, np.array): Two numpy arrays with the time axis in units
-            of s and curve values in units of V; (time, voltages)
+            Two numpy arrays with the time axis in units
+            of s and curve values in units of V; (time, voltages) and
+            the number of points as an integer
         """
         fulldata = waveform.split(';')
         preamblestr = ';'.join(fulldata[:16])
@@ -176,20 +207,20 @@ class ScopeArray(ArrayParameter):
 
 class TPS2012Channel(InstrumentChannel):
 
-    def __init__(self, parent, name, channel):
+    def __init__(self, parent: "TPS2012", name: str, channel: int):
         super().__init__(parent, name)
 
         self.add_parameter('scale',
-                           label='Channel {} Scale'.format(channel),
+                           label=f'Channel {channel} Scale',
                            unit='V/div',
-                           get_cmd='CH{}:SCAle?'.format(channel),
+                           get_cmd=f'CH{channel}:SCAle?',
                            set_cmd='CH{}:SCAle {}'.format(channel, '{}'),
                            get_parser=float
                            )
         self.add_parameter('position',
-                           label='Channel {} Position'.format(channel),
+                           label=f'Channel {channel} Position',
                            unit='div',
-                           get_cmd='CH{}:POSition?'.format(channel),
+                           get_cmd=f'CH{channel}:POSition?',
                            set_cmd='CH{}:POSition {}'.format(channel, '{}'),
                            get_parser=float
                            )
@@ -198,14 +229,14 @@ class TPS2012Channel(InstrumentChannel):
                            parameter_class=ScopeArray,
                            )
         self.add_parameter('state',
-                           label='Channel {} display state'.format(channel),
+                           label=f'Channel {channel} display state',
                            set_cmd='SELect:CH{} {}'.format(channel, '{}'),
                            get_cmd=partial(self._get_state, channel),
                            val_mapping={'ON': 1, 'OFF': 0},
                            vals=vals.Enum('ON', 'OFF')
                            )
 
-    def _get_state(self, ch):
+    def _get_state(self, ch: int) -> int:
         """
         get_cmd for the chX_state parameter
         """
@@ -222,14 +253,15 @@ class TPS2012(VisaInstrument):
     This is the QCoDeS driver for the Tektronix 2012B oscilloscope.
     """
 
-    def __init__(self, name, address, timeout=20, **kwargs):
+    def __init__(self, name: str, address: str,
+                 timeout: float = 20, **kwargs: Any):
         """
         Initialises the TPS2012.
 
         Args:
-            name (str): Name of the instrument used by QCoDeS
-        address (string): Instrument address as used by VISA
-            timeout (float): visa timeout, in secs. long default (180)
+            name: Name of the instrument used by QCoDeS
+            address: Instrument address as used by VISA
+            timeout: visa timeout, in secs. long default (180)
               to accommodate large waveforms
         """
 
@@ -299,7 +331,7 @@ class TPS2012(VisaInstrument):
         # channel-specific parameters
         channels = ChannelList(self, "ScopeChannels", TPS2012Channel, snapshotable=False)
         for ch_num in range(1, 3):
-            ch_name = "ch{}".format(ch_num)
+            ch_name = f"ch{ch_num}"
             channel = TPS2012Channel(self, ch_name, ch_num)
             channels.append(channel)
             self.add_submodule(ch_name, channel)
@@ -318,24 +350,24 @@ class TPS2012(VisaInstrument):
         # significantly to transfer times. The maximal length
         # of an array in one transfer is 2500 points.
 
-    def _set_timescale(self, scale):
+    def _set_timescale(self, scale: float) -> None:
         """
         set_cmd for the horizontal_scale
         """
         self.trace_ready = False
-        self.write('HORizontal:SCAle {}'.format(scale))
+        self.write(f'HORizontal:SCAle {scale}')
 
     ##################################################
     # METHODS FOR THE USER                           #
     ##################################################
 
-    def clear_message_queue(self, verbose=False):
+    def clear_message_queue(self, verbose: bool = False) -> None:
         """
         Function to clear up (flush) the VISA message queue of the AWG
         instrument. Reads all messages in the the queue.
 
         Args:
-            verbose (Bool): If True, the read messages are printed.
+            verbose: If True, the read messages are printed.
                 Default: False.
         """
         original_timeout = self.visa_handle.timeout

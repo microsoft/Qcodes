@@ -16,7 +16,7 @@ except ImportError as e:
     raise ImportError(message)
 
 
-CmdArgs = namedtuple('cmd_and_args', 'cmd args')
+CmdArgs = namedtuple('CmdArgs', 'cmd args')
 
 # The length of a command header, aka a command keyword
 # Every command sent from the driver via the server must have a
@@ -38,8 +38,7 @@ class CommandHandler:
     _variants = {'double': win32com.client.VARIANT(VT_BYREF | VT_R8, 0.0),
                  'long': win32com.client.VARIANT(VT_BYREF | VT_I4, 0)}
 
-
-    def __init__(self, inst_type: str='dynacool') -> None:
+    def __init__(self, inst_type: str = 'dynacool') -> None:
         self.inst_type = inst_type
         pythoncom.CoInitialize()
         client_id = f'QD.MULTIVU.{inst_type.upper()}.1'
@@ -120,10 +119,10 @@ class CommandHandler:
             args = list(float(arg) for arg in cmd_str[5:].split(', '))
             is_query = False
 
-        return (CmdArgs(cmd=cmd, args=args), is_query)
+        return CmdArgs(cmd=cmd, args=args), is_query
 
     @staticmethod
-    def postparser(error_code: int, vals: List) -> str:
+    def postparser(error_code: int, vals: List[Any]) -> str:
         """
         Parse the output of the MultiVu API call into a string that the server
         can send back to the client

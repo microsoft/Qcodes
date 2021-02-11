@@ -61,15 +61,14 @@ def test_measurement_requires_timing_parameters_to_be_set(smu):
 def test_sampling_measurement(smu_sampling_measurement,
                               smu_output):
     smu_sampling_measurement, _, _, _ = smu_sampling_measurement
-    n_samples, _ = smu_output
-    data_to_return = smu_output[1]
+    n_samples, data_to_return = smu_output
     smu_sampling_measurement.timing_parameters(h_bias=0,
                                                interval=0.1,
                                                number=n_samples)
     actual_data = smu_sampling_measurement.sampling_measurement_trace.get()
 
     np.testing.assert_allclose(actual_data, data_to_return, atol=1e-3)
-    smu_sampling_measurement.root_instrument.ask.assert_called_once_with('XE')
+    smu_sampling_measurement.root_instrument.ask.assert_called_with('XE')
 
 
 def test_compliance_needs_data_from_sampling_measurement(smu):
@@ -88,7 +87,7 @@ def test_compliance(smu_sampling_measurement,
                                                number=n_samples)
     smu_sampling_measurement.sampling_measurement_trace.get()
     compliance_list_string = [status]*n_samples
-    compliance_list = [constants.ComplianceError[i[0]].value
+    compliance_list = [constants.MeasurementError[i[0]].value
                        for i in compliance_list_string]
     smu_compliance = smu_sampling_measurement.sampling_measurement_trace\
         .compliance()

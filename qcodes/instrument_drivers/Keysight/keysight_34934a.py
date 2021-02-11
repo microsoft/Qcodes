@@ -51,7 +51,7 @@ class Keysight34934A(KeysightSwitchMatrixSubModule):
             int(num) for num in re.findall(r'\d+', layout)
         ]
 
-    def write(self, cmd: str):
+    def write(self, cmd: str) -> None:
         """
         When the module is safety interlocked, users can not make any
         connections. There will be no effect when try to connect any channels.
@@ -74,10 +74,10 @@ class Keysight34934A(KeysightSwitchMatrixSubModule):
         if (row > self.row) or (column > self.column):
             raise ValueError('row/column value out of range')
 
-    def _get_relay_protection_mode(self):
+    def _get_relay_protection_mode(self) -> str:
         return self.ask(f'SYSTem:MODule:ROW:PROTection? {self.slot}')
 
-    def _set_relay_protection_mode(self, mode: str):
+    def _set_relay_protection_mode(self, mode: str) -> None:
         self.write(f'SYSTem:MODule:ROW:PROTection {self.slot}, {mode}')
 
     def to_channel_list(
@@ -117,7 +117,7 @@ class Keysight34934A(KeysightSwitchMatrixSubModule):
             rows: int,
             columns: int,
             wiring_config: Optional[str] = ''
-    ) -> Callable:
+    ) -> Callable[[int, int], str]:
         """
         to select the correct numbering function based on the matrix layout.
         On P168 of the user's guide for Agilent 34934A High Density Matrix
@@ -168,7 +168,7 @@ class Keysight34934A(KeysightSwitchMatrixSubModule):
         channels_per_row = 800 / rows
         offset += 100 - int(channels_per_row)
 
-        def numbering_function(row, col):
+        def numbering_function(row: int, col: int) -> str:
             return str(int(channels_per_row * row + col + offset))
 
         return numbering_function

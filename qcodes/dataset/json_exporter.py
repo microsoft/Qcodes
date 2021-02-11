@@ -1,7 +1,7 @@
-from typing import Any
+from typing import Any, Dict
 
 
-json_template_linear={"type": 'linear',
+json_template_linear = {"type": 'linear',
                       'x': {'data': [], 'name': "", 'full_name': '', 'is_setpoint':True,  'unit':''},
                       'y': {'data': [], 'name': "", 'full_name': '', 'is_setpoint':False, 'unit':''}}
 
@@ -12,7 +12,7 @@ json_template_heatmap = {"type": 'heatmap',
 
 
 def export_data_as_json_linear(
-        data: Any, length: int, state: dict, location: str) -> None:
+        data: Any, length: int, state: Dict[str, Any], location: str) -> None:
     import numpy as np
     import json
     if len(data) > 0:
@@ -27,7 +27,7 @@ def export_data_as_json_linear(
 
 
 def export_data_as_json_heatmap(
-        data: Any, length: int, state: dict, location: str) -> None:
+        data: Any, length: int, state: Dict[str, Any], location: str) -> None:
     import numpy as np
     import json
     if len(data) > 0:

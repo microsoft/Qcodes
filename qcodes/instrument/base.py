@@ -32,7 +32,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             instrument's JSON snapshot.
     """
     def __init__(self, name: str,
-                 metadata: Optional[Dict] = None) -> None:
+                 metadata: Optional[Dict[Any, Any]] = None) -> None:
         self._name = str(name)
         self._short_name = str(name)
 
@@ -97,7 +97,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 name.
         """
         if name in self.parameters:
-            raise KeyError('Duplicate parameter name {}'.format(name))
+            raise KeyError(f'Duplicate parameter name {name}')
         param = parameter_class(name=name, instrument=self, **kwargs)
         self.parameters[name] = param
 
@@ -125,7 +125,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 name.
         """
         if name in self.functions:
-            raise KeyError('Duplicate function name {}'.format(name))
+            raise KeyError(f'Duplicate function name {name}')
         func = Function(name=name, instrument=self, **kwargs)
         self.functions[name] = func
 
@@ -158,14 +158,14 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 not an instance of an ``Metadatable`` object.
         """
         if name in self.submodules:
-            raise KeyError('Duplicate submodule name {}'.format(name))
+            raise KeyError(f'Duplicate submodule name {name}')
         if not isinstance(submodule, Metadatable):
             raise TypeError('Submodules must be metadatable.')
         self.submodules[name] = submodule
 
-    def snapshot_base(self, update: bool = False,
+    def snapshot_base(self, update: Optional[bool] = False,
                       params_to_skip_update: Optional[Sequence[str]] = None
-                      ) -> Dict:
+                      ) -> Dict[Any, Any]:
         """
         State of the instrument as a JSON-compatible dict (everything that
         the custom JSON encoder class
@@ -174,7 +174,9 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
         Args:
             update: If ``True``, update the state by querying the
-                instrument. If ``False``, just use the latest values in memory.
+                instrument. If None update the state if known to be invalid.
+                If ``False``, just use the latest values in memory and never
+                update state.
             params_to_skip_update: List of parameter names that will be skipped
                 in update even if update is True. This is useful if you have
                 parameters that are slow to update but can be updated in a
@@ -189,7 +191,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         if params_to_skip_update is None:
             params_to_skip_update = []
 
-        snap = {
+        snap: Dict[str, Any] = {
             "functions": {name: func.snapshot(update=update)
                           for name, func in self.functions.items()},
             "submodules": {name: subm.snapshot(update=update)
@@ -202,10 +204,9 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             if param.snapshot_exclude:
                 continue
             if params_to_skip_update and name in params_to_skip_update:
-                update_par = False
+                update_par: Optional[bool] = False
             else:
                 update_par = update
-
             try:
                 snap['parameters'][name] = param.snapshot(update=update_par)
             except:
@@ -264,12 +265,12 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 # this may be a multi parameter
                 unit = snapshot['parameters'][par].get('units', None)
             if isinstance(val, floating_types):
-                msg += '\t{:.5g} '.format(val)  # type: ignore[str-format]
+                msg += f'\t{val:.5g} '
                 # numpy float and int types format like builtins
             else:
-                msg += '\t{} '.format(val)
+                msg += f'\t{val} '
             if unit != '':  # corresponds to no unit
-                msg += '({})'.format(unit)
+                msg += f'({unit})'
             # Truncate the message if it is longer than max length
             if len(msg) > max_chars and not max_chars == -1:
                 msg = msg[0:max_chars-3] + '...'
@@ -321,7 +322,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
     #
     delegate_attr_dicts = ['parameters', 'functions', 'submodules']
 
-    def __getitem__(self, key: str) -> Union[Callable, Parameter]:
+    def __getitem__(self, key: str) -> Union[Callable[..., Any], Parameter]:
         """Delegate instrument['name'] to parameter or function 'name'."""
         try:
             return self.parameters[key]
@@ -366,11 +367,8 @@ class InstrumentBase(Metadatable, DelegateAttributes):
     def __getstate__(self) -> None:
         """Prevent pickling instruments, and give a nice error message."""
         raise RuntimeError(
-            'Pickling {}. qcodes Instruments should not.'.format(self.name) +
-            ' be pickled. Likely this means you '
-            'were trying to use a local instrument (defined with '
-            'server_name=None) in a background Loop. Local instruments can '
-            'only be used in Loops with background=False.')
+            f'Error when pickling instrument {self.name}. '
+            f'QCoDeS instruments can not be pickled.')
 
     def validate_status(self, verbose: bool = False) -> None:
         """ Validate the values of all gettable parameters
@@ -384,10 +382,10 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
         """
         for k, p in self.parameters.items():
-            if hasattr(p, 'get') and hasattr(p, 'set'):
+            if p.gettable and p.settable:
                 value = p.get()
                 if verbose:
-                    print('validate_status: param %s: %s' % (k, value))
+                    print(f'validate_status: param {k}: {value}')
                 p.validate(value)
 
 
@@ -415,12 +413,12 @@ class Instrument(InstrumentBase, AbstractInstrument):
 
     shared_kwargs = ()
 
-    _all_instruments: Dict[str, weakref.ref] = {}
+    _all_instruments: "Dict[str, weakref.ref[Instrument]]" = {}
     _type = None
-    _instances: List[weakref.ref] = []
+    _instances: "List[weakref.ref[Instrument]]" = []
 
     def __init__(self, name: str,
-                 metadata: Optional[Dict] = None) -> None:
+                 metadata: Optional[Dict[Any, Any]] = None) -> None:
         self._t0 = time.time()
 
         super().__init__(name, metadata)
@@ -473,7 +471,7 @@ class Instrument(InstrumentBase, AbstractInstrument):
         return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
 
     def connect_message(self, idn_param: str = 'IDN',
-                        begin_time: float = None) -> None:
+                        begin_time: Optional[float] = None) -> None:
         """
         Print a standard message on initial connection to an instrument.
 
@@ -503,11 +501,8 @@ class Instrument(InstrumentBase, AbstractInstrument):
     def __del__(self) -> None:
         """Close the instrument and remove its instance record."""
         try:
-            wr = weakref.ref(self)
-            if wr in getattr(self, '_instances', []):
-                self._instances.remove(wr)
             self.close()
-        except:
+        except BaseException:
             pass
 
     def close(self) -> None:
@@ -564,7 +559,7 @@ class Instrument(InstrumentBase, AbstractInstrument):
         # making sure its name is unique
         existing_wr = cls._all_instruments.get(name)
         if existing_wr and existing_wr():
-            raise KeyError('Another instrument has the name: {}'.format(name))
+            raise KeyError(f'Another instrument has the name: {name}')
 
         cls._all_instruments[name] = wr
 
@@ -634,7 +629,7 @@ class Instrument(InstrumentBase, AbstractInstrument):
 
         if ins is None:
             del cls._all_instruments[name]
-            raise KeyError('Instrument {} has been removed'.format(name))
+            raise KeyError(f'Instrument {name} has been removed')
         if instrument_class is not None:
             if not isinstance(ins, instrument_class):
                 raise TypeError(

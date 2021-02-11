@@ -1,5 +1,7 @@
 import re
 import json
+from datetime import datetime, timedelta
+import random
 from typing import List
 
 import pytest
@@ -16,15 +18,24 @@ def generate_some_links(N: int) -> List[Link]:
     """
     Generate N links with the same head
     """
+    def _timestamp() -> int:
+        """
+        return a random timestamp that is approximately
+        one day in the past.
+        """
+        timestamp = datetime.now() - timedelta(days=1,
+                                               seconds=random.randint(1, 1000))
+        return int(round(timestamp.timestamp()*1000))
+
 
     known_types = ("fit", "analysis", "step")
     known_descs = ("A second-order fit",
                    "Manual analysis (see notebook)",
                    "Step 3 in the characterisation")
 
-    head_guid = generate_guid()
+    head_guid = generate_guid(_timestamp())
     head_guids = [head_guid]*N
-    tail_guids = [generate_guid() for _ in range(N)]
+    tail_guids = [generate_guid(_timestamp()) for _ in range(N)]
     edge_types = [known_types[i % len(known_types)] for i in range(N)]
     descriptions = [known_descs[i % len(known_descs)] for i in range(N)]
 

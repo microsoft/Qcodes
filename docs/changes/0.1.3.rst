@@ -14,11 +14,11 @@ New & Improved
 
 - Drivers:
 
-    - add yokogawa gs200 (#393) 
+    - add yokogawa gs200 (#393)
     - add  SG384 (#318)
-    - new awg5014 driver 
+    - new awg5014 driver
     - add  Spectrum M4i.44xx-x8 driver
- 
+
 - Automatic build / test system
 
 Fixed
@@ -27,4 +27,4 @@ Fixed
 - Cosmetic issues
 
 
-- 
+-

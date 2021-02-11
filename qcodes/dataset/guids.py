@@ -1,10 +1,12 @@
 from typing import Union, Dict, Sequence, List, Optional
+
 import time
 import re
 
-import numpy as np
 
-from qcodes.configuration import Config
+import numpy as np
+import qcodes as qc
+
 
 _guid_pattern = re.compile(r'^[\da-f]{8}-([\da-f]{4}-){3}[\da-f]{12}$')
 
@@ -25,7 +27,7 @@ def generate_guid(timeint: Union[int, None]=None,
         timeint: An integer of miliseconds since unix epoch time
         sampleint: A code for the sample
     """
-    cfg = Config()
+    cfg = qc.config
 
     try:
         guid_comp = cfg['GUID_components']
@@ -81,7 +83,7 @@ def set_guid_location_code() -> None:
     """
     Interactive function to set the location code.
     """
-    cfg = Config()
+    cfg = qc.config
     old_loc = cfg['GUID_components']['location']
     print(f'Updating GUID location code. Current location code is: {old_loc}')
     if old_loc != 0:
@@ -106,7 +108,7 @@ def set_guid_work_station_code() -> None:
     """
     Interactive function to set the work station code
     """
-    cfg = Config()
+    cfg = qc.config
     old_ws = cfg['GUID_components']['work_station']
     print('Updating GUID work station code. '
           f'Current work station code is: {old_ws}')

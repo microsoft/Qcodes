@@ -88,7 +88,7 @@ class DiskIO:
             context manager yielding the open file
         """
         if mode not in ALLOWED_OPEN_MODES:
-            raise ValueError('mode {} not allowed in IO managers'.format(mode))
+            raise ValueError(f'mode {mode} not allowed in IO managers')
 
         filepath = self.to_path(filename)
 

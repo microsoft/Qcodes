@@ -29,7 +29,7 @@ class Metadatable:
         self.metadata = {}
         self.load_metadata(metadata or {})
 
-    def load_metadata(self, metadata: dict) -> None:
+    def load_metadata(self, metadata: Dict[Any, Any]) -> None:
         """
         Load metadata into this classes metadata dictionary.
 
@@ -38,7 +38,7 @@ class Metadatable:
         """
         deep_update(self.metadata, metadata)
 
-    def snapshot(self, update: bool = False) -> Dict:
+    def snapshot(self, update: Optional[bool] = False) -> Dict[Any, Any]:
         """
         Decorate a snapshot dictionary with metadata.
         DO NOT override this method if you want metadata in the snapshot
@@ -59,8 +59,9 @@ class Metadatable:
         return snap
 
     def snapshot_base(
-            self, update: bool = False,
-            params_to_skip_update: Optional[Sequence[str]] = None) -> Dict:
+            self, update: Optional[bool] = False,
+            params_to_skip_update: Optional[Sequence[str]] = None
+    ) -> Dict[Any, Any]:
         """
         Override this with the primary information for a subclass.
         """
@@ -82,14 +83,17 @@ def extract_param_values(snapshot: Snapshot) -> Dict[ParameterKey, Any]:
     instrument and parameter names onto parameter values.
     """
     parameters = {}
-    for param_name, param in snapshot['station']['parameters'].items():
+    snapshot = snapshot.get('station', snapshot)
+    for param_name, param in snapshot['parameters'].items():
         parameters[param_name] = param['value']
-    for instrument_name, instrument in snapshot['station']['instruments'].items():
-        for param_name, param in instrument['parameters'].items():
-            if 'value' in param:
-                parameters[instrument_name, param_name] = param['value']
+    if 'instruments' in snapshot:
+        for instrument_name, instrument in snapshot['instruments'].items():
+            for param_name, param in instrument['parameters'].items():
+                if 'value' in param:
+                    parameters[instrument_name, param_name] = param['value']
 
     return parameters
+
 
 
 def diff_param_values(left_snapshot: Snapshot,

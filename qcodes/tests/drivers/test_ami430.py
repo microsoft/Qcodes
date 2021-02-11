@@ -1,24 +1,23 @@
 import io
-import numpy as np
+import logging
 import re
 import time
-import pytest
-from hypothesis import given, settings
-from hypothesis.strategies import floats
-from hypothesis.strategies import tuples
-import logging
 import warnings
 from typing import List
 
-import qcodes.instrument.sims as sims
-from qcodes.instrument_drivers.american_magnetics.AMI430 import AMI430_3D, \
-    AMI430Warning
-from qcodes.instrument.ip_to_visa import AMI430_VISA
-from qcodes.math.field_vector import FieldVector
-from qcodes.utils.types import numpy_concrete_ints, numpy_concrete_floats, \
-    numpy_non_concrete_ints_instantiable, \
-    numpy_non_concrete_floats_instantiable
+import numpy as np
+import pytest
+from hypothesis import HealthCheck, given, settings
+from hypothesis.strategies import floats, tuples
 
+import qcodes.instrument.sims as sims
+from qcodes.instrument.ip_to_visa import AMI430_VISA
+from qcodes.instrument_drivers.american_magnetics.AMI430 import (AMI430_3D,
+                                                                 AMI430Warning)
+from qcodes.math_utils.field_vector import FieldVector
+from qcodes.utils.types import (numpy_concrete_floats, numpy_concrete_ints,
+                                numpy_non_concrete_floats_instantiable,
+                                numpy_non_concrete_ints_instantiable)
 
 _time_resolution = time.get_clock_info('time').resolution
 
@@ -68,12 +67,10 @@ def current_driver(magnet_axes_instances):
     driver.close()
 
 
-@pytest.fixture(scope='function',
-                params=(True, False))
-def ami430(request):
+@pytest.fixture(scope='function')
+def ami430():
     mag = AMI430_VISA('ami430', address='GPIB::1::INSTR', visalib=visalib,
-                      terminator='\n', port=1,
-                      has_current_rating=request.param)
+                      terminator='\n', port=1)
     yield mag
     mag.close()
 
@@ -111,7 +108,7 @@ random_coordinates = {
 
 
 @given(set_target=random_coordinates["cartesian"])
-@settings(max_examples=10)
+@settings(max_examples=10, suppress_health_check=(HealthCheck.function_scoped_fixture,))
 def test_cartesian_sanity(current_driver, set_target):
     """
     A sanity check to see if the driver remember vectors in any random
@@ -130,7 +127,7 @@ def test_cartesian_sanity(current_driver, set_target):
 
 
 @given(set_target=random_coordinates["spherical"])
-@settings(max_examples=10)
+@settings(max_examples=10, suppress_health_check=(HealthCheck.function_scoped_fixture,))
 def test_spherical_sanity(current_driver, set_target):
     """
     A sanity check to see if the driver remember vectors in any random
@@ -149,7 +146,7 @@ def test_spherical_sanity(current_driver, set_target):
 
 
 @given(set_target=random_coordinates["cylindrical"])
-@settings(max_examples=10)
+@settings(max_examples=10, suppress_health_check=(HealthCheck.function_scoped_fixture,))
 def test_cylindrical_sanity(current_driver, set_target):
     """
     A sanity check to see if the driver remember vectors in any random
@@ -168,7 +165,7 @@ def test_cylindrical_sanity(current_driver, set_target):
 
 
 @given(set_target=random_coordinates["cartesian"])
-@settings(max_examples=10)
+@settings(max_examples=10, suppress_health_check=(HealthCheck.function_scoped_fixture,))
 def test_cartesian_setpoints(current_driver, set_target):
     """
     Check that the individual x, y, z instruments are getting the set
@@ -189,7 +186,7 @@ def test_cartesian_setpoints(current_driver, set_target):
 
 
 @given(set_target=random_coordinates["spherical"])
-@settings(max_examples=10)
+@settings(max_examples=10, suppress_health_check=(HealthCheck.function_scoped_fixture,))
 def test_spherical_setpoints(current_driver, set_target):
     """
     Check that the individual x, y, z instruments are getting the set
@@ -211,7 +208,8 @@ def test_spherical_setpoints(current_driver, set_target):
 
 
 @given(set_target=random_coordinates["cylindrical"])
-@settings(max_examples=10, deadline=500)
+@settings(max_examples=10, deadline=500,
+          suppress_health_check=(HealthCheck.function_scoped_fixture,))
 def test_cylindrical_setpoints(current_driver, set_target):
     """
     Check that the individual x, y, z instruments are getting the set
@@ -233,7 +231,8 @@ def test_cylindrical_setpoints(current_driver, set_target):
 
 
 @given(set_target=random_coordinates["cartesian"])
-@settings(max_examples=10, deadline=500)
+@settings(max_examples=10, deadline=500,
+          suppress_health_check=(HealthCheck.function_scoped_fixture,))
 def test_measured(current_driver, set_target):
     """
     Simply call the measurement methods and verify that no exceptions
@@ -410,7 +409,7 @@ def test_ramp_rate_exception(current_driver):
     with pytest.raises(Exception) as excinfo:
         ix.ramp_rate(target_ramp_rate)
 
-        errmsg = "must be between 0 and {} inclusive".format(max_ramp_rate)
+        errmsg = f"must be between 0 and {max_ramp_rate} inclusive"
 
         assert errmsg in excinfo.value.args[0]
 

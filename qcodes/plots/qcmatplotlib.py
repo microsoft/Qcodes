@@ -195,7 +195,7 @@ class MatPlot(BasePlot):
 
             #  find ( more hope to) unit and label from
             # the data array inside the config
-            getter = getattr(ax, "get_{}label".format(axletter))
+            getter = getattr(ax, f"get_{axletter}label")
             if axletter in config and not getter():
                 # now if we did not have any kwarg for label or unit
                 # fallback to the data_array
@@ -210,8 +210,8 @@ class MatPlot(BasePlot):
                 # labels/names as these will in general not be consistent on
                 # at least one axis
                 return
-            axsetter = getattr(ax, "set_{}label".format(axletter))
-            axsetter("{} ({})".format(label, unit))
+            axsetter = getattr(ax, f"set_{axletter}label")
+            axsetter(f"{label} ({unit})")
 
     @staticmethod
     def default_figsize(subplots):
@@ -225,7 +225,7 @@ class MatPlot(BasePlot):
               for given subplot shape
         """
         if not isinstance(subplots, tuple):
-            raise TypeError('Subplots {} must be a tuple'.format(subplots))
+            raise TypeError(f'Subplots {subplots} must be a tuple')
         return (3 + 3 * subplots[1], 1 + 3 * subplots[0])
 
     def update_plot(self):
@@ -414,7 +414,7 @@ class MatPlot(BasePlot):
             if zlabel is None:
                 zlabel, _ = self.get_label(z)
 
-            label = "{} ({})".format(zlabel, zunit)
+            label = f"{zlabel} ({zunit})"
             ax.qcodes_colorbar.set_label(label)
 
         # Scale colors if z has elements
@@ -433,7 +433,7 @@ class MatPlot(BasePlot):
         Args:
             filename (Optional[str]): Location of the file
         """
-        default = "{}.png".format(self.get_default_title())
+        default = f"{self.get_default_title()}.png"
         filename = filename or default
         self.fig.savefig(filename)
 
@@ -452,7 +452,7 @@ class MatPlot(BasePlot):
         to avoid prefixes on combined or non standard units
         """
         def scale_formatter(i, pos, scale):
-            return "{0:g}".format(i * scale)
+            return "{:g}".format(i * scale)
 
         for i, subplot in enumerate(self.subplots):
             traces = [trace for trace in self.traces if trace['config'].get('subplot', None) == i+1]
@@ -490,12 +490,12 @@ class MatPlot(BasePlot):
 
                         tx = ticker.FuncFormatter(
                             partial(scale_formatter, scale=scale))
-                        new_label = "{} ({})".format(label, new_unit)
+                        new_label = f"{label} ({new_unit})"
                         if axis in ('x', 'y'):
                             getattr(subplot,
-                                    "{}axis".format(axis)).set_major_formatter(
+                                    f"{axis}axis").set_major_formatter(
                                 tx)
-                            getattr(subplot, "set_{}label".format(axis))(
+                            getattr(subplot, f"set_{axis}label")(
                                 new_label)
                         else:
                             subplot.qcodes_colorbar.formatter = tx

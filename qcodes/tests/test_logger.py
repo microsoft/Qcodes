@@ -1,16 +1,26 @@
 """
 Tests for `qcodes.utils.logger`.
 """
-import pytest
-import os
 import logging
+import os
 from copy import copy
+
+import pytest
+from packaging import version
+
+import qcodes as qc
 import qcodes.logger as logger
 from qcodes.logger.log_analysis import capture_dataframe
-import qcodes as qc
-
 
 TEST_LOG_MESSAGE = 'test log message'
+
+pytest_version = version.parse(pytest.__version__)
+assert isinstance(pytest_version, version.Version)
+
+if pytest_version.major >= 6:
+    NUM_PYTEST_LOGGERS = 2
+else:
+    NUM_PYTEST_LOGGERS = 1
 
 
 @pytest.fixture
@@ -115,22 +125,26 @@ def test_start_logger():
 
     assert logging.getLogger().level == logger.get_level_code('DEBUG')
 
+
 @pytest.mark.usefixtures("remove_root_handlers")
 def test_start_logger_twice():
     logger.start_logger()
     logger.start_logger()
     handlers = logging.getLogger().handlers
-    # there is always one logger registered from pytest
+    # there is one or two loggers registered from pytest
+    # depending on the version
     # and the telemetry logger is always off in the tests
-    assert len(handlers) == 2+1
+    assert len(handlers) == 2+NUM_PYTEST_LOGGERS
+
 
 @pytest.mark.usefixtures("remove_root_handlers")
 def test_set_level_without_starting_raises():
     with pytest.raises(RuntimeError):
         with logger.console_level('DEBUG'):
             pass
-    # there is always one logger registered from pytest
-    assert len(logging.getLogger().handlers) == 1
+    # there is one or two loggers registered from pytest
+    # depending on the version
+    assert len(logging.getLogger().handlers) == NUM_PYTEST_LOGGERS
 
 
 @pytest.mark.usefixtures("remove_root_handlers")
@@ -145,6 +159,7 @@ def test_handler_level():
             print(logs.string_handler)
             logging.debug(TEST_LOG_MESSAGE)
     assert logs.value.strip() == TEST_LOG_MESSAGE
+
 
 @pytest.mark.usefixtures("remove_root_handlers")
 def test_filter_instrument(AMI430_3D):
@@ -267,7 +282,7 @@ def test_instrument_connect_message():
     code, but it is more conveniently written here
     """
 
-    with open(logger.get_log_file_name(), 'r') as f:
+    with open(logger.get_log_file_name()) as f:
         lines = f.readlines()
 
     con_mssg_log_line = lines[-1]
@@ -290,7 +305,7 @@ def test_installation_info_logging():
     """
     logger.start_logger()
 
-    with open(logger.get_log_file_name(), 'r') as f:
+    with open(logger.get_log_file_name()) as f:
         lines = f.readlines()
 
     assert 'QCoDeS version:' in lines[-3]

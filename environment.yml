@@ -2,38 +2,37 @@ name: qcodes
 channels:
  - defaults
 dependencies:
- - python=3.7.7
+ - python=3.7.9
  - pip
- - numpy=1.17
- - matplotlib=3.1
- - pyqtgraph=0.10.0
- - conda-forge::pyvisa=1.10.1
+ - numpy=1.19.2
+ - matplotlib=3.3.2
+ - conda-forge::pyqtgraph=0.11.0
  - h5py=2.10.0
- - pyqt=5.9
+ - pyqt=5.9.2
  - QtPy
  - jsonschema
  - jupyter=1.0.0
- - hypothesis<5.6.0 # large number of warnings due to change in 5.6.0 https://hypothesis.readthedocs.io/en/latest/changes.html#v5-6-0
+ - hypothesis=6.0.0
  - pytest
  - pytest-runner
  - spyder
  - pyzmq
- - ruamel_yaml
  - wrapt
- - pyyaml
  - lxml
  - scipy
  - gitpython
  - pandas
- - testpath>=0.4.2 # 0.4.1 is bad due to https://github.com/conda-forge/testpath-feedstock/issues/7
+ - xarray
+ - testpath>=0.4.4
  - tqdm
  - tabulate
- - applicationinsights
  - pandoc
  - contextlib2 # for broadbean
  - conda-forge::websockets=8.1
  - conda-forge::schema
  - conda-forge::requirements-parser
  - pip:
+    - pyvisa==1.11.1
     - broadbean>=0.9.1
     - ruamel.yaml!=0.16.6
+    - opencensus-ext-azure

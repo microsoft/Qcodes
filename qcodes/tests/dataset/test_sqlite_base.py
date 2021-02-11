@@ -2,8 +2,6 @@
 # test the sqlite module, we mainly test exceptions and small helper
 # functions here
 from sqlite3 import OperationalError
-import tempfile
-import os
 from contextlib import contextmanager
 import time
 
@@ -22,17 +20,10 @@ from qcodes.dataset.sqlite.connection import path_to_dbfile
 from qcodes.dataset.sqlite.database import get_DB_location
 from qcodes.dataset.guids import generate_guid
 from qcodes.dataset.data_set import DataSet
-# pylint: disable=unused-import
-from qcodes.tests.dataset.temporary_databases import \
-    empty_temp_db, experiment, dataset
-from qcodes.tests.dataset.dataset_fixtures import scalar_dataset, \
-    standalone_parameters_dataset
 from qcodes.tests.common import error_caused_by
-# pylint: enable=unused-import
 
 from .helper_functions import verify_data_dict
 
-from qcodes.dataset import sqlite_base
 # mut: module under test
 from qcodes.dataset.sqlite import queries as mut_queries
 from qcodes.dataset.sqlite import query_helpers as mut_help
@@ -54,15 +45,15 @@ def shadow_conn(path_to_db: str):
     conn.close()
 
 
-def test_path_to_dbfile():
-    with tempfile.TemporaryDirectory() as tempdir:
-        tempdb = os.path.join(tempdir, 'database.db')
-        conn = mut_db.connect(tempdb)
-        try:
-            assert path_to_dbfile(conn) == tempdb
-            assert conn.path_to_dbfile == tempdb
-        finally:
-            conn.close()
+def test_path_to_dbfile(tmp_path):
+
+    tempdb = str(tmp_path / 'database.db')
+    conn = mut_db.connect(tempdb)
+    try:
+        assert path_to_dbfile(conn) == tempdb
+        assert conn.path_to_dbfile == tempdb
+    finally:
+        conn.close()
 
 
 def test_one_raises(experiment):
@@ -203,7 +194,7 @@ def test_update_runs_description(dataset):
             mut_queries.update_run_description(
                 dataset.conn, dataset.run_id, idesc)
 
-    desc = serial.to_json_for_storage(RunDescriber((InterDependencies_())))
+    desc = serial.to_json_for_storage(RunDescriber(InterDependencies_()))
     mut_queries.update_run_description(dataset.conn, dataset.run_id, desc)
 
 
@@ -221,11 +212,15 @@ def test_runs_table_columns(empty_temp_db):
     assert colnames == []
 
 
-@pytest.mark.filterwarnings("ignore:get_data")
 def test_get_data_no_columns(scalar_dataset):
     ds = scalar_dataset
-    ref = mut_queries.get_data(ds.conn, ds.table_name, [])
+    with pytest.warns(None) as record:
+        ref = mut_queries.get_data(ds.conn, ds.table_name, [])
+
     assert ref == [[]]
+    assert len(record) == 2
+    assert str(record[0].message).startswith("The function <get_data>")
+    assert str(record[1].message).startswith("get_data")
 
 
 def test_get_parameter_data(scalar_dataset):
@@ -376,31 +371,3 @@ def test_set_run_timestamp(experiment):
                                 "been set"))
 
     ds.conn.close()
-
-
-def test_sqlite_base_is_tested_in_this_file():
-    assert sqlite_base.set_run_timestamp is mut_queries.set_run_timestamp
-    assert sqlite_base.transaction is mut_conn.transaction
-    assert sqlite_base.connect is mut_db.connect
-    assert sqlite_base.atomic is mut_conn.atomic
-    assert sqlite_base.atomic_transaction is mut_conn.atomic_transaction
-    assert sqlite_base.one is mut_queries.one
-    assert sqlite_base.create_run is mut_queries.create_run
-    assert sqlite_base.is_run_id_in_database \
-           is mut_queries.is_run_id_in_database
-    assert sqlite_base.insert_many_values is mut_help.insert_many_values
-    assert sqlite_base.get_metadata is mut_queries.get_metadata
-    assert sqlite_base.new_experiment is mut_queries.new_experiment
-    assert sqlite_base.get_parameter_data is mut_queries.get_parameter_data
-    assert sqlite_base.get_non_dependencies is mut_queries.get_non_dependencies
-    assert sqlite_base.get_data is mut_queries.get_data
-    assert sqlite_base.RUNS_TABLE_COLUMNS is mut_queries.RUNS_TABLE_COLUMNS
-    assert sqlite_base.update_run_description \
-           is mut_queries.update_run_description
-    assert sqlite_base.get_last_experiment
-    assert sqlite_base.get_last_run
-    assert sqlite_base.run_exists is mut_queries.run_exists
-    assert sqlite_base.get_dependents is mut_queries.get_dependents
-    assert sqlite_base._validate_table_name is mut_queries._validate_table_name
-    assert sqlite_base.get_layout_id is mut_queries.get_layout_id
-    assert sqlite_base.is_column_in_table is mut_help.is_column_in_table

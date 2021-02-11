@@ -1,10 +1,16 @@
-import socket
-import select
-from msvcrt import kbhit, getch  # type: ignore[attr-defined]
 import logging
+import select
+import socket
+import sys
+if sys.platform == "win32":
+    from msvcrt import kbhit, getch
+else:
+    raise RuntimeError("Dynacool server only supported on Windows")
 
 from qcodes.instrument_drivers.QuantumDesign.\
     DynaCoolPPMS.private.commandhandler import CommandHandler
+
+assert sys.platform == 'win32'
 
 command_handler = CommandHandler()
 
@@ -27,7 +33,7 @@ if __name__ == '__main__':
     # Add server socket to the dictionary first.
     socket_dict = {server_socket: (ADDRESS, PORT)}
 
-    print('Server started on port {0}.'.format(PORT))
+    print(f'Server started on port {PORT}.')
     print('Press ESC to exit.')
 
     keep_going = True
@@ -49,8 +55,8 @@ if __name__ == '__main__':
             if sock == server_socket:
                 sock_fd, address = server_socket.accept()
                 socket_dict[sock_fd] = address
-                print('Client ({0}, {1}) connected.'.format(*address))
-                log.info('Client ({0}, {1}) connected.'.format(*address))
+                print('Client ({}, {}) connected.'.format(*address))
+                log.info('Client ({}, {}) connected.'.format(*address))
 
             # Incoming message from existing connection
             else:
@@ -75,8 +81,8 @@ if __name__ == '__main__':
                     # send an error code, since the driver expects that for all
                     # commands
                     sock.send(b'0')
-                    print('Client ({0}, {1}) disconnected.'.format(*socket_dict[sock]))
-                    log.info('Client ({0}, {1}) disconnected.'.format(*socket_dict[sock]))
+                    print('Client ({}, {}) disconnected.'.format(*socket_dict[sock]))
+                    log.info('Client ({}, {}) disconnected.'.format(*socket_dict[sock]))
                     socket_dict.pop(sock, None)
                     sock.close()
                 else:

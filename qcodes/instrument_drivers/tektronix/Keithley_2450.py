@@ -1,9 +1,192 @@
-import numpy as np
-from typing import cast, Dict, Union
+from types import TracebackType
+from typing import Any, Dict, List, Optional, Type, Union, cast, Set
 
-from qcodes import VisaInstrument, InstrumentChannel, ParameterWithSetpoints
-from qcodes.utils.validators import Enum, Numbers, Arrays, Ints
+import numpy as np
+from qcodes import InstrumentChannel, ParameterWithSetpoints, VisaInstrument
+from qcodes.instrument.parameter import invert_val_mapping
 from qcodes.utils.helpers import create_on_off_val_mapping
+from qcodes.utils.validators import Arrays, Enum, Ints, Lists, Numbers
+
+
+class ParameterWithSetpointsCustomized(ParameterWithSetpoints):
+    """
+    While the parent class ParameterWithSetpoints only support numerical data
+    (in the format of "Arrays"), the newly added "_user_selected_data" will
+    include extra fields which may contain string type, in addition to the
+    numerical values, which can be obtained by the get_cmd of the parent class.
+
+    This customized class is used for the "sweep" parameter.
+    """
+    _user_selected_data: Optional[List[Any]] = None
+
+    def get_selected(self) -> Optional[List[Any]]:
+        return self._user_selected_data
+
+
+class Buffer2450(InstrumentChannel):
+    """
+    Treat the reading buffer as a submodule, similar to Sense and Source
+    """
+    default_buffer = {"defbuffer1", "defbuffer2"}
+
+    buffer_elements = {
+        "date": "DATE",
+        "measurement_formatted": "FORMatted",
+        "fractional_seconds": "FRACtional",
+        "measurement": "READing",
+        "relative_time": "RELative",
+        "seconds": "SEConds",
+        "source_value": "SOURce",
+        "source_value_formatted": "SOURFORMatted",
+        "source_value_status": "SOURSTATus",
+        "source_value_unit": "SOURUNIT",
+        "measurement_status": "STATus",
+        "time": "TIME",
+        "timestamp": "TSTamp",
+        "measurement_unit": "UNIT"
+    }
+
+    inverted_buffer_elements = invert_val_mapping(buffer_elements)
+
+    def __init__(
+            self,
+            parent: 'Keithley2450',
+            name: str,
+            size: Optional[int] = None,
+            style: str = ''
+    ) -> None:
+        super().__init__(parent, name)
+        self.buffer_name = name
+        self._size = size
+        self.style = style
+
+        if self.buffer_name not in self.default_buffer:
+            # when making a new buffer, the "size" parameter is required.
+            if size is None:
+                raise TypeError(
+                    "buffer() missing 1 required positional argument: 'size'"
+                )
+            self.write(
+                f":TRACe:MAKE '{self.buffer_name}', {self._size}, {self.style}"
+            )
+        else:
+            # when referring to default buffer, "size" parameter is not needed.
+            if size is not None:
+                self.log.warning(
+                    f"Please use method 'size()' to resize default buffer "
+                    f"{self.buffer_name} size to {self._size}."
+                )
+
+        self.add_parameter(
+            "size",
+            get_cmd=f":TRACe:POINts? '{self.buffer_name}'",
+            set_cmd=f":TRACe:POINts {{}}, '{self.buffer_name}'",
+            get_parser=int,
+            docstring="The number of readings a buffer can store."
+        )
+
+        self.add_parameter(
+            "number_of_readings",
+            get_cmd=f":TRACe:ACTual? '{self.buffer_name}'",
+            get_parser=int,
+            docstring="To get the number of readings in the reading buffer."
+        )
+
+        self.add_parameter(
+            "elements",
+            get_cmd=None,
+            get_parser=self.from_scpi_to_name,
+            set_cmd=None,
+            set_parser=self.from_name_to_scpi,
+            vals=Lists(Enum(*list(self.buffer_elements.keys()))),
+            docstring="List of buffer elements to read."
+        )
+
+    def from_name_to_scpi(self, element_names: List[str]) -> List[str]:
+        return [self.buffer_elements[element] for element in element_names]
+
+    def from_scpi_to_name(self, element_scpis: List[str]) -> List[str]:
+        if element_scpis is None:
+            return []
+        return [
+            self.inverted_buffer_elements[element] for element in element_scpis
+        ]
+
+    def __enter__(self) -> "Buffer2450":
+        return self
+
+    def __exit__(self, exception_type: Optional[Type[BaseException]],
+                 value: Optional[BaseException],
+                 traceback: Optional[TracebackType]) -> None:
+        self.delete()
+
+    @property
+    def available_elements(self) -> Set[str]:
+        return set(self.buffer_elements.keys())
+
+    def get_last_reading(self) -> str:
+        """
+        This method requests the latest reading from a reading buffer.
+
+        """
+        if not self.elements():
+            return self.ask(f":FETCh? '{self.buffer_name}'")
+        fetch_elements = [
+            self.buffer_elements[element] for element in self.elements()
+        ]
+        return self.ask(
+            f":FETCh? '{self.buffer_name}', {','.join(fetch_elements)}"
+        )
+
+    def get_data(
+            self,
+            start_idx: int,
+            end_idx: int,
+            readings_only: bool = False
+    ) -> List[Any]:
+        """
+        This command returns specified data elements from reading buffer.
+
+        Args:
+            start_idx: beginning index of the buffer to return
+            end_idx: ending index of the buffer to return
+            readings_only: a flag to temporarily disable the elements and
+                output only the numerical readings
+
+        Returns:
+            data elements from the reading buffer
+
+        """
+        if (not self.elements()) or readings_only:
+            raw_data = self.ask(f":TRACe:DATA? {start_idx}, {end_idx}, "
+                                f"'{self.buffer_name}'")
+            return [float(i) for i in raw_data.split(",")]
+        elements = \
+            [self.buffer_elements[element] for element in self.elements()]
+        raw_data_with_extra = self.ask(f":TRACe:DATA? {start_idx}, "
+                                       f"{end_idx}, "
+                                       f"'{self.buffer_name}', "
+                                       f"{','.join(elements)}")
+        return raw_data_with_extra.split(",")
+
+    def clear_buffer(self) -> None:
+        """
+        Clear the data in the buffer
+        """
+        self.write(f":TRACe:CLEar '{self.buffer_name}'")
+
+    def trigger_start(self) -> None:
+        """
+        This method makes readings using the active measure function and
+        stores them in a reading buffer.
+        """
+        self.write(f":TRACe:TRIGger '{self.buffer_name}'")
+
+    def delete(self) -> None:
+        if self.buffer_name not in self.default_buffer:
+            self.parent.submodules.pop(f"_buffer_{self.buffer_name}")
+            self.parent.buffer_name("defbuffer1")
+            self.write(f":TRACe:DELete '{self.buffer_name}'")
 
 
 class Sense2450(InstrumentChannel):
@@ -84,7 +267,7 @@ class Sense2450(InstrumentChannel):
             get_cmd=self._measure_sweep,
             unit=unit,
             vals=Arrays(shape=(self.parent.npts,)),
-            parameter_class=ParameterWithSetpoints
+            parameter_class=ParameterWithSetpointsCustomized
         )
 
         self.add_parameter(
@@ -105,37 +288,70 @@ class Sense2450(InstrumentChannel):
             "user_delay",
             get_cmd=self._get_user_delay,
             set_cmd=self._set_user_delay,
+            get_parser=float,
             vals=Numbers(0, 1e4)
         )
 
-    def _measure(self) -> str:
+        self.add_parameter(
+            'auto_zero_enabled',
+            get_cmd=f":SENSe:{self._proper_function}:AZERo?",
+            set_cmd=f":SENSe:{self._proper_function}:AZERo {{}}",
+            val_mapping=create_on_off_val_mapping(on_val="1", off_val="0"),
+            docstring="This command enables or disables automatic updates to"
+                      "the internal reference measurements (autozero) of the"
+                      "instrument."
+        )
+
+        self.add_parameter(
+            'count',
+            get_cmd=":SENSe:COUNt?",
+            set_cmd=":SENSe:COUNt {}",
+            docstring="The number of measurements to make when a measurement "
+                      "is requested."
+        )
+
+    def _measure(self) -> Union[float, str]:
         if not self.parent.output_enabled():
             raise RuntimeError("Output needs to be on for a measurement")
-        return self.ask(":MEASure?")
+        buffer_name = self.parent.buffer_name()
+        return float(self.ask(f":MEASure? '{buffer_name}'"))
 
     def _measure_sweep(self) -> np.ndarray:
 
         source = cast(Source2450, self.parent.source)
         source.sweep_start()
-        raw_data = self.ask(f":TRACe:DATA? 1, {self.parent.npts()}")
+        buffer_name = self.parent.buffer_name()
+        buffer = cast(
+            Buffer2450, self.parent.submodules[f"_buffer_{buffer_name}"]
+        )
+        end_idx = self.parent.npts()
+        raw_data = buffer.get_data(1, end_idx, readings_only=True)
+        raw_data_with_extra = buffer.get_data(1, end_idx)
+        self.parent.sense.sweep._user_selected_data = raw_data_with_extra
         # Clear the trace so we can be assured that a subsequent measurement
         # will not be contaminated with data from this run.
-        self.clear_trace()
+        buffer.clear_buffer()
+        return np.array([float(i) for i in raw_data])
 
-        return np.array([float(i) for i in raw_data.split(",")])
+    def auto_zero_once(self) -> None:
+        """
+        This command causes the instrument to refresh the reference and zero
+        measurements once.
+        """
+        self.write(":SENSe:AZERo:ONCE")
 
-    def clear_trace(self) -> None:
+    def clear_trace(self, buffer_name: str = "defbuffer1") -> None:
         """
         Clear the data buffer
         """
-        self.write(":TRACe:CLEar")
+        self.write(f":TRACe:CLEar '{buffer_name}'")
 
     def _get_user_delay(self) -> str:
         get_cmd = f":SENSe:{self._proper_function}:DELay:USER" \
                   f"{self.user_number()}?"
         return self.ask(get_cmd)
 
-    def _set_user_delay(self, value) -> None:
+    def _set_user_delay(self, value: float) -> None:
         set_cmd = f":SENSe:{self._proper_function}:DELay:USER" \
                   f"{self.user_number()} {value}"
         self.write(set_cmd)
@@ -253,16 +469,25 @@ class Source2450(InstrumentChannel):
             val_mapping=create_on_off_val_mapping(on_val="1", off_val="0")
         )
 
+        self.add_parameter(
+            "read_back_enabled",
+            get_cmd=f":SOURce:{self._proper_function}:READ:BACK?",
+            set_cmd=f":SOURce:{self._proper_function}:READ:BACK {{}}",
+            val_mapping=create_on_off_val_mapping(on_val="1", off_val="0"),
+            docstring="This command determines if the instrument records the "
+                      "measured source value or the configured source value "
+                      "when making a measurement."
+        )
+
     def get_sweep_axis(self) -> np.ndarray:
         if self._sweep_arguments == {}:
             raise ValueError(
                 "Please setup the sweep before getting values of this parameter"
             )
-
         return np.linspace(
             start=self._sweep_arguments["start"],
             stop=self._sweep_arguments["stop"],
-            num=self._sweep_arguments["step_count"]
+            num=int(self._sweep_arguments["step_count"])
         )
 
     def sweep_setup(
@@ -272,7 +497,10 @@ class Source2450(InstrumentChannel):
             step_count: int,
             delay: float = 0,
             sweep_count: int = 1,
-            range_mode: str = "AUTO"
+            range_mode: str = "AUTO",
+            fail_abort: str = "ON",
+            dual: str = "OFF",
+            buffer_name: str = "defbuffer1"
     ) -> None:
 
         self._sweep_arguments = dict(
@@ -281,7 +509,10 @@ class Source2450(InstrumentChannel):
             step_count=step_count,
             delay=delay,
             sweep_count=sweep_count,
-            range_mode=range_mode
+            range_mode=range_mode,
+            fail_abort=fail_abort,
+            dual=dual,
+            buffer_name=buffer_name
         )
 
     def sweep_start(self) -> None:
@@ -293,7 +524,8 @@ class Source2450(InstrumentChannel):
         cmd_args["function"] = self._proper_function
 
         cmd = ":SOURce:SWEep:{function}:LINear {start},{stop}," \
-              "{step_count},{delay},{sweep_count},{range_mode}".format(**cmd_args)
+              "{step_count},{delay},{sweep_count},{range_mode}," \
+              "{fail_abort},{dual},'{buffer_name}'".format(**cmd_args)
 
         self.write(cmd)
         self.write(":INITiate")
@@ -302,12 +534,12 @@ class Source2450(InstrumentChannel):
     def sweep_reset(self) -> None:
         self._sweep_arguments = {}
 
-    def _get_user_delay(self) -> str:
+    def _get_user_delay(self) -> float:
         get_cmd = f":SOURce:{self._proper_function}:DELay:USER" \
                   f"{self.user_number()}?"
-        return self.ask(get_cmd)
+        return float(self.ask(get_cmd))
 
-    def _set_user_delay(self, value) -> None:
+    def _set_user_delay(self, value: float) -> None:
         set_cmd = f":SOURce:{self._proper_function}:DELay:USER" \
                   f"{self.user_number()} {value}"
         self.write(set_cmd)
@@ -318,7 +550,7 @@ class Keithley2450(VisaInstrument):
     The QCoDeS driver for the Keithley 2450 SMU
     """
 
-    def __init__(self, name: str, address: str, **kwargs) -> None:
+    def __init__(self, name: str, address: str, **kwargs: Any) -> None:
 
         super().__init__(name, address, terminator='\n', **kwargs)
 
@@ -367,6 +599,21 @@ class Keithley2450(VisaInstrument):
             val_mapping=create_on_off_val_mapping(on_val="1", off_val="0")
         )
 
+        self.add_parameter(
+            "line_frequency",
+            get_cmd=":SYSTem:LFRequency?",
+            unit='Hz',
+            docstring="returns the power line frequency setting that is used "
+                      "for NPLC calculations"
+        )
+
+        self.add_parameter(
+            "buffer_name",
+            get_cmd=None,
+            set_cmd=None,
+            docstring="name of the reading buffer in using"
+        )
+
         # Make a source module for every source function ('current' and 'voltage')
         for proper_source_function in Source2450.function_modes:
             self.add_submodule(
@@ -381,6 +628,8 @@ class Keithley2450(VisaInstrument):
                 Sense2450(self, "sense", proper_sense_function)
             )
 
+        self.buffer_name('defbuffer1')
+        self.buffer(name=self.buffer_name())
         self.connect_message()
 
     def _set_sense_function(self, value: str) -> None:
@@ -459,6 +708,19 @@ class Keithley2450(VisaInstrument):
         submodule = self.submodules[f"_sense_{sense_function}"]
         return cast(Sense2450, submodule)
 
+    def buffer(
+            self,
+            name: str,
+            size: Optional[int] = None,
+            style: str = ''
+    ) -> Buffer2450:
+        self.buffer_name(name)
+        if f"_buffer_{name}" in self.submodules:
+            return cast(Buffer2450, self.submodules[f"_buffer_{name}"])
+        new_buffer = Buffer2450(parent=self, name=name, size=size, style=style)
+        self.add_submodule(f"_buffer_{name}", new_buffer)
+        return new_buffer
+
     def npts(self) -> int:
         """
         Get the number of points in the sweep axis
@@ -479,6 +741,37 @@ class Keithley2450(VisaInstrument):
         Query if we have the correct language mode
         """
         return self.ask("*LANG?") == "SCPI"
+
+    def abort(self) -> None:
+        """
+        This command stops all trigger model commands on the instrument.
+        """
+        self.write(":ABORt")
+
+    def initiate(self) -> None:
+        """
+        This command starts the trigger model.
+        """
+        self.write(":INITiate")
+
+    def wait(self) -> None:
+        """
+        This command postpones the execution of subsequent commands until all
+        previous overlapped commands are finished.
+        """
+        self.write("*WAI")
+
+    def clear_event_register(self) -> None:
+        """
+        This function clears event registers.
+        """
+        self.write(":STATus:CLEar")
+
+    def clear_event_log(self) -> None:
+        """
+        This command clears the event log.
+        """
+        self.write(":SYSTem:CLEar")
 
     def reset(self) -> None:
         """

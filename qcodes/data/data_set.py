@@ -5,7 +5,7 @@ import logging
 from traceback import format_exc
 from copy import deepcopy
 from collections import OrderedDict
-from typing import Dict, Callable
+from typing import Dict, Callable, Any
 
 from .gnuplot_format import GNUPlotFormat
 from .io import DiskIO
@@ -147,19 +147,6 @@ class DataSet(DelegateAttributes):
             between saves to disk. If not ``LOCAL``, the ``DataServer`` handles
             this and generally writes more often. Use None to disable writing
             from calls to ``self.store``. Default 5.
-
-    Attributes:
-        background_functions (collections.OrderedDict[Callable]): Class
-            attribute, ``{key: fn}``: ``fn`` is a callable accepting no
-            arguments, and ``key`` is a name to identify the function and help
-            you attach and remove it.
-
-            In ``DataSet.complete`` we call each of these periodically, in the
-            order that they were attached.
-
-            Note that because this is a class attribute, the functions will
-            apply to every DataSet. If you want specific functions for one
-            DataSet you can override this with an instance attribute.
     """
 
     # ie data_set.arrays['vsd'] === data_set.vsd
@@ -169,7 +156,19 @@ class DataSet(DelegateAttributes):
     default_formatter = GNUPlotFormat()
     location_provider = FormatLocation()
 
-    background_functions: Dict[str, Callable] = OrderedDict()
+    background_functions: Dict[str, Callable[..., Any]] = OrderedDict()
+    """
+    The value ``fn`` is a callable accepting no
+    arguments, and ``key`` is a name to identify the function and help
+    you attach and remove it.
+
+    In ``DataSet.complete`` we call each of these periodically, in the
+    order that they were attached.
+
+    Note that because this is a class attribute, the functions will
+    apply to every DataSet. If you want specific functions for one
+    DataSet you can override this with an instance attribute.
+    """
 
     def __init__(self, location=None, arrays=None, formatter=None, io=None,
                  write_period=5):
@@ -250,7 +249,7 @@ class DataSet(DelegateAttributes):
             delay (float): seconds between iterations. Default 1.5
         """
         log.info(
-            'waiting for DataSet <{}> to complete'.format(self.location))
+            f'waiting for DataSet <{self.location}> to complete')
 
         failing = {key: False for key in self.background_functions}
 
@@ -285,7 +284,7 @@ class DataSet(DelegateAttributes):
             # but only sleep if we're not already finished
             time.sleep(delay)
 
-        log.info('DataSet <{}> is complete'.format(self.location))
+        log.info(f'DataSet <{self.location}> is complete')
 
     def get_changes(self, synced_indices):
         """
@@ -366,7 +365,7 @@ class DataSet(DelegateAttributes):
                 name += '_set'
 
             array.array_id = name
-        array_ids = set([array.array_id for array in arrays])
+        array_ids = {array.array_id for array in arrays}
         for name in array_ids:
             param_arrays = [array for array in arrays
                             if array.array_id == name]
@@ -381,7 +380,7 @@ class DataSet(DelegateAttributes):
         # and append the rest to the back of the name with underscores
         param_action_indices = [list(array.action_indices) for array in arrays]
         while all(len(ai) for ai in param_action_indices):
-            if len(set(ai[0] for ai in param_action_indices)) == 1:
+            if len({ai[0] for ai in param_action_indices}) == 1:
                 for ai in param_action_indices:
                     ai[:1] = []
             else:
@@ -454,7 +453,7 @@ class DataSet(DelegateAttributes):
 
         # fallback: any array found
         try:
-            name = sorted((list(arraynames)))[0]
+            name = sorted(list(arraynames))[0]
             return name
         except IndexError:
             pass
@@ -682,7 +681,7 @@ class DataSet(DelegateAttributes):
         return out
 
 
-class _PrettyPrintDict(dict):
+class _PrettyPrintDict(Dict[Any, Any]):
     """
     simple wrapper for a dict to repr its items on separate lines
     with a bit of indentation
