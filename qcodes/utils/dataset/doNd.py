@@ -48,7 +48,6 @@ class _ParamCaller:
         output = []
         for param in self._parameters:
             output.append(param.get())
-            output.append(param.get())
         return tuple(output)
 
     def __repr__(self) -> str:
