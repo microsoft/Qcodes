@@ -71,7 +71,7 @@ jobs:
     - name: Build docs on windows
       run: |
         cd docs
-        set SPHINXOPTS=-W -v
+        $env:SPHINXOPTS = "-W -v"
         ./make.bat html
       if: runner.os == 'Windows'
     - name: Upload build docs
