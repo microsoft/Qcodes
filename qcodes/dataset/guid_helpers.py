@@ -1,4 +1,4 @@
-from typing import Tuple, Union, Dict, Optional, List, Iterable
+from typing import Tuple, Union, Dict, Optional, List, Iterable, cast
 
 from pathlib import Path
 import gc
@@ -68,7 +68,8 @@ def guids_from_list_str(s: str) -> Optional[Tuple[str, ...]]:
     Returns:
         Extracted guids as a tuple of strings.
         If a provided string does not match the format, `None` will be returned.
-        For an empty list/tuple/set or empty string an empty set is returned.
+        For an empty list/tuple/set or empty string an empty tuple is returned.
+
     Examples:
         >>> guids_from_str(
         "['07fd7195-c51e-44d6-a085-fa8274cf00d6', \
@@ -77,7 +78,10 @@ def guids_from_list_str(s: str) -> Optional[Tuple[str, ...]]:
         ('07fd7195-c51e-44d6-a085-fa8274cf00d6',
         '070d7195-c51e-44d6-a085-fa8274cf00d6')
     """
-    parsed = (ast.parse(s, mode='eval')).body
+    parsed_expression = ast.parse(s, mode='eval')
+    if not hasattr(parsed_expression, 'body'):
+        return None
+    parsed = cast(ast.Expression, parsed_expression).body
     if not isinstance(parsed, (ast.List, ast.Tuple, ast.Set)):
         return None
     if not all(isinstance(e, ast.Constant) for e in parsed.elts):
