@@ -78,7 +78,7 @@ def guids_from_list_str(s: str) -> Optional[Tuple[str, ...]]:
         ('07fd7195-c51e-44d6-a085-fa8274cf00d6',
         '070d7195-c51e-44d6-a085-fa8274cf00d6')
     """
-    if s == "" or s == "''" or s == '""':
+    if s == "":
         return tuple()
 
     try:
@@ -90,6 +90,12 @@ def guids_from_list_str(s: str) -> Optional[Tuple[str, ...]]:
         return None
 
     parsed = cast(ast.Expression, parsed_expression).body
+
+    if isinstance(parsed, ast.Str):
+        if len(parsed.s) > 0:
+            return (parsed.s,)
+        else:
+            return tuple()
 
     if not isinstance(parsed, (ast.List, ast.Tuple, ast.Set)):
         return None
