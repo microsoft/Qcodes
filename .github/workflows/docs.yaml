@@ -34,7 +34,7 @@ jobs:
     - name: install pandoc ubuntu
       run: sudo apt install pandoc
       if: runner.os == 'Linux'
-    - name: Chocolatey Action
+    - name: Install pandoc on linux
       uses: crazy-max/ghaction-chocolatey@v1.4.0
       with:
         args: install pandoc
