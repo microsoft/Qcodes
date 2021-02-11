@@ -41,7 +41,7 @@ jobs:
     - name: install qcodes editable
       shell: bash -l {0}
       run: |
-        pip install . -e --no-deps
+        pip install  --no-deps -e .
     - name: generate test dbs
       uses: ./.github/actions/generate-test-dbs
     - name: install qcodes
