@@ -28,6 +28,7 @@ jobs:
     - uses: actions/checkout@v2
     - name: setup ubuntu-latest xvfb
       uses: ./.github/actions/setup-ubuntu-latest-xvfb
+      if: runner.os == 'Linux'
     - name: install pandoc ubuntu
       run: sudo apt install pandoc
       if: runner.os == 'Linux'
