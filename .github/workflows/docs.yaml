@@ -12,12 +12,17 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        os: [ubuntu-latest, windows-latest]
         python-version: [3.7, 3.8, 3.9]
+        exclude:
+          - os: windows-latest
+            python-version: [3.8, 3.9]
     env:
       DISPLAY: ':99.0'
+      OS: ${{ matrix.os }}
 
     steps:
     - uses: actions/checkout@v2
@@ -25,6 +30,12 @@ jobs:
       uses: ./.github/actions/setup-ubuntu-latest-xvfb
     - name: install pandoc ubuntu
       run: sudo apt install pandoc
+      if: runner.os == 'Linux'
+    - name: Chocolatey Action
+      uses: crazy-max/ghaction-chocolatey@v1.4.0
+      with:
+        args: install pandoc
+      if: runner.os == 'Windows'
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
@@ -56,5 +67,5 @@ jobs:
     - name: Upload build docs
       uses: actions/upload-artifact@v2
       with:
-        name: docs_${{ matrix.python-version }}
+        name: docs_${{ matrix.python-version }}_${{ matrix.os }}
         path: ${{ github.workspace }}/docs/_build/html
