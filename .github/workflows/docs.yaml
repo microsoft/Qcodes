@@ -31,10 +31,10 @@ jobs:
     - name: setup ubuntu-latest xvfb
       uses: ./.github/actions/setup-ubuntu-latest-xvfb
       if: runner.os == 'Linux'
-    - name: install pandoc ubuntu
+    - name: install pandoc linux
       run: sudo apt install pandoc
       if: runner.os == 'Linux'
-    - name: Install pandoc on linux
+    - name: Install pandoc on windows
       uses: crazy-max/ghaction-chocolatey@v1.4.0
       with:
         args: install pandoc
