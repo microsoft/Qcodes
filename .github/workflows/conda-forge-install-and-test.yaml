@@ -52,7 +52,11 @@ jobs:
     - name: Run Mypy
       shell: bash -l {0}
       run: mypy qcodes
-    - name: run tests
+    - name: run parallel tests
       shell: bash -l {0}
       run: |
-        pytest --hypothesis-profile ci qcodes
+         pytest -m "not serial" --hypothesis-profile ci qcodes
+    - name: run serial tests
+      shell: bash -l {0}
+      run: |
+         pytest -m "serial"  -n 0 --dist no --hypothesis-profile ci qcodes
