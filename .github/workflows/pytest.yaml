@@ -36,7 +36,7 @@ jobs:
       id: prepare-cache-pip
       uses: ./.github/actions/prepare-cache-pip
     - name: pip cache
-      uses: actions/cache@v2
+      uses: actions/cache@v2.1.4
       with:
         path: ${{ steps.prepare-cache-pip.outputs.cache-dir }}
         key: ${{ runner.os }}-${{ matrix.python-version }}-pip-${{ hashFiles('**/requirements.txt') }}-${{ hashFiles('**/test_requirements.txt') }}-${{ hashFiles('**/setup.py') }}
@@ -48,10 +48,14 @@ jobs:
     - name: install test_requirements.txt
       run: |
         pip install -r test_requirements.txt
+    - name: install qcodes editable
+      run: pip install -e .
     - name: generate test dbs
       uses: ./.github/actions/generate-test-dbs
     - name: install qcodes
-      run: pip install .
+      run: |
+        pip uninstall qcodes -y
+        pip install .
     - name: Run Mypy
       run: mypy qcodes
     - name: Run tests
