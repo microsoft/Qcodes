@@ -38,14 +38,9 @@ jobs:
       shell: bash -l {0}
       run: |
         conda info
-    - name: install qcodes editable
-      shell: bash -l {0}
-      run: |
-        pip install  --no-deps -e .
     - name: install qcodes
       shell: bash -l {0}
       run: |
-        pip uninstall qcodes -y
         pip install . --no-deps
     - name: Run Mypy
       shell: bash -l {0}

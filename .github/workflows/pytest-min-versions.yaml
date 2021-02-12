@@ -46,14 +46,11 @@ jobs:
       run: |
         pip install requirements-builder
         requirements-builder -l min -e test setup.py -o min_requirements.txt
-    - name: install qcodes editable
-      run: pip install -e .
     - name: install min_requirements.txt
       run: |
         pip install -r min_requirements.txt
     - name: install qcodes
       run: |
-        pip uninstall qcodes -y
         pip install .
     - name: Run tests
       run: |
