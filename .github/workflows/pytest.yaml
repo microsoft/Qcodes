@@ -50,8 +50,6 @@ jobs:
         pip install -r test_requirements.txt
     - name: install qcodes editable
       run: pip install -e .
-    - name: generate test dbs
-      uses: ./.github/actions/generate-test-dbs
     - name: install qcodes
       run: |
         pip uninstall qcodes -y
