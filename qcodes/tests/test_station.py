@@ -865,3 +865,9 @@ def test_load_all_instruments_only_names(example_station):
     for instrument in other_instruments:
         assert instrument not in example_station.components
         assert not Instrument.exist(instrument)
+
+
+def test_load_all_instruments_without_config_raises():
+    station = Station()
+    with pytest.raises(ValueError, match="Station has no config"):
+        station.load_all_instruments()
