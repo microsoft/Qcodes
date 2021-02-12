@@ -23,8 +23,6 @@ jobs:
     steps:
     - name: checkout source code
       uses: actions/checkout@v2
-      with:
-        fetch-depth: '0'
     - name: setup ubuntu-latest xvfb
       uses: ./.github/actions/setup-ubuntu-latest-xvfb
       if: runner.os == 'Linux'

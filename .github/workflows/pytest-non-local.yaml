@@ -21,8 +21,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-      with:
-        fetch-depth: '0'
     - name: setup ubuntu-latest xvfb
       uses: ./.github/actions/setup-ubuntu-latest-xvfb
     - name: Set up Python ${{ matrix.python-version }}
