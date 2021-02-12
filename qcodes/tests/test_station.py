@@ -260,8 +260,8 @@ def config_file_context(file_content):
         yield str(filename)
 
 
-@pytest.fixture
-def example_station_config():
+@pytest.fixture(name="example_station_config")
+def _make_example_station_config():
     """
     Returns path to temp yaml file with station config.
     """
@@ -312,8 +312,8 @@ def station_config_has_been_loaded(st: Station) -> bool:
     return st.config is not None
 
 
-@pytest.fixture
-def example_station(example_station_config):
+@pytest.fixture(name="example_station")
+def _make_example_station(example_station_config):
     return Station(config_file=example_station_config)
 
 
