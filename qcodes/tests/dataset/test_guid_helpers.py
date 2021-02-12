@@ -57,7 +57,7 @@ def test_guids_from_list_str() -> None:
     assert guids_from_list_str('""') == tuple()
     assert guids_from_list_str(str(tuple())) == tuple()
     assert guids_from_list_str(str(list())) == tuple()
-    assert guids_from_list_str(str(set())) == tuple()
+    assert guids_from_list_str(str({})) == tuple()
     assert guids_from_list_str(str(guids)) == tuple(guids)
     assert guids_from_list_str(str([guids[0]])) == (guids[0],)
     assert guids_from_list_str(str(guids[0])) == (guids[0],)
