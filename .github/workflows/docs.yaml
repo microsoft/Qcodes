@@ -79,3 +79,10 @@ jobs:
       with:
         name: docs_${{ matrix.python-version }}_${{ matrix.os }}
         path: ${{ github.workspace }}/docs/_build/html
+    - name: Deploy to gh pages
+      uses: JamesIves/github-pages-deploy-action@4.0.0
+      with:
+        branch: gh-pages
+        folder: ${{ github.workspace }}/docs/_build/html
+        dry-run: yes  # remove
+      if: runner.os == 'Linux' && python-version == '3.7'  # todo add condition on master branch only
