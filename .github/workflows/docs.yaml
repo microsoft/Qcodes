@@ -84,5 +84,6 @@ jobs:
       with:
         branch: gh-pages
         folder: ${{ github.workspace }}/docs/_build/html
-        dry-run: yes  # remove
-      if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.7'  # todo add condition on master branch only
+        dry-run: true  # remove
+        clean: true
+      if: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == '3.7' }}
