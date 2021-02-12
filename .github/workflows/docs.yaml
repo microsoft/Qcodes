@@ -86,4 +86,4 @@ jobs:
         folder: ${{ github.workspace }}/docs/_build/html
         dry-run: true  # remove
         clean: true
-      if: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == '3.7' }}
+      if: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == '3.7' && github.event_name == 'push' && GITHUB_REF == 'refs/heads/master'}}
