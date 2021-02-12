@@ -6,7 +6,7 @@ Babel==2.9.0
 backcall==0.2.0
 bleach==3.3.0
 certifi==2020.12.5
-cffi==1.14.4
+cffi==1.14.5
 chardet==4.0.0
 colorama==0.4.4
 decorator==4.4.2
