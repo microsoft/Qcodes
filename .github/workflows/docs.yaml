@@ -79,3 +79,12 @@ jobs:
       with:
         name: docs_${{ matrix.python-version }}_${{ matrix.os }}
         path: ${{ github.workspace }}/docs/_build/html
+    - name: Deploy to gh pages
+      uses: JamesIves/github-pages-deploy-action@4.0.0
+      with:
+        branch: gh-pages
+        folder: ${{ github.workspace }}/docs/_build/html
+        clean: true
+        git-config-email: "bot"
+        git-config-name: "Documentation Bot"
+      if: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == '3.7' && github.event_name == 'push' && github.ref == 'refs/heads/master'}}
