@@ -72,7 +72,7 @@ jobs:
       run: |
         cd docs
         $env:SPHINXOPTS = "-W -v"
-        ./make.bat html
+        ./make.bat htmlfast
       if: runner.os == 'Windows'
     - name: Upload build docs
       uses: actions/upload-artifact@v2
