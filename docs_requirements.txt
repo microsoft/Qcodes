@@ -46,7 +46,7 @@ pickleshare==0.7.5
 prometheus-client==0.9.0
 prompt-toolkit==3.0.16
 pycparser==2.20
-Pygments==2.7.4
+Pygments==2.8.0
 pyparsing==2.4.7
 pyrsistent==0.17.3
 python-dateutil==2.8.1
@@ -56,7 +56,7 @@ PyVISA-sim==0.4.0
 pywin32==300; sys_platform == 'win32'
 pywinpty==0.5.7; sys_platform == 'win32'
 PyYAML==5.4.1
-pyzmq==22.0.2
+pyzmq==22.0.3
 qtconsole==5.0.2
 QtPy==1.9.0
 requests==2.25.1
