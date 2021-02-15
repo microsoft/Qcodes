@@ -25,11 +25,15 @@ jobs:
     env:
       DISPLAY: ':99.0'
       OS: ${{ matrix.os }}
+      UPLOAD_TO_GHPAGES: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == '3.7' && github.event_name == 'push' && github.ref == 'refs/heads/master'}}
 
     steps:
     - uses: actions/checkout@v2
       with:
         fetch-depth: '0'
+      if: ${{ $UPLOAD_TO_GHPAGES }}
+    - uses: actions/checkout@v2
+      if: ${{ !$UPLOAD_TO_GHPAGES }}
     - name: setup ubuntu-latest xvfb
       uses: ./.github/actions/setup-ubuntu-latest-xvfb
       if: runner.os == 'Linux'
@@ -89,4 +93,4 @@ jobs:
         clean: true
         git-config-email: "bot"
         git-config-name: "Documentation Bot"
-      if: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == '3.7' && github.event_name == 'push' && github.ref == 'refs/heads/master'}}
+      if: ${{ $UPLOAD_TO_GHPAGES }}
