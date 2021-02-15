@@ -24,7 +24,7 @@ jobs:
     - name: checkout source code
       uses: actions/checkout@v2
       with:
-        fetch-depth: '0'
+        submodules: true
     - name: setup ubuntu-latest xvfb
       uses: ./.github/actions/setup-ubuntu-latest-xvfb
       if: runner.os == 'Linux'
@@ -38,16 +38,9 @@ jobs:
       shell: bash -l {0}
       run: |
         conda info
-    - name: install qcodes editable
-      shell: bash -l {0}
-      run: |
-        pip install  --no-deps -e .
-    - name: generate test dbs
-      uses: ./.github/actions/generate-test-dbs
     - name: install qcodes
       shell: bash -l {0}
       run: |
-        pip uninstall qcodes -y
         pip install . --no-deps
     - name: Run Mypy
       shell: bash -l {0}
