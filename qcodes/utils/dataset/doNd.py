@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 from collections import defaultdict
 from contextlib import contextmanager
 from typing import (Callable, Iterator, List, Optional,
@@ -7,6 +8,7 @@ from typing import (Callable, Iterator, List, Optional,
 
 import matplotlib
 import numpy as np
+from tqdm.auto import tqdm
 
 from qcodes import config
 from qcodes.dataset.data_set import DataSet
@@ -242,6 +244,7 @@ def do1d(
         do_plot: Optional[bool] = None,
         use_threads: bool = False,
         additional_setpoints: Sequence[ParamMeasT] = tuple(),
+        show_progress: Optional[None] = None,
         ) -> AxesTupleListWithDataSet:
     """
     Perform a 1D scan of ``param_set`` from ``start`` to ``stop`` in
@@ -275,12 +278,17 @@ def do1d(
         use_threads: If True measurements from each instrument will be done on
             separate threads. If you are measuring from several instruments
             this may give a significant speedup.
+        show_progress: should a progress bar be displayed during the
+            measurement. If None the setting will be read from ``qcodesrc.json`
 
     Returns:
         The QCoDeS dataset.
     """
     if do_plot is None:
         do_plot = config.dataset.dond_plot
+    if show_progress is None:
+        show_progress = config.dataset.dond_show_progress
+
     meas = Measurement(name=measurement_name, exp=exp)
 
     all_setpoint_params = (param_set,) + tuple(
@@ -312,7 +320,14 @@ def do1d(
     # reimplemented from scratch
     with _catch_keyboard_interrupts() as interrupted, meas.run() as datasaver:
         additional_setpoints_data = _process_params_meas(additional_setpoints)
-        for set_point in np.linspace(start, stop, num_points):
+        setpoints = np.linspace(start, stop, num_points)
+
+        # flush to prevent unflushed print's to visually interrupt tqdm bar
+        # updates
+        sys.stdout.flush()
+        sys.stderr.flush()
+
+        for set_point in tqdm(setpoints, disable=not show_progress):
             param_set.set(set_point)
             datasaver.add_result(
                 (param_set, set_point),
@@ -341,6 +356,7 @@ def do2d(
         do_plot: Optional[bool] = None,
         use_threads: bool = False,
         additional_setpoints: Sequence[ParamMeasT] = tuple(),
+        show_progress: Optional[None] = None,
         ) -> AxesTupleListWithDataSet:
     """
     Perform a 1D scan of ``param_set1`` from ``start1`` to ``stop1`` in
@@ -385,6 +401,8 @@ def do2d(
         use_threads: If True measurements from each instrument will be done on
             separate threads. If you are measuring from several instruments
             this may give a significant speedup.
+        show_progress: should a progress bar be displayed during the
+            measurement. If None the setting will be read from ``qcodesrc.json`
 
     Returns:
         The QCoDeS dataset.
@@ -392,6 +410,9 @@ def do2d(
 
     if do_plot is None:
         do_plot = config.dataset.dond_plot
+    if show_progress is None:
+        show_progress = config.dataset.dond_show_progress
+
     meas = Measurement(name=measurement_name, exp=exp)
     all_setpoint_params = (param_set1, param_set2,) + tuple(
             s for s in additional_setpoints)
@@ -424,14 +445,25 @@ def do2d(
 
     with _catch_keyboard_interrupts() as interrupted, meas.run() as datasaver:
         additional_setpoints_data = _process_params_meas(additional_setpoints)
-        for set_point1 in np.linspace(start1, stop1, num_points1):
+        setpoints1 = np.linspace(start1, stop1, num_points1)
+        for set_point1 in tqdm(setpoints1, disable=not show_progress):
             if set_before_sweep:
                 param_set2.set(start2)
 
             param_set1.set(set_point1)
+
             for action in before_inner_actions:
                 action()
-            for set_point2 in np.linspace(start2, stop2, num_points2):
+
+            setpoints2 = np.linspace(start2, stop2, num_points2)
+
+            # flush to prevent unflushed print's to visually interrupt tqdm bar
+            # updates
+            sys.stdout.flush()
+            sys.stderr.flush()
+            for set_point2 in tqdm(setpoints2,
+                                   disable=not show_progress,
+                                   leave=False):
                 # skip first inner set point if `set_before_sweep`
                 if set_point2 == start2 and set_before_sweep:
                     pass
@@ -442,6 +474,7 @@ def do2d(
                                      (param_set2, set_point2),
                                      *_process_params_meas(param_meas, use_threads=use_threads),
                                      *additional_setpoints_data)
+
             for action in after_inner_actions:
                 action()
             if flush_columns:
