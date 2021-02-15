@@ -27,7 +27,7 @@ jobs:
       OS: ${{ matrix.os }}
       UPLOAD_TO_GHPAGES: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == '3.7' && github.event_name == 'push' && github.ref == 'refs/heads/master' }}
     steps:
-    - run: git clone --filter=blob:none --single-branch --branch=${{ github.ref }} -- ${{ github.repository }}
+    - run: git clone --filter=blob:none --single-branch --branch=${{ github.ref }} -- $GITHUB_SERVER_URL/$GITHUB_REPOSITORY.git
         # if we upload to ghpages we need at least
         # all tree and commit information
         # to generate correct version info
