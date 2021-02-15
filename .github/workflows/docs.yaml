@@ -31,9 +31,9 @@ jobs:
         # if we upload to ghpages we need at least
         # all tree and commit information
         # to generate correct version info
-      if: ${{ fromJSON(env.UPLOAD_TO_GHPAGES) }}
-    - uses: actions/checkout@v2
-      if: ${{ !fromJSON(env.UPLOAD_TO_GHPAGES) }}
+#       if: ${{ fromJSON(env.UPLOAD_TO_GHPAGES) }}
+#     - uses: actions/checkout@v2
+#       if: ${{ !fromJSON(env.UPLOAD_TO_GHPAGES) }}
     - name: setup ubuntu-latest xvfb
       uses: ./.github/actions/setup-ubuntu-latest-xvfb
       if: runner.os == 'Linux'
