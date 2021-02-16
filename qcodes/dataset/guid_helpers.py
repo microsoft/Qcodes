@@ -100,8 +100,8 @@ def guids_from_list_str(s: str) -> Optional[Tuple[str, ...]]:
     if not isinstance(parsed, (ast.List, ast.Tuple, ast.Set)):
         return None
 
-    if not all(isinstance(e, ast.Constant) for e in parsed.elts):
+    if not all(isinstance(e, ast.Str) for e in parsed.elts):
         return None
 
-    constant_elts = cast(Tuple[ast.Constant, ...], tuple(parsed.elts))
-    return tuple(v.value for v in constant_elts)
+    str_elts = cast(Tuple[ast.Str, ...], tuple(parsed.elts))
+    return tuple(s.s for s in str_elts)
