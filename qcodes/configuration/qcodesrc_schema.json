@@ -311,10 +311,15 @@
                     "type": "boolean",
                     "default": false,
                     "description": "Should dond functions automatically open a plot after the measurement completes"
+                },
+                "dond_show_progress": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Should dond functions show a progress bar during the measurement"
                 }
             },
             "description": "Settings related to the DataSet and Measurement Context manager",
-            "required":[ "write_in_background", "write_period", "dond_plot"]
+            "required":[ "write_in_background", "write_period", "dond_plot", "dond_show_progress"]
         },
         "telemetry":{
             "type": "object",
