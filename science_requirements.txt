@@ -1,6 +1,6 @@
 alabaster==0.7.12
 appdirs==1.4.4
-astroid==2.4.2
+astroid==2.5
 async-generator==1.10
 atomicwrites==1.4.0
 attrs==20.3.0
