@@ -34,7 +34,6 @@ dependencies:
  - pytest-xdist>=2.0.0
  - pytest-mock>=3.0.0
  - lxml>=4.3.0
- - gitpython>=3.0.6
  # extra relevant requirements from setup.cfg
  - pyqtgraph>=0.11.0
  # for running mypy type checking
