@@ -6,6 +6,7 @@ import ast
 
 from sqlite3 import DatabaseError
 
+from qcodes.dataset.guids import validate_guid_format
 from qcodes.dataset.sqlite.queries import get_guids_from_run_spec
 from qcodes.dataset.sqlite.database import connect
 
@@ -80,6 +81,12 @@ def guids_from_list_str(s: str) -> Optional[Tuple[str, ...]]:
     """
     if s == "":
         return tuple()
+
+    try:
+        validate_guid_format(s)
+        return (s,)
+    except ValueError:
+        pass
 
     try:
         parsed_expression = ast.parse(s, mode='eval')
