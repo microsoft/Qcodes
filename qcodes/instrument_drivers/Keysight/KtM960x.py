@@ -190,7 +190,7 @@ class KtM960x(Instrument):
                                                          attr, ctypes.byref(s))
         if status:
             raise ValueError(f"Driver error: {status}")
-        return True if s else False
+        return bool(s)
 
     def set_vi_bool(self, attr: int, value: bool) -> bool:
         v = ctypes.c_uint16(1) if value else ctypes.c_uint16(0)
