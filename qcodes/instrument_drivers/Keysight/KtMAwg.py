@@ -1,8 +1,10 @@
 from .KtMAwg_Defs import *
-from qcodes import Instrument, InstrumentChannel, validators as vals
+
 import ctypes
 from functools import partial
 from typing import (Dict, Optional)
+
+from qcodes import Instrument, InstrumentChannel
 
 
 class KtMAWGChannel(InstrumentChannel):

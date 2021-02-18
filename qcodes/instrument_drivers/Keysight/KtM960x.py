@@ -1,8 +1,10 @@
-from qcodes import Instrument, validators as vals
+from .KtM960x_Defs import *
+
 import ctypes
 from functools import partial
-from .KtM960x_Defs import *
 from typing import (Dict, Optional)
+
+from qcodes import Instrument, validators as vals
 
 
 class KtM960x(Instrument):
