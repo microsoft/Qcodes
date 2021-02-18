@@ -5,8 +5,8 @@ colloquially known as the "stepper motors".
 from typing import Any, Dict, Optional, List
 import numpy as np
 
-from qcodes import Instrument
-from qcodes.utils.validators import Enum, Ints
+from qcodes import Instrument, InstrumentChannel
+from qcodes.utils.validators import Enum, Ints, Union
 
 try:
     import gclib
@@ -20,7 +20,7 @@ except ImportError as e:
         "environment.") from e
 
 
-class GalilInstrument(Instrument):
+class GalilMotionController(Instrument):
     """
     Base class for Galil Motion Controller drivers
     """
@@ -28,10 +28,11 @@ class GalilInstrument(Instrument):
         super().__init__(name=name, **kwargs)
         self.g = gclib.py()
         self.address = address
+        self.open()
 
-    def get_idn(self) -> Dict[str, Optional[str]]:
+    def open(self) -> None:
         """
-        Get Galil motion controller hardware information
+        Open connection to Galil motion controller
         """
         self.log.info('Listening for controllers requesting IP addresses...')
         ip_requests = self.g.GIpRequests()
@@ -46,6 +47,10 @@ class GalilInstrument(Instrument):
         self.g.GAssign(self.address, ip_requests[instrument])
         self.g.GOpen(self.address + ' --direct')
 
+    def get_idn(self) -> Dict[str, Optional[str]]:
+        """
+        Get Galil motion controller hardware information
+        """
         data = self.g.GInfo().split(" ")
         idparts: List[Optional[str]] = ["Galil Motion Control, Inc.",
                                         data[1], data[4], data[3][:-1]]
@@ -83,9 +88,59 @@ class GalilInstrument(Instrument):
         self.g.GClose()
 
 
-class DMC4133(GalilInstrument):
+class Motor(InstrumentChannel):
     """
-    Driver for Galil DMC-4133 Motor Controller
+    Class to control motors independently
+    """
+
+    def __init__(self,
+                 parent: "DMC4133Controller",
+                 name: str,
+                 **kwargs: Any) -> None:
+        super().__init__(parent, name, **kwargs)
+        self.axis = name
+
+        self.add_parameter("relative_position",
+                           get_cmd=f"MG _PR{self.axis}",
+                           units="quadrature counts",
+                           get_parser=int,
+                           set_cmd=self._set_relative_position,
+                           vals=Ints(-2147483648, 2147483647),
+                           docstring="sets relative position for the motor's "
+                                     "move")
+
+    def _set_relative_position(self, val: str) -> None:
+        """
+        sets relative position
+        """
+        self.write(f"PR{self.axis}={val}")
+
+    def off(self) -> None:
+        """
+        turns motor off
+        """
+        self.write(f"MO {self.axis}")
+
+    def on_off_status(self) -> str:
+        """
+        tells motor on off status
+        """
+        val = self.ask(f"MG _MO{self.axis}")
+        if int(val):
+            return "off"
+        else:
+            return "on"
+
+    def servo_here(self) -> None:
+        """
+        servo at the motor
+        """
+        self.write(f"SH {self.axis}")
+
+
+class DMC4133Controller(GalilMotionController):
+    """
+    Driver for Galil DMC-4133 Controller
     """
 
     def __init__(self,
@@ -93,27 +148,6 @@ class DMC4133(GalilInstrument):
                  address: str,
                  **kwargs: Any) -> None:
         super().__init__(name=name, address=address, **kwargs)
-
-        self.add_parameter("move_a",
-                           set_cmd=self._move_motor_a,
-                           vals=Ints(-2147483648, 2147483647),
-                           units="quadrature counts",
-                           docstring="moves motor A along x-axis. negative "
-                                     "value indicates movement along -x axis.")
-
-        self.add_parameter("move_b",
-                           set_cmd=self._move_motor_b,
-                           vals=Ints(-2147483648, 2147483647),
-                           units="quadrature counts",
-                           docstring="moves motor B along y-axis. negative "
-                                     "value indicates movement along -y axis.")
-
-        self.add_parameter("move_c",
-                           set_cmd=self._move_motor_c,
-                           vals=Ints(-2147483648, 2147483647),
-                           units="quadrature counts",
-                           docstring="moves motor C along z-axis. negative "
-                                     "value indicates movement along -z axis.")
 
         self.add_parameter("position_format_decimals",
                            set_cmd="PF 10.{}",
@@ -126,15 +160,6 @@ class DMC4133(GalilInstrument):
                            units="quadrature counts",
                            docstring="gets absolute position of the motors "
                                      "from the set origin")
-
-        self.add_parameter("motor_off",
-                           get_cmd="MG _MO",
-                           get_parser=self._motor_on_off_status,
-                           set_cmd="MO {}",
-                           vals=Enum("A", "B", "C"),
-                           docstring="turns given motors off and when called "
-                                     "without argument tells the status of "
-                                     "motors")
 
         self.add_parameter("begin",
                            set_cmd="BG {}",
@@ -226,6 +251,11 @@ class DMC4133(GalilInstrument):
                                      " of the vector is coming up. is "
                                      "required to exit the vector mode "
                                      "gracefully")
+
+        self.add_submodule("motor_a", Motor(self, "A"))
+        self.add_submodule("motor_b", Motor(self, "B"))
+        self.add_submodule("motor_c", Motor(self, "C"))
+
         self.connect_message()
 
     def _move_motor_a(self, val: int) -> None:
@@ -239,55 +269,6 @@ class DMC4133(GalilInstrument):
         self.write("ACA=500000")
         self.write("DCA=500000")
         self.begin("A")
-
-    def _move_motor_b(self, val: int) -> None:
-        """
-        moves motor B to the given amount from the current position
-        """
-        self.motor_off("B")
-        self.servo_at_motor("B")
-        self.write(f"PRB={val}")
-        self.write("SPB=1000")
-        self.write("ACB=500000")
-        self.write("DCB=500000")
-        self.begin("B")
-
-    def _move_motor_c(self, val: int) -> None:
-        """
-        moves motor C to the given amount from the current position
-        """
-        self.motor_off("C")
-        self.servo_at_motor("C")
-        self.write(f"PRC={val}")
-        self.write("SPC=1000")
-        self.write("ACC=500000")
-        self.write("DCC=500000")
-        self.begin("C")
-
-    @staticmethod
-    def _motor_on_off_status(val: str) -> Dict[str, str]:
-        """
-        motor on off status parser
-        """
-        result = dict()
-        data = val.split(" ")
-
-        if int(data[0][:-1]) == 1:
-            result["A"] = "OFF"
-        else:
-            result["A"] = "ON"
-
-        if int(data[1][:-1]) == 1:
-            result["B"] = "OFF"
-        else:
-            result["B"] = "ON"
-
-        if int(data[2]) == 1:
-            result["C"] = "OFF"
-        else:
-            result["C"] = "ON"
-
-        return result
 
     def _get_absolute_position(self) -> Dict[str, int]:
         """
@@ -340,6 +321,12 @@ class DMC4133(GalilInstrument):
         aborts motion and the program operation
         """
         self.write("AB")
+
+    def motors_off(self) -> None:
+        """
+        turn all motors off
+        """
+        self.write("MO")
 
     def home(self) -> None:
         """
@@ -428,7 +415,9 @@ class DMC4133(GalilInstrument):
 
 class Arm:
 
-    def __init__(self, driver: DMC4133, chip_design: str):
+    def __init__(self,
+                 driver: DMC4133Controller,
+                 chip_design: Dict[str, Union(int, float)]) -> None:
         self.driver = driver
         self.chip_design = chip_design
         self.load_chip_design(self.chip_design)
