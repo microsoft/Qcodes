@@ -9,7 +9,11 @@ class KtM960x(Instrument):
     _default_buf_size = 256
     _dll_loc = r"C:\Program Files\IVI Foundation\IVI\Bin\KtM960x_64.dll"
 
-    def __init__(self, name: str, address: str, options: bytes = b"", **kwargs) -> None:
+    def __init__(self,
+                 name: str,
+                 address: str,
+                 options: bytes = b"",
+                 **kwargs) -> None:
         super().__init__(name, **kwargs)
 
         if not isinstance(address, bytes):
@@ -42,21 +46,31 @@ class KtM960x(Instrument):
                            vals=vals.Numbers(1e-9, 300e-3),
                            get_cmd=partial(self.get_vi_real64,
                                            KTM960X_ATTR_OUTPUT_CURRENT_RANGE),
-                           set_cmd=partial(self.set_vi_real64, KTM960X_ATTR_OUTPUT_CURRENT_RANGE))
+                           set_cmd=partial(self.set_vi_real64,
+                                           KTM960X_ATTR_OUTPUT_CURRENT_RANGE)
+                           )
 
         self.add_parameter("measure_current_range",
                            label="Current Measurement Range",
                            unit="Amp",
                            get_cmd=partial(
-                               self.get_vi_real64, KTM960X_ATTR_MEASUREMENT_CURRENT_RANGE),
-                           set_cmd=partial(self.set_vi_real64, KTM960X_ATTR_MEASUREMENT_CURRENT_RANGE))
+                               self.get_vi_real64,
+                               KTM960X_ATTR_MEASUREMENT_CURRENT_RANGE),
+                           set_cmd=partial(
+                               self.set_vi_real64,
+                               KTM960X_ATTR_MEASUREMENT_CURRENT_RANGE)
+                           )
 
         self.add_parameter("measure_current_time",
                            label="Current Measurement Integration Time",
                            unit="Seconds",
                            get_cmd=partial(
-                               self.get_vi_real64, KTM960X_ATTR_MEASUREMENT_CURRENT_APERTURE),
-                           set_cmd=partial(self.set_vi_real64, KTM960X_ATTR_MEASUREMENT_CURRENT_APERTURE))
+                               self.get_vi_real64,
+                               KTM960X_ATTR_MEASUREMENT_CURRENT_APERTURE),
+                           set_cmd=partial(
+                               self.set_vi_real64,
+                               KTM960X_ATTR_MEASUREMENT_CURRENT_APERTURE)
+                           )
 
         self.add_parameter("measure_current",
                            label="Measured Current",
@@ -83,22 +97,26 @@ class KtM960x(Instrument):
 
         self.connect_message()
 
-    def _connect(self, options):
+    def _connect(self, options) -> None:
         if not isinstance(options, bytes):
             options = bytes(options, "ascii")
-        status = self._dll.KtM960x_InitWithOptions(self._address, 1, 1,
-                                                   options, ctypes.byref(self._session))
+        status = self._dll.KtM960x_InitWithOptions(self._address,
+                                                   1,
+                                                   1,
+                                                   options,
+                                                   ctypes.byref(self._session))
         if status:
-            print("connection to device failed! error: ", status)
-            raise SystemError
+            raise SystemError(f"connection to device failed! error: {status}")
 
     def get_idn(self) -> Dict[str, Optional[str]]:
         """generates the ``*IDN`` dictionary for qcodes"""
 
-        id_dict: Dict[str, Optional[str]] = {'firmware': self.get_firmware_revision(),
-                                             'model': self.get_model(),
-                                             'serial': self.get_serial_number(),
-                                             'vendor': self.get_manufactorer()}
+        id_dict: Dict[str, Optional[str]] = {
+            'firmware': self.get_firmware_revision(),
+            'model': self.get_model(),
+            'serial': self.get_serial_number(),
+            'vendor': self.get_manufactorer()
+        }
         return id_dict
 
     def _measure(self, key: str = None):
@@ -115,20 +133,21 @@ class KtM960x(Instrument):
         val_buf = (ctypes.c_double * 1024)()
         actual_size = ctypes.c_int32(0)
         ch_num_buf[0] = 1
-        status = self._dll.KtM960x_MeasurementMeasure(self._session,
-                                                      KTM960X_VAL_MEASUREMENT_TYPE_ALL,
-                                                      1,
-                                                      ch_num_buf,
-                                                      1024,
-                                                      val_buf,
-                                                      ctypes.byref(actual_size)
-                                                      )
+        status = self._dll.KtM960x_MeasurementMeasure(
+            self._session,
+            KTM960X_VAL_MEASUREMENT_TYPE_ALL,
+            1,
+            ch_num_buf,
+            1024,
+            val_buf,
+            ctypes.byref(actual_size)
+        )
 
         if status:
-            print("Driver error! ", status)
-            raise ValueError
+            raise ValueError(f"Driver error: {status}")
         # This might be a bit slow?
-        # Returned as [voltage, current, resistance, status, timestamp, and source]
+        # Returned as [voltage, current, resistance, status,
+        #                                               timestamp, and source]
         v = list(val_buf)[0:actual_size.value]
         val_map = {'voltage': v[0],
                    'current': v[1],
@@ -148,16 +167,19 @@ class KtM960x(Instrument):
                 self._session, ctypes.byref(error_code), error_message)
             assert(status == 0)
             print(
-                f"error_query: {error_code.value}, {error_message.value.decode('utf-8')}")
+                f"error_query: {error_code.value}, "
+                f"{error_message.value.decode('utf-8')}")
 
     # Generic functions for reading/writing different attributes
     def get_vi_string(self, attr: int) -> str:
         s = ctypes.create_string_buffer(self._default_buf_size)
-        status = self._dll.KtM960x_GetAttributeViString(self._session, b"",
-                                                        attr, self._default_buf_size, s)
+        status = self._dll.KtM960x_GetAttributeViString(self._session,
+                                                        b"",
+                                                        attr,
+                                                        self._default_buf_size,
+                                                        s)
         if status:
-            print("Driver error! ", status)
-            raise ValueError
+            raise ValueError(f"Driver error: {status}")
         return s.value.decode('utf-8')
 
     def get_vi_bool(self, attr: int) -> bool:
@@ -165,8 +187,7 @@ class KtM960x(Instrument):
         status = self._dll.KtM960x_GetAttributeViBoolean(self._session, b"",
                                                          attr, ctypes.byref(s))
         if status:
-            print("Driver error! ", status)
-            raise ValueError
+            raise ValueError(f"Driver error: {status}")
         return True if s else False
 
     def set_vi_bool(self, attr: int, value: bool) -> bool:
@@ -174,8 +195,7 @@ class KtM960x(Instrument):
         status = self._dll.KtM960x_SetAttributeViBoolean(self._session, b"",
                                                          attr, v)
         if status:
-            print("Driver error! ", status)
-            raise ValueError
+            raise ValueError(f"Driver error: {status}")
         return True
 
     def get_vi_real64(self, attr: int) -> float:
@@ -184,8 +204,7 @@ class KtM960x(Instrument):
                                                         attr, ctypes.byref(s))
 
         if status:
-            print("Driver error! ", status)
-            raise ValueError
+            raise ValueError(f"Driver error: {status}")
         return float(s.value)
 
     def set_vi_real64(self, attr: int, value: float) -> bool:
@@ -193,8 +212,7 @@ class KtM960x(Instrument):
         status = self._dll.KtM960x_SetAttributeViReal64(self._session, b"",
                                                         attr, v)
         if status:
-            print("Driver error! ", status)
-            raise ValueError
+            raise ValueError(f"Driver error: {status}")
         return True
 
     def set_vi_int(self, attr: int, value: int) -> bool:
@@ -202,8 +220,7 @@ class KtM960x(Instrument):
         status = self._dll.KtM960x_SetAttributeViInt32(self._session, b"",
                                                        attr, v)
         if status:
-            print("Driver error! ", status)
-            raise ValueError
+            raise ValueError(f"Driver error: {status}")
         return True
 
     def get_vi_int(self, attr: int) -> int:
@@ -211,8 +228,7 @@ class KtM960x(Instrument):
         status = self._dll.KtM960x_GetAttributeViInt32(self._session, b"",
                                                        attr, ctypes.byref(v))
         if status:
-            print("Driver error! ", status)
-            raise ValueError
+            raise ValueError(f"Driver error: {status}")
         return int(v.value)
 
     def close(self):
