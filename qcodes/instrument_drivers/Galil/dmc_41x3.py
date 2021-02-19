@@ -88,6 +88,86 @@ class GalilMotionController(Instrument):
         self.g.GClose()
 
 
+class VectorMode(InstrumentChannel):
+    """
+    Class to control motors independently
+    """
+
+    def __init__(self,
+                 parent: "DMC4133Controller",
+                 name: str,
+                 **kwargs: Any) -> None:
+        super().__init__(parent, name, **kwargs)
+        self._available_planes = ["AB", "BC", "AC"]
+
+        self.add_parameter("coordinate_system",
+                           get_cmd="CA ?",
+                           get_parser=self._parse_coordinate_system_active,
+                           set_cmd="CA {}",
+                           vals=Enum("S", "T"),
+                           docstring="sets coordinate system for the motion")
+
+        self.add_parameter("clear_sequence",
+                           set_cmd="CS {}",
+                           vals=Enum("S", "T"),
+                           docstring="clears vectors specified in the given "
+                                     "coordinate system")
+
+        self.add_parameter("vector_mode_plane",
+                           set_cmd="VM {}",
+                           vals=Enum(*self._available_planes),
+                           docstring="sets plane of motion for the motors")
+
+        self.add_parameter("vector_position",
+                           set_cmd="VP {},{}",  # make group param
+                           vals=Ints(-2147483648, 2147483647),
+                           units="quadrature counts",
+                           docstring="sets position vector for the motion")
+
+        self.add_parameter("vector_acceleration",
+                           get_cmd="VA ?",
+                           get_parser=int,
+                           set_cmd="VA {}",
+                           vals=Enum(np.linspace(1024, 1073740800, 1024)),
+                           units="counts/sec2",
+                           docstring="sets and gets the defined vector's "
+                                     "acceleration")
+
+        self.add_parameter("vector_deceleration",
+                           get_cmd="VD ?",
+                           get_parser=int,
+                           set_cmd="VD {}",
+                           vals=Enum(np.linspace(1024, 1073740800, 1024)),
+                           units="counts/sec2",
+                           docstring="sets and gets the defined vector's "
+                                     "deceleration")
+
+        self.add_parameter("vector_speed",
+                           get_cmd="VS ?",
+                           get_parser=int,
+                           set_cmd="VS {}",
+                           vals=Enum(np.linspace(2, 15000000, 2)),
+                           units="counts/sec",
+                           docstring="sets and gets defined vector's speed")
+
+    @staticmethod
+    def _parse_coordinate_system_active(val: str) -> str:
+        """
+        parses the the current active coordinate system
+        """
+        if int(val):
+            return "T"
+        else:
+            return "S"
+
+    def vector_seq_end(self) -> None:
+        """
+        indicates to the controller that the end of the vector is coming up.
+        is required to exit the vector mode gracefully
+        """
+        self.write("VE")
+
+
 class Motor(InstrumentChannel):
     """
     Class to control motors independently
@@ -229,88 +309,21 @@ class DMC4133Controller(GalilMotionController):
                                      "time specified before executing the next "
                                      "command")
 
-        self.add_parameter("coordinate_system",
-                           get_cmd="CA ?",
-                           get_parser=self._parse_coordinate_system_active,
-                           set_cmd="CA {}",
-                           vals=Enum("S", "T"),
-                           docstring="sets coordinate system for the motion")
-
-        self.add_parameter("clear_sequence",
-                           set_cmd="CS {}",
-                           vals=Enum("S", "T"),
-                           docstring="clears vectors specified in the given "
-                                     "coordinate system")
-
-        self.add_parameter("vector_mode",
-                           set_cmd="VM {}",
-                           vals=Enum("AB", "BC", "AC"),
-                           docstring="sets plane of motion for the motors")
-
-        self.add_parameter("vector_position",
-                           set_cmd="VP {},{}", #make group param
-                           vals=Ints(-2147483648, 2147483647),
-                           units="quadrature counts",
-                           docstring="can set initial and final vector "
-                                     "positions for the motion")
-
-        self.add_parameter("vector_acceleration",
-                           get_cmd="VA ?",
-                           get_parser=int,
-                           set_cmd="VA {}",
-                           vals=Enum(np.linspace(1024, 1073740800, 1024)),
-                           units="counts/sec2",
-                           docstring="sets and gets the defined vector's "
-                                     "acceleration")
-
-        self.add_parameter("vector_deceleration",
-                           get_cmd="VD ?",
-                           get_parser=int,
-                           set_cmd="VD {}",
-                           vals=Enum(np.linspace(1024, 1073740800, 1024)),
-                           units="counts/sec2",
-                           docstring="sets and gets the defined vector's "
-                                     "deceleration")
-
-        self.add_parameter("vector_speed",
-                           get_cmd="VS ?",
-                           get_parser=int,
-                           set_cmd="VS {}",
-                           vals=Enum(np.linspace(2, 15000000, 2)),
-                           units="counts/sec",
-                           docstring="sets and gets defined vector's speed")
-
-        self.add_parameter("half_circle_move_of_radius",
-                           set_cmd="CR {},0,180",
-                           vals=Ints(10, 6000000),
-                           units="quadrature counts",
-                           docstring="defines half circle move in the "
-                                     "set vector mode")
-
-        self.add_parameter("vector_seq_end",
-                           set_cmd="VE",
-                           docstring="indicates to the controller that the end"
-                                     " of the vector is coming up. is "
-                                     "required to exit the vector mode "
-                                     "gracefully")
-
+        self._set_default_update_time()
         self.add_submodule("motor_a", Motor(self, "A"))
         self.add_submodule("motor_b", Motor(self, "B"))
         self.add_submodule("motor_c", Motor(self, "C"))
+        self.add_submodule("vector_mode", VectorMode(self, "vector_mode"))
 
         self.connect_message()
 
-    def _move_motor_a(self, val: int) -> None:
+    def _set_default_update_time(self) -> None:
         """
-        moves motor A to the given amount from the current position
+        sets sampling period to default value of 1000. sampling period affects
+        the AC, AS, AT, DC, FA, FV, HV, JG, KP, NB, NF, NZ, PL, SD, SP, VA,
+        VD, VS, WT commands.
         """
-        self.motor_off("A")
-        self.servo_at_motor("A")
-        self.write(f"PRA={val}")
-        self.write("SPA=1000")
-        self.write("ACA=500000")
-        self.write("DCA=500000")
-        self.begin("A")
+        self.write("TM 1000")
 
     def _get_absolute_position(self) -> Dict[str, int]:
         """
@@ -323,16 +336,6 @@ class DMC4133Controller(GalilMotionController):
         result["C"] = int(data[2])
 
         return result
-
-    @staticmethod
-    def _parse_coordinate_system_active(val: str) -> str:
-        """
-        parses the the current active coordinate system
-        """
-        if int(val):
-            return "T"
-        else:
-            return "S"
 
     def end_program(self) -> None:
         """
