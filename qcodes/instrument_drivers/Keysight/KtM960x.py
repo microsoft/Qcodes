@@ -24,7 +24,7 @@ class KtM960x(Instrument):
                  name: str,
                  address: str,
                  options: bytes = b"",
-                 dll_string: str = _dll_loc,
+                 dll_path: str = r"C:\Program Files\IVI Foundation\IVI\Bin\KtM960x_64.dll"
                  **kwargs) -> None:
         super().__init__(name, **kwargs)
 
