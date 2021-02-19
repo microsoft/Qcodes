@@ -2,17 +2,18 @@ from .KtMAwgDefs import *
 
 import ctypes
 from functools import partial
-from typing import Dict, Optional
+from typing import Dict, Optional, Any
 
 from qcodes import Instrument, InstrumentChannel
 from qcodes.utils.helpers import create_on_off_val_mapping
 
 
 class KtMAWGChannel(InstrumentChannel):
-    """"""
+    """
+
+    """
 
     def __init__(self, parent: Instrument, name: str, chan: int) -> None:
-        """"""
 
         # Sanity Check inputs
         if name not in ["ch1", "ch2", "ch3"]:
@@ -21,7 +22,9 @@ class KtMAWGChannel(InstrumentChannel):
             raise ValueError(f"Invalid channel: {chan}, expecting ch1:ch3")
 
         super().__init__(parent, name)
-        self._channel = ctypes.create_string_buffer(f"Channel{chan}".encode("ascii"))
+        self._channel = ctypes.create_string_buffer(
+            f"Channel{chan}".encode("ascii")
+        )
 
         # Used to access waveforms loaded into the driver
         self._awg_handle = None
@@ -34,10 +37,14 @@ class KtMAWGChannel(InstrumentChannel):
             "output_term_config",
             label="Output Terminal Configuration",
             get_cmd=partial(
-                parent.get_vi_int, KTMAWG_ATTR_TERMINAL_CONFIGURATION, ch=self._channel
+                parent.get_vi_int,
+                KTMAWG_ATTR_TERMINAL_CONFIGURATION,
+                ch=self._channel
             ),
             set_cmd=partial(
-                parent.set_vi_int, KTMAWG_ATTR_TERMINAL_CONFIGURATION, ch=self._channel
+                parent.set_vi_int,
+                KTMAWG_ATTR_TERMINAL_CONFIGURATION,
+                ch=self._channel
             ),
             val_mapping={
                 "differential": KTMAWG_VAL_TERMINAL_CONFIGURATION_DIFFERENTIAL,
@@ -82,9 +89,10 @@ class KtMAWGChannel(InstrumentChannel):
                 "component": KTMAWG_VAL_GAIN_CONTROL_COMPONENT,
             },
         )
-        self.add_parameter(
-            "gain", label="Composite Output Gain", set_cmd=self._set_gain, get_cmd=None
-        )
+        self.add_parameter("gain",
+                           label="Composite Output Gain",
+                           set_cmd=self._set_gain,
+                           get_cmd=None)
 
         self.add_parameter(
             "analog_gain",
@@ -195,9 +203,14 @@ class KtMAWGChannel(InstrumentChannel):
 
 class KtMAwg(Instrument):
     _default_buf_size = 256
-    _dll_loc = r"C:\Program Files\IVI Foundation\IVI\Bin\KtMAwg_64.dll"
 
-    def __init__(self, name: str, address: str, options: bytes = b"", **kwargs) -> None:
+    def __init__(self,
+                 name: str,
+                 address: str,
+                 options: bytes = b"",
+                 dll_path: str = r"C:\Program Files\IVI "
+                                 r"Foundation\IVI\Bin\KtMAwg_64.dll",
+                 **kwargs: Any) -> None:
         super().__init__(name, **kwargs)
 
         if not isinstance(address, bytes):
@@ -205,8 +218,9 @@ class KtMAwg(Instrument):
 
         self._address = address
         self._session = ctypes.c_int(0)
+        self._dll_loc = dll_path
         self._dll = ctypes.windll.LoadLibrary(self._dll_loc)
-        self._channel = ctypes.create_string_buffer("Channel1".encode("ascii"))
+        self._channel = ctypes.create_string_buffer(b"Channel1")
 
         for ch_num in [1, 2, 3]:
             ch_name = f"ch{ch_num}"
@@ -229,7 +243,8 @@ class KtMAwg(Instrument):
         self.get_firmware_revision = partial(
             self.get_vi_string, KTMAWG_ATTR_INSTRUMENT_FIRMWARE_REVISION
         )
-        self.get_model = partial(self.get_vi_string, KTMAWG_ATTR_INSTRUMENT_MODEL)
+        self.get_model = partial(self.get_vi_string,
+                                 KTMAWG_ATTR_INSTRUMENT_MODEL)
         self.get_serial_number = partial(
             self.get_vi_string, KTMAWG_ATTR_MODULE_SERIAL_NUMBER
         )
@@ -269,7 +284,10 @@ class KtMAwg(Instrument):
         err = ctypes.c_int32(0)
         err_msg = ctypes.create_string_buffer(256)
 
-        self._dll.KtMAwg_GetError(self._session, ctypes.byref(err), 255, err_msg)
+        self._dll.KtMAwg_GetError(self._session,
+                                  ctypes.byref(err),
+                                  255,
+                                  err_msg)
 
         raise ValueError(f"Got dll error num {err.value} msg {err_msg.value}")
 
@@ -309,7 +327,10 @@ class KtMAwg(Instrument):
 
     def set_vi_bool(self, attr: int, value: bool, ch: bytes = b"") -> bool:
         v = ctypes.c_uint16(1) if value else ctypes.c_uint16(0)
-        status = self._dll.KtMAwg_SetAttributeViBoolean(self._session, ch, attr, v)
+        status = self._dll.KtMAwg_SetAttributeViBoolean(self._session,
+                                                        ch,
+                                                        attr,
+                                                        v)
         if status:
             raise ValueError(f"Driver error: {status}")
         return True
@@ -326,14 +347,20 @@ class KtMAwg(Instrument):
 
     def set_vi_real64(self, attr: int, value: float, ch: bytes = b"") -> bool:
         v = ctypes.c_double(value)
-        status = self._dll.KtMAwg_SetAttributeViReal64(self._session, ch, attr, v)
+        status = self._dll.KtMAwg_SetAttributeViReal64(self._session,
+                                                       ch,
+                                                       attr,
+                                                       v)
         if status:
             raise ValueError(f"Driver error: {status}")
         return True
 
     def set_vi_int(self, attr: int, value: int, ch: bytes = b"") -> bool:
         v = ctypes.c_int32(value)
-        status = self._dll.KtMAwg_SetAttributeViInt32(self._session, ch, attr, v)
+        status = self._dll.KtMAwg_SetAttributeViInt32(self._session,
+                                                      ch,
+                                                      attr,
+                                                      v)
         if status:
             raise ValueError(f"Driver error: {status}")
         return True
@@ -347,6 +374,6 @@ class KtMAwg(Instrument):
             raise ValueError(f"Driver error: {status}")
         return int(v.value)
 
-    def close(self):
+    def close(self) -> None:
         self._dll.KtMAwg_close(self._session)
         super().close()
