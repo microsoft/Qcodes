@@ -10,10 +10,9 @@ from qcodes.utils.helpers import create_on_off_val_mapping
 
 class KtM960x(Instrument):
     """
-    Provide a wrapper for the Keysight KtM960x DAC. This driver provides
-    an interface into the IVI-C driver provided by Keysight.
-    The .dll is installed by default into
-        C:\Program Files\IVI Foundation\IVI\Bin\KtM960x_64.dll
+    Provide a wrapper for the Keysight KtM960x DAC. This driver provides an
+    interface into the IVI-C driver provided by Keysight. The .dll is installed
+    by default into C:\Program Files\IVI Foundation\IVI\Bin\KtM960x_64.dll
     but a different path can be supplied to the constructor
     """
 
