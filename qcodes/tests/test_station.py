@@ -275,7 +275,7 @@ instruments:
   lakeshore:
     type: qcodes.instrument_drivers.Lakeshore.Model_336.Model_336
     enable_forced_reconnect: true
-    address: GPIB::2::65535::INSTR
+    address: GPIB::2::INSTR
     init:
       visalib: '{sims_path}lakeshore_model336.yaml@sim'
   mock_dac:
