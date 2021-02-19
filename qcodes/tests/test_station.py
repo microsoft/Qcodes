@@ -264,8 +264,8 @@ def config_file_context(file_content):
         yield str(filename)
 
 
-@pytest.fixture
-def example_station_config():
+@pytest.fixture(name="example_station_config")
+def _make_example_station_config():
     """
     Returns path to temp yaml file with station config.
     """
@@ -316,8 +316,8 @@ def station_config_has_been_loaded(st: Station) -> bool:
     return st.config is not None
 
 
-@pytest.fixture
-def example_station(example_station_config):
+@pytest.fixture(name="example_station")
+def _make_example_station(example_station_config):
     return Station(config_file=example_station_config)
 
 
@@ -800,3 +800,78 @@ def test_config_validation_comprehensive_config():
     Station(config_file=os.path.join(
         get_qcodes_path(), 'dist', 'tests', 'station', 'example.station.yaml')
     )
+
+
+def test_load_all_instruments_raises_on_both_only_names_and_only_types_passed(
+        example_station
+):
+    with pytest.raises(
+        ValueError,
+        match="It is an error to supply both ``only_names`` "
+              "and ``only_types`` arguments.",
+    ):
+        example_station.load_all_instruments(only_names=(), only_types=())
+
+
+def test_load_all_instruments_no_args(example_station):
+    all_instruments_in_config = {"lakeshore", "mock_dac", "mock_dac2"}
+
+    loaded_instruments = example_station.load_all_instruments()
+
+    assert set(loaded_instruments) == all_instruments_in_config
+
+    for instrument in all_instruments_in_config:
+        assert instrument in example_station.components
+        assert Instrument.exist(instrument)
+
+
+def test_load_all_instruments_only_types(example_station):
+    all_dummy_instruments = {"mock_dac", "mock_dac2"}
+
+    loaded_instruments = example_station.load_all_instruments(
+        only_types=("DummyInstrument",)
+    )
+
+    assert set(loaded_instruments) == all_dummy_instruments
+
+    for instrument in all_dummy_instruments:
+        assert instrument in example_station.components
+        assert Instrument.exist(instrument)
+
+    other_instruments = (
+            set(example_station.config["instruments"].keys())
+            - all_dummy_instruments
+    )
+
+    for instrument in other_instruments:
+        assert instrument not in example_station.components
+        assert not Instrument.exist(instrument)
+
+
+def test_load_all_instruments_only_names(example_station):
+    instruments_to_load = {"lakeshore", "mock_dac"}
+
+    loaded_instruments = example_station.load_all_instruments(
+        only_names=instruments_to_load
+    )
+
+    assert set(loaded_instruments) == instruments_to_load
+
+    for instrument in loaded_instruments:
+        assert instrument in example_station.components
+        assert Instrument.exist(instrument)
+
+    other_instruments = (
+            set(example_station.config["instruments"].keys())
+            - instruments_to_load
+    )
+
+    for instrument in other_instruments:
+        assert instrument not in example_station.components
+        assert not Instrument.exist(instrument)
+
+
+def test_load_all_instruments_without_config_raises():
+    station = Station()
+    with pytest.raises(ValueError, match="Station has no config"):
+        station.load_all_instruments()
