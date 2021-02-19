@@ -101,13 +101,55 @@ class Motor(InstrumentChannel):
         self._axis = name
 
         self.add_parameter("relative_position",
-                           get_cmd=f"MG _PR{self._axis}",
                            units="quadrature counts",
+                           get_cmd=f"MG _PR{self._axis}",
                            get_parser=int,
                            set_cmd=self._set_relative_position,
                            vals=Ints(-2147483648, 2147483647),
                            docstring="sets relative position for the motor's "
                                      "move")
+
+        self.add_parameter("speed",
+                           units="counts/sec",
+                           get_cmd=f"MG _SP{self._axis}",
+                           get_parser=int,
+                           set_cmd=self._set_speed,
+                           vals=Enum(np.linspace(0, 3000000, 2)),
+                           docstring="speed for motor's motion")
+
+        self.add_parameter("acceleration",
+                           units="counts/sec2",
+                           get_cmd=f"MG _AC{self._axis}",
+                           get_parser=int,
+                           set_cmd=self._set_acceleration,
+                           vals=Enum(np.linspace(1024, 1073740800, 1024)),
+                           docstring="acceleration for motor's motion")
+
+        self.add_parameter("deceleration",
+                           units="counts/sec2",
+                           get_cmd=f"MG _DC{self._axis}",
+                           get_parser=int,
+                           set_cmd=self._set_deceleration,
+                           vals=Enum(np.linspace(1024, 1073740800, 1024)),
+                           docstring="deceleration for motor's motion")
+
+    def _set_deceleration(self, val: str) -> None:
+        """
+        set deceleration for the motor's motion
+        """
+        self.write(f"DC{self._axis}={val}")
+
+    def _set_acceleration(self, val: str) -> None:
+        """
+        set acceleration for the motor's motion
+        """
+        self.write(f"AC{self._axis}={val}")
+
+    def _set_speed(self, val: str) -> None:
+        """
+        sets speed for motor's motion
+        """
+        self.write(f"SP{self._axis}={val}")
 
     def _set_relative_position(self, val: str) -> None:
         """
@@ -450,11 +492,5 @@ class Arm:
     def set_end_position(self) -> None:
         """
         sets last row of pads in chip as end position
-        """
-        pass
-
-    def begin_motion(self) -> str:
-        """
-        begins motion of motors after setup
         """
         pass
