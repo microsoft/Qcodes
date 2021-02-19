@@ -98,10 +98,10 @@ class Motor(InstrumentChannel):
                  name: str,
                  **kwargs: Any) -> None:
         super().__init__(parent, name, **kwargs)
-        self.axis = name
+        self._axis = name
 
         self.add_parameter("relative_position",
-                           get_cmd=f"MG _PR{self.axis}",
+                           get_cmd=f"MG _PR{self._axis}",
                            units="quadrature counts",
                            get_parser=int,
                            set_cmd=self._set_relative_position,
@@ -113,19 +113,19 @@ class Motor(InstrumentChannel):
         """
         sets relative position
         """
-        self.write(f"PR{self.axis}={val}")
+        self.write(f"PR{self._axis}={val}")
 
     def off(self) -> None:
         """
         turns motor off
         """
-        self.write(f"MO {self.axis}")
+        self.write(f"MO {self._axis}")
 
     def on_off_status(self) -> str:
         """
         tells motor on off status
         """
-        val = self.ask(f"MG _MO{self.axis}")
+        val = self.ask(f"MG _MO{self._axis}")
         if int(val):
             return "off"
         else:
@@ -135,7 +135,7 @@ class Motor(InstrumentChannel):
         """
         servo at the motor
         """
-        self.write(f"SH {self.axis}")
+        self.write(f"SH {self._axis}")
 
 
 class DMC4133Controller(GalilMotionController):
