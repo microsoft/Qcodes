@@ -2,7 +2,7 @@ from .KtM960xDefs import *
 
 import ctypes
 from functools import partial
-from typing import (Dict, Optional)
+from typing import (Dict, Optional, Any)
 
 from qcodes import Instrument, validators as vals
 from qcodes.utils.helpers import create_on_off_val_mapping
@@ -18,14 +18,14 @@ class KtM960x(Instrument):
     """
 
     _default_buf_size = 256
-    _dll_loc = r"C:\Program Files\IVI Foundation\IVI\Bin\KtM960x_64.dll"
 
     def __init__(self,
                  name: str,
                  address: str,
                  options: bytes = b"",
-                 dll_path: str = r"C:\Program Files\IVI Foundation\IVI\Bin\KtM960x_64.dll"
-                 **kwargs) -> None:
+                 dll_path: str = r"C:\Program Files\IVI "
+                                 r"Foundation\IVI\Bin\KtM960x_64.dll",
+                 **kwargs: Any) -> None:
         super().__init__(name, **kwargs)
 
         if not isinstance(address, bytes):
@@ -33,6 +33,7 @@ class KtM960x(Instrument):
 
         self._address = address
         self._session = ctypes.c_int(0)
+        self._dll_loc = dll_path
         self._dll = ctypes.windll.LoadLibrary(self._dll_loc)
 
         self.add_parameter('output',
@@ -42,8 +43,7 @@ class KtM960x(Instrument):
                            set_cmd=partial(self.set_vi_bool,
                                            KTM960X_ATTR_OUTPUT_ENABLED),
                            val_mapping=create_on_off_val_mapping(on_val=True,
-                                                                 off_val=False)
-                            )
+                                                                 off_val=False))
 
         self.add_parameter('voltage_level',
                            label="Source Voltage Level",
@@ -245,6 +245,6 @@ class KtM960x(Instrument):
             raise ValueError(f"Driver error: {status}")
         return int(v.value)
 
-    def close(self):
+    def close(self) -> None:
         self._dll.KtM960x_close(self._session)
         super().close()
