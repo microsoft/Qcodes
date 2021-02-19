@@ -5,9 +5,18 @@ from functools import partial
 from typing import (Dict, Optional)
 
 from qcodes import Instrument, validators as vals
+from qcodes.utils.helpers import create_on_off_val_mapping
 
 
 class KtM960x(Instrument):
+    """
+    Provide a wrapper for the Keysight KtM960x DAC. This driver provides
+    an interface into the IVI-C driver provided by Keysight.
+    The .dll is installed by default into
+        C:\Program Files\IVI Foundation\IVI\Bin\KtM960x_64.dll
+    but a different path can be supplied to the constructor
+    """
+
     _default_buf_size = 256
     _dll_loc = r"C:\Program Files\IVI Foundation\IVI\Bin\KtM960x_64.dll"
 
@@ -15,6 +24,7 @@ class KtM960x(Instrument):
                  name: str,
                  address: str,
                  options: bytes = b"",
+                 dll_string: str = _dll_loc,
                  **kwargs) -> None:
         super().__init__(name, **kwargs)
 
@@ -31,7 +41,9 @@ class KtM960x(Instrument):
                                            KTM960X_ATTR_OUTPUT_ENABLED),
                            set_cmd=partial(self.set_vi_bool,
                                            KTM960X_ATTR_OUTPUT_ENABLED),
-                           val_mapping={'on': True, 'off': False})
+                           val_mapping=create_on_off_val_mapping(on_val=True,
+                                                                 off_val=False)
+                            )
 
         self.add_parameter('voltage_level',
                            label="Source Voltage Level",
@@ -121,7 +133,7 @@ class KtM960x(Instrument):
         }
         return id_dict
 
-    def _measure(self, key: str = None):
+    def _measure(self, key: str) -> float:
 
         # Setup the output
         self.set_vi_int(KTM960X_ATTR_OUTPUT_PRIORITY_MODE,
@@ -158,7 +170,7 @@ class KtM960x(Instrument):
                    'timestamp': v[4],
                    'source': v[5]}
 
-        return val_map if key is None else val_map[key]
+        return val_map[key]
 
     # Query the driver for errors
     def _get_errors(self):
