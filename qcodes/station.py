@@ -210,7 +210,8 @@ class Station(Metadatable, DelegateAttributes):
                 to make it unique among previously added components.
         """
         try:
-            component.snapshot(update=update_snapshot)
+            if not (isinstance(component, Parameter) and component.snapshot_exclude):
+                component.snapshot(update=update_snapshot)
         except:
             pass
         if name is None:
