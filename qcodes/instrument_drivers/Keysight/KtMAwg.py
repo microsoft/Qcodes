@@ -1,4 +1,4 @@
-from .KtMAwg_Defs import *
+from .KtMAwgDefs import *
 
 import ctypes
 from functools import partial

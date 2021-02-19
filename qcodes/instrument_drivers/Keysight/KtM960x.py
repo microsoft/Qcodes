@@ -1,4 +1,4 @@
-from .KtM960x_Defs import *
+from .KtM960xDefs import *
 
 import ctypes
 from functools import partial
