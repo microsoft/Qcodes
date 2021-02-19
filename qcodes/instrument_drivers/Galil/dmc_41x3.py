@@ -462,23 +462,30 @@ class Arm:
 
     def __init__(self,
                  driver: DMC4133Controller,
-                 chip_design: Dict[str, Union(int, float)]) -> None:
-        self.driver = driver
-        self.chip_design = chip_design
-        self.load_chip_design(self.chip_design)
+                 chip: Dict[str, Union[int, float]]) -> None:
 
-    def load_chip_design(self, filename: str) -> None:
-        """
-        loads chip design features such as width and height of the chip,
-        pads dimensions and intra-pads measurements
-        """
-        self._chip_length: float
-        self._chip_width: float
-        self._rows: int
-        self._num_terminals_in_row: int
-        self._terminal_length: float
-        self._terminal_width: float
-        self._inter_terminal_distance_for_adjacent_rows: float
+        for key in ["length", "width", "rows", "num_terminals_in_row",
+                   "terminal_length", "terminal_width",
+                   "inter_terminal_distance_for_adjacent_rows"]:
+            if key not in list(chip.keys()):
+                raise RuntimeError(f"Chip {key} data not present in the chip "
+                                   f"dictionary. Chip dictionary should have "
+                                   f"following entries: length, width, rows, "
+                                   f"num_terminals_in_row, terminal_length, "
+                                   f"terminal_width, "
+                                   f"inter_terminal_distance_for_adjacent_rows")
+
+        self._chip_length: float = chip["length"]
+        self._chip_width: float = chip["width"]
+        self._rows: int = chip["rows"]
+        self._num_terminals_in_row: int = chip["num_terminals_in_row"]
+        self._terminal_length: float = chip["terminal_length"]
+        self._terminal_width: float = chip["terminal_width"]
+        self._inter_terminal_distance_for_adjacent_rows: float = chip[
+            "inter_terminal_distance_for_adjacent_rows"
+        ]
+
+        self.driver = driver
 
     def move_to_next_row(self) -> int:
         """
