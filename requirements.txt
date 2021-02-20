@@ -20,7 +20,7 @@ googleapis-common-protos~=1.52.0
 h5py~=3.1.0
 idna~=2.10
 importlib-metadata==3.4.0;python_version<'3.8'
-ipykernel~=5.4.3
+ipykernel~=5.5.0
 ipython~=7.20.0
 ipython-genutils~=0.2.0
 ipywidgets~=7.6.3
