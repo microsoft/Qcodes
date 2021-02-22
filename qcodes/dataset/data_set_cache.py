@@ -175,7 +175,7 @@ class DataSetCache:
     @deprecate(alternative="to_pandas_dataframe or to_pandas_dataframe_dict")
     def to_pandas(self) -> Optional[Dict[str, "pd.DataFrame"]]:
         """
-        Returns the values stored in the :class:`.DataSet` as a
+        Returns the values stored in the :class:`.dataset.data_set.DataSet` as a
         concatenated :py:class:`pandas.DataFrame` s
 
         The DataFrame contains a column for the data and is indexed by a
@@ -195,7 +195,7 @@ class DataSetCache:
 
     def to_xarray_dataarray_dict(self) -> Optional[Dict[str, "xr.DataArray"]]:
         """
-        Returns the values stored in the :class:`.DataSet` as a dict of
+        Returns the values stored in the :class:`.dataset.data_set.DataSet` as a dict of
         :py:class:`xr.DataArray` s
         Each element in the dict is indexed by the names of the dependent parameters.
 
@@ -212,7 +212,7 @@ class DataSetCache:
 
     def to_xarray_dataset(self) -> Optional["xr.Dataset"]:
         """
-        Returns the values stored in the :class:`.DataSet` as a
+        Returns the values stored in the :class:`.dataset.data_set.DataSet` as a
         :py:class:`xr.Dataset` object.
 
         Note that if the dataset contains data for multiple parameters that do
