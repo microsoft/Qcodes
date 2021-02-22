@@ -1167,7 +1167,10 @@ class DataSet(Sized):
 
                 dataarray_dict = ds.to_xarray_dataarray_dict()
         """
-        return self._load_to_xarray_dataarray_dict(*params, start=start, end=end)
+        data = self.get_parameter_data(*params,
+                                       start=start,
+                                       end=end)
+        return self._load_to_xarray_dataarray_dict(data)
 
     def to_xarray_dataset(self, *params: Union[str,
                                                ParamSpec,
@@ -1209,15 +1212,15 @@ class DataSet(Sized):
         """
         import xarray as xr
 
-        if not self._same_setpoints(self.get_parameter_data(*params,
-                                                            start=start,
-                                                            end=end)):
+        data = self.get_parameter_data(*params,
+                                       start=start,
+                                       end=end)
+        if not self._same_setpoints(data):
             warnings.warn(
                 'Independent parameter setpoints are not equal. \
                 Check concatenated output carefully.')
 
-        data_xrdarray_dict = self._load_to_xarray_dataarray_dict(
-            *params, start=start, end=end)
+        data_xrdarray_dict = self._load_to_xarray_dataarray_dict(data)
 
         # Casting Hashable for the key type until python/mypy#1114
         # and python/typing#445 are resolved.
@@ -1280,16 +1283,9 @@ class DataSet(Sized):
         return dfs
 
     def _load_to_xarray_dataarray_dict(self,
-                                       *params: Union[str,
-                                                      ParamSpec,
-                                                      _BaseParameter],
-                                       start: Optional[int] = None,
-                                       end: Optional[int] = None) -> \
+                                       datadict: Dict[str, Dict[str, numpy.ndarray]]) -> \
             Dict[str, "xr.DataArray"]:
         import xarray as xr
-        datadict = self.get_parameter_data(*params,
-                                           start=start,
-                                           end=end)
 
         data_xrdarray_dict: Dict[str, xr.DataArray] = {}
 
