@@ -1,6 +1,7 @@
-from typing import TYPE_CHECKING, Dict, Optional, Mapping, Tuple
+from typing import TYPE_CHECKING, Dict, Optional, Mapping, Tuple, cast, Hashable
 from copy import copy
 import logging
+import warnings
 
 import numpy as np
 
@@ -8,10 +9,11 @@ from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.sqlite.queries import (
     load_new_data_for_rundescriber, completed)
 from qcodes.dataset.sqlite.connection import ConnectionPlus
+from qcodes.utils.deprecate import deprecate
 
 if TYPE_CHECKING:
     import pandas as pd
-
+    import xarray as xr
     from .data_set import DataSet, ParameterData
 
 
@@ -131,7 +133,7 @@ class DataSetCache:
         if not all(status is None for status in self._write_status.values()):
             self._live = True
 
-    def to_pandas(self) -> Optional[Dict[str, "pd.DataFrame"]]:
+    def to_pandas_dataframe_dict(self) -> Optional[Dict[str, "pd.DataFrame"]]:
         """
         Convert the cached dataset to Pandas dataframes. The returned dataframes
         are in the same format :py:class:`.DataSet.to_pandas_dataframe_dict`.
@@ -147,6 +149,107 @@ class DataSetCache:
         dfs = self._dataset._load_to_dataframe_dict(data)
         return dfs
 
+    def to_pandas_dataframe(self) -> Optional["pd.DataFrame"]:
+        """
+        Convert the cached dataset to Pandas dataframes. The returned dataframes
+        are in the same format :py:class:`.DataSet.to_pandas_dataframe_dict`.
+
+        Returns:
+            A dict from parameter name to Pandas Dataframes. Each dataframe
+            represents one parameter tree.
+        """
+        import pandas as pd
+        data = self.data()
+        if data is None:
+            return None
+
+        if not self._dataset._same_setpoints(data):
+            warnings.warn(
+                'Independent parameter setpoints are not equal. \
+                Check concatenated output carefully.')
+
+        dfs_dict = self._dataset._load_to_dataframe_dict(data)
+        df = pd.concat(list(dfs_dict.values()), axis=1)
+        return df
+
+    @deprecate(alternative="to_pandas_dataframe or to_pandas_dataframe_dict")
+    def to_pandas(self) -> Optional[Dict[str, "pd.DataFrame"]]:
+        """
+        Returns the values stored in the :class:`.DataSet` as a
+        concatenated :py:class:`pandas.DataFrame` s
+
+        The DataFrame contains a column for the data and is indexed by a
+        :py:class:`pandas.MultiIndex` formed from all the setpoints
+        of the parameter.
+
+        Note that if the dataset contains data for multiple parameters that do
+        not share the same setpoints it is recommended to use
+        :py:class:`.to_pandas_dataframe_dict`
+
+        Returns:
+            :py:class:`pandas.DataFrame` s with the requested parameter as
+            a column and a indexed by a :py:class:`pandas.MultiIndex` formed
+            by the dependencies.
+        """
+        return self.to_pandas_dataframe_dict()
+
+    def to_xarray_dataarray_dict(self) -> Optional[Dict[str, "xr.DataArray"]]:
+        """
+        Returns the values stored in the :class:`.DataSet` as a dict of
+        :py:class:`xr.DataArray` s
+        Each element in the dict is indexed by the names of the dependent parameters.
+
+        Returns:
+            Dictionary from requested parameter names to :py:class:`xr.DataArray` s
+            with the requested parameter(s) as a column(s) and coordinates
+            formed by the dependencies.
+
+        """
+        data = self.data()
+        if data is None:
+            return None
+        return self._dataset._load_to_xarray_dataarray_dict(data)
+
+    def to_xarray_dataset(self) -> Optional["xr.Dataset"]:
+        """
+        Returns the values stored in the :class:`.DataSet` as a
+        :py:class:`xr.Dataset` object.
+
+        Note that if the dataset contains data for multiple parameters that do
+        not share the same setpoints it is recommended to use
+        :py:class:`.to_xarray_dataarray_dict`
+
+        Returns:
+            :py:class:`xr.Dataset` with the requested parameter(s) data as
+            :py:class:`xr.DataArray` s and coordinates formed by the dependencies.
+
+        """
+        import xarray as xr
+
+        data = self.data()
+        if data is None:
+            return None
+
+        if not self._dataset._same_setpoints(data):
+            warnings.warn(
+                'Independent parameter setpoints are not equal. \
+                Check concatenated output carefully.')
+
+        data_xrdarray_dict = self._dataset._load_to_xarray_dataarray_dict(data)
+
+        # Casting Hashable for the key type until python/mypy#1114
+        # and python/typing#445 are resolved.
+        xrdataset = xr.Dataset(
+            cast(Dict[Hashable, xr.DataArray], data_xrdarray_dict))
+
+        for dim in xrdataset.dims:
+            paramspec_dict = self._dataset.paramspecs[str(dim)]._to_dict()
+            xrdataset.coords[str(dim)].attrs.update(paramspec_dict.items())
+
+        xrdataset.attrs["sample_name"] = self._dataset.sample_name
+        xrdataset.attrs["exp_name"] = self._dataset.exp_name
+
+        return xrdataset
 
 def load_new_data_from_db_and_append(
             conn: ConnectionPlus,
