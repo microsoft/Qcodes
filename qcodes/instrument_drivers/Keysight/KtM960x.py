@@ -108,11 +108,11 @@ class KtM960x(Instrument):
 
         self.connect_message()
 
-    def _connect(self, options: bytes) -> None:
+    def _connect(self) -> None:
         status = self._dll.KtM960x_InitWithOptions(self._address,
                                                    1,
                                                    1,
-                                                   options,
+                                                   self._options,
                                                    ctypes.byref(self._session))
         if status:
             raise SystemError(f"connection to device failed! error: {status}")
