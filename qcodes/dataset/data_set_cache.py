@@ -141,10 +141,10 @@ class DataSetCache:
             represents one parameter tree.
         """
 
-        self.load_data_from_db()
-        if self._data is None:
+        data = self.data()
+        if data is None:
             return None
-        dfs = self._dataset._load_to_dataframe_dict(self._data)
+        dfs = self._dataset._load_to_dataframe_dict(data)
         return dfs
 
 
