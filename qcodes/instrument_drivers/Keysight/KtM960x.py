@@ -172,7 +172,7 @@ class KtM960x(Instrument):
         return val_map[key]
 
     # Query the driver for errors
-    def _get_errors(self):
+    def get_errors(self):
         error_code = ctypes.c_int(-1)
         error_message = ctypes.create_string_buffer(256)
         while error_code.value != 0:

@@ -10,7 +10,9 @@ from qcodes.utils.helpers import create_on_off_val_mapping
 
 class KtMAWGChannel(InstrumentChannel):
     """
-
+    Represent the three channels of the Keysight KTM Awg driver.
+    The channels can be independently controlled and programmed with
+    seperate waveforms.
     """
 
     def __init__(self, parent: Instrument, name: str, chan: int) -> None:
@@ -27,10 +29,9 @@ class KtMAWGChannel(InstrumentChannel):
         )
 
         # Used to access waveforms loaded into the driver
-        self._awg_handle = None
+        self._awg_handle: ctypes.c_long = None
 
-        # FIXME is this ok?
-        self._parent = parent
+        self._parent: Instrument = parent
         self._catch_error = self._parent._catch_error
 
         self.add_parameter(
@@ -202,21 +203,25 @@ class KtMAWGChannel(InstrumentChannel):
 
 
 class KtMAwg(Instrument):
+    """
+    AWG Driver for the Keysight M9336A PXIe I/Q Arbitrary Waveform
+    Generator. This driver provides a simple wrapper around the
+    IVI-C drivers from Keysight. The output configuration, gain
+    can be controlled and a waveform can be loaded from a file.
+    """
     _default_buf_size = 256
 
     def __init__(self,
                  name: str,
                  address: str,
-                 options: bytes = b"",
+                 options: str = "",
                  dll_path: str = r"C:\Program Files\IVI "
                                  r"Foundation\IVI\Bin\KtMAwg_64.dll",
                  **kwargs: Any) -> None:
         super().__init__(name, **kwargs)
 
-        if not isinstance(address, bytes):
-            address = bytes(address, "ascii")
-
-        self._address = address
+        self._address = bytes(address, "ascii")
+        self._options = bytes(options, "ascii")
         self._session = ctypes.c_int(0)
         self._dll_loc = dll_path
         self._dll = ctypes.windll.LoadLibrary(self._dll_loc)
@@ -252,15 +257,13 @@ class KtMAwg(Instrument):
             self.get_vi_string, KTMAWG_ATTR_INSTRUMENT_MANUFACTURER
         )
 
-        self._connect(options)
+        self._connect()
 
         self.connect_message()
 
-    def _connect(self, options) -> None:
-        if not isinstance(options, bytes):
-            options = bytes(options, "ascii")
+    def _connect(self) -> None:
         status = self._dll.KtMAwg_InitWithOptions(
-            self._address, 1, 1, options, ctypes.byref(self._session)
+            self._address, 1, 1, self._options, ctypes.byref(self._session)
         )
         if status:
             raise SystemError(f"connection to device failed! error: {status}")
@@ -293,7 +296,7 @@ class KtMAwg(Instrument):
 
     # Query the driver for errors
 
-    def _get_errors(self):
+    def get_errors(self):
         error_code = ctypes.c_int(-1)
         error_message = ctypes.create_string_buffer(256)
         while error_code.value != 0:
