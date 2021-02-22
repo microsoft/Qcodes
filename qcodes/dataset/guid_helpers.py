@@ -1,11 +1,12 @@
-from typing import Tuple, Union, Dict, Optional, List, Iterable
+from typing import Tuple, Union, Dict, Optional, List, Iterable, cast
 
 from pathlib import Path
 import gc
-import re
+import ast
 
 from sqlite3 import DatabaseError
 
+from qcodes.dataset.guids import validate_guid_format
 from qcodes.dataset.sqlite.queries import get_guids_from_run_spec
 from qcodes.dataset.sqlite.database import connect
 
@@ -68,7 +69,8 @@ def guids_from_list_str(s: str) -> Optional[Tuple[str, ...]]:
     Returns:
         Extracted guids as a tuple of strings.
         If a provided string does not match the format, `None` will be returned.
-        For an empty list/tuple/set or empty string an empty set is returned.
+        For an empty list/tuple/set or empty string an empty tuple is returned.
+
     Examples:
         >>> guids_from_str(
         "['07fd7195-c51e-44d6-a085-fa8274cf00d6', \
@@ -77,16 +79,36 @@ def guids_from_list_str(s: str) -> Optional[Tuple[str, ...]]:
         ('07fd7195-c51e-44d6-a085-fa8274cf00d6',
         '070d7195-c51e-44d6-a085-fa8274cf00d6')
     """
-    guid = r"[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}"
-    captured_guid = fr"(?:\s*['\"]?({guid})['\"]?\s*)"
-    open_parens = r"[\[\(\{]"
-    close_parens = r"[\]\)\}]"
-    m = re.match(
-        fr"^\s*{open_parens}?"
-        fr"(?:{captured_guid},)*{captured_guid}?"
-        fr"{close_parens}?\s*$",
-        s,
-    )
-    if m is None:
+    if s == "":
+        return tuple()
+
+    try:
+        validate_guid_format(s)
+        return (s,)
+    except ValueError:
+        pass
+
+    try:
+        parsed_expression = ast.parse(s, mode='eval')
+    except SyntaxError:
         return None
-    return tuple(v for v in m.groups() if v is not None)
+
+    if not hasattr(parsed_expression, 'body'):
+        return None
+
+    parsed = cast(ast.Expression, parsed_expression).body
+
+    if isinstance(parsed, ast.Str):
+        if len(parsed.s) > 0:
+            return (parsed.s,)
+        else:
+            return tuple()
+
+    if not isinstance(parsed, (ast.List, ast.Tuple, ast.Set)):
+        return None
+
+    if not all(isinstance(e, ast.Str) for e in parsed.elts):
+        return None
+
+    str_elts = cast(Tuple[ast.Str, ...], tuple(parsed.elts))
+    return tuple(s.s for s in str_elts)
