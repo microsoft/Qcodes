@@ -292,7 +292,8 @@ class KtMAwg(Instrument):
                                   255,
                                   err_msg)
 
-        raise ValueError(f"Got dll error num {err.value} msg {err_msg.value}")
+        raise ValueError(f"Got dll error num {err.value}"
+                         f"msg {err_msg.value.decode('ascii')}")
 
     # Query the driver for errors
 

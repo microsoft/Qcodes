@@ -21,16 +21,14 @@ class KtM960x(Instrument):
     def __init__(self,
                  name: str,
                  address: str,
-                 options: bytes = b"",
+                 options: str = "",
                  dll_path: str = r"C:\Program Files\IVI "
                                  r"Foundation\IVI\Bin\KtM960x_64.dll",
                  **kwargs: Any) -> None:
         super().__init__(name, **kwargs)
 
-        if not isinstance(address, bytes):
-            address = bytes(address, "ascii")
-
-        self._address = address
+        self._address = bytes(address, "ascii")
+        self._options = bytes(options, "ascii")
         self._session = ctypes.c_int(0)
         self._dll_loc = dll_path
         self._dll = ctypes.cdll.LoadLibrary(self._dll_loc)
@@ -106,13 +104,11 @@ class KtM960x(Instrument):
         self.get_manufactorer = partial(
             self.get_vi_string, KTM960X_ATTR_INSTRUMENT_MANUFACTURER)
 
-        self._connect(options)
+        self._connect()
 
         self.connect_message()
 
-    def _connect(self, options) -> None:
-        if not isinstance(options, bytes):
-            options = bytes(options, "ascii")
+    def _connect(self, options: bytes) -> None:
         status = self._dll.KtM960x_InitWithOptions(self._address,
                                                    1,
                                                    1,
