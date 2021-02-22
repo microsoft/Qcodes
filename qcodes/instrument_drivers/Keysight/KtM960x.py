@@ -33,7 +33,7 @@ class KtM960x(Instrument):
         self._address = address
         self._session = ctypes.c_int(0)
         self._dll_loc = dll_path
-        self._dll = ctypes.windll.LoadLibrary(self._dll_loc)
+        self._dll = ctypes.cdll.LoadLibrary(self._dll_loc)
 
         self.add_parameter('output',
                            label="Source Output Enable",
@@ -172,7 +172,7 @@ class KtM960x(Instrument):
         return val_map[key]
 
     # Query the driver for errors
-    def get_errors(self):
+    def get_errors(self) -> None:
         error_code = ctypes.c_int(-1)
         error_message = ctypes.create_string_buffer(256)
         while error_code.value != 0:

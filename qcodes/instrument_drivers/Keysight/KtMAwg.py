@@ -29,7 +29,7 @@ class KtMAWGChannel(InstrumentChannel):
         )
 
         # Used to access waveforms loaded into the driver
-        self._awg_handle: ctypes.c_long = None
+        self._awg_handle: Optional[ctypes.c_int32] = None
 
         self._parent: Instrument = parent
         self._catch_error = self._parent._catch_error
@@ -109,7 +109,7 @@ class KtMAWGChannel(InstrumentChannel):
             get_cmd=self._get_digital_gain,
         )
 
-    def load_waveform(self, filename) -> None:
+    def load_waveform(self, filename: str) -> None:
         path = ctypes.create_string_buffer(filename.encode("ascii"))
         self._awg_handle = ctypes.c_int32(0)
         status = self._parent._dll.KtMAwg_WaveformCreateChannelWaveformFromFile(
@@ -157,45 +157,45 @@ class KtMAWGChannel(InstrumentChannel):
         )
         self._catch_error(status)
 
-    def _set_gain_control(self, val) -> None:
+    def _set_gain_control(self, val: int) -> None:
         self._parent._dll.KtMAwg_ArbitrarySetGainControl(
             self._parent._session, self._channel, val
         )
 
-    def _get_gain_control(self):
+    def _get_gain_control(self) -> int:
         res = ctypes.c_int32(0)
         self._parent._dll.KtMAwg_ArbitraryGetGainControl(
             self._parent._session, self._channel, ctypes.byref(res)
         )
         return res.value
 
-    def _set_analog_gain(self, val) -> None:
+    def _set_analog_gain(self, val: float) -> None:
         v = ctypes.c_double(val)
         self._parent._dll.KtMAwg_ArbitrarySetAnalogGain(
             self._parent._session, self._channel, v
         )
 
-    def _get_analog_gain(self):
+    def _get_analog_gain(self) -> float:
         res = ctypes.c_double(0)
         self._parent._dll.KtMAwg_ArbitraryGetAnalogGain(
             self._parent._session, self._channel, ctypes.byref(res)
         )
         return res.value
 
-    def _set_digital_gain(self, val) -> None:
+    def _set_digital_gain(self, val: float) -> None:
         v = ctypes.c_double(val)
         self._parent._dll.KtMAwg_ArbitrarySetDigitalGain(
             self._parent._session, self._channel, v
         )
 
-    def _get_digital_gain(self):
+    def _get_digital_gain(self) -> float:
         res = ctypes.c_double(0)
         self._parent._dll.KtMAwg_ArbitraryGetDigitalGain(
             self._parent._session, self._channel, ctypes.byref(res)
         )
         return res.value
 
-    def _set_gain(self, val) -> None:
+    def _set_gain(self, val: float) -> None:
         v = ctypes.c_double(val)
         self._parent._dll.KtMAwg_ArbitrarySetGain(
             self._parent._session, self._channel, v
@@ -224,7 +224,7 @@ class KtMAwg(Instrument):
         self._options = bytes(options, "ascii")
         self._session = ctypes.c_int(0)
         self._dll_loc = dll_path
-        self._dll = ctypes.windll.LoadLibrary(self._dll_loc)
+        self._dll = ctypes.cdll.LoadLibrary(self._dll_loc)
         self._channel = ctypes.create_string_buffer(b"Channel1")
 
         for ch_num in [1, 2, 3]:
@@ -296,7 +296,7 @@ class KtMAwg(Instrument):
 
     # Query the driver for errors
 
-    def get_errors(self):
+    def get_errors(self) -> None:
         error_code = ctypes.c_int(-1)
         error_message = ctypes.create_string_buffer(256)
         while error_code.value != 0:
