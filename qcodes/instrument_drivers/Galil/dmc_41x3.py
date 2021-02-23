@@ -171,13 +171,13 @@ class VectorMode(InstrumentChannel):
         """
         begins motion of the motor
         """
-        self.write(f"BG S")
+        self.write("BG S")
 
     def after_seq_motion(self) -> None:
         """
         wait till motion ends
         """
-        self.write(f"AM S")
+        self.write("AM S")
 
 
 class Motor(InstrumentChannel):
@@ -270,12 +270,16 @@ class Motor(InstrumentChannel):
         """
         sets up for Stepper Position Maintenance (SPM) mode
         """
-        self.write(f"OE{self._axis}=1")   # Set the profiler to stop axis upon error
+        # Set the profiler to stop axis upon error
+        self.write(f"OE{self._axis}=1")
         self.write(f"KS{self._axis}=16")  # Set step smoothing
         self.write(f"MT{self._axis}=-2")  # Motor type set to stepper
         self.write(f"YA{self._axis}=1")   # Step resolution of the drive
-        self.write(f"YB{self._axis}=200")   # Motor resolution (full steps per revolution)
-        self.write(f"YC{self._axis}=4000")  # Encoder resolution (counts per revolution)
+
+        # Motor resolution (full steps per revolution)
+        self.write(f"YB{self._axis}=200")
+        # Encoder resolution (counts per revolution)
+        self.write(f"YC{self._axis}=4000")
 
     def off(self) -> None:
         """
