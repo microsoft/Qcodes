@@ -1209,15 +1209,18 @@ class DataSet(Sized):
 
                 xds = ds.to_xarray_dataset()
         """
-        import xarray as xr
-
         data = self.get_parameter_data(*params,
                                        start=start,
                                        end=end)
+
+        return self._load_to_xarray_dataset(data)
+
+    def _load_to_xarray_dataset(self, data: ParameterData) -> "xr.Dataset":
         if not self._same_setpoints(data):
             warnings.warn(
-                'Independent parameter setpoints are not equal. \
-                Check concatenated output carefully.')
+                "Independent parameter setpoints are not equal. "
+                "Check concatenated output carefully."
+            )
 
         data_xrdarray_dict = self._load_to_xarray_dataarray_dict(data)
 
