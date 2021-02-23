@@ -473,11 +473,42 @@ class DMC4133Controller(GalilMotionController):
         """
         self.write("MO")
 
+    def begin_motors(self) -> None:
+        """
+        begin motion of all motors simultaneously
+        """
+        self.write("BG")
+
+class ArmHeadPosition:
+
+    def __init__(self, x: int, y: int, z: int, *args) -> None:
+        self._x = x
+        self._y = y
+        self._z = z
+
+    def get_x(self) -> int:
+        return self._x
+
+    def set_x(self, val: int) -> None:
+        self._x = val
+
+    def get_y(self) -> int:
+        return self._y
+
+    def set_y(self, val: int) -> None:
+        self._y = val
+
+    def get_z(self) -> int:
+        return self._z
+
+    def set_z(self, val: int) -> None:
+        self._z = val
+
 
 class Arm:
 
     def __init__(self,
-                 driver: DMC4133Controller,
+                 controller: DMC4133Controller,
                  chip: Dict[str, Union[int, float]]) -> None:
 
         for key in ["length", "width", "rows", "num_terminals_in_row",
@@ -501,22 +532,74 @@ class Arm:
             "inter_terminal_distance_for_adjacent_rows"
         ]
 
-        self.driver = driver
+        self.controller = controller
+        self._arm_head_status = None
+
+    def _pick_arm_head_up(self) -> None:
+        """
+        picks up arm head if down
+        """
+        if self._arm_head_status == "up":
+            self.log.info("Arm head is already up.")
+            return
+
+        # implement logic to move in up direction
+
+        self._arm_head_status = "up"
+
+    def _move_arm_head(self) -> None:
+        """
+        move from current position to next position
+        """
+        x1, y1, z1 = (self._current_position.get_x(),
+                      self._current_position.get_y(),
+                      self._current_position.get_z())
+
+        x2, y2, z2 = (self._next_position.get_x(),
+                      self._next_position.get_y(),
+                      self._next_position.get_z())
+
+        if x1 == x2 and y1 == y2 and z1 == z2:
+            self.log.info("Arm head already at the required location.")
+            return
+
+        assert self._arm_head_status == "up"
+
+        # implement logic to move
+
+    def _put_arm_head_down(self) -> None:
+        """
+        puts arm head down if up
+        """
+        if self._arm_head_status == "down":
+            self.log.info("Arm head is already down.")
+            return
+
+        # implement logic to move in down direction
+
+        self._arm_head_status = "down"
 
     def move_to_next_row(self) -> int:
         """
         moves motors to next row of pads
         """
-        pass
+        self._pick_arm_head_up()
+        self._move_arm_head()
+        self._put_arm_head_down()
 
     def set_begin_position(self) -> None:
         """
         sets first row of pads in chip as begin position
         """
-        pass
+        self.controller.define_position_as_origin()
+        self._begin_position = (0, 0, 0)
+        self._current_position = ArmHeadPosition(0, 0, 0)
+        self._arm_head_status = "down"
 
     def set_end_position(self) -> None:
         """
         sets last row of pads in chip as end position
         """
-        pass
+        self._end_position = (self.controller.motor_a.relative_position(),
+                              self.controller.motor_b.relative_position(),
+                              self.controller.motor_c.relative_position())
