@@ -132,7 +132,7 @@ class DataSetCache:
         if not all(status is None for status in self._write_status.values()):
             self._live = True
 
-    def to_pandas_dataframe_dict(self) -> Optional[Dict[str, "pd.DataFrame"]]:
+    def to_pandas_dataframe_dict(self) -> Dict[str, "pd.DataFrame"]:
         """
         Convert the cached dataset to Pandas dataframes. The returned dataframes
         are in the same format :py:class:`.DataSet.to_pandas_dataframe_dict`.
@@ -141,14 +141,10 @@ class DataSetCache:
             A dict from parameter name to Pandas Dataframes. Each dataframe
             represents one parameter tree.
         """
-
         data = self.data()
-        if data is None:
-            return None
-
         return self._dataset._load_to_dataframe_dict(data)
 
-    def to_pandas_dataframe(self) -> Optional["pd.DataFrame"]:
+    def to_pandas_dataframe(self) -> "pd.DataFrame":
         """
         Convert the cached dataset to Pandas dataframes. The returned dataframes
         are in the same format :py:class:`.DataSet.to_pandas_dataframe_dict`.
@@ -158,13 +154,10 @@ class DataSetCache:
             represents one parameter tree.
         """
         data = self.data()
-        if data is None:
-            return None
-
         return self._dataset._load_to_concatenated_dataframe(data)
 
     @deprecate(alternative="to_pandas_dataframe or to_pandas_dataframe_dict")
-    def to_pandas(self) -> Optional[Dict[str, "pd.DataFrame"]]:
+    def to_pandas(self) -> Dict[str, "pd.DataFrame"]:
         """
         Returns the values stored in the :class:`.dataset.data_set.DataSet` as a
         concatenated :py:class:`pandas.DataFrame` s
@@ -184,7 +177,7 @@ class DataSetCache:
         """
         return self.to_pandas_dataframe_dict()
 
-    def to_xarray_dataarray_dict(self) -> Optional[Dict[str, "xr.DataArray"]]:
+    def to_xarray_dataarray_dict(self) -> Dict[str, "xr.DataArray"]:
         """
         Returns the values stored in the :class:`.dataset.data_set.DataSet` as a dict of
         :py:class:`xr.DataArray` s
@@ -197,12 +190,9 @@ class DataSetCache:
 
         """
         data = self.data()
-        if data is None:
-            return None
-
         return self._dataset._load_to_xarray_dataarray_dict(data)
 
-    def to_xarray_dataset(self) -> Optional["xr.Dataset"]:
+    def to_xarray_dataset(self) -> "xr.Dataset":
         """
         Returns the values stored in the :class:`.dataset.data_set.DataSet` as a
         :py:class:`xr.Dataset` object.
@@ -217,9 +207,6 @@ class DataSetCache:
 
         """
         data = self.data()
-        if data is None:
-            return None
-
         return self._dataset._load_to_xarray_dataset(data)
 
 
