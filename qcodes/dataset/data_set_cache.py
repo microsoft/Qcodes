@@ -157,19 +157,11 @@ class DataSetCache:
             A dict from parameter name to Pandas Dataframes. Each dataframe
             represents one parameter tree.
         """
-        import pandas as pd
         data = self.data()
         if data is None:
             return None
 
-        if not self._dataset._same_setpoints(data):
-            warnings.warn(
-                'Independent parameter setpoints are not equal. \
-                Check concatenated output carefully.')
-
-        dfs_dict = self._dataset._load_to_dataframe_dict(data)
-        df = pd.concat(list(dfs_dict.values()), axis=1)
-        return df
+        return self._dataset._load_to_concatenated_dataframe(data)
 
     @deprecate(alternative="to_pandas_dataframe or to_pandas_dataframe_dict")
     def to_pandas(self) -> Optional[Dict[str, "pd.DataFrame"]]:
