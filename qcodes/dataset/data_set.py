@@ -1112,6 +1112,8 @@ class DataSet(Sized):
 
     def _load_to_concatenated_dataframe(self, datadict: ParameterData
                                         ) -> "pd.DataFrame":
+        import pandas as pd
+
         if not self._same_setpoints(datadict):
             warnings.warn(
                 "Independent parameter setpoints are not equal. "
@@ -1216,6 +1218,8 @@ class DataSet(Sized):
         return self._load_to_xarray_dataset(data)
 
     def _load_to_xarray_dataset(self, data: ParameterData) -> "xr.Dataset":
+        import xarray as xr
+
         if not self._same_setpoints(data):
             warnings.warn(
                 "Independent parameter setpoints are not equal. "
