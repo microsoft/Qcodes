@@ -479,6 +479,7 @@ class DMC4133Controller(GalilMotionController):
         """
         self.write("BG")
 
+
 class ArmHeadPosition:
 
     def __init__(self, x: int, y: int, z: int, *args) -> None:
@@ -579,7 +580,7 @@ class Arm:
 
         self._arm_head_status = "down"
 
-    def move_to_next_row(self) -> int:
+    def move_to_next_row(self) -> None:
         """
         moves motors to next row of pads
         """
@@ -600,6 +601,9 @@ class Arm:
         """
         sets last row of pads in chip as end position
         """
-        self._end_position = (self.controller.motor_a.relative_position(),
-                              self.controller.motor_b.relative_position(),
-                              self.controller.motor_c.relative_position())
+        pos_dict = self.controller.absolute_position()
+        self._end_position = (pos_dict["A"], pos_dict["B"], pos_dict["C"])
+        self._current_position.set_x(pos_dict["A"])
+        self._current_position.set_y(pos_dict["B"])
+        self._current_position.set_z(pos_dict["C"])
+        self._arm_head_status = "down"
