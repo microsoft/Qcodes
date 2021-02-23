@@ -215,32 +215,12 @@ class DataSetCache:
             :py:class:`xr.DataArray` s and coordinates formed by the dependencies.
 
         """
-        import xarray as xr
-
         data = self.data()
         if data is None:
             return None
 
-        if not self._dataset._same_setpoints(data):
-            warnings.warn(
-                'Independent parameter setpoints are not equal. \
-                Check concatenated output carefully.')
+        return self._dataset._load_to_xarray_dataset(data)
 
-        data_xrdarray_dict = self._dataset._load_to_xarray_dataarray_dict(data)
-
-        # Casting Hashable for the key type until python/mypy#1114
-        # and python/typing#445 are resolved.
-        xrdataset = xr.Dataset(
-            cast(Dict[Hashable, xr.DataArray], data_xrdarray_dict))
-
-        for dim in xrdataset.dims:
-            paramspec_dict = self._dataset.paramspecs[str(dim)]._to_dict()
-            xrdataset.coords[str(dim)].attrs.update(paramspec_dict.items())
-
-        xrdataset.attrs["sample_name"] = self._dataset.sample_name
-        xrdataset.attrs["exp_name"] = self._dataset.exp_name
-
-        return xrdataset
 
 def load_new_data_from_db_and_append(
             conn: ConnectionPlus,
