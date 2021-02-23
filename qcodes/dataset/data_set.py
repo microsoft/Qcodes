@@ -1060,11 +1060,7 @@ class DataSet(Sized):
             a column and a indexed by a :py:class:`pandas.MultiIndex` formed
             by the dependencies.
         """
-        datadict = self.get_parameter_data(*params,
-                                           start=start,
-                                           end=end)
-        dfs_dict = self._load_to_dataframe_dict(datadict)
-        return dfs_dict
+        return self.to_pandas_dataframe_dict(*params, start=start, end=end)
 
     def to_pandas_dataframe(self,
                             *params: Union[str,
