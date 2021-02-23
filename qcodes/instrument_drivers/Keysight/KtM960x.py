@@ -1,3 +1,4 @@
+from qcodes.utils.validators import Numbers
 from .KtM960xDefs import *
 
 import ctypes
@@ -40,7 +41,8 @@ class KtM960x(Instrument):
                            set_cmd=partial(self.set_vi_bool,
                                            KTM960X_ATTR_OUTPUT_ENABLED),
                            val_mapping=create_on_off_val_mapping(on_val=True,
-                                                                 off_val=False))
+                                                                 off_val=False)
+                           )
 
         self.add_parameter('voltage_level',
                            label="Source Voltage Level",
@@ -69,7 +71,8 @@ class KtM960x(Instrument):
                                KTM960X_ATTR_MEASUREMENT_CURRENT_RANGE),
                            set_cmd=partial(
                                self.set_vi_real64,
-                               KTM960X_ATTR_MEASUREMENT_CURRENT_RANGE)
+                               KTM960X_ATTR_MEASUREMENT_CURRENT_RANGE),
+                           vals=vals.Numbers(1e-9, 300e-3),
                            )
 
         self.add_parameter("measure_current_time",
@@ -80,7 +83,8 @@ class KtM960x(Instrument):
                                KTM960X_ATTR_MEASUREMENT_CURRENT_APERTURE),
                            set_cmd=partial(
                                self.set_vi_real64,
-                               KTM960X_ATTR_MEASUREMENT_CURRENT_APERTURE)
+                               KTM960X_ATTR_MEASUREMENT_CURRENT_APERTURE),
+                           vals=Numbers(800e-9, 2)
                            )
 
         self.add_parameter("measure_current",

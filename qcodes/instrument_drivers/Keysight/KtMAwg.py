@@ -5,6 +5,7 @@ from functools import partial
 from typing import Dict, Optional, Any
 
 from qcodes import Instrument, InstrumentChannel
+from qcodes.utils.validators import Numbers
 from qcodes.utils.helpers import create_on_off_val_mapping
 
 
@@ -100,11 +101,13 @@ class KtMAWGChannel(InstrumentChannel):
         self.add_parameter("gain",
                            label="Composite Output Gain",
                            set_cmd=self._set_gain,
+                           vals=Numbers(0, 0.7999),
                            get_cmd=None)
 
         self.add_parameter(
             "analog_gain",
             label="Analog Output Gain",
+            vals=Numbers(0, 1.32),
             set_cmd=self._set_analog_gain,
             get_cmd=self._get_analog_gain,
         )
@@ -112,6 +115,7 @@ class KtMAWGChannel(InstrumentChannel):
         self.add_parameter(
             "digital_gain",
             label="Digital Output Gain",
+            vals=Numbers(0,1.0),
             set_cmd=self._set_digital_gain,
             get_cmd=self._get_digital_gain,
         )
