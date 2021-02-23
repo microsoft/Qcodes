@@ -1,7 +1,6 @@
-from typing import TYPE_CHECKING, Dict, Optional, Mapping, Tuple, cast, Hashable
+from typing import TYPE_CHECKING, Dict, Optional, Mapping, Tuple
 from copy import copy
 import logging
-import warnings
 
 import numpy as np
 
