@@ -1105,15 +1105,18 @@ class DataSet(Sized):
             Return a pandas DataFrame with
                 df = ds.to_pandas_dataframe()
         """
-        import pandas as pd
         datadict = self.get_parameter_data(*params,
                                            start=start,
                                            end=end)
+        return self._load_to_concatenated_dataframe(datadict)
 
+    def _load_to_concatenated_dataframe(self, datadict: ParameterData
+                                        ) -> "pd.DataFrame":
         if not self._same_setpoints(datadict):
             warnings.warn(
-                'Independent parameter setpoints are not equal. \
-                Check concatenated output carefully.')
+                "Independent parameter setpoints are not equal. "
+                "Check concatenated output carefully."
+            )
 
         dfs_dict = self._load_to_dataframe_dict(datadict)
         df = pd.concat(list(dfs_dict.values()), axis=1)
