@@ -266,6 +266,17 @@ class Motor(InstrumentChannel):
         """
         self.write(f"PR{self._axis}={val}")
 
+    def _setup_spm(self) -> None:
+        """
+        sets up for Stepper Position Maintenance (SPM) mode
+        """
+        self.write(f"OE{self._axis}=1")   # Set the profiler to stop axis upon error
+        self.write(f"KS{self._axis}=16")  # Set step smoothing
+        self.write(f"MT{self._axis}=-2")  # Motor type set to stepper
+        self.write(f"YA{self._axis}=1")   # Step resolution of the drive
+        self.write(f"YB{self._axis}=200")   # Motor resolution (full steps per revolution)
+        self.write(f"YC{self._axis}=4000")  # Encoder resolution (counts per revolution)
+
     def off(self) -> None:
         """
         turns motor off
@@ -346,6 +357,26 @@ class Motor(InstrumentChannel):
         # end the program
         self.root_instrument.end_program()
 
+    def enable_stepper_position_maintenance_mode(self, motor: str) -> None:
+        """
+        enables Stepper Position Maintenance mode and allows for error
+        correction when error happens
+        """
+        self._setup_spm()
+        self.servo_here()  # Enable axis
+        self.root_instrument.wait(50)  # Allow slight settle time
+        self.write(f"YS{self._axis}=1")
+
+    def error_magnitude(self) -> float:
+        """
+        gives the magnitude of error, in drive step counts, for axes in
+        Stepper Position Maintenance mode.
+
+        a step count is directly proportional to the micro-stepping
+        resolution of the stepper drive.
+        """
+        return float(self.ask(f"QS{self._axis}=?"))
+
 
 class DMC4133Controller(GalilMotionController):
     """
@@ -369,12 +400,6 @@ class DMC4133Controller(GalilMotionController):
                            units="quadrature counts",
                            docstring="gets absolute position of the motors "
                                      "from the set origin")
-
-        self.add_parameter("servo_at_motor",
-                           set_cmd="SH {}",
-                           vals=Enum("A", "B", "C"),
-                           docstring="servo at the specified motor"
-                           )
 
         self.add_parameter("wait",
                            set_cmd="WT {}",
@@ -447,46 +472,6 @@ class DMC4133Controller(GalilMotionController):
         turn all motors off
         """
         self.write("MO")
-
-    def error_magnitude(self) -> Dict[str, int]:
-        """
-        gives the magnitude of error, in drive step counts, for axes in
-        Stepper Position Maintenance mode.
-
-        a step count is directly proportional to the micro-stepping
-        resolution of the stepper drive.
-        """
-        data = self.ask("QS").split(",")
-        return {"A": int(data[0]), "B": int(data[1]), "C": int(data[2])}
-
-    def _setup_spm(self) -> None:
-        """
-        sets up for Stepper Position Maintenance (SPM) mode
-        """
-        self.write("OE 1,1,1")   # Set the profiler to stop axis upon error
-        self.write("KS 16,16,16")  # Set step smoothing
-        self.write("MT -2,-2,-2")  # Motor type set to stepper
-        self.write("YA 1,1,1")     # Step resolution of the drive
-        self.write("YB 200,200,200")   # Motor resolution (full steps per revolution)
-        self.write("YC 4000,4000,4000")  # Encoder resolution (counts per revolution)
-
-    def enable_stepper_position_maintenance_mode(self, motor: str) -> None:
-        """
-        enables Stepper Position Maintenance mode and allows for error
-        correction when error happens
-        """
-        cmd = "YS"
-        if motor == "A":
-            cmd = cmd + " 1"
-        elif motor == "B":
-            cmd = cmd + " ,1"
-        else:
-            cmd = cmd + " ,,1"
-
-        self._setup_spm()
-        self.servo_at_motor(motor)  # Enable axis
-        self.wait(50)  # Allow slight settle time
-        self.write(cmd)
 
 
 class Arm:
