@@ -145,8 +145,8 @@ class DataSetCache:
         data = self.data()
         if data is None:
             return None
-        dfs = self._dataset._load_to_dataframe_dict(data)
-        return dfs
+
+        return self._dataset._load_to_dataframe_dict(data)
 
     def to_pandas_dataframe(self) -> Optional["pd.DataFrame"]:
         """
@@ -199,6 +199,7 @@ class DataSetCache:
         data = self.data()
         if data is None:
             return None
+
         return self._dataset._load_to_xarray_dataarray_dict(data)
 
     def to_xarray_dataset(self) -> Optional["xr.Dataset"]:
