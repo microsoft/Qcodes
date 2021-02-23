@@ -40,9 +40,6 @@ jobs:
           ${{ runner.os }}-${{ matrix.python-version }}-pip-
     - name: install requirements.txt
       run: |
-        pip install -r requirements.txt
-    - name: install science_requirements.txt
-      run: |
-        pip install -r science_requirements.txt
+        pip install -r requirements.txt -r science_requirements.txt
     - name: install qcodes
       run: pip install .
