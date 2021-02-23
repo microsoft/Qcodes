@@ -4,7 +4,9 @@ from typing import Dict
 
 import hypothesis.strategies as hst
 import numpy as np
+import pandas
 import pytest
+import xarray
 from hypothesis import HealthCheck, given, settings
 
 from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
@@ -790,6 +792,171 @@ def test_cache_2d_shape(experiment,
                                            clip=cache_size == "too_large")
 
 
+@pytest.mark.parametrize("bg_writing", [True, False])
+@pytest.mark.parametrize("in_memory_cache", [True, False])
+@settings(deadline=None, max_examples=5,
+          suppress_health_check=(HealthCheck.function_scoped_fixture,))
+@given(n_points_outer=hst.integers(min_value=1, max_value=11),
+       n_points_inner=hst.integers(min_value=1, max_value=11))
+def test_cache_2d_to_dataframe_dict_and_dataframe(
+        experiment, DAC, DMM, n_points_outer, n_points_inner, bg_writing,
+        channel_array_instrument, in_memory_cache
+):
+    meas = Measurement()
+
+    meas.register_parameter(DAC.ch1)
+    meas.register_parameter(DAC.ch2)
+
+    meas_parameters = (DMM.v1,
+                       channel_array_instrument.A.dummy_multi_parameter,
+                       channel_array_instrument.A.dummy_scalar_multi_parameter,
+                       channel_array_instrument.A.dummy_2d_multi_parameter,
+                       channel_array_instrument.A.dummy_2d_multi_parameter_2,
+                       channel_array_instrument.A.dummy_array_parameter,
+                       channel_array_instrument.A.dummy_complex_array_parameter,
+                       channel_array_instrument.A.dummy_complex,
+                       channel_array_instrument.A.dummy_parameter_with_setpoints,
+                       channel_array_instrument.A.dummy_parameter_with_setpoints_complex,
+                       )
+    channel_array_instrument.A.dummy_start(0)
+    channel_array_instrument.A.dummy_stop(10)
+    channel_array_instrument.A.dummy_n_points(10)
+    for param in meas_parameters:
+        meas.register_parameter(param, setpoints=(DAC.ch1, DAC.ch2))
+    n_rows_written = 0
+    with meas.run(
+            write_in_background=bg_writing,
+            in_memory_cache=in_memory_cache) as datasaver:
+        dataset = datasaver.dataset
+
+        _assert_dataframe_dicts_are_identical(
+            dataset.to_pandas_dataframe_dict(),
+            dataset.cache.to_pandas_dataframe_dict()
+        )
+
+        pandas.testing.assert_frame_equal(
+            dataset.to_pandas_dataframe(),
+            dataset.cache.to_pandas_dataframe()
+        )
+
+        for v1 in np.linspace(-1, 1, n_points_outer):
+            for v2 in np.linspace(-1, 1, n_points_inner):
+                DAC.ch1.set(v1)
+                DAC.ch2.set(v2)
+                meas_vals = [(param, param.get()) for param in meas_parameters[:-2]]
+                meas_vals += expand_setpoints_helper(meas_parameters[-2])
+                meas_vals += expand_setpoints_helper(meas_parameters[-1])
+
+                datasaver.add_result((DAC.ch1, v1),
+                                     (DAC.ch2, v2),
+                                     *meas_vals)
+                datasaver.flush_data_to_database(block=True)
+                n_rows_written += 1
+
+                _assert_dataframe_dicts_are_identical(
+                    dataset.to_pandas_dataframe_dict(),
+                    dataset.cache.to_pandas_dataframe_dict()
+                )
+
+                pandas.testing.assert_frame_equal(
+                    dataset.to_pandas_dataframe(),
+                    dataset.cache.to_pandas_dataframe()
+                )
+
+    _assert_dataframe_dicts_are_identical(
+        dataset.to_pandas_dataframe_dict(),
+        dataset.cache.to_pandas_dataframe_dict()
+    )
+
+    pandas.testing.assert_frame_equal(
+        dataset.to_pandas_dataframe(),
+        dataset.cache.to_pandas_dataframe()
+    )
+
+
+@pytest.mark.parametrize("bg_writing", [True, False])
+@pytest.mark.parametrize("in_memory_cache", [True, False])
+@settings(deadline=None, max_examples=5,
+          suppress_health_check=(HealthCheck.function_scoped_fixture,))
+@given(n_points_outer=hst.integers(min_value=1, max_value=11),
+       n_points_inner=hst.integers(min_value=1, max_value=11))
+def test_cache_2d_to_xarray_dataarray_dict_and_xarray_dataset(
+        experiment, DAC, DMM, n_points_outer, n_points_inner, bg_writing,
+        channel_array_instrument, in_memory_cache
+):
+    meas = Measurement()
+
+    meas.register_parameter(DAC.ch1)
+    meas.register_parameter(DAC.ch2)
+
+    meas_parameters = (DMM.v1,
+                       channel_array_instrument.A.dummy_multi_parameter,
+                       channel_array_instrument.A.dummy_scalar_multi_parameter,
+                       channel_array_instrument.A.dummy_2d_multi_parameter,
+                       channel_array_instrument.A.dummy_2d_multi_parameter_2,
+                       channel_array_instrument.A.dummy_array_parameter,
+                       channel_array_instrument.A.dummy_complex_array_parameter,
+                       channel_array_instrument.A.dummy_complex,
+                       channel_array_instrument.A.dummy_parameter_with_setpoints,
+                       channel_array_instrument.A.dummy_parameter_with_setpoints_complex,
+                       )
+    channel_array_instrument.A.dummy_start(0)
+    channel_array_instrument.A.dummy_stop(10)
+    channel_array_instrument.A.dummy_n_points(10)
+    for param in meas_parameters:
+        meas.register_parameter(param, setpoints=(DAC.ch1, DAC.ch2))
+    n_rows_written = 0
+    with meas.run(
+            write_in_background=bg_writing,
+            in_memory_cache=in_memory_cache) as datasaver:
+        dataset = datasaver.dataset
+
+        _assert_xarray_dataarray_dicts_are_identical(
+            dataset.to_xarray_dataarray_dict(),
+            dataset.cache.to_xarray_dataarray_dict()
+        )
+
+        xarray.testing.assert_identical(
+            dataset.to_xarray_dataset(),
+            dataset.cache.to_xarray_dataset()
+        )
+
+        for v1 in np.linspace(-1, 1, n_points_outer):
+            for v2 in np.linspace(-1, 1, n_points_inner):
+                DAC.ch1.set(v1)
+                DAC.ch2.set(v2)
+                meas_vals = [(param, param.get()) for param in
+                             meas_parameters[:-2]]
+                meas_vals += expand_setpoints_helper(meas_parameters[-2])
+                meas_vals += expand_setpoints_helper(meas_parameters[-1])
+
+                datasaver.add_result((DAC.ch1, v1),
+                                     (DAC.ch2, v2),
+                                     *meas_vals)
+                datasaver.flush_data_to_database(block=True)
+                n_rows_written += 1
+
+                _assert_xarray_dataarray_dicts_are_identical(
+                    dataset.to_xarray_dataarray_dict(),
+                    dataset.cache.to_xarray_dataarray_dict()
+                )
+
+                xarray.testing.assert_identical(
+                    dataset.to_xarray_dataset(),
+                    dataset.cache.to_xarray_dataset()
+                )
+
+    _assert_xarray_dataarray_dicts_are_identical(
+        dataset.to_xarray_dataarray_dict(),
+        dataset.cache.to_xarray_dataarray_dict()
+    )
+
+    xarray.testing.assert_identical(
+        dataset.to_xarray_dataset(),
+        dataset.cache.to_xarray_dataset()
+    )
+
+
 def _assert_completed_cache_is_as_expected(
         cache_data_trees,
         param_data_trees,
@@ -913,6 +1080,25 @@ def _assert_parameter_data_is_identical(
                         expected_np_array.ravel(),
                         actual_np_array.ravel()
                     )
+
+
+def _assert_dataframe_dicts_are_identical(df_dict_left, df_dict_right) -> None:
+    for param_name, param_df_from_left in df_dict_left.items():
+        assert param_name in df_dict_right
+        param_df_from_right = df_dict_right[param_name]
+        pandas.testing.assert_frame_equal(
+            param_df_from_left, param_df_from_right
+        )
+
+
+def _assert_xarray_dataarray_dicts_are_identical(xr_dict_left, xr_dict_right
+                                                 ) -> None:
+    for param_name, param_dataarray_from_left in xr_dict_left.items():
+        assert param_name in xr_dict_right
+        param_dataarray_from_right = xr_dict_right[param_name]
+        xarray.testing.assert_identical(
+            param_dataarray_from_left, param_dataarray_from_right
+        )
 
 
 def _array_param_used_in_tree(measurement: Measurement) -> bool:
