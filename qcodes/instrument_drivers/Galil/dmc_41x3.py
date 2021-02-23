@@ -225,6 +225,23 @@ class Motor(InstrumentChannel):
                            vals=Enum(np.linspace(1024, 1073740800, 1024)),
                            docstring="deceleration for motor's motion")
 
+        self.add_parameter("homing_velocity",
+                           units="counts/sec",
+                           get_cmd=f"MG _HV{self._axis}",
+                           get_parser=int,
+                           set_cmd=self._set_homing_velocity,
+                           vals=Enum(np.linspace(0, 3000000, 2)),
+                           docstring="sets the slew speed for the FI "
+                                     "final move to the index and all but the "
+                                     "first stage of HM (home)")
+
+    def _set_homing_velocity(self, val: str) -> None:
+        """
+        sets the slew speed for the FI final move to the index and all but
+        the first stage of HM.
+        """
+        self.write(f"HV{self._axis}={val}")
+
     def _set_deceleration(self, val: str) -> None:
         """
         set deceleration for the motor's motion
@@ -271,6 +288,64 @@ class Motor(InstrumentChannel):
         """
         self.write(f"SH {self._axis}")
 
+    def begin(self) -> None:
+        """
+        begins motion of the motor
+        """
+        self.write(f"BG {self._axis}")
+
+    def after_motion(self) -> None:
+        """
+        wait till motion ends
+        """
+        self.write(f"AM {self._axis}")
+
+    def home(self) -> None:
+        """
+        performs a three stage homing sequence for servo systems and a two
+        stage sequence for stepper motor.
+
+         Step One. Servos and Steppers
+            - During the first stage of the homing sequence, the motor moves at
+            the user-programmed speed until detecting a transition on the
+            homing input for that axis. The speed for step one is set with the
+            SP command.
+
+            - The direction for this first stage is determined by the
+            initial state of the homing input. The state of the homing input
+            can be configured using the second field of the CN command.
+
+            - Once the homing input changes state, the motor decelerates to a
+            stop.
+
+        Step Two. Servos and Steppers
+            - At the second stage, the motor changes directions and
+            approaches the transition again at the speed set with the
+            HV command. When the transition is detected, the motor is stopped
+            instantaneously.
+
+        Step Three. Servos only
+            - At the third stage, the motor moves in the positive direction
+            at the speed set with the HV command until it detects an index
+            pulse via latch from the encoder. It returns to the latched
+            position and defines it as position 0.
+        """
+        # setup for homing
+        self.speed(2000)
+        self.homing_velocity(256)
+
+        # home command
+        self.write(f"HM {self._axis}")
+
+        # begin motion
+        self.begin()
+
+        # wait for motion to finish
+        self.after_motion()
+
+        # end the program
+        self.root_instrument.end_program()
+
 
 class DMC4133Controller(GalilMotionController):
     """
@@ -295,23 +370,11 @@ class DMC4133Controller(GalilMotionController):
                            docstring="gets absolute position of the motors "
                                      "from the set origin")
 
-        self.add_parameter("begin",
-                           set_cmd="BG {}",
-                           vals=Enum("A", "B", "C", "S"),
-                           docstring="begins the specified motor or sequence "
-                                     "motion")
-
         self.add_parameter("servo_at_motor",
                            set_cmd="SH {}",
                            vals=Enum("A", "B", "C"),
                            docstring="servo at the specified motor"
                            )
-
-        self.add_parameter("after_motion",
-                           set_cmd="AM {}",
-                           vals=Enum("A", "B", "C", "S"),
-                           docstring="wait till motion of given motor or "
-                                     "sequence finishes")
 
         self.add_parameter("wait",
                            set_cmd="WT {}",
@@ -384,50 +447,6 @@ class DMC4133Controller(GalilMotionController):
         turn all motors off
         """
         self.write("MO")
-
-    def home(self) -> None:
-        """
-         performs a three stage homing sequence for servo systems and a two
-         stage sequence for stepper motors.
-
-         Step One. Servos and Steppers
-            - During the first stage of the homing sequence, the motor moves at
-            the user-programmed speed until detecting a transition on the
-            homing input for that axis. The speed for step one is set with the
-            SP command.
-
-            - The direction for this first stage is determined by the
-            initial state of the homing input. The state of the homing input
-            can be configured using the second field of the CN command.
-
-            - Once the homing input changes state, the motor decelerates to a
-            stop.
-
-        Step Two. Servos and Steppers
-            - At the second stage, the motor changes directions and
-            approaches the transition again at the speed set with the
-            HV command. When the transition is detected, the motor is stopped
-            instantaneously.
-
-        Step Three. Servos only
-            - At the third stage, the motor moves in the positive direction
-            at the speed set with the HV command until it detects an index
-            pulse via latch from the encoder. It returns to the latched
-            position and defines it as position 0.
-        """
-        # setup for homing
-        self.write("SP 2000,2000,2000")
-        self.write("CN ,-1")
-        self.write("HV 256,256,256")
-
-        # home command
-        self.write("HM")
-
-        # begin motion
-        self.write("BG")
-
-        # wait for motion to finish
-        self.write("AM")
 
     def error_magnitude(self) -> Dict[str, int]:
         """
