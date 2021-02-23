@@ -167,6 +167,18 @@ class VectorMode(InstrumentChannel):
         """
         self.write("VE")
 
+    def begin_seq(self) -> None:
+        """
+        begins motion of the motor
+        """
+        self.write(f"BG S")
+
+    def after_seq_motion(self) -> None:
+        """
+        wait till motion ends
+        """
+        self.write(f"AM S")
+
 
 class Motor(InstrumentChannel):
     """
