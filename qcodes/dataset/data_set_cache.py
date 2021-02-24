@@ -318,20 +318,26 @@ def _merge_data(existing_data: Mapping[str, np.ndarray],
     subtree_merged_data = {}
     subtree_parameters = set(existing_data.keys()) | set(new_data.keys())
     new_write_status: Optional[int]
-    subtree_merged_data[meas_parameter], new_write_status = _merge_data_single_param(
+    single_param_merged_data, new_write_status = _merge_data_single_param(
         existing_data.get(meas_parameter),
         new_data.get(meas_parameter),
         shape,
         single_tree_write_status
     )
+    if single_param_merged_data is not None:
+        subtree_merged_data[meas_parameter] = single_param_merged_data
+
     for subtree_param in subtree_parameters:
         if subtree_param != meas_parameter:
-            subtree_merged_data[subtree_param], new_write_status = _merge_data_single_param(
+
+            single_param_merged_data, new_write_status = _merge_data_single_param(
                 existing_data.get(subtree_param),
                 new_data.get(subtree_param),
                 shape,
                 single_tree_write_status
             )
+            if single_param_merged_data is not None:
+                subtree_merged_data[subtree_param] = single_param_merged_data
 
     return subtree_merged_data, new_write_status
 
@@ -340,7 +346,7 @@ def _merge_data_single_param(
         existing_values: Optional[np.ndarray],
         new_values: Optional[np.ndarray],
         shape: Optional[Tuple[int, ...]],
-        single_tree_write_status: Optional[int]) -> Tuple[np.ndarray, Optional[int]]:
+        single_tree_write_status: Optional[int]) -> Tuple[Optional[np.ndarray], Optional[int]]:
     if existing_values is not None and new_values is not None:
         (merged_data,
          new_write_status) = _insert_into_data_dict(
@@ -359,7 +365,7 @@ def _merge_data_single_param(
         merged_data = existing_values
         new_write_status = single_tree_write_status
     else:
-        merged_data = np.array([])
+        merged_data = None
         new_write_status = None
     return merged_data, new_write_status
 
