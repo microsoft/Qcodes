@@ -1117,7 +1117,9 @@ class DataSet(Sized):
         if not self._same_setpoints(datadict):
             warnings.warn(
                 "Independent parameter setpoints are not equal. "
-                "Check concatenated output carefully."
+                "Check concatenated output carefully. Please "
+                "consider using `to_pandas_dataframe_dict` to export each "
+                "independent parameter to its own dataframe."
             )
 
         dfs_dict = self._load_to_dataframe_dict(datadict)
@@ -1223,7 +1225,9 @@ class DataSet(Sized):
         if not self._same_setpoints(data):
             warnings.warn(
                 "Independent parameter setpoints are not equal. "
-                "Check concatenated output carefully."
+                "Check concatenated output carefully. Please "
+                "consider using `to_xarray_dataarray_dict` to export each "
+                "independent parameter to its own datarray."
             )
 
         data_xrdarray_dict = self._load_to_xarray_dataarray_dict(data)
