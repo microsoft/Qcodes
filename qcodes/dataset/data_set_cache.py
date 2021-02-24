@@ -347,6 +347,7 @@ def _merge_data_single_param(
         new_values: Optional[np.ndarray],
         shape: Optional[Tuple[int, ...]],
         single_tree_write_status: Optional[int]) -> Tuple[Optional[np.ndarray], Optional[int]]:
+    merged_data: Optional[np.ndarray]
     if existing_values is not None and new_values is not None:
         (merged_data,
          new_write_status) = _insert_into_data_dict(
