@@ -302,7 +302,8 @@ def append_shaped_parameter_data_to_existing_arrays(
             existing_data_1_tree,
             new_data_1_tree,
             shape,
-            single_tree_write_status=write_status.get(meas_parameter)
+            single_tree_write_status=write_status.get(meas_parameter),
+            meas_parameter=meas_parameter
         )
     return updated_write_status, merged_data
 
@@ -310,34 +311,56 @@ def append_shaped_parameter_data_to_existing_arrays(
 def _merge_data(existing_data: Mapping[str, np.ndarray],
                 new_data: Mapping[str, np.ndarray],
                 shape: Optional[Tuple[int, ...]],
-                single_tree_write_status: Optional[int]
+                single_tree_write_status: Optional[int],
+                meas_parameter: str,
                 ) -> Tuple[Dict[str, np.ndarray], Optional[int]]:
 
     subtree_merged_data = {}
     subtree_parameters = set(existing_data.keys()) | set(new_data.keys())
-    new_write_status: Optional[int] = None
+    new_write_status: Optional[int]
+    subtree_merged_data[meas_parameter], new_write_status = _merge_data_single_param(
+        existing_data.get(meas_parameter),
+        new_data.get(meas_parameter),
+        shape,
+        single_tree_write_status
+    )
     for subtree_param in subtree_parameters:
-        existing_values = existing_data.get(subtree_param)
-        new_values = new_data.get(subtree_param)
-        if existing_values is not None and new_values is not None:
-            (subtree_merged_data[subtree_param],
-             new_write_status) = _insert_into_data_dict(
-                existing_values,
-                new_values,
-                single_tree_write_status,
-                shape=shape
+        if subtree_param != meas_parameter:
+            subtree_merged_data[subtree_param], new_write_status = _merge_data_single_param(
+                existing_data.get(subtree_param),
+                new_data.get(subtree_param),
+                shape,
+                single_tree_write_status
             )
-        elif new_values is not None:
-            (subtree_merged_data[subtree_param],
-             new_write_status) = _create_new_data_dict(
-                new_values,
-                shape
-            )
-        elif existing_values is not None:
-            subtree_merged_data[subtree_param] = existing_values
-            new_write_status = single_tree_write_status
 
     return subtree_merged_data, new_write_status
+
+
+def _merge_data_single_param(
+        existing_values: Optional[np.ndarray],
+        new_values: Optional[np.ndarray],
+        shape: Optional[Tuple[int, ...]],
+        single_tree_write_status: Optional[int]) -> Tuple[np.ndarray, Optional[int]]:
+    if existing_values is not None and new_values is not None:
+        (merged_data,
+         new_write_status) = _insert_into_data_dict(
+            existing_values,
+            new_values,
+            single_tree_write_status,
+            shape=shape
+        )
+    elif new_values is not None:
+        (merged_data,
+         new_write_status) = _create_new_data_dict(
+            new_values,
+            shape
+        )
+    elif existing_values is not None:
+        merged_data = existing_values
+        new_write_status = single_tree_write_status
+    else:
+        raise RuntimeError()
+    return merged_data, new_write_status
 
 
 def _create_new_data_dict(new_values: np.ndarray,
