@@ -359,7 +359,8 @@ def _merge_data_single_param(
         merged_data = existing_values
         new_write_status = single_tree_write_status
     else:
-        raise RuntimeError()
+        merged_data = np.array([])
+        new_write_status = None
     return merged_data, new_write_status
 
 
