@@ -2,10 +2,25 @@ from .KtM960xDefs import *
 
 import ctypes
 from functools import partial
-from typing import (Dict, Optional, Any)
+from typing import (Dict, Optional, Any, Tuple)
 
-from qcodes import Instrument, validators as vals
+from qcodes import Instrument, MultiParameter, validators as vals
+from qcodes.instrument.parameter import ParamRawDataType
 from qcodes.utils.helpers import create_on_off_val_mapping
+
+
+class Measure(MultiParameter):
+    def __init__(self, name) -> None:
+        super().__init__(name=name,
+                         names=("voltage", "current", "resistance", "status",
+                                "timestamp", "source"),
+                         shapes=((), (), (), (), (), ()),
+                         units=("V", "A", "Ohm", "", "", ""),
+                         docstring="param that returns measurement values")
+        self.instrument: "KtM960x"
+
+    def get_raw(self) -> Tuple[ParamRawDataType, ...]:
+        return self.instrument._measure()
 
 
 class KtM960x(Instrument):
@@ -86,11 +101,9 @@ class KtM960x(Instrument):
                            vals=vals.Numbers(800e-9, 2)
                            )
 
-        self.add_parameter("measure_current",
-                           label="Measured Current",
-                           unit="Amp",
-                           get_cmd=partial(self._measure, key="current"),
-                           set_cmd=None)
+        self.add_parameter("measure_data",
+                           label="Measured Data",
+                           parameter_class=Measure)
 
         self.get_driver_desc = partial(
             self.get_vi_string, KTM960X_ATTR_SPECIFIC_DRIVER_DESCRIPTION)
@@ -131,7 +144,7 @@ class KtM960x(Instrument):
         }
         return id_dict
 
-    def _measure(self, key: str) -> float:
+    def _measure(self) -> Tuple[ParamRawDataType, ...]:
 
         # Setup the output
         self.set_vi_int(KTM960X_ATTR_OUTPUT_PRIORITY_MODE,
@@ -161,14 +174,10 @@ class KtM960x(Instrument):
         # Returned as [voltage, current, resistance, status,
         #                                               timestamp, and source]
         v = list(val_buf)[0:actual_size.value]
-        val_map = {'voltage': v[0],
-                   'current': v[1],
-                   'resistance': v[2],
-                   'status': v[3],
-                   'timestamp': v[4],
-                   'source': v[5]}
 
-        return val_map[key]
+        # 'voltage': v[0], 'current': v[1], 'resistance': v[2], 'status': v[3],
+        # 'timestamp': v[4], 'source': v[5]
+        return v[0], v[1], v[2], v[3], v[4], v[5]
 
     # Query the driver for errors
     def get_errors(self) -> Dict[int, str]:
