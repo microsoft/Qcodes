@@ -1484,10 +1484,15 @@ class DataSet(Sized):
             if self._in_memory_cache:
                 new_results[toplevel_param.name] = {}
                 for param in all_params:
-                    new_results[toplevel_param.name][param.name] = self._reshape_array_for_cache(
-                        param,
-                        result_dict[param]
-                    )
+                    new_results[toplevel_param.name][toplevel_param.name] = self._reshape_array_for_cache(
+                            toplevel_param,
+                            result_dict[toplevel_param]
+                        )
+                    if param is not toplevel_param:
+                        new_results[toplevel_param.name][param.name] = self._reshape_array_for_cache(
+                            param,
+                            result_dict[param]
+                        )
 
             if toplevel_param.type == 'array':
                 res_list = self._finalize_res_dict_array(
