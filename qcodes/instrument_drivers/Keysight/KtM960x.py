@@ -10,7 +10,7 @@ from qcodes.utils.helpers import create_on_off_val_mapping
 
 
 class Measure(MultiParameter):
-    def __init__(self, name) -> None:
+    def __init__(self, name: str) -> None:
         super().__init__(name=name,
                          names=("voltage", "current", "resistance", "status",
                                 "timestamp", "source"),
