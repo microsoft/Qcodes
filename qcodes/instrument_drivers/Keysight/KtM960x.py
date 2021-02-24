@@ -1,4 +1,3 @@
-from qcodes.utils.validators import Numbers
 from .KtM960xDefs import *
 
 import ctypes
@@ -84,7 +83,7 @@ class KtM960x(Instrument):
                            set_cmd=partial(
                                self.set_vi_real64,
                                KTM960X_ATTR_MEASUREMENT_CURRENT_APERTURE),
-                           vals=Numbers(800e-9, 2)
+                           vals=vals.Numbers(800e-9, 2)
                            )
 
         self.add_parameter("measure_current",
@@ -172,16 +171,17 @@ class KtM960x(Instrument):
         return val_map[key]
 
     # Query the driver for errors
-    def get_errors(self) -> None:
+    def get_errors(self) -> Dict[int, str]:
         error_code = ctypes.c_int(-1)
         error_message = ctypes.create_string_buffer(256)
+        error_dict = dict()
         while error_code.value != 0:
             status = self._dll.KtM960x_error_query(
                 self._session, ctypes.byref(error_code), error_message)
             assert(status == 0)
-            print(
-                f"error_query: {error_code.value}, "
-                f"{error_message.value.decode('utf-8')}")
+            error_dict[error_code.value] = error_message.value.decode('utf-8')
+
+        return error_dict
 
     # Generic functions for reading/writing different attributes
     def get_vi_string(self, attr: int) -> str:
@@ -203,13 +203,12 @@ class KtM960x(Instrument):
             raise ValueError(f"Driver error: {status}")
         return bool(s)
 
-    def set_vi_bool(self, attr: int, value: bool) -> bool:
+    def set_vi_bool(self, attr: int, value: bool) -> None:
         v = ctypes.c_uint16(1) if value else ctypes.c_uint16(0)
         status = self._dll.KtM960x_SetAttributeViBoolean(self._session, b"",
                                                          attr, v)
         if status:
             raise ValueError(f"Driver error: {status}")
-        return True
 
     def get_vi_real64(self, attr: int) -> float:
         s = ctypes.c_double(0)
@@ -220,21 +219,19 @@ class KtM960x(Instrument):
             raise ValueError(f"Driver error: {status}")
         return float(s.value)
 
-    def set_vi_real64(self, attr: int, value: float) -> bool:
+    def set_vi_real64(self, attr: int, value: float) -> None:
         v = ctypes.c_double(value)
         status = self._dll.KtM960x_SetAttributeViReal64(self._session, b"",
                                                         attr, v)
         if status:
             raise ValueError(f"Driver error: {status}")
-        return True
 
-    def set_vi_int(self, attr: int, value: int) -> bool:
+    def set_vi_int(self, attr: int, value: int) -> None:
         v = ctypes.c_int32(value)
         status = self._dll.KtM960x_SetAttributeViInt32(self._session, b"",
                                                        attr, v)
         if status:
             raise ValueError(f"Driver error: {status}")
-        return True
 
     def get_vi_int(self, attr: int) -> int:
         v = ctypes.c_int32(0)
