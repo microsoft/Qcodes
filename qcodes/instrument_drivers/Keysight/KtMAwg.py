@@ -312,18 +312,18 @@ class KtMAwg(Instrument):
 
     # Query the driver for errors
 
-    def get_errors(self) -> None:
+    def get_errors(self) -> Dict[int, str]:
         error_code = ctypes.c_int(-1)
         error_message = ctypes.create_string_buffer(256)
+        error_dict = dict()
         while error_code.value != 0:
             status = self._dll.KtMAwg_error_query(
                 self._session, ctypes.byref(error_code), error_message
             )
             assert status == 0
-            print(
-                f"error_query: {error_code.value}, "
-                f"{error_message.value.decode('utf-8')}"
-            )
+            error_dict[error_code.value] = error_message.value.decode('utf-8')
+
+        return error_dict
 
     # Generic functions for reading/writing different attributes
     def get_vi_string(self, attr: int, ch: bytes = b"") -> str:
@@ -344,7 +344,7 @@ class KtMAwg(Instrument):
             raise ValueError(f"Driver error: {status}")
         return bool(s)
 
-    def set_vi_bool(self, attr: int, value: bool, ch: bytes = b"") -> bool:
+    def set_vi_bool(self, attr: int, value: bool, ch: bytes = b"") -> None:
         v = ctypes.c_uint16(1) if value else ctypes.c_uint16(0)
         status = self._dll.KtMAwg_SetAttributeViBoolean(self._session,
                                                         ch,
@@ -352,7 +352,6 @@ class KtMAwg(Instrument):
                                                         v)
         if status:
             raise ValueError(f"Driver error: {status}")
-        return True
 
     def get_vi_real64(self, attr: int, ch: bytes = b"") -> float:
         s = ctypes.c_double(0)
@@ -364,7 +363,7 @@ class KtMAwg(Instrument):
             raise ValueError(f"Driver error: {status}")
         return float(s.value)
 
-    def set_vi_real64(self, attr: int, value: float, ch: bytes = b"") -> bool:
+    def set_vi_real64(self, attr: int, value: float, ch: bytes = b"") -> None:
         v = ctypes.c_double(value)
         status = self._dll.KtMAwg_SetAttributeViReal64(self._session,
                                                        ch,
@@ -372,9 +371,8 @@ class KtMAwg(Instrument):
                                                        v)
         if status:
             raise ValueError(f"Driver error: {status}")
-        return True
 
-    def set_vi_int(self, attr: int, value: int, ch: bytes = b"") -> bool:
+    def set_vi_int(self, attr: int, value: int, ch: bytes = b"") -> None:
         v = ctypes.c_int32(value)
         status = self._dll.KtMAwg_SetAttributeViInt32(self._session,
                                                       ch,
@@ -382,7 +380,6 @@ class KtMAwg(Instrument):
                                                       v)
         if status:
             raise ValueError(f"Driver error: {status}")
-        return True
 
     def get_vi_int(self, attr: int, ch: bytes = b"") -> int:
         v = ctypes.c_int32(0)
