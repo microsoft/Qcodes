@@ -1060,11 +1060,7 @@ class DataSet(Sized):
             a column and a indexed by a :py:class:`pandas.MultiIndex` formed
             by the dependencies.
         """
-        datadict = self.get_parameter_data(*params,
-                                           start=start,
-                                           end=end)
-        dfs_dict = self._load_to_dataframe_dict(datadict)
-        return dfs_dict
+        return self.to_pandas_dataframe_dict(*params, start=start, end=end)
 
     def to_pandas_dataframe(self,
                             *params: Union[str,
@@ -1109,15 +1105,22 @@ class DataSet(Sized):
             Return a pandas DataFrame with
                 df = ds.to_pandas_dataframe()
         """
-        import pandas as pd
         datadict = self.get_parameter_data(*params,
                                            start=start,
                                            end=end)
+        return self._load_to_concatenated_dataframe(datadict)
+
+    def _load_to_concatenated_dataframe(self, datadict: ParameterData
+                                        ) -> "pd.DataFrame":
+        import pandas as pd
 
         if not self._same_setpoints(datadict):
             warnings.warn(
-                'Independent parameter setpoints are not equal. \
-                Check concatenated output carefully.')
+                "Independent parameter setpoints are not equal. "
+                "Check concatenated output carefully. Please "
+                "consider using `to_pandas_dataframe_dict` to export each "
+                "independent parameter to its own dataframe."
+            )
 
         dfs_dict = self._load_to_dataframe_dict(datadict)
         df = pd.concat(list(dfs_dict.values()), axis=1)
@@ -1210,15 +1213,22 @@ class DataSet(Sized):
 
                 xds = ds.to_xarray_dataset()
         """
-        import xarray as xr
-
         data = self.get_parameter_data(*params,
                                        start=start,
                                        end=end)
+
+        return self._load_to_xarray_dataset(data)
+
+    def _load_to_xarray_dataset(self, data: ParameterData) -> "xr.Dataset":
+        import xarray as xr
+
         if not self._same_setpoints(data):
             warnings.warn(
-                'Independent parameter setpoints are not equal. \
-                Check concatenated output carefully.')
+                "Independent parameter setpoints are not equal. "
+                "Check concatenated output carefully. Please "
+                "consider using `to_xarray_dataarray_dict` to export each "
+                "independent parameter to its own datarray."
+            )
 
         data_xrdarray_dict = self._load_to_xarray_dataarray_dict(data)
 
@@ -1477,11 +1487,16 @@ class DataSet(Sized):
 
             if self._in_memory_cache:
                 new_results[toplevel_param.name] = {}
+                new_results[toplevel_param.name][toplevel_param.name] = self._reshape_array_for_cache(
+                    toplevel_param,
+                    result_dict[toplevel_param]
+                )
                 for param in all_params:
-                    new_results[toplevel_param.name][param.name] = self._reshape_array_for_cache(
-                        param,
-                        result_dict[param]
-                    )
+                    if param is not toplevel_param:
+                        new_results[toplevel_param.name][param.name] = self._reshape_array_for_cache(
+                            param,
+                            result_dict[param]
+                        )
 
             if toplevel_param.type == 'array':
                 res_list = self._finalize_res_dict_array(
