@@ -1707,14 +1707,14 @@ class DataSet(Sized):
         """Export data to disk with file name {prefix}{run_id}.{ext}.
         Values for the export type, path and prefix are set in the qcodes "dataset" config.
 
-        :param export_type: Data export type, e.g. "netcdf" or DataExportType.NETCDF,
-            defaults to value set config
-        :type export_type: DataExportType, optional
-        :param path: Export path, defaults to value set in config
-        :type path: str, optional
-        :param prefix: File prefix, e.g. "qcodes_", defaults to value set in config
-        :type prefix: str, optional
-        :raises ValueError: If the export data type is not specified, raise an error
+        Args:
+            export_type (Union[DataExportType, str], optional): Data export type, e.g. "netcdf" or DataExportType.NETCDF,
+            defaults to value set config. Defaults to None.
+            path (str, optional): Export path, defaults to value set in config. Defaults to None.
+            prefix (str, optional): File prefix, e.g. "qcodes_", defaults to value set in config. Defaults to None.
+
+        Raises:
+            ValueError: If the export data type is not specified, raise an error
         """
         # Set defaults to values in config if the value was not set (defaults to None)
         export_type = get_data_export_type(export_type)

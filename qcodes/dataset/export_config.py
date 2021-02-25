@@ -20,9 +20,9 @@ class DataExportType(enum.Enum):
 def set_data_export_type(export_type: str) -> None:
     """Set data export type
 
-    :param export_type: Export type to use
+    Args:
+        export_type (str): Export type to use
         Currently supported values: "netcdf".
-    :type export_type: str
     """
     if hasattr(DataExportType, export_type.upper()):
         config[DATASET_CONFIG_SECTION][EXPORT_TYPE] = export_type.upper()
@@ -31,9 +31,11 @@ def set_data_export_type(export_type: str) -> None:
 def set_data_export_path(export_path: str) -> None:
     """Set path to export data to at the end of a measurement
 
-    :param export_path: An existing file path on disk
-    :type export_path: str
-    :raises ValueError: If the path does not exist, this raises an error
+    Args:
+        export_path (str): An existing file path on disk
+
+    Raises:
+        ValueError: If the path does not exist, this raises an error
     """
     if not exists(export_path):
         raise ValueError(f"Cannot set export path to '{export_path}' \
@@ -46,9 +48,15 @@ def get_data_export_type(
     """Get the file type for exporting data to disk at the end of
     a measurement from config
 
-    :raises ValueError: If the type is not supported, this raises an error
-    :return: Data export type or None
-    :rtype: Union[DataExportType, None]
+    Args:
+        export_type (Union[str, None], optional): Export type string format
+        to convert to DataExportType. Defaults to None.
+
+    Raises:
+        ValueError: If the type is not supported, this raises an error
+
+    Returns:
+        Union[DataExportType, None]: Data export type
     """
     # If export_type is None, get value from config
     export_type = export_type or config[DATASET_CONFIG_SECTION][EXPORT_TYPE]
@@ -66,8 +74,8 @@ def get_data_export_type(
 def get_data_export_path() -> str:
     """Get the path to export data to at the end of a measurement from config
 
-    :return: Path
-    :rtype: str
+    Returns:
+        str: Path
     """
     return normpath(expanduser(config[DATASET_CONFIG_SECTION][EXPORT_PATH]))
 
@@ -76,8 +84,8 @@ def set_data_export_prefix(export_prefix: str) -> None:
     """Set the data export file name prefix to export data to at the end of 
     a measurement
 
-    :param export_prefix: Prefix, e.g. "qcodes_"
-    :type export_prefix: str
+    Args:
+        export_prefix (str): Prefix, e.g. "qcodes_"
     """
     config[DATASET_CONFIG_SECTION][EXPORT_PREFIX] = export_prefix
 
@@ -86,7 +94,7 @@ def get_data_export_prefix() -> str:
     """Get the data export file name prefix to export data to at the end of 
     a measurement from config
 
-    :return: Prefix, e.g. "qcodes_"
-    :rtype: str
+    Returns:
+        str: Prefix, e.g. "qcodes_"
     """
     return config[DATASET_CONFIG_SECTION][EXPORT_PREFIX]
