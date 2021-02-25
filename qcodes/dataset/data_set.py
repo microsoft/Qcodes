@@ -1703,29 +1703,40 @@ class DataSet(Sized):
         xarr_dataset = self.to_xarray_dataset()
         xarr_dataset.to_netcdf(path=path)
 
-    def export(self, export_type: Union[DataExportType, str] = None, path: str = None, prefix: str = None) -> None:
+    def export(
+        self,
+        export_type: Union[DataExportType, str] = None,
+        path: str = None,
+        prefix: str = None) -> None:
         """Export data to disk with file name {prefix}{run_id}.{ext}.
-        Values for the export type, path and prefix are set in the qcodes "dataset" config.
+        Values for the export type, path and prefix are set in the qcodes
+        "dataset" config.
 
         Args:
-            export_type (Union[DataExportType, str], optional): Data export type, e.g. "netcdf" or DataExportType.NETCDF,
-            defaults to value set config. Defaults to None.
-            path (str, optional): Export path, defaults to value set in config. Defaults to None.
-            prefix (str, optional): File prefix, e.g. "qcodes_", defaults to value set in config. Defaults to None.
+            # export_type (Union[DataExportType, str], optional): Data
+            export type, e.g. "netcdf" or DataExportType.NETCDF,
+            defaults to value set config
+            path (str, optional): Export path, defaults to value set in
+            config
+            prefix (str, optional): File prefix, e.g. "qcodes_",
+            defaults to value set in config.
 
         Raises:
             ValueError: If the export data type is not specified, raise an error
         """
-        # Set defaults to values in config if the value was not set (defaults to None)
+        # Set defaults to values in config if the value was not set
+        # (defaults to None)
         export_type = get_data_export_type(export_type)
         path = path or get_data_export_path()
         prefix = prefix or get_data_export_prefix()
 
         if DataExportType.NETCDF == export_type:
             self._export_as_netcdf(path=path, prefix=prefix)
-        
+
         else:
-            raise ValueError("No data export type specified. Please set the export data type by using `qcodes.dataset.data_export.set_data_export_type(path)`.")
+            raise ValueError("No data export type specified. Please set the \
+            export data type by using \
+            `qcodes.dataset.data_export.set_data_export_type(path)`.")
 
 
 # public api
