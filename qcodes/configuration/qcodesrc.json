@@ -67,7 +67,10 @@
         "write_in_background": false,
         "write_period": 5.0,
         "dond_plot": false,
-        "dond_show_progress": false
+        "dond_show_progress": false,
+        "export_type": null,
+        "export_prefix": "qcodes_",
+        "export_path": "~"
     },
     "telemetry":
     {

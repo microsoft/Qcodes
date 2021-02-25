@@ -6,6 +6,8 @@ import warnings
 import os
 import time
 import uuid
+import enum
+
 from dataclasses import dataclass
 from queue import Empty, Queue
 from threading import Thread
@@ -1692,6 +1694,29 @@ class DataSet(Sized):
         if writer_status.write_in_background and block:
             log.debug(f"Waiting for write queue to empty.")
             writer_status.data_write_queue.join()
+
+    def _export_data_as_netcdf(self, path: str, prefix: str) -> None:
+        from qcodes.dataset.data_export import DataExportType
+        extension = DataExportType.NETCDF.value
+        path = os.path.join(path, f"{prefix}{self.run_id}.{extension}")
+        xarr_dataset = self.to_xarray_dataset()
+        xarr_dataset.to_netcdf(path=path)
+
+    def export_data(self) -> None:
+        """Export data to disk with file name {prefix}{run_id}.{ext}.
+        Values for the export type, path and prefix are set in the qcodes "dataset" config.
+        """
+
+        from qcodes.dataset.data_export import DataExportType, get_data_export_type, get_data_export_path, get_data_export_prefix
+        data_export_type = get_data_export_type()
+        prefix = get_data_export_prefix()
+        data_export_path = get_data_export_path()
+
+        if DataExportType.NETCDF == data_export_type:
+            self._export_data_as_netcdf(path=data_export_path, prefix=prefix)
+        
+        else:
+            raise ValueError("No data export type specified. Please set the export data type by using `qcodes.dataset.data_export.set_data_export_type(path)`.")
 
 
 # public api
