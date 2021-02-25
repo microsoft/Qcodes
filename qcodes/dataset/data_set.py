@@ -49,6 +49,7 @@ from qcodes.dataset.sqlite.query_helpers import (VALUE, VALUES,
                                                  select_one_where)
 from qcodes.instrument.parameter import _BaseParameter
 from qcodes.utils.deprecate import deprecate
+from qcodes.dataset.export_config import DataExportType, get_data_export_type, get_data_export_path, get_data_export_prefix
 
 from .data_set_cache import DataSetCache
 from .descriptions.versioning import serialization as serial
@@ -1695,25 +1696,33 @@ class DataSet(Sized):
             log.debug(f"Waiting for write queue to empty.")
             writer_status.data_write_queue.join()
 
-    def _export_data_as_netcdf(self, path: str, prefix: str) -> None:
-        from qcodes.dataset.data_export import DataExportType
+    def _export_as_netcdf(self, path: str, prefix: str) -> None:
+        """Export data as netcdf to a given path with file prefix"""
         extension = DataExportType.NETCDF.value
         path = os.path.join(path, f"{prefix}{self.run_id}.{extension}")
         xarr_dataset = self.to_xarray_dataset()
         xarr_dataset.to_netcdf(path=path)
 
-    def export_data(self) -> None:
+    def export(self, export_type: Union[DataExportType, str] = None, path: str = None, prefix: str = None) -> None:
         """Export data to disk with file name {prefix}{run_id}.{ext}.
         Values for the export type, path and prefix are set in the qcodes "dataset" config.
+
+        :param export_type: Data export type, e.g. "netcdf" or DataExportType.NETCDF,
+            defaults to value set config
+        :type export_type: DataExportType, optional
+        :param path: Export path, defaults to value set in config
+        :type path: str, optional
+        :param prefix: File prefix, e.g. "qcodes_", defaults to value set in config
+        :type prefix: str, optional
+        :raises ValueError: If the export data type is not specified, raise an error
         """
+        # Set defaults to values in config if the value was not set (defaults to None)
+        export_type = get_data_export_type(export_type)
+        path = path or get_data_export_path()
+        prefix = prefix or get_data_export_prefix()
 
-        from qcodes.dataset.data_export import DataExportType, get_data_export_type, get_data_export_path, get_data_export_prefix
-        data_export_type = get_data_export_type()
-        prefix = get_data_export_prefix()
-        data_export_path = get_data_export_path()
-
-        if DataExportType.NETCDF == data_export_type:
-            self._export_data_as_netcdf(path=data_export_path, prefix=prefix)
+        if DataExportType.NETCDF == export_type:
+            self._export_as_netcdf(path=path, prefix=prefix)
         
         else:
             raise ValueError("No data export type specified. Please set the export data type by using `qcodes.dataset.data_export.set_data_export_type(path)`.")

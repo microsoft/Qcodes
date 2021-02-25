@@ -319,8 +319,8 @@
                 },
                 "export_type": {
                     "type": "string",
-                    "default": null,
-                    "description": "Data export type for exporting datasets to disk after a measurement finishes. Does not export if set to null (default). Currently supported type(s): netcdf"
+                    "default": "",
+                    "description": "Data export type for exporting datasets to disk after a measurement finishes. Does not export if set to empty string (default). Currently supported type(s): netcdf"
                 },
                 "export_path": {
                     "type": "string",

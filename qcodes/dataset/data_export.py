@@ -1,62 +1,13 @@
 from typing import List, Any, Sequence, Tuple, Dict, Union, cast
-from os.path import normpath, expanduser
+
 import logging
-import enum
 
 import numpy as np
 
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.data_set import load_by_id
-from qcodes import config
 
 log = logging.getLogger(__name__)
-
-
-DATASET_CONFIG_SECTION = "dataset"
-EXPORT_TYPE = "export_type"
-EXPORT_PATH = "export_path"
-EXPORT_PREFIX = "export_prefix"
-
-
-class DataExportType(enum.Enum):
-    """File extensions for supported data types to export data"""
-    NETCDF = "nc"
-
-
-def set_data_export_type(export_type: str) -> None:
-    if hasattr(DataExportType, export_type.upper()):
-        config[DATASET_CONFIG_SECTION][EXPORT_TYPE] = export_type.upper()
-
-
-def set_data_export_path(export_path: str) -> None:
-    if not os.path.exists(export_path):
-        raise ValueError(f"Cannot set export path to '{export_path}' because it does not exist.")
-    config[DATASET_CONFIG_SECTION][EXPORT_PATH] = export_path
-
-
-def get_data_export_type() -> Union[DataExportType, None]:
-    export_type = config[DATASET_CONFIG_SECTION][EXPORT_TYPE]
-
-    if export_type:
-        if not hasattr(DataExportType, export_type):
-            raise ValueError(f"Unknown export data type: {export_type}")
-        export_type = getattr(DataExportType, export_type)
-    else:
-        return None
-
-    return export_type
-
-
-def get_data_export_path() -> str:
-    return normpath(expanduser(config[DATASET_CONFIG_SECTION][EXPORT_PATH]))
-
-
-def set_data_export_prefix(export_prefix: str) -> None:
-    config[DATASET_CONFIG_SECTION][EXPORT_PREFIX] = export_prefix
-
-
-def get_data_export_prefix() -> str:
-    return config[DATASET_CONFIG_SECTION][EXPORT_PREFIX]
 
 
 def flatten_1D_data_for_plot(rawdata: Union[Sequence[Sequence[Any]],
