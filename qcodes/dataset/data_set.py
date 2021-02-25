@@ -339,6 +339,7 @@ class DataSet(Sized):
         self.cache: DataSetCache = DataSetCache(self)
         self._results: List[Dict[str, VALUE]] = []
         self._in_memory_cache = in_memory_cache
+        self._export_path = ""
 
         if run_id is not None:
             if not run_exists(self.conn, run_id):
@@ -1696,12 +1697,41 @@ class DataSet(Sized):
             log.debug(f"Waiting for write queue to empty.")
             writer_status.data_write_queue.join()
 
-    def _export_as_netcdf(self, path: str, prefix: str) -> None:
+    def _export_as_netcdf(self, path: str, prefix: str) -> str:
         """Export data as netcdf to a given path with file prefix"""
         extension = DataExportType.NETCDF.value
         path = os.path.join(path, f"{prefix}{self.run_id}.{extension}")
         xarr_dataset = self.to_xarray_dataset()
         xarr_dataset.to_netcdf(path=path)
+        return path
+
+    def _export_data(
+        self,
+        export_type: DataExportType,
+        path: str = None,
+        prefix: str = None) -> Union[str, None]:
+        """Export data to disk with file name {prefix}{run_id}.{ext}.
+        Values for the export type, path and prefix are set in the qcodes
+        "dataset" config.
+
+        Args:
+            export_type (DataExportType): Data
+            export type, e.g. DataExportType.NETCDF
+            path (str, optional): Export path, defaults to value set in
+            config
+            prefix (str, optional): File prefix, e.g. "qcodes_",
+            defaults to value set in config.
+
+        Returns:
+            str: Path file was saved to, returns None if no file was saved.
+        """
+        # Set defaults to values in config if the value was not set
+        # (defaults to None)
+        path = path or get_data_export_path()
+        prefix = prefix or get_data_export_prefix()
+
+        if DataExportType.NETCDF == export_type:
+            return self._export_as_netcdf(path=path, prefix=prefix)
 
     def export(
         self,
@@ -1713,7 +1743,7 @@ class DataSet(Sized):
         "dataset" config.
 
         Args:
-            # export_type (Union[DataExportType, str], optional): Data
+            export_type (Union[DataExportType, str], optional): Data
             export type, e.g. "netcdf" or DataExportType.NETCDF,
             defaults to value set config
             path (str, optional): Export path, defaults to value set in
@@ -1724,19 +1754,19 @@ class DataSet(Sized):
         Raises:
             ValueError: If the export data type is not specified, raise an error
         """
-        # Set defaults to values in config if the value was not set
-        # (defaults to None)
         export_type = get_data_export_type(export_type)
-        path = path or get_data_export_path()
-        prefix = prefix or get_data_export_prefix()
 
-        if DataExportType.NETCDF == export_type:
-            self._export_as_netcdf(path=path, prefix=prefix)
-
-        else:
+        if export_type is None:
             raise ValueError("No data export type specified. Please set the \
             export data type by using \
             `qcodes.dataset.data_export.set_data_export_type(path)`.")
+
+        self._export_path = self._export_data(
+            export_type=export_type, path=path, prefix=prefix)
+
+    @property
+    def export_path(self):
+        return self._export_path
 
 
 # public api

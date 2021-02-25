@@ -40,6 +40,7 @@ from qcodes.instrument.parameter import (ArrayParameter, MultiParameter,
                                          expand_setpoints_helper)
 from qcodes.utils.delaykeyboardinterrupt import DelayedKeyboardInterrupt
 from qcodes.utils.helpers import NumpyJSONEncoder
+from qcodes.dataset.export_config import get_data_export_type
 
 log = logging.getLogger(__name__)
 
@@ -412,6 +413,17 @@ class DataSaver:
         """
         self.dataset._flush_data_to_database(block=block)
 
+    def export_data(self) -> bool:
+        """Export data at end of measurement if export_type
+        is specified in "dataset" config
+
+        Returns:
+            bool: Flag to export data
+        """
+        export_type = get_data_export_type()
+        if export_type is not None:
+            self.dataset.export(export_type=export_type)
+
     @property
     def run_id(self) -> int:
         return self._dataset.run_id
@@ -560,6 +572,7 @@ class Runner:
                  ) -> None:
         with DelayedKeyboardInterrupt():
             self.datasaver.flush_data_to_database(block=True)
+            self.datasaver.export_data()
 
             # perform the "teardown" events
             for func, args in self.exitactions:

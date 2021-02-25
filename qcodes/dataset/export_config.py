@@ -58,15 +58,14 @@ def get_data_export_type(
     Returns:
         Union[DataExportType, None]: Data export type
     """
-    # If export_type is None, get value from config
-    export_type = export_type or config[DATASET_CONFIG_SECTION][EXPORT_TYPE]
+    if not isinstance(export_type, DataExportType):
+        # If export_type is None, get value from config
+        export_type = export_type or config[DATASET_CONFIG_SECTION][EXPORT_TYPE]
 
-    if export_type:
-        if not hasattr(DataExportType, export_type):
-            raise ValueError(f"Unknown export data type: {export_type}")
-        export_type = getattr(DataExportType, export_type)
-    else:
-        return None
+        if export_type:
+            if not hasattr(DataExportType, export_type):
+                return
+            export_type = getattr(DataExportType, export_type)
 
     return export_type
 
