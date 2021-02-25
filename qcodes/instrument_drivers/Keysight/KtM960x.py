@@ -50,9 +50,9 @@ class KtM960x(Instrument):
 
         self.add_parameter('output',
                            label="Source Output Enable",
-                           get_cmd=partial(self.get_vi_bool,
+                           get_cmd=partial(self._get_vi_bool,
                                            KTM960X_ATTR_OUTPUT_ENABLED),
-                           set_cmd=partial(self.set_vi_bool,
+                           set_cmd=partial(self._set_vi_bool,
                                            KTM960X_ATTR_OUTPUT_ENABLED),
                            val_mapping=create_on_off_val_mapping(on_val=True,
                                                                  off_val=False)
@@ -61,9 +61,9 @@ class KtM960x(Instrument):
         self.add_parameter('voltage_level',
                            label="Source Voltage Level",
                            unit="Volt",
-                           get_cmd=partial(self.get_vi_real64,
+                           get_cmd=partial(self._get_vi_real64,
                                            KTM960X_ATTR_OUTPUT_VOLTAGE_LEVEL),
-                           set_cmd=partial(self.set_vi_real64,
+                           set_cmd=partial(self._set_vi_real64,
                                            KTM960X_ATTR_OUTPUT_VOLTAGE_LEVEL),
                            vals=vals.Numbers(-210, 210))
 
@@ -71,9 +71,9 @@ class KtM960x(Instrument):
                            label="Output Current Range",
                            unit="Amp",
                            vals=vals.Numbers(1e-9, 300e-3),
-                           get_cmd=partial(self.get_vi_real64,
+                           get_cmd=partial(self._get_vi_real64,
                                            KTM960X_ATTR_OUTPUT_CURRENT_RANGE),
-                           set_cmd=partial(self.set_vi_real64,
+                           set_cmd=partial(self._set_vi_real64,
                                            KTM960X_ATTR_OUTPUT_CURRENT_RANGE)
                            )
 
@@ -81,10 +81,10 @@ class KtM960x(Instrument):
                            label="Current Measurement Range",
                            unit="Amp",
                            get_cmd=partial(
-                               self.get_vi_real64,
+                               self._get_vi_real64,
                                KTM960X_ATTR_MEASUREMENT_CURRENT_RANGE),
                            set_cmd=partial(
-                               self.set_vi_real64,
+                               self._set_vi_real64,
                                KTM960X_ATTR_MEASUREMENT_CURRENT_RANGE),
                            vals=vals.Numbers(1e-9, 300e-3),
                            )
@@ -93,10 +93,10 @@ class KtM960x(Instrument):
                            label="Current Measurement Integration Time",
                            unit="Seconds",
                            get_cmd=partial(
-                               self.get_vi_real64,
+                               self._get_vi_real64,
                                KTM960X_ATTR_MEASUREMENT_CURRENT_APERTURE),
                            set_cmd=partial(
-                               self.set_vi_real64,
+                               self._set_vi_real64,
                                KTM960X_ATTR_MEASUREMENT_CURRENT_APERTURE),
                            vals=vals.Numbers(800e-9, 2)
                            )
@@ -105,20 +105,20 @@ class KtM960x(Instrument):
                            label="Measured Data",
                            parameter_class=Measure)
 
-        self.get_driver_desc = partial(
-            self.get_vi_string, KTM960X_ATTR_SPECIFIC_DRIVER_DESCRIPTION)
-        self.get_driver_prefix = partial(
-            self.get_vi_string, KTM960X_ATTR_SPECIFIC_DRIVER_PREFIX)
-        self.get_driver_revision = partial(
-            self.get_vi_string, KTM960X_ATTR_SPECIFIC_DRIVER_REVISION)
-        self.get_firmware_revision = partial(
-            self.get_vi_string, KTM960X_ATTR_INSTRUMENT_FIRMWARE_REVISION)
-        self.get_model = partial(
-            self.get_vi_string, KTM960X_ATTR_INSTRUMENT_MODEL)
-        self.get_serial_number = partial(
-            self.get_vi_string, KTM960X_ATTR_MODULE_SERIAL_NUMBER)
-        self.get_manufactorer = partial(
-            self.get_vi_string, KTM960X_ATTR_INSTRUMENT_MANUFACTURER)
+        self._get_driver_desc = partial(
+            self._get_vi_string, KTM960X_ATTR_SPECIFIC_DRIVER_DESCRIPTION)
+        self._get_driver_prefix = partial(
+            self._get_vi_string, KTM960X_ATTR_SPECIFIC_DRIVER_PREFIX)
+        self._get_driver_revision = partial(
+            self._get_vi_string, KTM960X_ATTR_SPECIFIC_DRIVER_REVISION)
+        self._get_firmware_revision = partial(
+            self._get_vi_string, KTM960X_ATTR_INSTRUMENT_FIRMWARE_REVISION)
+        self._get_model = partial(
+            self._get_vi_string, KTM960X_ATTR_INSTRUMENT_MODEL)
+        self._get_serial_number = partial(
+            self._get_vi_string, KTM960X_ATTR_MODULE_SERIAL_NUMBER)
+        self._get_manufacturer = partial(
+            self._get_vi_string, KTM960X_ATTR_INSTRUMENT_MANUFACTURER)
 
         self._connect()
 
@@ -137,22 +137,25 @@ class KtM960x(Instrument):
         """generates the ``*IDN`` dictionary for qcodes"""
 
         id_dict: Dict[str, Optional[str]] = {
-            'firmware': self.get_firmware_revision(),
-            'model': self.get_model(),
-            'serial': self.get_serial_number(),
-            'vendor': self.get_manufactorer()
+            'firmware': self._get_firmware_revision(),
+            'model': self._get_model(),
+            'serial': self._get_serial_number(),
+            'vendor': self._get_manufacturer(),
+            'driver desc': self._get_driver_desc(),
+            'driver prefix': self._get_driver_prefix(),
+            'driver revision': self._get_driver_revision()
         }
         return id_dict
 
     def _measure(self) -> Tuple[ParamRawDataType, ...]:
 
         # Setup the output
-        self.set_vi_int(KTM960X_ATTR_OUTPUT_PRIORITY_MODE,
-                        KTM960X_VAL_PRIORITY_MODE_VOLTAGE)
-        self.set_vi_int(KTM960X_ATTR_OUTPUT_OPERATION_MODE,
-                        KTM960X_VAL_OUTPUT_OPERATION_MODE_STANDARD)
-        self.set_vi_int(KTM960X_ATTR_MEASUREMENT_ACQUISITION_MODE,
-                        KTM960X_VAL_ACQUISITION_MODE_NORMAL)
+        self._set_vi_int(KTM960X_ATTR_OUTPUT_PRIORITY_MODE,
+                         KTM960X_VAL_PRIORITY_MODE_VOLTAGE)
+        self._set_vi_int(KTM960X_ATTR_OUTPUT_OPERATION_MODE,
+                         KTM960X_VAL_OUTPUT_OPERATION_MODE_STANDARD)
+        self._set_vi_int(KTM960X_ATTR_MEASUREMENT_ACQUISITION_MODE,
+                         KTM960X_VAL_ACQUISITION_MODE_NORMAL)
 
         ch_num_buf = (ctypes.c_int32 * 1)()
         val_buf = (ctypes.c_double * 1024)()
@@ -193,7 +196,7 @@ class KtM960x(Instrument):
         return error_dict
 
     # Generic functions for reading/writing different attributes
-    def get_vi_string(self, attr: int) -> str:
+    def _get_vi_string(self, attr: int) -> str:
         s = ctypes.create_string_buffer(self._default_buf_size)
         status = self._dll.KtM960x_GetAttributeViString(self._session,
                                                         b"",
@@ -204,7 +207,7 @@ class KtM960x(Instrument):
             raise ValueError(f"Driver error: {status}")
         return s.value.decode('utf-8')
 
-    def get_vi_bool(self, attr: int) -> bool:
+    def _get_vi_bool(self, attr: int) -> bool:
         s = ctypes.c_uint16(0)
         status = self._dll.KtM960x_GetAttributeViBoolean(self._session, b"",
                                                          attr, ctypes.byref(s))
@@ -212,14 +215,14 @@ class KtM960x(Instrument):
             raise ValueError(f"Driver error: {status}")
         return bool(s)
 
-    def set_vi_bool(self, attr: int, value: bool) -> None:
+    def _set_vi_bool(self, attr: int, value: bool) -> None:
         v = ctypes.c_uint16(1) if value else ctypes.c_uint16(0)
         status = self._dll.KtM960x_SetAttributeViBoolean(self._session, b"",
                                                          attr, v)
         if status:
             raise ValueError(f"Driver error: {status}")
 
-    def get_vi_real64(self, attr: int) -> float:
+    def _get_vi_real64(self, attr: int) -> float:
         s = ctypes.c_double(0)
         status = self._dll.KtM960x_GetAttributeViReal64(self._session, b"",
                                                         attr, ctypes.byref(s))
@@ -228,21 +231,21 @@ class KtM960x(Instrument):
             raise ValueError(f"Driver error: {status}")
         return float(s.value)
 
-    def set_vi_real64(self, attr: int, value: float) -> None:
+    def _set_vi_real64(self, attr: int, value: float) -> None:
         v = ctypes.c_double(value)
         status = self._dll.KtM960x_SetAttributeViReal64(self._session, b"",
                                                         attr, v)
         if status:
             raise ValueError(f"Driver error: {status}")
 
-    def set_vi_int(self, attr: int, value: int) -> None:
+    def _set_vi_int(self, attr: int, value: int) -> None:
         v = ctypes.c_int32(value)
         status = self._dll.KtM960x_SetAttributeViInt32(self._session, b"",
                                                        attr, v)
         if status:
             raise ValueError(f"Driver error: {status}")
 
-    def get_vi_int(self, attr: int) -> int:
+    def _get_vi_int(self, attr: int) -> int:
         v = ctypes.c_int32(0)
         status = self._dll.KtM960x_GetAttributeViInt32(self._session, b"",
                                                        attr, ctypes.byref(v))

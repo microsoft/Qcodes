@@ -38,12 +38,12 @@ class KtMAWGChannel(InstrumentChannel):
             "output_term_config",
             label="Output Terminal Configuration",
             get_cmd=partial(
-                self.root_instrument.get_vi_int,
+                self.root_instrument._get_vi_int,
                 KTMAWG_ATTR_TERMINAL_CONFIGURATION,
                 ch=self._channel
             ),
             set_cmd=partial(
-                self.root_instrument.set_vi_int,
+                self.root_instrument._set_vi_int,
                 KTMAWG_ATTR_TERMINAL_CONFIGURATION,
                 ch=self._channel
             ),
@@ -57,12 +57,12 @@ class KtMAWGChannel(InstrumentChannel):
             "operation",
             label="Operating Mode",
             get_cmd=partial(
-                self.root_instrument.get_vi_int,
+                self.root_instrument._get_vi_int,
                 KTMAWG_ATTR_OPERATION_MODE,
                 ch=self._channel
             ),
             set_cmd=partial(
-                self.root_instrument.set_vi_int,
+                self.root_instrument._set_vi_int,
                 KTMAWG_ATTR_OPERATION_MODE,
                 ch=self._channel
             ),
@@ -76,12 +76,12 @@ class KtMAWGChannel(InstrumentChannel):
             "output",
             label="Output Enable",
             get_cmd=partial(
-                self.root_instrument.get_vi_bool,
+                self.root_instrument._get_vi_bool,
                 KTMAWG_ATTR_OUTPUT_ENABLED,
                 ch=self._channel
             ),
             set_cmd=partial(
-                self.root_instrument.set_vi_bool,
+                self.root_instrument._set_vi_bool,
                 KTMAWG_ATTR_OUTPUT_ENABLED,
                 ch=self._channel
             ),
@@ -115,7 +115,7 @@ class KtMAWGChannel(InstrumentChannel):
         self.add_parameter(
             "digital_gain",
             label="Digital Output Gain",
-            vals=Numbers(0,1.0),
+            vals=Numbers(0, 1.0),
             set_cmd=self._set_digital_gain,
             get_cmd=self._get_digital_gain,
         )
@@ -251,25 +251,25 @@ class KtMAwg(Instrument):
             )
             self.add_submodule(ch_name, channel)
 
-        self.get_driver_desc = partial(
-            self.get_vi_string, KTMAWG_ATTR_SPECIFIC_DRIVER_DESCRIPTION
+        self._get_driver_desc = partial(
+            self._get_vi_string, KTMAWG_ATTR_SPECIFIC_DRIVER_DESCRIPTION
         )
-        self.get_driver_prefix = partial(
-            self.get_vi_string, KTMAWG_ATTR_SPECIFIC_DRIVER_PREFIX
+        self._get_driver_prefix = partial(
+            self._get_vi_string, KTMAWG_ATTR_SPECIFIC_DRIVER_PREFIX
         )
-        self.get_driver_revision = partial(
-            self.get_vi_string, KTMAWG_ATTR_SPECIFIC_DRIVER_REVISION
+        self._get_driver_revision = partial(
+            self._get_vi_string, KTMAWG_ATTR_SPECIFIC_DRIVER_REVISION
         )
-        self.get_firmware_revision = partial(
-            self.get_vi_string, KTMAWG_ATTR_INSTRUMENT_FIRMWARE_REVISION
+        self._get_firmware_revision = partial(
+            self._get_vi_string, KTMAWG_ATTR_INSTRUMENT_FIRMWARE_REVISION
         )
-        self.get_model = partial(self.get_vi_string,
-                                 KTMAWG_ATTR_INSTRUMENT_MODEL)
-        self.get_serial_number = partial(
-            self.get_vi_string, KTMAWG_ATTR_MODULE_SERIAL_NUMBER
+        self._get_model = partial(self._get_vi_string,
+                                  KTMAWG_ATTR_INSTRUMENT_MODEL)
+        self._get_serial_number = partial(
+            self._get_vi_string, KTMAWG_ATTR_MODULE_SERIAL_NUMBER
         )
-        self.get_manufactorer = partial(
-            self.get_vi_string, KTMAWG_ATTR_INSTRUMENT_MANUFACTURER
+        self._get_manufacturer = partial(
+            self._get_vi_string, KTMAWG_ATTR_INSTRUMENT_MANUFACTURER
         )
 
         self._connect()
@@ -287,10 +287,13 @@ class KtMAwg(Instrument):
         """generates the ``*IDN`` dictionary for qcodes"""
 
         id_dict: Dict[str, Optional[str]] = {
-            "firmware": self.get_firmware_revision(),
-            "model": self.get_model(),
-            "serial": self.get_serial_number(),
-            "vendor": self.get_manufactorer(),
+            "firmware": self._get_firmware_revision(),
+            "model": self._get_model(),
+            "serial": self._get_serial_number(),
+            "vendor": self._get_manufacturer(),
+            "driver desc": self._get_driver_desc(),
+            "driver prefix": self._get_driver_prefix(),
+            "driver revision": self._get_driver_revision()
         }
         return id_dict
 
@@ -326,7 +329,7 @@ class KtMAwg(Instrument):
         return error_dict
 
     # Generic functions for reading/writing different attributes
-    def get_vi_string(self, attr: int, ch: bytes = b"") -> str:
+    def _get_vi_string(self, attr: int, ch: bytes = b"") -> str:
         s = ctypes.create_string_buffer(self._default_buf_size)
         status = self._dll.KtMAwg_GetAttributeViString(
             self._session, ch, attr, self._default_buf_size, s
@@ -335,7 +338,7 @@ class KtMAwg(Instrument):
             raise ValueError(f"Driver error: {status}")
         return s.value.decode("utf-8")
 
-    def get_vi_bool(self, attr: int, ch: bytes = b"") -> bool:
+    def _get_vi_bool(self, attr: int, ch: bytes = b"") -> bool:
         s = ctypes.c_uint16(0)
         status = self._dll.KtMAwg_GetAttributeViBoolean(
             self._session, ch, attr, ctypes.byref(s)
@@ -344,7 +347,7 @@ class KtMAwg(Instrument):
             raise ValueError(f"Driver error: {status}")
         return bool(s)
 
-    def set_vi_bool(self, attr: int, value: bool, ch: bytes = b"") -> None:
+    def _set_vi_bool(self, attr: int, value: bool, ch: bytes = b"") -> None:
         v = ctypes.c_uint16(1) if value else ctypes.c_uint16(0)
         status = self._dll.KtMAwg_SetAttributeViBoolean(self._session,
                                                         ch,
@@ -353,7 +356,7 @@ class KtMAwg(Instrument):
         if status:
             raise ValueError(f"Driver error: {status}")
 
-    def get_vi_real64(self, attr: int, ch: bytes = b"") -> float:
+    def _get_vi_real64(self, attr: int, ch: bytes = b"") -> float:
         s = ctypes.c_double(0)
         status = self._dll.KtMAwg_GetAttributeViReal64(
             self._session, ch, attr, ctypes.byref(s)
@@ -363,7 +366,7 @@ class KtMAwg(Instrument):
             raise ValueError(f"Driver error: {status}")
         return float(s.value)
 
-    def set_vi_real64(self, attr: int, value: float, ch: bytes = b"") -> None:
+    def _set_vi_real64(self, attr: int, value: float, ch: bytes = b"") -> None:
         v = ctypes.c_double(value)
         status = self._dll.KtMAwg_SetAttributeViReal64(self._session,
                                                        ch,
@@ -372,7 +375,7 @@ class KtMAwg(Instrument):
         if status:
             raise ValueError(f"Driver error: {status}")
 
-    def set_vi_int(self, attr: int, value: int, ch: bytes = b"") -> None:
+    def _set_vi_int(self, attr: int, value: int, ch: bytes = b"") -> None:
         v = ctypes.c_int32(value)
         status = self._dll.KtMAwg_SetAttributeViInt32(self._session,
                                                       ch,
@@ -381,7 +384,7 @@ class KtMAwg(Instrument):
         if status:
             raise ValueError(f"Driver error: {status}")
 
-    def get_vi_int(self, attr: int, ch: bytes = b"") -> int:
+    def _get_vi_int(self, attr: int, ch: bytes = b"") -> int:
         v = ctypes.c_int32(0)
         status = self._dll.KtMAwg_GetAttributeViInt32(
             self._session, ch, attr, ctypes.byref(v)
