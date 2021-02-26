@@ -38,7 +38,7 @@ Under the hood:
 - Add two more SMUs to B1500 yaml sim file, useful for testing (#2722)
 - Build docs on windows using github actions (#2716)
 - Move upload to pypi to Github actions (#2713)
-- Remove duplicate get call in ``_ParamCaller`` (#2712)
+- Remove duplicate get call in ``_ParamCaller`` used to acquire parameters out of the main thread (#2712)
 - Modernize packaging by moving most static packaging data to ``setup.cfg`` (#2693)
 - Remove left over usage of deprecated ``get_data_as_pandas_dataframe`` (#2674)
 - Commit data directy to dataset cache (#2667)
