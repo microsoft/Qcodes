@@ -8,6 +8,7 @@ from unittest.mock import patch
 
 import hypothesis.strategies as hst
 import numpy as np
+import xarray as xr
 import pytest
 from hypothesis import HealthCheck, given, settings
 
@@ -1372,6 +1373,54 @@ def test_write_data_to_text_file_name_exception(tmp_path):
         dataset.write_data_to_text_file(path=temp_dir, single_file=True,
                                         single_file_name=None)
 
+
+@pytest.mark.usefixtures('experiment')
+def test_export_csv(tmp_path_factory):
+    dataset = new_data_set("dataset")
+    xparam = ParamSpecBase("x", 'numeric')
+    yparam = ParamSpecBase("y", 'numeric')
+    zparam = ParamSpecBase("z", 'numeric')
+    idps = InterDependencies_(
+        dependencies={yparam: (xparam,), zparam: (xparam,)})
+    dataset.set_interdependencies(idps)
+
+    dataset.mark_started()
+    results = [{'x': 0, 'y': 1, 'z': 2}]
+    dataset.add_results(results)
+    dataset.mark_completed()
+    tmp_path = tmp_path_factory.mktemp("export_csv")
+    path = str(tmp_path)
+    dataset.export(export_type="csv", path=path, prefix="qcodes_")
+    assert os.listdir(path) == ['qcodes_1.csv']
+    with open(os.path.join(path, "qcodes_1.csv")) as f:
+        assert f.readlines() == ['0.0\t1.0\t2.0\n']
+
+
+@pytest.mark.usefixtures('experiment')
+def test_export_netcdf(tmp_path_factory):
+    dataset = new_data_set("dataset")
+    xparam = ParamSpecBase("x", 'numeric')
+    yparam = ParamSpecBase("y", 'numeric')
+    zparam = ParamSpecBase("z", 'numeric')
+    idps = InterDependencies_(
+        dependencies={yparam: (xparam,), zparam: (xparam,)})
+    dataset.set_interdependencies(idps)
+
+    dataset.mark_started()
+    results = [{'x': 0, 'y': 1, 'z': 2}]
+    dataset.add_results(results)
+    dataset.mark_completed()
+    tmp_path = tmp_path_factory.mktemp("export_netcdf")
+    path = str(tmp_path)
+    dataset.export(export_type="netcdf", path=path, prefix="qcodes_")
+    assert os.listdir(path) == [f"qcodes_{dataset.run_id}.nc"]
+    file_path = os.path.join(path, f"qcodes_{dataset.run_id}.nc")
+    ds = xr.open_dataset(file_path)
+    df = ds.to_dataframe()
+    assert df.index.name == "x"
+    assert df.index.values.tolist() == [0.]
+    assert df.y.values.tolist() == [1.0]
+    assert df.z.values.tolist() == [2.0]
 
 def test_same_setpoint_warning_for_df_and_xarray(different_setpoint_dataset):
 

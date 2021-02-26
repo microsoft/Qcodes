@@ -1368,7 +1368,9 @@ class DataSet(Sized):
                 raise DataPathException("Please provide the desired file name " +
                                         "for the concatenated data.")
             else:
-                dst = os.path.join(path, f'{single_file_name}.dat')
+                if not single_file_name.lower().endswith(('.dat', '.csv', '.txt')):
+                    single_file_name = f'{single_file_name}.dat'
+                dst = os.path.join(path, single_file_name)
                 df_to_save = pd.concat(dfs_to_save, axis=1)
                 df_to_save.to_csv(path_or_buf=dst, header=False, sep='\t')
 
@@ -1697,13 +1699,25 @@ class DataSet(Sized):
             log.debug(f"Waiting for write queue to empty.")
             writer_status.data_write_queue.join()
 
+    def _export_file_name(self, prefix: str, export_type: DataExportType):
+        extension = export_type.value
+        return f"{prefix}{self.run_id}.{extension}"
+
     def _export_as_netcdf(self, path: str, prefix: str) -> str:
         """Export data as netcdf to a given path with file prefix"""
-        extension = DataExportType.NETCDF.value
-        path = os.path.join(path, f"{prefix}{self.run_id}.{extension}")
+        file_name = self._export_file_name(
+            prefix=prefix, export_type=DataExportType.NETCDF)
+        file_path = os.path.join(path, file_name)
         xarr_dataset = self.to_xarray_dataset()
-        xarr_dataset.to_netcdf(path=path)
+        xarr_dataset.to_netcdf(path=file_path)
         return path
+
+    def _export_as_csv(self, path: str, prefix: str) -> str:
+        """Export data as csv to a given path with file prefix"""
+        file_name = self._export_file_name(
+            prefix=prefix, export_type=DataExportType.CSV)
+        self.write_data_to_text_file(path=path, single_file=True, single_file_name=file_name)
+        return os.path.join(path, file_name)
 
     def _export_data(
         self,
@@ -1732,6 +1746,9 @@ class DataSet(Sized):
 
         if DataExportType.NETCDF == export_type:
             return self._export_as_netcdf(path=path, prefix=prefix)
+
+        elif DataExportType.CSV == export_type:
+            return self._export_as_csv(path=path, prefix=prefix)
 
     def export(
         self,

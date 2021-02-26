@@ -15,6 +15,7 @@ EXPORT_PREFIX = "export_prefix"
 class DataExportType(enum.Enum):
     """File extensions for supported data types to export data"""
     NETCDF = "nc"
+    CSV = "csv"
 
 
 def set_data_export_type(export_type: str) -> None:
@@ -22,7 +23,7 @@ def set_data_export_type(export_type: str) -> None:
 
     Args:
         export_type (str): Export type to use
-        Currently supported values: "netcdf".
+        Currently supported values: netcdf, csv.
     """
     if hasattr(DataExportType, export_type.upper()):
         config[DATASET_CONFIG_SECTION][EXPORT_TYPE] = export_type.upper()
@@ -58,16 +59,15 @@ def get_data_export_type(
     Returns:
         Union[DataExportType, None]: Data export type
     """
-    if not isinstance(export_type, DataExportType):
-        # If export_type is None, get value from config
-        export_type = export_type or config[DATASET_CONFIG_SECTION][EXPORT_TYPE]
+    if isinstance(export_type, DataExportType):
+        return export_type
 
-        if export_type:
-            if not hasattr(DataExportType, export_type):
-                return
-            export_type = getattr(DataExportType, export_type)
+    # If export_type is None, get value from config
+    export_type = export_type or config[DATASET_CONFIG_SECTION][EXPORT_TYPE]
 
-    return export_type
+    if export_type:
+        if hasattr(DataExportType, export_type.upper()):
+            return getattr(DataExportType, export_type.upper())
 
 
 def get_data_export_path() -> str:
