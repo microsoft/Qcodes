@@ -5,7 +5,9 @@ colloquially known as the "stepper motors".
 from typing import Any, Dict, Optional, List
 import numpy as np
 
-from qcodes import Instrument, InstrumentChannel
+from qcodes.instrument.base import Instrument
+from qcodes.instrument.channel import InstrumentChannel
+from qcodes.instrument.group_parameter import GroupParameter, Group
 from qcodes.utils.validators import Enum, Ints, Union
 
 try:
@@ -108,21 +110,43 @@ class VectorMode(InstrumentChannel):
                            docstring="sets coordinate system for the motion")
 
         self.add_parameter("clear_sequence",
+                           get_cmd=None,
                            set_cmd="CS {}",
                            vals=Enum("S", "T"),
                            docstring="clears vectors specified in the given "
                                      "coordinate system")
 
         self.add_parameter("vector_mode_plane",
+                           get_cmd=None,
                            set_cmd="VM {}",
                            vals=Enum(*self._available_planes),
                            docstring="sets plane of motion for the motors")
 
-        self.add_parameter("vector_position",
-                           set_cmd="VP {},{}",  # make group param
-                           vals=Ints(-2147483648, 2147483647),
+        self.add_parameter("vec_pos_first_coordinate",
                            units="quadrature counts",
-                           docstring="sets position vector for the motion")
+                           vals=Ints(-2147483648, 2147483647),
+                           parameter_class=GroupParameter,
+                           docstring="sets vector position for plane's first"
+                                     "axis. e.g., if vector_mode_plane "
+                                     "is specified 'AC'. this param sets "
+                                     "vector position for 'A' axis to be used"
+                                     "in motion")
+
+        self.add_parameter("vec_pos_second_coordinate",
+                           units="quadrature counts",
+                           vals=Ints(-2147483648, 2147483647),
+                           parameter_class=GroupParameter,
+                           docstring="sets vector position for plane's second"
+                                     "axis. e.g., if vector_mode_plane "
+                                     "is specified 'AC'. this param sets "
+                                     "vector position for 'C' axis to be used"
+                                     "in motion")
+
+        self._vector_position = Group([self.vec_pos_first_coordinate,
+                                       self.vec_pos_second_coordinate],
+                                      set_cmd="VP {vec_pos_first_coordinate},"
+                                              "{vec_pos_second_coordinate}",
+                                      get_cmd=None)
 
         self.add_parameter("vector_acceleration",
                            get_cmd="VA ?",
@@ -394,6 +418,7 @@ class DMC4133Controller(GalilMotionController):
         super().__init__(name=name, address=address, **kwargs)
 
         self.add_parameter("position_format_decimals",
+                           get_cmd=None,
                            set_cmd="PF 10.{}",
                            vals=Ints(0, 4),
                            docstring="sets number of decimals in the format "
@@ -401,11 +426,13 @@ class DMC4133Controller(GalilMotionController):
 
         self.add_parameter("absolute_position",
                            get_cmd=self._get_absolute_position,
+                           set_cmd=None,
                            units="quadrature counts",
                            docstring="gets absolute position of the motors "
                                      "from the set origin")
 
         self.add_parameter("wait",
+                           get_cmd=None,
                            set_cmd="WT {}",
                            units="ms",
                            vals=Enum(np.linspace(2, 2147483646, 2)),
