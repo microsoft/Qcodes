@@ -7,12 +7,14 @@ The February 2021 release of QCoDeS.
 Improved:
 ---------
 
+- Commit data directy to dataset cache (#2667) (#2761)
+- Removed duplicate get call in ``_ParamCaller`` used to acquire 
+  parameters out of the main thread. This fix resulting in a 2x speed up for multi-threaded experiments (#2712)
 - Add ``pandas`` and ``xarray`` methods to ``DataSetCache``  matching the ``DataSet`` (#2763)
 - Fix to Avoid loading data twice in dataset's ``to_xarray_dataset`` method (#2762)
-- Fix for the ``to_pandas`` method on a live dataset by not loading from disk (#2761)
 - Add optional ``tqdm`` progress bar to ``doNd`` functions (#2734)
-- Improvement to ``Station`` by adding the ``load_all_instruments`` method to load everything specified
-  in configuration yaml (#2721)
+- Improvment to ``Station`` by adding the ``load_all_instruments`` method to load everything specified
+  in configuration yaml (#2721) (#2754)
 - In ``guid_helpers`` the regular expression used to read guids from a string represantation of a
   list/tuple of guids was flawed. Improvment to use ``ast.parse`` makes it a lot easier and error proof. (#2700)
 - Fix for station snapshot of parameters with ``snapshot_exclude`` (#2692)
@@ -30,16 +32,8 @@ Improved drivers:
 Under the hood:
 ---------------
 
-- Fix to use correct visa address for lakeshore pyvisa-sim in ``Station`` tests (#2754)
 - Remove dependency on gitpython (#2738)
 - Add two more SMUs to B1500 yaml sim file, useful for testing (#2722)
-<<<<<<< HEAD
-- Remove duplicate get call in ``_ParamCaller`` (#2712)
-=======
-- Build docs on windows using github actions (#2716)
-- Move upload to pypi to Github actions (#2713)
-- Remove duplicate get call in ``_ParamCaller`` used to acquire parameters out of the main thread (#2712)
->>>>>>> 8228784313c198d6a25ac68bc1717fdfd6e868b6
 - Modernize packaging by moving most static packaging data to ``setup.cfg`` (#2693)
 - Remove left over usage of deprecated ``get_data_as_pandas_dataframe`` (#2674)
-- Commit data directy to dataset cache (#2667)
+
