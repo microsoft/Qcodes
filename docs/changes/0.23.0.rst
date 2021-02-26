@@ -22,7 +22,7 @@ Improved:
 Improved drivers:
 -----------------
 
-- Feature to determine the validators for the frequency and power parameter of the Agilent ``E8527D` microwave
+- Feature to determine the frequency and power parameter validators on the Agilent ``E8527D` microwave
   source based on the installed options (#2690)
 
 
