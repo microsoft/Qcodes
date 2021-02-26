@@ -10,12 +10,14 @@ from qcodes.utils.helpers import create_on_off_val_mapping
 
 
 class Measure(MultiParameter):
-    def __init__(self, name: str) -> None:
+    def __init__(self, name: str, instrument: "KtM960x") -> None:
         super().__init__(name=name,
                          names=("voltage", "current", "resistance", "status",
                                 "timestamp", "source"),
                          shapes=((), (), (), (), (), ()),
                          units=("V", "A", "Ohm", "", "", ""),
+                         instrument=instrument,
+                         labels="Measurement Data",
                          docstring="param that returns measurement values")
         self.instrument: "KtM960x"
 
@@ -102,7 +104,6 @@ class KtM960x(Instrument):
                            )
 
         self.add_parameter("measure_data",
-                           label="Measured Data",
                            parameter_class=Measure)
 
         self._get_driver_desc = partial(
