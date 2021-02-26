@@ -11,6 +11,7 @@ import numpy as np
 import pytest
 from hypothesis import HealthCheck, given, settings
 from numpy.testing import assert_allclose, assert_array_equal
+from unittest.mock import patch
 
 import qcodes as qc
 from qcodes.dataset.data_export import get_data_by_id
@@ -26,6 +27,7 @@ from qcodes.tests.common import retry_until_does_not_throw, reset_config_on_exit
 # pylint: disable=unused-import
 from qcodes.tests.test_station import set_default_station_to_none
 from qcodes.utils.validators import Arrays
+from qcodes.dataset.export_config import DataExportType
 
 
 def test_log_messages(caplog, meas_with_registered_param):
@@ -1676,6 +1678,46 @@ def test_datasaver_multidim_array(experiment, bg_writing):  # noqa: F811
             assert_allclose(datadict['data'], expected_data)
 
             assert datadict['data'].shape == (size1 * size2,)
+
+
+@pytest.mark.parametrize("bg_writing", [True, False])
+def test_datasaver_export(experiment, bg_writing, tmp_path_factory):
+    """
+    Test export data to csv after measurement ends
+    """
+    meas = Measurement(experiment)
+    size1 = 10
+    size2 = 15
+
+    x1 = qc.ManualParameter('x1')
+    x2 = qc.ManualParameter('x2')
+    y1 = qc.ManualParameter('y1')
+    y2 = qc.ManualParameter('y2')
+
+    meas.register_parameter(x1, paramtype='array')
+    meas.register_parameter(x2, paramtype='array')
+    meas.register_parameter(y1, setpoints=[x1, x2], paramtype='array')
+    meas.register_parameter(y2, setpoints=[x1, x2], paramtype='array')
+    data = np.random.rand(4, size1, size2)
+    expected = {'x1': data[0, :, :],
+                'x2': data[1, :, :],
+                'y1': data[2, :, :],
+                'y2': data[3, :, :]}
+
+    tmp_path = tmp_path_factory.mktemp("export_from_config")
+    path = str(tmp_path)
+
+    with patch("qcodes.dataset.measurements.get_data_export_type") as mock_type, \
+    patch("qcodes.dataset.data_set.get_data_export_path") as mock_path:
+        mock_type.return_value = DataExportType.CSV
+        mock_path.return_value = path
+        with meas.run(write_in_background=bg_writing) as datasaver:
+            datasaver.add_result((str(x1), expected['x1']),
+                                (str(x2), expected['x2']),
+                                (str(y1), expected['y1']),
+                                (str(y2), expected['y2']))
+
+    assert os.listdir(path) == [f"qcodes_{datasaver.dataset.run_id}.csv"]
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])

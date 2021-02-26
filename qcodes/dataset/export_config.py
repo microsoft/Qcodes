@@ -25,6 +25,10 @@ def set_data_export_type(export_type: str) -> None:
         export_type (str): Export type to use
         Currently supported values: netcdf, csv.
     """
+    # disable file export
+    if export_type is None:
+        config[DATASET_CONFIG_SECTION][EXPORT_TYPE] = None
+
     if hasattr(DataExportType, export_type.upper()):
         config[DATASET_CONFIG_SECTION][EXPORT_TYPE] = export_type.upper()
 
