@@ -24,9 +24,9 @@ Improved:
 New drivers:
 ------------
 
-- AWG Driver for the Keysight M9336A PXIe I/Q Arbitrary Waveform Generator. This driver provides
+- AWG Driver for the Keysight ``M9336A`` PXIe I/Q Arbitrary Waveform Generator. This driver provides
   a simple wrapper around the IVI-C drivers from Keysight (#2613)
-- Driver wrapper for the Keysight M960X DAC. This driver provides an interface into the IVI-C driver
+- Driver wrapper for the Keysight ``M960X`` DAC. This driver provides an interface into the IVI-C driver
   provided by Keysight (#2613)
 
 
