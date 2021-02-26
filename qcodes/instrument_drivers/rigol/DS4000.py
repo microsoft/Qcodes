@@ -162,7 +162,7 @@ class ScopeArray(ArrayParameter):
 
     def get_preamble(self) -> None:
         assert isinstance(self.instrument, RigolDS4000Channel)
-        preamble_nt = namedtuple('preamble', ["format", "mode", "points", "count", "xincrement", "xorigin",
+        preamble_nt = namedtuple('preamble_nt', ["format", "mode", "points", "count", "xincrement", "xorigin",
                                               "xreference", "yincrement", "yorigin", "yreference"])
         conv = lambda x: int(x) if x.isdigit() else float(x)
 
@@ -201,6 +201,7 @@ class RigolDS4000Channel(InstrumentChannel):
                            parameter_class=ScopeArray,
                            raw=True
                            )
+
 
 class DS4000(VisaInstrument):
     """

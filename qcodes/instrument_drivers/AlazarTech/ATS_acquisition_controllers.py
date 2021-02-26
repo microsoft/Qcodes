@@ -102,6 +102,7 @@ class Demodulation_AcquisitionController(AcquisitionController[float]):
         See AcquisitionController
         :return:
         """
+        assert self.buffer is not None
         self.buffer += data
 
     def post_acquire(self) -> float:

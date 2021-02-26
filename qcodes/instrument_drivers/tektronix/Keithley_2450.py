@@ -484,11 +484,10 @@ class Source2450(InstrumentChannel):
             raise ValueError(
                 "Please setup the sweep before getting values of this parameter"
             )
-
         return np.linspace(
             start=self._sweep_arguments["start"],
             stop=self._sweep_arguments["stop"],
-            num=self._sweep_arguments["step_count"]
+            num=int(self._sweep_arguments["step_count"])
         )
 
     def sweep_setup(
