@@ -4,8 +4,9 @@ import ctypes
 from functools import partial
 from typing import (Dict, Optional, Any, Tuple)
 
-from qcodes import Instrument, MultiParameter, validators as vals
-from qcodes.instrument.parameter import ParamRawDataType
+from qcodes.instrument.base import Instrument
+from qcodes.instrument.parameter import ParamRawDataType, MultiParameter
+from qcodes.utils import validators as vals
 from qcodes.utils.helpers import create_on_off_val_mapping
 
 
