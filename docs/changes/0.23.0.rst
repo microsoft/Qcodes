@@ -11,9 +11,9 @@ Improved:
 - Fix to Avoid loading data twice in dataset's ``to_xarray_dataset`` method (#2762)
 - Fix for the ``to_pandas`` method on a live dataset by not loading from disk (#2761)
 - Add optional ``tqdm`` progress bar to ``doNd`` functions (#2734)
-- Improvment to ``Station`` by adding the ``load_all_instruments`` method to load everything specified 
+- Improvment to ``Station`` by adding the ``load_all_instruments`` method to load everything specified
   in configuration yaml (#2721)
-- In ``guid_helpers`` the regular expression used to read guids from a string represantation of a 
+- In ``guid_helpers`` the regular expression used to read guids from a string represantation of a
   list/tuple of guids was flawed. Improvment to use ``ast.parse`` makes it a lot easier and error proof. (#2700)
 - Fix for station snapshot of parameters with ``snapshot_exclude`` (#2692)
 
@@ -22,7 +22,7 @@ Improved:
 Improved drivers:
 -----------------
 
-- Feature to determine the validators for the frequency and power parameter of the Agilent ``E8527D` microwave 
+- Feature to determine the validators for the frequency and power parameter of the Agilent ``E8527D` microwave
   source based on the installed options (#2690)
 
 
@@ -30,7 +30,7 @@ Improved drivers:
 Under the hood:
 ---------------
 
-- Simplify science requirements tests (#2768) 
+- Simplify science requirements tests (#2768)
 - Fix to use correct visa address for lakeshore pyvisa-sim in ``Station`` tests (#2754)
 - Update pip package caching since this key should depend on setup.cfg not setup.py (#2739)
 - Remove dependency on gitpython (#2738)
@@ -42,5 +42,3 @@ Under the hood:
 - Modernize packaging by moving most static packaging data to ``setup.cfg`` (#2693)
 - Remove left over usage of deprecated ``get_data_as_pandas_dataframe`` (#2674)
 - Commit data directy to dataset cache (#2667)
-
-
