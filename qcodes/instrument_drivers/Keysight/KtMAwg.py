@@ -122,7 +122,7 @@ class KtMAWGChannel(InstrumentChannel):
 
     def load_waveform(self, filename: str) -> None:
         path = ctypes.create_string_buffer(filename.encode("ascii"))
-        self._awg_handle = ctypes.c_int32(0)
+        self._awg_handle = ctypes.c_int32(-1)
         status = self.root_instrument._dll.\
             KtMAwg_WaveformCreateChannelWaveformFromFile(
                 self.root_instrument._session,
