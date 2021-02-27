@@ -1780,7 +1780,7 @@ class DataSet(Sized):
             export_type=export_type, path=path, prefix=prefix)
 
     @property
-    def export_path(self) -> strr:
+    def export_path(self) -> str:
         return self._export_path
 
 
