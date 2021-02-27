@@ -1724,7 +1724,7 @@ class DataSet(Sized):
         self,
         export_type: DataExportType,
         path: Optional[str] = None,
-        prefix: Optional[str] = None) -> Union[str, None]:
+        prefix: Optional[str] = None) -> str:
         """Export data to disk with file name {prefix}{run_id}.{ext}.
         Values for the export type, path and prefix are set in the qcodes
         "dataset" config.
@@ -1747,9 +1747,9 @@ class DataSet(Sized):
 
         elif DataExportType.CSV == export_type:
             return self._export_as_csv(path=path, prefix=prefix)
-
+        
         else:
-            return None
+            return ""
 
     def export(
         self,
@@ -1777,7 +1777,10 @@ class DataSet(Sized):
             export data type by using set_data_export_type.")
 
         self._export_path = self._export_data(
-            export_type=export_type, path=path, prefix=prefix)
+            export_type=export_type,
+            path=path,
+            prefix=prefix
+        )
 
     @property
     def export_path(self) -> str:
