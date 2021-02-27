@@ -78,8 +78,7 @@ def get_data_export_type(
     elif export_type:
         if hasattr(DataExportType, export_type.upper()):
             return getattr(DataExportType, export_type.upper())
-    else:
-        return None
+    return None
 
 
 def get_data_export_path() -> str:

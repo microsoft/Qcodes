@@ -1777,7 +1777,7 @@ class DataSet(Sized):
             export data type by using set_data_export_type.")
 
         self._export_path = self._export_data(
-            export_type=export_type, path=path, prefix=prefix)
+            export_type=str(export_type), path=path, prefix=prefix)
 
     @property
     def export_path(self) -> str:
