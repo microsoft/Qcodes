@@ -1,9 +1,12 @@
 import enum
+import logging
 
 from os.path import normpath, expanduser, exists
 from typing import Union, Optional
 
 from qcodes import config
+
+_log = logging.getLogger(__name__)
 
 
 DATASET_CONFIG_SECTION = "dataset"
@@ -22,15 +25,20 @@ def set_data_export_type(export_type: str) -> None:
     """Set data export type
 
     Args:
-        export_type: Export type to use
-        Currently supported values: netcdf, csv.
+        export_type: Export type to use.
+            Currently supported values: netcdf, csv.
     """
     # disable file export
     if export_type is None:
         config[DATASET_CONFIG_SECTION][EXPORT_TYPE] = None
 
-    if hasattr(DataExportType, export_type.upper()):
+    elif hasattr(DataExportType, export_type.upper()):
         config[DATASET_CONFIG_SECTION][EXPORT_TYPE] = export_type.upper()
+
+    else:
+        _log.warning(
+            "Could not set export type to '%s' because it is not supported." \
+            % export_type)
 
 
 def set_data_export_path(export_path: str) -> None:
@@ -49,7 +57,7 @@ def set_data_export_path(export_path: str) -> None:
 
 
 def get_data_export_type(
-    export_type: Optional[str] = None) -> Union[DataExportType, None]:
+    export_type: Optional[Union[DataExportType, str]] = None) -> Union[DataExportType, None]:
     """Get the file type for exporting data to disk at the end of
     a measurement from config
 
@@ -62,15 +70,16 @@ def get_data_export_type(
     Returns:
         Data export type
     """
-    if isinstance(export_type, DataExportType):
-        return export_type
-
     # If export_type is None, get value from config
     export_type = export_type or config[DATASET_CONFIG_SECTION][EXPORT_TYPE]
 
-    if export_type:
+    if isinstance(export_type, DataExportType):
+        return export_type
+    elif export_type:
         if hasattr(DataExportType, export_type.upper()):
             return getattr(DataExportType, export_type.upper())
+    else:
+        return None
 
 
 def get_data_export_path() -> str:
@@ -83,7 +92,7 @@ def get_data_export_path() -> str:
 
 
 def set_data_export_prefix(export_prefix: str) -> None:
-    """Set the data export file name prefix to export data to at the end of 
+    """Set the data export file name prefix to export data to at the end of
     a measurement
 
     Args:
@@ -93,7 +102,7 @@ def set_data_export_prefix(export_prefix: str) -> None:
 
 
 def get_data_export_prefix() -> str:
-    """Get the data export file name prefix to export data to at the end of 
+    """Get the data export file name prefix to export data to at the end of
     a measurement from config
 
     Returns:

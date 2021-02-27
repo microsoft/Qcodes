@@ -1364,13 +1364,13 @@ class DataSet(Sized):
                 raise DataLengthException("You cannot concatenate data " +
                                           "with different length to a " +
                                           "single file.")
-            if single_file_name == None:
+            if single_file_name is None:
                 raise DataPathException("Please provide the desired file name " +
                                         "for the concatenated data.")
             else:
                 if not single_file_name.lower().endswith(('.dat', '.csv', '.txt')):
                     single_file_name = f'{single_file_name}.dat'
-                dst = os.path.join(path, single_file_name)
+                dst = os.path.join(path, str(single_file_name))
                 df_to_save = pd.concat(dfs_to_save, axis=1)
                 df_to_save.to_csv(path_or_buf=dst, header=False, sep='\t')
 
@@ -1747,6 +1747,9 @@ class DataSet(Sized):
 
         elif DataExportType.CSV == export_type:
             return self._export_as_csv(path=path, prefix=prefix)
+        
+        else:
+            return None
 
     def export(
         self,
@@ -1771,14 +1774,13 @@ class DataSet(Sized):
 
         if export_type is None:
             raise ValueError("No data export type specified. Please set the \
-            export data type by using \
-            `qcodes.dataset.data_export.set_data_export_type(path)`.")
+            export data type by using set_data_export_type.")
 
         self._export_path = self._export_data(
             export_type=export_type, path=path, prefix=prefix)
 
     @property
-    def export_path(self):
+    def export_path(self) -> strr:
         return self._export_path
 
 

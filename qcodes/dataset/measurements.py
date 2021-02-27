@@ -413,7 +413,7 @@ class DataSaver:
         """
         self.dataset._flush_data_to_database(block=block)
 
-    def export_data(self):
+    def export_data(self) -> None:
         """Export data at end of measurement if export_type
         is specified in "dataset" config
         """
