@@ -1699,7 +1699,8 @@ class DataSet(Sized):
             log.debug(f"Waiting for write queue to empty.")
             writer_status.data_write_queue.join()
 
-    def _export_file_name(self, prefix: str, export_type: DataExportType):
+    def _export_file_name(self, prefix: str, export_type: DataExportType) -> str:
+        """Get export file name"""
         extension = export_type.value
         return f"{prefix}{self.run_id}.{extension}"
 
@@ -1723,18 +1724,15 @@ class DataSet(Sized):
         self,
         export_type: DataExportType,
         path: str = None,
-        prefix: str = None) -> Union[str, None]:
+        prefix: Optional[str] = None) -> Union[str, None]:
         """Export data to disk with file name {prefix}{run_id}.{ext}.
         Values for the export type, path and prefix are set in the qcodes
         "dataset" config.
 
         Args:
-            export_type (DataExportType): Data
-            export type, e.g. DataExportType.NETCDF
-            path (str, optional): Export path, defaults to value set in
-            config
-            prefix (str, optional): File prefix, e.g. "qcodes_",
-            defaults to value set in config.
+            export_type: Data export type, e.g. DataExportType.NETCDF
+            path: Export path, defaults to value set in config
+            prefix: File prefix, e.g. "qcodes_", defaults to value set in config.
 
         Returns:
             str: Path file was saved to, returns None if no file was saved.
