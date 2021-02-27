@@ -1747,7 +1747,7 @@ class DataSet(Sized):
 
         elif DataExportType.CSV == export_type:
             return self._export_as_csv(path=path, prefix=prefix)
-        
+
         else:
             return None
 
