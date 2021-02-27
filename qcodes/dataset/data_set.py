@@ -1723,7 +1723,7 @@ class DataSet(Sized):
     def _export_data(
         self,
         export_type: DataExportType,
-        path: str = None,
+        path: Optional[str] = None,
         prefix: Optional[str] = None) -> Union[str, None]:
         """Export data to disk with file name {prefix}{run_id}.{ext}.
         Values for the export type, path and prefix are set in the qcodes
@@ -1750,21 +1750,19 @@ class DataSet(Sized):
 
     def export(
         self,
-        export_type: Union[DataExportType, str] = None,
-        path: str = None,
-        prefix: str = None) -> None:
+        export_type: Optional[Union[DataExportType, str]] = None,
+        path: Optional[str] = None,
+        prefix: Optional[str] = None) -> None:
         """Export data to disk with file name {prefix}{run_id}.{ext}.
         Values for the export type, path and prefix are set in the qcodes
         "dataset" config.
 
         Args:
-            export_type (Union[DataExportType, str], optional): Data
-            export type, e.g. "netcdf" or DataExportType.NETCDF,
-            defaults to value set config
-            path (str, optional): Export path, defaults to value set in
-            config
-            prefix (str, optional): File prefix, e.g. "qcodes_",
-            defaults to value set in config.
+            export_type: Data
+                export type, e.g. "netcdf" or DataExportType.NETCDF,
+                defaults to value set config
+            path: Export path, defaults to value set in config
+            prefix: File prefix, e.g. "qcodes_", defaults to value set in config.
 
         Raises:
             ValueError: If the export data type is not specified, raise an error

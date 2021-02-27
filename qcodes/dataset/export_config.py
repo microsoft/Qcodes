@@ -1,7 +1,7 @@
 import enum
 
 from os.path import normpath, expanduser, exists
-from typing import Union
+from typing import Union, Optional
 
 from qcodes import config
 
@@ -22,7 +22,7 @@ def set_data_export_type(export_type: str) -> None:
     """Set data export type
 
     Args:
-        export_type (str): Export type to use
+        export_type: Export type to use
         Currently supported values: netcdf, csv.
     """
     # disable file export
@@ -37,7 +37,7 @@ def set_data_export_path(export_path: str) -> None:
     """Set path to export data to at the end of a measurement
 
     Args:
-        export_path (str): An existing file path on disk
+        export_path: An existing file path on disk
 
     Raises:
         ValueError: If the path does not exist, this raises an error
@@ -49,19 +49,18 @@ def set_data_export_path(export_path: str) -> None:
 
 
 def get_data_export_type(
-    export_type: Union[str, None] = None) -> Union[DataExportType, None]:
+    export_type: Optional[str] = None) -> Union[DataExportType, None]:
     """Get the file type for exporting data to disk at the end of
     a measurement from config
 
     Args:
-        export_type (Union[str, None], optional): Export type string format
-        to convert to DataExportType. Defaults to None.
+        export_type: Export type string format to convert to DataExportType.
 
     Raises:
         ValueError: If the type is not supported, this raises an error
 
     Returns:
-        Union[DataExportType, None]: Data export type
+        Data export type
     """
     if isinstance(export_type, DataExportType):
         return export_type
@@ -78,7 +77,7 @@ def get_data_export_path() -> str:
     """Get the path to export data to at the end of a measurement from config
 
     Returns:
-        str: Path
+        Path
     """
     return normpath(expanduser(config[DATASET_CONFIG_SECTION][EXPORT_PATH]))
 
@@ -88,7 +87,7 @@ def set_data_export_prefix(export_prefix: str) -> None:
     a measurement
 
     Args:
-        export_prefix (str): Prefix, e.g. "qcodes_"
+        export_prefix: Prefix, e.g. "qcodes_"
     """
     config[DATASET_CONFIG_SECTION][EXPORT_PREFIX] = export_prefix
 
