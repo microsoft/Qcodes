@@ -105,6 +105,6 @@ def get_data_export_prefix() -> str:
     a measurement from config
 
     Returns:
-        str: Prefix, e.g. "qcodes_"
+        Prefix, e.g. "qcodes_"
     """
     return config[DATASET_CONFIG_SECTION][EXPORT_PREFIX]
