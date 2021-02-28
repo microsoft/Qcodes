@@ -46,6 +46,7 @@ jobs:
       run: |
         pip install requirements-builder
         requirements-builder -l min -e test setup.py -o min_requirements.txt
+        pip install numpy==1.16.1
     - name: install min_requirements.txt
       run: |
         pip install -r min_requirements.txt
