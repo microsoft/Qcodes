@@ -16,6 +16,7 @@ from typing import (Hashable, Iterator, TYPE_CHECKING, Any, Callable, Dict,
                     Sized, Tuple, Union, cast)
 
 import numpy
+from netCDF4 import Dataset
 
 import qcodes
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
@@ -1710,7 +1711,7 @@ class DataSet(Sized):
             prefix=prefix, export_type=DataExportType.NETCDF)
         file_path = os.path.join(path, file_name)
         xarr_dataset = self.to_xarray_dataset()
-        xarr_dataset.to_netcdf(path=file_path, engine="scipy")
+        xarr_dataset.to_netcdf(path=file_path)
         return path
 
     def _export_as_csv(self, path: str, prefix: str) -> str:
