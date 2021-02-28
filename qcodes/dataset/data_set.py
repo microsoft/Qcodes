@@ -1710,7 +1710,7 @@ class DataSet(Sized):
             prefix=prefix, export_type=DataExportType.NETCDF)
         file_path = os.path.join(path, file_name)
         xarr_dataset = self.to_xarray_dataset()
-        xarr_dataset.to_netcdf(path=file_path)
+        xarr_dataset.to_netcdf(path=file_path, engine="scipy")
         return path
 
     def _export_as_csv(self, path: str, prefix: str) -> str:
