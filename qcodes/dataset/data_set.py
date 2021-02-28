@@ -16,7 +16,10 @@ from typing import (Hashable, Iterator, TYPE_CHECKING, Any, Callable, Dict,
                     Sized, Tuple, Union, cast)
 
 import numpy
+import pandas as pd 
 from netCDF4 import Dataset
+import xarray as xr
+import h5py
 
 import qcodes
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
