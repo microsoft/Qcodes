@@ -10,7 +10,7 @@ cffi==1.14.5
 chardet==4.0.0
 colorama==0.4.4
 decorator==4.4.2
-defusedxml==0.6.0
+defusedxml==0.7.0
 docutils==0.16
 entrypoints==0.3
 idna==2.10

@@ -12,12 +12,12 @@ colorama~=0.4.4
 contextlib2~=0.6.0.post1
 cycler~=0.10.0
 decorator~=4.4.2
-defusedxml~=0.6.0
+defusedxml~=0.7.0
 entrypoints~=0.3
 google-api-core~=1.26.0
 google-auth~=1.27.0
 googleapis-common-protos~=1.53.0
-h5py~=3.1.0
+h5py~=3.2.0
 idna~=2.10
 importlib-metadata==3.4.0;python_version<'3.8'
 ipykernel~=5.5.0
