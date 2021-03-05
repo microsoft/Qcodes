@@ -52,7 +52,7 @@ pickleshare~=0.7.5
 Pillow~=8.1.1
 prometheus-client~=0.9.0
 prompt-toolkit~=3.0.16
-protobuf~=3.15.4
+protobuf~=3.15.5
 psutil~=5.8.0
 pyasn1~=0.4.8
 pyasn1-modules~=0.2.8
@@ -69,7 +69,7 @@ pyzmq~=22.0.3
 requests~=2.25.1
 requirements-parser~=0.2.0
 rsa~=4.7
-ruamel.yaml~=0.16.12
+ruamel.yaml~=0.16.13
 ruamel.yaml.clib~=0.2.2
 schema~=0.7.4
 Send2Trash~=1.5.0
@@ -89,7 +89,7 @@ widgetsnbextension~=3.5.1
 wincertstore~=0.2
 wrapt~=1.12.1
 xarray~=0.17.0
-zipp~=3.4.0
+zipp~=3.4.1
 # not strict requirements but needed for the legacy pyqtgraph based plotting
 PyQt5<5.13 # 5.12 is the last version that spyder supports at the moment
 pyqtgraph~=0.11.1
