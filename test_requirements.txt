@@ -8,7 +8,7 @@ colorama==0.4.4
 coverage==5.5
 deepdiff==5.2.3
 execnet==1.8.0
-hypothesis==6.4.2
+hypothesis==6.4.3
 idna==2.10
 importlib-metadata==3.4.0;python_version<'3.8'
 iniconfig==1.1.1
@@ -40,4 +40,4 @@ typing-extensions==3.7.4.3
 urllib3==1.26.3
 wincertstore==0.2
 wrapt==1.12.1
-zipp==3.4.0
+zipp==3.4.1
