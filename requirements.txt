@@ -89,7 +89,7 @@ widgetsnbextension~=3.5.1
 wincertstore~=0.2
 wrapt~=1.12.1
 xarray~=0.17.0
-zipp~=3.4.0
+zipp~=3.4.1
 # not strict requirements but needed for the legacy pyqtgraph based plotting
 PyQt5<5.13 # 5.12 is the last version that spyder supports at the moment
 pyqtgraph~=0.11.1
