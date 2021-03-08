@@ -34,20 +34,14 @@ class GalilMotionController(Instrument):
 
     def open(self) -> None:
         """
-        Open connection to Galil motion controller
+        Open connection to Galil motion controller. This method assumes that
+        the initial mapping of Galil motion controller's hardware's mapping
+        to an IP address is done using GDK and the IP address in burned in.
+        This applies that Motion controller no more requests for an IP address
+        and a connection to the Motion controller can be done by the IP
+        address burned in.
         """
-        self.log.info('Listening for controllers requesting IP addresses...')
-        ip_requests = self.g.GIpRequests()
-        if len(ip_requests) != 1:
-            raise RuntimeError("Multiple or No controllers connected!")
-
-        instrument = list(ip_requests.keys())[0]
-        self.log.info(instrument + " at mac" + ip_requests[instrument])
-
-        self.log.info("Assigning " + self.address +
-                      " to mac" + ip_requests[instrument])
-        self.g.GAssign(self.address, ip_requests[instrument])
-        self.g.GOpen(self.address + ' --direct')
+        self.g.GOpen(self.address + ' --direct -s ALL')
 
     def get_idn(self) -> Dict[str, Optional[str]]:
         """
