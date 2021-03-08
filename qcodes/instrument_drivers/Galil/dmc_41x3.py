@@ -65,17 +65,17 @@ class GalilMotionController(Instrument):
         """
         return self.g.GCommand(cmd+"\r")
 
-    def timeout(self, val: float) -> None:
+    def timeout(self, val: int) -> None:
         """
         Sets timeout for the instrument
 
         Args:
-            val: time in seconds
+            val: time in milliseconds
         """
-        if val < 0.001:
-            raise RuntimeError("Timeout can not be less than 0.001s")
+        if val < 1:
+            raise RuntimeError("Timeout can not be less than 1 ms")
 
-        self.g.GTimeout(val*1000)
+        self.g.GTimeout(val)
 
     def close(self) -> None:
         """
