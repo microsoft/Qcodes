@@ -310,7 +310,7 @@ class Motor(InstrumentChannel):
         tells motor on off status
         """
         val = self.ask(f"MG _MO{self._axis}")
-        if int(val):
+        if val[0] == "1":
             return "off"
         else:
             return "on"
