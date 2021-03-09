@@ -130,14 +130,6 @@ class Slack(threading.Thread):
 
         self.slack = WebClient(token=self.config['token'])
         self.users = self.get_users(self.config['names'])
-
-        for user_name, user_info in self.users.items():
-            if user_name.lower() == self.config['bot_name'].lower():
-                self.bot_id = user_info['id']
-                break
-        else:
-            raise ValueError("Bot name not found in list of users")
-
         self.get_im_ids(self.users)
 
         self.commands = {'plot': self.upload_latest_plot,
@@ -270,13 +262,14 @@ class Slack(threading.Thread):
         """
         # provide backward compatibility with 'count' keyword. It still works,
         # but is undocumented
-        kwargs['limit'] = kwargs.pop('count', None)
+        if 'limit' not in kwargs.keys():
+            kwargs['limit'] = kwargs.pop('count', None)
 
         channel = self.users[username].get('im_id', None)
         if channel is None:
             return []
         else:
-            response = self.slack.conversations_history(channel=channel, 
+            response = self.slack.conversations_history(channel=channel,
                                                         **kwargs)
             return response['messages']
 
@@ -427,7 +420,7 @@ class Slack(threading.Thread):
             os.remove(temp_filename)
         else:
             self.slack.chat_postMessage(text='No latest plot',
-                                         channel=channel)
+                                        channel=channel)
 
     def print_measurement_information(self, channel, **kwargs):
         """

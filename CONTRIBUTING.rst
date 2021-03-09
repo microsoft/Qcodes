@@ -77,13 +77,19 @@ It's easy to install:
 
 ::
 
-    pip install coverage pytest-cov pytest
+    pip install coverage pytest-cov pytest pytest-dist hypothesis pytest-mock
 
 Then to test and view the coverage:
 
 ::
-    py.test --cov=qcodes --cov-report xml --cov-config=.coveragerc
 
+    py.test --cov=qcodes --cov-report xml --cov-config=setup.cfg
+
+To test and see the coverage (with missing lines) of a single module:
+
+::
+
+    py.test --cov=qcodes.module.submodule --cov-report=term-missing qcodes/tests/test_file.py
 
 You can also run single tests with:
 
@@ -95,6 +101,7 @@ You can also run single tests with:
     python -m unittest qcodes.tests.test_metadata
     # or
     python -m unittest qcodes.tests.test_metadata.TestMetadatable.test_snapshot
+
 
 If the tests pass, you should be ready to start developing!
 
