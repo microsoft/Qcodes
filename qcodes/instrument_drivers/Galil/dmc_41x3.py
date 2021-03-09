@@ -253,6 +253,62 @@ class Motor(InstrumentChannel):
                                      "final move to the index and all but the "
                                      "first stage of HM (home)")
 
+        self.add_parameter("off_when_error_occurs",
+                           get_cmd=f"MG _OE{self._axis}",
+                           set_cmd=self._set_off_when_error_occurs,
+                           vals={"disable": 0,
+                                 "enable for position, amplifier error or "
+                                 "abort input": 1,
+                                 "enable for hardware limit switch": 2,
+                                 "enable for all": 3},
+                           docstring="enables or disables the motor to "
+                                     "automatically turn off when error occurs")
+
+        self.add_parameter(
+            "stepper_position_maintenance_mode",
+            get_cmd=self._stepper_position_maintenance_mode_status,
+            set_cmd=self._enable_disable_spm_mode,
+            vals={"enable": 1,
+                  "disable": 0},
+            docstring="enables, disables and gives status of error in SPM mode")
+
+    def _enable_disable_spm_mode(self, val: str) -> None:
+        """
+        enables/disables Stepper Position Maintenance mode and allows for error
+        correction when error happens
+        """
+        if val == "1":
+            self.off_when_error_occurs("enable for position, amplifier error "
+                                       "or abort input")
+            self._setup_spm()
+            self.servo_here()  # Enable axis
+            self.root_instrument.wait(50)  # Allow slight settle time
+            self.write(f"YS{self._axis}={val}")
+        else:
+            self.write(f"YS{self._axis}={val}")
+            self.off_when_error_occurs("disable")
+
+    def _stepper_position_maintenance_mode_status(self) -> str:
+        """
+        gives the status if the motor is in SPM mode enabled, disabled or an
+        error has occurred. if error has occurred status is received,
+        then error can be cleared by setting
+        `stepper_position_maintenance_mode` to enable.
+        """
+        val = self.ask(f"MG _YS{self._axis}")
+        if val[0] == "0":
+            return "SPM mode disabled"
+        elif val[0] == "1":
+            return "SPM mode enabled and no error has occurred"
+        else:
+            return "Error Occurred"
+
+    def _set_off_when_error_occurs(self, val: str) -> None:
+        """
+        sets the motor to turn off automatically when the error occurs
+        """
+        self.write(f"OE{self.axis}={val}")
+
     def _set_homing_velocity(self, val: str) -> None:
         """
         sets the slew speed for the FI final move to the index and all but
@@ -289,10 +345,9 @@ class Motor(InstrumentChannel):
         sets up for Stepper Position Maintenance (SPM) mode
         """
         # Set the profiler to stop axis upon error
-        self.write(f"OE{self._axis}=1")
         self.write(f"KS{self._axis}=16")  # Set step smoothing
         self.write(f"MT{self._axis}=-2")  # Motor type set to stepper
-        self.write(f"YA{self._axis}=1")   # Step resolution of the drive
+        self.write(f"YA{self._axis}=64")   # Step resolution of the drive
 
         # Motor resolution (full steps per revolution)
         self.write(f"YB{self._axis}=200")
@@ -367,16 +422,6 @@ class Motor(InstrumentChannel):
         # begin motion
         self.begin()
 
-    def enable_stepper_position_maintenance_mode(self, motor: str) -> None:
-        """
-        enables Stepper Position Maintenance mode and allows for error
-        correction when error happens
-        """
-        self._setup_spm()
-        self.servo_here()  # Enable axis
-        self.root_instrument.wait(50)  # Allow slight settle time
-        self.write(f"YS{self._axis}=1")
-
     def error_magnitude(self) -> float:
         """
         gives the magnitude of error, in drive step counts, for axes in
@@ -386,6 +431,15 @@ class Motor(InstrumentChannel):
         resolution of the stepper drive.
         """
         return float(self.ask(f"QS{self._axis}=?"))
+
+    def correct_error(self) -> None:
+        """
+        this allows the user to correct for position error in Stepper Position
+        Maintenance mode and after correction sets
+        `stepper_position_maintenance_mode` back to enable
+        """
+        self.write(f"YR{self._axis}=_QS{self._axis}")
+        self.stepper_position_maintenance_mode()
 
 
 class DMC4133Controller(GalilMotionController):
