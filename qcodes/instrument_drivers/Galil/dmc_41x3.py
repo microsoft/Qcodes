@@ -95,8 +95,6 @@ class VectorMode(InstrumentChannel):
                  **kwargs: Any) -> None:
         super().__init__(parent, name, **kwargs)
         self._available_planes = ["AB", "BC", "AC"]
-        self._acc_dec_range = np.arange(1024, 1073740800, 1024)
-        self._speed_range = np.arange(2, 15000000, 2)
 
         self.add_parameter("coordinate_system",
                            get_cmd="CA ?",
@@ -148,7 +146,7 @@ class VectorMode(InstrumentChannel):
                            get_cmd="VA ?",
                            get_parser=int,
                            set_cmd="VA {}",
-                           vals=Enum(*self._acc_dec_range),
+                           vals=Ints(1024, 1073740800),
                            unit="counts/sec2",
                            docstring="sets and gets the defined vector's "
                                      "acceleration")
@@ -157,7 +155,7 @@ class VectorMode(InstrumentChannel):
                            get_cmd="VD ?",
                            get_parser=int,
                            set_cmd="VD {}",
-                           vals=Enum(*self._acc_dec_range),
+                           vals=Ints(1024, 1073740800),
                            unit="counts/sec2",
                            docstring="sets and gets the defined vector's "
                                      "deceleration")
@@ -166,7 +164,7 @@ class VectorMode(InstrumentChannel):
                            get_cmd="VS ?",
                            get_parser=int,
                            set_cmd="VS {}",
-                           vals=Enum(*self._speed_range),
+                           vals=Ints(2, 15000000),
                            unit="counts/sec",
                            docstring="sets and gets defined vector's speed")
 
@@ -211,8 +209,6 @@ class Motor(InstrumentChannel):
                  **kwargs: Any) -> None:
         super().__init__(parent, name, **kwargs)
         self._axis = name
-        self._speed_range = np.arange(0, 3000000, 2)
-        self._acc_dec_range = np.arange(1024, 1073740800, 1024)
 
         self.add_parameter("relative_position",
                            unit="quadrature counts",
@@ -228,7 +224,7 @@ class Motor(InstrumentChannel):
                            get_cmd=f"MG _SP{self._axis}",
                            get_parser=int,
                            set_cmd=self._set_speed,
-                           vals=Enum(*self._speed_range),
+                           vals=Ints(0, 3000000),
                            docstring="speed for motor's motion")
 
         self.add_parameter("acceleration",
@@ -236,7 +232,7 @@ class Motor(InstrumentChannel):
                            get_cmd=f"MG _AC{self._axis}",
                            get_parser=int,
                            set_cmd=self._set_acceleration,
-                           vals=Enum(*self._acc_dec_range),
+                           vals=Ints(1024, 1073740800),
                            docstring="acceleration for motor's motion")
 
         self.add_parameter("deceleration",
@@ -244,7 +240,7 @@ class Motor(InstrumentChannel):
                            get_cmd=f"MG _DC{self._axis}",
                            get_parser=int,
                            set_cmd=self._set_deceleration,
-                           vals=Enum(*self._acc_dec_range),
+                           vals=Ints(1024, 1073740800),
                            docstring="deceleration for motor's motion")
 
         self.add_parameter("homing_velocity",
@@ -252,7 +248,7 @@ class Motor(InstrumentChannel):
                            get_cmd=f"MG _HV{self._axis}",
                            get_parser=int,
                            set_cmd=self._set_homing_velocity,
-                           vals=Enum(*self._speed_range),
+                           vals=Ints(0, 3000000),
                            docstring="sets the slew speed for the FI "
                                      "final move to the index and all but the "
                                      "first stage of HM (home)")
@@ -414,7 +410,6 @@ class DMC4133Controller(GalilMotionController):
                  address: str,
                  **kwargs: Any) -> None:
         super().__init__(name=name, address=address, **kwargs)
-        self._time_range = np.arange(2, 2147483646, 2)
 
         self.add_parameter("position_format_decimals",
                            get_cmd=None,
@@ -434,7 +429,7 @@ class DMC4133Controller(GalilMotionController):
                            get_cmd=None,
                            set_cmd="WT {}",
                            unit="ms",
-                           vals=Enum(*self._time_range),
+                           vals=Ints(2, 2147483646),
                            docstring="controller will wait for the amount of "
                                      "time specified before executing the next "
                                      "command")
