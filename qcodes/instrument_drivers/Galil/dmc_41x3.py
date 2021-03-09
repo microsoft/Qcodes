@@ -146,7 +146,7 @@ class VectorMode(InstrumentChannel):
                            get_cmd="VA ?",
                            get_parser=int,
                            set_cmd="VA {}",
-                           vals=Enum(np.linspace(1024, 1073740800, 1024)),
+                           vals=Enum(*np.arange(1024, 1073740800, 1024)),
                            unit="counts/sec2",
                            docstring="sets and gets the defined vector's "
                                      "acceleration")
@@ -155,7 +155,7 @@ class VectorMode(InstrumentChannel):
                            get_cmd="VD ?",
                            get_parser=int,
                            set_cmd="VD {}",
-                           vals=Enum(np.linspace(1024, 1073740800, 1024)),
+                           vals=Enum(*np.arange(1024, 1073740800, 1024)),
                            unit="counts/sec2",
                            docstring="sets and gets the defined vector's "
                                      "deceleration")
@@ -164,7 +164,7 @@ class VectorMode(InstrumentChannel):
                            get_cmd="VS ?",
                            get_parser=int,
                            set_cmd="VS {}",
-                           vals=Enum(np.linspace(2, 15000000, 2)),
+                           vals=Enum(*np.arange(2, 15000000, 2)),
                            unit="counts/sec",
                            docstring="sets and gets defined vector's speed")
 
@@ -224,7 +224,7 @@ class Motor(InstrumentChannel):
                            get_cmd=f"MG _SP{self._axis}",
                            get_parser=int,
                            set_cmd=self._set_speed,
-                           vals=Enum(np.linspace(0, 3000000, 2)),
+                           vals=Enum(*np.arange(0, 3000000, 2)),
                            docstring="speed for motor's motion")
 
         self.add_parameter("acceleration",
@@ -232,7 +232,7 @@ class Motor(InstrumentChannel):
                            get_cmd=f"MG _AC{self._axis}",
                            get_parser=int,
                            set_cmd=self._set_acceleration,
-                           vals=Enum(np.linspace(1024, 1073740800, 1024)),
+                           vals=Enum(*np.arange(1024, 1073740800, 1024)),
                            docstring="acceleration for motor's motion")
 
         self.add_parameter("deceleration",
@@ -240,7 +240,7 @@ class Motor(InstrumentChannel):
                            get_cmd=f"MG _DC{self._axis}",
                            get_parser=int,
                            set_cmd=self._set_deceleration,
-                           vals=Enum(np.linspace(1024, 1073740800, 1024)),
+                           vals=Enum(*np.arange(1024, 1073740800, 1024)),
                            docstring="deceleration for motor's motion")
 
         self.add_parameter("homing_velocity",
@@ -248,7 +248,7 @@ class Motor(InstrumentChannel):
                            get_cmd=f"MG _HV{self._axis}",
                            get_parser=int,
                            set_cmd=self._set_homing_velocity,
-                           vals=Enum(np.linspace(0, 3000000, 2)),
+                           vals=Enum(*np.arange(0, 3000000, 2)),
                            docstring="sets the slew speed for the FI "
                                      "final move to the index and all but the "
                                      "first stage of HM (home)")
@@ -429,7 +429,7 @@ class DMC4133Controller(GalilMotionController):
                            get_cmd=None,
                            set_cmd="WT {}",
                            unit="ms",
-                           vals=Enum(np.linspace(2, 2147483646, 2)),
+                           vals=Enum(*np.arange(2, 2147483646, 2)),
                            docstring="controller will wait for the amount of "
                                      "time specified before executing the next "
                                      "command")
