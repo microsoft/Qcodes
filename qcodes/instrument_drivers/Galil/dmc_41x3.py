@@ -117,7 +117,7 @@ class VectorMode(InstrumentChannel):
                            docstring="sets plane of motion for the motors")
 
         self.add_parameter("vec_pos_first_coordinate",
-                           units="quadrature counts",
+                           unit="quadrature counts",
                            vals=Ints(-2147483648, 2147483647),
                            parameter_class=GroupParameter,
                            docstring="sets vector position for plane's first"
@@ -127,7 +127,7 @@ class VectorMode(InstrumentChannel):
                                      "in motion")
 
         self.add_parameter("vec_pos_second_coordinate",
-                           units="quadrature counts",
+                           unit="quadrature counts",
                            vals=Ints(-2147483648, 2147483647),
                            parameter_class=GroupParameter,
                            docstring="sets vector position for plane's second"
@@ -147,7 +147,7 @@ class VectorMode(InstrumentChannel):
                            get_parser=int,
                            set_cmd="VA {}",
                            vals=Enum(np.linspace(1024, 1073740800, 1024)),
-                           units="counts/sec2",
+                           unit="counts/sec2",
                            docstring="sets and gets the defined vector's "
                                      "acceleration")
 
@@ -156,7 +156,7 @@ class VectorMode(InstrumentChannel):
                            get_parser=int,
                            set_cmd="VD {}",
                            vals=Enum(np.linspace(1024, 1073740800, 1024)),
-                           units="counts/sec2",
+                           unit="counts/sec2",
                            docstring="sets and gets the defined vector's "
                                      "deceleration")
 
@@ -165,7 +165,7 @@ class VectorMode(InstrumentChannel):
                            get_parser=int,
                            set_cmd="VS {}",
                            vals=Enum(np.linspace(2, 15000000, 2)),
-                           units="counts/sec",
+                           unit="counts/sec",
                            docstring="sets and gets defined vector's speed")
 
     @staticmethod
@@ -211,7 +211,7 @@ class Motor(InstrumentChannel):
         self._axis = name
 
         self.add_parameter("relative_position",
-                           units="quadrature counts",
+                           unit="quadrature counts",
                            get_cmd=f"MG _PR{self._axis}",
                            get_parser=int,
                            set_cmd=self._set_relative_position,
@@ -220,7 +220,7 @@ class Motor(InstrumentChannel):
                                      "move")
 
         self.add_parameter("speed",
-                           units="counts/sec",
+                           unit="counts/sec",
                            get_cmd=f"MG _SP{self._axis}",
                            get_parser=int,
                            set_cmd=self._set_speed,
@@ -228,7 +228,7 @@ class Motor(InstrumentChannel):
                            docstring="speed for motor's motion")
 
         self.add_parameter("acceleration",
-                           units="counts/sec2",
+                           unit="counts/sec2",
                            get_cmd=f"MG _AC{self._axis}",
                            get_parser=int,
                            set_cmd=self._set_acceleration,
@@ -236,7 +236,7 @@ class Motor(InstrumentChannel):
                            docstring="acceleration for motor's motion")
 
         self.add_parameter("deceleration",
-                           units="counts/sec2",
+                           unit="counts/sec2",
                            get_cmd=f"MG _DC{self._axis}",
                            get_parser=int,
                            set_cmd=self._set_deceleration,
@@ -244,7 +244,7 @@ class Motor(InstrumentChannel):
                            docstring="deceleration for motor's motion")
 
         self.add_parameter("homing_velocity",
-                           units="counts/sec",
+                           unit="counts/sec",
                            get_cmd=f"MG _HV{self._axis}",
                            get_parser=int,
                            set_cmd=self._set_homing_velocity,
@@ -421,14 +421,14 @@ class DMC4133Controller(GalilMotionController):
         self.add_parameter("absolute_position",
                            get_cmd=self._get_absolute_position,
                            set_cmd=None,
-                           units="quadrature counts",
+                           unit="quadrature counts",
                            docstring="gets absolute position of the motors "
                                      "from the set origin")
 
         self.add_parameter("wait",
                            get_cmd=None,
                            set_cmd="WT {}",
-                           units="ms",
+                           unit="ms",
                            vals=Enum(np.linspace(2, 2147483646, 2)),
                            docstring="controller will wait for the amount of "
                                      "time specified before executing the next "
