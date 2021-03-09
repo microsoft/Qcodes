@@ -327,12 +327,6 @@ class Motor(InstrumentChannel):
         """
         self.write(f"BG {self._axis}")
 
-    def after_motion(self) -> None:
-        """
-        wait till motion ends
-        """
-        self.write(f"AM {self._axis}")
-
     def home(self) -> None:
         """
         performs a three stage homing sequence for servo systems and a two
@@ -372,12 +366,6 @@ class Motor(InstrumentChannel):
 
         # begin motion
         self.begin()
-
-        # wait for motion to finish
-        self.after_motion()
-
-        # end the program
-        self.root_instrument.end_program()
 
     def enable_stepper_position_maintenance_mode(self, motor: str) -> None:
         """
