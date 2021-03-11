@@ -1,7 +1,7 @@
 from unittest.mock import call
 
 import pytest
-from requests import ReadTimeout, HTTPError, ConnectTimeout
+from requests.exceptions import ReadTimeout, HTTPError, ConnectTimeout
 from urllib3.exceptions import ReadTimeoutError
 
 from qcodes import Parameter
