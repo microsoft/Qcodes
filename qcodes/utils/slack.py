@@ -261,7 +261,8 @@ class Slack(threading.Thread):
             List of IM messages.
         """
         # provide backward compatibility with 'count' keyword. It still works,
-        # but is undocumented
+        # but is undocumented. 'count' likely does the same as 'limit', but
+        # 'limit' takes precedence
         if 'limit' not in kwargs.keys():
             kwargs['limit'] = kwargs.pop('count', None)
 
@@ -310,11 +311,11 @@ class Slack(threading.Thread):
         new_messages = {}
         try:
             new_messages = self.get_new_im_messages()
-        except (ReadTimeout, HTTPError, ConnectTimeout, ReadTimeoutError) as ex:
+        except (ReadTimeout, HTTPError, ConnectTimeout, ReadTimeoutError) as e:
             # catch any timeouts caused by network delays
             warnings.warn('error retrieving slack messages',
                           SlackTimeoutWarning)
-            logging.info(ex)
+            logging.info(e)
         self.handle_messages(new_messages)
 
     def help_message(self):
@@ -362,7 +363,7 @@ class Slack(threading.Thread):
                                 text=f'Results: {results}',
                                 channel=channel)
 
-                    except:
+                    except Exception:
                         self.slack.chat_postMessage(
                             text=f'Error: {traceback.format_exc()}',
                             channel=channel)
