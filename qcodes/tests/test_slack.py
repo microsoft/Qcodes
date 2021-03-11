@@ -5,8 +5,6 @@ from requests.exceptions import ReadTimeout, HTTPError, ConnectTimeout
 from urllib3.exceptions import ReadTimeoutError
 
 from qcodes import Parameter
-from qcodes.plots.base import BasePlot
-from qcodes.plots.qcmatplotlib import MatPlot
 
 
 class AnyStringWith(str):
@@ -72,6 +70,7 @@ def test_slack_instance_should_get_config_from_qc_config():
     qc_config.add(key='slack', value=slack_config)
     import qcodes.utils.slack
     slack = qcodes.utils.slack.Slack(config=None, auto_start=False)
+    assert 'dummyuser' in slack.users.keys()
 
 
 def test_slack_instance_should_start(mocker):
@@ -289,12 +288,12 @@ def test_slack_instance_should_add_unknown_task_command(mock_webclient, slack):
     mock_webclient.chat_postMessage.assert_called_with(**expected_output)
 
 
-def test_slack_instance_should_upload_latest_plot(mock_webclient, slack):
-    _ = MatPlot()
+def test_slack_instance_should_upload_latest_plot(mock_webclient, slack, mocker):
+    mocker.patch('qcodes.utils.slack.BasePlot.latest_plot', return_value=not None)
+    mocker.patch('os.remove')
     slack.upload_latest_plot(channel='CH234')
     expected_output = {'channels': 'CH234', 'file': AnyStringWith('.jpg')}
     mock_webclient.files_upload.assert_called_with(**expected_output)
-    BasePlot.latest_plot = None
 
 
 def test_slack_instance_should_not_fail_when_uploading_latest_plot_without_plot(mock_webclient, slack):
