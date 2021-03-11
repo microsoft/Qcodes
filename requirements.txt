@@ -17,7 +17,7 @@ entrypoints~=0.3
 google-api-core~=1.26.1
 google-auth~=1.27.1
 googleapis-common-protos~=1.53.0
-h5py~=3.2.0
+h5py~=3.2.1
 idna~=2.10
 importlib-metadata==3.4.0;python_version<'3.8'
 ipykernel~=5.5.0
@@ -69,7 +69,7 @@ pyzmq~=22.0.3
 requests~=2.25.1
 requirements-parser~=0.2.0
 rsa~=4.7
-ruamel.yaml~=0.16.12
+ruamel.yaml~=0.16.13
 ruamel.yaml.clib~=0.2.2
 schema~=0.7.4
 Send2Trash~=1.5.0
