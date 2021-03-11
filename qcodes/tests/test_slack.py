@@ -79,9 +79,11 @@ def test_slack_instance_should_start(mocker):
         'token': '123',
         'names': ['dummyuser']
     }
-    mocker.patch('threading.Thread.start')
+    mock_thread_start = mocker.patch('threading.Thread.start')
     import qcodes.utils.slack
     slack = qcodes.utils.slack.Slack(config=slack_config)
+
+    mock_thread_start.assert_called()
 
 
 def test_slack_instance_should_not_start_when_already_started(mocker):
@@ -96,6 +98,8 @@ def test_slack_instance_should_not_start_when_already_started(mocker):
     import qcodes.utils.slack
     slack = qcodes.utils.slack.Slack(config=slack_config)
 
+    mock_thread_start.assert_called()
+
 
 def test_slack_instance_should_start_and_stop(mocker):
     slack_config = {
@@ -108,6 +112,8 @@ def test_slack_instance_should_start_and_stop(mocker):
     import qcodes.utils.slack
     slack = qcodes.utils.slack.Slack(config=slack_config, interval=0)
     slack.stop()
+
+    assert not slack._is_active
 
 
 def test_slack_instance_should_return_username_from_id(mock_webclient, slack):
