@@ -5,7 +5,6 @@ from requests.exceptions import ReadTimeout, HTTPError, ConnectTimeout
 from urllib3.exceptions import ReadTimeoutError
 
 from qcodes import Parameter
-from qcodes import config as qc_config
 
 
 class AnyStringWith(str):
@@ -65,6 +64,7 @@ def test_slack_instance_should_contain_supplied_usernames(slack):
 
 
 def test_slack_instance_should_get_config_from_qc_config():
+    from qcodes import config as qc_config
     slack_config = {
         'bot_name': 'bot',
         'token': '123',
