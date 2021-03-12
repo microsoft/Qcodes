@@ -14,7 +14,7 @@ import concurrent
 from functools import partial
 from weakref import WeakValueDictionary
 
-from qcodes.instrument.parameter import AbstractParameter
+from qcodes.instrument.parameter import _BaseParameter
 from .utils import TraceParameter
 from .constants import API_SUCCESS, API_DMA_IN_PROGRESS, ERROR_CODES, \
     ReturnCode
@@ -44,7 +44,7 @@ def _api_call_task(
 def _normalize_params(*args: T) -> List[T]:
     args_out: List[T] = []
     for arg in args:
-        if isinstance(arg, AbstractParameter):
+        if isinstance(arg, _BaseParameter):
             args_out.append(arg.raw_value)
         else:
             args_out.append(arg)

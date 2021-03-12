@@ -125,7 +125,7 @@ class _SetParamContext:
     >>> assert abs(dac.voltage() - v) <= tolerance
 
     """
-    def __init__(self, parameter: "AbstractParameter", value: ParamDataType,
+    def __init__(self, parameter: "_BaseParameter", value: ParamDataType,
                  allow_changes: bool = False):
         self._parameter = parameter
         self._value = value
@@ -161,7 +161,7 @@ def invert_val_mapping(val_mapping: Dict[Any, Any]) -> Dict[Any, Any]:
     return {v: k for k, v in val_mapping.items()}
 
 
-class AbstractParameter(Metadatable):
+class _BaseParameter(Metadatable):
     """
     Shared behavior for all parameters. This not usually used
     directly, normally you should use ``Parameter``, ``ArrayParameter``,
@@ -945,11 +945,13 @@ class AbstractParameter(Metadatable):
         return self._settable
 
 
-# For backwards compatibility
-_BaseParameter = AbstractParameter
+# A simple alias for `_BaseParameter`. Using the `AbstractParameter`
+# alias will produce more readable code in situations where using
+# this class is meant to define an abstract interface.
+AbstractParameter = _BaseParameter
 
 
-class Parameter(AbstractParameter):
+class Parameter(_BaseParameter):
     """
     A parameter represents a single degree of freedom. Most often,
     this is the standard parameter for Instruments, though it can also be
@@ -1240,7 +1242,7 @@ class ParameterWithSetpoints(Parameter):
 
     def __init__(self, name: str, *,
                  vals: Optional[Validator[Any]] = None,
-                 setpoints: Optional[Sequence[AbstractParameter]] = None,
+                 setpoints: Optional[Sequence[_BaseParameter]] = None,
                  snapshot_get: bool = False,
                  snapshot_value: bool = False,
                  **kwargs: Any) -> None:
@@ -1255,14 +1257,14 @@ class ParameterWithSetpoints(Parameter):
         super().__init__(name=name, vals=vals, snapshot_get=snapshot_get,
                          snapshot_value=snapshot_value, **kwargs)
         if setpoints is None:
-            self.setpoints: Sequence[AbstractParameter] = []
+            self.setpoints: Sequence[_BaseParameter] = []
         else:
             self.setpoints = setpoints
 
         self._validate_on_get = True
 
     @property
-    def setpoints(self) -> Sequence[AbstractParameter]:
+    def setpoints(self) -> Sequence[_BaseParameter]:
         """
         Sequence of parameters to use as setpoints for this parameter.
 
@@ -1274,7 +1276,7 @@ class ParameterWithSetpoints(Parameter):
         return self._setpoints
 
     @setpoints.setter
-    def setpoints(self, setpoints: Sequence[AbstractParameter]) -> None:
+    def setpoints(self, setpoints: Sequence[_BaseParameter]) -> None:
         for setpointarray in setpoints:
             if not isinstance(setpointarray, Parameter):
                 raise TypeError(f"Setpoints is of type {type(setpointarray)}"
@@ -1556,7 +1558,7 @@ class DelegateParameter(Parameter):
         return snapshot
 
 
-class ArrayParameter(AbstractParameter):
+class ArrayParameter(_BaseParameter):
     """
     A gettable parameter that returns an array of values.
     Not necessarily part of an instrument.
@@ -1762,7 +1764,7 @@ def _is_nested_sequence_or_none(obj: Any,
     return True
 
 
-class MultiParameter(AbstractParameter):
+class MultiParameter(_BaseParameter):
     """
     A gettable parameter that returns multiple values with separate names,
     each of arbitrary shape. Not necessarily part of an instrument.
@@ -2040,7 +2042,7 @@ class _Cache:
             that does not have a get function.
     """
     def __init__(self,
-                 parameter: 'AbstractParameter',
+                 parameter: '_BaseParameter',
                  max_val_age: Optional[float] = None):
         self._parameter = parameter
         self._value: ParamDataType = None
@@ -2244,7 +2246,7 @@ class GetLatest(DelegateAttributes):
     Args:
         parameter: Parameter to be wrapped.
     """
-    def __init__(self, parameter: AbstractParameter):
+    def __init__(self, parameter: _BaseParameter):
         self.parameter = parameter
 
     delegate_attr_objects = ['parameter']
@@ -2745,7 +2747,7 @@ class ScaledParameter(Parameter):
 
 def expand_setpoints_helper(parameter: ParameterWithSetpoints,
                             results: Optional[ParamDataType] = None) -> List[
-        Tuple[AbstractParameter, ParamDataType]]:
+        Tuple[_BaseParameter, ParamDataType]]:
     """
     A helper function that takes a :class:`.ParameterWithSetpoints` and
     acquires the parameter along with it's setpoints. The data is returned

@@ -45,7 +45,7 @@ from qcodes.dataset.sqlite.query_helpers import (VALUE, VALUES,
                                                  insert_many_values,
                                                  length, one,
                                                  select_one_where)
-from qcodes.instrument.parameter import AbstractParameter
+from qcodes.instrument.parameter import _BaseParameter
 from qcodes.utils.deprecate import deprecate
 
 from .data_set_cache import DataSetCache
@@ -76,9 +76,9 @@ scalar_res_types = Union[str, complex,
                          numpy.integer, numpy.floating, numpy.complexfloating]
 values_type = Union[scalar_res_types, numpy.ndarray,
                     Sequence[scalar_res_types]]
-res_type = Tuple[Union[AbstractParameter, str],
+res_type = Tuple[Union[_BaseParameter, str],
                  values_type]
-setpoints_type = Sequence[Union[str, AbstractParameter]]
+setpoints_type = Sequence[Union[str, _BaseParameter]]
 SPECS = List[ParamSpec]
 # Transition period type: SpecsOrInterDeps. We will allow both as input to
 # the DataSet constructor for a while, then deprecate SPECS and finally remove
@@ -855,7 +855,7 @@ class DataSet(Sized):
                 writer_status.bg_writer = None
 
     @staticmethod
-    def _validate_parameters(*params: Union[str, ParamSpec, AbstractParameter]
+    def _validate_parameters(*params: Union[str, ParamSpec, _BaseParameter]
                              ) -> List[str]:
         """
         Validate that the provided parameters have a name and return those
@@ -880,7 +880,7 @@ class DataSet(Sized):
 
     def get_parameter_data(
             self,
-            *params: Union[str, ParamSpec, AbstractParameter],
+            *params: Union[str, ParamSpec, _BaseParameter],
             start: Optional[int] = None,
             end: Optional[int] = None) -> ParameterData:
         """
@@ -968,7 +968,7 @@ class DataSet(Sized):
     def to_pandas_dataframe_dict(self,
                                  *params: Union[str,
                                                 ParamSpec,
-                                                AbstractParameter],
+                                                _BaseParameter],
                                  start: Optional[int] = None,
                                  end: Optional[int] = None) ->\
             Dict[str, "pd.DataFrame"]:
@@ -1020,7 +1020,7 @@ class DataSet(Sized):
     def get_data_as_pandas_dataframe(self,
                                      *params: Union[str,
                                                     ParamSpec,
-                                                    AbstractParameter],
+                                                    _BaseParameter],
                                      start: Optional[int] = None,
                                      end: Optional[int] = None) -> \
             Dict[str, "pd.DataFrame"]:
@@ -1065,7 +1065,7 @@ class DataSet(Sized):
     def to_pandas_dataframe(self,
                             *params: Union[str,
                                            ParamSpec,
-                                           AbstractParameter],
+                                           _BaseParameter],
                             start: Optional[int] = None,
                             end: Optional[int] = None) -> "pd.DataFrame":
         """
@@ -1130,7 +1130,7 @@ class DataSet(Sized):
     def to_xarray_dataarray_dict(self,
                                  *params: Union[str,
                                                 ParamSpec,
-                                                AbstractParameter],
+                                                _BaseParameter],
                                  start: Optional[int] = None,
                                  end: Optional[int] = None) -> \
             Dict[str, "xr.DataArray"]:
@@ -1177,7 +1177,7 @@ class DataSet(Sized):
 
     def to_xarray_dataset(self, *params: Union[str,
                                                ParamSpec,
-                                               AbstractParameter],
+                                               _BaseParameter],
                           start: Optional[int] = None,
                           end: Optional[int] = None) -> "xr.Dataset":
         """

@@ -11,7 +11,7 @@ from qcodes.utils.helpers import DelegateAttributes, strip_attrs, full_class
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.validators import Anything
 from qcodes.logger.instrument_logger import get_instrument_logger
-from .parameter import Parameter, AbstractParameter, AbstractParameter
+from .parameter import Parameter, _BaseParameter, _BaseParameter
 from .function import Function
 
 if TYPE_CHECKING:
@@ -36,7 +36,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         self._name = str(name)
         self._short_name = str(name)
 
-        self.parameters: Dict[str, AbstractParameter] = {}
+        self.parameters: Dict[str, _BaseParameter] = {}
         """
         All the parameters supported by this instrument.
         Usually populated via :py:meth:`add_parameter`.

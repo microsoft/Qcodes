@@ -36,7 +36,7 @@ from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.linked_datasets.links import Link
 from qcodes.instrument.parameter import (ArrayParameter, MultiParameter,
                                          Parameter, ParameterWithSetpoints,
-                                         AbstractParameter,
+                                         _BaseParameter,
                                          expand_setpoints_helper)
 from qcodes.utils.delaykeyboardinterrupt import DelayedKeyboardInterrupt
 from qcodes.utils.helpers import NumpyJSONEncoder
@@ -137,14 +137,14 @@ class DataSaver:
         results_dict: Dict[ParamSpecBase, np.ndarray] = {}
 
         parameter_names = tuple(partial_result[0].full_name
-                                if isinstance(partial_result[0], AbstractParameter) else partial_result[0]
+                                if isinstance(partial_result[0], _BaseParameter) else partial_result[0]
                                 for partial_result in res_tuple)
 
         for partial_result in res_tuple:
             parameter = partial_result[0]
             data = partial_result[1]
 
-            if (isinstance(parameter, AbstractParameter) and
+            if (isinstance(parameter, _BaseParameter) and
                     isinstance(parameter.vals, vals.Arrays)):
                 if not isinstance(data, np.ndarray):
                     raise TypeError(
@@ -310,7 +310,7 @@ class DataSaver:
         return result_dict
 
     def _unpack_setpoints_from_parameter(
-        self, parameter: AbstractParameter, setpoints: Sequence[Any],
+        self, parameter: _BaseParameter, setpoints: Sequence[Any],
         sp_names: Optional[Sequence[str]], fallback_sp_name: str
             ) -> Dict[ParamSpecBase, np.ndarray]:
         """
@@ -706,7 +706,7 @@ class Measurement:
         return self
 
     def register_parameter(
-            self: T, parameter: AbstractParameter,
+            self: T, parameter: _BaseParameter,
             setpoints: Optional[setpoints_type] = None,
             basis: Optional[setpoints_type] = None,
             paramtype: Optional[str] = None) -> T:
@@ -726,7 +726,7 @@ class Measurement:
                 If None the paramtype will be inferred from the parameter type
                 and the validator of the supplied parameter.
         """
-        if not isinstance(parameter, AbstractParameter):
+        if not isinstance(parameter, _BaseParameter):
             raise ValueError('Can not register object of type {}. Can only '
                              'register a QCoDeS Parameter.'
                              ''.format(type(parameter)))
@@ -771,7 +771,7 @@ class Measurement:
         return self
 
     @staticmethod
-    def _infer_paramtype(parameter: AbstractParameter,
+    def _infer_paramtype(parameter: _BaseParameter,
                          paramtype: Optional[str]) -> Optional[str]:
         """
         Infer the best parameter type to store the parameter supplied.
@@ -1024,7 +1024,7 @@ class Measurement:
         Remove a custom/QCoDeS parameter from the dataset produced by
         running this measurement
         """
-        if isinstance(parameter, AbstractParameter):
+        if isinstance(parameter, _BaseParameter):
             param = str(parameter)
         elif isinstance(parameter, str):
             param = parameter

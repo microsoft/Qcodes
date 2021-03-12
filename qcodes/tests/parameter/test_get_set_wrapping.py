@@ -1,6 +1,6 @@
 import pytest
 
-from qcodes.instrument.parameter import Parameter, AbstractParameter
+from qcodes.instrument.parameter import Parameter, _BaseParameter
 from .conftest import (OverwriteGetParam, OverwriteSetParam,
                        GetSetRawParameter, ParameterMemory)
 
@@ -37,7 +37,7 @@ def test_gettable_settable_attributes_with_get_set_cmd(get_cmd, set_cmd):
     assert a.settable is expected_settable
 
 
-@pytest.mark.parametrize("baseclass", [AbstractParameter, Parameter])
+@pytest.mark.parametrize("baseclass", [_BaseParameter, Parameter])
 def test_gettable_settable_attributes_with_get_set_raw(baseclass):
     """Test that parameters that have get_raw,set_raw are
     listed as gettable/settable and reverse."""
@@ -58,7 +58,7 @@ def test_gettable_settable_attributes_with_get_set_raw(baseclass):
     assert a.gettable is True
     assert a.settable is True
 
-    b = AbstractParameter('foo', None)
+    b = _BaseParameter('foo', None)
 
     assert b.gettable is False
     assert b.settable is False

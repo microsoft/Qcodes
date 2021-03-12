@@ -17,13 +17,13 @@ from qcodes.dataset.descriptions.detect_shapes import \
 from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.measurements import Measurement, res_type
 from qcodes.dataset.plotting import plot_dataset
-from qcodes.instrument.parameter import AbstractParameter, ParamDataType
+from qcodes.instrument.parameter import _BaseParameter, ParamDataType
 from qcodes.dataset.experiment_container import Experiment
 from qcodes.utils.threading import RespondingThread
 
 ActionsT = Sequence[Callable[[], None]]
 
-ParamMeasT = Union[AbstractParameter, Callable[[], None]]
+ParamMeasT = Union[_BaseParameter, Callable[[], None]]
 
 AxesTuple = Tuple[matplotlib.axes.Axes, matplotlib.colorbar.Colorbar]
 AxesTupleList = Tuple[List[matplotlib.axes.Axes],
@@ -42,7 +42,7 @@ class UnsafeThreadingException(Exception):
 
 class _ParamCaller:
 
-    def __init__(self, *parameters: AbstractParameter):
+    def __init__(self, *parameters: _BaseParameter):
 
         self._parameters = parameters
 
@@ -59,12 +59,12 @@ class _ParamCaller:
 
 def _instrument_to_param(
         params: Sequence[ParamMeasT]
-) -> Dict[Optional[str], Tuple[AbstractParameter, ...]]:
+) -> Dict[Optional[str], Tuple[_BaseParameter, ...]]:
 
     real_parameters = [param for param in params
-                       if isinstance(param, AbstractParameter)]
+                       if isinstance(param, _BaseParameter)]
 
-    output: Dict[Optional[str], Tuple[AbstractParameter, ...]] = defaultdict(tuple)
+    output: Dict[Optional[str], Tuple[_BaseParameter, ...]] = defaultdict(tuple)
     for param in real_parameters:
         if param.root_instrument:
             output[param.root_instrument.full_name] += (param,)
@@ -102,7 +102,7 @@ def _call_params(param_meas: Sequence[ParamMeasT]) -> OutType:
     output: OutType = []
 
     for parameter in param_meas:
-        if isinstance(parameter, AbstractParameter):
+        if isinstance(parameter, _BaseParameter):
             output.append((parameter, parameter.get()))
         elif callable(parameter):
             parameter()
@@ -124,11 +124,11 @@ def _process_params_meas(
 def _register_parameters(
         meas: Measurement,
         param_meas: Sequence[ParamMeasT],
-        setpoints: Optional[Sequence[AbstractParameter]] = None,
+        setpoints: Optional[Sequence[_BaseParameter]] = None,
         shapes: Shapes = None
         ) -> None:
     for parameter in param_meas:
-        if isinstance(parameter, AbstractParameter):
+        if isinstance(parameter, _BaseParameter):
             meas.register_parameter(parameter,
                                     setpoints=setpoints)
     meas.set_shapes(shapes=shapes)
@@ -205,7 +205,7 @@ def do0d(
     meas = Measurement(name=measurement_name, exp=exp)
 
     measured_parameters = tuple(param for param in param_meas
-                                if isinstance(param, AbstractParameter))
+                                if isinstance(param, _BaseParameter))
 
     try:
         shapes: Shapes = detect_shape_of_measurement(
@@ -233,7 +233,7 @@ def do0d(
 
 
 def do1d(
-        param_set: AbstractParameter, start: float, stop: float,
+        param_set: _BaseParameter, start: float, stop: float,
         num_points: int, delay: float,
         *param_meas: ParamMeasT,
         enter_actions: ActionsT = (),
@@ -295,7 +295,7 @@ def do1d(
         s for s in additional_setpoints)
 
     measured_parameters = tuple(param for param in param_meas
-                                if isinstance(param, AbstractParameter))
+                                if isinstance(param, _BaseParameter))
     try:
         loop_shape = tuple(1 for _ in additional_setpoints) + (num_points,)
         shapes: Shapes = detect_shape_of_measurement(
@@ -339,9 +339,9 @@ def do1d(
 
 
 def do2d(
-        param_set1: AbstractParameter, start1: float, stop1: float,
+        param_set1: _BaseParameter, start1: float, stop1: float,
         num_points1: int, delay1: float,
-        param_set2: AbstractParameter, start2: float, stop2: float,
+        param_set2: _BaseParameter, start2: float, stop2: float,
         num_points2: int, delay2: float,
         *param_meas: ParamMeasT,
         set_before_sweep: Optional[bool] = True,
@@ -418,7 +418,7 @@ def do2d(
             s for s in additional_setpoints)
 
     measured_parameters = tuple(param for param in param_meas
-                                if isinstance(param, AbstractParameter))
+                                if isinstance(param, _BaseParameter))
 
     try:
         loop_shape = tuple(

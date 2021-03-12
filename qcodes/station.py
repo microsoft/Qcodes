@@ -32,7 +32,7 @@ from qcodes.instrument.base import Instrument, InstrumentBase
 from qcodes.instrument.channel import ChannelList
 from qcodes.instrument.parameter import (
     Parameter, ManualParameter,
-    DelegateParameter, AbstractParameter)
+    DelegateParameter, _BaseParameter)
 import qcodes.utils.validators as validators
 from qcodes.monitor.monitor import Monitor
 
@@ -484,21 +484,21 @@ class Station(Metadatable, DelegateAttributes):
         def resolve_parameter_identifier(
             instrument: ChannelOrInstrumentBase,
             identifier: str
-        ) -> AbstractParameter:
+        ) -> _BaseParameter:
             parts = identifier.split('.')
             if len(parts) > 1:
                 instrument = resolve_instrument_identifier(
                     instrument,
                     '.'.join(parts[:-1]))
             try:
-                return checked_getattr(instrument, parts[-1], AbstractParameter)
+                return checked_getattr(instrument, parts[-1], _BaseParameter)
             except TypeError:
                 raise RuntimeError(
                     f'Cannot resolve parameter identifier `{identifier}` to '
                     f'a parameter on instrument {instrument!r}.')
 
         def setup_parameter_from_dict(
-            parameter: AbstractParameter,
+            parameter: _BaseParameter,
             options: Dict[str, Any]
         ) -> None:
             for attr, val in options.items():
@@ -543,7 +543,7 @@ class Station(Metadatable, DelegateAttributes):
         ) -> None:
             # keep the original dictionray intact for snapshot
             options = copy(options)
-            param_type: type = AbstractParameter
+            param_type: type = _BaseParameter
             kwargs = {}
             if 'source' in options:
                 param_type = DelegateParameter

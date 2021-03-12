@@ -6,7 +6,7 @@ from qcodes.utils.helpers import (is_sequence, permissive_range, make_sweep,
                                   named_repr)
 from qcodes.utils.metadata import Metadatable
 if TYPE_CHECKING:
-    from qcodes.instrument.parameter import AbstractParameter
+    from qcodes.instrument.parameter import _BaseParameter
 
 
 class SweepValues(Metadatable):
@@ -53,7 +53,7 @@ class SweepValues(Metadatable):
     That allows things like adaptive sampling, where you don't know ahead of
     time what the values will be or even how many there are.
     """
-    def __init__(self, parameter: 'AbstractParameter', **kwargs: Any):
+    def __init__(self, parameter: '_BaseParameter', **kwargs: Any):
         super().__init__(**kwargs)
         self.parameter = parameter
         self.name = parameter.name
@@ -131,7 +131,7 @@ class SweepFixedValues(SweepValues):
     That allows things like adaptive sampling, where you don't know ahead of
     time what the values will be or even how many there are.
     """
-    def __init__(self, parameter: 'AbstractParameter',
+    def __init__(self, parameter: '_BaseParameter',
                  keys: Optional[Any] = None,
                  start: Optional[float] = None,
                  stop: Optional[float] = None,

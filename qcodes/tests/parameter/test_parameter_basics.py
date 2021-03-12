@@ -1,6 +1,6 @@
 import pytest
 
-from qcodes.instrument.parameter import Parameter, AbstractParameter
+from qcodes.instrument.parameter import Parameter, _BaseParameter
 import qcodes.utils.validators as vals
 from qcodes.instrument.function import Function
 from .conftest import GettableParam, blank_instruments, named_instrument
@@ -172,6 +172,6 @@ def test_unknown_args_to_baseparameter_raises():
     Passing an unknown kwarg to _BaseParameter should trigger a TypeError
     """
     with pytest.raises(TypeError):
-        _ = AbstractParameter(name='Foo',
-                              instrument=None,
-                              snapshotable=False)
+        _ = _BaseParameter(name='Foo',
+                           instrument=None,
+                           snapshotable=False)
