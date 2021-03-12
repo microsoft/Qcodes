@@ -179,6 +179,9 @@ def test_snapshot():
     station.add_component(parameter)
     parameter_snapshot = parameter.snapshot()
 
+    excluded_parameter = Parameter('excluded_parameter', snapshot_exclude=True)
+    station.add_component(excluded_parameter)
+
     component = DumyPar('component')
     component.metadata['smth'] = 'in the way she moves'
     station.add_component(component)
@@ -196,6 +199,7 @@ def test_snapshot():
     assert ['instrument'] == list(snapshot['instruments'].keys())
     assert instrument_snapshot == snapshot['instruments']['instrument']
 
+    # the list should not contain the excluded parameter
     assert ['parameter'] == list(snapshot['parameters'].keys())
     assert parameter_snapshot == snapshot['parameters']['parameter']
 
@@ -271,7 +275,7 @@ instruments:
   lakeshore:
     type: qcodes.instrument_drivers.Lakeshore.Model_336.Model_336
     enable_forced_reconnect: true
-    address: GPIB::2::65535::INSTR
+    address: GPIB::2::INSTR
     init:
       visalib: '{sims_path}lakeshore_model336.yaml@sim'
   mock_dac:

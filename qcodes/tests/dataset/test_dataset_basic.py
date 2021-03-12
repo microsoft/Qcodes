@@ -1375,11 +1375,19 @@ def test_write_data_to_text_file_name_exception(tmp_path):
 
 def test_same_setpoint_warning_for_df_and_xarray(different_setpoint_dataset):
 
-    warning_mesage = ('Independent parameter setpoints are not equal. \
-                Check concatenated output carefully.')
+    warning_message = (
+        "Independent parameter setpoints are not equal. "
+        "Check concatenated output carefully."
+    )
 
-    with pytest.warns(UserWarning, match=warning_mesage):
+    with pytest.warns(UserWarning, match=warning_message):
         different_setpoint_dataset.to_pandas_dataframe()
 
-    with pytest.warns(UserWarning, match=warning_mesage):
+    with pytest.warns(UserWarning, match=warning_message):
         different_setpoint_dataset.to_xarray_dataset()
+
+    with pytest.warns(UserWarning, match=warning_message):
+        different_setpoint_dataset.cache.to_pandas_dataframe()
+
+    with pytest.warns(UserWarning, match=warning_message):
+        different_setpoint_dataset.cache.to_xarray_dataset()

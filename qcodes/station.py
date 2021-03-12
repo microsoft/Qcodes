@@ -184,7 +184,8 @@ class Station(Metadatable, DelegateAttributes):
             elif isinstance(itm, (Parameter,
                                   ManualParameter
                                   )):
-                snap['parameters'][name] = itm.snapshot(update=update)
+                if not itm.snapshot_exclude:
+                    snap['parameters'][name] = itm.snapshot(update=update)
             else:
                 snap['components'][name] = itm.snapshot(update=update)
 
@@ -209,7 +210,9 @@ class Station(Metadatable, DelegateAttributes):
                 to make it unique among previously added components.
         """
         try:
-            component.snapshot(update=update_snapshot)
+            if not (isinstance(component, Parameter)
+                    and component.snapshot_exclude):
+                component.snapshot(update=update_snapshot)
         except:
             pass
         if name is None:

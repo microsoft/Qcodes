@@ -77,13 +77,19 @@ It's easy to install:
 
 ::
 
-    pip install coverage pytest-cov pytest
+    pip install -r test_requirements.txt
 
 Then to test and view the coverage:
 
 ::
-    py.test --cov=qcodes --cov-report xml --cov-config=.coveragerc
 
+    py.test --cov=qcodes --cov-report xml --cov-config=setup.cfg
+
+To test and see the coverage (with missing lines) of a single module:
+
+::
+
+    py.test --cov=qcodes.module.submodule --cov-report=term-missing qcodes/tests/test_file.py
 
 You can also run single tests with:
 
@@ -95,6 +101,7 @@ You can also run single tests with:
     python -m unittest qcodes.tests.test_metadata
     # or
     python -m unittest qcodes.tests.test_metadata.TestMetadatable.test_snapshot
+
 
 If the tests pass, you should be ready to start developing!
 
@@ -309,7 +316,7 @@ NOTE(giulioungaretti): is this enough ?
 -  Use `PEP8 <http://legacy.python.org/dev/peps/pep-0008/>`__ style. Not
    only is this style good for readability in an absolute sense, but
    consistent styling helps us all read each other's code.
--  There is a command-line tool (``pip install pep8``) you can run after
+-  There is a command-line tool (``pip install pycodestyle``) you can run after
    writing code to validate its style.
 -  A lot of editors have plugins that will check this for you
    automatically as you type. Sublime Text for example has
