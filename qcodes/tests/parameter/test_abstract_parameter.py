@@ -54,6 +54,6 @@ def test_unit_mismatch_exception():
 
     with pytest.raises(
             ValueError,
-            match="inconsistent with the unit specified"
+            match="inconsistent with the unit"
     ):
         MyVoltageSource2("name2")
