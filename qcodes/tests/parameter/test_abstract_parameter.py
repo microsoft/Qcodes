@@ -1,7 +1,7 @@
 import pytest
 
 from qcodes import Instrument
-from qcodes.instrument.parameter import _BaseParameter
+from qcodes.instrument.parameter import AbstractParameter
 
 
 class BaseVoltageSource(Instrument):
@@ -10,7 +10,7 @@ class BaseVoltageSource(Instrument):
 
         self.add_parameter(
             "voltage",
-            parameter_class=_BaseParameter,
+            parameter_class=AbstractParameter,
             unit="V"
         )
 
