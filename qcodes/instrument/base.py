@@ -104,7 +104,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             existing_unit = getattr(existing_parameter, "unit", None)
             new_unit = kwargs.get("unit", None)
 
-            if all([existing_unit, new_unit]) and existing_unit != new_unit:
+            if existing_unit and existing_unit != new_unit:
                 raise ValueError(
                     f"The unit of the parameter '{name}' is '{new_unit}', which is "
                     f"inconsistent with the unit specified in the abstract interface: "
