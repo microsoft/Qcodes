@@ -5,7 +5,7 @@ from qcodes.instrument.visa import VisaInstrument
 from qcodes.utils import validators as vals
 
 
-class SP983c(VisaInstrument):
+class SP983C(VisaInstrument):
     def __init__(self, name: str, address: str, **kwargs: Any) -> None:
         super().__init__(name, address, terminator="\r\n", **kwargs)
 
@@ -18,7 +18,7 @@ class SP983c(VisaInstrument):
             vals=vals.Enum(1e5, 1e6, 1e7, 1e8, 1e9),
         )
         self.add_parameter(
-            "filter_f",
+            "fcut",
             unit="Hz",
             label="Filter Cut-Off Frequency",
             set_cmd=self.set_filter,
