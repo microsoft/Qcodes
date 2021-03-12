@@ -2783,12 +2783,12 @@ class AbstractParameter(Parameter):
             **kwargs
         )
 
-    def _set_cmd(self, value: Any):
+    def _set_cmd(self, value: Any) -> None:
         raise TypeError(
             "Abstract parameters cannot be called and are meant to be implemented in sub classes"
         )
 
-    def _get_cmd(self):
+    def _get_cmd(self) -> None:
         raise TypeError(
             "Abstract parameters cannot be called and are meant to be implemented in sub classes"
         )
