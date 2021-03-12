@@ -2784,11 +2784,11 @@ class AbstractParameter(Parameter):
         )
 
     def _set_cmd(self, value: Any):
-        raise ValueError(
+        raise TypeError(
             "Abstract parameters cannot be called and are meant to be implemented in sub classes"
         )
 
     def _get_cmd(self):
-        raise ValueError(
+        raise TypeError(
             "Abstract parameters cannot be called and are meant to be implemented in sub classes"
         )
