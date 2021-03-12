@@ -60,7 +60,6 @@ def test_default_attributes():
 
     # only in simple parameters
     assert not hasattr(p, 'label')
-    assert not hasattr(p, 'unit')
 
 
 def test_explicit_attributes():

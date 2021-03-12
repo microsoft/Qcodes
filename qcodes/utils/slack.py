@@ -48,7 +48,7 @@ from requests.packages.urllib3.exceptions import ReadTimeoutError
 
 from qcodes.plots.base import BasePlot
 from qcodes import config as qc_config
-from qcodes.instrument.parameter import _BaseParameter
+from qcodes.instrument.parameter import AbstractParameter
 from qcodes.loops import active_loop, active_data_set
 
 
@@ -335,7 +335,7 @@ class Slack(threading.Thread):
 
                     func = self.commands[command]
                     try:
-                        if isinstance(func, _BaseParameter):
+                        if isinstance(func, AbstractParameter):
                             results = func(*args, **kwargs)
                         else:
                             # Only add channel and Slack if they are explicit

@@ -125,7 +125,7 @@ class _SetParamContext:
     >>> assert abs(dac.voltage() - v) <= tolerance
 
     """
-    def __init__(self, parameter: "_BaseParameter", value: ParamDataType,
+    def __init__(self, parameter: "AbstractParameter", value: ParamDataType,
                  allow_changes: bool = False):
         self._parameter = parameter
         self._value = value
@@ -161,12 +161,18 @@ def invert_val_mapping(val_mapping: Dict[Any, Any]) -> Dict[Any, Any]:
     return {v: k for k, v in val_mapping.items()}
 
 
-class _BaseParameter(Metadatable):
+class AbstractParameter(Metadatable):
     """
-    Shared behavior for all parameters. Not intended to be used
+    Shared behavior for all parameters. This not usually used
     directly, normally you should use ``Parameter``, ``ArrayParameter``,
-    ``MultiParameter``, or ``CombinedParameter``.
-    Note that ``CombinedParameter`` is not yet a subclass of ``_BaseParameter``
+    ``MultiParameter``, or ``CombinedParameter``. However when defining abstract
+    interfaces (e.g. set of instrument drivers exposing the same interface),
+    this can be done by creating a base class that adds ``AbstractParameter``.
+
+    Note 1) that when adding an ``AbstractParameter`` in a base class which has a
+    unit, the units added in the subclasses must match the one in the base class.
+
+    Note 2) that ``CombinedParameter`` is not yet a subclass of ``AbstractParameter``
 
     Args:
         name: the local name of the parameter. Must be a valid
@@ -241,6 +247,8 @@ class _BaseParameter(Metadatable):
 
         metadata: extra information to include with the
             JSON snapshot of the parameter
+
+        unit: The unit of measure. Use ``''`` for unitless.
     """
 
     def __init__(self, name: str,
@@ -258,7 +266,9 @@ class _BaseParameter(Metadatable):
                  snapshot_value: bool = True,
                  snapshot_exclude: bool = False,
                  max_val_age: Optional[float] = None,
-                 vals: Optional[Validator[Any]] = None) -> None:
+                 vals: Optional[Validator[Any]] = None,
+                 unit: Optional[str] = None
+                 ) -> None:
         super().__init__(metadata)
         if not str(name).isidentifier():
             raise ValueError(f"Parameter name must be a valid identifier "
@@ -345,6 +355,9 @@ class _BaseParameter(Metadatable):
         # intended to be changed in a subclass if you want the subclass
         # to perform a validation on get
         self._validate_on_get = False
+
+        #: The unit of measure. Use ``''`` for unitless.
+        self.unit = unit if unit is not None else ''
 
     @property
     def raw_value(self) -> ParamRawDataType:
@@ -932,7 +945,11 @@ class _BaseParameter(Metadatable):
         return self._settable
 
 
-class Parameter(_BaseParameter):
+# For backwards compatibility
+_BaseParameter = AbstractParameter
+
+
+class Parameter(AbstractParameter):
     """
     A parameter represents a single degree of freedom. Most often,
     this is the standard parameter for Instruments, though it can also be
@@ -1080,7 +1097,7 @@ class Parameter(_BaseParameter):
             initial_cache_value: Optional[Union[float, str]] = None,
             **kwargs: Any) -> None:
         super().__init__(name=name, instrument=instrument, vals=vals,
-                         max_val_age=max_val_age, **kwargs)
+                         max_val_age=max_val_age, unit=unit, **kwargs)
 
         no_instrument_get = not self.gettable and \
             (get_cmd is None or get_cmd is False)
@@ -1134,8 +1151,6 @@ class Parameter(_BaseParameter):
 
         #: Label of the data used for plots etc.
         self.label: str = name if label is None else label
-        #: The unit of measure. Use ``''`` for unitless.
-        self.unit = unit if unit is not None else ''
 
         if initial_value is not None and initial_cache_value is not None:
             raise SyntaxError('It is not possible to specify both of the '
@@ -1225,7 +1240,7 @@ class ParameterWithSetpoints(Parameter):
 
     def __init__(self, name: str, *,
                  vals: Optional[Validator[Any]] = None,
-                 setpoints: Optional[Sequence[_BaseParameter]] = None,
+                 setpoints: Optional[Sequence[AbstractParameter]] = None,
                  snapshot_get: bool = False,
                  snapshot_value: bool = False,
                  **kwargs: Any) -> None:
@@ -1240,14 +1255,14 @@ class ParameterWithSetpoints(Parameter):
         super().__init__(name=name, vals=vals, snapshot_get=snapshot_get,
                          snapshot_value=snapshot_value, **kwargs)
         if setpoints is None:
-            self.setpoints: Sequence[_BaseParameter] = []
+            self.setpoints: Sequence[AbstractParameter] = []
         else:
             self.setpoints = setpoints
 
         self._validate_on_get = True
 
     @property
-    def setpoints(self) -> Sequence[_BaseParameter]:
+    def setpoints(self) -> Sequence[AbstractParameter]:
         """
         Sequence of parameters to use as setpoints for this parameter.
 
@@ -1259,7 +1274,7 @@ class ParameterWithSetpoints(Parameter):
         return self._setpoints
 
     @setpoints.setter
-    def setpoints(self, setpoints: Sequence[_BaseParameter]) -> None:
+    def setpoints(self, setpoints: Sequence[AbstractParameter]) -> None:
         for setpointarray in setpoints:
             if not isinstance(setpointarray, Parameter):
                 raise TypeError(f"Setpoints is of type {type(setpointarray)}"
@@ -1541,7 +1556,7 @@ class DelegateParameter(Parameter):
         return snapshot
 
 
-class ArrayParameter(_BaseParameter):
+class ArrayParameter(AbstractParameter):
     """
     A gettable parameter that returns an array of values.
     Not necessarily part of an instrument.
@@ -1747,7 +1762,7 @@ def _is_nested_sequence_or_none(obj: Any,
     return True
 
 
-class MultiParameter(_BaseParameter):
+class MultiParameter(AbstractParameter):
     """
     A gettable parameter that returns multiple values with separate names,
     each of arbitrary shape. Not necessarily part of an instrument.
@@ -2025,7 +2040,7 @@ class _Cache:
             that does not have a get function.
     """
     def __init__(self,
-                 parameter: '_BaseParameter',
+                 parameter: 'AbstractParameter',
                  max_val_age: Optional[float] = None):
         self._parameter = parameter
         self._value: ParamDataType = None
@@ -2229,7 +2244,7 @@ class GetLatest(DelegateAttributes):
     Args:
         parameter: Parameter to be wrapped.
     """
-    def __init__(self, parameter: _BaseParameter):
+    def __init__(self, parameter: AbstractParameter):
         self.parameter = parameter
 
     delegate_attr_objects = ['parameter']
@@ -2730,7 +2745,7 @@ class ScaledParameter(Parameter):
 
 def expand_setpoints_helper(parameter: ParameterWithSetpoints,
                             results: Optional[ParamDataType] = None) -> List[
-        Tuple[_BaseParameter, ParamDataType]]:
+        Tuple[AbstractParameter, ParamDataType]]:
     """
     A helper function that takes a :class:`.ParameterWithSetpoints` and
     acquires the parameter along with it's setpoints. The data is returned
@@ -2766,29 +2781,3 @@ def expand_setpoints_helper(parameter: ParameterWithSetpoints,
         data = results
     res.append((parameter, data))
     return res
-
-
-class AbstractParameter(Parameter):
-    def __init__(self, name: str,
-                 instrument: Optional['InstrumentBase'] = None,
-                 **kwargs: Any):
-        """
-        An abstract parameter is meant to define an abstract interface,
-        much like abc.abstractmethod. This is useful for defining instrument
-        classes, all of which are guaranteed to have specific parameters
-        """
-        super().__init__(
-            name=name, instrument=instrument,
-            set_cmd=self._set_cmd, get_cmd=self._get_cmd,
-            **kwargs
-        )
-
-    def _set_cmd(self, value: Any) -> None:
-        raise TypeError(
-            "Abstract parameters cannot be called and are meant to be implemented in sub classes"
-        )
-
-    def _get_cmd(self) -> None:
-        raise TypeError(
-            "Abstract parameters cannot be called and are meant to be implemented in sub classes"
-        )

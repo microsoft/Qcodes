@@ -11,7 +11,7 @@ from qcodes.utils.helpers import DelegateAttributes, strip_attrs, full_class
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.validators import Anything
 from qcodes.logger.instrument_logger import get_instrument_logger
-from .parameter import Parameter, _BaseParameter, AbstractParameter
+from .parameter import Parameter, AbstractParameter, AbstractParameter
 from .function import Function
 
 if TYPE_CHECKING:
@@ -36,7 +36,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         self._name = str(name)
         self._short_name = str(name)
 
-        self.parameters: Dict[str, _BaseParameter] = {}
+        self.parameters: Dict[str, AbstractParameter] = {}
         """
         All the parameters supported by this instrument.
         Usually populated via :py:meth:`add_parameter`.
@@ -98,17 +98,17 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         """
         existing_parameter = self.parameters.get(name, None)
         if existing_parameter:
-            if not isinstance(existing_parameter, AbstractParameter):
-                raise KeyError(f'Duplicate parameter name {name}')
 
-            existing_unit = getattr(existing_parameter, "unit", None)
+            existing_unit = existing_parameter.unit
             new_unit = kwargs.get("unit", None)
 
             if existing_unit and existing_unit != new_unit:
                 raise ValueError(
-                    f"The unit of the parameter '{name}' is '{new_unit}', which is "
-                    f"inconsistent with the unit specified in the abstract interface: "
-                    f"'{existing_unit}'"
+                    f"The unit of the parameter '{name}' is '{new_unit}', which "
+                    f"is inconsistent with the unit '{existing_unit}' specified "
+                    f"earlier. This is usually because a driver is a subclass "
+                    f"of a baseclass which defines a parameter of the same name "
+                    f"but with different units"
                 )
 
         param = parameter_class(name=name, instrument=self, **kwargs)

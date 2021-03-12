@@ -15,7 +15,7 @@ from .constants import BOARD_NAMES, REGISTER_ACCESS_PASSWORD, ReturnCode
 # `_BaseParameter` is needed because users may pass instrument parameters
 # that originate from `Instrument.parameters` dictionary which is typed
 # with `_BaseParameter`, not `Parameter`.
-from qcodes.instrument.parameter import _BaseParameter as Parameter
+from qcodes.instrument.parameter import AbstractParameter as Parameter
 
 # Define aliases for ctypes that match Alazar's notation.
 U8 = ctypes.c_uint8

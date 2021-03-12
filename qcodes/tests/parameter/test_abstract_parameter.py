@@ -57,15 +57,3 @@ def test_unit_mismatch_exception():
             match="inconsistent with the unit specified"
     ):
         MyVoltageSource2("name2")
-
-
-def test_call_abstract_parameter_exception():
-
-    source = BaseVoltageSource("base")
-
-    with pytest.raises(
-        TypeError,
-        match="Abstract parameters cannot be called and are meant to be "
-              "implemented in sub classes"
-    ):
-        source.voltage()

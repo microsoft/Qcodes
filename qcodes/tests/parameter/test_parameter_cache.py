@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from qcodes.instrument.parameter import Parameter, _BaseParameter
+from qcodes.instrument.parameter import Parameter, AbstractParameter
 import qcodes.utils.validators as vals
 from .conftest import NOT_PASSED, BetterGettableParam, SettableParam
 
@@ -211,7 +211,7 @@ def test_no_get_max_val_age_runtime_error(get_if_invalid):
     """
     value = 1
 
-    class LocalParameter(_BaseParameter):
+    class LocalParameter(AbstractParameter):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
             self.set_raw = lambda x: x
