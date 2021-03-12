@@ -2766,3 +2766,29 @@ def expand_setpoints_helper(parameter: ParameterWithSetpoints,
         data = results
     res.append((parameter, data))
     return res
+
+
+class AbstractParameter(Parameter):
+    def __init__(self, name: str,
+                 instrument: Optional['InstrumentBase'] = None,
+                 **kwargs: Any):
+        """
+        An abstract parameter is meant to define an abstract interface,
+        much like abc.abstractmethod. This is useful for defining instrument
+        classes, all of which are guaranteed to have specific parameters
+        """
+        super().__init__(
+            name=name, instrument=instrument,
+            set_cmd=self._set_cmd, get_cmd=self._get_cmd,
+            **kwargs
+        )
+
+    def _set_cmd(self, value: Any):
+        raise ValueError(
+            "Abstract parameters cannot be called and are meant to be implemented in sub classes"
+        )
+
+    def _get_cmd(self):
+        raise ValueError(
+            "Abstract parameters cannot be called and are meant to be implemented in sub classes"
+        )
