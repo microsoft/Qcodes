@@ -45,14 +45,14 @@ def setup_slack():
         'token': '123',
         'names': ['dummyuser']
     }
-    import qcodes.utils.slack
+    import qcodes.utils.slack  # pylint: disable=import-outside-toplevel
     slack = qcodes.utils.slack.Slack(config=slack_config, auto_start=False)
 
     return slack
 
 
 def test_convert_command_should_convert_floats():
-    import qcodes.utils.slack
+    import qcodes.utils.slack  # pylint: disable=import-outside-toplevel
     cmd, arg, kwarg = qcodes.utils.slack.convert_command('comm 0.234 key=0.1')
     assert cmd == 'comm'
     assert arg == [pytest.approx(0.234)]
@@ -64,14 +64,14 @@ def test_slack_instance_should_contain_supplied_usernames(slack):
 
 
 def test_slack_instance_should_get_config_from_qc_config():
-    from qcodes import config as qc_config
+    from qcodes import config as cf  # pylint: disable=import-outside-toplevel
     slack_config = {
         'bot_name': 'bot',
         'token': '123',
         'names': ['dummyuser']
     }
-    qc_config.add(key='slack', value=slack_config)
-    import qcodes.utils.slack
+    cf.add(key='slack', value=slack_config)
+    import qcodes.utils.slack  # pylint: disable=import-outside-toplevel
     slack = qcodes.utils.slack.Slack(config=None, auto_start=False)
     assert 'dummyuser' in slack.users.keys()
 
@@ -83,7 +83,7 @@ def test_slack_instance_should_start(mocker):
         'names': ['dummyuser']
     }
     mock_thread_start = mocker.patch('threading.Thread.start')
-    import qcodes.utils.slack
+    import qcodes.utils.slack  # pylint: disable=import-outside-toplevel
     _ = qcodes.utils.slack.Slack(config=slack_config)
 
     mock_thread_start.assert_called()
@@ -98,7 +98,7 @@ def test_slack_instance_should_not_start_when_already_started(mocker):
     mock_thread_start = mocker.patch('threading.Thread.start')
     mock_thread_start.side_effect = RuntimeError
 
-    import qcodes.utils.slack
+    import qcodes.utils.slack  # pylint: disable=import-outside-toplevel
     _ = qcodes.utils.slack.Slack(config=slack_config)
 
     mock_thread_start.assert_called()
@@ -112,7 +112,7 @@ def test_slack_instance_should_start_and_stop(mocker):
     }
     mocker.patch('threading.Thread.start')
 
-    import qcodes.utils.slack
+    import qcodes.utils.slack  # pylint: disable=import-outside-toplevel
     slack = qcodes.utils.slack.Slack(config=slack_config, interval=0)
     slack.stop()
 
@@ -154,6 +154,8 @@ def test_slack_instance_should_get_im_ids_with_zero_messages(mock_webclient):
         if channel == 'CH234':
             response = {'messages': []}
             return response
+        else:
+            return None
 
     mock_webclient.conversations_history.side_effect = conversations_history
     slack = setup_slack()
@@ -168,6 +170,8 @@ def test_slack_instance_should_get_im_messages_w_count(slack, mock_webclient):
                         for i in range(limit)]
             response = {'messages': messages}
             return response
+        else:
+            return None
 
     mock_webclient.conversations_history.side_effect = conversations_history
 
@@ -182,6 +186,8 @@ def test_slack_instance_should_get_im_messages_without_channel(mock_webclient):
                          'ts': f'{45.5 + i}'} for i in range(limit)]
             response = {'messages': messages}
             return response
+        else:
+            return None
 
     mock_webclient.conversations_history.side_effect = conversations_history
 
