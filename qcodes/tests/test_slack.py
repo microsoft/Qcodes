@@ -5,6 +5,7 @@ from requests.exceptions import ReadTimeout, HTTPError, ConnectTimeout
 from urllib3.exceptions import ReadTimeoutError
 
 from qcodes import Parameter
+from qcodes import config as qc_config
 
 
 class AnyStringWith(str):
@@ -16,7 +17,8 @@ class AnyStringWith(str):
 def setup_webclient(mocker):
     mock_slack_sdk_module = mocker.MagicMock(name='slack_sdk_module')
     mock_webclient = mocker.MagicMock(name='WebclientMock')
-    mock_slack_sdk_module.WebClient = mocker.MagicMock(return_value=mock_webclient)
+    mock_slack_sdk_module.WebClient = mocker.MagicMock()
+    mock_slack_sdk_module.WebClient.return_value = mock_webclient
     mocker.patch.dict('sys.modules', slack_sdk=mock_slack_sdk_module)
 
     response = {'members': [{'name': 'dummyuser', 'id': 'DU123'}]}
@@ -25,6 +27,8 @@ def setup_webclient(mocker):
     def mock_conversations_list(types):
         if 'im' in types.split(','):
             return {'channels': [{'user': 'DU123', 'id': 'CH234'}]}
+        else:
+            return None
 
     mock_webclient.conversations_list.side_effect = mock_conversations_list
 
@@ -50,8 +54,8 @@ def setup_slack():
 
 def test_convert_command_should_convert_floats():
     import qcodes.utils.slack
-    command, arg, kwarg = qcodes.utils.slack.convert_command('comm 0.234 key=0.1')
-    assert command == 'comm'
+    cmd, arg, kwarg = qcodes.utils.slack.convert_command('comm 0.234 key=0.1')
+    assert cmd == 'comm'
     assert arg == [pytest.approx(0.234)]
     assert kwarg == {'key': pytest.approx(0.1)}
 
@@ -61,7 +65,6 @@ def test_slack_instance_should_contain_supplied_usernames(slack):
 
 
 def test_slack_instance_should_get_config_from_qc_config():
-    from qcodes import config as qc_config
     slack_config = {
         'bot_name': 'bot',
         'token': '123',
@@ -81,7 +84,7 @@ def test_slack_instance_should_start(mocker):
     }
     mock_thread_start = mocker.patch('threading.Thread.start')
     import qcodes.utils.slack
-    slack = qcodes.utils.slack.Slack(config=slack_config)
+    _ = qcodes.utils.slack.Slack(config=slack_config)
 
     mock_thread_start.assert_called()
 
@@ -96,7 +99,7 @@ def test_slack_instance_should_not_start_when_already_started(mocker):
     mock_thread_start.side_effect = RuntimeError
 
     import qcodes.utils.slack
-    slack = qcodes.utils.slack.Slack(config=slack_config)
+    _ = qcodes.utils.slack.Slack(config=slack_config)
 
     mock_thread_start.assert_called()
 
@@ -120,6 +123,8 @@ def test_slack_instance_should_return_username_from_id(mock_webclient, slack):
     def mock_users_info(user):
         if user == 'DU123':
             return {'user': {'name': 'dummyuser', 'id': 'DU123'}}
+        else:
+            return None
 
     mock_webclient.users_info.side_effect = mock_users_info
 
@@ -127,12 +132,16 @@ def test_slack_instance_should_return_username_from_id(mock_webclient, slack):
 
 
 def test_slack_instance_should_get_im_ids(mock_webclient):
-    def mock_conversations_history(channel, limit=None):
+    def conversations_history(channel, limit=None):
         if channel == 'CH234':
-            response = {'messages': [{'user': 'DU123', 'text': f'm{i}', 'ts': f'{45.5 + i}'} for i in range(limit)]}
+            messages = [{'user': 'DU123', 'text': f'm{i}',
+                         'ts': f'{45.5 + i}'} for i in range(limit)]
+            response = {'messages': messages}
             return response
+        else:
+            return None
 
-    mock_webclient.conversations_history.side_effect = mock_conversations_history
+    mock_webclient.conversations_history.side_effect = conversations_history
 
     slack = setup_slack()
 
@@ -141,40 +150,46 @@ def test_slack_instance_should_get_im_ids(mock_webclient):
 
 
 def test_slack_instance_should_get_im_ids_with_zero_messages(mock_webclient):
-    def mock_conversations_history(channel, limit=None):
+    def conversations_history(channel, limit=None):
         if channel == 'CH234':
             response = {'messages': []}
             return response
 
-    mock_webclient.conversations_history.side_effect = mock_conversations_history
+    mock_webclient.conversations_history.side_effect = conversations_history
     slack = setup_slack()
 
     assert slack.users['dummyuser']['last_ts'] is None
 
 
-def test_slack_instance_should_get_im_messages_with_count_iso_limit_specified(slack, mock_webclient):
-    def mock_conversations_history(channel, limit=None):
+def test_slack_instance_should_get_im_messages_w_count(slack, mock_webclient):
+    def conversations_history(channel, limit=None):
         if channel == 'CH234':
-            response = {'messages': [{'user': 'DU123', 'text': f'message{i}'} for i in range(limit)]}
+            messages = [{'user': 'DU123', 'text': f'message{i}'}
+                        for i in range(limit)]
+            response = {'messages': messages}
             return response
 
-    mock_webclient.conversations_history.side_effect = mock_conversations_history
+    mock_webclient.conversations_history.side_effect = conversations_history
 
     messages = slack.get_im_messages('dummyuser', count=3)
     assert len(messages) == 3
 
 
 def test_slack_instance_should_get_im_messages_without_channel(mock_webclient):
-    def mock_conversations_history(channel, limit=None):
+    def conversations_history(channel, limit=None):
         if channel == 'CH234':
-            response = {'messages': [{'user': 'DU123', 'text': f'm{i}', 'ts': f'{45.5 + i}'} for i in range(limit)]}
+            messages = [{'user': 'DU123', 'text': f'm{i}',
+                         'ts': f'{45.5 + i}'} for i in range(limit)]
+            response = {'messages': messages}
             return response
 
-    mock_webclient.conversations_history.side_effect = mock_conversations_history
+    mock_webclient.conversations_history.side_effect = conversations_history
 
     def mock_conversations_list(types):
         if 'im' in types.split(','):
             return {'channels': []}
+        else:
+            return None
 
     mock_webclient.conversations_list.side_effect = mock_conversations_list
 
@@ -189,18 +204,21 @@ def test_slack_instance_should_get_new_im_messages(mock_webclient):
         total = 8
         new = 3
         while True:
-            response = {'messages': [{'user': 'DU123', 'text': f'm{i}', 'ts': f'{45.5 + i}'} for i
-                                     in range(total)][-new:]}
+            new_messages = [{'user': 'DU123', 'text': f'm{i}',
+                             'ts': f'{45.5 + i}'} for i in range(total)][-new:]
+            response = {'messages': new_messages}
             yield response
             total += new
 
     generator = generator_function()
 
-    def mock_conversations_history(channel, limit=None, oldest=None):
+    def conversations_history(channel, limit=None, oldest=None):
         if channel == 'CH234':
             return next(generator)
+        else:
+            return None
 
-    mock_webclient.conversations_history.side_effect = mock_conversations_history
+    mock_webclient.conversations_history.side_effect = conversations_history
 
     slack = setup_slack()
 
@@ -229,8 +247,9 @@ def test_slack_instance_should_update_with_task_returning_true(slack, mocker):
     assert 'Slack.check_msmt_finished' in str(task_added.func)
 
 
-def test_slack_instance_should_update_with_new_im_messages_exception(slack, mocker):
-    mock_get_new_im_messages = mocker.patch('qcodes.utils.slack.Slack.get_new_im_messages')
+def test_slack_instance_should_update_with_exception(slack, mocker):
+    method_name = 'qcodes.utils.slack.Slack.get_new_im_messages'
+    mock_get_new_im_messages = mocker.patch(method_name)
     mocker.patch('warnings.warn')
     mocker.patch('logging.info')
 
@@ -243,29 +262,31 @@ def test_slack_instance_should_update_with_new_im_messages_exception(slack, mock
 
 def test_slack_instance_should_give_help_message(slack):
     message = slack.help_message()
-    expected_message = '\nAvailable commands: `plot`, `msmt`, `measurement`, ' \
-                       '`notify`, `help`, `task`'
+    expected_message = '\nAvailable commands: `plot`, `msmt`, ' \
+                       '`measurement`, `notify`, `help`, `task`'
     assert message == expected_message
 
 
 def test_slack_instance_should_handle_messages(mock_webclient, slack):
     messages = {'dummyuser': [{'user': 'DU123', 'text': 'help'}]}
     slack.handle_messages(messages)
+    expected_text = 'Results: \nAvailable commands: `plot`, ' \
+                    '`msmt`, `measurement`, `notify`, `help`, `task`'
     expected_output = {'channel': 'CH234',
-                       'text': 'Results: \nAvailable commands: `plot`, '
-                               '`msmt`, `measurement`, `notify`, `help`, `task`'}
+                       'text': expected_text}
 
     mock_webclient.chat_postMessage.assert_called_with(**expected_output)
 
 
-def test_slack_instance_should_handle_messages_with_args_and_kwargs(mock_webclient, slack):
-    messages = {'dummyuser': [{'user': 'DU123', 'text': 'task finished key=1'}]}
+def test_slack_inst_should_handle_messages_w_args_kw(mock_webclient, slack):
+    text = 'task finished key=1'
+    messages = {'dummyuser': [{'user': 'DU123', 'text': text}]}
     slack.handle_messages(messages)
     expected_output = {'channel': 'CH234', 'text': 'Added task "finished"'}
     mock_webclient.chat_postMessage.assert_called_with(**expected_output)
 
 
-def test_slack_instance_should_handle_messages_with_base_parameter(mock_webclient, slack):
+def test_slack_inst_should_handle_messages_w_parameter(mock_webclient, slack):
     slack.commands.update({'comm': Parameter(name='param')})
     messages = {'dummyuser': [{'user': 'DU123', 'text': 'comm'}]}
     slack.handle_messages(messages)
@@ -273,42 +294,46 @@ def test_slack_instance_should_handle_messages_with_base_parameter(mock_webclien
     mock_webclient.chat_postMessage.assert_called_with(**expected_output)
 
 
-def test_slack_instance_should_handle_messages_with_exception(mock_webclient, slack, mocker):
+def test_slack_inst_should_handle_messages_w_exception(mock_webclient, slack):
     messages = {'dummyuser': [{'user': 'DU123', 'text': 'help toomany'}]}
     slack.handle_messages(messages)
-    partial_expected_text = 'TypeError: help_message() takes 1 positional argument but 2 were given\n'
-    expected_output = {'channel': 'CH234', 'text': AnyStringWith(partial_expected_text)}
+    text = 'TypeError: help_message() takes 1 positional argument ' \
+           'but 2 were given\n'
+    expected_output = {'channel': 'CH234', 'text': AnyStringWith(text)}
     mock_webclient.chat_postMessage.assert_called_with(**expected_output)
 
 
-def test_slack_instance_should_handle_messages_with_unknown_command(mock_webclient, slack):
+def test_slack_inst_should_handle_messages_w_unkn_cmd(mock_webclient, slack):
     messages = {'dummyuser': [{'user': 'DU123', 'text': 'comm'}]}
     slack.handle_messages(messages)
-    expected_output = {'channel': 'CH234', 'text': 'Command comm not understood. Try `help`'}
+    text = 'Command comm not understood. Try `help`'
+    expected_output = {'channel': 'CH234', 'text': text}
     mock_webclient.chat_postMessage.assert_called_with(**expected_output)
 
 
-def test_slack_instance_should_add_unknown_task_command(mock_webclient, slack):
+def test_slack_inst_should_add_unknown_task_command(mock_webclient, slack):
     slack.add_task('tcomm', channel='CH234')
-    expected_output = {'channel': 'CH234', 'text': 'Task command tcomm not understood'}
+    text = 'Task command tcomm not understood'
+    expected_output = {'channel': 'CH234', 'text': text}
     mock_webclient.chat_postMessage.assert_called_with(**expected_output)
 
 
-def test_slack_instance_should_upload_latest_plot(mock_webclient, slack, mocker):
-    mocker.patch('qcodes.utils.slack.BasePlot.latest_plot', return_value=not None)
+def test_slack_inst_should_upload_latest_plot(mock_webclient, slack, mocker):
+    method_name = 'qcodes.utils.slack.BasePlot.latest_plot'
+    mocker.patch(method_name, return_value=not None)
     mocker.patch('os.remove')
     slack.upload_latest_plot(channel='CH234')
     expected_output = {'channels': 'CH234', 'file': AnyStringWith('.jpg')}
     mock_webclient.files_upload.assert_called_with(**expected_output)
 
 
-def test_slack_instance_should_not_fail_when_uploading_latest_plot_without_plot(mock_webclient, slack):
+def test_slack_inst_should_not_fail_upl_latest_wo_plot(mock_webclient, slack):
     slack.upload_latest_plot(channel='CH234')
     expected_output = {'channel': 'CH234', 'text': 'No latest plot'}
     mock_webclient.chat_postMessage.assert_called_with(**expected_output)
 
 
-def test_slack_instance_should_print_measurement_information(mock_webclient, slack, mocker):
+def test_slack_inst_should_print_measurement(mock_webclient, slack, mocker):
     dataset = mocker.MagicMock()
     dataset.fraction_complete.return_value = 0.123
     mocker.patch('qcodes.utils.slack.active_data_set', return_value=dataset)
@@ -317,12 +342,15 @@ def test_slack_instance_should_print_measurement_information(mock_webclient, sla
 
     print(mock_webclient.chat_postMessage.calls)
 
-    expected_output = {'channel': 'CH234', 'text': 'Measurement is {:.0f}% complete'.format(0.123 * 100)}
-    expected_output2 = {'channel': 'CH234', 'text': AnyStringWith('MagicMock')}
-    assert mock_webclient.chat_postMessage.call_args_list == [call(**expected_output), call(**expected_output2)]
+    text1 = 'Measurement is {:.0f}% complete'.format(0.123 * 100)
+    expected_out1 = {'channel': 'CH234', 'text': text1}
+    expected_out2 = {'channel': 'CH234', 'text': AnyStringWith('MagicMock')}
+    actual = mock_webclient.chat_postMessage.call_args_list
+    expected = [call(**expected_out1), call(**expected_out2)]
+    assert actual == expected
 
 
-def test_slack_instance_should_print_measurement_information_without_latest_dataset(mock_webclient, slack):
+def test_slack_inst_should_print_measurement_wo_latest(mock_webclient, slack):
     slack.print_measurement_information(channel='CH234')
     expected_output = {'channel': 'CH234', 'text': 'No latest dataset found'}
     mock_webclient.chat_postMessage.assert_called_with(**expected_output)
