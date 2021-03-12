@@ -93,8 +93,10 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             **kwargs: Constructor arguments for ``parameter_class``.
 
         Raises:
-            KeyError: If this instrument already has a parameter with this
-                name.
+            ValueError: If this instrument already has a parameter with this
+                name but the unit is different. A pre-exisiting parameter is
+                often added in a base class to define an interface. Subclasses
+                must honor the units defined in this interface.
         """
         existing_parameter = self.parameters.get(name, None)
         if existing_parameter:
