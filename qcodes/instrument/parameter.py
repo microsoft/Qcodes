@@ -163,16 +163,10 @@ def invert_val_mapping(val_mapping: Dict[Any, Any]) -> Dict[Any, Any]:
 
 class _BaseParameter(Metadatable):
     """
-    Shared behavior for all parameters. This not usually used
+    Shared behavior for all parameters. Not intended to be used
     directly, normally you should use ``Parameter``, ``ArrayParameter``,
-    ``MultiParameter``, or ``CombinedParameter``. However when defining abstract
-    interfaces (e.g. set of instrument drivers exposing the same interface),
-    this can be done by creating a base class that adds ``AbstractParameter``.
-
-    Note 1) that when adding an ``AbstractParameter`` in a base class which has a
-    unit, the units added in the subclasses must match the one in the base class.
-
-    Note 2) that ``CombinedParameter`` is not yet a subclass of ``AbstractParameter``
+    ``MultiParameter``, or ``CombinedParameter``.
+    Note that ``CombinedParameter`` is not yet a subclass of ``_BaseParameter``
 
     Args:
         name: the local name of the parameter. Must be a valid
@@ -945,10 +939,23 @@ class _BaseParameter(Metadatable):
         return self._settable
 
 
-# A simple alias for `_BaseParameter`. Using the `AbstractParameter`
-# alias will produce more readable code in situations where using
-# this class is meant to define an abstract interface.
-AbstractParameter = _BaseParameter
+class AbstractParameter(_BaseParameter):
+    """
+    A trivial subclass of `_BaseParameter`, essentially serving as
+    an alias for the latter. Using the `AbstractParameter`
+    alias will produce more readable code in situations where using
+    this class is meant to define an abstract interface.
+
+    An abstract interface is used to create a set of instrument drivers
+    which all have certain parameters. This can be done by creating a
+    base class that adds an ``AbstractParameter``. Subclasses of this
+    instrument base class can then add parameters of the same name and
+    unit. 
+
+    Note that when adding an ``AbstractParameter`` in a base class
+    which has a unit, the units added in the subclasses must match the
+    one in the base class.
+    """
 
 
 class Parameter(_BaseParameter):
