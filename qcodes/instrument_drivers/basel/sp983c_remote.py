@@ -26,7 +26,10 @@ class SP983c(VisaInstrument):
             vals=vals.Enum(30, 100, 300, 1000, 3000, 30_000, 100_000, "FULL"),
         )
         self.add_parameter(
-            "overload_status", label="Overload Status", set_cmd=None, get_cmd="GET O"
+            "overload_status",
+            label="Overload Status",
+            set_cmd=None,
+            get_cmd="GET O"
         )
 
     def set_gain(self, value: float) -> None:
