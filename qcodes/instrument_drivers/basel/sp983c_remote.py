@@ -2,12 +2,11 @@ from typing import Any, Union, Dict, Optional
 import numpy as np
 
 from qcodes.instrument.visa import VisaInstrument
-from qcodes.instrument.parameter import Parameter
-from qcodes.instrument_drivers.basel.sp983c import SP983C
+from qcodes.instrument.parameter import Parameter, DelegateParameter
 from qcodes.utils import validators as vals
 
 
-class SP983A(VisaInstrument, SP983C):
+class SP983A(VisaInstrument):
     """
     A driver for SP983C Remote Instrument (SP983A).
 
@@ -26,8 +25,7 @@ class SP983A(VisaInstrument, SP983C):
                  address: str,
                  input_offset_voltage: Optional[Parameter] = None,
                  **kwargs: Any) -> None:
-        super().__init__(name, address, terminator="\r\n",
-                         input_offset_voltage=input_offset_voltage, **kwargs)
+        super().__init__(name, address, terminator="\r\n", **kwargs)
 
         self.add_parameter(
             "gain",
@@ -53,6 +51,15 @@ class SP983A(VisaInstrument, SP983C):
             set_cmd=None,
             get_cmd="GET O"
         )
+
+        self.add_parameter(
+            "offset_voltage",
+            label="Offset Voltage for SP983C",
+            unit="V",
+            vals=vals.Numbers(-0.1, 0.1),
+            scale=100,
+            source=input_offset_voltage,
+            parameter_class=DelegateParameter)
 
     def _set_gain(self, value: float) -> None:
         r = self.ask(f"SET G 1E{int(np.log10(value))}")
