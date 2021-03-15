@@ -34,14 +34,6 @@ class SP983A(VisaInstrument):
             get_cmd="GET O"
         )
 
-    def get_idn(self) -> Dict[str, Optional[str]]:
-        vendor = 'Physics Basel'
-        model = 'SP 983(a)'
-        serial = None
-        firmware = None
-        return {'vendor': vendor, 'model': model,
-                'serial': serial, 'firmware': firmware}
-
     def _set_gain(self, value: float) -> None:
         r = self.ask(f"SET G 1E{int(np.log10(value))}")
         if r != "OK":
