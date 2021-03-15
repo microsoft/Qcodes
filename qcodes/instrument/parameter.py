@@ -950,7 +950,7 @@ class AbstractParameter(_BaseParameter):
     which all have certain parameters. This can be done by creating a
     base class that adds an ``AbstractParameter``. Subclasses of this
     instrument base class can then add parameters of the same name and
-    unit. 
+    unit.
 
     Note that when adding an ``AbstractParameter`` in a base class
     which has a unit, the units added in the subclasses must match the
