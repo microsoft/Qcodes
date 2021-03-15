@@ -1,6 +1,6 @@
-from typing import Any, Union
-
+from typing import Any, Union, Dict, Optional
 import numpy as np
+
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.utils import validators as vals
 
@@ -33,6 +33,14 @@ class SP983A(VisaInstrument):
             set_cmd=None,
             get_cmd="GET O"
         )
+
+    def get_idn(self) -> Dict[str, Optional[str]]:
+        vendor = 'Physics Basel'
+        model = 'SP 983(a)'
+        serial = None
+        firmware = None
+        return {'vendor': vendor, 'model': model,
+                'serial': serial, 'firmware': firmware}
 
     def _set_gain(self, value: float) -> None:
         r = self.ask(f"SET G 1E{int(np.log10(value))}")
