@@ -61,6 +61,14 @@ class SP983A(VisaInstrument):
             source=input_offset_voltage,
             parameter_class=DelegateParameter)
 
+    def get_idn(self) -> Dict[str, Optional[str]]:
+        vendor = 'Physics Basel'
+        model = 'SP 983A'
+        serial = None
+        firmware = None
+        return {'vendor': vendor, 'model': model,
+                'serial': serial, 'firmware': firmware}
+
     def _set_gain(self, value: float) -> None:
         r = self.ask(f"SET G 1E{int(np.log10(value))}")
         if r != "OK":
