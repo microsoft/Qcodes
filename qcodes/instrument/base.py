@@ -106,11 +106,11 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
             if existing_unit and existing_unit != new_unit:
                 raise ValueError(
-                    f"The unit of the parameter '{name}' is '{new_unit}', which "
-                    f"is inconsistent with the unit '{existing_unit}' specified "
-                    f"earlier. This is usually because a driver is a subclass "
-                    f"of a baseclass which defines a parameter of the same name "
-                    f"but with different units"
+                    f"The unit of the parameter '{name}' is '{new_unit}', "
+                    f"which is inconsistent with the unit '{existing_unit}' "
+                    f"specified earlier. This is usually because a driver "
+                    f"is a subclass of a baseclass which defines a parameter "
+                    f"of the same name but with different units"
                 )
 
         param = parameter_class(name=name, instrument=self, **kwargs)
