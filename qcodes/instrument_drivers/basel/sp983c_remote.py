@@ -2,12 +2,32 @@ from typing import Any, Union, Dict, Optional
 import numpy as np
 
 from qcodes.instrument.visa import VisaInstrument
+from qcodes.instrument.parameter import Parameter
+from qcodes.instrument_drivers.basel.sp983c import SP983C
 from qcodes.utils import validators as vals
 
 
-class SP983A(VisaInstrument):
-    def __init__(self, name: str, address: str, **kwargs: Any) -> None:
-        super().__init__(name, address, terminator="\r\n", **kwargs)
+class SP983A(VisaInstrument, SP983C):
+    """
+    A driver for SP983C Remote Instrument (SP983A).
+
+    Args:
+        name
+        address
+        input_offset_voltage: (Optional) A source input offset voltage
+            parameter. The range for input is -10 to 10 Volts and it is
+            user's responsibility to ensure this. This source parameter is
+            used to set offset voltage parameter of the preamp and the
+            source parameter should represent a voltage source that is
+            connected to the "Offset Input Volgate" connector of the SP983C.
+    """
+    def __init__(self,
+                 name: str,
+                 address: str,
+                 input_offset_voltage: Optional[Parameter] = None,
+                 **kwargs: Any) -> None:
+        super().__init__(name, address, terminator="\r\n",
+                         input_offset_voltage=input_offset_voltage, **kwargs)
 
         self.add_parameter(
             "gain",
