@@ -57,7 +57,7 @@ pywin32==300; sys_platform == 'win32'
 pywinpty==0.5.7; sys_platform == 'win32'
 PyYAML==5.4.1
 pyzmq==22.0.3
-qtconsole==5.0.2
+qtconsole==5.0.3
 QtPy==1.9.0
 requests==2.25.1
 scipy==1.6.1
