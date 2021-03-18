@@ -17,9 +17,6 @@ from typing import (Hashable, Iterator, TYPE_CHECKING, Any, Callable, Dict,
 
 import numpy
 import pandas as pd
-from netCDF4 import Dataset
-import xarray as xr
-import h5py
 
 import qcodes
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
@@ -1708,29 +1705,25 @@ class DataSet(Sized):
         extension = export_type.value
         return f"{prefix}{self.run_id}.{extension}"
 
-    def _export_as_netcdf(self, path: str, prefix: str) -> str:
+    def _export_as_netcdf(self, path: str, file_name: str) -> str:
         """Export data as netcdf to a given path with file prefix"""
-        file_name = self._export_file_name(
-            prefix=prefix, export_type=DataExportType.NETCDF)
         file_path = os.path.join(path, file_name)
         xarr_dataset = self.to_xarray_dataset()
         xarr_dataset.to_netcdf(path=file_path)
         return path
 
-    def _export_as_csv(self, path: str, prefix: str) -> str:
+    def _export_as_csv(self, path: str, file_name: str) -> str:
         """Export data as csv to a given path with file prefix"""
-        file_name = self._export_file_name(
-            prefix=prefix, export_type=DataExportType.CSV)
         self.write_data_to_text_file(path=path, single_file=True, single_file_name=file_name)
         return os.path.join(path, file_name)
 
-    def _export_data(
-        self,
-        export_type: DataExportType,
-        path: Optional[str] = None,
-        prefix: Optional[str] = None) -> str:
+    def _export_data(self,
+                     export_type: DataExportType,
+                     path: Optional[str] = None,
+                     prefix: Optional[str] = None
+                     ) -> str:
         """Export data to disk with file name {prefix}{run_id}.{ext}.
-        Values for the export type, path and prefix are set in the qcodes
+        Values for the export type, path and prefix can also be set in the qcodes
         "dataset" config.
 
         Args:
@@ -1743,31 +1736,33 @@ class DataSet(Sized):
         """
         # Set defaults to values in config if the value was not set
         # (defaults to None)
-        path = path or get_data_export_path()
-        prefix = prefix or get_data_export_prefix()
+        path = path if path is not None else get_data_export_path()
+        prefix = prefix if prefix is not None else get_data_export_prefix()
 
         if DataExportType.NETCDF == export_type:
-            return self._export_as_netcdf(path=path, prefix=prefix)
+            file_name = self._export_file_name(
+                prefix=prefix, export_type=DataExportType.NETCDF)
+            return self._export_as_netcdf(path=path, file_name=file_name)
 
         elif DataExportType.CSV == export_type:
-            return self._export_as_csv(path=path, prefix=prefix)
+            file_name = self._export_file_name(
+                prefix=prefix, export_type=DataExportType.CSV)
+            return self._export_as_csv(path=path, file_name=file_name)
 
         else:
             return ""
 
-    def export(
-        self,
-        export_type: Optional[Union[DataExportType, str]] = None,
-        path: Optional[str] = None,
-        prefix: Optional[str] = None) -> None:
+    def export(self,
+               export_type: Optional[Union[DataExportType, str]] = None,
+               path: Optional[str] = None,
+               prefix: Optional[str] = None) -> None:
         """Export data to disk with file name {prefix}{run_id}.{ext}.
-        Values for the export type, path and prefix are set in the qcodes
-        "dataset" config.
+        Values for the export type, path and prefix can also be set in the "dataset"
+        section of qcodes config.
 
         Args:
-            export_type: Data
-                export type, e.g. "netcdf" or DataExportType.NETCDF,
-                defaults to value set config
+            export_type: Data export type, e.g. "netcdf" or ``DataExportType.NETCDF``,
+                defaults to a value set in qcodes config
             path: Export path, defaults to value set in config
             prefix: File prefix, e.g. "qcodes_", defaults to value set in config.
 
@@ -1777,8 +1772,10 @@ class DataSet(Sized):
         export_type = get_data_export_type(export_type)
 
         if export_type is None:
-            raise ValueError("No data export type specified. Please set the \
-            export data type by using set_data_export_type.")
+            raise ValueError(
+                "No data export type specified. Please set the export data type "
+                "by using ``qcodes.dataset.export_config.set_data_export_type``."
+            )
 
         self._export_path = self._export_data(
             export_type=export_type,

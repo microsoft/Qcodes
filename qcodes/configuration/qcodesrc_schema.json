@@ -318,9 +318,10 @@
                     "description": "Should dond functions show a progress bar during the measurement"
                 },
                 "export_type": {
-                    "type": "string",
-                    "default": "",
-                    "description": "Data export type for exporting datasets to disk after a measurement finishes. Does not export if set to empty string (default). Currently supported type(s): netcdf, csv"
+                    "type": ["string", "null"],
+                    "enum": ["netcdf", "csv", null],
+                    "default": null,
+                    "description": "Data export type for exporting datasets to disk after a measurement finishes. Does not export if set to null (default). Currently supported type(s): netcdf, csv"
                 },
                 "export_path": {
                     "type": "string",

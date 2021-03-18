@@ -414,12 +414,10 @@ class DataSaver:
         self.dataset._flush_data_to_database(block=block)
 
     def export_data(self) -> None:
-        """Export data at end of measurement if export_type
-        is specified in "dataset" config
+        """Export data at end of measurement as per export_type
+        specification in "dataset" section of qcodes config
         """
-        export_type = get_data_export_type()
-        if export_type is not None:
-            self.dataset.export(export_type=export_type)
+        self.dataset.export()
 
     @property
     def run_id(self) -> int:

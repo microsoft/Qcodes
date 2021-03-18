@@ -64,9 +64,6 @@ def get_data_export_type(
     Args:
         export_type: Export type string format to convert to DataExportType.
 
-    Raises:
-        ValueError: If the type is not supported, this raises an error
-
     Returns:
         Data export type
     """
