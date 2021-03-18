@@ -707,7 +707,7 @@ class SR830(VisaInstrument):
             steps before reaching the limit in the function might be more
             or less than this maximum.
         """
-        def autorange_once():
+        def autorange_once() -> bool:
             r = self.R()
             sens = self.sensitivity()
             if r > 0.9 * sens:
