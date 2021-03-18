@@ -68,7 +68,7 @@
         "write_period": 5.0,
         "dond_plot": false,
         "dond_show_progress": false,
-        "export_type": "",
+        "export_type": null,
         "export_prefix": "qcodes_",
         "export_path": "~"
     },
