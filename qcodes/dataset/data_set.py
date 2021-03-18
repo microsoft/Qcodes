@@ -34,7 +34,6 @@ from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
 from qcodes.dataset.export_config import (
     DataExportType,
-    get_data_export_automatic,
     get_data_export_path,
     get_data_export_prefix,
     get_data_export_type,
@@ -87,6 +86,7 @@ from qcodes.dataset.sqlite.query_helpers import (
 )
 from qcodes.instrument.parameter import _BaseParameter
 from qcodes.utils.deprecate import deprecate
+from qcodes.utils.helpers import NumpyJSONEncoder
 
 from .data_set_cache import DataSetCache
 from .descriptions.versioning import serialization as serial
@@ -104,6 +104,8 @@ from .subscriber import _Subscriber
 if TYPE_CHECKING:
     import pandas as pd
     import xarray as xr
+
+    from qcodes.station import Station
 
 
 log = logging.getLogger(__name__)
@@ -321,6 +323,26 @@ class DataSet(Sized):
                 data_write_queue=queue,
                 active_datasets=set())
             _WRITERS[self.path_to_db] = ws
+
+    def prepare(self,
+                station: "Optional[Station]",
+                interdeps: InterDependencies_,
+                write_in_background: bool,
+                shapes: Shapes = None,
+                parent_datasets: Sequence[Dict[Any, Any]] = ()) -> None:
+        if station:
+            self.add_snapshot(json.dumps({'station': station.snapshot()},
+                              cls=NumpyJSONEncoder))
+
+        if interdeps == InterDependencies_():
+            raise RuntimeError("No parameters supplied")
+        else:
+            self.set_interdependencies(interdeps,
+                                       shapes)
+        links = [Link(head=self.guid, **pdict)
+                 for pdict in parent_datasets]
+        self.parent_dataset_links = links
+        self.mark_started(start_bg_writer=write_in_background)
 
     @property
     def run_id(self) -> int:

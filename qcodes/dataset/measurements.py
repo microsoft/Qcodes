@@ -16,6 +16,7 @@ from numbers import Number
 from time import perf_counter
 from types import TracebackType
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -45,6 +46,10 @@ from qcodes.dataset.data_set import (
     setpoints_type,
     values_type,
 )
+from qcodes.dataset.data_set_protocol import (
+    DataSetProtocol,
+    DataSetWithSubscriberProtocol,
+)
 from qcodes.dataset.descriptions.dependencies import (
     DependencyError,
     InferenceError,
@@ -65,6 +70,7 @@ from qcodes.instrument.parameter import (
     _BaseParameter,
     expand_setpoints_helper,
 )
+from qcodes.station import Station
 from qcodes.utils.delaykeyboardinterrupt import DelayedKeyboardInterrupt
 from qcodes.utils.helpers import NumpyJSONEncoder
 
@@ -89,7 +95,7 @@ class DataSaver:
 
     default_callback: Optional[Dict[Any, Any]] = None
 
-    def __init__(self, dataset: DataSet,
+    def __init__(self, dataset: DataSetProtocol,
                  write_period: float,
                  interdeps: InterDependencies_) -> None:
         self._dataset = dataset
@@ -103,16 +109,19 @@ class DataSaver:
             min_count = DataSaver.default_callback[
                 'run_tables_subscription_min_count']
             snapshot = dataset.get_metadata('snapshot')
-            self._dataset.subscribe(callback,
-                                    min_wait=min_wait,
-                                    min_count=min_count,
-                                    state={},
-                                    callback_kwargs={'run_id':
-                                                     self._dataset.run_id,
-                                                     'snapshot': snapshot})
-        default_subscribers = qc.config.subscription.default_subscribers
-        for subscriber in default_subscribers:
-            self._dataset.subscribe_from_config(subscriber)
+            if isinstance(self._dataset, DataSetWithSubscriberProtocol):
+                self._dataset.subscribe(callback,
+                                        min_wait=min_wait,
+                                        min_count=min_count,
+                                        state={},
+                                        callback_kwargs={'run_id':
+                                                         self._dataset.run_id,
+                                                         'snapshot': snapshot})
+
+        if isinstance(self._dataset, DataSetWithSubscriberProtocol):
+            default_subscribers = qc.config.subscription.default_subscribers
+            for subscriber in default_subscribers:
+                self._dataset.subscribe_from_config(subscriber)
 
         self._interdeps = interdeps
         self.write_period = float(write_period)
@@ -454,7 +463,7 @@ class DataSaver:
         return self._dataset.number_of_results
 
     @property
-    def dataset(self) -> DataSet:
+    def dataset(self) -> DataSetProtocol:
         return self._dataset
 
 
@@ -485,8 +494,10 @@ class Runner:
         write_in_background: bool = False,
         shapes: Optional[Shapes] = None,
         in_memory_cache: bool = True,
+        dataset_class: Type[DataSetProtocol] = DataSet
     ) -> None:
 
+        self._dataset_class = dataset_class
         self.write_period = self._calculate_write_period(write_in_background,
                                                          write_period)
 
@@ -506,6 +517,7 @@ class Runner:
         self._extra_log_info = extra_log_info
         self._write_in_background = write_in_background
         self._in_memory_cache = in_memory_cache
+        self.ds: DataSetProtocol
 
     @staticmethod
     def _calculate_write_period(
@@ -534,13 +546,13 @@ class Runner:
 
         # next set up the "datasaver"
         if self.experiment is not None:
-            self.ds = DataSet(
+            self.ds = self._dataset_class(
                 name=self.name, exp_id=self.experiment.exp_id,
-                conn=self.experiment.conn,
+                conn=self.experiment.conn,  # todo this is sqlite specific
                 in_memory_cache=self._in_memory_cache
             )
         else:
-            self.ds = DataSet(
+            self.ds = self._dataset_class(
                 name=self.name,
                 in_memory_cache=self._in_memory_cache
             )
@@ -551,28 +563,22 @@ class Runner:
         else:
             station = self.station
 
-        if station:
-            self.ds.add_snapshot(json.dumps({'station': station.snapshot()},
-                                            cls=NumpyJSONEncoder))
-
-        if self._interdependencies == InterDependencies_():
-            raise RuntimeError("No parameters supplied")
-        else:
-            self.ds.set_interdependencies(self._interdependencies,
-                                          self._shapes)
-
-        links = [Link(head=self.ds.guid, **pdict)
-                 for pdict in self._parent_datasets]
-        self.ds.parent_dataset_links = links
-        self.ds.mark_started(start_bg_writer=self._write_in_background)
+        self.ds.prepare(
+            station=station,
+            interdeps=self._interdependencies,
+            write_in_background=self._write_in_background,
+            shapes=self._shapes,
+            parent_datasets=self._parent_datasets
+        )
 
         # register all subscribers
-        for (callble, state) in self.subscribers:
-            # We register with minimal waiting time.
-            # That should make all subscribers be called when data is flushed
-            # to the database
-            log.debug(f'Subscribing callable {callble} with state {state}')
-            self.ds.subscribe(callble, min_wait=0, min_count=1, state=state)
+        if isinstance(self.ds, DataSetWithSubscriberProtocol):
+            for (callble, state) in self.subscribers:
+                # We register with minimal waiting time.
+                # That should make all subscribers be called when data is flushed
+                # to the database
+                log.debug(f'Subscribing callable {callble} with state {state}')
+                self.ds.subscribe(callble, min_wait=0, min_count=1, state=state)
 
         print(f'Starting experimental run with id: {self.ds.run_id}.'
               f' {self._extra_log_info}')
@@ -624,7 +630,8 @@ class Runner:
                 self.datasaver.export_data()
             log.info(f'Finished measurement with guid: {self.ds.guid}. '
                      f'{self._extra_log_info}')
-            self.ds.unsubscribe_all()
+            if isinstance(self.ds, DataSetWithSubscriberProtocol):
+                self.ds.unsubscribe_all()
 
 
 T = TypeVar('T', bound='Measurement')
