@@ -22,11 +22,11 @@ ipython-genutils==0.2.0
 ipywidgets==7.6.3
 jedi==0.17.2
 Jinja2==2.11.3
-jsonpointer==2.0
+jsonpointer==2.1
 jsonschema==3.2.0
 jupyter==1.0.0
-jupyter-client==6.1.11
-jupyter-console==6.2.0
+jupyter-client==6.1.12
+jupyter-console==6.3.0
 jupyter-core==4.7.1
 jupyterlab-pygments==0.1.2
 MarkupSafe==1.1.1
@@ -44,7 +44,7 @@ pandocfilters==1.4.3
 parso==0.7.0
 pickleshare==0.7.5
 prometheus-client==0.9.0
-prompt-toolkit==3.0.16
+prompt-toolkit==3.0.17
 pycparser==2.20
 Pygments==2.8.1
 pyparsing==2.4.7
@@ -57,7 +57,7 @@ pywin32==300; sys_platform == 'win32'
 pywinpty==0.5.7; sys_platform == 'win32'
 PyYAML==5.4.1
 pyzmq==22.0.3
-qtconsole==5.0.2
+qtconsole==5.0.3
 QtPy==1.9.0
 requests==2.25.1
 scipy==1.6.1
@@ -74,12 +74,12 @@ sphinxcontrib-jsmath==1.0.1
 sphinxcontrib-qthelp==1.0.3
 sphinxcontrib-serializinghtml==1.1.4
 stringparser==0.5
-terminado==0.9.2
+terminado==0.9.3
 testpath==0.4.4
 tornado==6.1
 traitlets==5.0.5
 typing-extensions==3.7.4.3
-urllib3==1.26.3
+urllib3==1.26.4
 wcwidth==0.2.5
 webencodings==0.5.1
 widgetsnbextension==3.5.1
