@@ -2,7 +2,8 @@
 This file holds the QCoDeS driver for the Galil DMC-41x3 motor controllers,
 colloquially known as the "stepper motors".
 """
-from typing import Any, Dict, Optional, List
+from typing import Any, Dict, Optional, List, Tuple
+import numpy as np
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.channel import InstrumentChannel
@@ -546,130 +547,181 @@ class DMC4133Controller(GalilMotionController):
         self.write("BG")
 
 
-class ArmHeadPosition:
-
-    def __init__(self, x: int, y: int, z: int, *args) -> None:
-        self._x = x
-        self._y = y
-        self._z = z
-
-    def get_x(self) -> int:
-        return self._x
-
-    def set_x(self, val: int) -> None:
-        self._x = val
-
-    def get_y(self) -> int:
-        return self._y
-
-    def set_y(self, val: int) -> None:
-        self._y = val
-
-    def get_z(self) -> int:
-        return self._z
-
-    def set_z(self, val: int) -> None:
-        self._z = val
-
-
 class Arm:
 
     def __init__(self,
                  controller: DMC4133Controller,
-                 chip: Dict[str, Union[int, float]]) -> None:
+                 chip: Dict[str, Union[int, float]],
+                 distance: int) -> None:
 
-        for key in ["length", "width", "rows", "num_terminals_in_row",
-                   "terminal_length", "terminal_width",
-                   "inter_terminal_distance_for_adjacent_rows"]:
+        self._chip = self._validate_chip_info(chip)
+        self._distance = distance
+        self.controller = controller
+        self._arm_head_status: Optional[str] = None
+        self._end_pos: Tuple[int, int, int]
+
+    @staticmethod
+    def _validate_chip_info(self,
+                            chip: Dict[str, Union[int, float]]
+                            ) -> Dict[str, Union[int, float]]:
+        """
+        Assumption here is that, chip design has parallel rows of
+        terminals
+                    ---------------------
+                    | ----------------- |
+                    | ----------------- |
+                    | ----------------- |
+                    | ----------------- |
+                    ---------------------
+        """
+
+        for key in ["rows", "num_terminals_in_row", "terminal_length",
+                    "terminal_width",
+                    "inter_terminal_distance_for_adjacent_rows"]:
             if key not in list(chip.keys()):
                 raise RuntimeError(f"Chip {key} data not present in the chip "
                                    f"dictionary. Chip dictionary should have "
-                                   f"following entries: length, width, rows, "
+                                   f"following entries: rows, "
                                    f"num_terminals_in_row, terminal_length, "
                                    f"terminal_width, "
                                    f"inter_terminal_distance_for_adjacent_rows")
 
-        self._chip_length: float = chip["length"]
-        self._chip_width: float = chip["width"]
-        self._rows: int = chip["rows"]
-        self._num_terminals_in_row: int = chip["num_terminals_in_row"]
-        self._terminal_length: float = chip["terminal_length"]
-        self._terminal_width: float = chip["terminal_width"]
-        self._inter_terminal_distance_for_adjacent_rows: float = chip[
-            "inter_terminal_distance_for_adjacent_rows"
-        ]
+        return chip
 
-        self.controller = controller
-        self._arm_head_status = None
+    def _move(self,
+              plane: str,
+              rel_first_pos: int,
+              rel_second_pos: int) -> None:
 
-    def _pick_arm_head_up(self) -> None:
+        self.controller.vector_mode.vector_mode_plane(plane)
+        self.controller.vector_mode.vec_pos_first_coordinate(rel_first_pos)
+        self.controller.vector_mode.vec_pos_second_coordinate(rel_second_pos)
+        self.controller.vector_mode.vector_acceleration(100000)
+        self.controller.vector_mode.vector_speed(2000)
+        self.controller.vector_mode.vector_deceleration(100000)
+        self.controller.vector_mode.begin_seq()
+        self.controller.wait(5000)
+        self.controller.vector_mode.vector_seq_end()
+
+    def set_current_position_as_begin(self) -> None:
+
+        assert self._arm_head_status == "down"
+        self.controller.define_position_as_origin()
+
+    def set_current_position_as_end(self) -> None:
+
+        assert self._arm_head_status == "down"
+        pos = self.controller.absolute_position()
+        self._end_pos = (pos["A"], pos["B"], pos["C"])
+
+    def move_arm_head_to_begin(self) -> None:
         """
-        picks up arm head if down
+        Moves arm head from current position to begin position
         """
-        if self._arm_head_status == "up":
-            self.log.info("Arm head is already up.")
-            return
 
-        # implement logic to move in up direction
+        assert self._arm_head_status == "down"
+        self.lift_arm_head_up(self._distance)
+        assert self._arm_head_status == "up"
+        self.move_arm_towards_begin()
+        assert self._arm_head_status == "up"
+        self.align_x_axis()
+        assert self._arm_head_status == "up"
+        self.put_arm_head_down()
+        assert self._arm_head_status == "down"
+
+    def lift_arm_head_up(self, d: int) -> None:
+
+        curr_pos = self.controller.absolute_position()
+        y = curr_pos["B"]
+        z = curr_pos["C"]
+
+        m = -1*(y/z)
+        denominator = np.sqrt(1+pow(m, 2))
+
+        rel_y1 = -1*d/denominator
+        rel_z1 = -1*m*d/denominator
+
+        y1 = y + rel_y1
+        z1 = z + rel_z1
+
+        self._move("BC", rel_y1, rel_z1)
+
+        curr_pos = self.controller.absolute_position()
+        assert curr_pos["B"] == y1
+        assert curr_pos["C"] == z1
 
         self._arm_head_status = "up"
 
-    def _move_arm_head(self) -> None:
+    def move_arm_towards_begin(self) -> None:
+
+        y = self._end_pos[1]
+        z = self._end_pos[2]
+
+        m = z / y
+        denominator = np.sqrt(1 + pow(m, 2))
+        d = np.sqrt(pow(y, 2) + pow(z, 2))
+
+        rel_y2 = -1 * d / denominator
+        rel_z2 = -1 * m * d / denominator
+
+        curr_pos = self.controller.absolute_position()
+        y1 = curr_pos["B"]
+        z1 = curr_pos["C"]
+
+        y2 = y1 + rel_y2
+        z2 = z1 + rel_z2
+
+        self._move("BC", rel_y2, rel_z2)
+
+        curr_pos = self.controller.absolute_position()
+        assert curr_pos["B"] == y2
+        assert curr_pos["C"] == z2
+
+        self._arm_head_status = "up"
+
+    def align_x_axis(self) -> None:
+
+        curr_pos = self.controller.absolute_position()
+        x2 = curr_pos["A"]
+        y2 = curr_pos["B"]
+        z2 = curr_pos["C"]
+
+        rel_x3 = -1*x2
+        rel_y3 = 0
+
+        self._move("AB", rel_x3, rel_y3)
+
+        curr_pos = self.controller.absolute_position()
+        assert curr_pos["A"] == 0
+        assert curr_pos["B"] == y2
+        assert curr_pos["C"] == z2
+
+        self._arm_head_status = "up"
+
+    def put_arm_head_down(self) -> None:
+
+        curr_pos = self.controller.absolute_position()
+        y3 = curr_pos["B"]
+        z3 = curr_pos["C"]
+
+        rel_begin_y = -1*y3
+        rel_begin_z = -1*z3
+
+        self._move("BC", rel_begin_y, rel_begin_z)
+
+        curr_pos = self.controller.absolute_position()
+        assert curr_pos["A"] == 0
+        assert curr_pos["B"] == 0
+        assert curr_pos["C"] == 0
+
+        self._arm_head_status = "down"
+
+    def move_arm_head_to_next_row(self) -> None:
         """
-        move from current position to next position
+        Moves arm head from current position to next row position
         """
-        x1, y1, z1 = (self._current_position.get_x(),
-                      self._current_position.get_y(),
-                      self._current_position.get_z())
-
-        x2, y2, z2 = (self._next_position.get_x(),
-                      self._next_position.get_y(),
-                      self._next_position.get_z())
-
-        if x1 == x2 and y1 == y2 and z1 == z2:
-            self.log.info("Arm head already at the required location.")
-            return
-
+        assert self._arm_head_status == "down"
+        self.lift_arm_head_up(self._distance)
         assert self._arm_head_status == "up"
 
-        # implement logic to move
-
-    def _put_arm_head_down(self) -> None:
-        """
-        puts arm head down if up
-        """
-        if self._arm_head_status == "down":
-            self.log.info("Arm head is already down.")
-            return
-
-        # implement logic to move in down direction
-
-        self._arm_head_status = "down"
-
-    def move_to_next_row(self) -> None:
-        """
-        moves motors to next row of pads
-        """
-        self._pick_arm_head_up()
-        self._move_arm_head()
-        self._put_arm_head_down()
-
-    def set_begin_position(self) -> None:
-        """
-        sets first row of pads in chip as begin position
-        """
-        self.controller.define_position_as_origin()
-        self._begin_position = (0, 0, 0)
-        self._current_position = ArmHeadPosition(0, 0, 0)
-        self._arm_head_status = "down"
-
-    def set_end_position(self) -> None:
-        """
-        sets last row of pads in chip as end position
-        """
-        pos_dict = self.controller.absolute_position()
-        self._end_position = (pos_dict["A"], pos_dict["B"], pos_dict["C"])
-        self._current_position.set_x(pos_dict["A"])
-        self._current_position.set_y(pos_dict["B"])
-        self._current_position.set_z(pos_dict["C"])
-        self._arm_head_status = "down"
+        # logic to find next row coordinates and move
