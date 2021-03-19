@@ -1372,7 +1372,7 @@ class DataSet(Sized):
             else:
                 if not single_file_name.lower().endswith(('.dat', '.csv', '.txt')):
                     single_file_name = f'{single_file_name}.dat'
-                dst = os.path.join(path, str(single_file_name))
+                dst = os.path.join(path, single_file_name)
                 df_to_save = pd.concat(dfs_to_save, axis=1)
                 df_to_save.to_csv(path_or_buf=dst, header=False, sep='\t')
 
