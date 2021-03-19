@@ -1,4 +1,4 @@
-from typing import Any, Union, Dict, Optional
+from typing import Any, Dict, Optional
 import numpy as np
 
 from qcodes.instrument.visa import VisaInstrument
@@ -8,7 +8,7 @@ from qcodes.utils import validators as vals
 
 class SP983A(VisaInstrument):
     """
-    A driver for SP983C Remote Instrument (SP983A).
+    A driver for Basel Preamp's (SP983C) Remote Instrument - Model SP983A.
 
     Args:
         name
@@ -43,7 +43,7 @@ class SP983A(VisaInstrument):
             get_parser=self._parse_filter_value,
             set_cmd=self._set_filter,
             vals={30: '30', 100: '100', 300: '300', 1000: '1000', 3000: '3000',
-                  10e3: '10k', 30e3: '30k', 100e3: '100k', 'Full': 'FULL'},
+                  10e3: '10k', 30e3: '30k', 100e3: '100k', 1e6: 'FULL'},
         )
         self.add_parameter(
             "overload_status",
@@ -89,9 +89,9 @@ class SP983A(VisaInstrument):
         return s.split("Filter: ")[1]
 
     @staticmethod
-    def _parse_filter_value(val: str) -> Union[str, float]:
+    def _parse_filter_value(val: str) -> float:
         if val.startswith("F"):
-            return "Full"
+            return float(1e6)
         elif val[-3::] == "kHz":
             return float(val[0:-3]) * 1e3
         elif val[-2::] == "Hz":
