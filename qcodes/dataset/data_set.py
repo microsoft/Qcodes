@@ -340,7 +340,7 @@ class DataSet(Sized):
         self.cache: DataSetCache = DataSetCache(self)
         self._results: List[Dict[str, VALUE]] = []
         self._in_memory_cache = in_memory_cache
-        self._export_path = ""
+        self._export_path: Optional[str] = None
 
         if run_id is not None:
             if not run_exists(self.conn, run_id):
@@ -1722,7 +1722,7 @@ class DataSet(Sized):
                      export_type: DataExportType,
                      path: Optional[str] = None,
                      prefix: Optional[str] = None
-                     ) -> str:
+                     ) -> Optional[str]:
         """Export data to disk with file name {prefix}{run_id}.{ext}.
         Values for the export type, path and prefix can also be set in the qcodes
         "dataset" config.
@@ -1751,7 +1751,7 @@ class DataSet(Sized):
             return self._export_as_csv(path=path, file_name=file_name)
 
         else:
-            return ""
+            return None
 
     def export(self,
                export_type: Optional[Union[DataExportType, str]] = None,
@@ -1785,7 +1785,7 @@ class DataSet(Sized):
         )
 
     @property
-    def export_path(self) -> str:
+    def export_path(self) -> Optional[str]:
         return self._export_path
 
 
