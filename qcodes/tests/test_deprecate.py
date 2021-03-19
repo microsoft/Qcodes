@@ -170,20 +170,6 @@ def test_class_method_raises():
         c.class_method(1)
 
 
-@pytest.mark.xfail(reason="This is not implemented yet.")
-def test_class_method_raises():
-    with assert_deprecated(
-            'The function <static_method> is deprecated, because '
-            'this is a test.'):
-        C.class_method(1)
-    with pytest.warns(expected_warning=QCoDeSDeprecationWarning):
-        c = C('pristine')
-    with assert_deprecated(
-            'The function <static_method> is deprecated, because '
-            'this is a test.'):
-        c.class_method(1)
-
-
 def test_property_uninhibited():
     with pytest.warns(expected_warning=QCoDeSDeprecationWarning):
         c = C('pristine')
