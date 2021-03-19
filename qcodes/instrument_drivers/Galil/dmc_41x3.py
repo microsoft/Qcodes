@@ -561,9 +561,9 @@ class Arm:
         self._end_pos: Tuple[int, int, int]
 
     @staticmethod
-    def _validate_chip_info(self,
-                            chip: Dict[str, Union[int, float]]
-                            ) -> Dict[str, Union[int, float]]:
+    def _validate_chip_info(
+            chip: Dict[str, Union[int, float]]
+    ) -> Dict[str, Union[int, float]]:
         """
         Assumption here is that, chip design has parallel rows of
         terminals
