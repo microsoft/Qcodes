@@ -317,6 +317,11 @@
                     "default": false,
                     "description": "Should dond functions show a progress bar during the measurement"
                 },
+                "export_automatic": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Should the data be exported automatically when a measurement is completed? If this is set 'export_type' must be set to a non null value."
+                },
                 "export_type": {
                     "type": ["string", "null"],
                     "enum": ["netcdf", "csv", null],
