@@ -486,7 +486,7 @@ class SR830(VisaInstrument):
             'r': '3',
             'p': '4',
         'phase': '4',
-           'θ' : '4',
+            'θ': '4',
          'aux1': '5',
          'aux2': '6',
          'aux3': '7',
@@ -697,15 +697,15 @@ class SR830(VisaInstrument):
         else:
             return self._CURR_TO_N[s]
 
-    def autorange(self, max_changes: int=1) -> None:
+    def autorange(self, max_changes: int = 1) -> None:
         """
-        Automatically changes the sensitivity of the instrument according
-        to the R value and defined max_changes.
+        Automatically changes the sensitivity of the instrument according to
+        the R value and defined max_changes.
         Args:
             max_changes: Maximum number of steps allowing the function to
-            automatically change the sensitivity (default is 1). Actual
-            steps before reaching the limit in the function might be more
-            or less than this maximum.
+                automatically change the sensitivity (default is 1). The actual
+                number of steps needed to change to the optimal sensitivity may
+                be more or less than this maximum.
         """
         def autorange_once() -> bool:
             r = self.R()
