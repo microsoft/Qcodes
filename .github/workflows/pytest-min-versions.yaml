@@ -25,7 +25,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       with:
-        fetch-depth: '0'
+        submodules: true
     - name: setup ubuntu-latest xvfb
       uses: ./.github/actions/setup-ubuntu-latest-xvfb
     - name: Set up Python ${{ matrix.python-version }}
@@ -36,10 +36,10 @@ jobs:
       id: prepare-cache-pip
       uses: ./.github/actions/prepare-cache-pip
     - name: pip cache
-      uses: actions/cache@v2
+      uses: actions/cache@v2.1.4
       with:
         path: ${{ steps.prepare-cache-pip.outputs.cache-dir }}
-        key: ${{ runner.os }}-${{ matrix.python-version }}-pip-${{ hashFiles('**/min-requirements.txt') }}-${{ hashFiles('**/setup.py') }}
+        key: ${{ runner.os }}-${{ matrix.python-version }}-pip-${{ hashFiles('**/min-requirements.txt') }}-${{ hashFiles('**/setup.cfg') }}
         restore-keys: |
           ${{ runner.os }}-${{ matrix.python-version }}-pip-
     - name: generate min_requirements.txt
@@ -49,10 +49,9 @@ jobs:
     - name: install min_requirements.txt
       run: |
         pip install -r min_requirements.txt
-    - name: generate test dbs
-      uses: ./.github/actions/generate-test-dbs
     - name: install qcodes
-      run: pip install .
+      run: |
+        pip install .
     - name: Run tests
       run: |
         pytest --hypothesis-profile ci qcodes
