@@ -41,7 +41,7 @@ class RawTrace(ArrayParameter):
                          )
         self._channel = channel
 
-    def prepare_curvedata(self) -> None:
+    def prepare_curvedata(self, acquire_mode: str = 'RTIMe') -> None:
         """
         Prepare the scope for returning curve data
         """
@@ -72,6 +72,11 @@ class RawTrace(ArrayParameter):
         assert isinstance(root_instrument, Infiniium)
         root_instrument.trace_ready = True
 
+        # set up the instrument
+        # ---------------------------------------------------------------------
+        # realtime mode: only one trigger is used
+        instr._parent.acquire_mode(acquire_mode)
+
     def get_raw(self) -> ParamRawDataType:
         # when get is called the setpoints have to be known already
         # (saving data issue). Therefor create additional prepare function that
@@ -94,8 +99,6 @@ class RawTrace(ArrayParameter):
 
         # get intrument state
         state = instr.ask(':RSTate?')
-        # realtime mode: only one trigger is used
-        instr._parent.acquire_mode('RTIMe')
 
         # acquire the data
         # ---------------------------------------------------------------------
