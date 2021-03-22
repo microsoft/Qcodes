@@ -67,10 +67,6 @@ jobs:
     - name: install docs_requirements.txt
       run: |
         pip install -r docs_requirements.txt
-        pip install git+https://github.com/jenshnielsen/sphinx-jsonschema.git
-    # as a workaround for lack of escaping in sphinx json schema we install a
-    # branch with a fix for now. Revert once https://github.com/lnoor/sphinx-jsonschema/pull/57
-    # or another solution is merged
     - name: install qcodes
       run: pip install .
     - name: Build docs on linux
