@@ -241,8 +241,6 @@ class _BaseParameter(Metadatable):
 
         metadata: extra information to include with the
             JSON snapshot of the parameter
-
-        unit: The unit of measure. Use ``''`` for unitless.
     """
 
     def __init__(self, name: str,
@@ -261,7 +259,6 @@ class _BaseParameter(Metadatable):
                  snapshot_exclude: bool = False,
                  max_val_age: Optional[float] = None,
                  vals: Optional[Validator[Any]] = None,
-                 unit: Optional[str] = None
                  ) -> None:
         super().__init__(metadata)
         if not str(name).isidentifier():
@@ -349,9 +346,6 @@ class _BaseParameter(Metadatable):
         # intended to be changed in a subclass if you want the subclass
         # to perform a validation on get
         self._validate_on_get = False
-
-        #: The unit of measure. Use ``''`` for unitless.
-        self.unit = unit if unit is not None else ''
 
     @property
     def raw_value(self) -> ParamRawDataType:
@@ -941,24 +935,23 @@ class _BaseParameter(Metadatable):
 
 class AbstractParameter(_BaseParameter):
     """
-    A trivial subclass of `_BaseParameter`, essentially serving as
-    an alias for the latter. Using the `AbstractParameter`
-    alias will produce more readable code in situations where using
-    this class is meant to define an abstract interface.
-
-    An abstract interface is used to create a set of instrument drivers
-    which all have certain parameters. This can be done by creating a
-    base class that adds an ``AbstractParameter``. Subclasses of this
-    instrument base class can then add parameters of the same name and
-    unit.
+    All parameters with a `unit` attribute inherit from this
+    base class. An abstract parameter can also be used to define
+    an instrument interface such that sub classes of this instrument
+    are all guaranteed to possess these parameters. E.g. that all
+    voltage sources have a `voltage` parameter with unit `V`.
 
     Note that when adding an ``AbstractParameter`` in a base class
     which has a unit, the units added in the subclasses must match the
     one in the base class.
     """
+    def __init__(self, *args, unit: Optional[str] = None, **kwargs):
+        super().__init__(*args, **kwargs)
+        #: The unit of measure. Use ``''`` for unitless.
+        self.unit = unit if unit is not None else ''
 
 
-class Parameter(_BaseParameter):
+class Parameter(AbstractParameter):
     """
     A parameter represents a single degree of freedom. Most often,
     this is the standard parameter for Instruments, though it can also be
@@ -1565,7 +1558,7 @@ class DelegateParameter(Parameter):
         return snapshot
 
 
-class ArrayParameter(_BaseParameter):
+class ArrayParameter(AbstractParameter):
     """
     A gettable parameter that returns an array of values.
     Not necessarily part of an instrument.
