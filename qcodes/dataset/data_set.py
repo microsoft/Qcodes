@@ -1765,7 +1765,7 @@ class DataSet(Sized):
             export_type: Data export type, e.g. "netcdf" or ``DataExportType.NETCDF``,
                 defaults to a value set in qcodes config
             path: Export path, defaults to value set in config
-            prefix: File prefix, e.g. "qcodes_", defaults to value set in config.
+            prefix: File prefix, e.g. ``qcodes_``, defaults to value set in config.
 
         Raises:
             ValueError: If the export data type is not specified, raise an error
