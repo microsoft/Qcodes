@@ -10,6 +10,7 @@ _log = logging.getLogger(__name__)
 
 
 DATASET_CONFIG_SECTION = "dataset"
+EXPORT_AUTOMATIC = "export_automatic"
 EXPORT_TYPE = "export_type"
 EXPORT_PATH = "export_path"
 EXPORT_PREFIX = "export_prefix"
@@ -53,11 +54,11 @@ def set_data_export_path(export_path: str) -> None:
     if not exists(export_path):
         raise ValueError(f"Cannot set export path to '{export_path}' \
         because it does not exist.")
-    config[DATASET_CONFIG_SECTION][EXPORT_PATH] = export_path
+    config[DATASET_CONFIG_SECTION][EXPORT_AUTOMATIC] = export_path
 
 
 def get_data_export_type(
-    export_type: Optional[Union[DataExportType, str]] = None) -> Union[DataExportType, None]:
+    export_type: Optional[Union[DataExportType, str]] = None) -> Optional[DataExportType]:
     """Get the file type for exporting data to disk at the end of
     a measurement from config
 
@@ -76,6 +77,13 @@ def get_data_export_type(
         if hasattr(DataExportType, export_type.upper()):
             return getattr(DataExportType, export_type.upper())
     return None
+
+
+def get_data_export_automatic() -> bool:
+    """Should the data be exported automatically?"""
+    # If export_type is None, get value from config
+    export_automatic = config[DATASET_CONFIG_SECTION][EXPORT_AUTOMATIC]
+    return export_automatic
 
 
 def get_data_export_path() -> str:

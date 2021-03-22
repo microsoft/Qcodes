@@ -50,7 +50,7 @@ from qcodes.dataset.sqlite.query_helpers import (VALUE, VALUES,
                                                  select_one_where)
 from qcodes.instrument.parameter import _BaseParameter
 from qcodes.utils.deprecate import deprecate
-from qcodes.dataset.export_config import DataExportType, get_data_export_type, get_data_export_path, get_data_export_prefix
+from qcodes.dataset.export_config import DataExportType, get_data_export_type, get_data_export_path, get_data_export_prefix, get_data_export_automatic
 
 from .data_set_cache import DataSetCache
 from .descriptions.versioning import serialization as serial
@@ -1775,7 +1775,8 @@ class DataSet(Sized):
         if export_type is None:
             raise ValueError(
                 "No data export type specified. Please set the export data type "
-                "by using ``qcodes.dataset.export_config.set_data_export_type``."
+                "by using ``qcodes.dataset.export_config.set_data_export_type`` or "
+                "give an explicit export_type when calling ``dataset.export`` manually."
             )
 
         self._export_path = self._export_data(

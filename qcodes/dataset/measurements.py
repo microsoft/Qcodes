@@ -40,7 +40,7 @@ from qcodes.instrument.parameter import (ArrayParameter, MultiParameter,
                                          expand_setpoints_helper)
 from qcodes.utils.delaykeyboardinterrupt import DelayedKeyboardInterrupt
 from qcodes.utils.helpers import NumpyJSONEncoder
-from qcodes.dataset.export_config import get_data_export_type
+from qcodes.dataset.export_config import get_data_export_automatic
 
 log = logging.getLogger(__name__)
 
@@ -417,7 +417,8 @@ class DataSaver:
         """Export data at end of measurement as per export_type
         specification in "dataset" section of qcodes config
         """
-        self.dataset.export()
+        if get_data_export_automatic():
+            self.dataset.export()
 
     @property
     def run_id(self) -> int:

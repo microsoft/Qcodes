@@ -1707,10 +1707,12 @@ def test_datasaver_export(experiment, bg_writing, tmp_path_factory):
     tmp_path = tmp_path_factory.mktemp("export_from_config")
     path = str(tmp_path)
 
-    with patch("qcodes.dataset.measurements.get_data_export_type") as mock_type, \
-    patch("qcodes.dataset.data_set.get_data_export_path") as mock_path:
+    with patch("qcodes.dataset.data_set.get_data_export_type") as mock_type, \
+    patch("qcodes.dataset.data_set.get_data_export_path") as mock_path, \
+    patch("qcodes.dataset.measurements.get_data_export_automatic") as mock_automatic:
         mock_type.return_value = DataExportType.CSV
         mock_path.return_value = path
+        mock_automatic.return_value = True
         with meas.run(write_in_background=bg_writing) as datasaver:
             datasaver.add_result((str(x1), expected['x1']),
                                 (str(x2), expected['x2']),
