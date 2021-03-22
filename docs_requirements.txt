@@ -64,7 +64,7 @@ scipy==1.6.1
 Send2Trash==1.5.0
 six==1.15.0
 snowballstemmer==2.1.0
-Sphinx==3.5.2
+Sphinx==3.5.3
 sphinx-jsonschema==1.16.7
 sphinx-rtd-theme==0.5.1
 sphinxcontrib-applehelp==1.0.2
