@@ -701,6 +701,7 @@ class SR830(VisaInstrument):
         """
         Automatically changes the sensitivity of the instrument according to
         the R value and defined max_changes.
+
         Args:
             max_changes: Maximum number of steps allowing the function to
                 automatically change the sensitivity (default is 1). The actual
