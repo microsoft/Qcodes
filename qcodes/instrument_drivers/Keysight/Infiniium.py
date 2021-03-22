@@ -47,9 +47,9 @@ class RawTrace(ArrayParameter):
 
         Args:
             acquire_mode: This argument sets the `acquire_mode` param on the
-            Infiniium oscilloscope instrument for the measurement. Default
-            value is `RTIMe` which means realtime mode and only one trigger
-            is used.
+                Infiniium oscilloscope instrument for the measurement. Default
+                value is `RTIMe` which means realtime mode and only one trigger
+                is used.
         """
         # To calculate set points, we must have the full preamble
         # For the instrument to return the full preamble, the channel
