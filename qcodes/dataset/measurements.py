@@ -417,8 +417,7 @@ class DataSaver:
         """Export data at end of measurement as per export_type
         specification in "dataset" section of qcodes config
         """
-        if get_data_export_automatic():
-            self.dataset.export()
+        self.dataset.export()
 
     @property
     def run_id(self) -> int:
@@ -568,7 +567,6 @@ class Runner:
                  ) -> None:
         with DelayedKeyboardInterrupt():
             self.datasaver.flush_data_to_database(block=True)
-            self.datasaver.export_data()
 
             # perform the "teardown" events
             for func, args in self.exitactions:
@@ -592,6 +590,8 @@ class Runner:
             # Note that the completion of a dataset entails waiting for the
             # write thread to terminate (iff the write thread has been started)
             self.ds.mark_completed()
+            if get_data_export_automatic():
+                self.datasaver.export_data()
             log.info(f'Finished measurement with guid: {self.ds.guid}. '
                      f'{self._extra_log_info}')
             self.ds.unsubscribe_all()
