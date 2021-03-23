@@ -65,7 +65,10 @@ Send2Trash==1.5.0
 six==1.15.0
 snowballstemmer==2.1.0
 Sphinx==3.5.3
-sphinx-jsonschema==1.16.7
+git+https://github.com/jenshnielsen/sphinx-jsonschema.git
+# as a workaround for lack of escaping in sphinx json schema we install a
+# branch with a fix for now. Revert once https://github.com/lnoor/sphinx-jsonschema/pull/57
+# or another solution is merged
 sphinx-rtd-theme==0.5.1
 sphinxcontrib-applehelp==1.0.2
 sphinxcontrib-devhelp==1.0.2
