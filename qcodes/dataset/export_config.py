@@ -81,7 +81,6 @@ def get_data_export_type(
 
 def get_data_export_automatic() -> bool:
     """Should the data be exported automatically?"""
-    # If export_type is None, get value from config
     export_automatic = config[DATASET_CONFIG_SECTION][EXPORT_AUTOMATIC]
     return export_automatic
 
