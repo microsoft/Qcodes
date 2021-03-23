@@ -36,7 +36,7 @@ nbconvert==6.0.7
 nbformat==5.1.2
 nbsphinx==0.8.2
 nest-asyncio==1.5.1
-notebook==6.2.0
+notebook==6.3.0
 numpy==1.20.1
 packaging==20.9
 pandas==1.2.3
@@ -44,7 +44,7 @@ pandocfilters==1.4.3
 parso==0.7.0
 pickleshare==0.7.5
 prometheus-client==0.9.0
-prompt-toolkit==3.0.17
+prompt-toolkit==3.0.18
 pycparser==2.20
 Pygments==2.8.1
 pyparsing==2.4.7
