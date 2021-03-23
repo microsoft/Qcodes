@@ -44,7 +44,7 @@ pandocfilters==1.4.3
 parso==0.7.0
 pickleshare==0.7.5
 prometheus-client==0.9.0
-prompt-toolkit==3.0.17
+prompt-toolkit==3.0.18
 pycparser==2.20
 Pygments==2.8.1
 pyparsing==2.4.7
