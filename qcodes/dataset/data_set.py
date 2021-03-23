@@ -6,7 +6,6 @@ import warnings
 import os
 import time
 import uuid
-import enum
 
 from dataclasses import dataclass
 from queue import Empty, Queue

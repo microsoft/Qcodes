@@ -1,4 +1,3 @@
-import itertools
 import os
 import random
 import re
@@ -11,7 +10,6 @@ import numpy as np
 import xarray as xr
 import pytest
 from hypothesis import HealthCheck, given, settings
-from contextlib import contextmanager
 
 import qcodes as qc
 from qcodes import (experiments, load_by_counter, load_by_id, new_data_set,
@@ -26,7 +24,6 @@ from qcodes.dataset.sqlite.database import get_DB_location
 from qcodes.dataset.sqlite.queries import _unicode_categories
 from qcodes.tests.common import error_caused_by
 from qcodes.tests.dataset.test_links import generate_some_links
-from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 from qcodes.utils.types import numpy_ints, numpy_floats
 from qcodes.dataset.export_config import (
     set_data_export_path,
@@ -1272,8 +1269,8 @@ def limit_data_to_start_end(start, end, input_names, expected_names,
 
 
 @pytest.mark.usefixtures('experiment')
-@pytest.fixture()
-def mock_dataset():
+@pytest.fixture(name="mock_dataset")
+def _make_mock_dataset():
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", 'numeric')
     yparam = ParamSpecBase("y", 'numeric')
