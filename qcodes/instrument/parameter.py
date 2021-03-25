@@ -945,7 +945,7 @@ class AbstractParameter(_BaseParameter):
     which has a unit, the units added in the subclasses must match the
     one in the base class.
     """
-    def __init__(self, *args, unit: Optional[str] = None, **kwargs):
+    def __init__(self, *args: Any, unit: Optional[str] = None, **kwargs: Any):
         super().__init__(*args, **kwargs)
         #: The unit of measure. Use ``''`` for unitless.
         self.unit = unit if unit is not None else ''
