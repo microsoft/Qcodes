@@ -101,7 +101,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         existing_parameter = self.parameters.get(name, None)
         if existing_parameter:
 
-            existing_unit = existing_parameter.unit
+            existing_unit = getattr(existing_parameter, "unit", None)
             new_unit = kwargs.get("unit", None)
 
             if existing_unit and existing_unit != new_unit:
