@@ -1246,6 +1246,7 @@ class DataSet(Sized):
                 paramspec_dict = self.paramspecs[str(dim)]._to_dict()
                 xrdataset.coords[str(dim)].attrs.update(paramspec_dict.items())
 
+        xrdataset.attrs["name"] = self.name
         xrdataset.attrs["sample_name"] = self.sample_name
         xrdataset.attrs["exp_name"] = self.exp_name
         xrdataset.attrs["guid"] = self.guid
