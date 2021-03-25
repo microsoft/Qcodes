@@ -1350,6 +1350,8 @@ class DataSet(Sized):
             single_file: If true, merges the data of same length of multiple
                          dependent parameters to a single file.
             single_file_name: User defined name for the data to be concatenated.
+                              If no extension is passed (.dat, .csv or .txt),
+                              .dat is automatically appended.
 
         Raises:
             DataLengthException: If the data of multiple parameters have not same
