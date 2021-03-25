@@ -6,6 +6,7 @@ import warnings
 import os
 import time
 import uuid
+
 from dataclasses import dataclass
 from queue import Empty, Queue
 from threading import Thread
@@ -14,6 +15,7 @@ from typing import (Hashable, Iterator, TYPE_CHECKING, Any, Callable, Dict,
                     Sized, Tuple, Union, cast)
 
 import numpy
+import pandas as pd
 
 import qcodes
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
@@ -47,6 +49,7 @@ from qcodes.dataset.sqlite.query_helpers import (VALUE, VALUES,
                                                  select_one_where)
 from qcodes.instrument.parameter import _BaseParameter
 from qcodes.utils.deprecate import deprecate
+from qcodes.dataset.export_config import DataExportType, get_data_export_type, get_data_export_path, get_data_export_prefix, get_data_export_automatic
 
 from .data_set_cache import DataSetCache
 from .descriptions.versioning import serialization as serial
@@ -336,6 +339,7 @@ class DataSet(Sized):
         self.cache: DataSetCache = DataSetCache(self)
         self._results: List[Dict[str, VALUE]] = []
         self._in_memory_cache = in_memory_cache
+        self._export_path: Optional[str] = None
 
         if run_id is not None:
             if not run_exists(self.conn, run_id):
@@ -1238,8 +1242,9 @@ class DataSet(Sized):
             cast(Dict[Hashable, xr.DataArray], data_xrdarray_dict))
 
         for dim in xrdataset.dims:
-            paramspec_dict = self.paramspecs[str(dim)]._to_dict()
-            xrdataset.coords[str(dim)].attrs.update(paramspec_dict.items())
+            if "index" != dim:
+                paramspec_dict = self.paramspecs[str(dim)]._to_dict()
+                xrdataset.coords[str(dim)].attrs.update(paramspec_dict.items())
 
         xrdataset.attrs["sample_name"] = self.sample_name
         xrdataset.attrs["exp_name"] = self.exp_name
@@ -1360,11 +1365,13 @@ class DataSet(Sized):
                 raise DataLengthException("You cannot concatenate data " +
                                           "with different length to a " +
                                           "single file.")
-            if single_file_name == None:
+            if single_file_name is None:
                 raise DataPathException("Please provide the desired file name " +
                                         "for the concatenated data.")
             else:
-                dst = os.path.join(path, f'{single_file_name}.dat')
+                if not single_file_name.lower().endswith(('.dat', '.csv', '.txt')):
+                    single_file_name = f'{single_file_name}.dat'
+                dst = os.path.join(path, single_file_name)
                 df_to_save = pd.concat(dfs_to_save, axis=1)
                 df_to_save.to_csv(path_or_buf=dst, header=False, sep='\t')
 
@@ -1692,6 +1699,94 @@ class DataSet(Sized):
         if writer_status.write_in_background and block:
             log.debug(f"Waiting for write queue to empty.")
             writer_status.data_write_queue.join()
+
+    def _export_file_name(self, prefix: str, export_type: DataExportType) -> str:
+        """Get export file name"""
+        extension = export_type.value
+        return f"{prefix}{self.run_id}.{extension}"
+
+    def _export_as_netcdf(self, path: str, file_name: str) -> str:
+        """Export data as netcdf to a given path with file prefix"""
+        file_path = os.path.join(path, file_name)
+        xarr_dataset = self.to_xarray_dataset()
+        xarr_dataset.to_netcdf(path=file_path)
+        return path
+
+    def _export_as_csv(self, path: str, file_name: str) -> str:
+        """Export data as csv to a given path with file prefix"""
+        self.write_data_to_text_file(path=path, single_file=True, single_file_name=file_name)
+        return os.path.join(path, file_name)
+
+    def _export_data(self,
+                     export_type: DataExportType,
+                     path: Optional[str] = None,
+                     prefix: Optional[str] = None
+                     ) -> Optional[str]:
+        """Export data to disk with file name {prefix}{run_id}.{ext}.
+        Values for the export type, path and prefix can also be set in the qcodes
+        "dataset" config.
+
+        Args:
+            export_type: Data export type, e.g. DataExportType.NETCDF
+            path: Export path, defaults to value set in config
+            prefix: File prefix, e.g. "qcodes_", defaults to value set in config.
+
+        Returns:
+            str: Path file was saved to, returns None if no file was saved.
+        """
+        # Set defaults to values in config if the value was not set
+        # (defaults to None)
+        path = path if path is not None else get_data_export_path()
+        prefix = prefix if prefix is not None else get_data_export_prefix()
+
+        if DataExportType.NETCDF == export_type:
+            file_name = self._export_file_name(
+                prefix=prefix, export_type=DataExportType.NETCDF)
+            return self._export_as_netcdf(path=path, file_name=file_name)
+
+        elif DataExportType.CSV == export_type:
+            file_name = self._export_file_name(
+                prefix=prefix, export_type=DataExportType.CSV)
+            return self._export_as_csv(path=path, file_name=file_name)
+
+        else:
+            return None
+
+    def export(self,
+               export_type: Optional[Union[DataExportType, str]] = None,
+               path: Optional[str] = None,
+               prefix: Optional[str] = None) -> None:
+        """Export data to disk with file name {prefix}{run_id}.{ext}.
+        Values for the export type, path and prefix can also be set in the "dataset"
+        section of qcodes config.
+
+        Args:
+            export_type: Data export type, e.g. "netcdf" or ``DataExportType.NETCDF``,
+                defaults to a value set in qcodes config
+            path: Export path, defaults to value set in config
+            prefix: File prefix, e.g. ``qcodes_``, defaults to value set in config.
+
+        Raises:
+            ValueError: If the export data type is not specified, raise an error
+        """
+        export_type = get_data_export_type(export_type)
+
+        if export_type is None:
+            raise ValueError(
+                "No data export type specified. Please set the export data type "
+                "by using ``qcodes.dataset.export_config.set_data_export_type`` or "
+                "give an explicit export_type when calling ``dataset.export`` manually."
+            )
+
+        self._export_path = self._export_data(
+            export_type=export_type,
+            path=path,
+            prefix=prefix
+        )
+
+    @property
+    def export_path(self) -> Optional[str]:
+        return self._export_path
 
 
 # public api
