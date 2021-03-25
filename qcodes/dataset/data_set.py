@@ -1253,7 +1253,7 @@ class DataSet(Sized):
         xrdataset.attrs["run_timestamp"] = self.run_timestamp_raw
         xrdataset.attrs["completed_timestamp"] = self.completed_timestamp_raw
         xrdataset.attrs["parameters"] = self.parameters
-        xrdataset.attrs["run_description"] = self.description
+        xrdataset.attrs["run_description"] = serial.to_json_for_storage(self.description)
         xrdataset.attrs["snapshot"] = self.snapshot
         xrdataset.attrs["captured_run_id"] = self.captured_run_id
         xrdataset.attrs["captured_counter"] = self.captured_counter
