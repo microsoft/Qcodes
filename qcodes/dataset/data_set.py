@@ -1257,7 +1257,7 @@ class DataSet(Sized):
         xrdataset.attrs["captured_run_id"] = self.captured_run_id
         xrdataset.attrs["captured_counter"] = self.captured_counter
 
-        for metadata_tag, metadata in self._metadata.keys():
+        for metadata_tag, metadata in self._metadata.items():
             xrdataset.attrs[metadata_tag] = metadata
 
         return xrdataset
