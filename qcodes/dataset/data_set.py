@@ -1248,6 +1248,7 @@ class DataSet(Sized):
 
         xrdataset.attrs["sample_name"] = self.sample_name
         xrdataset.attrs["exp_name"] = self.exp_name
+        xrdataset.attrs["snapshot"] = json.dumps(self.snapshot)
 
         return xrdataset
 
@@ -1306,11 +1307,17 @@ class DataSet(Sized):
 
         for name, subdict in datadict.items():
             index = self._generate_pandas_index(subdict)
-            xrdarray: xr.DataArray = self._data_to_dataframe(
-                subdict, index).to_xarray()[name]
+            if len(index.unique()) != len(index):
+                for _name in subdict:
+                    xrdarray: xr.DataArray = self._data_to_dataframe(
+                        subdict, index).reset_index().to_xarray()[_name]
+                    data_xrdarray_dict[_name] = xrdarray
+            else:
+                xrdarray: xr.DataArray = self._data_to_dataframe(
+                    subdict, index).to_xarray()[name]
+                data_xrdarray_dict[name] = xrdarray
             paramspec_dict = self.paramspecs[name]._to_dict()
             xrdarray.attrs.update(paramspec_dict.items())
-            data_xrdarray_dict[name] = xrdarray
 
         return data_xrdarray_dict
 
