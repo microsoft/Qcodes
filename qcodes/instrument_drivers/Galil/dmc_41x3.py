@@ -559,6 +559,8 @@ class Arm:
         self.controller = controller
         self._arm_head_status: Optional[str] = None
         self._current_row_num: Optional[int] = None
+        self._row_positions: List[Tuple[int, int, int]] = [(0, 0, 0)]
+        self._positions_vertically_above_rows: List[Tuple[int, int, int]]
         self._end_pos: Tuple[int, int, int]
 
     @staticmethod
@@ -614,6 +616,31 @@ class Arm:
         assert self._arm_head_status == "down"
         pos = self.controller.absolute_position()
         self._end_pos = (pos["A"], pos["B"], pos["C"])
+        self._generate_row_positions()
+        self._generate_positions_vertically_above_rows()
+
+    def _generate_row_positions(self):
+
+        dist_bw_adj_rows = self._chip[
+            "inter_terminal_distance_for_adjacent_rows"
+        ]
+        dist_begin_to_end = np.sqrt(
+            self._end_pos[0]**2 + self._end_pos[1]**2 + self._end_pos[2]**2
+        )
+
+        for i in range(1, self._chip["rows"]):
+            dist_from_begin = i*dist_bw_adj_rows
+
+            x = (dist_from_begin / dist_begin_to_end) * self._end_pos[0]
+            y = (dist_from_begin / dist_begin_to_end) * self._end_pos[1]
+            z = (dist_from_begin / dist_begin_to_end) * self._end_pos[2]
+
+            self._row_positions.append((x, y, z))
+
+    def _generate_positions_vertically_above_rows(self) -> None:
+
+        for i in range(self._chip["rows"]):
+            pass
 
     def move_arm_head_to_begin(self) -> None:
         """
@@ -621,29 +648,26 @@ class Arm:
         """
 
         assert self._arm_head_status == "down"
-        self.lift_arm_head_up(self._distance)
+        self.lift_arm_head_up()
         assert self._arm_head_status == "up"
-        self.move_arm_towards_begin()
+        self.move_arm_towards_next_row(0)
         assert self._arm_head_status == "up"
-        self.align_x_axis((0, 0, 0))
+        self.align_x_axis(0)
         assert self._arm_head_status == "up"
-        self.put_arm_head_down((0, 0, 0))
+        self.put_arm_head_down(0)
         assert self._arm_head_status == "down"
 
-    def lift_arm_head_up(self, d: int) -> None:
+    def lift_arm_head_up(self) -> None:
 
         curr_pos = self.controller.absolute_position()
         y = curr_pos["B"]
         z = curr_pos["C"]
 
-        m = -1*(y/z)
-        denominator = np.sqrt(1+pow(m, 2))
+        y1 = self._positions_vertically_above_rows[self._current_row_num][1]
+        z1 = self._positions_vertically_above_rows[self._current_row_num][2]
 
-        rel_y1 = -1*d/denominator
-        rel_z1 = -1*m*d/denominator
-
-        y1 = y + rel_y1
-        z1 = z + rel_z1
+        rel_y1 = y1 - y
+        rel_z1 = z1 - z
 
         self._move("BC", rel_y1, rel_z1)
 
@@ -653,106 +677,75 @@ class Arm:
 
         self._arm_head_status = "up"
 
-    def move_arm_towards_begin(self) -> None:
+    def move_arm_towards_next_row(self,
+                                  next_row_num: Optional[int] = None) -> None:
 
-        y = self._end_pos[1]
-        z = self._end_pos[2]
-
-        m = z / y
-        denominator = np.sqrt(1 + pow(m, 2))
-        d = np.sqrt(pow(y, 2) + pow(z, 2))
-
-        rel_y2 = -1 * d / denominator
-        rel_z2 = -1 * m * d / denominator
-
-        curr_pos = self.controller.absolute_position()
-        y1 = curr_pos["B"]
-        z1 = curr_pos["C"]
-
-        y2 = y1 + rel_y2
-        z2 = z1 + rel_z2
-
-        self._move("BC", rel_y2, rel_z2)
-
-        curr_pos = self.controller.absolute_position()
-        assert curr_pos["B"] == y2
-        assert curr_pos["C"] == z2
-
-        self._current_row_num = 0
-
-        self._arm_head_status = "up"
-
-    def move_arm_towards_next_row(self) -> Tuple[int, int, int]:
-
-        x = self._end_pos[0]
-        y = self._end_pos[1]
-        z = self._end_pos[2]
-
-        d = np.sqrt(x^2 + y^2 + z^2)
-        dd = self._chip[
-                 "inter_terminal_distance_for_adjacent_rows"
-             ]*(self._current_row_num+1)
-
-        x_coord_of_next_row = x*dd/d
-
-        sin_theta = x/d
-
-        distance = dd * np.sqrt(1-np.pow(sin_theta, 2))
-
-        m = z / y
-        denominator = np.sqrt(1 + pow(m, 2))
-
-        rel_y2 = -1 * distance / denominator
-        rel_z2 = -1 * m * distance / denominator
+        if next_row_num is not None:
+            next_row_y = self._positions_vertically_above_rows[next_row_num][1]
+            next_row_z = self._positions_vertically_above_rows[next_row_num][2]
+        else:
+            next_row_y = self._positions_vertically_above_rows[
+                self._current_row_num + 1
+            ][1]
+            next_row_z = self._positions_vertically_above_rows[
+                self._current_row_num + 1
+            ][2]
 
         curr_pos = self.controller.absolute_position()
         y1 = curr_pos["B"]
         z1 = curr_pos["C"]
 
-        y2 = y1 + rel_y2
-        z2 = z1 + rel_z2
+        rel_y2 = next_row_y - y1
+        rel_z2 = next_row_z - z1
 
         self._move("BC", rel_y2, rel_z2)
-
         curr_pos = self.controller.absolute_position()
-        assert curr_pos["B"] == y2
-        assert curr_pos["C"] == z2
-
-        self._current_row_num += 1
+        assert curr_pos["B"] == next_row_y
+        assert curr_pos["C"] == next_row_z
 
         self._arm_head_status = "up"
 
-        return x_coord_of_next_row, y2, z2
+    def align_x_axis(self, next_row_num: Optional[int] = None) -> None:
 
-    def align_x_axis(self, coord: Tuple[int, int, int]) -> None:
+        if next_row_num is not None:
+            coord = self._positions_vertically_above_rows[next_row_num]
+        else:
+            coord = self._positions_vertically_above_rows[
+                self._current_row_num + 1
+            ]
 
         curr_pos = self.controller.absolute_position()
         x2 = curr_pos["A"]
-        y2 = curr_pos["B"]
-        z2 = curr_pos["C"]
 
-        rel_x3 = coord[0]-1*x2
-        rel_y3 = coord[1]
+        rel_x = coord[0]-1*x2
+        rel_y = coord[1]
 
-        self._move("AB", rel_x3, rel_y3)
+        self._move("AB", rel_x, rel_y)
 
         curr_pos = self.controller.absolute_position()
         assert curr_pos["A"] == coord[0]
-        assert curr_pos["B"] == y2
-        assert curr_pos["C"] == z2
+        assert curr_pos["B"] == coord[1]
+        assert curr_pos["C"] == coord[2]
 
         self._arm_head_status = "up"
 
-    def put_arm_head_down(self, coord: Tuple[int, int, int]) -> None:
+    def put_arm_head_down(self, next_row_num: Optional[int] = None) -> None:
+
+        if next_row_num is not None:
+            coord = self._row_positions[next_row_num]
+        else:
+            coord = self._row_positions[
+                self._current_row_num + 1
+            ]
 
         curr_pos = self.controller.absolute_position()
         y3 = curr_pos["B"]
         z3 = curr_pos["C"]
 
-        rel_begin_y = coord[1]-1*y3
-        rel_begin_z = coord[2]-1*z3
+        rel_y = coord[1]-1*y3
+        rel_z = coord[2]-1*z3
 
-        self._move("BC", rel_begin_y, rel_begin_z)
+        self._move("BC", rel_y, rel_z)
 
         curr_pos = self.controller.absolute_position()
         assert curr_pos["A"] == coord[0]
@@ -761,16 +754,18 @@ class Arm:
 
         self._arm_head_status = "down"
 
+        self._current_row_num += 1
+
     def move_arm_head_to_next_row(self) -> None:
         """
         Moves arm head from current position to next row position
         """
         assert self._arm_head_status == "down"
-        self.lift_arm_head_up(self._distance)
+        self.lift_arm_head_up()
         assert self._arm_head_status == "up"
-        next_row_coord = self.move_arm_towards_next_row()
+        self.move_arm_towards_next_row()
         assert self._arm_head_status == "up"
-        self.align_x_axis(next_row_coord)
+        self.align_x_axis()
         assert self._arm_head_status == "up"
-        self.put_arm_head_down(next_row_coord)
+        self.put_arm_head_down()
         assert self._arm_head_status == "down"
