@@ -4,6 +4,7 @@ import re
 from copy import copy
 from typing import Dict, List, Optional, Sequence, Tuple
 from unittest.mock import patch
+import json
 
 import hypothesis.strategies as hst
 import numpy as np
@@ -1452,9 +1453,21 @@ def test_export_to_xarray(mock_dataset, mock_dataset_nonunique):
     assert "index" not in ds.coords
     assert "x" in ds.coords
     assert ds.guid == mock_dataset.guid
+    assert ds.sample_name == mock_dataset.sample_name
+    assert ds.exp_name == mock_dataset.exp_name
+    assert ds.snapshot == json.dumps(mock_dataset.snapshot)
+    assert ds.run_timestamp == mock_dataset.run_timestamp()
+    assert ds.completed_timestamp == mock_dataset.completed_timestamp()
+    assert ds.run_id == mock_dataset.run_id
 
     ds = mock_dataset_nonunique.to_xarray_dataset()
     assert len(ds) == 3
     assert "index" in ds.coords
     assert "x" not in ds.coords
     assert ds.guid == mock_dataset_nonunique.guid
+    assert ds.sample_name == mock_dataset_nonunique.sample_name
+    assert ds.exp_name == mock_dataset_nonunique.exp_name
+    assert ds.snapshot == json.dumps(mock_dataset_nonunique.snapshot)
+    assert ds.run_timestamp == mock_dataset_nonunique.run_timestamp()
+    assert ds.completed_timestamp == mock_dataset_nonunique.completed_timestamp()
+    assert ds.run_id == mock_dataset_nonunique.run_id
