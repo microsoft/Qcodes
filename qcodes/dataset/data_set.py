@@ -1251,8 +1251,8 @@ class DataSet(Sized):
             "exp_name": self.exp_name,
             "snapshot": json.dumps(self.snapshot),
             "guid": self.guid,
-            "run_timestamp": self.run_timestamp(),
-            "completed_timestamp": self.completed_timestamp(),
+            "run_timestamp": self.run_timestamp() or "",
+            "completed_timestamp": self.completed_timestamp() or "",
             "run_id": self.run_id
         })
 
