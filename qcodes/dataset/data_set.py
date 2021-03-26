@@ -1309,15 +1309,16 @@ class DataSet(Sized):
             index = self._generate_pandas_index(subdict)
             if len(index.unique()) != len(index):
                 for _name in subdict:
-                    xrdarray: xr.DataArray = self._data_to_dataframe(
+                    data_xrdarray_dict[_name] = self._data_to_dataframe(
                         subdict, index).reset_index().to_xarray()[_name]
-                    data_xrdarray_dict[_name] = xrdarray
+                    paramspec_dict = self.paramspecs[_name]._to_dict()
+                    data_xrdarray_dict[_name].attrs.update(paramspec_dict.items())
             else:
                 xrdarray: xr.DataArray = self._data_to_dataframe(
                     subdict, index).to_xarray()[name]
                 data_xrdarray_dict[name] = xrdarray
-            paramspec_dict = self.paramspecs[name]._to_dict()
-            xrdarray.attrs.update(paramspec_dict.items())
+                paramspec_dict = self.paramspecs[name]._to_dict()
+                xrdarray.attrs.update(paramspec_dict.items())
 
         return data_xrdarray_dict
 
