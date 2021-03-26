@@ -4,6 +4,7 @@ import re
 from copy import copy
 from typing import Dict, List, Optional, Sequence, Tuple
 from unittest.mock import patch
+import json
 
 import hypothesis.strategies as hst
 import numpy as np
@@ -1287,6 +1288,24 @@ def _make_mock_dataset():
 
 
 @pytest.mark.usefixtures('experiment')
+@pytest.fixture(name="mock_dataset_nonunique")
+def _make_mock_dataset_nonunique_index():
+    dataset = new_data_set("dataset")
+    xparam = ParamSpecBase("x", 'numeric')
+    yparam = ParamSpecBase("y", 'numeric')
+    zparam = ParamSpecBase("z", 'numeric')
+    idps = InterDependencies_(
+        dependencies={yparam: (xparam,), zparam: (xparam,)})
+    dataset.set_interdependencies(idps)
+
+    dataset.mark_started()
+    results = [{'x': 0, 'y': 1, 'z': 2}, {'x': 0, 'y': 1, 'z': 2}]
+    dataset.add_results(results)
+    dataset.mark_completed()
+    return dataset
+
+
+@pytest.mark.usefixtures('experiment')
 def test_write_data_to_text_file_save(tmp_path_factory):
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", 'numeric')
@@ -1426,3 +1445,29 @@ def test_same_setpoint_warning_for_df_and_xarray(different_setpoint_dataset):
 
     with pytest.warns(UserWarning, match=warning_message):
         different_setpoint_dataset.cache.to_xarray_dataset()
+
+
+def test_export_to_xarray(mock_dataset, mock_dataset_nonunique):
+    ds = mock_dataset.to_xarray_dataset()
+    assert len(ds) == 2
+    assert "index" not in ds.coords
+    assert "x" in ds.coords
+    assert ds.guid == mock_dataset.guid
+    assert ds.sample_name == mock_dataset.sample_name
+    assert ds.exp_name == mock_dataset.exp_name
+    assert ds.snapshot == json.dumps(mock_dataset.snapshot)
+    assert ds.run_timestamp == mock_dataset.run_timestamp()
+    assert ds.completed_timestamp == mock_dataset.completed_timestamp()
+    assert ds.run_id == mock_dataset.run_id
+
+    ds = mock_dataset_nonunique.to_xarray_dataset()
+    assert len(ds) == 3
+    assert "index" in ds.coords
+    assert "x" not in ds.coords
+    assert ds.guid == mock_dataset_nonunique.guid
+    assert ds.sample_name == mock_dataset_nonunique.sample_name
+    assert ds.exp_name == mock_dataset_nonunique.exp_name
+    assert ds.snapshot == json.dumps(mock_dataset_nonunique.snapshot)
+    assert ds.run_timestamp == mock_dataset_nonunique.run_timestamp()
+    assert ds.completed_timestamp == mock_dataset_nonunique.completed_timestamp()
+    assert ds.run_id == mock_dataset_nonunique.run_id

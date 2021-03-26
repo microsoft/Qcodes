@@ -1246,8 +1246,15 @@ class DataSet(Sized):
                 paramspec_dict = self.paramspecs[str(dim)]._to_dict()
                 xrdataset.coords[str(dim)].attrs.update(paramspec_dict.items())
 
-        xrdataset.attrs["sample_name"] = self.sample_name
-        xrdataset.attrs["exp_name"] = self.exp_name
+        xrdataset.attrs.update({
+            "sample_name": self.sample_name,
+            "exp_name": self.exp_name,
+            "snapshot": json.dumps(self.snapshot),
+            "guid": self.guid,
+            "run_timestamp": self.run_timestamp() or "",
+            "completed_timestamp": self.completed_timestamp() or "",
+            "run_id": self.run_id
+        })
 
         return xrdataset
 
@@ -1306,11 +1313,18 @@ class DataSet(Sized):
 
         for name, subdict in datadict.items():
             index = self._generate_pandas_index(subdict)
-            xrdarray: xr.DataArray = self._data_to_dataframe(
-                subdict, index).to_xarray()[name]
-            paramspec_dict = self.paramspecs[name]._to_dict()
-            xrdarray.attrs.update(paramspec_dict.items())
-            data_xrdarray_dict[name] = xrdarray
+            if index is not None and len(index.unique()) != len(index):
+                for _name in subdict:
+                    data_xrdarray_dict[_name] = self._data_to_dataframe(
+                        subdict, index).reset_index().to_xarray()[_name]
+                    paramspec_dict = self.paramspecs[_name]._to_dict()
+                    data_xrdarray_dict[_name].attrs.update(paramspec_dict.items())
+            else:
+                xrdarray: xr.DataArray = self._data_to_dataframe(
+                    subdict, index).to_xarray()[name]
+                data_xrdarray_dict[name] = xrdarray
+                paramspec_dict = self.paramspecs[name]._to_dict()
+                xrdarray.attrs.update(paramspec_dict.items())
 
         return data_xrdarray_dict
 
@@ -1343,6 +1357,8 @@ class DataSet(Sized):
             single_file: If true, merges the data of same length of multiple
                          dependent parameters to a single file.
             single_file_name: User defined name for the data to be concatenated.
+                              If no extension is passed (.dat, .csv or .txt),
+                              .dat is automatically appended.
 
         Raises:
             DataLengthException: If the data of multiple parameters have not same
