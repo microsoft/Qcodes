@@ -1247,13 +1247,17 @@ class DataSet(Sized):
                 xrdataset.coords[str(dim)].attrs.update(paramspec_dict.items())
 
         xrdataset.attrs.update({
+            "name": self.name,
             "sample_name": self.sample_name,
             "exp_name": self.exp_name,
-            "snapshot": json.dumps(self.snapshot),
+            "snapshot": self.snapshot_raw or "null",
             "guid": self.guid,
             "run_timestamp": self.run_timestamp() or "",
             "completed_timestamp": self.completed_timestamp() or "",
-            "run_id": self.run_id
+            "captured_run_id": self.captured_run_id,
+            "captured_counter": self.captured_counter,
+            "run_id": self.run_id,
+            "run_description": serial.to_json_for_storage(self.description)
         })
 
         return xrdataset

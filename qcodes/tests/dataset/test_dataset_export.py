@@ -8,6 +8,7 @@ from qcodes import new_data_set
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.export_config import DataExportType
+from qcodes.dataset.descriptions.versioning import serialization as serial
 
 
 @pytest.mark.usefixtures('experiment')
@@ -208,10 +209,14 @@ def test_export_to_xarray_non_unique_dependent_parameter(mock_dataset_nonunique)
 
 def _assert_xarray_metadata_is_as_expected(xarray_ds, qc_dataset):
 
-    assert xarray_ds.guid == qc_dataset.guid
+    assert xarray_ds.name == qc_dataset.name
     assert xarray_ds.sample_name == qc_dataset.sample_name
     assert xarray_ds.exp_name == qc_dataset.exp_name
     assert xarray_ds.snapshot == json.dumps(qc_dataset.snapshot)
+    assert xarray_ds.guid == qc_dataset.guid
     assert xarray_ds.run_timestamp == qc_dataset.run_timestamp()
     assert xarray_ds.completed_timestamp == qc_dataset.completed_timestamp()
+    assert xarray_ds.captured_run_id == qc_dataset.captured_run_id
+    assert xarray_ds.captured_counter == qc_dataset.captured_counter
     assert xarray_ds.run_id == qc_dataset.run_id
+    assert xarray_ds.run_description == serial.to_json_for_storage(qc_dataset.description)
