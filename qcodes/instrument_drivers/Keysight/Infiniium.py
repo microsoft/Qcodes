@@ -41,15 +41,9 @@ class RawTrace(ArrayParameter):
                          )
         self._channel = channel
 
-    def prepare_curvedata(self, acquire_mode: str = 'RTIMe') -> None:
+    def prepare_curvedata(self) -> None:
         """
         Prepare the scope for returning curve data
-
-        Args:
-            acquire_mode: This argument sets the `acquire_mode` param on the
-                Infiniium oscilloscope instrument for the measurement. Default
-                value is `RTIMe` which means realtime mode and only one trigger
-                is used.
         """
         # To calculate set points, we must have the full preamble
         # For the instrument to return the full preamble, the channel
@@ -80,9 +74,6 @@ class RawTrace(ArrayParameter):
         root_instrument = instr.root_instrument
         assert isinstance(root_instrument, Infiniium)
         root_instrument.trace_ready = True
-
-        # realtime mode: only one trigger is used
-        root_instrument.acquire_mode(acquire_mode)
 
     def get_raw(self) -> ParamRawDataType:
         # when get is called the setpoints have to be known already
@@ -376,6 +367,7 @@ class Infiniium(VisaInstrument):
 
     def __init__(self, name: str, address: str,
                  timeout: float = 20,
+                 acquire_mode: str = 'RTIMe',
                  **kwargs: Any):
         """
         Initialises the oscilloscope.
@@ -384,6 +376,10 @@ class Infiniium(VisaInstrument):
             name: Name of the instrument used by QCoDeS
             address: Instrument address as used by VISA
             timeout: visa timeout, in secs.
+            acquire_mode: This argument sets the `acquire_mode` param on the
+                Infiniium oscilloscope instrument for the measurement. Default
+                value is `RTIMe` which means realtime mode and only one trigger
+                is used.
         """
 
         super().__init__(name, address, timeout=timeout,
@@ -569,6 +565,9 @@ class Infiniium(VisaInstrument):
         # Submodules
         meassubsys = MeasurementSubsystem(self, 'measure')
         self.add_submodule('measure', meassubsys)
+
+        # Set acquire mode
+        self.acquire_mode(acquire_mode)
 
     def _cmd_and_invalidate(self, cmd: str) -> Callable[..., Any]:
         return partial(Infiniium._cmd_and_invalidate_call, self, cmd)
