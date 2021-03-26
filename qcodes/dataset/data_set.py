@@ -1154,6 +1154,10 @@ class DataSet(Sized):
         of the :class:`.DataSet` – then a dict of empty :py:class:`xr.DataArray` s is
         returned.
 
+        The dependent parameters of the Dataset are normally used as coordinates of the
+        XArray dataframe. However if non unique values are found for the dependent parameter
+        values we will fall back to using an index as coordinates.
+
         Args:
             *params: string parameter names, QCoDeS Parameter objects, and
                 ParamSpec objects. If no parameters are supplied data for
@@ -1197,6 +1201,10 @@ class DataSet(Sized):
         less than or equal to the start, or if start is after the current end
         of the :class:`.DataSet` – then a empty :py:class:`xr.Dataset` s is
         returned.
+
+        The dependent parameters of the Dataset are normally used as coordinates of the
+        XArray dataframe. However if non unique values are found for the dependent parameter
+        values we will fall back to using an index as coordinates.
 
         Args:
             *params: string parameter names, QCoDeS Parameter objects, and
