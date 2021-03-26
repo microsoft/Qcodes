@@ -193,13 +193,7 @@ def test_export_to_xarray(mock_dataset):
     assert len(ds) == 2
     assert "index" not in ds.coords
     assert "x" in ds.coords
-    assert ds.guid == mock_dataset.guid
-    assert ds.sample_name == mock_dataset.sample_name
-    assert ds.exp_name == mock_dataset.exp_name
-    assert ds.snapshot == json.dumps(mock_dataset.snapshot)
-    assert ds.run_timestamp == mock_dataset.run_timestamp()
-    assert ds.completed_timestamp == mock_dataset.completed_timestamp()
-    assert ds.run_id == mock_dataset.run_id
+    _assert_xarray_metadata_is_as_expected(ds, mock_dataset)
 
 
 def test_export_to_xarray_non_unique_dependent_parameter(mock_dataset_nonunique):
@@ -209,10 +203,15 @@ def test_export_to_xarray_non_unique_dependent_parameter(mock_dataset_nonunique)
     assert len(ds) == 3
     assert "index" in ds.coords
     assert "x" not in ds.coords
-    assert ds.guid == mock_dataset_nonunique.guid
-    assert ds.sample_name == mock_dataset_nonunique.sample_name
-    assert ds.exp_name == mock_dataset_nonunique.exp_name
-    assert ds.snapshot == json.dumps(mock_dataset_nonunique.snapshot)
-    assert ds.run_timestamp == mock_dataset_nonunique.run_timestamp()
-    assert ds.completed_timestamp == mock_dataset_nonunique.completed_timestamp()
-    assert ds.run_id == mock_dataset_nonunique.run_id
+    _assert_xarray_metadata_is_as_expected(ds, mock_dataset_nonunique)
+
+
+def _assert_xarray_metadata_is_as_expected(xarray_ds, qc_dataset):
+
+    assert xarray_ds.guid == qc_dataset.guid
+    assert xarray_ds.sample_name == qc_dataset.sample_name
+    assert xarray_ds.exp_name == qc_dataset.exp_name
+    assert xarray_ds.snapshot == json.dumps(qc_dataset.snapshot)
+    assert xarray_ds.run_timestamp == qc_dataset.run_timestamp()
+    assert xarray_ds.completed_timestamp == qc_dataset.completed_timestamp()
+    assert xarray_ds.run_id == qc_dataset.run_id
