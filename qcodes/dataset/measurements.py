@@ -40,6 +40,7 @@ from qcodes.instrument.parameter import (ArrayParameter, MultiParameter,
                                          expand_setpoints_helper)
 from qcodes.utils.delaykeyboardinterrupt import DelayedKeyboardInterrupt
 from qcodes.utils.helpers import NumpyJSONEncoder
+from qcodes.dataset.export_config import get_data_export_automatic
 
 log = logging.getLogger(__name__)
 
@@ -412,6 +413,12 @@ class DataSaver:
         """
         self.dataset._flush_data_to_database(block=block)
 
+    def export_data(self) -> None:
+        """Export data at end of measurement as per export_type
+        specification in "dataset" section of qcodes config
+        """
+        self.dataset.export()
+
     @property
     def run_id(self) -> int:
         return self._dataset.run_id
@@ -583,6 +590,8 @@ class Runner:
             # Note that the completion of a dataset entails waiting for the
             # write thread to terminate (iff the write thread has been started)
             self.ds.mark_completed()
+            if get_data_export_automatic():
+                self.datasaver.export_data()
             log.info(f'Finished measurement with guid: {self.ds.guid}. '
                      f'{self._extra_log_info}')
             self.ds.unsubscribe_all()
