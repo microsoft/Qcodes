@@ -1260,6 +1260,12 @@ class DataSet(Sized):
             "run_description": serial.to_json_for_storage(self.description)
         })
 
+        if len(self._metadata) > 0:
+            xrdataset.attrs['extra_metadata'] = {}
+
+            for metadata_tag, metadata in self._metadata.items():
+                xrdataset.attrs['extra_metadata'][metadata_tag] = metadata
+
         return xrdataset
 
     @staticmethod

@@ -207,6 +207,14 @@ def test_export_to_xarray_non_unique_dependent_parameter(mock_dataset_nonunique)
     _assert_xarray_metadata_is_as_expected(ds, mock_dataset_nonunique)
 
 
+def test_export_to_xarray_extra_metadata(mock_dataset):
+    mock_dataset.add_metadata("mytag", "somestring")
+    mock_dataset.add_metadata("myothertag", 1)
+    ds = mock_dataset.to_xarray_dataset()
+
+    _assert_xarray_metadata_is_as_expected(ds, mock_dataset)
+
+
 def _assert_xarray_metadata_is_as_expected(xarray_ds, qc_dataset):
 
     assert xarray_ds.name == qc_dataset.name
