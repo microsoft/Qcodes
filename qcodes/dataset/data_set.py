@@ -1307,7 +1307,7 @@ class DataSet(Sized):
 
         for name, subdict in datadict.items():
             index = self._generate_pandas_index(subdict)
-            if len(index.unique()) != len(index):
+            if index is not None and len(index.unique()) != len(index):
                 for _name in subdict:
                     data_xrdarray_dict[_name] = self._data_to_dataframe(
                         subdict, index).reset_index().to_xarray()[_name]
