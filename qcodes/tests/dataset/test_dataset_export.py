@@ -188,7 +188,7 @@ def test_same_setpoint_warning_for_df_and_xarray(different_setpoint_dataset):
         different_setpoint_dataset.cache.to_xarray_dataset()
 
 
-def test_export_to_xarray(mock_dataset, mock_dataset_nonunique):
+def test_export_to_xarray(mock_dataset):
     ds = mock_dataset.to_xarray_dataset()
     assert len(ds) == 2
     assert "index" not in ds.coords
@@ -201,6 +201,10 @@ def test_export_to_xarray(mock_dataset, mock_dataset_nonunique):
     assert ds.completed_timestamp == mock_dataset.completed_timestamp()
     assert ds.run_id == mock_dataset.run_id
 
+
+def test_export_to_xarray_non_unique_dependent_parameter(mock_dataset_nonunique):
+    """When x (the dependent parameter) contains non unique values it cannot be used
+    as coordinates in xarray so check that we fall back to using an index"""
     ds = mock_dataset_nonunique.to_xarray_dataset()
     assert len(ds) == 3
     assert "index" in ds.coords
