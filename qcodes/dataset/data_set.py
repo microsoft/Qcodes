@@ -1249,6 +1249,7 @@ class DataSet(Sized):
         xrdataset.attrs["sample_name"] = self.sample_name
         xrdataset.attrs["exp_name"] = self.exp_name
         xrdataset.attrs["snapshot"] = json.dumps(self.snapshot)
+        xrdataset.attrs["guid"] = self.guid
 
         return xrdataset
 

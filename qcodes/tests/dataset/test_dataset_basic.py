@@ -1451,8 +1451,10 @@ def test_export_to_xarray(mock_dataset, mock_dataset_nonunique):
     assert len(ds) == 2
     assert "index" not in ds.coords
     assert "x" in ds.coords
+    assert ds.guid == mock_dataset.guid
 
     ds = mock_dataset_nonunique.to_xarray_dataset()
     assert len(ds) == 3
     assert "index" in ds.coords
     assert "x" not in ds.coords
+    assert ds.guid == mock_dataset_nonunique.guid
