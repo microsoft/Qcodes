@@ -83,7 +83,7 @@ def test_write_data_to_text_file_save_single_file(tmp_path_factory, mock_dataset
     tmp_path = tmp_path_factory.mktemp("to_text_file_save_single_file")
     path = str(tmp_path)
     mock_dataset.write_data_to_text_file(path=path, single_file=True,
-                                    single_file_name='yz')
+                                         single_file_name='yz')
     assert os.listdir(path) == ['yz.dat']
     with open(os.path.join(path, "yz.dat")) as f:
         assert f.readlines() == ['0.0\t1.0\t2.0\n']
@@ -119,7 +119,7 @@ def test_write_data_to_text_file_name_exception(tmp_path, mock_dataset):
     temp_dir = str(tmp_path)
     with pytest.raises(Exception, match='desired file name'):
         mock_dataset.write_data_to_text_file(path=temp_dir, single_file=True,
-                                        single_file_name=None)
+                                             single_file_name=None)
 
 
 @pytest.mark.usefixtures('experiment')
