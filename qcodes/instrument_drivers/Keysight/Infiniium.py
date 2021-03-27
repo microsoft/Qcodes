@@ -367,7 +367,6 @@ class Infiniium(VisaInstrument):
 
     def __init__(self, name: str, address: str,
                  timeout: float = 20,
-                 acquire_mode: str = 'RTIMe',
                  **kwargs: Any):
         """
         Initialises the oscilloscope.
@@ -376,10 +375,6 @@ class Infiniium(VisaInstrument):
             name: Name of the instrument used by QCoDeS
             address: Instrument address as used by VISA
             timeout: visa timeout, in secs.
-            acquire_mode: This argument sets the `acquire_mode` param on the
-                Infiniium oscilloscope instrument for the measurement. Default
-                value is `RTIMe` which means realtime mode and only one trigger
-                is used.
         """
 
         super().__init__(name, address, timeout=timeout,
@@ -565,9 +560,6 @@ class Infiniium(VisaInstrument):
         # Submodules
         meassubsys = MeasurementSubsystem(self, 'measure')
         self.add_submodule('measure', meassubsys)
-
-        # Set acquire mode
-        self.acquire_mode(acquire_mode)
 
     def _cmd_and_invalidate(self, cmd: str) -> Callable[..., Any]:
         return partial(Infiniium._cmd_and_invalidate_call, self, cmd)
