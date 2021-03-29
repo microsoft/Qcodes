@@ -1258,7 +1258,10 @@ class DataSet(Sized):
 
         return xrdataset
 
-    def _add_metadata_to_xarray(self, xrdataset: xr.Dataset) -> None:
+    def _add_metadata_to_xarray(
+            self,
+            xrdataset: Union[xr.Dataset, xr.DataArray]
+    ) -> None:
         xrdataset.attrs.update({
             "name": self.name,
             "sample_name": self.sample_name,
@@ -1350,6 +1353,9 @@ class DataSet(Sized):
                 data_xrdarray_dict[name] = xrdarray
                 paramspec_dict = self.paramspecs[name]._to_dict()
                 xrdarray.attrs.update(paramspec_dict.items())
+
+        for dataarray in data_xrdarray_dict.values():
+            self._add_metadata_to_xarray(dataarray)
 
         return data_xrdarray_dict
 
