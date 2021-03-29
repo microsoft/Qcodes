@@ -19,7 +19,7 @@ google-auth~=1.28.0
 googleapis-common-protos~=1.53.0
 h5py~=3.2.1
 idna~=2.10
-importlib-metadata==3.7.3;python_version<'3.8'
+importlib-metadata==3.9.0;python_version<'3.8'
 ipykernel~=5.5.0
 ipython~=7.22.0
 ipython-genutils~=0.2.0
