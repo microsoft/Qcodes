@@ -215,6 +215,15 @@ def test_export_to_xarray_extra_metadata(mock_dataset):
     _assert_xarray_metadata_is_as_expected(ds, mock_dataset)
 
 
+def test_export_to_xarray_ds_dict_extra_metadata(mock_dataset):
+    mock_dataset.add_metadata("mytag", "somestring")
+    mock_dataset.add_metadata("myothertag", 1)
+    da_dict = mock_dataset.to_xarray_dataarray_dict()
+
+    for datarray in da_dict.values():
+        _assert_xarray_metadata_is_as_expected(datarray, mock_dataset)
+
+
 def _assert_xarray_metadata_is_as_expected(xarray_ds, qc_dataset):
 
     assert xarray_ds.ds_name == qc_dataset.name
