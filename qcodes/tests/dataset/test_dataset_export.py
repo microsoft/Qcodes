@@ -235,7 +235,7 @@ def _assert_xarray_metadata_is_as_expected(xarray_ds, qc_dataset):
     assert xarray_ds.ds_name == qc_dataset.name
     assert xarray_ds.sample_name == qc_dataset.sample_name
     assert xarray_ds.exp_name == qc_dataset.exp_name
-    assert xarray_ds.snapshot == json.dumps(qc_dataset.snapshot)
+    assert xarray_ds.snapshot == qc_dataset.snapshot_raw
     assert xarray_ds.guid == qc_dataset.guid
     assert xarray_ds.run_timestamp == qc_dataset.run_timestamp()
     assert xarray_ds.completed_timestamp == qc_dataset.completed_timestamp()
