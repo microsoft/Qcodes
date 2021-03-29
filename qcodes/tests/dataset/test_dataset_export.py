@@ -206,6 +206,9 @@ def test_export_to_xarray_non_unique_dependent_parameter(mock_dataset_nonunique)
     assert "x" not in ds.coords
     _assert_xarray_metadata_is_as_expected(ds, mock_dataset_nonunique)
 
+    for array_name in ds.data_vars:
+        assert "snapshot" not in ds[array_name].attrs.keys()
+
 
 def test_export_to_xarray_extra_metadata(mock_dataset):
     mock_dataset.add_metadata("mytag", "somestring")
@@ -213,6 +216,9 @@ def test_export_to_xarray_extra_metadata(mock_dataset):
     ds = mock_dataset.to_xarray_dataset()
 
     _assert_xarray_metadata_is_as_expected(ds, mock_dataset)
+
+    for array_name in ds.data_vars:
+        assert "snapshot" not in ds[array_name].attrs.keys()
 
 
 def test_export_to_xarray_ds_dict_extra_metadata(mock_dataset):
