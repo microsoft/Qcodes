@@ -1272,7 +1272,11 @@ class DataSet(Sized):
             "run_id": self.run_id,
             "run_description": serial.to_json_for_storage(self.description)
         })
-
+        if self.run_timestamp_raw is not None:
+            xrdataset.attrs["run_timestamp_raw"] = self.run_timestamp_raw
+        if self.completed_timestamp_raw is not None:
+            xrdataset.attrs[
+                "completed_timestamp_raw"] = self.completed_timestamp_raw
         if len(self._metadata) > 0:
             xrdataset.attrs['extra_metadata'] = {}
 
