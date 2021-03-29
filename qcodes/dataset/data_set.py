@@ -1254,6 +1254,11 @@ class DataSet(Sized):
                 paramspec_dict = self.paramspecs[str(dim)]._to_dict()
                 xrdataset.coords[str(dim)].attrs.update(paramspec_dict.items())
 
+        self._add_metadata_to_xarray(xrdataset)
+
+        return xrdataset
+
+    def _add_metadata_to_xarray(self, xrdataset: xr.Dataset) -> None:
         xrdataset.attrs.update({
             "name": self.name,
             "sample_name": self.sample_name,
@@ -1273,8 +1278,6 @@ class DataSet(Sized):
 
             for metadata_tag, metadata in self._metadata.items():
                 xrdataset.attrs['extra_metadata'][metadata_tag] = metadata
-
-        return xrdataset
 
     @staticmethod
     def _data_to_dataframe(data: Dict[str, numpy.ndarray], index: Union["pd.Index", "pd.MultiIndex"]) -> "pd.DataFrame":
