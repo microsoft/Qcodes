@@ -1267,7 +1267,7 @@ class DataSet(Sized):
             xrdataset: Union["xr.Dataset", "xr.DataArray"]
     ) -> None:
         xrdataset.attrs.update({
-            "name": self.name,
+            "ds_name": self.name,
             "sample_name": self.sample_name,
             "exp_name": self.exp_name,
             "snapshot": self.snapshot_raw or "null",
