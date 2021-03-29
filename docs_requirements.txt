@@ -17,7 +17,7 @@ idna==2.10
 imagesize==1.2.0
 importlib-metadata==3.7.3;python_version<'3.8'
 ipykernel==5.5.0
-ipython==7.21.0
+ipython==7.22.0
 ipython-genutils==0.2.0
 ipywidgets==7.6.3
 jedi==0.17.2
@@ -37,7 +37,7 @@ nbformat==5.1.2
 nbsphinx==0.8.2
 nest-asyncio==1.5.1
 notebook==6.3.0
-numpy==1.20.1
+numpy==1.20.2
 packaging==20.9
 pandas==1.2.3
 pandocfilters==1.4.3
