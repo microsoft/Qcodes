@@ -1181,7 +1181,11 @@ class DataSet(Sized):
         data = self.get_parameter_data(*params,
                                        start=start,
                                        end=end)
-        return self._load_to_xarray_dataarray_dict(data)
+        datadict = self._load_to_xarray_dataarray_dict(data)
+
+        for dataarray in datadict.values():
+            self._add_metadata_to_xarray(dataarray)
+        return datadict
 
     def to_xarray_dataset(self, *params: Union[str,
                                                ParamSpec,
@@ -1353,9 +1357,6 @@ class DataSet(Sized):
                 data_xrdarray_dict[name] = xrdarray
                 paramspec_dict = self.paramspecs[name]._to_dict()
                 xrdarray.attrs.update(paramspec_dict.items())
-
-        for dataarray in data_xrdarray_dict.values():
-            self._add_metadata_to_xarray(dataarray)
 
         return data_xrdarray_dict
 
