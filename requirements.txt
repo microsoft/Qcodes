@@ -21,7 +21,7 @@ h5py~=3.2.1
 idna~=2.10
 importlib-metadata==3.4.0;python_version<'3.8'
 ipykernel~=5.5.0
-ipython~=7.21.0
+ipython~=7.22.0
 ipython-genutils~=0.2.0
 ipywidgets~=7.6.3
 jedi~=0.17.2
@@ -40,7 +40,7 @@ nbformat~=5.1.2
 netCDF4~=1.5.6
 nest-asyncio~=1.5.1
 notebook~=6.3.0
-numpy~=1.20.1
+numpy~=1.20.2
 opencensus~=0.7.12
 opencensus-context~=0.1.2
 opencensus-ext-azure~=1.0.7
