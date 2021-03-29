@@ -1264,7 +1264,7 @@ class DataSet(Sized):
 
     def _add_metadata_to_xarray(
             self,
-            xrdataset: Union[xr.Dataset, xr.DataArray]
+            xrdataset: Union["xr.Dataset", "xr.DataArray"]
     ) -> None:
         xrdataset.attrs.update({
             "name": self.name,
