@@ -24,4 +24,4 @@ Improved drivers:
 Breaking Changes:
 -----------------
 
-- Because the mode of the instrument is no longer set in the constructor, this is a breaking change.
+- Because the mode of the Infiniium instrument driver is no longer set in the constructor, the change introduced by #2837 is a breaking change.
