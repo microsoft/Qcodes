@@ -17,5 +17,11 @@ Improved:
 Improved drivers:
 -----------------
 
-- Remove hardcoded acquire mode and allow users to set acquire mode for trace on Infiniium driver (#2837) *Note: Because the mode of the instrument is no longer set in the constructor, this is a breaking change.*
+- Remove hardcoded acquire mode and allow users to set acquire mode for trace on Infiniium driver (#2837)
 - Updating SR830 driver with adding autorange method and its example notebook (#2832)
+
+-----------------
+Breaking Changes:
+-----------------
+
+- Because the mode of the instrument is no longer set in the constructor, this is a breaking change.
