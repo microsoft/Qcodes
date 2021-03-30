@@ -1154,6 +1154,10 @@ class DataSet(Sized):
         of the :class:`.DataSet` – then a dict of empty :py:class:`xr.DataArray` s is
         returned.
 
+        The dependent parameters of the Dataset are normally used as coordinates of the
+        XArray dataframe. However if non unique values are found for the dependent parameter
+        values we will fall back to using an index as coordinates.
+
         Args:
             *params: string parameter names, QCoDeS Parameter objects, and
                 ParamSpec objects. If no parameters are supplied data for
@@ -1177,7 +1181,11 @@ class DataSet(Sized):
         data = self.get_parameter_data(*params,
                                        start=start,
                                        end=end)
-        return self._load_to_xarray_dataarray_dict(data)
+        datadict = self._load_to_xarray_dataarray_dict(data)
+
+        for dataarray in datadict.values():
+            self._add_metadata_to_xarray(dataarray)
+        return datadict
 
     def to_xarray_dataset(self, *params: Union[str,
                                                ParamSpec,
@@ -1197,6 +1205,10 @@ class DataSet(Sized):
         less than or equal to the start, or if start is after the current end
         of the :class:`.DataSet` – then a empty :py:class:`xr.Dataset` s is
         returned.
+
+        The dependent parameters of the Dataset are normally used as coordinates of the
+        XArray dataframe. However if non unique values are found for the dependent parameter
+        values we will fall back to using an index as coordinates.
 
         Args:
             *params: string parameter names, QCoDeS Parameter objects, and
@@ -1246,17 +1258,37 @@ class DataSet(Sized):
                 paramspec_dict = self.paramspecs[str(dim)]._to_dict()
                 xrdataset.coords[str(dim)].attrs.update(paramspec_dict.items())
 
+        self._add_metadata_to_xarray(xrdataset)
+
+        return xrdataset
+
+    def _add_metadata_to_xarray(
+            self,
+            xrdataset: Union["xr.Dataset", "xr.DataArray"]
+    ) -> None:
         xrdataset.attrs.update({
+            "ds_name": self.name,
             "sample_name": self.sample_name,
             "exp_name": self.exp_name,
-            "snapshot": json.dumps(self.snapshot),
+            "snapshot": self.snapshot_raw or "null",
             "guid": self.guid,
             "run_timestamp": self.run_timestamp() or "",
             "completed_timestamp": self.completed_timestamp() or "",
-            "run_id": self.run_id
+            "captured_run_id": self.captured_run_id,
+            "captured_counter": self.captured_counter,
+            "run_id": self.run_id,
+            "run_description": serial.to_json_for_storage(self.description)
         })
+        if self.run_timestamp_raw is not None:
+            xrdataset.attrs["run_timestamp_raw"] = self.run_timestamp_raw
+        if self.completed_timestamp_raw is not None:
+            xrdataset.attrs[
+                "completed_timestamp_raw"] = self.completed_timestamp_raw
+        if len(self._metadata) > 0:
+            xrdataset.attrs['extra_metadata'] = {}
 
-        return xrdataset
+            for metadata_tag, metadata in self._metadata.items():
+                xrdataset.attrs['extra_metadata'][metadata_tag] = metadata
 
     @staticmethod
     def _data_to_dataframe(data: Dict[str, numpy.ndarray], index: Union["pd.Index", "pd.MultiIndex"]) -> "pd.DataFrame":
