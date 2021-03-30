@@ -7,13 +7,15 @@ The March 2021 release of QCoDeS.
 Improved:
 ---------
 
-- support export to xarray for data with non unique indices (#2848).
-- update use of Slack API in qcodes.utils.slack.Slack class (#2813)
+- Support export to xarray for data with non unique indices (#2848).
+- Update use of Slack API in qcodes.utils.slack.Slack class (#2813)
+- Support dataset export to NetCDF or CSV after measurement ends (#2782)
+- Export more metadata to xarray dataset (#2854)
 
 
 -----------------
 Improved drivers:
 -----------------
 
-- Remove hardcoded acquire mode and allow users to set acquire mode for trace on Infiniium driver (#2837)
+- Remove hardcoded acquire mode and allow users to set acquire mode for trace on Infiniium driver (#2837) *Note: Because the mode of the instrument is no longer set in the constructor, this is a breaking change.*
 - Updating SR830 driver with adding autorange method and its example notebook (#2832)
