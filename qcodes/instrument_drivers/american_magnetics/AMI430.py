@@ -319,7 +319,8 @@ class AMI430(IPInstrument):
 
         # Check we can ramp
         if not self._can_start_ramping():
-            raise AMI430Exception("Cannot ramp in current state")
+            raise AMI430Exception(f"Cannot ramp in current state: "
+                                  f"state is {self.ramping_state()}")
 
         # Then, do the actual ramp
         self.pause()
