@@ -67,6 +67,9 @@ class RawTrace(ArrayParameter):
         self.setpoints = (tuple(xdata), )
         self.shape = (self.npts, )
 
+        # set up the instrument
+        # ---------------------------------------------------------------------
+
         # make this on a per channel basis?
         root_instrument = instr.root_instrument
         assert isinstance(root_instrument, Infiniium)
@@ -94,8 +97,6 @@ class RawTrace(ArrayParameter):
 
         # get intrument state
         state = instr.ask(':RSTate?')
-        # realtime mode: only one trigger is used
-        instr._parent.acquire_mode('RTIMe')
 
         # acquire the data
         # ---------------------------------------------------------------------

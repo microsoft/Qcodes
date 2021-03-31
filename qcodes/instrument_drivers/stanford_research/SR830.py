@@ -7,6 +7,7 @@ from qcodes.instrument.parameter import ArrayParameter, ParamRawDataType
 from qcodes.utils.validators import Numbers, Ints, Enum, Strings
 
 from typing import Tuple
+import time
 
 
 class ChannelBuffer(ArrayParameter):
@@ -485,7 +486,7 @@ class SR830(VisaInstrument):
             'r': '3',
             'p': '4',
         'phase': '4',
-           'θ' : '4',
+            'θ': '4',
          'aux1': '5',
          'aux2': '6',
          'aux3': '7',
@@ -695,3 +696,28 @@ class SR830(VisaInstrument):
             return self._VOLT_TO_N[s]
         else:
             return self._CURR_TO_N[s]
+
+    def autorange(self, max_changes: int = 1) -> None:
+        """
+        Automatically changes the sensitivity of the instrument according to
+        the R value and defined max_changes.
+
+        Args:
+            max_changes: Maximum number of steps allowing the function to
+                automatically change the sensitivity (default is 1). The actual
+                number of steps needed to change to the optimal sensitivity may
+                be more or less than this maximum.
+        """
+        def autorange_once() -> bool:
+            r = self.R()
+            sens = self.sensitivity()
+            if r > 0.9 * sens:
+                return self.increment_sensitivity()
+            elif r < 0.1 * sens:
+                return self.decrement_sensitivity()
+            return False
+
+        sets = 0
+        while autorange_once() and sets < max_changes:
+            sets += 1
+            time.sleep(self.time_constant())
