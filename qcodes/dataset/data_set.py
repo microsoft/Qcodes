@@ -1,4 +1,3 @@
-import functools
 import importlib
 import json
 import logging
@@ -8,7 +7,7 @@ import time
 import uuid
 
 from dataclasses import dataclass
-from queue import Empty, Queue
+from queue import Queue
 from threading import Thread
 from typing import (Hashable, Iterator, TYPE_CHECKING, Any, Callable, Dict,
                     List, Mapping, Optional, Sequence, Set,
@@ -50,9 +49,9 @@ from qcodes.dataset.sqlite.query_helpers import (VALUE, VALUES,
 from qcodes.instrument.parameter import _BaseParameter
 from qcodes.utils.deprecate import deprecate
 from qcodes.dataset.export_config import DataExportType, get_data_export_type, get_data_export_path, get_data_export_prefix, get_data_export_automatic
-
 from .data_set_cache import DataSetCache
 from .descriptions.versioning import serialization as serial
+from .subscriber import _Subscriber
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -100,121 +99,6 @@ class DataLengthException(Exception):
 
 class DataPathException(Exception):
     pass
-
-
-class _Subscriber(Thread):
-    """
-    Class to add a subscriber to a :class:`.DataSet`. The subscriber gets called every
-    time an insert is made to the results_table.
-
-    The _Subscriber is not meant to be instantiated directly, but rather used
-    via the 'subscribe' method of the :class:`.DataSet`.
-
-    NOTE: A subscriber should be added *after* all parameters have been added.
-
-    NOTE: Special care shall be taken when using the *state* object: it is the
-    user's responsibility to operate with it in a thread-safe way.
-    """
-
-    def __init__(self,
-                 dataSet: 'DataSet',
-                 id_: str,
-                 callback: Callable[..., None],
-                 state: Optional[Any] = None,
-                 loop_sleep_time: int = 0,  # in milliseconds
-                 min_queue_length: int = 1,
-                 callback_kwargs: Optional[Mapping[str, Any]] = None
-                 ) -> None:
-        super().__init__()
-
-        self._id = id_
-
-        self.dataSet = dataSet
-        self.table_name = dataSet.table_name
-        self._data_set_len = len(dataSet)
-
-        self.state = state
-
-        self.data_queue: "Queue[Any]" = Queue()
-        self._queue_length: int = 0
-        self._stop_signal: bool = False
-        # convert milliseconds to seconds
-        self._loop_sleep_time = loop_sleep_time / 1000
-        self.min_queue_length = min_queue_length
-
-        if callback_kwargs is None or len(callback_kwargs) == 0:
-            self.callback = callback
-        else:
-            self.callback = functools.partial(callback, **callback_kwargs)
-
-        self.callback_id = f"callback{self._id}"
-        self.trigger_id = f"sub{self._id}"
-
-        conn = dataSet.conn
-
-        conn.create_function(self.callback_id, -1, self._cache_data_to_queue)
-
-        parameters = dataSet.get_parameters()
-        sql_param_list = ",".join([f"NEW.{p.name}" for p in parameters])
-        sql_create_trigger_for_callback = f"""
-        CREATE TRIGGER {self.trigger_id}
-            AFTER INSERT ON '{self.table_name}'
-        BEGIN
-            SELECT {self.callback_id}({sql_param_list});
-        END;"""
-        atomic_transaction(conn, sql_create_trigger_for_callback)
-
-        self.log = logging.getLogger(f"_Subscriber {self._id}")
-
-    def _cache_data_to_queue(self, *args: Any) -> None:
-        self.data_queue.put(args)
-        self._data_set_len += 1
-        self._queue_length += 1
-
-    def run(self) -> None:
-        self.log.debug("Starting subscriber")
-        self._loop()
-
-    @staticmethod
-    def _exhaust_queue(queue: "Queue[Any]") -> List[Any]:
-        result_list = []
-        while True:
-            try:
-                result_list.append(queue.get(block=False))
-            except Empty:
-                break
-        return result_list
-
-    def _call_callback_on_queue_data(self) -> None:
-        result_list = self._exhaust_queue(self.data_queue)
-        self.callback(result_list, self._data_set_len, self.state)
-
-    def _loop(self) -> None:
-        while True:
-            if self._stop_signal:
-                self._clean_up()
-                break
-
-            if self._queue_length >= self.min_queue_length:
-                self._call_callback_on_queue_data()
-                self._queue_length = 0
-
-            time.sleep(self._loop_sleep_time)
-
-            if self.dataSet.completed:
-                self._call_callback_on_queue_data()
-                break
-
-    def done_callback(self) -> None:
-        self._call_callback_on_queue_data()
-
-    def schedule_stop(self) -> None:
-        if not self._stop_signal:
-            self.log.debug("Scheduling stop")
-            self._stop_signal = True
-
-    def _clean_up(self) -> None:
-        self.log.debug("Stopped subscriber")
 
 
 class _BackgroundWriter(Thread):
@@ -1154,6 +1038,10 @@ class DataSet(Sized):
         of the :class:`.DataSet` – then a dict of empty :py:class:`xr.DataArray` s is
         returned.
 
+        The dependent parameters of the Dataset are normally used as coordinates of the
+        XArray dataframe. However if non unique values are found for the dependent parameter
+        values we will fall back to using an index as coordinates.
+
         Args:
             *params: string parameter names, QCoDeS Parameter objects, and
                 ParamSpec objects. If no parameters are supplied data for
@@ -1177,7 +1065,11 @@ class DataSet(Sized):
         data = self.get_parameter_data(*params,
                                        start=start,
                                        end=end)
-        return self._load_to_xarray_dataarray_dict(data)
+        datadict = self._load_to_xarray_dataarray_dict(data)
+
+        for dataarray in datadict.values():
+            self._add_metadata_to_xarray(dataarray)
+        return datadict
 
     def to_xarray_dataset(self, *params: Union[str,
                                                ParamSpec,
@@ -1197,6 +1089,10 @@ class DataSet(Sized):
         less than or equal to the start, or if start is after the current end
         of the :class:`.DataSet` – then a empty :py:class:`xr.Dataset` s is
         returned.
+
+        The dependent parameters of the Dataset are normally used as coordinates of the
+        XArray dataframe. However if non unique values are found for the dependent parameter
+        values we will fall back to using an index as coordinates.
 
         Args:
             *params: string parameter names, QCoDeS Parameter objects, and
@@ -1246,10 +1142,37 @@ class DataSet(Sized):
                 paramspec_dict = self.paramspecs[str(dim)]._to_dict()
                 xrdataset.coords[str(dim)].attrs.update(paramspec_dict.items())
 
-        xrdataset.attrs["sample_name"] = self.sample_name
-        xrdataset.attrs["exp_name"] = self.exp_name
+        self._add_metadata_to_xarray(xrdataset)
 
         return xrdataset
+
+    def _add_metadata_to_xarray(
+            self,
+            xrdataset: Union["xr.Dataset", "xr.DataArray"]
+    ) -> None:
+        xrdataset.attrs.update({
+            "ds_name": self.name,
+            "sample_name": self.sample_name,
+            "exp_name": self.exp_name,
+            "snapshot": self.snapshot_raw or "null",
+            "guid": self.guid,
+            "run_timestamp": self.run_timestamp() or "",
+            "completed_timestamp": self.completed_timestamp() or "",
+            "captured_run_id": self.captured_run_id,
+            "captured_counter": self.captured_counter,
+            "run_id": self.run_id,
+            "run_description": serial.to_json_for_storage(self.description)
+        })
+        if self.run_timestamp_raw is not None:
+            xrdataset.attrs["run_timestamp_raw"] = self.run_timestamp_raw
+        if self.completed_timestamp_raw is not None:
+            xrdataset.attrs[
+                "completed_timestamp_raw"] = self.completed_timestamp_raw
+        if len(self._metadata) > 0:
+            xrdataset.attrs['extra_metadata'] = {}
+
+            for metadata_tag, metadata in self._metadata.items():
+                xrdataset.attrs['extra_metadata'][metadata_tag] = metadata
 
     @staticmethod
     def _data_to_dataframe(data: Dict[str, numpy.ndarray], index: Union["pd.Index", "pd.MultiIndex"]) -> "pd.DataFrame":
@@ -1306,11 +1229,18 @@ class DataSet(Sized):
 
         for name, subdict in datadict.items():
             index = self._generate_pandas_index(subdict)
-            xrdarray: xr.DataArray = self._data_to_dataframe(
-                subdict, index).to_xarray()[name]
-            paramspec_dict = self.paramspecs[name]._to_dict()
-            xrdarray.attrs.update(paramspec_dict.items())
-            data_xrdarray_dict[name] = xrdarray
+            if index is not None and len(index.unique()) != len(index):
+                for _name in subdict:
+                    data_xrdarray_dict[_name] = self._data_to_dataframe(
+                        subdict, index).reset_index().to_xarray()[_name]
+                    paramspec_dict = self.paramspecs[_name]._to_dict()
+                    data_xrdarray_dict[_name].attrs.update(paramspec_dict.items())
+            else:
+                xrdarray: xr.DataArray = self._data_to_dataframe(
+                    subdict, index).to_xarray()[name]
+                data_xrdarray_dict[name] = xrdarray
+                paramspec_dict = self.paramspecs[name]._to_dict()
+                xrdarray.attrs.update(paramspec_dict.items())
 
         return data_xrdarray_dict
 
@@ -1343,6 +1273,8 @@ class DataSet(Sized):
             single_file: If true, merges the data of same length of multiple
                          dependent parameters to a single file.
             single_file_name: User defined name for the data to be concatenated.
+                              If no extension is passed (.dat, .csv or .txt),
+                              .dat is automatically appended.
 
         Raises:
             DataLengthException: If the data of multiple parameters have not same
