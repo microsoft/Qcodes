@@ -3,11 +3,78 @@ import numpy as np
 from typing import Any
 
 from qcodes import VisaInstrument
-from qcodes.instrument.parameter import ArrayParameter, ParamRawDataType
-from qcodes.utils.validators import Numbers, Ints, Enum, Strings
+from qcodes.instrument.parameter import ArrayParameter, ParamRawDataType, ParameterWithSetpoints, Parameter
+from qcodes.utils.validators import Numbers, Ints, Enum, Strings, Arrays
 
 from typing import Tuple
 import time
+
+
+class ChannelTrace(ParameterWithSetpoints):
+    """
+    Parameter class for the two channel buffers
+    """
+
+    def __init__(self, name: str, channel: int, **kwargs) -> None:
+        """
+        Args:
+            name: The name of the parameter
+            channel: The relevant channel (1 or 2). The name should
+                should match this.
+        """
+        super().__init__(name, **kwargs)
+
+        self._valid_channels = (1, 2)
+
+        if channel not in self._valid_channels:
+            raise ValueError('Invalid channel specifier. SR830 only has '
+                             'channels 1 and 2.')
+
+        if not isinstance(self.root_instrument, SR830):
+            raise ValueError('Invalid parent instrument. ChannelBuffer '
+                             'can only live on an SR830.')
+
+        self.channel = channel
+        self.update_unit()
+
+
+
+        # YES, it should be: comparing to the string 'none' and not
+        # the None literal
+    def update_unit(self):
+        params = self.root_instrument.parameters
+        if params[f'ch{self.channel}_ratio'].get() != 'none':
+            self.unit = '%'
+        else:
+            disp = params[f'ch{self.channel}_display'].get()
+            if disp == 'Phase':
+                self.unit = 'deg'
+            else:
+                self.unit = 'V'
+
+
+
+
+
+    def get_raw(self) -> ParamRawDataType:
+        """
+        Get command. Returns numpy array
+        """
+
+        N = self.root_instrument.buffer_npts()
+        if N == 0:
+            raise ValueError('No points stored in SR830 data buffer.'
+                             ' Can not poll anything.')
+
+        # poll raw binary data
+        self.root_instrument.write(f'TRCL ? {self.channel}, 0, {N}')
+        rawdata = self.root_instrument.visa_handle.read_raw()
+
+        # parse it
+        realdata = np.fromstring(rawdata, dtype='<i2')
+        numbers = realdata[::2]*2.0**(realdata[1::2]-124)
+
+        return numbers
 
 
 class ChannelBuffer(ArrayParameter):
