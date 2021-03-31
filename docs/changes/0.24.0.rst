@@ -3,6 +3,12 @@ Changelog for QCoDeS 0.24.0
 
 The March 2021 release of QCoDeS.
 
+-----------------
+Breaking Changes:
+-----------------
+
+- Because the mode of the Infiniium instrument driver is no longer set in the constructor, the change introduced by #2837 is a breaking change.
+
 ---------
 Improved:
 ---------
@@ -11,7 +17,7 @@ Improved:
 - Update use of Slack API in qcodes.utils.slack.Slack class (#2813)
 - Support dataset export to NetCDF or CSV after measurement ends (#2782)
 - Export more metadata to xarray dataset (#2854)
-
+- Extra explanation for Experiment and database in 15_minutes notebook (#2838)
 
 -----------------
 Improved drivers:
@@ -19,9 +25,3 @@ Improved drivers:
 
 - Remove hardcoded acquire mode and allow users to set acquire mode for trace on Infiniium driver (#2837)
 - Updating SR830 driver with adding autorange method and its example notebook (#2832)
-
------------------
-Breaking Changes:
------------------
-
-- Because the mode of the Infiniium instrument driver is no longer set in the constructor, the change introduced by #2837 is a breaking change.
