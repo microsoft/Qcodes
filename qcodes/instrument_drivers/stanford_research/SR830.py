@@ -37,11 +37,8 @@ class ChannelTrace(ParameterWithSetpoints):
         self.channel = channel
         self.update_unit()
 
-
-
-        # YES, it should be: comparing to the string 'none' and not
-        # the None literal
     def update_unit(self):
+
         params = self.root_instrument.parameters
         if params[f'ch{self.channel}_ratio'].get() != 'none':
             self.unit = '%'
@@ -51,10 +48,6 @@ class ChannelTrace(ParameterWithSetpoints):
                 self.unit = 'deg'
             else:
                 self.unit = 'V'
-
-
-
-
 
     def get_raw(self) -> ParamRawDataType:
         """
@@ -491,12 +484,12 @@ class SR830(VisaInstrument):
                            unit='',
                            initial_value=1,
                            get_cmd=None,
-                           set_cmd=None)                                       
+                           set_cmd=None)
 
         self.add_parameter('sweep_n_points',
                            unit='',
                            initial_value=10,
-                           vals=Numbers(1, 1e3), # max should be equal the max buffer size
+                           vals=Numbers(1, 16e3),
                            get_cmd=None,
                            set_cmd=None)
 
@@ -505,7 +498,7 @@ class SR830(VisaInstrument):
                            startparam=self.sweep_start,
                            stopparam=self.sweep_stop,
                            numpointsparam=self.sweep_n_points,
-                           vals=Arrays(shape=(self.buffer_npts.get,)))                           
+                           vals=Arrays(shape=(self.buffer_npts.get,)))
 
         # Channel setup
         for ch in range(1, 3):
@@ -528,7 +521,7 @@ class SR830(VisaInstrument):
                                channel=ch,
                                vals=Arrays(shape=(self.buffer_npts.get,)),
                                setpoints=(self.sweep_setpoints,),
-                               parameter_class=ChannelTrace)                               
+                               parameter_class=ChannelTrace)
 
         # Auto functions
         self.add_function('auto_gain', call_cmd='AGAN')
@@ -754,7 +747,7 @@ class SR830(VisaInstrument):
         ratio_val = int(self.ask(f'DDEF ? {channel}').split(',')[1])
         self.write(f'DDEF {channel}, {disp_int}, {ratio_val}')
         self._buffer_ready = False
-        # we update the unit of the datatrace 
+        # we update the unit of the datatrace
         # according to the choice of channel
         params = self.parameters
         params[f'ch{channel}_datatrace'].update_unit()
@@ -824,8 +817,12 @@ class SR830(VisaInstrument):
             sets += 1
             time.sleep(self.time_constant())
 
-    def set_sweep_parameters(self,sweep_param, start, stop, n_points=10, label=None):
-
+    def set_sweep_parameters(self,
+                             sweep_param: Parameter,
+                             start: int,
+                             stop: int,
+                             n_points: int = 10,
+                             label: str = None) -> None:
 
         self.sweep_start.unit = sweep_param.unit
         self.sweep_start.vals = sweep_param.vals
@@ -841,6 +838,7 @@ class SR830(VisaInstrument):
         elif sweep_param.label is not None:
             self.sweep_setpoints.label = sweep_param.label
 
+
 class GeneratedSetPoints(Parameter):
     """
     A parameter that generates a setpoint array from start, stop and num points
@@ -853,24 +851,22 @@ class GeneratedSetPoints(Parameter):
         self._numpointsparam = numpointsparam
         self.update_units_if_time()
 
-
     def update_units_if_time(self) -> None:
         """
         If the buffer is filled at a constant sample rate
         update the unit and label to s,Time else do nothing
         """
         SR = self.root_instrument.buffer_SR.get()
-        if SR is not 'Trigger':
+        if SR != 'Trigger':
             self.unit = 's'
             self.label = 'Time'
- 
 
-    def get_raw(self):
+    def get_raw(self) -> ParamRawDataType:
         SR = self.root_instrument.buffer_SR.get()
         N = self.root_instrument.buffer_npts.get()
         if SR == 'Trigger':
             return np.linspace(self._startparam(), self._stopparam(),
-                            self._numpointsparam())
+                               self._numpointsparam())
 
         else:
             dt = 1/SR
