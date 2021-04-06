@@ -464,6 +464,11 @@ class SR830(VisaInstrument):
             self.add_parameter(f'ch{ch}_databuffer',
                                channel=ch,
                                parameter_class=ChannelBuffer)
+            self.add_parameter(f'ch{ch}_datatrace',
+                               channel=ch,
+                               vals=Arrays(shape=(self.buffer_npts.get,)),
+                               setpoints=(self.sweep_setpoints,),
+                               parameter_class=ChannelTrace)                               
 
         # Data transfer
         self.add_parameter('X',
@@ -749,6 +754,10 @@ class SR830(VisaInstrument):
         ratio_val = int(self.ask(f'DDEF ? {channel}').split(',')[1])
         self.write(f'DDEF {channel}, {disp_int}, {ratio_val}')
         self._buffer_ready = False
+        # we update the unit of the datatrace 
+        # according to the choice of channel
+        params = self.parameters
+        params[f'ch{channel}_datatrace'].update_unit()
 
     def _set_units(self, unit: str) -> None:
         # TODO:
@@ -868,4 +877,3 @@ class GeneratedSetPoints(Parameter):
             dt = 1/SR
 
             return np.linspace(0, N*dt, N)
-            
