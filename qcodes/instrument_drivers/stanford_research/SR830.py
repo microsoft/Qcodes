@@ -421,55 +421,6 @@ class SR830(VisaInstrument):
                                'GPIB': '1\n',
                            })
 
-        self.add_parameter('sweep_start',
-                           unit='',
-                           initial_value=0,
-                           get_cmd=None,
-                           set_cmd=None)
-
-        self.add_parameter('sweep_stop',
-                           unit='',
-                           initial_value=1,
-                           get_cmd=None,
-                           set_cmd=None)                                       
-
-        self.add_parameter('sweep_n_points',
-                           unit='',
-                           initial_value=10,
-                           vals=Numbers(1, 1e3), # max should be equal the max buffer size
-                           get_cmd=None,
-                           set_cmd=None)
-
-        self.add_parameter('sweep_setpoints',
-                           parameter_class=GeneratedSetPoints,
-                           startparam=self.sweep_start,
-                           stopparam=self.sweep_stop,
-                           numpointsparam=self.sweep_n_points,
-                           vals=Arrays(shape=(self.buffer_npts.get,)))                           
-
-        # Channel setup
-        for ch in range(1, 3):
-
-            # detailed validation and mapping performed in set/get functions
-            self.add_parameter(f'ch{ch}_ratio',
-                               label=f'Channel {ch} ratio',
-                               get_cmd=partial(self._get_ch_ratio, ch),
-                               set_cmd=partial(self._set_ch_ratio, ch),
-                               vals=Strings())
-            self.add_parameter(f'ch{ch}_display',
-                               label=f'Channel {ch} display',
-                               get_cmd=partial(self._get_ch_display, ch),
-                               set_cmd=partial(self._set_ch_display, ch),
-                               vals=Strings())
-            self.add_parameter(f'ch{ch}_databuffer',
-                               channel=ch,
-                               parameter_class=ChannelBuffer)
-            self.add_parameter(f'ch{ch}_datatrace',
-                               channel=ch,
-                               vals=Arrays(shape=(self.buffer_npts.get,)),
-                               setpoints=(self.sweep_setpoints,),
-                               parameter_class=ChannelTrace)                               
-
         # Data transfer
         self.add_parameter('X',
                            get_cmd='OUTP? 1',
@@ -529,6 +480,55 @@ class SR830(VisaInstrument):
                            label='Buffer number of stored points',
                            get_cmd='SPTS ?',
                            get_parser=int)
+
+        self.add_parameter('sweep_start',
+                           unit='',
+                           initial_value=0,
+                           get_cmd=None,
+                           set_cmd=None)
+
+        self.add_parameter('sweep_stop',
+                           unit='',
+                           initial_value=1,
+                           get_cmd=None,
+                           set_cmd=None)                                       
+
+        self.add_parameter('sweep_n_points',
+                           unit='',
+                           initial_value=10,
+                           vals=Numbers(1, 1e3), # max should be equal the max buffer size
+                           get_cmd=None,
+                           set_cmd=None)
+
+        self.add_parameter('sweep_setpoints',
+                           parameter_class=GeneratedSetPoints,
+                           startparam=self.sweep_start,
+                           stopparam=self.sweep_stop,
+                           numpointsparam=self.sweep_n_points,
+                           vals=Arrays(shape=(self.buffer_npts.get,)))                           
+
+        # Channel setup
+        for ch in range(1, 3):
+
+            # detailed validation and mapping performed in set/get functions
+            self.add_parameter(f'ch{ch}_ratio',
+                               label=f'Channel {ch} ratio',
+                               get_cmd=partial(self._get_ch_ratio, ch),
+                               set_cmd=partial(self._set_ch_ratio, ch),
+                               vals=Strings())
+            self.add_parameter(f'ch{ch}_display',
+                               label=f'Channel {ch} display',
+                               get_cmd=partial(self._get_ch_display, ch),
+                               set_cmd=partial(self._set_ch_display, ch),
+                               vals=Strings())
+            self.add_parameter(f'ch{ch}_databuffer',
+                               channel=ch,
+                               parameter_class=ChannelBuffer)
+            self.add_parameter(f'ch{ch}_datatrace',
+                               channel=ch,
+                               vals=Arrays(shape=(self.buffer_npts.get,)),
+                               setpoints=(self.sweep_setpoints,),
+                               parameter_class=ChannelTrace)                               
 
         # Auto functions
         self.add_function('auto_gain', call_cmd='AGAN')
