@@ -861,10 +861,9 @@ class GeneratedSetPoints(Parameter):
         """
         SR = self.root_instrument.buffer_SR.get()
         if SR is not 'Trigger':
-            self.units = 's'
+            self.unit = 's'
             self.label = 'Time'
-
-
+ 
 
     def get_raw(self):
         SR = self.root_instrument.buffer_SR.get()
