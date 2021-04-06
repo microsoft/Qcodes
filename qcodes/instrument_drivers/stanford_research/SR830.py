@@ -421,6 +421,32 @@ class SR830(VisaInstrument):
                                'GPIB': '1\n',
                            })
 
+        self.add_parameter('sweep_start',
+                           unit='',
+                           initial_value=0,
+                           get_cmd=None,
+                           set_cmd=None)
+
+        self.add_parameter('sweep_stop',
+                           unit='',
+                           initial_value=1,
+                           get_cmd=None,
+                           set_cmd=None)                                       
+
+        self.add_parameter('sweep_n_points',
+                           unit='',
+                           initial_value=10,
+                           vals=Numbers(1, 1e3), # max should be equal the max buffer size
+                           get_cmd=None,
+                           set_cmd=None)
+
+        self.add_parameter('sweep_setpoints',
+                           parameter_class=GeneratedSetPoints,
+                           startparam=self.sweep_start,
+                           stopparam=self.sweep_stop,
+                           numpointsparam=self.sweep_n_points,
+                           vals=Arrays(shape=(self.buffer_npts.get,)))                           
+
         # Channel setup
         for ch in range(1, 3):
 
@@ -788,3 +814,58 @@ class SR830(VisaInstrument):
         while autorange_once() and sets < max_changes:
             sets += 1
             time.sleep(self.time_constant())
+
+    def set_sweep_parameters(self,sweep_param, start, stop, n_points=10, label=None):
+
+
+        self.sweep_start.unit = sweep_param.unit
+        self.sweep_start.vals = sweep_param.vals
+        self.sweep_start.set(start)
+
+        self.sweep_stop.unit = sweep_param.unit
+        self.sweep_stop.vals = sweep_param.vals
+        self.sweep_stop.set(stop)
+        self.sweep_n_points.set(n_points)
+        self.sweep_setpoints.unit = sweep_param.unit
+        if label is not None:
+            self.sweep_setpoints.label = label
+        elif sweep_param.label is not None:
+            self.sweep_setpoints.label = sweep_param.label
+
+class GeneratedSetPoints(Parameter):
+    """
+    A parameter that generates a setpoint array from start, stop and num points
+    parameters.
+    """
+    def __init__(self, startparam, stopparam, numpointsparam, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._startparam = startparam
+        self._stopparam = stopparam
+        self._numpointsparam = numpointsparam
+        self.update_units_if_time()
+
+
+    def update_units_if_time(self) -> None:
+        """
+        If the buffer is filled at a constant sample rate
+        update the unit and label to s,Time else do nothing
+        """
+        SR = self.root_instrument.buffer_SR.get()
+        if SR is not 'Trigger':
+            self.units = 's'
+            self.label = 'Time'
+
+
+
+    def get_raw(self):
+        SR = self.root_instrument.buffer_SR.get()
+        N = self.root_instrument.buffer_npts.get()
+        if SR == 'Trigger':
+            return np.linspace(self._startparam(), self._stopparam(),
+                            self._numpointsparam())
+
+        else:
+            dt = 1/SR
+
+            return np.linspace(0, N*dt, N)
+            
