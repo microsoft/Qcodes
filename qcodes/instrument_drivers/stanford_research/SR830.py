@@ -1,6 +1,6 @@
 from functools import partial
 import numpy as np
-from typing import Any
+from typing import Any, Union
 
 from qcodes import VisaInstrument
 from qcodes.instrument.parameter import ArrayParameter, ParamRawDataType, ParameterWithSetpoints, Parameter
@@ -15,7 +15,7 @@ class ChannelTrace(ParameterWithSetpoints):
     Parameter class for the two channel buffers
     """
 
-    def __init__(self, name: str, channel: int, **kwargs) -> None:
+    def __init__(self, name: str, channel: int, **kwargs: Any) -> None:
         """
         Args:
             name: The name of the parameter
@@ -37,8 +37,8 @@ class ChannelTrace(ParameterWithSetpoints):
         self.channel = channel
         self.update_unit()
 
-    def update_unit(self):
-
+    def update_unit(self) -> None:
+        assert isinstance(self.root_instrument, SR830)
         params = self.root_instrument.parameters
         if params[f'ch{self.channel}_ratio'].get() != 'none':
             self.unit = '%'
@@ -53,7 +53,7 @@ class ChannelTrace(ParameterWithSetpoints):
         """
         Get command. Returns numpy array
         """
-
+        assert isinstance(self.root_instrument, SR830)
         N = self.root_instrument.buffer_npts()
         if N == 0:
             raise ValueError('No points stored in SR830 data buffer.'
@@ -750,7 +750,9 @@ class SR830(VisaInstrument):
         # we update the unit of the datatrace
         # according to the choice of channel
         params = self.parameters
-        params[f'ch{channel}_datatrace'].update_unit()
+        dataparam = params[f'ch{channel}_datatrace']
+        assert isinstance(dataparam, ChannelTrace)
+        dataparam.update_unit()
 
     def _set_units(self, unit: str) -> None:
         # TODO:
@@ -819,10 +821,10 @@ class SR830(VisaInstrument):
 
     def set_sweep_parameters(self,
                              sweep_param: Parameter,
-                             start: int,
-                             stop: int,
+                             start: float,
+                             stop: float,
                              n_points: int = 10,
-                             label: str = None) -> None:
+                             label: Union[str,None] = None) -> None:
 
         self.sweep_start.unit = sweep_param.unit
         self.sweep_start.vals = sweep_param.vals
@@ -844,7 +846,7 @@ class GeneratedSetPoints(Parameter):
     A parameter that generates a setpoint array from start, stop and num points
     parameters.
     """
-    def __init__(self, startparam, stopparam, numpointsparam, *args, **kwargs):
+    def __init__(self, startparam: 'Parameter', stopparam: 'Parameter', numpointsparam: 'Parameter', *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self._startparam = startparam
         self._stopparam = stopparam
@@ -856,17 +858,24 @@ class GeneratedSetPoints(Parameter):
         If the buffer is filled at a constant sample rate
         update the unit and label to s,Time else do nothing
         """
+        assert isinstance(self.root_instrument, SR830)
         SR = self.root_instrument.buffer_SR.get()
         if SR != 'Trigger':
             self.unit = 's'
             self.label = 'Time'
 
     def get_raw(self) -> ParamRawDataType:
+        assert isinstance(self.root_instrument, SR830)
         SR = self.root_instrument.buffer_SR.get()
         N = self.root_instrument.buffer_npts.get()
         if SR == 'Trigger':
-            return np.linspace(self._startparam(), self._stopparam(),
-                               self._numpointsparam())
+            start = self._startparam()
+            stop = self._stopparam()
+            nsteps = self._numpointsparam 
+            assert isinstance(start,float)
+            assert isinstance(stop,float)
+            assert isinstance(nsteps,int)
+            return np.linspace(start, stop, nsteps)
 
         else:
             dt = 1/SR
