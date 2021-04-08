@@ -154,7 +154,7 @@ class ChipMeta(InstrumentBase):
         station: "Station",
         devices: Dict[str, Dict[str, List[str]]],
         default_values: Dict[str, Dict[str, Any]],
-        connections: Dict[str, Dict[str, Union[str, List[str]]]],
+        connections: Dict[str, List[str]],
         set_defaults_on_load: bool = False,
         **kwargs):
         """
