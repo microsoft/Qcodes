@@ -1,6 +1,7 @@
 from functools import partial
 import logging
 from typing import Any, Sequence, Dict, Optional
+from scipy.interpolate import interp1d
 
 import numpy as np
 
@@ -9,7 +10,7 @@ from qcodes.utils.validators import Numbers, Arrays, Strings, ComplexNumbers
 from qcodes.instrument.parameter import MultiParameter, Parameter, \
     ArrayParameter, ParameterWithSetpoints
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
-import random
+import time
 
 log = logging.getLogger(__name__)
 
@@ -698,3 +699,166 @@ class SnapShotTestInstrument(Instrument):
         snap = super().snapshot_base(
             update=update, params_to_skip_update=params_to_skip_update)
         return snap
+
+
+class MockField(Instrument):
+
+    def __init__(
+            self,
+            name: str,
+            vals: Numbers = Numbers(min_value=-1., max_value=1.),
+            **kwargs):
+        """Mock instrument for emulating a magnetic field axis
+
+        Args:
+            name (str): Instrument name
+            vals (Numbers, optional): Soft limits. Defaults to Numbers(min_value=-1., max_value=1.).
+        """
+        super().__init__(name=name, **kwargs)
+        self._field = 0.0
+        self.add_parameter("field",
+                           parameter_class=Parameter,
+                           initial_value=0.0,
+                           unit='T',
+                           vals=vals,
+                           get_cmd=self.get_field, set_cmd=self.set_field)
+        self.add_parameter("ramp_rate",
+                           parameter_class=Parameter,
+                           initial_value=0.1,
+                           unit='T/min',
+                           get_cmd=None, set_cmd=None)
+        self._ramp_start_time = None
+        self._wait_time = None
+        self._fr = self._field_ramp()
+        next(self._fr)
+    
+    def get_field(self):
+        """
+        This method is automatically wrapped to
+        provide a ``get`` method on the parameter instance.
+        """
+        if self._ramp_start_time:
+            _time_since_start = time.time() - self._ramp_start_time
+            val = self._fr.send(_time_since_start)
+            next(self._fr)
+            self._field = val
+        return self._field
+
+    def set_field(self, value, block: bool = True):
+        if self._field == value:
+            return value
+
+        self._wait_time = 60. * np.abs(self._field - value) / self.ramp_rate()
+        self._field_ramp_fcn = interp1d(
+            x=[0.0, self._wait_time],
+            y=[self._field, value],
+            bounds_error=False,
+            fill_value=(self._field, value)
+        )
+        self._ramp_start_time = time.time()
+
+        if block:
+            time.sleep(self._wait_time)
+            self._field = value
+            return value
+
+    def _field_ramp(self):
+        """
+        Yields pinch off current for a given gate voltage
+        """
+        while True:
+            _time = yield
+            if _time is None:
+                _time = 0.0
+
+            yield float(self._field_ramp_fcn(_time))
+
+
+class MockLockin(Instrument):
+
+    def __init__(
+            self,
+            name: str,
+            **kwargs):
+        super().__init__(name=name, **kwargs)
+        self.add_parameter("X",
+                           parameter_class=Parameter,
+                           initial_value=1e-3,
+                           unit='V',
+                           get_cmd=None, set_cmd=None)
+        self.add_parameter("Y",
+                           parameter_class=Parameter,
+                           initial_value=1e-5,
+                           unit='V',
+                           get_cmd=None, set_cmd=None)
+        self.add_parameter("frequency",
+                           parameter_class=Parameter,
+                           initial_value=125.,
+                           unit='Hz',
+                           get_cmd=None, set_cmd=None)
+        self.add_parameter("amplitude",
+                           parameter_class=Parameter,
+                           initial_value=0.,
+                           unit='V',
+                           get_cmd=None, set_cmd=None)
+        self.add_parameter("phase",
+                           parameter_class=Parameter,
+                           initial_value=0.,
+                           unit='deg',
+                           get_cmd=None, set_cmd=None)
+        self.add_parameter("time_constant",
+                           parameter_class=Parameter,
+                           initial_value=1.e-3,
+                           unit='s',
+                           get_cmd=None, set_cmd=None)
+        self.add_parameter("Y",
+                           parameter_class=Parameter,
+                           initial_value=0.,
+                           unit='V',
+                           get_cmd=None, set_cmd=None)
+
+
+class MockDACChannel(InstrumentChannel):
+    """
+    A single dummy channel implementation
+    """
+
+    def __init__(self, parent, name):
+        super().__init__(parent, name)
+
+        self.add_parameter('voltage',
+                           parameter_class=Parameter,
+                           initial_value=0.,
+                           label=f"Voltage_{name}",
+                           unit='V',
+                           vals=Numbers(-2., 2.),
+                           get_cmd=None, set_cmd=None)
+
+
+class MockDAC(Instrument):
+
+    def __init__(
+        self,
+        name: str = 'mdac',
+        num_channels: int = 10,
+        **kwargs):
+
+        """
+        Create a dummy instrument that can be used for testing
+
+        Args:
+            name: name for the instrument
+            gates: list of names that is used to create parameters for
+                            the instrument
+        """
+        super().__init__(name, **kwargs)
+
+        # make gates
+        channels = ChannelList(self, "channels", MockDACChannel)
+        for n in range(num_channels):
+            num = str(n + 1).zfill(2)
+            chan_name = f"ch{num}"
+            channel = MockDACChannel(parent=self, name=chan_name)
+            channels.append(channel)
+            self.add_submodule(chan_name, channel)
+        self.add_submodule("channels", channels)
