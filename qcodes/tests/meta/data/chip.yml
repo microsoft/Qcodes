@@ -27,7 +27,7 @@ instruments:
           - lockin.Y
 
   field:
-    type: forq.meta.InstrumentMeta
+    type: qcodes.instrument_drivers.meta.InstrumentMeta
     init:
       aliases:
         X:
