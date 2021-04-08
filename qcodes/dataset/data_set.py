@@ -52,12 +52,15 @@ from .data_set_cache import DataSetCache
 from .descriptions.versioning import serialization as serial
 from .subscriber import _Subscriber
 
-from .exporters.export_to_pandas_xarray import (
+from .exporters.export_to_pandas import (
     load_to_dataframe_dict,
-    load_to_concatenated_dataframe,
+    load_to_concatenated_dataframe
+)
+from .exporters.export_to_xarray import (
     load_to_xarray_dataset,
     load_to_xarray_dataarray_dict
 )
+
 
 if TYPE_CHECKING:
     import pandas as pd

@@ -10,12 +10,15 @@ from qcodes.dataset.sqlite.queries import (
 from qcodes.dataset.sqlite.connection import ConnectionPlus
 from qcodes.utils.deprecate import deprecate
 
-from .exporters.export_to_pandas_xarray import (
+from .exporters.export_to_pandas import (
     load_to_dataframe_dict,
-    load_to_xarray_dataarray_dict,
     load_to_concatenated_dataframe,
+)
+from .exporters.export_to_xarray import (
+    load_to_xarray_dataarray_dict,
     load_to_xarray_dataset
 )
+
 
 if TYPE_CHECKING:
     import pandas as pd
