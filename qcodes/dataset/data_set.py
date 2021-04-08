@@ -53,6 +53,8 @@ from .data_set_cache import DataSetCache
 from .descriptions.versioning import serialization as serial
 from .subscriber import _Subscriber
 
+from .exporters.export_to_pandas_xarray import _load_to_dataframe_dict, _load_to_xarray_dataarray_dict
+
 if TYPE_CHECKING:
     import pandas as pd
     import xarray as xr
@@ -899,7 +901,7 @@ class DataSet(Sized):
         datadict = self.get_parameter_data(*params,
                                            start=start,
                                            end=end)
-        dfs_dict = self._load_to_dataframe_dict(datadict)
+        dfs_dict = _load_to_dataframe_dict(datadict)
         return dfs_dict
 
     @deprecate(reason='This method will be removed due to inconcise naming, please '
@@ -1010,7 +1012,7 @@ class DataSet(Sized):
                 "independent parameter to its own dataframe."
             )
 
-        dfs_dict = self._load_to_dataframe_dict(datadict)
+        dfs_dict = _load_to_dataframe_dict(datadict)
         df = pd.concat(list(dfs_dict.values()), axis=1)
 
         return df
@@ -1065,7 +1067,7 @@ class DataSet(Sized):
         data = self.get_parameter_data(*params,
                                        start=start,
                                        end=end)
-        datadict = self._load_to_xarray_dataarray_dict(data)
+        datadict = _load_to_xarray_dataarray_dict(self, data)
 
         for dataarray in datadict.values():
             self._add_metadata_to_xarray(dataarray)
@@ -1130,7 +1132,7 @@ class DataSet(Sized):
                 "independent parameter to its own datarray."
             )
 
-        data_xrdarray_dict = self._load_to_xarray_dataarray_dict(data)
+        data_xrdarray_dict = _load_to_xarray_dataarray_dict(self, data)
 
         # Casting Hashable for the key type until python/mypy#1114
         # and python/typing#445 are resolved.
@@ -1173,76 +1175,6 @@ class DataSet(Sized):
 
             for metadata_tag, metadata in self._metadata.items():
                 xrdataset.attrs['extra_metadata'][metadata_tag] = metadata
-
-    @staticmethod
-    def _data_to_dataframe(data: Dict[str, numpy.ndarray], index: Union["pd.Index", "pd.MultiIndex"]) -> "pd.DataFrame":
-        import pandas as pd
-        if len(data) == 0:
-            return pd.DataFrame()
-        dependent_col_name = list(data.keys())[0]
-        dependent_data = data[dependent_col_name]
-        if dependent_data.dtype == numpy.dtype('O'):
-            # ravel will not fully unpack a numpy array of arrays
-            # which are of "object" dtype. This can happen if a variable
-            # length array is stored in the db. We use concatenate to
-            # flatten these
-            mydata = numpy.concatenate(dependent_data)
-        else:
-            mydata = dependent_data.ravel()
-        df = pd.DataFrame(mydata, index=index,
-                          columns=[dependent_col_name])
-        return df
-
-    @staticmethod
-    def _generate_pandas_index(data: Dict[str, numpy.ndarray]) -> Union["pd.Index", "pd.MultiIndex"]:
-        # the first element in the dict given by parameter_tree is always the dependent
-        # parameter and the index is therefore formed from the rest
-        import pandas as pd
-        keys = list(data.keys())
-        if len(data) <= 1:
-            index = None
-        elif len(data) == 2:
-            index = pd.Index(data[keys[1]].ravel(), name=keys[1])
-        else:
-            index_data = tuple(numpy.concatenate(data[key])
-                               if data[key].dtype == numpy.dtype('O')
-                               else data[key].ravel()
-                               for key in keys[1:])
-            index = pd.MultiIndex.from_arrays(
-                index_data,
-                names=keys[1:])
-        return index
-
-    def _load_to_dataframe_dict(self, datadict: ParameterData) -> Dict[str, "pd.DataFrame"]:
-        dfs = {}
-        for name, subdict in datadict.items():
-            index = self._generate_pandas_index(subdict)
-            dfs[name] = self._data_to_dataframe(subdict, index)
-        return dfs
-
-    def _load_to_xarray_dataarray_dict(self,
-                                       datadict: Dict[str, Dict[str, numpy.ndarray]]) -> \
-            Dict[str, "xr.DataArray"]:
-        import xarray as xr
-
-        data_xrdarray_dict: Dict[str, xr.DataArray] = {}
-
-        for name, subdict in datadict.items():
-            index = self._generate_pandas_index(subdict)
-            if index is not None and len(index.unique()) != len(index):
-                for _name in subdict:
-                    data_xrdarray_dict[_name] = self._data_to_dataframe(
-                        subdict, index).reset_index().to_xarray()[_name]
-                    paramspec_dict = self.paramspecs[_name]._to_dict()
-                    data_xrdarray_dict[_name].attrs.update(paramspec_dict.items())
-            else:
-                xrdarray: xr.DataArray = self._data_to_dataframe(
-                    subdict, index).to_xarray()[name]
-                data_xrdarray_dict[name] = xrdarray
-                paramspec_dict = self.paramspecs[name]._to_dict()
-                xrdarray.attrs.update(paramspec_dict.items())
-
-        return data_xrdarray_dict
 
     def write_data_to_text_file(self, path: str,
                                 single_file: bool = False,
