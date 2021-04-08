@@ -166,22 +166,21 @@ class InstrumentMeta(InstrumentBase):
 
         Example usage in instrument YAML:
 
-        mux:
-            type: forq.meta.InstrumentMeta
+        field:
+            type: qcodes.instrument_drivers.meta.InstrumentMeta
             init:
             aliases:
-                drive:
-                - rf_source1.frequency
-                - rf_source1.power
-                - rf_source1.phase
-                - rf_source1.status
-                mixer:
-                - rf_source2.frequency
-                - rf_source2.power
-                - rf_source2.phase
-                - rf_source2.status
-                readout:
-                - dmm.volt
+                X:
+                - field_X.field
+                ramp_rate:
+                - field_X.ramp_rate
+            set_defaults_on_load: true
+            default_values:
+                ramp_rate: 0.02
+            setters:
+                X:
+                method: field_X.set_field
+                block: false
 
         Args:
             name (str): Instrument name
