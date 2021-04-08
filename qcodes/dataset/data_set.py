@@ -1,7 +1,6 @@
 import importlib
 import json
 import logging
-import warnings
 import os
 import time
 import uuid
@@ -9,9 +8,9 @@ import uuid
 from dataclasses import dataclass
 from queue import Queue
 from threading import Thread
-from typing import (Hashable, Iterator, TYPE_CHECKING, Any, Callable, Dict,
+from typing import (TYPE_CHECKING, Any, Callable, Dict,
                     List, Mapping, Optional, Sequence, Set,
-                    Sized, Tuple, Union, cast)
+                    Sized, Tuple, Union)
 
 import numpy
 import pandas as pd
@@ -53,7 +52,12 @@ from .data_set_cache import DataSetCache
 from .descriptions.versioning import serialization as serial
 from .subscriber import _Subscriber
 
-from .exporters.export_to_pandas_xarray import _load_to_dataframe_dict, _load_to_xarray_dataarray_dict
+from .exporters.export_to_pandas_xarray import (
+    load_to_dataframe_dict,
+    load_to_concatenated_dataframe,
+    load_to_xarray_dataset,
+    load_to_xarray_dataarray_dict
+)
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -825,36 +829,6 @@ class DataSet(Sized):
         return get_parameter_data(self.conn, self.table_name,
                                   valid_param_names, start, end)
 
-    @staticmethod
-    def _parameter_data_identical(param_dict_a: Dict[str, numpy.ndarray],
-                                  param_dict_b: Dict[str, numpy.ndarray]) -> bool:
-
-        try:
-            numpy.testing.assert_equal(param_dict_a, param_dict_b)
-        except AssertionError:
-            return False
-
-        return True
-
-    def _same_setpoints(self, datadict: ParameterData) -> bool:
-
-        def _get_setpoints(dd: ParameterData) -> Iterator[Dict[str, numpy.ndarray]]:
-
-            for dep_name, param_dict in dd.items():
-                out = {
-                    name: vals for name, vals in param_dict.items() if name != dep_name
-                }
-                yield out
-
-        sp_iterator = _get_setpoints(datadict)
-
-        try:
-            first = next(sp_iterator)
-        except StopIteration:
-            return True
-
-        return all(self._parameter_data_identical(first, rest) for rest in sp_iterator)
-
     def to_pandas_dataframe_dict(self,
                                  *params: Union[str,
                                                 ParamSpec,
@@ -901,7 +875,7 @@ class DataSet(Sized):
         datadict = self.get_parameter_data(*params,
                                            start=start,
                                            end=end)
-        dfs_dict = _load_to_dataframe_dict(datadict)
+        dfs_dict = load_to_dataframe_dict(datadict)
         return dfs_dict
 
     @deprecate(reason='This method will be removed due to inconcise naming, please '
@@ -998,24 +972,7 @@ class DataSet(Sized):
         datadict = self.get_parameter_data(*params,
                                            start=start,
                                            end=end)
-        return self._load_to_concatenated_dataframe(datadict)
-
-    def _load_to_concatenated_dataframe(self, datadict: ParameterData
-                                        ) -> "pd.DataFrame":
-        import pandas as pd
-
-        if not self._same_setpoints(datadict):
-            warnings.warn(
-                "Independent parameter setpoints are not equal. "
-                "Check concatenated output carefully. Please "
-                "consider using `to_pandas_dataframe_dict` to export each "
-                "independent parameter to its own dataframe."
-            )
-
-        dfs_dict = _load_to_dataframe_dict(datadict)
-        df = pd.concat(list(dfs_dict.values()), axis=1)
-
-        return df
+        return load_to_concatenated_dataframe(datadict)
 
     def to_xarray_dataarray_dict(self,
                                  *params: Union[str,
@@ -1067,10 +1024,8 @@ class DataSet(Sized):
         data = self.get_parameter_data(*params,
                                        start=start,
                                        end=end)
-        datadict = _load_to_xarray_dataarray_dict(self, data)
+        datadict = load_to_xarray_dataarray_dict(self, data)
 
-        for dataarray in datadict.values():
-            self._add_metadata_to_xarray(dataarray)
         return datadict
 
     def to_xarray_dataset(self, *params: Union[str,
@@ -1119,62 +1074,7 @@ class DataSet(Sized):
                                        start=start,
                                        end=end)
 
-        return self._load_to_xarray_dataset(data)
-
-    def _load_to_xarray_dataset(self, data: ParameterData) -> "xr.Dataset":
-        import xarray as xr
-
-        if not self._same_setpoints(data):
-            warnings.warn(
-                "Independent parameter setpoints are not equal. "
-                "Check concatenated output carefully. Please "
-                "consider using `to_xarray_dataarray_dict` to export each "
-                "independent parameter to its own datarray."
-            )
-
-        data_xrdarray_dict = _load_to_xarray_dataarray_dict(self, data)
-
-        # Casting Hashable for the key type until python/mypy#1114
-        # and python/typing#445 are resolved.
-        xrdataset = xr.Dataset(
-            cast(Dict[Hashable, xr.DataArray], data_xrdarray_dict))
-
-        for dim in xrdataset.dims:
-            if "index" != dim:
-                paramspec_dict = self.paramspecs[str(dim)]._to_dict()
-                xrdataset.coords[str(dim)].attrs.update(paramspec_dict.items())
-
-        self._add_metadata_to_xarray(xrdataset)
-
-        return xrdataset
-
-    def _add_metadata_to_xarray(
-            self,
-            xrdataset: Union["xr.Dataset", "xr.DataArray"]
-    ) -> None:
-        xrdataset.attrs.update({
-            "ds_name": self.name,
-            "sample_name": self.sample_name,
-            "exp_name": self.exp_name,
-            "snapshot": self.snapshot_raw or "null",
-            "guid": self.guid,
-            "run_timestamp": self.run_timestamp() or "",
-            "completed_timestamp": self.completed_timestamp() or "",
-            "captured_run_id": self.captured_run_id,
-            "captured_counter": self.captured_counter,
-            "run_id": self.run_id,
-            "run_description": serial.to_json_for_storage(self.description)
-        })
-        if self.run_timestamp_raw is not None:
-            xrdataset.attrs["run_timestamp_raw"] = self.run_timestamp_raw
-        if self.completed_timestamp_raw is not None:
-            xrdataset.attrs[
-                "completed_timestamp_raw"] = self.completed_timestamp_raw
-        if len(self._metadata) > 0:
-            xrdataset.attrs['extra_metadata'] = {}
-
-            for metadata_tag, metadata in self._metadata.items():
-                xrdataset.attrs['extra_metadata'][metadata_tag] = metadata
+        return load_to_xarray_dataset(self, data)
 
     def write_data_to_text_file(self, path: str,
                                 single_file: bool = False,

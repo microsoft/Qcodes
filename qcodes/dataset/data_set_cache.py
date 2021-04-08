@@ -10,7 +10,12 @@ from qcodes.dataset.sqlite.queries import (
 from qcodes.dataset.sqlite.connection import ConnectionPlus
 from qcodes.utils.deprecate import deprecate
 
-from .exporters.export_to_pandas_xarray import _load_to_dataframe_dict, _load_to_xarray_dataarray_dict
+from .exporters.export_to_pandas_xarray import (
+    load_to_dataframe_dict,
+    load_to_xarray_dataarray_dict,
+    load_to_concatenated_dataframe,
+    load_to_xarray_dataset
+)
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -144,7 +149,7 @@ class DataSetCache:
             represents one parameter tree.
         """
         data = self.data()
-        return _load_to_dataframe_dict(data)
+        return load_to_dataframe_dict(data)
 
     def to_pandas_dataframe(self) -> "pd.DataFrame":
         """
@@ -156,7 +161,7 @@ class DataSetCache:
             represents one parameter tree.
         """
         data = self.data()
-        return self._dataset._load_to_concatenated_dataframe(data)
+        return load_to_concatenated_dataframe(data)
 
     @deprecate(alternative="to_pandas_dataframe or to_pandas_dataframe_dict")
     def to_pandas(self) -> Dict[str, "pd.DataFrame"]:
@@ -192,7 +197,7 @@ class DataSetCache:
 
         """
         data = self.data()
-        return _load_to_xarray_dataarray_dict(self._dataset, data)
+        return load_to_xarray_dataarray_dict(self._dataset, data)
 
     def to_xarray_dataset(self) -> "xr.Dataset":
         """
@@ -209,7 +214,7 @@ class DataSetCache:
 
         """
         data = self.data()
-        return self._dataset._load_to_xarray_dataset(data)
+        return load_to_xarray_dataset(self._dataset, data)
 
 
 def load_new_data_from_db_and_append(
