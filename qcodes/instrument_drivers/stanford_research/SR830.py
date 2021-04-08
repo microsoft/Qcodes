@@ -870,12 +870,14 @@ class GeneratedSetPoints(Parameter):
         SR = self.root_instrument.buffer_SR.get()
         N = self.root_instrument.buffer_npts.get()
         if SR == 'Trigger':
-            start = float(self._startparam())
-            stop = float(self._stopparam())
-            nsteps = int(self._numpointsparam())
-            assert isinstance(start, float)
-            assert isinstance(stop, float)
+            start = self._startparam()
+            stop =  self._stopparam()
+            nsteps = self._numpointsparam()
+
+            assert isinstance(start, (float,int))
+            assert isinstance(stop, (float,int))
             assert isinstance(nsteps, int)
+            
             return np.linspace(start, stop, nsteps)
 
         else:
