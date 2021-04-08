@@ -166,8 +166,9 @@ class ChipMeta(InstrumentBase):
             devices (Dict[str, Dict[str, List[str]]]): Devices on the chip,
                 for each a DeviceMeta is created
             default_values (Dict[str, Dict[str, Any]]): Default values to set on load
-            connections (Dict[str, Dict[str, Union[str, List[str]]]]): [description]
-            set_defaults_on_load (bool, optional): [description]. Defaults to False.
+            connections (Dict[str, Dict[str, Union[str, List[str]]]]): Connections from channels to
+                endpoint instrument parameters
+            set_defaults_on_load (bool, optional): Set default values on load. Defaults to False.
         """
         super().__init__(name=name, **kwargs)
 
