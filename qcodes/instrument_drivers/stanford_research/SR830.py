@@ -824,7 +824,7 @@ class SR830(VisaInstrument):
                              start: float,
                              stop: float,
                              n_points: int = 10,
-                             label: Union[str,None] = None) -> None:
+                             label: Union[str, None] = None) -> None:
 
         self.sweep_start.unit = sweep_param.unit
         self.sweep_start.vals = sweep_param.vals
@@ -846,7 +846,8 @@ class GeneratedSetPoints(Parameter):
     A parameter that generates a setpoint array from start, stop and num points
     parameters.
     """
-    def __init__(self, startparam: 'Parameter', stopparam: 'Parameter', numpointsparam: 'Parameter', *args: Any, **kwargs: Any) -> None:
+    def __init__(self, startparam: 'Parameter', stopparam: 'Parameter',
+                 numpointsparam: 'Parameter', *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self._startparam = startparam
         self._stopparam = stopparam
@@ -869,12 +870,12 @@ class GeneratedSetPoints(Parameter):
         SR = self.root_instrument.buffer_SR.get()
         N = self.root_instrument.buffer_npts.get()
         if SR == 'Trigger':
-            start = self._startparam()
-            stop = self._stopparam()
-            nsteps = self._numpointsparam 
-            assert isinstance(start,float)
-            assert isinstance(stop,float)
-            assert isinstance(nsteps,int)
+            start = float(self._startparam())
+            stop = float(self._stopparam())
+            nsteps = int(self._numpointsparam())
+            assert isinstance(start, float)
+            assert isinstance(stop, float)
+            assert isinstance(nsteps, int)
             return np.linspace(start, stop, nsteps)
 
         else:
