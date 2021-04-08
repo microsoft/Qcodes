@@ -27,6 +27,8 @@ class SP983A(VisaInstrument):
                  **kwargs: Any) -> None:
         super().__init__(name, address, terminator="\r\n", **kwargs)
 
+        self.connect_message()
+
         self.add_parameter(
             "gain",
             label="Gain",
@@ -42,8 +44,9 @@ class SP983A(VisaInstrument):
             get_cmd=self._get_filter,
             get_parser=self._parse_filter_value,
             set_cmd=self._set_filter,
-            vals={30: '30', 100: '100', 300: '300', 1000: '1000', 3000: '3000',
-                  10e3: '10k', 30e3: '30k', 100e3: '100k', 1e6: 'FULL'},
+            val_mapping={30: '30', 100: '100', 300: '300', 1000: '1k',
+                         3000: '3k', 10e3: '10k', 30e3: '30k',
+                         100e3: '100k', 1e6: 'FULL'},
         )
         self.add_parameter(
             "overload_status",
@@ -89,12 +92,13 @@ class SP983A(VisaInstrument):
         return s.split("Filter: ")[1]
 
     @staticmethod
-    def _parse_filter_value(val: str) -> float:
+    def _parse_filter_value(val: str) -> str:
         if val.startswith("F"):
-            return float(1e6)
+            return "FULL"
         elif val[-3::] == "kHz":
-            return float(val[0:-3]) * 1e3
+            return str(int(val[0:-3]))+'k'
+
         elif val[-2::] == "Hz":
-            return float(val[0:-2])
+            return str(int(val[0:-2]))
         else:
             raise ValueError(f"Could not interpret result. Got: {val}")
