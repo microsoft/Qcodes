@@ -103,4 +103,6 @@ def load_to_xarray_dataset(dataset: DataSet, data: ParameterData) -> xr.Dataset:
             paramspec_dict = dataset.paramspecs[str(dim)]._to_dict()
             xrdataset.coords[str(dim)].attrs.update(paramspec_dict.items())
 
+    _add_metadata_to_xarray(dataset, xrdataset)
+
     return xrdataset

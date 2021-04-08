@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import warnings
 
-from typing import Dict, TYPE_CHECKING, Union, Iterator, cast, Hashable
+from typing import Dict, TYPE_CHECKING, Union, Iterator
 
 import numpy as np
 
 
 if TYPE_CHECKING:
     import pandas as pd
-    from qcodes.dataset.data_set import DataSet, ParameterData
+    from qcodes.dataset.data_set import ParameterData
 
 
 def load_to_dataframe_dict(datadict: ParameterData) -> Dict[str, pd.DataFrame]:
