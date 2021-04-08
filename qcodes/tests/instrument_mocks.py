@@ -811,11 +811,6 @@ class MockLockin(Instrument):
                            initial_value=1.e-3,
                            unit='s',
                            get_cmd=None, set_cmd=None)
-        self.add_parameter("Y",
-                           parameter_class=Parameter,
-                           initial_value=0.,
-                           unit='V',
-                           get_cmd=None, set_cmd=None)
 
 
 class MockDACChannel(InstrumentChannel):

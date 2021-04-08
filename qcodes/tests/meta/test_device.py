@@ -9,12 +9,11 @@ def test_mock_dac(dac):
     dac.ch01.voltage(1.)
     assert dac.ch01.voltage() == 1.
 
-def test_device(station, chip_config, dmm, dac, lockin):
+def test_device(station, chip_config, dac, lockin):
     assert os.path.exists(chip_config)
     station.load_config_file(chip_config)
     chip = station.load_MockChip_123(station=station)
     assert station.dac == dac
-    assert station.dmm == dmm
     assert chip.device1.gate.endpoints == (station.dac.ch01.voltage,)
     assert chip.device1.source.endpoints == (
         lockin.frequency,
@@ -28,8 +27,8 @@ def test_device(station, chip_config, dmm, dac, lockin):
     )
 
 
-def test_device_meas(experiment, station, chip):
-    meas = Measurement(exp=experiment, station=station)
+def test_device_meas(station, chip):
+    meas = Measurement(station=station)
     device = chip.device1
     meas.register_parameter(device.gate)  # register the first independent parameter
     meas.register_parameter(device.drain, setpoints=(device.gate,))  # now register the dependent oone

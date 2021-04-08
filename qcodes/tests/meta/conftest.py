@@ -20,20 +20,19 @@ def field():
 
 
 @pytest.fixture(scope="session")
-def lockin(dac, field):
+def lockin():
     _lockin = MockLockin(
-        name='lockin',
-        setter_param=dac.ch01.voltage,
-        field=field.field
+        name='lockin'
     )
     return _lockin
 
 
 @pytest.fixture(scope="session")
-def station(dac, lockin):
+def station(dac, lockin, field):
     _station = qc.Station()
     _station.add_component(dac)
     _station.add_component(lockin)
+    _station.add_component(field)
     return _station
 
 
