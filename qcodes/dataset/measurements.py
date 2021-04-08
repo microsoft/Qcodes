@@ -1162,7 +1162,8 @@ class Measurement:
         self._shapes = shapes
 
     def run(self, write_in_background: Optional[bool] = None,
-            in_memory_cache: bool = True) -> Runner:
+            in_memory_cache: bool = True,
+            dataset_class: Type[DataSetProtocol] = DataSet) -> Runner:
         """
         Returns the context manager for the experimental run
 
@@ -1188,4 +1189,5 @@ class Measurement:
                       extra_log_info=self._extra_log_info,
                       write_in_background=write_in_background,
                       shapes=self._shapes,
-                      in_memory_cache=in_memory_cache)
+                      in_memory_cache=in_memory_cache,
+                      dataset_class=dataset_class)
