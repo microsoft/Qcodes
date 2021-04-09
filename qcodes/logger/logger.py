@@ -361,7 +361,7 @@ def conditionally_start_all_logging() -> None:
             'testlauncher.py'        # VSCode
         )
         return any(sys.argv[0].endswith(tool) for tool in tools)
-    
+
     if not running_in_test_or_tool() and start_logging_on_import():
         start_all_logging()
 
