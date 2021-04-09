@@ -876,7 +876,12 @@ class Tektronix_AWG5014(VisaInstrument):
                 record_data = value.encode('ASCII')
             else:
                 assert isinstance(value, (abc.Sequence, np.ndarray))
-                record_data = struct.pack('<' + dtype, *value)
+                if dtype[-1] == 'H' and isinstance(value, np.ndarray):
+                    # numpy conversion is fast
+                    record_data = value.astype('<u2').tobytes()
+                else:
+                    # argument unpacking is slow
+                    record_data = struct.pack('<' + dtype, *value)
 
         # the zero byte at the end the record name is the "(Include NULL.)"
         record_name = name.encode('ASCII') + b'\x00'
@@ -1683,11 +1688,10 @@ class Tektronix_AWG5014(VisaInstrument):
             raise TypeError('Marker 2 contains invalid values.' +
                             ' Only 0 and 1 are allowed')
 
-        wflen = len(wf)
-        packed_wf = np.zeros(wflen, dtype=np.uint16)
-        packed_wf += np.uint16(np.round(wf * 8191) + 8191 +
-                               np.round(16384 * m1) +
-                               np.round(32768 * m2))
+        # Note: np.trunc is an order of magnitude faster then np.round
+        packed_wf = np.trunc(16384 * m1 + 32768 * m2
+                             + wf * 8191 + 8191.5).astype(np.uint16)
+
         if len(np.where(packed_wf == -1)[0]) > 0:
             print(np.where(packed_wf == -1))
         return packed_wf
