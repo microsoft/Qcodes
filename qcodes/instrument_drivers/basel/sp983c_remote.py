@@ -24,7 +24,7 @@ class SP983A(VisaInstrument):
                  name: str,
                  address: str,
                  input_offset_voltage: Optional[Parameter] = None,
-                 terminator="\r\n",
+                 terminator: str = "\r\n",
                  **kwargs: Any) -> None:
         super().__init__(name, address, terminator=terminator, **kwargs)
 
