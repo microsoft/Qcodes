@@ -1,19 +1,19 @@
-import functools
 import importlib
 import json
 import logging
-import warnings
 import os
 import time
 import uuid
+
 from dataclasses import dataclass
-from queue import Empty, Queue
+from queue import Queue
 from threading import Thread
-from typing import (Hashable, Iterator, TYPE_CHECKING, Any, Callable, Dict,
+from typing import (TYPE_CHECKING, Any, Callable, Dict,
                     List, Mapping, Optional, Sequence, Set,
-                    Sized, Tuple, Union, cast)
+                    Sized, Tuple, Union)
 
 import numpy
+import pandas as pd
 
 import qcodes
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
@@ -47,9 +47,20 @@ from qcodes.dataset.sqlite.query_helpers import (VALUE, VALUES,
                                                  select_one_where)
 from qcodes.instrument.parameter import _BaseParameter
 from qcodes.utils.deprecate import deprecate
-
+from qcodes.dataset.export_config import DataExportType, get_data_export_type, get_data_export_path, get_data_export_prefix, get_data_export_automatic
 from .data_set_cache import DataSetCache
 from .descriptions.versioning import serialization as serial
+from .subscriber import _Subscriber
+
+from .exporters.export_to_pandas import (
+    load_to_dataframe_dict,
+    load_to_concatenated_dataframe
+)
+from .exporters.export_to_xarray import (
+    load_to_xarray_dataset,
+    load_to_xarray_dataarray_dict
+)
+
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -97,121 +108,6 @@ class DataLengthException(Exception):
 
 class DataPathException(Exception):
     pass
-
-
-class _Subscriber(Thread):
-    """
-    Class to add a subscriber to a :class:`.DataSet`. The subscriber gets called every
-    time an insert is made to the results_table.
-
-    The _Subscriber is not meant to be instantiated directly, but rather used
-    via the 'subscribe' method of the :class:`.DataSet`.
-
-    NOTE: A subscriber should be added *after* all parameters have been added.
-
-    NOTE: Special care shall be taken when using the *state* object: it is the
-    user's responsibility to operate with it in a thread-safe way.
-    """
-
-    def __init__(self,
-                 dataSet: 'DataSet',
-                 id_: str,
-                 callback: Callable[..., None],
-                 state: Optional[Any] = None,
-                 loop_sleep_time: int = 0,  # in milliseconds
-                 min_queue_length: int = 1,
-                 callback_kwargs: Optional[Mapping[str, Any]] = None
-                 ) -> None:
-        super().__init__()
-
-        self._id = id_
-
-        self.dataSet = dataSet
-        self.table_name = dataSet.table_name
-        self._data_set_len = len(dataSet)
-
-        self.state = state
-
-        self.data_queue: "Queue[Any]" = Queue()
-        self._queue_length: int = 0
-        self._stop_signal: bool = False
-        # convert milliseconds to seconds
-        self._loop_sleep_time = loop_sleep_time / 1000
-        self.min_queue_length = min_queue_length
-
-        if callback_kwargs is None or len(callback_kwargs) == 0:
-            self.callback = callback
-        else:
-            self.callback = functools.partial(callback, **callback_kwargs)
-
-        self.callback_id = f"callback{self._id}"
-        self.trigger_id = f"sub{self._id}"
-
-        conn = dataSet.conn
-
-        conn.create_function(self.callback_id, -1, self._cache_data_to_queue)
-
-        parameters = dataSet.get_parameters()
-        sql_param_list = ",".join([f"NEW.{p.name}" for p in parameters])
-        sql_create_trigger_for_callback = f"""
-        CREATE TRIGGER {self.trigger_id}
-            AFTER INSERT ON '{self.table_name}'
-        BEGIN
-            SELECT {self.callback_id}({sql_param_list});
-        END;"""
-        atomic_transaction(conn, sql_create_trigger_for_callback)
-
-        self.log = logging.getLogger(f"_Subscriber {self._id}")
-
-    def _cache_data_to_queue(self, *args: Any) -> None:
-        self.data_queue.put(args)
-        self._data_set_len += 1
-        self._queue_length += 1
-
-    def run(self) -> None:
-        self.log.debug("Starting subscriber")
-        self._loop()
-
-    @staticmethod
-    def _exhaust_queue(queue: "Queue[Any]") -> List[Any]:
-        result_list = []
-        while True:
-            try:
-                result_list.append(queue.get(block=False))
-            except Empty:
-                break
-        return result_list
-
-    def _call_callback_on_queue_data(self) -> None:
-        result_list = self._exhaust_queue(self.data_queue)
-        self.callback(result_list, self._data_set_len, self.state)
-
-    def _loop(self) -> None:
-        while True:
-            if self._stop_signal:
-                self._clean_up()
-                break
-
-            if self._queue_length >= self.min_queue_length:
-                self._call_callback_on_queue_data()
-                self._queue_length = 0
-
-            time.sleep(self._loop_sleep_time)
-
-            if self.dataSet.completed:
-                self._call_callback_on_queue_data()
-                break
-
-    def done_callback(self) -> None:
-        self._call_callback_on_queue_data()
-
-    def schedule_stop(self) -> None:
-        if not self._stop_signal:
-            self.log.debug("Scheduling stop")
-            self._stop_signal = True
-
-    def _clean_up(self) -> None:
-        self.log.debug("Stopped subscriber")
 
 
 class _BackgroundWriter(Thread):
@@ -336,6 +232,7 @@ class DataSet(Sized):
         self.cache: DataSetCache = DataSetCache(self)
         self._results: List[Dict[str, VALUE]] = []
         self._in_memory_cache = in_memory_cache
+        self._export_path: Optional[str] = None
 
         if run_id is not None:
             if not run_exists(self.conn, run_id):
@@ -935,36 +832,6 @@ class DataSet(Sized):
         return get_parameter_data(self.conn, self.table_name,
                                   valid_param_names, start, end)
 
-    @staticmethod
-    def _parameter_data_identical(param_dict_a: Dict[str, numpy.ndarray],
-                                  param_dict_b: Dict[str, numpy.ndarray]) -> bool:
-
-        try:
-            numpy.testing.assert_equal(param_dict_a, param_dict_b)
-        except AssertionError:
-            return False
-
-        return True
-
-    def _same_setpoints(self, datadict: ParameterData) -> bool:
-
-        def _get_setpoints(dd: ParameterData) -> Iterator[Dict[str, numpy.ndarray]]:
-
-            for dep_name, param_dict in dd.items():
-                out = {
-                    name: vals for name, vals in param_dict.items() if name != dep_name
-                }
-                yield out
-
-        sp_iterator = _get_setpoints(datadict)
-
-        try:
-            first = next(sp_iterator)
-        except StopIteration:
-            return True
-
-        return all(self._parameter_data_identical(first, rest) for rest in sp_iterator)
-
     def to_pandas_dataframe_dict(self,
                                  *params: Union[str,
                                                 ParamSpec,
@@ -1011,7 +878,7 @@ class DataSet(Sized):
         datadict = self.get_parameter_data(*params,
                                            start=start,
                                            end=end)
-        dfs_dict = self._load_to_dataframe_dict(datadict)
+        dfs_dict = load_to_dataframe_dict(datadict)
         return dfs_dict
 
     @deprecate(reason='This method will be removed due to inconcise naming, please '
@@ -1108,24 +975,7 @@ class DataSet(Sized):
         datadict = self.get_parameter_data(*params,
                                            start=start,
                                            end=end)
-        return self._load_to_concatenated_dataframe(datadict)
-
-    def _load_to_concatenated_dataframe(self, datadict: ParameterData
-                                        ) -> "pd.DataFrame":
-        import pandas as pd
-
-        if not self._same_setpoints(datadict):
-            warnings.warn(
-                "Independent parameter setpoints are not equal. "
-                "Check concatenated output carefully. Please "
-                "consider using `to_pandas_dataframe_dict` to export each "
-                "independent parameter to its own dataframe."
-            )
-
-        dfs_dict = self._load_to_dataframe_dict(datadict)
-        df = pd.concat(list(dfs_dict.values()), axis=1)
-
-        return df
+        return load_to_concatenated_dataframe(datadict)
 
     def to_xarray_dataarray_dict(self,
                                  *params: Union[str,
@@ -1150,6 +1000,10 @@ class DataSet(Sized):
         of the :class:`.DataSet` – then a dict of empty :py:class:`xr.DataArray` s is
         returned.
 
+        The dependent parameters of the Dataset are normally used as coordinates of the
+        XArray dataframe. However if non unique values are found for the dependent parameter
+        values we will fall back to using an index as coordinates.
+
         Args:
             *params: string parameter names, QCoDeS Parameter objects, and
                 ParamSpec objects. If no parameters are supplied data for
@@ -1173,7 +1027,9 @@ class DataSet(Sized):
         data = self.get_parameter_data(*params,
                                        start=start,
                                        end=end)
-        return self._load_to_xarray_dataarray_dict(data)
+        datadict = load_to_xarray_dataarray_dict(self, data)
+
+        return datadict
 
     def to_xarray_dataset(self, *params: Union[str,
                                                ParamSpec,
@@ -1193,6 +1049,10 @@ class DataSet(Sized):
         less than or equal to the start, or if start is after the current end
         of the :class:`.DataSet` – then a empty :py:class:`xr.Dataset` s is
         returned.
+
+        The dependent parameters of the Dataset are normally used as coordinates of the
+        XArray dataframe. However if non unique values are found for the dependent parameter
+        values we will fall back to using an index as coordinates.
 
         Args:
             *params: string parameter names, QCoDeS Parameter objects, and
@@ -1217,97 +1077,7 @@ class DataSet(Sized):
                                        start=start,
                                        end=end)
 
-        return self._load_to_xarray_dataset(data)
-
-    def _load_to_xarray_dataset(self, data: ParameterData) -> "xr.Dataset":
-        import xarray as xr
-
-        if not self._same_setpoints(data):
-            warnings.warn(
-                "Independent parameter setpoints are not equal. "
-                "Check concatenated output carefully. Please "
-                "consider using `to_xarray_dataarray_dict` to export each "
-                "independent parameter to its own datarray."
-            )
-
-        data_xrdarray_dict = self._load_to_xarray_dataarray_dict(data)
-
-        # Casting Hashable for the key type until python/mypy#1114
-        # and python/typing#445 are resolved.
-        xrdataset = xr.Dataset(
-            cast(Dict[Hashable, xr.DataArray], data_xrdarray_dict))
-
-        for dim in xrdataset.dims:
-            paramspec_dict = self.paramspecs[str(dim)]._to_dict()
-            xrdataset.coords[str(dim)].attrs.update(paramspec_dict.items())
-
-        xrdataset.attrs["sample_name"] = self.sample_name
-        xrdataset.attrs["exp_name"] = self.exp_name
-
-        return xrdataset
-
-    @staticmethod
-    def _data_to_dataframe(data: Dict[str, numpy.ndarray], index: Union["pd.Index", "pd.MultiIndex"]) -> "pd.DataFrame":
-        import pandas as pd
-        if len(data) == 0:
-            return pd.DataFrame()
-        dependent_col_name = list(data.keys())[0]
-        dependent_data = data[dependent_col_name]
-        if dependent_data.dtype == numpy.dtype('O'):
-            # ravel will not fully unpack a numpy array of arrays
-            # which are of "object" dtype. This can happen if a variable
-            # length array is stored in the db. We use concatenate to
-            # flatten these
-            mydata = numpy.concatenate(dependent_data)
-        else:
-            mydata = dependent_data.ravel()
-        df = pd.DataFrame(mydata, index=index,
-                          columns=[dependent_col_name])
-        return df
-
-    @staticmethod
-    def _generate_pandas_index(data: Dict[str, numpy.ndarray]) -> Union["pd.Index", "pd.MultiIndex"]:
-        # the first element in the dict given by parameter_tree is always the dependent
-        # parameter and the index is therefore formed from the rest
-        import pandas as pd
-        keys = list(data.keys())
-        if len(data) <= 1:
-            index = None
-        elif len(data) == 2:
-            index = pd.Index(data[keys[1]].ravel(), name=keys[1])
-        else:
-            index_data = tuple(numpy.concatenate(data[key])
-                               if data[key].dtype == numpy.dtype('O')
-                               else data[key].ravel()
-                               for key in keys[1:])
-            index = pd.MultiIndex.from_arrays(
-                index_data,
-                names=keys[1:])
-        return index
-
-    def _load_to_dataframe_dict(self, datadict: ParameterData) -> Dict[str, "pd.DataFrame"]:
-        dfs = {}
-        for name, subdict in datadict.items():
-            index = self._generate_pandas_index(subdict)
-            dfs[name] = self._data_to_dataframe(subdict, index)
-        return dfs
-
-    def _load_to_xarray_dataarray_dict(self,
-                                       datadict: Dict[str, Dict[str, numpy.ndarray]]) -> \
-            Dict[str, "xr.DataArray"]:
-        import xarray as xr
-
-        data_xrdarray_dict: Dict[str, xr.DataArray] = {}
-
-        for name, subdict in datadict.items():
-            index = self._generate_pandas_index(subdict)
-            xrdarray: xr.DataArray = self._data_to_dataframe(
-                subdict, index).to_xarray()[name]
-            paramspec_dict = self.paramspecs[name]._to_dict()
-            xrdarray.attrs.update(paramspec_dict.items())
-            data_xrdarray_dict[name] = xrdarray
-
-        return data_xrdarray_dict
+        return load_to_xarray_dataset(self, data)
 
     def write_data_to_text_file(self, path: str,
                                 single_file: bool = False,
@@ -1338,6 +1108,8 @@ class DataSet(Sized):
             single_file: If true, merges the data of same length of multiple
                          dependent parameters to a single file.
             single_file_name: User defined name for the data to be concatenated.
+                              If no extension is passed (.dat, .csv or .txt),
+                              .dat is automatically appended.
 
         Raises:
             DataLengthException: If the data of multiple parameters have not same
@@ -1360,11 +1132,13 @@ class DataSet(Sized):
                 raise DataLengthException("You cannot concatenate data " +
                                           "with different length to a " +
                                           "single file.")
-            if single_file_name == None:
+            if single_file_name is None:
                 raise DataPathException("Please provide the desired file name " +
                                         "for the concatenated data.")
             else:
-                dst = os.path.join(path, f'{single_file_name}.dat')
+                if not single_file_name.lower().endswith(('.dat', '.csv', '.txt')):
+                    single_file_name = f'{single_file_name}.dat'
+                dst = os.path.join(path, single_file_name)
                 df_to_save = pd.concat(dfs_to_save, axis=1)
                 df_to_save.to_csv(path_or_buf=dst, header=False, sep='\t')
 
@@ -1692,6 +1466,94 @@ class DataSet(Sized):
         if writer_status.write_in_background and block:
             log.debug(f"Waiting for write queue to empty.")
             writer_status.data_write_queue.join()
+
+    def _export_file_name(self, prefix: str, export_type: DataExportType) -> str:
+        """Get export file name"""
+        extension = export_type.value
+        return f"{prefix}{self.run_id}.{extension}"
+
+    def _export_as_netcdf(self, path: str, file_name: str) -> str:
+        """Export data as netcdf to a given path with file prefix"""
+        file_path = os.path.join(path, file_name)
+        xarr_dataset = self.to_xarray_dataset()
+        xarr_dataset.to_netcdf(path=file_path)
+        return path
+
+    def _export_as_csv(self, path: str, file_name: str) -> str:
+        """Export data as csv to a given path with file prefix"""
+        self.write_data_to_text_file(path=path, single_file=True, single_file_name=file_name)
+        return os.path.join(path, file_name)
+
+    def _export_data(self,
+                     export_type: DataExportType,
+                     path: Optional[str] = None,
+                     prefix: Optional[str] = None
+                     ) -> Optional[str]:
+        """Export data to disk with file name {prefix}{run_id}.{ext}.
+        Values for the export type, path and prefix can also be set in the qcodes
+        "dataset" config.
+
+        Args:
+            export_type: Data export type, e.g. DataExportType.NETCDF
+            path: Export path, defaults to value set in config
+            prefix: File prefix, e.g. "qcodes_", defaults to value set in config.
+
+        Returns:
+            str: Path file was saved to, returns None if no file was saved.
+        """
+        # Set defaults to values in config if the value was not set
+        # (defaults to None)
+        path = path if path is not None else get_data_export_path()
+        prefix = prefix if prefix is not None else get_data_export_prefix()
+
+        if DataExportType.NETCDF == export_type:
+            file_name = self._export_file_name(
+                prefix=prefix, export_type=DataExportType.NETCDF)
+            return self._export_as_netcdf(path=path, file_name=file_name)
+
+        elif DataExportType.CSV == export_type:
+            file_name = self._export_file_name(
+                prefix=prefix, export_type=DataExportType.CSV)
+            return self._export_as_csv(path=path, file_name=file_name)
+
+        else:
+            return None
+
+    def export(self,
+               export_type: Optional[Union[DataExportType, str]] = None,
+               path: Optional[str] = None,
+               prefix: Optional[str] = None) -> None:
+        """Export data to disk with file name {prefix}{run_id}.{ext}.
+        Values for the export type, path and prefix can also be set in the "dataset"
+        section of qcodes config.
+
+        Args:
+            export_type: Data export type, e.g. "netcdf" or ``DataExportType.NETCDF``,
+                defaults to a value set in qcodes config
+            path: Export path, defaults to value set in config
+            prefix: File prefix, e.g. ``qcodes_``, defaults to value set in config.
+
+        Raises:
+            ValueError: If the export data type is not specified, raise an error
+        """
+        export_type = get_data_export_type(export_type)
+
+        if export_type is None:
+            raise ValueError(
+                "No data export type specified. Please set the export data type "
+                "by using ``qcodes.dataset.export_config.set_data_export_type`` or "
+                "give an explicit export_type when calling ``dataset.export`` manually."
+            )
+
+        self._export_path = self._export_data(
+            export_type=export_type,
+            path=path,
+            prefix=prefix
+        )
+
+    @property
+    def export_path(self) -> Optional[str]:
+        return self._export_path
 
 
 # public api

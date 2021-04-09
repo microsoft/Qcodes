@@ -1,10 +1,7 @@
-import itertools
-import os
 import random
 import re
 from copy import copy
 from typing import Dict, List, Optional, Sequence, Tuple
-from unittest.mock import patch
 
 import hypothesis.strategies as hst
 import numpy as np
@@ -24,7 +21,6 @@ from qcodes.dataset.sqlite.database import get_DB_location
 from qcodes.dataset.sqlite.queries import _unicode_categories
 from qcodes.tests.common import error_caused_by
 from qcodes.tests.dataset.test_links import generate_some_links
-from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 from qcodes.utils.types import numpy_ints, numpy_floats
 
 from qcodes.tests.dataset.helper_functions import verify_data_dict
@@ -1258,136 +1254,3 @@ def limit_data_to_start_end(start, end, input_names, expected_names,
                     expected_values[name][i] = \
                         expected_values[name][i][start - 1:end]
     return start, end
-
-
-@pytest.mark.usefixtures('experiment')
-def test_write_data_to_text_file_save(tmp_path_factory):
-    dataset = new_data_set("dataset")
-    xparam = ParamSpecBase("x", 'numeric')
-    yparam = ParamSpecBase("y", 'numeric')
-    idps = InterDependencies_(dependencies={yparam: (xparam,)})
-    dataset.set_interdependencies(idps)
-
-    dataset.mark_started()
-    results = [{'x': 0, 'y': 1}]
-    dataset.add_results(results)
-    dataset.mark_completed()
-
-    path = str(tmp_path_factory.mktemp("write_data_to_text_file_save"))
-    dataset.write_data_to_text_file(path=path)
-    assert os.listdir(path) == ['y.dat']
-    with open(os.path.join(path, "y.dat")) as f:
-        assert f.readlines() == ['0.0\t1.0\n']
-
-
-@pytest.mark.usefixtures('experiment')
-def test_write_data_to_text_file_save_multi_keys(tmp_path_factory):
-    dataset = new_data_set("dataset")
-    xparam = ParamSpecBase("x", 'numeric')
-    yparam = ParamSpecBase("y", 'numeric')
-    zparam = ParamSpecBase("z", 'numeric')
-    idps = InterDependencies_(
-        dependencies={yparam: (xparam,), zparam: (xparam,)})
-    dataset.set_interdependencies(idps)
-
-    dataset.mark_started()
-    results = [{'x': 0, 'y': 1, 'z': 2}]
-    dataset.add_results(results)
-    dataset.mark_completed()
-    tmp_path = tmp_path_factory.mktemp("data_to_text_file_save_multi_keys")
-    path = str(tmp_path)
-    dataset.write_data_to_text_file(path=path)
-    assert sorted(os.listdir(path)) == ['y.dat', 'z.dat']
-    with open(os.path.join(path, "y.dat")) as f:
-        assert f.readlines() == ['0.0\t1.0\n']
-    with open(os.path.join(path, "z.dat")) as f:
-        assert f.readlines() == ['0.0\t2.0\n']
-
-
-@pytest.mark.usefixtures('experiment')
-def test_write_data_to_text_file_save_single_file(tmp_path_factory):
-    dataset = new_data_set("dataset")
-    xparam = ParamSpecBase("x", 'numeric')
-    yparam = ParamSpecBase("y", 'numeric')
-    zparam = ParamSpecBase("z", 'numeric')
-    idps = InterDependencies_(
-        dependencies={yparam: (xparam,), zparam: (xparam,)})
-    dataset.set_interdependencies(idps)
-
-    dataset.mark_started()
-    results = [{'x': 0, 'y': 1, 'z': 2}]
-    dataset.add_results(results)
-    dataset.mark_completed()
-    tmp_path = tmp_path_factory.mktemp("to_text_file_save_single_file")
-    path = str(tmp_path)
-    dataset.write_data_to_text_file(path=path, single_file=True,
-                                    single_file_name='yz')
-    assert os.listdir(path) == ['yz.dat']
-    with open(os.path.join(path, "yz.dat")) as f:
-        assert f.readlines() == ['0.0\t1.0\t2.0\n']
-
-
-@pytest.mark.usefixtures('experiment')
-def test_write_data_to_text_file_length_exception(tmp_path):
-    dataset = new_data_set("dataset")
-    xparam = ParamSpecBase("x", 'numeric')
-    yparam = ParamSpecBase("y", 'numeric')
-    zparam = ParamSpecBase("z", 'numeric')
-    idps = InterDependencies_(
-        dependencies={yparam: (xparam,), zparam: (xparam,)})
-    dataset.set_interdependencies(idps)
-
-    dataset.mark_started()
-    results1 = [{'x': 0, 'y': 1}]
-    results2 = [{'x': 0, 'z': 2}]
-    results3 = [{'x': 1, 'z': 3}]
-    dataset.add_results(results1)
-    dataset.add_results(results2)
-    dataset.add_results(results3)
-    dataset.mark_completed()
-
-    temp_dir = str(tmp_path)
-    with pytest.raises(Exception, match='different length'):
-        dataset.write_data_to_text_file(path=temp_dir, single_file=True,
-                                        single_file_name='yz')
-
-
-@pytest.mark.usefixtures('experiment')
-def test_write_data_to_text_file_name_exception(tmp_path):
-    dataset = new_data_set("dataset")
-    xparam = ParamSpecBase("x", 'numeric')
-    yparam = ParamSpecBase("y", 'numeric')
-    zparam = ParamSpecBase("z", 'numeric')
-    idps = InterDependencies_(
-        dependencies={yparam: (xparam,), zparam: (xparam,)})
-    dataset.set_interdependencies(idps)
-
-    dataset.mark_started()
-    results = [{'x': 0, 'y': 1, 'z': 2}]
-    dataset.add_results(results)
-    dataset.mark_completed()
-
-    temp_dir = str(tmp_path)
-    with pytest.raises(Exception, match='desired file name'):
-        dataset.write_data_to_text_file(path=temp_dir, single_file=True,
-                                        single_file_name=None)
-
-
-def test_same_setpoint_warning_for_df_and_xarray(different_setpoint_dataset):
-
-    warning_message = (
-        "Independent parameter setpoints are not equal. "
-        "Check concatenated output carefully."
-    )
-
-    with pytest.warns(UserWarning, match=warning_message):
-        different_setpoint_dataset.to_pandas_dataframe()
-
-    with pytest.warns(UserWarning, match=warning_message):
-        different_setpoint_dataset.to_xarray_dataset()
-
-    with pytest.warns(UserWarning, match=warning_message):
-        different_setpoint_dataset.cache.to_pandas_dataframe()
-
-    with pytest.warns(UserWarning, match=warning_message):
-        different_setpoint_dataset.cache.to_xarray_dataset()

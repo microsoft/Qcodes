@@ -10,23 +10,17 @@ import numpy as np
 import os
 
 try:
+    noQtPlot = False
     from qcodes.plots.pyqtgraph import QtPlot
-    if os.environ.get("TRAVISCI"):
-        noQtPlot = True
-    else:
-        noQtPlot = False
 except Exception:
     noQtPlot = True
 
 try:
+    noMatPlot = False
     from qcodes.plots.qcmatplotlib import MatPlot
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
-    if os.environ.get("TRAVISCI"):
-        noMatPlot = True
-    else:
-        noMatPlot = False
 except Exception:
     noMatPlot = True
 

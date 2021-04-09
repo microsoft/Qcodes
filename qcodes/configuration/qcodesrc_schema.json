@@ -316,6 +316,27 @@
                     "type": "boolean",
                     "default": false,
                     "description": "Should dond functions show a progress bar during the measurement"
+                },
+                "export_automatic": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Should the data be exported automatically when a measurement is completed? If this is set 'export_type' must be set to a non null value."
+                },
+                "export_type": {
+                    "type": ["string", "null"],
+                    "enum": ["netcdf", "csv", null],
+                    "default": null,
+                    "description": "Data export type for exporting datasets to disk after a measurement finishes. Does not export if set to null (default). Currently supported type(s): netcdf, csv"
+                },
+                "export_path": {
+                    "type": "string",
+                    "default": "~",
+                    "description": "Data export path for exporting datasets to disk after a measurement finishes. Only activated if export_type is set"
+                },
+                "export_prefix": {
+                    "type": "string",
+                    "default": "qcodes_",
+                    "description": "Prefix to add to filename for exporting datasets to disk after a measurement finishes. Only activated if export_type is set"
                 }
             },
             "description": "Settings related to the DataSet and Measurement Context manager",
