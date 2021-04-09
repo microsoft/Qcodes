@@ -11,8 +11,8 @@ class SP983A(VisaInstrument):
     A driver for Basel Preamp's (SP983C) Remote Instrument - Model SP983A.
 
     Args:
-        name
-        address
+        name: name for your instrument driver instance
+        address: address of the connected remote controller of basel preamp
         input_offset_voltage: (Optional) A source input offset voltage
             parameter. The range for input is -10 to 10 Volts and it is
             user's responsibility to ensure this. This source parameter is
@@ -24,8 +24,9 @@ class SP983A(VisaInstrument):
                  name: str,
                  address: str,
                  input_offset_voltage: Optional[Parameter] = None,
+                 terminator="\r\n",
                  **kwargs: Any) -> None:
-        super().__init__(name, address, terminator="\r\n", **kwargs)
+        super().__init__(name, address, terminator=terminator, **kwargs)
 
         self.connect_message()
 
