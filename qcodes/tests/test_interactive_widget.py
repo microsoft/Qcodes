@@ -1,9 +1,12 @@
 import time
 from unittest.mock import patch
 
+import matplotlib
 import pytest
 from ipywidgets import HTML, Button, GridspecLayout, Tab, Textarea
 
+# set matplotlib backend before importing pyplot
+matplotlib.use("Agg")
 from qcodes import interactive_widget
 
 # we only need `experiment` here, but pytest does not discover the dependencies
