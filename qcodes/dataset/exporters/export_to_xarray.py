@@ -15,11 +15,13 @@ from .export_to_pandas import (
 if TYPE_CHECKING:
     import xarray as xr
 
-    from qcodes.dataset.data_set import DataSet, ParameterData
+    from qcodes.dataset.data_set import ParameterData
+    from qcodes.dataset.data_set_protocol import DataSetProtocol
+
 
 
 def _load_to_xarray_dataarray_dict_no_metadata(
-    dataset: DataSet, datadict: Mapping[str, Mapping[str, np.ndarray]]
+    dataset: DataSetProtocol, datadict: Mapping[str, Mapping[str, np.ndarray]]
 ) -> Dict[str, xr.DataArray]:
     import xarray as xr
 
@@ -44,7 +46,7 @@ def _load_to_xarray_dataarray_dict_no_metadata(
 
 
 def load_to_xarray_dataarray_dict(
-    dataset: DataSet, datadict: Mapping[str, Mapping[str, np.ndarray]]
+    dataset: DataSetProtocol, datadict: Mapping[str, Mapping[str, np.ndarray]]
 ) -> Dict[str, xr.DataArray]:
     dataarrays = _load_to_xarray_dataarray_dict_no_metadata(dataset, datadict)
 
@@ -54,7 +56,7 @@ def load_to_xarray_dataarray_dict(
 
 
 def _add_metadata_to_xarray(
-        dataset: DataSet,
+        dataset: DataSetProtocol,
         xrdataset: Union[xr.Dataset, xr.DataArray]
 ) -> None:
     xrdataset.attrs.update({
@@ -80,7 +82,7 @@ def _add_metadata_to_xarray(
             xrdataset.attrs[metadata_tag] = metadata
 
 
-def load_to_xarray_dataset(dataset: DataSet, data: ParameterData) -> xr.Dataset:
+def load_to_xarray_dataset(dataset: DataSetProtocol, data: ParameterData) -> xr.Dataset:
     import xarray as xr
 
     if not _same_setpoints(data):

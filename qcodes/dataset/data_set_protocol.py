@@ -11,6 +11,7 @@ from qcodes.dataset.sqlite.connection import ConnectionPlus
 from qcodes.dataset.sqlite.query_helpers import VALUES
 from qcodes.dataset.linked_datasets.links import Link
 from qcodes.dataset.export_config import DataExportType
+from qcodes.dataset.descriptions.rundescriber import RunDescriber
 
 SPECS = List[ParamSpec]
 # Transition period type: SpecsOrInterDeps. We will allow both as input to
@@ -63,6 +64,14 @@ class DataSetProtocol(Protocol, Sized):
         pass
 
     @property
+    def captured_run_id(self) -> int:
+        pass
+
+    @property
+    def captured_counter(self) -> int:
+        pass
+
+    @property
     def guid(self) -> str:
         pass
 
@@ -87,6 +96,51 @@ class DataSetProtocol(Protocol, Sized):
         pass
 
     def _flush_data_to_database(self, block: bool = False) -> None:
+        pass
+
+    @property
+    def paramspecs(self) -> Dict[str, ParamSpec]:
+        pass
+
+    @property
+    def exp_name(self) -> str:
+        pass
+
+    @property
+    def sample_name(self) -> str:
+        pass
+
+    @property
+    def name(self) -> str:
+        pass
+
+    @property
+    def snapshot_raw(self) -> Optional[str]:
+        pass
+
+    @property
+    def run_timestamp_raw(self) -> Optional[float]:
+        pass
+
+    def run_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S") -> Optional[str]:
+        pass
+
+    @property
+    def completed_timestamp_raw(self) -> Optional[float]:
+        pass
+
+    def completed_timestamp(
+            self,
+            fmt: str = "%Y-%m-%d %H:%M:%S"
+    ) -> Optional[str]:
+        pass
+
+    @property
+    def description(self) -> RunDescriber:
+        pass
+
+    @property
+    def metadata(self) -> Dict[str, Any]:
         pass
 
 
