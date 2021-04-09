@@ -51,7 +51,7 @@ class SP983A(VisaInstrument):
         self.add_parameter(
             "overload_status",
             label="Overload Status",
-            set_cmd=None,
+            set_cmd=False,
             get_cmd="GET O"
         )
 
