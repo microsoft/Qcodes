@@ -4,7 +4,7 @@ import logging
 import numpy as np
 
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
-from qcodes.dataset.data_set import load_by_id
+from qcodes.dataset.data_set import load_by_id, DataSet
 
 log = logging.getLogger(__name__)
 
@@ -69,11 +69,16 @@ def get_data_by_id(run_id: int) -> \
 
     """
     ds = load_by_id(run_id)
+    output = _get_data_from_ds(ds)
+    return output
 
+
+def _get_data_from_ds(ds: DataSet) -> List[List[Dict[str, Union[str, np.ndarray]]]]:
     dependent_parameters: Tuple[ParamSpecBase, ...] = ds.dependent_parameters
 
-    parameter_data = ds.get_parameter_data(
-        *[ps.name for ps in dependent_parameters])
+    all_data = ds.cache.data()
+
+    parameter_data = {ps.name: all_data[ps.name] for ps in dependent_parameters}
 
     output = []
 

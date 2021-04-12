@@ -19,7 +19,7 @@ from qcodes.dataset.data_set import load_by_run_spec, DataSet
 from qcodes.utils.plotting import (auto_color_scale_from_config,
                                    find_scale_and_prefix)
 
-from .data_export import (get_data_by_id, flatten_1D_data_for_plot,
+from .data_export import (_get_data_from_ds, flatten_1D_data_for_plot,
                           get_1D_plottype, get_2D_plottype, reshape_2D_data,
                           _strings_as_ints)
 
@@ -176,7 +176,7 @@ def plot_dataset(dataset: DataSet,
     title = f"Run #{dataset.captured_run_id}, " \
             f"Experiment {experiment_name} ({sample_name})"
 
-    alldata: NamedData = get_data_by_id(dataset.run_id)
+    alldata: NamedData = _get_data_from_ds(dataset)
     alldata = _complex_to_real_preparser(alldata,
                                          conversion=complex_plot_type,
                                          degrees=degrees)
