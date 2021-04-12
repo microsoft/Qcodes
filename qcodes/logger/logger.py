@@ -356,7 +356,7 @@ def conditionally_start_all_logging() -> None:
         tools = (
             'pytest.py',
             'pytest',
-            'sphinx\__main__.py',    # Sphinx docs building
+            r'sphinx\__main__.py',    # Sphinx docs building
             '_jb_pytest_runner.py',  # Jetbrains Pycharm
             'testlauncher.py'        # VSCode
         )
