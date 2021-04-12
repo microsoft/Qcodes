@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from typing import TYPE_CHECKING, Dict, Mapping, Optional, Tuple
 
@@ -22,6 +24,7 @@ if TYPE_CHECKING:
     import xarray as xr
 
     from .data_set import DataSet, ParameterData
+    from .data_set_protocol import DataSetProtocol
 
 
 log = logging.getLogger(__name__)
@@ -39,7 +42,7 @@ class DataSetCache:
     :py:class:`.DataSet.to_pandas_dataframe_dict`
     """
 
-    def __init__(self, dataset: 'DataSet'):
+    def __init__(self, dataset: DataSetProtocol):
         self._dataset = dataset
         self._data: ParameterData = {}
         #: number of rows read per parameter tree (by the name of the dependent parameter)
@@ -53,40 +56,6 @@ class DataSetCache:
     def rundescriber(self) -> RunDescriber:
         return self._dataset.description
 
-    def load_data_from_db(self) -> None:
-        """
-        Loads data from the dataset into the cache.
-        If new data has been added to the dataset since the last time
-        this method was called, calling this method again would load
-        that new portion of the data and append to the already loaded data.
-        If the dataset is marked completed and data has already been loaded
-        no load will be performed.
-        """
-        if self.live:
-            raise RuntimeError("Cannot load data into this cache from the "
-                               "database because this dataset is being built "
-                               "in-memory.")
-
-        if self._loaded_from_completed_ds:
-            return
-        self._dataset._completed = completed(
-            self._dataset.conn, self._dataset.run_id)
-        if self._dataset.completed:
-            self._loaded_from_completed_ds = True
-
-
-        (self._write_status,
-         self._read_status,
-         self._data) = load_new_data_from_db_and_append(
-            self._dataset.conn,
-            self._dataset.table_name,
-            self.rundescriber,
-            self._write_status,
-            self._read_status,
-            self._data
-        )
-        if not all(status is None for status in self._write_status.values()):
-            self._live = False
 
     @property
     def live(self) -> Optional[bool]:
@@ -113,6 +82,15 @@ class DataSetCache:
             self.load_data_from_db()
 
         return self._data
+
+    def load_data_from_db(self) -> None:
+        """
+        Load the data from a on disk format in case the cache is not live
+
+        Should be implemented in a specific subclass that knows how to read data
+        from disk
+        """
+        pass
 
     def add_data(self, new_data: Mapping[str, Mapping[str, np.ndarray]]) -> None:
         if self.live is False:
@@ -455,3 +433,42 @@ def _expand_single_param_dict(
             )
 
     return expanded_param_dict
+
+
+class DataSetCacheWithDBBackend(DataSetCache):
+
+    def load_data_from_db(self) -> None:
+        """
+        Loads data from the dataset into the cache.
+        If new data has been added to the dataset since the last time
+        this method was called, calling this method again would load
+        that new portion of the data and append to the already loaded data.
+        If the dataset is marked completed and data has already been loaded
+        no load will be performed.
+        """
+        assert isinstance(self._dataset, DataSet)
+        if self.live:
+            raise RuntimeError("Cannot load data into this cache from the "
+                               "database because this dataset is being built "
+                               "in-memory.")
+
+        if self._loaded_from_completed_ds:
+            return
+        self._dataset.completed = completed(
+            self._dataset.conn, self._dataset.run_id)
+        if self._dataset.completed:
+            self._loaded_from_completed_ds = True
+
+
+        (self._write_status,
+         self._read_status,
+         self._data) = load_new_data_from_db_and_append(
+            self._dataset.conn,
+            self._dataset.table_name,
+            self.rundescriber,
+            self._write_status,
+            self._read_status,
+            self._data
+        )
+        if not all(status is None for status in self._write_status.values()):
+            self._live = False
