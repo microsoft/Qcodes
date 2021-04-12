@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Dict, Mapping, Optional, Tuple
+from typing import TYPE_CHECKING, Dict, Generic, Mapping, Optional, Tuple, TypeVar
 
 import numpy as np
 
@@ -24,13 +24,15 @@ if TYPE_CHECKING:
     import xarray as xr
 
     from .data_set import DataSet, ParameterData
+    from .data_set_in_memory import DataSetInMem
     from .data_set_protocol import DataSetProtocol
 
+DatasetType = TypeVar("DatasetType", bound="DataSetProtocol")
 
 log = logging.getLogger(__name__)
 
 
-class DataSetCache:
+class DataSetCache(Generic[DatasetType]):
     """
     The DataSetCache contains a in memory representation of the
     data in this dataset as well a a method to progressively read data
@@ -42,7 +44,7 @@ class DataSetCache:
     :py:class:`.DataSet.to_pandas_dataframe_dict`
     """
 
-    def __init__(self, dataset: DataSetProtocol):
+    def __init__(self, dataset: DatasetType):
         self._dataset = dataset
         self._data: ParameterData = {}
         #: number of rows read per parameter tree (by the name of the dependent parameter)
@@ -56,7 +58,6 @@ class DataSetCache:
     def rundescriber(self) -> RunDescriber:
         return self._dataset.description
 
-
     @property
     def live(self) -> Optional[bool]:
         """
@@ -66,7 +67,7 @@ class DataSetCache:
         """
         return self._live
 
-    def data(self) -> 'ParameterData':
+    def data(self) -> ParameterData:
         """
         Loads data from the database on disk if needed and returns
         the cached data. The cached data is in almost the same format as
@@ -118,7 +119,7 @@ class DataSetCache:
         if not all(status is None for status in self._write_status.values()):
             self._live = True
 
-    def to_pandas_dataframe_dict(self) -> Dict[str, "pd.DataFrame"]:
+    def to_pandas_dataframe_dict(self) -> Dict[str, pd.DataFrame]:
         """
         Convert the cached dataset to Pandas dataframes. The returned dataframes
         are in the same format :py:class:`.DataSet.to_pandas_dataframe_dict`.
@@ -130,7 +131,7 @@ class DataSetCache:
         data = self.data()
         return load_to_dataframe_dict(data)
 
-    def to_pandas_dataframe(self) -> "pd.DataFrame":
+    def to_pandas_dataframe(self) -> pd.DataFrame:
         """
         Convert the cached dataset to Pandas dataframes. The returned dataframes
         are in the same format :py:class:`.DataSet.to_pandas_dataframe_dict`.
@@ -143,7 +144,7 @@ class DataSetCache:
         return load_to_concatenated_dataframe(data)
 
     @deprecate(alternative="to_pandas_dataframe or to_pandas_dataframe_dict")
-    def to_pandas(self) -> Dict[str, "pd.DataFrame"]:
+    def to_pandas(self) -> Dict[str, pd.DataFrame]:
         """
         Returns the values stored in the :class:`.dataset.data_set.DataSet` as a
         concatenated :py:class:`pandas.DataFrame` s
@@ -163,7 +164,7 @@ class DataSetCache:
         """
         return self.to_pandas_dataframe_dict()
 
-    def to_xarray_dataarray_dict(self) -> Dict[str, "xr.DataArray"]:
+    def to_xarray_dataarray_dict(self) -> Dict[str, xr.DataArray]:
         """
         Returns the values stored in the :class:`.dataset.data_set.DataSet` as a dict of
         :py:class:`xr.DataArray` s
@@ -178,7 +179,7 @@ class DataSetCache:
         data = self.data()
         return load_to_xarray_dataarray_dict(self._dataset, data)
 
-    def to_xarray_dataset(self) -> "xr.Dataset":
+    def to_xarray_dataset(self) -> xr.Dataset:
         """
         Returns the values stored in the :class:`.dataset.data_set.DataSet` as a
         :py:class:`xr.Dataset` object.
@@ -435,7 +436,11 @@ def _expand_single_param_dict(
     return expanded_param_dict
 
 
-class DataSetCacheWithDBBackend(DataSetCache):
+class DataSetCacheInMem(DataSetCache["DataSetInMem"]):
+    pass
+
+
+class DataSetCacheWithDBBackend(DataSetCache["DataSet"]):
 
     def load_data_from_db(self) -> None:
         """
@@ -446,7 +451,6 @@ class DataSetCacheWithDBBackend(DataSetCache):
         If the dataset is marked completed and data has already been loaded
         no load will be performed.
         """
-        assert isinstance(self._dataset, DataSet)
         if self.live:
             raise RuntimeError("Cannot load data into this cache from the "
                                "database because this dataset is being built "
