@@ -4,13 +4,23 @@ import logging
 import os
 import time
 import uuid
-
 from dataclasses import dataclass
 from queue import Queue
 from threading import Thread
-from typing import (TYPE_CHECKING, Any, Callable, Dict,
-                    List, Mapping, Optional, Sequence, Set,
-                    Sized, Tuple, Union)
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    Sized,
+    Tuple,
+    Union,
+)
 
 import numpy
 import pandas as pd
@@ -19,48 +29,77 @@ import qcodes
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
-from qcodes.dataset.descriptions.versioning.converters import (new_to_old,
-                                                               old_to_new)
+from qcodes.dataset.descriptions.versioning.converters import new_to_old, old_to_new
 from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
-from qcodes.dataset.guids import (filter_guids_by_parts, generate_guid,
-                                  parse_guid)
-from qcodes.dataset.linked_datasets.links import (Link, links_to_str,
-                                                  str_to_links)
-from qcodes.dataset.sqlite.connection import (ConnectionPlus, atomic,
-                                              atomic_transaction, transaction)
-from qcodes.dataset.sqlite.database import (conn_from_dbpath_or_conn, connect,
-                                            get_DB_location)
+from qcodes.dataset.export_config import (
+    DataExportType,
+    get_data_export_automatic,
+    get_data_export_path,
+    get_data_export_prefix,
+    get_data_export_type,
+)
+from qcodes.dataset.guids import filter_guids_by_parts, generate_guid, parse_guid
+from qcodes.dataset.linked_datasets.links import Link, links_to_str, str_to_links
+from qcodes.dataset.sqlite.connection import (
+    ConnectionPlus,
+    atomic,
+    atomic_transaction,
+    transaction,
+)
+from qcodes.dataset.sqlite.database import (
+    conn_from_dbpath_or_conn,
+    connect,
+    get_DB_location,
+)
 from qcodes.dataset.sqlite.queries import (
-    add_meta_data, add_parameter, completed, create_run,
+    add_meta_data,
+    add_parameter,
+    completed,
+    create_run,
     get_completed_timestamp_from_run_id,
-    get_experiment_name_from_experiment_id, get_guid_from_run_id,
-    get_guids_from_run_spec, get_last_experiment, get_metadata,
-    get_metadata_from_run_id, get_parameter_data, get_parent_dataset_links,
-    get_run_description, get_run_timestamp_from_run_id, get_runid_from_guid,
-    get_sample_name_from_experiment_id, mark_run_complete,
-    remove_trigger, run_exists, set_run_timestamp, update_parent_datasets,
-    update_run_description)
-from qcodes.dataset.sqlite.query_helpers import (VALUE, VALUES,
-                                                 insert_many_values,
-                                                 length, one,
-                                                 select_one_where)
+    get_experiment_name_from_experiment_id,
+    get_guid_from_run_id,
+    get_guids_from_run_spec,
+    get_last_experiment,
+    get_metadata,
+    get_metadata_from_run_id,
+    get_parameter_data,
+    get_parent_dataset_links,
+    get_run_description,
+    get_run_timestamp_from_run_id,
+    get_runid_from_guid,
+    get_sample_name_from_experiment_id,
+    mark_run_complete,
+    remove_trigger,
+    run_exists,
+    set_run_timestamp,
+    update_parent_datasets,
+    update_run_description,
+)
+from qcodes.dataset.sqlite.query_helpers import (
+    VALUE,
+    VALUES,
+    insert_many_values,
+    length,
+    one,
+    select_one_where,
+)
 from qcodes.instrument.parameter import _BaseParameter
 from qcodes.utils.deprecate import deprecate
-from qcodes.dataset.export_config import DataExportType, get_data_export_type, get_data_export_path, get_data_export_prefix, get_data_export_automatic
+
 from .data_set_cache import DataSetCache
 from .descriptions.versioning import serialization as serial
-from .subscriber import _Subscriber
-
+from .exporters.export_to_csv import dataframe_to_csv
 from .exporters.export_to_pandas import (
+    load_to_concatenated_dataframe,
     load_to_dataframe_dict,
-    load_to_concatenated_dataframe
 )
 from .exporters.export_to_xarray import (
+    load_to_xarray_dataarray_dict,
     load_to_xarray_dataset,
-    load_to_xarray_dataarray_dict
 )
-
+from .subscriber import _Subscriber
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -99,14 +138,6 @@ ParameterData = Dict[str, Dict[str, numpy.ndarray]]
 
 
 class CompletedError(RuntimeError):
-    pass
-
-
-class DataLengthException(Exception):
-    pass
-
-
-class DataPathException(Exception):
     pass
 
 
@@ -1117,30 +1148,13 @@ class DataSet(Sized):
             DataPathException: If the data of multiple parameters are wanted to be merged
                                in a single file but no filename provided.
         """
-        import pandas as pd
         dfdict = self.to_pandas_dataframe_dict()
-        dfs_to_save = list()
-        for parametername, df in dfdict.items():
-            if not single_file:
-                dst = os.path.join(path, f'{parametername}.dat')
-                df.to_csv(path_or_buf=dst, header=False, sep='\t')
-            else:
-                dfs_to_save.append(df)
-        if single_file:
-            df_length = len(dfs_to_save[0])
-            if any(len(df) != df_length for df in dfs_to_save):
-                raise DataLengthException("You cannot concatenate data " +
-                                          "with different length to a " +
-                                          "single file.")
-            if single_file_name is None:
-                raise DataPathException("Please provide the desired file name " +
-                                        "for the concatenated data.")
-            else:
-                if not single_file_name.lower().endswith(('.dat', '.csv', '.txt')):
-                    single_file_name = f'{single_file_name}.dat'
-                dst = os.path.join(path, single_file_name)
-                df_to_save = pd.concat(dfs_to_save, axis=1)
-                df_to_save.to_csv(path_or_buf=dst, header=False, sep='\t')
+        dataframe_to_csv(
+            dfdict=dfdict,
+            path=path,
+            single_file=single_file,
+            single_file_name=single_file_name,
+        )
 
     def subscribe(self,
                   callback: Callable[[Any, int, Optional[Any]], None],
