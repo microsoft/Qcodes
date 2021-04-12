@@ -769,7 +769,7 @@ class DataSetInMem(Sized):
     def _export_as_netcdf(self, path: str, file_name: str) -> str:
         """Export data as netcdf to a given path with file prefix"""
         file_path = os.path.join(path, file_name)
-        xarr_dataset = self.to_xarray_dataset()
+        xarr_dataset = self.cache.to_xarray_dataset()
         xarr_dataset.to_netcdf(path=file_path)
         return path
 
