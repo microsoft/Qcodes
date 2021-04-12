@@ -34,7 +34,7 @@ mistune==0.8.4
 nbclient==0.5.3
 nbconvert==6.0.7
 nbformat==5.1.3
-nbsphinx==0.8.2
+nbsphinx==0.8.3
 nest-asyncio==1.5.1
 notebook==6.3.0
 numpy==1.20.2
@@ -64,7 +64,7 @@ scipy==1.6.2
 Send2Trash==1.5.0
 six==1.15.0
 snowballstemmer==2.1.0
-Sphinx==3.5.3
+Sphinx==3.5.4
 sphinx-jsonschema==1.16.8
 sphinx-rtd-theme==0.5.2
 sphinxcontrib-applehelp==1.0.2
