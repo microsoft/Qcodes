@@ -136,6 +136,14 @@ class DataSetProtocol(Protocol, Sized):
         pass
 
     @property
+    def completed(self) -> bool:
+        pass
+
+    @completed.setter
+    def completed(self, value: bool) -> None:
+        pass
+
+    @property
     def description(self) -> RunDescriber:
         pass
 
