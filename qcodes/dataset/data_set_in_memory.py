@@ -2,13 +2,13 @@ import json
 import logging
 import os
 import time
-import warnings
+
 from collections.abc import Sized
-from typing import (TYPE_CHECKING, Any, Dict, Hashable, Iterator,
-                    List, Mapping, Optional, Sequence, Set, Tuple, Union, cast)
+from typing import (TYPE_CHECKING, Any, Dict,
+                    List, Mapping, Optional, Sequence, Set, Tuple, Union)
 
 import numpy
-import pandas as pd
+
 
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
@@ -30,7 +30,7 @@ from qcodes.dataset.sqlite.queries import (
     get_completed_timestamp_from_run_id,
     get_experiment_name_from_experiment_id, get_guid_from_run_id,
     get_last_experiment, get_metadata, get_metadata_from_run_id,
-    get_parameter_data, get_parent_dataset_links, get_run_description,
+    get_parent_dataset_links, get_run_description,
     get_run_timestamp_from_run_id, get_sample_name_from_experiment_id,
     mark_run_complete, run_exists, set_run_timestamp,
     update_parent_datasets, update_run_description)
@@ -38,13 +38,12 @@ from qcodes.dataset.sqlite.query_helpers import (VALUE, VALUES,
                                                  length,
                                                  select_one_where)
 from qcodes.instrument.parameter import _BaseParameter
-from qcodes.utils.deprecate import deprecate
 from qcodes.utils.helpers import NumpyJSONEncoder
 
-from .data_set import (SPECS, CompletedError, DataLengthException,
-                       DataPathException, ParameterData, SpecsOrInterDeps,
+from .data_set import (SPECS, CompletedError,
+                       SpecsOrInterDeps,
                        values_type)
-from .data_set_cache import DataSetCache
+from .data_set_cache import DataSetCacheInMem
 from .descriptions.versioning import serialization as serial
 
 if TYPE_CHECKING:
@@ -116,7 +115,7 @@ class DataSetInMem(Sized):
 
         self._parent_dataset_links: List[Link]
         #: In memory representation of the data in the dataset.
-        self.cache: DataSetCache = DataSetCache(self)
+        self.cache: DataSetCacheInMem = DataSetCacheInMem(self)
 
         self._in_memory_cache = in_memory_cache
         self._export_path: Optional[str] = None
