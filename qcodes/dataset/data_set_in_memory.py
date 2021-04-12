@@ -774,7 +774,7 @@ class DataSetInMem(Sized):
 
     def _export_as_csv(self, path: str, file_name: str) -> str:
         """Export data as csv to a given path with file prefix"""
-        self.write_data_to_text_file(path=path, single_file=True, single_file_name=file_name)
+        self.cache.to_csv(path=path, single_file=True, single_file_name=file_name)
         return os.path.join(path, file_name)
 
     def _export_data(self,
