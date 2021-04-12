@@ -88,7 +88,7 @@ from qcodes.instrument.parameter import _BaseParameter
 from qcodes.utils.deprecate import deprecate
 from qcodes.utils.helpers import NumpyJSONEncoder
 
-from .data_set_cache import DataSetCache
+from .data_set_cache import DataSetCacheWithDBBackend
 from .descriptions.versioning import serialization as serial
 from .exporters.export_to_csv import dataframe_to_csv
 from .exporters.export_to_pandas import (
@@ -262,7 +262,7 @@ class DataSet(Sized):
         self.subscribers: Dict[str, _Subscriber] = {}
         self._parent_dataset_links: List[Link]
         #: In memory representation of the data in the dataset.
-        self.cache: DataSetCache = DataSetCache(self)
+        self.cache: DataSetCacheWithDBBackend = DataSetCacheWithDBBackend(self)
         self._results: List[Dict[str, VALUE]] = []
         self._in_memory_cache = in_memory_cache
         self._export_path: Optional[str] = None
