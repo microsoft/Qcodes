@@ -18,6 +18,7 @@ from .exporters.export_to_xarray import (
     load_to_xarray_dataarray_dict,
     load_to_xarray_dataset,
 )
+from .exporters.export_to_csv import dataframe_to_csv
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -193,6 +194,17 @@ class DataSetCache(Generic[DatasetType]):
         """
         data = self.data()
         return load_to_xarray_dataset(self._dataset, data)
+
+    def to_csv(self,
+               path: str,
+               single_file: bool = False,
+               single_file_name: Optional[str] = None,
+               ) -> None:
+        dfdict = self.to_pandas_dataframe_dict()
+        dataframe_to_csv(dfdict=dfdict,
+                         path=path,
+                         single_file=single_file,
+                         single_file_name=single_file_name)
 
 
 def load_new_data_from_db_and_append(
