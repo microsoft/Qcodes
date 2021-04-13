@@ -48,6 +48,7 @@ class ChannelTrace(ParameterWithSetpoints):
                 self.unit = 'deg'
             else:
                 self.unit = 'V'
+                self.label = self.root_instrument.name + '_' + disp
 
     def get_raw(self) -> ParamRawDataType:
         """
@@ -871,13 +872,13 @@ class GeneratedSetPoints(Parameter):
         N = self.root_instrument.buffer_npts.get()
         if SR == 'Trigger':
             start = self._startparam()
-            stop =  self._stopparam()
+            stop = self._stopparam()
             nsteps = self._numpointsparam()
 
-            assert isinstance(start, (float,int))
-            assert isinstance(stop, (float,int))
+            assert isinstance(start, (float, int))
+            assert isinstance(stop, (float, int))
             assert isinstance(nsteps, int)
-            
+
             return np.linspace(start, stop, nsteps)
 
         else:
