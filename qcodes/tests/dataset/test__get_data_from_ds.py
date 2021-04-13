@@ -206,7 +206,7 @@ def test_datasaver_array_parameters_array(channel_array_instrument, DAC, N,
             datasaver.add_result((DAC.ch1, set_v),
                                  (array_param, array_param.get()))
 
-    datadicts = get_data_by_id(datasaver.run_id)
+    datadicts = _get_data_from_ds(datasaver.dataset)
     # one dependent parameter
     assert len(datadicts) == 1
     datadicts = datadicts[0]
@@ -256,7 +256,7 @@ def test_datasaver_multidim_array(experiment, bg_writing):
                              (str(y1), expected['y1']),
                              (str(y2), expected['y2']))
 
-    datadicts = get_data_by_id(datasaver.run_id)
+    datadicts = _get_data_from_ds(datasaver.dataset)
     assert len(datadicts) == 2
     for datadict_list in datadicts:
         assert len(datadict_list) == 3
@@ -300,7 +300,7 @@ def test_datasaver_multidim_array(experiment, bg_writing):
                              (str(y1), expected['y1']),
                              (str(y2), expected['y2']))
 
-    datadicts = get_data_by_id(datasaver.run_id)
+    datadicts = _get_data_from_ds(datasaver.dataset)
     assert len(datadicts) == 2
     for datadict_list in datadicts:
         assert len(datadict_list) == 3
@@ -339,7 +339,7 @@ def test_datasaver_multidim_numeric(experiment, bg_writing):
                              (str(y1), data[2, :, :]),
                              (str(y2), data[3, :, :]))
 
-    datadicts = get_data_by_id(datasaver.run_id)
+    datadicts = _get_data_from_ds(datasaver.dataset)
     assert len(datadicts) == 2
     for datadict_list in datadicts:
         assert len(datadict_list) == 3
