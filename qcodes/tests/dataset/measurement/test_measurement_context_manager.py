@@ -1813,35 +1813,6 @@ def test_datasaver_multidimarrayparameter_as_array(SpectrumAnalyzer,
                                                array_param.stop,
                                                array_param.npts[i]))
 
-    datadicts = get_data_by_id(datasaver.run_id)
-    assert len(datadicts) == 1
-    for datadict_list in datadicts:
-        assert len(datadict_list) == 4
-        for i, datadict in enumerate(datadict_list):
-
-            datadict['data'].shape = (np.prod(expected_shape),)
-            if i == 0:
-                temp_data = np.linspace(array_param.start,
-                                        array_param.stop,
-                                        array_param.npts[0])
-                expected_data = np.repeat(temp_data,
-                                          expected_shape[2] * expected_shape[3])
-            if i == 1:
-                temp_data = np.linspace(array_param.start,
-                                        array_param.stop,
-                                        array_param.npts[i])
-                expected_data = np.tile(np.repeat(temp_data, expected_shape[3]),
-                                        expected_shape[1])
-            if i == 2:
-                temp_data = np.linspace(array_param.start,
-                                        array_param.stop,
-                                        array_param.npts[i])
-                expected_data = np.tile(temp_data,
-                                        expected_shape[1] * expected_shape[2])
-            if i == 3:
-                expected_data = inserted_data.ravel()
-            assert_allclose(datadict['data'], expected_data)
-
 
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.usefixtures("experiment")
@@ -1886,35 +1857,6 @@ def test_datasaver_multidimarrayparameter_as_numeric(SpectrumAnalyzer,
                         expected_setpoints[i])
     data = loaded_data['dummy_SA_multidimspectrum']['dummy_SA_multidimspectrum'].squeeze()
     assert_allclose(data, inserted_data.ravel())
-
-    datadicts = get_data_by_id(datasaver.run_id)
-    assert len(datadicts) == 1
-    for datadict_list in datadicts:
-        assert len(datadict_list) == 4
-        for i, datadict in enumerate(datadict_list):
-
-            datadict['data'].shape = (np.prod(expected_shape),)
-            if i == 0:
-                temp_data = np.linspace(array_param.start,
-                                        array_param.stop,
-                                        array_param.npts[0])
-                expected_data = np.repeat(temp_data,
-                                          expected_shape[1] * expected_shape[2])
-            if i == 1:
-                temp_data = np.linspace(array_param.start,
-                                        array_param.stop,
-                                        array_param.npts[i])
-                expected_data = np.tile(np.repeat(temp_data, expected_shape[2]),
-                                        expected_shape[0])
-            if i == 2:
-                temp_data = np.linspace(array_param.start,
-                                        array_param.stop,
-                                        array_param.npts[i])
-                expected_data = np.tile(temp_data,
-                                        expected_shape[0] * expected_shape[1])
-            if i == 3:
-                expected_data = inserted_data.ravel()
-            assert_allclose(datadict['data'], expected_data)
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
