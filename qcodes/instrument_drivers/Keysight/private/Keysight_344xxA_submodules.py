@@ -174,12 +174,17 @@ class Sample(InstrumentChannel):
             selected, the maximum is 50,000 readings (without the MEM
             option) or 2,000,000 readings (with the MEM option)"""))
 
-        if self.parent.has_DIG:
+        if self.parent.model == '34411A':
+            _max_pretrig_count = int(1e6) - 1
+        elif self.parent.has_DIG:
             if self.parent.has_MEM:
                 _max_pretrig_count = int(2e6) - 1
             else:
                 _max_pretrig_count = int(5e4) - 1
+        else:
+            _max_pretrig_count = None
 
+        if _max_pretrig_count is not None:
             self.add_parameter('pretrigger_count',
                                label='Sample Pretrigger Count',
                                set_cmd='SAMPle:COUNt:PRETrigger {}',
