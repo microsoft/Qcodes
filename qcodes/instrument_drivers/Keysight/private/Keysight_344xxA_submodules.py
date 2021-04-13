@@ -785,10 +785,11 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
 
     def _licenses(self) -> Sequence[str]:
         """
-        Return extra licenses purchased with the DMM. The 34410A does not have
-        optional modules, hence always returns an empty tuple.
+        Return extra licenses purchased with the DMM. The 34410A and 34411A
+        models do not have optional modules, hence always returns an empty
+        tuple.
         """
-        if self.model != '34410A':
+        if not self.is_34410A_34411A:
             licenses_raw = self.ask('SYST:LIC:CAT?')
             licenses_list = [x.strip('"') for x in licenses_raw.split(',')]
             return licenses_list
@@ -797,14 +798,14 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
     def _options(self) -> Tuple[str, ...]:
         """
         Return enabled options of the DMM returned by ``*OPT?`` command.
-        The 34410A model does not have options, hence always returns
+        The 34410A and 34411A models do not have options, hence always returns
         an empty tuple.
 
         Note that for firmware version 3.0, output of ```*OPT?`` will contain
         the ``DIG`` option only if it has been purchased before, although
         the option itself is enabled by default in the firmware version 3.0.
         """
-        if self.model != '34410A':
+        if not self.is_34410A_34411A:
             options_raw = self.ask('*OPT?')
             options_list = [opt for opt in options_raw.split(',') if opt != '0']
             return tuple(options_list)
