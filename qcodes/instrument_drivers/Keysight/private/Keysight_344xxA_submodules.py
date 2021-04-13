@@ -86,7 +86,7 @@ class Trigger(InstrumentChannel):
                            get_cmd='TRIGger:SLOPe?',
                            vals=vals.Enum('POS', 'NEG'))
 
-        if self.parent.is_34465A_34470A and self.parent.has_DIG:
+        if self.parent.has_DIG or (self.parent.model == '34411A'):
             self.add_parameter('level',
                                label='Trigger Level',
                                unit='V',
@@ -122,7 +122,7 @@ class Trigger(InstrumentChannel):
                 it buffers one trigger.""")
         _trigger_source_vals = vals.Enum('IMM', 'EXT', 'BUS')
 
-        if self.parent.has_DIG:
+        if self.parent.has_DIG or (self.parent.model == '34411A'):
             _trigger_source_vals = vals.Enum('IMM', 'EXT', 'BUS', 'INT')
             # extra empty lines are needed for readability of the docstring
             _trigger_source_docstring += textwrap.dedent("""\
