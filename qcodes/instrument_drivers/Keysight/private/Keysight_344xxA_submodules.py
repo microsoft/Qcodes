@@ -451,6 +451,7 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         self.model = idn['model']
 
         self.is_34465A_34470A = self.model in ['34465A', '34470A']
+        self.is_34410A_34411A = self.model in ['34410A', '34411A']
 
         ####################################
         # Instrument specifications
