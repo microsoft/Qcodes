@@ -77,8 +77,10 @@ def _get_data_from_ds(ds: DataSet) -> List[List[Dict[str, Union[str, np.ndarray]
     dependent_parameters: Tuple[ParamSpecBase, ...] = ds.dependent_parameters
 
     all_data = ds.cache.data()
-
-    parameter_data = {ps.name: all_data[ps.name] for ps in dependent_parameters}
+    if len(dependent_parameters) > 0:
+        parameter_data = {ps.name: all_data[ps.name] for ps in dependent_parameters}
+    else:
+        parameter_data = all_data
 
     output = []
 
