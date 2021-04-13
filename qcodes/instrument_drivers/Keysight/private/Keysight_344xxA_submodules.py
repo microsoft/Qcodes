@@ -477,13 +477,6 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
             PLCs['34465A'] = [0.001, 0.002, 0.006] + PLCs['34465A']
             PLCs['34470A'] = [0.001, 0.002, 0.006] + PLCs['34470A']
 
-        ranges = {'34410A': [10**n for n in range(3, 10)],  # 100 to 1 G
-                  '34460A': [10**n for n in range(-3, 9)],  # 1 m to 100 M
-                  '34461A': [10**n for n in range(-3, 9)],  # 1 m to 100 M
-                  '34465A': [10**n for n in range(-3, 10)],  # 1 m to 1 G
-                  '34470A': [10**n for n in range(-3, 10)],  # 1 m to 1 G
-                  }
-
         # The resolution factor order matches the order of PLCs
         res_factors = {'34410A': [6e-6, 3e-6, 1.5e-6, 0.7e-6,
                                   0.3e-6, 0.2e-6, 0.1e-6, 0.03e-6],
@@ -501,7 +494,7 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
             res_factors['34470A'] = [30e-6, 10e-6, 3e-6] + res_factors['34470A']
 
         self._resolution_factors = res_factors[self.model]
-        self.ranges = ranges[self.model]
+        self.DCV_ranges = [10**n for n in range(-1, 4)] # 100 m to 1 k
         self.NPLC_list = PLCs[self.model]
 
         ####################################
@@ -555,7 +548,7 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
                            get_cmd='SENSe:VOLTage:DC:RANGe?',
                            get_parser=float,
                            set_cmd='SENSe:VOLTage:DC:RANGe {:f}',
-                           vals=vals.Enum(*self.ranges))
+                           vals=vals.Enum(*self.DCV_ranges))
 
         self.add_parameter('resolution',
                            get_cmd='SENSe:VOLTage:DC:RESolution?',
