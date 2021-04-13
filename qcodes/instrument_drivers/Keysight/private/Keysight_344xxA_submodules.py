@@ -484,7 +484,7 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
                   }
 
         # The resolution factor order matches the order of PLCs
-        res_factors = {'34410A': [30e-6, 15e-5, 6e-6, 3e-6, 1.5e-6, 0.7e-6,
+        res_factors = {'34410A': [6e-6, 3e-6, 1.5e-6, 0.7e-6,
                                   0.3e-6, 0.2e-6, 0.1e-6, 0.03e-6],
                        '34411A': [30e-6, 15e-5, 6e-6, 3e-6, 1.5e-6, 0.7e-6,
                                   0.3e-6, 0.2e-6, 0.1e-6, 0.03e-6],
