@@ -622,14 +622,21 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         ####################################
         # Aperture parameters
 
-        if self.is_34465A_34470A:
-            # Define the extreme aperture time values for the 34465A and 34470A
+        if self.is_34465A_34470A or self.is_34410A_34411A:
+            # Define the extreme aperture time values for the 34410A, 34411A,
+            # 34465A and 34470A. The upper limits for 34410A and 34411A in the
+            # case of a 60Hz line frequency are just calculated by multiplying
+            # the respective limit with 50/60.
             utility_freq = self.line_frequency()
             if utility_freq == 50:
-                apt_times = {'34465A': [0.3e-3, 2],
+                apt_times = {'34410A': [100e-6, 1],
+                            '34411A': [20e-6, 1],
+                            '34465A': [0.3e-3, 2],
                             '34470A': [0.3e-3, 2]}
             elif utility_freq == 60:
-                apt_times = {'34465A': [0.3e-3, 1.67],
+                apt_times = {'34410A': [100e-6, 0.83],
+                            '34411A': [20e-6, 0.83],
+                            '34465A': [0.3e-3, 1.67],
                             '34470A': [0.3e-3, 1.67]}
             if self.has_DIG:
                 apt_times['34465A'][0] = 20e-6
