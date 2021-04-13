@@ -170,9 +170,13 @@ class Sample(InstrumentChannel):
             Specifies the number of measurements (samples) the instrument
             takes per trigger.
 
-            MAX selects 1 billion readings. However, when pretrigger is
-            selected, the maximum is 50,000 readings (without the MEM
-            option) or 2,000,000 readings (with the MEM option)"""))
+            For the models 34460A and above, MAX selects 1 billion readings.
+            However, when pretrigger is selected, the maximum is 50,000
+            readings (without the MEM option) or 2,000,000 readings (with the
+            MEM option).
+            For the model 34410A the maximum is 50,000 readings, and for the
+            model 34411A the maximum is 1,000,000 readings. The latter does
+            not depend on the pretrigger count."""))
 
         if self.parent.model == '34411A':
             _max_pretrig_count = int(1e6) - 1
