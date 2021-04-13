@@ -466,6 +466,7 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         self.has_MEM = self.is_34465A_34470A and 'MEM' in options
 
         PLCs = {'34410A': [0.006, 0.02, 0.06, 0.2, 1, 2, 10, 100],
+                '34411A': [0.001, 0.002, 0.006, 0.02, 0.06, 0.2, 1, 2, 10, 100],
                 '34460A': [0.02, 0.2, 1, 10, 100],
                 '34461A': [0.02, 0.2, 1, 10, 100],
                 '34465A': [0.02, 0.06, 0.2, 1, 10, 100],
@@ -484,6 +485,8 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
 
         # The resolution factor order matches the order of PLCs
         res_factors = {'34410A': [30e-6, 15e-5, 6e-6, 3e-6, 1.5e-6, 0.7e-6,
+                                  0.3e-6, 0.2e-6, 0.1e-6, 0.03e-6],
+                       '34411A': [30e-6, 15e-5, 6e-6, 3e-6, 1.5e-6, 0.7e-6,
                                   0.3e-6, 0.2e-6, 0.1e-6, 0.03e-6],
                        '34460A': [300e-6, 100e-6, 30e-6, 10e-6, 3e-6],
                        '34461A': [100e-6, 10e-6, 3e-6, 1e-6, 0.3e-6],
