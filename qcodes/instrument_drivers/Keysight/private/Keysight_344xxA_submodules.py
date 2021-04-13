@@ -427,8 +427,8 @@ class TimeAxis(Parameter): # pylint: disable=abstract-method
 
 class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
     """
-    Instrument class for Keysight 34460A, 34461A, 34465A and 34470A
-    multimeters.
+    Instrument class for Keysight 34410A, 34411A, 34460A, 34461A, 34465A and
+    34470A multimeters.
 
     The driver currently only supports using the instrument as a voltmeter
     for DC measurements.
