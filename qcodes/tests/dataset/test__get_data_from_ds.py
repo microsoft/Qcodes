@@ -1,7 +1,10 @@
 import pytest
 import numpy as np
 from numpy.testing import assert_allclose
+import hypothesis.strategies as hst
+from hypothesis import HealthCheck, given, settings
 
+import qcodes as qc
 from qcodes.dataset.data_export import get_data_by_id, _get_data_from_ds
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
@@ -142,3 +145,207 @@ def test_datasaver_multidimarrayparameter_as_numeric(SpectrumAnalyzer,
             if datadict['name'] == "dummy_SA_multidimspectrum":
                 expected_data = inserted_data.ravel()
             assert_allclose(datadict['data'], expected_data)
+
+
+@settings(max_examples=5, deadline=None,
+          suppress_health_check=(HealthCheck.function_scoped_fixture,))
+@given(N=hst.integers(min_value=5, max_value=500))
+@pytest.mark.parametrize("bg_writing", [True, False])
+@pytest.mark.parametrize("storage_type", ['numeric', 'array'])
+@pytest.mark.usefixtures("experiment")
+def test_datasaver_array_parameters_channel(channel_array_instrument,
+                                            DAC, N, storage_type,
+                                            bg_writing):
+    array_param = channel_array_instrument.A.dummy_array_parameter
+    meas = Measurement()
+    meas.register_parameter(DAC.ch1)
+    meas.register_parameter(array_param, setpoints=[DAC.ch1], paramtype=storage_type)
+
+    M = array_param.shape[0]
+    with meas.run(write_in_background=bg_writing) as datasaver:
+        for set_v in np.linspace(0, 0.01, N):
+            datasaver.add_result((DAC.ch1, set_v),
+                                 (array_param, array_param.get()))
+
+    datadicts = _get_data_from_ds(datasaver.dataset)
+    # one dependent parameter
+    assert len(datadicts) == 1
+    datadicts = datadicts[0]
+    assert len(datadicts) == len(meas.parameters)
+    for datadict in datadicts:
+        assert datadict['data'].shape == (N * M,)
+
+
+@settings(max_examples=5, deadline=None,
+          suppress_health_check=(HealthCheck.function_scoped_fixture,))
+@given(N=hst.integers(min_value=5, max_value=500))
+@pytest.mark.usefixtures("experiment")
+@pytest.mark.parametrize("bg_writing", [True, False])
+def test_datasaver_array_parameters_array(channel_array_instrument, DAC, N,
+                                          bg_writing):
+    """
+    Test that storing array parameters inside a loop works as expected
+    """
+    storage_type = "array"
+    array_param = channel_array_instrument.A.dummy_array_parameter
+    dependency_name = 'dummy_channel_inst_ChanA_array_setpoint_param_this_setpoint'
+
+    # Now for a real measurement
+
+    meas = Measurement()
+
+    meas.register_parameter(DAC.ch1, paramtype='numeric')
+    meas.register_parameter(array_param, setpoints=[DAC.ch1], paramtype=storage_type)
+
+    assert len(meas.parameters) == 3
+
+    M = array_param.shape[0]
+    dac_datapoints = np.linspace(0, 0.01, N)
+    with meas.run(write_in_background=bg_writing) as datasaver:
+        for set_v in dac_datapoints:
+            datasaver.add_result((DAC.ch1, set_v),
+                                 (array_param, array_param.get()))
+
+    datadicts = get_data_by_id(datasaver.run_id)
+    # one dependent parameter
+    assert len(datadicts) == 1
+    datadicts = datadicts[0]
+    assert len(datadicts) == len(meas.parameters)
+    for datadict in datadicts:
+        if datadict['name'] == 'dummy_dac_ch1':
+            expected_data = np.repeat(dac_datapoints, M)
+        if datadict['name'] == dependency_name:
+            expected_data = np.tile(np.linspace(5, 9, 5), N)
+        if datadict['name'] == 'dummy_channel_inst_ChanA_dummy_array_parameter':
+            expected_data = np.empty(N * M)
+            expected_data[:] = 2.
+        assert_allclose(datadict['data'], expected_data)
+
+        assert datadict['data'].shape == (N * M,)
+
+
+@pytest.mark.parametrize("bg_writing", [True, False])
+def test_datasaver_multidim_array(experiment, bg_writing):
+    """
+    Test that inserting multidim parameters as arrays works as expected
+    """
+    meas = Measurement(experiment)
+    size1 = 10
+    size2 = 15
+
+    data_mapping = {name: i for i, name in
+                    zip(range(4), ['x1', 'x2', 'y1', 'y2'])}
+
+    x1 = qc.ManualParameter('x1')
+    x2 = qc.ManualParameter('x2')
+    y1 = qc.ManualParameter('y1')
+    y2 = qc.ManualParameter('y2')
+
+    meas.register_parameter(x1, paramtype='array')
+    meas.register_parameter(x2, paramtype='array')
+    meas.register_parameter(y1, setpoints=[x1, x2], paramtype='array')
+    meas.register_parameter(y2, setpoints=[x1, x2], paramtype='array')
+    data = np.random.rand(4, size1, size2)
+    expected = {'x1': data[0, :, :],
+                'x2': data[1, :, :],
+                'y1': data[2, :, :],
+                'y2': data[3, :, :]}
+    with meas.run(write_in_background=bg_writing) as datasaver:
+        datasaver.add_result((str(x1), expected['x1']),
+                             (str(x2), expected['x2']),
+                             (str(y1), expected['y1']),
+                             (str(y2), expected['y2']))
+
+    datadicts = get_data_by_id(datasaver.run_id)
+    assert len(datadicts) == 2
+    for datadict_list in datadicts:
+        assert len(datadict_list) == 3
+        for datadict in datadict_list:
+            dataindex = data_mapping[datadict['name']]
+            expected_data = data[dataindex, :, :].ravel()
+            assert_allclose(datadict['data'], expected_data)
+
+            assert datadict['data'].shape == (size1 * size2,)
+
+
+@pytest.mark.parametrize("bg_writing", [True, False])
+def test_datasaver_multidim_array(experiment, bg_writing):
+    """
+    Test that inserting multidim parameters as arrays works as expected
+    """
+    meas = Measurement(experiment)
+    size1 = 10
+    size2 = 15
+
+    data_mapping = {name: i for i, name in
+                    zip(range(4), ['x1', 'x2', 'y1', 'y2'])}
+
+    x1 = qc.ManualParameter('x1')
+    x2 = qc.ManualParameter('x2')
+    y1 = qc.ManualParameter('y1')
+    y2 = qc.ManualParameter('y2')
+
+    meas.register_parameter(x1, paramtype='array')
+    meas.register_parameter(x2, paramtype='array')
+    meas.register_parameter(y1, setpoints=[x1, x2], paramtype='array')
+    meas.register_parameter(y2, setpoints=[x1, x2], paramtype='array')
+    data = np.random.rand(4, size1, size2)
+    expected = {'x1': data[0, :, :],
+                'x2': data[1, :, :],
+                'y1': data[2, :, :],
+                'y2': data[3, :, :]}
+    with meas.run(write_in_background=bg_writing) as datasaver:
+        datasaver.add_result((str(x1), expected['x1']),
+                             (str(x2), expected['x2']),
+                             (str(y1), expected['y1']),
+                             (str(y2), expected['y2']))
+
+    datadicts = get_data_by_id(datasaver.run_id)
+    assert len(datadicts) == 2
+    for datadict_list in datadicts:
+        assert len(datadict_list) == 3
+        for datadict in datadict_list:
+            dataindex = data_mapping[datadict['name']]
+            expected_data = data[dataindex, :, :].ravel()
+            assert_allclose(datadict['data'], expected_data)
+
+            assert datadict['data'].shape == (size1 * size2,)
+
+
+@pytest.mark.parametrize("bg_writing", [True, False])
+def test_datasaver_multidim_numeric(experiment, bg_writing):
+    """
+    Test that inserting multidim parameters as numeric works as expected
+    """
+    meas = Measurement(experiment)
+    size1 = 10
+    size2 = 15
+    x1 = qc.ManualParameter('x1')
+    x2 = qc.ManualParameter('x2')
+    y1 = qc.ManualParameter('y1')
+    y2 = qc.ManualParameter('y2')
+
+    data_mapping = {name: i for i, name in
+                    zip(range(4), ['x1', 'x2', 'y1', 'y2'])}
+
+    meas.register_parameter(x1, paramtype='numeric')
+    meas.register_parameter(x2, paramtype='numeric')
+    meas.register_parameter(y1, setpoints=[x1, x2], paramtype='numeric')
+    meas.register_parameter(y2, setpoints=[x1, x2], paramtype='numeric')
+    data = np.random.rand(4, size1, size2)
+    with meas.run(write_in_background=bg_writing) as datasaver:
+        datasaver.add_result((str(x1), data[0, :, :]),
+                             (str(x2), data[1, :, :]),
+                             (str(y1), data[2, :, :]),
+                             (str(y2), data[3, :, :]))
+
+    datadicts = get_data_by_id(datasaver.run_id)
+    assert len(datadicts) == 2
+    for datadict_list in datadicts:
+        assert len(datadict_list) == 3
+        for datadict in datadict_list:
+            dataindex = data_mapping[datadict['name']]
+            expected_data = data[dataindex, :, :].ravel()
+            assert_allclose(datadict['data'], expected_data)
+
+            assert datadict['data'].shape == (size1 * size2,)
