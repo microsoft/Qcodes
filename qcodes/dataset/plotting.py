@@ -6,7 +6,7 @@ using QCoDeS.
 import logging
 from functools import partial
 from typing import (Optional, List, Sequence, Union, Tuple, Dict,
-                    Any, Set, cast)
+                    Any, cast)
 import inspect
 import numpy as np
 import matplotlib
@@ -30,7 +30,7 @@ AxesTuple = Tuple[matplotlib.axes.Axes, matplotlib.colorbar.Colorbar]
 AxesTupleList = Tuple[List[matplotlib.axes.Axes],
                       List[Optional[matplotlib.colorbar.Colorbar]]]
 Number = Union[float, int]
-# NamedData is the structure get_data_by_id returns and that plot_by_id
+# NamedData is the structure _get_data_from_ds returns and that plot_by_id
 # uses internally
 NamedData = List[List[Dict[str, Union[str, np.ndarray]]]]
 
