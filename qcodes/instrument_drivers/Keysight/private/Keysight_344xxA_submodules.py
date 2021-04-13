@@ -208,7 +208,7 @@ class Sample(InstrumentChannel):
                 ``sample.count`` parameter for information on the maximum
                 number of sample counts."""))
 
-        if self.parent.is_34465A_34470A:
+        if self.parent.is_34465A_34470A or self.parent.is_34410A_34411A:
             self.add_parameter('source',
                                label='Sample Timing Source',
                                set_cmd='SAMPle:SOURce {}',
