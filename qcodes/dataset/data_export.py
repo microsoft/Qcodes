@@ -376,7 +376,6 @@ def datatype_from_setpoints_2d(xpoints: np.ndarray,
     return '2D_unknown'
 
 
-@deprecate(reason="only used by deprecated functions")
 def reshape_2D_data(x: np.ndarray, y: np.ndarray, z: np.ndarray
                     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     xrow = np.array(_rows_from_datapoints(x)[0])
