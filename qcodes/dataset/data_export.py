@@ -5,7 +5,7 @@ import numpy as np
 
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.data_set import load_by_id, DataSet
-
+from qcodes.utils.deprecate import deprecate
 log = logging.getLogger(__name__)
 
 
@@ -29,6 +29,7 @@ def flatten_1D_data_for_plot(rawdata: Union[Sequence[Sequence[Any]],
     return dataarray
 
 
+@deprecate(alternative="dataset.get_parameter_data")
 def get_data_by_id(run_id: int) -> \
         List[List[Dict[str, Union[str, np.ndarray]]]]:
     """
@@ -375,6 +376,7 @@ def datatype_from_setpoints_2d(xpoints: np.ndarray,
     return '2D_unknown'
 
 
+@deprecate(reason="only used by deprecated functions")
 def reshape_2D_data(x: np.ndarray, y: np.ndarray, z: np.ndarray
                     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     xrow = np.array(_rows_from_datapoints(x)[0])
@@ -401,6 +403,7 @@ def reshape_2D_data(x: np.ndarray, y: np.ndarray, z: np.ndarray
     return xrow, yrow, z_to_plot
 
 
+@deprecate(alternative="dataset.get_parameter_data")
 def get_shaped_data_by_runid(
         run_id: int
 ) -> List[List[Dict[str, Union[str, np.ndarray]]]]:
