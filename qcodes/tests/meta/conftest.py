@@ -15,8 +15,8 @@ def dac():
 
 
 @pytest.fixture(scope="session")
-def field():
-    return MockField('field_X')
+def field_x():
+    return MockField('field_x')
 
 
 @pytest.fixture(scope="session")
@@ -28,11 +28,11 @@ def lockin():
 
 
 @pytest.fixture(scope="session")
-def station(dac, lockin, field):
+def station(dac, lockin, field_x):
     _station = qc.Station()
     _station.add_component(dac)
     _station.add_component(lockin)
-    _station.add_component(field)
+    _station.add_component(field_x)
     return _station
 
 

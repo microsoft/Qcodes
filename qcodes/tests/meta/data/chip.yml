@@ -31,13 +31,13 @@ instruments:
     init:
       aliases:
         X:
-          - field_X.field
+          - field_x.field
         ramp_rate:
-          - field_X.ramp_rate
+          - field_x.ramp_rate
       set_defaults_on_load: true
       default_values:
         ramp_rate: 0.02
       setters:
         X:
-          method: field_X.set_field
+          method: field_x.set_field
           block: false

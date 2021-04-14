@@ -4,11 +4,6 @@ import numpy as np
 from qcodes import Measurement
 
 
-def test_mock_dac(dac):
-    assert dac.ch01.voltage() == 0.
-    dac.ch01.voltage(1.)
-    assert dac.ch01.voltage() == 1.
-
 def test_device(station, chip_config, dac, lockin):
     assert os.path.exists(chip_config)
     station.load_config_file(chip_config)
