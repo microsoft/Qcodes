@@ -6,7 +6,7 @@ using QCoDeS.
 import logging
 from functools import partial
 from typing import (Optional, List, Sequence, Union, Tuple, Dict,
-                    Any, Set, cast)
+                    Any, cast)
 import inspect
 import numpy as np
 import matplotlib
@@ -30,7 +30,7 @@ AxesTuple = Tuple[matplotlib.axes.Axes, matplotlib.colorbar.Colorbar]
 AxesTupleList = Tuple[List[matplotlib.axes.Axes],
                       List[Optional[matplotlib.colorbar.Colorbar]]]
 Number = Union[float, int]
-# NamedData is the structure get_data_by_id returns and that plot_by_id
+# NamedData is the structure _get_data_from_ds returns and that plot_by_id
 # uses internally
 NamedData = List[List[Dict[str, Union[str, np.ndarray]]]]
 
@@ -336,13 +336,13 @@ def plot_by_id(run_id: int,
 
 def _complex_to_real_preparser(alldata: NamedData,
                                conversion: str,
-                               degrees: bool=False) -> NamedData:
+                               degrees: bool = False) -> NamedData:
     """
     Convert complex-valued parameters to two real-valued parameters, either
     real and imaginary part or phase and magnitude part
 
     Args:
-        alldata: The data to convert, should be the output of get_data_by_id
+        alldata: The data to convert, should be the output of `_get_data_from_ds`
         conversion: the conversion method, either "real_and_imag" or
             "mag_and_phase"
         degrees: Whether to return the phase in degrees. The default is to
