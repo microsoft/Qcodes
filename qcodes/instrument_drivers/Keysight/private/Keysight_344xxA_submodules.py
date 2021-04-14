@@ -503,7 +503,7 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
             res_factors['34470A'] = [30e-6, 10e-6, 3e-6] + res_factors['34470A']
 
         self._resolution_factors = res_factors[self.model]
-        self.DCV_ranges = [10**n for n in range(-1, 4)] # 100 m to 1 k
+        self.ranges = [10**n for n in range(-1, 4)] # 100 m to 1 k
         self.NPLC_list = PLCs[self.model]
 
         ####################################
@@ -557,7 +557,7 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
                            get_cmd='SENSe:VOLTage:DC:RANGe?',
                            get_parser=float,
                            set_cmd='SENSe:VOLTage:DC:RANGe {:f}',
-                           vals=vals.Enum(*self.DCV_ranges))
+                           vals=vals.Enum(*self.ranges))
 
         self.add_parameter('resolution',
                            get_cmd='SENSe:VOLTage:DC:RESolution?',
