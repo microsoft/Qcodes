@@ -1,0 +1,34 @@
+Changelog for QCoDeS 0.24.0 (Unreleased)
+========================================
+
+The April 2021 release of QCoDeS.
+
+-----------------
+Breaking Changes:
+-----------------
+
+- `get_data_by_id` no longer returns data for standalone parameters
+  if there are no dependent parameters in the dataset. For the same reason
+  `plot_by_id` and `plot_dataset` will no longer plot these standalone parameters.
+
+
+------------
+Deprecation:
+------------
+
+- `get_data_by_id` and `get_shaped_data_by_runid` are now deprecated. These
+  functions now all have better alternatives in the build in `get_parameter_data` as well as `Xarray`
+  and `Pandas` exporters.
+
+----
+New:
+----
+
+---------
+Improved:
+---------
+
+
+-----------------
+Improved drivers:
+-----------------

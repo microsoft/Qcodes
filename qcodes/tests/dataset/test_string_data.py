@@ -166,7 +166,8 @@ def test_list_of_strings(experiment):
         test_set.conn.close()
 
 
-@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,),
+          deadline=None)
 @given(
     p_values=hypnumpy.arrays(
         dtype=hst.sampled_from(
