@@ -16,7 +16,7 @@ Breaking Changes:
 Deprecation:
 ------------
 
-- `get_data_by_id`, `get_shaped_data_by_runid` and `reshape_2D_data` are now deprecatd. These
+- `get_data_by_id`, `get_shaped_data_by_runid` and `reshape_2D_data` are now deprecated. These
   functions now all have better alternatives in the build in `get_parameter_data` as well as `Xarray`
   and `Pandas` exporters.
 
