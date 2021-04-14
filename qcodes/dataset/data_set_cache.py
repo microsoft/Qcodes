@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from .data_set_in_memory import DataSetInMem
     from .data_set_protocol import DataSetProtocol
 
-DatasetType = TypeVar("DatasetType", bound="DataSetProtocol")
+DatasetType = TypeVar("DatasetType", bound="DataSetProtocol", covariant=True)
 
 log = logging.getLogger(__name__)
 
