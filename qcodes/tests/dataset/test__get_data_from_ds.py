@@ -9,6 +9,7 @@ from qcodes.dataset.data_export import get_data_by_id, _get_data_from_ds
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.measurements import Measurement
+from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 
 def test_get_data_by_id_order(dataset):
@@ -38,7 +39,12 @@ def test_get_data_by_id_order(dataset):
                           'indep1': 1}])
     dataset.mark_completed()
 
-    for data in (get_data_by_id(dataset.run_id), _get_data_from_ds(dataset)):
+    with pytest.warns(QCoDeSDeprecationWarning):
+        data1 = get_data_by_id(dataset.run_id)
+
+    data2 = _get_data_from_ds(dataset)
+
+    for data in (data1, data2):
         data_dict = {el['name']: el['data'] for el in data[0]}
         assert data_dict['indep1'] == 1
         assert data_dict['indep2'] == 2
