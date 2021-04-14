@@ -115,7 +115,7 @@ class DataSetInMem(Sized):
 
         self._parent_dataset_links: List[Link]
         #: In memory representation of the data in the dataset.
-        self.cache: DataSetCacheInMem = DataSetCacheInMem(self)
+        self._cache: DataSetCacheInMem = DataSetCacheInMem(self)
 
         self._in_memory_cache = in_memory_cache
         self._export_path: Optional[str] = None
@@ -188,6 +188,10 @@ class DataSetInMem(Sized):
                  for pdict in parent_datasets]
         self.parent_dataset_links = links
         self.mark_started(start_bg_writer=write_in_background)
+
+    @property
+    def cache(self) -> DataSetCacheInMem:
+        return self._cache
 
     @property
     def run_id(self) -> int:
