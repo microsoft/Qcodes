@@ -97,7 +97,7 @@ class DeviceMeta(InstrumentMeta):
         name: str,
         station: Station,
         channels: Dict[str, List[str]],
-        default_values: Dict[str, Dict[str, Any]],
+        default_values: Dict[str, Any],
         connections: Dict[str, List[str]],
         set_defaults_on_load: bool = False
     ):
@@ -107,7 +107,7 @@ class DeviceMeta(InstrumentMeta):
             name (str): DeviceMeta name
             station (Station): Measurement station with real instruments
             channels (Dict[str, List[str]]): Channels to connect
-            default_values (Dict[str, Dict[str, Any]]): Default values to set on
+            default_values (Dict[str, Any]): Default values to set on
                 instrument load
             connections (Dict[str, List[str]]): Connections from channels to
                 endpoint instrument parameters
