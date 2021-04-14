@@ -269,50 +269,6 @@ def test_datasaver_multidim_array(experiment, bg_writing):
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
-def test_datasaver_multidim_array(experiment, bg_writing):
-    """
-    Test that inserting multidim parameters as arrays works as expected
-    """
-    meas = Measurement(experiment)
-    size1 = 10
-    size2 = 15
-
-    data_mapping = {name: i for i, name in
-                    zip(range(4), ['x1', 'x2', 'y1', 'y2'])}
-
-    x1 = qc.ManualParameter('x1')
-    x2 = qc.ManualParameter('x2')
-    y1 = qc.ManualParameter('y1')
-    y2 = qc.ManualParameter('y2')
-
-    meas.register_parameter(x1, paramtype='array')
-    meas.register_parameter(x2, paramtype='array')
-    meas.register_parameter(y1, setpoints=[x1, x2], paramtype='array')
-    meas.register_parameter(y2, setpoints=[x1, x2], paramtype='array')
-    data = np.random.rand(4, size1, size2)
-    expected = {'x1': data[0, :, :],
-                'x2': data[1, :, :],
-                'y1': data[2, :, :],
-                'y2': data[3, :, :]}
-    with meas.run(write_in_background=bg_writing) as datasaver:
-        datasaver.add_result((str(x1), expected['x1']),
-                             (str(x2), expected['x2']),
-                             (str(y1), expected['y1']),
-                             (str(y2), expected['y2']))
-
-    datadicts = _get_data_from_ds(datasaver.dataset)
-    assert len(datadicts) == 2
-    for datadict_list in datadicts:
-        assert len(datadict_list) == 3
-        for datadict in datadict_list:
-            dataindex = data_mapping[datadict['name']]
-            expected_data = data[dataindex, :, :].ravel()
-            assert_allclose(datadict['data'], expected_data)
-
-            assert datadict['data'].shape == (size1 * size2,)
-
-
-@pytest.mark.parametrize("bg_writing", [True, False])
 def test_datasaver_multidim_numeric(experiment, bg_writing):
     """
     Test that inserting multidim parameters as numeric works as expected
