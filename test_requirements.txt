@@ -31,6 +31,7 @@ PyVISA==1.11.3
 PyVISA-sim==0.4.0
 PyYAML==5.4.1
 requests==2.25.1
+scipy~=1.6.2
 six==1.15.0
 sortedcontainers==2.3.0
 stringparser==0.5
