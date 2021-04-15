@@ -1,8 +1,8 @@
-from typing import List, Dict, Tuple, Union, Any, Optional
+from typing import List, Dict, Union, Any, Optional
 
-from collections import namedtuple
 from functools import partial
 
+from qcodes.instrument_drivers.meta.meta_parameter import MetaParameter
 from qcodes.instrument.parameter import Parameter
 from qcodes.instrument.base import InstrumentBase
 from qcodes.station import Station
@@ -12,126 +12,7 @@ import logging
 _log = logging.getLogger(__name__)
 
 
-class MetaParameter(Parameter):
-    """Meta parameter that returns one or more endpoint parameter values"""
-    def __init__(
-        self,
-        name: str,
-        endpoints: Tuple[Parameter],
-        endpoint_names: Tuple[str],
-        setter: callable = None,
-        **kwargs
-    ):
-        """Meta parameter that acts as an alias to a real instrument parameter
-
-        Args:
-            name (str): Meta parameter name
-            endpoints (Tuple[Parameter]): One or more endpoint parameters to alias
-            endpoint_names (Tuple[str]): One or more endpoint names
-            setter (callable, optional): Optional setter function to override 
-                endpoint parameter setter. Defaults to None.
-        """
-        super().__init__(name, **kwargs)
-        self._endpoints = endpoints
-        endpoint_names = endpoint_names or [_e.name for _e in endpoints]
-        self._namedtuple = namedtuple(name, endpoint_names)
-        # Generate sub parameters if >1 endpoints,
-        # e.g. my_meta_param.X, my_meta_param.Y
-        self._sub_parameters(endpoints, endpoint_names)
-        self._setter = setter
-
-    def _sub_parameters(self, endpoints, endpoint_names):
-        """Generate sub parameters if there are > 1 endpoints."""
-        if len(endpoints) > 1:
-            parameters = []
-            for endpoint, endpoint_name in zip(
-                endpoints,
-                endpoint_names
-            ):
-                parameter = self.add_parameter(
-                    cls=self.__class__,
-                    name=endpoint_name,
-                    endpoint=endpoint
-                )
-                parameters.append(parameter)
-            self._parameters = tuple(parameters)
-        else:
-            self._parameters = (self,)
-
-    def add_parameter(
-        self,
-        cls,
-        name: str,
-        endpoint: Parameter
-    ) -> Parameter:
-        """Add a sub parameter to the meta parameter
-
-        Args:
-            name (str): Sub parameter name
-            endpoint (Parameter): Endpoint parameter object
-
-        Returns:
-            Parameter: Parameter instance
-        """
-        assert not hasattr(
-            self, name
-        ), f"Duplicate parameter name {name}."
-        parameter = cls(
-            name=name,
-            endpoints=(endpoint,),
-            endpoint_names=(endpoint.name,)
-        )
-        setattr(self, name, parameter)
-        return parameter
-
-    @property
-    def endpoints(self):
-        """Get endpoint parameters"""
-        return self._endpoints
-
-    @property
-    def parameters(self):
-        """Get all sub parameters"""
-        return self._parameters
-
-    def get_raw(self):
-        """Get parameter raw value"""
-        if len(self.endpoints) > 1:
-            return self._namedtuple(*[_e() for _e in self.endpoints])
-        return self.endpoints[0]()
-
-    def set_raw(self, value: float):
-        """Set parameter raw value
-
-        Args:
-            value (float): Parameter value to set
-
-        Returns:
-            float: Returns the parameter value
-        """
-        if self._setter is not None:
-            return self._setter(value)
-        elif len(self.endpoints) == 1:
-            return self._endpoints[0](value)
- 
-    def connect(self, *params):
-        """Connect endpoint parameter"""
-        self._endpoints = params
-
-    def disconnect(self):
-        """Disconnect endpoint parameter"""
-        self._endpoints = ()
-
-    def __repr__(self):
-        output = f"MetaParameter(name={self.name}"
-        if self.endpoints:
-            endpoints = ", ".join([str(_) for _ in self.endpoints])
-            output += f", endpoints=({endpoints})"
-        output += ")"
-        return output
-
-
-class InstrumentMeta(InstrumentBase):
+class MetaInstrument(InstrumentBase):
     """Meta instrument for aliasing instrument parameters"""
     param_cls = MetaParameter
 
@@ -160,6 +41,7 @@ class InstrumentMeta(InstrumentBase):
         default_values: Dict[str, Any] = None,
         set_defaults_on_load: bool = False,
         setters: Dict[str, Dict[str, Any]] = None,
+        units: Dict[str, Dict[str, str]] = None,
         metadata: Optional[Dict[Any, Any]] = None):
         """InstrumentMeta class for creating a meta instrument that aliases one or more 
         parameter endpoints from real instruments.
@@ -181,6 +63,9 @@ class InstrumentMeta(InstrumentBase):
                 X:
                 method: field_X.set_field
                 block: false
+            units:
+                X: T
+                ramp_rate: T/min
 
         Args:
             name (str): Instrument name
@@ -198,7 +83,8 @@ class InstrumentMeta(InstrumentBase):
         self._add_parameters(
             station=station,
             aliases=aliases,
-            setters=setters or {}
+            setters=setters or {},
+            units=units or {}
         )
         self._default_values = default_values or {}
         if set_defaults_on_load:
@@ -236,7 +122,8 @@ class InstrumentMeta(InstrumentBase):
         self,
         station: Station,
         aliases: Dict[str, List[str]],
-        setters: Dict[str, Dict[str, Any]]
+        setters: Dict[str, Dict[str, Any]],
+        units: Dict[str, Dict[str, str]]
     ):
         """Add parameters to meta instrument based on specified aliases, endpoints
         and setter methods"""
@@ -245,7 +132,8 @@ class InstrumentMeta(InstrumentBase):
                 param_name=param_name,
                 station=station,
                 paths=paths,
-                setter=setters.get(param_name)
+                setter=setters.get(param_name),
+                unit=units.get(param_name)
             )
 
     @staticmethod
@@ -264,6 +152,7 @@ class InstrumentMeta(InstrumentBase):
         station: Station,
         paths: List[str],
         setter: Dict[str, Any],
+        unit: str,
         **kwargs
     ):
         """Create meta parameter that links to a given set of paths
@@ -282,54 +171,10 @@ class InstrumentMeta(InstrumentBase):
             endpoints=endpoints,
             endpoint_names=self._endpoint_names(endpoints),
             setter=setter,
+            unit=unit,
             **kwargs
         )
 
     def __repr__(self):
         params = ", ".join(self.parameters.keys())
         return f"InstrumentMeta(name={self.name}, parameters={params})"
-
-
-class ChannelInstrumentMeta(InstrumentMeta):
-    """Meta instrument that auto generates aliases for a given ChannelList"""
-    def __init__(
-        self,
-        name: str,
-        station: Station,
-        channels: str,
-        aliases: Dict[str, List[str]],
-        default_values: Dict[str, Any] = None,
-        set_defaults_on_load: bool = False,
-        **kwargs):
-        """Create a ChannelInstrumentMeta instrument
-
-        Args:
-            name (str): Instrument name
-            station (Station): Station with real instruments to connect to
-            channels (str): Path to channels, e.g. my_instrument.channels
-            aliases (Dict[str, List[str]]): Aliases to specify for instrument,
-                these are auto-generated per channel
-            default_values (Dict[str, Any], optional): Default values to set on
-                instrument load. Defaults to None.
-            set_defaults_on_load (bool, optional): Flag to set defaults on load.
-                Defaults to False.
-        """
-        _channels = self.parse_instrument_path(station=station, path=channels)
-        _aliases = {}
-        for channel in _channels:
-            ins = channel.root_instrument.name
-            chan_no = str(channel.channel_number()).zfill(2)
-            for alias, paths in aliases.items():
-                _paths = [
-                    f"{ins}.ch{chan_no}.{path}" for path in paths
-                ]
-                _aliases[f"{alias}{chan_no}"] = _paths
-
-        super().__init__(
-            name=name,
-            station=station,
-            aliases=_aliases,
-            default_values=default_values,
-            set_defaults_on_load=set_defaults_on_load,
-            **kwargs
-        )

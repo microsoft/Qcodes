@@ -27,7 +27,7 @@ instruments:
           - lockin.Y
 
   field:
-    type: qcodes.instrument_drivers.meta.InstrumentMeta
+    type: qcodes.instrument_drivers.meta.MetaInstrument
     init:
       aliases:
         X:
@@ -41,3 +41,6 @@ instruments:
         X:
           method: field_x.set_field
           block: false
+      units:
+        X: T
+        ramp_rate: T/min

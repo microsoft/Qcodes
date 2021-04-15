@@ -5,7 +5,10 @@ from qcodes.instrument.base import InstrumentBase
 from qcodes.instrument.channel import InstrumentChannel
 from qcodes.station import Station
 
-from qcodes.instrument_drivers.meta.instrument_meta import MetaParameter, InstrumentMeta
+from qcodes.instrument_drivers.meta.meta_instrument import (
+    MetaParameter,
+    MetaInstrument
+)
 
 
 class DeviceMetaParameter(MetaParameter):
@@ -62,7 +65,8 @@ class DeviceMetaParameter(MetaParameter):
             name=name,
             endpoints=(endpoint,),
             endpoint_names=(endpoint.name,),
-            channel=self.channel
+            channel=self.channel,
+            instrument=None
         )
         setattr(self, name, parameter)
         return parameter
@@ -78,7 +82,7 @@ class DeviceMetaParameter(MetaParameter):
         return output
 
 
-class DeviceMeta(InstrumentMeta):
+class DeviceMeta(MetaInstrument):
     """Meta instrument for a quantum device on a chip"""
     param_cls = DeviceMetaParameter
 
@@ -129,7 +133,8 @@ class DeviceMeta(InstrumentMeta):
         self,
         station: Station,
         aliases: Dict[str, List[str]],
-        setters: Dict[str, Dict[str, Any]]
+        setters: Dict[str, Dict[str, Any]],
+        units: Dict[str, Dict[str, str]]
     ):
         for param_name, paths in aliases.items():
             channel = self.parse_instrument_path(
@@ -142,7 +147,8 @@ class DeviceMeta(InstrumentMeta):
                 station=station,
                 paths=paths,
                 channel=channel,
-                setter=setters.get(param_name)
+                setter=setters.get(param_name),
+                unit=units.get(param_name)
             )
 
 
@@ -158,7 +164,7 @@ class ChipMeta(InstrumentBase):
         set_defaults_on_load: bool = False,
         **kwargs):
         """
-        Create a ChipMeta instrument
+        Create a ChipMeta instrument.
 
         Args:
             name (str): Chip name

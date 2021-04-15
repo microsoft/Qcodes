@@ -1,6 +1,6 @@
-from qcodes.instrument_drivers.meta.instrument_meta import (
+from qcodes.instrument_drivers.meta.meta_instrument import (
     MetaParameter,
-    InstrumentMeta
+    MetaInstrument
 )
 
 from qcodes.instrument_drivers.meta.chip_meta import (

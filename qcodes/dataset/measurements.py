@@ -41,6 +41,7 @@ from qcodes.instrument.parameter import (ArrayParameter, MultiParameter,
 from qcodes.utils.delaykeyboardinterrupt import DelayedKeyboardInterrupt
 from qcodes.utils.helpers import NumpyJSONEncoder
 from qcodes.dataset.export_config import get_data_export_automatic
+from qcodes.instrument_drivers.meta.meta_parameter import MetaParameter
 
 log = logging.getLogger(__name__)
 
@@ -770,6 +771,12 @@ class Measurement:
         elif isinstance(parameter, Parameter):
             self._register_parameter(parameter.full_name,
                                      parameter.label,
+                                     parameter.unit,
+                                     setpoints,
+                                     basis, paramtype)
+        elif isinstance(parameter, MetaParameter):
+            self._register_parameter(parameter.full_name,
+                                     parameter.name,
                                      parameter.unit,
                                      setpoints,
                                      basis, paramtype)
