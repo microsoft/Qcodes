@@ -62,6 +62,8 @@ class MetaParameter(_BaseParameter):
         # e.g. my_meta_param.X, my_meta_param.Y
         if len(endpoints) > 1:
             self._parameters = self._sub_parameters(endpoints, endpoint_names)
+        self._set = self.set
+        self.set = self._set_override
 
     @property
     def group(self) -> Optional['MetaGroup']:
@@ -143,7 +145,14 @@ class MetaParameter(_BaseParameter):
             self.group.set_parameters(value)
         else:
             return self._endpoints[0](value)
- 
+    
+    def _set_override(self, value: ParamDataType = None, **kwargs):
+        """Overide set method such that values can optionally be set using only kwargs"""
+        if value is None:
+            self._set(kwargs)
+        else:
+            self._set(value, **kwargs)
+
     def connect(self, *params):
         """Connect endpoint parameter"""
         self._endpoints = params

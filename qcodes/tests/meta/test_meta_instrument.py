@@ -24,6 +24,6 @@ def test_mock_field_meta(station, field_x, chip_config):
         assert ramp.field == 0.001
         assert ramp.ramp_rate == 0.02
 
-        field.ramp_X({"field": 0.0, "ramp_rate": 10.0})
+        field.ramp_X(field=0.0, ramp_rate=10.0)
         assert field.ramp_rate() == 10.0
         assert field.X() == 0.0
