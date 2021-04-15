@@ -4,9 +4,9 @@ instruments:
     init:
       devices:
         device1:
-          gate: dac.ch01
-          source: dac.ch02
-          drain: dac.ch03
+          gate: foo
+          source: bar
+          drain: baz
 
       set_initial_values_on_load: true
       initial_values:
@@ -15,14 +15,14 @@ instruments:
           gate.inter_delay: 12.5e-4
 
       connections:
-        dac.ch01:
+        foo:
           - dac.ch01.voltage
-        dac.ch02:
+        bar:
           - lockin.frequency
           - lockin.amplitude
           - lockin.phase
           - lockin.time_constant
-        dac.ch03:
+        baz:
           - lockin.X
           - lockin.Y
 

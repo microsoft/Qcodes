@@ -134,10 +134,13 @@ class NanoDevice(MetaInstrument):
         units: Dict[str, Dict[str, str]]
     ):
         for param_name, paths in aliases.items():
-            channel = self.parse_instrument_path(
-                station=station,
-                path=self._channels[param_name]
-            )
+            try:
+                channel = self.parse_instrument_path(
+                    station=station,
+                    path=self._channels[param_name]
+                )
+            except AttributeError:
+                channel = None
 
             self._add_parameter(
                 param_name=param_name,
