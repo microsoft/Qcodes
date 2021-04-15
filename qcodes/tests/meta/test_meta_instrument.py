@@ -9,6 +9,7 @@ def test_mock_dac(dac):
 
 def test_mock_field_meta(station, field_x, chip_config):
     with patch.object(MockField, "set_field", wraps=field_x.set_field) as mock_set_field:
+        mock_set_field.side_effect = None
         station.load_config_file(chip_config)
         field = station.load_field(station=station)
         assert field.ramp_rate() == 0.02
