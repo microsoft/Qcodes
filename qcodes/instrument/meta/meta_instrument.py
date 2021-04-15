@@ -13,13 +13,13 @@ _log = logging.getLogger(__name__)
 
 
 class MetaInstrument(InstrumentBase):
-    """InstrumentMeta class for creating a meta instrument that aliases one or more 
+    """MetaInstrument class for creating a meta instrument that aliases one or more 
     parameter endpoints from real instruments.
 
     Example usage in instrument YAML:
 
     field:
-        type: qcodes.instrument.meta.InstrumentMeta
+        type: qcodes.instrument.meta.MetaInstrument
         init:
         aliases:
             X:
@@ -182,4 +182,4 @@ class MetaInstrument(InstrumentBase):
 
     def __repr__(self):
         params = ", ".join(self.parameters.keys())
-        return f"InstrumentMeta(name={self.name}, parameters={params})"
+        return f"MetaInstrument(name={self.name}, parameters={params})"
