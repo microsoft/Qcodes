@@ -831,6 +831,9 @@ def get_guid_from_run_id(conn: ConnectionPlus, run_id: int) -> str:
     Args:
         conn: database connection
         run_id: id of the run
+
+    Returns:
+        The guid of the run_id.
     """
     return select_one_where(conn, "runs", "guid", "run_id", run_id)
 
