@@ -41,7 +41,7 @@ from qcodes.instrument.parameter import (ArrayParameter, MultiParameter,
 from qcodes.utils.delaykeyboardinterrupt import DelayedKeyboardInterrupt
 from qcodes.utils.helpers import NumpyJSONEncoder
 from qcodes.dataset.export_config import get_data_export_automatic
-from qcodes.instrument_drivers.meta.meta_parameter import MetaParameter
+from qcodes.instrument.meta.meta_parameter import MetaParameter
 
 log = logging.getLogger(__name__)
 

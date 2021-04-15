@@ -1,11 +1,13 @@
-from qcodes.instrument_drivers.meta.device_meta import DeviceMeta
-from typing import List, Dict, Any
+from qcodes.instrument.meta.nano_device import NanoDevice
+from typing import List, Dict, Any, TYPE_CHECKING
 
 from qcodes.instrument.base import InstrumentBase
-from qcodes.station import Station
+
+if TYPE_CHECKING:
+    from qcodes.station import Station
 
 
-class ChipMeta(InstrumentBase):
+class Chip(InstrumentBase):
     """Meta instrument for a chip"""
     def __init__(
         self,
@@ -17,12 +19,12 @@ class ChipMeta(InstrumentBase):
         set_initial_values_on_load: bool = False,
         **kwargs):
         """
-        Create a ChipMeta instrument.
+        Create a Chip instrument.
 
         Args:
             name: Chip name
             station: Measurement station with real instruments
-            devices: Devices on the chip, for each a DeviceMeta is created
+            devices: Devices on the chip, for each a NanoDevice is created
             initial_values: Default values to set on load
             connections: Connections from channels to endpoint instrument parameters
             set_initial_values_on_load: Set default values on load. Defaults to False.
@@ -30,7 +32,7 @@ class ChipMeta(InstrumentBase):
         super().__init__(name=name, **kwargs)
 
         for device_name, channels in devices.items():
-            device = DeviceMeta(
+            device = NanoDevice(
                 name=device_name,
                 station=station,
                 channels=channels,
@@ -46,4 +48,4 @@ class ChipMeta(InstrumentBase):
 
     def __repr__(self):
         devices = ", ".join(self.submodules.keys())
-        return f"ChipMeta(name={self.name}, devices={devices})"
+        return f"Chip(name={self.name}, devices={devices})"

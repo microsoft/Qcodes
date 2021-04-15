@@ -1,6 +1,6 @@
 instruments:
   MockChip_123:
-    type: qcodes.instrument_drivers.meta.ChipMeta
+    type: qcodes.instrument.meta.Chip
     init:
       devices:
         device1:
@@ -27,7 +27,7 @@ instruments:
           - lockin.Y
 
   field:
-    type: qcodes.instrument_drivers.meta.MetaInstrument
+    type: qcodes.instrument.meta.MetaInstrument
     init:
       aliases:
         X:

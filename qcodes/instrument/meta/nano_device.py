@@ -4,13 +4,13 @@ from qcodes.instrument.parameter import Parameter
 from qcodes.instrument.channel import InstrumentChannel
 from qcodes.station import Station
 
-from qcodes.instrument_drivers.meta.meta_instrument import (
+from qcodes.instrument.meta.meta_instrument import (
     MetaParameter,
     MetaInstrument
 )
 
 
-class DeviceMetaParameter(MetaParameter):
+class NanoDeviceParameter(MetaParameter):
     """Meta for a device parameter."""
     def __init__(
         self,
@@ -20,7 +20,7 @@ class DeviceMetaParameter(MetaParameter):
         channel: InstrumentChannel = None,
         **kwargs
     ):
-        """Meta parameter for a Device on a ChipMeta instrument
+        """Meta parameter for a Device on a Chip instrument
 
         Args:
             name: Parameter name
@@ -71,7 +71,7 @@ class DeviceMetaParameter(MetaParameter):
         return parameter
 
     def __repr__(self):
-        output = f"DeviceMetaParameter(name={self.name}"
+        output = f"NanoDeviceParameter(name={self.name}"
         if self.channel:
             output += f", channel={self.channel.name}"
         if self.endpoints:
@@ -81,9 +81,9 @@ class DeviceMetaParameter(MetaParameter):
         return output
 
 
-class DeviceMeta(MetaInstrument):
+class NanoDevice(MetaInstrument):
     """Meta instrument for a quantum device on a chip"""
-    param_cls = DeviceMetaParameter
+    param_cls = NanoDeviceParameter
 
     @staticmethod
     def _connect_aliases(
@@ -104,10 +104,10 @@ class DeviceMeta(MetaInstrument):
         connections: Dict[str, List[str]],
         set_initial_values_on_load: bool = False
     ):
-        """Create a DeviceMeta instrument
+        """Create a NanoDevice instrument
 
         Args:
-            name: DeviceMeta name
+            name: NanoDevice name
             station: Measurement station with real instruments
             channels: Channels to connect
             initial_values: Default values to set on instrument load

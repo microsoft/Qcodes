@@ -2,7 +2,7 @@ from typing import List, Dict, Union, Any, Optional
 
 from functools import partial
 
-from qcodes.instrument_drivers.meta.meta_parameter import MetaGroup, MetaParameter
+from qcodes.instrument.meta.meta_parameter import MetaGroup, MetaParameter
 from qcodes.instrument.parameter import Parameter
 from qcodes.instrument.base import InstrumentBase
 from qcodes.station import Station
@@ -49,7 +49,7 @@ class MetaInstrument(InstrumentBase):
         Example usage in instrument YAML:
 
         field:
-            type: qcodes.instrument_drivers.meta.InstrumentMeta
+            type: qcodes.instrument.meta.InstrumentMeta
             init:
             aliases:
                 X:
