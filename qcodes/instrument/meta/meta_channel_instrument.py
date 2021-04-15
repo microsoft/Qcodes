@@ -3,7 +3,7 @@ from qcodes.station import Station
 from qcodes.instrument.meta.meta_instrument import MetaInstrument
 
 
-class MetaInstrumentWithChannels(MetaInstrument):
+class MetaChannelInstrument(MetaInstrument):
     """Meta instrument that auto generates aliases for a given ChannelList"""
     def __init__(
         self,
@@ -20,12 +20,9 @@ class MetaInstrumentWithChannels(MetaInstrument):
             name: Instrument name
             station: Station with real instruments to connect to
             channels: Path to channels, e.g. my_instrument.channels
-            aliases: Aliases to specify for instrument,
-                these are auto-generated per channel
-            initial_values: Default values to set on
-                instrument load. Defaults to None.
-            set_initial_values_on_load: Flag to set defaults on load.
-                Defaults to False.
+            aliases: Aliases to specify for instrument, these are auto-generated per channel
+            initial_values: Default values to set on instrument load. Defaults to None.
+            set_initial_values_on_load: Flag to set defaults on load. Defaults to False.
         """
         _channels = self.parse_instrument_path(station=station, path=channels)
         _aliases = {}

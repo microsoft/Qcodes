@@ -47,3 +47,14 @@ instruments:
       units:
         X: T
         ramp_rate: T/min
+
+  switch:
+    type: qcodes.instrument.meta.MetaChannelInstrument
+    init:
+      channels: dac.channels
+      aliases:
+        state:
+          - dac_output
+          - smc
+          - gnd
+          - bus

@@ -6,7 +6,7 @@ from scipy.interpolate import interp1d
 import numpy as np
 
 from qcodes.instrument.base import Instrument, InstrumentBase
-from qcodes.utils.validators import Numbers, Arrays, Strings, ComplexNumbers
+from qcodes.utils.validators import Numbers, Arrays, OnOff, Strings, ComplexNumbers
 from qcodes.instrument.parameter import MultiParameter, Parameter, \
     ArrayParameter, ParameterWithSetpoints
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
@@ -818,9 +818,10 @@ class MockDACChannel(InstrumentChannel):
     A single dummy channel implementation
     """
 
-    def __init__(self, parent, name):
+    def __init__(self, parent, name, num):
         super().__init__(parent, name)
 
+        self._num = num
         self.add_parameter('voltage',
                            parameter_class=Parameter,
                            initial_value=0.,
@@ -828,6 +829,29 @@ class MockDACChannel(InstrumentChannel):
                            unit='V',
                            vals=Numbers(-2., 2.),
                            get_cmd=None, set_cmd=None)
+        self.add_parameter('dac_output',
+                           parameter_class=Parameter,
+                           initial_value="off",
+                           vals=OnOff(),
+                           get_cmd=None, set_cmd=None)
+        self.add_parameter('smc',
+                           parameter_class=Parameter,
+                           initial_value="off",
+                           vals=OnOff(),
+                           get_cmd=None, set_cmd=None)
+        self.add_parameter('bus',
+                           parameter_class=Parameter,
+                           initial_value="off",
+                           vals=OnOff(),
+                           get_cmd=None, set_cmd=None)
+        self.add_parameter('gnd',
+                           parameter_class=Parameter,
+                           initial_value="off",
+                           vals=OnOff(),
+                           get_cmd=None, set_cmd=None)
+    
+    def channel_number(self):
+        return self._num
 
 
 class MockDAC(Instrument):
@@ -853,7 +877,7 @@ class MockDAC(Instrument):
         for n in range(num_channels):
             num = str(n + 1).zfill(2)
             chan_name = f"ch{num}"
-            channel = MockDACChannel(parent=self, name=chan_name)
+            channel = MockDACChannel(parent=self, name=chan_name, num=num)
             channels.append(channel)
             self.add_submodule(chan_name, channel)
         self.add_submodule("channels", channels)

@@ -27,3 +27,21 @@ def test_mock_field_meta(station, field_x, chip_config):
         field.ramp_X(field=0.0, ramp_rate=10.0)
         assert field.ramp_rate() == 10.0
         assert field.X() == 0.0
+
+
+def test_meta_channel_instrument(station, chip_config):
+    station.load_config_file(chip_config)
+    switch = station.load_switch(station=station)
+
+    state = switch.state01()
+    assert state.dac_output == "off"
+    assert state.smc == "off"
+    assert state.bus == "off"
+    assert state.gnd == "off"
+
+    switch.state01(dac_output="on", smc="off", bus="off", gnd="off")
+    state = switch.state01()
+    assert state.dac_output == "on"
+    assert state.smc == "off"
+    assert state.bus == "off"
+    assert state.gnd == "off"
