@@ -67,8 +67,8 @@ class MetaParameter(_BaseParameter):
         """Add a sub parameter to the meta parameter
 
         Args:
-            name (str): Sub parameter name
-            endpoint (Parameter): Endpoint parameter object
+            name: Sub parameter name
+            endpoint: Endpoint parameter object
 
         Returns:
             Parameter: Parameter instance
@@ -105,7 +105,7 @@ class MetaParameter(_BaseParameter):
         """Set parameter raw value
 
         Args:
-            value (float): Parameter value to set
+            value: Parameter value to set
 
         Returns:
             float: Returns the parameter value

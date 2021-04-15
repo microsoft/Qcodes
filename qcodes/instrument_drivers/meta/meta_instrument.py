@@ -22,8 +22,8 @@ class MetaInstrument(InstrumentBase):
         e.g. "my_instrument.my_param" returns station.my_instrument.my_param
 
         Args:
-            station (Station): Measurement station
-            path (Union[str, List[str]]): Relative path to parse
+            station: Measurement station
+            path: Relative path to parse
         """
         def _parse_path(parent, elem):
             child = getattr(parent, elem[0])
@@ -68,16 +68,15 @@ class MetaInstrument(InstrumentBase):
                 ramp_rate: T/min
 
         Args:
-            name (str): Instrument name
-            station (Station): Real instrument station to connect the endpoints to.
-            aliases (Dict[str, List[str]]): Aliases and the endpoints they connect to.
-            default_values (Dict[str, Any], optional): Default values to set on meta instrument.
+            name: Instrument name
+            station: Real instrument station to connect the endpoints to.
+            aliases: Aliases and the endpoints they connect to.
+            default_values: Default values to set on meta instrument.
                 Defaults to None.
-            set_defaults_on_load (bool, optional): Flag to set defaults on load or not. Defaults to False.
-            setters (Dict[str, Dict[str, Any]], optional): Optional setter methods to use instead
+            set_defaults_on_load: Flag to set defaults on load or not. Defaults to False.
+            setters: Optional setter methods to use instead
                 of calling the .set() method on the endpoint parameters. Defaults to None.
-            metadata (Optional[Dict[Any, Any]], optional): Optional metadata to pass to instrument.
-                Defaults to None.
+            metadata: Optional metadata to pass to instrument. Defaults to None.
         """
         super().__init__(name=name, metadata=metadata)
         self._add_parameters(
@@ -94,7 +93,7 @@ class MetaInstrument(InstrumentBase):
         """Set default parameters on meta instrument
 
         Args:
-            dry_run (bool, optional): Dry run to test if defaults are set correctly.
+            dry_run: Dry run to test if defaults are set correctly.
                 Defaults to False.
         """
         _log.debug(f"Setting default values: {self._default_values}")

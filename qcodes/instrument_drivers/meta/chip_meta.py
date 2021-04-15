@@ -24,11 +24,11 @@ class DeviceMetaParameter(MetaParameter):
         """Meta parameter for a Device on a ChipMeta instrument
 
         Args:
-            name (str): Parameter name
-            endpoints (Tuple[Parameter]): Endpoints to connect to
-            endpoint_names (Tuple[str]): Names of endpoints to connect to
-            channel (InstrumentChannel, optional): Optionally set the channel 
-                this parameter refers to. Defaults to None.
+            name: Parameter name
+            endpoints: Endpoints to connect to
+            endpoint_names: Names of endpoints to connect to
+            channel: Optionally set the channel this parameter refers to.
+                Defaults to None.
         """
         self._channel = channel
         super().__init__(
@@ -52,8 +52,8 @@ class DeviceMetaParameter(MetaParameter):
         e.g. my_instrument.param.sub_param
 
         Args:
-            name (str): Name of sub parameter
-            endpoint (Parameter): Endpoint parameter to connect to
+            name: Name of sub parameter
+            endpoint: Endpoint parameter to connect to
 
         Returns:
             Parameter: The parameter instance
@@ -108,14 +108,12 @@ class DeviceMeta(MetaInstrument):
         """Create a DeviceMeta instrument
 
         Args:
-            name (str): DeviceMeta name
-            station (Station): Measurement station with real instruments
-            channels (Dict[str, List[str]]): Channels to connect
-            default_values (Dict[str, Any]): Default values to set on
-                instrument load
-            connections (Dict[str, List[str]]): Connections from channels to
-                endpoint instrument parameters
-            set_defaults_on_load (bool, optional): Set default values on load.
+            name: DeviceMeta name
+            station: Measurement station with real instruments
+            channels: Channels to connect
+            default_values: Default values to set on instrument load
+            connections: Connections from channels to endpoint instrument parameters
+            set_defaults_on_load: Set default values on load.
                 Defaults to False.
         """
         self._connections = connections
@@ -167,14 +165,12 @@ class ChipMeta(InstrumentBase):
         Create a ChipMeta instrument.
 
         Args:
-            name (str): Chip name
-            station (Station): Measurement station with real instruments
-            devices (Dict[str, Dict[str, List[str]]]): Devices on the chip,
-                for each a DeviceMeta is created
-            default_values (Dict[str, Dict[str, Any]]): Default values to set on load
-            connections (Dict[str, Dict[str, Union[str, List[str]]]]): Connections from channels to
-                endpoint instrument parameters
-            set_defaults_on_load (bool, optional): Set default values on load. Defaults to False.
+            name: Chip name
+            station: Measurement station with real instruments
+            devices: Devices on the chip, for each a DeviceMeta is created
+            default_values: Default values to set on load
+            connections: Connections from channels to endpoint instrument parameters
+            set_defaults_on_load: Set default values on load. Defaults to False.
         """
         super().__init__(name=name, **kwargs)
 

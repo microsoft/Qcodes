@@ -17,14 +17,14 @@ class MetaInstrumentWithChannels(MetaInstrument):
         """Create a Meta instrument with auto-generated channels
 
         Args:
-            name (str): Instrument name
-            station (Station): Station with real instruments to connect to
-            channels (str): Path to channels, e.g. my_instrument.channels
-            aliases (Dict[str, List[str]]): Aliases to specify for instrument,
+            name: Instrument name
+            station: Station with real instruments to connect to
+            channels: Path to channels, e.g. my_instrument.channels
+            aliases: Aliases to specify for instrument,
                 these are auto-generated per channel
-            default_values (Dict[str, Any], optional): Default values to set on
+            default_values: Default values to set on
                 instrument load. Defaults to None.
-            set_defaults_on_load (bool, optional): Flag to set defaults on load.
+            set_defaults_on_load: Flag to set defaults on load.
                 Defaults to False.
         """
         _channels = self.parse_instrument_path(station=station, path=channels)
