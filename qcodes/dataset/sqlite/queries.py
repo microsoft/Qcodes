@@ -12,7 +12,6 @@ from typing import (Any, Callable, Dict, List, Mapping, Optional, Sequence,
 from copy import copy
 import numpy as np
 from numpy import VisibleDeprecationWarning
-from pathlib import Path
 from qcodes.dataset.sqlite.database import connect
 
 import qcodes as qc
@@ -854,14 +853,20 @@ def get_guid_from_multiple_run_ids(db_path: str,
     """
 
     guids: List[str] = []
-    for run_id in run_ids:
-        if run_exists(conn=connect(db_path), run_id=run_id):
-            run_id_guid = get_guid_from_run_id(conn=connect(db_path),
-                                               run_id=run_id)
-            guids.append(run_id_guid)
-        else:
-            raise RuntimeError(f'run id {run_id} and above are not'
-                               ' available in the database')
+
+    try:
+        conn = connect(db_path)
+        for run_id in run_ids:
+            if run_exists(conn=conn, run_id=run_id):
+                run_id_guid = get_guid_from_run_id(conn=conn,
+                                                   run_id=run_id)
+                guids.append(run_id_guid)
+            else:
+                raise RuntimeError(f'run id {run_id} and above do not'
+                                   ' exist in the database')
+    finally:
+        conn.close()
+        del conn
 
     return guids
 
