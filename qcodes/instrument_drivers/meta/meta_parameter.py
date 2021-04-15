@@ -1,11 +1,33 @@
-from typing import Tuple
+from qcodes.instrument.group_parameter import Group
+from typing import Any, Dict, List, Optional, Tuple, Union
 from collections import namedtuple
 
-from qcodes.instrument.parameter import Parameter, _BaseParameter
+from qcodes.instrument.parameter import ParamDataType, ParamRawDataType, Parameter, _BaseParameter
 
 import logging
 
 _log = logging.getLogger(__name__)
+
+
+class MetaGroup(Group):
+    """Group of Meta parameters"""
+    def __init__(
+        self,
+        name: str,
+        parameters: Tuple['MetaParameter'],
+        parameter_names: Tuple[str] = None,
+        **kwargs
+    ):
+        super().__init__(parameters=list(parameters), single_instrument=False, **kwargs)
+        parameter_names = parameter_names or [_e.name for _e in parameters]
+        self._namedtuple = namedtuple(name, parameter_names)
+
+    def get_parameters(self) -> Any:
+        return self._namedtuple(*[_p.get() for _p in self.parameters.values()])
+
+    def _set_from_dict(self, calling_dict: Dict[str, ParamRawDataType]) -> None:
+        for name, p in list(self.parameters.items()):
+            p.set(calling_dict[name])
 
 
 class MetaParameter(_BaseParameter):
@@ -31,31 +53,37 @@ class MetaParameter(_BaseParameter):
         """
         super().__init__(name, **kwargs)
         self._endpoints = endpoints
-        endpoint_names = endpoint_names or [_e.name for _e in endpoints]
-        self._namedtuple = namedtuple(name, endpoint_names)
-        # Generate sub parameters if >1 endpoints,
-        # e.g. my_meta_param.X, my_meta_param.Y
-        self._sub_parameters(endpoints, endpoint_names)
         self._setter = setter
         self.unit = unit if unit is not None else ''
+        endpoint_names = endpoint_names or [_e.name for _e in endpoints]
+        self._group = None
 
-    def _sub_parameters(self, endpoints, endpoint_names):
-        """Generate sub parameters if there are > 1 endpoints."""
+        # Generate sub parameters if >1 endpoints,
+        # e.g. my_meta_param.X, my_meta_param.Y
         if len(endpoints) > 1:
-            parameters = []
-            for endpoint, endpoint_name in zip(
-                endpoints,
-                endpoint_names
-            ):
-                parameter = self.add_parameter(
-                    cls=self.__class__,
-                    name=endpoint_name,
-                    endpoint=endpoint
-                )
-                parameters.append(parameter)
-            self._parameters = tuple(parameters)
-        else:
-            self._parameters = (self,)
+            self._parameters = self._sub_parameters(endpoints, endpoint_names)
+
+    @property
+    def group(self) -> Optional['MetaGroup']:
+        """
+        The group that this parameter belongs to.
+        """
+        return self._group
+
+    def _sub_parameters(self, endpoints: Tuple[Parameter], endpoint_names: Tuple[str]):
+        """Generate sub parameters if there are > 1 endpoints."""
+        parameters = []
+        for endpoint, endpoint_name in zip(
+            endpoints,
+            endpoint_names
+        ):
+            parameter = self.add_parameter(
+                cls=self.__class__,
+                name=endpoint_name,
+                endpoint=endpoint
+            )
+            parameters.append(parameter)
+        return tuple(parameters)
 
     def add_parameter(
         self,
@@ -96,11 +124,11 @@ class MetaParameter(_BaseParameter):
 
     def get_raw(self):
         """Get parameter raw value"""
-        if len(self.endpoints) > 1:
-            return self._namedtuple(*[_e() for _e in self.endpoints])
+        if self.group is not None:
+            return self.group.get_parameters()
         return self.endpoints[0]()
 
-    def set_raw(self, value: float):
+    def set_raw(self, value: Union[float, Dict[str, ParamDataType]]):
         """Set parameter raw value
 
         Args:
@@ -111,7 +139,9 @@ class MetaParameter(_BaseParameter):
         """
         if self._setter is not None:
             return self._setter(value)
-        elif len(self.endpoints) == 1:
+        elif self.group is not None:
+            self.group.set_parameters(value)
+        else:
             return self._endpoints[0](value)
  
     def connect(self, *params):

@@ -8,8 +8,8 @@ instruments:
           source: dac.ch02
           drain: dac.ch03
 
-      set_defaults_on_load: true
-      default_values:
+      set_initial_values_on_load: true
+      initial_values:
         device1:
           gate.step: 5e-4
           gate.inter_delay: 12.5e-4
@@ -34,8 +34,11 @@ instruments:
           - field_x.field
         ramp_rate:
           - field_x.ramp_rate
-      set_defaults_on_load: true
-      default_values:
+        ramp_X:
+          - field_x.ramp_rate
+          - field_x.field
+      set_initial_values_on_load: true
+      initial_values:
         ramp_rate: 0.02
       setters:
         X:

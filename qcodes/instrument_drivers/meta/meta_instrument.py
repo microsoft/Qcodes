@@ -2,7 +2,7 @@ from typing import List, Dict, Union, Any, Optional
 
 from functools import partial
 
-from qcodes.instrument_drivers.meta.meta_parameter import MetaParameter
+from qcodes.instrument_drivers.meta.meta_parameter import MetaGroup, MetaParameter
 from qcodes.instrument.parameter import Parameter
 from qcodes.instrument.base import InstrumentBase
 from qcodes.station import Station
@@ -38,8 +38,8 @@ class MetaInstrument(InstrumentBase):
         name: str,
         station: Station,
         aliases: Dict[str, List[str]],
-        default_values: Dict[str, Any] = None,
-        set_defaults_on_load: bool = False,
+        initial_values: Dict[str, Any] = None,
+        set_initial_values_on_load: bool = False,
         setters: Dict[str, Dict[str, Any]] = None,
         units: Dict[str, Dict[str, str]] = None,
         metadata: Optional[Dict[Any, Any]] = None):
@@ -56,8 +56,8 @@ class MetaInstrument(InstrumentBase):
                 - field_X.field
                 ramp_rate:
                 - field_X.ramp_rate
-            set_defaults_on_load: true
-            default_values:
+            set_initial_values_on_load: true
+            initial_values:
                 ramp_rate: 0.02
             setters:
                 X:
@@ -71,9 +71,9 @@ class MetaInstrument(InstrumentBase):
             name: Instrument name
             station: Real instrument station to connect the endpoints to.
             aliases: Aliases and the endpoints they connect to.
-            default_values: Default values to set on meta instrument.
+            initial_values: Default values to set on meta instrument.
                 Defaults to None.
-            set_defaults_on_load: Flag to set defaults on load or not. Defaults to False.
+            set_initial_values_on_load: Flag to set defaults on load or not. Defaults to False.
             setters: Optional setter methods to use instead
                 of calling the .set() method on the endpoint parameters. Defaults to None.
             metadata: Optional metadata to pass to instrument. Defaults to None.
@@ -85,19 +85,19 @@ class MetaInstrument(InstrumentBase):
             setters=setters or {},
             units=units or {}
         )
-        self._default_values = default_values or {}
-        if set_defaults_on_load:
-            self.set_defaults()
+        self._initial_values = initial_values or {}
+        if set_initial_values_on_load:
+            self.set_initial_values()
 
-    def set_defaults(self, dry_run: bool = False):
-        """Set default parameters on meta instrument
+    def set_initial_values(self, dry_run: bool = False):
+        """Set parameter initial values on meta instrument
 
         Args:
             dry_run: Dry run to test if defaults are set correctly.
                 Defaults to False.
         """
-        _log.debug(f"Setting default values: {self._default_values}")
-        for path, value in self._default_values.items():
+        _log.debug(f"Setting default values: {self._initial_values}")
+        for path, value in self._initial_values.items():
             param = self.parse_instrument_path(self, path=path)
             msg = f"Setting parameter {self.name}.{path} to {value}."
             if not dry_run:
@@ -159,6 +159,7 @@ class MetaInstrument(InstrumentBase):
         endpoints = tuple(
             self.parse_instrument_path(station, path) for path in paths
         )
+        endpoint_names = self._endpoint_names(endpoints)
 
         if setter is not None:
            setter_fn = self.parse_instrument_path(station, setter.pop("method"))
@@ -168,11 +169,17 @@ class MetaInstrument(InstrumentBase):
             name=param_name,
             parameter_class=self.param_cls,
             endpoints=endpoints,
-            endpoint_names=self._endpoint_names(endpoints),
+            endpoint_names=endpoint_names,
             setter=setter,
             unit=unit,
             **kwargs
         )
+        if len(endpoints) > 1:
+            self.parameters[param_name]._group = MetaGroup(
+                name=param_name,
+                parameters=endpoints,
+                parameter_names=endpoint_names
+            )
 
     def __repr__(self):
         params = ", ".join(self.parameters.keys())
