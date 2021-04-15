@@ -1,4 +1,4 @@
-from typing import List, Dict, Tuple, Union, Any
+from typing import List, Dict, Tuple, Any
 
 from qcodes.instrument.parameter import Parameter
 from qcodes.instrument.base import InstrumentBase

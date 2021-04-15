@@ -1,5 +1,4 @@
 from typing import Tuple
-
 from collections import namedtuple
 
 from qcodes.instrument.parameter import Parameter, _BaseParameter
