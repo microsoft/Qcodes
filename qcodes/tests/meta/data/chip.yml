@@ -14,7 +14,7 @@ instruments:
           gate.step: 5e-4
           gate.inter_delay: 12.5e-4
 
-      connections: # there's two types of connections
+      connections:
         dac.ch01:
           - dac.ch01.voltage
         dac.ch02:
