@@ -8,10 +8,12 @@ import time
 import unicodedata
 import warnings
 from typing import (Any, Callable, Dict, List, Mapping, Optional, Sequence,
-                    Tuple, Union, cast)
+                    Tuple, Union, cast, Iterable)
 from copy import copy
 import numpy as np
 from numpy import VisibleDeprecationWarning
+from pathlib import Path
+from qcodes.dataset.sqlite.database import connect
 
 import qcodes as qc
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
@@ -831,6 +833,34 @@ def get_guid_from_run_id(conn: ConnectionPlus, run_id: int) -> str:
         run_id: id of the run
     """
     return select_one_where(conn, "runs", "guid", "run_id", run_id)
+
+
+def get_guid_from_multiple_run_ids(db_path: str,
+                                   run_ids: Iterable[int]) \
+                                   -> List[str]:
+    """
+    Expanding the functionality of get_guid_from_run_id to retrive guids
+    from database and for multiple run ids.
+
+    Args:
+        db_path: The path to the database file.
+        run_ids: An integer iterable of run ids to get their guids.
+
+    Returns:
+        A list of guids belonging to the inserted run_ids.
+    """
+
+    guids: List[str] = []
+    for run_id in run_ids:
+        if run_exists(conn=connect(db_path), run_id=run_id):
+            run_id_guid = get_guid_from_run_id(conn=connect(db_path),
+                                               run_id=run_id)
+            guids.append(run_id_guid)
+        else:
+            raise RuntimeError(f'run id {run_id} and above are not'
+                               ' available in the database')
+
+    return guids
 
 
 def finish_experiment(conn: ConnectionPlus, exp_id: int) -> None:
