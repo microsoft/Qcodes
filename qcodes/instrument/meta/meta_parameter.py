@@ -1,8 +1,12 @@
 from qcodes.instrument.group_parameter import Group
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple, Union
 from collections import namedtuple
-
-from qcodes.instrument.parameter import ParamDataType, ParamRawDataType, Parameter, _BaseParameter
+from qcodes.instrument.parameter import (
+    ParamDataType,
+    ParamRawDataType,
+    Parameter,
+    _BaseParameter
+)
 
 import logging
 
