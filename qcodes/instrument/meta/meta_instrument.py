@@ -14,40 +14,40 @@ _log = logging.getLogger(__name__)
 
 class MetaInstrument(InstrumentBase):
     """InstrumentMeta class for creating a meta instrument that aliases one or more 
-        parameter endpoints from real instruments.
+    parameter endpoints from real instruments.
 
-        Example usage in instrument YAML:
+    Example usage in instrument YAML:
 
-        field:
-            type: qcodes.instrument.meta.InstrumentMeta
-            init:
-            aliases:
-                X:
-                - field_X.field
-                ramp_rate:
-                - field_X.ramp_rate
-            set_initial_values_on_load: true
-            initial_values:
-                ramp_rate: 0.02
-            setters:
-                X:
-                method: field_X.set_field
-                block: false
-            units:
-                X: T
-                ramp_rate: T/min
+    field:
+        type: qcodes.instrument.meta.InstrumentMeta
+        init:
+        aliases:
+            X:
+            - field_X.field
+            ramp_rate:
+            - field_X.ramp_rate
+        set_initial_values_on_load: true
+        initial_values:
+            ramp_rate: 0.02
+        setters:
+            X:
+            method: field_X.set_field
+            block: false
+        units:
+            X: T
+            ramp_rate: T/min
 
-        Args:
-            name: Instrument name
-            station: Real instrument station to connect the endpoints to.
-            aliases: Aliases and the endpoints they connect to.
-            initial_values: Default values to set on meta instrument.
-                Defaults to None.
-            set_initial_values_on_load: Flag to set defaults on load or not. Defaults to False.
-            setters: Optional setter methods to use instead
-                of calling the .set() method on the endpoint parameters. Defaults to None.
-            metadata: Optional metadata to pass to instrument. Defaults to None.
-        """
+    Args:
+        name: Instrument name
+        station: Real instrument station to connect the endpoints to.
+        aliases: Aliases and the endpoints they connect to.
+        initial_values: Default values to set on meta instrument.
+            Defaults to None.
+        set_initial_values_on_load: Flag to set defaults on load or not. Defaults to False.
+        setters: Optional setter methods to use instead
+            of calling the .set() method on the endpoint parameters. Defaults to None.
+        metadata: Optional metadata to pass to instrument. Defaults to None.
+    """
     param_cls = MetaParameter
 
     @staticmethod
