@@ -4,7 +4,17 @@ from qcodes.instrument.meta.meta_instrument import MetaInstrument
 
 
 class MetaChannelInstrument(MetaInstrument):
-    """Meta instrument that auto generates aliases for a given ChannelList"""
+    """
+    Meta instrument that auto generates aliases for a given ChannelList
+    
+    Args:
+        name: Instrument name
+        station: Station with real instruments to connect to
+        channels: Path to channels, e.g. my_instrument.channels
+        aliases: Aliases to specify for instrument, these are auto-generated per channel
+        initial_values: Default values to set on instrument load. Defaults to None.
+        set_initial_values_on_load: Flag to set defaults on load. Defaults to False.
+    """
     def __init__(
         self,
         name: str,
@@ -14,16 +24,6 @@ class MetaChannelInstrument(MetaInstrument):
         initial_values: Dict[str, Any] = None,
         set_initial_values_on_load: bool = False,
         **kwargs):
-        """Create a Meta instrument with auto-generated channels
-
-        Args:
-            name: Instrument name
-            station: Station with real instruments to connect to
-            channels: Path to channels, e.g. my_instrument.channels
-            aliases: Aliases to specify for instrument, these are auto-generated per channel
-            initial_values: Default values to set on instrument load. Defaults to None.
-            set_initial_values_on_load: Flag to set defaults on load. Defaults to False.
-        """
         _channels = self.parse_instrument_path(station=station, path=channels)
         _aliases = {}
         for channel in _channels:

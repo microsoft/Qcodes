@@ -11,7 +11,16 @@ from qcodes.instrument.meta.meta_instrument import (
 
 
 class NanoDeviceParameter(MetaParameter):
-    """Meta for a device parameter."""
+    """
+    Meta for a NanoDevice parameter.
+
+    Args:
+            name: Parameter name
+            endpoints: Endpoints to connect to
+            endpoint_names: Names of endpoints to connect to
+            channel: Optionally set the channel this parameter refers to.
+                Defaults to None.
+    """
     def __init__(
         self,
         name: str,
@@ -20,15 +29,6 @@ class NanoDeviceParameter(MetaParameter):
         channel: InstrumentChannel = None,
         **kwargs
     ):
-        """Meta parameter for a Device on a Chip instrument
-
-        Args:
-            name: Parameter name
-            endpoints: Endpoints to connect to
-            endpoint_names: Names of endpoints to connect to
-            channel: Optionally set the channel this parameter refers to.
-                Defaults to None.
-        """
         self._channel = channel
         super().__init__(
             name=name,
@@ -82,7 +82,18 @@ class NanoDeviceParameter(MetaParameter):
 
 
 class NanoDevice(MetaInstrument):
-    """Meta instrument for a quantum device on a chip"""
+    """
+    Meta instrument for a quantum device on a chip
+
+    Args:
+            name: NanoDevice name
+            station: Measurement station with real instruments
+            channels: Channels to connect
+            initial_values: Default values to set on instrument load
+            connections: Connections from channels to endpoint instrument parameters
+            set_initial_values_on_load: Set default values on load.
+                Defaults to False.
+    """
     param_cls = NanoDeviceParameter
 
     @staticmethod
@@ -104,17 +115,6 @@ class NanoDevice(MetaInstrument):
         connections: Dict[str, List[str]],
         set_initial_values_on_load: bool = False
     ):
-        """Create a NanoDevice instrument
-
-        Args:
-            name: NanoDevice name
-            station: Measurement station with real instruments
-            channels: Channels to connect
-            initial_values: Default values to set on instrument load
-            connections: Connections from channels to endpoint instrument parameters
-            set_initial_values_on_load: Set default values on load.
-                Defaults to False.
-        """
         self._connections = connections
         self._channels = channels
 

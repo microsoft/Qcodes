@@ -13,37 +13,7 @@ _log = logging.getLogger(__name__)
 
 
 class MetaInstrument(InstrumentBase):
-    """Meta instrument for aliasing instrument parameters"""
-    param_cls = MetaParameter
-
-    @staticmethod
-    def parse_instrument_path(station: Station, path: Union[str, List[str]]):
-        """Parse a string path and return the object relative to the station,
-        e.g. "my_instrument.my_param" returns station.my_instrument.my_param
-
-        Args:
-            station: Measurement station
-            path: Relative path to parse
-        """
-        def _parse_path(parent, elem):
-            child = getattr(parent, elem[0])
-            if len(elem) == 1:
-                return child
-            return _parse_path(child, elem[1:])
-
-        return _parse_path(station, path.split("."))
-
-    def __init__(
-        self,
-        name: str,
-        station: Station,
-        aliases: Dict[str, List[str]],
-        initial_values: Dict[str, Any] = None,
-        set_initial_values_on_load: bool = False,
-        setters: Dict[str, Dict[str, Any]] = None,
-        units: Dict[str, Dict[str, str]] = None,
-        metadata: Optional[Dict[Any, Any]] = None):
-        """InstrumentMeta class for creating a meta instrument that aliases one or more 
+    """InstrumentMeta class for creating a meta instrument that aliases one or more 
         parameter endpoints from real instruments.
 
         Example usage in instrument YAML:
@@ -78,6 +48,35 @@ class MetaInstrument(InstrumentBase):
                 of calling the .set() method on the endpoint parameters. Defaults to None.
             metadata: Optional metadata to pass to instrument. Defaults to None.
         """
+    param_cls = MetaParameter
+
+    @staticmethod
+    def parse_instrument_path(station: Station, path: Union[str, List[str]]):
+        """Parse a string path and return the object relative to the station,
+        e.g. "my_instrument.my_param" returns station.my_instrument.my_param
+
+        Args:
+            station: Measurement station
+            path: Relative path to parse
+        """
+        def _parse_path(parent, elem):
+            child = getattr(parent, elem[0])
+            if len(elem) == 1:
+                return child
+            return _parse_path(child, elem[1:])
+
+        return _parse_path(station, path.split("."))
+
+    def __init__(
+        self,
+        name: str,
+        station: Station,
+        aliases: Dict[str, List[str]],
+        initial_values: Dict[str, Any] = None,
+        set_initial_values_on_load: bool = False,
+        setters: Dict[str, Dict[str, Any]] = None,
+        units: Dict[str, Dict[str, str]] = None,
+        metadata: Optional[Dict[Any, Any]] = None):
         super().__init__(name=name, metadata=metadata)
         self._add_parameters(
             station=station,

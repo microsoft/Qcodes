@@ -31,7 +31,17 @@ class MetaGroup(Group):
 
 
 class MetaParameter(_BaseParameter):
-    """Meta parameter that returns one or more endpoint parameter values"""
+    """
+    Meta parameter that returns one or more endpoint parameter values
+    
+    Args:
+        name: Meta parameter name
+        endpoints: One or more endpoint parameters to alias
+        endpoint_names: One or more endpoint names
+        unit: The unit of measure. Use ``''`` for unitless.
+        setter: Optional setter function to override
+            endpoint parameter setter. Defaults to None.
+    """
     def __init__(
         self,
         name: str,
@@ -41,16 +51,6 @@ class MetaParameter(_BaseParameter):
         setter: callable = None,
         **kwargs
     ):
-        """Meta parameter that acts as an alias to a real instrument parameter
-
-        Args:
-            name: Meta parameter name
-            endpoints: One or more endpoint parameters to alias
-            endpoint_names: One or more endpoint names
-            unit: The unit of measure. Use ``''`` for unitless.
-            setter: Optional setter function to override
-                endpoint parameter setter. Defaults to None.
-        """
         super().__init__(name, **kwargs)
         self._endpoints = endpoints
         self._setter = setter

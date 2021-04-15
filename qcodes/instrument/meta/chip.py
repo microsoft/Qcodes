@@ -8,7 +8,17 @@ if TYPE_CHECKING:
 
 
 class Chip(InstrumentBase):
-    """Meta instrument for a chip"""
+    """
+    Meta instrument for a Chip
+    
+    Args:
+        name: Chip name
+        station: Measurement station with real instruments
+        devices: Devices on the chip, for each a NanoDevice is created
+        initial_values: Default values to set on load
+        connections: Connections from channels to endpoint instrument parameters
+        set_initial_values_on_load: Set default values on load. Defaults to False.
+    """
     def __init__(
         self,
         name: str,
@@ -18,17 +28,6 @@ class Chip(InstrumentBase):
         connections: Dict[str, List[str]],
         set_initial_values_on_load: bool = False,
         **kwargs):
-        """
-        Create a Chip instrument.
-
-        Args:
-            name: Chip name
-            station: Measurement station with real instruments
-            devices: Devices on the chip, for each a NanoDevice is created
-            initial_values: Default values to set on load
-            connections: Connections from channels to endpoint instrument parameters
-            set_initial_values_on_load: Set default values on load. Defaults to False.
-        """
         super().__init__(name=name, **kwargs)
 
         for device_name, channels in devices.items():
