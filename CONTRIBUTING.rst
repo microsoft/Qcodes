@@ -158,8 +158,8 @@ born familiar with git, and everybody makes mistakes.
 -  If you're having difficulty making unit tests, first consider whether
    your code could be restructured to make it less dependent on other
    modules. Often, however, extra techniques are needed to break down a
-   complex test into simpler ones. @alexcjohnson or @giulioungaretti are
-   happy to help with this. Two ideas that are useful here:
+   complex test into simpler ones. We are happy to help with this on Slack.
+   Two ideas that are useful here:
 -  Patching, one of the most useful parts of the
    `unittest.mock <https://docs.python.org/3/library/unittest.mock.html>`__
    library. This lets you specify exactly how other functions/objects
