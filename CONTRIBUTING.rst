@@ -102,34 +102,6 @@ You can also run single tests with something like:
 
 If the tests pass, you should be ready to start developing!
 
-To tests actual instruments, first instantiate them in an interactive
-python session, then run ``qcodes.test_instruments()``:
-
-.. code:: python
-
-    import qcodes
-    sig_gen = qcodes.instrument_drivers.agilent.E8527D.Agilent_E8527D('source', address='...')
-    qcodes.test_instruments()  # optional verbosity = 1 (default) or 2
-
-The output of this command should include lines like:
-
-::
-
-    ***** found one Agilent_E8527D, testing *****
-
-for each class of instrument you have defined. Note that if you
-instantiate several instruments of the same class, only the *last* one
-will be tested unless you write the test to explicitly test more than
-this.
-
-Coverage testing is generally meaningless for instrument drivers, as
-calls to ``add_parameter`` and ``add_function`` do not add any code
-other than the call itself, which is covered immediately on
-instantiation rather than on calling these parameters/functions. So it
-is up to the driver author to ensure that all functionality the
-instrument supports is covered by tests. Also, it's mentioned below but
-bears repeating: if you fix a bug, write a test that would have failed
-before your fix, so we can be sure the bug does not reappear later!
 
 New code and testing
 ~~~~~~~~~~~~~~~~~~~~
