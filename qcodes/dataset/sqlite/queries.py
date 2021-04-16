@@ -33,6 +33,7 @@ from qcodes.dataset.sqlite.query_helpers import (VALUES, insert_column,
                                                  sql_placeholder_string,
                                                  update_where)
 from qcodes.utils.deprecate import deprecate
+from pathlib import Path
 
 log = logging.getLogger(__name__)
 
@@ -837,7 +838,7 @@ def get_guid_from_run_id(conn: ConnectionPlus, run_id: int) -> str:
     return select_one_where(conn, "runs", "guid", "run_id", run_id)
 
 
-def get_guid_from_multiple_run_ids(db_path: str,
+def get_guid_from_multiple_run_ids(db_path: Union[str, Path],
                                    run_ids: Iterable[int]) \
                                    -> List[str]:
     """
