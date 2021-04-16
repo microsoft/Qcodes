@@ -228,7 +228,7 @@ Pull requests
 ~~~~~~~~~~~~~
 
 -  Push your branch back to github and make a pull request (PR). If you
-   visit the repo `home page <ht://github.com/qdev-dk/Qcodes>`__ soon
+   visit the repo `home page <ht://github.com/qcodes/Qcodes>`__ soon
    after pushing to a branch, github will automatically ask you if you
    want to make a PR and help you with it.
 
