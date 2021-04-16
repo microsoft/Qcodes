@@ -148,11 +148,6 @@ born familiar with git, and everybody makes mistakes.
 -  Write the docs, following the other documentation files (.rst) in the
    repo.
 
-NOTE(giulioungaretti): maybe running test locally should be simplified,
-and then unit testing should be run on pull-request, using CI. Maybe
-simplify to a one command that says: if there's enough cover, and all
-good or fail and where it fails.
-
 -  We should have a *few* high-level "integration" tests, but simple
    unit tests (that just depend on code in one module) are more valuable
    for several reasons:
