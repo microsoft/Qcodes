@@ -114,6 +114,6 @@ def test_get_guid_from_multiple_run_ids(tmp_path: Path) -> None:
     assert get_guid_from_multiple_run_ids(db_path=path, run_ids=[1, 2]) \
         == guids
 
-    with pytest.raises(RuntimeError, match="run id 3 and above do not"
+    with pytest.raises(RuntimeError, match="run id 3 does not"
                        " exist in the database"):
         get_guid_from_multiple_run_ids(db_path=path, run_ids=[1, 2, 3])
