@@ -1,16 +1,20 @@
-from typing import cast
+from typing import cast, List
 from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
 
-from qcodes.dataset.experiment_container import new_experiment
+from qcodes.dataset.experiment_container import new_experiment, \
+    load_or_create_experiment
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.sqlite.database import initialised_database_at
 from qcodes.instrument.parameter import Parameter
 
 
 from qcodes.dataset.guid_helpers import guids_from_dir, guids_from_list_str
+from qcodes.dataset.sqlite.queries import get_guid_from_multiple_run_ids
+
+import pytest
 
 
 def test_guids_from_dir(tmp_path: Path) -> None:
@@ -77,3 +81,39 @@ def test_many_guids_from_list_str() -> None:
         'aaaaaaaa-0d00-000d-0000-017662b2a878',
         'aaaaaaaa-0d00-000d-0000-01766827cfaf']
     assert guids_from_list_str(str(guids)) == tuple(guids)
+
+
+def test_get_guid_from_multiple_run_ids(tmp_path: Path) -> None:
+    def generate_local_exp(dbpath: Path) -> List[str]:
+        with initialised_database_at(str(dbpath)):
+            guids = []
+            exp = load_or_create_experiment(experiment_name="test_guid")
+
+            p1 = Parameter('Voltage', set_cmd=None)
+            p2 = Parameter('Current', get_cmd=np.random.randn)
+
+            meas = Measurement(exp=exp)
+            meas.register_parameter(p1).register_parameter(p2, setpoints=[p1])
+
+            # Meaure for 2 times to get 2 run ids and 2 guids
+            for run in range(2):
+                with meas.run() as datasaver:
+                    for v in np.linspace(0*run, 2*run, 50):
+                        p1(v)
+                        datasaver.add_result((p1, cast(float, p1())),
+                                             (p2, cast(float, p2())))
+                guid = datasaver.dataset.guid
+                guids.append(guid)
+            datasaver.flush_data_to_database(block=True)
+        return guids
+
+    path = tmp_path/'dbfile2.db'
+    path.parent.mkdir(exist_ok=True, parents=True)
+    guids = generate_local_exp(path)
+
+    assert get_guid_from_multiple_run_ids(db_path=path, run_ids=[1, 2]) \
+        == guids
+
+    with pytest.raises(RuntimeError, match="run id 3 and above do not"
+                       " exist in the database"):
+        get_guid_from_multiple_run_ids(db_path=path, run_ids=[1, 2, 3])
