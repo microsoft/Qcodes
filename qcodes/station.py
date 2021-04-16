@@ -41,6 +41,7 @@ from io import StringIO
 from collections import deque
 import ruamel.yaml
 from pathlib import Path
+from typing.Deque import deque as Tdeque
 
 log = logging.getLogger(__name__)
 
@@ -698,7 +699,7 @@ def merge_yamls(*yamls: Union[str, Path]) -> IO[str]:
     top_key = "instruments"
     yaml = ruamel.yaml.YAML()
 
-    deq: deque = deque()
+    deq: Tdeque = deque()
 
     # Load the yaml files and add to deque in reverse entry order
     for filepath in yamls[::-1]:
