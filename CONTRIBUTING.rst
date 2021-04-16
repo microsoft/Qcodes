@@ -107,9 +107,9 @@ New code and testing
 ~~~~~~~~~~~~~~~~~~~~
 -  Fork the repo into your github account
 -  Make a branch within this repo
--  branch naming matters:
+-  It is worth considering a good branch name:
 
-   -  always select a prefix:
+   -  for example selecting a prefix can be useful:
 
       -  feature/bar (if you add the feature bar)
       -  hotfix/bar (if you fix the bug bar)
