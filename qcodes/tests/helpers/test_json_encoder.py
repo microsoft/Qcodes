@@ -35,7 +35,7 @@ def test_complex_types():
     for complex_type in numpy_complex:
         assert e.encode(complex_type(complex(1, 2))) == \
                '{"__dtype__": "complex", "re": 1.0, "im": 2.0}'
-        
+
 def test_UFloat_type():
     e = NumpyJSONEncoder()
     assert e.encode(uncertainties.ufloat(1.0, 2.0)) == \
