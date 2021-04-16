@@ -4,6 +4,7 @@ import json
 import logging
 import math
 import numbers
+import uncertainties
 import os
 import time
 from asyncio import iscoroutinefunction
@@ -51,6 +52,10 @@ class NumpyJSONEncoder(json.JSONEncoder):
         converted to a dictionary with fields ``re`` and ``im`` containing floating
         numbers for the real and imaginary parts respectively, and a field
         ``__dtype__`` containing value ``complex``.
+        * Numbers with uncertainties  (numbers that conforms to ``uncertainties.UFloat``) get
+        converted to a dictionary with fields ``nominal`` and ``uncertainty`` containing floating
+        numbers for the nominal and uncertainty parts respectively, and a field
+        ``__dtype__`` containing value ``UFloat``.
         * Object with a ``_JSONEncoder`` method get converted the return value of
         that method.
         * Objects which support the pickle protocol get converted using the
@@ -71,6 +76,12 @@ class NumpyJSONEncoder(json.JSONEncoder):
                 '__dtype__': 'complex',
                 're': float(obj.real),
                 'im': float(obj.imag)
+            }
+        elif isinstance(obj, uncertainties.UFloat):
+            return {
+                '__dtype__': 'UFloat',
+                'nominal': float(obj.nominal_value),
+                'uncertainty': float(obj.std_dev)
             }
         elif hasattr(obj, '_JSONEncoder'):
             # Use object's custom JSON encoder
