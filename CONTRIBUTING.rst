@@ -177,8 +177,6 @@ born familiar with git, and everybody makes mistakes.
 Coding Style
 ~~~~~~~~~~~~
 
-NOTE(giulioungaretti): is this enough ?
-
 -  Try to make your code self-documenting. Python is generally quite
    amenable to that, but some things that can help are:
 
