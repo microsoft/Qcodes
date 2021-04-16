@@ -850,7 +850,7 @@ def get_guid_from_multiple_run_ids(db_path: Union[str, Path],
         run_ids: An integer iterable of run ids to get their guids.
 
     Returns:
-        A list of guids belonging to the inserted run_ids.
+        A list of guids for the supplied run_ids.
     """
 
     guids: List[str] = []
@@ -863,7 +863,7 @@ def get_guid_from_multiple_run_ids(db_path: Union[str, Path],
                                                    run_id=run_id)
                 guids.append(run_id_guid)
             else:
-                raise RuntimeError(f'run id {run_id} and above do not'
+                raise RuntimeError(f'run id {run_id} does not'
                                    ' exist in the database')
     finally:
         conn.close()
