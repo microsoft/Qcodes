@@ -80,8 +80,8 @@ class NumpyJSONEncoder(json.JSONEncoder):
         elif isinstance(obj, uncertainties.UFloat):
             return {
                 '__dtype__': 'UFloat',
-                'nominal': float(obj.nominal_value),
-                'uncertainty': float(obj.std_dev)
+                'nominal_value': float(obj.nominal_value),
+                'std_dev': float(obj.std_dev)
             }
         elif hasattr(obj, '_JSONEncoder'):
             # Use object's custom JSON encoder
