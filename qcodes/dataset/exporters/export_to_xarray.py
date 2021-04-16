@@ -73,11 +73,9 @@ def _add_metadata_to_xarray(
     if dataset.completed_timestamp_raw is not None:
         xrdataset.attrs[
             "completed_timestamp_raw"] = dataset.completed_timestamp_raw
-    if len(dataset._metadata) > 0:
-        xrdataset.attrs['extra_metadata'] = {}
-
-        for metadata_tag, metadata in dataset._metadata.items():
-            xrdataset.attrs['extra_metadata'][metadata_tag] = metadata
+    if len(dataset.metadata) > 0:
+        for metadata_tag, metadata in dataset.metadata.items():
+            xrdataset.attrs[metadata_tag] = metadata
 
 
 def load_to_xarray_dataset(dataset: DataSet, data: ParameterData) -> xr.Dataset:
