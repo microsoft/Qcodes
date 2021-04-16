@@ -230,6 +230,21 @@ def test_export_to_xarray_ds_dict_extra_metadata(mock_dataset):
         _assert_xarray_metadata_is_as_expected(datarray, mock_dataset)
 
 
+def test_export_to_xarray_extra_metadate_can_be_stored(mock_dataset, tmp_path):
+
+    import json
+    nt_metadata = {
+        "foo": {
+            "bar": {
+                "baz": "test"
+            },
+            "spam": [1, 2, 3],
+        }
+    }
+    mock_dataset.add_metadata("foo_metadata", json.dumps(nt_metadata))
+    mock_dataset.export(export_type="netcdf", path=str(tmp_path))
+
+
 def _assert_xarray_metadata_is_as_expected(xarray_ds, qc_dataset):
 
     assert xarray_ds.ds_name == qc_dataset.name
