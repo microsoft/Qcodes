@@ -252,11 +252,6 @@ Pull requests
    (``- [ ] take over the world``) to let others know what more to
    expect in the near future.
 
--  There are a number of emoji that have specific meanings within our
-   github conversations. The most important one is :dancer: which means
-   "approved" - typically one of the core contributors should give the
-   dancer. Ideally this person was also tagged when you opened the PR.
-
 -  Delete your branch once you have merged (using the helpful button
    provided by github after the merge) to keep the repository clean.
    Then on your own computer, after you merge and pull the merged master
