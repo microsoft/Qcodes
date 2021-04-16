@@ -11,7 +11,7 @@ chardet==4.0.0
 colorama==0.4.4
 decorator==4.4.2
 defusedxml==0.7.1
-docutils==0.16
+docutils==0.17
 entrypoints==0.3
 idna==2.10
 imagesize==1.2.0
