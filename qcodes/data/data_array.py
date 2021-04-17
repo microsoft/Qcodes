@@ -544,7 +544,7 @@ class DataArray(DelegateAttributes):
         return xarray_dataarray
 
 
-def data_array_to_xarray_dictionary(data_array: DataArray) -> dict:
+def data_array_to_xarray_dictionary(data_array: DataArray) -> Dict[str, Any]:
     """Convert DataArray to a dictionary.
 
     Args:

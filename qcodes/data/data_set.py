@@ -2,18 +2,18 @@
 
 import xarray as xr
 import numpy as np
-from qcodes.data.data_array import data_array_to_xarray_dictionary, DataArray
 import time
 import logging
 from traceback import format_exc
 from copy import deepcopy
 from collections import OrderedDict
-from typing import Dict, Callable, Any
+from typing import Dict, Callable, Any, List
 
 from .gnuplot_format import GNUPlotFormat
 from .io import DiskIO
 from .location import FormatLocation
 from qcodes.utils.helpers import DelegateAttributes, full_class, deep_update
+from qcodes.data.data_array import data_array_to_xarray_dictionary, DataArray
 
 log = logging.getLogger(__name__)
 
@@ -781,7 +781,7 @@ def _xarray_dataarray_dictionary_to_data_array(
 
 
 def xarray_dictionary_to_dataset(
-    xarray_dictionary: dict,
+    xarray_dictionary: Dict[str, Any],
 ) -> DataSet:
     """Convert xarray dictionary to Qcodes DataSet.
 
@@ -794,7 +794,7 @@ def xarray_dictionary_to_dataset(
     dataset = new_data()
     dataset.metadata.update(xarray_dictionary["attrs"])
 
-    grid_coords = []
+    grid_coords : List[Any] = []
     set_array_names = []
     for array_key, array_dictionary in xarray_dictionary["coords"].items():
         preset_data = np.array(array_dictionary["data"])
@@ -819,9 +819,7 @@ def xarray_dictionary_to_dataset(
     return dataset
 
 
-def xarray_dataset_to_qcodes_dataset(
-    xarray_data_set: DataSet,
-) -> xr.Dataset:
+def xarray_dataset_to_qcodes_dataset(xarray_data_set: xr.Dataset) -> DataSet:
     """ Convert QCoDeS gridded dataset to xarray dataset """
     xarray_dictionary = xarray_data_set.to_dict()
     qcodes_dataset = xarray_dictionary_to_dataset(xarray_dictionary)
