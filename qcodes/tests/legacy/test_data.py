@@ -8,7 +8,7 @@ from qcodes.data.location import FormatLocation
 from qcodes.data.data_array import DataArray, data_array_to_xarray_dictionary
 from qcodes.data.io import DiskIO
 from qcodes.data.data_set import load_data, new_data, DataSet, qcodes_dataset_to_xarray_dataset,\
-    xarray_dataset_to_qcodes_dataset
+    xarray_dataset_to_qcodes_dataset, DataSet
 from qcodes.logger.logger import LogCapture
 
 from .data_mocks import (MockFormatter, MatchIO,
@@ -602,3 +602,6 @@ class TestDataSet(TestCase):
         mt = qd2_transformed.default_parameter_array()
         for key in ["name", "unit"]:
             self.assertEqual(getattr(m, key), getattr(mt, key))
+
+        xds = qd.to_xarray()
+        qds = DataSet.from_xarray(xds)

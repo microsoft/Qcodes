@@ -683,6 +683,13 @@ class DataSet(DelegateAttributes):
 
         return out
 
+    def to_xarray(self) -> xr.Dataset:
+        """ Convert the dataset to an xarray Dataset """
+        return qcodes_dataset_to_xarray_dataset(self)
+
+    @classmethod
+    def from_xarray(cls, xarray_dataset : xr.Dataset) -> 'DataSet':
+        return xarray_dataset_to_qcodes_dataset(xarray_dataset)
 
 class _PrettyPrintDict(Dict[Any, Any]):
     """
