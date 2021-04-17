@@ -1,7 +1,10 @@
+from typing import Dict, Any
 import numpy as np
 import collections
 
 from qcodes.utils.helpers import DelegateAttributes, full_class, warn_units
+
+import xarray as xr
 
 
 class DataArray(DelegateAttributes):
@@ -529,3 +532,50 @@ class DataArray(DelegateAttributes):
     def units(self):
         warn_units('DataArray', self)
         return self.unit
+
+    def to_xarray(self) -> xr.DataArray:
+        """ Return this DataArray as an xarray dataarray
+
+        Returns:
+            DataArray in xarray format
+        """
+        xarray_dictionary = data_array_to_xarray_dictionary(self)
+        xarray_dataarray = xr.DataArray.from_dict(xarray_dictionary)
+        return xarray_dataarray
+
+
+def data_array_to_xarray_dictionary(data_array: DataArray) -> dict:
+    """Convert DataArray to a dictionary.
+
+    Args:
+        data_array: The DataArray to convert.
+
+    Returns:
+        dict: A dictionary containing the data in xarray format.
+    """
+    key_mapping = {"unit": "unit", "name": "long_name", "label": "label"}
+
+    data_dictionary = {
+        target_key: getattr(data_array, key) for key, target_key in key_mapping.items()
+    }
+    if data_array.is_setpoint:
+        data_dictionary["dims"] = tuple([data_array.array_id])
+        data_dictionary["depends_on"] = data_dictionary["dims"]
+        data = data_array.ndarray
+        # flatten data, assumes setpoint is uniform as for a normal gridded dataset
+        while len(data.shape) > 1:
+            data = data[0, ..., :]
+        data_dictionary["data"] = data
+    else:
+        if data_array.set_arrays:
+            data_dictionary["dims"] = tuple([a.array_id for a in data_array.set_arrays])
+            data_dictionary["depends_on"] = data_dictionary["dims"]
+        data_dictionary["data"] = data_array.ndarray
+
+    return data_dictionary
+
+
+if __name__ == '__main__':
+    data = DataArray(preset_data=[1, 2])
+    data_array_to_xarray_dictionary(data)
+    xarray_dataarray = data.to_xarray()

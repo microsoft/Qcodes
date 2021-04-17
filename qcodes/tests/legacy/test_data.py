@@ -5,9 +5,10 @@ import pickle
 import logging
 
 from qcodes.data.location import FormatLocation
-from qcodes.data.data_array import DataArray
+from qcodes.data.data_array import DataArray, data_array_to_xarray_dictionary
 from qcodes.data.io import DiskIO
-from qcodes.data.data_set import load_data, new_data, DataSet
+from qcodes.data.data_set import load_data, new_data, DataSet, qcodes_dataset_to_xarray_dataset,\
+    xarray_dataset_to_qcodes_dataset
 from qcodes.logger.logger import LogCapture
 
 from .data_mocks import (MockFormatter, MatchIO,
@@ -278,6 +279,11 @@ class TestDataArray(TestCase):
         # now pretend we get more info from syncing
         data.synced_index = 22
         self.assertEqual(data.fraction_complete(), 23 / 50)
+
+    def test_to_xarray(self):
+        data = DataArray(preset_data=[1, 2])
+        array_dict = data_array_to_xarray_dictionary(data)
+        xarray_dataarray = data.to_xarray()
 
 
 class TestLoadData(TestCase):
@@ -578,3 +584,21 @@ class TestDataSet(TestCase):
         m.remove_array('z')
         _ = m.__repr__()
         self.assertFalse('z' in m.arrays)
+
+    def test_xarray_conversions(self):
+        qd = DataSet1D()
+        xarray_data_set = qcodes_dataset_to_xarray_dataset(qd)
+        qd_transformed = xarray_dataset_to_qcodes_dataset(xarray_data_set)
+        m = qd.default_parameter_array()
+        mt = qd_transformed.default_parameter_array()
+
+        for key in ["name", "unit"]:
+            self.assertEqual(getattr(m, key), getattr(mt, key))
+        qd2 = DataSet2D()
+        xarray_data_set = qcodes_dataset_to_xarray_dataset(qd2)
+        qd2_transformed = xarray_dataset_to_qcodes_dataset(xarray_data_set)
+
+        m = qd2.default_parameter_array()
+        mt = qd2_transformed.default_parameter_array()
+        for key in ["name", "unit"]:
+            self.assertEqual(getattr(m, key), getattr(mt, key))
