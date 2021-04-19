@@ -36,7 +36,6 @@ from qcodes.instrument.parameter import (
 import qcodes.utils.validators as validators
 from qcodes.monitor.monitor import Monitor
 
-import tempfile
 from io import StringIO
 from collections import deque
 import ruamel.yaml
@@ -706,7 +705,8 @@ def merge_yamls(*yamls: Union[str, Path]) -> IO[str]:
         with open(filepath, "r") as file_pointer:
             deq.append(yaml.load(file_pointer))
 
-    # Add the top key entries from filepath n to filepath n-1 to ... filepath 1.
+    # Add the top key entries from filepath n to filepath n-1 to
+    # ... filepath 1.
     while len(deq) > 1:
         data2, data1 = deq[0], deq[1]
         for entry in data2[top_key]:
@@ -714,12 +714,13 @@ def merge_yamls(*yamls: Union[str, Path]) -> IO[str]:
                 data1[top_key].update({entry: data2[top_key][entry]})
             else:
                 raise KeyError(
-                    f"duplicate key `{entry}` detected among files: {','.join(map(str, yamls))}"
+                    f"duplicate key `{entry}` detected among files:"
+                    f"{ ','.join(map(str, yamls))}"
                 )
         deq.popleft()
 
-    # Dump to a temp file so it can be read by load_config
-    merged_yaml_temp_file = tempfile.TemporaryFile("w+")
+    # Dump to a temp file in memory, so it can be read by load_config.
+    merged_yaml_temp_file = StringIO()
     yaml.dump(data1, merged_yaml_temp_file)
     merged_yaml_temp_file.seek(0)
 
