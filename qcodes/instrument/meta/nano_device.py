@@ -88,40 +88,27 @@ class NanoDevice(MetaInstrument):
     Args:
         name: NanoDevice name
         station: Measurement station with real instruments
-        channels: Channels to connect
+        endpoints: Parameter endpoints to connect to
         initial_values: Default values to set on instrument load
-        connections: Connections from channels to endpoint instrument parameters
         set_initial_values_on_load: Set default values on load.
             Defaults to False.
     """
     param_cls = NanoDeviceParameter
 
-    @staticmethod
-    def _connect_aliases(
-        connections: Dict[str, List[str]],
-        channels: Dict[str, List[str]]
-    ):
-        aliases = {}
-        for key, channel_name in channels.items():
-            aliases[key] = connections.get(channel_name)
-        return aliases
-
     def __init__(
         self,
         name: str,
         station: Station,
-        channels: Dict[str, List[str]],
+        aliases: Dict[str, List[str]],
         initial_values: Dict[str, Any],
-        connections: Dict[str, List[str]],
         set_initial_values_on_load: bool = False
     ):
-        self._connections = connections
-        self._channels = channels
+        self._aliases = aliases
 
         super().__init__(
             name=name,
             station=station,
-            aliases=self._connect_aliases(connections, channels),
+            aliases=aliases,
             initial_values=initial_values,
             set_initial_values_on_load=set_initial_values_on_load
         )

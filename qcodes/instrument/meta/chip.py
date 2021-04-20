@@ -25,18 +25,16 @@ class Chip(InstrumentBase):
         station: "Station",
         devices: Dict[str, Dict[str, List[str]]],
         initial_values: Dict[str, Dict[str, Any]],
-        connections: Dict[str, List[str]],
         set_initial_values_on_load: bool = False,
         **kwargs):
         super().__init__(name=name, **kwargs)
 
-        for device_name, channels in devices.items():
+        for device_name, aliases in devices.items():
             device = NanoDevice(
                 name=device_name,
                 station=station,
-                channels=channels,
+                aliases=aliases,
                 initial_values=initial_values.get(device_name),
-                connections=connections,
                 set_initial_values_on_load=set_initial_values_on_load
             )
 

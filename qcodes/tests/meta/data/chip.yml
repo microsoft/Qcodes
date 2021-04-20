@@ -4,27 +4,22 @@ instruments:
     init:
       devices:
         device1:
-          gate: foo
-          source: bar
-          drain: baz
+          gate:
+            - dac.ch01.voltage
+          source:
+            - lockin.frequency
+            - lockin.amplitude
+            - lockin.phase
+            - lockin.time_constant
+          drain:
+            - lockin.X
+            - lockin.Y
 
       set_initial_values_on_load: true
       initial_values:
         device1:
           gate.step: 5e-4
-          gate.inter_delay: 12.5e-4
-
-      connections:
-        foo:
-          - dac.ch01.voltage
-        bar:
-          - lockin.frequency
-          - lockin.amplitude
-          - lockin.phase
-          - lockin.time_constant
-        baz:
-          - lockin.X
-          - lockin.Y
+          gate.inter_delay: 12.5e-4          
 
   field:
     type: qcodes.instrument.meta.MetaInstrument
