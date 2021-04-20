@@ -160,16 +160,16 @@ born familiar with git, and everybody makes mistakes.
    modules. Often, however, extra techniques are needed to break down a
    complex test into simpler ones. We are happy to help with this on Slack.
    Two ideas that are useful here:
--  Patching, one of the most useful parts of the
-   `unittest.mock <https://docs.python.org/3/library/unittest.mock.html>`__
-   library. This lets you specify exactly how other functions/objects
-   should behave when they're called by the code you are testing.
 
--  Supporting files / data: Lets say you have a test of data acquisition
-   and analysis. You can break that up into an acquisition test and an
-   analysis by saving the intermediate state, namely the data file, in
-   the test directory. Use it to compare to the output of the
-   acquisition test, and as the input for the analysis test.
+   -  Patching, one of the most useful parts of the
+      `unittest.mock <https://docs.python.org/3/library/unittest.mock.html>`__
+      library. This lets you specify exactly how other functions/objects
+      should behave when they're called by the code you are testing.
+   -  Supporting files / data: Lets say you have a test of data acquisition
+      and analysis. You can break that up into an acquisition test and an
+      analysis by saving the intermediate state, namely the data file, in
+      the test directory. Use it to compare to the output of the
+      acquisition test, and as the input for the analysis test.
 
 -  Refer to QCoDeS documentation on how to implement tests for the 
    instrument drivers.
