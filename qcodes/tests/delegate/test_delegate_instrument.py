@@ -1,4 +1,3 @@
-import numpy as np
 from unittest.mock import patch
 from qcodes.tests.instrument_mocks import MockField
 
@@ -9,7 +8,7 @@ def test_mock_dac(dac):
     assert dac.ch01.voltage() == 1.
 
 
-def test_mock_field_meta(station, field_x, chip_config):
+def test_mock_field_delegate(station, field_x, chip_config):
     with patch.object(MockField, "set_field", wraps=field_x.set_field) as mock_set_field:
         station.load_config_file(chip_config)
         field = station.load_field(station=station)
@@ -18,7 +17,7 @@ def test_mock_field_meta(station, field_x, chip_config):
         field.X(0.001)
         mock_set_field.assert_called_once_with(0.001, block=False)
 
-        # Test group meta parameters
+        # Test group delegate parameters
         field_x.set_field(0.001)
         ramp = field.ramp_X()
         assert ramp.field == 0.001
@@ -29,7 +28,7 @@ def test_mock_field_meta(station, field_x, chip_config):
         assert field.X() == 0.0
 
 
-def test_meta_channel_instrument(station, chip_config):
+def test_delegate_channel_instrument(station, chip_config):
     station.load_config_file(chip_config)
     switch = station.load_switch(station=station)
 

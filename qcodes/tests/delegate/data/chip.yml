@@ -1,6 +1,6 @@
 instruments:
   MockChip_123:
-    type: qcodes.instrument.meta.Chip
+    type: qcodes.instrument.delegate.Chip
     init:
       devices:
         device1:
@@ -19,10 +19,10 @@ instruments:
       initial_values:
         device1:
           gate.step: 5e-4
-          gate.inter_delay: 12.5e-4          
+          gate.inter_delay: 12.5e-4
 
   field:
-    type: qcodes.instrument.meta.MetaInstrument
+    type: qcodes.instrument.delegate.DelegateInstrument
     init:
       aliases:
         X:
@@ -44,7 +44,7 @@ instruments:
         ramp_rate: T/min
 
   switch:
-    type: qcodes.instrument.meta.MetaChannelInstrument
+    type: qcodes.instrument.delegate.DelegateChannelInstrument
     init:
       channels: dac.channels
       aliases:

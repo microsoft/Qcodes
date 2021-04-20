@@ -2,7 +2,10 @@ from typing import List, Dict, Union, Any, Optional
 
 from functools import partial
 
-from qcodes.instrument.meta.meta_parameter import MetaGroup, MetaParameter
+from qcodes.instrument.delegate.delegate_group_parameter import (
+    DelegateGroup,
+    DelegateGroupParameter
+)
 from qcodes.instrument.parameter import Parameter
 from qcodes.instrument.base import InstrumentBase
 from qcodes.station import Station
@@ -12,14 +15,14 @@ import logging
 _log = logging.getLogger(__name__)
 
 
-class MetaInstrument(InstrumentBase):
-    """MetaInstrument class for creating a meta instrument that aliases one or more 
-    parameter endpoints from real instruments.
+class DelegateInstrument(InstrumentBase):
+    """DelegateInstrument class for creating an instrument with one or
+    more delegate parameters that connect to real instrument parmaters.
 
     Example usage in instrument YAML:
 
     field:
-        type: qcodes.instrument.meta.MetaInstrument
+        type: qcodes.instrument.delegate.DelegateInstrument
         init:
         aliases:
             X:
@@ -48,8 +51,29 @@ class MetaInstrument(InstrumentBase):
             of calling the .set() method on the endpoint parameters. Defaults to None.
         metadata: Optional metadata to pass to instrument. Defaults to None.
     """
-    param_cls = MetaParameter
+    param_cls = DelegateGroupParameter
 
+    def __init__(
+        self,
+        name: str,
+        station: Station,
+        aliases: Dict[str, List[str]],
+        initial_values: Dict[str, Any] = None,
+        set_initial_values_on_load: bool = False,
+        setters: Dict[str, Dict[str, Any]] = None,
+        units: Dict[str, Dict[str, str]] = None,
+        metadata: Optional[Dict[Any, Any]] = None):
+        super().__init__(name=name, metadata=metadata)
+        self._create_and_add_parameters(
+            station=station,
+            aliases=aliases,
+            setters=setters or {},
+            units=units or {}
+        )
+        self._initial_values = initial_values or {}
+        if set_initial_values_on_load:
+            self.set_initial_values()
+    
     @staticmethod
     def parse_instrument_path(station: Station, path: Union[str, List[str]]):
         """Parse a string path and return the object relative to the station,
@@ -66,27 +90,6 @@ class MetaInstrument(InstrumentBase):
             return _parse_path(child, elem[1:])
 
         return _parse_path(station, path.split("."))
-
-    def __init__(
-        self,
-        name: str,
-        station: Station,
-        aliases: Dict[str, List[str]],
-        initial_values: Dict[str, Any] = None,
-        set_initial_values_on_load: bool = False,
-        setters: Dict[str, Dict[str, Any]] = None,
-        units: Dict[str, Dict[str, str]] = None,
-        metadata: Optional[Dict[Any, Any]] = None):
-        super().__init__(name=name, metadata=metadata)
-        self._add_parameters(
-            station=station,
-            aliases=aliases,
-            setters=setters or {},
-            units=units or {}
-        )
-        self._initial_values = initial_values or {}
-        if set_initial_values_on_load:
-            self.set_initial_values()
 
     def set_initial_values(self, dry_run: bool = False):
         """Set parameter initial values on meta instrument
@@ -116,7 +119,7 @@ class MetaInstrument(InstrumentBase):
             else:
                 print(f"Dry run: {msg}")
 
-    def _add_parameters(
+    def _create_and_add_parameters(
         self,
         station: Station,
         aliases: Dict[str, List[str]],
@@ -126,7 +129,7 @@ class MetaInstrument(InstrumentBase):
         """Add parameters to meta instrument based on specified aliases, endpoints
         and setter methods"""
         for param_name, paths in aliases.items():
-            self._add_parameter(
+            self._create_and_add_parameter(
                 param_name=param_name,
                 station=station,
                 paths=paths,
@@ -144,7 +147,7 @@ class MetaInstrument(InstrumentBase):
             ]
         return endpoint_names
 
-    def _add_parameter(
+    def _create_and_add_parameter(
         self,
         param_name: str,
         station: Station,
@@ -174,7 +177,7 @@ class MetaInstrument(InstrumentBase):
             **kwargs
         )
         if len(endpoints) > 1:
-            self.parameters[param_name]._group = MetaGroup(
+            self.parameters[param_name]._group = DelegateGroup(
                 name=param_name,
                 parameters=endpoints,
                 parameter_names=endpoint_names
@@ -182,4 +185,4 @@ class MetaInstrument(InstrumentBase):
 
     def __repr__(self):
         params = ", ".join(self.parameters.keys())
-        return f"MetaInstrument(name={self.name}, parameters={params})"
+        return f"DelegateInstrument(name={self.name}, parameters={params})"

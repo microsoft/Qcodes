@@ -4,13 +4,13 @@ from qcodes.instrument.parameter import Parameter
 from qcodes.instrument.channel import InstrumentChannel
 from qcodes.station import Station
 
-from qcodes.instrument.meta.meta_instrument import (
-    MetaParameter,
-    MetaInstrument
+from qcodes.instrument.delegate.delegate_instrument import (
+    DelegateGroupParameter,
+    DelegateInstrument
 )
 
 
-class NanoDeviceParameter(MetaParameter):
+class NanoDeviceParameter(DelegateGroupParameter):
     """
     Meta for a NanoDevice parameter.
 
@@ -41,35 +41,6 @@ class NanoDeviceParameter(MetaParameter):
     def channel(self):
         return self._channel
 
-    def add_parameter(
-        self,
-        cls,
-        name: str,
-        endpoint: Parameter
-    ) -> Parameter:
-        """Add a sub parameter to this parameter,
-        e.g. my_instrument.param.sub_param
-
-        Args:
-            name: Name of sub parameter
-            endpoint: Endpoint parameter to connect to
-
-        Returns:
-            Parameter: The parameter instance
-        """
-        assert not hasattr(
-            self, name
-        ), f"Duplicate parameter name {name}."
-        parameter = cls(
-            name=name,
-            endpoints=(endpoint,),
-            endpoint_names=(endpoint.name,),
-            channel=self.channel,
-            instrument=None
-        )
-        setattr(self, name, parameter)
-        return parameter
-
     def __repr__(self):
         output = f"NanoDeviceParameter(name={self.name}"
         if self.channel:
@@ -81,7 +52,7 @@ class NanoDeviceParameter(MetaParameter):
         return output
 
 
-class NanoDevice(MetaInstrument):
+class NanoDevice(DelegateInstrument):
     """
     Meta instrument for a quantum device on a chip
 
@@ -113,7 +84,7 @@ class NanoDevice(MetaInstrument):
             set_initial_values_on_load=set_initial_values_on_load
         )
 
-    def _add_parameters(
+    def _create_and_add_parameters(
         self,
         station: Station,
         aliases: Dict[str, List[str]],
@@ -129,7 +100,7 @@ class NanoDevice(MetaInstrument):
             except AttributeError:
                 channel = None
 
-            self._add_parameter(
+            self._create_and_add_parameter(
                 param_name=param_name,
                 station=station,
                 paths=paths,

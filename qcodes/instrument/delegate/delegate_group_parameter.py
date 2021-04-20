@@ -2,6 +2,7 @@ from qcodes.instrument.group_parameter import Group
 from typing import Any, Dict, Optional, Tuple, Union
 from collections import namedtuple
 from qcodes.instrument.parameter import (
+    DelegateParameter,
     ParamDataType,
     ParamRawDataType,
     Parameter,
@@ -13,12 +14,12 @@ import logging
 _log = logging.getLogger(__name__)
 
 
-class MetaGroup(Group):
-    """Group of Meta parameters"""
+class DelegateGroup(Group):
+    """Group of delegate parameters"""
     def __init__(
         self,
         name: str,
-        parameters: Tuple['MetaParameter'],
+        parameters: Tuple['DelegateGroupParameter'],
         parameter_names: Tuple[str] = None,
         **kwargs
     ):
@@ -34,7 +35,7 @@ class MetaGroup(Group):
             p.set(calling_dict[name])
 
 
-class MetaParameter(_BaseParameter):
+class DelegateGroupParameter(_BaseParameter):
     """
     Meta parameter that returns one or more endpoint parameter values
     
@@ -46,6 +47,8 @@ class MetaParameter(_BaseParameter):
         setter: Optional setter function to override
             endpoint parameter setter. Defaults to None.
     """
+    param_cls = DelegateParameter
+
     def __init__(
         self,
         name: str,
@@ -53,11 +56,13 @@ class MetaParameter(_BaseParameter):
         endpoint_names: Tuple[str],
         unit: str = None,
         setter: callable = None,
+        label: str = None,
         **kwargs
     ):
         super().__init__(name, **kwargs)
         self._endpoints = endpoints
         self._setter = setter
+        self.label = name if label is None else label
         self.unit = unit if unit is not None else ''
         endpoint_names = endpoint_names or [_e.name for _e in endpoints]
         self._group = None
@@ -70,7 +75,7 @@ class MetaParameter(_BaseParameter):
         self.set = self._set_override
 
     @property
-    def group(self) -> Optional['MetaGroup']:
+    def group(self) -> Optional['DelegateGroup']:
         """
         The group that this parameter belongs to.
         """
@@ -83,40 +88,13 @@ class MetaParameter(_BaseParameter):
             endpoints,
             endpoint_names
         ):
-            parameter = self.add_parameter(
-                cls=self.__class__,
-                name=endpoint_name,
-                endpoint=endpoint
+            parameter = self.root_instrument.add_parameter(
+                parameter_class=self.param_cls,
+                name=f"{self.name}_{endpoint_name}",
+                source=endpoint
             )
             parameters.append(parameter)
         return tuple(parameters)
-
-    def add_parameter(
-        self,
-        cls,
-        name: str,
-        endpoint: Parameter
-    ) -> Parameter:
-        """Add a sub parameter to the meta parameter
-
-        Args:
-            name: Sub parameter name
-            endpoint: Endpoint parameter object
-
-        Returns:
-            Parameter: Parameter instance
-        """
-        assert not hasattr(
-            self, name
-        ), f"Duplicate parameter name {name}."
-        parameter = cls(
-            name=name,
-            endpoints=(endpoint,),
-            endpoint_names=(endpoint.name,),
-            instrument=None
-        )
-        setattr(self, name, parameter)
-        return parameter
 
     @property
     def endpoints(self):
@@ -166,7 +144,7 @@ class MetaParameter(_BaseParameter):
         self._endpoints = ()
 
     def __repr__(self):
-        output = f"MetaParameter(name={self.name}"
+        output = f"DelegateGroupParameter(name={self.name}"
         if self.endpoints:
             endpoints = ", ".join([str(_) for _ in self.endpoints])
             output += f", endpoints=({endpoints})"

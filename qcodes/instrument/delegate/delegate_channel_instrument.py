@@ -1,11 +1,11 @@
 from typing import Dict, List, Any
 from qcodes.station import Station
-from qcodes.instrument.meta.meta_instrument import MetaInstrument
+from qcodes.instrument.delegate.delegate_instrument import DelegateInstrument
 
 
-class MetaChannelInstrument(MetaInstrument):
+class DelegateChannelInstrument(DelegateInstrument):
     """
-    Meta instrument that auto generates aliases for a given ChannelList
+    Delegate instrument that auto generates delegate parameters for a given ChannelList
     
     Args:
         name: Instrument name

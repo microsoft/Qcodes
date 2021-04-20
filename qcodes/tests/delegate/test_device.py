@@ -32,7 +32,7 @@ def test_device_meas(station, chip):
     with meas.run() as datasaver:
         for set_v in np.linspace(0, 1.5, 10):
             device.gate.set(set_v)
-            get_a = device.drain.X.get()
+            get_a = device.drain_X.get()
             datasaver.add_result((device.gate, set_v), (device.drain, get_a))
             datasaver.flush_data_to_database()
         assert len(datasaver.dataset.to_pandas_dataframe_dict()["device1_drain"]) == 10

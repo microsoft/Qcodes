@@ -1,4 +1,4 @@
-from qcodes.instrument.meta.nano_device import NanoDevice
+from qcodes.instrument.delegate.nano_device import NanoDevice
 from typing import List, Dict, Any, TYPE_CHECKING
 
 from qcodes.instrument.base import InstrumentBase
@@ -16,7 +16,6 @@ class Chip(InstrumentBase):
         station: Measurement station with real instruments
         devices: Devices on the chip, for each a NanoDevice is created
         initial_values: Default values to set on load
-        connections: Connections from channels to endpoint instrument parameters
         set_initial_values_on_load: Set default values on load. Defaults to False.
     """
     def __init__(
