@@ -1688,7 +1688,8 @@ class Tektronix_AWG5014(VisaInstrument):
             raise TypeError('Marker 2 contains invalid values.' +
                             ' Only 0 and 1 are allowed')
 
-        # Note: np.trunc is an order of magnitude faster then np.round
+        # Note: we use np.trunc here rather than np.round
+        # as it is an order of magnitude faster
         packed_wf = np.trunc(16384 * m1 + 32768 * m2
                              + wf * 8191 + 8191.5).astype(np.uint16)
 
