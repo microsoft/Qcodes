@@ -172,11 +172,11 @@ born familiar with git, and everybody makes mistakes.
       the test directory. Use it to compare to the output of the
       acquisition test, and as the input for the analysis test.
 
--  Refer to QCoDeS documentation on how to implement tests for the 
+-  Refer to QCoDeS documentation on how to implement tests for the
    instrument drivers.
 
    -  We have not yet settled on a framework for testing real hardware.
-      For some tests we use `pyvisa-sim <https://github.com/pyvisa/pyvisa-sim>`__ 
+      For some tests we use `pyvisa-sim <https://github.com/pyvisa/pyvisa-sim>`__
       but it's flexibility is limited. Another interesting candidate is
       `pyvisa-mock <https://github.com/microsoft/pyvisa-mock>`__.
       So, stay tuned, or post any ideas you have as GitHub issues!
