@@ -146,7 +146,8 @@ born familiar with git, and everybody makes mistakes.
    inputs, coverage in itself will not ensure that this is tested.
 
 -  Write the docs, following the other documentation files (.rst) in the
-   repo.
+   repo as an example. Or write the docs in the form of example IPython
+   notebook (there are many of those in our docs as well).
 
 -  We should have a *few* high-level "integration" tests, but simple
    unit tests (that just depend on code in one module) are more valuable
