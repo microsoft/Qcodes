@@ -870,7 +870,6 @@ class GeneratedSetPoints(Parameter):
     def get_raw(self) -> ParamRawDataType:
         assert isinstance(self.root_instrument, SR830)
         SR = self.root_instrument.buffer_SR.get()
-        N = self.root_instrument.buffer_npts.get()
         if SR == 'Trigger':
             start = self._startparam()
             stop = self._stopparam()
@@ -883,6 +882,7 @@ class GeneratedSetPoints(Parameter):
             return np.linspace(start, stop, nsteps)
 
         else:
+            N = self.root_instrument.buffer_npts.get()
             dt = 1/SR
 
             return np.linspace(0, N*dt, N)
