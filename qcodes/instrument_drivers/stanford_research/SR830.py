@@ -853,9 +853,9 @@ class GeneratedSetPoints(Parameter):
         self._startparam = startparam
         self._stopparam = stopparam
         self._numpointsparam = numpointsparam
-        self.update_units_if_time()
+        self.update_units_if_constant_sample_rate()
 
-    def update_units_if_time(self) -> None:
+    def update_units_if_constant_sample_rate(self) -> None:
         """
         If the buffer is filled at a constant sample rate,
         update the unit to "s" and label to "Time";
