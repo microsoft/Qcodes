@@ -13,7 +13,7 @@ from .gnuplot_format import GNUPlotFormat
 from .io import DiskIO
 from .location import FormatLocation
 from qcodes.utils.helpers import DelegateAttributes, full_class, deep_update
-from qcodes.data.data_array import data_array_to_xarray_dictionary, DataArray
+from qcodes.data.data_array import xarray_data_array_dictionary_to_data_array, data_array_to_xarray_dictionary, DataArray
 
 log = logging.getLogger(__name__)
 
@@ -688,8 +688,10 @@ class DataSet(DelegateAttributes):
         return qcodes_dataset_to_xarray_dataset(self)
 
     @classmethod
-    def from_xarray(cls, xarray_dataset : xr.Dataset) -> 'DataSet':
+    def from_xarray(cls, xarray_dataset: xr.Dataset) -> 'DataSet':
+        """ Convert the dataset to an xarray DataSet """
         return xarray_dataset_to_qcodes_dataset(xarray_dataset)
+
 
 class _PrettyPrintDict(Dict[Any, Any]):
     """
@@ -759,27 +761,6 @@ def qcodes_dataset_to_xarray_dataset(
     return xarray_dataset
 
 
-def _xarray_dataarray_dictionary_to_data_array(
-    array_id, array_dictionary, is_setpoint, preset_data=None
-):
-    if preset_data is None:
-        preset_data = np.array(array_dictionary["data"])
-    array_name = array_dictionary.get("name", array_id)
-
-    array_full_name = array_dictionary.get("long_name", array_name)
-    data_array = DataArray(
-        name=array_name,
-        full_name=array_full_name,
-        label=array_dictionary.get("label", ""),
-        unit=array_dictionary.get("unit", None),
-        is_setpoint=is_setpoint,
-        shape=preset_data.shape,
-        array_id=array_id,
-        preset_data=preset_data,
-    )
-    return data_array
-
-
 def xarray_dictionary_to_dataset(
     xarray_dictionary: Dict[str, Any],
 ) -> DataSet:
@@ -794,24 +775,24 @@ def xarray_dictionary_to_dataset(
     dataset = new_data()
     dataset.metadata.update(xarray_dictionary["attrs"])
 
-    grid_coords : List[Any] = []
+    grid_coords: List[Any] = []
     set_array_names = []
-    for array_key, array_dictionary in xarray_dictionary["coords"].items():
-        preset_data = np.array(array_dictionary["data"])
+    for array_key, coord_dictionary in xarray_dictionary["coords"].items():
+        preset_data = np.array(coord_dictionary["data"])
 
         tiled_preset_data = np.tile(preset_data, [g.size for g in grid_coords] + [1])
         grid_coords.append(preset_data)
 
-        data_array = _xarray_dataarray_dictionary_to_data_array(
-            array_key, array_dictionary, True, preset_data=tiled_preset_data
+        data_array = xarray_data_array_dictionary_to_data_array(
+            array_key, coord_dictionary, True, preset_data=tiled_preset_data
         )
         dataset.add_array(data_array)
         set_array_names.append(array_key)
-    for array_key, array_dictionary in xarray_dictionary["data_vars"].items():
+    for array_key, datavar_dictionary in xarray_dictionary["data_vars"].items():
         set_arrays = tuple([dataset.arrays[name] for name in set_array_names])
 
-        data_array = _xarray_dataarray_dictionary_to_data_array(
-            array_key, array_dictionary, False
+        data_array = xarray_data_array_dictionary_to_data_array(
+            array_key, datavar_dictionary, False
         )
         data_array.set_arrays = set_arrays
         dataset.add_array(data_array)

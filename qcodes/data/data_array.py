@@ -1,4 +1,4 @@
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 import numpy as np
 import collections
 
@@ -543,9 +543,24 @@ class DataArray(DelegateAttributes):
         xarray_dataarray = xr.DataArray.from_dict(xarray_dictionary)
         return xarray_dataarray
 
+    @classmethod
+    def from_xarray(cls, xarray_dataarray: xr.DataArray, array_id: Optional[str] = None) -> 'DataArray':
+        """ Create a DataArray from an xarray DataArray
+
+        Args:
+            array_id: Array id for the new DataArray. If None, then use the first data variable from the argument
+        Returns:
+            Created xarray DataArray
+        """
+        xarray_dict = xarray_dataarray.to_dict()
+        if array_id is None:
+            array_id = list(xarray_dict['dims'])[0]
+        data_array = xarray_data_array_dictionary_to_data_array(array_id, xarray_dict, is_setpoint=False)
+        return data_array
+
 
 def data_array_to_xarray_dictionary(data_array: DataArray) -> Dict[str, Any]:
-    """Convert DataArray to a dictionary.
+    """Convert DataArray to a dictionary in xarray format.
 
     Args:
         data_array: The DataArray to convert.
@@ -553,11 +568,12 @@ def data_array_to_xarray_dictionary(data_array: DataArray) -> Dict[str, Any]:
     Returns:
         dict: A dictionary containing the data in xarray format.
     """
-    key_mapping = {"unit": "unit", "name": "long_name", "label": "label"}
+    key_mapping = {"unit": "unit", "name": "name", "label": "label"}
 
     data_dictionary = {
         target_key: getattr(data_array, key) for key, target_key in key_mapping.items()
     }
+    data_dictionary['long_name'] = data_array.name
     if data_array.is_setpoint:
         data_dictionary["dims"] = tuple([data_array.array_id])
         data_dictionary["depends_on"] = data_dictionary["dims"]
@@ -575,7 +591,33 @@ def data_array_to_xarray_dictionary(data_array: DataArray) -> Dict[str, Any]:
     return data_dictionary
 
 
-if __name__ == '__main__':
-    data = DataArray(preset_data=[1, 2])
-    data_array_to_xarray_dictionary(data)
-    xarray_dataarray = data.to_xarray()
+def xarray_data_array_dictionary_to_data_array(
+        array_id: str, array_dictionary: Dict[str, Any], is_setpoint: bool = False, preset_data=None):
+    """Convert xarray dictionary to a DataArray
+
+    This conversion is for bith the data array and the the internal xarray structure, e.g. the datavars and coords.
+    Args:
+        array_id: Create the new DataArray with this id
+        array_dictionary: Data to convert
+        is_setpoint: Passed to the DataArray constructor
+        preset_data: If None use the data from the dictionary, otherwise use the specified data.
+
+    Returns:
+        dict: A dictionary containing the data in xarray format.
+    """
+    if preset_data is None:
+        preset_data = np.array(array_dictionary["data"])
+    array_name = array_dictionary.get("name", array_id)
+
+    array_full_name = array_dictionary.get("long_name", array_name)
+    data_array = DataArray(
+        name=array_name,
+        full_name=array_full_name,
+        label=array_dictionary.get("label", ""),
+        unit=array_dictionary.get("unit", None),
+        is_setpoint=is_setpoint,
+        shape=preset_data.shape,
+        array_id=array_id,
+        preset_data=preset_data,
+    )
+    return data_array

@@ -8,7 +8,7 @@ from qcodes.data.location import FormatLocation
 from qcodes.data.data_array import DataArray, data_array_to_xarray_dictionary
 from qcodes.data.io import DiskIO
 from qcodes.data.data_set import load_data, new_data, DataSet, qcodes_dataset_to_xarray_dataset,\
-    xarray_dataset_to_qcodes_dataset, DataSet
+    xarray_dataset_to_qcodes_dataset
 from qcodes.logger.logger import LogCapture
 
 from .data_mocks import (MockFormatter, MatchIO,
@@ -284,6 +284,17 @@ class TestDataArray(TestCase):
         data = DataArray(preset_data=[1, 2])
         array_dict = data_array_to_xarray_dictionary(data)
         xarray_dataarray = data.to_xarray()
+
+    def test_xarray_conversions(self):
+        da = DataSet1D().x_set
+
+        xarray_dictionary = data_array_to_xarray_dictionary(da)
+
+        xarray_dataarray = da.to_xarray()
+        da_transformed = DataArray.from_xarray(xarray_dataarray)
+
+        for key in ["name", "unit", "label"]:
+            self.assertEqual(da.name, da_transformed.name)
 
 
 class TestLoadData(TestCase):
