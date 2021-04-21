@@ -3,6 +3,8 @@ import numpy as np
 import os
 import pickle
 import logging
+import pandas as pd
+import xarray as xr
 
 from qcodes.data.location import FormatLocation
 from qcodes.data.data_array import DataArray, data_array_to_xarray_dictionary
@@ -616,3 +618,19 @@ class TestDataSet(TestCase):
 
         xds = qd.to_xarray()
         qds = DataSet.from_xarray(xds)
+
+    def test_xarray_example_conversion(self):
+        times = pd.date_range("2000-01-01", "2000-1-31", name="time")
+        shape = (31, 3)
+        xarray_dataset = xr.Dataset(
+            {"tmin": (("time", "location"), np.random.rand(*shape)),
+                "tmax": (("time", "location"), np.random.rand(*shape)),
+             }, {"time": times, "location": ["IA", "IN", "IL"]},)
+
+        qd = DataSet.from_xarray(xarray_dataset)
+        xarray_dataset2 = qd.to_xarray()
+
+        self.asserEqual(qd.default_parameter_array().shape, xarray_dataset.tmin.shape)
+        self.assertEqual(list(xarray_dataset.coords.keys()), list(xarray_dataset2.coords.keys()))
+        self.assertEqual(list(xarray_dataset.data_vars.keys()), list(xarray_dataset2.data_vars.keys()))
+        self.assertEqual(xarray_dataset.tmin.shape, xarray_dataset2.tmin.shape)
