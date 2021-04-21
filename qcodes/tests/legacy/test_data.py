@@ -630,7 +630,7 @@ class TestDataSet(TestCase):
         qd = DataSet.from_xarray(xarray_dataset)
         xarray_dataset2 = qd.to_xarray()
 
-        self.asserEqual(qd.default_parameter_array().shape, xarray_dataset.tmin.shape)
+        self.assertEqual(qd.default_parameter_array().shape, xarray_dataset.tmin.shape)
         self.assertEqual(list(xarray_dataset.coords.keys()), list(xarray_dataset2.coords.keys()))
         self.assertEqual(list(xarray_dataset.data_vars.keys()), list(xarray_dataset2.data_vars.keys()))
         self.assertEqual(xarray_dataset.tmin.shape, xarray_dataset2.tmin.shape)
