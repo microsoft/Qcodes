@@ -10,6 +10,8 @@ Breaking Changes:
 - `get_data_by_id` no longer returns data for standalone parameters
   if there are no dependent parameters in the dataset. For the same reason
   `plot_by_id` and `plot_dataset` will no longer plot these standalone parameters.
+- `xarray` exported data no longer exports extra metadata columns under the `extra_metadata` tag
+  since the extra dictionary level prevents exporting to `netcdf`
 
 
 ------------
