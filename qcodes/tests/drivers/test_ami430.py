@@ -107,6 +107,60 @@ random_coordinates = {
 }
 
 
+def test_instantiation_from_names(magnet_axes_instances, request):
+    """
+    Instantiate AMI430_3D instrument from the three mock instruments
+    representing current drivers for the x, y, and z directions by their
+    names as opposed from their instances.
+    """
+    mag_x, mag_y, mag_z = magnet_axes_instances
+    request.addfinalizer(AMI430_3D.close_all)
+
+    driver = AMI430_3D("AMI430-3D", mag_x.name, mag_y.name, mag_z.name,
+                       field_limit)
+
+    assert driver._instrument_x is mag_x
+    assert driver._instrument_y is mag_y
+    assert driver._instrument_z is mag_z
+
+
+def test_instantiation_from_name_of_nonexistent_instrument(
+        magnet_axes_instances, request
+):
+    mag_x, mag_y, mag_z = magnet_axes_instances
+    request.addfinalizer(AMI430_3D.close_all)
+
+    non_existent_instrument = mag_y.name + "foo"
+
+    with pytest.raises(
+            KeyError,
+            match=f"with name {non_existent_instrument} does not exist"
+    ):
+        AMI430_3D(
+            "AMI430-3D",
+            mag_x.name, non_existent_instrument, mag_z.name,
+            field_limit
+        )
+
+
+def test_instantiation_from_badly_typed_argument(
+        magnet_axes_instances, request
+):
+    mag_x, mag_y, mag_z = magnet_axes_instances
+    request.addfinalizer(AMI430_3D.close_all)
+
+    badly_typed_instrument_z_argument = 123
+
+    with pytest.raises(
+            ValueError, match="instrument_z argument is neither of those"
+    ):
+        AMI430_3D(
+            "AMI430-3D",
+            mag_x.name, mag_y, badly_typed_instrument_z_argument,
+            field_limit
+        )
+
+
 @given(set_target=random_coordinates["cartesian"])
 @settings(max_examples=10, suppress_health_check=(HealthCheck.function_scoped_fixture,))
 def test_cartesian_sanity(current_driver, set_target):
