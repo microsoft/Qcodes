@@ -102,10 +102,9 @@ dependencies. This can be done by installing QCoDeS using the `test` extra targe
 Other dependencies
 ~~~~~~~~~~~~~~~~~~
 
-You probably also wants to install Keysight IO Libraries Suite which
-includes VISA Library from `here <www.keysight.com/find/iosuite>`__. To
-download it you will need to provide your e-mail id and name but
-the download is free of charge.
+You probably also wants to install Keysight IO Libraries Suite from `here
+<https://www.keysight.com/find/iosuite>`__. To download it, you will need to
+provide your e-mail id, name and location but the download is free of charge.
 
 Updating QCoDeS
 ~~~~~~~~~~~~~~~
