@@ -857,8 +857,9 @@ class GeneratedSetPoints(Parameter):
 
     def update_units_if_time(self) -> None:
         """
-        If the buffer is filled at a constant sample rate
-        update the unit and label to s,Time else do nothing
+        If the buffer is filled at a constant sample rate,
+        update the unit to "s" and label to "Time";
+        otherwise do nothing
         """
         assert isinstance(self.root_instrument, SR830)
         SR = self.root_instrument.buffer_SR.get()
