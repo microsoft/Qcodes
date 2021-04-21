@@ -102,9 +102,9 @@ dependencies. This can be done by installing QCoDeS using the `test` extra targe
 Other dependencies
 ~~~~~~~~~~~~~~~~~~
 
-You probably also wants to install National Instruments VISA from
-`here <https://www.ni.com/visa/>`__. To download it
-you will need to create an account on the National Instruments homepage but
+You probably also wants to install Keysight IO Libraries Suite which
+includes VISA Library from `here <www.keysight.com/find/iosuite>`__. To
+download it you will need to provide your e-mail id and name but
 the download is free of charge.
 
 Updating QCoDeS
