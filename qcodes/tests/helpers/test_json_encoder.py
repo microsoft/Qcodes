@@ -2,6 +2,7 @@ from collections import OrderedDict, UserDict
 import json
 
 import numpy as np
+import uncertainties
 import pytest
 from qcodes.utils.helpers import NumpyJSONEncoder
 from qcodes.utils.types import numpy_ints, numpy_floats, numpy_complex
@@ -35,6 +36,10 @@ def test_complex_types():
         assert e.encode(complex_type(complex(1, 2))) == \
                '{"__dtype__": "complex", "re": 1.0, "im": 2.0}'
 
+def test_UFloat_type():
+    e = NumpyJSONEncoder()
+    assert e.encode(uncertainties.ufloat(1.0, 2.0)) == \
+           '{"__dtype__": "UFloat", "nominal_value": 1.0, "std_dev": 2.0}'
 
 def test_numpy_int_types():
     e = NumpyJSONEncoder()
