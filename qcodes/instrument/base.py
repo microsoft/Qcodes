@@ -625,6 +625,8 @@ class Instrument(InstrumentBase, AbstractInstrument):
             TypeError: If a specific class was requested but a different
                 type was found.
         """
+        if name not in cls._all_instruments:
+            raise KeyError(f"Instrument with name {name} does not exist")
         ins = cls._all_instruments[name]()
 
         if ins is None:
