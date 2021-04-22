@@ -11,8 +11,10 @@ from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import floats, tuples
 
 import qcodes.instrument.sims as sims
+from qcodes.instrument.base import Instrument
 from qcodes.instrument.ip_to_visa import AMI430_VISA
-from qcodes.instrument_drivers.american_magnetics.AMI430 import (AMI430_3D,
+from qcodes.instrument_drivers.american_magnetics.AMI430 import (AMI430,
+                                                                 AMI430_3D,
                                                                  AMI430Warning)
 from qcodes.math_utils.field_vector import FieldVector
 from qcodes.utils.types import (numpy_concrete_floats, numpy_concrete_ints,
@@ -124,7 +126,7 @@ def test_instantiation_from_names(magnet_axes_instances, request):
     assert driver._instrument_z is mag_z
 
 
-def test_instantiation_from_name_of_nonexistent_instrument(
+def test_instantiation_from_name_of_nonexistent_ami_instrument(
         magnet_axes_instances, request
 ):
     mag_x, mag_y, mag_z = magnet_axes_instances
@@ -139,6 +141,29 @@ def test_instantiation_from_name_of_nonexistent_instrument(
         AMI430_3D(
             "AMI430-3D",
             mag_x.name, non_existent_instrument, mag_z.name,
+            field_limit
+        )
+
+
+def test_instantiation_from_name_of_existing_non_ami_instrument(
+        magnet_axes_instances, request
+):
+    mag_x, mag_y, mag_z = magnet_axes_instances
+    request.addfinalizer(AMI430_3D.close_all)
+
+    non_ami_existing_instrument = Instrument("foo")
+
+    with pytest.raises(
+            TypeError,
+            match=re.escape(
+                f"Instrument {non_ami_existing_instrument.name} is "
+                f"{type(non_ami_existing_instrument)} but {AMI430} "
+                f"was requested"
+            )
+    ):
+        AMI430_3D(
+            "AMI430-3D",
+            mag_x.name, non_ami_existing_instrument.name, mag_z.name,
             field_limit
         )
 
