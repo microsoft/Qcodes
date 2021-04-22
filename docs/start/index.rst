@@ -102,9 +102,16 @@ dependencies. This can be done by installing QCoDeS using the `test` extra targe
 Other dependencies
 ~~~~~~~~~~~~~~~~~~
 
-You probably also wants to install Keysight IO Libraries Suite from `here
+To connect to many instruments (All instruments that are subclasses of
+``VisaInstrument`` ) you need a working VISA implementation installed. There
+are several of these available from instrument vendors and other sources.
+
+We recommend you to install the Keysight IO Libraries Suite from `here
 <https://www.keysight.com/find/iosuite>`__. To download it, you will need to
 provide your e-mail id, name and location but the download is free of charge.
+
+See the `PyVISA documentation <https://pyvisa.readthedocs
+.io/en/latest/advanced/backends.html>`_ for more information.
 
 Updating QCoDeS
 ~~~~~~~~~~~~~~~
