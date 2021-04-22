@@ -838,12 +838,12 @@ def get_guid_from_run_id(conn: ConnectionPlus, run_id: int) -> str:
     return select_one_where(conn, "runs", "guid", "run_id", run_id)
 
 
-def get_guid_from_multiple_run_ids(db_path: Union[str, Path],
-                                   run_ids: Iterable[int]) \
-                                   -> List[str]:
+def get_guids_from_multiple_run_ids(db_path: Union[str, Path],
+                                    run_ids: Iterable[int]
+                                    ) -> List[str]:
     """
-    Expanding the functionality of get_guid_from_run_id to retrive guids
-    from database and for multiple run ids.
+    Retrieve guids of runs in the given database specified by their run ids.
+    run ids are run_id in the database and not captured_run_id.
 
     Args:
         db_path: The path to the database file.
