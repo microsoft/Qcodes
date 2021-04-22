@@ -12,7 +12,7 @@ from qcodes.instrument.parameter import Parameter
 
 
 from qcodes.dataset.guid_helpers import guids_from_dir, guids_from_list_str
-from qcodes.dataset.sqlite.queries import get_guid_from_multiple_run_ids
+from qcodes.dataset.sqlite.queries import get_guids_from_multiple_run_ids
 
 import pytest
 
@@ -83,7 +83,7 @@ def test_many_guids_from_list_str() -> None:
     assert guids_from_list_str(str(guids)) == tuple(guids)
 
 
-def test_get_guid_from_multiple_run_ids(tmp_path: Path) -> None:
+def test_get_guids_from_multiple_run_ids(tmp_path: Path) -> None:
     def generate_local_exp(dbpath: Path) -> List[str]:
         with initialised_database_at(str(dbpath)):
             guids = []
@@ -104,16 +104,14 @@ def test_get_guid_from_multiple_run_ids(tmp_path: Path) -> None:
                                              (p2, cast(float, p2())))
                 guid = datasaver.dataset.guid
                 guids.append(guid)
-            datasaver.flush_data_to_database(block=True)
         return guids
 
     path = tmp_path/'dbfile2.db'
-    path.parent.mkdir(exist_ok=True, parents=True)
     guids = generate_local_exp(path)
 
-    assert get_guid_from_multiple_run_ids(db_path=path, run_ids=[1, 2]) \
+    assert get_guids_from_multiple_run_ids(db_path=path, run_ids=[1, 2]) \
         == guids
 
     with pytest.raises(RuntimeError, match="run id 3 does not"
                        " exist in the database"):
-        get_guid_from_multiple_run_ids(db_path=path, run_ids=[1, 2, 3])
+        get_guids_from_multiple_run_ids(db_path=path, run_ids=[1, 2, 3])
