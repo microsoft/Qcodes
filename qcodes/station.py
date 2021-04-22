@@ -95,7 +95,9 @@ class Station(Metadatable, DelegateAttributes):
     Args:
         *components: components to add immediately to the
             Station. Can be added later via ``self.add_component``.
-        config_file: Path to YAML file to load the station config from.
+        config_file: Path to YAML files to load the station config from.
+            If more than one file is supplied, they they will be merged into
+            one file.
         use_monitor: Should the QCoDeS monitor be activated for this station.
         default: Is this station the default?
         update_snapshot: Immediately update the snapshot of each
@@ -118,7 +120,7 @@ class Station(Metadatable, DelegateAttributes):
     A user dict representing the YAML file that the station was loaded from"""
 
     def __init__(self, *components: Metadatable,
-                 config_file: Optional[str] = None,
+                 config_file: Optional[Union[str, Sequence[str]]] = None,
                  use_monitor: Optional[bool] = None, default: bool = True,
                  update_snapshot: bool = True, **kwargs: Any) -> None:
         super().__init__(**kwargs)
@@ -137,12 +139,19 @@ class Station(Metadatable, DelegateAttributes):
             self.add_component(item, update_snapshot=update_snapshot)
 
         self.use_monitor = use_monitor
-        self.config_file = config_file
+        if type(config_file) == str:
+            self.config_file = config_file
+        else:
+            self.config_file = self.full_yaml(config_file)
 
         self._added_methods: List[str] = []
         self._monitor_parameters: List[Parameter] = []
 
         self.load_config_file(self.config_file)
+
+    def full_yaml(self, config_file):
+        yamls = merge_yamls(*config_file)
+        return yamls.getvalue()
 
     def snapshot_base(self, update: Optional[bool] = True,
                       params_to_skip_update: Optional[Sequence[str]] = None
@@ -299,7 +308,6 @@ class Station(Metadatable, DelegateAttributes):
                 if os.path.isfile(p):
                     return p
             return None
-
 
         path = get_config_file_path(filename)
 
@@ -692,6 +700,14 @@ def update_config_schema(
 
 
 def merge_yamls(*yamls: Union[str, Path]) -> IO[str]:
+    """
+    Merge multiple station yamls files into one and stores it in the memory.
+
+    Args:
+        yamls: string or Path to yaml files separated by comma.
+    Returns:
+        Full yaml file stored in the memory.
+    """
     if len(yamls) == 1:
         return open(yamls[0], "r")
 
@@ -718,8 +734,11 @@ def merge_yamls(*yamls: Union[str, Path]) -> IO[str]:
                     f"{ ','.join(map(str, yamls))}"
                 )
         deq.popleft()
+    
+    import tempfile
 
     # Dump to a temp file in memory, so it can be read by load_config.
+    # merged_yaml_temp_file = tempfile.TemporaryFile('w+')
     merged_yaml_temp_file = StringIO()
     yaml.dump(data1, merged_yaml_temp_file)
     merged_yaml_temp_file.seek(0)
