@@ -288,7 +288,7 @@ class TestDataArray(TestCase):
         xarray_dataarray = data.to_xarray()
 
     def test_xarray_conversions(self):
-        da = DataSet1D().x_set
+        da = DataSet1D(name="TestDataArray_test_xarray_conversions").x_set
 
         xarray_dictionary = data_array_to_xarray_dictionary(da)
 
@@ -599,7 +599,7 @@ class TestDataSet(TestCase):
         self.assertFalse('z' in m.arrays)
 
     def test_xarray_conversions(self):
-        qd = DataSet1D()
+        qd = DataSet1D(name="TestNewData_test_xarray_conversions")
         xarray_data_set = qcodes_dataset_to_xarray_dataset(qd)
         qd_transformed = xarray_dataset_to_qcodes_dataset(xarray_data_set)
         m = qd.default_parameter_array()
@@ -607,7 +607,7 @@ class TestDataSet(TestCase):
 
         for key in ["name", "unit"]:
             self.assertEqual(getattr(m, key), getattr(mt, key))
-        qd2 = DataSet2D()
+        qd2 = DataSet2D(name="TestNewData_test_xarray_conversions")
         xarray_data_set = qcodes_dataset_to_xarray_dataset(qd2)
         qd2_transformed = xarray_dataset_to_qcodes_dataset(xarray_data_set)
 
