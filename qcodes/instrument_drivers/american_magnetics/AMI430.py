@@ -469,6 +469,26 @@ class AMI430_3D(Instrument):
                  field_limit: Union[numbers.Real,
                                     Iterable[CartesianFieldLimitFunction]],
                  **kwargs: Any):
+        """
+        Driver for controlling three American Magnetics Model 430 magnet power
+        supplies simultaneously for setting magnetic field vectors.
+
+        The individual magnet power supplies can be passed in as either
+        instances of AMI430 driver or as names of existing AMI430 instances.
+        In the latter case, the instances will be found via the passed names.
+
+        Args:
+            name: a name for the instrument
+            instrument_x: AMI430 instance or a names of existing AMI430
+                instance for controlling the X axis of magnetic field
+            instrument_y: AMI430 instance or a names of existing AMI430
+                instance for controlling the X axis of magnetic field
+            instrument_z: AMI430 instance or a names of existing AMI430
+                instance for controlling the X axis of magnetic field
+            field_limit: a number for maximum allows magnetic field or an
+                iterable of callable field limit functions that define
+                region(s) of allowed values in 3D magnetic field space
+        """
         super().__init__(name, **kwargs)
 
         if not isinstance(name, str):
