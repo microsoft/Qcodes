@@ -482,9 +482,9 @@ class AMI430_3D(Instrument):
             instrument_x: AMI430 instance or a names of existing AMI430
                 instance for controlling the X axis of magnetic field
             instrument_y: AMI430 instance or a names of existing AMI430
-                instance for controlling the X axis of magnetic field
+                instance for controlling the Y axis of magnetic field
             instrument_z: AMI430 instance or a names of existing AMI430
-                instance for controlling the X axis of magnetic field
+                instance for controlling the Z axis of magnetic field
             field_limit: a number for maximum allows magnetic field or an
                 iterable of callable field limit functions that define
                 region(s) of allowed values in 3D magnetic field space
