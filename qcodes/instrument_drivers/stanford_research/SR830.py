@@ -48,7 +48,7 @@ class ChannelTrace(ParameterWithSetpoints):
                 self.unit = 'deg'
             else:
                 self.unit = 'V'
-                self.label = self.root_instrument.name + ' ' + disp
+            self.label = disp
 
     def get_raw(self) -> ParamRawDataType:
         """
