@@ -4,7 +4,7 @@ from qcodes.instrument.delegate.delegate_instrument import (
 )
 from qcodes.instrument.delegate.chip import Chip
 from qcodes.instrument.delegate.device import (
-    NanoDeviceParameter,
+    DeviceParameter,
     Device
 )
 from qcodes.instrument.delegate.delegate_channel_instrument import DelegateChannelInstrument

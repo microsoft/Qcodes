@@ -12,7 +12,7 @@ from qcodes.instrument.delegate.delegate_instrument import (
 
 class DeviceParameter(DelegateGroupParameter):
     """
-    Meta for a NanoDevice parameter.
+    Meta for a Device parameter.
 
     Args:
         name: Parameter name
@@ -42,7 +42,7 @@ class DeviceParameter(DelegateGroupParameter):
         return self._channel
 
     def __repr__(self):
-        output = f"NanoDeviceParameter(name={self.name}"
+        output = f"DeviceParameter(name={self.name}"
         if self.channel:
             output += f", channel={self.channel.name}"
         if self.endpoints:
@@ -57,7 +57,7 @@ class Device(DelegateInstrument):
     Meta instrument for a quantum device on a chip
 
     Args:
-        name: NanoDevice name
+        name: Device name
         station: Measurement station with real instruments
         endpoints: Parameter endpoints to connect to
         initial_values: Default values to set on instrument load

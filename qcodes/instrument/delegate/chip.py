@@ -14,7 +14,7 @@ class Chip(InstrumentBase):
     Args:
         name: Chip name
         station: Measurement station with real instruments
-        devices: Devices on the chip, for each a NanoDevice is created
+        devices: Devices on the chip, for each a Device is created
         initial_values: Default values to set on load
         set_initial_values_on_load: Set default values on load. Defaults to False.
     """
