@@ -5,15 +5,47 @@ from qcodes.instrument.delegate.delegate_instrument import DelegateInstrument
 
 class DelegateChannelInstrument(DelegateInstrument):
     """
-    Delegate instrument that auto generates delegate parameters for a given ChannelList
-    
+    Delegate instrument that auto generates delegate parameters for a given
+    ChannelList.
+
+    Example usage in instrument YAML:
+
+        switch:
+            type: qcodes.instrument.delegate.DelegateChannelInstrument
+            init:
+                channels: dac.channels
+                aliases:
+                    state:
+                    - dac_output
+                    - smc
+                    - gnd
+                    - bus
+
+    The above will create a new instrument called "switch" that generates a
+    method for a delegate parameter:
+        switch.state()
+
+    that returns a named tuple:
+        state(dac_output=..., smc=..., gnd=..., bus=...)
+
+    where the values of each of the tuple items are delegated to the
+    instrument parameters:
+        dac.dac_output()
+        dac.smc()
+        dac.gnd()
+        dac.bus()
+
     Args:
         name: Instrument name
         station: Station with real instruments to connect to
         channels: Path to channels, e.g. my_instrument.channels
-        aliases: Aliases to specify for instrument, these are auto-generated per channel
-        initial_values: Default values to set on instrument load. Defaults to None.
-        set_initial_values_on_load: Flag to set defaults on load. Defaults to False.
+        aliases: A mapping from name of a delegate parameter to the sequence
+            of endpoint parameters it connects  to. These are auto-generated per
+            channel.
+        initial_values: Default values to set on instrument load. Defaults
+            to None.
+        set_initial_values_on_load: Flag to set defaults on load. Defaults
+            to False.
     """
     def __init__(
         self,

@@ -17,7 +17,7 @@ _log = logging.getLogger(__name__)
 
 class DelegateInstrument(InstrumentBase):
     """DelegateInstrument class for creating an instrument with one or
-    more delegate parameters that connect to real instrument parmaters.
+    more delegate parameters that connect to real instrument parameters.
 
     Example usage in instrument YAML:
 
@@ -40,15 +40,32 @@ class DelegateInstrument(InstrumentBase):
             X: T
             ramp_rate: T/min
 
+    this will generate an instrument named "field" with methods for
+    delegate parameters:
+        field.X()
+        field.ramp_rate()
+
+    that are delegate parameters for:
+        field_X.field()
+        field_X.ramp_rate()
+
+    Additionally, this will set field_X.ramp_rate(0.02) on load and
+    override the field.X.set() method with
+        field_X.set_field(value, block=False),
+    as opposed to field.X.field.set() which ramps with block=True.
+
     Args:
         name: Instrument name
-        station: Real instrument station to connect the endpoints to.
-        aliases: Aliases and the endpoints they connect to.
-        initial_values: Default values to set on meta instrument.
-            Defaults to None.
-        set_initial_values_on_load: Flag to set defaults on load or not. Defaults to False.
-        setters: Optional setter methods to use instead
-            of calling the .set() method on the endpoint parameters. Defaults to None.
+        station: Real instrument station that is used to get the endpoint
+            parameters.
+        aliases: A mapping from name of a delegate parameter to the sequence of
+            endpoints that it connects to.
+        initial_values: Default values to set on the delegate instrument's
+            parameters. Defaults to None.
+        set_initial_values_on_load: Flag to set initial values when the
+            instrument is loaded. Defaults to False.
+        setters: Optional setter methods to use instead of calling the .set()
+            method on the endpoint parameters. Defaults to None.
         metadata: Optional metadata to pass to instrument. Defaults to None.
     """
     param_cls = DelegateGroupParameter
