@@ -6,7 +6,7 @@ from qcodes import VisaInstrument
 from qcodes.instrument.parameter import ArrayParameter, ParamRawDataType, ParameterWithSetpoints, Parameter
 from qcodes.utils.validators import Numbers, Ints, Enum, Strings, Arrays
 
-from typing import Tuple
+from typing import Tuple, Sequence
 import time
 
 
@@ -475,30 +475,8 @@ class SR830(VisaInstrument):
                            get_cmd='SPTS ?',
                            get_parser=int)
 
-        self.add_parameter('sweep_start',
-                           unit='',
-                           initial_value=0,
-                           get_cmd=None,
-                           set_cmd=None)
-
-        self.add_parameter('sweep_stop',
-                           unit='',
-                           initial_value=1,
-                           get_cmd=None,
-                           set_cmd=None)
-
-        self.add_parameter('sweep_n_points',
-                           unit='',
-                           initial_value=10,
-                           vals=Numbers(1, 16e3),
-                           get_cmd=None,
-                           set_cmd=None)
-
         self.add_parameter('sweep_setpoints',
                            parameter_class=GeneratedSetPoints,
-                           startparam=self.sweep_start,
-                           stopparam=self.sweep_stop,
-                           numpointsparam=self.sweep_n_points,
                            vals=Arrays(shape=(self.buffer_npts.get,)))
 
         # Channel setup
@@ -827,14 +805,7 @@ class SR830(VisaInstrument):
                              n_points: int = 10,
                              label: Union[str, None] = None) -> None:
 
-        self.sweep_start.unit = sweep_param.unit
-        self.sweep_start.vals = sweep_param.vals
-        self.sweep_start.set(start)
-
-        self.sweep_stop.unit = sweep_param.unit
-        self.sweep_stop.vals = sweep_param.vals
-        self.sweep_stop.set(stop)
-        self.sweep_n_points.set(n_points)
+        self.sweep_setpoints.set(np.linspace(start, stop, n_points))
         self.sweep_setpoints.unit = sweep_param.unit
         if label is not None:
             self.sweep_setpoints.label = label
@@ -847,12 +818,11 @@ class GeneratedSetPoints(Parameter):
     A parameter that generates a setpoint array from start, stop and num points
     parameters.
     """
-    def __init__(self, startparam: 'Parameter', stopparam: 'Parameter',
-                 numpointsparam: 'Parameter', *args: Any, **kwargs: Any) -> None:
+    def __init__(self,
+                 sweep_array: Sequence[Union[float, int]] = np.linspace(0, 1, 10),
+                 *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self._startparam = startparam
-        self._stopparam = stopparam
-        self._numpointsparam = numpointsparam
+        self.sweep_array = sweep_array
         self.update_units_if_constant_sample_rate()
 
     def update_units_if_constant_sample_rate(self) -> None:
@@ -867,20 +837,14 @@ class GeneratedSetPoints(Parameter):
             self.unit = 's'
             self.label = 'Time'
 
+    def set_raw(self, value: Sequence[Union[float, int]]) -> None:
+        self.sweep_array = value
+
     def get_raw(self) -> ParamRawDataType:
         assert isinstance(self.root_instrument, SR830)
         SR = self.root_instrument.buffer_SR.get()
         if SR == 'Trigger':
-            start = self._startparam()
-            stop = self._stopparam()
-            nsteps = self._numpointsparam()
-
-            assert isinstance(start, (float, int))
-            assert isinstance(stop, (float, int))
-            assert isinstance(nsteps, int)
-
-            return np.linspace(start, stop, nsteps)
-
+            return self.sweep_array
         else:
             N = self.root_instrument.buffer_npts.get()
             dt = 1/SR
