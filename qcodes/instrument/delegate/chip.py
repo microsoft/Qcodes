@@ -1,4 +1,4 @@
-from qcodes.instrument.delegate.nano_device import NanoDevice
+from qcodes.instrument.delegate.nano_device import Device
 from typing import List, Dict, Any, TYPE_CHECKING
 
 from qcodes.instrument.base import InstrumentBase
@@ -29,7 +29,7 @@ class Chip(InstrumentBase):
         super().__init__(name=name, **kwargs)
 
         for device_name, aliases in devices.items():
-            device = NanoDevice(
+            device = Device(
                 name=device_name,
                 station=station,
                 aliases=aliases,

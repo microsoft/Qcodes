@@ -52,7 +52,7 @@ class NanoDeviceParameter(DelegateGroupParameter):
         return output
 
 
-class NanoDevice(DelegateInstrument):
+class Device(DelegateInstrument):
     """
     Meta instrument for a quantum device on a chip
 
