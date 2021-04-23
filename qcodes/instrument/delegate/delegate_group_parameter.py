@@ -37,15 +37,18 @@ class DelegateGroup(Group):
 
 class DelegateGroupParameter(_BaseParameter):
     """
-    Meta parameter that returns one or more endpoint parameter values
+    Delegate group parameter that wraps one or more delegate parameters
+    into a group.
     
     Args:
-        name: Meta parameter name
-        endpoints: One or more endpoint parameters to alias
-        endpoint_names: One or more endpoint names
+        name: Delegate group parameter name
+        endpoints: Sequence of one or more endpoint parameters that
+            will be used as the source to the delegate parameters
+        endpoint_names: Sequence of one or more names for the
+            delegate parameters
         unit: The unit of measure. Use ``''`` for unitless.
-        setter: Optional setter function to override
-            endpoint parameter setter. Defaults to None.
+        setter: Optional setter function to override the "set" method
+            for the delegate group parameter. Defaults to None.
     """
     param_cls = DelegateParameter
 
@@ -127,9 +130,12 @@ class DelegateGroupParameter(_BaseParameter):
             self.group.set_parameters(value)
         else:
             return self._endpoints[0](value)
-    
+
     def _set_override(self, value: ParamDataType = None, **kwargs):
-        """Overide set method such that values can optionally be set using only kwargs"""
+        """
+        Overide set method such that values can optionally be set
+        using only kwargs
+        """
         if value is None:
             self._set(kwargs)
         else:
