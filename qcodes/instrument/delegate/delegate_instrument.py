@@ -143,8 +143,8 @@ class DelegateInstrument(InstrumentBase):
         setters: Dict[str, Dict[str, Any]],
         units: Dict[str, Dict[str, str]]
     ):
-        """Add parameters to meta instrument based on specified aliases, endpoints
-        and setter methods"""
+        """Add parameters to meta instrument based on specified aliases,
+        endpoints and setter methods"""
         for param_name, paths in aliases.items():
             self._create_and_add_parameter(
                 param_name=param_name,
