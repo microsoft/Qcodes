@@ -664,6 +664,7 @@ class SR830(VisaInstrument):
         self.write(f'SRAT {SR}')
         self._buffer1_ready = False
         self._buffer2_ready = False
+        self.sweep_setpoints.update_units_if_constant_sample_rate()
 
     def _get_ch_ratio(self, channel: int) -> str:
         val_mapping = {1: {0: 'none',
@@ -805,7 +806,7 @@ class SR830(VisaInstrument):
                              n_points: int = 10,
                              label: Union[str, None] = None) -> None:
 
-        self.sweep_setpoints.set(np.linspace(start, stop, n_points))
+        self.sweep_setpoints.sweep_array = np.linspace(start, stop, n_points)
         self.sweep_setpoints.unit = sweep_param.unit
         if label is not None:
             self.sweep_setpoints.label = label
