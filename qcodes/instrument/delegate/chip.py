@@ -1,4 +1,4 @@
-from qcodes.instrument.delegate.nano_device import Device
+from qcodes.instrument.delegate.device import Device
 from typing import List, Dict, Any, TYPE_CHECKING
 
 from qcodes.instrument.base import InstrumentBase

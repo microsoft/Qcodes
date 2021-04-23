@@ -3,7 +3,7 @@ from qcodes.instrument.delegate.delegate_instrument import (
     DelegateInstrument
 )
 from qcodes.instrument.delegate.chip import Chip
-from qcodes.instrument.delegate.nano_device import (
+from qcodes.instrument.delegate.device import (
     NanoDeviceParameter,
     Device
 )
