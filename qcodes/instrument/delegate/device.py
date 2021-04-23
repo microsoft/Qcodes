@@ -10,7 +10,7 @@ from qcodes.instrument.delegate.delegate_instrument import (
 )
 
 
-class NanoDeviceParameter(DelegateGroupParameter):
+class DeviceParameter(DelegateGroupParameter):
     """
     Meta for a NanoDevice parameter.
 
@@ -64,7 +64,7 @@ class Device(DelegateInstrument):
         set_initial_values_on_load: Set default values on load.
             Defaults to False.
     """
-    param_cls = NanoDeviceParameter
+    param_cls = DeviceParameter
 
     def __init__(
         self,
