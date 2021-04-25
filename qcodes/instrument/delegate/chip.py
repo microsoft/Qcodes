@@ -9,7 +9,8 @@ if TYPE_CHECKING:
 
 class Chip(InstrumentBase):
     """
-    Meta instrument for a Chip
+    Instrument for a Chip that contains one or more Devices.
+    This instrument is mainly a wrapper for sub instruments/submodules.
     
     Args:
         name: Chip name

@@ -5,12 +5,12 @@ from qcodes.instrument.channel import InstrumentChannel
 from qcodes.station import Station
 
 from qcodes.instrument.delegate.delegate_instrument import (
-    DelegateGroupParameter,
+    GroupedParameter,
     DelegateInstrument
 )
 
 
-class DeviceParameter(DelegateGroupParameter):
+class DeviceParameter(GroupedParameter):
     """
     Meta for a Device parameter.
 
@@ -32,8 +32,8 @@ class DeviceParameter(DelegateGroupParameter):
         self._channel = channel
         super().__init__(
             name=name,
-            endpoints=endpoints,
-            endpoint_names=endpoint_names,
+            source_parameters=endpoints,
+            parameter_names=endpoint_names,
             **kwargs
         )
 
@@ -70,16 +70,16 @@ class Device(DelegateInstrument):
         self,
         name: str,
         station: Station,
-        aliases: Dict[str, List[str]],
+        parameters: Dict[str, List[str]],
         initial_values: Dict[str, Any],
         set_initial_values_on_load: bool = False
     ):
-        self._aliases = aliases
+        self._parameters = parameters
 
         super().__init__(
             name=name,
             station=station,
-            aliases=aliases,
+            parameters=parameters,
             initial_values=initial_values,
             set_initial_values_on_load=set_initial_values_on_load
         )
@@ -87,11 +87,11 @@ class Device(DelegateInstrument):
     def _create_and_add_parameters(
         self,
         station: Station,
-        aliases: Dict[str, List[str]],
+        parameters: Dict[str, List[str]],
         setters: Dict[str, Dict[str, Any]],
         units: Dict[str, Dict[str, str]]
     ):
-        for param_name, paths in aliases.items():
+        for param_name, paths in parameters.items():
             try:
                 channel = self.parse_instrument_path(
                     station=station,
@@ -101,7 +101,7 @@ class Device(DelegateInstrument):
                 channel = None
 
             self._create_and_add_parameter(
-                param_name=param_name,
+                group_name=param_name,
                 station=station,
                 paths=paths,
                 channel=channel,

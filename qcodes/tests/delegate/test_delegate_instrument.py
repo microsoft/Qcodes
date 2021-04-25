@@ -23,7 +23,7 @@ def test_mock_field_delegate(station, field_x, chip_config):
         assert ramp.field == 0.001
         assert ramp.ramp_rate == 0.02
 
-        field.ramp_X(field=0.0, ramp_rate=10.0)
+        field.ramp_X(dict(field=0.0, ramp_rate=10.0))
         assert field.ramp_rate() == 10.0
         assert field.X() == 0.0
         assert field.ramp_X_ramp_rate() == 10.0
@@ -40,7 +40,7 @@ def test_delegate_channel_instrument(station, chip_config):
     assert state.bus == "off"
     assert state.gnd == "off"
 
-    switch.state01(dac_output="on", smc="off", bus="off", gnd="off")
+    switch.state01(dict(dac_output="on", smc="off", bus="off", gnd="off"))
     state = switch.state01()
     assert state.dac_output == "on"
     assert state.smc == "off"

@@ -24,7 +24,7 @@ instruments:
   field:
     type: qcodes.instrument.delegate.DelegateInstrument
     init:
-      aliases:
+      parameters:
         X:
           - field_x.field
         ramp_rate:
@@ -47,7 +47,7 @@ instruments:
     type: qcodes.instrument.delegate.DelegateChannelInstrument
     init:
       channels: dac.channels
-      aliases:
+      parameters:
         state:
           - dac_output
           - smc

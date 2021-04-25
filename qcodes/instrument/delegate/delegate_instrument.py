@@ -2,11 +2,11 @@ from typing import List, Dict, Union, Any, Optional
 
 from functools import partial
 
-from qcodes.instrument.delegate.delegate_group_parameter import (
+from qcodes.instrument.delegate.grouped_parameter import (
     DelegateGroup,
-    DelegateGroupParameter
+    GroupedParameter
 )
-from qcodes.instrument.parameter import Parameter
+from qcodes.instrument.parameter import DelegateParameter, Parameter
 from qcodes.instrument.base import InstrumentBase
 from qcodes.station import Station
 
@@ -16,15 +16,15 @@ _log = logging.getLogger(__name__)
 
 
 class DelegateInstrument(InstrumentBase):
-    """DelegateInstrument class for creating an instrument with one or
-    more delegate parameters that connect to real instrument parameters.
+    """DelegateInstrument is an instrument driver with one or more
+    parameters that connect to instrument parameters.
 
     Example usage in instrument YAML:
 
     field:
         type: qcodes.instrument.delegate.DelegateInstrument
         init:
-        aliases:
+        parameters:
             X:
             - field_X.field
             ramp_rate:
@@ -40,8 +40,7 @@ class DelegateInstrument(InstrumentBase):
             X: T
             ramp_rate: T/min
 
-    this will generate an instrument named "field" with methods for
-    delegate parameters:
+    this will generate an instrument named "field" with methods:
         field.X()
         field.ramp_rate()
 
@@ -58,8 +57,8 @@ class DelegateInstrument(InstrumentBase):
         name: Instrument name
         station: Real instrument station that is used to get the endpoint
             parameters.
-        aliases: A mapping from name of a delegate parameter to the sequence of
-            endpoints that it connects to.
+        parameters: A mapping from the name of a parameter to the sequence
+            of source parameters that it points to.
         initial_values: Default values to set on the delegate instrument's
             parameters. Defaults to None.
         set_initial_values_on_load: Flag to set initial values when the
@@ -68,13 +67,13 @@ class DelegateInstrument(InstrumentBase):
             method on the endpoint parameters. Defaults to None.
         metadata: Optional metadata to pass to instrument. Defaults to None.
     """
-    param_cls = DelegateGroupParameter
+    param_cls = DelegateParameter
 
     def __init__(
         self,
         name: str,
         station: Station,
-        aliases: Dict[str, List[str]],
+        parameters: Dict[str, List[str]],
         initial_values: Dict[str, Any] = None,
         set_initial_values_on_load: bool = False,
         setters: Dict[str, Dict[str, Any]] = None,
@@ -83,14 +82,14 @@ class DelegateInstrument(InstrumentBase):
         super().__init__(name=name, metadata=metadata)
         self._create_and_add_parameters(
             station=station,
-            aliases=aliases,
+            parameters=parameters,
             setters=setters or {},
             units=units or {}
         )
         self._initial_values = initial_values or {}
         if set_initial_values_on_load:
             self.set_initial_values()
-    
+
     @staticmethod
     def parse_instrument_path(station: Station, path: Union[str, List[str]]):
         """Parse a string path and return the object relative to the station,
@@ -128,7 +127,10 @@ class DelegateInstrument(InstrumentBase):
                     if "." in path:
                         name = path.split(".")[-1]
                         parent_path = ".".join(path.split(".")[:-1])
-                        parent = self.parse_instrument_path(self, path=parent_path)
+                        parent = self.parse_instrument_path(
+                            self,
+                            path=parent_path
+                        )
                     else:
                         parent, name = self, path
                     print(parent, name, value)
@@ -139,15 +141,15 @@ class DelegateInstrument(InstrumentBase):
     def _create_and_add_parameters(
         self,
         station: Station,
-        aliases: Dict[str, List[str]],
+        parameters: Dict[str, List[str]],
         setters: Dict[str, Dict[str, Any]],
         units: Dict[str, Dict[str, str]]
     ):
         """Add parameters to meta instrument based on specified aliases,
         endpoints and setter methods"""
-        for param_name, paths in aliases.items():
+        for param_name, paths in parameters.items():
             self._create_and_add_parameter(
-                param_name=param_name,
+                group_name=param_name,
                 station=station,
                 paths=paths,
                 setter=setters.get(param_name),
@@ -155,18 +157,18 @@ class DelegateInstrument(InstrumentBase):
             )
 
     @staticmethod
-    def _endpoint_names(endpoints: List[Parameter]):
+    def _parameter_names(parameters: List[Parameter]):
         """Get the endpoint names"""
-        endpoint_names = [_e.name for _e in endpoints]
-        if len(endpoint_names) != len(set(endpoint_names)):
-            endpoint_names = [
-                f"{_e}{n}" for n, _e in enumerate(endpoint_names)
+        parameter_names = [_e.name for _e in parameters]
+        if len(parameter_names) != len(set(parameter_names)):
+            parameter_names = [
+                f"{_e}{n}" for n, _e in enumerate(parameter_names)
             ]
-        return endpoint_names
+        return parameter_names
 
     def _create_and_add_parameter(
         self,
-        param_name: str,
+        group_name: str,
         station: Station,
         paths: List[str],
         setter: Dict[str, Any],
@@ -175,30 +177,39 @@ class DelegateInstrument(InstrumentBase):
     ):
         """Create meta parameter that links to a given set of paths
         (e.g. my_instrument.my_param) on the station"""
-        endpoints = tuple(
+        source_parameters = tuple(
             self.parse_instrument_path(station, path) for path in paths
         )
-        endpoint_names = self._endpoint_names(endpoints)
+        parameter_names = self._parameter_names(source_parameters)
 
         if setter is not None:
            setter_fn = self.parse_instrument_path(station, setter.pop("method"))
            setter = partial(setter_fn, **setter)
 
+        parameters = []
+        for name, source in zip(parameter_names, source_parameters):
+            param_name = f"{group_name}_{name}"
+            self.add_parameter(
+                parameter_class=self.param_cls,
+                name=param_name,
+                source=source
+            )
+            parameters.append(self.parameters[param_name])
+
+        group = DelegateGroup(
+            name=group_name,
+            parameters=parameters,
+            parameter_names=parameter_names,
+            setter=setter
+        )
+
         self.add_parameter(
-            name=param_name,
-            parameter_class=self.param_cls,
-            endpoints=endpoints,
-            endpoint_names=endpoint_names,
-            setter=setter,
+            name=group_name,
+            parameter_class=GroupedParameter,
+            group=group,
             unit=unit,
             **kwargs
         )
-        if len(endpoints) > 1:
-            self.parameters[param_name]._group = DelegateGroup(
-                name=param_name,
-                parameters=endpoints,
-                parameter_names=endpoint_names
-            )
 
     def __repr__(self):
         params = ", ".join(self.parameters.keys())
