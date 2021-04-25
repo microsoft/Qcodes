@@ -133,7 +133,6 @@ class GroupedParameter(_BaseParameter):
         group: Group that contains the target parameter(s).
         unit: The unit of measure. Use ``''`` for unitless.
         label: Optional label, defaults to parameter name.
-        setter: Custom "set" method that should be used instead of the
         default set method(s).
     """
     def __init__(
@@ -141,12 +140,10 @@ class GroupedParameter(_BaseParameter):
         name: str,
         group: DelegateGroup,
         unit: str = None,
-        setter: callable = None,
         label: str = None,
         **kwargs
     ):
         super().__init__(name, **kwargs)
-        self._setter = setter
         self.label = name if label is None else label
         self.unit = unit if unit is not None else ''
         self._group = group
