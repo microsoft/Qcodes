@@ -65,6 +65,7 @@ class DelegateInstrument(InstrumentBase):
             instrument is loaded. Defaults to False.
         setters: Optional setter methods to use instead of calling the .set()
             method on the endpoint parameters. Defaults to None.
+        units: Optional units to set for parameters.
         metadata: Optional metadata to pass to instrument. Defaults to None.
     """
     param_cls = DelegateParameter
@@ -171,8 +172,10 @@ class DelegateInstrument(InstrumentBase):
         group_name: str,
         station: Station,
         paths: List[str],
-        setter: Dict[str, Any],
-        unit: str,
+        setter: Dict[str, Any] = None,
+        getter: Dict[str, Any] = None,
+        formatter: Dict[str, Any] = None,
+        unit: str = None,
         **kwargs
     ):
         """Create meta parameter that links to a given set of paths
@@ -200,7 +203,9 @@ class DelegateInstrument(InstrumentBase):
             name=group_name,
             parameters=parameters,
             parameter_names=parameter_names,
-            setter=setter
+            setter=setter,
+            getter=getter,
+            formatter=formatter
         )
 
         self.add_parameter(
