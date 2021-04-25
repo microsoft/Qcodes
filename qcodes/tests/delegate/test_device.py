@@ -25,9 +25,8 @@ def test_device(station, chip_config, dac, lockin):
 def test_device_meas(station, chip):
     meas = Measurement(station=station)
     device = chip.device1
-    meas.register_parameter(device.gate)  # register the first independent parameter
-    meas.register_parameter(device.drain, setpoints=(device.gate,))  # now register the dependent oone
-    meas.write_period = 2
+    meas.register_parameter(device.gate)
+    meas.register_parameter(device.drain, setpoints=(device.gate,))
 
     with meas.run() as datasaver:
         for set_v in np.linspace(0, 1.5, 10):
@@ -35,4 +34,5 @@ def test_device_meas(station, chip):
             get_a = device.drain_X.get()
             datasaver.add_result((device.gate, set_v), (device.drain, get_a))
             datasaver.flush_data_to_database()
-        assert len(datasaver.dataset.to_pandas_dataframe_dict()["device1_drain"]) == 10
+        assert len(
+            datasaver.dataset.to_pandas_dataframe_dict()["device1_drain"]) == 10
