@@ -158,7 +158,7 @@ def test_snapshot_value(testdummy):
     assert 'value' not in snapshot['parameters']['no_snapshot_value']
 
 
-def test_delegate_instrument(parabola):
+def test_meta_instrument(parabola):
     mock_instrument = MockMetaParabola("mock_parabola", parabola)
 
     # Check that the mock instrument can return values
