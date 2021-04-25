@@ -5,6 +5,7 @@ from qcodes.instrument.parameter import (
     DelegateParameter,
     ParamDataType,
     ParamRawDataType,
+    Parameter,
     _BaseParameter
 )
 
@@ -41,6 +42,20 @@ class DelegateGroup(Group):
     The formatter takes as input the values of the :class:`.DelegateParameter`s
     as positional arguments in the order at which the
     :class:`.DelegateParameter`s are specified.
+
+    Args:
+        name: Name of the DelegateGroup
+        parameters: DelegateParameters to group together
+        parameter_names: Optional names of parameters, defaults to the
+            parameter `name` attributes
+        setter: Optional function to call for setting the grouped parameters,
+            should take one argument `value`. Defaults to set_parameters(),
+            which sets each parameter using its .set() method.
+        getter: Optional function to call for getting the grouped parameters.
+            Defaults to .get_parameters(), which runs the get() method for each
+            parameter.
+        formatter: Optional formatter for value returned by get_parameters(),
+            defaults to a namedtuple with the parameter names as keys.
     """
     def __init__(
         self,
@@ -144,9 +159,14 @@ class GroupedParameter(_BaseParameter):
         return self._group
 
     @property
-    def source_parameters(self) -> Tuple[DelegateParameter]:
-        """Get endpoint parameters"""
+    def parameters(self) -> Tuple[DelegateParameter]:
+        """Get delegate parameters wrapped by this GroupedParameter"""
         return self.group.parameters
+
+    @property
+    def source_parameters(self) -> Tuple[Parameter]:
+        """Get source parameters of each DelegateParameter"""
+        return tuple(p.source for p in self.group.parameters.values())
 
     def get_raw(self):
         """Get parameter raw value"""

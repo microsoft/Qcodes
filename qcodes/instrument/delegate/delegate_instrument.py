@@ -26,16 +26,16 @@ class DelegateInstrument(InstrumentBase):
         init:
         parameters:
             X:
-            - field_X.field
+                - field_X.field
             ramp_rate:
-            - field_X.ramp_rate
+                - field_X.ramp_rate
         set_initial_values_on_load: true
         initial_values:
             ramp_rate: 0.02
         setters:
             X:
-            method: field_X.set_field
-            block: false
+                method: field_X.set_field
+                block: false
         units:
             X: T
             ramp_rate: T/min

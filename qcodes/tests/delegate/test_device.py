@@ -9,14 +9,14 @@ def test_device(station, chip_config, dac, lockin):
     station.load_config_file(chip_config)
     chip = station.load_MockChip_123(station=station)
     assert station.dac == dac
-    assert chip.device1.gate.endpoints == (station.dac.ch01.voltage,)
-    assert chip.device1.source.endpoints == (
+    assert chip.device1.gate.source_parameters == (station.dac.ch01.voltage,)
+    assert chip.device1.source.source_parameters == (
         lockin.frequency,
         lockin.amplitude,
         lockin.phase,
         lockin.time_constant
     )
-    assert chip.device1.drain.endpoints == (
+    assert chip.device1.drain.source_parameters == (
         lockin.X,
         lockin.Y
     )
