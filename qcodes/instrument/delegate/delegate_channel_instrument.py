@@ -1,4 +1,4 @@
-from typing import Dict, List, Any
+from typing import Dict, Sequence, Any, Optional
 from qcodes.station import Station
 from qcodes.instrument.delegate.delegate_instrument import DelegateInstrument
 
@@ -52,10 +52,10 @@ class DelegateChannelInstrument(DelegateInstrument):
         name: str,
         station: Station,
         channels: str,
-        parameters: Dict[str, List[str]],
-        initial_values: Dict[str, Any] = None,
+        parameters: Dict[str, Sequence[str]],
+        initial_values: Optional[Dict[str, Any]] = None,
         set_initial_values_on_load: bool = False,
-        **kwargs):
+        **kwargs: Any):
         _channels = self.parse_instrument_path(station=station, path=channels)
         _parameters = {}
         for channel in _channels:
