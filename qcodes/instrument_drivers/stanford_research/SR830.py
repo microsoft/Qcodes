@@ -6,7 +6,7 @@ from qcodes import VisaInstrument
 from qcodes.instrument.parameter import ArrayParameter, ParamRawDataType, ParameterWithSetpoints, Parameter
 from qcodes.utils.validators import Numbers, Ints, Enum, Strings, Arrays
 
-from typing import Tuple, Sequence
+from typing import Tuple, Iterable
 import time
 
 
@@ -820,7 +820,7 @@ class GeneratedSetPoints(Parameter):
     parameters.
     """
     def __init__(self,
-                 sweep_array: Sequence[Union[float, int]] = np.linspace(0, 1, 10),
+                 sweep_array: Iterable[Union[float, int]] = np.linspace(0, 1, 10),
                  *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.sweep_array = sweep_array
@@ -838,7 +838,7 @@ class GeneratedSetPoints(Parameter):
             self.unit = 's'
             self.label = 'Time'
 
-    def set_raw(self, value: Sequence[Union[float, int]]) -> None:
+    def set_raw(self, value: Iterable[Union[float, int]]) -> None:
         self.sweep_array = value
 
     def get_raw(self) -> ParamRawDataType:
