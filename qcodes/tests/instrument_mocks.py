@@ -727,11 +727,11 @@ class MockField(Instrument):
                            initial_value=0.1,
                            unit='T/min',
                            get_cmd=None, set_cmd=None)
-        self._ramp_start_time = None
-        self._wait_time = None
+        self._ramp_start_time: Optional[float] = None
+        self._wait_time: Optional[float] = None
         self._fr = self._field_ramp()
         next(self._fr)
-    
+
     def get_field(self):
         """
         This method is automatically wrapped to
@@ -748,7 +748,8 @@ class MockField(Instrument):
         if self._field == value:
             return value
 
-        self._wait_time = 60. * np.abs(self._field - value) / self.ramp_rate()
+        wait_time = 60. * np.abs(self._field - value) / self.ramp_rate()
+        self._wait_time = wait_time
         self._field_ramp_fcn = interp1d(
             x=[0.0, self._wait_time],
             y=[self._field, value],
@@ -758,7 +759,7 @@ class MockField(Instrument):
         self._ramp_start_time = time.time()
 
         if block:
-            time.sleep(self._wait_time)
+            time.sleep(wait_time)
             self._field = value
             return value
 
@@ -849,7 +850,7 @@ class MockDACChannel(InstrumentChannel):
                            initial_value="off",
                            vals=OnOff(),
                            get_cmd=None, set_cmd=None)
-    
+
     def channel_number(self):
         return self._num
 
