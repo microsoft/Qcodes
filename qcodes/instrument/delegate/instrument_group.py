@@ -34,7 +34,8 @@ class InstrumentGroup(InstrumentBase):
         submodules: Dict[str, Dict[str, List[str]]],
         initial_values: Dict[str, Dict[str, Any]],
         set_initial_values_on_load: bool = False,
-        **kwargs):
+        **kwargs: Any
+    ):
         super().__init__(name=name, **kwargs)
 
         module_name = '.'.join(submodules_type.split('.')[:-1])
@@ -56,6 +57,6 @@ class InstrumentGroup(InstrumentBase):
                 submodule
             )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         submodules = ", ".join(self.submodules.keys())
         return f"InstrumentGroup(name={self.name}, submodules={submodules})"

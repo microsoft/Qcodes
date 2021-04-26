@@ -1,4 +1,4 @@
-from typing import List, Dict, Union, Any, Optional
+from typing import List, Dict, Union, Any, Optional, Sequence
 
 from functools import partial
 
@@ -75,11 +75,12 @@ class DelegateInstrument(InstrumentBase):
         name: str,
         station: Station,
         parameters: Dict[str, List[str]],
-        initial_values: Dict[str, Any] = None,
+        initial_values: Optional[Dict[str, Any]] = None,
         set_initial_values_on_load: bool = False,
-        setters: Dict[str, Dict[str, Any]] = None,
-        units: Dict[str, Dict[str, str]] = None,
-        metadata: Optional[Dict[Any, Any]] = None):
+        setters: Optional[Dict[str, Dict[str, Any]]] = None,
+        units: Optional[Dict[str, Dict[str, str]]] = None,
+        metadata: Optional[Dict[Any, Any]] = None
+    ):
         super().__init__(name=name, metadata=metadata)
         self._create_and_add_parameters(
             station=station,
@@ -92,7 +93,7 @@ class DelegateInstrument(InstrumentBase):
             self.set_initial_values()
 
     @staticmethod
-    def parse_instrument_path(station: Station, path: Union[str, List[str]]):
+    def parse_instrument_path(station: Station, path: str):
         """Parse a string path and return the object relative to the station,
         e.g. "my_instrument.my_param" returns station.my_instrument.my_param
 
@@ -100,7 +101,7 @@ class DelegateInstrument(InstrumentBase):
             station: Measurement station
             path: Relative path to parse
         """
-        def _parse_path(parent, elem):
+        def _parse_path(parent, elem: Sequence[str]):
             child = getattr(parent, elem[0])
             if len(elem) == 1:
                 return child
@@ -108,7 +109,7 @@ class DelegateInstrument(InstrumentBase):
 
         return _parse_path(station, path.split("."))
 
-    def set_initial_values(self, dry_run: bool = False):
+    def set_initial_values(self, dry_run: bool = False) -> None:
         """Set parameter initial values on meta instrument
 
         Args:
@@ -145,7 +146,7 @@ class DelegateInstrument(InstrumentBase):
         parameters: Dict[str, List[str]],
         setters: Dict[str, Dict[str, Any]],
         units: Dict[str, Dict[str, str]]
-    ):
+    ) -> None:
         """Add parameters to meta instrument based on specified aliases,
         endpoints and setter methods"""
         for param_name, paths in parameters.items():
@@ -172,12 +173,12 @@ class DelegateInstrument(InstrumentBase):
         group_name: str,
         station: Station,
         paths: List[str],
-        setter: Dict[str, Any] = None,
-        getter: Dict[str, Any] = None,
-        formatter: Dict[str, Any] = None,
-        unit: str = None,
-        **kwargs
-    ):
+        setter: Optional[Dict[str, Any]] = None,
+        getter: Optional[Dict[str, Any]] = None,
+        formatter: Optional[Dict[str, Any]] = None,
+        unit: Optional[str] = None,
+        **kwargs: Any
+    ) -> None:
         """Create meta parameter that links to a given set of paths
         (e.g. my_instrument.my_param) on the station"""
         source_parameters = tuple(
@@ -216,6 +217,6 @@ class DelegateInstrument(InstrumentBase):
             **kwargs
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         params = ", ".join(self.parameters.keys())
         return f"DelegateInstrument(name={self.name}, parameters={params})"

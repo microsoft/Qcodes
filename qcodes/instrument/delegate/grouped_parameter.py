@@ -1,5 +1,5 @@
 from qcodes.instrument.group_parameter import Group
-from typing import Any, Dict, Optional, OrderedDict, Tuple, Union
+from typing import Any, Dict, Optional, OrderedDict, Tuple, Union, Sequence, Callable
 from collections import namedtuple
 from qcodes.instrument.parameter import (
     DelegateParameter,
@@ -61,11 +61,11 @@ class DelegateGroup(Group):
         self,
         name: str,
         parameters: Tuple[DelegateParameter],
-        parameter_names: Tuple[str] = None,
-        setter: callable = None,
-        getter: callable = None,
-        formatter: callable = None,
-        **kwargs
+        parameter_names: Optional[Sequence[str]] = None,
+        setter: Optional[Callable[..., Any]] = None,
+        getter: Optional[Callable[..., Any]] = None,
+        formatter: Optional[Callable[..., Any]] = None,
+        **kwargs: Any
     ):
         super().__init__(
             parameters=list(parameters),
@@ -139,9 +139,9 @@ class GroupedParameter(_BaseParameter):
         self,
         name: str,
         group: DelegateGroup,
-        unit: str = None,
-        label: str = None,
-        **kwargs
+        unit: Optional[str] = None,
+        label: Optional[str] = None,
+        **kwargs: Any
     ):
         super().__init__(name, **kwargs)
         self.label = name if label is None else label
@@ -149,7 +149,7 @@ class GroupedParameter(_BaseParameter):
         self._group = group
 
     @property
-    def group(self) -> Optional['DelegateGroup']:
+    def group(self) -> 'DelegateGroup':
         """
         The group that contains the target parameters.
         """
@@ -161,15 +161,15 @@ class GroupedParameter(_BaseParameter):
         return self.group.parameters
 
     @property
-    def source_parameters(self) -> Tuple[Parameter]:
+    def source_parameters(self) -> Tuple[Parameter, ...]:
         """Get source parameters of each DelegateParameter"""
         return tuple(p.source for p in self.group.parameters.values())
 
-    def get_raw(self):
+    def get_raw(self) -> Union[ParamDataType, Dict[str, ParamDataType]]:
         """Get parameter raw value"""
         return self.group.get_parameters()
 
-    def set_raw(self, value: Union[ParamDataType, Dict[str, ParamDataType]]):
+    def set_raw(self, value: Union[ParamDataType, Dict[str, ParamDataType]]) -> None:
         """Set parameter raw value
 
         Args:
@@ -180,7 +180,7 @@ class GroupedParameter(_BaseParameter):
         """
         self.group.set(value)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         output = f"GroupedParameter(name={self.name}"
         if self.source_parameters:
             source_parameters = ", ".join(
