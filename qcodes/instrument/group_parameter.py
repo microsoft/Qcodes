@@ -6,7 +6,7 @@ should be of type :class:`GroupParameter`
 
 
 from collections import OrderedDict
-from typing import List, Union, Callable, Dict, Any, Optional
+from typing import Union, Callable, Dict, Any, Optional, Sequence
 
 from qcodes.instrument.parameter import (Parameter,
                                          ParamRawDataType,
@@ -159,7 +159,7 @@ class Group:
         single instrument, which in turn does additional checks. Defaults to True.
     """
     def __init__(self,
-                 parameters: List[GroupParameter],
+                 parameters: Sequence[GroupParameter],
                  set_cmd: Optional[str] = None,
                  get_cmd: Optional[str] = None,
                  get_parser: Union[Callable[[str],
@@ -186,11 +186,11 @@ class Group:
             self.get_parser = get_parser
         else:
             self.get_parser = self._separator_parser(separator)
-        
+
         if single_instrument:
             self._check_initial_values(parameters)
 
-    def _check_initial_values(self, parameters):
+    def _check_initial_values(self, parameters: Sequence[GroupParameter]) -> None:
         have_initial_values = [p._initial_value is not None
                                for p in parameters]
         if any(have_initial_values):
