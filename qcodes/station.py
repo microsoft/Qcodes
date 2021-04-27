@@ -5,7 +5,8 @@ Station objects - collect all the equipment you use to do an experiment.
 
 from contextlib import suppress
 from typing import (
-    Dict, Iterable, List, Optional, Sequence, Any, cast, AnyStr, IO, Tuple)
+    Dict, Iterable, List, Optional, Sequence, Any, cast, AnyStr, IO,
+    Tuple, Union)
 from types import ModuleType
 from functools import partial
 import importlib
@@ -17,7 +18,6 @@ import pkgutil
 import inspect
 from copy import deepcopy, copy
 from collections import UserDict
-from typing import Union
 import jsonschema
 import warnings
 
@@ -96,8 +96,10 @@ class Station(Metadatable, DelegateAttributes):
         *components: components to add immediately to the
             Station. Can be added later via ``self.add_component``.
         config_file: Path to YAML files to load the station config from.
-            If more than one file is supplied, they they will be merged into
-            one file.
+            - If only one yaml file needed to be loaded, it should be passed
+            as a string, e.g., '~/station.yaml.
+            - If more than one yaml file needed, they should be supplied as
+            a sequence of strings, e.g. ['~/station1.yaml', ~/station2.yaml'].
         use_monitor: Should the QCoDeS monitor be activated for this station.
         default: Is this station the default?
         update_snapshot: Immediately update the snapshot of each
@@ -139,19 +141,20 @@ class Station(Metadatable, DelegateAttributes):
             self.add_component(item, update_snapshot=update_snapshot)
 
         self.use_monitor = use_monitor
-        if type(config_file) == str:
-            self.config_file = config_file
-        else:
-            self.config_file = self.full_yaml(config_file)
 
         self._added_methods: List[str] = []
         self._monitor_parameters: List[Parameter] = []
 
-        self.load_config_file(self.config_file)
-
-    def full_yaml(self, config_file):
-        yamls = merge_yamls(*config_file)
-        return yamls.getvalue()
+        if config_file is not None:
+            if isinstance(config_file, str):
+                config_file = [config_file]
+                self.load_config_file(config_file[0])
+            else:
+                with merge_yamls(*config_file) as yamls:
+                    self.load_config(yamls)
+        else:
+            self.load_config_file(config_file)
+        self.config_file = config_file
 
     def snapshot_base(self, update: Optional[bool] = True,
                       params_to_skip_update: Optional[Sequence[str]] = None
@@ -421,7 +424,10 @@ class Station(Metadatable, DelegateAttributes):
         # load file
         # try to reload file on every call. This makes script execution a
         # little slower but makes the overall workflow more convenient.
-        self.load_config_file(self.config_file)
+        if self.config_file is not None:
+            with merge_yamls(*self.config_file) as yamls:
+                self.load_config(yamls)
+
 
         # load from config
         if identifier not in self._instrument_config.keys():
@@ -591,7 +597,8 @@ class Station(Metadatable, DelegateAttributes):
                              only_types: Optional[Iterable[str]] = None,
                              ) -> Tuple[str, ...]:
         """
-        Load all instruments specified in the loaded YAML station configuration.
+        Load all instruments specified in the loaded YAML station
+        configuration.
 
         Optionally, the instruments to be loaded can be filtered by their
         names or types, use ``only_names`` and ``only_types``
@@ -734,11 +741,10 @@ def merge_yamls(*yamls: Union[str, Path]) -> IO[str]:
                     f"{ ','.join(map(str, yamls))}"
                 )
         deq.popleft()
-    
+
     import tempfile
 
     # Dump to a temp file in memory, so it can be read by load_config.
-    # merged_yaml_temp_file = tempfile.TemporaryFile('w+')
     merged_yaml_temp_file = StringIO()
     yaml.dump(data1, merged_yaml_temp_file)
     merged_yaml_temp_file.seek(0)
