@@ -9,9 +9,7 @@ from qcodes.dataset.data_set import (DataSet,
                                      load_by_id,
                                      load_by_counter,
                                      load_by_run_spec)
-from qcodes.dataset.descriptions.param_spec import ParamSpecBase
-from qcodes.dataset.descriptions.dependencies import InterDependencies_
-from qcodes.dataset.data_export import get_data_by_id
+
 from qcodes.dataset.sqlite.queries import get_guids_from_run_spec
 from qcodes.dataset.experiment_container import new_experiment
 
@@ -170,43 +168,6 @@ def test_completed_timestamp_with_default_format():
     assert t_before_complete_secs \
            <= actual_completed_timestamp_raw \
            <= t_after_complete_secs + 1
-
-
-def test_get_data_by_id_order(dataset):
-    """
-    Test that the added values of setpoints end up associated with the correct
-    setpoint parameter, irrespective of the ordering of those setpoint
-    parameters
-    """
-    indepA = ParamSpecBase('indep1', "numeric")
-    indepB = ParamSpecBase('indep2', "numeric")
-    depAB = ParamSpecBase('depAB', "numeric")
-    depBA = ParamSpecBase('depBA', "numeric")
-
-    idps = InterDependencies_(
-        dependencies={depAB: (indepA, indepB), depBA: (indepB, indepA)})
-
-    dataset.set_interdependencies(idps)
-
-    dataset.mark_started()
-
-    dataset.add_results([{'depAB': 12,
-                          'indep2': 2,
-                          'indep1': 1}])
-
-    dataset.add_results([{'depBA': 21,
-                          'indep2': 2,
-                          'indep1': 1}])
-    dataset.mark_completed()
-
-    data = get_data_by_id(dataset.run_id)
-    data_dict = {el['name']: el['data'] for el in data[0]}
-    assert data_dict['indep1'] == 1
-    assert data_dict['indep2'] == 2
-
-    data_dict = {el['name']: el['data'] for el in data[1]}
-    assert data_dict['indep1'] == 1
-    assert data_dict['indep2'] == 2
 
 
 @pytest.mark.usefixtures('experiment')

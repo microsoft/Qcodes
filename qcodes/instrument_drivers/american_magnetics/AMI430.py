@@ -2,7 +2,8 @@ import collections
 import logging
 import time
 from functools import partial
-from typing import Union, Iterable, Callable, Any, Optional, Tuple, List, Sequence, TypeVar
+from typing import Union, Iterable, Callable, Any, Optional, Tuple, List, \
+    Sequence, TypeVar, cast
 import numbers
 import warnings
 
@@ -319,7 +320,8 @@ class AMI430(IPInstrument):
 
         # Check we can ramp
         if not self._can_start_ramping():
-            raise AMI430Exception("Cannot ramp in current state")
+            raise AMI430Exception(f"Cannot ramp in current state: "
+                                  f"state is {self.ramping_state()}")
 
         # Then, do the actual ramp
         self.pause()
@@ -461,27 +463,67 @@ class AMI430(IPInstrument):
 class AMI430_3D(Instrument):
     def __init__(self,
                  name: str,
-                 instrument_x: AMI430,
-                 instrument_y: AMI430,
-                 instrument_z: AMI430,
+                 instrument_x: Union[AMI430, str],
+                 instrument_y: Union[AMI430, str],
+                 instrument_z: Union[AMI430, str],
                  field_limit: Union[numbers.Real,
                                     Iterable[CartesianFieldLimitFunction]],
                  **kwargs: Any):
+        """
+        Driver for controlling three American Magnetics Model 430 magnet power
+        supplies simultaneously for setting magnetic field vectors.
+
+        The individual magnet power supplies can be passed in as either
+        instances of AMI430 driver or as names of existing AMI430 instances.
+        In the latter case, the instances will be found via the passed names.
+
+        Args:
+            name: a name for the instrument
+            instrument_x: AMI430 instance or a names of existing AMI430
+                instance for controlling the X axis of magnetic field
+            instrument_y: AMI430 instance or a names of existing AMI430
+                instance for controlling the Y axis of magnetic field
+            instrument_z: AMI430 instance or a names of existing AMI430
+                instance for controlling the Z axis of magnetic field
+            field_limit: a number for maximum allows magnetic field or an
+                iterable of callable field limit functions that define
+                region(s) of allowed values in 3D magnetic field space
+        """
         super().__init__(name, **kwargs)
 
         if not isinstance(name, str):
             raise ValueError("Name should be a string")
 
-        instruments = [instrument_x, instrument_y, instrument_z]
+        for instrument, arg_name in zip(
+                (instrument_x, instrument_y, instrument_z),
+                ("instrument_x", "instrument_y", "instrument_z"),
+        ):
+            if not isinstance(instrument, (AMI430, str)):
+                raise ValueError(
+                    f"Instruments need to be instances of the class AMI430 "
+                    f"or be valid names of already instantiated instances "
+                    f"of AMI430 class; {arg_name} argument is "
+                    f"neither of those"
+                )
 
-        if not all([isinstance(instrument, AMI430)
-                    for instrument in instruments]):
-            raise ValueError("Instruments need to be instances "
-                             "of the class AMI430")
+        def find_ami430_with_name(ami430_name: str) -> AMI430:
+            found_ami430 = AMI430.find_instrument(
+                name=ami430_name, instrument_class=AMI430
+            )
+            return cast(AMI430, found_ami430)
 
-        self._instrument_x = instrument_x
-        self._instrument_y = instrument_y
-        self._instrument_z = instrument_z
+        self._instrument_x = (
+            instrument_x if isinstance(instrument_x, AMI430)
+            else find_ami430_with_name(instrument_x)
+        )
+        self._instrument_y = (
+            instrument_y if isinstance(instrument_y, AMI430)
+            else find_ami430_with_name(instrument_y)
+        )
+        self._instrument_z = (
+            instrument_z if isinstance(instrument_z, AMI430)
+            else find_ami430_with_name(instrument_z)
+        )
 
         self._field_limit: Union[float, Iterable[CartesianFieldLimitFunction]]
         if isinstance(field_limit, collections.abc.Iterable):

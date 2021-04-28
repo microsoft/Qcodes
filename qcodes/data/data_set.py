@@ -1,16 +1,19 @@
 """DataSet class and factory functions."""
 
+import xarray as xr
+import numpy as np
 import time
 import logging
 from traceback import format_exc
 from copy import deepcopy
 from collections import OrderedDict
-from typing import Dict, Callable, Any
+from typing import Dict, Callable, Any, List
 
 from .gnuplot_format import GNUPlotFormat
 from .io import DiskIO
 from .location import FormatLocation
 from qcodes.utils.helpers import DelegateAttributes, full_class, deep_update
+from qcodes.data.data_array import xarray_data_array_dictionary_to_data_array, data_array_to_xarray_dictionary, DataArray
 
 log = logging.getLogger(__name__)
 
@@ -680,6 +683,15 @@ class DataSet(DelegateAttributes):
 
         return out
 
+    def to_xarray(self) -> xr.Dataset:
+        """ Convert the dataset to an xarray Dataset """
+        return qcodes_dataset_to_xarray_dataset(self)
+
+    @classmethod
+    def from_xarray(cls, xarray_dataset: xr.Dataset) -> 'DataSet':
+        """ Convert the dataset to an xarray DataSet """
+        return xarray_dataset_to_qcodes_dataset(xarray_dataset)
+
 
 class _PrettyPrintDict(Dict[Any, Any]):
     """
@@ -695,3 +707,102 @@ class _PrettyPrintDict(Dict[Any, Any]):
     def _indent(self, s):
         lines = s.split('\n')
         return '\n    '.join(lines)
+
+
+def dataset_to_xarray_dictionary(
+    data_set: DataSet, include_metadata: bool = True
+) -> Dict[str, Any]:
+    """Convert QcodesDataSet to dictionary.
+
+    Args:
+        data_set: The data to convert.
+        include_data: If True then include the ndarray field.
+        include_metadata: If True then include the metadata.
+
+    Returns:
+        Dictionary containing the serialized data.
+    """
+    data_dictionary: Dict[str, Any] = {
+        "dims": {},
+        "attrs": {},
+        "coords": {},
+        "data_vars": {},
+    }
+
+    pa = data_set.default_parameter_array()
+    dimensions = [(a.array_id, a.size) for a in pa.set_arrays]
+    data_dictionary["dims"] = dict(dimensions)
+
+    for array_id in [item[0] for item in dimensions]:
+        data_array = data_set.arrays[array_id]
+        data_dictionary["coords"][array_id] = data_array_to_xarray_dictionary(
+            data_array
+        )
+
+    for array_id, data_array in data_set.arrays.items():
+        if not data_array.is_setpoint:
+            data_dictionary["data_vars"][array_id] = data_array_to_xarray_dictionary(
+                data_array
+            )
+
+    if include_metadata:
+        data_dictionary["attrs"]["metadata"] = data_set.metadata
+        data_dictionary["attrs"]["qcodes_location"] = data_set.location
+
+    return data_dictionary
+
+
+def qcodes_dataset_to_xarray_dataset(
+    data_set: DataSet,
+) -> xr.Dataset:
+    """ Convert QCoDeS gridded dataset to xarray dataset """
+    xarray_dictionary = dataset_to_xarray_dictionary(data_set)
+    xarray_dataset = xr.Dataset.from_dict(xarray_dictionary)
+    return xarray_dataset
+
+
+def xarray_dictionary_to_dataset(
+    xarray_dictionary: Dict[str, Any],
+) -> DataSet:
+    """Convert xarray dictionary to Qcodes DataSet.
+
+    Args:
+        xarray_dictionary: data to convert
+
+    Returns:
+        QCoDeS dataSet with converted data.
+    """
+    dataset = new_data()
+    dataset.metadata.update(xarray_dictionary["attrs"])
+
+    grid_coords: List[Any] = []
+    set_array_names = []
+    for array_key, coord_dictionary in xarray_dictionary["coords"].items():
+        preset_data = np.array(coord_dictionary["data"])
+
+        tiled_preset_data = np.tile(preset_data, [g.size for g in grid_coords] + [1])
+        grid_coords.append(preset_data)
+
+        data_array = xarray_data_array_dictionary_to_data_array(
+            array_key, coord_dictionary, True, preset_data=tiled_preset_data
+        )
+        dataset.add_array(data_array)
+        set_array_names.append(array_key)
+    for array_key, datavar_dictionary in xarray_dictionary["data_vars"].items():
+        set_arrays = tuple([dataset.arrays[name] for name in set_array_names])
+
+        data_array = xarray_data_array_dictionary_to_data_array(
+            array_key, datavar_dictionary, False
+        )
+        data_array.set_arrays = set_arrays
+        dataset.add_array(data_array)
+
+    return dataset
+
+
+def xarray_dataset_to_qcodes_dataset(xarray_data_set: xr.Dataset) -> DataSet:
+    """ Convert QCoDeS gridded dataset to xarray dataset """
+    xarray_dictionary = xarray_data_set.to_dict()
+    qcodes_dataset = xarray_dictionary_to_dataset(xarray_dictionary)
+
+    return qcodes_dataset

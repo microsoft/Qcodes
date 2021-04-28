@@ -27,6 +27,7 @@ dependencies:
  - packaging>=20.0
  - ipywidgets>=7.5.0
  - broadbean>=0.9.1
+ - uncertainties>=3.0.2
  # test requirements from setup.cfg
  - deepdiff>=5.0.2
  - hypothesis>=5.49.0

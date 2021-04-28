@@ -24,6 +24,7 @@ import qcodes
 from qcodes.utils.types import (
     numpy_ints, numpy_floats, complex_types, complex_type_union
 )
+from pathlib import Path
 
 
 # utility function to allow sqlite/numpy type
@@ -112,7 +113,7 @@ def _adapt_complex(value: complex_type_union) -> sqlite3.Binary:
     return sqlite3.Binary(out.read())
 
 
-def connect(name: str, debug: bool = False,
+def connect(name: Union[str, Path], debug: bool = False,
             version: int = -1) -> ConnectionPlus:
     """
     Connect or create  database. If debug the queries will be echoed back.

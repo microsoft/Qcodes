@@ -8,10 +8,11 @@ import time
 import unicodedata
 import warnings
 from typing import (Any, Callable, Dict, List, Mapping, Optional, Sequence,
-                    Tuple, Union, cast)
+                    Tuple, Union, cast, Iterable)
 from copy import copy
 import numpy as np
 from numpy import VisibleDeprecationWarning
+from qcodes.dataset.sqlite.database import connect
 
 import qcodes as qc
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
@@ -32,6 +33,7 @@ from qcodes.dataset.sqlite.query_helpers import (VALUES, insert_column,
                                                  sql_placeholder_string,
                                                  update_where)
 from qcodes.utils.deprecate import deprecate
+from pathlib import Path
 
 log = logging.getLogger(__name__)
 
@@ -829,8 +831,45 @@ def get_guid_from_run_id(conn: ConnectionPlus, run_id: int) -> str:
     Args:
         conn: database connection
         run_id: id of the run
+
+    Returns:
+        The guid of the run_id.
     """
     return select_one_where(conn, "runs", "guid", "run_id", run_id)
+
+
+def get_guids_from_multiple_run_ids(db_path: Union[str, Path],
+                                    run_ids: Iterable[int]
+                                    ) -> List[str]:
+    """
+    Retrieve guids of runs in the given database specified by their run ids.
+    run ids are run_id in the database and not captured_run_id.
+
+    Args:
+        db_path: The path to the database file.
+        run_ids: An integer iterable of run ids to get their guids.
+
+    Returns:
+        A list of guids for the supplied run_ids.
+    """
+
+    guids: List[str] = []
+
+    try:
+        conn = connect(db_path)
+        for run_id in run_ids:
+            if run_exists(conn=conn, run_id=run_id):
+                run_id_guid = get_guid_from_run_id(conn=conn,
+                                                   run_id=run_id)
+                guids.append(run_id_guid)
+            else:
+                raise RuntimeError(f'run id {run_id} does not'
+                                   ' exist in the database')
+    finally:
+        conn.close()
+        del conn
+
+    return guids
 
 
 def finish_experiment(conn: ConnectionPlus, exp_id: int) -> None:

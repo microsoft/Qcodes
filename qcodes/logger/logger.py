@@ -356,12 +356,13 @@ def conditionally_start_all_logging() -> None:
         tools = (
             'pytest.py',
             'pytest',
+            r'sphinx\__main__.py',    # Sphinx docs building
             '_jb_pytest_runner.py',  # Jetbrains Pycharm
             'testlauncher.py'        # VSCode
         )
         return any(sys.argv[0].endswith(tool) for tool in tools)
 
-    if start_logging_on_import() and not running_in_test_or_tool():
+    if not running_in_test_or_tool() and start_logging_on_import():
         start_all_logging()
 
 
