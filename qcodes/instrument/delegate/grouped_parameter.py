@@ -1,5 +1,14 @@
 from qcodes.instrument.group_parameter import Group
-from typing import Any, Dict, Optional, OrderedDict, Tuple, Union, Sequence, Callable
+from typing import (
+    Any,
+    Dict,
+    Optional,
+    OrderedDict,
+    Tuple,
+    Union,
+    Sequence,
+    Callable
+)
 from collections import namedtuple
 from qcodes.instrument.parameter import (
     DelegateParameter,
@@ -60,7 +69,7 @@ class DelegateGroup(Group):
     def __init__(
         self,
         name: str,
-        parameters: Tuple[DelegateParameter],
+        parameters: Sequence[_BaseParameter],
         parameter_names: Optional[Sequence[str]] = None,
         setter: Optional[Callable[..., Any]] = None,
         getter: Optional[Callable[..., Any]] = None,
@@ -68,14 +77,17 @@ class DelegateGroup(Group):
         **kwargs: Any
     ):
         super().__init__(
-            parameters=list(parameters),
+            parameters=parameters,
             single_instrument=False,
             **kwargs
         )
-        parameter_names = parameter_names or [_e.name for _e in parameters]
+
+        self.name = name
+        self._parameter_names = parameter_names or [
+            _e.name for _e in parameters
+        ]
         self._set_fn = setter
         self._get_fn = getter
-        self._namedtuple = namedtuple(name, parameter_names)
         self._parameters = OrderedDict(zip(parameter_names, parameters))
 
         if formatter is None and len(parameters) == 1:
@@ -84,6 +96,9 @@ class DelegateGroup(Group):
             self._formatter = self._namedtuple
         else:
             self._formatter = formatter
+
+    def _namedtuple(self, *args, **kwargs):
+        return namedtuple(self.name, self._parameter_names)(*args, **kwargs)
 
     def set(
         self,
@@ -108,6 +123,14 @@ class DelegateGroup(Group):
     def _set_from_dict(self, calling_dict: Dict[str, ParamRawDataType]) -> None:
         for name, p in list(self.parameters.items()):
             p.set(calling_dict[name])
+
+    @property
+    def parameters(self) -> Dict[str, DelegateParameter]:
+        """
+        All parameters in this group as a dict from parameter name to
+        :class:`.Parameter`
+        """
+        return self._parameters
 
 
 class GroupedParameter(_BaseParameter):
@@ -156,7 +179,7 @@ class GroupedParameter(_BaseParameter):
         return self._group
 
     @property
-    def parameters(self) -> Tuple[DelegateParameter]:
+    def parameters(self) -> Dict[str, DelegateParameter]:
         """Get delegate parameters wrapped by this GroupedParameter"""
         return self.group.parameters
 

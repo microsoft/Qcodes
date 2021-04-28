@@ -1,4 +1,4 @@
-from typing import List, Dict, Union, Any, Optional, Sequence
+from typing import Callable, List, Dict, Union, Any, Optional, Sequence
 
 from functools import partial
 
@@ -93,21 +93,22 @@ class DelegateInstrument(InstrumentBase):
             self.set_initial_values()
 
     @staticmethod
-    def parse_instrument_path(station: Station, path: str):
-        """Parse a string path and return the object relative to the station,
-        e.g. "my_instrument.my_param" returns station.my_instrument.my_param
+    def parse_instrument_path(parent: Union[Station, InstrumentBase], path: str) -> Any:
+        """Parse a string path and return the object relative to a station or
+        instrument, e.g. "my_instrument.my_param" returns
+        station.my_instrument.my_param
 
         Args:
             station: Measurement station
             path: Relative path to parse
         """
-        def _parse_path(parent, elem: Sequence[str]):
+        def _parse_path(parent: Any, elem: Sequence[str]) -> Any:
             child = getattr(parent, elem[0])
             if len(elem) == 1:
                 return child
             return _parse_path(child, elem[1:])
 
-        return _parse_path(station, path.split("."))
+        return _parse_path(parent, path.split("."))
 
     def set_initial_values(self, dry_run: bool = False) -> None:
         """Set parameter initial values on meta instrument
@@ -118,7 +119,7 @@ class DelegateInstrument(InstrumentBase):
         """
         _log.debug(f"Setting default values: {self._initial_values}")
         for path, value in self._initial_values.items():
-            param = self.parse_instrument_path(self, path=path)
+            param = self.parse_instrument_path(parent=self, path=path)
             msg = f"Setting parameter {self.name}.{path} to {value}."
             if not dry_run:
                 _log.debug(msg)
@@ -130,7 +131,7 @@ class DelegateInstrument(InstrumentBase):
                         name = path.split(".")[-1]
                         parent_path = ".".join(path.split(".")[:-1])
                         parent = self.parse_instrument_path(
-                            self,
+                            parent=self,
                             path=parent_path
                         )
                     else:
@@ -145,7 +146,7 @@ class DelegateInstrument(InstrumentBase):
         station: Station,
         parameters: Dict[str, List[str]],
         setters: Dict[str, Dict[str, Any]],
-        units: Dict[str, Dict[str, str]]
+        units: Dict[str, str]
     ) -> None:
         """Add parameters to meta instrument based on specified aliases,
         endpoints and setter methods"""
@@ -159,7 +160,7 @@ class DelegateInstrument(InstrumentBase):
             )
 
     @staticmethod
-    def _parameter_names(parameters: List[Parameter]):
+    def _parameter_names(parameters: List[Parameter]) -> List[str]:
         """Get the endpoint names"""
         parameter_names = [_e.name for _e in parameters]
         if len(parameter_names) != len(set(parameter_names)):
@@ -174,21 +175,25 @@ class DelegateInstrument(InstrumentBase):
         station: Station,
         paths: List[str],
         setter: Optional[Dict[str, Any]] = None,
-        getter: Optional[Dict[str, Any]] = None,
-        formatter: Optional[Dict[str, Any]] = None,
+        getter: Optional[Callable[..., Any]] = None,
+        formatter: Optional[Callable[..., Any]] = None,
         unit: Optional[str] = None,
         **kwargs: Any
     ) -> None:
         """Create meta parameter that links to a given set of paths
         (e.g. my_instrument.my_param) on the station"""
-        source_parameters = tuple(
+        source_parameters = [
             self.parse_instrument_path(station, path) for path in paths
-        )
+        ]
         parameter_names = self._parameter_names(source_parameters)
 
         if setter is not None:
-           setter_fn = self.parse_instrument_path(station, setter.pop("method"))
-           setter = partial(setter_fn, **setter)
+            setter_method = self.parse_instrument_path(
+                station, setter.pop("method")
+            )
+            setter_fn = partial(setter_method, **setter)
+        else:
+            setter_fn = None
 
         parameters = []
         for name, source in zip(parameter_names, source_parameters):
@@ -204,7 +209,7 @@ class DelegateInstrument(InstrumentBase):
             name=group_name,
             parameters=parameters,
             parameter_names=parameter_names,
-            setter=setter,
+            setter=setter_fn,
             getter=getter,
             formatter=formatter
         )
