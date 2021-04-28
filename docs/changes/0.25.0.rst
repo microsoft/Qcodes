@@ -38,9 +38,7 @@ New:
 Improved:
 ---------
 
-- Log sample_name, exp_name, dataset name when Measurement starts (#2952)
 - plot_dataset avoid loading from db if in cache (#2918)
-- Move private dataset export functions to their own module (#2904)
 - contribution guidelines: remove no longer relevant sections and make the
   sections on naming somewhat less strict (#2937)
 - remove double assignment of dataset variable in example notebook
@@ -64,6 +62,8 @@ Improved drivers:
 Under the hood:
 ---------------
 
+- Log sample_name, exp_name, dataset name when Measurement starts (#2952)
+- Move private dataset export functions to their own module (#2904)
 - Remove wait time test (#2935)
 - fix(logger): Disable conditionally start logging for Sphinx documentation
   (#2909)
