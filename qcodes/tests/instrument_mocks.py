@@ -1,7 +1,6 @@
 from functools import partial
 import logging
 from typing import Any, Sequence, Dict, Optional
-from scipy.interpolate import interp1d
 
 import numpy as np
 
@@ -750,12 +749,8 @@ class MockField(Instrument):
 
         wait_time = 60. * np.abs(self._field - value) / self.ramp_rate()
         self._wait_time = wait_time
-        self._field_ramp_fcn = interp1d(
-            x=[0.0, self._wait_time],
-            y=[self._field, value],
-            bounds_error=False,
-            fill_value=(self._field, value)
-        )
+        self._start_field = self._field
+        self._target_field = value
         self._ramp_start_time = time.time()
 
         if block:
@@ -763,9 +758,17 @@ class MockField(Instrument):
             self._field = value
             return value
 
+    def _field_ramp_fcn(self, _time: float):
+        if _time <= 0.0:
+            return self._start_field
+        elif _time >= self._wait_time:
+            return self._target_field
+        dfield = self.ramp_rate() * _time / 60.0
+        return self._start_field + dfield
+
     def _field_ramp(self):
         """
-        Yields pinch off current for a given gate voltage
+        Yields field for a given point in time
         """
         while True:
             _time = yield
