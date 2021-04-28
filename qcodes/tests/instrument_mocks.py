@@ -759,7 +759,9 @@ class MockField(Instrument):
             return value
 
     def _field_ramp_fcn(self, _time: float):
-        if _time <= 0.0:
+        if self._wait_time is None:
+            return self._field
+        elif _time <= 0.0:
             return self._start_field
         elif _time >= self._wait_time:
             return self._target_field

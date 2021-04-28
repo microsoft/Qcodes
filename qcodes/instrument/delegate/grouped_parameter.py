@@ -2,6 +2,8 @@ from qcodes.instrument.group_parameter import Group
 from typing import (
     Any,
     Dict,
+    Iterable,
+    NamedTuple,
     Optional,
     OrderedDict,
     Tuple,
@@ -69,8 +71,8 @@ class DelegateGroup(Group):
     def __init__(
         self,
         name: str,
-        parameters: Sequence[_BaseParameter],
-        parameter_names: Optional[Sequence[str]] = None,
+        parameters: Sequence[DelegateParameter],
+        parameter_names: Optional[Iterable[str]] = None,
         setter: Optional[Callable[..., Any]] = None,
         getter: Optional[Callable[..., Any]] = None,
         formatter: Optional[Callable[..., Any]] = None,
@@ -88,7 +90,7 @@ class DelegateGroup(Group):
         ]
         self._set_fn = setter
         self._get_fn = getter
-        self._parameters = OrderedDict(zip(parameter_names, parameters))
+        self._parameters = OrderedDict(zip(self._parameter_names, parameters))
 
         if formatter is None and len(parameters) == 1:
             self._formatter = lambda result: result
@@ -97,7 +99,7 @@ class DelegateGroup(Group):
         else:
             self._formatter = formatter
 
-    def _namedtuple(self, *args, **kwargs):
+    def _namedtuple(self, *args: Any, **kwargs: Any) -> Tuple[Any, ...]:
         return namedtuple(self.name, self._parameter_names)(*args, **kwargs)
 
     def set(
@@ -108,7 +110,7 @@ class DelegateGroup(Group):
             self._set_fn(value)
         else:
             if not isinstance(value, dict):
-                value = self._namedtuple(value)._asdict()
+                value = dict(zip(self._parameter_names, value))
             self.set_parameters(value)
 
     def get(self) -> Any:
@@ -123,14 +125,6 @@ class DelegateGroup(Group):
     def _set_from_dict(self, calling_dict: Dict[str, ParamRawDataType]) -> None:
         for name, p in list(self.parameters.items()):
             p.set(calling_dict[name])
-
-    @property
-    def parameters(self) -> Dict[str, DelegateParameter]:
-        """
-        All parameters in this group as a dict from parameter name to
-        :class:`.Parameter`
-        """
-        return self._parameters
 
 
 class GroupedParameter(_BaseParameter):
@@ -184,7 +178,7 @@ class GroupedParameter(_BaseParameter):
         return self.group.parameters
 
     @property
-    def source_parameters(self) -> Tuple[Parameter, ...]:
+    def source_parameters(self) -> Tuple[Optional[Parameter], ...]:
         """Get source parameters of each DelegateParameter"""
         return tuple(p.source for p in self.group.parameters.values())
 

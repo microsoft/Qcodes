@@ -56,7 +56,7 @@ class DelegateChannelInstrument(DelegateInstrument):
         initial_values: Optional[Dict[str, Any]] = None,
         set_initial_values_on_load: bool = False,
         **kwargs: Any):
-        _channels = self.parse_instrument_path(station=station, path=channels)
+        _channels = self.parse_instrument_path(parent=station, path=channels)
         _parameters = {}
         for channel in _channels:
             ins = channel.root_instrument.name

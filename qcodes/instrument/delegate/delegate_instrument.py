@@ -78,7 +78,7 @@ class DelegateInstrument(InstrumentBase):
         initial_values: Optional[Dict[str, Any]] = None,
         set_initial_values_on_load: bool = False,
         setters: Optional[Dict[str, Dict[str, Any]]] = None,
-        units: Optional[Dict[str, Dict[str, str]]] = None,
+        units: Optional[Dict[str, str]] = None,
         metadata: Optional[Dict[Any, Any]] = None
     ):
         super().__init__(name=name, metadata=metadata)
@@ -193,7 +193,7 @@ class DelegateInstrument(InstrumentBase):
             )
             setter_fn = partial(setter_method, **setter)
         else:
-            setter_fn = None
+            setter_fn = partial(lambda x: x)
 
         parameters = []
         for name, source in zip(parameter_names, source_parameters):

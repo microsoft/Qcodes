@@ -1479,6 +1479,10 @@ class DelegateParameter(Parameter):
         if initial_cache_value is not None:
             self.cache.set(initial_cache_value)
 
+        # Optional, for usage with DelegateGroup
+        self._group = None
+        self._initial_value = None
+
     @property
     def source(self) -> Optional[Parameter]:
         """

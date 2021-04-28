@@ -8,7 +8,7 @@ should be of type :class:`GroupParameter`
 from collections import OrderedDict
 from typing import Union, Callable, Dict, Any, Optional, Sequence
 
-from qcodes.instrument.parameter import (Parameter,
+from qcodes.instrument.parameter import (DelegateParameter, Parameter,
                                          ParamRawDataType,
                                          ParamDataType)
 from qcodes.instrument.base import InstrumentBase
@@ -190,7 +190,7 @@ class Group:
         if single_instrument:
             self._check_initial_values(parameters)
 
-    def _check_initial_values(self, parameters: Sequence[GroupParameter]) -> None:
+    def _check_initial_values(self, parameters: Sequence[Union[GroupParameter, DelegateParameter]]) -> None:
         have_initial_values = [p._initial_value is not None
                                for p in parameters]
         if any(have_initial_values):
@@ -298,7 +298,7 @@ class Group:
             p.cache._set_from_raw_value(ret[name])
 
     @property
-    def parameters(self) -> Dict[str, GroupParameter]:
+    def parameters(self) -> "OrderedDict[str, DelegateParameter]":
         """
         All parameters in this group as a dict from parameter name to
         :class:`.Parameter`
