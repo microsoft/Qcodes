@@ -110,7 +110,9 @@ class DelegateGroup(Group):
             self._set_fn(value)
         else:
             if not isinstance(value, dict):
-                value = dict(zip(self._parameter_names, value))
+                value = {
+                    self._parameter_names[0]: value
+                }
             self.set_parameters(value)
 
     def get(self) -> Any:
