@@ -22,37 +22,49 @@ class DelegateInstrument(InstrumentBase):
 
     Example usage in instrument YAML:
 
-    field:
-        type: qcodes.instrument.delegate.DelegateInstrument
-        init:
-        parameters:
-            X:
-                - field_X.field
-            ramp_rate:
-                - field_X.ramp_rate
-        set_initial_values_on_load: true
-        initial_values:
-            ramp_rate: 0.02
-        setters:
-            X:
-                method: field_X.set_field
-                block: false
-        units:
-            X: T
-            ramp_rate: T/min
+    .. code-block:: yaml
+
+        field:
+            type: qcodes.instrument.delegate.DelegateInstrument
+            init:
+            parameters:
+                X:
+                    - field_X.field
+                ramp_rate:
+                    - field_X.ramp_rate
+            set_initial_values_on_load: true
+            initial_values:
+                ramp_rate: 0.02
+            setters:
+                X:
+                    method: field_X.set_field
+                    block: false
+            units:
+                X: T
+                ramp_rate: T/min
 
     this will generate an instrument named "field" with methods:
+
+    .. code-block:: python
+
         field.X()
         field.ramp_rate()
 
     that are delegate parameters for:
+
+    .. code-block:: python
+
         field_X.field()
         field_X.ramp_rate()
 
-    Additionally, this will set field_X.ramp_rate(0.02) on load and
-    override the field.X.set() method with
+    Additionally, this will set ``field_X.ramp_rate(0.02)``` on load and
+    override the ``field.X.set()`` method with
+
+    .. code-block:: python
+
         field_X.set_field(value, block=False),
-    as opposed to field.X.field.set() which ramps with block=True.
+
+    as opposed to ``field.X.field.set()`` which ramps with ``block=True``.
 
     Args:
         name: Instrument name
@@ -64,7 +76,7 @@ class DelegateInstrument(InstrumentBase):
             parameters. Defaults to None.
         set_initial_values_on_load: Flag to set initial values when the
             instrument is loaded. Defaults to False.
-        setters: Optional setter methods to use instead of calling the .set()
+        setters: Optional setter methods to use instead of calling the ``.set()``
             method on the endpoint parameters. Defaults to None.
         units: Optional units to set for parameters.
         metadata: Optional metadata to pass to instrument. Defaults to None.

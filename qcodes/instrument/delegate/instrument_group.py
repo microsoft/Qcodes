@@ -13,7 +13,7 @@ class InstrumentGroup(InstrumentBase):
     InstrumentGroup is an instrument driver to represent a series of instruments
     that are grouped together. This instrument is mainly used as a wrapper for
     sub instruments/submodules and particularly built for use with grouping
-    multiple :class:`DelegateInstrument`s.
+    multiple :class:`DelegateInstrument` s.
 
     Args:
         name: Name referring to this group of items

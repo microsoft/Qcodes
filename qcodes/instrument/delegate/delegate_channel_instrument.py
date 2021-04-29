@@ -10,6 +10,8 @@ class DelegateChannelInstrument(DelegateInstrument):
 
     Example usage in instrument YAML:
 
+    .. code-block:: yaml
+
         switch:
             type: qcodes.instrument.delegate.DelegateChannelInstrument
             init:
@@ -21,15 +23,24 @@ class DelegateChannelInstrument(DelegateInstrument):
                     - gnd
                     - bus
 
-    The above will create a new instrument called "switch" that generates a
+    The above will create a new instrument called ``switch`` that generates a
     method for a delegate parameter:
+
+    .. code-block:: python
+
         switch.state()
 
     that returns a named tuple:
+
+    .. code-block:: python
+
         state(dac_output=..., smc=..., gnd=..., bus=...)
 
     where the values of each of the tuple items are delegated to the
     instrument parameters:
+
+    .. code-block:: python
+
         dac.dac_output()
         dac.smc()
         dac.gnd()
