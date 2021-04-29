@@ -1,4 +1,4 @@
-Changelog for QCoDeS 0.24.0
+Changelog for QCoDeS 0.25.0
 ===========================
 
 The April 2021 release of QCoDeS.
