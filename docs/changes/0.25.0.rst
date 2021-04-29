@@ -38,7 +38,8 @@ New:
 Improved:
 ---------
 
-- plot_dataset avoid loading from db if in cache (#2918)
+- plot_dataset: improve performance by avoiding loading data from the database
+  if the data is already in dataset's cache (#2918)
 - contribution guidelines: remove no longer relevant sections and make the
   sections on naming somewhat less strict (#2937)
 - remove double assignment of dataset variable in example notebook
