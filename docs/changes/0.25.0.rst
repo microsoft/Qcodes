@@ -38,8 +38,8 @@ New:
 Improved:
 ---------
 
-- plot_dataset: improve performance by avoiding loading data from the database
-  if the data is already in dataset's cache (#2918)
+- plot_dataset: Improved performance by using in memory cache when possible
+  to avoid reloading data from disk (#2918)
 - contribution guidelines: remove no longer relevant sections and make the
   sections on naming somewhat less strict (#2937)
 - remove double assignment of dataset variable in example notebook
@@ -58,6 +58,8 @@ Improved drivers:
   instances, next to from AMI430 instances only  driver (#2949)
 - AMI430 3D driver: add docstring, extra test for initializing from AMI430 by
   name  driver (#2951)
+- Driver sr830 update: Add ChannelTrace class and related parameter
+  ch{ch}_datatrace which makes buffered acquisition easier.(#2894)
 
 ---------------
 Under the hood:
