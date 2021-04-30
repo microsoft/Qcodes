@@ -749,6 +749,7 @@ class MockField(Instrument):
 
         wait_time = 60. * np.abs(self._field - value) / self.ramp_rate()
         self._wait_time = wait_time
+        self._sign = np.sign(value - self._field)
         self._start_field = self._field
         self._target_field = value
         self._ramp_start_time = time.time()
@@ -766,7 +767,7 @@ class MockField(Instrument):
         elif _time >= self._wait_time:
             return self._target_field
         dfield = self.ramp_rate() * _time / 60.0
-        return self._start_field + dfield
+        return self._start_field + self._sign * dfield
 
     def _field_ramp(self):
         """
