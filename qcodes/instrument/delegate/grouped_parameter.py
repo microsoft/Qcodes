@@ -148,7 +148,7 @@ class DelegateGroup(Group):
     def _set_from_dict(self, calling_dict: Dict[str, ParamRawDataType]) -> None:
         for name, p in list(self.parameters.items()):
             p.set(calling_dict[name])
-    
+
     @property
     def source_parameters(self) -> Tuple[Optional[Parameter], ...]:
         """Get source parameters of each DelegateParameter"""

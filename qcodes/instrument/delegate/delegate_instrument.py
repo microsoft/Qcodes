@@ -169,7 +169,7 @@ class DelegateInstrument(InstrumentBase):
                 f"{_e}{n}" for n, _e in enumerate(parameter_names)
             ]
         return parameter_names
-    
+
 
     def _add_parameter(
         self,
@@ -213,7 +213,7 @@ class DelegateInstrument(InstrumentBase):
             setter_fn = partial(setter_method, **setter)
 
         params = [
-            self._add_parameter(group_name, name, source) 
+            self._add_parameter(group_name, name, source)
             for name, source in zip(parameter_names, source_parameters)
         ]
 
