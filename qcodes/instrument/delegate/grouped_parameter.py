@@ -111,7 +111,7 @@ class DelegateGroup(Group):
         self._set_fn = setter
         self._get_fn = getter
         self._params = parameters
-        self._parameters = OrderedDict(zip(self._parameter_names, parameters))        
+        self._parameters = OrderedDict(zip(self._parameter_names, parameters))
 
         if formatter is None and len(parameters) == 1:
             self._formatter = lambda result: result
