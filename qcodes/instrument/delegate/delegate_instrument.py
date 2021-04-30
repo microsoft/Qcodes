@@ -187,13 +187,12 @@ class DelegateInstrument(InstrumentBase):
         ]
         parameter_names = self._parameter_names(source_parameters)
 
+        setter_fn = None
         if setter is not None:
             setter_method = self.parse_instrument_path(
                 station, setter.pop("method")
             )
             setter_fn = partial(setter_method, **setter)
-        else:
-            setter_fn = None
 
         parameters = []
         for name, source in zip(parameter_names, source_parameters):

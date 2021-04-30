@@ -1,15 +1,15 @@
-from qcodes.instrument.group_parameter import Group
+from qcodes.instrument.group_parameter import Group, GroupParameter
 from typing import (
     Any,
     Dict,
     Iterable,
-    NamedTuple,
     Optional,
     OrderedDict,
     Tuple,
     Union,
     Sequence,
-    Callable
+    Callable,
+    TYPE_CHECKING
 )
 from collections import namedtuple
 from qcodes.instrument.parameter import (
@@ -20,9 +20,29 @@ from qcodes.instrument.parameter import (
     _BaseParameter
 )
 
+if TYPE_CHECKING:
+    from qcodes.instrument.base import InstrumentBase
+
 import logging
 
 _log = logging.getLogger(__name__)
+
+
+class DelegateGroupParameter(DelegateParameter, GroupParameter):
+
+    def __init__(
+        self,
+        name: str,
+        source: Optional[Parameter],
+        instrument: Optional['InstrumentBase'] = None,
+        initial_value: Union[float, int, str, None] = None
+    ) -> None:
+        super().__init__(
+            name=name,
+            source=source,
+            instrument=instrument,
+            initial_value=initial_value
+        )
 
 
 class DelegateGroup(Group):
@@ -71,7 +91,7 @@ class DelegateGroup(Group):
     def __init__(
         self,
         name: str,
-        parameters: Sequence[DelegateParameter],
+        parameters: Sequence[DelegateGroupParameter],
         parameter_names: Optional[Iterable[str]] = None,
         setter: Optional[Callable[..., Any]] = None,
         getter: Optional[Callable[..., Any]] = None,
@@ -111,7 +131,7 @@ class DelegateGroup(Group):
         else:
             if not isinstance(value, dict):
                 value = {
-                    self._parameter_names[0]: value
+                    name: value for name in self._parameter_names
                 }
             self.set_parameters(value)
 
@@ -127,6 +147,11 @@ class DelegateGroup(Group):
     def _set_from_dict(self, calling_dict: Dict[str, ParamRawDataType]) -> None:
         for name, p in list(self.parameters.items()):
             p.set(calling_dict[name])
+    
+    @property
+    def source_parameters(self) -> Tuple[Optional[Parameter], ...]:
+        """Get source parameters of each DelegateParameter"""
+        return tuple(p.source for p in self._parameters.values())
 
 
 class GroupedParameter(_BaseParameter):
@@ -175,14 +200,14 @@ class GroupedParameter(_BaseParameter):
         return self._group
 
     @property
-    def parameters(self) -> Dict[str, DelegateParameter]:
+    def parameters(self) -> Dict[str, GroupParameter]:
         """Get delegate parameters wrapped by this GroupedParameter"""
         return self.group.parameters
 
     @property
     def source_parameters(self) -> Tuple[Optional[Parameter], ...]:
         """Get source parameters of each DelegateParameter"""
-        return tuple(p.source for p in self.group.parameters.values())
+        return self.group.source_parameters
 
     def get_raw(self) -> Union[ParamDataType, Dict[str, ParamDataType]]:
         """Get parameter raw value"""

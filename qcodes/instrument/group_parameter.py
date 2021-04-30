@@ -190,7 +190,7 @@ class Group:
         if single_instrument:
             self._check_initial_values(parameters)
 
-    def _check_initial_values(self, parameters: Sequence[Union[GroupParameter, DelegateParameter]]) -> None:
+    def _check_initial_values(self, parameters: Sequence[GroupParameter]) -> None:
         have_initial_values = [p._initial_value is not None
                                for p in parameters]
         if any(have_initial_values):
@@ -298,7 +298,7 @@ class Group:
             p.cache._set_from_raw_value(ret[name])
 
     @property
-    def parameters(self) -> "OrderedDict[str, DelegateParameter]":
+    def parameters(self) -> "OrderedDict[str, GroupParameter]":
         """
         All parameters in this group as a dict from parameter name to
         :class:`.Parameter`
