@@ -110,7 +110,8 @@ class DelegateGroup(Group):
         ]
         self._set_fn = setter
         self._get_fn = getter
-        self._parameters = OrderedDict(zip(self._parameter_names, parameters))
+        self._params = parameters
+        self._parameters = OrderedDict(zip(self._parameter_names, parameters))        
 
         if formatter is None and len(parameters) == 1:
             self._formatter = lambda result: result
@@ -151,7 +152,7 @@ class DelegateGroup(Group):
     @property
     def source_parameters(self) -> Tuple[Optional[Parameter], ...]:
         """Get source parameters of each DelegateParameter"""
-        return tuple(p.source for p in self._parameters.values())
+        return tuple(p.source for p in self._params)
 
 
 class GroupedParameter(_BaseParameter):

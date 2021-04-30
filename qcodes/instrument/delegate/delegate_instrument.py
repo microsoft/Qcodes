@@ -4,6 +4,7 @@ from functools import partial
 
 from qcodes.instrument.delegate.grouped_parameter import (
     DelegateGroup,
+    DelegateGroupParameter,
     GroupedParameter
 )
 from qcodes.instrument.parameter import DelegateParameter, Parameter
@@ -68,7 +69,7 @@ class DelegateInstrument(InstrumentBase):
         units: Optional units to set for parameters.
         metadata: Optional metadata to pass to instrument. Defaults to None.
     """
-    param_cls = DelegateParameter
+    param_cls = DelegateGroupParameter
 
     def __init__(
         self,
@@ -168,6 +169,23 @@ class DelegateInstrument(InstrumentBase):
                 f"{_e}{n}" for n, _e in enumerate(parameter_names)
             ]
         return parameter_names
+    
+
+    def _add_parameter(
+        self,
+        group_name: str,
+        name: str,
+        source: Parameter,
+    ) -> DelegateGroupParameter:
+        param = self.param_cls(
+            name=f"{group_name}_{name}",
+            instrument=self,
+            source=source
+        )
+        if param.name in self.parameters:
+            raise KeyError(f'Duplicate parameter name {param.name}')
+        self.parameters[param.name] = param
+        return param
 
     def _create_and_add_parameter(
         self,
@@ -194,19 +212,14 @@ class DelegateInstrument(InstrumentBase):
             )
             setter_fn = partial(setter_method, **setter)
 
-        parameters = []
-        for name, source in zip(parameter_names, source_parameters):
-            param_name = f"{group_name}_{name}"
-            self.add_parameter(
-                parameter_class=self.param_cls,
-                name=param_name,
-                source=source
-            )
-            parameters.append(self.parameters[param_name])
+        params = [
+            self._add_parameter(group_name, name, source) 
+            for name, source in zip(parameter_names, source_parameters)
+        ]
 
         group = DelegateGroup(
             name=group_name,
-            parameters=parameters,
+            parameters=params,
             parameter_names=parameter_names,
             setter=setter_fn,
             getter=getter,
