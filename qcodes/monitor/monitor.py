@@ -38,10 +38,6 @@ import websockets
 
 from qcodes.instrument.parameter import Parameter
 
-if sys.version_info < (3, 7):
-    all_tasks = asyncio.Task.all_tasks
-else:
-    all_tasks = asyncio.all_tasks
 
 WEBSOCKET_PORT = 5678
 SERVER_PORT = 3000
@@ -180,7 +176,7 @@ class Monitor(Thread):
         finally:
             log.debug("loop stopped")
             log.debug("Pending tasks at close: %r",
-                      all_tasks(self.loop))
+                      asyncio.all_tasks(self.loop))
             self.loop.close()
             log.debug("loop closed")
             self.loop_is_closed.set()
@@ -212,7 +208,7 @@ class Monitor(Thread):
         log.debug("stopping loop")
         if self.loop is not None:
             log.debug("Pending tasks at stop: %r",
-                      all_tasks(self.loop))
+                      asyncio.all_tasks(self.loop))
             self.loop.stop()
 
     def join(self, timeout: Optional[float] = None) -> None:
