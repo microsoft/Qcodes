@@ -36,6 +36,12 @@ import socketserver
 import webbrowser
 import websockets
 
+try:
+    from websockets.legacy.server import WebSocketServerProtocol, serve, WebSocketServer
+except ImportError:
+    # fallback for websockets < 9
+    from websockets import WebSocketServerProtocol, serve, WebSocketServer  # type:ignore[attr-defined,no-redef]
+
 from qcodes.instrument.parameter import Parameter
 
 
@@ -84,11 +90,11 @@ def _get_metadata(*parameters: Parameter) -> Dict[str, Any]:
 
 
 def _handler(parameters: Sequence[Parameter], interval: float) \
-        -> Callable[[websockets.WebSocketServerProtocol, str], Awaitable[None]]:
+        -> Callable[[WebSocketServerProtocol, str], Awaitable[None]]:
     """
     Return the websockets server handler.
     """
-    async def server_func(websocket: websockets.WebSocketServerProtocol, _: str) -> None:
+    async def server_func(websocket: WebSocketServerProtocol, _: str) -> None:
         """
         Create a websockets handler that sends parameter values to a listener
         every "interval" seconds.
@@ -137,7 +143,7 @@ class Monitor(Thread):
                                 f"Parameters, not {type(parameter)}")
 
         self.loop: Optional[asyncio.AbstractEventLoop] = None
-        self.server: Optional[websockets.WebSocketServer] = None
+        self.server: Optional[WebSocketServer] = None
         self._parameters = parameters
         self.loop_is_closed = Event()
         self.server_is_started = Event()
@@ -164,7 +170,7 @@ class Monitor(Thread):
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
         try:
-            server_start = websockets.serve(self.handler, '127.0.0.1',
+            server_start = serve(self.handler, '127.0.0.1',
                                             WEBSOCKET_PORT, close_timeout=1)
             self.server = self.loop.run_until_complete(server_start)
             self.server_is_started.set()
