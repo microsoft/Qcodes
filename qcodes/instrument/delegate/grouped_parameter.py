@@ -4,14 +4,13 @@ from typing import (
     Dict,
     Iterable,
     Optional,
-    OrderedDict,
     Tuple,
     Union,
     Sequence,
     Callable,
     TYPE_CHECKING
 )
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 from qcodes.instrument.parameter import (
     DelegateParameter,
     ParamDataType,
@@ -46,7 +45,7 @@ class DelegateGroupParameter(DelegateParameter, GroupParameter):
 
 
 class DelegateGroup(Group):
-    """The DelegateGroup combines :class:`.DelegateParameter`s that
+    """The DelegateGroup combines :class:`.DelegateParameter` s that
     are to be gotten or set using one :class:`.GroupedParameter`.
     Each :class:`.DelegateParameter` maps to one source parameter
     that is individually set or gotten on an instrument. These
@@ -54,25 +53,25 @@ class DelegateGroup(Group):
 
     The class :class:`.DelegateGroup` is used within the
     :class:`GroupedParameter` class in order to get and set the
-    :class:`.DelegateParameter`s either via their default get and set
+    :class:`.DelegateParameter` s either via their default get and set
     methods or via a custom get or set method.
 
     The value to be set can be passed to the set method either via a
     dictionary, where the keys are the names of the
-    :class:`.DelegateParameter`s contained in the :class:`DelegateGroup`,
+    :class:`.DelegateParameter` s contained in the :class:`DelegateGroup`,
     or a single value, if a custom setter is defined or if the group
     only contains a single :class:`.DelegateParameter`.
 
     The value returned by the get method is passed through a formatter.
     By default, the formatter returns the :class:`.DelegateParameter`
     values in a namedtuple, where the keys are the names of the
-    :class:`.DelegateParameter`s. In the special case where the
+    :class:`.DelegateParameter` s. In the special case where the
     :class:`.DelegateGroup` only contains one :class:`.DelegateParameter`,
     the formatter simply returns the individual value. Optionally,
     the formatter can be customized and specified via the constructor.
-    The formatter takes as input the values of the :class:`.DelegateParameter`s
+    The formatter takes as input the values of the :class:`.DelegateParameter` s
     as positional arguments in the order at which the
-    :class:`.DelegateParameter`s are specified.
+    :class:`.DelegateParameter` s are specified.
 
     Args:
         name: Name of the DelegateGroup
@@ -157,12 +156,12 @@ class DelegateGroup(Group):
 
 class GroupedParameter(_BaseParameter):
     """
-    The GroupedParameter wraps one or more :class:`.DelegateParameter`s,
+    The GroupedParameter wraps one or more :class:`.DelegateParameter` s,
     such that those parameters can be accessed as if they were one
     parameter.
 
     The :class:`GroupedParameter` uses a :class:`DelegateGroup` to keep
-    track of the :class:`.DelegateParameter`s. Mainly, this class is a
+    track of the :class:`.DelegateParameter` s. Mainly, this class is a
     thin wrapper around the :class:`DelegateGroup`, and mainly exists
     in order to allow for it to be used as a :class:`_BaseParameter`.
 
