@@ -78,7 +78,7 @@ terminado==0.9.4
 testpath==0.4.4
 tornado==6.1
 traitlets==5.0.5
-typing-extensions==3.7.4.3
+typing-extensions==3.10.0.0
 urllib3==1.26.4
 wcwidth==0.2.5
 webencodings==0.5.1
