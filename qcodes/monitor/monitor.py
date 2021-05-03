@@ -25,7 +25,7 @@ import os
 import time
 import json
 from contextlib import suppress
-from typing import Dict, Union, Any, Optional, Sequence, Callable, Awaitable
+from typing import Dict, Union, Any, Optional, Sequence, Callable, Awaitable, TYPE_CHECKING
 from collections import defaultdict
 
 import asyncio
@@ -37,10 +37,14 @@ import webbrowser
 import websockets
 
 try:
-    from websockets.legacy.server import WebSocketServerProtocol, serve, WebSocketServer
+    from websockets.legacy.server import serve
 except ImportError:
     # fallback for websockets < 9
-    from websockets import WebSocketServerProtocol, serve, WebSocketServer  # type:ignore[attr-defined,no-redef]
+    # for the same reason we only support typechecking with websockets 9
+    from websockets import serve  # type:ignore[attr-defined,no-redef]
+
+if TYPE_CHECKING:
+    from websockets.legacy.server import WebSocketServerProtocol, WebSocketServer
 
 from qcodes.instrument.parameter import Parameter
 
@@ -90,11 +94,11 @@ def _get_metadata(*parameters: Parameter) -> Dict[str, Any]:
 
 
 def _handler(parameters: Sequence[Parameter], interval: float) \
-        -> Callable[[WebSocketServerProtocol, str], Awaitable[None]]:
+        -> Callable[["WebSocketServerProtocol", str], Awaitable[None]]:
     """
     Return the websockets server handler.
     """
-    async def server_func(websocket: WebSocketServerProtocol, _: str) -> None:
+    async def server_func(websocket: "WebSocketServerProtocol", _: str) -> None:
         """
         Create a websockets handler that sends parameter values to a listener
         every "interval" seconds.
@@ -143,7 +147,7 @@ class Monitor(Thread):
                                 f"Parameters, not {type(parameter)}")
 
         self.loop: Optional[asyncio.AbstractEventLoop] = None
-        self.server: Optional[WebSocketServer] = None
+        self.server: Optional["WebSocketServer"] = None
         self._parameters = parameters
         self.loop_is_closed = Event()
         self.server_is_started = Event()
