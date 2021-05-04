@@ -145,7 +145,9 @@ class Station(Metadatable, DelegateAttributes):
         self._added_methods: List[str] = []
         self._monitor_parameters: List[Parameter] = []
 
-        self.load_config_files(config_file)
+        self.config_file = config_file
+
+        self.load_config_files(self.config_file)
 
     def snapshot_base(self, update: Optional[bool] = True,
                       params_to_skip_update: Optional[Sequence[str]] = None
@@ -336,15 +338,11 @@ class Station(Metadatable, DelegateAttributes):
         updated.
         """
         if filenames is None or isinstance(filenames, str):
-            self.config_file = filenames
-            self.load_config_file(self.config_file)
+            self.load_config_file(filenames)
             return
 
         with _merge_yamls(*filenames) as yamls:
             self.load_config(yamls)
-
-        self.config_file = filenames
-
 
     def load_config(self, config: Union[str, IO[AnyStr]]) -> None:
         """
@@ -442,7 +440,7 @@ class Station(Metadatable, DelegateAttributes):
         # try to reload file on every call. This makes script execution a
         # little slower but makes the overall workflow more convenient.
         if self.config_file is not None:
-            with _merge_yamls(*self.config_file) as yamls:
+            with _merge_yamls(self.config_file) as yamls:
                 self.load_config(yamls)
 
 
