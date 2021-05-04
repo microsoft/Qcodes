@@ -145,16 +145,7 @@ class Station(Metadatable, DelegateAttributes):
         self._added_methods: List[str] = []
         self._monitor_parameters: List[Parameter] = []
 
-        if config_file is not None:
-            if isinstance(config_file, str):
-                config_file = [config_file]
-                self.load_config_file(config_file[0])
-            else:
-                with merge_yamls(*config_file) as yamls:
-                    self.load_config(yamls)
-        else:
-            self.load_config_file(config_file)
-        self.config_file = config_file
+        self.load_config_files(config_file)
 
     def snapshot_base(self, update: Optional[bool] = True,
                       params_to_skip_update: Optional[Sequence[str]] = None
@@ -329,6 +320,32 @@ class Station(Metadatable, DelegateAttributes):
         with open(path) as f:
             self.load_config(f)
 
+    def load_config_files(self,
+                          filenames: Optional[Union[str, Sequence[str]]]
+                          ) -> None:
+        """
+        Loads configuration from multiple YAML files after merging them
+        into one. If `filenames` are not specified the default file name from
+        the qcodes configuration will be used.
+
+        Loading of configuration will update the snapshot of the station and
+        make the instruments described in the config files available for
+        instantiation with the :meth:`load_instrument` method.
+
+        Additionally the shortcut methods ``load_<instrument_name>`` will be
+        updated.
+        """
+        if filenames is None or isinstance(filenames, str):
+            self.config_file = filenames
+            self.load_config_file(self.config_file)
+            return
+
+        with _merge_yamls(*filenames) as yamls:
+            self.load_config(yamls)
+
+        self.config_file = filenames
+
+
     def load_config(self, config: Union[str, IO[AnyStr]]) -> None:
         """
         Loads a configuration from a supplied string or file/stream handle.
@@ -425,7 +442,7 @@ class Station(Metadatable, DelegateAttributes):
         # try to reload file on every call. This makes script execution a
         # little slower but makes the overall workflow more convenient.
         if self.config_file is not None:
-            with merge_yamls(*self.config_file) as yamls:
+            with _merge_yamls(*self.config_file) as yamls:
                 self.load_config(yamls)
 
 
@@ -706,7 +723,7 @@ def update_config_schema(
     )
 
 
-def merge_yamls(*yamls: Union[str, Path]) -> IO[str]:
+def _merge_yamls(*yamls: Union[str, Path]) -> IO[str]:
     """
     Merge multiple station yamls files into one and stores it in the memory.
 
