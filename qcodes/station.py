@@ -719,12 +719,12 @@ def update_config_schema(
 
 def _merge_yamls(*yamls: Union[str, Path]) -> str:
     """
-    Merge multiple station yamls files into one and stores it in the memory.
+    Merge multiple station yamls files into one.
 
     Args:
         yamls: string or Path to yaml files separated by comma.
     Returns:
-        Full yaml file stored in the memory.
+        merged yamls as a string
     """
 
     top_key = "instruments"
@@ -751,4 +751,4 @@ def _merge_yamls(*yamls: Union[str, Path]) -> str:
                 )
         deq.popleft()
 
-    return data1.ToString()
+    return ruamel.yaml.dump(data1)
