@@ -17,7 +17,6 @@ import json
 import pkgutil
 import inspect
 from copy import deepcopy, copy
-from collections import UserDict
 import jsonschema
 import warnings
 
@@ -36,7 +35,6 @@ from qcodes.instrument.parameter import (
 import qcodes.utils.validators as validators
 from qcodes.monitor.monitor import Monitor
 
-from io import StringIO
 from collections import deque
 import ruamel.yaml
 from pathlib import Path
@@ -341,8 +339,8 @@ class Station(Metadatable, DelegateAttributes):
             self.load_config_file(filenames)
             return
 
-        with _merge_yamls(*filenames) as yamls:
-            self.load_config(yamls)
+        yamls = _merge_yamls(*filenames)
+        self.load_config(yamls)
 
     def load_config(self, config: Union[str, IO[AnyStr]]) -> None:
         """
@@ -439,9 +437,7 @@ class Station(Metadatable, DelegateAttributes):
         # load file
         # try to reload file on every call. This makes script execution a
         # little slower but makes the overall workflow more convenient.
-        if self.config_file is not None:
-            with _merge_yamls(self.config_file) as yamls:
-                self.load_config(yamls)
+        self.load_config_files(self.config_file)
 
 
         # load from config
@@ -721,7 +717,7 @@ def update_config_schema(
     )
 
 
-def _merge_yamls(*yamls: Union[str, Path]) -> IO[str]:
+def _merge_yamls(*yamls: Union[str, Path]) -> str:
     """
     Merge multiple station yamls files into one and stores it in the memory.
 
@@ -730,8 +726,6 @@ def _merge_yamls(*yamls: Union[str, Path]) -> IO[str]:
     Returns:
         Full yaml file stored in the memory.
     """
-    if len(yamls) == 1:
-        return open(yamls[0], "r")
 
     top_key = "instruments"
     yaml = ruamel.yaml.YAML()
@@ -740,7 +734,7 @@ def _merge_yamls(*yamls: Union[str, Path]) -> IO[str]:
 
     # Load the yaml files and add to deque in reverse entry order
     for filepath in yamls[::-1]:
-        with open(filepath, "r") as file_pointer:
+        with open(filepath) as file_pointer:
             deq.append(yaml.load(file_pointer))
 
     # Add the top key entries from filepath n to filepath n-1 to
@@ -757,11 +751,4 @@ def _merge_yamls(*yamls: Union[str, Path]) -> IO[str]:
                 )
         deq.popleft()
 
-    import tempfile
-
-    # Dump to a temp file in memory, so it can be read by load_config.
-    merged_yaml_temp_file = StringIO()
-    yaml.dump(data1, merged_yaml_temp_file)
-    merged_yaml_temp_file.seek(0)
-
-    return merged_yaml_temp_file
+    return data1.ToString()
