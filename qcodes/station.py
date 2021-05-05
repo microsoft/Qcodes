@@ -35,6 +35,7 @@ from qcodes.instrument.parameter import (
 import qcodes.utils.validators as validators
 from qcodes.monitor.monitor import Monitor
 
+from io import StringIO
 from collections import deque
 import ruamel.yaml
 from pathlib import Path
@@ -339,8 +340,8 @@ class Station(Metadatable, DelegateAttributes):
             self.load_config_file(filenames)
             return
 
-        yamls = _merge_yamls(*filenames)
-        self.load_config(yamls)
+        with _merge_yamls(*filenames) as yamls:
+            self.load_config(yamls)
 
     def load_config(self, config: Union[str, IO[AnyStr]]) -> None:
         """
@@ -717,14 +718,14 @@ def update_config_schema(
     )
 
 
-def _merge_yamls(*yamls: Union[str, Path]) -> str:
+def _merge_yamls(*yamls: Union[str, Path]) -> IO[str]:
     """
-    Merge multiple station yamls files into one.
+    Merge multiple station yamls files into one and stores it in the memory.
 
     Args:
         yamls: string or Path to yaml files separated by comma.
     Returns:
-        merged yamls as a string
+        Full yaml file stored in the memory.
     """
 
     top_key = "instruments"
@@ -751,4 +752,9 @@ def _merge_yamls(*yamls: Union[str, Path]) -> str:
                 )
         deq.popleft()
 
-    return ruamel.yaml.dump(data1)
+    # Dump to a temp file in memory, so it can be read by load_config.
+    merged_yaml_temp_file = StringIO()
+    yaml.dump(data1, merged_yaml_temp_file)
+    merged_yaml_temp_file.seek(0)
+
+    return merged_yaml_temp_file
