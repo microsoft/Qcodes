@@ -1,18 +1,31 @@
 """Instrument base class."""
+import logging
 import time
 import weakref
-import logging
 from abc import ABC, abstractmethod
-from typing import Sequence, Optional, Dict, Union, Callable, Any, List, \
-    TYPE_CHECKING, cast, Type
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Type,
+    Union,
+    cast,
+)
 
 import numpy as np
-from qcodes.utils.helpers import DelegateAttributes, strip_attrs, full_class
+
+from qcodes.logger.instrument_logger import get_instrument_logger
+from qcodes.utils.helpers import DelegateAttributes, full_class, strip_attrs
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.validators import Anything
-from qcodes.logger.instrument_logger import get_instrument_logger
-from .parameter import Parameter, _BaseParameter
+
+from .base_representation import instrument_repr_html
 from .function import Function
+from .parameter import Parameter, _BaseParameter
 
 if TYPE_CHECKING:
     from qcodes.instrument.channel import ChannelList
@@ -497,6 +510,10 @@ class Instrument(InstrumentBase, AbstractInstrument):
     def __repr__(self) -> str:
         """Simplified repr giving just the class and name."""
         return '<{}: {}>'.format(type(self).__name__, self.name)
+
+    def _repr_html_(self) -> str:
+        """Fancy representation adding Parameters and Functions."""
+        return instrument_repr_html(self)
 
     def __del__(self) -> None:
         """Close the instrument and remove its instance record."""
