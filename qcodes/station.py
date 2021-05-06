@@ -144,7 +144,12 @@ class Station(Metadatable, DelegateAttributes):
         self._added_methods: List[str] = []
         self._monitor_parameters: List[Parameter] = []
 
-        self.config_file = config_file
+        if config_file is None:
+            self.config_file = []
+        if isinstance(config_file, str):
+            self.config_file = [str, ]
+        else:
+            self.config_file = config_file
 
         self.load_config_files(self.config_file)
 
@@ -322,7 +327,7 @@ class Station(Metadatable, DelegateAttributes):
             self.load_config(f)
 
     def load_config_files(self,
-                          filenames: Optional[Union[str, Sequence[str]]]
+                          filenames: Optional[List[str]] = None
                           ) -> None:
         """
         Loads configuration from multiple YAML files after merging them
@@ -336,8 +341,8 @@ class Station(Metadatable, DelegateAttributes):
         Additionally the shortcut methods ``load_<instrument_name>`` will be
         updated.
         """
-        if filenames is None or isinstance(filenames, str):
-            self.load_config_file(filenames)
+        if filenames is None or len(filenames) == 0:
+            self.load_config_file()
             return
 
         with _merge_yamls(*filenames) as yamls:
