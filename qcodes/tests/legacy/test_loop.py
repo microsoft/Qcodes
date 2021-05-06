@@ -115,7 +115,7 @@ class TestLoop(TestCase):
     def test_measurement_with_many_nans(self):
         loop = Loop(self.p1.sweep(0, 1, num=10),
                     delay=0.05).each(self.p4_crazy)
-        ds = loop.get_data_set()
+        ds = loop.get_data_set(name="test_measurement_with_many_nans")
         loop.run()
 
         # assert that both the snapshot and the datafile are there

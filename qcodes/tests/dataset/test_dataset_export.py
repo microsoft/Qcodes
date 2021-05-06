@@ -4,6 +4,7 @@ import os
 import pytest
 import xarray as xr
 
+import qcodes
 from qcodes import new_data_set
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
@@ -228,6 +229,34 @@ def test_export_to_xarray_ds_dict_extra_metadata(mock_dataset):
 
     for datarray in da_dict.values():
         _assert_xarray_metadata_is_as_expected(datarray, mock_dataset)
+
+
+def test_export_to_xarray_extra_metadate_can_be_stored(mock_dataset, tmp_path):
+
+    nt_metadata = {
+        "foo": {
+            "bar": {
+                "baz": "test"
+            },
+            "spam": [1, 2, 3],
+        }
+    }
+    mock_dataset.add_metadata("foo_metadata", json.dumps(nt_metadata))
+    mock_dataset.export(export_type="netcdf", path=str(tmp_path))
+    data_as_xarray = mock_dataset.to_xarray_dataset()
+
+    loaded_data = xr.load_dataset(
+        tmp_path/f"{qcodes.config.dataset.export_prefix}{mock_dataset.run_id}.nc"
+    )
+
+    # check that the metadata in the qcodes dataset is roundtripped to the loaded
+    # dataset
+    for key in mock_dataset.metadata.keys():
+        assert mock_dataset.metadata[key] == loaded_data.attrs[key]
+    # check that the added metadata roundtrip correctly
+    assert loaded_data.attrs["foo_metadata"] == json.dumps(nt_metadata)
+    # check that all attrs roundtrip correctly within the xarray ds
+    assert loaded_data.attrs == data_as_xarray.attrs
 
 
 def _assert_xarray_metadata_is_as_expected(xarray_ds, qc_dataset):

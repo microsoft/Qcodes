@@ -96,12 +96,13 @@ def test_param_callable(_param_callable):
 @pytest.mark.parametrize('period', [None, 1])
 @pytest.mark.parametrize('plot', [None, True, False])
 @pytest.mark.parametrize('plot_config', [None, True, False])
-def test_do0d_with_real_parameter(_param, period, plot, plot_config):
+def test_do0d_with_real_parameter(period, plot, plot_config):
+    arrayparam = ArraySetPointParam(name='arrayparam')
 
     if plot_config is not None:
         config.dataset.dond_plot = plot_config
 
-    output = do0d(_param, write_period=period, do_plot=plot)
+    output = do0d(arrayparam, write_period=period, do_plot=plot)
     assert len(output[1]) == 1
     if plot is True or plot is None and plot_config is True:
         assert isinstance(output[1][0], matplotlib.axes.Axes)

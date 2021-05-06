@@ -13,3 +13,9 @@ repos:
     - id: pyupgrade
       args: ['--py37-plus']
       exclude: _version.py|versioneer.py
+  - repo: https://github.com/akaihola/darker
+    rev: 1.2.3
+    hooks:
+      -   id: darker
+          args: [-i]
+          additional_dependencies: [isort]
