@@ -43,8 +43,8 @@ class LuaSweepParameter(ArrayParameter):
                 or 'VI' (current sweep)
         """
 
-        if mode not in ['IV', 'VI']:
-            raise ValueError('mode must be either "VI" or "IV"')
+        if mode not in ['IV', 'VI', 'VIfour']:
+            raise ValueError('mode must be either "VI", "IV" or "VIfour"')
 
         self.shape = (steps,)
 
@@ -61,6 +61,13 @@ class LuaSweepParameter(ArrayParameter):
             self.setpoint_units = ('A',)
             self.label = 'voltage'
             self._short_name = 'vi_sweep'
+
+        if mode == 'VIfour':
+            self.unit = 'V'
+            self.setpoint_names = ('Current',)
+            self.setpoint_units = ('A',)
+            self.label = 'voltage'
+            self._short_name = 'vi_sweep_four'
 
         self.setpoints = (tuple(np.linspace(start, stop, steps)),)
 
@@ -465,16 +472,25 @@ class KeithleyChannel(InstrumentChannel):
             meas = 'i'
             sour = 'v'
             func = '1'
+            sense_mode = '0'
 
         if mode == 'VI':
             meas = 'v'
             sour = 'i'
             func = '0'
+            sense_mode = '0'
+
+        if mode == 'VIfour':
+            meas = 'v'
+            sour = 'i'
+            func = '0'
+            sense_mode = '1'
 
         script = [f'{channel}.measure.nplc = {nplc:.12f}',
                   f'{channel}.source.output = 1',
                   f'startX = {start:.12f}',
                   f'dX = {dV:.12f}',
+                  f'{channel}.sense = {sense_mode}',
                   f'{channel}.source.output = 1',
                   f'{channel}.source.func = {func}',
                   f'{channel}.measure.count = 1',
