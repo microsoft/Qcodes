@@ -543,6 +543,7 @@ class _BaseParameter(Metadatable):
                 elif isinstance(value, collections.abc.Iterable):
                     # Use single offset for all values
                     value = tuple(val - self.offset for val in value)
+                raise
 
         # scale second
         if self.scale is not None:
