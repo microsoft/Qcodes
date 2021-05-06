@@ -6,7 +6,6 @@ using the :class:`.Measurement` class.
 
 
 import io
-import json
 import logging
 import traceback as tb_module
 import warnings
@@ -16,7 +15,6 @@ from numbers import Number
 from time import perf_counter
 from types import TracebackType
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -46,10 +44,7 @@ from qcodes.dataset.data_set import (
     setpoints_type,
     values_type,
 )
-from qcodes.dataset.data_set_protocol import (
-    DataSetProtocol,
-    DataSetWithSubscriberProtocol,
-)
+from qcodes.dataset.data_set_protocol import DataSetProtocol
 from qcodes.dataset.descriptions.dependencies import (
     DependencyError,
     InferenceError,
@@ -60,7 +55,6 @@ from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.export_config import get_data_export_automatic
-from qcodes.dataset.linked_datasets.links import Link
 from qcodes.instrument.delegate.grouped_parameter import GroupedParameter
 from qcodes.instrument.parameter import (
     ArrayParameter,
@@ -109,16 +103,18 @@ class DataSaver:
             min_count = DataSaver.default_callback[
                 'run_tables_subscription_min_count']
             snapshot = dataset.get_metadata('snapshot')
-            if isinstance(self._dataset, DataSetWithSubscriberProtocol):
-                self._dataset.subscribe(callback,
-                                        min_wait=min_wait,
-                                        min_count=min_count,
-                                        state={},
-                                        callback_kwargs={'run_id':
-                                                         self._dataset.run_id,
-                                                         'snapshot': snapshot})
-
-        if isinstance(self._dataset, DataSetWithSubscriberProtocol):
+            if isinstance(self._dataset, DataSet):
+                self._dataset.subscribe(
+                    callback,
+                    min_wait=min_wait,
+                    min_count=min_count,
+                    state={},
+                    callback_kwargs={
+                        "run_id": self._dataset.run_id,
+                        "snapshot": snapshot,
+                    },
+                )
+        if isinstance(self._dataset, DataSet):
             default_subscribers = qc.config.subscription.default_subscribers
             for subscriber in default_subscribers:
                 self._dataset.subscribe_from_config(subscriber)
@@ -546,17 +542,22 @@ class Runner:
 
         # next set up the "datasaver"
         if self.experiment is not None:
-            self.ds = self._dataset_class(
-                name=self.name, exp_id=self.experiment.exp_id,
-                conn=self.experiment.conn,  # todo this is sqlite specific
-                in_memory_cache=self._in_memory_cache
-            )
+            if self._dataset_class is DataSet:
+                self.ds = self._dataset_class(
+                    name=self.name,
+                    exp_id=self.experiment.exp_id,
+                    conn=self.experiment.conn,  # todo this is sqlite specific
+                    in_memory_cache=self._in_memory_cache,
+                )
+            else:
+                raise RuntimeError("Does not support any other dataset classes")
         else:
-            self.ds = self._dataset_class(
-                name=self.name,
-                in_memory_cache=self._in_memory_cache
-            )
-
+            if self._dataset_class is DataSet:
+                self.ds = self._dataset_class(
+                    name=self.name, in_memory_cache=self._in_memory_cache
+                )
+            else:
+                raise RuntimeError("Does not support any other dataset classes")
         # .. and give the dataset a snapshot as metadata
         if self.station is None:
             station = qc.Station.default
@@ -572,7 +573,7 @@ class Runner:
         )
 
         # register all subscribers
-        if isinstance(self.ds, DataSetWithSubscriberProtocol):
+        if isinstance(self.ds, DataSet):
             for (callble, state) in self.subscribers:
                 # We register with minimal waiting time.
                 # That should make all subscribers be called when data is flushed
@@ -630,7 +631,7 @@ class Runner:
                 self.datasaver.export_data()
             log.info(f'Finished measurement with guid: {self.ds.guid}. '
                      f'{self._extra_log_info}')
-            if isinstance(self.ds, DataSetWithSubscriberProtocol):
+            if isinstance(self.ds, DataSet):
                 self.ds.unsubscribe_all()
 
 
