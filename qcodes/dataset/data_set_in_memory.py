@@ -32,29 +32,6 @@ from qcodes.dataset.export_config import (
 )
 from qcodes.dataset.guids import generate_guid
 from qcodes.dataset.linked_datasets.links import Link, links_to_str, str_to_links
-from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic
-from qcodes.dataset.sqlite.database import conn_from_dbpath_or_conn
-from qcodes.dataset.sqlite.queries import (
-    add_meta_data,
-    add_parameter,
-    completed,
-    create_run,
-    get_completed_timestamp_from_run_id,
-    get_experiment_name_from_experiment_id,
-    get_guid_from_run_id,
-    get_last_experiment,
-    get_metadata,
-    get_metadata_from_run_id,
-    get_parent_dataset_links,
-    get_run_description,
-    get_run_timestamp_from_run_id,
-    get_sample_name_from_experiment_id,
-    mark_run_complete,
-    run_exists,
-    set_run_timestamp,
-    update_parent_datasets,
-    update_run_description,
-)
 from qcodes.dataset.sqlite.query_helpers import VALUE, VALUES, length, select_one_where
 from qcodes.instrument.parameter import _BaseParameter
 from qcodes.utils.helpers import NumpyJSONEncoder
@@ -100,116 +77,17 @@ class DataSetInMem(Sized):
 
     def __init__(
         self,
-        path_to_db: Optional[str] = None,
-        run_id: Optional[int] = None,
-        conn: Optional[ConnectionPlus] = None,
-        exp_id: Optional[int] = None,
-        name: Optional[str] = None,
-        specs: Optional[SpecsOrInterDeps] = None,
-        values: Optional[VALUES] = None,
-        metadata: Optional[Mapping[str, Any]] = None,
-        shapes: Optional[Shapes] = None,
-        in_memory_cache: bool = True,
+        run_id: int,
+        counter: int,
+        name: str,
     ) -> None:
-        """
-        Create a new :class:`.DataSet` object. The object can either hold a new run or
-        an already existing run. If a ``run_id`` is provided, then an old run is
-        looked up, else a new run is created.
 
-        Args:
-            path_to_db: path to the sqlite file on disk. If not provided, the
-                path will be read from the config.
-            run_id: provide this when loading an existing run, leave it
-                as None when creating a new run
-            conn: connection to the DB; if provided and ``path_to_db`` is
-                provided as well, then a ``ValueError`` is raised (this is to
-                prevent the possibility of providing a connection to a DB
-                file that is different from ``path_to_db``)
-            exp_id: the id of the experiment in which to create a new run.
-                Ignored if ``run_id`` is provided.
-            name: the name of the dataset. Ignored if ``run_id`` is provided.
-            specs: paramspecs belonging to the dataset or an ``InterDependencies_``
-                object that describes the dataset. Ignored if ``run_id``
-                is provided.
-            values: values to insert into the dataset. Ignored if ``run_id`` is
-                provided.
-            metadata: metadata to insert into the dataset. Ignored if ``run_id``
-                is provided.
-            shapes:
-                An optional dict from names of dependent parameters to the shape
-                of the data captured as a list of integers. The list is in the
-                same order as the interdependencies or paramspecs provided.
-                Ignored if ``run_id`` is provided.
-            in_memory_cache: Should measured data be keep in memory
-                and available as part of the `dataset.cache` object.
-
-        """
-        self.conn = conn_from_dbpath_or_conn(conn, path_to_db)
-
-        self._parent_dataset_links: List[Link]
-        #: In memory representation of the data in the dataset.
-        self._cache: DataSetCacheInMem = DataSetCacheInMem(self)
-
-        self._in_memory_cache = in_memory_cache
-        self._export_path: Optional[str] = None
-
-        if run_id is not None:
-            if not run_exists(self.conn, run_id):
-                raise ValueError(
-                    f"Run with run_id {run_id} does not exist in " f"the database"
-                )
-            self._run_id = run_id
-            self._completed = completed(self.conn, self.run_id)
-            run_desc = self._get_run_description_from_db()
-            self._rundescriber = run_desc
-            self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
-            self._started = self.run_timestamp_raw is not None
-            self._parent_dataset_links = str_to_links(
-                get_parent_dataset_links(self.conn, self.run_id)
-            )
-        else:
-            # Actually perform all the side effects needed for the creation
-            # of a new dataset. Note that a dataset is created (in the DB)
-            # with no parameters; they are written to disk when the dataset
-            # is marked as started
-            if exp_id is None:
-                exp_id = get_last_experiment(self.conn)
-                if exp_id is None:  # if it's still None, then...
-                    raise ValueError(
-                        "No experiments found."
-                        "You can start a new one with:"
-                        " new_experiment(name, sample_name)"
-                    )
-            name = name or "dataset"
-            # todo update to handle that no runs table is created
-            _, run_id, __ = create_run(
-                self.conn,
-                exp_id,
-                name,
-                generate_guid(),
-                parameters=None,
-                values=values,
-                metadata=metadata,
-            )
-            # this is really the UUID (an ever increasing count in the db)
-            self._run_id = run_id
-            self._completed = False
-            self._started = False
-
-            if isinstance(specs, InterDependencies_):
-                interdeps = specs
-            elif specs is not None:
-                interdeps = old_to_new(InterDependencies(*specs))
-            else:
-                interdeps = InterDependencies_()
-
-            self.set_interdependencies(interdeps=interdeps, shapes=shapes)
-
-            self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
-            self._parent_dataset_links = []
+        self._run_id = run_id
+        pass
 
     def prepare(
         self,
+        *,
         station: "Optional[Station]",
         interdeps: InterDependencies_,
         write_in_background: bool,
@@ -239,27 +117,15 @@ class DataSetInMem(Sized):
 
     @property
     def captured_run_id(self) -> int:
-        return select_one_where(
-            self.conn, "runs", "captured_run_id", "run_id", self.run_id
-        )
-
-    @property
-    def path_to_db(self) -> str:
-        return self.conn.path_to_dbfile
+        return self._run_id
 
     @property
     def name(self) -> str:
-        return select_one_where(self.conn, "runs", "name", "run_id", self.run_id)
-
-    @property
-    def table_name(self) -> str:
-        return select_one_where(
-            self.conn, "runs", "result_table_name", "run_id", self.run_id
-        )
+        return self._name
 
     @property
     def guid(self) -> str:
-        return get_guid_from_run_id(self.conn, self.run_id)
+        return self._guid
 
     @property
     def snapshot(self) -> Optional[Dict[str, Any]]:
@@ -273,34 +139,25 @@ class DataSetInMem(Sized):
     @property
     def snapshot_raw(self) -> Optional[str]:
         """Snapshot of the run as a JSON-formatted string (or None)"""
-        return select_one_where(self.conn, "runs", "snapshot", "run_id", self.run_id)
+        return self._snapshot
 
     @property
     def number_of_results(self) -> int:
         # todo how to replace
-        return 1
+        return 0
 
     @property
     def counter(self) -> int:
-        return select_one_where(
-            self.conn, "runs", "result_counter", "run_id", self.run_id
-        )
+        return self._counter
 
     @property
     def captured_counter(self) -> int:
-        return select_one_where(
-            self.conn, "runs", "captured_counter", "run_id", self.run_id
-        )
+        return self._counter
 
     @property
     def parameters(self) -> str:
-        if self.pristine:
-            psnames = [ps.name for ps in self.description.interdeps.paramspecs]
-            return ",".join(psnames)
-        else:
-            return select_one_where(
-                self.conn, "runs", "parameters", "run_id", self.run_id
-            )
+        psnames = [ps.name for ps in self.description.interdeps.paramspecs]
+        return ",".join(psnames)
 
     @property
     def paramspecs(self) -> Dict[str, ParamSpec]:
@@ -315,15 +172,15 @@ class DataSetInMem(Sized):
 
     @property
     def exp_id(self) -> int:
-        return select_one_where(self.conn, "runs", "exp_id", "run_id", self.run_id)
+        return self._exp_id
 
     @property
     def exp_name(self) -> str:
-        return get_experiment_name_from_experiment_id(self.conn, self.exp_id)
+        return self._exp_name
 
     @property
     def sample_name(self) -> str:
-        return get_sample_name_from_experiment_id(self.conn, self.exp_id)
+        return self._sample_name
 
     @property
     def run_timestamp_raw(self) -> Optional[float]:
@@ -333,7 +190,7 @@ class DataSetInMem(Sized):
         The run timestamp is the moment when the measurement for this run
         started.
         """
-        return get_run_timestamp_from_run_id(self.conn, self.run_id)
+        return self._run_timestamp_raw
 
     @property
     def description(self) -> RunDescriber:
@@ -401,7 +258,7 @@ class DataSetInMem(Sized):
 
         If the run (or the dataset) is not completed, then returns None.
         """
-        return get_completed_timestamp_from_run_id(self.conn, self.run_id)
+        return self._completed_timestamp_raw
 
     def completed_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S") -> Optional[str]:
         """
@@ -422,13 +279,6 @@ class DataSetInMem(Sized):
             completed_timestamp = None
 
         return completed_timestamp
-
-    def _get_run_description_from_db(self) -> RunDescriber:
-        """
-        Look up the run_description from the database
-        """
-        desc_str = get_run_description(self.conn, self.run_id)
-        return serial.from_json_to_current(desc_str)
 
     def set_interdependencies(
         self, interdeps: InterDependencies_, shapes: Shapes = None
@@ -466,9 +316,6 @@ class DataSetInMem(Sized):
         """
 
         self._metadata[tag] = metadata
-        # `add_meta_data` is not atomic by itself, hence using `atomic`
-        with atomic(self.conn) as conn:
-            add_meta_data(conn, self.run_id, {tag: metadata})
 
     def add_snapshot(self, snapshot: str, overwrite: bool = False) -> None:
         """
@@ -479,7 +326,7 @@ class DataSetInMem(Sized):
             overwrite: force overwrite an existing snapshot
         """
         if self.snapshot is None or overwrite:
-            add_meta_data(self.conn, self.run_id, {"snapshot": snapshot})
+            self.add_metadata("snapshot", snapshot)
         elif self.snapshot is not None and not overwrite:
             log.warning(
                 "This dataset already has a snapshot. Use overwrite"
@@ -522,8 +369,6 @@ class DataSetInMem(Sized):
     @completed.setter
     def completed(self, value: bool) -> None:
         self._completed = value
-        if value:
-            mark_run_complete(self.conn, self.run_id)
 
     def mark_started(self, start_bg_writer: bool = False) -> None:
         """
@@ -545,18 +390,6 @@ class DataSetInMem(Sized):
         Perform the actions that must take place once the run has been started
         """
         paramspecs = new_to_old(self._rundescriber.interdeps).paramspecs
-
-        for spec in paramspecs:
-            add_parameter(self.conn, self.table_name, spec)
-
-        desc_str = serial.to_json_for_storage(self.description)
-
-        update_run_description(self.conn, self.run_id, desc_str)
-
-        set_run_timestamp(self.conn, self.run_id)
-
-        pdl_str = links_to_str(self._parent_dataset_links)
-        update_parent_datasets(self.conn, self.run_id, pdl_str)
 
     def mark_completed(self) -> None:
         """
@@ -609,22 +442,15 @@ class DataSetInMem(Sized):
         return valid_param_names
 
     def get_metadata(self, tag: str) -> str:
-        return get_metadata(self.conn, tag, self.table_name)
+        return self._metadata[tag]
 
     def __len__(self) -> int:
-        return length(self.conn, self.table_name)
+        # todo what should this be
+        return 0
 
     def __repr__(self) -> str:
-        out = []
-        heading = f"{self.name} #{self.run_id}@{self.path_to_db}"
-        out.append(heading)
-        out.append("-" * len(heading))
-        ps = self.get_parameters()
-        if len(ps) > 0:
-            for p in ps:
-                out.append(f"{p.name} - {p.type}")
-
-        return "\n".join(out)
+        # todo what to put in
+        return "dataset"
 
     def _enqueue_results(
         self, result_dict: Mapping[ParamSpecBase, numpy.ndarray]
@@ -645,39 +471,35 @@ class DataSetInMem(Sized):
         interdeps = self._rundescriber.interdeps
 
         toplevel_params = set(interdeps.dependencies).intersection(set(result_dict))
-        if self._in_memory_cache:
-            new_results: Dict[str, Dict[str, numpy.ndarray]] = {}
+        new_results: Dict[str, Dict[str, numpy.ndarray]] = {}
         for toplevel_param in toplevel_params:
             inff_params = set(interdeps.inferences.get(toplevel_param, ()))
             deps_params = set(interdeps.dependencies.get(toplevel_param, ()))
             all_params = inff_params.union(deps_params).union({toplevel_param})
 
-            if self._in_memory_cache:
-                new_results[toplevel_param.name] = {}
-                new_results[toplevel_param.name][
-                    toplevel_param.name
-                ] = self._reshape_array_for_cache(
-                    toplevel_param, result_dict[toplevel_param]
-                )
-                for param in all_params:
-                    if param is not toplevel_param:
-                        new_results[toplevel_param.name][
-                            param.name
-                        ] = self._reshape_array_for_cache(param, result_dict[param])
+            new_results[toplevel_param.name] = {}
+            new_results[toplevel_param.name][
+                toplevel_param.name
+            ] = self._reshape_array_for_cache(
+                toplevel_param, result_dict[toplevel_param]
+            )
+            for param in all_params:
+                if param is not toplevel_param:
+                    new_results[toplevel_param.name][
+                        param.name
+                    ] = self._reshape_array_for_cache(param, result_dict[param])
 
         # Finally, handle standalone parameters
 
         standalones = set(interdeps.standalones).intersection(set(result_dict))
 
         if standalones:
-            if self._in_memory_cache:
-                for st in standalones:
-                    new_results[st.name] = {
-                        st.name: self._reshape_array_for_cache(st, result_dict[st])
-                    }
+            for st in standalones:
+                new_results[st.name] = {
+                    st.name: self._reshape_array_for_cache(st, result_dict[st])
+                }
 
-        if self._in_memory_cache:
-            self.cache.add_data(new_results)
+        self.cache.add_data(new_results)
 
     @staticmethod
     def _reshape_array_for_cache(
