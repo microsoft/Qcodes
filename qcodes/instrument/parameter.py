@@ -533,28 +533,30 @@ class _BaseParameter(Metadatable):
         # apply offset first (native scale)
         if self.offset is not None:
             # offset values
-            if isinstance(self.offset, collections.abc.Iterable):
-                # offset contains multiple elements, one for each value
-                value = tuple(val - offset for val, offset
-                              in zip(value, self.offset))
-            elif isinstance(value, collections.abc.Iterable):
-                # Use single offset for all values
-                value = tuple(val - self.offset for val in value)
-            else:
-                value -= self.offset
+            try:
+                value = value - self.offset
+            except TypeError:
+                if isinstance(self.offset, collections.abc.Iterable):
+                    # offset contains multiple elements, one for each value
+                    value = tuple(val - offset for val, offset
+                                  in zip(value, self.offset))
+                elif isinstance(value, collections.abc.Iterable):
+                    # Use single offset for all values
+                    value = tuple(val - self.offset for val in value)
 
         # scale second
         if self.scale is not None:
             # Scale values
-            if isinstance(self.scale, collections.abc.Iterable):
-                # Scale contains multiple elements, one for each value
-                value = tuple(val / scale for val, scale
-                              in zip(value, self.scale))
-            elif isinstance(value, collections.abc.Iterable):
-                # Use single scale for all values
-                value = tuple(val / self.scale for val in value)
-            else:
-                value /= self.scale
+            try:
+                value = value / self.scale
+            except TypeError:
+                if isinstance(self.scale, collections.abc.Iterable):
+                    # Scale contains multiple elements, one for each value
+                    value = tuple(val / scale for val, scale in zip(value,
+                                                                    self.scale))
+                elif isinstance(value, collections.abc.Iterable):
+                    # Use single scale for all values
+                    value = tuple(val / self.scale for val in value)
 
         if self.inverse_val_mapping is not None:
             if value in self.inverse_val_mapping:
