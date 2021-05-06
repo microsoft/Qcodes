@@ -69,15 +69,15 @@ def test_scale_and_offset_raw_value_iterable(values, offsets, scales):
     # test that scale and offset does not change the default behaviour
     p(values)
     assert p.raw_value == values
-    old_raw_value = p()
+    old_value = p()
 
     # test setting scale and offset does not change anything
     p.scale = scales
     p.offset = offsets
     assert p.raw_value == values
-    new_raw_value = p()
+    new_value = p()
 
-    assert type(new_raw_value) == type(old_raw_value)
+    assert type(new_value) == type(old_value)
 
     np_values = np.array(values)
     np_offsets = np.array(offsets)
