@@ -1,17 +1,18 @@
 """
 Test suite for instument.base.*
 """
-import pytest
-import weakref
-import io
 import contextlib
+import io
 import re
+import weakref
+
+import pytest
 
 from qcodes.instrument.base import Instrument, InstrumentBase, find_or_create_instrument
-from qcodes.instrument.parameter import Parameter
 from qcodes.instrument.function import Function
+from qcodes.instrument.parameter import Parameter
 
-from .instrument_mocks import DummyInstrument, MockParabola, MockMetaParabola
+from .instrument_mocks import DummyInstrument, MockMetaParabola, MockParabola
 
 
 @pytest.fixture(name='testdummy', scope='function')
@@ -273,6 +274,10 @@ def test_instrumentbase_metadata():
     instrument = InstrumentBase('instr', metadata=metadatadict)
     assert instrument.metadata == metadatadict
 
+
+def test_instrument_repr_html():
+    html_repr = DummyInstrument("test")._repr_html_()
+    assert isinstance(html_repr, str)
 
 def test_snapshot_and_meta_attrs():
     """Test snapshot of InstrumentBase contains _meta_attrs attributes"""
