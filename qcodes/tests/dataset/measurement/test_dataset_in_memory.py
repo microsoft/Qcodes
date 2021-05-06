@@ -8,5 +8,4 @@ def test_dataset_in_memory_smoke_test(meas_with_registered_param, DMM, DAC):
         for set_v in np.linspace(0, 25, 10):
             DAC.ch1.set(set_v)
             get_v = DMM.v1()
-            datasaver.add_result((DAC.ch1, set_v),
-                                 (DMM.v1, get_v))
+            datasaver.add_result((DAC.ch1, set_v), (DMM.v1, get_v))

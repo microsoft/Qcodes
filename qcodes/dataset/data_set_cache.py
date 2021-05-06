@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from copy import copy
 from typing import TYPE_CHECKING, Dict, Generic, Mapping, Optional, Tuple, TypeVar
 
 import numpy as np
@@ -10,6 +11,7 @@ from qcodes.dataset.sqlite.connection import ConnectionPlus
 from qcodes.dataset.sqlite.queries import completed, load_new_data_for_rundescriber
 from qcodes.utils.deprecate import deprecate
 
+from .exporters.export_to_csv import dataframe_to_csv
 from .exporters.export_to_pandas import (
     load_to_concatenated_dataframe,
     load_to_dataframe_dict,
@@ -18,7 +20,6 @@ from .exporters.export_to_xarray import (
     load_to_xarray_dataarray_dict,
     load_to_xarray_dataset,
 )
-from .exporters.export_to_csv import dataframe_to_csv
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -26,6 +27,7 @@ if TYPE_CHECKING:
 
     from .data_set import DataSet, ParameterData
     from .data_set_protocol import DataSetProtocol
+
 
 DatasetType = TypeVar("DatasetType", bound="DataSetProtocol", covariant=True)
 
@@ -195,16 +197,19 @@ class DataSetCache(Generic[DatasetType]):
         data = self.data()
         return load_to_xarray_dataset(self._dataset, data)
 
-    def to_csv(self,
-               path: str,
-               single_file: bool = False,
-               single_file_name: Optional[str] = None,
-               ) -> None:
+    def to_csv(
+        self,
+        path: str,
+        single_file: bool = False,
+        single_file_name: Optional[str] = None,
+    ) -> None:
         dfdict = self.to_pandas_dataframe_dict()
-        dataframe_to_csv(dfdict=dfdict,
-                         path=path,
-                         single_file=single_file,
-                         single_file_name=single_file_name)
+        dataframe_to_csv(
+            dfdict=dfdict,
+            path=path,
+            single_file=single_file,
+            single_file_name=single_file_name,
+        )
 
 
 def load_new_data_from_db_and_append(
