@@ -93,7 +93,7 @@ def instrument_repr_html(self: "qcodes.instrument.base.Instrument") -> str:
     }
 
     sections = [
-        parameter_section(section_data),
+        parameter_section(section_data),  # type: ignore
         functions_section(functions_section_data),
     ]
 
