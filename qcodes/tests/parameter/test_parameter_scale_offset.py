@@ -69,15 +69,11 @@ def test_scale_and_offset_raw_value_iterable(values, offsets, scales):
     # test that scale and offset does not change the default behaviour
     p(values)
     assert p.raw_value == values
-    old_value = p()
 
     # test setting scale and offset does not change anything
     p.scale = scales
     p.offset = offsets
     assert p.raw_value == values
-    new_value = p()
-
-    assert type(new_value) == type(old_value)
 
     np_values = np.array(values)
     np_offsets = np.array(offsets)
@@ -176,3 +172,20 @@ def test_scale_and_offset_raw_value_iterable_for_set_cache(values,
         event('Scale is array and also offset')
     if isinstance(scales, Iterable) and not isinstance(offsets, Iterable):
         event('Scale is array but not offset')
+
+
+def test_data_return_type_after_setting_scale_and_offset():
+
+    def rands():
+        return np.random.randn(5)
+
+    param = Parameter(name='test_param1',
+                       set_cmd=None,
+                       get_cmd=rands)
+
+    param.scale = 10
+    param.offset = 7
+
+    values = param()
+
+    assert isinstance(values, np.ndarray)
