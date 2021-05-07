@@ -4,12 +4,16 @@ import uuid
 from collections import namedtuple
 from functools import partial
 from html import escape
+from typing import Any, Dict, Optional
 
-import numpy as np
 from xarray.core.formatting_html import _icon, _mapping_section, _obj_repr
 
+import qcodes
 
-def create_entry(ed, preview=None):
+Entry = namedtuple("Entry", ["name", "short", "long"])
+
+
+def create_entry(ed: Entry, preview: Optional[str] = None) -> str:
     name = ed.name
     preview = ed.short
     long = ed.long
@@ -33,7 +37,7 @@ def create_entry(ed, preview=None):
     )
 
 
-def create_entries(variables):
+def create_entries(variables: Dict[str, Entry]) -> str:
     logging.debug(f"create_entries: {variables}")
     vars_li = "".join(
         f"<li class='xr-var-item'>{create_entry(entry)}</li>"
@@ -58,28 +62,29 @@ functions_section = partial(
 )
 
 
-def instrument_repr_html(self):
+def instrument_repr_html(self: "qcodes.instrument.base.Instrument") -> str:
     obj_type = "{}".format(type(self).__name__)
 
     name = self.name
     header_components = [f"<div class='xr-obj-type'>{escape(obj_type)}: {name}</div>"]
 
-    Entry = namedtuple("SectionEntry", ["name", "short", "long"])
 
     dd = []
     parameters = list(self.parameters.keys())
     for ii, parameter_name in enumerate(sorted(parameters)):
         parameter = self.parameters[parameter_name]
+        unit = getattr(parameter, "unit", None)
+        label = getattr(parameter, "label", parameter.name)
         try:
-            short = f"{parameter()} [{parameter.unit}]"
+            short = f"{parameter()} [{unit}]"
         except:
-            short = None
+            short = "-"
         timestamp = parameter.cache.timestamp
 
-        def hcolor(txt):
+        def hcolor(txt: Any) -> str:
             return f'<span style="color:#777777">{txt}</span>'
 
-        long = f"unit: {hcolor(parameter.unit)}, label: {hcolor(parameter.label)}, timestamp: {hcolor(timestamp)}"
+        long = f"unit: {hcolor(unit)}, label: {hcolor(label)}, timestamp: {hcolor(timestamp)}"
         dd.append(Entry(parameter_name, short=short, long=long))
     section_data = {ed.name: ed for ed in dd}
 
