@@ -1,18 +1,10 @@
 import warnings
-from contextlib import contextmanager
 import pytest
 
 
 from qcodes.utils.deprecate import (
     deprecate, issue_deprecation_warning, _catch_deprecation_warnings,
-    assert_not_deprecated, assert_deprecated)
-
-
-@contextmanager
-def _ignore_warnings():
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        yield
+    assert_not_deprecated, assert_deprecated, QCoDeSDeprecationWarning)
 
 
 def test_assert_deprecated_raises():
@@ -59,6 +51,7 @@ def test_similar_output():
     @deprecate(reason='this function is for private use only')
     def add_one(x):
         return _add_one(x)
+
     with assert_deprecated(
             'The function <add_one> is deprecated, because '
             'this function is for private use only.'):
@@ -71,7 +64,8 @@ def test_deprecated_context_manager():
         issue_deprecation_warning('something more')
         warnings.warn('Some other warning')
     assert len(ws) == 2
-    with warnings.catch_warnings(record=True) as ws:
+
+    with pytest.warns(expected_warning=QCoDeSDeprecationWarning) as ws:
         issue_deprecation_warning('something')
         warnings.warn('Some other warning')
     assert len(ws) == 2
@@ -102,99 +96,109 @@ class C:
         self.a = val + '_prop'
 
 
-class TestClassDeprecation:  # pylint: disable=no-self-use
-    def test_init_uninhibited(self):
-        with _ignore_warnings():
-            c = C('pristine')
-        assert c.a == 'pristine'
+def test_init_uninhibited():
+    with pytest.warns(expected_warning=QCoDeSDeprecationWarning):
+        c = C('pristine')
+    assert c.a == 'pristine'
 
-    def test_init_raises(self):
-        with assert_deprecated(
-                'The class <C> is deprecated, because '
-                'this is a test.'):
-            C('pristine')
 
-    def test_method_uninhibited(self):
-        with _ignore_warnings():
-            c = C('pristine')
-            c.method()
-        assert c.a == 'last called by method'
+def test_init_raises():
+    with assert_deprecated(
+            'The class <C> is deprecated, because '
+            'this is a test.'):
+        C('pristine')
 
-    def test_method_raises(self):
-        with _ignore_warnings():
-            c = C('pristine')
 
-        with assert_deprecated(
-                'The function <method> is deprecated, because '
-                'this is a test.'):
-            c.method()
+def test_method_uninhibited():
+    with pytest.warns(expected_warning=QCoDeSDeprecationWarning):
+        c = C('pristine')
+        c.method()
+    assert c.a == 'last called by method'
 
-    def test_static_method_uninhibited(self):
-        with _ignore_warnings():
-            assert C.static_method(1) == 2
-        with _ignore_warnings():
-            c = C('pristine')
-            assert c.static_method(1) == 2
 
-    @pytest.mark.xfail(reason="This is not implemented yet.")
-    def test_static_method_raises(self):
-        with assert_deprecated(
-                'The function <static_method> is deprecated, because '
-                'this is a test.'):
-            assert C.static_method(1) == 2
-        with _ignore_warnings():
-            c = C('pristine')
-        with assert_deprecated(
-                'The function <static_method> is deprecated, because '
-                'this is a test.'):
-            assert c.static_method(1) == 2
+def test_method_raises():
+    with pytest.warns(expected_warning=QCoDeSDeprecationWarning):
+        c = C('pristine')
 
-    def test_class_method_uninhibited(self):
-        with _ignore_warnings():
-            assert C.class_method(1) == 2
-            c = C('pristine')
-            assert c.class_method(1) == 2
+    with assert_deprecated(
+            'The function <method> is deprecated, because '
+            'this is a test.'):
+        c.method()
 
-    @pytest.mark.xfail(reason="This is not implemented yet.")
-    def test_class_method_raises(self):
-        with assert_deprecated(
-                'The function <static_method> is deprecated, because '
-                'this is a test.'):
-            C.class_method(1)
-        with _ignore_warnings():
-            c = C('pristine')
-        with assert_deprecated(
-                'The function <static_method> is deprecated, because '
-                'this is a test.'):
-            c.class_method(1)
 
-    def test_property_uninhibited(self):
-        with _ignore_warnings():
-            c = C('pristine')
-            assert c.prop == 'pristine'
+def test_static_method_uninhibited():
+    assert C.static_method(1) == 2
+    with pytest.warns(expected_warning=QCoDeSDeprecationWarning):
+        c = C('pristine')
+        assert c.static_method(1) == 2
 
-    @pytest.mark.xfail(reason="This is not implemented yet.")
-    def test_property_raises(self):
-        with _ignore_warnings():
-            c = C('pristine')
 
+@pytest.mark.xfail(reason="This is not implemented yet.")
+def test_static_method_raises(self):
+    with assert_deprecated(
+            'The function <static_method> is deprecated, because '
+            'this is a test.'):
+        assert C.static_method(1) == 2
+    with pytest.warns(expected_warning=QCoDeSDeprecationWarning):
+        c = C('pristine')
+    with assert_deprecated(
+            'The function <static_method> is deprecated, because '
+            'this is a test.'):
+        assert c.static_method(1) == 2
+
+
+def test_class_method_uninhibited():
+    with pytest.warns(expected_warning=QCoDeSDeprecationWarning):
+        assert C.class_method(1) == 2
+    with pytest.warns(expected_warning=QCoDeSDeprecationWarning):
+        c = C('pristine')
+    with pytest.warns(expected_warning=QCoDeSDeprecationWarning):
+        assert c.class_method(1) == 2
+
+
+@pytest.mark.xfail(reason="This is not implemented yet.")
+def test_class_method_raises():
+    with assert_deprecated(
+            'The function <static_method> is deprecated, because '
+            'this is a test.'):
+        C.class_method(1)
+    with pytest.warns(expected_warning=QCoDeSDeprecationWarning):
+        c = C('pristine')
+    with assert_deprecated(
+            'The function <static_method> is deprecated, because '
+            'this is a test.'):
+        c.class_method(1)
+
+
+def test_property_uninhibited():
+    with pytest.warns(expected_warning=QCoDeSDeprecationWarning):
+        c = C('pristine')
+        assert c.prop == 'pristine'
+
+
+@pytest.mark.xfail(reason="This is not implemented yet.")
+def test_property_raises():
+    with pytest.warns(expected_warning=QCoDeSDeprecationWarning):
+        c = C('pristine')
         with assert_deprecated(
                 'The function <method> is deprecated, because '
                 'this is a test.'):
             _ = c.prop  # pylint: disable=pointless-statement
 
-    def test_setter_uninhibited(self):
-        with _ignore_warnings():
-            c = C('pristine')
-            c.prop = 'changed'
-            assert c.a == 'changed_prop'
 
-    @pytest.mark.xfail(reason="This is not implemented yet.")
-    def test_setter_raises(self):
-        with _ignore_warnings():
-            c = C('pristine')
+def test_setter_uninhibited():
+    with pytest.warns(expected_warning=QCoDeSDeprecationWarning):
+        c = C('pristine')
+        c.prop = 'changed'
+        assert c.a == 'changed_prop'
 
-        with assert_deprecated(
-                'The function <method> is deprecated, because '
-                'this is a test.'):
-            c.prop = 'changed'
+
+@pytest.mark.xfail(reason="This is not implemented yet.")
+def test_setter_raises(self):
+    with pytest.warns(expected_warning=QCoDeSDeprecationWarning):
+        c = C('pristine')
+
+    with assert_deprecated(
+            'The function <method> is deprecated, because '
+            'this is a test.'):
+        c.prop = 'changed'
