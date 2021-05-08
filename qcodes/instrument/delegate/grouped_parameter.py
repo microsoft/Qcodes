@@ -34,7 +34,7 @@ class DelegateGroupParameter(DelegateParameter, GroupParameter):
         name: str,
         source: Optional[Parameter],
         instrument: Optional['InstrumentBase'] = None,
-        initial_value: Union[float, int, str, None] = None
+        initial_value: Union[float, str, None] = None
     ) -> None:
         super().__init__(
             name=name,
