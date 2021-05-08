@@ -73,7 +73,7 @@ class DelegateInstrument(InstrumentBase):
         parameters: A mapping from the name of a parameter to the sequence
             of source parameters that it points to.
         initial_values: Default values to set on the delegate instrument's
-            parameters. Defaults to None.
+            parameters. Defaults to None (no initial values are specified or set).
         set_initial_values_on_load: Flag to set initial values when the
             instrument is loaded. Defaults to False.
         setters: Optional setter methods to use instead of calling the ``.set()``
