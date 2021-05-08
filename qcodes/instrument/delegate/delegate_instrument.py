@@ -68,7 +68,7 @@ class DelegateInstrument(InstrumentBase):
 
     Args:
         name: Instrument name
-        station: Real instrument station that is used to get the endpoint
+        station: Station containing the real instrument that is used to get the endpoint
             parameters.
         parameters: A mapping from the name of a parameter to the sequence
             of source parameters that it points to.
@@ -124,7 +124,7 @@ class DelegateInstrument(InstrumentBase):
         return _parse_path(parent, path.split("."))
 
     def set_initial_values(self, dry_run: bool = False) -> None:
-        """Set parameter initial values on meta instrument
+        """Set parameter initial values on delegate instrument
 
         Args:
             dry_run: Dry run to test if defaults are set correctly.
@@ -161,7 +161,7 @@ class DelegateInstrument(InstrumentBase):
         setters: Dict[str, Dict[str, Any]],
         units: Dict[str, str]
     ) -> None:
-        """Add parameters to meta instrument based on specified aliases,
+        """Add parameters to delegate instrument based on specified aliases,
         endpoints and setter methods"""
         for param_name, paths in parameters.items():
             self._create_and_add_parameter(
@@ -210,7 +210,7 @@ class DelegateInstrument(InstrumentBase):
         unit: Optional[str] = None,
         **kwargs: Any
     ) -> None:
-        """Create meta parameter that links to a given set of paths
+        """Create delegate parameter that links to a given set of paths
         (e.g. my_instrument.my_param) on the station"""
         source_parameters = [
             self.parse_instrument_path(station, path) for path in paths
