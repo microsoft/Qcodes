@@ -7,6 +7,7 @@ from html import escape
 from typing import Any, Dict, Optional
 
 from xarray.core.formatting_html import _icon, _mapping_section, _obj_repr
+from xarray.core.options import DISPLAY_EXPAND_ATTRS
 
 import qcodes
 
@@ -47,7 +48,6 @@ def create_entries(variables: Dict[str, Entry]) -> str:
     return f"<ul class='xr-var-list'>{vars_li}</ul>"
 
 
-from xarray.core.options import DISPLAY_EXPAND_ATTRS
 
 parameter_section = partial(
     _mapping_section,
