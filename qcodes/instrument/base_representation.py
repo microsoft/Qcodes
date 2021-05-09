@@ -47,11 +47,14 @@ def create_entries(variables: Dict[str, Entry]) -> str:
     return f"<ul class='xr-var-list'>{vars_li}</ul>"
 
 
+from xarray.core.options import DISPLAY_EXPAND_ATTRS
+
 parameter_section = partial(
     _mapping_section,
     name="Parameters",
     details_func=create_entries,
     max_items_collapse=10,
+    expand_option_name=DISPLAY_EXPAND_ATTRS,
 )
 
 functions_section = partial(
@@ -59,6 +62,7 @@ functions_section = partial(
     name="Functions",
     details_func=create_entries,
     max_items_collapse=10,
+    expand_option_name=DISPLAY_EXPAND_ATTRS,
 )
 
 
