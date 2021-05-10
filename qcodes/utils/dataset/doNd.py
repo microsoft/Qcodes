@@ -483,6 +483,173 @@ def do2d(
     return _handle_plotting(dataset, do_plot, interrupted())
 
 
+def dond(
+    *params: Union[_BaseParameter, int, float, ParamMeasT],
+    write_period: Optional[float] = None,
+    measurement_name: str = "",
+    exp: Optional[Experiment] = None,
+    do_plot: Optional[bool] = None,
+    show_progress: Optional[None] = None,
+    use_threads: bool = False,
+    additional_setpoints: Sequence[ParamMeasT] = tuple()
+    ) -> AxesTupleListWithDataSet:
+    """
+    Perform n-dimentional scan from slowest (first) to the fastest (last), to
+    measure m measurement parameters. Supplied params are parsed to params_set,
+    params_dicts and params_meas inside the function.
+    
+    Args:
+        *params:
+            param_set_1, start_1, stop_1, num_points_1, delay_1, ...,
+            param_set_n, start_n, stop_n, num_points_n, delay_n,
+            param_meas_1, param_meas_2, ..., param_meas_m
+        write_period: The time after which the data is actually written to the
+            database.
+        measurement_name: Name of the measurement. This will be passed down to
+            the dataset produced by the measurement. If not given, a default
+            value of 'results' is used for the dataset.
+        exp: The experiment to use for this measurement.
+        do_plot: should png and pdf versions of the images be saved and plots
+            are shown after the run. If None the setting will be read from
+            ``qcodesrc.json``
+        show_progress: should a progress bar be displayed during the
+            measurement. If None the setting will be read from ``qcodesrc.json`
+        use_threads: If True, measurements from each instrument will be done on
+            separate threads. If you are measuring from several instruments
+            this may give a significant speedup.
+        additional_setpoints: A list of setpoint parameters to be registered in
+            the measurement but not scanned.
+    """
+    if do_plot is None:
+        do_plot = config.dataset.dond_plot
+    if show_progress is None:
+        show_progress = config.dataset.dond_show_progress
+
+    meas = Measurement(name=measurement_name, exp=exp)
+
+    def _make_nested_setpoints(
+        params: List[_BaseParameter],
+        param_dicts: Dict[_BaseParameter, Dict[str, Union[float, int]]]
+    ) -> Union[np.ndarray, List[Tuple[()]]]:
+        """Create the cartesian product of all the setpoint values."""
+        
+        setpoint_values = [np.linspace(params_dicts[p]['start'],
+                                    params_dicts[p]['stop'],
+                                    int(params_dicts[p]['num_points']))
+                        for p in params]
+        setpoint_grids = np.meshgrid(*setpoint_values, indexing='ij')
+        flat_setpoint_grids = [np.ravel(grid, order='C') for grid in setpoint_grids]
+        flat_setpoints: Union[np.ndarray, List[Tuple[()]]]
+        if flat_setpoint_grids:
+            flat_setpoints = np.vstack(flat_setpoint_grids).T
+        else:
+            flat_setpoints = [()]
+        return flat_setpoints
+
+    def _find_parameters(*params: Union[_BaseParameter, int, float, ParamMeasT]
+                        ) -> Tuple[List[Union[_BaseParameter, ParamMeasT]],
+                            Dict[Union[_BaseParameter, ParamMeasT], List[Union[int, float]]]]:
+        _params: List[Union[_BaseParameter, ParamMeasT]] = []
+        args_per_parameter: Dict[Union[_BaseParameter, ParamMeasT], List[Union[int, float]]] = {}
+        for par in params:
+            if isinstance(par, _BaseParameter) or callable(par): # A QCodes parameter:
+                _params.append(par)
+                args_per_parameter[par] = []
+                last_param = par
+            else: # A numerical argument:
+                try:
+                    float(par)
+                    args_per_parameter[last_param].append(par)
+                except TypeError as err:
+                    raise TypeError(f'Invalid argument type: {par}') from err
+        return _params, args_per_parameter
+
+    def _parse_dond_arguments(*params: Union[_BaseParameter, int, float, ParamMeasT]
+    ) -> Tuple[
+        List[_BaseParameter],
+        Dict[_BaseParameter, Dict[str, Union[float, int]]],
+        List[ParamMeasT]
+    ]:
+        """
+        Parse arguments for a dond scan.
+
+        The expected order for the arguments is:
+        params: param_set_1, start_1, stop_1, num_points_1, delay_1, ...,
+                param_set_n, start_n, stop_n, num_points_1, delay_n,
+                param_meas_1, param_meas_2, ..., param_meas_m
+        """
+        _params, args_per_parameter = _find_parameters(*params)
+        arg_types = ['start', 'stop', 'num_points', 'delay']
+        params_set: List[_BaseParameter] = []
+        params_meas: List[ParamMeasT] = []
+        params_dicts: Dict[_BaseParameter, Dict[str, Union[float, int]]] = {}
+        for param in _params:
+            arguments = args_per_parameter[param]
+            if not arguments:
+                if isinstance(param, _BaseParameter):
+                    params_meas.append(param)
+            elif len(arguments) == len(arg_types):
+                if isinstance(param, _BaseParameter):
+                    params_set.append(param)
+                    params_dicts[param] = {}
+                    for arg_type, value in zip(arg_types, arguments):
+                        params_dicts[param][arg_type] = value
+            else:
+                raise ValueError(f'Invalid number of arguments for '
+                                'parameter {param}.')
+        return params_set, params_dicts, params_meas
+
+    params_set, params_dicts, params_meas = _parse_dond_arguments(*params)
+
+    all_setpoint_params = tuple(params_set) + tuple(
+            s for s in additional_setpoints)
+
+    measured_parameters = tuple(param for param in params_meas
+                                if isinstance(param, _BaseParameter))
+
+    num_points_params_set: List[Union[float, int]] = []
+    for par in params_set:
+        num_points_params_set.append(int(params_dicts[par]['num_points']))
+
+    try:
+        loop_shape = tuple(
+            1 for _ in additional_setpoints
+        ) + tuple(num_points_params_set)
+        shapes: Shapes = detect_shape_of_measurement(
+            measured_parameters,
+            loop_shape
+        )
+    except TypeError:
+        LOG.exception(
+            f"Could not detect shape of {measured_parameters} "
+            f"falling back to unknown shape.")
+        shapes = None
+
+    _register_parameters(meas, params_set)
+    _register_parameters(meas, params_meas, setpoints=params_set, shapes=shapes)
+    _set_write_period(meas, write_period)
+    
+    nested_setpoints = _make_nested_setpoints(params_set, params_dicts)
+
+    last_setpoints = dict([(param, None) for param in params_set])
+    with _catch_keyboard_interrupts() as interrupted, meas.run() as datasaver:
+        for setpoints in tqdm(nested_setpoints, disable=not show_progress):
+            param_set_list = []
+            param_value_pairs = zip(params_set[::-1], setpoints[::-1])
+            for setpoint_param, setpoint in param_value_pairs:
+                if not setpoint == last_setpoints[setpoint_param]:
+                    delay = params_dicts[setpoint_param]['delay']
+                    setpoint_param(setpoint)
+                    setpoint_param.post_delay = delay
+                    last_setpoints[setpoint_param] = setpoint
+                param_set_list.append((setpoint_param, setpoint))
+            datasaver.add_result(*param_set_list,
+                                 *_process_params_meas(params_meas,
+                                                       use_threads=use_threads))
+        dataset = datasaver.dataset
+    return _handle_plotting(dataset, do_plot, interrupted())
+
+
 def _handle_plotting(
         data: DataSet,
         do_plot: bool = True,
