@@ -44,7 +44,10 @@ if TYPE_CHECKING:
     import pandas as pd
     import xarray as xr
 
+    from qcodes.dataset.sqlite.connection import ConnectionPlus
     from qcodes.station import Station
+
+    from .data_set_cache import DataSetCache
 
 log = logging.getLogger(__name__)
 
@@ -80,10 +83,70 @@ class DataSetInMem(Sized):
         run_id: int,
         counter: int,
         name: str,
+        exp_id: int,
+        exp_name: str,
+        sample_name: str,
+        guid: str,
+        run_timestamp_raw: Optional[float],
+        completed_timestamp_raw: Optional[float],
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> None:
 
         self._run_id = run_id
-        pass
+        self._counter = counter
+        self._name = name
+        self._exp_id = exp_id
+        self._exp_name = exp_name
+        self._sample_name = sample_name
+        self._guid = guid
+        self._cache = (DataSetCacheInMem(self),)
+        self._run_timestamp_raw = run_timestamp_raw
+        self._completed_timestamp_raw = completed_timestamp_raw
+        if metadata is None:
+            self._metadata = {}
+        else:
+            self._metadata = metadata
+
+    @classmethod
+    def create_new_run(
+        cls,
+        name: str,
+        exp_id: Optional[int] = None,
+        conn: "Optional[ConnectionPlus]" = None,
+    ) -> "DataSetInMem":
+
+        from qcodes.dataset.sqlite.queries import create_run, get_last_experiment
+
+        if exp_id is None:
+            exp_id = get_last_experiment(conn)
+            if exp_id is None:  # if it's still None, then...
+                raise ValueError(
+                    "No experiments found."
+                    "You can start a new one with:"
+                    " new_experiment(name, sample_name)"
+                )
+        name = name or "dataset"
+        guid = generate_guid()
+        # todo replace with a better function that does not put in the results table name
+
+        run_counter, run_id, __ = create_run(
+            conn, exp_id, name, guid=guid, parameters=None
+        )
+
+        ds = cls(
+            run_id=run_id,
+            counter=run_counter,
+            name=name,
+            exp_id=exp_id,
+            exp_name=exp_name,
+            sample_name=sample_name,
+            guid=guid,
+            run_timestamp_raw=None,
+            completed_timestamp_raw=None,
+            metadata=None,
+        )
+
+        return ds
 
     def prepare(
         self,
@@ -139,7 +202,7 @@ class DataSetInMem(Sized):
     @property
     def snapshot_raw(self) -> Optional[str]:
         """Snapshot of the run as a JSON-formatted string (or None)"""
-        return self._snapshot
+        return self._metadata["snapshot"]
 
     @property
     def number_of_results(self) -> int:
@@ -340,7 +403,7 @@ class DataSetInMem(Sized):
         meaning that parameters can still be added and removed, but results
         can not be added.
         """
-        return not (self._started or self._completed)
+        return self._run_timestamp_raw is None and self._completed_timestamp_raw is None
 
     @property
     def running(self) -> bool:
@@ -348,7 +411,10 @@ class DataSetInMem(Sized):
         Is this :class:`.DataSet` currently running? A running :class:`.DataSet` has been started,
         but not yet completed.
         """
-        return self._started and not self._completed
+        return (
+            self._run_timestamp_raw is not None
+            and self._completed_timestamp_raw is None
+        )
 
     @property
     def started(self) -> bool:
@@ -356,7 +422,7 @@ class DataSetInMem(Sized):
         Has this :class:`.DataSet` been started? A :class:`.DataSet` not started can not have any
         results added to it.
         """
-        return self._started
+        return self._run_timestamp_raw is not None
 
     @property
     def completed(self) -> bool:
@@ -364,11 +430,12 @@ class DataSetInMem(Sized):
         Is this :class:`.DataSet` completed? A completed :class:`.DataSet` may not be modified in
         any way.
         """
-        return self._completed
+        return self._completed_timestamp_raw is not None
 
     @completed.setter
     def completed(self, value: bool) -> None:
-        self._completed = value
+        if value:
+            self._completed_timestamp_raw = time.time()
 
     def mark_started(self, start_bg_writer: bool = False) -> None:
         """
@@ -381,15 +448,15 @@ class DataSetInMem(Sized):
             start_bg_writer: If True, the add_results method will write to the
                 database in a separate thread.
         """
-        if not self._started:
-            self._perform_start_actions(start_bg_writer=start_bg_writer)
-            self._started = True
+        if self.run_timestamp_raw is None:
+            self._perform_start_actions()
 
-    def _perform_start_actions(self, start_bg_writer: bool) -> None:
+    def _perform_start_actions(self) -> None:
         """
         Perform the actions that must take place once the run has been started
         """
-        paramspecs = new_to_old(self._rundescriber.interdeps).paramspecs
+        # todo here the other backend would write a bunch of data to
+        #  the runs table marking it started
 
     def mark_completed(self) -> None:
         """

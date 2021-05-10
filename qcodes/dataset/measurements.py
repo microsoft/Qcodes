@@ -44,6 +44,7 @@ from qcodes.dataset.data_set import (
     setpoints_type,
     values_type,
 )
+from qcodes.dataset.data_set_in_memory import DataSetInMem
 from qcodes.dataset.data_set_protocol import DataSetProtocol
 from qcodes.dataset.descriptions.dependencies import (
     DependencyError,
