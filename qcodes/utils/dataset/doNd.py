@@ -492,12 +492,12 @@ def dond(
     show_progress: Optional[None] = None,
     use_threads: bool = False,
     additional_setpoints: Sequence[ParamMeasT] = tuple()
-    ) -> AxesTupleListWithDataSet:
+        ) -> AxesTupleListWithDataSet:
     """
     Perform n-dimentional scan from slowest (first) to the fastest (last), to
     measure m measurement parameters. Supplied params are parsed to params_set,
     params_dicts and params_meas inside the function.
-    
+
     Args:
         *params:
             param_set_1, start_1, stop_1, num_points_1, delay_1, ...,
@@ -532,11 +532,11 @@ def dond(
         param_dicts: Dict[_BaseParameter, Dict[str, Union[float, int]]]
     ) -> Union[np.ndarray, List[Tuple[()]]]:
         """Create the cartesian product of all the setpoint values."""
-        
+
         setpoint_values = [np.linspace(params_dicts[p]['start'],
-                                    params_dicts[p]['stop'],
-                                    int(params_dicts[p]['num_points']))
-                        for p in params]
+                                       params_dicts[p]['stop'],
+                                       int(params_dicts[p]['num_points']))
+                           for p in params]
         setpoint_grids = np.meshgrid(*setpoint_values, indexing='ij')
         flat_setpoint_grids = [np.ravel(grid, order='C') for grid in setpoint_grids]
         flat_setpoints: Union[np.ndarray, List[Tuple[()]]]
@@ -547,16 +547,16 @@ def dond(
         return flat_setpoints
 
     def _find_parameters(*params: Union[_BaseParameter, int, float, ParamMeasT]
-                        ) -> Tuple[List[Union[_BaseParameter, ParamMeasT]],
+                         ) -> Tuple[List[Union[_BaseParameter, ParamMeasT]],
                             Dict[Union[_BaseParameter, ParamMeasT], List[Union[int, float]]]]:
         _params: List[Union[_BaseParameter, ParamMeasT]] = []
         args_per_parameter: Dict[Union[_BaseParameter, ParamMeasT], List[Union[int, float]]] = {}
         for par in params:
-            if isinstance(par, _BaseParameter) or callable(par): # A QCodes parameter:
+            if isinstance(par, _BaseParameter) or callable(par):  # A QCodes parameter:
                 _params.append(par)
                 args_per_parameter[par] = []
                 last_param = par
-            else: # A numerical argument:
+            else:  # A numerical argument:
                 try:
                     float(par)
                     args_per_parameter[last_param].append(par)
@@ -564,8 +564,9 @@ def dond(
                     raise TypeError(f'Invalid argument type: {par}') from err
         return _params, args_per_parameter
 
-    def _parse_dond_arguments(*params: Union[_BaseParameter, int, float, ParamMeasT]
-    ) -> Tuple[
+    def _parse_dond_arguments(*params: Union[_BaseParameter,
+                              int, float, ParamMeasT]
+                              ) -> Tuple[
         List[_BaseParameter],
         Dict[_BaseParameter, Dict[str, Union[float, int]]],
         List[ParamMeasT]
@@ -596,7 +597,7 @@ def dond(
                         params_dicts[param][arg_type] = value
             else:
                 raise ValueError(f'Invalid number of arguments for '
-                                'parameter {param}.')
+                                 'parameter {param}.')
         return params_set, params_dicts, params_meas
 
     params_set, params_dicts, params_meas = _parse_dond_arguments(*params)
@@ -626,9 +627,10 @@ def dond(
         shapes = None
 
     _register_parameters(meas, params_set)
-    _register_parameters(meas, params_meas, setpoints=params_set, shapes=shapes)
+    _register_parameters(meas, params_meas, setpoints=params_set,
+                         shapes=shapes)
     _set_write_period(meas, write_period)
-    
+
     nested_setpoints = _make_nested_setpoints(params_set, params_dicts)
 
     last_setpoints = dict([(param, None) for param in params_set])
@@ -645,7 +647,8 @@ def dond(
                 param_set_list.append((setpoint_param, setpoint))
             datasaver.add_result(*param_set_list,
                                  *_process_params_meas(params_meas,
-                                                       use_threads=use_threads))
+                                                       use_threads=use_threads)
+                                 )
         dataset = datasaver.dataset
     return _handle_plotting(dataset, do_plot, interrupted())
 
