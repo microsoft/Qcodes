@@ -453,8 +453,13 @@ class DataSetInMem(Sized):
 
     @completed.setter
     def completed(self, value: bool) -> None:
+        from qcodes.dataset.sqlite.database import conn_from_dbpath_or_conn
+        from qcodes.dataset.sqlite.queries import mark_run_complete
+
+        conn = conn_from_dbpath_or_conn(conn=None, path_to_db=self._path_to_db)
         if value:
             self._completed_timestamp_raw = time.time()
+            mark_run_complete(conn, self.run_id, self._completed_timestamp_raw)
 
     def mark_started(self, start_bg_writer: bool = False) -> None:
         """
@@ -492,9 +497,8 @@ class DataSetInMem(Sized):
             desc_str = serial.to_json_for_storage(self.description)
 
             update_run_description(conn, self.run_id, desc_str)
-            # todo this should match the dataset
             self._run_timestamp_raw = time.time()
-            set_run_timestamp(conn, self.run_id)
+            set_run_timestamp(conn, self.run_id, self._run_timestamp_raw)
 
             pdl_str = links_to_str(self._parent_dataset_links)
             update_parent_datasets(conn, self.run_id, pdl_str)
