@@ -42,6 +42,7 @@ class NumpyJSONEncoder(json.JSONEncoder):
     def default(self, obj: Any) -> Any:
         """
         List of conversions that this encoder performs:
+        
         * ``numpy.generic`` (all integer, floating, and other types) gets
         converted to its python equivalent using its ``item`` method (see
         ``numpy`` docs for more information,
