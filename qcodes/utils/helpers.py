@@ -4,7 +4,6 @@ import json
 import logging
 import math
 import numbers
-import uncertainties
 import os
 import time
 from asyncio import iscoroutinefunction
@@ -14,11 +13,28 @@ from copy import deepcopy
 from functools import partial
 from inspect import signature
 from pathlib import Path
-from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterator, List,
-                    Mapping, MutableMapping, Optional, Sequence, SupportsAbs,
-                    Tuple, Type, Union, cast, Hashable, TypeVar)
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Hashable,
+    Iterator,
+    List,
+    Mapping,
+    MutableMapping,
+    Optional,
+    Sequence,
+    SupportsAbs,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 
 import numpy as np
+import uncertainties
 
 if TYPE_CHECKING:
     from PyQt5.QtWidgets import QMainWindow
@@ -42,7 +58,7 @@ class NumpyJSONEncoder(json.JSONEncoder):
     def default(self, obj: Any) -> Any:
         """
         List of conversions that this encoder performs:
-        
+
         * ``numpy.generic`` (all integer, floating, and other types) gets
         converted to its python equivalent using its ``item`` method (see
         ``numpy`` docs for more information,
@@ -588,8 +604,7 @@ def add_to_spyder_UMR_excludelist(modulename: str) -> None:
             sitecustomize_found = True
         if sitecustomize_found is False:
             try:
-                from spyder_kernels.customize import \
-                    spydercustomize as sitecustomize
+                from spyder_kernels.customize import spydercustomize as sitecustomize
 
             except ImportError:
                 pass
