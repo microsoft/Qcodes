@@ -548,7 +548,7 @@ def dond(
 
     def _find_parameters(*params: Union[_BaseParameter, int, float, ParamMeasT]
                          ) -> Tuple[List[Union[_BaseParameter, ParamMeasT]],
-                            Dict[Union[_BaseParameter, ParamMeasT], List[Union[int, float]]]]:
+                                    Dict[Union[_BaseParameter, ParamMeasT], List[Union[int, float]]]]:
         _params: List[Union[_BaseParameter, ParamMeasT]] = []
         args_per_parameter: Dict[Union[_BaseParameter, ParamMeasT], List[Union[int, float]]] = {}
         for par in params:
@@ -633,7 +633,7 @@ def dond(
 
     nested_setpoints = _make_nested_setpoints(params_set, params_dicts)
 
-    last_setpoints = dict([(param, None) for param in params_set])
+    last_setpoints = {param: None for param in params_set}
     with _catch_keyboard_interrupts() as interrupted, meas.run() as datasaver:
         for setpoints in tqdm(nested_setpoints, disable=not show_progress):
             param_set_list = []
