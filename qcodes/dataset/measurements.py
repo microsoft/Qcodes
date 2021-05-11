@@ -71,6 +71,9 @@ from qcodes.utils.delaykeyboardinterrupt import DelayedKeyboardInterrupt
 if TYPE_CHECKING:
     from qcodes.dataset.sqlite.connection import ConnectionPlus
 
+if TYPE_CHECKING:
+    from qcodes.dataset.sqlite.connection import ConnectionPlus
+
 log = logging.getLogger(__name__)
 
 
@@ -560,9 +563,11 @@ class Runner:
         # next set up the "datasaver"
         if self.experiment is not None:
             exp_id: Optional[int] = self.experiment.exp_id
+            path_to_db: Optional[str] = self.experiment.path_to_db
             conn: Optional["ConnectionPlus"] = self.experiment.conn
         else:
             exp_id = None
+            path_to_db = None
             conn = None
 
         if self._dataset_class is DataSet:
@@ -573,8 +578,14 @@ class Runner:
                 conn=conn,
                 in_memory_cache=self._in_memory_cache,
             )
+        elif self._dataset_class is DataSetInMem:
+            dataset_class = cast(Type[DataSetInMem], self._dataset_class)
+            self.ds = dataset_class.create_new_run(
+                name=self.name,
+            )
         else:
             raise RuntimeError("Does not support any other dataset classes")
+
         # .. and give the dataset a snapshot as metadata
         if self.station is None:
             station = qc.Station.default
