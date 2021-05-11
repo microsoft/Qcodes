@@ -626,15 +626,17 @@ def dond(
             f"falling back to unknown shape.")
         shapes = None
 
-    _register_parameters(meas, params_set)
-    _register_parameters(meas, params_meas, setpoints=params_set,
-                         shapes=shapes)
+    _register_parameters(meas, all_setpoint_params)
+    _register_parameters(
+        meas, params_meas, setpoints=all_setpoint_params, shapes=shapes
+    )
     _set_write_period(meas, write_period)
 
     nested_setpoints = _make_nested_setpoints(params_set, params_dicts)
 
     last_setpoints = {param: None for param in params_set}
     with _catch_keyboard_interrupts() as interrupted, meas.run() as datasaver:
+        additional_setpoints_data = _process_params_meas(additional_setpoints)
         for setpoints in tqdm(nested_setpoints, disable=not show_progress):
             param_set_list = []
             param_value_pairs = zip(params_set[::-1], setpoints[::-1])
@@ -645,11 +647,13 @@ def dond(
                     setpoint_param.post_delay = delay
                     last_setpoints[setpoint_param] = setpoint
                 param_set_list.append((setpoint_param, setpoint))
-            datasaver.add_result(*param_set_list,
-                                 *_process_params_meas(params_meas,
-                                                       use_threads=use_threads)
-                                 )
+            datasaver.add_result(
+                *param_set_list,
+                *_process_params_meas(params_meas, use_threads=use_threads),
+                *additional_setpoints_data,
+            )
         dataset = datasaver.dataset
+
     return _handle_plotting(dataset, do_plot, interrupted())
 
 
