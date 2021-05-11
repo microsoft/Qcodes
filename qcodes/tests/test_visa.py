@@ -166,11 +166,9 @@ def test_visa_backend(mocker, request):
     inst2.close()
 
     # this one raises a warning
-    with warnings.catch_warnings(record=True) as w:
+    with pytest.warns(UserWarning, match="use the visalib"):
         inst3 = MockBackendVisaInstrument('name3', address='ASRL3@py')
         request.addfinalizer(inst3.close)
-        assert len(w) == 1
-        assert 'use the visalib' in str(w[-1].message)
 
     assert rm_mock.call_count == 3
     assert rm_mock.call_args == (('@py',),)
