@@ -313,6 +313,8 @@ def do1d(
                          shapes=shapes)
     _set_write_period(meas, write_period)
     _register_actions(meas, enter_actions, exit_actions)
+
+    original_delay = param_set.post_delay
     param_set.post_delay = delay
 
     # do1D enforces a simple relationship between measured parameters
@@ -335,6 +337,9 @@ def do1d(
                 *_process_params_meas(param_meas, use_threads=use_threads),
                 *additional_setpoints_data
             )
+
+    param_set.post_delay = original_delay
+
     return _handle_plotting(dataset, do_plot, interrupted())
 
 
@@ -440,6 +445,9 @@ def do2d(
     _set_write_period(meas, write_period)
     _register_actions(meas, enter_actions, exit_actions)
 
+    original_delay1 = param_set1.post_delay
+    original_delay2 = param_set2.post_delay
+
     param_set1.post_delay = delay1
     param_set2.post_delay = delay2
 
@@ -480,6 +488,10 @@ def do2d(
                 action()
             if flush_columns:
                 datasaver.flush_data_to_database()
+
+    param_set1.post_delay = original_delay1
+    param_set2.post_delay = original_delay2
+
     return _handle_plotting(dataset, do_plot, interrupted())
 
 
