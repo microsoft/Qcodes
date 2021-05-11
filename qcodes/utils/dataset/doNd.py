@@ -319,6 +319,7 @@ def do1d(
     # and set parameters. For anything more complicated this should be
     # reimplemented from scratch
     with _catch_keyboard_interrupts() as interrupted, meas.run() as datasaver:
+        dataset = datasaver.dataset
         additional_setpoints_data = _process_params_meas(additional_setpoints)
         setpoints = np.linspace(start, stop, num_points)
 
@@ -334,7 +335,6 @@ def do1d(
                 *_process_params_meas(param_meas, use_threads=use_threads),
                 *additional_setpoints_data
             )
-        dataset = datasaver.dataset
     return _handle_plotting(dataset, do_plot, interrupted())
 
 
@@ -444,6 +444,7 @@ def do2d(
     param_set2.post_delay = delay2
 
     with _catch_keyboard_interrupts() as interrupted, meas.run() as datasaver:
+        dataset = datasaver.dataset
         additional_setpoints_data = _process_params_meas(additional_setpoints)
         setpoints1 = np.linspace(start1, stop1, num_points1)
         for set_point1 in tqdm(setpoints1, disable=not show_progress):
@@ -479,7 +480,6 @@ def do2d(
                 action()
             if flush_columns:
                 datasaver.flush_data_to_database()
-        dataset = datasaver.dataset
     return _handle_plotting(dataset, do_plot, interrupted())
 
 
