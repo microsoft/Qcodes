@@ -3,6 +3,7 @@ import logging
 import os
 import time
 from collections.abc import Sized
+from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -87,6 +88,7 @@ class DataSetInMem(Sized):
         exp_name: str,
         sample_name: str,
         guid: str,
+        path_to_db: str,
         run_timestamp_raw: Optional[float],
         completed_timestamp_raw: Optional[float],
         metadata: Optional[Dict[str, Any]] = None,
@@ -99,9 +101,10 @@ class DataSetInMem(Sized):
         self._exp_name = exp_name
         self._sample_name = sample_name
         self._guid = guid
-        self._cache = (DataSetCacheInMem(self),)
+        self._cache = DataSetCacheInMem(self)
         self._run_timestamp_raw = run_timestamp_raw
         self._completed_timestamp_raw = completed_timestamp_raw
+        self._path_to_db = path_to_db
         if metadata is None:
             self._metadata = {}
         else:
@@ -111,40 +114,56 @@ class DataSetInMem(Sized):
     def create_new_run(
         cls,
         name: str,
+        path_to_db: "Optional[Union[Path,str]]" = None,
         exp_id: Optional[int] = None,
-        conn: "Optional[ConnectionPlus]" = None,
     ) -> "DataSetInMem":
 
-        from qcodes.dataset.sqlite.queries import create_run, get_last_experiment
-
-        if exp_id is None:
-            exp_id = get_last_experiment(conn)
-            if exp_id is None:  # if it's still None, then...
-                raise ValueError(
-                    "No experiments found."
-                    "You can start a new one with:"
-                    " new_experiment(name, sample_name)"
-                )
-        name = name or "dataset"
-        guid = generate_guid()
-        # todo replace with a better function that does not put in the results table name
-
-        run_counter, run_id, __ = create_run(
-            conn, exp_id, name, guid=guid, parameters=None
+        from qcodes.dataset.sqlite.database import conn_from_dbpath_or_conn
+        from qcodes.dataset.sqlite.queries import (
+            create_run,
+            get_experiment_name_from_experiment_id,
+            get_last_experiment,
+            get_sample_name_from_experiment_id,
         )
 
-        ds = cls(
-            run_id=run_id,
-            counter=run_counter,
-            name=name,
-            exp_id=exp_id,
-            exp_name=exp_name,
-            sample_name=sample_name,
-            guid=guid,
-            run_timestamp_raw=None,
-            completed_timestamp_raw=None,
-            metadata=None,
-        )
+        if path_to_db is not None:
+            path_to_db = str(path_to_db)
+
+        conn = conn_from_dbpath_or_conn(conn=None, path_to_db=path_to_db)
+        try:
+            if exp_id is None:
+                exp_id = get_last_experiment(conn)
+                if exp_id is None:  # if it's still None, then...
+                    raise ValueError(
+                        "No experiments found."
+                        "You can start a new one with:"
+                        " new_experiment(name, sample_name)"
+                    )
+            name = name or "dataset"
+            sample_name = get_sample_name_from_experiment_id(conn, exp_id)
+            exp_name = get_experiment_name_from_experiment_id(conn, exp_id)
+            guid = generate_guid()
+            # todo replace with a better function that does not put in the results table name
+
+            run_counter, run_id, __ = create_run(
+                conn, exp_id, name, guid=guid, parameters=None
+            )
+
+            ds = cls(
+                run_id=run_id,
+                counter=run_counter,
+                name=name,
+                exp_id=exp_id,
+                exp_name=exp_name,
+                sample_name=sample_name,
+                guid=guid,
+                path_to_db=conn.path_to_dbfile,
+                run_timestamp_raw=None,
+                completed_timestamp_raw=None,
+                metadata=None,
+            )
+        finally:
+            conn.close()
 
         return ds
 
@@ -202,7 +221,7 @@ class DataSetInMem(Sized):
     @property
     def snapshot_raw(self) -> Optional[str]:
         """Snapshot of the run as a JSON-formatted string (or None)"""
-        return self._metadata["snapshot"]
+        return self._metadata.get("snapshot")
 
     @property
     def number_of_results(self) -> int:
@@ -455,8 +474,32 @@ class DataSetInMem(Sized):
         """
         Perform the actions that must take place once the run has been started
         """
-        # todo here the other backend would write a bunch of data to
-        #  the runs table marking it started
+        from qcodes.dataset.sqlite.database import conn_from_dbpath_or_conn
+        from qcodes.dataset.sqlite.queries import (
+            set_run_timestamp,
+            update_parent_datasets,
+            update_run_description,
+        )
+
+        conn = conn_from_dbpath_or_conn(conn=None, path_to_db=self._path_to_db)
+
+        try:
+            # paramspecs = new_to_old(self.description.interdeps).paramspecs
+            #
+            # # for spec in paramspecs:
+            # #     add_parameter(conn, self.table_name, spec)
+
+            desc_str = serial.to_json_for_storage(self.description)
+
+            update_run_description(conn, self.run_id, desc_str)
+            # todo this should match the dataset
+            self._run_timestamp_raw = time.time()
+            set_run_timestamp(conn, self.run_id)
+
+            pdl_str = links_to_str(self._parent_dataset_links)
+            update_parent_datasets(conn, self.run_id, pdl_str)
+        finally:
+            conn.close()
 
     def mark_completed(self) -> None:
         """
