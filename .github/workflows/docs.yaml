@@ -47,7 +47,7 @@ jobs:
         args: install pandoc
       if: runner.os == 'Windows'
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v2.2.2
       with:
         python-version: ${{ matrix.python-version }}
     - name: prepare pip cache
@@ -87,7 +87,7 @@ jobs:
         name: docs_${{ matrix.python-version }}_${{ matrix.os }}
         path: ${{ github.workspace }}/docs/_build/html
     - name: Deploy to gh pages
-      uses: JamesIves/github-pages-deploy-action@4.1.2
+      uses: JamesIves/github-pages-deploy-action@4.1.3
       with:
         branch: gh-pages
         folder: ${{ github.workspace }}/docs/_build/html
