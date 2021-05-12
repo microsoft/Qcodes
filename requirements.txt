@@ -64,7 +64,7 @@ python-dateutil~=2.8.1
 pytz~=2021.1
 PyVISA~=1.11.3
 pywin32==300; sys_platform == 'win32'
-pywinpty~=1.0.1; sys_platform == 'win32'
+pywinpty~=0.5.7; sys_platform == 'win32'
 pyzmq~=22.0.3
 requests~=2.25.1
 requirements-parser~=0.2.0
@@ -76,7 +76,7 @@ Send2Trash~=1.5.0
 six~=1.16.0
 slack-sdk~=3.5.1
 tabulate~=0.8.9
-terminado~=0.9.4
+terminado~=0.9.5
 testpath~=0.4.4
 tornado~=6.1
 tqdm~=4.60.0
