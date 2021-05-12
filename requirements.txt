@@ -64,7 +64,7 @@ python-dateutil~=2.8.1
 pytz~=2021.1
 PyVISA~=1.11.3
 pywin32==300; sys_platform == 'win32'
-pywinpty~=1.0.1; sys_platform == 'win32'
+pywinpty~=0.5.7; sys_platform == 'win32'
 pyzmq~=22.0.3
 requests~=2.25.1
 requirements-parser~=0.2.0
