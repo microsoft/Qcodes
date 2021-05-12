@@ -60,25 +60,25 @@ class NumpyJSONEncoder(json.JSONEncoder):
         List of conversions that this encoder performs:
 
         * ``numpy.generic`` (all integer, floating, and other types) gets
-        converted to its python equivalent using its ``item`` method (see
-        ``numpy`` docs for more information,
-        https://docs.scipy.org/doc/numpy/reference/arrays.scalars.html).
+          converted to its python equivalent using its ``item`` method (see
+          ``numpy`` docs for more information,
+          https://docs.scipy.org/doc/numpy/reference/arrays.scalars.html).
         * ``numpy.ndarray`` gets converted to python list using its ``tolist``
-        method.
+          method.
         * Complex number (a number that conforms to ``numbers.Complex`` ABC) gets
-        converted to a dictionary with fields ``re`` and ``im`` containing floating
-        numbers for the real and imaginary parts respectively, and a field
-        ``__dtype__`` containing value ``complex``.
+          converted to a dictionary with fields ``re`` and ``im`` containing floating
+          numbers for the real and imaginary parts respectively, and a field
+          ``__dtype__`` containing value ``complex``.
         * Numbers with uncertainties  (numbers that conforms to ``uncertainties.UFloat``) get
-        converted to a dictionary with fields ``nominal_value`` and ``std_dev`` containing floating
-        numbers for the nominal and uncertainty parts respectively, and a field
-        ``__dtype__`` containing value ``UFloat``.
+          converted to a dictionary with fields ``nominal_value`` and ``std_dev`` containing floating
+          numbers for the nominal and uncertainty parts respectively, and a field
+          ``__dtype__`` containing value ``UFloat``.
         * Object with a ``_JSONEncoder`` method get converted the return value of
-        that method.
+          that method.
         * Objects which support the pickle protocol get converted using the
-        data provided by that protocol.
+          data provided by that protocol.
         * Other objects which cannot be serialized get converted to their
-        string representation (suing the ``str`` function).
+          string representation (using the ``str`` function).
         """
         if isinstance(obj, np.generic) \
                 and not isinstance(obj, np.complexfloating):
