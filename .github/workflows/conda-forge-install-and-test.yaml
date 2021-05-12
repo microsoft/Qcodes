@@ -29,7 +29,7 @@ jobs:
       uses: ./.github/actions/setup-ubuntu-latest-xvfb
       if: runner.os == 'Linux'
     - name: install dependencies
-      uses: conda-incubator/setup-miniconda@v2
+      uses: conda-incubator/setup-miniconda@v2.1.1
       with:
         activate-environment: qcodesforge
         environment-file: .github/static/environment_forge_full.yml
