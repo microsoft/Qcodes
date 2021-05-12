@@ -18,6 +18,7 @@ from typing import (
 )
 
 import numpy
+import numpy as np
 import xarray as xr
 
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
@@ -188,7 +189,25 @@ class DataSetInMem(Sized):
             completed_timestamp_raw=loaded_data.completed_timestamp_raw,
             metadata={"snapshot": loaded_data.snapshot},
         )
+        ds._cache = DataSetCacheInMem(ds)
+        ds._cache._data = cls._from_xarray_dataset_to_qcodes(loaded_data)
+
         return ds
+
+    @staticmethod
+    def _from_xarray_dataset_to_qcodes(xr_data: xr.Dataset):
+        output = {}
+        for datavar in xr_data.data_vars:
+            output[datavar] = {}
+            data = xr_data[datavar]
+            output[datavar][datavar] = data.data
+            coords_unexpanded = []
+            for coord in data.coords:
+                coords_unexpanded.append(xr_data[coord].data)
+            coords_arrays = np.meshgrid(*coords_unexpanded)
+            for coord_name, coord_array in zip(data.coords, coords_arrays):
+                output[datavar][coord_name] = coord_array
+        return output
 
     def prepare(
         self,
@@ -419,7 +438,8 @@ class DataSetInMem(Sized):
             tag: represents the key in the metadata dictionary
             metadata: actual metadata
         """
-
+        # todo this never commits the data to sqlite do we want that
+        # it also never updates any exported netcdf file
         self._metadata[tag] = metadata
 
     def add_snapshot(self, snapshot: str, overwrite: bool = False) -> None:
@@ -516,6 +536,7 @@ class DataSetInMem(Sized):
             #
             # # for spec in paramspecs:
             # #     add_parameter(conn, self.table_name, spec)
+            # todo do we want to keep adding parameters to the runs table?
 
             desc_str = serial.to_json_for_storage(self.description)
 
