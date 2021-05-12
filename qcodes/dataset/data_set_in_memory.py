@@ -18,6 +18,7 @@ from typing import (
 )
 
 import numpy
+import xarray as xr
 
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
@@ -49,6 +50,7 @@ if TYPE_CHECKING:
     from qcodes.station import Station
 
     from .data_set_cache import DataSetCache
+
 
 log = logging.getLogger(__name__)
 
@@ -165,6 +167,27 @@ class DataSetInMem(Sized):
         finally:
             conn.close()
 
+        return ds
+
+    @classmethod
+    def load_from_netcdf(cls, path: Union[Path, str]):
+        loaded_data = xr.load_dataset(path)
+        # todo do we want to create this run in the sqlites run table if not
+        # exists. e.g. load by guid and then if that is not there create one.
+
+        ds = cls(
+            run_id=loaded_data.captured_run_id,
+            counter=loaded_data.captured_counter,
+            name=loaded_data.ds_name,
+            exp_id=0,
+            exp_name=loaded_data.exp_name,
+            sample_name=loaded_data.sample_name,
+            guid=loaded_data.guid,
+            path_to_db="",  # todo what should this be?
+            run_timestamp_raw=loaded_data.run_timestamp_raw,
+            completed_timestamp_raw=loaded_data.completed_timestamp_raw,
+            metadata={"snapshot": loaded_data.snapshot},
+        )
         return ds
 
     def prepare(
