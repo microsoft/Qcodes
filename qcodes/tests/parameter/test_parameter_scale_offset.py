@@ -174,7 +174,7 @@ def test_scale_and_offset_raw_value_iterable_for_set_cache(values,
         event('Scale is array but not offset')
 
 
-def test_data_return_type_after_setting_scale_and_offset():
+def test_numpy_array_valued_parameter_preserves_type_if_scale_and_offset_are_set():
 
     def rands():
         return np.random.randn(5)
