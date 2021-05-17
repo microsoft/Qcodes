@@ -503,7 +503,7 @@ class _BaseParameter(Metadatable):
                                   in zip(raw_value, self.scale))
             else:
                 # Use single scale for all values
-                raw_value *= self.scale
+                raw_value = raw_value * self.scale
 
         # apply offset next
         if self.offset is not None:
@@ -513,7 +513,7 @@ class _BaseParameter(Metadatable):
                                   in zip(raw_value, self.offset))
             else:
                 # Use single offset for all values
-                raw_value += self.offset
+                raw_value = raw_value + self.offset
 
         # parser last
         if self.set_parser is not None:
