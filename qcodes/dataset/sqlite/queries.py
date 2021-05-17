@@ -8,10 +8,11 @@ import time
 import unicodedata
 import warnings
 from typing import (Any, Callable, Dict, List, Mapping, Optional, Sequence,
-                    Tuple, Union, cast)
+                    Tuple, Union, cast, Iterable)
 from copy import copy
 import numpy as np
 from numpy import VisibleDeprecationWarning
+from qcodes.dataset.sqlite.database import connect
 
 import qcodes as qc
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
@@ -32,6 +33,7 @@ from qcodes.dataset.sqlite.query_helpers import (VALUES, insert_column,
                                                  sql_placeholder_string,
                                                  update_where)
 from qcodes.utils.deprecate import deprecate
+from pathlib import Path
 
 log = logging.getLogger(__name__)
 
@@ -305,34 +307,54 @@ def _expand_data_to_arrays(data: List[List[Any]], paramspecs: Sequence[ParamSpec
     types = [param.type for param in paramspecs]
     # if we have array type parameters expand all other parameters
     # to arrays
-    if 'array' in types and ('numeric' in types or 'text' in types
-                             or 'complex' in types):
-        first_array_element = types.index('array')
-        numeric_elms = [i for i, x in enumerate(types)
-                        if x == "numeric"]
-        complex_elms = [i for i, x in enumerate(types)
-                        if x == 'complex']
-        text_elms = [i for i, x in enumerate(types)
-                     if x == "text"]
+    if 'array' in types:
+
+        if ('numeric' in types or 'text' in types
+                or 'complex' in types):
+            first_array_element = types.index('array')
+            numeric_elms = [i for i, x in enumerate(types)
+                            if x == "numeric"]
+            complex_elms = [i for i, x in enumerate(types)
+                            if x == 'complex']
+            text_elms = [i for i, x in enumerate(types)
+                         if x == "text"]
+            for row in data:
+                for element in numeric_elms:
+                    row[element] = np.full_like(row[first_array_element],
+                                                row[element],
+                                                dtype=np.dtype(np.float64))
+                    # todo should we handle int/float types here
+                    # we would in practice have to perform another
+                    # loop to check that all elements of a given can be cast to
+                    # int without loosing precision before choosing an integer
+                    # representation of the array
+                for element in complex_elms:
+                    row[element] = np.full_like(row[first_array_element],
+                                                row[element],
+                                                dtype=np.dtype(np.complex128))
+                for element in text_elms:
+                    strlen = len(row[element])
+                    row[element] = np.full_like(row[first_array_element],
+                                                row[element],
+                                                dtype=np.dtype(f'U{strlen}'))
+
         for row in data:
-            for element in numeric_elms:
-                row[element] = np.full_like(row[first_array_element],
-                                            row[element],
-                                            dtype=np.dtype(np.float64))
-                # todo should we handle int/float types here
-                # we would in practice have to perform another
-                # loop to check that all elements of a given can be cast to
-                # int without loosing precision before choosing an integer
-                # representation of the array
-            for element in complex_elms:
-                row[element] = np.full_like(row[first_array_element],
-                                            row[element],
-                                            dtype=np.dtype(np.complex128))
-            for element in text_elms:
-                strlen = len(row[element])
-                row[element] = np.full_like(row[first_array_element],
-                                            row[element],
-                                            dtype=np.dtype(f'U{strlen}'))
+            # now expand all one element arrays to match the expected size
+            # one element arrays are introduced if scalar values are stored
+            # with an explicit array storage type
+            sizes = tuple(array.size for array in row)
+            max_size = max(sizes)
+            max_index = sizes.index(max_size)
+
+            for i, array in enumerate(row):
+                if array.size != max_size:
+                    if array.size == 1:
+                        row[i] = np.full_like(row[max_index],
+                                              row[i],
+                                              dtype=row[i].dtype)
+                    else:
+                        log.warning(f"Cannot expand array of size {array.size} "
+                                    f"to size {row[max_index].size}")
 
 
 def _get_data_for_one_param_tree(conn: ConnectionPlus, table_name: str,
@@ -809,8 +831,45 @@ def get_guid_from_run_id(conn: ConnectionPlus, run_id: int) -> str:
     Args:
         conn: database connection
         run_id: id of the run
+
+    Returns:
+        The guid of the run_id.
     """
     return select_one_where(conn, "runs", "guid", "run_id", run_id)
+
+
+def get_guids_from_multiple_run_ids(db_path: Union[str, Path],
+                                    run_ids: Iterable[int]
+                                    ) -> List[str]:
+    """
+    Retrieve guids of runs in the given database specified by their run ids.
+    run ids are run_id in the database and not captured_run_id.
+
+    Args:
+        db_path: The path to the database file.
+        run_ids: An integer iterable of run ids to get their guids.
+
+    Returns:
+        A list of guids for the supplied run_ids.
+    """
+
+    guids: List[str] = []
+
+    try:
+        conn = connect(db_path)
+        for run_id in run_ids:
+            if run_exists(conn=conn, run_id=run_id):
+                run_id_guid = get_guid_from_run_id(conn=conn,
+                                                   run_id=run_id)
+                guids.append(run_id_guid)
+            else:
+                raise RuntimeError(f'run id {run_id} does not'
+                                   ' exist in the database')
+    finally:
+        conn.close()
+        del conn
+
+    return guids
 
 
 def finish_experiment(conn: ConnectionPlus, exp_id: int) -> None:
@@ -1796,51 +1855,35 @@ def remove_trigger(conn: ConnectionPlus, trigger_id: str) -> None:
     transaction(conn, f"DROP TRIGGER IF EXISTS {trigger_id};")
 
 
-def append_shaped_parameter_data_to_existing_arrays(
+def load_new_data_for_rundescriber(
         conn: ConnectionPlus,
         table_name: str,
         rundescriber: RunDescriber,
-        write_status: Dict[str, Optional[int]],
-        read_status: Dict[str, int],
-        data: Dict[str, Dict[str, np.ndarray]],
-) -> Tuple[Dict[str, Optional[int]],
-           Dict[str, int],
-           Dict[str, Dict[str, np.ndarray]]]:
+        read_status: Mapping[str, int],
+) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, int]]:
     """
-    Append newly loaded data to an already existing cache.
+    Load all new data for a given rundesciber since the rows given by read_status.
 
     Args:
         conn: The connection to the sqlite database
         table_name: The name of the table the data is stored in
         rundescriber: The rundescriber that describes the run
-        write_status: Mapping from dependent parameter name to number of rows
-          written to the cache previously.
         read_status: Mapping from dependent parameter name to number of rows
           read from the db previously.
-        data: Mapping from dependent parameter name to mapping
-          from parameter name to numpy arrays that the data should be
-          inserted into.
 
     Returns:
-        Updated write and read status, and the updated ``data``
+        new data and an updated number of rows read.
+
     """
+
     parameters = tuple(ps.name for ps in
                        rundescriber.interdeps.non_dependencies)
-    merged_data = {}
-
-    updated_write_status = copy(write_status)
-    updated_read_status = copy(read_status)
+    updated_read_status: Dict[str, int] = dict(read_status)
+    new_data_dict: Dict[str, Dict[str, np.ndarray]] = {}
 
     for meas_parameter in parameters:
 
-        shapes = rundescriber.shapes
-        if shapes is not None:
-            shape = shapes.get(meas_parameter, None)
-        else:
-            shape = None
-
         start = read_status.get(meas_parameter, 0) + 1
-
         new_data, n_rows_read = get_parameter_data_for_one_paramtree(
             conn,
             table_name,
@@ -1849,79 +1892,6 @@ def append_shaped_parameter_data_to_existing_arrays(
             start=start,
             end=None
         )
-
-        existing_data = data.get(meas_parameter, {})
-
-        subtree_merged_data = {}
-        subtree_parameters = set(existing_data.keys()) | set(new_data.keys())
-        new_write_status: Optional[int]
-
-        for subtree_param in subtree_parameters:
-            existing_values = existing_data.get(subtree_param)
-            new_values = new_data.get(subtree_param)
-            if existing_values is not None and new_values is not None:
-                (subtree_merged_data[subtree_param],
-                 new_write_status) = _insert_into_data_dict(
-                    existing_values,
-                    new_values,
-                    write_status.get(meas_parameter),
-                    shape=shape
-                )
-                updated_write_status[meas_parameter] = new_write_status
-            elif new_values is not None:
-                (subtree_merged_data[subtree_param],
-                 new_write_status) = _create_new_data_dict(
-                    new_values,
-                    shape
-                )
-                updated_write_status[meas_parameter] = new_write_status
-            elif existing_values is not None:
-                subtree_merged_data[subtree_param] = existing_values
-        merged_data[meas_parameter] = subtree_merged_data
-        updated_read_status[meas_parameter] = read_status.get(meas_parameter, 0) + n_rows_read
-    return updated_write_status, updated_read_status, merged_data
-
-
-def _create_new_data_dict(new_values: np.ndarray,
-                          shape: Optional[Tuple[int, ...]]
-                          ) -> Tuple[np.ndarray, int]:
-    if shape is None:
-        return new_values, new_values.size
-    else:
-        n_values = new_values.size
-        data = np.zeros(shape, dtype=new_values.dtype)
-
-        if new_values.dtype.kind == "f" or new_values.dtype.kind == "c":
-            data[:] = np.nan
-
-        data.ravel()[0:n_values] = new_values
-        return data, n_values
-
-
-def _insert_into_data_dict(
-        existing_values: np.ndarray,
-        new_values: np.ndarray,
-        write_status: Optional[int],
-        shape: Optional[Tuple[int, ...]]
-) -> Tuple[np.ndarray, Optional[int]]:
-    if shape is None or write_status is None:
-        return np.append(existing_values, new_values, axis=0), None
-    else:
-        if existing_values.dtype.kind in ('U', 'S'):
-            # string type arrays may be too small for the new data
-            # read so rescale if needed.
-            if new_values.dtype.itemsize > existing_values.dtype.itemsize:
-                existing_values = existing_values.astype(new_values.dtype)
-        n_values = new_values.size
-        new_write_status = write_status+n_values
-        if new_write_status > existing_values.size:
-            log.warning(f"Incorrect shape of dataset: Dataset is expected to "
-                        f"contain {existing_values.size} points but trying to "
-                        f"add an amount of data that makes it contain {new_write_status} points. Cache will "
-                        f"be flattened into a 1D array")
-            return (np.append(existing_values.flatten(),
-                              new_values.flatten(), axis=0),
-                    new_write_status)
-        else:
-            existing_values.ravel()[write_status:new_write_status] = new_values
-            return existing_values, new_write_status
+        new_data_dict[meas_parameter] = new_data
+        updated_read_status[meas_parameter] = start + n_rows_read - 1
+    return new_data_dict, updated_read_status

@@ -176,7 +176,7 @@ html_theme = "sphinx_rtd_theme"
 # html_theme_options = {}
 
 # Add any paths that contain custom themes here, relative to this directory.
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+# html_theme_path = []
 
 # The name for this set of Sphinx documents.
 # "<project> v<release> documentation" by default.
@@ -394,7 +394,7 @@ autodoc_default_options = {'members': True, 'undoc-members': True,
 # there when generating the docs
 autodoc_mock_imports = ['pyspcm', 'zhinst', 'zhinst.utils', 'keysightSD1',
                         'cffi', 'spirack', 'clr', 'win32com',
-                        'win32com.client', 'pythoncom', 'slacker', 'hickle']
+                        'win32com.client', 'pythoncom', 'slack-sdk', 'hickle']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

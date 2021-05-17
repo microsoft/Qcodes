@@ -1,12 +1,74 @@
 from functools import partial
 import numpy as np
-from typing import Any
+from typing import Any, Union
 
 from qcodes import VisaInstrument
-from qcodes.instrument.parameter import ArrayParameter, ParamRawDataType
-from qcodes.utils.validators import Numbers, Ints, Enum, Strings
+from qcodes.instrument.parameter import ArrayParameter, ParamRawDataType, ParameterWithSetpoints, Parameter
+from qcodes.utils.validators import Numbers, Ints, Enum, Strings, Arrays
 
-from typing import Tuple
+from typing import Tuple, Iterable
+import time
+
+
+class ChannelTrace(ParameterWithSetpoints):
+    """
+    Parameter class for the two channel buffers
+    """
+
+    def __init__(self, name: str, channel: int, **kwargs: Any) -> None:
+        """
+        Args:
+            name: The name of the parameter
+            channel: The relevant channel (1 or 2). The name should
+                should match this.
+        """
+        super().__init__(name, **kwargs)
+
+        self._valid_channels = (1, 2)
+
+        if channel not in self._valid_channels:
+            raise ValueError('Invalid channel specifier. SR830 only has '
+                             'channels 1 and 2.')
+
+        if not isinstance(self.root_instrument, SR830):
+            raise ValueError('Invalid parent instrument. ChannelBuffer '
+                             'can only live on an SR830.')
+
+        self.channel = channel
+        self.update_unit()
+
+    def update_unit(self) -> None:
+        assert isinstance(self.root_instrument, SR830)
+        params = self.root_instrument.parameters
+        if params[f'ch{self.channel}_ratio'].get() != 'none':
+            self.unit = '%'
+        else:
+            disp = params[f'ch{self.channel}_display'].get()
+            if disp == 'Phase':
+                self.unit = 'deg'
+            else:
+                self.unit = 'V'
+            self.label = disp
+
+    def get_raw(self) -> ParamRawDataType:
+        """
+        Get command. Returns numpy array
+        """
+        assert isinstance(self.root_instrument, SR830)
+        N = self.root_instrument.buffer_npts()
+        if N == 0:
+            raise ValueError('No points stored in SR830 data buffer.'
+                             ' Can not poll anything.')
+
+        # poll raw binary data
+        self.root_instrument.write(f'TRCL ? {self.channel}, 0, {N}')
+        rawdata = self.root_instrument.visa_handle.read_raw()
+
+        # parse it
+        realdata = np.fromstring(rawdata, dtype='<i2')
+        numbers = realdata[::2]*2.0**(realdata[1::2]-124)
+
+        return numbers
 
 
 class ChannelBuffer(ArrayParameter):
@@ -353,24 +415,6 @@ class SR830(VisaInstrument):
                                'GPIB': '1\n',
                            })
 
-        # Channel setup
-        for ch in range(1, 3):
-
-            # detailed validation and mapping performed in set/get functions
-            self.add_parameter(f'ch{ch}_ratio',
-                               label=f'Channel {ch} ratio',
-                               get_cmd=partial(self._get_ch_ratio, ch),
-                               set_cmd=partial(self._set_ch_ratio, ch),
-                               vals=Strings())
-            self.add_parameter(f'ch{ch}_display',
-                               label=f'Channel {ch} display',
-                               get_cmd=partial(self._get_ch_display, ch),
-                               set_cmd=partial(self._set_ch_display, ch),
-                               vals=Strings())
-            self.add_parameter(f'ch{ch}_databuffer',
-                               channel=ch,
-                               parameter_class=ChannelBuffer)
-
         # Data transfer
         self.add_parameter('X',
                            get_cmd='OUTP? 1',
@@ -431,6 +475,33 @@ class SR830(VisaInstrument):
                            get_cmd='SPTS ?',
                            get_parser=int)
 
+        self.add_parameter('sweep_setpoints',
+                           parameter_class=GeneratedSetPoints,
+                           vals=Arrays(shape=(self.buffer_npts.get,)))
+
+        # Channel setup
+        for ch in range(1, 3):
+
+            # detailed validation and mapping performed in set/get functions
+            self.add_parameter(f'ch{ch}_ratio',
+                               label=f'Channel {ch} ratio',
+                               get_cmd=partial(self._get_ch_ratio, ch),
+                               set_cmd=partial(self._set_ch_ratio, ch),
+                               vals=Strings())
+            self.add_parameter(f'ch{ch}_display',
+                               label=f'Channel {ch} display',
+                               get_cmd=partial(self._get_ch_display, ch),
+                               set_cmd=partial(self._set_ch_display, ch),
+                               vals=Strings())
+            self.add_parameter(f'ch{ch}_databuffer',
+                               channel=ch,
+                               parameter_class=ChannelBuffer)
+            self.add_parameter(f'ch{ch}_datatrace',
+                               channel=ch,
+                               vals=Arrays(shape=(self.buffer_npts.get,)),
+                               setpoints=(self.sweep_setpoints,),
+                               parameter_class=ChannelTrace)
+
         # Auto functions
         self.add_function('auto_gain', call_cmd='AGAN')
         self.add_function('auto_reserve', call_cmd='ARSV')
@@ -485,7 +556,7 @@ class SR830(VisaInstrument):
             'r': '3',
             'p': '4',
         'phase': '4',
-           'θ' : '4',
+            'θ': '4',
          'aux1': '5',
          'aux2': '6',
          'aux3': '7',
@@ -593,6 +664,7 @@ class SR830(VisaInstrument):
         self.write(f'SRAT {SR}')
         self._buffer1_ready = False
         self._buffer2_ready = False
+        self.sweep_setpoints.update_units_if_constant_sample_rate()
 
     def _get_ch_ratio(self, channel: int) -> str:
         val_mapping = {1: {0: 'none',
@@ -655,6 +727,12 @@ class SR830(VisaInstrument):
         ratio_val = int(self.ask(f'DDEF ? {channel}').split(',')[1])
         self.write(f'DDEF {channel}, {disp_int}, {ratio_val}')
         self._buffer_ready = False
+        # we update the unit of the datatrace
+        # according to the choice of channel
+        params = self.parameters
+        dataparam = params[f'ch{channel}_datatrace']
+        assert isinstance(dataparam, ChannelTrace)
+        dataparam.update_unit()
 
     def _set_units(self, unit: str) -> None:
         # TODO:
@@ -695,3 +773,81 @@ class SR830(VisaInstrument):
             return self._VOLT_TO_N[s]
         else:
             return self._CURR_TO_N[s]
+
+    def autorange(self, max_changes: int = 1) -> None:
+        """
+        Automatically changes the sensitivity of the instrument according to
+        the R value and defined max_changes.
+
+        Args:
+            max_changes: Maximum number of steps allowing the function to
+                automatically change the sensitivity (default is 1). The actual
+                number of steps needed to change to the optimal sensitivity may
+                be more or less than this maximum.
+        """
+        def autorange_once() -> bool:
+            r = self.R()
+            sens = self.sensitivity()
+            if r > 0.9 * sens:
+                return self.increment_sensitivity()
+            elif r < 0.1 * sens:
+                return self.decrement_sensitivity()
+            return False
+
+        sets = 0
+        while autorange_once() and sets < max_changes:
+            sets += 1
+            time.sleep(self.time_constant())
+
+    def set_sweep_parameters(self,
+                             sweep_param: Parameter,
+                             start: float,
+                             stop: float,
+                             n_points: int = 10,
+                             label: Union[str, None] = None) -> None:
+
+        self.sweep_setpoints.sweep_array = np.linspace(start, stop, n_points)
+        self.sweep_setpoints.unit = sweep_param.unit
+        if label is not None:
+            self.sweep_setpoints.label = label
+        elif sweep_param.label is not None:
+            self.sweep_setpoints.label = sweep_param.label
+
+
+class GeneratedSetPoints(Parameter):
+    """
+    A parameter that generates a setpoint array from start, stop and num points
+    parameters.
+    """
+    def __init__(self,
+                 sweep_array: Iterable[Union[float, int]] = np.linspace(0, 1, 10),
+                 *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.sweep_array = sweep_array
+        self.update_units_if_constant_sample_rate()
+
+    def update_units_if_constant_sample_rate(self) -> None:
+        """
+        If the buffer is filled at a constant sample rate,
+        update the unit to "s" and label to "Time";
+        otherwise do nothing
+        """
+        assert isinstance(self.root_instrument, SR830)
+        SR = self.root_instrument.buffer_SR.get()
+        if SR != 'Trigger':
+            self.unit = 's'
+            self.label = 'Time'
+
+    def set_raw(self, value: Iterable[Union[float, int]]) -> None:
+        self.sweep_array = value
+
+    def get_raw(self) -> ParamRawDataType:
+        assert isinstance(self.root_instrument, SR830)
+        SR = self.root_instrument.buffer_SR.get()
+        if SR == 'Trigger':
+            return self.sweep_array
+        else:
+            N = self.root_instrument.buffer_npts.get()
+            dt = 1/SR
+
+            return np.linspace(0, N*dt, N)

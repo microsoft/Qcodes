@@ -3,6 +3,7 @@ import logging
 import pytest
 import numpy as np
 import hypothesis as hst
+from hypothesis import HealthCheck, settings
 
 from qcodes.instrument_drivers.oxford.MercuryiPS_VISA import MercuryiPS
 import qcodes.instrument.sims as sims
@@ -89,6 +90,7 @@ def test_wrong_field_limit_raises():
                    field_limits=0)
 
 
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @hst.given(x=hst.strategies.floats(min_value=-3, max_value=3),
            y=hst.strategies.floats(min_value=-3, max_value=3),
            z=hst.strategies.floats(min_value=-3, max_value=3))
@@ -132,6 +134,7 @@ def get_ramp_order(caplog_records):
     return order
 
 
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @hst.given(x=hst.strategies.floats(min_value=-3, max_value=3),
            y=hst.strategies.floats(min_value=-3, max_value=3),
            z=hst.strategies.floats(min_value=-3, max_value=3))

@@ -1,10 +1,14 @@
 import logging
 import os
+import sys
+from collections import defaultdict
 from contextlib import contextmanager
-from typing import Callable, Iterator, List, Optional, Sequence, Tuple, Union
+from typing import (Callable, Iterator, List, Optional,
+                    Sequence, Tuple, Union, Dict)
 
 import matplotlib
 import numpy as np
+from tqdm.auto import tqdm
 
 from qcodes import config
 from qcodes.dataset.data_set import DataSet
@@ -13,8 +17,9 @@ from qcodes.dataset.descriptions.detect_shapes import \
 from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.measurements import Measurement, res_type
 from qcodes.dataset.plotting import plot_dataset
-from qcodes.instrument.base import _BaseParameter
+from qcodes.instrument.parameter import _BaseParameter, ParamDataType
 from qcodes.dataset.experiment_container import Experiment
+from qcodes.utils.threading import RespondingThread
 
 ActionsT = Sequence[Callable[[], None]]
 
@@ -31,14 +36,89 @@ OutType = List[res_type]
 LOG = logging.getLogger(__name__)
 
 
-def _process_params_meas(param_meas: Sequence[ParamMeasT]) -> OutType:
+class UnsafeThreadingException(Exception):
+    pass
+
+
+class _ParamCaller:
+
+    def __init__(self, *parameters: _BaseParameter):
+
+        self._parameters = parameters
+
+    def __call__(self) -> Tuple[ParamDataType, ...]:
+        output = []
+        for param in self._parameters:
+            output.append(param.get())
+        return tuple(output)
+
+    def __repr__(self) -> str:
+        names = tuple(param.full_name for param in self._parameters)
+        return f"ParamCaller of {names}"
+
+
+def _instrument_to_param(
+        params: Sequence[ParamMeasT]
+) -> Dict[Optional[str], Tuple[_BaseParameter, ...]]:
+
+    real_parameters = [param for param in params
+                       if isinstance(param, _BaseParameter)]
+
+    output: Dict[Optional[str], Tuple[_BaseParameter, ...]] = defaultdict(tuple)
+    for param in real_parameters:
+        if param.root_instrument:
+            output[param.root_instrument.full_name] += (param,)
+        else:
+            output[None] += (param,)
+
+    return output
+
+
+def _call_params_threaded(param_meas: Sequence[ParamMeasT]) -> OutType:
+
+    inst_param_mapping = _instrument_to_param(param_meas)
+    executors = tuple(_ParamCaller(*param_list)
+                      for param_list in
+                      inst_param_mapping.values())
+
     output: OutType = []
+    threads = [RespondingThread(target=executor)
+               for executor in executors]
+
+    for t in threads:
+        t.start()
+
+    for t, param_list in zip(threads, inst_param_mapping.values()):
+        thread_output = t.output()
+        assert thread_output is not None
+        for param, value in zip(param_list, thread_output):
+            output.append((param, value))
+
+    return output
+
+
+def _call_params(param_meas: Sequence[ParamMeasT]) -> OutType:
+
+    output: OutType = []
+
     for parameter in param_meas:
         if isinstance(parameter, _BaseParameter):
             output.append((parameter, parameter.get()))
         elif callable(parameter):
             parameter()
+
     return output
+
+
+def _process_params_meas(
+    param_meas: Sequence[ParamMeasT],
+        use_threads: bool = False
+    ) -> OutType:
+
+    if use_threads:
+        return _call_params_threaded(param_meas)
+
+    return _call_params(param_meas)
 
 
 def _register_parameters(
@@ -93,7 +173,8 @@ def do0d(
         write_period: Optional[float] = None,
         measurement_name: str = "",
         exp: Optional[Experiment] = None,
-        do_plot: Optional[bool] = None
+        do_plot: Optional[bool] = None,
+        use_threads: bool = False,
         ) -> AxesTupleListWithDataSet:
     """
     Perform a measurement of a single parameter. This is probably most
@@ -112,6 +193,9 @@ def do0d(
         exp: The experiment to use for this measurement.
         do_plot: should png and pdf versions of the images be saved after the
             run. If None the setting will be read from ``qcodesrc.json``
+        use_threads: If True measurements from each instrument will be done on
+            separate threads. If you are measuring from several instruments
+            this may give a significant speedup.
 
     Returns:
         The QCoDeS dataset.
@@ -137,7 +221,12 @@ def do0d(
     _set_write_period(meas, write_period)
 
     with meas.run() as datasaver:
-        datasaver.add_result(*_process_params_meas(param_meas))
+        datasaver.add_result(
+            *_process_params_meas(
+                param_meas,
+                use_threads=use_threads
+            )
+        )
         dataset = datasaver.dataset
 
     return _handle_plotting(dataset, do_plot)
@@ -153,7 +242,9 @@ def do1d(
         measurement_name: str = "",
         exp: Optional[Experiment] = None,
         do_plot: Optional[bool] = None,
+        use_threads: bool = False,
         additional_setpoints: Sequence[ParamMeasT] = tuple(),
+        show_progress: Optional[None] = None,
         ) -> AxesTupleListWithDataSet:
     """
     Perform a 1D scan of ``param_set`` from ``start`` to ``stop`` in
@@ -183,13 +274,21 @@ def do1d(
             value of 'results' is used for the dataset.
         exp: The experiment to use for this measurement.
         do_plot: should png and pdf versions of the images be saved after the
-            run. If None the setting will be read from ``qcodesrc.json``
+            run. If None the setting will be read from ``qcodesrc.json`
+        use_threads: If True measurements from each instrument will be done on
+            separate threads. If you are measuring from several instruments
+            this may give a significant speedup.
+        show_progress: should a progress bar be displayed during the
+            measurement. If None the setting will be read from ``qcodesrc.json`
 
     Returns:
         The QCoDeS dataset.
     """
     if do_plot is None:
         do_plot = config.dataset.dond_plot
+    if show_progress is None:
+        show_progress = config.dataset.dond_show_progress
+
     meas = Measurement(name=measurement_name, exp=exp)
 
     all_setpoint_params = (param_set,) + tuple(
@@ -214,19 +313,33 @@ def do1d(
                          shapes=shapes)
     _set_write_period(meas, write_period)
     _register_actions(meas, enter_actions, exit_actions)
+
+    original_delay = param_set.post_delay
     param_set.post_delay = delay
 
     # do1D enforces a simple relationship between measured parameters
     # and set parameters. For anything more complicated this should be
     # reimplemented from scratch
     with _catch_keyboard_interrupts() as interrupted, meas.run() as datasaver:
-        additional_setpoints_data = _process_params_meas(additional_setpoints)
-        for set_point in np.linspace(start, stop, num_points):
-            param_set.set(set_point)
-            datasaver.add_result((param_set, set_point),
-                                 *_process_params_meas(param_meas),
-                                 *additional_setpoints_data)
         dataset = datasaver.dataset
+        additional_setpoints_data = _process_params_meas(additional_setpoints)
+        setpoints = np.linspace(start, stop, num_points)
+
+        # flush to prevent unflushed print's to visually interrupt tqdm bar
+        # updates
+        sys.stdout.flush()
+        sys.stderr.flush()
+
+        for set_point in tqdm(setpoints, disable=not show_progress):
+            param_set.set(set_point)
+            datasaver.add_result(
+                (param_set, set_point),
+                *_process_params_meas(param_meas, use_threads=use_threads),
+                *additional_setpoints_data
+            )
+
+    param_set.post_delay = original_delay
+
     return _handle_plotting(dataset, do_plot, interrupted())
 
 
@@ -246,7 +359,9 @@ def do2d(
         exp: Optional[Experiment] = None,
         flush_columns: bool = False,
         do_plot: Optional[bool] = None,
+        use_threads: bool = False,
         additional_setpoints: Sequence[ParamMeasT] = tuple(),
+        show_progress: Optional[None] = None,
         ) -> AxesTupleListWithDataSet:
     """
     Perform a 1D scan of ``param_set1`` from ``start1`` to ``stop1`` in
@@ -288,12 +403,21 @@ def do2d(
             the measurement but not scanned.
         do_plot: should png and pdf versions of the images be saved after the
             run. If None the setting will be read from ``qcodesrc.json``
+        use_threads: If True measurements from each instrument will be done on
+            separate threads. If you are measuring from several instruments
+            this may give a significant speedup.
+        show_progress: should a progress bar be displayed during the
+            measurement. If None the setting will be read from ``qcodesrc.json`
 
     Returns:
         The QCoDeS dataset.
     """
+
     if do_plot is None:
         do_plot = config.dataset.dond_plot
+    if show_progress is None:
+        show_progress = config.dataset.dond_show_progress
+
     meas = Measurement(name=measurement_name, exp=exp)
     all_setpoint_params = (param_set1, param_set2,) + tuple(
             s for s in additional_setpoints)
@@ -321,19 +445,34 @@ def do2d(
     _set_write_period(meas, write_period)
     _register_actions(meas, enter_actions, exit_actions)
 
+    original_delay1 = param_set1.post_delay
+    original_delay2 = param_set2.post_delay
+
     param_set1.post_delay = delay1
     param_set2.post_delay = delay2
 
     with _catch_keyboard_interrupts() as interrupted, meas.run() as datasaver:
+        dataset = datasaver.dataset
         additional_setpoints_data = _process_params_meas(additional_setpoints)
-        for set_point1 in np.linspace(start1, stop1, num_points1):
+        setpoints1 = np.linspace(start1, stop1, num_points1)
+        for set_point1 in tqdm(setpoints1, disable=not show_progress):
             if set_before_sweep:
                 param_set2.set(start2)
 
             param_set1.set(set_point1)
+
             for action in before_inner_actions:
                 action()
-            for set_point2 in np.linspace(start2, stop2, num_points2):
+
+            setpoints2 = np.linspace(start2, stop2, num_points2)
+
+            # flush to prevent unflushed print's to visually interrupt tqdm bar
+            # updates
+            sys.stdout.flush()
+            sys.stderr.flush()
+            for set_point2 in tqdm(setpoints2,
+                                   disable=not show_progress,
+                                   leave=False):
                 # skip first inner set point if `set_before_sweep`
                 if set_point2 == start2 and set_before_sweep:
                     pass
@@ -342,13 +481,17 @@ def do2d(
 
                 datasaver.add_result((param_set1, set_point1),
                                      (param_set2, set_point2),
-                                     *_process_params_meas(param_meas),
+                                     *_process_params_meas(param_meas, use_threads=use_threads),
                                      *additional_setpoints_data)
+
             for action in after_inner_actions:
                 action()
             if flush_columns:
                 datasaver.flush_data_to_database()
-        dataset = datasaver.dataset
+
+    param_set1.post_delay = original_delay1
+    param_set2.post_delay = original_delay2
+
     return _handle_plotting(dataset, do_plot, interrupted())
 
 

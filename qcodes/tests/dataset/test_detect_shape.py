@@ -1,7 +1,7 @@
 import hypothesis.strategies as hst
 import numpy as np
 import pytest
-from hypothesis import given
+from hypothesis import HealthCheck, given, settings
 
 from qcodes.dataset.descriptions.detect_shapes import \
     detect_shape_of_measurement
@@ -84,6 +84,7 @@ def test_get_shape_for_multiparam_from_shape(
     assert shapes == expected_shapes
 
 
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(loop_shape=hst.lists(hst.integers(min_value=1), min_size=1, max_size=10),
        n_points=hst.integers(min_value=1, max_value=1000))
 def test_get_shape_for_pws_from_len(dummyinstrument, loop_shape, n_points):
@@ -98,6 +99,7 @@ def test_get_shape_for_pws_from_len(dummyinstrument, loop_shape, n_points):
     assert (dummyinstrument.A.dummy_n_points(),) == param.vals.shape
 
 
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @pytest.mark.parametrize("range_func", [range, np.arange])
 @given(
     loop_shape=hst.lists(
@@ -135,6 +137,7 @@ def test_get_shape_for_param_with_array_validator_from_shape(
     assert shapes == {"paramwitharrayval": tuple(loop_shape) + param.vals.shape}
 
 
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(loop_shape=hst.lists(hst.integers(min_value=1), min_size=1, max_size=10),
        n_points_1=hst.integers(min_value=1, max_value=1000),
        n_points_2=hst.integers(min_value=1, max_value=1000))

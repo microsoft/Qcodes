@@ -3,11 +3,14 @@ import numpy as np
 import os
 import pickle
 import logging
+import pandas as pd
+import xarray as xr
 
 from qcodes.data.location import FormatLocation
-from qcodes.data.data_array import DataArray
+from qcodes.data.data_array import DataArray, data_array_to_xarray_dictionary
 from qcodes.data.io import DiskIO
-from qcodes.data.data_set import load_data, new_data, DataSet
+from qcodes.data.data_set import load_data, new_data, DataSet, qcodes_dataset_to_xarray_dataset,\
+    xarray_dataset_to_qcodes_dataset
 from qcodes.logger.logger import LogCapture
 
 from .data_mocks import (MockFormatter, MatchIO,
@@ -278,6 +281,22 @@ class TestDataArray(TestCase):
         # now pretend we get more info from syncing
         data.synced_index = 22
         self.assertEqual(data.fraction_complete(), 23 / 50)
+
+    def test_to_xarray(self):
+        data = DataArray(preset_data=[1, 2])
+        array_dict = data_array_to_xarray_dictionary(data)
+        xarray_dataarray = data.to_xarray()
+
+    def test_xarray_conversions(self):
+        da = DataSet1D(name="TestDataArray_test_xarray_conversions").x_set
+
+        xarray_dictionary = data_array_to_xarray_dictionary(da)
+
+        xarray_dataarray = da.to_xarray()
+        da_transformed = DataArray.from_xarray(xarray_dataarray)
+
+        for key in ["name", "unit", "label"]:
+            self.assertEqual(da.name, da_transformed.name)
 
 
 class TestLoadData(TestCase):
@@ -578,3 +597,40 @@ class TestDataSet(TestCase):
         m.remove_array('z')
         _ = m.__repr__()
         self.assertFalse('z' in m.arrays)
+
+    def test_xarray_conversions(self):
+        qd = DataSet1D(name="TestNewData_test_xarray_conversions")
+        xarray_data_set = qcodes_dataset_to_xarray_dataset(qd)
+        qd_transformed = xarray_dataset_to_qcodes_dataset(xarray_data_set)
+        m = qd.default_parameter_array()
+        mt = qd_transformed.default_parameter_array()
+
+        for key in ["name", "unit"]:
+            self.assertEqual(getattr(m, key), getattr(mt, key))
+        qd2 = DataSet2D(name="TestNewData_test_xarray_conversions")
+        xarray_data_set = qcodes_dataset_to_xarray_dataset(qd2)
+        qd2_transformed = xarray_dataset_to_qcodes_dataset(xarray_data_set)
+
+        m = qd2.default_parameter_array()
+        mt = qd2_transformed.default_parameter_array()
+        for key in ["name", "unit"]:
+            self.assertEqual(getattr(m, key), getattr(mt, key))
+
+        xds = qd.to_xarray()
+        qds = DataSet.from_xarray(xds)
+
+    def test_xarray_example_conversion(self):
+        times = pd.date_range("2000-01-01", "2000-1-31", name="time")
+        shape = (31, 3)
+        xarray_dataset = xr.Dataset(
+            {"tmin": (("time", "location"), np.random.rand(*shape)),
+                "tmax": (("time", "location"), np.random.rand(*shape)),
+             }, {"time": times, "location": ["IA", "IN", "IL"]},)
+
+        qd = DataSet.from_xarray(xarray_dataset)
+        xarray_dataset2 = qd.to_xarray()
+
+        self.assertEqual(qd.default_parameter_array().shape, xarray_dataset.tmin.shape)
+        self.assertEqual(list(xarray_dataset.coords.keys()), list(xarray_dataset2.coords.keys()))
+        self.assertEqual(list(xarray_dataset.data_vars.keys()), list(xarray_dataset2.data_vars.keys()))
+        self.assertEqual(xarray_dataset.tmin.shape, xarray_dataset2.tmin.shape)

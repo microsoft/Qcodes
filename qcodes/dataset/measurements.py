@@ -40,6 +40,8 @@ from qcodes.instrument.parameter import (ArrayParameter, MultiParameter,
                                          expand_setpoints_helper)
 from qcodes.utils.delaykeyboardinterrupt import DelayedKeyboardInterrupt
 from qcodes.utils.helpers import NumpyJSONEncoder
+from qcodes.dataset.export_config import get_data_export_automatic
+from qcodes.instrument.delegate.grouped_parameter import GroupedParameter
 
 log = logging.getLogger(__name__)
 
@@ -154,8 +156,8 @@ class DataSaver:
                 if (parameter.vals.shape is not None
                         and data.shape != parameter.vals.shape):
                     raise TypeError(
-                        "Expected data with shape {parameter.vals.shape}, "
-                        "but got {data.shape}"
+                        f"Expected data with shape {parameter.vals.shape}, "
+                        f"but got {data.shape} for parameter: {parameter.full_name}"
                     )
 
             if isinstance(parameter, ArrayParameter):
@@ -412,6 +414,12 @@ class DataSaver:
         """
         self.dataset._flush_data_to_database(block=block)
 
+    def export_data(self) -> None:
+        """Export data at end of measurement as per export_type
+        specification in "dataset" section of qcodes config
+        """
+        self.dataset.export()
+
     @property
     def run_id(self) -> int:
         return self._dataset.run_id
@@ -450,7 +458,8 @@ class Runner:
             parent_datasets: Sequence[Dict[Any, Any]] = (),
             extra_log_info: str = '',
             write_in_background: bool = False,
-            shapes: Optional[Shapes] = None) -> None:
+            shapes: Optional[Shapes] = None,
+            in_memory_cache: bool = True) -> None:
 
         self.write_period = self._calculate_write_period(write_in_background,
                                                          write_period)
@@ -470,6 +479,7 @@ class Runner:
         self._parent_datasets = parent_datasets
         self._extra_log_info = extra_log_info
         self._write_in_background = write_in_background
+        self._in_memory_cache = in_memory_cache
 
     @staticmethod
     def _calculate_write_period(
@@ -499,10 +509,15 @@ class Runner:
         # next set up the "datasaver"
         if self.experiment is not None:
             self.ds = qc.new_data_set(
-                self.name, self.experiment.exp_id, conn=self.experiment.conn
+                self.name, self.experiment.exp_id,
+                conn=self.experiment.conn,
+                in_memory_cache=self._in_memory_cache
             )
         else:
-            self.ds = qc.new_data_set(self.name)
+            self.ds = qc.new_data_set(
+                self.name,
+                in_memory_cache=self._in_memory_cache
+            )
 
         # .. and give the dataset a snapshot as metadata
         if self.station is None:
@@ -535,8 +550,11 @@ class Runner:
 
         print(f'Starting experimental run with id: {self.ds.run_id}.'
               f' {self._extra_log_info}')
-        log.info(f'Starting measurement with guid: {self.ds.guid}.'
-                 f' {self._extra_log_info}')
+        log.info(f'Starting measurement with guid: {self.ds.guid}, '
+                 f'sample_name: "{self.ds.sample_name}", '
+                 f'exp_name: "{self.ds.exp_name}", '
+                 f'ds_name: "{self.ds.name}". '
+                 f'{self._extra_log_info}')
         log.info(f'Using background writing: {self._write_in_background}')
 
         self.datasaver = DataSaver(
@@ -576,6 +594,8 @@ class Runner:
             # Note that the completion of a dataset entails waiting for the
             # write thread to terminate (iff the write thread has been started)
             self.ds.mark_completed()
+            if get_data_export_automatic():
+                self.datasaver.export_data()
             log.info(f'Finished measurement with guid: {self.ds.guid}. '
                      f'{self._extra_log_info}')
             self.ds.unsubscribe_all()
@@ -752,6 +772,12 @@ class Measurement:
                                           paramtype,
                                           )
         elif isinstance(parameter, Parameter):
+            self._register_parameter(parameter.full_name,
+                                     parameter.label,
+                                     parameter.unit,
+                                     setpoints,
+                                     basis, paramtype)
+        elif isinstance(parameter, GroupedParameter):
             self._register_parameter(parameter.full_name,
                                      parameter.label,
                                      parameter.unit,
@@ -1102,7 +1128,8 @@ class Measurement:
                                              shapes=shapes)
         self._shapes = shapes
 
-    def run(self, write_in_background: Optional[bool] = None) -> Runner:
+    def run(self, write_in_background: Optional[bool] = None,
+            in_memory_cache: bool = True) -> Runner:
         """
         Returns the context manager for the experimental run
 
@@ -1113,6 +1140,8 @@ class Measurement:
                 main thread that is executing the context manager.
                 By default the setting for write in background will be
                 read from the ``qcodesrc.json`` config file.
+            in_memory_cache: Should measured data be keep in memory
+                and available as part of the `dataset.cache` object.
         """
         if write_in_background is None:
             write_in_background = qc.config.dataset.write_in_background
@@ -1125,4 +1154,5 @@ class Measurement:
                       parent_datasets=self._parent_datasets,
                       extra_log_info=self._extra_log_info,
                       write_in_background=write_in_background,
-                      shapes=self._shapes)
+                      shapes=self._shapes,
+                      in_memory_cache=in_memory_cache)

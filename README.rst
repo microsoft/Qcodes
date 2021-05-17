@@ -1,6 +1,6 @@
 QCoDeS |PyPi| |DOCS| |PyPI python versions| |DOI|
 =================================================
-|Build Status Azure| |Build Status Github| |Build Status Github Docs| |Codacy badge|
+|Build Status Github| |Build Status Github Docs| |Codacy badge|
 
 QCoDeS is a Python-based data acquisition framework developed by the
 Copenhagen / Delft / Sydney / Microsoft quantum computing consortium.
@@ -47,7 +47,7 @@ Go to the directory ``docs`` and
 
 .. code:: bash
 
-    make html-api
+    make html
 
 This generate a webpage, index.html, in ``docs/_build/html`` with the
 rendered html.
@@ -76,8 +76,6 @@ License
 
 See `License <https://github.com/QCoDeS/Qcodes/tree/master/LICENSE.rst>`__.
 
-.. |Build Status Azure| image:: https://dev.azure.com/ms-quantum-public/Microsoft%20Quantum%20(public)/_apis/build/status/QCoDeS.Qcodes%20(public)?branchName=master
-    :target: https://dev.azure.com/ms-quantum-public/Microsoft%20Quantum%20(public)/_build/latest?definitionId=8&branchName=master
 .. |Build Status Github| image:: https://github.com/QCoDeS/Qcodes/workflows/Run%20mypy%20and%20pytest/badge.svg
     :target: https://github.com/QCoDeS/Qcodes/actions?query=workflow%3A%22Run+mypy+and+pytest%22
 .. |Build Status Github Docs| image:: https://github.com/QCoDeS/Qcodes/workflows/build%20docs/badge.svg
@@ -91,5 +89,5 @@ See `License <https://github.com/QCoDeS/Qcodes/tree/master/LICENSE.rst>`__.
     :target: https://pypi.python.org/pypi/qcodes/
 .. |DOCS| image:: https://img.shields.io/badge/read%20-thedocs-ff66b4.svg
    :target: http://qcodes.github.io/Qcodes
-.. |DOI| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.4280434.svg
-   :target: https://doi.org/10.5281/zenodo.4280434
+.. |DOI| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.4695990.svg
+   :target: https://doi.org/10.5281/zenodo.4695990

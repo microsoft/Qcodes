@@ -20,6 +20,7 @@ from qcodes.tests.instrument_mocks import (ArraySetPointParam,
                                            DummyChannelInstrument,
                                            DummyInstrument,
                                            Multi2DSetPointParam,
+                                           Multi2DSetPointParam2Sizes,
                                            setpoint_generator)
 from qcodes.utils.validators import Arrays, ComplexNumbers, Numbers
 
@@ -199,6 +200,7 @@ def array_dataset(experiment, request):
     finally:
         datasaver.dataset.conn.close()
 
+
 @pytest.fixture(scope="function",
                 params=["array", "numeric"])
 def array_dataset_with_nulls(experiment, request):
@@ -236,6 +238,22 @@ def array_dataset_with_nulls(experiment, request):
 def multi_dataset(experiment, request):
     meas = Measurement()
     param = Multi2DSetPointParam()
+
+    meas.register_parameter(param, paramtype=request.param)
+
+    with meas.run() as datasaver:
+        datasaver.add_result((param, param.get(),))
+    try:
+        yield datasaver.dataset
+    finally:
+        datasaver.dataset.conn.close()
+
+
+@pytest.fixture(scope="function",
+                params=["array"])
+def different_setpoint_dataset(experiment, request):
+    meas = Measurement()
+    param = Multi2DSetPointParam2Sizes()
 
     meas.register_parameter(param, paramtype=request.param)
 
@@ -431,7 +449,7 @@ def some_interdeps():
     ps5 = ParamSpecBase('ps5', paramtype='numeric', label='Signal',
                         unit='Conductance')
     ps6 = ParamSpecBase('ps6', paramtype='text', label='Goodness',
-                    unit='')
+                        unit='')
 
     idps = InterDependencies_(dependencies={ps5: (ps3, ps4), ps6: (ps3, ps4)},
                               inferences={ps4: (ps2,), ps3: (ps1,)})
@@ -545,13 +563,11 @@ def complex_num_instrument():
                             get_cmd=lambda: np.arange(5),
                             set_cmd=False)
 
-
     dummyinst.add_parameter('some_complex_array',
                             label='Some Array',
                             unit='some_array_unit',
                             get_cmd=lambda: np.ones(5) + 1j*np.ones(5),
                             set_cmd=False)
-
 
     yield dummyinst
     dummyinst.close()

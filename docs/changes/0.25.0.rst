@@ -1,0 +1,74 @@
+Changelog for QCoDeS 0.25.0
+===========================
+
+The April 2021 release of QCoDeS.
+
+-----------------
+Breaking Changes:
+-----------------
+
+- `get_data_by_id` no longer returns data for standalone parameters
+  if there are no dependent parameters in the dataset. For the same reason
+  `plot_by_id` and `plot_dataset` will no longer plot these standalone
+  parameters. (#2918)
+- `xarray` exported data no longer exports extra metadata columns under the
+  `extra_metadata` tag since the extra dictionary level prevents exporting to
+  `netcdf` (#2934)
+
+------------
+Deprecation:
+------------
+
+- `get_data_by_id` and `get_shaped_data_by_runid` are now deprecated. These
+  functions now all have better alternatives in the build in `get_parameter_data` as well as `Xarray`
+  and `Pandas` exporters. (#2921, #2925)
+
+----
+New:
+----
+
+- SP983c Basel IV amplifier remote control driver (#2707)
+- Add support for Keysight 34411A (#2927)
+- Added the functionality of getting guids from multiple run ids and directly
+  from database (#2930)
+- NumpyJSONEncoder: Add support for the uncertanties' UFloat type (#2933)
+- Add conversion between qcodes legacy DataSet and xarray format (#2938)
+
+---------
+Improved:
+---------
+
+- plot_dataset: Improved performance by using in memory cache when possible
+  to avoid reloading data from disk (#2918)
+- contribution guidelines: remove no longer relevant sections and make the
+  sections on naming somewhat less strict (#2937)
+- remove double assignment of dataset variable in example notebook
+  of Performing-measurements-using-qcodes-parameters-and-dataset (#2926)
+- Update old driver notebooks (Agilent 34400A) docs (#2377)
+- Update link from NI VISA to Keysight IO Libraries Suite on 'Getting Started'
+  Doc (#2948)
+- Removed ZI UHFLI notebook (#2893)
+
+-----------------
+Improved drivers:
+-----------------
+
+- Significant performance improvement in Tektronix5014 driver (#2910)
+- AMI430 3D driver: allow instantiating from names of existing AMI430
+  instances, next to from AMI430 instances only  driver (#2949)
+- AMI430 3D driver: add docstring, extra test for initializing from AMI430 by
+  name  driver (#2951)
+- Driver sr830 update: Add ChannelTrace class and related parameter
+  ch{ch}_datatrace which makes buffered acquisition easier.(#2894)
+
+---------------
+Under the hood:
+---------------
+
+- Log sample_name, exp_name, dataset name when Measurement starts (#2952)
+- Move private dataset export functions to their own module (#2904)
+- Remove wait time test (#2935)
+- fix(logger): Disable conditionally start logging for Sphinx documentation
+  (#2909)
+- Name legacy test datasets (#2950)
+- use python -m pip to upgrade pip in github actions (#2955)

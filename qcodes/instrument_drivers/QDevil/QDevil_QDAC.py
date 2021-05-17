@@ -21,7 +21,7 @@ from collections import namedtuple
 LOG = logging.getLogger(__name__)
 
 
-_ModeTuple = namedtuple('Mode', 'v i')
+_ModeTuple = namedtuple('_ModeTuple', 'v i')
 
 
 class Mode(Enum):

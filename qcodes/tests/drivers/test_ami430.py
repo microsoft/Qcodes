@@ -7,12 +7,14 @@ from typing import List
 
 import numpy as np
 import pytest
-from hypothesis import given, settings
+from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import floats, tuples
 
 import qcodes.instrument.sims as sims
+from qcodes.instrument.base import Instrument
 from qcodes.instrument.ip_to_visa import AMI430_VISA
-from qcodes.instrument_drivers.american_magnetics.AMI430 import (AMI430_3D,
+from qcodes.instrument_drivers.american_magnetics.AMI430 import (AMI430,
+                                                                 AMI430_3D,
                                                                  AMI430Warning)
 from qcodes.math_utils.field_vector import FieldVector
 from qcodes.utils.types import (numpy_concrete_floats, numpy_concrete_ints,
@@ -107,8 +109,85 @@ random_coordinates = {
 }
 
 
+def test_instantiation_from_names(magnet_axes_instances, request):
+    """
+    Instantiate AMI430_3D instrument from the three mock instruments
+    representing current drivers for the x, y, and z directions by their
+    names as opposed from their instances.
+    """
+    mag_x, mag_y, mag_z = magnet_axes_instances
+    request.addfinalizer(AMI430_3D.close_all)
+
+    driver = AMI430_3D("AMI430-3D", mag_x.name, mag_y.name, mag_z.name,
+                       field_limit)
+
+    assert driver._instrument_x is mag_x
+    assert driver._instrument_y is mag_y
+    assert driver._instrument_z is mag_z
+
+
+def test_instantiation_from_name_of_nonexistent_ami_instrument(
+        magnet_axes_instances, request
+):
+    mag_x, mag_y, mag_z = magnet_axes_instances
+    request.addfinalizer(AMI430_3D.close_all)
+
+    non_existent_instrument = mag_y.name + "foo"
+
+    with pytest.raises(
+            KeyError,
+            match=f"with name {non_existent_instrument} does not exist"
+    ):
+        AMI430_3D(
+            "AMI430-3D",
+            mag_x.name, non_existent_instrument, mag_z.name,
+            field_limit
+        )
+
+
+def test_instantiation_from_name_of_existing_non_ami_instrument(
+        magnet_axes_instances, request
+):
+    mag_x, mag_y, mag_z = magnet_axes_instances
+    request.addfinalizer(AMI430_3D.close_all)
+
+    non_ami_existing_instrument = Instrument("foo")
+
+    with pytest.raises(
+            TypeError,
+            match=re.escape(
+                f"Instrument {non_ami_existing_instrument.name} is "
+                f"{type(non_ami_existing_instrument)} but {AMI430} "
+                f"was requested"
+            )
+    ):
+        AMI430_3D(
+            "AMI430-3D",
+            mag_x.name, non_ami_existing_instrument.name, mag_z.name,
+            field_limit
+        )
+
+
+def test_instantiation_from_badly_typed_argument(
+        magnet_axes_instances, request
+):
+    mag_x, mag_y, mag_z = magnet_axes_instances
+    request.addfinalizer(AMI430_3D.close_all)
+
+    badly_typed_instrument_z_argument = 123
+
+    with pytest.raises(
+            ValueError, match="instrument_z argument is neither of those"
+    ):
+        AMI430_3D(
+            "AMI430-3D",
+            mag_x.name, mag_y, badly_typed_instrument_z_argument,
+            field_limit
+        )
+
+
 @given(set_target=random_coordinates["cartesian"])
-@settings(max_examples=10)
+@settings(max_examples=10, suppress_health_check=(HealthCheck.function_scoped_fixture,))
 def test_cartesian_sanity(current_driver, set_target):
     """
     A sanity check to see if the driver remember vectors in any random
@@ -127,7 +206,7 @@ def test_cartesian_sanity(current_driver, set_target):
 
 
 @given(set_target=random_coordinates["spherical"])
-@settings(max_examples=10)
+@settings(max_examples=10, suppress_health_check=(HealthCheck.function_scoped_fixture,))
 def test_spherical_sanity(current_driver, set_target):
     """
     A sanity check to see if the driver remember vectors in any random
@@ -146,7 +225,7 @@ def test_spherical_sanity(current_driver, set_target):
 
 
 @given(set_target=random_coordinates["cylindrical"])
-@settings(max_examples=10)
+@settings(max_examples=10, suppress_health_check=(HealthCheck.function_scoped_fixture,))
 def test_cylindrical_sanity(current_driver, set_target):
     """
     A sanity check to see if the driver remember vectors in any random
@@ -165,7 +244,7 @@ def test_cylindrical_sanity(current_driver, set_target):
 
 
 @given(set_target=random_coordinates["cartesian"])
-@settings(max_examples=10)
+@settings(max_examples=10, suppress_health_check=(HealthCheck.function_scoped_fixture,))
 def test_cartesian_setpoints(current_driver, set_target):
     """
     Check that the individual x, y, z instruments are getting the set
@@ -186,7 +265,7 @@ def test_cartesian_setpoints(current_driver, set_target):
 
 
 @given(set_target=random_coordinates["spherical"])
-@settings(max_examples=10)
+@settings(max_examples=10, suppress_health_check=(HealthCheck.function_scoped_fixture,))
 def test_spherical_setpoints(current_driver, set_target):
     """
     Check that the individual x, y, z instruments are getting the set
@@ -208,7 +287,8 @@ def test_spherical_setpoints(current_driver, set_target):
 
 
 @given(set_target=random_coordinates["cylindrical"])
-@settings(max_examples=10, deadline=500)
+@settings(max_examples=10, deadline=500,
+          suppress_health_check=(HealthCheck.function_scoped_fixture,))
 def test_cylindrical_setpoints(current_driver, set_target):
     """
     Check that the individual x, y, z instruments are getting the set
@@ -230,7 +310,8 @@ def test_cylindrical_setpoints(current_driver, set_target):
 
 
 @given(set_target=random_coordinates["cartesian"])
-@settings(max_examples=10, deadline=500)
+@settings(max_examples=10, deadline=500,
+          suppress_health_check=(HealthCheck.function_scoped_fixture,))
 def test_measured(current_driver, set_target):
     """
     Simply call the measurement methods and verify that no exceptions
