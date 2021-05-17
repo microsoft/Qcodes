@@ -327,7 +327,7 @@ class Station(Metadatable, DelegateAttributes):
             self.load_config(f)
 
     def load_config_files(self,
-                          filenames: Optional[List[str]] = None
+                          *filenames: List[Union[str, Path]]
                           ) -> None:
         """
         Loads configuration from multiple YAML files after merging them
@@ -341,12 +341,11 @@ class Station(Metadatable, DelegateAttributes):
         Additionally the shortcut methods ``load_<instrument_name>`` will be
         updated.
         """
-        if filenames is None or len(filenames) == 0:
+        if len(filenames) == 1 and filenames[0] is None:
             self.load_config_file()
-            return
-
-        with _merge_yamls(*filenames) as yamls:
-            self.load_config(yamls)
+        else:
+            with _merge_yamls(*filenames[0]) as yamls:
+                self.load_config(yamls)
 
     def load_config(self, config: Union[str, IO[AnyStr]]) -> None:
         """
@@ -732,6 +731,10 @@ def _merge_yamls(*yamls: Union[str, Path]) -> IO[str]:
     Returns:
         Full yaml file stored in the memory.
     """
+
+    if len(yamls) == 1:
+        with open(yamls[0]) as file:
+            return file
 
     top_key = "instruments"
     yaml = ruamel.yaml.YAML()
