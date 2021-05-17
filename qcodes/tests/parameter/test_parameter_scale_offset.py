@@ -179,7 +179,7 @@ def test_numpy_array_valued_parameter_preserves_type_if_scale_and_offset_are_set
     def rands():
         return np.random.randn(5)
 
-    param = Parameter(name='test_param1',
+    param = Parameter(name='test_param',
                        set_cmd=None,
                        get_cmd=rands)
 
@@ -189,3 +189,19 @@ def test_numpy_array_valued_parameter_preserves_type_if_scale_and_offset_are_set
     values = param()
 
     assert isinstance(values, np.ndarray)
+
+
+def test_setting_numpy_array_valued_param_if_scale_and_offset_are_not_none():
+
+    param = Parameter(name='test_param',
+                      set_cmd=None,
+                      get_cmd=None)
+
+    values = np.array([1, 2, 3, 4, 5])
+
+    param.scale = 100
+    param.offset = 10
+
+    param(values)
+
+    assert isinstance(param.raw_value, np.ndarray)
