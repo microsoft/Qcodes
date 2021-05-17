@@ -71,9 +71,6 @@ from qcodes.utils.delaykeyboardinterrupt import DelayedKeyboardInterrupt
 if TYPE_CHECKING:
     from qcodes.dataset.sqlite.connection import ConnectionPlus
 
-if TYPE_CHECKING:
-    from qcodes.dataset.sqlite.connection import ConnectionPlus
-
 log = logging.getLogger(__name__)
 
 

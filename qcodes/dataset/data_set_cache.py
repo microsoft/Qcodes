@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-from copy import copy
 from typing import TYPE_CHECKING, Dict, Generic, Mapping, Optional, Tuple, TypeVar
 
 import numpy as np
@@ -27,7 +26,6 @@ if TYPE_CHECKING:
 
     from .data_set import DataSet, ParameterData
     from .data_set_protocol import DataSetProtocol
-
 
 DatasetType = TypeVar("DatasetType", bound="DataSetProtocol", covariant=True)
 

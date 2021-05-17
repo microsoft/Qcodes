@@ -24,9 +24,8 @@ import xarray as xr
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
-from qcodes.dataset.descriptions.versioning.converters import new_to_old, old_to_new
+from qcodes.dataset.descriptions.versioning.converters import new_to_old
 from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
-from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
 from qcodes.dataset.export_config import (
     DataExportType,
     get_data_export_path,
@@ -34,24 +33,19 @@ from qcodes.dataset.export_config import (
     get_data_export_type,
 )
 from qcodes.dataset.guids import generate_guid
-from qcodes.dataset.linked_datasets.links import Link, links_to_str, str_to_links
-from qcodes.dataset.sqlite.query_helpers import VALUE, VALUES, length, select_one_where
+from qcodes.dataset.linked_datasets.links import Link, links_to_str
+from qcodes.dataset.sqlite.query_helpers import VALUE
 from qcodes.instrument.parameter import _BaseParameter
 from qcodes.utils.helpers import NumpyJSONEncoder
 
-from .data_set import SPECS, CompletedError, SpecsOrInterDeps, values_type
+from .data_set import SPECS, CompletedError, values_type
 from .data_set_cache import DataSetCacheInMem
 from .descriptions.versioning import serialization as serial
 
 if TYPE_CHECKING:
-    import pandas as pd
     import xarray as xr
 
-    from qcodes.dataset.sqlite.connection import ConnectionPlus
     from qcodes.station import Station
-
-    from .data_set_cache import DataSetCache
-
 
 log = logging.getLogger(__name__)
 
@@ -94,7 +88,7 @@ class DataSetInMem(Sized):
         path_to_db: str,
         run_timestamp_raw: Optional[float],
         completed_timestamp_raw: Optional[float],
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: Optional[Mapping[str, Any]] = None,
     ) -> None:
 
         self._run_id = run_id
@@ -111,7 +105,7 @@ class DataSetInMem(Sized):
         if metadata is None:
             self._metadata = {}
         else:
-            self._metadata = metadata
+            self._metadata = dict(metadata)
 
     @classmethod
     def create_new_run(
@@ -171,7 +165,7 @@ class DataSetInMem(Sized):
         return ds
 
     @classmethod
-    def load_from_netcdf(cls, path: Union[Path, str]):
+    def load_from_netcdf(cls, path: Union[Path, str]) -> "DataSetInMem":
         loaded_data = xr.load_dataset(path)
         # todo do we want to create this run in the sqlites run table if not
         # exists. e.g. load by guid and then if that is not there create one.
@@ -195,18 +189,20 @@ class DataSetInMem(Sized):
         return ds
 
     @staticmethod
-    def _from_xarray_dataset_to_qcodes(xr_data: xr.Dataset):
-        output = {}
+    def _from_xarray_dataset_to_qcodes(
+        xr_data: xr.Dataset,
+    ) -> Dict[str, Dict[str, np.ndarray]]:
+        output: Dict[str, Dict[str, np.ndarray]] = {}
         for datavar in xr_data.data_vars:
-            output[datavar] = {}
+            output[str(datavar)] = {}
             data = xr_data[datavar]
-            output[datavar][datavar] = data.data
+            output[str(datavar)][str(datavar)] = data.data
             coords_unexpanded = []
             for coord in data.coords:
                 coords_unexpanded.append(xr_data[coord].data)
             coords_arrays = np.meshgrid(*coords_unexpanded)
             for coord_name, coord_array in zip(data.coords, coords_arrays):
-                output[datavar][coord_name] = coord_array
+                output[str(datavar)][str(coord_name)] = coord_array
         return output
 
     def prepare(
@@ -216,7 +212,7 @@ class DataSetInMem(Sized):
         interdeps: InterDependencies_,
         write_in_background: bool,
         shapes: Shapes = None,
-        parent_datasets: Sequence[Dict[Any, Any]] = (),
+        parent_datasets: Sequence[Mapping[Any, Any]] = (),
     ) -> None:
         if station:
             self.add_snapshot(
