@@ -41,6 +41,7 @@ from qcodes.instrument.parameter import (ArrayParameter, MultiParameter,
 from qcodes.utils.delaykeyboardinterrupt import DelayedKeyboardInterrupt
 from qcodes.utils.helpers import NumpyJSONEncoder
 from qcodes.dataset.export_config import get_data_export_automatic
+from qcodes.instrument.delegate.grouped_parameter import GroupedParameter
 
 log = logging.getLogger(__name__)
 
@@ -549,8 +550,11 @@ class Runner:
 
         print(f'Starting experimental run with id: {self.ds.run_id}.'
               f' {self._extra_log_info}')
-        log.info(f'Starting measurement with guid: {self.ds.guid}.'
-                 f' {self._extra_log_info}')
+        log.info(f'Starting measurement with guid: {self.ds.guid}, '
+                 f'sample_name: "{self.ds.sample_name}", '
+                 f'exp_name: "{self.ds.exp_name}", '
+                 f'ds_name: "{self.ds.name}". '
+                 f'{self._extra_log_info}')
         log.info(f'Using background writing: {self._write_in_background}')
 
         self.datasaver = DataSaver(
@@ -768,6 +772,12 @@ class Measurement:
                                           paramtype,
                                           )
         elif isinstance(parameter, Parameter):
+            self._register_parameter(parameter.full_name,
+                                     parameter.label,
+                                     parameter.unit,
+                                     setpoints,
+                                     basis, paramtype)
+        elif isinstance(parameter, GroupedParameter):
             self._register_parameter(parameter.full_name,
                                      parameter.label,
                                      parameter.unit,

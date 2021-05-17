@@ -13,11 +13,28 @@ from copy import deepcopy
 from functools import partial
 from inspect import signature
 from pathlib import Path
-from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterator, List,
-                    Mapping, MutableMapping, Optional, Sequence, SupportsAbs,
-                    Tuple, Type, Union, cast, Hashable, TypeVar)
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Hashable,
+    Iterator,
+    List,
+    Mapping,
+    MutableMapping,
+    Optional,
+    Sequence,
+    SupportsAbs,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 
 import numpy as np
+import uncertainties
 
 if TYPE_CHECKING:
     from PyQt5.QtWidgets import QMainWindow
@@ -41,22 +58,27 @@ class NumpyJSONEncoder(json.JSONEncoder):
     def default(self, obj: Any) -> Any:
         """
         List of conversions that this encoder performs:
+
         * ``numpy.generic`` (all integer, floating, and other types) gets
-        converted to its python equivalent using its ``item`` method (see
-        ``numpy`` docs for more information,
-        https://docs.scipy.org/doc/numpy/reference/arrays.scalars.html).
+          converted to its python equivalent using its ``item`` method (see
+          ``numpy`` docs for more information,
+          https://docs.scipy.org/doc/numpy/reference/arrays.scalars.html).
         * ``numpy.ndarray`` gets converted to python list using its ``tolist``
-        method.
+          method.
         * Complex number (a number that conforms to ``numbers.Complex`` ABC) gets
-        converted to a dictionary with fields ``re`` and ``im`` containing floating
-        numbers for the real and imaginary parts respectively, and a field
-        ``__dtype__`` containing value ``complex``.
+          converted to a dictionary with fields ``re`` and ``im`` containing floating
+          numbers for the real and imaginary parts respectively, and a field
+          ``__dtype__`` containing value ``complex``.
+        * Numbers with uncertainties  (numbers that conforms to ``uncertainties.UFloat``) get
+          converted to a dictionary with fields ``nominal_value`` and ``std_dev`` containing floating
+          numbers for the nominal and uncertainty parts respectively, and a field
+          ``__dtype__`` containing value ``UFloat``.
         * Object with a ``_JSONEncoder`` method get converted the return value of
-        that method.
+          that method.
         * Objects which support the pickle protocol get converted using the
-        data provided by that protocol.
+          data provided by that protocol.
         * Other objects which cannot be serialized get converted to their
-        string representation (suing the ``str`` function).
+          string representation (using the ``str`` function).
         """
         if isinstance(obj, np.generic) \
                 and not isinstance(obj, np.complexfloating):
@@ -71,6 +93,12 @@ class NumpyJSONEncoder(json.JSONEncoder):
                 '__dtype__': 'complex',
                 're': float(obj.real),
                 'im': float(obj.imag)
+            }
+        elif isinstance(obj, uncertainties.UFloat):
+            return {
+                '__dtype__': 'UFloat',
+                'nominal_value': float(obj.nominal_value),
+                'std_dev': float(obj.std_dev)
             }
         elif hasattr(obj, '_JSONEncoder'):
             # Use object's custom JSON encoder
@@ -576,8 +604,7 @@ def add_to_spyder_UMR_excludelist(modulename: str) -> None:
             sitecustomize_found = True
         if sitecustomize_found is False:
             try:
-                from spyder_kernels.customize import \
-                    spydercustomize as sitecustomize
+                from spyder_kernels.customize import spydercustomize as sitecustomize
 
             except ImportError:
                 pass

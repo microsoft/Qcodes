@@ -394,7 +394,7 @@ class _BaseParameter(Metadatable):
         return named_repr(self)
 
     def __call__(self, *args: Any, **kwargs: Any) -> Optional[ParamDataType]:
-        if len(args) == 0:
+        if len(args) == 0 and len(kwargs) == 0:
             if self.gettable:
                 return self.get()
             else:
