@@ -1,6 +1,6 @@
 apipkg==1.5
 atomicwrites==1.4.0
-attrs==21.1.0
+attrs==21.2.0
 certifi==2020.12.5
 chardet==4.0.0
 codacy-coverage==1.3.11
@@ -8,23 +8,23 @@ colorama==0.4.4
 coverage==5.5
 deepdiff==5.5.0
 execnet==1.8.0
-hypothesis==6.12.0
+hypothesis==6.12.1
 idna==2.10
 importlib-metadata==4.0.0; python_version<'3.8'
 iniconfig==1.1.1
 lxml==4.6.3
 mypy==0.812
 mypy-extensions==0.4.3
-numpy==1.20.2
+numpy==1.20.3
 ordered-set==4.0.2
 packaging==20.9
 pluggy==0.13.1
 py==1.10.0
 pyparsing==2.4.7
 pytest==6.2.4
-pytest-cov==2.11.1
+pytest-cov==2.12.0
 pytest-forked==1.3.0
-pytest-mock==3.6.0
+pytest-mock==3.6.1
 pytest-rerunfailures==9.1.1
 pytest-xdist==2.2.1
 PyVISA==1.11.3
@@ -32,7 +32,7 @@ PyVISA-sim==0.4.0
 PyYAML==5.4.1
 requests==2.25.1
 six==1.16.0
-sortedcontainers==2.3.0
+sortedcontainers==2.4.0
 stringparser==0.5
 toml==0.10.2
 typed-ast==1.4.3

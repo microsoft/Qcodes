@@ -41,6 +41,7 @@ from qcodes.instrument.parameter import (ArrayParameter, MultiParameter,
 from qcodes.utils.delaykeyboardinterrupt import DelayedKeyboardInterrupt
 from qcodes.utils.helpers import NumpyJSONEncoder
 from qcodes.dataset.export_config import get_data_export_automatic
+from qcodes.instrument.delegate.grouped_parameter import GroupedParameter
 
 log = logging.getLogger(__name__)
 
@@ -771,6 +772,12 @@ class Measurement:
                                           paramtype,
                                           )
         elif isinstance(parameter, Parameter):
+            self._register_parameter(parameter.full_name,
+                                     parameter.label,
+                                     parameter.unit,
+                                     setpoints,
+                                     basis, paramtype)
+        elif isinstance(parameter, GroupedParameter):
             self._register_parameter(parameter.full_name,
                                      parameter.label,
                                      parameter.unit,

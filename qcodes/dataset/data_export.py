@@ -1,11 +1,12 @@
-from typing import List, Any, Sequence, Tuple, Dict, Union, cast
 import logging
+from typing import Any, Dict, List, Sequence, Tuple, Union, cast
 
 import numpy as np
 
+from qcodes.dataset.data_set import DataSet, load_by_id
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
-from qcodes.dataset.data_set import load_by_id, DataSet
 from qcodes.utils.deprecate import deprecate
+
 log = logging.getLogger(__name__)
 
 
@@ -86,29 +87,17 @@ def _get_data_from_ds(ds: DataSet) -> List[List[Dict[str, Union[str, np.ndarray]
     for dep_name, data_dict in parameter_data.items():
         data_dicts_list = []
 
-        dep_data_dict_index = None
+        dependent = ds.description.interdeps[dep_name]
+        dependencies = ds.description.interdeps.dependencies[dependent]
 
-        for param_name, data in data_dict.items():
-            my_data_dict: Dict[str, Union[str, np.ndarray]] = {}
-
-            my_data_dict['name'] = param_name
-
-            my_data_dict['data'] = data.flatten()
-
-            ps = ds.paramspecs[param_name]
-            my_data_dict['unit'] = ps.unit
-            my_data_dict['label'] = ps.label
-
+        for param_spec_base in dependencies + (dependent,):
+            my_data_dict: Dict[str, Union[str, np.ndarray]] = {
+                "name": param_spec_base.name,
+                "unit": param_spec_base.unit,
+                "label": param_spec_base.label,
+                "data": data_dict[param_spec_base.name].flatten(),
+            }
             data_dicts_list.append(my_data_dict)
-
-            if param_name == dep_name:
-                dep_data_dict_index = len(data_dicts_list) - 1
-
-        # put the data dict of the dependent one at the very end of the list
-        if dep_data_dict_index is None:
-            raise RuntimeError(f'{dep_name} not found in its own "datadict".')
-        else:
-            data_dicts_list.append(data_dicts_list.pop(dep_data_dict_index))
 
         output.append(data_dicts_list)
 
