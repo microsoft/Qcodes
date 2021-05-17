@@ -87,9 +87,10 @@ def _get_data_from_ds(ds: DataSet) -> List[List[Dict[str, Union[str, np.ndarray]
     for dep_name, data_dict in parameter_data.items():
         data_dicts_list = []
 
-        for param_spec_base in ds.description.interdeps.dependencies[
-            ds.paramspecs[dep_name].base_version()
-        ] + (ds.paramspecs[dep_name].base_version(),):
+        dependent = ds.paramspecs[dep_name].base_version()
+        dependencies = ds.description.interdeps.dependencies[dependent]
+
+        for param_spec_base in dependencies + (dependent,):
             my_data_dict: Dict[str, Union[str, np.ndarray]] = {
                 "name": param_spec_base.name,
                 "unit": param_spec_base.unit,
