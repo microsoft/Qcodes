@@ -104,7 +104,7 @@ def _get_data_from_ds(
         if ds.description.shapes is not None:
             data_dicts_list[-1]["shape"] = ds.description.shapes.get(dependent.name)
         else:
-            data_dicts_list[-1] = None
+            data_dicts_list[-1]["shape"] = None
 
         output.append(data_dicts_list)
 
