@@ -3,25 +3,29 @@ This plotting module provides various functions to plot the data measured
 using QCoDeS.
 """
 
-import logging
-from functools import partial
-from typing import (Optional, List, Sequence, Union, Tuple, Dict,
-                    Any, cast)
 import inspect
-import numpy as np
+import logging
+from contextlib import contextmanager
+from functools import partial
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
+
 import matplotlib
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.ticker import FuncFormatter
-from contextlib import contextmanager
 
 import qcodes as qc
-from qcodes.dataset.data_set import load_by_run_spec, DataSet
-from qcodes.utils.plotting import (auto_color_scale_from_config,
-                                   find_scale_and_prefix)
+from qcodes.dataset.data_set import DataSet, load_by_run_spec
+from qcodes.utils.plotting import auto_color_scale_from_config, find_scale_and_prefix
 
-from .data_export import (_get_data_from_ds, flatten_1D_data_for_plot,
-                          get_1D_plottype, get_2D_plottype, reshape_2D_data,
-                          _strings_as_ints)
+from .data_export import (
+    _get_data_from_ds,
+    _strings_as_ints,
+    flatten_1D_data_for_plot,
+    get_1D_plottype,
+    get_2D_plottype,
+    reshape_2D_data,
+)
 
 log = logging.getLogger(__name__)
 DB = qc.config["core"]["db_location"]
@@ -252,17 +256,17 @@ def plot_dataset(dataset: DataSet,
         elif len(data) == 3:  # 2D PLOTTING
             log.debug(f'Doing a 2D plot with kwargs: {kwargs}')
 
-            # From the setpoints, figure out which 2D plotter to use
-            # TODO: The "decision tree" for what gets plotted how and how
-            # we check for that is still unfinished/not optimised
-
-            xpoints = flatten_1D_data_for_plot(data[0]['data'])
-            ypoints = flatten_1D_data_for_plot(data[1]['data'])
-            zpoints = flatten_1D_data_for_plot(data[2]['data'])
-
-            plottype = get_2D_plottype(xpoints, ypoints, zpoints)
-
-            log.debug(f'Determined plottype: {plottype}')
+            if data[2]["shape"] is None:
+                xpoints = flatten_1D_data_for_plot(data[0]["data"])
+                ypoints = flatten_1D_data_for_plot(data[1]["data"])
+                zpoints = flatten_1D_data_for_plot(data[2]["data"])
+                plottype = get_2D_plottype(xpoints, ypoints, zpoints)
+                log.debug(f"Determined plottype: {plottype}")
+            else:
+                xpoints = data[0]["data"]
+                ypoints = data[1]["data"]
+                zpoints = data[2]["data"]
+                plottype = "2D_grid"
 
             how_to_plot = {'2D_grid': plot_on_a_plain_grid,
                            '2D_equidistant': plot_on_a_plain_grid,
