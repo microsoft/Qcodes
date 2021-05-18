@@ -579,16 +579,31 @@ def plot_on_a_plain_grid(x: np.ndarray,
         z = _strings_as_ints(z)
 
     if x.ndim == 2 and y.ndim == 2 and z.ndim == 2:
-        # data already shaped just clip any nans from x and y
-        xrow, yrow = x[:, 0], y[0, :]
 
-        filter_x = ~np.isnan(xrow)
-        filter_y = ~np.isnan(yrow)
+        def _on_grid_except_nan(x_data: np.ndarray, y_data: np.ndarray) -> bool:
+            x_row = x_data[:, 0:1]
+            y_row = y_data[0:1, :]
+            return (
+                np.nanmax(np.abs(x_data - x_row)) == 0
+                and np.nanmax(np.abs(y_data - y_row)) == 0
+            )
 
-        xrow = xrow[filter_x]
-        yrow = yrow[filter_y]
-        z_to_plot = z[filter_x, :]
-        z_to_plot = z_to_plot[:, filter_y].transpose()
+        if _on_grid_except_nan(x, y):
+            xrow, yrow = x[:, 0], y[0, :]
+
+            filter_x = ~np.isnan(xrow)
+            filter_y = ~np.isnan(yrow)
+
+            xrow = xrow[filter_x]
+            yrow = yrow[filter_y]
+            z_to_plot = z[filter_x, :]
+            z_to_plot = z_to_plot[:, filter_y].transpose()
+        else:
+            raise NotImplementedError(
+                "Does not handle plotting datasets "
+                "with a predefined shape that are not on a"
+                "grid"
+            )
     else:
         xrow, yrow, z_to_plot = reshape_2D_data(x, y, z)
 
