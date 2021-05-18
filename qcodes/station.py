@@ -149,8 +149,7 @@ class Station(Metadatable, DelegateAttributes):
         elif isinstance(config_file, str):
             self.config_file = [config_file, ]
         else:
-            assert isinstance(config_file, List)
-            self.config_file = config_file
+            self.config_file = list(config_file)
 
         self.load_config_files(*self.config_file)
 
