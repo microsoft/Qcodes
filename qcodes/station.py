@@ -146,9 +146,10 @@ class Station(Metadatable, DelegateAttributes):
 
         if config_file is None:
             self.config_file = []
-        if isinstance(config_file, str):
+        elif isinstance(config_file, str):
             self.config_file = [config_file, ]
         else:
+            assert isinstance(config_file, List)
             self.config_file = config_file
 
         self.load_config_files(self.config_file)
@@ -333,7 +334,7 @@ class Station(Metadatable, DelegateAttributes):
             self.load_config(f)
 
     def load_config_files(self,
-                          *filenames: List[Union[str, Path]]
+                          filenames: List[str]
                           ) -> None:
         """
         Loads configuration from multiple YAML files after merging them
@@ -347,14 +348,14 @@ class Station(Metadatable, DelegateAttributes):
         Additionally the shortcut methods ``load_<instrument_name>`` will be
         updated.
         """
-        if len(filenames) == 1 and filenames[0] is None:
+        if len(filenames) == 0:
             self.load_config_file()
         else:
             paths = list()
             for filename in filenames:
-                path = self._get_config_file_path(filename[0])
+                path = self._get_config_file_path(filename)
 
-                if path is None and filename[0] is not None:
+                if path is None and filename is not None:
                     raise FileNotFoundError(path)
 
                 paths.append(path)
