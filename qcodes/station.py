@@ -147,7 +147,7 @@ class Station(Metadatable, DelegateAttributes):
         if config_file is None:
             self.config_file = []
         if isinstance(config_file, str):
-            self.config_file = [str, ]
+            self.config_file = [config_file, ]
         else:
             self.config_file = config_file
 
@@ -282,6 +282,26 @@ class Station(Metadatable, DelegateAttributes):
             if isinstance(c, Instrument):
                 self.close_and_remove_instrument(c)
 
+    @staticmethod
+    def _get_config_file_path(
+            filename: Optional[str] = None) -> Optional[str]:
+        """
+        Methods to get complete path of a provided file. If not able to find
+        path then returns None.
+        """
+        filename = filename or get_config_default_file()
+        if filename is None:
+            return None
+        search_list = [filename]
+        if (not os.path.isabs(filename) and
+                get_config_default_folder() is not None):
+            config_folder = cast(str, get_config_default_folder())
+            search_list += [os.path.join(config_folder, filename)]
+        for p in search_list:
+            if os.path.isfile(p):
+                return p
+        return None
+
     def load_config_file(self, filename: Optional[str] = None) -> None:
         """
         Loads a configuration from a YAML file. If `filename` is not specified
@@ -294,22 +314,8 @@ class Station(Metadatable, DelegateAttributes):
         Additionally the shortcut methods ``load_<instrument_name>`` will be
         updated.
         """
-        def get_config_file_path(
-                filename: Optional[str] = None) -> Optional[str]:
-            filename = filename or get_config_default_file()
-            if filename is None:
-                return None
-            search_list = [filename]
-            if (not os.path.isabs(filename) and
-                    get_config_default_folder() is not None):
-                config_folder = cast(str, get_config_default_folder())
-                search_list += [os.path.join(config_folder, filename)]
-            for p in search_list:
-                if os.path.isfile(p):
-                    return p
-            return None
 
-        path = get_config_file_path(filename)
+        path = self._get_config_file_path(filename)
 
         if path is None:
             if filename is not None:
@@ -344,7 +350,20 @@ class Station(Metadatable, DelegateAttributes):
         if len(filenames) == 1 and filenames[0] is None:
             self.load_config_file()
         else:
-            with _merge_yamls(*filenames[0]) as yamls:
+            paths = list()
+            for filename in filenames:
+                path = self._get_config_file_path(filename[0])
+
+                if path is None and filename[0] is not None:
+                    raise FileNotFoundError(path)
+
+                paths.append(path)
+
+            if None in paths:
+                raise RuntimeWarning("Couldn't find path to one or more of the "
+                                     "provided config files.")
+
+            with _merge_yamls(*paths) as yamls:
                 self.load_config(yamls)
 
     def load_config(self, config: Union[str, IO[AnyStr]]) -> None:
@@ -733,8 +752,7 @@ def _merge_yamls(*yamls: Union[str, Path]) -> IO[str]:
     """
 
     if len(yamls) == 1:
-        with open(yamls[0]) as file:
-            return file
+        return open(yamls[0])
 
     top_key = "instruments"
     yaml = ruamel.yaml.YAML()
