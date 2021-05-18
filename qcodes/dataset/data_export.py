@@ -75,7 +75,9 @@ def get_data_by_id(run_id: int) -> \
     return output
 
 
-def _get_data_from_ds(ds: DataSet) -> List[List[Dict[str, Union[str, np.ndarray]]]]:
+def _get_data_from_ds(
+    ds: DataSet,
+) -> List[List[Dict[str, Union[None, str, np.ndarray, Tuple[int, ...]]]]]:
     dependent_parameters: Tuple[ParamSpecBase, ...] = ds.dependent_parameters
 
     all_data = ds.cache.data()
@@ -95,9 +97,14 @@ def _get_data_from_ds(ds: DataSet) -> List[List[Dict[str, Union[str, np.ndarray]
                 "name": param_spec_base.name,
                 "unit": param_spec_base.unit,
                 "label": param_spec_base.label,
-                "data": data_dict[param_spec_base.name].flatten(),
+                "data": data_dict[param_spec_base.name],
             }
             data_dicts_list.append(my_data_dict)
+
+        if ds.description.shapes is not None:
+            data_dicts_list[-1]["shape"] = ds.description.shapes.get(dependent.name)
+        else:
+            data_dicts_list[-1] = None
 
         output.append(data_dicts_list)
 
