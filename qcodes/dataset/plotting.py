@@ -578,13 +578,24 @@ def plot_on_a_plain_grid(x: np.ndarray,
         z_strings = np.unique(z)
         z = _strings_as_ints(z)
 
-    xrow, yrow, z_to_plot = reshape_2D_data(x, y, z)
+    if x.ndim == 2 and y.ndim == 2 and z.ndim == 2:
+        # data already shaped just clip any nans from x and y
+        xrow, yrow = x[:, 0], y[0, :]
 
-    # we use a general edge calculator,
-    # in the case of non-equidistantly spaced data
+        filter_x = ~np.isnan(xrow)
+        filter_y = ~np.isnan(yrow)
+
+        xrow = xrow[filter_x]
+        yrow = yrow[filter_y]
+        z_to_plot = z[filter_x, :]
+        z_to_plot = z_to_plot[:, filter_y].transpose()
+    else:
+        xrow, yrow, z_to_plot = reshape_2D_data(x, y, z)
+
     # TODO: is this appropriate for a log ax?
     dxs = np.diff(xrow)/2
     dys = np.diff(yrow)/2
+
     x_edges = np.concatenate((np.array([xrow[0] - dxs[0]]),
                               xrow[:-1] + dxs,
                               np.array([xrow[-1] + dxs[-1]])))
