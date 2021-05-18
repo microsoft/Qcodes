@@ -338,9 +338,9 @@ def plot_by_id(
                         **kwargs)
 
 
-def _complex_to_real_preparser(alldata: NamedData,
-                               conversion: str,
-                               degrees: bool = False) -> NamedData:
+def _complex_to_real_preparser(
+    alldata: Sequence[Sequence[DSPlotData]], conversion: str, degrees: bool = False
+) -> NamedData:
     """
     Convert complex-valued parameters to two real-valued parameters, either
     real and imaginary part or phase and magnitude part
