@@ -334,7 +334,7 @@ class Station(Metadatable, DelegateAttributes):
             self.load_config(f)
 
     def load_config_files(self,
-                          *filenames: Sequence[str]
+                          *filenames: str
                           ) -> None:
         """
         Loads configuration from multiple YAML files after merging them
