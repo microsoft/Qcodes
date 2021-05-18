@@ -152,7 +152,7 @@ class Station(Metadatable, DelegateAttributes):
             assert isinstance(config_file, List)
             self.config_file = config_file
 
-        self.load_config_files(self.config_file)
+        self.load_config_files(*self.config_file)
 
     def snapshot_base(self, update: Optional[bool] = True,
                       params_to_skip_update: Optional[Sequence[str]] = None
@@ -334,7 +334,7 @@ class Station(Metadatable, DelegateAttributes):
             self.load_config(f)
 
     def load_config_files(self,
-                          filenames: List[str]
+                          *filenames: List[str]
                           ) -> None:
         """
         Loads configuration from multiple YAML files after merging them
@@ -462,7 +462,7 @@ class Station(Metadatable, DelegateAttributes):
         # load file
         # try to reload file on every call. This makes script execution a
         # little slower but makes the overall workflow more convenient.
-        self.load_config_files(self.config_file)
+        self.load_config_files(*self.config_file)
 
 
         # load from config
