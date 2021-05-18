@@ -19,6 +19,7 @@ from qcodes.dataset.data_set import DataSet, load_by_run_spec
 from qcodes.utils.plotting import auto_color_scale_from_config, find_scale_and_prefix
 
 from .data_export import (
+    DSPlotData,
     _get_data_from_ds,
     _strings_as_ints,
     flatten_1D_data_for_plot,
@@ -33,10 +34,9 @@ DB = qc.config["core"]["db_location"]
 AxesTuple = Tuple[matplotlib.axes.Axes, matplotlib.colorbar.Colorbar]
 AxesTupleList = Tuple[List[matplotlib.axes.Axes],
                       List[Optional[matplotlib.colorbar.Colorbar]]]
-Number = Union[float, int]
 # NamedData is the structure _get_data_from_ds returns and that plot_by_id
 # uses internally
-NamedData = List[List[Dict[str, Union[str, np.ndarray]]]]
+NamedData = List[List[DSPlotData]]
 
 # list of kwargs for plotting function, so that kwargs can be passed to
 # :func:`plot_dataset` and will be distributed to the respective plotting func.
@@ -90,19 +90,19 @@ def _appropriate_kwargs(plottype: str,
     yield plot_handler_mapping[plottype](**kwargs.copy())
 
 
-def plot_dataset(dataset: DataSet,
-                 axes: Optional[Union[matplotlib.axes.Axes,
-                                      Sequence[matplotlib.axes.Axes]]] = None,
-                 colorbars: Optional[Union[matplotlib.colorbar.Colorbar,
-                                           Sequence[
-                                        matplotlib.colorbar.Colorbar]]] = None,
-                 rescale_axes: bool = True,
-                 auto_color_scale: Optional[bool] = None,
-                 cutoff_percentile: Optional[Union[Tuple[Number, Number],
-                                                   Number]] = None,
-                 complex_plot_type: str = 'real_and_imag',
-                 complex_plot_phase: str = 'radians',
-                 **kwargs: Any) -> AxesTupleList:
+def plot_dataset(
+    dataset: DataSet,
+    axes: Optional[Union[matplotlib.axes.Axes, Sequence[matplotlib.axes.Axes]]] = None,
+    colorbars: Optional[
+        Union[matplotlib.colorbar.Colorbar, Sequence[matplotlib.colorbar.Colorbar]]
+    ] = None,
+    rescale_axes: bool = True,
+    auto_color_scale: Optional[bool] = None,
+    cutoff_percentile: Optional[Union[Tuple[float, float], float]] = None,
+    complex_plot_type: str = "real_and_imag",
+    complex_plot_phase: str = "radians",
+    **kwargs: Any,
+) -> AxesTupleList:
     """
     Construct all plots for a given dataset
 
@@ -218,8 +218,8 @@ def plot_dataset(dataset: DataSet,
         if len(data) == 2:  # 1D PLOTTING
             log.debug(f'Doing a 1D plot with kwargs: {kwargs}')
 
-            xpoints = cast(np.ndarray, data[0]['data'])
-            ypoints = cast(np.ndarray, data[1]['data'])
+            xpoints = data[0]["data"]
+            ypoints = data[1]["data"]
 
             plottype = get_1D_plottype(xpoints, ypoints)
             log.debug(f'Determined plottype: {plottype}')
@@ -305,19 +305,19 @@ def plot_dataset(dataset: DataSet,
     return axeslist, new_colorbars
 
 
-def plot_by_id(run_id: int,
-               axes: Optional[Union[matplotlib.axes.Axes,
-                              Sequence[matplotlib.axes.Axes]]] = None,
-               colorbars: Optional[Union[matplotlib.colorbar.Colorbar,
-                                   Sequence[
-                                       matplotlib.colorbar.Colorbar]]] = None,
-               rescale_axes: bool = True,
-               auto_color_scale: Optional[bool] = None,
-               cutoff_percentile: Optional[Union[Tuple[Number, Number],
-                                                 Number]] = None,
-               complex_plot_type: str = 'real_and_imag',
-               complex_plot_phase: str = 'radians',
-               **kwargs: Any) -> AxesTupleList:
+def plot_by_id(
+    run_id: int,
+    axes: Optional[Union[matplotlib.axes.Axes, Sequence[matplotlib.axes.Axes]]] = None,
+    colorbars: Optional[
+        Union[matplotlib.colorbar.Colorbar, Sequence[matplotlib.colorbar.Colorbar]]
+    ] = None,
+    rescale_axes: bool = True,
+    auto_color_scale: Optional[bool] = None,
+    cutoff_percentile: Optional[Union[Tuple[float, float], float]] = None,
+    complex_plot_type: str = "real_and_imag",
+    complex_plot_phase: str = "radians",
+    **kwargs: Any,
+) -> AxesTupleList:
     """
     Construct all plots for a given `run_id`. Here `run_id` is an
     alias for `captured_run_id` for historical reasons. See the docs
@@ -358,7 +358,7 @@ def _complex_to_real_preparser(alldata: NamedData,
                          'but can only accept "real_and_imag" or '
                          '"mag_and_phase".')
 
-    newdata = []
+    newdata: NamedData = []
 
     # we build a new NamedData object from the given `alldata` input.
     # Note that the length of `newdata` will be larger than that of `alldata`
@@ -371,11 +371,11 @@ def _complex_to_real_preparser(alldata: NamedData,
         new_group = []
         new_groups: NamedData = [[], []]
         for index, parameter in enumerate(group):
-            data = cast(np.ndarray, parameter['data'])
-            if data.dtype.kind == 'c':
-                p1, p2 = _convert_complex_to_real(parameter,
-                                                  conversion=conversion,
-                                                  degrees=degrees)
+            data = parameter["data"]
+            if data.dtype.kind == "c":
+                p1, p2 = _convert_complex_to_real(
+                    parameter, conversion=conversion, degrees=degrees
+                )
                 if index < len(group) - 1:
                     # if the above condition is met, we are dealing with
                     # complex setpoints
@@ -405,11 +405,8 @@ def _complex_to_real_preparser(alldata: NamedData,
 
 
 def _convert_complex_to_real(
-        parameter: Dict[str, Union[str, np.ndarray]],
-        conversion: str,
-        degrees: bool
-        ) -> Tuple[Dict[str, Union[str, np.ndarray]],
-                   Dict[str, Union[str, np.ndarray]]]:
+    parameter: DSPlotData, conversion: str, degrees: bool
+) -> Tuple[DSPlotData, DSPlotData]:
     """
     Do the actual conversion and turn one parameter into two.
     Should only be called from within _complex_to_real_preparser.
@@ -446,7 +443,7 @@ def _convert_complex_to_real(
     return new_parameters  # type: ignore[return-value]
 
 
-def _get_label_of_data(data_dict: Dict[str, Any]) -> str:
+def _get_label_of_data(data_dict: DSPlotData) -> str:
     return data_dict['label'] if data_dict['label'] != '' \
         else data_dict['name']
 
@@ -458,17 +455,17 @@ def _make_axis_label(label: str, unit: str) -> str:
     return label
 
 
-def _make_label_for_data_axis(data: List[Dict[str, Any]], axis_index: int
-                              ) -> str:
+def _make_label_for_data_axis(data: Sequence[DSPlotData], axis_index: int) -> str:
     label = _get_label_of_data(data[axis_index])
     unit = data[axis_index]['unit']
     return _make_axis_label(label, unit)
 
 
-def _set_data_axes_labels(ax: matplotlib.axes.Axes,
-                          data: List[Dict[str, Any]],
-                          cax: Optional[matplotlib.colorbar.Colorbar] = None
-                          ) -> None:
+def _set_data_axes_labels(
+    ax: matplotlib.axes.Axes,
+    data: Sequence[DSPlotData],
+    cax: Optional[matplotlib.colorbar.Colorbar] = None,
+) -> None:
     ax.set_xlabel(_make_label_for_data_axis(data, 0))
     ax.set_ylabel(_make_label_for_data_axis(data, 1))
 
@@ -665,8 +662,9 @@ def _scale_formatter(tick_value: float, pos: int, factor: float) -> str:
     return "{:g}".format(tick_value*factor)
 
 
-def _make_rescaled_ticks_and_units(data_dict: Dict[str, Any]) \
-        -> Tuple[matplotlib.ticker.FuncFormatter, str]:
+def _make_rescaled_ticks_and_units(
+    data_dict: DSPlotData,
+) -> Tuple[matplotlib.ticker.FuncFormatter, str]:
     """
     Create a ticks formatter and a new label for the data that is to be used
     on the axes where the data is plotted.
@@ -710,10 +708,11 @@ def _make_rescaled_ticks_and_units(data_dict: Dict[str, Any]) \
     return ticks_formatter, new_label
 
 
-def _rescale_ticks_and_units(ax: matplotlib.axes.Axes,
-                             data: List[Dict[str, Any]],
-                             cax: matplotlib.colorbar.Colorbar = None
-                             ) -> None:
+def _rescale_ticks_and_units(
+    ax: matplotlib.axes.Axes,
+    data: Sequence[DSPlotData],
+    cax: matplotlib.colorbar.Colorbar = None,
+) -> None:
     """
     Rescale ticks and units for the provided axes as described in
     :func:`~_make_rescaled_ticks_and_units`

@@ -1,13 +1,22 @@
 import logging
-from typing import Any, Dict, List, Sequence, Tuple, Union, cast
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 
 import numpy as np
+from typing_extensions import TypedDict
 
 from qcodes.dataset.data_set import DataSet, load_by_id
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.utils.deprecate import deprecate
 
 log = logging.getLogger(__name__)
+
+
+class DSPlotData(TypedDict):
+    name: str
+    unit: str
+    label: str
+    data: np.ndarray
+    shape: Optional[Tuple[int, ...]]
 
 
 def flatten_1D_data_for_plot(rawdata: Union[Sequence[Sequence[Any]],
@@ -31,8 +40,7 @@ def flatten_1D_data_for_plot(rawdata: Union[Sequence[Sequence[Any]],
 
 
 @deprecate(alternative="dataset.get_parameter_data")
-def get_data_by_id(run_id: int) -> \
-        List[List[Dict[str, Union[str, np.ndarray]]]]:
+def get_data_by_id(run_id: int) -> List[List[DSPlotData]]:
     """
     Load data from database and reshapes into 1D arrays with minimal
     name, unit and label metadata.
@@ -77,7 +85,7 @@ def get_data_by_id(run_id: int) -> \
 
 def _get_data_from_ds(
     ds: DataSet,
-) -> List[List[Dict[str, Union[None, str, np.ndarray, Tuple[int, ...]]]]]:
+) -> List[List[DSPlotData]]:
     dependent_parameters: Tuple[ParamSpecBase, ...] = ds.dependent_parameters
 
     all_data = ds.cache.data()
@@ -93,18 +101,17 @@ def _get_data_from_ds(
         dependencies = ds.description.interdeps.dependencies[dependent]
 
         for param_spec_base in dependencies + (dependent,):
-            my_data_dict: Dict[str, Union[str, np.ndarray]] = {
+            my_data_dict: DSPlotData = {
                 "name": param_spec_base.name,
                 "unit": param_spec_base.unit,
                 "label": param_spec_base.label,
                 "data": data_dict[param_spec_base.name],
+                "shape": None,
             }
             data_dicts_list.append(my_data_dict)
 
         if ds.description.shapes is not None:
             data_dicts_list[-1]["shape"] = ds.description.shapes.get(dependent.name)
-        else:
-            data_dicts_list[-1]["shape"] = None
 
         output.append(data_dicts_list)
 
