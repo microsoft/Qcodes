@@ -1,16 +1,20 @@
+from typing import List
+
 import numpy as np
-from hypothesis import given, example, assume, settings, HealthCheck
-from hypothesis.strategies import text, sampled_from, floats, lists, data, \
-    one_of, just
+from hypothesis import HealthCheck, assume, example, given, settings
+from hypothesis.strategies import data, floats, just, lists, one_of, sampled_from, text
 
 import qcodes as qc
-from qcodes.dataset.plotting import _make_rescaled_ticks_and_units
-from qcodes.utils.plotting import _ENGINEERING_PREFIXES, _UNITS_FOR_RESCALING
-
-from qcodes.dataset.plotting import (plot_by_id, _appropriate_kwargs,
-    _complex_to_real_preparser)
+from qcodes.dataset.data_export import DSPlotData
 from qcodes.dataset.measurements import Measurement
+from qcodes.dataset.plotting import (
+    _appropriate_kwargs,
+    _complex_to_real_preparser,
+    _make_rescaled_ticks_and_units,
+    plot_by_id,
+)
 from qcodes.tests.instrument_mocks import DummyInstrument
+from qcodes.utils.plotting import _ENGINEERING_PREFIXES, _UNITS_FOR_RESCALING
 
 
 @given(param_name=text(min_size=1, max_size=10),
@@ -152,16 +156,26 @@ def test_appropriate_kwargs():
         assert ap_kwargs['cmap'] == qc.config.plotting.default_color_map
 
 
-def test__complex_to_real_preparser_complex_toplevel_param():
+def test__complex_to_real_preparser_complex_toplevel_param() -> None:
 
-    data_in = [[{'data': np.array([0, 1, 2]),
-                 'name': 'voltage',
-                 'label': 'swept voltage',
-                 'unit': 'V'},
-                {'data': np.array([0+0j, 1+2j, -1+1j]),
-                 'name': 'signal',
-                 'label': 'complex signal',
-                 'unit': 'Ohm'}]]
+    data_in: List[List[DSPlotData]] = [
+        [
+            {
+                "data": np.array([0, 1, 2]),
+                "name": "voltage",
+                "label": "swept voltage",
+                "unit": "V",
+                "shape": None,
+            },
+            {
+                "data": np.array([0 + 0j, 1 + 2j, -1 + 1j]),
+                "name": "signal",
+                "label": "complex signal",
+                "unit": "Ohm",
+                "shape": None,
+            },
+        ]
+    ]
 
     data_out = _complex_to_real_preparser(data_in, conversion='real_and_imag')
 
@@ -169,10 +183,10 @@ def test__complex_to_real_preparser_complex_toplevel_param():
     assert data_out[0][0] == data_in[0][0]
 
     real_param = data_out[0][1]
-    assert real_param['name'] == 'signal_real'
-    assert real_param['label'] =='complex signal [real]'
-    assert all(real_param['data'] == np.array([0, 1, -1]))
-    assert real_param['unit'] == 'Ohm'
+    assert real_param["name"] == "signal_real"
+    assert real_param["label"] == "complex signal [real]"
+    assert all(real_param["data"] == np.array([0, 1, -1]))
+    assert real_param["unit"] == "Ohm"
 
     imag_param = data_out[1][1]
     assert imag_param['name'] == 'signal_imag'
