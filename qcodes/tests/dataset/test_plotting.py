@@ -109,17 +109,16 @@ def test_plot_by_id_line_and_heatmap(experiment, request):
     meas = Measurement()
     meas.register_parameter(inst.s1)
     meas.register_parameter(inst.s2)
-    meas.register_parameter(inst.m2, setpoints=(inst.s1, inst.s2) )
+    meas.register_parameter(inst.m2, setpoints=(inst.s1, inst.s2))
     meas.register_parameter(inst.m1, setpoints=(inst.s1,))
 
     with meas.run() as datasaver:
         for outer in range(10):
-            datasaver.add_result((inst.s1, outer),
-                                (inst.m1, inst.m1()))
+            datasaver.add_result((inst.s1, outer), (inst.m1, inst.m1()))
             for inner in range(10):
-                datasaver.add_result((inst.s1, outer),
-                                    (inst.s2, inner),
-                                    (inst.m2, inst.m2()))
+                datasaver.add_result(
+                    (inst.s1, outer), (inst.s2, inner), (inst.m2, inst.m2())
+                )
 
     dataid = datasaver.run_id
     plot_by_id(dataid)
@@ -216,11 +215,12 @@ def test__complex_to_real_preparser_complex_toplevel_param() -> None:
                                           degrees=True)
 
     phase_param = data_out[1][1]
-    assert phase_param['name'] == 'signal_phase'
-    assert phase_param['label'] =='complex signal [phase]'
-    assert all(phase_param['data'] == np.angle(np.array([0+0j, 1+2j, -1+1j]),
-                                               deg=True))
-    assert phase_param['unit'] == 'deg'
+    assert phase_param["name"] == "signal_phase"
+    assert phase_param["label"] == "complex signal [phase]"
+    assert all(
+        phase_param["data"] == np.angle(np.array([0 + 0j, 1 + 2j, -1 + 1j]), deg=True)
+    )
+    assert phase_param["unit"] == "deg"
 
 
 def test__complex_to_real_preparser_complex_setpoint() -> None:
