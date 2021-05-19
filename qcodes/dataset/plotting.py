@@ -430,17 +430,23 @@ def _convert_complex_to_real(
     new_units = converters['units'][conversion](parameter['unit'])
     new_names = converters['names'][conversion](parameter['name'])
 
-    new_parameters = tuple(
-        {'name': name, 'label': label,
-         'unit': unit, 'data': data}
-        for name, label, unit, data in zip(
-            new_names, new_labels, new_units, new_data))
+    parameter1: DSPlotData = {
+        "name": new_names[0],
+        "label": new_labels[0],
+        "unit": new_units[0],
+        "data": new_data[0],
+        "shape": parameter["shape"],
+    }
 
-    # The reason we ignore the type in the return is that I cannot figure
-    # out how to get mypy to correctly infer the type of iterated values
-    # (the name, label, unit, and data above)
+    parameter2: DSPlotData = {
+        "name": new_names[1],
+        "label": new_labels[1],
+        "unit": new_units[1],
+        "data": new_data[1],
+        "shape": parameter["shape"],
+    }
 
-    return new_parameters  # type: ignore[return-value]
+    return parameter1, parameter2
 
 
 def _get_label_of_data(data_dict: DSPlotData) -> str:
