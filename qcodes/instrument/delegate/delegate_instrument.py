@@ -87,7 +87,7 @@ class DelegateInstrument(InstrumentBase):
         self,
         name: str,
         station: Station,
-        parameters: Dict[str, Union[str, List[str]]],
+        parameters: Union[Dict[str, List[str]], Dict[str, str]],
         initial_values: Optional[Dict[str, Any]] = None,
         set_initial_values_on_load: bool = False,
         setters: Optional[Dict[str, Dict[str, Any]]] = None,
@@ -157,14 +157,14 @@ class DelegateInstrument(InstrumentBase):
     def _create_and_add_parameters(
         self,
         station: Station,
-        parameters: Dict[str, Union[str, List[str]]],
+        parameters: Union[Dict[str, List[str]], Dict[str, str]],
         setters: Dict[str, Dict[str, Any]],
         units: Dict[str, str]
     ) -> None:
         """Add parameters to delegate instrument based on specified aliases,
         endpoints and setter methods"""
         for param_name, paths in parameters.items():
-            if isinstance(paths, List[str]):
+            if isinstance(paths, list):
                 self._create_and_add_parameter(
                     group_name=param_name,
                     station=station,
