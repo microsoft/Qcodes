@@ -612,8 +612,11 @@ def plot_on_a_plain_grid(x: np.ndarray,
 
     # TODO: is this appropriate for a log ax?
     dxs = np.diff(xrow)/2
+    if dxs.size == 0:
+        dxs = np.array([1])
     dys = np.diff(yrow)/2
-
+    if dys.size == 0:
+        dys = np.array([1])
     x_edges = np.concatenate((np.array([xrow[0] - dxs[0]]),
                               xrow[:-1] + dxs,
                               np.array([xrow[-1] + dxs[-1]])))
