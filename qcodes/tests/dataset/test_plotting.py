@@ -223,17 +223,26 @@ def test__complex_to_real_preparser_complex_toplevel_param() -> None:
     assert phase_param['unit'] == 'deg'
 
 
-def test__complex_to_real_preparser_complex_setpoint():
+def test__complex_to_real_preparser_complex_setpoint() -> None:
 
-    data_in = [[{'data': np.array([0+0j, 1+2j, -1+1j]),
-                 'name': 'signal',
-                 'label': 'complex signal',
-                 'unit': 'Ohm'},
-                 {'data': np.array([0, 1, 2]),
-                 'name': 'voltage',
-                 'label': 'measured voltage',
-                 'unit': 'V'}
-                ]]
+    data_in: List[List[DSPlotData]] = [
+        [
+            {
+                "data": np.array([0 + 0j, 1 + 2j, -1 + 1j]),
+                "name": "signal",
+                "label": "complex signal",
+                "unit": "Ohm",
+                "shape": None,
+            },
+            {
+                "data": np.array([0, 1, 2]),
+                "name": "voltage",
+                "label": "measured voltage",
+                "unit": "V",
+                "shape": None,
+            },
+        ]
+    ]
 
     data_out = _complex_to_real_preparser(data_in, conversion='real_and_imag')
 
@@ -241,10 +250,10 @@ def test__complex_to_real_preparser_complex_setpoint():
     assert data_out[0][-1] == data_in[0][-1]
 
     real_param = data_out[0][0]
-    assert real_param['name'] == 'signal_real'
-    assert real_param['label'] =='complex signal [real]'
-    assert all(real_param['data'] == np.array([0, 1, -1]))
-    assert real_param['unit'] == 'Ohm'
+    assert real_param["name"] == "signal_real"
+    assert real_param["label"] == "complex signal [real]"
+    assert all(real_param["data"] == np.array([0, 1, -1]))
+    assert real_param["unit"] == "Ohm"
 
     imag_param = data_out[0][1]
     assert imag_param['name'] == 'signal_imag'
