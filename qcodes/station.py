@@ -95,10 +95,12 @@ class Station(Metadatable, DelegateAttributes):
         *components: components to add immediately to the
             Station. Can be added later via ``self.add_component``.
         config_file: Path to YAML files to load the station config from.
+
             - If only one yaml file needed to be loaded, it should be passed
-            as a string, e.g., '~/station.yaml.
+              as a string, e.g., '~/station.yaml'
             - If more than one yaml file needed, they should be supplied as
-            a sequence of strings, e.g. ['~/station1.yaml', ~/station2.yaml'].
+              a sequence of strings, e.g. ['~/station1.yaml', '~/station2.yaml']
+
         use_monitor: Should the QCoDeS monitor be activated for this station.
         default: Is this station the default?
         update_snapshot: Immediately update the snapshot of each
