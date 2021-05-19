@@ -39,12 +39,13 @@ class LuaSweepParameter(ArrayParameter):
             start: Starting point of the sweep
             stop: Endpoint of the sweep
             steps: No. of sweep steps
-            mode: Type of sweep, either 'IV' (voltage sweep)
-                or 'VI' (current sweep)
+            mode: Type of sweep, either 'IV' (voltage sweep),
+                'VI' (current sweep two probe setup) or
+                'VIfourprobe' (current sweep four probe setup)
         """
 
-        if mode not in ['IV', 'VI', 'VIfour']:
-            raise ValueError('mode must be either "VI", "IV" or "VIfour"')
+        if mode not in ['IV', 'VI', 'VIfourprobe']:
+            raise ValueError('mode must be either "VI", "IV" or "VIfourprobe"')
 
         self.shape = (steps,)
 
@@ -62,12 +63,12 @@ class LuaSweepParameter(ArrayParameter):
             self.label = 'voltage'
             self._short_name = 'vi_sweep'
 
-        if mode == 'VIfour':
+        if mode == 'VIfourprobe':
             self.unit = 'V'
             self.setpoint_names = ('Current',)
             self.setpoint_units = ('A',)
             self.label = 'voltage'
-            self._short_name = 'vi_sweep_four'
+            self._short_name = 'vi_sweep_four_probe'
 
         self.setpoints = (tuple(np.linspace(start, stop, steps)),)
 
@@ -434,8 +435,9 @@ class KeithleyChannel(InstrumentChannel):
             start: starting sweep value (V or A)
             stop: end sweep value (V or A)
             steps: number of steps
-            mode: What kind of sweep to make.
-                'IV' (I versus V) or 'VI' (V versus I)
+            mode: Type of sweep, either 'IV' (voltage sweep),
+                'VI' (current sweep two probe setup) or
+                'VIfourprobe' (current sweep four probe setup)
         """
         # prepare setpoints, units, name
         self.fastsweep.prepareSweep(start, stop, steps, mode)
@@ -455,8 +457,9 @@ class KeithleyChannel(InstrumentChannel):
             start: starting voltage
             stop: end voltage
             steps: number of steps
-            mode: What kind of sweep to make.
-                'IV' (I versus V) or 'VI' (V versus I)
+            mode: Type of sweep, either 'IV' (voltage sweep),
+                'VI' (current sweep two probe setup) or
+                'VIfourprobe' (current sweep four probe setup)
         """
 
         channel = self.channel
@@ -480,7 +483,7 @@ class KeithleyChannel(InstrumentChannel):
             func = '0'
             sense_mode = '0'
 
-        if mode == 'VIfour':
+        if mode == 'VIfourprobe':
             meas = 'v'
             sour = 'i'
             func = '0'
