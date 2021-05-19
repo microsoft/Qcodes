@@ -17,26 +17,33 @@ from qcodes.tests.instrument_mocks import DummyInstrument
 from qcodes.utils.plotting import _ENGINEERING_PREFIXES, _UNITS_FOR_RESCALING
 
 
-@given(param_name=text(min_size=1, max_size=10),
-       param_label=text(min_size=0, max_size=15),
-       scale=sampled_from(sorted(list(_ENGINEERING_PREFIXES.keys()))),
-       unit=sampled_from(sorted(list(
-           _UNITS_FOR_RESCALING.union(
-               ['', 'unit', 'kg', '%', 'permille', 'nW'])))),
-       data_strategy=data()
-       )
-@example(param_name='huge_param',
-         param_label='Larger than the highest scale',
-         scale=max(list(_ENGINEERING_PREFIXES.keys())),
-         unit='V',
-         data_strategy=np.random.random((5,))
-                       * 10 ** (3 + max(list(_ENGINEERING_PREFIXES.keys()))))
-@example(param_name='small_param',
-         param_label='Lower than the lowest scale',
-         scale=min(list(_ENGINEERING_PREFIXES.keys())),
-         unit='V',
-         data_strategy=np.random.random((5,))
-                       * 10 ** (-3 + min(list(_ENGINEERING_PREFIXES.keys()))))
+@given(
+    param_name=text(min_size=1, max_size=10),
+    param_label=text(min_size=0, max_size=15),
+    scale=sampled_from(sorted(list(_ENGINEERING_PREFIXES.keys()))),
+    unit=sampled_from(
+        sorted(
+            list(_UNITS_FOR_RESCALING.union(["", "unit", "kg", "%", "permille", "nW"]))
+        )
+    ),
+    data_strategy=data(),
+)
+@example(
+    param_name="huge_param",
+    param_label="Larger than the highest scale",
+    scale=max(list(_ENGINEERING_PREFIXES.keys())),
+    unit="V",
+    data_strategy=np.random.random((5,))
+    * 10 ** (3 + max(list(_ENGINEERING_PREFIXES.keys()))),
+)
+@example(
+    param_name="small_param",
+    param_label="Lower than the lowest scale",
+    scale=min(list(_ENGINEERING_PREFIXES.keys())),
+    unit="V",
+    data_strategy=np.random.random((5,))
+    * 10 ** (-3 + min(list(_ENGINEERING_PREFIXES.keys()))),
+)
 @settings(suppress_health_check=[HealthCheck.too_slow])
 def test_rescaled_ticks_and_units(scale, unit,
                                   param_name, param_label, data_strategy):
@@ -200,10 +207,10 @@ def test__complex_to_real_preparser_complex_toplevel_param() -> None:
     assert data_out[0][0] == data_in[0][0]
 
     phase_param = data_out[1][1]
-    assert phase_param['name'] == 'signal_phase'
-    assert phase_param['label'] =='complex signal [phase]'
-    assert all(phase_param['data'] == np.angle(np.array([0+0j, 1+2j, -1+1j])))
-    assert phase_param['unit'] == 'rad'
+    assert phase_param["name"] == "signal_phase"
+    assert phase_param["label"] == "complex signal [phase]"
+    assert all(phase_param["data"] == np.angle(np.array([0 + 0j, 1 + 2j, -1 + 1j])))
+    assert phase_param["unit"] == "rad"
 
     mag_param = data_out[0][1]
     assert mag_param['name'] == 'signal_mag'
