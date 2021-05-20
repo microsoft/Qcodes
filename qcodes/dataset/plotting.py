@@ -583,6 +583,10 @@ def plot_on_a_plain_grid(x: np.ndarray,
     if x.ndim == 2 and y.ndim == 2 and z.ndim == 2:
 
         def _on_grid_except_nan(x_data: np.ndarray, y_data: np.ndarray) -> bool:
+            """
+            check that data is on a grid. e.g. all points are the same as the  first
+            row and column with the exception of nans. Those represent points not yet measured
+            """
             x_row = x_data[:, 0:1]
             y_row = y_data[0:1, :]
             return (
