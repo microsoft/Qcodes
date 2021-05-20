@@ -7,7 +7,7 @@ import inspect
 import logging
 from contextlib import contextmanager
 from functools import partial
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
+from typing import Any, List, Optional, Sequence, Tuple, Union, cast
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -22,7 +22,6 @@ from .data_export import (
     DSPlotData,
     _get_data_from_ds,
     _strings_as_ints,
-    flatten_1D_data_for_plot,
     get_1D_plottype,
     get_2D_plottype,
     reshape_2D_data,
@@ -257,9 +256,9 @@ def plot_dataset(
             log.debug(f'Doing a 2D plot with kwargs: {kwargs}')
 
             if data[2]["shape"] is None:
-                xpoints = flatten_1D_data_for_plot(data[0]["data"])
-                ypoints = flatten_1D_data_for_plot(data[1]["data"])
-                zpoints = flatten_1D_data_for_plot(data[2]["data"])
+                xpoints = data[0]["data"].flatten()
+                ypoints = data[1]["data"].flatten()
+                zpoints = data[2]["data"].flatten()
                 plottype = get_2D_plottype(xpoints, ypoints, zpoints)
                 log.debug(f"Determined plottype: {plottype}")
             else:
