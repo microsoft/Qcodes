@@ -97,10 +97,10 @@ class DelegateInstrument(InstrumentBase):
         name: str,
         station: Station,
         parameters: Union[Mapping[str, Sequence[str]], Mapping[str, str]],
-        initial_values: Optional[Dict[str, Any]] = None,
+        initial_values: Optional[Mapping[str, Any]] = None,
         set_initial_values_on_load: bool = False,
-        setters: Optional[Dict[str, Dict[str, Any]]] = None,
-        units: Optional[Dict[str, str]] = None,
+        setters: Optional[Mapping[str, MutableMapping[str, Any]]] = None,
+        units: Optional[Mapping[str, str]] = None,
         metadata: Optional[Dict[Any, Any]] = None
     ):
         super().__init__(name=name, metadata=metadata)
