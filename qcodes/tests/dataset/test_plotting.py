@@ -6,12 +6,14 @@ from hypothesis.strategies import data, floats, just, lists, one_of, sampled_fro
 
 import qcodes as qc
 from qcodes.dataset.data_export import DSPlotData
+from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.plotting import (
     _appropriate_kwargs,
     _complex_to_real_preparser,
     _make_rescaled_ticks_and_units,
     plot_by_id,
+    plot_dataset,
 )
 from qcodes.tests.instrument_mocks import DummyInstrument
 from qcodes.utils.plotting import _ENGINEERING_PREFIXES, _UNITS_FOR_RESCALING
@@ -130,6 +132,47 @@ def test_plot_by_id_line_and_heatmap(experiment, request):
     dataid = datasaver.run_id
     plot_by_id(dataid)
     plot_by_id(dataid, cmap='bone')
+
+
+def test_plot_dataset_2d_shaped_shift(experiment, request):
+    """
+    Test plotting of preshaped data on a shifted grid
+    """
+    inst = DummyInstrument("dummy", gates=["s1", "m1", "s2"])
+    request.addfinalizer(inst.close)
+
+    inst.m1.get = np.random.randn
+
+    meas = Measurement()
+    meas.register_parameter(inst.s1)
+    meas.register_parameter(inst.s2)
+    meas.register_parameter(inst.m1, setpoints=(inst.s1, inst.s2))
+
+    outer_shape = 10
+    inner_shape = 20
+
+    meas.set_shapes(detect_shape_of_measurement((inst.m1,), (outer_shape, inner_shape)))
+
+    shift = 0
+
+    with meas.run() as datasaver:
+        for outer in np.linspace(0, 9, outer_shape):
+            for inner in np.linspace(0 + shift, 10 + shift, inner_shape):
+                datasaver.add_result(
+                    (inst.s1, outer), (inst.s2, inner), (inst.m1, inst.m1())
+                )
+            shift += 1
+
+    axes, cbs = plot_dataset(datasaver.dataset)
+    xlims = axes[0].get_xlim()
+    ylims = axes[0].get_ylim()
+
+    assert xlims[0] == -0.5
+    assert xlims[1] == 9.5
+    assert ylims[0] < -0.5
+    assert ylims[0] > -1.0
+    assert ylims[1] > 19.5
+    assert ylims[1] < 20.0
 
 
 def test_appropriate_kwargs():
