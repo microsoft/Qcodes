@@ -1,17 +1,26 @@
-from typing import Callable, List, Dict, Union, Any, Optional, Sequence
-
+import logging
+from collections import abc
 from functools import partial
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    MutableMapping,
+    Optional,
+    Sequence,
+    Union,
+)
 
+from qcodes.instrument.base import InstrumentBase
 from qcodes.instrument.delegate.grouped_parameter import (
     DelegateGroup,
     DelegateGroupParameter,
-    GroupedParameter
+    GroupedParameter,
 )
 from qcodes.instrument.parameter import DelegateParameter, Parameter
-from qcodes.instrument.base import InstrumentBase
 from qcodes.station import Station
-
-import logging
 
 _log = logging.getLogger(__name__)
 
@@ -87,7 +96,7 @@ class DelegateInstrument(InstrumentBase):
         self,
         name: str,
         station: Station,
-        parameters: Union[Dict[str, List[str]], Dict[str, str]],
+        parameters: Union[Mapping[str, Sequence[str]], Mapping[str, str]],
         initial_values: Optional[Dict[str, Any]] = None,
         set_initial_values_on_load: bool = False,
         setters: Optional[Dict[str, Dict[str, Any]]] = None,
@@ -157,8 +166,8 @@ class DelegateInstrument(InstrumentBase):
     def _create_and_add_parameters(
         self,
         station: Station,
-        parameters: Union[Dict[str, List[str]], Dict[str, str]],
-        setters: Dict[str, Dict[str, Any]],
+        parameters: Union[Mapping[str, Sequence[str]], Mapping[str, str]],
+        setters: Mapping[str, MutableMapping[str, Any]],
         units: Dict[str, str]
     ) -> None:
         """Add parameters to delegate instrument based on specified aliases,
@@ -172,7 +181,7 @@ class DelegateInstrument(InstrumentBase):
                     setter=setters.get(param_name),
                     unit=units.get(param_name)
                 )
-            elif isinstance(paths, list):
+            elif isinstance(paths, abc.Sequence):
                 self._create_and_add_parameter(
                     group_name=param_name,
                     station=station,
@@ -184,7 +193,7 @@ class DelegateInstrument(InstrumentBase):
                 raise ValueError("Parameter paths should be either a string or list of strings.")
 
     @staticmethod
-    def _parameter_names(parameters: List[Parameter]) -> List[str]:
+    def _parameter_names(parameters: Sequence[Parameter]) -> List[str]:
         """Get the endpoint names"""
         parameter_names = [_e.name for _e in parameters]
         if len(parameter_names) != len(set(parameter_names)):
@@ -214,8 +223,8 @@ class DelegateInstrument(InstrumentBase):
         self,
         group_name: str,
         station: Station,
-        paths: List[str],
-        setter: Optional[Dict[str, Any]] = None,
+        paths: Sequence[str],
+        setter: Optional[MutableMapping[str, Any]] = None,
         getter: Optional[Callable[..., Any]] = None,
         formatter: Optional[Callable[..., Any]] = None,
         unit: Optional[str] = None,
