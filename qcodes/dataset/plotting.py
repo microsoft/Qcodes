@@ -610,24 +610,10 @@ def plot_on_a_plain_grid(x: np.ndarray,
     else:
         xrow, yrow, z_to_plot = reshape_2D_data(x, y, z)
 
-    # TODO: is this appropriate for a log ax?
-    dxs = np.diff(xrow)/2
-    if dxs.size == 0:
-        dxs = np.array([1])
-    dys = np.diff(yrow)/2
-    if dys.size == 0:
-        dys = np.array([1])
-    x_edges = np.concatenate((np.array([xrow[0] - dxs[0]]),
-                              xrow[:-1] + dxs,
-                              np.array([xrow[-1] + dxs[-1]])))
-    y_edges = np.concatenate((np.array([yrow[0] - dys[0]]),
-                              yrow[:-1] + dys,
-                              np.array([yrow[-1] + dys[-1]])))
     if 'rasterized' in kwargs.keys():
         rasterized = kwargs.pop('rasterized')
     else:
-        rasterized = len(x_edges) * len(y_edges) \
-                      > qc.config.plotting.rasterize_threshold
+        rasterized = len(xrow) * len(yrow) > qc.config.plotting.rasterize_threshold
 
     cmap = kwargs.pop('cmap') if 'cmap' in kwargs else None
 
@@ -635,11 +621,15 @@ def plot_on_a_plain_grid(x: np.ndarray,
         name = cmap.name if hasattr(cmap, 'name') else 'viridis'
         cmap = matplotlib.cm.get_cmap(name, len(z_strings))
 
-    colormesh = ax.pcolormesh(x_edges, y_edges,
-                              np.ma.masked_invalid(z_to_plot),
-                              rasterized=rasterized,
-                              cmap=cmap,
-                              **kwargs)
+    colormesh = ax.pcolormesh(
+        xrow,
+        yrow,
+        np.ma.masked_invalid(z_to_plot),
+        rasterized=rasterized,
+        cmap=cmap,
+        shading="nearest",
+        **kwargs,
+    )
 
     if x_is_stringy:
         ax.set_xticks(np.arange(len(np.unique(x_strings))))
