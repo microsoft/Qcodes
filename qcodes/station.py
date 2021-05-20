@@ -362,12 +362,8 @@ class Station(Metadatable, DelegateAttributes):
 
                 paths.append(path)
 
-            if None in paths:
-                raise RuntimeWarning("Couldn't find path to one or more of the "
-                                     "provided config files.")
-
-            with _merge_yamls(*paths) as yamls:
-                self.load_config(yamls)
+            yamls = _merge_yamls(*paths)
+            self.load_config(yamls)
 
     def load_config(self, config: Union[str, IO[AnyStr]]) -> None:
         """
@@ -755,7 +751,9 @@ def _merge_yamls(*yamls: Union[str, Path]) -> str:
     """
 
     if len(yamls) == 1:
-        return open(yamls[0])
+        with open(yamls[0]) as file:
+            content = file.read()
+        return content
 
     top_key = "instruments"
     yaml = ruamel.yaml.YAML()
@@ -781,9 +779,7 @@ def _merge_yamls(*yamls: Union[str, Path]) -> str:
                 )
         deq.popleft()
 
-    # Dump to a temp file in memory, so it can be read by load_config.
-    merged_yaml_temp_file = StringIO()
-    yaml.dump(data1, merged_yaml_temp_file)
-    merged_yaml_temp_file.seek(0)
-
-    return merged_yaml_temp_file
+    with StringIO() as merged_yaml_stream:
+        yaml.dump(data1, merged_yaml_stream)
+        merged_yaml = merged_yaml_stream.getvalue()
+    return merged_yaml
