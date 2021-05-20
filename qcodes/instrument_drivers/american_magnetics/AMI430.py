@@ -238,7 +238,11 @@ class AMI430(IPInstrument):
                                'heating switch': 9,
                                'cooling switch': 10,
                            })
-
+        self.add_parameter('ramping_state_check_interval',
+                           initial_value=0.05,
+                           unit="s",
+                           vals=Numbers(0, 10))
+                           
         # Add persistent switch
         switch_heater = AMI430SwitchHeater(self)
         self.add_submodule("switch_heater", switch_heater)
@@ -350,7 +354,7 @@ class AMI430(IPInstrument):
     def wait_while_ramping(self, check_interval=0.05) -> str:
 
         while self.ramping_state() == 'ramping':
-            self._sleep(check_interval)
+            self._sleep(self.ramping_state_check_interval())
 
         return self.ramping_state()
 
