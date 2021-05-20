@@ -1,8 +1,10 @@
 from typing import List
 
 import numpy as np
+import pytest
 from hypothesis import HealthCheck, assume, example, given, settings
 from hypothesis.strategies import data, floats, just, lists, one_of, sampled_from, text
+from matplotlib.collections import QuadMesh
 
 import qcodes as qc
 from qcodes.dataset.data_export import DSPlotData
@@ -17,6 +19,10 @@ from qcodes.dataset.plotting import (
 )
 from qcodes.tests.instrument_mocks import DummyInstrument
 from qcodes.utils.plotting import _ENGINEERING_PREFIXES, _UNITS_FOR_RESCALING
+
+
+class TerminateLoopException(Exception):
+    pass
 
 
 @given(
@@ -134,9 +140,12 @@ def test_plot_by_id_line_and_heatmap(experiment, request):
     plot_by_id(dataid, cmap='bone')
 
 
-def test_plot_dataset_2d_shaped_shift(experiment, request):
+@pytest.mark.parametrize("nan_setpoints", [True, False])
+@pytest.mark.parametrize("shifted", [True, False])
+def test_plot_dataset_2d_shaped(experiment, request, nan_setpoints, shifted):
     """
-    Test plotting of preshaped data on a shifted grid
+    Test plotting of preshaped data on a grid that may or may not be shifted
+    with and without nans in the set points.
     """
     inst = DummyInstrument("dummy", gates=["s1", "m1", "s2"])
     request.addfinalizer(inst.close)
@@ -156,23 +165,54 @@ def test_plot_dataset_2d_shaped_shift(experiment, request):
     shift = 0
 
     with meas.run() as datasaver:
-        for outer in np.linspace(0, 9, outer_shape):
-            for inner in np.linspace(0 + shift, 10 + shift, inner_shape):
-                datasaver.add_result(
-                    (inst.s1, outer), (inst.s2, inner), (inst.m1, inst.m1())
-                )
-            shift += 1
+        try:
+            for outer in np.linspace(0, 9, outer_shape):
+                for inner in np.linspace(0 + shift, 10 + shift, inner_shape):
+                    datasaver.add_result(
+                        (inst.s1, outer), (inst.s2, inner), (inst.m1, inst.m1())
+                    )
+                    if inner > 7 and outer > 6 and nan_setpoints:
+                        raise TerminateLoopException
+                if shifted:
+                    shift += 1
+        except TerminateLoopException:
+            pass
 
     axes, cbs = plot_dataset(datasaver.dataset)
     xlims = axes[0].get_xlim()
     ylims = axes[0].get_ylim()
 
-    assert xlims[0] == -0.5
-    assert xlims[1] == 9.5
-    assert ylims[0] < -0.5
-    assert ylims[0] > -1.0
-    assert ylims[1] > 19.5
-    assert ylims[1] < 20.0
+    # check that this generates a QuadMesh which is the expected output of pcolormesh
+    assert any(isinstance(mplobj, QuadMesh) for mplobj in axes[0].get_children())
+
+    if nan_setpoints and shifted:
+        assert xlims[0] == -0.5
+        assert xlims[1] == 7.5
+        assert ylims[0] < 0
+        assert ylims[0] > -1.0
+        assert ylims[1] > 16
+        assert ylims[1] < 17
+    elif not nan_setpoints and shifted:
+        assert xlims[0] == -0.5
+        assert xlims[1] == 9.5
+        assert ylims[0] < 0
+        assert ylims[0] > -1.0
+        assert ylims[1] > 19
+        assert ylims[1] < 20
+    elif nan_setpoints and not shifted:
+        assert xlims[0] == -0.5
+        assert xlims[1] == 7.5
+        assert ylims[0] < 0
+        assert ylims[0] > -1.0
+        assert ylims[1] > 10
+        assert ylims[1] < 11
+    else:
+        assert xlims[0] == -0.5
+        assert xlims[1] == 9.5
+        assert ylims[0] < 0
+        assert ylims[0] > -1.0
+        assert ylims[1] > 10
+        assert ylims[1] < 11
 
 
 def test_appropriate_kwargs():
