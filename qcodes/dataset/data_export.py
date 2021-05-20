@@ -22,6 +22,7 @@ class DSPlotData(TypedDict):
     shape: Optional[Tuple[int, ...]]
 
 
+@deprecate(alternative="ndarray.flatten()")
 def flatten_1D_data_for_plot(rawdata: Union[Sequence[Sequence[Any]],
                                             np.ndarray]) -> np.ndarray:
     """
