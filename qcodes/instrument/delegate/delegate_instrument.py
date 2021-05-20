@@ -121,7 +121,7 @@ class DelegateInstrument(InstrumentBase):
         station.my_instrument.my_param
 
         Args:
-            station: Measurement station
+            parent: Measurement station
             path: Relative path to parse
         """
         def _parse_path(parent: Any, elem: Sequence[str]) -> Any:
