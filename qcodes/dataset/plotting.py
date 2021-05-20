@@ -581,48 +581,23 @@ def plot_on_a_plain_grid(x: np.ndarray,
         z = _strings_as_ints(z)
 
     if x.ndim == 2 and y.ndim == 2 and z.ndim == 2:
-
-        def _on_grid_except_nan(x_data: np.ndarray, y_data: np.ndarray) -> bool:
-            """
-            check that data is on a grid. e.g. all points are the same as the  first
-            row and column with the exception of nans. Those represent points not yet measured
-            """
-            x_row = x_data[:, 0:1]
-            y_row = y_data[0:1, :]
-            return (
-                np.nanmax(np.abs(x_data - x_row)) == 0
-                and np.nanmax(np.abs(y_data - y_row)) == 0
-            )
-
-        if _on_grid_except_nan(x, y):
-            xrow, yrow = x[:, 0], y[0, :]
-
-            filter_x = ~np.isnan(xrow)
-            filter_y = ~np.isnan(yrow)
-
-            xrow = xrow[filter_x]
-            yrow = yrow[filter_y]
-            z_to_plot = z[filter_x, :]
-            z_to_plot = z_to_plot[:, filter_y].transpose()
+        if np.logical_or(np.any(np.isnan(x)), np.any(np.isnan(y))):
+            x_to_plot, y_to_plot, z_to_plot = _clip_nan_from_shaped_data(x, y, z)
+            num_points = x_to_plot.size * y_to_plot.size
         else:
-            if np.logical_or(np.any(np.isnan(x)), np.any(np.isnan(y))):
-                # fallback to flatten
-                x = x.flatten()
-                y = y.flatten()
-                z = z.flatten()
-                filter_nans = np.logical_and(~np.isnan(x), ~np.isnan(y))
-                xrow, yrow, z_to_plot = reshape_2D_data(
-                    x[filter_nans], y[filter_nans], z[filter_nans]
-                )
-            else:
-                xrow, yrow, z_to_plot = x, y, z
+            # data is on a grid that may or may not be
+            # rectilinear. Rely on matplotlib to plot
+            # this directly
+            x_to_plot, y_to_plot, z_to_plot = x, y, z
+            num_points = x_to_plot.size
     else:
-        xrow, yrow, z_to_plot = reshape_2D_data(x, y, z)
+        x_to_plot, y_to_plot, z_to_plot = reshape_2D_data(x, y, z)
+        num_points = x_to_plot.size * y_to_plot.size
 
     if 'rasterized' in kwargs.keys():
         rasterized = kwargs.pop('rasterized')
     else:
-        rasterized = len(xrow) * len(yrow) > qc.config.plotting.rasterize_threshold
+        rasterized = num_points > qc.config.plotting.rasterize_threshold
 
     cmap = kwargs.pop('cmap') if 'cmap' in kwargs else None
 
@@ -631,8 +606,8 @@ def plot_on_a_plain_grid(x: np.ndarray,
         cmap = matplotlib.cm.get_cmap(name, len(z_strings))
 
     colormesh = ax.pcolormesh(
-        xrow,
-        yrow,
+        x_to_plot,
+        y_to_plot,
         np.ma.masked_invalid(z_to_plot),
         rasterized=rasterized,
         cmap=cmap,
@@ -660,6 +635,50 @@ def plot_on_a_plain_grid(x: np.ndarray,
         colorbar.set_ticklabels(z_strings)
 
     return ax, colorbar
+
+
+def _clip_nan_from_shaped_data(x, y, z):
+    def _on_rectilinear_grid_except_nan(x_data: np.ndarray, y_data: np.ndarray) -> bool:
+        """
+        check that data is on a rectilinear grid. e.g. all points are the same as the  first
+        row and column with the exception of nans. Those represent points not yet measured.
+        """
+        x_row = x_data[:, 0:1]
+        y_row = y_data[0:1, :]
+        return (
+            np.nanmax(np.abs(x_data - x_row)) == 0
+            and np.nanmax(np.abs(y_data - y_row)) == 0
+        )
+
+    if _on_rectilinear_grid_except_nan(x, y):
+        """
+        clip any row or column where there are nans in the first row
+        or column. Since we fill from here we assume that means that no data
+        has been measured for this row
+        """
+        x_to_plot, y_to_plot = x[:, 0], y[0, :]
+
+        filter_x = ~np.isnan(x_to_plot)
+        filter_y = ~np.isnan(y_to_plot)
+
+        x_to_plot = x_to_plot[filter_x]
+        y_to_plot = y_to_plot[filter_y]
+        z_to_plot = z[filter_x, :]
+        z_to_plot = z_to_plot[:, filter_y].transpose()
+    else:
+        # fallback to flattening the data and use the same path as
+        # non shaped data after filtering the nans.
+        # this is not ideal as we loose the shape data but
+        # not clear how to do this better. Either return a ragged
+        # array or clip all inner dims that have nans completely
+        x = x.flatten()
+        y = y.flatten()
+        z = z.flatten()
+        filter_nans = np.logical_and(~np.isnan(x), ~np.isnan(y))
+        x_to_plot, y_to_plot, z_to_plot = reshape_2D_data(
+            x[filter_nans], y[filter_nans], z[filter_nans]
+        )
+    return x_to_plot, y_to_plot, z_to_plot
 
 
 def _scale_formatter(tick_value: float, pos: int, factor: float) -> str:
