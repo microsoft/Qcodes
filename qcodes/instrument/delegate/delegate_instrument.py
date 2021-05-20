@@ -19,7 +19,7 @@ from qcodes.instrument.delegate.grouped_parameter import (
     DelegateGroupParameter,
     GroupedParameter,
 )
-from qcodes.instrument.parameter import DelegateParameter, Parameter
+from qcodes.instrument.parameter import Parameter
 from qcodes.station import Station
 
 _log = logging.getLogger(__name__)
