@@ -605,11 +605,17 @@ def plot_on_a_plain_grid(x: np.ndarray,
             z_to_plot = z[filter_x, :]
             z_to_plot = z_to_plot[:, filter_y].transpose()
         else:
-            raise NotImplementedError(
-                "Does not handle plotting datasets "
-                "with a predefined shape that are not on a"
-                "grid"
-            )
+            if np.logical_or(np.any(np.isnan(x)), np.any(np.isnan(y))):
+                # fallback to flatten
+                x = x.flatten()
+                y = y.flatten()
+                z = z.flatten()
+                filter_nans = np.logical_and(~np.isnan(x), ~np.isnan(y))
+                xrow, yrow, z_to_plot = reshape_2D_data(
+                    x[filter_nans], y[filter_nans], z[filter_nans]
+                )
+            else:
+                xrow, yrow, z_to_plot = x, y, z
     else:
         xrow, yrow, z_to_plot = reshape_2D_data(x, y, z)
 
