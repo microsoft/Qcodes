@@ -637,7 +637,9 @@ def plot_on_a_plain_grid(x: np.ndarray,
     return ax, colorbar
 
 
-def _clip_nan_from_shaped_data(x, y, z):
+def _clip_nan_from_shaped_data(
+    x: np.ndarray, y: np.ndarray, z: np.ndarray
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     def _on_rectilinear_grid_except_nan(x_data: np.ndarray, y_data: np.ndarray) -> bool:
         """
         check that data is on a rectilinear grid. e.g. all points are the same as the  first
