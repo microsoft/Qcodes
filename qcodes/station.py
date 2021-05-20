@@ -744,7 +744,7 @@ def update_config_schema(
     )
 
 
-def _merge_yamls(*yamls: Union[str, Path]) -> IO[str]:
+def _merge_yamls(*yamls: Union[str, Path]) -> str:
     """
     Merge multiple station yamls files into one and stores it in the memory.
 
