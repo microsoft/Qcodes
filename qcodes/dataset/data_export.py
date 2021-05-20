@@ -12,6 +12,9 @@ log = logging.getLogger(__name__)
 
 
 class DSPlotData(TypedDict):
+    """
+    The dictionary used to represent data for use within `plot_dataset`
+    """
     name: str
     unit: str
     label: str
