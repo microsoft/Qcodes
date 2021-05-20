@@ -168,29 +168,28 @@ class DelegateInstrument(InstrumentBase):
         station: Station,
         parameters: Union[Mapping[str, Sequence[str]], Mapping[str, str]],
         setters: Mapping[str, MutableMapping[str, Any]],
-        units: Dict[str, str]
+        units: Mapping[str, str],
     ) -> None:
         """Add parameters to delegate instrument based on specified aliases,
         endpoints and setter methods"""
         for param_name, paths in parameters.items():
             if isinstance(paths, str):
-                self._create_and_add_parameter(
-                    group_name=param_name,
-                    station=station,
-                    paths=[paths],
-                    setter=setters.get(param_name),
-                    unit=units.get(param_name)
-                )
+                path_list: Sequence[str] = [paths]
+
             elif isinstance(paths, abc.Sequence):
-                self._create_and_add_parameter(
-                    group_name=param_name,
-                    station=station,
-                    paths=paths,
-                    setter=setters.get(param_name),
-                    unit=units.get(param_name)
-                )
+                path_list = paths
             else:
-                raise ValueError("Parameter paths should be either a string or list of strings.")
+                raise ValueError(
+                    "Parameter paths should be either a string or Sequence of strings."
+                )
+
+            self._create_and_add_parameter(
+                group_name=param_name,
+                station=station,
+                paths=path_list,
+                setter=setters.get(param_name),
+                unit=units.get(param_name),
+            )
 
     @staticmethod
     def _parameter_names(parameters: Sequence[Parameter]) -> List[str]:
