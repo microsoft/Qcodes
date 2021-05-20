@@ -23,7 +23,7 @@ def flatten_1D_data_for_plot(rawdata: Union[Sequence[Sequence[Any]],
                                             np.ndarray]) -> np.ndarray:
     """
     Cast the return value of the database query to
-    a numpy array
+    a 1D numpy array
 
     Args:
         rawdata: The return of the get_values function
@@ -32,10 +32,7 @@ def flatten_1D_data_for_plot(rawdata: Union[Sequence[Sequence[Any]],
         A one-dimensional numpy array
 
     """
-    dataarray = np.array(rawdata)
-    shape = np.shape(dataarray)
-    dataarray = dataarray.reshape(np.product(shape))
-
+    dataarray = np.array(rawdata).flatten()
     return dataarray
 
 
