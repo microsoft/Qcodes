@@ -238,6 +238,11 @@ class AMI430(IPInstrument):
                                'heating switch': 9,
                                'cooling switch': 10,
                            })
+        self.add_parameter('ramping_state_check_interval',
+                           initial_value=0.05,
+                           unit="s",
+                           vals=Numbers(0, 10),
+                           set_cmd=None)
 
         # Add persistent switch
         switch_heater = AMI430SwitchHeater(self)
@@ -340,15 +345,19 @@ class AMI430(IPInstrument):
 
         # Otherwise, wait until no longer ramping
         self.log.debug(f'Starting blocking ramp of {self.name} to {value}')
-        while self.ramping_state() == 'ramping':
-            self._sleep(0.3)
-        self._sleep(2.0)
-        state = self.ramping_state()
+        exit_state = self.wait_while_ramping()
         self.log.debug(f'Finished blocking ramp')
         # If we are now holding, it was successful
-        if state != 'holding':
+        if exit_state != 'holding':
             msg = '_set_field({}) failed with state: {}'
-            raise AMI430Exception(msg.format(value, state))
+            raise AMI430Exception(msg.format(value, exit_state))
+
+    def wait_while_ramping(self) -> str:
+
+        while self.ramping_state() == 'ramping':
+            self._sleep(self.ramping_state_check_interval())
+
+        return self.ramping_state()
 
     def _get_ramp_rate(self) -> float:
         """ Return the ramp rate of the first segment in Tesla per second """
