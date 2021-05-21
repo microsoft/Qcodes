@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 import warnings
-
-from typing import Dict, TYPE_CHECKING, Union, Iterator
+from typing import TYPE_CHECKING, Dict, Iterator, Union
 
 import numpy as np
 
-
 if TYPE_CHECKING:
     import pandas as pd
+
     from qcodes.dataset.data_set import ParameterData
 
 
@@ -20,9 +19,7 @@ def load_to_dataframe_dict(datadict: ParameterData) -> Dict[str, pd.DataFrame]:
     return dfs
 
 
-def load_to_concatenated_dataframe(
-        datadict: ParameterData
-) -> "pd.DataFrame":
+def load_to_concatenated_dataframe(datadict: ParameterData) -> pd.DataFrame:
     import pandas as pd
 
     if not _same_setpoints(datadict):

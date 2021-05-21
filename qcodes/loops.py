@@ -39,20 +39,28 @@ Supported commands to .each are:
     - Task: any callable that does not generate data
     - Wait: a delay
 """
-from typing import Optional, Sequence
-from datetime import datetime
 import logging
 import time
+from datetime import datetime
+from typing import Optional, Sequence
+
 import numpy as np
 
-from qcodes.station import Station
-from qcodes.data.data_set import new_data
 from qcodes.data.data_array import DataArray
-from qcodes.utils.helpers import wait_secs, full_class, tprint
+from qcodes.data.data_set import new_data
+from qcodes.station import Station
+from qcodes.utils.helpers import full_class, tprint, wait_secs
 from qcodes.utils.metadata import Metadatable
 
-from .actions import (_actions_snapshot, Task, Wait, _Measure, _Nest,
-                      BreakIf, _QcodesBreak)
+from .actions import (
+    BreakIf,
+    Task,
+    Wait,
+    _actions_snapshot,
+    _Measure,
+    _Nest,
+    _QcodesBreak,
+)
 
 log = logging.getLogger(__name__)
 
@@ -95,7 +103,7 @@ class Loop(Metadatable):
                  progress_interval=None):
         super().__init__()
         if delay < 0:
-            raise ValueError('delay must be > 0, not {}'.format(repr(delay)))
+            raise ValueError(f"delay must be > 0, not {repr(delay)}")
 
         self.sweep_values = sweep_values
         self.delay = delay
