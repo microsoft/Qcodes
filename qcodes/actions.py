@@ -4,7 +4,6 @@ import time
 from qcodes.utils.helpers import is_function
 from qcodes.utils.threading import thread_map
 
-
 _NO_SNAPSHOT = {'type': None, 'description': 'Action without snapshot'}
 
 
@@ -84,7 +83,7 @@ class Wait:
     """
     def __init__(self, delay):
         if not delay >= 0:
-            raise ValueError('delay must be > 0, not {}'.format(repr(delay)))
+            raise ValueError(f"delay must be > 0, not {repr(delay)}")
         self.delay = delay
 
     def __call__(self):

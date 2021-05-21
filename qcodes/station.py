@@ -3,43 +3,48 @@ Station objects - collect all the equipment you use to do an experiment.
 """
 
 
-from contextlib import suppress
-from typing import (
-    Dict, Iterable, List, Optional, Sequence, Any, cast, AnyStr, IO,
-    Tuple, Union)
-from types import ModuleType
-from functools import partial
 import importlib
-import logging
-import os
+import inspect
 import itertools
 import json
+import logging
+import os
 import pkgutil
-import inspect
-from copy import deepcopy, copy
-import jsonschema
 import warnings
+from collections import deque
+from contextlib import suppress
+from copy import copy, deepcopy
+from functools import partial
+from io import StringIO
+from pathlib import Path
+from types import ModuleType
+from typing import IO, Any, AnyStr
+from typing import Deque as Tdeque
+from typing import Dict, Iterable, List, Optional, Sequence, Tuple, Union, cast
+
+import jsonschema
+import ruamel.yaml
 
 import qcodes
-from qcodes.utils.metadata import Metadatable
-from qcodes.utils.helpers import (
-    DelegateAttributes, YAML, checked_getattr, get_qcodes_path,
-    get_qcodes_user_path)
-from qcodes.utils.deprecate import issue_deprecation_warning
-
+import qcodes.utils.validators as validators
 from qcodes.instrument.base import Instrument, InstrumentBase
 from qcodes.instrument.channel import ChannelList
 from qcodes.instrument.parameter import (
-    Parameter, ManualParameter,
-    DelegateParameter, _BaseParameter)
-import qcodes.utils.validators as validators
+    DelegateParameter,
+    ManualParameter,
+    Parameter,
+    _BaseParameter,
+)
 from qcodes.monitor.monitor import Monitor
-
-from io import StringIO
-from collections import deque
-import ruamel.yaml
-from pathlib import Path
-from typing import Deque as Tdeque
+from qcodes.utils.deprecate import issue_deprecation_warning
+from qcodes.utils.helpers import (
+    YAML,
+    DelegateAttributes,
+    checked_getattr,
+    get_qcodes_path,
+    get_qcodes_user_path,
+)
+from qcodes.utils.metadata import Metadatable
 
 log = logging.getLogger(__name__)
 
@@ -232,8 +237,7 @@ class Station(Metadatable, DelegateAttributes):
         except:
             pass
         if name is None:
-            name = getattr(component, 'name',
-                           'component{}'.format(len(self.components)))
+            name = getattr(component, "name", f"component{len(self.components)}")
         namestr = str(name)
         if namestr in self.components.keys():
             raise RuntimeError(
@@ -562,10 +566,13 @@ class Station(Metadatable, DelegateAttributes):
                 elif attr == 'limits':
                     if isinstance(val, str):
                         issue_deprecation_warning(
-                            ('use of a comma separated string for the limits '
-                             'keyword'),
-                            alternative='an array like "[lower_lim, upper_lim]"')
-                        lower, upper = [float(x) for x in val.split(',')]
+                            (
+                                "use of a comma separated string for the limits "
+                                "keyword"
+                            ),
+                            alternative='an array like "[lower_lim, upper_lim]"',
+                        )
+                        lower, upper = (float(x) for x in val.split(","))
                     else:
                         lower, upper = val
                     parameter.vals = validators.Numbers(lower, upper)
