@@ -1,22 +1,24 @@
-from qcodes.instrument.group_parameter import Group, GroupParameter
+from collections import OrderedDict, namedtuple
 from typing import (
+    TYPE_CHECKING,
     Any,
+    Callable,
     Dict,
     Iterable,
+    Mapping,
     Optional,
+    Sequence,
     Tuple,
     Union,
-    Sequence,
-    Callable,
-    TYPE_CHECKING
 )
-from collections import namedtuple, OrderedDict
+
+from qcodes.instrument.group_parameter import Group, GroupParameter
 from qcodes.instrument.parameter import (
     DelegateParameter,
     ParamDataType,
-    ParamRawDataType,
     Parameter,
-    _BaseParameter
+    ParamRawDataType,
+    _BaseParameter,
 )
 
 if TYPE_CHECKING:
@@ -122,10 +124,7 @@ class DelegateGroup(Group):
     def _namedtuple(self, *args: Any, **kwargs: Any) -> Tuple[Any, ...]:
         return namedtuple(self.name, self._parameter_names)(*args, **kwargs)
 
-    def set(
-        self,
-        value: Union[ParamDataType, Dict[str, ParamDataType]]
-    ) -> None:
+    def set(self, value: Union[ParamDataType, Mapping[str, ParamDataType]]) -> None:
         if self._set_fn is not None:
             self._set_fn(value)
         else:
@@ -144,7 +143,7 @@ class DelegateGroup(Group):
     def get_parameters(self) -> Any:
         return self._formatter(*[_p.get() for _p in self.parameters.values()])
 
-    def _set_from_dict(self, calling_dict: Dict[str, ParamRawDataType]) -> None:
+    def _set_from_dict(self, calling_dict: Mapping[str, ParamRawDataType]) -> None:
         for name, p in list(self.parameters.items()):
             p.set(calling_dict[name])
 
@@ -209,11 +208,11 @@ class GroupedParameter(_BaseParameter):
         """Get source parameters of each DelegateParameter"""
         return self.group.source_parameters
 
-    def get_raw(self) -> Union[ParamDataType, Dict[str, ParamDataType]]:
+    def get_raw(self) -> Union[ParamDataType, Mapping[str, ParamDataType]]:
         """Get parameter raw value"""
         return self.group.get_parameters()
 
-    def set_raw(self, value: Union[ParamDataType, Dict[str, ParamDataType]]) -> None:
+    def set_raw(self, value: Union[ParamDataType, Mapping[str, ParamDataType]]) -> None:
         """Set parameter raw value
 
         Args:

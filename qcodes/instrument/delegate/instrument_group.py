@@ -1,6 +1,5 @@
 import importlib
-
-from typing import List, Dict, Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, List, Mapping
 
 from qcodes.instrument.base import InstrumentBase
 
@@ -31,8 +30,8 @@ class InstrumentGroup(InstrumentBase):
         name: str,
         station: "Station",
         submodules_type: str,
-        submodules: Dict[str, Dict[str, List[str]]],
-        initial_values: Dict[str, Dict[str, Any]],
+        submodules: Mapping[str, Mapping[str, List[str]]],
+        initial_values: Mapping[str, Mapping[str, Any]],
         set_initial_values_on_load: bool = False,
         **kwargs: Any
     ):

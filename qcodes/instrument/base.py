@@ -9,6 +9,7 @@ from typing import (
     Callable,
     Dict,
     List,
+    Mapping,
     Optional,
     Sequence,
     Type,
@@ -43,8 +44,8 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         metadata: additional static metadata to add to this
             instrument's JSON snapshot.
     """
-    def __init__(self, name: str,
-                 metadata: Optional[Dict[Any, Any]] = None) -> None:
+
+    def __init__(self, name: str, metadata: Optional[Mapping[Any, Any]] = None) -> None:
         self._name = str(name)
         self._short_name = str(name)
 
@@ -429,8 +430,7 @@ class Instrument(InstrumentBase, AbstractInstrument):
     _type = None
     _instances: "List[weakref.ref[Instrument]]" = []
 
-    def __init__(self, name: str,
-                 metadata: Optional[Dict[Any, Any]] = None) -> None:
+    def __init__(self, name: str, metadata: Optional[Mapping[Any, Any]] = None) -> None:
         self._t0 = time.time()
 
         super().__init__(name, metadata)
