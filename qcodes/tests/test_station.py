@@ -264,6 +264,18 @@ def config_file_context(file_content):
         yield str(filename)
 
 
+@contextmanager
+def config_files_context(file_content1, file_content2):
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        filename1 = Path(tmpdirname, 'station_config1.yaml')
+        with filename1.open('w') as f:
+            f.write(file_content1)
+        filename2 = Path(tmpdirname, 'station_config2.yaml')
+        with filename2.open('w') as f:
+            f.write(file_content2)
+        yield [str(filename1), str(filename2)]
+
+
 @pytest.fixture(name="example_station_config")
 def _make_example_station_config():
     """
@@ -875,3 +887,27 @@ def test_load_all_instruments_without_config_raises():
     station = Station()
     with pytest.raises(ValueError, match="Station has no config"):
         station.load_all_instruments()
+
+
+def test_station_config_created_with_multiple_config_files():
+
+    test_config1 = f"""
+        instruments:
+          mock_dac1:
+            type: qcodes.tests.instrument_mocks.DummyInstrument
+            enable_forced_reconnect: true
+            init:
+              gates: {{"ch1", "ch2"}}
+            parameters:
+              ch1:
+                monitor: true
+    """
+    test_config2 = f"""
+        instruments:
+          mock_dac2:
+            type: qcodes.tests.instrument_mocks.DummyInstrument
+    """
+    with config_files_context(
+            test_config1, test_config2
+    ) as file_list:
+        assert station_config_has_been_loaded(Station(config_file=file_list))
