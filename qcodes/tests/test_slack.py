@@ -1,7 +1,7 @@
 from unittest.mock import call
 
 import pytest
-from requests.exceptions import ReadTimeout, HTTPError, ConnectTimeout
+from requests.exceptions import ConnectTimeout, HTTPError, ReadTimeout
 from urllib3.exceptions import ReadTimeoutError
 
 from qcodes import Parameter
@@ -348,9 +348,9 @@ def test_slack_inst_should_print_measurement(mock_webclient, slack, mocker):
 
     print(mock_webclient.chat_postMessage.calls)
 
-    text1 = 'Measurement is {:.0f}% complete'.format(0.123 * 100)
-    expected_out1 = {'channel': 'CH234', 'text': text1}
-    expected_out2 = {'channel': 'CH234', 'text': AnyStringWith('MagicMock')}
+    text1 = f"Measurement is {0.123 * 100:.0f}% complete"
+    expected_out1 = {"channel": "CH234", "text": text1}
+    expected_out2 = {"channel": "CH234", "text": AnyStringWith("MagicMock")}
     actual = mock_webclient.chat_postMessage.call_args_list
     expected = [call(**expected_out1), call(**expected_out2)]
     assert actual == expected

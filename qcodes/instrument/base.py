@@ -1,18 +1,31 @@
 """Instrument base class."""
+import logging
 import time
 import weakref
-import logging
 from abc import ABC, abstractmethod
-from typing import Sequence, Optional, Dict, Union, Callable, Any, List, \
-    TYPE_CHECKING, cast, Type
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Type,
+    Union,
+    cast,
+)
 
 import numpy as np
-from qcodes.utils.helpers import DelegateAttributes, strip_attrs, full_class
+
+from qcodes.logger.instrument_logger import get_instrument_logger
+from qcodes.utils.helpers import DelegateAttributes, full_class, strip_attrs
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.validators import Anything
-from qcodes.logger.instrument_logger import get_instrument_logger
-from .parameter import Parameter, _BaseParameter
+
 from .function import Function
+from .parameter import Parameter, _BaseParameter
 
 if TYPE_CHECKING:
     from qcodes.instrument.channel import ChannelList
@@ -31,8 +44,8 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         metadata: additional static metadata to add to this
             instrument's JSON snapshot.
     """
-    def __init__(self, name: str,
-                 metadata: Optional[Dict[Any, Any]] = None) -> None:
+
+    def __init__(self, name: str, metadata: Optional[Mapping[Any, Any]] = None) -> None:
         self._name = str(name)
         self._short_name = str(name)
 
@@ -417,8 +430,7 @@ class Instrument(InstrumentBase, AbstractInstrument):
     _type = None
     _instances: "List[weakref.ref[Instrument]]" = []
 
-    def __init__(self, name: str,
-                 metadata: Optional[Dict[Any, Any]] = None) -> None:
+    def __init__(self, name: str, metadata: Optional[Mapping[Any, Any]] = None) -> None:
         self._t0 = time.time()
 
         super().__init__(name, metadata)
@@ -496,7 +508,7 @@ class Instrument(InstrumentBase, AbstractInstrument):
 
     def __repr__(self) -> str:
         """Simplified repr giving just the class and name."""
-        return '<{}: {}>'.format(type(self).__name__, self.name)
+        return f"<{type(self).__name__}: {self.name}>"
 
     def __del__(self) -> None:
         """Close the instrument and remove its instance record."""

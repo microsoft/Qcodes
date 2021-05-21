@@ -686,7 +686,7 @@ def _scale_formatter(tick_value: float, pos: int, factor: float) -> str:
     Function for matplotlib.ticker.FuncFormatter that scales the tick values
     according to the given `scale` value.
     """
-    return "{:g}".format(tick_value*factor)
+    return f"{tick_value*factor:g}"
 
 
 def _make_rescaled_ticks_and_units(
