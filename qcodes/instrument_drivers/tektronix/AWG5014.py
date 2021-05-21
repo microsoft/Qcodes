@@ -1,29 +1,25 @@
-import struct
+import array as arr
 import logging
-import warnings
 import re
-from collections import namedtuple
-from collections import defaultdict
-from collections import abc
-
-from typing import Tuple, Any, Union, Dict, Optional, Sequence, List, NamedTuple, cast
-from typing_extensions import Literal
+import struct
+import warnings
+from collections import abc, defaultdict, namedtuple
+from functools import WRAPPER_ASSIGNMENTS, wraps
+from io import BytesIO
+from time import localtime, sleep
+from typing import Any, Dict, List, NamedTuple, Optional, Sequence, Tuple, Union, cast
 
 import numpy as np
-import array as arr
-
-from time import sleep, localtime
-from io import BytesIO
-from functools import wraps, WRAPPER_ASSIGNMENTS
-
-
-from qcodes import VisaInstrument, validators as vals
-from qcodes.utils.deprecate import deprecate
 from pyvisa.errors import VisaIOError
+from typing_extensions import Literal
+
+from qcodes import VisaInstrument
+from qcodes import validators as vals
+from qcodes.utils.deprecate import deprecate
 
 # conditionally import lomentum for support of lomentum type sequences
 try:
-    from lomentum.tools import is_subsequence, get_element_channel_ids
+    from lomentum.tools import get_element_channel_ids, is_subsequence
     USE_LOMENTUM = True
 except ImportError:
     USE_LOMENTUM = False
@@ -1465,9 +1461,9 @@ class Tektronix_AWG5014(VisaInstrument):
             namelist = []
             for jj in range(len(waveforms_int[ii])):
                 if channels is None:
-                    thisname = 'wfm{:03d}ch{}'.format(jj + 1, ii + 1)
+                    thisname = f"wfm{jj + 1:03d}ch{ii + 1}"
                 else:
-                    thisname = 'wfm{:03d}ch{}'.format(jj + 1, channels[ii])
+                    thisname = f"wfm{jj + 1:03d}ch{channels[ii]}"
                 namelist.append(thisname)
 
                 package = self._pack_waveform(waveforms_int[ii][jj],

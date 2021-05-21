@@ -1,7 +1,7 @@
 from typing import Any
 
-from qcodes.utils.validators import Enum, Strings
 from qcodes import VisaInstrument
+from qcodes.utils.validators import Enum, Strings
 
 
 class Agilent_34400A(VisaInstrument):
@@ -107,9 +107,8 @@ class Agilent_34400A(VisaInstrument):
         # convert both value*range and the resolution factors
         # to strings with few digits, so we avoid floating point
         # rounding errors.
-        res_fac_strs = ['{:.1e}'.format(v * rang)
-                        for v in self._resolution_factor]
-        if f'{value:.1e}' not in res_fac_strs:
+        res_fac_strs = [f"{v * rang:.1e}" for v in self._resolution_factor]
+        if f"{value:.1e}" not in res_fac_strs:
             raise ValueError(
                 'Resolution setting {:.1e} ({} at range {}) '
                 'does not exist. '

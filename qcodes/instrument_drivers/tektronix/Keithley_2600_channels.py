@@ -1,18 +1,19 @@
 import logging
 import struct
-import numpy as np
 import warnings
-from typing import List, Dict, Optional, Any
+from typing import Any, Dict, List, Optional
+
+import numpy as np
 
 import qcodes as qc
+import qcodes.utils.validators as vals
 from qcodes import VisaInstrument
 from qcodes.data.data_set import DataSet
-from qcodes.instrument.channel import InstrumentChannel
 from qcodes.instrument.base import Instrument, Parameter
+from qcodes.instrument.channel import InstrumentChannel
 from qcodes.instrument.parameter import ArrayParameter, ParameterWithSetpoints
-import qcodes.utils.validators as vals
-from qcodes.utils.helpers import create_on_off_val_mapping
 from qcodes.measure import Measure
+from qcodes.utils.helpers import create_on_off_val_mapping
 
 log = logging.getLogger(__name__)
 
@@ -149,16 +150,18 @@ class TimeTrace(ParameterWithSetpoints):
 
         mode_map = {"current": "i", "voltage": "v"}
 
-        script = [f'{channel}.measure.count={npts}',
-                  f'oldint={channel}.measure.interval',
-                  f'{channel}.measure.interval={dt}',
-                  f'{channel}.nvbuffer1.clear()',
-                  '{}.measure.{}({}.nvbuffer1)'.format(channel, mode_map[mode], channel),
-                  f'{channel}.measure.interval=oldint',
-                  f'{channel}.measure.count=1',
-                  'format.data = format.REAL32',
-                  'format.byteorder = format.LITTLEENDIAN',
-                  f'printbuffer(1, {npts}, {channel}.nvbuffer1.readings)']
+        script = [
+            f"{channel}.measure.count={npts}",
+            f"oldint={channel}.measure.interval",
+            f"{channel}.measure.interval={dt}",
+            f"{channel}.nvbuffer1.clear()",
+            f"{channel}.measure.{mode_map[mode]}({channel}.nvbuffer1)",
+            f"{channel}.measure.interval=oldint",
+            f"{channel}.measure.count=1",
+            "format.data = format.REAL32",
+            "format.byteorder = format.LITTLEENDIAN",
+            f"printbuffer(1, {npts}, {channel}.nvbuffer1.readings)",
+        ]
 
         return self.instrument._execute_lua(script, npts)
 
@@ -591,10 +594,9 @@ class Keithley_2600(VisaInstrument):
         knownmodels = ['2601B', '2602A', '2602B', '2604B', '2611B', '2612B',
                        '2614B', '2635B', '2636B']
         if model not in knownmodels:
-            kmstring = ('{}, '*(len(knownmodels)-1)).format(*knownmodels[:-1])
-            kmstring += 'and {}.'.format(knownmodels[-1])
-            raise ValueError('Unknown model. Known model are: ' +
-                             kmstring)
+            kmstring = ("{}, " * (len(knownmodels) - 1)).format(*knownmodels[:-1])
+            kmstring += f"and {knownmodels[-1]}."
+            raise ValueError("Unknown model. Known model are: " + kmstring)
 
         self.model = model
 
