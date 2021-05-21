@@ -1,5 +1,14 @@
-from typing import (Any, Dict, NamedTuple, NewType, Sequence, Tuple, TypeVar,
-                    Union, Optional)
+from typing import (
+    Any,
+    Dict,
+    NamedTuple,
+    NewType,
+    Optional,
+    Sequence,
+    Tuple,
+    TypeVar,
+    Union,
+)
 
 from .helpers import deep_update
 
@@ -103,8 +112,12 @@ def diff_param_values(left_snapshot: Snapshot,
     Given two snapshots, returns the differences between parameter values
     in each.
     """
-    left_params, right_params = map(extract_param_values, (left_snapshot, right_snapshot))
-    left_keys, right_keys = [set(params.keys()) for params in (left_params, right_params)]
+    left_params, right_params = map(
+        extract_param_values, (left_snapshot, right_snapshot)
+    )
+    left_keys, right_keys = (
+        set(params.keys()) for params in (left_params, right_params)
+    )
     common_keys = left_keys.intersection(right_keys)
 
     return ParameterDiff(
