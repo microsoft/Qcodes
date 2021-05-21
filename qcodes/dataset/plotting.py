@@ -653,11 +653,9 @@ def _clip_nan_from_shaped_data(
         )
 
     if _on_rectilinear_grid_except_nan(x, y):
-        """
-        clip any row or column where there are nans in the first row
-        or column. Since we fill from here we assume that means that no data
-        has been measured for this row
-        """
+        # clip any row or column where there are nans in the first row
+        # or column. Since we fill from here we assume that means that no data
+        # has been measured for this row
         x_to_plot, y_to_plot = x[:, 0], y[0, :]
 
         filter_x = ~np.isnan(x_to_plot)
