@@ -4,7 +4,6 @@ from functools import partial
 from typing import (
     Any,
     Callable,
-    Dict,
     List,
     Mapping,
     MutableMapping,
@@ -101,7 +100,7 @@ class DelegateInstrument(InstrumentBase):
         set_initial_values_on_load: bool = False,
         setters: Optional[Mapping[str, MutableMapping[str, Any]]] = None,
         units: Optional[Mapping[str, str]] = None,
-        metadata: Optional[Dict[Any, Any]] = None
+        metadata: Optional[Mapping[Any, Any]] = None,
     ):
         super().__init__(name=name, metadata=metadata)
         self._create_and_add_parameters(
