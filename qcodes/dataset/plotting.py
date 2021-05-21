@@ -581,15 +581,15 @@ def plot_on_a_plain_grid(x: np.ndarray,
         z = _strings_as_ints(z)
 
     if x.ndim == 2 and y.ndim == 2 and z.ndim == 2:
-        if np.logical_or(np.any(np.isnan(x)), np.any(np.isnan(y))):
-            x_to_plot, y_to_plot, z_to_plot = _clip_nan_from_shaped_data(x, y, z)
-            num_points = x_to_plot.size * y_to_plot.size
-        else:
+        if not np.logical_or(np.any(np.isnan(x)), np.any(np.isnan(y))):
             # data is on a grid that may or may not be
             # rectilinear. Rely on matplotlib to plot
             # this directly
             x_to_plot, y_to_plot, z_to_plot = x, y, z
             num_points = x_to_plot.size
+        else:
+            x_to_plot, y_to_plot, z_to_plot = _clip_nan_from_shaped_data(x, y, z)
+            num_points = x_to_plot.size * y_to_plot.size
     else:
         x_to_plot, y_to_plot, z_to_plot = reshape_2D_data(x, y, z)
         num_points = x_to_plot.size * y_to_plot.size
