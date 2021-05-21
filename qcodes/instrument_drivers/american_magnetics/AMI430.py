@@ -241,7 +241,8 @@ class AMI430(IPInstrument):
         self.add_parameter('ramping_state_check_interval',
                            initial_value=0.05,
                            unit="s",
-                           vals=Numbers(0, 10))
+                           vals=Numbers(0, 10),
+                           set_cmd=None)
 
         # Add persistent switch
         switch_heater = AMI430SwitchHeater(self)
