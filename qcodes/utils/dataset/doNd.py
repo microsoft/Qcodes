@@ -483,6 +483,77 @@ def do2d(
     return _handle_plotting(dataset, do_plot, interrupted())
 
 
+class AbstractSweep:
+    """
+    Superclass for children sweep classes.
+    """
+
+    def get_setpoints() -> np.ndarray:
+        pass
+
+    @property
+    def delay() -> float:
+        pass
+
+
+class LinSweep(AbstractSweep):
+    """
+    Linear sweep class.
+
+    Args:
+        param: Qcodes _BaseParameter to sweep over.
+        start: Sweep start value.
+        stop: Sweep end value.
+        num_points: number of sweep points.
+        delay: Time in second between two consequtive sweep points.
+    """
+
+    def __init__(self, param: _BaseParameter, start: float, stop: float,
+                 num_points: int, delay: float = 0):
+
+        self._param = param
+        self._start = start
+        self._stop = stop
+        self._num_points = num_points
+        self._delay = delay
+
+    def get_setpoints(self):
+        return np.linspace(self._start, self._stop, self._num_points)
+
+    @property
+    def delay(self) -> float:
+        return self._delay
+
+
+class LogSweep(AbstractSweep):
+    """
+    Logarithmic sweep class.
+
+    Args:
+        param: Qcodes _BaseParameter to sweep over.
+        start: Sweep start value.
+        stop: Sweep end value.
+        num_points: number of sweep points.
+        delay: Time in second between two consequtive sweep points.
+    """
+
+    def __init__(self, param: _BaseParameter, start: float, stop: float,
+                 num_points: int, delay: float = 0):
+
+        self._param = param
+        self._start = start
+        self._stop = stop
+        self._num_points = num_points
+        self._delay = delay
+
+    def get_setpoints(self):
+        return np.logspace(self._start, self._stop, self._num_points)
+
+    @property
+    def delay(self) -> float:
+        return self._delay
+
+
 def dond(
     *params: Union[_BaseParameter, int, float, ParamMeasT],
     write_period: Optional[float] = None,
