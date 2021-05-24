@@ -3,16 +3,19 @@
 import logging
 import time
 from functools import partial
-from typing import Optional, Sequence, Dict, Tuple, Any, Union, List
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import pyvisa as visa
 from pyvisa.resources.serial import SerialInstrument
 
-from qcodes.instrument.channel import (ChannelList, InstrumentChannel,
-                                       MultiChannelInstrumentParameter)
-from qcodes.instrument.visa import VisaInstrument
 from qcodes.instrument.base import Instrument
+from qcodes.instrument.channel import (
+    ChannelList,
+    InstrumentChannel,
+    MultiChannelInstrumentParameter,
+)
 from qcodes.instrument.parameter import ParamRawDataType
+from qcodes.instrument.visa import VisaInstrument
 from qcodes.utils import validators as vals
 
 log = logging.getLogger(__name__)
@@ -592,7 +595,7 @@ class QDac(VisaInstrument):
         Print the finite slopes assigned to channels
         """
         for sl in self._slopes:
-            print('Channel {}, slope: {} (V/s)'.format(sl[0], sl[1]))
+            print(f"Channel {sl[0]}, slope: {sl[1]} (V/s)")
 
     def _rampvoltage(
             self,
@@ -720,8 +723,8 @@ class QDac(VisaInstrument):
 
         # Print the channels
         for ii in range(self.num_chans):
-            line = 'Channel {} \n'.format(ii+1)
-            line += '    '
+            line = f"Channel {ii+1} \n"
+            line += "    "
             for pp in paramstoget[0]:
                 param = getattr(self.channels[ii], pp)
                 line += printdict[pp]
@@ -733,6 +736,6 @@ class QDac(VisaInstrument):
                 param = getattr(self.channels[ii], pp)
                 line += printdict[pp]
                 value = param.get_latest()
-                line += ': {}'.format(returnmap[pp][value])
-                line += '. '
+                line += f": {returnmap[pp][value]}"
+                line += ". "
             print(line)
