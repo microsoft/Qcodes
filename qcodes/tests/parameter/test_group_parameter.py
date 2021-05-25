@@ -62,7 +62,7 @@ class Dummy(Instrument):
 
     def ask(self, cmd: str) -> str:
         assert cmd == self._get_cmd
-        return ",".join([str(i) for i in [self._a, self._b]])
+        return ",".join(str(i) for i in [self._a, self._b])
 
 
 def test_sanity():

@@ -221,7 +221,7 @@ def _all_in_group_or_subgroup(rows: np.ndarray) -> bool:
     # are all contained in the rows of the other
     if aigos and switchindex > 0:
         for row in rows[1+switchindex:]:
-            if sum([r in rows[0] for r in row]) != len(row):
+            if sum(r in rows[0] for r in row) != len(row):
                 aigos = False
                 break
 
