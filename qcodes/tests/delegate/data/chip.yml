@@ -5,8 +5,7 @@ instruments:
       submodules_type: qcodes.instrument.delegate.DelegateInstrument
       submodules:
         device1:
-          gate:
-            - dac.ch01.voltage
+          gate: dac.ch01.voltage
           source:
             - lockin.frequency
             - lockin.amplitude
@@ -26,10 +25,8 @@ instruments:
     type: qcodes.instrument.delegate.DelegateInstrument
     init:
       parameters:
-        X:
-          - field_x.field
-        ramp_rate:
-          - field_x.ramp_rate
+        X: field_x.field
+        ramp_rate: field_x.ramp_rate
         ramp_X:
           - field_x.ramp_rate
           - field_x.field

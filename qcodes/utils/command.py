@@ -91,8 +91,10 @@ class Command:
                 }[(parse_input, parse_output)]
 
             elif exec_str is not None:
-                raise TypeError('exec_str must be a function with one arg,' +
-                                ' not {}'.format(repr(exec_str)))
+                raise TypeError(
+                    "exec_str must be a function with one arg,"
+                    + f" not {repr(exec_str)}"
+                )
 
         elif is_function(cmd, arg_count):
             self._cmd = cmd

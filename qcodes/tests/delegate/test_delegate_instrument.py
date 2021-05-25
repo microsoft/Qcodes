@@ -9,7 +9,9 @@ def test_mock_dac(dac):
 
 
 def test_mock_field_delegate(station, field_x, chip_config):
-    with patch.object(MockField, "set_field", wraps=field_x.set_field) as mock_set_field:
+    with patch.object(
+        MockField, "set_field", wraps=field_x.set_field
+    ) as mock_set_field:
         station.load_config_file(chip_config)
         field = station.load_field(station=station)
 

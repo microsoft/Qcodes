@@ -1,13 +1,17 @@
+import time
 from functools import partial
+from typing import Any, Iterable, Tuple, Union
+
 import numpy as np
-from typing import Any, Union
 
 from qcodes import VisaInstrument
-from qcodes.instrument.parameter import ArrayParameter, ParamRawDataType, ParameterWithSetpoints, Parameter
-from qcodes.utils.validators import Numbers, Ints, Enum, Strings, Arrays
-
-from typing import Tuple, Iterable
-import time
+from qcodes.instrument.parameter import (
+    ArrayParameter,
+    Parameter,
+    ParameterWithSetpoints,
+    ParamRawDataType,
+)
+from qcodes.utils.validators import Arrays, Enum, Ints, Numbers, Strings
 
 
 class ChannelTrace(ParameterWithSetpoints):
@@ -176,7 +180,9 @@ class ChannelBuffer(ArrayParameter):
         realdata = np.fromstring(rawdata, dtype='<i2')
         numbers = realdata[::2]*2.0**(realdata[1::2]-124)
         if self.shape[0] != N:
-            raise RuntimeError("SR830 got {} points in buffer expected {}".format(N, self.shape[0]))
+            raise RuntimeError(
+                f"SR830 got {N} points in buffer expected {self.shape[0]}"
+            )
         return numbers
 
 

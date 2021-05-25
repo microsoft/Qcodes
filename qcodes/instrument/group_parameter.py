@@ -6,12 +6,10 @@ should be of type :class:`GroupParameter`
 
 
 from collections import OrderedDict
-from typing import Union, Callable, Dict, Any, Optional, Sequence
+from typing import Any, Callable, Dict, Mapping, Optional, Sequence, Union
 
-from qcodes.instrument.parameter import (DelegateParameter, Parameter,
-                                         ParamRawDataType,
-                                         ParamDataType)
 from qcodes.instrument.base import InstrumentBase
+from qcodes.instrument.parameter import ParamDataType, Parameter, ParamRawDataType
 
 
 class GroupParameter(Parameter):
@@ -158,15 +156,16 @@ class Group:
         single_instrument: A flag to indicate that all parameters belong to a
         single instrument, which in turn does additional checks. Defaults to True.
     """
-    def __init__(self,
-                 parameters: Sequence[GroupParameter],
-                 set_cmd: Optional[str] = None,
-                 get_cmd: Optional[str] = None,
-                 get_parser: Union[Callable[[str],
-                                            Dict[str, Any]], None] = None,
-                 separator: str = ',',
-                 single_instrument: bool = True
-                 ) -> None:
+
+    def __init__(
+        self,
+        parameters: Sequence[GroupParameter],
+        set_cmd: Optional[str] = None,
+        get_cmd: Optional[str] = None,
+        get_parser: Union[Callable[[str], Mapping[str, Any]], None] = None,
+        separator: str = ",",
+        single_instrument: bool = True,
+    ) -> None:
         self._parameters = OrderedDict((p.name, p) for p in parameters)
 
         for p in parameters:
@@ -221,8 +220,7 @@ class Group:
 
         return parser
 
-    def set_parameters(self,
-                       parameters_dict: Dict[str, ParamDataType]) -> None:
+    def set_parameters(self, parameters_dict: Mapping[str, ParamDataType]) -> None:
         """
         Sets the value of one or more parameters within a group to the given
         values by calling the ``set_cmd`` while updating rest.
@@ -264,7 +262,7 @@ class Group:
 
         self._set_from_dict(calling_dict)
 
-    def _set_from_dict(self, calling_dict: Dict[str, ParamRawDataType]) -> None:
+    def _set_from_dict(self, calling_dict: Mapping[str, ParamRawDataType]) -> None:
         """
         Use ``set_cmd`` to parse a dict that maps parameter names to parameter
         raw values, and actually perform setting the values.
