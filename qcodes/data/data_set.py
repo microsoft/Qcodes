@@ -706,9 +706,10 @@ class _PrettyPrintDict(Dict[Any, Any]):
     """
 
     def __repr__(self):
-        body = '\n  '.join([repr(k) + ': ' + self._indent(repr(v))
-                            for k, v in self.items()])
-        return '{\n  ' + body + '\n}'
+        body = "\n  ".join(
+            repr(k) + ": " + self._indent(repr(v)) for k, v in self.items()
+        )
+        return "{\n  " + body + "\n}"
 
     def _indent(self, s):
         lines = s.split('\n')
@@ -795,7 +796,7 @@ def xarray_dictionary_to_dataset(
         dataset.add_array(data_array)
         set_array_names.append(array_key)
     for array_key, datavar_dictionary in xarray_dictionary["data_vars"].items():
-        set_arrays = tuple([dataset.arrays[name] for name in set_array_names])
+        set_arrays = tuple(dataset.arrays[name] for name in set_array_names)
 
         data_array = xarray_data_array_dictionary_to_data_array(
             array_key, datavar_dictionary, False

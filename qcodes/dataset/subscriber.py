@@ -1,10 +1,9 @@
 import functools
 import logging
 import time
-
-from threading import Thread
-from typing import Any, Callable, List, Mapping, Optional, TYPE_CHECKING
 from queue import Empty, Queue
+from threading import Thread
+from typing import TYPE_CHECKING, Any, Callable, List, Mapping, Optional
 
 from qcodes.dataset.sqlite.connection import atomic_transaction
 
@@ -65,7 +64,7 @@ class _Subscriber(Thread):
         conn.create_function(self.callback_id, -1, self._cache_data_to_queue)
 
         parameters = dataSet.get_parameters()
-        sql_param_list = ",".join([f"NEW.{p.name}" for p in parameters])
+        sql_param_list = ",".join(f"NEW.{p.name}" for p in parameters)
         sql_create_trigger_for_callback = f"""
         CREATE TRIGGER {self.trigger_id}
             AFTER INSERT ON '{self.table_name}'
