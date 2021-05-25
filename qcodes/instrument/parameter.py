@@ -1972,8 +1972,8 @@ class MultiParameter(_BaseParameter):
         separated by underscores, like this: ``instrument_submodule_parameter``
         """
         inst_name = "_".join(self.name_parts[:-1])
-        if inst_name != '':
-            return tuple([inst_name + '_' + name for name in self.names])
+        if inst_name != "":
+            return tuple(inst_name + "_" + name for name in self.names)
         else:
             return self.names
 

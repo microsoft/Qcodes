@@ -1,10 +1,10 @@
-from typing import Dict, Any, Optional
-import numpy as np
 import collections
+from typing import Any, Dict, Optional
+
+import numpy as np
+import xarray as xr
 
 from qcodes.utils.helpers import DelegateAttributes, full_class, warn_units
-
-import xarray as xr
 
 
 class DataArray(DelegateAttributes):
@@ -584,7 +584,7 @@ def data_array_to_xarray_dictionary(data_array: DataArray) -> Dict[str, Any]:
         data_dictionary["data"] = data
     else:
         if data_array.set_arrays:
-            data_dictionary["dims"] = tuple([a.array_id for a in data_array.set_arrays])
+            data_dictionary["dims"] = tuple(a.array_id for a in data_array.set_arrays)
             data_dictionary["depends_on"] = data_dictionary["dims"]
         data_dictionary["data"] = data_array.ndarray
 
