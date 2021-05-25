@@ -1,13 +1,13 @@
-import pytest
-import numpy as np
-from numpy.testing import assert_allclose
 import hypothesis.strategies as hst
+import numpy as np
+import pytest
 from hypothesis import HealthCheck, given, settings
+from numpy.testing import assert_allclose
 
 import qcodes as qc
-from qcodes.dataset.data_export import get_data_by_id, _get_data_from_ds
-from qcodes.dataset.descriptions.param_spec import ParamSpecBase
+from qcodes.dataset.data_export import _get_data_from_ds, get_data_by_id
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
+from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.measurements import Measurement
 from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
@@ -179,7 +179,10 @@ def test_datasaver_array_parameters_channel(channel_array_instrument,
     datadicts = datadicts[0]
     assert len(datadicts) == len(meas.parameters)
     for datadict in datadicts:
-        assert datadict['data'].shape == (N * M,)
+        if storage_type == "array":
+            assert datadict["data"].shape == (N, M)
+        else:
+            assert datadict["data"].shape == (N * M,)
 
 
 @settings(max_examples=5, deadline=None,
@@ -219,15 +222,15 @@ def test_datasaver_array_parameters_array(channel_array_instrument, DAC, N,
     assert len(datadicts) == len(meas.parameters)
     for datadict in datadicts:
         if datadict['name'] == 'dummy_dac_ch1':
-            expected_data = np.repeat(dac_datapoints, M)
+            expected_data = np.repeat(dac_datapoints, M).reshape(N, M)
         if datadict['name'] == dependency_name:
-            expected_data = np.tile(np.linspace(5, 9, 5), N)
+            expected_data = np.tile(np.linspace(5, 9, 5), (N, 1))
         if datadict['name'] == 'dummy_channel_inst_ChanA_dummy_array_parameter':
-            expected_data = np.empty(N * M)
+            expected_data = np.empty((N, M))
             expected_data[:] = 2.
         assert_allclose(datadict['data'], expected_data)
 
-        assert datadict['data'].shape == (N * M,)
+        assert datadict["data"].shape == (N, M)
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
@@ -267,11 +270,11 @@ def test_datasaver_multidim_array(experiment, bg_writing):
     for datadict_list in datadicts:
         assert len(datadict_list) == 3
         for datadict in datadict_list:
-            dataindex = data_mapping[datadict['name']]
-            expected_data = data[dataindex, :, :].ravel()
-            assert_allclose(datadict['data'], expected_data)
+            dataindex = data_mapping[datadict["name"]]
+            expected_data = data[dataindex : dataindex + 1, :, :]
+            assert_allclose(datadict["data"], expected_data)
 
-            assert datadict['data'].shape == (size1 * size2,)
+            assert datadict["data"].shape == (1, size1, size2)
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
