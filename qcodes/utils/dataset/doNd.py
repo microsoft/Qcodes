@@ -8,7 +8,6 @@ from typing import (Callable, Iterator, List, Optional,
 
 import matplotlib
 import numpy as np
-from numpy.lib.arraysetops import isin
 from tqdm.auto import tqdm
 
 from qcodes import config
@@ -546,7 +545,7 @@ class LinSweep(_AbstractSweep):
         Linear numpy array for supplied start, stop and num_points in the
         class.
 
-        Rturns:
+        Returns:
             Numpy linspace for supplied start, stop and num_points in the
             class.
         """
@@ -573,7 +572,7 @@ class LogSweep(_AbstractSweep):
         Logarithmic numpy array for supplied start, stop and num_points in
         the class.
 
-        Rturns:
+        Returns:
             Numpy logspace for supplied start, stop and num_points in the
             class.
         """
