@@ -472,8 +472,8 @@ class Runner:
 
     def __init__(
         self,
-        enteractions: List[ActionType],
-        exitactions: List[ActionType],
+        enteractions: Sequence[ActionType],
+        exitactions: Sequence[ActionType],
         experiment: Optional[Experiment] = None,
         station: Optional[Station] = None,
         write_period: Optional[float] = None,
