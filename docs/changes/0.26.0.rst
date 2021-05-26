@@ -11,6 +11,7 @@ New:
 - DelegateInstrument support for single parameters (#3031)
 - Introducing merge_yaml function in Station and allow Station to load
   multiple config yaml files (#2936)
+- Keysight VNA P9374A driver (#3034)
 
 ---------
 Improved:
@@ -21,6 +22,12 @@ Improved:
 - [Bug fix] Return parameter data with same type as before applying scale or
   offset (#2980)
 - Improved plotting of pre-shaped 2d data (#3024)
+- replace the use of Dict with Mapping for input args within instrument
+  module (#3040)
+- Convert input arguments to Mapping in dataset module (#3051)
+- use nan + i*nan as placeholder for complex numbers (#3049)
+- Add information about name keyword argument of Measurement module in
+  relevant docs (#3052)
 
 -----------------
 Improved drivers:
@@ -37,6 +44,4 @@ Under the hood:
 - tests: cleanup warning handling (#2834)
 - Fix NumpyJSONEncoder docstring (#2994)
 - remove scientific deps job (#3014)
-- replace the use of Dict with Mapping for input args within instrument
-  module (#3040)
 - upgrade precommit hooks to latest version (#3037)
