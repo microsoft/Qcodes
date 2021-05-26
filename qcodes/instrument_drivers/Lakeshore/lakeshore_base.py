@@ -1,11 +1,11 @@
-from typing import Dict, ClassVar, List, Any, Sequence, Optional
 import time
 from bisect import bisect
+from typing import Any, ClassVar, Dict, List, Optional, Sequence
 
 import numpy as np
 
-from qcodes import VisaInstrument, InstrumentChannel, ChannelList
-from qcodes.instrument.group_parameter import GroupParameter, Group
+from qcodes import ChannelList, InstrumentChannel, VisaInstrument
+from qcodes.instrument.group_parameter import Group, GroupParameter
 from qcodes.utils import validators as vals
 
 
@@ -400,7 +400,7 @@ class BaseSensorChannel(InstrumentChannel):
         """
         codes = self._get_sum_terms(list(self.SENSOR_STATUSES.keys()),
                                     int(sum_of_codes))
-        return ", ".join([self.SENSOR_STATUSES[k] for k in codes])
+        return ", ".join(self.SENSOR_STATUSES[k] for k in codes)
 
     @staticmethod
     def _get_sum_terms(

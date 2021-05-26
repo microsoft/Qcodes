@@ -1,28 +1,26 @@
-from typing import TYPE_CHECKING, Dict, Optional, Mapping, Tuple
-from copy import copy
 import logging
+from typing import TYPE_CHECKING, Dict, Mapping, Optional, Tuple
 
 import numpy as np
 
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
-from qcodes.dataset.sqlite.queries import (
-    load_new_data_for_rundescriber, completed)
 from qcodes.dataset.sqlite.connection import ConnectionPlus
+from qcodes.dataset.sqlite.queries import completed, load_new_data_for_rundescriber
 from qcodes.utils.deprecate import deprecate
 
 from .exporters.export_to_pandas import (
-    load_to_dataframe_dict,
     load_to_concatenated_dataframe,
+    load_to_dataframe_dict,
 )
 from .exporters.export_to_xarray import (
     load_to_xarray_dataarray_dict,
-    load_to_xarray_dataset
+    load_to_xarray_dataset,
 )
-
 
 if TYPE_CHECKING:
     import pandas as pd
     import xarray as xr
+
     from .data_set import DataSet, ParameterData
 
 
@@ -116,7 +114,7 @@ class DataSetCache:
 
         return self._data
 
-    def add_data(self, new_data: Dict[str, Dict[str, np.ndarray]]) -> None:
+    def add_data(self, new_data: Mapping[str, Mapping[str, np.ndarray]]) -> None:
         if self.live is False:
             raise RuntimeError(
                 "Cannot append live data to a dataset that has "
@@ -221,15 +219,13 @@ class DataSetCache:
 
 
 def load_new_data_from_db_and_append(
-            conn: ConnectionPlus,
-            table_name: str,
-            rundescriber: RunDescriber,
-            write_status: Dict[str, Optional[int]],
-            read_status: Dict[str, int],
-            existing_data: Mapping[str, Mapping[str, np.ndarray]],
-    ) -> Tuple[Dict[str, Optional[int]],
-               Dict[str, int],
-               Dict[str, Dict[str, np.ndarray]]]:
+    conn: ConnectionPlus,
+    table_name: str,
+    rundescriber: RunDescriber,
+    write_status: Mapping[str, Optional[int]],
+    read_status: Mapping[str, int],
+    existing_data: Mapping[str, Mapping[str, np.ndarray]],
+) -> Tuple[Dict[str, Optional[int]], Dict[str, int], Dict[str, Dict[str, np.ndarray]]]:
     """
     Append any new data in the db to an already existing datadict and return the merged
     data.
@@ -266,12 +262,11 @@ def load_new_data_from_db_and_append(
 
 
 def append_shaped_parameter_data_to_existing_arrays(
-        rundescriber: RunDescriber,
-        write_status: Dict[str, Optional[int]],
-        existing_data: Mapping[str, Mapping[str, np.ndarray]],
-        new_data: Mapping[str, Mapping[str, np.ndarray]],
-) -> Tuple[Dict[str, Optional[int]],
-           Dict[str, Dict[str, np.ndarray]]]:
+    rundescriber: RunDescriber,
+    write_status: Mapping[str, Optional[int]],
+    existing_data: Mapping[str, Mapping[str, np.ndarray]],
+    new_data: Mapping[str, Mapping[str, np.ndarray]],
+) -> Tuple[Dict[str, Optional[int]], Dict[str, Dict[str, np.ndarray]]]:
     """
     Append datadict to an already existing datadict and return the merged
     data.
@@ -293,7 +288,7 @@ def append_shaped_parameter_data_to_existing_arrays(
                        rundescriber.interdeps.non_dependencies)
     merged_data = {}
 
-    updated_write_status = copy(write_status)
+    updated_write_status = dict(write_status)
 
     for meas_parameter in parameters:
 
@@ -390,8 +385,10 @@ def _create_new_data_dict(new_values: np.ndarray,
         n_values = new_values.size
         data = np.zeros(shape, dtype=new_values.dtype)
 
-        if new_values.dtype.kind == "f" or new_values.dtype.kind == "c":
+        if new_values.dtype.kind == "f":
             data[:] = np.nan
+        elif new_values.dtype.kind == "c":
+            data[:] = np.nan + 1j * np.nan
 
         data.ravel()[0:n_values] = new_values.ravel()
         return data, n_values

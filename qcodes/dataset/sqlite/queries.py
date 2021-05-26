@@ -7,12 +7,24 @@ import sqlite3
 import time
 import unicodedata
 import warnings
-from typing import (Any, Callable, Dict, List, Mapping, Optional, Sequence,
-                    Tuple, Union, cast, Iterable)
 from copy import copy
+from pathlib import Path
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    cast,
+)
+
 import numpy as np
 from numpy import VisibleDeprecationWarning
-from qcodes.dataset.sqlite.database import connect
 
 import qcodes as qc
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
@@ -22,18 +34,27 @@ from qcodes.dataset.descriptions.versioning import serialization as serial
 from qcodes.dataset.descriptions.versioning import v0
 from qcodes.dataset.descriptions.versioning.converters import old_to_new
 from qcodes.dataset.guids import generate_guid, parse_guid
-from qcodes.dataset.sqlite.connection import (ConnectionPlus, atomic,
-                                              atomic_transaction, transaction)
-from qcodes.dataset.sqlite.query_helpers import (VALUES, insert_column,
-                                                 insert_values,
-                                                 is_column_in_table, many,
-                                                 many_many, one,
-                                                 select_many_where,
-                                                 select_one_where,
-                                                 sql_placeholder_string,
-                                                 update_where)
+from qcodes.dataset.sqlite.connection import (
+    ConnectionPlus,
+    atomic,
+    atomic_transaction,
+    transaction,
+)
+from qcodes.dataset.sqlite.database import connect
+from qcodes.dataset.sqlite.query_helpers import (
+    VALUES,
+    insert_column,
+    insert_values,
+    is_column_in_table,
+    many,
+    many_many,
+    one,
+    select_many_where,
+    select_one_where,
+    sql_placeholder_string,
+    update_where,
+)
 from qcodes.utils.deprecate import deprecate
-from pathlib import Path
 
 log = logging.getLogger(__name__)
 
@@ -1176,19 +1197,22 @@ def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
             VALUES
                 (?,?,?,?,?,?,?,?,?,?,?,?)
             """
-            curr = transaction(conn, query,
-                               name,
-                               exp_id,
-                               guid,
-                               formatted_name,
-                               run_counter,
-                               None,
-                               ",".join([p.name for p in parameters]),
-                               False,
-                               desc_str,
-                               captured_run_id,
-                               captured_counter,
-                               parent_dataset_links)
+            curr = transaction(
+                conn,
+                query,
+                name,
+                exp_id,
+                guid,
+                formatted_name,
+                run_counter,
+                None,
+                ",".join(p.name for p in parameters),
+                False,
+                desc_str,
+                captured_run_id,
+                captured_counter,
+                parent_dataset_links,
+            )
 
             _add_parameters_to_layout_and_deps(conn, formatted_name,
                                                *parameters)
@@ -1530,7 +1554,7 @@ def _create_run_table(conn: ConnectionPlus,
     with atomic(conn) as conn:
 
         if parameters and values:
-            _parameters = ",".join([p.sql_repr() for p in parameters])
+            _parameters = ",".join(p.sql_repr() for p in parameters)
             query = f"""
             CREATE TABLE "{formatted_name}" (
                 id INTEGER PRIMARY KEY,
@@ -1542,7 +1566,7 @@ def _create_run_table(conn: ConnectionPlus,
             insert_values(conn, formatted_name,
                           [p.name for p in parameters], values)
         elif parameters:
-            _parameters = ",".join([p.sql_repr() for p in parameters])
+            _parameters = ",".join(p.sql_repr() for p in parameters)
             query = f"""
             CREATE TABLE "{formatted_name}" (
                 id INTEGER PRIMARY KEY,

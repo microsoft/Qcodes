@@ -1,10 +1,10 @@
 from keyword import iskeyword
 from numbers import Number
 
-import pytest
-from numpy import ndarray
-from hypothesis import given, assume
 import hypothesis.strategies as hst
+import pytest
+from hypothesis import assume, given
+from numpy import ndarray
 
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 
@@ -124,7 +124,7 @@ def test_repr(name):
                 ps = ParamSpec(name, okt)
 
 
-alphabet = "".join([chr(i) for i in range(ord("a"), ord("z"))])
+alphabet = "".join(chr(i) for i in range(ord("a"), ord("z")))
 
 
 @given(
