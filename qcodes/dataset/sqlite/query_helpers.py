@@ -5,17 +5,19 @@ are useful for building more database-specific queries out of them.
 import itertools
 import sqlite3
 from distutils.version import LooseVersion
-
-from typing import List, Any, Union, Dict, Tuple, Optional, Sequence
+from typing import Any, List, Mapping, Optional, Sequence, Tuple, Union
 
 import numpy as np
 from numpy import ndarray
 
-from qcodes.dataset.sqlite.connection import ConnectionPlus, \
-    atomic_transaction, transaction, atomic
+from qcodes.dataset.sqlite.connection import (
+    ConnectionPlus,
+    atomic,
+    atomic_transaction,
+    transaction,
+)
 from qcodes.dataset.sqlite.settings import SQLiteSettings
 from qcodes.utils.deprecate import deprecate
-
 
 # represent the type of  data we can/want map to sqlite column
 VALUE = Union[str, complex, List, ndarray, bool, None]
@@ -101,7 +103,7 @@ def select_many_where(conn: ConnectionPlus, table: str, *columns: str,
     return res
 
 
-def _massage_dict(metadata: Dict[str, Any]) -> Tuple[str, List[Any]]:
+def _massage_dict(metadata: Mapping[str, Any]) -> Tuple[str, List[Any]]:
     """
     {key:value, key2:value} -> ["key=?, key2=?", [value, value]]
     """

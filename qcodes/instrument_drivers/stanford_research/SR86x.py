@@ -1,12 +1,12 @@
-import numpy as np
 import logging
-from typing import Sequence, Dict, Callable, Tuple, Optional, List, Any
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
+
+import numpy as np
 
 from qcodes import VisaInstrument
-from qcodes.instrument.channel import InstrumentChannel, ChannelList
-from qcodes.utils.validators import Numbers, Ints, Enum, ComplexNumbers
+from qcodes.instrument.channel import ChannelList, InstrumentChannel
 from qcodes.instrument.parameter import ArrayParameter
-
+from qcodes.utils.validators import ComplexNumbers, Enum, Ints, Numbers
 
 log = logging.getLogger(__name__)
 
@@ -230,11 +230,10 @@ class SR86xBuffer(InstrumentChannel):
         nearest_valid_rate = max_rate / 2 ** n_round
         if abs(capture_rate_hz - nearest_valid_rate) > 1:
             available_frequencies = ", ".join(
-                [str(f) for f in self.available_frequencies])
-            log.warning("Warning: Setting capture rate to {:.5} Hz"
-                        .format(nearest_valid_rate))
-            log.warning("The available frequencies are: {}"
-                        .format(available_frequencies))
+                str(f) for f in self.available_frequencies
+            )
+            log.warning(f"Warning: Setting capture rate to {nearest_valid_rate:.5} Hz")
+            log.warning(f"The available frequencies are: {available_frequencies}")
 
         return n_round
 

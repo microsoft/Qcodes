@@ -1,0 +1,53 @@
+instruments:
+  MockChip_123:
+    type: qcodes.instrument.delegate.InstrumentGroup
+    init:
+      submodules_type: qcodes.instrument.delegate.DelegateInstrument
+      submodules:
+        device1:
+          gate: dac.ch01.voltage
+          source:
+            - lockin.frequency
+            - lockin.amplitude
+            - lockin.phase
+            - lockin.time_constant
+          drain:
+            - lockin.X
+            - lockin.Y
+
+      set_initial_values_on_load: true
+      initial_values:
+        device1:
+          gate.step: 5e-4
+          gate.inter_delay: 12.5e-4
+
+  field:
+    type: qcodes.instrument.delegate.DelegateInstrument
+    init:
+      parameters:
+        X: field_x.field
+        ramp_rate: field_x.ramp_rate
+        ramp_X:
+          - field_x.ramp_rate
+          - field_x.field
+      set_initial_values_on_load: true
+      initial_values:
+        ramp_rate: 0.02
+      setters:
+        X:
+          method: field_x.set_field
+          block: false
+      units:
+        X: T
+        ramp_rate: T/min
+
+  switch:
+    type: qcodes.instrument.delegate.DelegateChannelInstrument
+    init:
+      channels: dac.channels
+      parameters:
+        state:
+          - dac_output
+          - smc
+          - gnd
+          - bus

@@ -52,13 +52,13 @@ import warnings
 from functools import partial
 from time import sleep
 
-from requests.exceptions import ReadTimeout, HTTPError, ConnectTimeout
+from requests.exceptions import ConnectTimeout, HTTPError, ReadTimeout
 from requests.packages.urllib3.exceptions import ReadTimeoutError
 from slack_sdk import WebClient
 
 from qcodes import config as qc_config
 from qcodes.instrument.parameter import _BaseParameter
-from qcodes.loops import active_loop, active_data_set
+from qcodes.loops import active_data_set, active_loop
 from qcodes.plots.base import BasePlot
 
 
@@ -319,9 +319,9 @@ class Slack(threading.Thread):
         self.handle_messages(new_messages)
 
     def help_message(self):
-        """ Return simple help message """
-        cc = ', '.join(['`' + str(k) + '`' for k in self.commands.keys()])
-        return '\nAvailable commands: %s' % cc
+        """Return simple help message"""
+        cc = ", ".join("`" + str(k) + "`" for k in self.commands.keys())
+        return "\nAvailable commands: %s" % cc
 
     def handle_messages(self, messages):
         """

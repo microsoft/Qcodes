@@ -1,19 +1,33 @@
-from typing import List, Any, Sequence, Tuple, Dict, Union, cast
 import logging
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 
 import numpy as np
+from typing_extensions import TypedDict
 
+from qcodes.dataset.data_set import DataSet, load_by_id
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
-from qcodes.dataset.data_set import load_by_id, DataSet
 from qcodes.utils.deprecate import deprecate
+
 log = logging.getLogger(__name__)
 
 
+class DSPlotData(TypedDict):
+    """
+    The dictionary used to represent data for use within `plot_dataset`
+    """
+    name: str
+    unit: str
+    label: str
+    data: np.ndarray
+    shape: Optional[Tuple[int, ...]]
+
+
+@deprecate(alternative="ndarray.flatten()")
 def flatten_1D_data_for_plot(rawdata: Union[Sequence[Sequence[Any]],
                                             np.ndarray]) -> np.ndarray:
     """
     Cast the return value of the database query to
-    a numpy array
+    a 1D numpy array
 
     Args:
         rawdata: The return of the get_values function
@@ -22,16 +36,12 @@ def flatten_1D_data_for_plot(rawdata: Union[Sequence[Sequence[Any]],
         A one-dimensional numpy array
 
     """
-    dataarray = np.array(rawdata)
-    shape = np.shape(dataarray)
-    dataarray = dataarray.reshape(np.product(shape))
-
+    dataarray = np.array(rawdata).flatten()
     return dataarray
 
 
 @deprecate(alternative="dataset.get_parameter_data")
-def get_data_by_id(run_id: int) -> \
-        List[List[Dict[str, Union[str, np.ndarray]]]]:
+def get_data_by_id(run_id: int) -> List[List[DSPlotData]]:
     """
     Load data from database and reshapes into 1D arrays with minimal
     name, unit and label metadata.
@@ -74,7 +84,9 @@ def get_data_by_id(run_id: int) -> \
     return output
 
 
-def _get_data_from_ds(ds: DataSet) -> List[List[Dict[str, Union[str, np.ndarray]]]]:
+def _get_data_from_ds(
+    ds: DataSet,
+) -> List[List[DSPlotData]]:
     dependent_parameters: Tuple[ParamSpecBase, ...] = ds.dependent_parameters
 
     all_data = ds.cache.data()
@@ -86,29 +98,21 @@ def _get_data_from_ds(ds: DataSet) -> List[List[Dict[str, Union[str, np.ndarray]
     for dep_name, data_dict in parameter_data.items():
         data_dicts_list = []
 
-        dep_data_dict_index = None
+        dependent = ds.description.interdeps[dep_name]
+        dependencies = ds.description.interdeps.dependencies[dependent]
 
-        for param_name, data in data_dict.items():
-            my_data_dict: Dict[str, Union[str, np.ndarray]] = {}
-
-            my_data_dict['name'] = param_name
-
-            my_data_dict['data'] = data.flatten()
-
-            ps = ds.paramspecs[param_name]
-            my_data_dict['unit'] = ps.unit
-            my_data_dict['label'] = ps.label
-
+        for param_spec_base in dependencies + (dependent,):
+            my_data_dict: DSPlotData = {
+                "name": param_spec_base.name,
+                "unit": param_spec_base.unit,
+                "label": param_spec_base.label,
+                "data": data_dict[param_spec_base.name],
+                "shape": None,
+            }
             data_dicts_list.append(my_data_dict)
 
-            if param_name == dep_name:
-                dep_data_dict_index = len(data_dicts_list) - 1
-
-        # put the data dict of the dependent one at the very end of the list
-        if dep_data_dict_index is None:
-            raise RuntimeError(f'{dep_name} not found in its own "datadict".')
-        else:
-            data_dicts_list.append(data_dicts_list.pop(dep_data_dict_index))
+        if ds.description.shapes is not None:
+            data_dicts_list[-1]["shape"] = ds.description.shapes.get(dependent.name)
 
         output.append(data_dicts_list)
 
@@ -217,7 +221,7 @@ def _all_in_group_or_subgroup(rows: np.ndarray) -> bool:
     # are all contained in the rows of the other
     if aigos and switchindex > 0:
         for row in rows[1+switchindex:]:
-            if sum([r in rows[0] for r in row]) != len(row):
+            if sum(r in rows[0] for r in row) != len(row):
                 aigos = False
                 break
 

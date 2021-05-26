@@ -1,15 +1,17 @@
 """ Base class for the channel of an instrument """
-from typing import (
-    List, Union, Optional, Dict, Sequence,
-    cast, Any, Tuple, Callable,
-)
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union, cast
 
-from .base import InstrumentBase, Instrument
-from .parameter import (MultiParameter, ArrayParameter, Parameter,
-    ParamRawDataType, Iterator)
-from ..utils.validators import Validator
-from ..utils.metadata import Metadatable
 from ..utils.helpers import full_class
+from ..utils.metadata import Metadatable
+from ..utils.validators import Validator
+from .base import Instrument, InstrumentBase
+from .parameter import (
+    ArrayParameter,
+    Iterator,
+    MultiParameter,
+    Parameter,
+    ParamRawDataType,
+)
 
 
 class InstrumentChannel(InstrumentBase):
@@ -39,7 +41,7 @@ class InstrumentChannel(InstrumentBase):
         # (see https://github.com/QCoDeS/Qcodes/issues/1140 for a nice table)
         # this has been a confusion about names. don't use name but
         # full_name, or short_name.
-        self._name = "{}_{}".format(parent.name, str(name))
+        self._name = f"{parent.name}_{str(name)}"
 
     def __repr__(self) -> str:
         """Custom repr to give parent information"""

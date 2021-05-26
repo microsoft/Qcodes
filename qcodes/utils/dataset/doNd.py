@@ -314,12 +314,15 @@ def do1d(
                          shapes=shapes)
     _set_write_period(meas, write_period)
     _register_actions(meas, enter_actions, exit_actions)
+
+    original_delay = param_set.post_delay
     param_set.post_delay = delay
 
     # do1D enforces a simple relationship between measured parameters
     # and set parameters. For anything more complicated this should be
     # reimplemented from scratch
     with _catch_keyboard_interrupts() as interrupted, meas.run() as datasaver:
+        dataset = datasaver.dataset
         additional_setpoints_data = _process_params_meas(additional_setpoints)
         setpoints = np.linspace(start, stop, num_points)
 
@@ -335,7 +338,9 @@ def do1d(
                 *_process_params_meas(param_meas, use_threads=use_threads),
                 *additional_setpoints_data
             )
-        dataset = datasaver.dataset
+
+    param_set.post_delay = original_delay
+
     return _handle_plotting(dataset, do_plot, interrupted())
 
 
@@ -441,10 +446,14 @@ def do2d(
     _set_write_period(meas, write_period)
     _register_actions(meas, enter_actions, exit_actions)
 
+    original_delay1 = param_set1.post_delay
+    original_delay2 = param_set2.post_delay
+
     param_set1.post_delay = delay1
     param_set2.post_delay = delay2
 
     with _catch_keyboard_interrupts() as interrupted, meas.run() as datasaver:
+        dataset = datasaver.dataset
         additional_setpoints_data = _process_params_meas(additional_setpoints)
         setpoints1 = np.linspace(start1, stop1, num_points1)
         for set_point1 in tqdm(setpoints1, disable=not show_progress):
@@ -480,7 +489,10 @@ def do2d(
                 action()
             if flush_columns:
                 datasaver.flush_data_to_database()
-        dataset = datasaver.dataset
+
+    param_set1.post_delay = original_delay1
+    param_set2.post_delay = original_delay2
+
     return _handle_plotting(dataset, do_plot, interrupted())
 
 

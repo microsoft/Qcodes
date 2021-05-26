@@ -1,8 +1,8 @@
 # awg file -> (what, we, put, into, make_send_and_load_awg_file)
 # This module parses an awg file using THREE sub-parser. This code could
 # probably be streamlined somewhat.
-from typing import Any, Tuple, Union, Dict, List
 import struct
+from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
 
@@ -438,7 +438,7 @@ def _parser1(
                 assert file_format is not None
                 value = _unwrap(rawvalue, file_format)
                 (number, barename) = _getendingnumber(name)
-                fieldname = barename + '{}'.format(number-20)
+                fieldname = barename + f"{number-20}"
                 waveformlist[0].append(fieldname)
                 waveformlist[1].append(value)
 

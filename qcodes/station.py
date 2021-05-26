@@ -3,39 +3,48 @@ Station objects - collect all the equipment you use to do an experiment.
 """
 
 
-from contextlib import suppress
-from typing import (
-    Dict, Iterable, List, Optional, Sequence, Any, cast, AnyStr, IO, Tuple)
-from types import ModuleType
-from functools import partial
 import importlib
-import logging
-import os
+import inspect
 import itertools
 import json
+import logging
+import os
 import pkgutil
-import inspect
-from copy import deepcopy, copy
-from collections import UserDict
-from typing import Union
-import jsonschema
 import warnings
+from collections import deque
+from contextlib import suppress
+from copy import copy, deepcopy
+from functools import partial
+from io import StringIO
+from pathlib import Path
+from types import ModuleType
+from typing import IO, Any, AnyStr
+from typing import Deque as Tdeque
+from typing import Dict, Iterable, List, Optional, Sequence, Tuple, Union, cast
+
+import jsonschema
+import ruamel.yaml
 
 import qcodes
-from qcodes.utils.metadata import Metadatable
-from qcodes.utils.helpers import (
-    DelegateAttributes, YAML, checked_getattr, get_qcodes_path,
-    get_qcodes_user_path)
-from qcodes.utils.deprecate import issue_deprecation_warning
-
+import qcodes.utils.validators as validators
 from qcodes.instrument.base import Instrument, InstrumentBase
 from qcodes.instrument.channel import ChannelList
 from qcodes.instrument.parameter import (
-    Parameter, ManualParameter,
-    DelegateParameter, _BaseParameter)
-import qcodes.utils.validators as validators
+    DelegateParameter,
+    ManualParameter,
+    Parameter,
+    _BaseParameter,
+)
 from qcodes.monitor.monitor import Monitor
-
+from qcodes.utils.deprecate import issue_deprecation_warning
+from qcodes.utils.helpers import (
+    YAML,
+    DelegateAttributes,
+    checked_getattr,
+    get_qcodes_path,
+    get_qcodes_user_path,
+)
+from qcodes.utils.metadata import Metadatable
 
 log = logging.getLogger(__name__)
 
@@ -90,7 +99,13 @@ class Station(Metadatable, DelegateAttributes):
     Args:
         *components: components to add immediately to the
             Station. Can be added later via ``self.add_component``.
-        config_file: Path to YAML file to load the station config from.
+        config_file: Path to YAML files to load the station config from.
+
+            - If only one yaml file needed to be loaded, it should be passed
+              as a string, e.g., '~/station.yaml'
+            - If more than one yaml file needed, they should be supplied as
+              a sequence of strings, e.g. ['~/station1.yaml', '~/station2.yaml']
+
         use_monitor: Should the QCoDeS monitor be activated for this station.
         default: Is this station the default?
         update_snapshot: Immediately update the snapshot of each
@@ -113,7 +128,7 @@ class Station(Metadatable, DelegateAttributes):
     A user dict representing the YAML file that the station was loaded from"""
 
     def __init__(self, *components: Metadatable,
-                 config_file: Optional[str] = None,
+                 config_file: Optional[Union[str, Sequence[str]]] = None,
                  use_monitor: Optional[bool] = None, default: bool = True,
                  update_snapshot: bool = True, **kwargs: Any) -> None:
         super().__init__(**kwargs)
@@ -132,12 +147,18 @@ class Station(Metadatable, DelegateAttributes):
             self.add_component(item, update_snapshot=update_snapshot)
 
         self.use_monitor = use_monitor
-        self.config_file = config_file
 
         self._added_methods: List[str] = []
         self._monitor_parameters: List[Parameter] = []
 
-        self.load_config_file(self.config_file)
+        if config_file is None:
+            self.config_file = []
+        elif isinstance(config_file, str):
+            self.config_file = [config_file, ]
+        else:
+            self.config_file = list(config_file)
+
+        self.load_config_files(*self.config_file)
 
     def snapshot_base(self, update: Optional[bool] = True,
                       params_to_skip_update: Optional[Sequence[str]] = None
@@ -216,8 +237,7 @@ class Station(Metadatable, DelegateAttributes):
         except:
             pass
         if name is None:
-            name = getattr(component, 'name',
-                           'component{}'.format(len(self.components)))
+            name = getattr(component, "name", f"component{len(self.components)}")
         namestr = str(name)
         if namestr in self.components.keys():
             raise RuntimeError(
@@ -268,6 +288,26 @@ class Station(Metadatable, DelegateAttributes):
             if isinstance(c, Instrument):
                 self.close_and_remove_instrument(c)
 
+    @staticmethod
+    def _get_config_file_path(
+            filename: Optional[str] = None) -> Optional[str]:
+        """
+        Methods to get complete path of a provided file. If not able to find
+        path then returns None.
+        """
+        filename = filename or get_config_default_file()
+        if filename is None:
+            return None
+        search_list = [filename]
+        if (not os.path.isabs(filename) and
+                get_config_default_folder() is not None):
+            config_folder = cast(str, get_config_default_folder())
+            search_list += [os.path.join(config_folder, filename)]
+        for p in search_list:
+            if os.path.isfile(p):
+                return p
+        return None
+
     def load_config_file(self, filename: Optional[str] = None) -> None:
         """
         Loads a configuration from a YAML file. If `filename` is not specified
@@ -280,23 +320,8 @@ class Station(Metadatable, DelegateAttributes):
         Additionally the shortcut methods ``load_<instrument_name>`` will be
         updated.
         """
-        def get_config_file_path(
-                filename: Optional[str] = None) -> Optional[str]:
-            filename = filename or get_config_default_file()
-            if filename is None:
-                return None
-            search_list = [filename]
-            if (not os.path.isabs(filename) and
-                    get_config_default_folder() is not None):
-                config_folder = cast(str, get_config_default_folder())
-                search_list += [os.path.join(config_folder, filename)]
-            for p in search_list:
-                if os.path.isfile(p):
-                    return p
-            return None
 
-
-        path = get_config_file_path(filename)
+        path = self._get_config_file_path(filename)
 
         if path is None:
             if filename is not None:
@@ -312,6 +337,37 @@ class Station(Metadatable, DelegateAttributes):
 
         with open(path) as f:
             self.load_config(f)
+
+    def load_config_files(self,
+                          *filenames: str
+                          ) -> None:
+        """
+        Loads configuration from multiple YAML files after merging them
+        into one. If `filenames` are not specified the default file name from
+        the qcodes configuration will be used.
+
+        Loading of configuration will update the snapshot of the station and
+        make the instruments described in the config files available for
+        instantiation with the :meth:`load_instrument` method.
+
+        Additionally the shortcut methods ``load_<instrument_name>`` will be
+        updated.
+        """
+        if len(filenames) == 0:
+            self.load_config_file()
+        else:
+            paths = list()
+            for filename in filenames:
+                assert isinstance(filename, str)
+                path = self._get_config_file_path(filename)
+
+                if path is None and filename is not None:
+                    raise FileNotFoundError(path)
+
+                paths.append(path)
+
+            yamls = _merge_yamls(*paths)
+            self.load_config(yamls)
 
     def load_config(self, config: Union[str, IO[AnyStr]]) -> None:
         """
@@ -408,7 +464,8 @@ class Station(Metadatable, DelegateAttributes):
         # load file
         # try to reload file on every call. This makes script execution a
         # little slower but makes the overall workflow more convenient.
-        self.load_config_file(self.config_file)
+        self.load_config_files(*self.config_file)
+
 
         # load from config
         if identifier not in self._instrument_config.keys():
@@ -509,10 +566,13 @@ class Station(Metadatable, DelegateAttributes):
                 elif attr == 'limits':
                     if isinstance(val, str):
                         issue_deprecation_warning(
-                            ('use of a comma separated string for the limits '
-                             'keyword'),
-                            alternative='an array like "[lower_lim, upper_lim]"')
-                        lower, upper = [float(x) for x in val.split(',')]
+                            (
+                                "use of a comma separated string for the limits "
+                                "keyword"
+                            ),
+                            alternative='an array like "[lower_lim, upper_lim]"',
+                        )
+                        lower, upper = (float(x) for x in val.split(","))
                     else:
                         lower, upper = val
                     parameter.vals = validators.Numbers(lower, upper)
@@ -578,7 +638,8 @@ class Station(Metadatable, DelegateAttributes):
                              only_types: Optional[Iterable[str]] = None,
                              ) -> Tuple[str, ...]:
         """
-        Load all instruments specified in the loaded YAML station configuration.
+        Load all instruments specified in the loaded YAML station
+        configuration.
 
         Optionally, the instruments to be loaded can be filtered by their
         names or types, use ``only_names`` and ``only_types``
@@ -684,3 +745,48 @@ def update_config_schema(
                 [qcodes.instrument_drivers] + additional_instrument_modules)
         ))
     )
+
+
+def _merge_yamls(*yamls: Union[str, Path]) -> str:
+    """
+    Merge multiple station yamls files into one and stores it in the memory.
+
+    Args:
+        yamls: string or Path to yaml files separated by comma.
+    Returns:
+        Full yaml file stored in the memory.
+    """
+
+    if len(yamls) == 1:
+        with open(yamls[0]) as file:
+            content = file.read()
+        return content
+
+    top_key = "instruments"
+    yaml = ruamel.yaml.YAML()
+
+    deq: Tdeque[Any] = deque()
+
+    # Load the yaml files and add to deque in reverse entry order
+    for filepath in yamls[::-1]:
+        with open(filepath) as file_pointer:
+            deq.append(yaml.load(file_pointer))
+
+    # Add the top key entries from filepath n to filepath n-1 to
+    # ... filepath 1.
+    while len(deq) > 1:
+        data2, data1 = deq[0], deq[1]
+        for entry in data2[top_key]:
+            if entry not in data1[top_key].keys():
+                data1[top_key].update({entry: data2[top_key][entry]})
+            else:
+                raise KeyError(
+                    f"duplicate key `{entry}` detected among files:"
+                    f"{ ','.join(map(str, yamls))}"
+                )
+        deq.popleft()
+
+    with StringIO() as merged_yaml_stream:
+        yaml.dump(data1, merged_yaml_stream)
+        merged_yaml = merged_yaml_stream.getvalue()
+    return merged_yaml

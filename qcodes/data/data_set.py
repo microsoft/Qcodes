@@ -1,19 +1,25 @@
 """DataSet class and factory functions."""
 
-import xarray as xr
-import numpy as np
-import time
 import logging
-from traceback import format_exc
-from copy import deepcopy
+import time
 from collections import OrderedDict
-from typing import Dict, Callable, Any, List
+from copy import deepcopy
+from traceback import format_exc
+from typing import Any, Callable, Dict, List
+
+import numpy as np
+import xarray as xr
+
+from qcodes.data.data_array import (
+    DataArray,
+    data_array_to_xarray_dictionary,
+    xarray_data_array_dictionary_to_data_array,
+)
+from qcodes.utils.helpers import DelegateAttributes, deep_update, full_class
 
 from .gnuplot_format import GNUPlotFormat
 from .io import DiskIO
 from .location import FormatLocation
-from qcodes.utils.helpers import DelegateAttributes, full_class, deep_update
-from qcodes.data.data_array import xarray_data_array_dictionary_to_data_array, data_array_to_xarray_dictionary, DataArray
 
 log = logging.getLogger(__name__)
 
@@ -269,7 +275,7 @@ class DataSet(DelegateAttributes):
             # because we want things like live plotting to get the final data
             for key, fn in list(self.background_functions.items()):
                 try:
-                    log.debug('calling {}: {}'.format(key, repr(fn)))
+                    log.debug(f"calling {key}: {repr(fn)}")
                     fn()
                     failing[key] = False
                 except Exception:
@@ -700,9 +706,10 @@ class _PrettyPrintDict(Dict[Any, Any]):
     """
 
     def __repr__(self):
-        body = '\n  '.join([repr(k) + ': ' + self._indent(repr(v))
-                            for k, v in self.items()])
-        return '{\n  ' + body + '\n}'
+        body = "\n  ".join(
+            repr(k) + ": " + self._indent(repr(v)) for k, v in self.items()
+        )
+        return "{\n  " + body + "\n}"
 
     def _indent(self, s):
         lines = s.split('\n')
@@ -789,7 +796,7 @@ def xarray_dictionary_to_dataset(
         dataset.add_array(data_array)
         set_array_names.append(array_key)
     for array_key, datavar_dictionary in xarray_dictionary["data_vars"].items():
-        set_arrays = tuple([dataset.arrays[name] for name in set_array_names])
+        set_arrays = tuple(dataset.arrays[name] for name in set_array_names)
 
         data_array = xarray_data_array_dictionary_to_data_array(
             array_key, datavar_dictionary, False

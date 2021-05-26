@@ -72,33 +72,53 @@ more specialized ones:
 # create an ABC for Parameter and MultiParameter - or just remove this statement
 # if everyone is happy to use these classes.
 
-from datetime import datetime, timedelta
-from copy import copy
-from operator import xor
-import time
+import collections
+import enum
 import logging
 import os
-import collections
+import time
 import warnings
-import enum
-from typing import Optional, Sequence, TYPE_CHECKING, Union, Callable, List, \
-    Dict, Any, Sized, Iterable, cast, Type, Tuple, Iterator
-from typing_extensions import Protocol
-from types import TracebackType
+from copy import copy
+from datetime import datetime, timedelta
 from functools import wraps
+from operator import xor
+from types import TracebackType
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Sized,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
 
 import numpy
+from typing_extensions import Protocol
 
-from qcodes.utils.deprecate import deprecate, issue_deprecation_warning
-from qcodes.utils.helpers import abstractmethod
-from qcodes.utils.helpers import (permissive_range, is_sequence_of,
-                                  DelegateAttributes, full_class, named_repr,
-                                  warn_units)
-from qcodes.utils.metadata import Metadatable
-from qcodes.utils.command import Command
-from qcodes.utils.validators import Validator, Ints, Strings, Enum, Arrays
-from qcodes.instrument.sweep_values import SweepFixedValues
 from qcodes.data.data_array import DataArray
+from qcodes.instrument.sweep_values import SweepFixedValues
+from qcodes.utils.command import Command
+from qcodes.utils.deprecate import deprecate, issue_deprecation_warning
+from qcodes.utils.helpers import (
+    DelegateAttributes,
+    abstractmethod,
+    full_class,
+    is_sequence_of,
+    named_repr,
+    permissive_range,
+    warn_units,
+)
+from qcodes.utils.metadata import Metadatable
+from qcodes.utils.validators import Arrays, Enum, Ints, Strings, Validator
 
 if TYPE_CHECKING:
     from .base import Instrument, InstrumentBase
@@ -156,7 +176,7 @@ class _SetParamContext:
             self._parameter.set(self._original_value)
 
 
-def invert_val_mapping(val_mapping: Dict[Any, Any]) -> Dict[Any, Any]:
+def invert_val_mapping(val_mapping: Mapping[Any, Any]) -> Dict[Any, Any]:
     """Inverts the value mapping dictionary for allowed parameter values"""
     return {v: k for k, v in val_mapping.items()}
 
@@ -243,22 +263,25 @@ class _BaseParameter(Metadatable):
             JSON snapshot of the parameter
     """
 
-    def __init__(self, name: str,
-                 instrument: Optional['InstrumentBase'],
-                 snapshot_get: bool = True,
-                 metadata: Optional[Dict[Any, Any]] = None,
-                 step: Optional[float] = None,
-                 scale: Optional[Union[float, Iterable[float]]] = None,
-                 offset: Optional[Union[float, Iterable[float]]] = None,
-                 inter_delay: float = 0,
-                 post_delay: float = 0,
-                 val_mapping: Optional[Dict[Any, Any]] = None,
-                 get_parser: Optional[Callable[..., Any]] = None,
-                 set_parser: Optional[Callable[..., Any]] = None,
-                 snapshot_value: bool = True,
-                 snapshot_exclude: bool = False,
-                 max_val_age: Optional[float] = None,
-                 vals: Optional[Validator[Any]] = None) -> None:
+    def __init__(
+        self,
+        name: str,
+        instrument: Optional["InstrumentBase"],
+        snapshot_get: bool = True,
+        metadata: Optional[Mapping[Any, Any]] = None,
+        step: Optional[float] = None,
+        scale: Optional[Union[float, Iterable[float]]] = None,
+        offset: Optional[Union[float, Iterable[float]]] = None,
+        inter_delay: float = 0,
+        post_delay: float = 0,
+        val_mapping: Optional[Mapping[Any, Any]] = None,
+        get_parser: Optional[Callable[..., Any]] = None,
+        set_parser: Optional[Callable[..., Any]] = None,
+        snapshot_value: bool = True,
+        snapshot_exclude: bool = False,
+        max_val_age: Optional[float] = None,
+        vals: Optional[Validator[Any]] = None,
+    ) -> None:
         super().__init__(metadata)
         if not str(name).isidentifier():
             raise ValueError(f"Parameter name must be a valid identifier "
@@ -394,7 +417,7 @@ class _BaseParameter(Metadatable):
         return named_repr(self)
 
     def __call__(self, *args: Any, **kwargs: Any) -> Optional[ParamDataType]:
-        if len(args) == 0:
+        if len(args) == 0 and len(kwargs) == 0:
             if self.gettable:
                 return self.get()
             else:
@@ -503,7 +526,7 @@ class _BaseParameter(Metadatable):
                                   in zip(raw_value, self.scale))
             else:
                 # Use single scale for all values
-                raw_value *= self.scale
+                raw_value = raw_value * self.scale
 
         # apply offset next
         if self.offset is not None:
@@ -513,7 +536,7 @@ class _BaseParameter(Metadatable):
                                   in zip(raw_value, self.offset))
             else:
                 # Use single offset for all values
-                raw_value += self.offset
+                raw_value = raw_value + self.offset
 
         # parser last
         if self.set_parser is not None:
@@ -533,28 +556,34 @@ class _BaseParameter(Metadatable):
         # apply offset first (native scale)
         if self.offset is not None:
             # offset values
-            if isinstance(self.offset, collections.abc.Iterable):
-                # offset contains multiple elements, one for each value
-                value = tuple(val - offset for val, offset
-                              in zip(value, self.offset))
-            elif isinstance(value, collections.abc.Iterable):
-                # Use single offset for all values
-                value = tuple(val - self.offset for val in value)
-            else:
-                value -= self.offset
+            try:
+                value = value - self.offset
+            except TypeError:
+                if isinstance(self.offset, collections.abc.Iterable):
+                    # offset contains multiple elements, one for each value
+                    value = tuple(val - offset for val, offset
+                                  in zip(value, self.offset))
+                elif isinstance(value, collections.abc.Iterable):
+                    # Use single offset for all values
+                    value = tuple(val - self.offset for val in value)
+                else:
+                    raise
 
         # scale second
         if self.scale is not None:
             # Scale values
-            if isinstance(self.scale, collections.abc.Iterable):
-                # Scale contains multiple elements, one for each value
-                value = tuple(val / scale for val, scale
-                              in zip(value, self.scale))
-            elif isinstance(value, collections.abc.Iterable):
-                # Use single scale for all values
-                value = tuple(val / self.scale for val in value)
-            else:
-                value /= self.scale
+            try:
+                value = value / self.scale
+            except TypeError:
+                if isinstance(self.scale, collections.abc.Iterable):
+                    # Scale contains multiple elements, one for each value
+                    value = tuple(val / scale for val, scale in zip(value,
+                                                                    self.scale))
+                elif isinstance(value, collections.abc.Iterable):
+                    # Use single scale for all values
+                    value = tuple(val / self.scale for val in value)
+                else:
+                    raise
 
         if self.inverse_val_mapping is not None:
             if value in self.inverse_val_mapping:
@@ -1626,24 +1655,31 @@ class ArrayParameter(_BaseParameter):
             JSON snapshot of the parameter.
     """
 
-    def __init__(self,
-                 name: str,
-                 shape: Sequence[int],
-                 instrument: Optional['InstrumentBase'] = None,
-                 label: Optional[str] = None,
-                 unit: Optional[str] = None,
-                 setpoints: Optional[Sequence[Any]] = None,
-                 setpoint_names: Optional[Sequence[str]] = None,
-                 setpoint_labels: Optional[Sequence[str]] = None,
-                 setpoint_units: Optional[Sequence[str]] = None,
-                 docstring: Optional[str] = None,
-                 snapshot_get: bool = True,
-                 snapshot_value: bool = False,
-                 snapshot_exclude: bool = False,
-                 metadata: Optional[Dict[Any, Any]] = None) -> None:
-        super().__init__(name, instrument, snapshot_get, metadata,
-                         snapshot_value=snapshot_value,
-                         snapshot_exclude=snapshot_exclude)
+    def __init__(
+        self,
+        name: str,
+        shape: Sequence[int],
+        instrument: Optional["InstrumentBase"] = None,
+        label: Optional[str] = None,
+        unit: Optional[str] = None,
+        setpoints: Optional[Sequence[Any]] = None,
+        setpoint_names: Optional[Sequence[str]] = None,
+        setpoint_labels: Optional[Sequence[str]] = None,
+        setpoint_units: Optional[Sequence[str]] = None,
+        docstring: Optional[str] = None,
+        snapshot_get: bool = True,
+        snapshot_value: bool = False,
+        snapshot_exclude: bool = False,
+        metadata: Optional[Mapping[Any, Any]] = None,
+    ) -> None:
+        super().__init__(
+            name,
+            instrument,
+            snapshot_get,
+            metadata,
+            snapshot_value=snapshot_value,
+            snapshot_exclude=snapshot_exclude,
+        )
 
         if self.settable:
             # TODO (alexcjohnson): can we support, ala Combine?
@@ -1832,25 +1868,32 @@ class MultiParameter(_BaseParameter):
             JSON snapshot of the parameter.
     """
 
-    def __init__(self,
-                 name: str,
-                 names: Sequence[str],
-                 shapes: Sequence[Sequence[int]],
-                 instrument: Optional['InstrumentBase'] = None,
-                 labels: Optional[Sequence[str]] = None,
-                 units: Optional[Sequence[str]] = None,
-                 setpoints: Optional[Sequence[Sequence[Any]]] = None,
-                 setpoint_names: Optional[Sequence[Sequence[str]]] = None,
-                 setpoint_labels: Optional[Sequence[Sequence[str]]] = None,
-                 setpoint_units: Optional[Sequence[Sequence[str]]] = None,
-                 docstring: Optional[str] = None,
-                 snapshot_get: bool = True,
-                 snapshot_value: bool = False,
-                 snapshot_exclude: bool = False,
-                 metadata: Optional[Dict[Any, Any]] = None) -> None:
-        super().__init__(name, instrument, snapshot_get, metadata,
-                         snapshot_value=snapshot_value,
-                         snapshot_exclude=snapshot_exclude)
+    def __init__(
+        self,
+        name: str,
+        names: Sequence[str],
+        shapes: Sequence[Sequence[int]],
+        instrument: Optional["InstrumentBase"] = None,
+        labels: Optional[Sequence[str]] = None,
+        units: Optional[Sequence[str]] = None,
+        setpoints: Optional[Sequence[Sequence[Any]]] = None,
+        setpoint_names: Optional[Sequence[Sequence[str]]] = None,
+        setpoint_labels: Optional[Sequence[Sequence[str]]] = None,
+        setpoint_units: Optional[Sequence[Sequence[str]]] = None,
+        docstring: Optional[str] = None,
+        snapshot_get: bool = True,
+        snapshot_value: bool = False,
+        snapshot_exclude: bool = False,
+        metadata: Optional[Mapping[Any, Any]] = None,
+    ) -> None:
+        super().__init__(
+            name,
+            instrument,
+            snapshot_get,
+            metadata,
+            snapshot_value=snapshot_value,
+            snapshot_exclude=snapshot_exclude,
+        )
 
         self._meta_attrs.extend(['setpoint_names', 'setpoint_labels',
                                  'setpoint_units', 'names', 'labels', 'units'])
@@ -1929,8 +1972,8 @@ class MultiParameter(_BaseParameter):
         separated by underscores, like this: ``instrument_submodule_parameter``
         """
         inst_name = "_".join(self.name_parts[:-1])
-        if inst_name != '':
-            return tuple([inst_name + '_' + name for name in self.names])
+        if inst_name != "":
+            return tuple(inst_name + "_" + name for name in self.names)
         else:
             return self.names
 
