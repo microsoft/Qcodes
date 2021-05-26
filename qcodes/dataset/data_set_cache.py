@@ -1,5 +1,4 @@
 import logging
-from copy import copy
 from typing import TYPE_CHECKING, Dict, Mapping, Optional, Tuple
 
 import numpy as np
@@ -115,7 +114,7 @@ class DataSetCache:
 
         return self._data
 
-    def add_data(self, new_data: Dict[str, Dict[str, np.ndarray]]) -> None:
+    def add_data(self, new_data: Mapping[str, Mapping[str, np.ndarray]]) -> None:
         if self.live is False:
             raise RuntimeError(
                 "Cannot append live data to a dataset that has "
@@ -220,15 +219,13 @@ class DataSetCache:
 
 
 def load_new_data_from_db_and_append(
-            conn: ConnectionPlus,
-            table_name: str,
-            rundescriber: RunDescriber,
-            write_status: Dict[str, Optional[int]],
-            read_status: Dict[str, int],
-            existing_data: Mapping[str, Mapping[str, np.ndarray]],
-    ) -> Tuple[Dict[str, Optional[int]],
-               Dict[str, int],
-               Dict[str, Dict[str, np.ndarray]]]:
+    conn: ConnectionPlus,
+    table_name: str,
+    rundescriber: RunDescriber,
+    write_status: Mapping[str, Optional[int]],
+    read_status: Mapping[str, int],
+    existing_data: Mapping[str, Mapping[str, np.ndarray]],
+) -> Tuple[Dict[str, Optional[int]], Dict[str, int], Dict[str, Dict[str, np.ndarray]]]:
     """
     Append any new data in the db to an already existing datadict and return the merged
     data.
@@ -265,12 +262,11 @@ def load_new_data_from_db_and_append(
 
 
 def append_shaped_parameter_data_to_existing_arrays(
-        rundescriber: RunDescriber,
-        write_status: Dict[str, Optional[int]],
-        existing_data: Mapping[str, Mapping[str, np.ndarray]],
-        new_data: Mapping[str, Mapping[str, np.ndarray]],
-) -> Tuple[Dict[str, Optional[int]],
-           Dict[str, Dict[str, np.ndarray]]]:
+    rundescriber: RunDescriber,
+    write_status: Mapping[str, Optional[int]],
+    existing_data: Mapping[str, Mapping[str, np.ndarray]],
+    new_data: Mapping[str, Mapping[str, np.ndarray]],
+) -> Tuple[Dict[str, Optional[int]], Dict[str, Dict[str, np.ndarray]]]:
     """
     Append datadict to an already existing datadict and return the merged
     data.
@@ -292,7 +288,7 @@ def append_shaped_parameter_data_to_existing_arrays(
                        rundescriber.interdeps.non_dependencies)
     merged_data = {}
 
-    updated_write_status = copy(write_status)
+    updated_write_status = dict(write_status)
 
     for meas_parameter in parameters:
 

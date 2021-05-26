@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Dict, Iterator, Union
+from typing import TYPE_CHECKING, Dict, Iterator, Mapping, Union
 
 import numpy as np
 
@@ -36,7 +36,9 @@ def load_to_concatenated_dataframe(datadict: ParameterData) -> pd.DataFrame:
     return df
 
 
-def _data_to_dataframe(data: Dict[str, np.ndarray], index: Union[pd.Index, pd.MultiIndex]) -> pd.DataFrame:
+def _data_to_dataframe(
+    data: Mapping[str, np.ndarray], index: Union[pd.Index, pd.MultiIndex]
+) -> pd.DataFrame:
     import pandas as pd
     if len(data) == 0:
         return pd.DataFrame()
@@ -55,7 +57,9 @@ def _data_to_dataframe(data: Dict[str, np.ndarray], index: Union[pd.Index, pd.Mu
     return df
 
 
-def _generate_pandas_index(data: Dict[str, np.ndarray]) -> Union[pd.Index, pd.MultiIndex]:
+def _generate_pandas_index(
+    data: Mapping[str, np.ndarray]
+) -> Union[pd.Index, pd.MultiIndex]:
     # the first element in the dict given by parameter_tree is always the dependent
     # parameter and the index is therefore formed from the rest
     import pandas as pd
@@ -75,8 +79,9 @@ def _generate_pandas_index(data: Dict[str, np.ndarray]) -> Union[pd.Index, pd.Mu
     return index
 
 
-def _parameter_data_identical(param_dict_a: Dict[str, np.ndarray],
-                              param_dict_b: Dict[str, np.ndarray]) -> bool:
+def _parameter_data_identical(
+    param_dict_a: Mapping[str, np.ndarray], param_dict_b: Mapping[str, np.ndarray]
+) -> bool:
 
     try:
         np.testing.assert_equal(param_dict_a, param_dict_b)
