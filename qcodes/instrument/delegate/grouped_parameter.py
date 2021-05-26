@@ -226,8 +226,7 @@ class GroupedParameter(_BaseParameter):
     def __repr__(self) -> str:
         output = f"GroupedParameter(name={self.name}"
         if self.source_parameters:
-            source_parameters = ", ".join(
-                [str(_) for _ in self.source_parameters])
+            source_parameters = ", ".join(str(_) for _ in self.source_parameters)
             output += f", source_parameters=({source_parameters})"
         output += ")"
         return output
