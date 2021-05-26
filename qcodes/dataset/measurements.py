@@ -15,33 +15,58 @@ from inspect import signature
 from numbers import Number
 from time import perf_counter
 from types import TracebackType
-from typing import (Any, Callable, Dict, List, Mapping, MutableMapping,
-                    MutableSequence, Optional, Sequence, Tuple, Type, TypeVar,
-                    Union, cast)
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    MutableMapping,
+    MutableSequence,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 
 import numpy as np
 
 import qcodes as qc
 import qcodes.utils.validators as vals
 from qcodes import Station
-from qcodes.dataset.data_set import (VALUE, DataSet, load_by_guid, res_type,
-                                     setpoints_type, values_type)
-from qcodes.dataset.descriptions.dependencies import (DependencyError,
-                                                      InferenceError,
-                                                      InterDependencies_)
+from qcodes.dataset.data_set import (
+    VALUE,
+    DataSet,
+    load_by_guid,
+    res_type,
+    setpoints_type,
+    values_type,
+)
+from qcodes.dataset.descriptions.dependencies import (
+    DependencyError,
+    InferenceError,
+    InterDependencies_,
+)
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.experiment_container import Experiment
+from qcodes.dataset.export_config import get_data_export_automatic
 from qcodes.dataset.linked_datasets.links import Link
-from qcodes.instrument.parameter import (ArrayParameter, MultiParameter,
-                                         Parameter, ParameterWithSetpoints,
-                                         _BaseParameter,
-                                         expand_setpoints_helper)
+from qcodes.instrument.delegate.grouped_parameter import GroupedParameter
+from qcodes.instrument.parameter import (
+    ArrayParameter,
+    MultiParameter,
+    Parameter,
+    ParameterWithSetpoints,
+    _BaseParameter,
+    expand_setpoints_helper,
+)
 from qcodes.utils.delaykeyboardinterrupt import DelayedKeyboardInterrupt
 from qcodes.utils.helpers import NumpyJSONEncoder
-from qcodes.dataset.export_config import get_data_export_automatic
-from qcodes.instrument.delegate.grouped_parameter import GroupedParameter
 
 log = logging.getLogger(__name__)
 
@@ -62,7 +87,7 @@ class DataSaver:
     datasaving to the database.
     """
 
-    default_callback: Optional[Dict[Any,Any]] = None
+    default_callback: Optional[Dict[Any, Any]] = None
 
     def __init__(self, dataset: DataSet,
                  write_period: float,
@@ -446,20 +471,21 @@ class Runner:
     """
 
     def __init__(
-            self,
-            enteractions:  List[ActionType],
-            exitactions: List[ActionType],
-            experiment: Optional[Experiment] = None,
-            station: Optional[Station] = None,
-            write_period: Optional[float] = None,
-            interdeps: InterDependencies_ = InterDependencies_(),
-            name: str = '',
-            subscribers: Optional[Sequence[SubscriberType]] = None,
-            parent_datasets: Sequence[Dict[Any, Any]] = (),
-            extra_log_info: str = '',
-            write_in_background: bool = False,
-            shapes: Optional[Shapes] = None,
-            in_memory_cache: bool = True) -> None:
+        self,
+        enteractions: List[ActionType],
+        exitactions: List[ActionType],
+        experiment: Optional[Experiment] = None,
+        station: Optional[Station] = None,
+        write_period: Optional[float] = None,
+        interdeps: InterDependencies_ = InterDependencies_(),
+        name: str = "",
+        subscribers: Optional[Sequence[SubscriberType]] = None,
+        parent_datasets: Sequence[Mapping[Any, Any]] = (),
+        extra_log_info: str = "",
+        write_in_background: bool = False,
+        shapes: Optional[Shapes] = None,
+        in_memory_cache: bool = True,
+    ) -> None:
 
         self.write_period = self._calculate_write_period(write_in_background,
                                                          write_period)
