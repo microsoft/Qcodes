@@ -1,22 +1,25 @@
 from __future__ import annotations
 
 import warnings
-
-from typing import Dict, TYPE_CHECKING, Union, cast, Hashable
+from typing import TYPE_CHECKING, Dict, Hashable, Mapping, Union, cast
 
 import numpy as np
 
 from ..descriptions.versioning import serialization as serial
-from .export_to_pandas import _generate_pandas_index, _data_to_dataframe, _same_setpoints
+from .export_to_pandas import (
+    _data_to_dataframe,
+    _generate_pandas_index,
+    _same_setpoints,
+)
 
 if TYPE_CHECKING:
     import xarray as xr
+
     from qcodes.dataset.data_set import DataSet, ParameterData
 
 
 def _load_to_xarray_dataarray_dict_no_metadata(
-        dataset: DataSet,
-        datadict: Dict[str, Dict[str, np.ndarray]]
+    dataset: DataSet, datadict: Mapping[str, Mapping[str, np.ndarray]]
 ) -> Dict[str, xr.DataArray]:
     import xarray as xr
 
@@ -41,8 +44,7 @@ def _load_to_xarray_dataarray_dict_no_metadata(
 
 
 def load_to_xarray_dataarray_dict(
-        dataset: DataSet,
-        datadict: Dict[str, Dict[str, np.ndarray]]
+    dataset: DataSet, datadict: Mapping[str, Mapping[str, np.ndarray]]
 ) -> Dict[str, xr.DataArray]:
     dataarrays = _load_to_xarray_dataarray_dict_no_metadata(dataset, datadict)
 
