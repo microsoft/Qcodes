@@ -7,8 +7,7 @@ The May 2021 release of QCoDeS.
 New:
 ----
 
-- DelegateInstrument and InstrumentGroup drivers (#2928)
-- DelegateInstrument support for single parameters (#3031)
+- DelegateInstrument and InstrumentGroup drivers (#2928, #3031)
 - Introducing merge_yaml function in Station and allow Station to load
   multiple config yaml files (#2936)
 - Keysight VNA P9374A driver (#3034)
