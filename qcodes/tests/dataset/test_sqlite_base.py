@@ -353,12 +353,14 @@ def test_atomic_creation(experiment):
 def test_set_run_timestamp(dataset):
 
     assert dataset.run_timestamp_raw is None
+    assert dataset.completed_timestamp_raw is None
 
     time_now = time.time()
     time.sleep(1)  # for slower test platforms
     mut_queries.set_run_timestamp(dataset.conn, dataset.run_id)
 
     assert dataset.run_timestamp_raw > time_now
+    assert dataset.completed_timestamp_raw is None
 
     with pytest.raises(RuntimeError, match="Rolling back due to unhandled "
                                            "exception") as ei:
@@ -371,12 +373,14 @@ def test_set_run_timestamp(dataset):
 def test_set_run_timestamp_explicit(dataset):
 
     assert dataset.run_timestamp_raw is None
+    assert dataset.completed_timestamp_raw is None
 
     time_now = time.time()
     time.sleep(1)  # for slower test platforms
     mut_queries.set_run_timestamp(dataset.conn, dataset.run_id, time_now)
 
     assert dataset.run_timestamp_raw == time_now
+    assert dataset.completed_timestamp_raw is None
 
     with pytest.raises(
         RuntimeError, match="Rolling back due to unhandled " "exception"
@@ -389,6 +393,7 @@ def test_set_run_timestamp_explicit(dataset):
 def test_mark_run_complete(dataset):
 
     assert dataset.run_timestamp_raw is None
+    assert dataset.completed_timestamp_raw is None
 
     time_now = time.time()
     mut_queries.set_run_timestamp(dataset.conn, dataset.run_id)
@@ -401,6 +406,7 @@ def test_mark_run_complete(dataset):
 def test_mark_run_complete_explicit_time(dataset):
 
     assert dataset.run_timestamp_raw is None
+    assert dataset.completed_timestamp_raw is None
 
     mut_queries.set_run_timestamp(dataset.conn, dataset.run_id)
     time_now = time.time()
