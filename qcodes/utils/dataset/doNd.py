@@ -635,7 +635,7 @@ def dond(
 
     def _make_nested_setpoints(
         *params: Union[_AbstractSweep, ParamMeasT],
-    ) -> Union[np.ndarray, List[Tuple[()]]]:
+    ) -> np.ndarray:
         """Create the cartesian product of all the setpoint values."""
 
         setpoint_values: List[np.ndarray] = []
@@ -645,12 +645,7 @@ def dond(
         setpoint_grids = np.meshgrid(*setpoint_values, indexing='ij')
         flat_setpoint_grids = [np.ravel(grid, order='C')
                                for grid in setpoint_grids]
-        flat_setpoints: Union[np.ndarray, List[Tuple[()]]]
-        if flat_setpoint_grids:
-            flat_setpoints = np.vstack(flat_setpoint_grids).T
-        else:
-            flat_setpoints = [()]
-        return flat_setpoints
+        return np.vstack(flat_setpoint_grids).T
 
     def _parse_dond_arguments(*params: Union[_AbstractSweep, ParamMeasT]
                               ) -> Tuple[
@@ -679,7 +674,11 @@ def dond(
         return params_set, params_delay, params_meas
 
     params_set, params_delay, params_meas = _parse_dond_arguments(*params)
-    nested_setpoints = _make_nested_setpoints(*params)
+    nested_setpoints: Union[np.ndarray, List[Tuple[()]]]
+    if params_set:
+        nested_setpoints = _make_nested_setpoints(*params)
+    else:
+        nested_setpoints = [()]  # For zero-dimensional grid (do0d)
 
     all_setpoint_params = tuple(params_set) + tuple(
             s for s in additional_setpoints)
