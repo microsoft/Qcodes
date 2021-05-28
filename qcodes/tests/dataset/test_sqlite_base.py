@@ -366,3 +366,21 @@ def test_set_run_timestamp(dataset):
 
     assert error_caused_by(ei, ("Can not set run_timestamp; it has already "
                                 "been set"))
+
+
+def test_set_run_timestamp_explicit(dataset):
+
+    assert dataset.run_timestamp_raw is None
+
+    time_now = time.time()
+    time.sleep(1)  # for slower test platforms
+    mut_queries.set_run_timestamp(dataset.conn, dataset.run_id, time_now)
+
+    assert dataset.run_timestamp_raw == time_now
+
+    with pytest.raises(
+        RuntimeError, match="Rolling back due to unhandled " "exception"
+    ) as ei:
+        mut_queries.set_run_timestamp(dataset.conn, dataset.run_id)
+
+    assert error_caused_by(ei, "Can not set run_timestamp; it has already " "been set")
