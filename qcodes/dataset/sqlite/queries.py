@@ -806,7 +806,7 @@ def mark_run_complete(
         conn: database connection
         run_id: id of the run to mark complete
         timestamp: time stamp for completion. If None the function will
-            automatically get the time.
+            automatically get the current time.
     """
     query = """
     UPDATE
@@ -1417,6 +1417,12 @@ def set_run_timestamp(
     """
     Set the run_timestamp for the run with the given run_id. If the
     run_timestamp has already been set, a RuntimeError is raised.
+
+    Args:
+        conn: database connection
+        run_id: id of the run to mark complete
+        timestamp: time stamp for completion. If None the function will
+            automatically get the current time.
     """
 
     query = """
