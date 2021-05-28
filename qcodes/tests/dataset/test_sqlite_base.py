@@ -384,3 +384,29 @@ def test_set_run_timestamp_explicit(dataset):
         mut_queries.set_run_timestamp(dataset.conn, dataset.run_id)
 
     assert error_caused_by(ei, "Can not set run_timestamp; it has already " "been set")
+
+
+def test_mark_run_complete(dataset):
+
+    assert dataset.run_timestamp_raw is None
+
+    time_now = time.time()
+    mut_queries.set_run_timestamp(dataset.conn, dataset.run_id)
+    time.sleep(1)  # for slower test platforms
+    mut_queries.mark_run_complete(dataset.conn, dataset.run_id)
+
+    assert dataset.completed_timestamp_raw > time_now
+
+
+def test_mark_run_complete_explicit_time(dataset):
+
+    assert dataset.run_timestamp_raw is None
+
+    mut_queries.set_run_timestamp(dataset.conn, dataset.run_id)
+    time_now = time.time()
+    time.sleep(1)  # for slower test platforms
+    mut_queries.mark_run_complete(dataset.conn, dataset.run_id, time_now)
+
+    assert dataset.completed_timestamp_raw == time_now
+
+    mut_queries.mark_run_complete(dataset.conn, dataset.run_id)
