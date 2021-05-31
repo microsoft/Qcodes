@@ -56,8 +56,7 @@ def load_to_xarray_dataarray_dict(
 
 
 def _add_metadata_to_xarray(
-        dataset: DataSetProtocol,
-        xrdataset: Union[xr.Dataset, xr.DataArray]
+    dataset: DataSetProtocol, xrdataset: Union[xr.Dataset, xr.DataArray]
 ) -> None:
     xrdataset.attrs.update({
         "ds_name": dataset.name,

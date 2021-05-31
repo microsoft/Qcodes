@@ -333,16 +333,15 @@ class DataSet(Sized):
         parent_datasets: Sequence[Mapping[Any, Any]] = (),
     ) -> None:
         if station:
-            self.add_snapshot(json.dumps({'station': station.snapshot()},
-                              cls=NumpyJSONEncoder))
+            self.add_snapshot(
+                json.dumps({"station": station.snapshot()}, cls=NumpyJSONEncoder)
+            )
 
         if interdeps == InterDependencies_():
             raise RuntimeError("No parameters supplied")
         else:
-            self.set_interdependencies(interdeps,
-                                       shapes)
-        links = [Link(head=self.guid, **pdict)
-                 for pdict in parent_datasets]
+            self.set_interdependencies(interdeps, shapes)
+        links = [Link(head=self.guid, **pdict) for pdict in parent_datasets]
         self.parent_dataset_links = links
         self.mark_started(start_bg_writer=write_in_background)
 

@@ -441,7 +441,6 @@ class DataSetCacheInMem(DataSetCache["DataSetInMem"]):
 
 
 class DataSetCacheWithDBBackend(DataSetCache["DataSet"]):
-
     def load_data_from_db(self) -> None:
         """
         Loads data from the dataset into the cache.
@@ -452,27 +451,29 @@ class DataSetCacheWithDBBackend(DataSetCache["DataSet"]):
         no load will be performed.
         """
         if self.live:
-            raise RuntimeError("Cannot load data into this cache from the "
-                               "database because this dataset is being built "
-                               "in-memory.")
+            raise RuntimeError(
+                "Cannot load data into this cache from the "
+                "database because this dataset is being built "
+                "in-memory."
+            )
 
         if self._loaded_from_completed_ds:
             return
-        self._dataset.completed = completed(
-            self._dataset.conn, self._dataset.run_id)
+        self._dataset.completed = completed(self._dataset.conn, self._dataset.run_id)
         if self._dataset.completed:
             self._loaded_from_completed_ds = True
 
-
-        (self._write_status,
-         self._read_status,
-         self._data) = load_new_data_from_db_and_append(
+        (
+            self._write_status,
+            self._read_status,
+            self._data,
+        ) = load_new_data_from_db_and_append(
             self._dataset.conn,
             self._dataset.table_name,
             self.rundescriber,
             self._write_status,
             self._read_status,
-            self._data
+            self._data,
         )
         if not all(status is None for status in self._write_status.values()):
             self._live = False
