@@ -579,6 +579,8 @@ class Runner:
             dataset_class = cast(Type[DataSetInMem], self._dataset_class)
             self.ds = dataset_class.create_new_run(
                 name=self.name,
+                exp_id=exp_id,
+                path_to_db=path_to_db,
             )
         else:
             raise RuntimeError("Does not support any other dataset classes")
