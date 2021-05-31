@@ -15,6 +15,7 @@ from numbers import Number
 from time import perf_counter
 from types import TracebackType
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -35,7 +36,6 @@ import numpy as np
 
 import qcodes as qc
 import qcodes.utils.validators as vals
-from qcodes import Station
 from qcodes.dataset.data_set import (
     VALUE,
     DataSet,
@@ -66,7 +66,9 @@ from qcodes.instrument.parameter import (
 )
 from qcodes.station import Station
 from qcodes.utils.delaykeyboardinterrupt import DelayedKeyboardInterrupt
-from qcodes.utils.helpers import NumpyJSONEncoder
+
+if TYPE_CHECKING:
+    from qcodes.dataset.sqlite.connection import ConnectionPlus
 
 log = logging.getLogger(__name__)
 
@@ -543,24 +545,26 @@ class Runner:
         for func, args in self.enteractions:
             func(*args)
 
+        dataset_class: Type[DataSetProtocol]
+
         # next set up the "datasaver"
         if self.experiment is not None:
-            if self._dataset_class is DataSet:
-                self.ds = self._dataset_class(
-                    name=self.name,
-                    exp_id=self.experiment.exp_id,
-                    conn=self.experiment.conn,  # todo this is sqlite specific
-                    in_memory_cache=self._in_memory_cache,
-                )
-            else:
-                raise RuntimeError("Does not support any other dataset classes")
+            exp_id: Optional[int] = self.experiment.exp_id
+            conn: Optional["ConnectionPlus"] = self.experiment.conn
         else:
-            if self._dataset_class is DataSet:
-                self.ds = self._dataset_class(
-                    name=self.name, in_memory_cache=self._in_memory_cache
-                )
-            else:
-                raise RuntimeError("Does not support any other dataset classes")
+            exp_id = None
+            conn = None
+
+        if self._dataset_class is DataSet:
+            dataset_class = cast(Type[DataSet], self._dataset_class)
+            self.ds = dataset_class(
+                name=self.name,
+                exp_id=exp_id,
+                conn=conn,
+                in_memory_cache=self._in_memory_cache,
+            )
+        else:
+            raise RuntimeError("Does not support any other dataset classes")
         # .. and give the dataset a snapshot as metadata
         if self.station is None:
             station = qc.Station.default
