@@ -495,11 +495,28 @@ def do2d(
     return _handle_plotting(dataset, do_plot, interrupted())
 
 
-class _AbstractSweep:
+class AbstractSweep:
     """
-    Superclass for children sweep classes. Users probably do not want to use
-    this class directly unless they want to define a new child sweep class
-    that is not among sweep classes in this module.
+    Abstract sweep class as an interface class for sweep classes.
+    """
+
+    def get_setpoints(self) -> np.ndarray:
+        """
+        Method definig sweep setpoints.
+        """
+        pass
+
+    @property
+    def delay(self) -> float:
+        """
+        Property method defining delay between two consecutive sweep points.
+        """
+        pass
+
+
+class LinSweep(AbstractSweep):
+    """
+    Linear sweep class.
 
     Args:
         param: Qcodes _BaseParameter for sweep.
@@ -509,6 +526,7 @@ class _AbstractSweep:
         delay: Time in second between two consequtive sweep points. The default
             is 0.
     """
+
     def __init__(self, param: _BaseParameter, start: float, stop: float,
                  num_points: int, delay: float = 0):
         self._param = param
@@ -516,29 +534,6 @@ class _AbstractSweep:
         self._stop = stop
         self._num_points = num_points
         self._delay = delay
-
-    def get_setpoints(self) -> np.ndarray:
-        """
-        Create a numpy array based on supplied start, stop and num_points
-        into the class. Each child class for sweep has its own method for
-        returning the array.
-        """
-        pass
-
-    @property
-    def delay(self) -> float:
-        """
-        A property for the supplied delay argument. The property is defined
-        in the children classes.
-        """
-        pass
-
-
-class LinSweep(_AbstractSweep):
-    """
-    Linear sweep class. The class should be instantiated with the signature
-    defined in the _AbstractSweep class.
-    """
 
     def get_setpoints(self) -> np.ndarray:
         """
@@ -555,17 +550,32 @@ class LinSweep(_AbstractSweep):
     @property
     def delay(self) -> float:
         """
-        Property for delay argument.
+        Property for the supplied delay argument.
         """
 
         return self._delay
 
 
-class LogSweep(_AbstractSweep):
+class LogSweep(AbstractSweep):
     """
-    Logarithmic sweep class. The class should be instantiated with the
-    signature defined in the _AbstractSweep class.
+    Logarithmic sweep class.
+
+    Args:
+        param: Qcodes _BaseParameter for sweep.
+        start: Sweep start value.
+        stop: Sweep end value.
+        num_points: Number of sweep points.
+        delay: Time in second between two consequtive sweep points. The default
+            is 0.
     """
+
+    def __init__(self, param: _BaseParameter, start: float, stop: float,
+                 num_points: int, delay: float = 0):
+        self._param = param
+        self._start = start
+        self._stop = stop
+        self._num_points = num_points
+        self._delay = delay
 
     def get_setpoints(self) -> np.ndarray:
         """
@@ -582,14 +592,14 @@ class LogSweep(_AbstractSweep):
     @property
     def delay(self) -> float:
         """
-        Property for delay argument.
+        Property for the supplied delay argument.
         """
 
         return self._delay
 
 
 def dond(
-    *params: Union[_AbstractSweep, ParamMeasT],
+    *params: Union[AbstractSweep, ParamMeasT],
     write_period: Optional[float] = None,
     measurement_name: str = "",
     exp: Optional[Experiment] = None,
@@ -634,20 +644,20 @@ def dond(
     meas = Measurement(name=measurement_name, exp=exp)
 
     def _make_nested_setpoints(
-        *params: Union[_AbstractSweep, ParamMeasT],
+        *params: Union[AbstractSweep, ParamMeasT],
     ) -> np.ndarray:
         """Create the cartesian product of all the setpoint values."""
 
         setpoint_values: List[np.ndarray] = []
         for param in params:
-            if isinstance(param, _AbstractSweep):
+            if isinstance(param, AbstractSweep):
                 setpoint_values.append(param.get_setpoints())
         setpoint_grids = np.meshgrid(*setpoint_values, indexing='ij')
         flat_setpoint_grids = [np.ravel(grid, order='C')
                                for grid in setpoint_grids]
         return np.vstack(flat_setpoint_grids).T
 
-    def _parse_dond_arguments(*params: Union[_AbstractSweep, ParamMeasT]
+    def _parse_dond_arguments(*params: Union[AbstractSweep, ParamMeasT]
                               ) -> Tuple[
         List[_BaseParameter],
         Dict[_BaseParameter, Dict[str, float]],
@@ -660,7 +670,7 @@ def dond(
         params_delay: Dict[_BaseParameter, Dict[str, float]] = {}
         params_meas: List[ParamMeasT] = []
         for param in params:
-            if isinstance(param, _AbstractSweep):
+            if isinstance(param, AbstractSweep):
                 params_set.append(param._param)
                 params_delay[param._param] = {}
                 params_delay[param._param]['delay'] = param._delay
@@ -688,7 +698,7 @@ def dond(
 
     num_points_params_set: List[int] = []
     for par in params:
-        if isinstance(par, _AbstractSweep):
+        if isinstance(par, AbstractSweep):
             num_points_params_set.append(int(par._num_points))
 
     try:
