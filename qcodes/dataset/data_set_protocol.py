@@ -38,7 +38,6 @@ if TYPE_CHECKING:
 
 @runtime_checkable
 class DataSetProtocol(Protocol, Sized):
-
     def prepare(
         self,
         *,
@@ -50,10 +49,7 @@ class DataSetProtocol(Protocol, Sized):
     ) -> None:
         pass
 
-    def _enqueue_results(
-            self,
-            result_dict: Mapping[ParamSpecBase, np.ndarray]
-    ) -> None:
+    def _enqueue_results(self, result_dict: Mapping[ParamSpecBase, np.ndarray]) -> None:
         pass
 
     def get_metadata(self, tag: str) -> str:
@@ -88,10 +84,12 @@ class DataSetProtocol(Protocol, Sized):
     def parent_dataset_links(self) -> List[Link]:
         pass
 
-    def export(self,
-               export_type: Optional[Union[DataExportType, str]] = None,
-               path: Optional[str] = None,
-               prefix: Optional[str] = None) -> None:
+    def export(
+        self,
+        export_type: Optional[Union[DataExportType, str]] = None,
+        path: Optional[str] = None,
+        prefix: Optional[str] = None,
+    ) -> None:
         pass
 
     @property
@@ -132,10 +130,7 @@ class DataSetProtocol(Protocol, Sized):
     def completed_timestamp_raw(self) -> Optional[float]:
         pass
 
-    def completed_timestamp(
-            self,
-            fmt: str = "%Y-%m-%d %H:%M:%S"
-    ) -> Optional[str]:
+    def completed_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S") -> Optional[str]:
         pass
 
     @property
