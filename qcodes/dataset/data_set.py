@@ -34,7 +34,6 @@ from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
 from qcodes.dataset.export_config import (
     DataExportType,
-    get_data_export_automatic,
     get_data_export_path,
     get_data_export_prefix,
     get_data_export_type,
