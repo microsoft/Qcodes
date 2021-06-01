@@ -86,7 +86,7 @@ class DataSetCache(Generic[DatasetType]):
 
     def load_data_from_db(self) -> None:
         """
-        Load the data from a on disk format in case the cache is not live
+        Load the data from an on-disk format in case the cache is not live
 
         Should be implemented in a specific subclass that knows how to read data
         from disk
