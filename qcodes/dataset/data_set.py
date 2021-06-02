@@ -105,8 +105,6 @@ if TYPE_CHECKING:
     import pandas as pd
     import xarray as xr
 
-    from qcodes.station import Station
-
 
 log = logging.getLogger(__name__)
 
@@ -326,16 +324,15 @@ class DataSet(Sized):
 
     def prepare(
         self,
-        station: "Optional[Station]",
+        *,
+        snapshot: Dict[Any, Any],
         interdeps: InterDependencies_,
-        write_in_background: bool,
         shapes: Shapes = None,
         parent_datasets: Sequence[Mapping[Any, Any]] = (),
+        write_in_background: bool = False,
     ) -> None:
-        if station:
-            self.add_snapshot(
-                json.dumps({"station": station.snapshot()}, cls=NumpyJSONEncoder)
-            )
+
+        self.add_snapshot(json.dumps({"station": snapshot}, cls=NumpyJSONEncoder))
 
         if interdeps == InterDependencies_():
             raise RuntimeError("No parameters supplied")

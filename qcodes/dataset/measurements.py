@@ -571,8 +571,13 @@ class Runner:
         else:
             station = self.station
 
+        if station is not None:
+            snapshot = station.snapshot()
+        else:
+            snapshot = {}
+
         self.ds.prepare(
-            station=station,
+            snapshot=snapshot,
             interdeps=self._interdependencies,
             write_in_background=self._write_in_background,
             shapes=self._shapes,
