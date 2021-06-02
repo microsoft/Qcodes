@@ -339,8 +339,8 @@ class DataSet(Sized):
 
         if interdeps == InterDependencies_():
             raise RuntimeError("No parameters supplied")
-        else:
-            self.set_interdependencies(interdeps, shapes)
+
+        self.set_interdependencies(interdeps, shapes)
         links = [Link(head=self.guid, **pdict) for pdict in parent_datasets]
         self.parent_dataset_links = links
         self.mark_started(start_bg_writer=write_in_background)
