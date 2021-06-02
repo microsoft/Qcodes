@@ -90,7 +90,6 @@ class DataSetCache(Generic[DatasetType]):
         Should be implemented in a specific subclass that knows how to read data
         from disk
         """
-        pass
 
     def add_data(self, new_data: Mapping[str, Mapping[str, np.ndarray]]) -> None:
         if self.live is False:
