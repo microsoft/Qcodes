@@ -31,7 +31,6 @@ SpecsOrInterDeps = Union[SPECS, InterDependencies_]
 
 
 if TYPE_CHECKING:
-    from qcodes.station import Station
 
     from .data_set_cache import DataSetCache
 
@@ -41,11 +40,11 @@ class DataSetProtocol(Protocol, Sized):
     def prepare(
         self,
         *,
-        station: Optional[Station],
+        snapshot: Dict[Any, Any],
         interdeps: InterDependencies_,
-        write_in_background: bool,
         shapes: Shapes = None,
         parent_datasets: Sequence[Mapping[Any, Any]] = (),
+        write_in_background: bool = False,
     ) -> None:
         pass
 
