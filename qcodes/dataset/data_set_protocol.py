@@ -129,9 +129,6 @@ class DataSetProtocol(Protocol, Sized):
     def description(self) -> RunDescriber:
         pass
 
-    @property
-    def dependent_parameters(self) -> Tuple[ParamSpecBase, ...]:
-        pass
 
     @property
     def parent_dataset_links(self) -> List[Link]:

@@ -86,7 +86,7 @@ def get_data_by_id(run_id: int) -> List[List[DSPlotData]]:
 
 
 def _get_data_from_ds(ds: DataSetProtocol) -> List[List[DSPlotData]]:
-    dependent_parameters: Tuple[ParamSpecBase, ...] = ds.dependent_parameters
+    dependent_parameters: Tuple[ParamSpecBase, ...] = tuple(ds.description.interdeps.dependencies.keys())
 
     all_data = ds.cache.data()
 
