@@ -116,9 +116,6 @@ class DataSetProtocol(Protocol, Sized):
     def snapshot_raw(self) -> Optional[str]:
         pass
 
-    def get_metadata(self, tag: str) -> str:
-        pass
-
     def add_metadata(self, tag: str, metadata: Any) -> None:
         pass
 

@@ -107,7 +107,7 @@ class DataSaver:
                 'run_tables_subscription_min_wait']
             min_count = DataSaver.default_callback[
                 'run_tables_subscription_min_count']
-            snapshot = dataset.get_metadata('snapshot')
+            snapshot = dataset.metadata['snapshot']
             if isinstance(self._dataset, DataSet):
                 self._dataset.subscribe(
                     callback,
