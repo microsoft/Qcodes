@@ -48,14 +48,20 @@ class DataSetProtocol(Protocol, Sized):
     ) -> None:
         pass
 
-    def _enqueue_results(self, result_dict: Mapping[ParamSpecBase, np.ndarray]) -> None:
+    @property
+    def completed(self) -> bool:
         pass
 
-    def get_metadata(self, tag: str) -> str:
+    # todo do we really need both of these?
+
+    @completed.setter
+    def completed(self, value: bool) -> None:
         pass
 
-    def add_metadata(self, tag: str, metadata: Any) -> None:
+    def mark_completed(self) -> None:
         pass
+
+    # dataset attributes
 
     @property
     def run_id(self) -> int:
@@ -73,33 +79,16 @@ class DataSetProtocol(Protocol, Sized):
     def guid(self) -> str:
         pass
 
-    def add_snapshot(self, snapshot: str, overwrite: bool = False) -> None:
-        pass
-
-    def mark_completed(self) -> None:
-        pass
-
-    @property
-    def parent_dataset_links(self) -> List[Link]:
-        pass
-
-    def export(
-        self,
-        export_type: Optional[Union[DataExportType, str]] = None,
-        path: Optional[str] = None,
-        prefix: Optional[str] = None,
-    ) -> None:
-        pass
-
     @property
     def number_of_results(self) -> int:
         pass
 
-    def _flush_data_to_database(self, block: bool = False) -> None:
+    @property
+    def paramspecs(self) -> Dict[str, ParamSpec]:
         pass
 
     @property
-    def paramspecs(self) -> Dict[str, ParamSpec]:
+    def name(self) -> str:
         pass
 
     @property
@@ -110,42 +99,43 @@ class DataSetProtocol(Protocol, Sized):
     def sample_name(self) -> str:
         pass
 
-    @property
-    def name(self) -> str:
-        pass
-
-    @property
-    def snapshot_raw(self) -> Optional[str]:
+    def run_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S") -> Optional[str]:
         pass
 
     @property
     def run_timestamp_raw(self) -> Optional[float]:
         pass
 
-    def run_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S") -> Optional[str]:
+    def completed_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S") -> Optional[str]:
         pass
 
     @property
     def completed_timestamp_raw(self) -> Optional[float]:
         pass
 
-    def completed_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S") -> Optional[str]:
+    # snapshot and metadata
+
+    def add_snapshot(self, snapshot: str, overwrite: bool = False) -> None:
         pass
 
     @property
-    def completed(self) -> bool:
+    def snapshot_raw(self) -> Optional[str]:
         pass
 
-    @completed.setter
-    def completed(self, value: bool) -> None:
+    def get_metadata(self, tag: str) -> str:
         pass
 
-    @property
-    def description(self) -> RunDescriber:
+    def add_metadata(self, tag: str, metadata: Any) -> None:
         pass
 
     @property
     def metadata(self) -> Dict[str, Any]:
+        pass
+
+    # dataset description and links
+
+    @property
+    def description(self) -> RunDescriber:
         pass
 
     @property
@@ -153,5 +143,27 @@ class DataSetProtocol(Protocol, Sized):
         pass
 
     @property
+    def parent_dataset_links(self) -> List[Link]:
+        pass
+
+    # data related members
+
+    def export(
+        self,
+        export_type: Optional[Union[DataExportType, str]] = None,
+        path: Optional[str] = None,
+        prefix: Optional[str] = None,
+    ) -> None:
+        pass
+
+    @property
     def cache(self) -> DataSetCache[DataSetProtocol]:
+        pass
+
+    # private members called doing measurement
+
+    def _enqueue_results(self, result_dict: Mapping[ParamSpecBase, np.ndarray]) -> None:
+        pass
+
+    def _flush_data_to_database(self, block: bool = False) -> None:
         pass
