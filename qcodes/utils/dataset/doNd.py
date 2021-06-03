@@ -20,6 +20,7 @@ from qcodes.dataset.plotting import plot_dataset
 from qcodes.instrument.parameter import _BaseParameter, ParamDataType
 from qcodes.dataset.experiment_container import Experiment
 from qcodes.utils.threading import RespondingThread
+from abc import ABC, abstractmethod
 
 ActionsT = Sequence[Callable[[], None]]
 
@@ -495,11 +496,12 @@ def do2d(
     return _handle_plotting(dataset, do_plot, interrupted())
 
 
-class AbstractSweep:
+class AbstractSweep(ABC):
     """
     Abstract sweep class as an interface class for sweep classes.
     """
 
+    @abstractmethod
     def get_setpoints(self) -> np.ndarray:
         """
         Method definig sweep setpoints.
@@ -507,9 +509,10 @@ class AbstractSweep:
         pass
 
     @property
+    @abstractmethod
     def delay(self) -> float:
         """
-        Property method defining delay between two consecutive sweep points.
+        Property defining delay between two consecutive sweep points.
         """
         pass
 
@@ -721,13 +724,17 @@ def dond(
     )
     _set_write_period(meas, write_period)
 
+    original_delays: Dict[_BaseParameter, float] = {}
+    for param in params_set:
+        original_delays[param] = param.post_delay
+        param.post_delay = params_delay[param]['delay']
+
     with _catch_keyboard_interrupts() as interrupted, meas.run() as datasaver:
         additional_setpoints_data = _process_params_meas(additional_setpoints)
         for setpoints in tqdm(nested_setpoints, disable=not show_progress):
             param_set_list = []
             param_value_pairs = zip(params_set[::-1], setpoints[::-1])
             for setpoint_param, setpoint in param_value_pairs:
-                setpoint_param.post_delay = params_delay[setpoint_param]['delay']
                 setpoint_param(setpoint)
                 param_set_list.append((setpoint_param, setpoint))
             datasaver.add_result(
@@ -736,6 +743,9 @@ def dond(
                 *additional_setpoints_data,
             )
         dataset = datasaver.dataset
+
+    for param in params_set:
+        param.post_delay = original_delays[param]
 
     return _handle_plotting(dataset, do_plot, interrupted())
 
