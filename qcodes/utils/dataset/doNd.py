@@ -510,9 +510,25 @@ class AbstractSweep(ABC):
 
     @property
     @abstractmethod
+    def param(self) -> _BaseParameter:
+        """
+        Property for the qcodes sweep parameter.
+        """
+        pass
+
+    @property
+    @abstractmethod
     def delay(self) -> float:
         """
         Property defining delay between two consecutive sweep points.
+        """
+        pass
+
+    @property
+    @abstractmethod
+    def num_points(self) -> int:
+        """
+        Property for number of sweep points.
         """
         pass
 
@@ -551,12 +567,25 @@ class LinSweep(AbstractSweep):
         return np.linspace(self._start, self._stop, self._num_points)
 
     @property
+    def param(self) -> _BaseParameter:
+        """
+        Property for the supplied sweep parameter.
+        """
+        return self._param
+
+    @property
     def delay(self) -> float:
         """
         Property for the supplied delay argument.
         """
-
         return self._delay
+
+    @property
+    def num_points(self) -> int:
+        """
+        Property for the supplied number of sweep points.
+        """
+        return self._num_points
 
 
 class LogSweep(AbstractSweep):
@@ -593,12 +622,25 @@ class LogSweep(AbstractSweep):
         return np.logspace(self._start, self._stop, self._num_points)
 
     @property
+    def param(self) -> _BaseParameter:
+        """
+        Property for the supplied sweep parameter.
+        """
+        return self._param
+
+    @property
     def delay(self) -> float:
         """
         Property for the supplied delay argument.
         """
-
         return self._delay
+
+    @property
+    def num_points(self) -> int:
+        """
+        Property for the supplied number of sweep points.
+        """
+        return self._num_points
 
 
 def dond(
@@ -672,13 +714,13 @@ def dond(
         params_set: List[_BaseParameter] = []
         params_delay: Dict[_BaseParameter, Dict[str, float]] = {}
         params_meas: List[ParamMeasT] = []
-        for param in params:
-            if isinstance(param, AbstractSweep):
-                params_set.append(param._param)
-                params_delay[param._param] = {}
-                params_delay[param._param]['delay'] = param._delay
-            elif isinstance(param, _BaseParameter):
-                params_meas.append(param)
+        for par in params:
+            if isinstance(par, AbstractSweep):
+                params_set.append(par.param)
+                params_delay[par.param] = {}
+                params_delay[par.param]['delay'] = par.delay
+            elif isinstance(par, _BaseParameter):
+                params_meas.append(par)
             else:
                 raise ValueError(f'Cannot proceed: {param} is not either a'
                                  ' sweep instance or measurement parameter.'
@@ -702,7 +744,7 @@ def dond(
     num_points_params_set: List[int] = []
     for par in params:
         if isinstance(par, AbstractSweep):
-            num_points_params_set.append(int(par._num_points))
+            num_points_params_set.append(par.num_points)
 
     try:
         loop_shape = tuple(
