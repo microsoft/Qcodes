@@ -52,12 +52,6 @@ class DataSetProtocol(Protocol, Sized):
     def completed(self) -> bool:
         pass
 
-    # todo do we really need both of these?
-
-    @completed.setter
-    def completed(self, value: bool) -> None:
-        pass
-
     def mark_completed(self) -> None:
         pass
 
