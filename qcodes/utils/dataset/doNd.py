@@ -536,7 +536,7 @@ def plot(
         save_pdf: Save figure in pdf format.
         save_png: Save figure in png format.
     """
-    dataid = data.run_id
+    dataid = data.captured_run_id
     axes, cbs = plot_dataset(data)
     mainfolder = config.user.mainfolder
     experiment_name = data.exp_name
