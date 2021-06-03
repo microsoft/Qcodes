@@ -593,14 +593,18 @@ class Runner:
                 log.debug(f"Subscribing callable {callble} with state {state}")
                 self.ds.subscribe(callble, min_wait=0, min_count=1, state=state)
 
-        print(f'Starting experimental run with id: {self.ds.run_id}.'
-              f' {self._extra_log_info}')
-        log.info(f'Starting measurement with guid: {self.ds.guid}, '
-                 f'sample_name: "{self.ds.sample_name}", '
-                 f'exp_name: "{self.ds.exp_name}", '
-                 f'ds_name: "{self.ds.name}". '
-                 f'{self._extra_log_info}')
-        log.info(f'Using background writing: {self._write_in_background}')
+        print(
+            f"Starting experimental run with id: {self.ds.captured_run_id}."
+            f" {self._extra_log_info}"
+        )
+        log.info(
+            f"Starting measurement with guid: {self.ds.guid}, "
+            f'sample_name: "{self.ds.sample_name}", '
+            f'exp_name: "{self.ds.exp_name}", '
+            f'ds_name: "{self.ds.name}". '
+            f"{self._extra_log_info}"
+        )
+        log.info(f"Using background writing: {self._write_in_background}")
 
         self.datasaver = DataSaver(
                             dataset=self.ds,
