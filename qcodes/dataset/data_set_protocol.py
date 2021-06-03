@@ -129,7 +129,6 @@ class DataSetProtocol(Protocol, Sized):
     def description(self) -> RunDescriber:
         pass
 
-
     @property
     def parent_dataset_links(self) -> List[Link]:
         pass
