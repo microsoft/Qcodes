@@ -98,16 +98,14 @@ class DataSaver:
         interdeps: InterDependencies_,
     ) -> None:
         self._dataset = dataset
-        if DataSaver.default_callback is not None \
-                and 'run_tables_subscription_callback' \
-                    in DataSaver.default_callback:
-            callback = DataSaver.default_callback[
-                'run_tables_subscription_callback']
-            min_wait = DataSaver.default_callback[
-                'run_tables_subscription_min_wait']
-            min_count = DataSaver.default_callback[
-                'run_tables_subscription_min_count']
-            snapshot = dataset.metadata['snapshot']
+        if (
+            DataSaver.default_callback is not None
+            and "run_tables_subscription_callback" in DataSaver.default_callback
+        ):
+            callback = DataSaver.default_callback["run_tables_subscription_callback"]
+            min_wait = DataSaver.default_callback["run_tables_subscription_min_wait"]
+            min_count = DataSaver.default_callback["run_tables_subscription_min_count"]
+            snapshot = dataset.metadata["snapshot"]
             if isinstance(self._dataset, DataSet):
                 self._dataset.subscribe(
                     callback,
