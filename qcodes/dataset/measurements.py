@@ -1194,6 +1194,8 @@ class Measurement:
                 read from the ``qcodesrc.json`` config file.
             in_memory_cache: Should measured data be keep in memory
                 and available as part of the `dataset.cache` object.
+            dataset_class: Class implementing the dataset protocol interface
+                used to store the data.
         """
         if write_in_background is None:
             write_in_background = qc.config.dataset.write_in_background
