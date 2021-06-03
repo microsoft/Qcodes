@@ -325,7 +325,7 @@ class DataSet(Sized):
     def prepare(
         self,
         *,
-        snapshot: Dict[Any, Any],
+        snapshot: Mapping[Any, Any],
         interdeps: InterDependencies_,
         shapes: Shapes = None,
         parent_datasets: Sequence[Mapping[Any, Any]] = (),
