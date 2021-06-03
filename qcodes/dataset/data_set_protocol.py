@@ -78,10 +78,6 @@ class DataSetProtocol(Protocol, Sized):
         pass
 
     @property
-    def paramspecs(self) -> Dict[str, ParamSpec]:
-        pass
-
-    @property
     def name(self) -> str:
         pass
 
@@ -124,6 +120,9 @@ class DataSetProtocol(Protocol, Sized):
         pass
 
     # dataset description and links
+    @property
+    def paramspecs(self) -> Dict[str, ParamSpec]:
+        pass
 
     @property
     def description(self) -> RunDescriber:
