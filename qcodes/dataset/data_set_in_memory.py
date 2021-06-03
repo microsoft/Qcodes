@@ -208,16 +208,14 @@ class DataSetInMem(Sized):
     def prepare(
         self,
         *,
-        station: "Optional[Station]",
+        snapshot: Mapping[Any, Any],
         interdeps: InterDependencies_,
-        write_in_background: bool,
         shapes: Shapes = None,
         parent_datasets: Sequence[Mapping[Any, Any]] = (),
+        write_in_background: bool = False,
     ) -> None:
-        if station:
-            self.add_snapshot(
-                json.dumps({"station": station.snapshot()}, cls=NumpyJSONEncoder)
-            )
+
+        self.add_snapshot(json.dumps({"station": snapshot}, cls=NumpyJSONEncoder))
 
         if interdeps == InterDependencies_():
             raise RuntimeError("No parameters supplied")
