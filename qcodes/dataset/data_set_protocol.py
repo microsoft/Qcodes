@@ -104,12 +104,15 @@ class DataSetProtocol(Protocol, Sized):
         pass
 
     # snapshot and metadata
+    @property
+    def snapshot(self) -> Optional[Dict[str, Any]]:
+        pass
 
     def add_snapshot(self, snapshot: str, overwrite: bool = False) -> None:
         pass
 
     @property
-    def snapshot_raw(self) -> Optional[str]:
+    def _snapshot_raw(self) -> Optional[str]:
         pass
 
     def add_metadata(self, tag: str, metadata: Any) -> None:
