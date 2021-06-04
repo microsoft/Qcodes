@@ -1,3 +1,4 @@
+import importlib
 import logging
 from collections import abc
 from functools import partial
@@ -19,6 +20,7 @@ from qcodes.instrument.delegate.grouped_parameter import (
     GroupedParameter,
 )
 from qcodes.instrument.parameter import Parameter
+from qcodes.instrument.channel import InstrumentChannel
 from qcodes.station import Station
 
 _log = logging.getLogger(__name__)
@@ -40,6 +42,8 @@ class DelegateInstrument(InstrumentBase):
                     - field_X.field
                 ramp_rate:
                     - field_X.ramp_rate
+            channels:
+                gate_1: dac.ch01
             set_initial_values_on_load: true
             initial_values:
                 ramp_rate: 0.02
@@ -95,7 +99,8 @@ class DelegateInstrument(InstrumentBase):
         self,
         name: str,
         station: Station,
-        parameters: Union[Mapping[str, Sequence[str]], Mapping[str, str]],
+        parameters: Optional[Union[Mapping[str, Sequence[str]], Mapping[str, str]]] = None,
+        channels: Optional[Union[Mapping[str, Sequence[str]], Mapping[str, str]]] = None,
         initial_values: Optional[Mapping[str, Any]] = None,
         set_initial_values_on_load: bool = False,
         setters: Optional[Mapping[str, MutableMapping[str, Any]]] = None,
@@ -103,15 +108,22 @@ class DelegateInstrument(InstrumentBase):
         metadata: Optional[Mapping[Any, Any]] = None,
     ):
         super().__init__(name=name, metadata=metadata)
-        self._create_and_add_parameters(
-            station=station,
-            parameters=parameters,
-            setters=setters or {},
-            units=units or {}
-        )
+        if parameters is not None:
+            self._create_and_add_parameters(
+                station=station,
+                parameters=parameters,
+                setters=setters or {},
+                units=units or {}
+            )
         self._initial_values = initial_values or {}
         if set_initial_values_on_load:
             self.set_initial_values()
+
+        if channels is not None:
+            self._create_and_add_channels(
+                station=station,
+                channels=channels,
+            )
 
     @staticmethod
     def parse_instrument_path(parent: Union[Station, InstrumentBase], path: str) -> Any:
@@ -200,7 +212,6 @@ class DelegateInstrument(InstrumentBase):
             ]
         return parameter_names
 
-
     def _add_parameter(
         self,
         group_name: str,
@@ -264,6 +275,100 @@ class DelegateInstrument(InstrumentBase):
             **kwargs
         )
 
+    def _create_and_add_channels(
+        self,
+        station: Station,
+        channels: Union[Mapping[str, Sequence[str]], Mapping[str, str]],
+    ) -> None:
+        """Add channels to the instrument.
+
+        .. code-block:: yaml
+
+        field:
+            type: qcodes.instrument.delegate.DelegateInstrument
+            init:
+            channels:
+                type: mypackage.mydevice.mydevice_channel.MyDeviceChannel
+                top_barrier:
+                  channel: dac.ch01
+                  my_input_param: 0
+
+        Args:
+            station: QCoDeS station, i.e. representation of the entire physical
+                setup.
+            channels: Mapping of names/aliases to instrument channels and
+                optional input parameters if a channel wrapper class is used to
+                instantiate the channel. If no 'type' field is given, the
+                channel is added as is using ``self.add_submodule``.
+
+        """
+
+        channel_wrapper = None
+        if 'type' in channels.keys():
+            module_name = '.'.join(channels['type'].split('.')[:-1])
+            instr_class_name = channels['type'].split('.')[-1]
+            module = importlib.import_module(module_name)
+            channel_wrapper = getattr(module, instr_class_name)
+
+        for param_name, input_params in channels.items():
+            if param_name != 'type':
+                self._create_and_add_channel(
+                    param_name=param_name,
+                    station=station,
+                    input_params=input_params,
+                    channel_wrapper=channel_wrapper,
+                )
+
+    def _create_and_add_channel(
+        self,
+        param_name: str,
+        station: Station,
+        input_params: Union[str, Mapping[str, Any]],
+        channel_wrapper: Optional[InstrumentChannel],
+        **kwargs: Any
+    ) -> None:
+        """Adds a channel to the instrument.
+
+        Args:
+            param_name: Alias/name of the channel.
+            station: QCoDeS' station containing the instrument containing the
+                channel.
+            input_params: Either the path to the channel or keyworded arguments
+                with 'channel' key containing the path of the channel and any
+                other input arguments taken by channel_wrapper.
+            channel_wrapper: Optional class to construct the channel. If none
+                given, the channel is added as is using ``self.add_submodule``.
+
+        """
+
+        if isinstance(input_params, str):
+            try:
+                instrument_name, channel_name = input_params.split('.')
+                instrument = getattr(station, instrument_name)
+                channel = getattr(instrument, channel_name)
+
+            except ValueError:
+                raise ValueError("Unknown channel path. Try: instrument.chXY")
+        else:
+            channel_str = input_params['channel']
+
+            instrument_name, channel_name = channel_str.split('.')
+            instrument = getattr(station, instrument_name)
+            initial_channel = getattr(instrument, channel_name)
+            init_params = {x: input_params[x] for x in input_params.keys() if x not in ['channel']}
+
+            kwargs = dict(kwargs, **init_params)
+            channel = channel_wrapper(
+                param_name,
+                initial_channel,
+                **kwargs
+            )
+
+        self.add_submodule(param_name, channel)
+
+
     def __repr__(self) -> str:
         params = ", ".join(self.parameters.keys())
         return f"DelegateInstrument(name={self.name}, parameters={params})"
+
+
