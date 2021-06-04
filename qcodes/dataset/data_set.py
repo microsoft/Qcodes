@@ -383,10 +383,15 @@ class DataSet(Sized):
             return None
 
     @property
-    def snapshot_raw(self) -> Optional[str]:
+    def _snapshot_raw(self) -> Optional[str]:
         """Snapshot of the run as a JSON-formatted string (or None)"""
         return select_one_where(self.conn, "runs", "snapshot",
                                 "run_id", self.run_id)
+
+    @property
+    def snapshot_raw(self) -> Optional[str]:
+        """Snapshot of the run as a JSON-formatted string (or None)"""
+        return self._snapshot_raw
 
     @property
     def number_of_results(self) -> int:

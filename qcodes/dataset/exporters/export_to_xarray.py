@@ -58,19 +58,21 @@ def load_to_xarray_dataarray_dict(
 def _add_metadata_to_xarray(
     dataset: DataSetProtocol, xrdataset: Union[xr.Dataset, xr.DataArray]
 ) -> None:
-    xrdataset.attrs.update({
-        "ds_name": dataset.name,
-        "sample_name": dataset.sample_name,
-        "exp_name": dataset.exp_name,
-        "snapshot": dataset.snapshot_raw or "null",
-        "guid": dataset.guid,
-        "run_timestamp": dataset.run_timestamp() or "",
-        "completed_timestamp": dataset.completed_timestamp() or "",
-        "captured_run_id": dataset.captured_run_id,
-        "captured_counter": dataset.captured_counter,
-        "run_id": dataset.run_id,
-        "run_description": serial.to_json_for_storage(dataset.description)
-    })
+    xrdataset.attrs.update(
+        {
+            "ds_name": dataset.name,
+            "sample_name": dataset.sample_name,
+            "exp_name": dataset.exp_name,
+            "snapshot": dataset._snapshot_raw or "null",
+            "guid": dataset.guid,
+            "run_timestamp": dataset.run_timestamp() or "",
+            "completed_timestamp": dataset.completed_timestamp() or "",
+            "captured_run_id": dataset.captured_run_id,
+            "captured_counter": dataset.captured_counter,
+            "run_id": dataset.run_id,
+            "run_description": serial.to_json_for_storage(dataset.description),
+        }
+    )
     if dataset.run_timestamp_raw is not None:
         xrdataset.attrs["run_timestamp_raw"] = dataset.run_timestamp_raw
     if dataset.completed_timestamp_raw is not None:
