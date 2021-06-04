@@ -649,8 +649,8 @@ def dond(
         ) -> AxesTupleListWithDataSet:
     """
     Perform n-dimentional scan from slowest (first) to the fastest (last), to
-    measure m measurement parameters. Supplied params are parsed to params_set,
-    params_delay and params_meas inside the function.
+    measure m measurement parameters. Supplied params are parsed into
+    sweep_instances and params_meas inside the function.
 
     Args:
         *params: Instances of n sweeping classes and m measurement parameters.
@@ -713,14 +713,12 @@ def dond(
         setpoint_grids = np.meshgrid(*setpoint_values, indexing='ij')
         flat_setpoint_grids = [np.ravel(grid, order='C')
                                for grid in setpoint_grids]
+        if len(setpoint_values) == 0:
+            return np.array([[]])  # 0d sweep (do0d)
         return np.vstack(flat_setpoint_grids).T
 
     sweep_instances, params_meas = _parse_dond_arguments(*params)
-    nested_setpoints: Union[np.ndarray, List[Tuple[()]]]
-    if sweep_instances:
-        nested_setpoints = _make_nested_setpoints(sweep_instances)
-    else:
-        nested_setpoints = [()]  # For zero-dimensional grid (do0d)
+    nested_setpoints = _make_nested_setpoints(sweep_instances)
 
     all_setpoint_params = tuple(sweep.param for sweep in sweep_instances) \
         + tuple(s for s in additional_setpoints)
@@ -771,8 +769,8 @@ def dond(
                 )
             dataset = datasaver.dataset
     finally:
-        for param in params_set:
-            param.post_delay = original_delays[param]
+        for par in params_set:
+            par.post_delay = original_delays[par]
 
     return _handle_plotting(dataset, do_plot, interrupted())
 
