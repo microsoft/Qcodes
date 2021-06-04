@@ -5,7 +5,7 @@ from typing import Any, Sequence, Dict, Optional
 import numpy as np
 
 from qcodes.instrument.base import Instrument, InstrumentBase
-from qcodes.utils.validators import Numbers, Arrays, OnOff, Strings, ComplexNumbers
+from qcodes.utils.validators import Numbers, Arrays, OnOff, Strings, ComplexNumbers, Lists
 from qcodes.instrument.parameter import MultiParameter, Parameter, \
     ArrayParameter, ParameterWithSetpoints
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
@@ -888,3 +888,41 @@ class MockDAC(Instrument):
             channels.append(channel)
             self.add_submodule(chan_name, channel)
         self.add_submodule("channels", channels)
+
+
+class MockCustomChannel(InstrumentChannel):
+    def __init__(
+        self,
+        name: str,
+        channel: InstrumentChannel,
+        current_valid_ranges: Optional[list] = None,
+    ) -> None:
+        super().__init__(channel.parent, name)
+        if current_valid_ranges is None:
+            current_valid_ranges = []
+
+        super().add_parameter(
+            name="current_valid_range",
+            label=f"{name} valid voltage range",
+            # set_cmd=self.set_current_valid_range,
+            # get_cmd=self.get_current_valid_range,
+            initial_value=current_valid_ranges,
+            vals=Lists(),
+            get_cmd=None, set_cmd=None,
+        )
+
+        self.add_parameter(
+            'voltage',
+            parameter_class=Parameter,
+            initial_value=0.,
+            label=f"Voltage_{name}",
+            unit='V',
+            vals=Numbers(-2., 2.),
+            get_cmd=None, set_cmd=None
+        )
+
+    # def get_current_valid_range(self) -> list:
+    #     return self._current_valid_range
+
+    # def set_current_valid_range(self, new_range: list) -> None:
+    #     self._current_valid_range = new_range
