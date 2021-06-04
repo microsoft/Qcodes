@@ -9,7 +9,6 @@ from typing import (
     Optional,
     Sequence,
     Sized,
-    Tuple,
     Union,
 )
 
