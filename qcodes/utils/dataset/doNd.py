@@ -512,7 +512,7 @@ class AbstractSweep(ABC):
     @abstractmethod
     def param(self) -> _BaseParameter:
         """
-        Property for the qcodes sweep parameter.
+        Property for the Qcodes sweep parameter.
         """
         pass
 
@@ -520,7 +520,7 @@ class AbstractSweep(ABC):
     @abstractmethod
     def delay(self) -> float:
         """
-        Property defining delay between two consecutive sweep points.
+        Property for delay between two consecutive sweep points.
         """
         pass
 
@@ -538,12 +538,11 @@ class LinSweep(AbstractSweep):
     Linear sweep class.
 
     Args:
-        param: Qcodes _BaseParameter for sweep.
+        param: Qcodes parameter for sweep.
         start: Sweep start value.
         stop: Sweep end value.
         num_points: Number of sweep points.
-        delay: Time in second between two consequtive sweep points. The default
-            is 0.
+        delay: Time in second between two consequtive sweep points (default is 0)
     """
 
     def __init__(self, param: _BaseParameter, start: float, stop: float,
@@ -556,12 +555,10 @@ class LinSweep(AbstractSweep):
 
     def get_setpoints(self) -> np.ndarray:
         """
-        Linear numpy array for supplied start, stop and num_points in the
-        class.
+        Linear numpy array for supplied start, stop and num_points.
 
         Returns:
-            Numpy linspace for supplied start, stop and num_points in the
-            class.
+            Numpy linspace for supplied start, stop and num_points.
         """
 
         return np.linspace(self._start, self._stop, self._num_points)
@@ -569,7 +566,7 @@ class LinSweep(AbstractSweep):
     @property
     def param(self) -> _BaseParameter:
         """
-        Property for the supplied sweep parameter.
+        Property for the supplied Qcodes param argument.
         """
         return self._param
 
@@ -583,7 +580,7 @@ class LinSweep(AbstractSweep):
     @property
     def num_points(self) -> int:
         """
-        Property for the supplied number of sweep points.
+        Property for the supplied num_points argument.
         """
         return self._num_points
 
@@ -593,12 +590,11 @@ class LogSweep(AbstractSweep):
     Logarithmic sweep class.
 
     Args:
-        param: Qcodes _BaseParameter for sweep.
+        param: Qcodes parameter for sweep.
         start: Sweep start value.
         stop: Sweep end value.
         num_points: Number of sweep points.
-        delay: Time in second between two consequtive sweep points. The default
-            is 0.
+        delay: Time in second between two consequtive sweep points (default is 0).
     """
 
     def __init__(self, param: _BaseParameter, start: float, stop: float,
@@ -611,12 +607,10 @@ class LogSweep(AbstractSweep):
 
     def get_setpoints(self) -> np.ndarray:
         """
-        Logarithmic numpy array for supplied start, stop and num_points in
-        the class.
+        Logarithmic numpy array for supplied start, stop and num_points.
 
         Returns:
-            Numpy logspace for supplied start, stop and num_points in the
-            class.
+            Numpy logspace for supplied start, stop and num_points.
         """
 
         return np.logspace(self._start, self._stop, self._num_points)
@@ -624,7 +618,7 @@ class LogSweep(AbstractSweep):
     @property
     def param(self) -> _BaseParameter:
         """
-        Property for the supplied sweep parameter.
+        Property for the supplied Qcodes param argument.
         """
         return self._param
 
@@ -638,7 +632,7 @@ class LogSweep(AbstractSweep):
     @property
     def num_points(self) -> int:
         """
-        Property for the supplied number of sweep points.
+        Property for the supplied num_points argument.
         """
         return self._num_points
 
@@ -688,68 +682,56 @@ def dond(
 
     meas = Measurement(name=measurement_name, exp=exp)
 
+    def _parse_dond_arguments(*params: Union[AbstractSweep, ParamMeasT]
+                              ) -> Tuple[
+        List[AbstractSweep],
+        List[ParamMeasT]
+    ]:
+        """
+        Parse supplied arguments params to sweep and measurement.
+        """
+        sweep_instances: List[AbstractSweep] = []
+        params_meas: List[ParamMeasT] = []
+        for par in params:
+            if isinstance(par, AbstractSweep):
+                sweep_instances.append(par)
+            elif isinstance(par, _BaseParameter):
+                params_meas.append(par)
+            else:
+                raise ValueError(f'Cannot proceed: {par} is not either a'
+                                 ' sweep instance or measurement parameter.'
+                                 ' Please check the supplied `dond`'
+                                 ' arguments.')
+        return sweep_instances, params_meas
+
     def _make_nested_setpoints(
-        *params: Union[AbstractSweep, ParamMeasT],
+        sweeps: List[AbstractSweep],
     ) -> np.ndarray:
         """Create the cartesian product of all the setpoint values."""
 
-        setpoint_values: List[np.ndarray] = []
-        for param in params:
-            if isinstance(param, AbstractSweep):
-                setpoint_values.append(param.get_setpoints())
+        setpoint_values = [sweep.get_setpoints() for sweep in sweeps]
         setpoint_grids = np.meshgrid(*setpoint_values, indexing='ij')
         flat_setpoint_grids = [np.ravel(grid, order='C')
                                for grid in setpoint_grids]
         return np.vstack(flat_setpoint_grids).T
 
-    def _parse_dond_arguments(*params: Union[AbstractSweep, ParamMeasT]
-                              ) -> Tuple[
-        List[_BaseParameter],
-        Dict[_BaseParameter, Dict[str, float]],
-        List[ParamMeasT]
-    ]:
-        """
-        Parse supplied arguments for a dond scan.
-        """
-        params_set: List[_BaseParameter] = []
-        params_delay: Dict[_BaseParameter, Dict[str, float]] = {}
-        params_meas: List[ParamMeasT] = []
-        for par in params:
-            if isinstance(par, AbstractSweep):
-                params_set.append(par.param)
-                params_delay[par.param] = {}
-                params_delay[par.param]['delay'] = par.delay
-            elif isinstance(par, _BaseParameter):
-                params_meas.append(par)
-            else:
-                raise ValueError(f'Cannot proceed: {param} is not either a'
-                                 ' sweep instance or measurement parameter.'
-                                 ' Please check the supplied `dond`'
-                                 ' arguments.')
-        return params_set, params_delay, params_meas
-
-    params_set, params_delay, params_meas = _parse_dond_arguments(*params)
+    sweep_instances, params_meas = _parse_dond_arguments(*params)
     nested_setpoints: Union[np.ndarray, List[Tuple[()]]]
-    if params_set:
-        nested_setpoints = _make_nested_setpoints(*params)
+    if sweep_instances:
+        nested_setpoints = _make_nested_setpoints(sweep_instances)
     else:
         nested_setpoints = [()]  # For zero-dimensional grid (do0d)
 
-    all_setpoint_params = tuple(params_set) + tuple(
-            s for s in additional_setpoints)
+    all_setpoint_params = tuple(sweep.param for sweep in sweep_instances) \
+        + tuple(s for s in additional_setpoints)
 
-    measured_parameters = tuple(param for param in params_meas
-                                if isinstance(param, _BaseParameter))
-
-    num_points_params_set: List[int] = []
-    for par in params:
-        if isinstance(par, AbstractSweep):
-            num_points_params_set.append(par.num_points)
+    measured_parameters = tuple(par for par in params_meas
+                                if isinstance(par, _BaseParameter))
 
     try:
         loop_shape = tuple(
             1 for _ in additional_setpoints
-        ) + tuple(num_points_params_set)
+        ) + tuple(sweep.num_points for sweep in sweep_instances)
         shapes: Shapes = detect_shape_of_measurement(
             measured_parameters,
             loop_shape
@@ -767,27 +749,30 @@ def dond(
     _set_write_period(meas, write_period)
 
     original_delays: Dict[_BaseParameter, float] = {}
-    for param in params_set:
-        original_delays[param] = param.post_delay
-        param.post_delay = params_delay[param]['delay']
+    params_set: List[_BaseParameter] = []
+    for sweep in sweep_instances:
+        original_delays[sweep.param] = sweep.param.post_delay
+        sweep.param.post_delay = sweep.delay
+        params_set.append(sweep.param)
 
-    with _catch_keyboard_interrupts() as interrupted, meas.run() as datasaver:
-        additional_setpoints_data = _process_params_meas(additional_setpoints)
-        for setpoints in tqdm(nested_setpoints, disable=not show_progress):
-            param_set_list = []
-            param_value_pairs = zip(params_set[::-1], setpoints[::-1])
-            for setpoint_param, setpoint in param_value_pairs:
-                setpoint_param(setpoint)
-                param_set_list.append((setpoint_param, setpoint))
-            datasaver.add_result(
-                *param_set_list,
-                *_process_params_meas(params_meas, use_threads=use_threads),
-                *additional_setpoints_data,
-            )
-        dataset = datasaver.dataset
-
-    for param in params_set:
-        param.post_delay = original_delays[param]
+    try:
+        with _catch_keyboard_interrupts() as interrupted, meas.run() as datasaver:
+            additional_setpoints_data = _process_params_meas(additional_setpoints)
+            for setpoints in tqdm(nested_setpoints, disable=not show_progress):
+                param_set_list = []
+                param_value_pairs = zip(params_set[::-1], setpoints[::-1])
+                for setpoint_param, setpoint in param_value_pairs:
+                    setpoint_param(setpoint)
+                    param_set_list.append((setpoint_param, setpoint))
+                datasaver.add_result(
+                    *param_set_list,
+                    *_process_params_meas(params_meas, use_threads=use_threads),
+                    *additional_setpoints_data,
+                )
+            dataset = datasaver.dataset
+    finally:
+        for param in params_set:
+            param.post_delay = original_delays[param]
 
     return _handle_plotting(dataset, do_plot, interrupted())
 
