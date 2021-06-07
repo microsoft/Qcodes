@@ -500,13 +500,13 @@ def do2d(
 
 class AbstractSweep(ABC):
     """
-    Abstract sweep class as an interface class for sweep classes.
+    Abstract sweep class that defines an interface for concrete sweep classes.
     """
 
     @abstractmethod
     def get_setpoints(self) -> np.ndarray:
         """
-        Method definig sweep setpoints.
+        Returns an array of setpoint values for this sweep.
         """
         pass
 
@@ -514,7 +514,7 @@ class AbstractSweep(ABC):
     @abstractmethod
     def param(self) -> _BaseParameter:
         """
-        Property for the Qcodes sweep parameter.
+        Returns the Qcodes sweep parameter.
         """
         pass
 
@@ -522,7 +522,7 @@ class AbstractSweep(ABC):
     @abstractmethod
     def delay(self) -> float:
         """
-        Property for delay between two consecutive sweep points.
+        Delay between two consecutive sweep points.
         """
         pass
 
@@ -530,21 +530,21 @@ class AbstractSweep(ABC):
     @abstractmethod
     def num_points(self) -> int:
         """
-        Property for number of sweep points.
+        Number of sweep points.
         """
         pass
 
 
 class LinSweep(AbstractSweep):
     """
-    Linear sweep class.
+    Linear sweep.
 
     Args:
-        param: Qcodes parameter for sweep.
+        param: Qcodes parameter to sweep.
         start: Sweep start value.
         stop: Sweep end value.
         num_points: Number of sweep points.
-        delay: Time in second between two consequtive sweep points (default is 0)
+        delay: Time in seconds between two consequtive sweep points
     """
 
     def __init__(self, param: _BaseParameter, start: float, stop: float,
@@ -557,46 +557,34 @@ class LinSweep(AbstractSweep):
 
     def get_setpoints(self) -> np.ndarray:
         """
-        Linear numpy array for supplied start, stop and num_points.
-
-        Returns:
-            Numpy linspace for supplied start, stop and num_points.
+        Linear (evenly spaced) numpy array for supplied start, stop and
+        num_points.
         """
-
         return np.linspace(self._start, self._stop, self._num_points)
 
     @property
     def param(self) -> _BaseParameter:
-        """
-        Property for the supplied Qcodes param argument.
-        """
         return self._param
 
     @property
     def delay(self) -> float:
-        """
-        Property for the supplied delay argument.
-        """
         return self._delay
 
     @property
     def num_points(self) -> int:
-        """
-        Property for the supplied num_points argument.
-        """
         return self._num_points
 
 
 class LogSweep(AbstractSweep):
     """
-    Logarithmic sweep class.
+    Logarithmic sweep.
 
     Args:
         param: Qcodes parameter for sweep.
         start: Sweep start value.
         stop: Sweep end value.
         num_points: Number of sweep points.
-        delay: Time in second between two consequtive sweep points (default is 0).
+        delay: Time in seconds between two consequtive sweep points.
     """
 
     def __init__(self, param: _BaseParameter, start: float, stop: float,
@@ -609,33 +597,21 @@ class LogSweep(AbstractSweep):
 
     def get_setpoints(self) -> np.ndarray:
         """
-        Logarithmic numpy array for supplied start, stop and num_points.
-
-        Returns:
-            Numpy logspace for supplied start, stop and num_points.
+        Logarithmically spaced numpy array for supplied start, stop and
+        num_points.
         """
-
         return np.logspace(self._start, self._stop, self._num_points)
 
     @property
     def param(self) -> _BaseParameter:
-        """
-        Property for the supplied Qcodes param argument.
-        """
         return self._param
 
     @property
     def delay(self) -> float:
-        """
-        Property for the supplied delay argument.
-        """
         return self._delay
 
     @property
     def num_points(self) -> int:
-        """
-        Property for the supplied num_points argument.
-        """
         return self._num_points
 
 
