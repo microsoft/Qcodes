@@ -769,41 +769,90 @@ def test_do2d_explicit_name(_param_set, _param_set_2, _param):
     assert data1[0].name == "my measurement"
 
 
-def test_LinSweep(_param, _param_complex):
+def test_linear_sweep_get_setpoints(_param, _param_complex):
+    start = 0
+    stop = 1
+    num_points = 5
+    delay = 1
+    sweep = LinSweep(_param, start, stop, num_points, delay)
+
+    np.testing.assert_array_equal(sweep.get_setpoints(),
+                                  np.linspace(start, stop, num_points))
+
+
+def test_linear_sweep_properties(_param, _param_complex):
     start = 0
     stop = 1
     num_points = 5
     delay = 1
     sweep = LinSweep(_param, start, stop, num_points, delay)
     assert isinstance(sweep.param, _BaseParameter)
-    np.testing.assert_array_equal(sweep.get_setpoints(),
-                                  np.linspace(start, stop, num_points))
     assert sweep.delay == delay
     assert sweep.param == _param
     assert sweep.num_points == num_points
 
     # test default delay 0 with complex param
     sweep_2 = LinSweep(_param_complex, start, stop, num_points)
-    assert isinstance(sweep_2._param, _BaseParameter)
-    assert sweep_2._delay == 0
+    assert sweep_2.delay == 0
 
 
-def test_LogSweep(_param, _param_complex):
+def test_linear_sweep_parameter_class(_param, _param_complex):
     start = 0
     stop = 1
     num_points = 5
     delay = 1
-    sweep = LogSweep(_param, start, stop, num_points, delay)
+    sweep = LinSweep(_param, start, stop, num_points, delay)
     assert isinstance(sweep.param, _BaseParameter)
+
+    sweep_2 = LinSweep(_param_complex, start, stop, num_points)
+    assert isinstance(sweep_2.param, _BaseParameter)
+
+    arrayparam = ArraySetPointParam(name='arrayparam')
+    sweep_3 = LinSweep(arrayparam, start, stop, num_points)
+    assert isinstance(sweep_3.param, _BaseParameter)
+
+
+def test_log_sweep_get_setpoints(_param, _param_complex):
+    start = 0
+    stop = 1
+    num_points = 5
+    delay = 1
+    sweep = LinSweep(_param, start, stop, num_points, delay)
+
     np.testing.assert_array_equal(sweep.get_setpoints(),
-                                  np.logspace(start, stop, num_points))
+                                  np.linspace(start, stop, num_points))
+
+
+def test_log_sweep_properties(_param, _param_complex):
+    start = 0
+    stop = 1
+    num_points = 5
+    delay = 1
+    sweep = LinSweep(_param, start, stop, num_points, delay)
+    assert isinstance(sweep.param, _BaseParameter)
     assert sweep.delay == delay
     assert sweep.param == _param
     assert sweep.num_points == num_points
 
-    # test default delay 0
-    sweep_2 = LogSweep(_param_complex, start, stop, num_points)
-    assert sweep_2._delay == 0
+    # test default delay 0 with complex param
+    sweep_2 = LinSweep(_param_complex, start, stop, num_points)
+    assert sweep_2.delay == 0
+
+
+def test_log_sweep_parameter_class(_param, _param_complex):
+    start = 0
+    stop = 1
+    num_points = 5
+    delay = 1
+    sweep = LinSweep(_param, start, stop, num_points, delay)
+    assert isinstance(sweep.param, _BaseParameter)
+
+    sweep_2 = LinSweep(_param_complex, start, stop, num_points)
+    assert isinstance(sweep_2.param, _BaseParameter)
+
+    arrayparam = ArraySetPointParam(name='arrayparam')
+    sweep_3 = LinSweep(arrayparam, start, stop, num_points)
+    assert isinstance(sweep_3.param, _BaseParameter)
 
 
 def test_dond_explicit_exp_meas_sample(_param, experiment):
@@ -882,7 +931,8 @@ def test_dond_0d_output_type(_param, _param_complex, _param_callable):
 
 @pytest.mark.usefixtures("experiment")
 def test_dond_0d_parameter_with_array_vals():
-    param = ArrayshapedParam(name='paramwitharrayval', vals=Arrays(shape=(10,)))
+    param = ArrayshapedParam(name='paramwitharrayval',
+                             vals=Arrays(shape=(10,)))
     results = dond(param)
     expected_shapes = {'paramwitharrayval': (10,)}
     assert results[0].description.shapes == expected_shapes
@@ -949,7 +999,8 @@ def test_dond_1d_parameter_with_array_vals(_param_set):
                                             Multi2DSetPointParam2Sizes])
 @given(num_points=hst.integers(min_value=1, max_value=5),
        n_points_pws=hst.integers(min_value=1, max_value=500))
-@settings(deadline=None, suppress_health_check=(HealthCheck.function_scoped_fixture,))
+@settings(deadline=None,
+          suppress_health_check=(HealthCheck.function_scoped_fixture,))
 def test_dond_1d_verify_shape(_param, _param_complex, _param_set,
                               multiparamtype, dummyinstrument,
                               num_points, n_points_pws):
@@ -1062,9 +1113,11 @@ def test_dond_1d_output_data(_param, _param_complex, _param_set):
 
     np.testing.assert_array_equal(loaded_data_1[_param.name][_param.name],
                                   np.ones(sweep_1._num_points))
-    np.testing.assert_array_equal(loaded_data_1[_param_complex.name][_param_complex.name],
+    np.testing.assert_array_equal(loaded_data_1[_param_complex.name]
+                                  [_param_complex.name],
                                   (1+1j)*np.ones(sweep_1._num_points))
-    np.testing.assert_array_equal(loaded_data_1[_param_complex.name][_param_set.name],
+    np.testing.assert_array_equal(loaded_data_1[_param_complex.name]
+                                  [_param_set.name],
                                   np.linspace(sweep_1._start, sweep_1._stop,
                                               sweep_1._num_points))
     np.testing.assert_array_equal(loaded_data_1[_param.name][_param_set.name],
@@ -1088,7 +1141,8 @@ def test_dond_1d_output_type(_param, _param_complex, _param_set):
 @given(num_points_p1=hst.integers(min_value=1, max_value=5),
        num_points_p2=hst.integers(min_value=1, max_value=5),
        n_points_pws=hst.integers(min_value=1, max_value=500))
-@settings(deadline=None, suppress_health_check=(HealthCheck.function_scoped_fixture,))
+@settings(deadline=None,
+          suppress_health_check=(HealthCheck.function_scoped_fixture,))
 def test_dond_2d_verify_shape(_param, _param_complex, _param_set, _param_set_2,
                               multiparamtype, dummyinstrument, num_points_p1,
                               num_points_p2, n_points_pws):
@@ -1169,7 +1223,8 @@ def test_dond_2d_additional_setpoints(_param, _param_complex,
 
 @given(num_points_p1=hst.integers(min_value=1, max_value=5),
        num_points_p2=hst.integers(min_value=1, max_value=5))
-@settings(deadline=None, suppress_health_check=(HealthCheck.function_scoped_fixture,))
+@settings(deadline=None,
+          suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @pytest.mark.usefixtures("experiment")
 def test_dond_2d_additional_setpoints_shape(
         _param, _param_complex,
