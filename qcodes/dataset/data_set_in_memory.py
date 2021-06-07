@@ -210,7 +210,9 @@ class DataSetInMem(Sized):
             self._set_interdependencies(interdeps, shapes)
         links = [Link(head=self.guid, **pdict) for pdict in parent_datasets]
         self._set_parent_dataset_links(links)
-        self.mark_started(start_bg_writer=write_in_background)
+
+        if self.pristine:
+            self._perform_start_actions()
 
     @property
     def pristine(self) -> bool:
@@ -558,20 +560,6 @@ class DataSetInMem(Sized):
         if value:
             self._completed_timestamp_raw = time.time()
             mark_run_complete(conn, self.run_id, self._completed_timestamp_raw)
-
-    def mark_started(self, start_bg_writer: bool = False) -> None:
-        """
-        Mark this :class:`.DataSet` as started. A :class:`.DataSet` that has been started can not
-        have its parameters modified.
-
-        Calling this on an already started :class:`.DataSet` is a NOOP.
-
-        Args:
-            start_bg_writer: If True, the add_results method will write to the
-                database in a separate thread.
-        """
-        if self.run_timestamp_raw is None:
-            self._perform_start_actions()
 
     def _perform_start_actions(self) -> None:
         """
