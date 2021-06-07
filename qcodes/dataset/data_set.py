@@ -34,7 +34,6 @@ from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
 from qcodes.dataset.export_config import (
     DataExportType,
-    get_data_export_automatic,
     get_data_export_path,
     get_data_export_prefix,
     get_data_export_type,
@@ -87,8 +86,9 @@ from qcodes.dataset.sqlite.query_helpers import (
 )
 from qcodes.instrument.parameter import _BaseParameter
 from qcodes.utils.deprecate import deprecate
+from qcodes.utils.helpers import NumpyJSONEncoder
 
-from .data_set_cache import DataSetCache
+from .data_set_cache import DataSetCacheWithDBBackend
 from .descriptions.versioning import serialization as serial
 from .exporters.export_to_csv import dataframe_to_csv
 from .exporters.export_to_pandas import (
@@ -260,7 +260,7 @@ class DataSet(Sized):
         self.subscribers: Dict[str, _Subscriber] = {}
         self._parent_dataset_links: List[Link]
         #: In memory representation of the data in the dataset.
-        self.cache: DataSetCache = DataSetCache(self)
+        self._cache: DataSetCacheWithDBBackend = DataSetCacheWithDBBackend(self)
         self._results: List[Dict[str, VALUE]] = []
         self._in_memory_cache = in_memory_cache
         self._export_path: Optional[str] = None
@@ -322,6 +322,30 @@ class DataSet(Sized):
                 active_datasets=set())
             _WRITERS[self.path_to_db] = ws
 
+    def prepare(
+        self,
+        *,
+        snapshot: Mapping[Any, Any],
+        interdeps: InterDependencies_,
+        shapes: Shapes = None,
+        parent_datasets: Sequence[Mapping[Any, Any]] = (),
+        write_in_background: bool = False,
+    ) -> None:
+
+        self.add_snapshot(json.dumps({"station": snapshot}, cls=NumpyJSONEncoder))
+
+        if interdeps == InterDependencies_():
+            raise RuntimeError("No parameters supplied")
+
+        self.set_interdependencies(interdeps, shapes)
+        links = [Link(head=self.guid, **pdict) for pdict in parent_datasets]
+        self.parent_dataset_links = links
+        self.mark_started(start_bg_writer=write_in_background)
+
+    @property
+    def cache(self) -> DataSetCacheWithDBBackend:
+        return self._cache
+
     @property
     def run_id(self) -> int:
         return self._run_id
@@ -359,10 +383,15 @@ class DataSet(Sized):
             return None
 
     @property
-    def snapshot_raw(self) -> Optional[str]:
+    def _snapshot_raw(self) -> Optional[str]:
         """Snapshot of the run as a JSON-formatted string (or None)"""
         return select_one_where(self.conn, "runs", "snapshot",
                                 "run_id", self.run_id)
+
+    @property
+    def snapshot_raw(self) -> Optional[str]:
+        """Snapshot of the run as a JSON-formatted string (or None)"""
+        return self._snapshot_raw
 
     @property
     def number_of_results(self) -> int:
