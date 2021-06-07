@@ -4,18 +4,7 @@ import os
 import time
 from collections.abc import Sized
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Sequence, Union
 
 import numpy
 import numpy as np
@@ -34,11 +23,10 @@ from qcodes.dataset.export_config import (
 )
 from qcodes.dataset.guids import generate_guid
 from qcodes.dataset.linked_datasets.links import Link, links_to_str
-from qcodes.dataset.sqlite.query_helpers import VALUE
 from qcodes.instrument.parameter import _BaseParameter
 from qcodes.utils.helpers import NumpyJSONEncoder
 
-from .data_set import SPECS, CompletedError, values_type
+from .data_set import SPECS, CompletedError
 from .data_set_cache import DataSetCacheInMem
 from .descriptions.versioning import serialization as serial
 
@@ -59,8 +47,6 @@ class DataSetInMem(Sized):
         "name",
         "guid",
         "number_of_results",
-        "parameters",
-        "paramspecs",
         "exp_name",
         "sample_name",
         "completed",
@@ -69,12 +55,10 @@ class DataSetInMem(Sized):
         "description",
         "completed_timestamp_raw",
         "metadata",
-        "dependent_parameters",
         "parent_dataset_links",
         "captured_run_id",
         "captured_counter",
     )
-    background_sleep_time = 1e-3
 
     def __init__(
         self,
@@ -220,7 +204,7 @@ class DataSetInMem(Sized):
         if interdeps == InterDependencies_():
             raise RuntimeError("No parameters supplied")
         else:
-            self.set_interdependencies(interdeps, shapes)
+            self._set_interdependencies(interdeps, shapes)
         links = [Link(head=self.guid, **pdict) for pdict in parent_datasets]
         self._set_parent_dataset_links(links)
         self.mark_started(start_bg_writer=write_in_background)
@@ -384,7 +368,7 @@ class DataSetInMem(Sized):
 
     @property
     def paramspecs(self) -> Dict[str, ParamSpec]:
-        return {ps.name: ps for ps in self.get_parameters()}
+        return {ps.name: ps for ps in self._get_paramspecs()}
 
     @property
     def description(self) -> RunDescriber:
@@ -492,21 +476,21 @@ class DataSetInMem(Sized):
     def counter(self) -> int:
         return self._counter
 
-    @property
-    def parameters(self) -> str:
-        psnames = [ps.name for ps in self.description.interdeps.paramspecs]
-        return ",".join(psnames)
+    # @property
+    # def parameters(self) -> str:
+    #     psnames = [ps.name for ps in self.description.interdeps.paramspecs]
+    #     return ",".join(psnames)
 
-    @property
-    def dependent_parameters(self) -> Tuple[ParamSpecBase, ...]:
-        """
-        Return all the parameters that explicitly depend on other parameters
-        """
-        return tuple(self._rundescriber.interdeps.dependencies.keys())
+    # @property
+    # def dependent_parameters(self) -> Tuple[ParamSpecBase, ...]:
+    #     """
+    #     Return all the parameters that explicitly depend on other parameters
+    #     """
+    #     return tuple(self._rundescriber.interdeps.dependencies.keys())
 
-    @property
-    def exp_id(self) -> int:
-        return self._exp_id
+    # @property
+    # def exp_id(self) -> int:
+    #     return self._exp_id
 
     def _set_parent_dataset_links(self, links: List[Link]) -> None:
         """
@@ -534,7 +518,7 @@ class DataSetInMem(Sized):
 
         self._parent_dataset_links = links
 
-    def set_interdependencies(
+    def _set_interdependencies(
         self, interdeps: InterDependencies_, shapes: Shapes = None
     ) -> None:
         """
@@ -555,7 +539,7 @@ class DataSetInMem(Sized):
             raise RuntimeError(mssg)
         self._rundescriber = RunDescriber(interdeps, shapes=shapes)
 
-    def get_parameters(self) -> SPECS:
+    def _get_paramspecs(self) -> SPECS:
         old_interdeps = new_to_old(self.description.interdeps)
         return list(old_interdeps.paramspecs)
 
@@ -677,9 +661,6 @@ class DataSetInMem(Sized):
                 valid_param_names.append(maybeParam)
         return valid_param_names
 
-    def get_metadata(self, tag: str) -> str:
-        return self._metadata[tag]
-
     def __len__(self) -> int:
         # todo what should this be
         return 0
@@ -705,118 +686,6 @@ class DataSetInMem(Sized):
         else:
             new_data = param_data.ravel()
         return new_data
-
-    @staticmethod
-    def _finalize_res_dict_array(
-        result_dict: Mapping[ParamSpecBase, values_type], all_params: Set[ParamSpecBase]
-    ) -> List[Dict[str, VALUE]]:
-        """
-        Make a list of res_dicts out of the results for a 'array' type
-        parameter. The results are assumed to already have been validated for
-        type and shape
-        """
-
-        def reshaper(val: Any, ps: ParamSpecBase) -> VALUE:
-            paramtype = ps.type
-            if paramtype == "numeric":
-                return float(val)
-            elif paramtype == "text":
-                return str(val)
-            elif paramtype == "complex":
-                return complex(val)
-            elif paramtype == "array":
-                if val.shape:
-                    return val
-                else:
-                    return numpy.reshape(val, (1,))
-            else:
-                raise ValueError(
-                    f"Cannot handle unknown paramtype " f"{paramtype!r} of {ps!r}."
-                )
-
-        res_dict = {ps.name: reshaper(result_dict[ps], ps) for ps in all_params}
-
-        return [res_dict]
-
-    @staticmethod
-    def _finalize_res_dict_numeric_text_or_complex(
-        result_dict: Mapping[ParamSpecBase, numpy.ndarray],
-        toplevel_param: ParamSpecBase,
-        inff_params: Set[ParamSpecBase],
-        deps_params: Set[ParamSpecBase],
-    ) -> List[Dict[str, VALUE]]:
-        """
-        Make a res_dict in the format expected by DataSet.add_results out
-        of the results for a 'numeric' or text type parameter. This includes
-        replicating and unrolling values as needed and also handling the corner
-        case of np.array(1) kind of values
-        """
-
-        res_list: List[Dict[str, VALUE]] = []
-        all_params = inff_params.union(deps_params).union({toplevel_param})
-
-        t_map = {"numeric": float, "text": str, "complex": complex}
-
-        toplevel_shape = result_dict[toplevel_param].shape
-        if toplevel_shape == ():
-            # In the case of a single value, life is reasonably simple
-            res_list = [{ps.name: t_map[ps.type](result_dict[ps]) for ps in all_params}]
-        else:
-            # We first massage all values into np.arrays of the same
-            # shape
-            flat_results: Dict[str, numpy.ndarray] = {}
-
-            toplevel_val = result_dict[toplevel_param]
-            flat_results[toplevel_param.name] = toplevel_val.ravel()
-            N = len(flat_results[toplevel_param.name])
-            for dep in deps_params:
-                if result_dict[dep].shape == ():
-                    flat_results[dep.name] = numpy.repeat(result_dict[dep], N)
-                else:
-                    flat_results[dep.name] = result_dict[dep].ravel()
-            for inff in inff_params:
-                if numpy.shape(result_dict[inff]) == ():
-                    flat_results[inff.name] = numpy.repeat(result_dict[dep], N)
-                else:
-                    flat_results[inff.name] = result_dict[inff].ravel()
-
-            # And then put everything into the list
-
-            res_list = [
-                {p.name: flat_results[p.name][ind] for p in all_params}
-                for ind in range(N)
-            ]
-
-        return res_list
-
-    @staticmethod
-    def _finalize_res_dict_standalones(
-        result_dict: Mapping[ParamSpecBase, numpy.ndarray]
-    ) -> List[Dict[str, VALUE]]:
-        """
-        Massage all standalone parameters into the correct shape
-        """
-        res_list: List[Dict[str, VALUE]] = []
-        for param, value in result_dict.items():
-            if param.type == "text":
-                if value.shape:
-                    res_list += [{param.name: str(val)} for val in value]
-                else:
-                    res_list += [{param.name: str(value)}]
-            elif param.type == "numeric":
-                if value.shape:
-                    res_list += [{param.name: number} for number in value]
-                else:
-                    res_list += [{param.name: float(value)}]
-            elif param.type == "complex":
-                if value.shape:
-                    res_list += [{param.name: number} for number in value]
-                else:
-                    res_list += [{param.name: complex(value)}]
-            else:
-                res_list += [{param.name: value}]
-
-        return res_list
 
     def _export_file_name(self, prefix: str, export_type: DataExportType) -> str:
         """Get export file name"""
