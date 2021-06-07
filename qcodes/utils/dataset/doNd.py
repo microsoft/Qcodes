@@ -626,7 +626,7 @@ def dond(
     show_progress: Optional[bool] = None,
     use_threads: bool = False,
     additional_setpoints: Sequence[ParamMeasT] = tuple()
-        ) -> AxesTupleListWithDataSet:
+) -> AxesTupleListWithDataSet:
     """
     Perform n-dimentional scan from slowest (first) to the fastest (last), to
     measure m measurement parameters. The dimensions should be specified
@@ -670,11 +670,9 @@ def dond(
 
     meas = Measurement(name=measurement_name, exp=exp)
 
-    def _parse_dond_arguments(*params: Union[AbstractSweep, ParamMeasT]
-                              ) -> Tuple[
-        List[AbstractSweep],
-        List[ParamMeasT]
-    ]:
+    def _parse_dond_arguments(
+        *params: Union[AbstractSweep, ParamMeasT]
+    ) -> Tuple[List[AbstractSweep], List[ParamMeasT]]:
         """
         Parse supplied arguments into sweep objects and measurement parameters.
         """
@@ -692,9 +690,7 @@ def dond(
                                  ' arguments.')
         return sweep_instances, params_meas
 
-    def _make_nested_setpoints(
-        sweeps: List[AbstractSweep],
-    ) -> np.ndarray:
+    def _make_nested_setpoints(sweeps: List[AbstractSweep]) -> np.ndarray:
         """Create the cartesian product of all the setpoint values."""
 
         setpoint_values = [sweep.get_setpoints() for sweep in sweeps]
