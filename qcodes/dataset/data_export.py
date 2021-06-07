@@ -4,7 +4,8 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 import numpy as np
 from typing_extensions import TypedDict
 
-from qcodes.dataset.data_set import DataSet, load_by_id
+from qcodes.dataset.data_set import load_by_id
+from qcodes.dataset.data_set_protocol import DataSetProtocol
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.utils.deprecate import deprecate
 
@@ -84,10 +85,10 @@ def get_data_by_id(run_id: int) -> List[List[DSPlotData]]:
     return output
 
 
-def _get_data_from_ds(
-    ds: DataSet,
-) -> List[List[DSPlotData]]:
-    dependent_parameters: Tuple[ParamSpecBase, ...] = ds.dependent_parameters
+def _get_data_from_ds(ds: DataSetProtocol) -> List[List[DSPlotData]]:
+    dependent_parameters: Tuple[ParamSpecBase, ...] = tuple(
+        ds.description.interdeps.dependencies.keys()
+    )
 
     all_data = ds.cache.data()
 
