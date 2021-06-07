@@ -225,6 +225,15 @@ class DataSetInMem(Sized):
         self.parent_dataset_links = links
         self.mark_started(start_bg_writer=write_in_background)
 
+
+    @property
+    def completed(self) -> bool:
+        """
+        Is this :class:`.DataSet` completed? A completed :class:`.DataSet` may not be modified in
+        any way.
+        """
+        return self._completed_timestamp_raw is not None
+
     @property
     def cache(self) -> DataSetCacheInMem:
         return self._cache
@@ -248,14 +257,14 @@ class DataSetInMem(Sized):
     @property
     def snapshot(self) -> Optional[Dict[str, Any]]:
         """Snapshot of the run as dictionary (or None)"""
-        snapshot_json = self.snapshot_raw
+        snapshot_json = self._snapshot_raw
         if snapshot_json is not None:
             return json.loads(snapshot_json)
         else:
             return None
 
     @property
-    def snapshot_raw(self) -> Optional[str]:
+    def _snapshot_raw(self) -> Optional[str]:
         """Snapshot of the run as a JSON-formatted string (or None)"""
         return self._metadata.get("snapshot")
 
@@ -480,16 +489,9 @@ class DataSetInMem(Sized):
         """
         return self._run_timestamp_raw is not None
 
-    @property
-    def completed(self) -> bool:
-        """
-        Is this :class:`.DataSet` completed? A completed :class:`.DataSet` may not be modified in
-        any way.
-        """
-        return self._completed_timestamp_raw is not None
 
-    @completed.setter
-    def completed(self, value: bool) -> None:
+
+    def _complete(self, value: bool) -> None:
         from qcodes.dataset.sqlite.database import conn_from_dbpath_or_conn
         from qcodes.dataset.sqlite.queries import mark_run_complete
 
@@ -555,7 +557,7 @@ class DataSetInMem(Sized):
                 "has been marked as started."
             )
 
-        self.completed = True
+        self._complete(True)
 
     def _raise_if_not_writable(self) -> None:
         if self.pristine:
