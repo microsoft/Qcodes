@@ -642,6 +642,8 @@ def dond(
     write_period: Optional[float] = None,
     measurement_name: str = "",
     exp: Optional[Experiment] = None,
+    enter_actions: ActionsT = (),
+    exit_actions: ActionsT = (),
     do_plot: Optional[bool] = None,
     show_progress: Optional[bool] = None,
     use_threads: bool = False,
@@ -664,6 +666,10 @@ def dond(
             the dataset produced by the measurement. If not given, a default
             value of 'results' is used for the dataset.
         exp: The experiment to use for this measurement.
+        enter_actions: A list of functions taking no arguments that will be
+            called before the measurements start.
+        exit_actions: A list of functions taking no arguments that will be
+            called after the measurements ends.
         do_plot: should png and pdf versions of the images be saved and plots
             are shown after the run. If None the setting will be read from
             ``qcodesrc.json``
@@ -745,6 +751,7 @@ def dond(
         meas, params_meas, setpoints=all_setpoint_params, shapes=shapes
     )
     _set_write_period(meas, write_period)
+    _register_actions(meas, enter_actions, exit_actions)
 
     original_delays: Dict[_BaseParameter, float] = {}
     params_set: List[_BaseParameter] = []
