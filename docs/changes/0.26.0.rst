@@ -1,0 +1,46 @@
+Changelog for QCoDeS 0.26.0
+===========================
+
+The May 2021 release of QCoDeS.
+
+----
+New:
+----
+
+- DelegateInstrument and InstrumentGroup drivers (#2928, #3031)
+- Introducing merge_yaml function in Station and allow Station to load
+  multiple config yaml files (#2936)
+- Keysight VNA P9374A driver (#3034)
+
+---------
+Improved:
+---------
+
+- Ensure that plot dataset uses axis in the expected order (#3017)
+- Make doNd reset original post_delay values + fix to keyboard interrupt (#2996)
+- [Bug fix] Return parameter data with same type as before applying scale or
+  offset (#2980)
+- Improved plotting of pre-shaped 2d data (#3024)
+- replace the use of Dict with Mapping for input args within instrument
+  module (#3040)
+- Convert input arguments to Mapping in dataset module (#3051)
+- use nan + i*nan as placeholder for complex numbers (#3049)
+- Add information about name keyword argument of Measurement module in
+  relevant docs (#3052)
+
+-----------------
+Improved drivers:
+-----------------
+
+- Make wait times in blocking AMI430 field ramps adjustable (#3032)
+- Keithley 2600: 4 probe current sweep support (#3023)
+
+---------------
+Under the hood:
+---------------
+
+- Add darker to precommit hooks (#2979)
+- tests: cleanup warning handling (#2834)
+- Fix NumpyJSONEncoder docstring (#2994)
+- remove scientific deps job (#3014)
+- upgrade precommit hooks to latest version (#3037)
