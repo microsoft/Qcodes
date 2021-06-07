@@ -447,6 +447,9 @@ class SR830(VisaInstrument):
             label="Voltage",
             get_cmd=self._get_complex_voltage,
             unit="V",
+            docstring="Complex voltage parameter "
+            "calculated from X, Y phase using "
+            "Z = X +j*Y",
             vals=ComplexNumbers(),
         )
 
