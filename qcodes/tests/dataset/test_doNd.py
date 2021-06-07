@@ -769,7 +769,7 @@ def test_do2d_explicit_name(_param_set, _param_set_2, _param):
     assert data1[0].name == "my measurement"
 
 
-def test_linear_sweep_get_setpoints(_param, _param_complex):
+def test_linear_sweep_get_setpoints(_param):
     start = 0
     stop = 1
     num_points = 5
@@ -812,15 +812,15 @@ def test_linear_sweep_parameter_class(_param, _param_complex):
     assert isinstance(sweep_3.param, _BaseParameter)
 
 
-def test_log_sweep_get_setpoints(_param, _param_complex):
+def test_log_sweep_get_setpoints(_param):
     start = 0
     stop = 1
     num_points = 5
     delay = 1
-    sweep = LinSweep(_param, start, stop, num_points, delay)
+    sweep = LogSweep(_param, start, stop, num_points, delay)
 
     np.testing.assert_array_equal(sweep.get_setpoints(),
-                                  np.linspace(start, stop, num_points))
+                                  np.logspace(start, stop, num_points))
 
 
 def test_log_sweep_properties(_param, _param_complex):
@@ -828,14 +828,14 @@ def test_log_sweep_properties(_param, _param_complex):
     stop = 1
     num_points = 5
     delay = 1
-    sweep = LinSweep(_param, start, stop, num_points, delay)
+    sweep = LogSweep(_param, start, stop, num_points, delay)
     assert isinstance(sweep.param, _BaseParameter)
     assert sweep.delay == delay
     assert sweep.param == _param
     assert sweep.num_points == num_points
 
     # test default delay 0 with complex param
-    sweep_2 = LinSweep(_param_complex, start, stop, num_points)
+    sweep_2 = LogSweep(_param_complex, start, stop, num_points)
     assert sweep_2.delay == 0
 
 
@@ -844,14 +844,14 @@ def test_log_sweep_parameter_class(_param, _param_complex):
     stop = 1
     num_points = 5
     delay = 1
-    sweep = LinSweep(_param, start, stop, num_points, delay)
+    sweep = LogSweep(_param, start, stop, num_points, delay)
     assert isinstance(sweep.param, _BaseParameter)
 
-    sweep_2 = LinSweep(_param_complex, start, stop, num_points)
+    sweep_2 = LogSweep(_param_complex, start, stop, num_points)
     assert isinstance(sweep_2.param, _BaseParameter)
 
     arrayparam = ArraySetPointParam(name='arrayparam')
-    sweep_3 = LinSweep(arrayparam, start, stop, num_points)
+    sweep_3 = LogSweep(arrayparam, start, stop, num_points)
     assert isinstance(sweep_3.param, _BaseParameter)
 
 
