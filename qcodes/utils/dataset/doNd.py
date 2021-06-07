@@ -748,8 +748,8 @@ def dond(
                 )
             dataset = datasaver.dataset
     finally:
-        for par in params_set:
-            par.post_delay = original_delays[par]
+        for parameter, original_delay in original_delays.items():
+            parameter.post_delay = original_delay
 
     return _handle_plotting(dataset, do_plot, interrupted())
 
