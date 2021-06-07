@@ -74,6 +74,9 @@ class DataSetInMem(Sized):
         completed_timestamp_raw: Optional[float],
         metadata: Optional[Mapping[str, Any]] = None,
     ) -> None:
+        """Note that the constructor is considered private. A ``DataSetInMem``
+        should be constructed either using ``create_new_run`` or ``load_from_netcdf``
+        """
 
         self._run_id = run_id
         self._counter = counter
@@ -546,15 +549,6 @@ class DataSetInMem(Sized):
     def _get_paramspecs(self) -> SPECS:
         old_interdeps = new_to_old(self.description.interdeps)
         return list(old_interdeps.paramspecs)
-
-
-    @property
-    def started(self) -> bool:
-        """
-        Has this :class:`.DataSet` been started? A :class:`.DataSet` not started can not have any
-        results added to it.
-        """
-        return self._run_timestamp_raw is not None
 
     def _complete(self, value: bool) -> None:
         from qcodes.dataset.sqlite.database import conn_from_dbpath_or_conn
