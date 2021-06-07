@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+from abc import ABC, abstractmethod
 from collections import defaultdict
 from contextlib import contextmanager
 from typing import Callable, Dict, Iterator, List, Optional, Sequence, Tuple, Union
@@ -18,7 +19,6 @@ from qcodes.dataset.measurements import Measurement, res_type
 from qcodes.dataset.plotting import plot_dataset
 from qcodes.instrument.parameter import ParamDataType, _BaseParameter
 from qcodes.utils.threading import RespondingThread
-from abc import ABC, abstractmethod
 
 ActionsT = Sequence[Callable[[], None]]
 
