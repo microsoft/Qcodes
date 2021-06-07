@@ -225,7 +225,6 @@ class DataSetInMem(Sized):
         self.parent_dataset_links = links
         self.mark_started(start_bg_writer=write_in_background)
 
-
     @property
     def completed(self) -> bool:
         """
@@ -234,9 +233,19 @@ class DataSetInMem(Sized):
         """
         return self._completed_timestamp_raw is not None
 
-    @property
-    def cache(self) -> DataSetCacheInMem:
-        return self._cache
+    def mark_completed(self) -> None:
+        """
+        Mark :class:`.DataSet` as complete and thus read only and notify the subscribers
+        """
+        if self.completed:
+            return
+        if self.pristine:
+            raise RuntimeError(
+                "Can not mark DataSet as complete before it "
+                "has been marked as started."
+            )
+
+        self._complete(True)
 
     @property
     def run_id(self) -> int:
@@ -247,26 +256,12 @@ class DataSetInMem(Sized):
         return self._run_id
 
     @property
-    def name(self) -> str:
-        return self._name
+    def captured_counter(self) -> int:
+        return self._counter
 
     @property
     def guid(self) -> str:
         return self._guid
-
-    @property
-    def snapshot(self) -> Optional[Dict[str, Any]]:
-        """Snapshot of the run as dictionary (or None)"""
-        snapshot_json = self._snapshot_raw
-        if snapshot_json is not None:
-            return json.loads(snapshot_json)
-        else:
-            return None
-
-    @property
-    def _snapshot_raw(self) -> Optional[str]:
-        """Snapshot of the run as a JSON-formatted string (or None)"""
-        return self._metadata.get("snapshot")
 
     @property
     def number_of_results(self) -> int:
@@ -274,32 +269,8 @@ class DataSetInMem(Sized):
         return 0
 
     @property
-    def counter(self) -> int:
-        return self._counter
-
-    @property
-    def captured_counter(self) -> int:
-        return self._counter
-
-    @property
-    def parameters(self) -> str:
-        psnames = [ps.name for ps in self.description.interdeps.paramspecs]
-        return ",".join(psnames)
-
-    @property
-    def paramspecs(self) -> Dict[str, ParamSpec]:
-        return {ps.name: ps for ps in self.get_parameters()}
-
-    @property
-    def dependent_parameters(self) -> Tuple[ParamSpecBase, ...]:
-        """
-        Return all the parameters that explicitly depend on other parameters
-        """
-        return tuple(self._rundescriber.interdeps.dependencies.keys())
-
-    @property
-    def exp_id(self) -> int:
-        return self._exp_id
+    def name(self) -> str:
+        return self._name
 
     @property
     def exp_name(self) -> str:
@@ -308,6 +279,21 @@ class DataSetInMem(Sized):
     @property
     def sample_name(self) -> str:
         return self._sample_name
+
+    def run_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S") -> Optional[str]:
+        """
+        Returns run timestamp in a human-readable format
+
+        The run timestamp is the moment when the measurement for this run
+        started. If the run has not yet been started, this function returns
+        None.
+
+        Consult with :func:`time.strftime` for information about the format.
+        """
+        if self.run_timestamp_raw is None:
+            return None
+        else:
+            return time.strftime(fmt, time.localtime(self.run_timestamp_raw))
 
     @property
     def run_timestamp_raw(self) -> Optional[float]:
@@ -319,13 +305,90 @@ class DataSetInMem(Sized):
         """
         return self._run_timestamp_raw
 
+    def completed_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S") -> Optional[str]:
+        """
+        Returns timestamp when measurement run was completed
+        in a human-readable format
+
+        If the run (or the dataset) is not completed, then returns None.
+
+        Consult with ``time.strftime`` for information about the format.
+        """
+        completed_timestamp_raw = self.completed_timestamp_raw
+
+        if completed_timestamp_raw:
+            completed_timestamp: Optional[str] = time.strftime(
+                fmt, time.localtime(completed_timestamp_raw)
+            )
+        else:
+            completed_timestamp = None
+
+        return completed_timestamp
+
     @property
-    def description(self) -> RunDescriber:
-        return self._rundescriber
+    def completed_timestamp_raw(self) -> Optional[float]:
+        """
+        Returns timestamp when measurement run was completed
+        as number of seconds since the Epoch
+
+        If the run (or the dataset) is not completed, then returns None.
+        """
+        return self._completed_timestamp_raw
+
+    @property
+    def snapshot(self) -> Optional[Dict[str, Any]]:
+        """Snapshot of the run as dictionary (or None)"""
+        snapshot_json = self._snapshot_raw
+        if snapshot_json is not None:
+            return json.loads(snapshot_json)
+        else:
+            return None
+
+    def add_snapshot(self, snapshot: str, overwrite: bool = False) -> None:
+        """
+        Adds a snapshot to this run
+
+        Args:
+            snapshot: the raw JSON dump of the snapshot
+            overwrite: force overwrite an existing snapshot
+        """
+        if self.snapshot is None or overwrite:
+            self.add_metadata("snapshot", snapshot)
+        elif self.snapshot is not None and not overwrite:
+            log.warning(
+                "This dataset already has a snapshot. Use overwrite"
+                "=True to overwrite that"
+            )
+
+    @property
+    def _snapshot_raw(self) -> Optional[str]:
+        """Snapshot of the run as a JSON-formatted string (or None)"""
+        return self._metadata.get("snapshot")
+
+    def add_metadata(self, tag: str, metadata: Any) -> None:
+        """
+        Adds metadata to the :class:`.DataSet`. The metadata is stored under the
+        provided tag. Note that None is not allowed as a metadata value.
+
+        Args:
+            tag: represents the key in the metadata dictionary
+            metadata: actual metadata
+        """
+        # todo this never commits the data to sqlite do we want that
+        # it also never updates any exported netcdf file
+        self._metadata[tag] = metadata
 
     @property
     def metadata(self) -> Dict[str, Any]:
         return self._metadata
+
+    @property
+    def paramspecs(self) -> Dict[str, ParamSpec]:
+        return {ps.name: ps for ps in self.get_parameters()}
+
+    @property
+    def description(self) -> RunDescriber:
+        return self._rundescriber
 
     @property
     def parent_dataset_links(self) -> List[Link]:
@@ -334,6 +397,116 @@ class DataSetInMem(Sized):
         this dataset to one of its parent datasets
         """
         return self._parent_dataset_links
+
+    def export(
+        self,
+        export_type: Optional[Union[DataExportType, str]] = None,
+        path: Optional[str] = None,
+        prefix: Optional[str] = None,
+    ) -> None:
+        """Export data to disk with file name {prefix}{run_id}.{ext}.
+        Values for the export type, path and prefix can also be set in the "dataset"
+        section of qcodes config.
+
+        Args:
+            export_type: Data export type, e.g. "netcdf" or ``DataExportType.NETCDF``,
+                defaults to a value set in qcodes config
+            path: Export path, defaults to value set in config
+            prefix: File prefix, e.g. ``qcodes_``, defaults to value set in config.
+
+        Raises:
+            ValueError: If the export data type is not specified, raise an error
+        """
+        export_type = get_data_export_type(export_type)
+
+        if export_type is None:
+            raise ValueError(
+                "No data export type specified. Please set the export data type "
+                "by using ``qcodes.dataset.export_config.set_data_export_type`` or "
+                "give an explicit export_type when calling ``dataset.export`` manually."
+            )
+
+        self._export_path = self._export_data(
+            export_type=export_type, path=path, prefix=prefix
+        )
+
+    @property
+    def cache(self) -> DataSetCacheInMem:
+        return self._cache
+
+    def _enqueue_results(
+        self, result_dict: Mapping[ParamSpecBase, numpy.ndarray]
+    ) -> None:
+        """
+        Enqueue the results into self._results
+
+        Before we can enqueue the results, all values of the results dict
+        must have the same length. We enqueue each parameter tree separately,
+        effectively mimicking making one call to add_results per parameter
+        tree.
+
+        Deal with 'numeric' type parameters. If a 'numeric' top level parameter
+        has non-scalar shape, it must be unrolled into a list of dicts of
+        single values (database).
+        """
+        self._raise_if_not_writable()
+        interdeps = self._rundescriber.interdeps
+
+        toplevel_params = set(interdeps.dependencies).intersection(set(result_dict))
+        new_results: Dict[str, Dict[str, numpy.ndarray]] = {}
+        for toplevel_param in toplevel_params:
+            inff_params = set(interdeps.inferences.get(toplevel_param, ()))
+            deps_params = set(interdeps.dependencies.get(toplevel_param, ()))
+            all_params = inff_params.union(deps_params).union({toplevel_param})
+
+            new_results[toplevel_param.name] = {}
+            new_results[toplevel_param.name][
+                toplevel_param.name
+            ] = self._reshape_array_for_cache(
+                toplevel_param, result_dict[toplevel_param]
+            )
+            for param in all_params:
+                if param is not toplevel_param:
+                    new_results[toplevel_param.name][
+                        param.name
+                    ] = self._reshape_array_for_cache(param, result_dict[param])
+
+        # Finally, handle standalone parameters
+
+        standalones = set(interdeps.standalones).intersection(set(result_dict))
+
+        if standalones:
+            for st in standalones:
+                new_results[st.name] = {
+                    st.name: self._reshape_array_for_cache(st, result_dict[st])
+                }
+
+        self.cache.add_data(new_results)
+
+    def _flush_data_to_database(self, block: bool = False) -> None:
+        pass
+
+    # not part of the protocol specified api
+
+    @property
+    def counter(self) -> int:
+        return self._counter
+
+    @property
+    def parameters(self) -> str:
+        psnames = [ps.name for ps in self.description.interdeps.paramspecs]
+        return ",".join(psnames)
+
+    @property
+    def dependent_parameters(self) -> Tuple[ParamSpecBase, ...]:
+        """
+        Return all the parameters that explicitly depend on other parameters
+        """
+        return tuple(self._rundescriber.interdeps.dependencies.keys())
+
+    @property
+    def exp_id(self) -> int:
+        return self._exp_id
 
     @parent_dataset_links.setter
     def parent_dataset_links(self, links: List[Link]) -> None:
@@ -362,51 +535,6 @@ class DataSetInMem(Sized):
 
         self._parent_dataset_links = links
 
-    def run_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S") -> Optional[str]:
-        """
-        Returns run timestamp in a human-readable format
-
-        The run timestamp is the moment when the measurement for this run
-        started. If the run has not yet been started, this function returns
-        None.
-
-        Consult with :func:`time.strftime` for information about the format.
-        """
-        if self.run_timestamp_raw is None:
-            return None
-        else:
-            return time.strftime(fmt, time.localtime(self.run_timestamp_raw))
-
-    @property
-    def completed_timestamp_raw(self) -> Optional[float]:
-        """
-        Returns timestamp when measurement run was completed
-        as number of seconds since the Epoch
-
-        If the run (or the dataset) is not completed, then returns None.
-        """
-        return self._completed_timestamp_raw
-
-    def completed_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S") -> Optional[str]:
-        """
-        Returns timestamp when measurement run was completed
-        in a human-readable format
-
-        If the run (or the dataset) is not completed, then returns None.
-
-        Consult with ``time.strftime`` for information about the format.
-        """
-        completed_timestamp_raw = self.completed_timestamp_raw
-
-        if completed_timestamp_raw:
-            completed_timestamp: Optional[str] = time.strftime(
-                fmt, time.localtime(completed_timestamp_raw)
-            )
-        else:
-            completed_timestamp = None
-
-        return completed_timestamp
-
     def set_interdependencies(
         self, interdeps: InterDependencies_, shapes: Shapes = None
     ) -> None:
@@ -431,35 +559,6 @@ class DataSetInMem(Sized):
     def get_parameters(self) -> SPECS:
         old_interdeps = new_to_old(self.description.interdeps)
         return list(old_interdeps.paramspecs)
-
-    def add_metadata(self, tag: str, metadata: Any) -> None:
-        """
-        Adds metadata to the :class:`.DataSet`. The metadata is stored under the
-        provided tag. Note that None is not allowed as a metadata value.
-
-        Args:
-            tag: represents the key in the metadata dictionary
-            metadata: actual metadata
-        """
-        # todo this never commits the data to sqlite do we want that
-        # it also never updates any exported netcdf file
-        self._metadata[tag] = metadata
-
-    def add_snapshot(self, snapshot: str, overwrite: bool = False) -> None:
-        """
-        Adds a snapshot to this run
-
-        Args:
-            snapshot: the raw JSON dump of the snapshot
-            overwrite: force overwrite an existing snapshot
-        """
-        if self.snapshot is None or overwrite:
-            self.add_metadata("snapshot", snapshot)
-        elif self.snapshot is not None and not overwrite:
-            log.warning(
-                "This dataset already has a snapshot. Use overwrite"
-                "=True to overwrite that"
-            )
 
     @property
     def pristine(self) -> bool:
@@ -488,8 +587,6 @@ class DataSetInMem(Sized):
         results added to it.
         """
         return self._run_timestamp_raw is not None
-
-
 
     def _complete(self, value: bool) -> None:
         from qcodes.dataset.sqlite.database import conn_from_dbpath_or_conn
@@ -545,20 +642,6 @@ class DataSetInMem(Sized):
         finally:
             conn.close()
 
-    def mark_completed(self) -> None:
-        """
-        Mark :class:`.DataSet` as complete and thus read only and notify the subscribers
-        """
-        if self.completed:
-            return
-        if self.pristine:
-            raise RuntimeError(
-                "Can not mark DataSet as complete before it "
-                "has been marked as started."
-            )
-
-        self._complete(True)
-
     def _raise_if_not_writable(self) -> None:
         if self.pristine:
             raise RuntimeError(
@@ -605,55 +688,6 @@ class DataSetInMem(Sized):
     def __repr__(self) -> str:
         # todo what to put in
         return "dataset"
-
-    def _enqueue_results(
-        self, result_dict: Mapping[ParamSpecBase, numpy.ndarray]
-    ) -> None:
-        """
-        Enqueue the results into self._results
-
-        Before we can enqueue the results, all values of the results dict
-        must have the same length. We enqueue each parameter tree separately,
-        effectively mimicking making one call to add_results per parameter
-        tree.
-
-        Deal with 'numeric' type parameters. If a 'numeric' top level parameter
-        has non-scalar shape, it must be unrolled into a list of dicts of
-        single values (database).
-        """
-        self._raise_if_not_writable()
-        interdeps = self._rundescriber.interdeps
-
-        toplevel_params = set(interdeps.dependencies).intersection(set(result_dict))
-        new_results: Dict[str, Dict[str, numpy.ndarray]] = {}
-        for toplevel_param in toplevel_params:
-            inff_params = set(interdeps.inferences.get(toplevel_param, ()))
-            deps_params = set(interdeps.dependencies.get(toplevel_param, ()))
-            all_params = inff_params.union(deps_params).union({toplevel_param})
-
-            new_results[toplevel_param.name] = {}
-            new_results[toplevel_param.name][
-                toplevel_param.name
-            ] = self._reshape_array_for_cache(
-                toplevel_param, result_dict[toplevel_param]
-            )
-            for param in all_params:
-                if param is not toplevel_param:
-                    new_results[toplevel_param.name][
-                        param.name
-                    ] = self._reshape_array_for_cache(param, result_dict[param])
-
-        # Finally, handle standalone parameters
-
-        standalones = set(interdeps.standalones).intersection(set(result_dict))
-
-        if standalones:
-            for st in standalones:
-                new_results[st.name] = {
-                    st.name: self._reshape_array_for_cache(st, result_dict[st])
-                }
-
-        self.cache.add_data(new_results)
 
     @staticmethod
     def _reshape_array_for_cache(
@@ -785,9 +819,6 @@ class DataSetInMem(Sized):
 
         return res_list
 
-    def _flush_data_to_database(self, block: bool = False) -> None:
-        pass
-
     def _export_file_name(self, prefix: str, export_type: DataExportType) -> str:
         """Get export file name"""
         extension = export_type.value
@@ -842,38 +873,6 @@ class DataSetInMem(Sized):
 
         else:
             return None
-
-    def export(
-        self,
-        export_type: Optional[Union[DataExportType, str]] = None,
-        path: Optional[str] = None,
-        prefix: Optional[str] = None,
-    ) -> None:
-        """Export data to disk with file name {prefix}{run_id}.{ext}.
-        Values for the export type, path and prefix can also be set in the "dataset"
-        section of qcodes config.
-
-        Args:
-            export_type: Data export type, e.g. "netcdf" or ``DataExportType.NETCDF``,
-                defaults to a value set in qcodes config
-            path: Export path, defaults to value set in config
-            prefix: File prefix, e.g. ``qcodes_``, defaults to value set in config.
-
-        Raises:
-            ValueError: If the export data type is not specified, raise an error
-        """
-        export_type = get_data_export_type(export_type)
-
-        if export_type is None:
-            raise ValueError(
-                "No data export type specified. Please set the export data type "
-                "by using ``qcodes.dataset.export_config.set_data_export_type`` or "
-                "give an explicit export_type when calling ``dataset.export`` manually."
-            )
-
-        self._export_path = self._export_data(
-            export_type=export_type, path=path, prefix=prefix
-        )
 
     @property
     def export_path(self) -> Optional[str]:
