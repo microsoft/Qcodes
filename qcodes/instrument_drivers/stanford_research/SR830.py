@@ -755,7 +755,7 @@ class SR830(VisaInstrument):
             param.unit = unit
 
     def _get_complex_voltage(self) -> complex:
-        x, y = self.get_values("X", "Y")
+        x, y = self.snap("X", "Y")
         return x + 1.0j * y
 
     def _get_input_config(self, s: int) -> str:
