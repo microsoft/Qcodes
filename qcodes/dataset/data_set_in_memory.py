@@ -210,6 +210,26 @@ class DataSetInMem(Sized):
         self.mark_started(start_bg_writer=write_in_background)
 
     @property
+    def pristine(self) -> bool:
+        """
+        Is this :class:`.DataSet` pristine? A pristine :class:`.DataSet` has not yet been started,
+        meaning that parameters can still be added and removed, but results
+        can not be added.
+        """
+        return self._run_timestamp_raw is None and self._completed_timestamp_raw is None
+
+    @property
+    def running(self) -> bool:
+        """
+        Is this :class:`.DataSet` currently running? A running :class:`.DataSet` has been started,
+        but not yet completed.
+        """
+        return (
+            self._run_timestamp_raw is not None
+            and self._completed_timestamp_raw is None
+        )
+
+    @property
     def completed(self) -> bool:
         """
         Is this :class:`.DataSet` completed? A completed :class:`.DataSet` may not be modified in
@@ -543,25 +563,6 @@ class DataSetInMem(Sized):
         old_interdeps = new_to_old(self.description.interdeps)
         return list(old_interdeps.paramspecs)
 
-    @property
-    def pristine(self) -> bool:
-        """
-        Is this :class:`.DataSet` pristine? A pristine :class:`.DataSet` has not yet been started,
-        meaning that parameters can still be added and removed, but results
-        can not be added.
-        """
-        return self._run_timestamp_raw is None and self._completed_timestamp_raw is None
-
-    @property
-    def running(self) -> bool:
-        """
-        Is this :class:`.DataSet` currently running? A running :class:`.DataSet` has been started,
-        but not yet completed.
-        """
-        return (
-            self._run_timestamp_raw is not None
-            and self._completed_timestamp_raw is None
-        )
 
     @property
     def started(self) -> bool:
