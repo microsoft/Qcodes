@@ -681,13 +681,8 @@ def dond(
         for par in params:
             if isinstance(par, AbstractSweep):
                 sweep_instances.append(par)
-            elif isinstance(par, _BaseParameter):
-                params_meas.append(par)
             else:
-                raise ValueError(f'Cannot proceed: {par} is not either a'
-                                 ' sweep instance or measurement parameter.'
-                                 ' Please check the supplied `dond`'
-                                 ' arguments.')
+                params_meas.append(par)
         return sweep_instances, params_meas
 
     def _make_nested_setpoints(sweeps: List[AbstractSweep]) -> np.ndarray:
