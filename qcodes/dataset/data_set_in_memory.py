@@ -496,22 +496,6 @@ class DataSetInMem(Sized):
     def counter(self) -> int:
         return self._counter
 
-    # @property
-    # def parameters(self) -> str:
-    #     psnames = [ps.name for ps in self.description.interdeps.paramspecs]
-    #     return ",".join(psnames)
-
-    # @property
-    # def dependent_parameters(self) -> Tuple[ParamSpecBase, ...]:
-    #     """
-    #     Return all the parameters that explicitly depend on other parameters
-    #     """
-    #     return tuple(self._rundescriber.interdeps.dependencies.keys())
-
-    # @property
-    # def exp_id(self) -> int:
-    #     return self._exp_id
-
     def _set_parent_dataset_links(self, links: List[Link]) -> None:
         """
         Assign one or more links to parent datasets to this dataset. It is an
