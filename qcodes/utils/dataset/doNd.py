@@ -692,13 +692,12 @@ def dond(
 
     def _make_nested_setpoints(sweeps: List[AbstractSweep]) -> np.ndarray:
         """Create the cartesian product of all the setpoint values."""
-
+        if len(sweeps) == 0:
+            return np.array([[]])  # 0d sweep (do0d)
         setpoint_values = [sweep.get_setpoints() for sweep in sweeps]
         setpoint_grids = np.meshgrid(*setpoint_values, indexing='ij')
         flat_setpoint_grids = [np.ravel(grid, order='C')
                                for grid in setpoint_grids]
-        if len(setpoint_values) == 0:
-            return np.array([[]])  # 0d sweep (do0d)
         return np.vstack(flat_setpoint_grids).T
 
     sweep_instances, params_meas = _parse_dond_arguments(*params)
