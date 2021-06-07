@@ -222,7 +222,7 @@ class DataSetInMem(Sized):
         else:
             self.set_interdependencies(interdeps, shapes)
         links = [Link(head=self.guid, **pdict) for pdict in parent_datasets]
-        self.parent_dataset_links = links
+        self._set_parent_dataset_links(links)
         self.mark_started(start_bg_writer=write_in_background)
 
     @property
@@ -508,8 +508,7 @@ class DataSetInMem(Sized):
     def exp_id(self) -> int:
         return self._exp_id
 
-    @parent_dataset_links.setter
-    def parent_dataset_links(self, links: List[Link]) -> None:
+    def _set_parent_dataset_links(self, links: List[Link]) -> None:
         """
         Assign one or more links to parent datasets to this dataset. It is an
         error to assign links to a non-pristine dataset
