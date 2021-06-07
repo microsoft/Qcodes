@@ -15,11 +15,13 @@ from .export_to_pandas import (
 if TYPE_CHECKING:
     import xarray as xr
 
-    from qcodes.dataset.data_set import DataSet, ParameterData
+    from qcodes.dataset.data_set import ParameterData
+    from qcodes.dataset.data_set_protocol import DataSetProtocol
+
 
 
 def _load_to_xarray_dataarray_dict_no_metadata(
-    dataset: DataSet, datadict: Mapping[str, Mapping[str, np.ndarray]]
+    dataset: DataSetProtocol, datadict: Mapping[str, Mapping[str, np.ndarray]]
 ) -> Dict[str, xr.DataArray]:
     import xarray as xr
 
@@ -44,7 +46,7 @@ def _load_to_xarray_dataarray_dict_no_metadata(
 
 
 def load_to_xarray_dataarray_dict(
-    dataset: DataSet, datadict: Mapping[str, Mapping[str, np.ndarray]]
+    dataset: DataSetProtocol, datadict: Mapping[str, Mapping[str, np.ndarray]]
 ) -> Dict[str, xr.DataArray]:
     dataarrays = _load_to_xarray_dataarray_dict_no_metadata(dataset, datadict)
 
@@ -54,22 +56,23 @@ def load_to_xarray_dataarray_dict(
 
 
 def _add_metadata_to_xarray(
-        dataset: DataSet,
-        xrdataset: Union[xr.Dataset, xr.DataArray]
+    dataset: DataSetProtocol, xrdataset: Union[xr.Dataset, xr.DataArray]
 ) -> None:
-    xrdataset.attrs.update({
-        "ds_name": dataset.name,
-        "sample_name": dataset.sample_name,
-        "exp_name": dataset.exp_name,
-        "snapshot": dataset.snapshot_raw or "null",
-        "guid": dataset.guid,
-        "run_timestamp": dataset.run_timestamp() or "",
-        "completed_timestamp": dataset.completed_timestamp() or "",
-        "captured_run_id": dataset.captured_run_id,
-        "captured_counter": dataset.captured_counter,
-        "run_id": dataset.run_id,
-        "run_description": serial.to_json_for_storage(dataset.description)
-    })
+    xrdataset.attrs.update(
+        {
+            "ds_name": dataset.name,
+            "sample_name": dataset.sample_name,
+            "exp_name": dataset.exp_name,
+            "snapshot": dataset._snapshot_raw or "null",
+            "guid": dataset.guid,
+            "run_timestamp": dataset.run_timestamp() or "",
+            "completed_timestamp": dataset.completed_timestamp() or "",
+            "captured_run_id": dataset.captured_run_id,
+            "captured_counter": dataset.captured_counter,
+            "run_id": dataset.run_id,
+            "run_description": serial.to_json_for_storage(dataset.description),
+        }
+    )
     if dataset.run_timestamp_raw is not None:
         xrdataset.attrs["run_timestamp_raw"] = dataset.run_timestamp_raw
     if dataset.completed_timestamp_raw is not None:
@@ -80,7 +83,7 @@ def _add_metadata_to_xarray(
             xrdataset.attrs[metadata_tag] = metadata
 
 
-def load_to_xarray_dataset(dataset: DataSet, data: ParameterData) -> xr.Dataset:
+def load_to_xarray_dataset(dataset: DataSetProtocol, data: ParameterData) -> xr.Dataset:
     import xarray as xr
 
     if not _same_setpoints(data):
