@@ -629,15 +629,19 @@ def dond(
         ) -> AxesTupleListWithDataSet:
     """
     Perform n-dimentional scan from slowest (first) to the fastest (last), to
-    measure m measurement parameters. Supplied params are parsed into
-    sweep_instances and params_meas inside the function.
+    measure m measurement parameters. The dimensions should be specified
+    as sweep objects, and after them the parameters to measure should be passed.
 
     Args:
-        *params: Instances of n sweeping classes and m measurement parameters.
-            e.g., if linear sweep is considered:
-            LinSweep(param_set_1, start_1, stop_1, num_points_1, delay_1), ...,
-            LinSweep(param_set_n, start_n, stop_n, num_points_n, delay_n),
-            param_meas_1, param_meas_2, ..., param_meas_m
+        *params: Instances of n sweep classes and m measurement parameters,
+            e.g. if linear sweep is considered:
+
+            .. code-block::
+
+                LinSweep(param_set_1, start_1, stop_1, num_points_1, delay_1), ...,
+                LinSweep(param_set_n, start_n, stop_n, num_points_n, delay_n),
+                param_meas_1, param_meas_2, ..., param_meas_m
+
         write_period: The time after which the data is actually written to the
             database.
         measurement_name: Name of the measurement. This will be passed down to
@@ -657,7 +661,7 @@ def dond(
             separate threads. If you are measuring from several instruments
             this may give a significant speedup.
         additional_setpoints: A list of setpoint parameters to be registered in
-            the measurement but not scanned.
+            the measurement but not scanned/swept-over.
     """
     if do_plot is None:
         do_plot = config.dataset.dond_plot
@@ -672,7 +676,7 @@ def dond(
         List[ParamMeasT]
     ]:
         """
-        Parse supplied arguments params to sweep and measurement.
+        Parse supplied arguments into sweep objects and measurement parameters.
         """
         sweep_instances: List[AbstractSweep] = []
         params_meas: List[ParamMeasT] = []
