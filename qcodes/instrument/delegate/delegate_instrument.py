@@ -115,15 +115,16 @@ class DelegateInstrument(InstrumentBase):
                 setters=setters or {},
                 units=units or {}
             )
-        self._initial_values = initial_values or {}
-        if set_initial_values_on_load:
-            self.set_initial_values()
 
         if channels is not None:
             self._create_and_add_channels(
                 station=station,
                 channels=channels,
             )
+
+        self._initial_values = initial_values or {}
+        if set_initial_values_on_load:
+            self.set_initial_values()
 
     @staticmethod
     def parse_instrument_path(parent: Union[Station, InstrumentBase], path: str) -> Any:
