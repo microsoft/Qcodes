@@ -11,6 +11,8 @@ from typing import (
     Optional,
     Sequence,
     Union,
+    Type,
+    Dict,
 )
 
 from qcodes.instrument.base import InstrumentBase
@@ -279,7 +281,7 @@ class DelegateInstrument(InstrumentBase):
     def _create_and_add_channels(
         self,
         station: Station,
-        channels: Union[Mapping[str, Sequence[str]], Mapping[str, str]],
+        channels: Union[Mapping[str, Mapping[str, Any]], Mapping[str, str]],
     ) -> None:
         """Add channels to the instrument.
 
@@ -305,16 +307,16 @@ class DelegateInstrument(InstrumentBase):
         """
 
         channel_wrapper = None
-        channels = dict(channels)
-        channel_type = channels.pop("type", None)
+        channels_dict: Dict[str, Union[str, Mapping[str, Any]]] = dict(channels)
+        channel_type = channels_dict.pop("type", None)
         if channel_type is not None:
-            channel_type_elems = channel_type.split(".")
+            channel_type_elems = str(channel_type).split(".")
             module_name = '.'.join(channel_type_elems[:-1])
             instr_class_name = channel_type_elems[-1]
             module = importlib.import_module(module_name)
             channel_wrapper = getattr(module, instr_class_name)
 
-        for param_name, input_params in channels.items():
+        for param_name, input_params in channels_dict.items():
             self._create_and_add_channel(
                 param_name=param_name,
                 station=station,
@@ -327,7 +329,7 @@ class DelegateInstrument(InstrumentBase):
         param_name: str,
         station: Station,
         input_params: Union[str, Mapping[str, Any]],
-        channel_wrapper: Optional[InstrumentChannel],
+        channel_wrapper: Optional[Type[InstrumentChannel]],
         **kwargs: Any
     ) -> None:
         """Adds a channel to the instrument.
