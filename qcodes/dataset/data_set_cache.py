@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import logging
-from typing import TYPE_CHECKING, Dict, Mapping, Optional, Tuple
+from typing import TYPE_CHECKING, Dict, Generic, Mapping, Optional, Tuple, TypeVar
 
 import numpy as np
 
@@ -22,12 +24,14 @@ if TYPE_CHECKING:
     import xarray as xr
 
     from .data_set import DataSet, ParameterData
+    from .data_set_protocol import DataSetProtocol
 
+DatasetType = TypeVar("DatasetType", bound="DataSetProtocol", covariant=True)
 
 log = logging.getLogger(__name__)
 
 
-class DataSetCache:
+class DataSetCache(Generic[DatasetType]):
     """
     The DataSetCache contains a in memory representation of the
     data in this dataset as well a a method to progressively read data
@@ -39,7 +43,7 @@ class DataSetCache:
     :py:class:`.DataSet.to_pandas_dataframe_dict`
     """
 
-    def __init__(self, dataset: 'DataSet'):
+    def __init__(self, dataset: DatasetType):
         self._dataset = dataset
         self._data: ParameterData = {}
         #: number of rows read per parameter tree (by the name of the dependent parameter)
@@ -53,41 +57,6 @@ class DataSetCache:
     def rundescriber(self) -> RunDescriber:
         return self._dataset.description
 
-    def load_data_from_db(self) -> None:
-        """
-        Loads data from the dataset into the cache.
-        If new data has been added to the dataset since the last time
-        this method was called, calling this method again would load
-        that new portion of the data and append to the already loaded data.
-        If the dataset is marked completed and data has already been loaded
-        no load will be performed.
-        """
-        if self.live:
-            raise RuntimeError("Cannot load data into this cache from the "
-                               "database because this dataset is being built "
-                               "in-memory.")
-
-        if self._loaded_from_completed_ds:
-            return
-        self._dataset._completed = completed(
-            self._dataset.conn, self._dataset.run_id)
-        if self._dataset.completed:
-            self._loaded_from_completed_ds = True
-
-
-        (self._write_status,
-         self._read_status,
-         self._data) = load_new_data_from_db_and_append(
-            self._dataset.conn,
-            self._dataset.table_name,
-            self.rundescriber,
-            self._write_status,
-            self._read_status,
-            self._data
-        )
-        if not all(status is None for status in self._write_status.values()):
-            self._live = False
-
     @property
     def live(self) -> Optional[bool]:
         """
@@ -97,7 +66,7 @@ class DataSetCache:
         """
         return self._live
 
-    def data(self) -> 'ParameterData':
+    def data(self) -> ParameterData:
         """
         Loads data from the database on disk if needed and returns
         the cached data. The cached data is in almost the same format as
@@ -113,6 +82,14 @@ class DataSetCache:
             self.load_data_from_db()
 
         return self._data
+
+    def load_data_from_db(self) -> None:
+        """
+        Load the data from an on-disk format in case the cache is not live
+
+        Should be implemented in a specific subclass that knows how to read data
+        from disk
+        """
 
     def add_data(self, new_data: Mapping[str, Mapping[str, np.ndarray]]) -> None:
         if self.live is False:
@@ -140,7 +117,7 @@ class DataSetCache:
         if not all(status is None for status in self._write_status.values()):
             self._live = True
 
-    def to_pandas_dataframe_dict(self) -> Dict[str, "pd.DataFrame"]:
+    def to_pandas_dataframe_dict(self) -> Dict[str, pd.DataFrame]:
         """
         Convert the cached dataset to Pandas dataframes. The returned dataframes
         are in the same format :py:class:`.DataSet.to_pandas_dataframe_dict`.
@@ -152,7 +129,7 @@ class DataSetCache:
         data = self.data()
         return load_to_dataframe_dict(data)
 
-    def to_pandas_dataframe(self) -> "pd.DataFrame":
+    def to_pandas_dataframe(self) -> pd.DataFrame:
         """
         Convert the cached dataset to Pandas dataframes. The returned dataframes
         are in the same format :py:class:`.DataSet.to_pandas_dataframe_dict`.
@@ -165,7 +142,7 @@ class DataSetCache:
         return load_to_concatenated_dataframe(data)
 
     @deprecate(alternative="to_pandas_dataframe or to_pandas_dataframe_dict")
-    def to_pandas(self) -> Dict[str, "pd.DataFrame"]:
+    def to_pandas(self) -> Dict[str, pd.DataFrame]:
         """
         Returns the values stored in the :class:`.dataset.data_set.DataSet` as a
         concatenated :py:class:`pandas.DataFrame` s
@@ -185,7 +162,7 @@ class DataSetCache:
         """
         return self.to_pandas_dataframe_dict()
 
-    def to_xarray_dataarray_dict(self) -> Dict[str, "xr.DataArray"]:
+    def to_xarray_dataarray_dict(self) -> Dict[str, xr.DataArray]:
         """
         Returns the values stored in the :class:`.dataset.data_set.DataSet` as a dict of
         :py:class:`xr.DataArray` s
@@ -200,7 +177,7 @@ class DataSetCache:
         data = self.data()
         return load_to_xarray_dataarray_dict(self._dataset, data)
 
-    def to_xarray_dataset(self) -> "xr.Dataset":
+    def to_xarray_dataset(self) -> xr.Dataset:
         """
         Returns the values stored in the :class:`.dataset.data_set.DataSet` as a
         :py:class:`xr.Dataset` object.
@@ -455,3 +432,42 @@ def _expand_single_param_dict(
             )
 
     return expanded_param_dict
+
+
+class DataSetCacheWithDBBackend(DataSetCache["DataSet"]):
+    def load_data_from_db(self) -> None:
+        """
+        Loads data from the dataset into the cache.
+        If new data has been added to the dataset since the last time
+        this method was called, calling this method again would load
+        that new portion of the data and append to the already loaded data.
+        If the dataset is marked completed and data has already been loaded
+        no load will be performed.
+        """
+        if self.live:
+            raise RuntimeError(
+                "Cannot load data into this cache from the "
+                "database because this dataset is being built "
+                "in-memory."
+            )
+
+        if self._loaded_from_completed_ds:
+            return
+        self._dataset.completed = completed(self._dataset.conn, self._dataset.run_id)
+        if self._dataset.completed:
+            self._loaded_from_completed_ds = True
+
+        (
+            self._write_status,
+            self._read_status,
+            self._data,
+        ) = load_new_data_from_db_and_append(
+            self._dataset.conn,
+            self._dataset.table_name,
+            self.rundescriber,
+            self._write_status,
+            self._read_status,
+            self._data,
+        )
+        if not all(status is None for status in self._write_status.values()):
+            self._live = False
