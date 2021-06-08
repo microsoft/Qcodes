@@ -15,7 +15,3 @@ Improved:
 ---------
 
 - DelegateInstrument can now have instrument channels. (#3089)
-
-
-
-

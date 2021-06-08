@@ -5,24 +5,24 @@ from functools import partial
 from typing import (
     Any,
     Callable,
+    Dict,
     List,
     Mapping,
     MutableMapping,
     Optional,
     Sequence,
-    Union,
     Type,
-    Dict,
+    Union,
 )
 
 from qcodes.instrument.base import InstrumentBase
+from qcodes.instrument.channel import InstrumentChannel
 from qcodes.instrument.delegate.grouped_parameter import (
     DelegateGroup,
     DelegateGroupParameter,
     GroupedParameter,
 )
 from qcodes.instrument.parameter import Parameter
-from qcodes.instrument.channel import InstrumentChannel
 from qcodes.station import Station
 
 _log = logging.getLogger(__name__)
@@ -377,5 +377,3 @@ class DelegateInstrument(InstrumentBase):
     def __repr__(self) -> str:
         params = ", ".join(self.parameters.keys())
         return f"DelegateInstrument(name={self.name}, parameters={params})"
-
-

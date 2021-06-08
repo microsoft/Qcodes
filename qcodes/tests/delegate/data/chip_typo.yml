@@ -40,5 +40,3 @@ instruments:
           gate_1.voltage.post_delay: 0.01
         channel_device_custom:
           readout: 1e-5
-
-
