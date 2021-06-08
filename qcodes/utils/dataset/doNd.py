@@ -115,8 +115,11 @@ def _call_params(param_meas: Sequence[ParamMeasT]) -> OutType:
 
 def _process_params_meas(
     param_meas: Sequence[ParamMeasT],
-        use_threads: bool = False
+        use_threads: Optional[bool] = None
     ) -> OutType:
+
+    if use_threads is None:
+        use_threads = config.dataset.use_threads
 
     if use_threads:
         return _call_params_threaded(param_meas)
@@ -177,7 +180,7 @@ def do0d(
         measurement_name: str = "",
         exp: Optional[Experiment] = None,
         do_plot: Optional[bool] = None,
-        use_threads: bool = False,
+        use_threads: Optional[bool] = None,
         ) -> AxesTupleListWithDataSet:
     """
     Perform a measurement of a single parameter. This is probably most
@@ -245,7 +248,7 @@ def do1d(
         measurement_name: str = "",
         exp: Optional[Experiment] = None,
         do_plot: Optional[bool] = None,
-        use_threads: bool = False,
+        use_threads: Optional[bool] = None,
         additional_setpoints: Sequence[ParamMeasT] = tuple(),
         show_progress: Optional[None] = None,
         ) -> AxesTupleListWithDataSet:
@@ -362,7 +365,7 @@ def do2d(
         exp: Optional[Experiment] = None,
         flush_columns: bool = False,
         do_plot: Optional[bool] = None,
-        use_threads: bool = False,
+        use_threads: Optional[bool] = None,
         additional_setpoints: Sequence[ParamMeasT] = tuple(),
         show_progress: Optional[None] = None,
         ) -> AxesTupleListWithDataSet:
@@ -636,7 +639,7 @@ def dond(
     exit_actions: ActionsT = (),
     do_plot: Optional[bool] = None,
     show_progress: Optional[bool] = None,
-    use_threads: bool = False,
+    use_threads: Optional[bool] = None,
     additional_setpoints: Sequence[ParamMeasT] = tuple(),
 ) -> AxesTupleListWithDataSet:
     """
