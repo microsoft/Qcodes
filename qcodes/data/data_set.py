@@ -423,7 +423,7 @@ class DataSet(DelegateAttributes):
         # else:
         #     log.debug('.store method: This is not the right time to write')
 
-    def default_parameter_name(self, paramname: Optional[str] = None):
+    def default_parameter_name(self, paramname: Optional[str] = None) -> Optional[str]:
         """Return name of default parameter for plotting
 
         The default parameter is determined by looking into
@@ -434,7 +434,7 @@ class DataSet(DelegateAttributes):
             paramname: Name to match to parameter name
 
         Returns:
-            (Optional[str]): name of the default parameter
+            Name of the default parameter, or None if no parameter is found
         """
         arraynames = self.arrays.keys()
 
