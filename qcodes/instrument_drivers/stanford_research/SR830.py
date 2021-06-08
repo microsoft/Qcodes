@@ -11,7 +11,7 @@ from qcodes.instrument.parameter import (
     ParameterWithSetpoints,
     ParamRawDataType,
 )
-from qcodes.utils.validators import Arrays, Enum, Ints, Numbers, Strings
+from qcodes.utils.validators import Arrays, ComplexNumbers, Enum, Ints, Numbers, Strings
 
 
 class ChannelTrace(ParameterWithSetpoints):
@@ -442,6 +442,17 @@ class SR830(VisaInstrument):
                            get_parser=float,
                            unit='deg')
 
+        self.add_parameter(
+            "complex_voltage",
+            label="Voltage",
+            get_cmd=self._get_complex_voltage,
+            unit="V",
+            docstring="Complex voltage parameter "
+            "calculated from X, Y phase using "
+            "Z = X +j*Y",
+            vals=ComplexNumbers(),
+        )
+
         # Data buffer settings
         self.add_parameter('buffer_SR',
                            label='Buffer sample rate',
@@ -745,6 +756,10 @@ class SR830(VisaInstrument):
         # make a public parameter function that allows to change the units
         for param in [self.X, self.Y, self.R, self.sensitivity]:
             param.unit = unit
+
+    def _get_complex_voltage(self) -> complex:
+        x, y = self.snap("X", "Y")
+        return x + 1.0j * y
 
     def _get_input_config(self, s: int) -> str:
         mode = self._N_TO_INPUT_CONFIG[int(s)]
