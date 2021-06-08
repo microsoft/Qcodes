@@ -115,8 +115,8 @@ def _call_params(param_meas: Sequence[ParamMeasT]) -> OutType:
 
 def process_params_meas(
     param_meas: Sequence[ParamMeasT],
-        use_threads: Optional[bool] = None
-    ) -> OutType:
+    use_threads: Optional[bool] = None
+) -> OutType:
 
     if use_threads is None:
         use_threads = config.dataset.use_threads
