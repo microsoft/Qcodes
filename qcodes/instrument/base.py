@@ -413,8 +413,9 @@ class InstrumentBase(Metadatable, DelegateAttributes):
     def _add_params_from_decorated_methods(self):
 
         def special_kwargs_to_meth(self, kwarg_value):
-            """Returns the attribute that has the name `kwarg_value.attr_name`
-             of this instance if the kwarg_value is of type `InstanceAttr`.
+            """
+            Returns the attribute that has the name `kwarg_value.attr_name`
+            of this instance if the kwarg_value is of type `InstanceAttr`.
             """
             if isinstance(kwarg_value, InstanceAttr):
                 return getattr(self, kwarg_value.attr_name)
@@ -439,7 +440,8 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
 
 class InstanceAttr:
-    """An auxiliary class to be used together with the
+    """
+    An auxiliary class to be used together with the
     :obj:`qcodes.instrument.base.add_parameter` decorator to allow adding parameters
     that require information available only during the `__init__()` of an Instrument
     subclass.
@@ -449,6 +451,7 @@ class InstanceAttr:
         self.attr_name: str = attr_name
 
     def __repr__(self):
+        """Return the class name and `self.attr_name`."""
         return f"{self.__class__.__name__}('{self.attr_name}')"
 
 
