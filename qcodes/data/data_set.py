@@ -5,7 +5,7 @@ import time
 from collections import OrderedDict
 from copy import deepcopy
 from traceback import format_exc
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Optional
 
 import numpy as np
 import xarray as xr
@@ -423,15 +423,15 @@ class DataSet(DelegateAttributes):
         # else:
         #     log.debug('.store method: This is not the right time to write')
 
-    def default_parameter_name(self, paramname='amplitude'):
-        """ Return name of default parameter for plotting
+    def default_parameter_name(self, paramname: Optional[str] = None):
+        """Return name of default parameter for plotting
 
         The default parameter is determined by looking into
         metdata['default_parameter_name'].  If this variable is not present,
         then the closest match to the argument paramname is tried.
 
         Args:
-            paramname (str): Name to match to parameter name
+            paramname: Name to match to parameter name
 
         Returns:
             (Optional[str]): name of the default parameter
@@ -448,12 +448,13 @@ class DataSet(DelegateAttributes):
             return paramname
 
         # try find something similar
-        vv = [v for v in arraynames if v.endswith(paramname)]
-        if (len(vv) > 0):
-            return vv[0]
-        vv = [v for v in arraynames if v.startswith(paramname)]
-        if (len(vv) > 0):
-            return vv[0]
+        if paramname is not None:
+            vv = [v for v in arraynames if v.endswith(paramname)]
+            if len(vv) > 0:
+                return vv[0]
+            vv = [v for v in arraynames if v.startswith(paramname)]
+            if len(vv) > 0:
+                return vv[0]
 
         # try to get the first non-setpoint array
         vv = [v for v in arraynames if not self.arrays[v].is_setpoint]
