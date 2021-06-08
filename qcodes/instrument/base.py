@@ -420,6 +420,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 return getattr(self, kwarg_value.attr_name)
             return kwarg_value
 
+        # decorated methods are required to have a specific prefix
         has_parameter_prefix = lambda s: s.startswith(DECORATED_METHOD_PREFIX)
 
         for obj_name in filter(has_parameter_prefix, dir(self)):
