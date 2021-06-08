@@ -1,6 +1,6 @@
 from functools import partial
 import logging
-from typing import Any, Sequence, Dict, Optional, Union
+from typing import Any, Sequence, Dict, Optional, Union, List
 
 import numpy as np
 
@@ -896,7 +896,7 @@ class MockCustomChannel(InstrumentChannel):
         parent: InstrumentBase,
         name: str,
         channel: Union[str, InstrumentChannel],
-        current_valid_range: Optional[list] = None,
+        current_valid_range: Optional[List[float]] = None,
     ) -> None:
         """A custom instrument channel emulating an existing channel and
         extending by a parameter not found in the original channel:
