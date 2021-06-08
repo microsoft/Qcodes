@@ -141,7 +141,7 @@ class DelegateGroup(Group):
             return self.get_parameters()
 
     def get_parameters(self) -> Any:
-        return self._formatter(*[_p.get() for _p in self.parameters.values()])
+        return self._formatter(*(_p.get() for _p in self.parameters.values()))
 
     def _set_from_dict(self, calling_dict: Mapping[str, ParamRawDataType]) -> None:
         for name, p in list(self.parameters.items()):

@@ -13,13 +13,18 @@ from hypothesis.strategies import floats, tuples
 import qcodes.instrument.sims as sims
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.ip_to_visa import AMI430_VISA
-from qcodes.instrument_drivers.american_magnetics.AMI430 import (AMI430,
-                                                                 AMI430_3D,
-                                                                 AMI430Warning)
+from qcodes.instrument_drivers.american_magnetics.AMI430 import (
+    AMI430,
+    AMI430_3D,
+    AMI430Warning,
+)
 from qcodes.math_utils.field_vector import FieldVector
-from qcodes.utils.types import (numpy_concrete_floats, numpy_concrete_ints,
-                                numpy_non_concrete_floats_instantiable,
-                                numpy_non_concrete_ints_instantiable)
+from qcodes.utils.types import (
+    numpy_concrete_floats,
+    numpy_concrete_ints,
+    numpy_non_concrete_floats_instantiable,
+    numpy_non_concrete_ints_instantiable,
+)
 
 _time_resolution = time.get_clock_info('time').resolution
 
@@ -422,7 +427,7 @@ def test_field_limit_exception(current_driver):
     x = np.linspace(-3, 3, 11)
     y = np.copy(x)
     z = np.copy(x)
-    set_points = zip(*[i.flatten() for i in np.meshgrid(x, y, z)])
+    set_points = zip(*(i.flatten() for i in np.meshgrid(x, y, z)))
 
     for set_point in set_points:
         should_not_raise = any([is_safe(*set_point)
