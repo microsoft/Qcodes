@@ -547,8 +547,14 @@ class LinSweep(AbstractSweep):
         delay: Time in seconds between two consequtive sweep points
     """
 
-    def __init__(self, param: _BaseParameter, start: float, stop: float,
-                 num_points: int, delay: float = 0):
+    def __init__(
+        self,
+        param: _BaseParameter,
+        start: float,
+        stop: float,
+        num_points: int,
+        delay: float = 0,
+    ):
         self._param = param
         self._start = start
         self._stop = stop
@@ -587,8 +593,14 @@ class LogSweep(AbstractSweep):
         delay: Time in seconds between two consequtive sweep points.
     """
 
-    def __init__(self, param: _BaseParameter, start: float, stop: float,
-                 num_points: int, delay: float = 0):
+    def __init__(
+        self,
+        param: _BaseParameter,
+        start: float,
+        stop: float,
+        num_points: int,
+        delay: float = 0,
+    ):
         self._param = param
         self._start = start
         self._stop = stop
@@ -625,7 +637,7 @@ def dond(
     do_plot: Optional[bool] = None,
     show_progress: Optional[bool] = None,
     use_threads: bool = False,
-    additional_setpoints: Sequence[ParamMeasT] = tuple()
+    additional_setpoints: Sequence[ParamMeasT] = tuple(),
 ) -> AxesTupleListWithDataSet:
     """
     Perform n-dimentional scan from slowest (first) to the fastest (last), to
@@ -690,32 +702,31 @@ def dond(
         if len(sweeps) == 0:
             return np.array([[]])  # 0d sweep (do0d)
         setpoint_values = [sweep.get_setpoints() for sweep in sweeps]
-        setpoint_grids = np.meshgrid(*setpoint_values, indexing='ij')
-        flat_setpoint_grids = [np.ravel(grid, order='C')
-                               for grid in setpoint_grids]
+        setpoint_grids = np.meshgrid(*setpoint_values, indexing="ij")
+        flat_setpoint_grids = [np.ravel(grid, order="C") for grid in setpoint_grids]
         return np.vstack(flat_setpoint_grids).T
 
     sweep_instances, params_meas = _parse_dond_arguments(*params)
     nested_setpoints = _make_nested_setpoints(sweep_instances)
 
-    all_setpoint_params = tuple(sweep.param for sweep in sweep_instances) \
-        + tuple(s for s in additional_setpoints)
+    all_setpoint_params = tuple(sweep.param for sweep in sweep_instances) + tuple(
+        s for s in additional_setpoints
+    )
 
-    measured_parameters = tuple(par for par in params_meas
-                                if isinstance(par, _BaseParameter))
+    measured_parameters = tuple(
+        par for par in params_meas if isinstance(par, _BaseParameter)
+    )
 
     try:
-        loop_shape = tuple(
-            1 for _ in additional_setpoints
-        ) + tuple(sweep.num_points for sweep in sweep_instances)
-        shapes: Shapes = detect_shape_of_measurement(
-            measured_parameters,
-            loop_shape
+        loop_shape = tuple(1 for _ in additional_setpoints) + tuple(
+            sweep.num_points for sweep in sweep_instances
         )
+        shapes: Shapes = detect_shape_of_measurement(measured_parameters, loop_shape)
     except TypeError:
         LOG.exception(
             f"Could not detect shape of {measured_parameters} "
-            f"falling back to unknown shape.")
+            f"falling back to unknown shape."
+        )
         shapes = None
 
     _register_parameters(meas, all_setpoint_params)
