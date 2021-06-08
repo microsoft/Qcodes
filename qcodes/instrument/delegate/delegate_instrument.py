@@ -80,21 +80,28 @@ class DelegateInstrument(InstrumentBase):
 
     as opposed to ``field.X.field.set()`` which ramps with ``block=True``.
 
+
     Args:
         name: Instrument name
-        station: Station containing the real instrument that is used to get the endpoint
-            parameters.
+        station: Station containing the real instrument that is used to get
+            the endpoint parameters.
         parameters: A mapping from the name of a parameter to the sequence
             of source parameters that it points to.
+        channels: A mapping from the name of an instrument channel to either
+            the channel it emulates or a mapping of keworded input parameters
+            of a custom channel wrapper class. This custom channel wrapper
+            class needs to be specified under the `type` keyword.
         initial_values: Default values to set on the delegate instrument's
-            parameters. Defaults to None (no initial values are specified or set).
+            parameters. Defaults to None (no initial values are specified or
+            set).
         set_initial_values_on_load: Flag to set initial values when the
             instrument is loaded. Defaults to False.
-        setters: Optional setter methods to use instead of calling the ``.set()``
-            method on the endpoint parameters. Defaults to None.
+        setters: Optional setter methods to use instead of calling the
+            ``.set()`` method on the endpoint parameters. Defaults to None.
         units: Optional units to set for parameters.
         metadata: Optional metadata to pass to instrument. Defaults to None.
     """
+
     param_cls = DelegateGroupParameter
 
     def __init__(
