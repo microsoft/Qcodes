@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+from abc import ABC, abstractmethod
 from collections import defaultdict
 from contextlib import contextmanager
 from typing import Callable, Dict, Iterator, List, Optional, Sequence, Tuple, Union
@@ -493,6 +494,273 @@ def do2d(
 
     param_set1.post_delay = original_delay1
     param_set2.post_delay = original_delay2
+
+    return _handle_plotting(dataset, do_plot, interrupted())
+
+
+class AbstractSweep(ABC):
+    """
+    Abstract sweep class that defines an interface for concrete sweep classes.
+    """
+
+    @abstractmethod
+    def get_setpoints(self) -> np.ndarray:
+        """
+        Returns an array of setpoint values for this sweep.
+        """
+        pass
+
+    @property
+    @abstractmethod
+    def param(self) -> _BaseParameter:
+        """
+        Returns the Qcodes sweep parameter.
+        """
+        pass
+
+    @property
+    @abstractmethod
+    def delay(self) -> float:
+        """
+        Delay between two consecutive sweep points.
+        """
+        pass
+
+    @property
+    @abstractmethod
+    def num_points(self) -> int:
+        """
+        Number of sweep points.
+        """
+        pass
+
+
+class LinSweep(AbstractSweep):
+    """
+    Linear sweep.
+
+    Args:
+        param: Qcodes parameter to sweep.
+        start: Sweep start value.
+        stop: Sweep end value.
+        num_points: Number of sweep points.
+        delay: Time in seconds between two consequtive sweep points
+    """
+
+    def __init__(
+        self,
+        param: _BaseParameter,
+        start: float,
+        stop: float,
+        num_points: int,
+        delay: float = 0,
+    ):
+        self._param = param
+        self._start = start
+        self._stop = stop
+        self._num_points = num_points
+        self._delay = delay
+
+    def get_setpoints(self) -> np.ndarray:
+        """
+        Linear (evenly spaced) numpy array for supplied start, stop and
+        num_points.
+        """
+        return np.linspace(self._start, self._stop, self._num_points)
+
+    @property
+    def param(self) -> _BaseParameter:
+        return self._param
+
+    @property
+    def delay(self) -> float:
+        return self._delay
+
+    @property
+    def num_points(self) -> int:
+        return self._num_points
+
+
+class LogSweep(AbstractSweep):
+    """
+    Logarithmic sweep.
+
+    Args:
+        param: Qcodes parameter for sweep.
+        start: Sweep start value.
+        stop: Sweep end value.
+        num_points: Number of sweep points.
+        delay: Time in seconds between two consequtive sweep points.
+    """
+
+    def __init__(
+        self,
+        param: _BaseParameter,
+        start: float,
+        stop: float,
+        num_points: int,
+        delay: float = 0,
+    ):
+        self._param = param
+        self._start = start
+        self._stop = stop
+        self._num_points = num_points
+        self._delay = delay
+
+    def get_setpoints(self) -> np.ndarray:
+        """
+        Logarithmically spaced numpy array for supplied start, stop and
+        num_points.
+        """
+        return np.logspace(self._start, self._stop, self._num_points)
+
+    @property
+    def param(self) -> _BaseParameter:
+        return self._param
+
+    @property
+    def delay(self) -> float:
+        return self._delay
+
+    @property
+    def num_points(self) -> int:
+        return self._num_points
+
+
+def dond(
+    *params: Union[AbstractSweep, ParamMeasT],
+    write_period: Optional[float] = None,
+    measurement_name: str = "",
+    exp: Optional[Experiment] = None,
+    enter_actions: ActionsT = (),
+    exit_actions: ActionsT = (),
+    do_plot: Optional[bool] = None,
+    show_progress: Optional[bool] = None,
+    use_threads: bool = False,
+    additional_setpoints: Sequence[ParamMeasT] = tuple(),
+) -> AxesTupleListWithDataSet:
+    """
+    Perform n-dimentional scan from slowest (first) to the fastest (last), to
+    measure m measurement parameters. The dimensions should be specified
+    as sweep objects, and after them the parameters to measure should be passed.
+
+    Args:
+        *params: Instances of n sweep classes and m measurement parameters,
+            e.g. if linear sweep is considered:
+
+            .. code-block::
+
+                LinSweep(param_set_1, start_1, stop_1, num_points_1, delay_1), ...,
+                LinSweep(param_set_n, start_n, stop_n, num_points_n, delay_n),
+                param_meas_1, param_meas_2, ..., param_meas_m
+
+        write_period: The time after which the data is actually written to the
+            database.
+        measurement_name: Name of the measurement. This will be passed down to
+            the dataset produced by the measurement. If not given, a default
+            value of 'results' is used for the dataset.
+        exp: The experiment to use for this measurement.
+        enter_actions: A list of functions taking no arguments that will be
+            called before the measurements start.
+        exit_actions: A list of functions taking no arguments that will be
+            called after the measurements ends.
+        do_plot: should png and pdf versions of the images be saved and plots
+            are shown after the run. If None the setting will be read from
+            ``qcodesrc.json``
+        show_progress: should a progress bar be displayed during the
+            measurement. If None the setting will be read from ``qcodesrc.json`
+        use_threads: If True, measurements from each instrument will be done on
+            separate threads. If you are measuring from several instruments
+            this may give a significant speedup.
+        additional_setpoints: A list of setpoint parameters to be registered in
+            the measurement but not scanned/swept-over.
+    """
+    if do_plot is None:
+        do_plot = config.dataset.dond_plot
+    if show_progress is None:
+        show_progress = config.dataset.dond_show_progress
+
+    meas = Measurement(name=measurement_name, exp=exp)
+
+    def _parse_dond_arguments(
+        *params: Union[AbstractSweep, ParamMeasT]
+    ) -> Tuple[List[AbstractSweep], List[ParamMeasT]]:
+        """
+        Parse supplied arguments into sweep objects and measurement parameters.
+        """
+        sweep_instances: List[AbstractSweep] = []
+        params_meas: List[ParamMeasT] = []
+        for par in params:
+            if isinstance(par, AbstractSweep):
+                sweep_instances.append(par)
+            else:
+                params_meas.append(par)
+        return sweep_instances, params_meas
+
+    def _make_nested_setpoints(sweeps: List[AbstractSweep]) -> np.ndarray:
+        """Create the cartesian product of all the setpoint values."""
+        if len(sweeps) == 0:
+            return np.array([[]])  # 0d sweep (do0d)
+        setpoint_values = [sweep.get_setpoints() for sweep in sweeps]
+        setpoint_grids = np.meshgrid(*setpoint_values, indexing="ij")
+        flat_setpoint_grids = [np.ravel(grid, order="C") for grid in setpoint_grids]
+        return np.vstack(flat_setpoint_grids).T
+
+    sweep_instances, params_meas = _parse_dond_arguments(*params)
+    nested_setpoints = _make_nested_setpoints(sweep_instances)
+
+    all_setpoint_params = tuple(sweep.param for sweep in sweep_instances) + tuple(
+        s for s in additional_setpoints
+    )
+
+    measured_parameters = tuple(
+        par for par in params_meas if isinstance(par, _BaseParameter)
+    )
+
+    try:
+        loop_shape = tuple(1 for _ in additional_setpoints) + tuple(
+            sweep.num_points for sweep in sweep_instances
+        )
+        shapes: Shapes = detect_shape_of_measurement(measured_parameters, loop_shape)
+    except TypeError:
+        LOG.exception(
+            f"Could not detect shape of {measured_parameters} "
+            f"falling back to unknown shape."
+        )
+        shapes = None
+
+    _register_parameters(meas, all_setpoint_params)
+    _register_parameters(
+        meas, params_meas, setpoints=all_setpoint_params, shapes=shapes
+    )
+    _set_write_period(meas, write_period)
+    _register_actions(meas, enter_actions, exit_actions)
+
+    original_delays: Dict[_BaseParameter, float] = {}
+    params_set: List[_BaseParameter] = []
+    for sweep in sweep_instances:
+        original_delays[sweep.param] = sweep.param.post_delay
+        sweep.param.post_delay = sweep.delay
+        params_set.append(sweep.param)
+
+    try:
+        with _catch_keyboard_interrupts() as interrupted, meas.run() as datasaver:
+            additional_setpoints_data = _process_params_meas(additional_setpoints)
+            for setpoints in tqdm(nested_setpoints, disable=not show_progress):
+                param_set_list = []
+                param_value_pairs = zip(params_set[::-1], setpoints[::-1])
+                for setpoint_param, setpoint in param_value_pairs:
+                    setpoint_param(setpoint)
+                    param_set_list.append((setpoint_param, setpoint))
+                datasaver.add_result(
+                    *param_set_list,
+                    *_process_params_meas(params_meas, use_threads=use_threads),
+                    *additional_setpoints_data,
+                )
+            dataset = datasaver.dataset
+    finally:
+        for parameter, original_delay in original_delays.items():
+            parameter.post_delay = original_delay
 
     return _handle_plotting(dataset, do_plot, interrupted())
 
