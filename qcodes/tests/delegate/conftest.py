@@ -49,3 +49,24 @@ def chip(station, chip_config):
     station.load_config_file(chip_config)
     _chip = station.load_MockChip_123(station=station)
     return _chip
+
+
+# @pytest.fixture()
+# def channel_device_custom(station, chip_config):
+#     if hasattr(station, "channel_device_custom"):
+#         return station.channel_device_custom
+
+#     station.load_config_file(chip_config)
+#     _chip = station.load_channel_device_custom(station=station)
+#     return _chip
+
+
+# @pytest.fixture()
+# def channel_device(station, chip_config):
+#     if hasattr(station, "channel_device"):
+#         return station.channel_device
+
+#     station.load_config_file(chip_config)
+#     _chip = station.load_channel_device(station=station)
+#     return _chip
+
