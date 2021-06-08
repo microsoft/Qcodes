@@ -214,6 +214,7 @@
                             "description": "Upper and lower percentage of datapoints that may maximally be discarded by the auto color scale. For example for [1,1] the auto color scale will in a set of 10 0000 points not clip more than the 100 points of lowest and highest value.",
                             "type": "array",
                             "items": {
+                                "type": "number",
                                 "type": "number"
                             },
                             "default": [0.5, 0.5]
