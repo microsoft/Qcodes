@@ -485,10 +485,12 @@ def do2d(
                 else:
                     param_set2.set(set_point2)
 
-                datasaver.add_result((param_set1, set_point1),
-                                     (param_set2, set_point2),
-                                     *process_params_meas(param_meas, use_threads=use_threads),
-                                     *additional_setpoints_data)
+                datasaver.add_result(
+                    (param_set1, set_point1),
+                    (param_set2, set_point2),
+                    *process_params_meas(param_meas, use_threads=use_threads),
+                    *additional_setpoints_data
+                )
 
             for action in after_inner_actions:
                 action()
