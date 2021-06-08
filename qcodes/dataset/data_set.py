@@ -772,7 +772,7 @@ class DataSet(Sized):
 
         self._raise_if_not_writable()
 
-        expected_keys = frozenset.union(*[frozenset(d) for d in results])
+        expected_keys = frozenset.union(*(frozenset(d) for d in results))
         values = [[d.get(k, None) for k in expected_keys] for d in results]
 
         writer_status = self._writer_status
