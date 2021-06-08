@@ -896,9 +896,21 @@ class MockCustomChannel(InstrumentChannel):
         parent: InstrumentBase,
         name: str,
         channel: Union[str, InstrumentChannel],
-        current_valid_ranges: Optional[list] = None,
+        current_valid_range: Optional[list] = None,
     ) -> None:
-        """ """
+        """A custom instrument channel emulating an existing channel and
+        extending by a parameter not found in the original channel:
+        current_valid_range.
+
+        Args:
+            parent: Instrument to which the original channel belongs to,
+                usually a dac.
+            name: Name of channel.
+            channel: The original instrument channel.
+            current_valid_range: Voltage range the channel is expected to show
+                interesting features. It's just an example of an additional
+                parameter a regular instrument channel does not have.
+        """
 
         if isinstance(channel, str):
             _ , channel_name = channel.split('.')
@@ -911,12 +923,12 @@ class MockCustomChannel(InstrumentChannel):
 
         super().__init__(parent, name)
 
-        if current_valid_ranges is None:
-            current_valid_ranges = []
+        if current_valid_range is None:
+            current_valid_range = []
         super().add_parameter(
             name="current_valid_range",
             label=f"{name} valid voltage range",
-            initial_value=current_valid_ranges,
+            initial_value=current_valid_range,
             vals=Lists(),
             get_cmd=None, set_cmd=None,
         )
@@ -930,4 +942,3 @@ class MockCustomChannel(InstrumentChannel):
             vals=Numbers(-2., 2.),
             get_cmd=None, set_cmd=None
         )
-
