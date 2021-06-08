@@ -17,6 +17,9 @@ from typing import (
     cast,
 )
 
+from functools import wraps
+import inspect
+
 import numpy as np
 
 from qcodes.logger.instrument_logger import get_instrument_logger
@@ -73,6 +76,8 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         self._meta_attrs = ['name']
 
         self.log = get_instrument_logger(self, __name__)
+
+        self._add_params_from_decorated_methods()
 
     @property
     def name(self) -> str:
@@ -400,6 +405,73 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 if verbose:
                     print(f'validate_status: param {k}: {value}')
                 p.validate(value)
+
+    def _add_params_from_decorated_methods(self):
+
+        def special_kwargs_to_meth(self, kwarg_name, kwarg_value):
+            """Replace method names with the methods themselves for specific kwargs."""
+            if kwarg_name in ("get_cmd", "set_cmd", "get_parser", "set_parser"):
+                return getattr(self, kwarg_value)
+            return kwarg_value
+
+        has_parameter_prefix = lambda s: s.startswith(DECORATED_METHOD_PREFIX)
+
+        for obj_name in filter(has_parameter_prefix, dir(self)):
+            meth = getattr(self, obj_name)
+            # the `@add_parameter` decorator adds an attribute we check for here
+            if hasattr(meth, ADD_PARAMETER_ATTR_NAME):
+                kwargs = {
+                    key: special_kwargs_to_meth(self, key, val.default)
+                    for key, val in sorted(inspect.signature(meth).parameters.items())
+                }
+                self.add_parameter(
+                    name=meth.__name__[len(DECORATED_METHOD_PREFIX):],
+                    docstring=meth.__doc__,
+                    **kwargs,
+                )
+
+DECORATED_METHOD_PREFIX = "_parameter_"
+"""
+A constant defining the prefix of the methods on which
+:obj:`qcodes.instrument.base.add_parameter` decorator can be used. The intention is to
+keep the name of these methods fairly unique and private to avoid any foreseeable clash.
+"""
+
+ADD_PARAMETER_ATTR_NAME = "_add_parameter"
+"""
+A constant defining the name of the attribute set by
+:obj:`qcodes.instrument.base.add_parameter` decorator to flag a method that will be
+converted to parameter.
+"""
+
+def add_parameter(method):
+    """
+    A decorator function that wraps a method of an Instrument subclass such that the
+    new method will be converted into the corresponding :code:`param_class`
+    in the :code:`_add_params_from_decorated_methods`.
+
+    Args:
+        method: The method to be wrapped and flagged to be converted to parameter.
+    """
+
+    if DECORATED_METHOD_PREFIX not in method.__name__:
+        raise ValueError(
+            f"Only methods prefixed with '{DECORATED_METHOD_PREFIX}' can be decorated "
+            f"with this decorator.å"
+        )
+
+    @wraps(method)  # preserves info like `__doc__` and signature
+    def kwargs_and_doc_container(self, *args, **kwargs):
+        raise RuntimeError(
+            f"Method not intended to be called.\n"
+            f"'{method.__name__}' is a special method used as information container "
+            f"for creating and assigning parameters to {self}."
+        )
+
+    # special attribute to flag method for conversion to parameter
+    setattr(kwargs_and_doc_container, ADD_PARAMETER_ATTR_NAME, True)
+
+    return kwargs_and_doc_container
 
 
 class AbstractInstrument(ABC):
