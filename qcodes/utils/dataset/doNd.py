@@ -748,6 +748,7 @@ def dond(
 
     try:
         with _catch_keyboard_interrupts() as interrupted, meas.run() as datasaver:
+            dataset = datasaver.dataset
             additional_setpoints_data = process_params_meas(additional_setpoints)
             for setpoints in tqdm(nested_setpoints, disable=not show_progress):
                 param_set_list = []
@@ -760,7 +761,6 @@ def dond(
                     *process_params_meas(params_meas, use_threads=use_threads),
                     *additional_setpoints_data,
                 )
-            dataset = datasaver.dataset
     finally:
         for parameter, original_delay in original_delays.items():
             parameter.post_delay = original_delay
