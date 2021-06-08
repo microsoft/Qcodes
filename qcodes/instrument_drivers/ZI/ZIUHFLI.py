@@ -1389,14 +1389,16 @@ class ZIUHFLI(Instrument):
                             vals=vals.Enum(*list(self._samplingrate_codes.keys()))
                             )
 
-        self.add_parameter('scope_samplingrate_float',
-                           label="Scope's sampling rate as float",
-                           set_cmd=self._set_samplingrate_as_float,
-                           unit='Hz',
-                           get_cmd=self._get_samplingrate_as_float,
-                           vals=vals.Enum(*[1.8e9 / 2 ** v for v in
-                                            self._samplingrate_codes.values()]),
-                           docstring=""" A numeric representation of the scope's
+        self.add_parameter(
+            "scope_samplingrate_float",
+            label="Scope's sampling rate as float",
+            set_cmd=self._set_samplingrate_as_float,
+            unit="Hz",
+            get_cmd=self._get_samplingrate_as_float,
+            vals=vals.Enum(
+                *(1.8e9 / 2 ** v for v in self._samplingrate_codes.values())
+            ),
+            docstring=""" A numeric representation of the scope's
                              samplingrate parameter. Sets and gets the sampling
                              rate by using the scope_samplingrate parameter."""
                            )
