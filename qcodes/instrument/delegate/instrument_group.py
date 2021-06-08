@@ -42,11 +42,11 @@ class InstrumentGroup(InstrumentBase):
         module = importlib.import_module(module_name)
         instr_class = getattr(module, instr_class_name)
 
-        for submodule_name, parameters in submodules.items():
+        for submodule_name, inputs in submodules.items():
             submodule = instr_class(
                 name=submodule_name,
                 station=station,
-                parameters=parameters,
+                **inputs,
                 initial_values=initial_values.get(submodule_name),
                 set_initial_values_on_load=set_initial_values_on_load
             )
