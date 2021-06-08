@@ -113,7 +113,7 @@ def _call_params(param_meas: Sequence[ParamMeasT]) -> OutType:
     return output
 
 
-def _process_params_meas(
+def process_params_meas(
     param_meas: Sequence[ParamMeasT],
         use_threads: Optional[bool] = None
     ) -> OutType:
