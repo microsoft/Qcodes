@@ -48,6 +48,14 @@ class DataSetProtocol(Protocol, Sized):
         pass
 
     @property
+    def pristine(self) -> bool:
+        pass
+
+    @property
+    def running(self) -> bool:
+        pass
+
+    @property
     def completed(self) -> bool:
         pass
 
