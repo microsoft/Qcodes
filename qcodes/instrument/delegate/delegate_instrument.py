@@ -100,7 +100,7 @@ class DelegateInstrument(InstrumentBase):
         name: str,
         station: Station,
         parameters: Optional[Union[Mapping[str, Sequence[str]], Mapping[str, str]]] = None,
-        channels: Optional[Union[Mapping[str, Sequence[str]], Mapping[str, str]]] = None,
+        channels: Optional[Union[Mapping[str, Mapping[str, Any]], Mapping[str, str]]] = None,
         initial_values: Optional[Mapping[str, Any]] = None,
         set_initial_values_on_load: bool = False,
         setters: Optional[Mapping[str, MutableMapping[str, Any]]] = None,
@@ -349,23 +349,22 @@ class DelegateInstrument(InstrumentBase):
 
             except ValueError:
                 raise ValueError("Unknown channel path. Try: instrument.chXY")
-        else:
-            channel_str = input_params['channel']
 
+        elif isinstance(input_params, Mapping) and channel_wrapper is not None:
+            channel_str = input_params['channel']
             instrument_name, channel_name = channel_str.split('.')
             instrument = getattr(station, instrument_name)
-            initial_channel = getattr(instrument, channel_name)
-            init_params = {x: input_params[x] for x in input_params.keys() if x not in ['channel']}
+            kwargs = dict(kwargs, **input_params)
 
-            kwargs = dict(kwargs, **init_params)
             channel = channel_wrapper(
+                instrument,
                 param_name,
-                initial_channel,
                 **kwargs
             )
+        else:
+            raise ValueError('Unknown input type.')
 
         self.add_submodule(param_name, channel)
-
 
     def __repr__(self) -> str:
         params = ", ".join(self.parameters.keys())

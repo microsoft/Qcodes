@@ -1,6 +1,6 @@
 from functools import partial
 import logging
-from typing import Any, Sequence, Dict, Optional
+from typing import Any, Sequence, Dict, Optional, Union
 
 import numpy as np
 
@@ -893,19 +893,29 @@ class MockDAC(Instrument):
 class MockCustomChannel(InstrumentChannel):
     def __init__(
         self,
+        parent: InstrumentBase,
         name: str,
-        channel: InstrumentChannel,
+        channel: Union[str, InstrumentChannel],
         current_valid_ranges: Optional[list] = None,
     ) -> None:
-        super().__init__(channel.parent, name)
+        """ """
+
+        if isinstance(channel, str):
+            _ , channel_name = channel.split('.')
+            instr_channel = getattr(parent, channel_name)
+            self._dac_channel = instr_channel
+        elif isinstance(channel, InstrumentChannel):
+            self._dac_channel = channel
+        else:
+            raise ValueError('Unknown input type for "channel".')
+
+        super().__init__(parent, name)
+
         if current_valid_ranges is None:
             current_valid_ranges = []
-
         super().add_parameter(
             name="current_valid_range",
             label=f"{name} valid voltage range",
-            # set_cmd=self.set_current_valid_range,
-            # get_cmd=self.get_current_valid_range,
             initial_value=current_valid_ranges,
             vals=Lists(),
             get_cmd=None, set_cmd=None,
@@ -921,8 +931,3 @@ class MockCustomChannel(InstrumentChannel):
             get_cmd=None, set_cmd=None
         )
 
-    # def get_current_valid_range(self) -> list:
-    #     return self._current_valid_range
-
-    # def set_current_valid_range(self, new_range: list) -> None:
-    #     self._current_valid_range = new_range
