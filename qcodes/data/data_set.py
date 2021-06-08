@@ -436,7 +436,6 @@ class DataSet(DelegateAttributes):
         Returns:
             (Optional[str]): name of the default parameter
         """
-
         arraynames = self.arrays.keys()
 
         # overrule parameter name from the metadata
