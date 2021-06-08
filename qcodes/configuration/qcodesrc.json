@@ -66,7 +66,7 @@
     "dataset": {
         "write_in_background": false,
         "write_period": 5.0,
-        "use_threaded": false,
+        "use_threads": false,
         "dond_plot": false,
         "dond_show_progress": false,
         "export_automatic": false,

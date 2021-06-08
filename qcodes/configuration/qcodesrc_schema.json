@@ -306,7 +306,7 @@
                     "default": 5.0,
                     "description": "How often should data be written to disk (s)"
                 },
-                "use_threaded": {
+                "use_threads": {
                         "type": "boolean",
                         "default": false,
                         "description": "Should instruments be addresesed in parallel for process_params_meas() in doNd measurement"
