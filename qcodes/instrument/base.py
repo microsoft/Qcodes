@@ -77,7 +77,11 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
         self.log = get_instrument_logger(self, __name__)
 
-        self._add_params_from_decorated_methods()
+        if getattr(self, "_call_add_params_from_decorated_methods", True):
+            # setting self._call_add_params_from_decorated_methods=False before calling
+            # `super().__init__()` gives more control in driver whose parameters require
+            # information available only in the `__init__()` of a driver.
+            self._add_params_from_decorated_methods()
 
     @property
     def name(self) -> str:
@@ -408,10 +412,12 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
     def _add_params_from_decorated_methods(self):
 
-        def special_kwargs_to_meth(self, kwarg_name, kwarg_value):
-            """Replace method names with the methods themselves for specific kwargs."""
-            if kwarg_name in ("get_cmd", "set_cmd", "get_parser", "set_parser"):
-                return getattr(self, kwarg_value)
+        def special_kwargs_to_meth(self, kwarg_value):
+            """Returns the attribute that has the name `kwarg_value.attr_name`
+             of this instance if the kwarg_value is of type `InstanceAttr`.
+            """
+            if isinstance(kwarg_value, InstanceAttr):
+                return getattr(self, kwarg_value.attr_name)
             return kwarg_value
 
         has_parameter_prefix = lambda s: s.startswith(DECORATED_METHOD_PREFIX)
@@ -421,7 +427,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             # the `@add_parameter` decorator adds an attribute we check for here
             if hasattr(meth, ADD_PARAMETER_ATTR_NAME):
                 kwargs = {
-                    key: special_kwargs_to_meth(self, key, val.default)
+                    key: special_kwargs_to_meth(self, val.default)
                     for key, val in sorted(inspect.signature(meth).parameters.items())
                 }
                 self.add_parameter(
@@ -429,6 +435,21 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                     docstring=meth.__doc__,
                     **kwargs,
                 )
+
+
+class InstanceAttr:
+    """An auxiliary class to be used together with the
+    :obj:`qcodes.instrument.base.add_parameter` decorator to allow adding parameters
+    that require information available only during the `__init__()` of an Instrument
+    subclass.
+    """
+    def __init__(self, attr_name: str):
+        """Instantiates the class and saves the passed in attr_name."""
+        self.attr_name: str = attr_name
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}('{self.attr_name}')"
+
 
 DECORATED_METHOD_PREFIX = "_parameter_"
 """
@@ -457,7 +478,7 @@ def add_parameter(method):
     if DECORATED_METHOD_PREFIX not in method.__name__:
         raise ValueError(
             f"Only methods prefixed with '{DECORATED_METHOD_PREFIX}' can be decorated "
-            f"with this decorator.å"
+            f"with this decorator."
         )
 
     @wraps(method)  # preserves info like `__doc__` and signature
