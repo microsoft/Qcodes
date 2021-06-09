@@ -410,14 +410,51 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                     print(f'validate_status: param {k}: {value}')
                 p.validate(value)
 
-    def _add_params_from_decorated_methods(self):
+    def _add_params_from_decorated_methods(self) -> None:
+        """
+        Transforms methods decorated with `@add_parameter` into actual parameters and
+        uses `self.add_parameter(...)` to add them to this instrument.
 
-        def special_kwargs_to_meth(self, kwarg_value):
+        Intended to be called in the `__init__()` of `InstrumentBase` or  in a driver
+        subclass.
+
+        .. seealso::
+
+            - :obj:`qcodes.instrument.base.add_parameter`
+            - :obj:`qcodes.instrument.base.InstanceAttr`
+            - :obj:`qcodes.instrument.base.DECORATED_METHOD_PREFIX`
+            - :obj:`qcodes.instrument.base.ADD_PARAMETER_ATTR_NAME`
+
+        """
+
+        def kwarg_to_attr(self, kwarg_name, kwarg_value, param_name) -> Any:
             """
             Returns the attribute that has the name `kwarg_value.attr_name`
-            of this instance if the kwarg_value is of type `InstanceAttr`.
+            of this Instrument instance if the `kwarg_value` is of type `InstanceAttr`,
+            otherwise just returns the `kwarg_value`.
+
+            Args:
+                kwarg_name: The name of the kwarg used in the definition of the
+                    method decorated with `@add_parameter`. Only necessary for raising
+                    informative exceptions.
+                kwarg_value: The default value of the kwarg used in the definition of
+                    the method decorated with `@add_parameter`.
+                param_name: The name of the parameter that is to be added. Only
+                    necessary for raising informative exceptions.
+
+            Raises:
+                AttributeError: When the `self` does not have the attribute the user
+                    expected the Instrument instance to have.
             """
             if isinstance(kwarg_value, InstanceAttr):
+                if not hasattr(self, kwarg_value.attr_name):
+                    raise AttributeError(
+                        f"Failed to determine the value of {kwarg_name!r} when creating"
+                        f" the {param_name!r} parameter.\nInstance {self} does not have"
+                        f" an attribute named {kwarg_value.attr_name!r}.\n"
+                        f"Make sure the {kwarg_value.attr_name!r} attribute exist when "
+                        "`self._add_params_from_decorated_methods()` is called."
+                    )
                 return getattr(self, kwarg_value.attr_name)
             return kwarg_value
 
@@ -428,12 +465,13 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             meth = getattr(self, obj_name)
             # the `@add_parameter` decorator adds an attribute we check for here
             if hasattr(meth, ADD_PARAMETER_ATTR_NAME):
+                param_name = meth.__name__[len(DECORATED_METHOD_PREFIX):]
                 kwargs = {
-                    key: special_kwargs_to_meth(self, val.default)
-                    for key, val in sorted(inspect.signature(meth).parameters.items())
+                    kw_name: kwarg_to_attr(self, kw_name, kw_value.default, param_name)
+                    for kw_name, kw_value in inspect.signature(meth).parameters.items()
                 }
                 self.add_parameter(
-                    name=meth.__name__[len(DECORATED_METHOD_PREFIX):],
+                    name=param_name,
                     docstring=meth.__doc__,
                     **kwargs,
                 )
@@ -446,13 +484,13 @@ class InstanceAttr:
     that require information available only during the `__init__()` of an Instrument
     subclass.
     """
-    def __init__(self, attr_name: str):
+    def __init__(self, attr_name: str) -> None:
         """Instantiates the class and saves the passed in attr_name."""
         self.attr_name: str = attr_name
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Return the class name and `self.attr_name`."""
-        return f"{self.__class__.__name__}('{self.attr_name}')"
+        return f"{self.__class__.__name__}({self.attr_name!r})"
 
 
 DECORATED_METHOD_PREFIX = "_parameter_"
@@ -469,7 +507,12 @@ A constant defining the name of the attribute set by
 converted to parameter.
 """
 
-def add_parameter(method):
+_PARAM_SPEC = TypeVar["_PARAM_SPEC"]
+"""
+A custom type to annotate the type hints of `add_parameter`.
+"""
+
+def add_parameter(method: Callable[_PARAM_SPEC]) -> Callable[_PARAM_SPEC]:
     """
     A decorator function that wraps a method of an Instrument subclass such that the
     new method will be converted into the corresponding :code:`param_class`
@@ -479,17 +522,23 @@ def add_parameter(method):
         method: The method to be wrapped and flagged to be converted to parameter.
     """
 
-    if DECORATED_METHOD_PREFIX not in method.__name__:
+    if not method.__name__.startswith(DECORATED_METHOD_PREFIX):
         raise ValueError(
-            f"Only methods prefixed with '{DECORATED_METHOD_PREFIX}' can be decorated "
-            f"with this decorator."
+            f"Only methods prefixed with {DECORATED_METHOD_PREFIX!r} can be decorated "
+            f"with `add_parameter` decorator."
         )
 
     @wraps(method)  # preserves info like `__doc__` and signature
-    def kwargs_and_doc_container(self, *args, **kwargs):
+    def kwargs_and_doc_container(self, *args, **kwargs) -> None:
+        """
+        Auxiliary function that serves as a container of information.
+
+        Raises:
+            RuntimeError: Always.
+        """
         raise RuntimeError(
             f"Method not intended to be called.\n"
-            f"'{method.__name__}' is a special method used as information container "
+            f"{method.__name__!r} is a special method used as information container "
             f"for creating and assigning parameters to {self}."
         )
 
