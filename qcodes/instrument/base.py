@@ -15,6 +15,7 @@ from typing import (
     Type,
     Union,
     cast,
+    TypeVar
 )
 
 from functools import wraps
