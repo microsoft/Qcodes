@@ -513,7 +513,7 @@ _ParamSpec = TypeVar("_ParamSpec")
 A custom type to annotate the type hints of `add_parameter`.
 """
 
-def add_parameter(method: Callable[_ParamSpec]) -> Callable[_ParamSpec]:
+def add_parameter(method: Callable[[_ParamSpec], None]) -> Callable[[_ParamSpec], None]:
     """
     A decorator function that wraps a method of an Instrument subclass such that the
     new method will be converted into the corresponding :code:`param_class`
