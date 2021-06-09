@@ -13,7 +13,7 @@ idna==2.10
 importlib-metadata==4.0.0; python_version<'3.8'
 iniconfig==1.1.1
 lxml==4.6.3
-mypy==0.812
+mypy==0.901
 mypy-extensions==0.4.3
 numpy==1.20.3
 ordered-set==4.0.2
@@ -35,8 +35,11 @@ six==1.16.0
 sortedcontainers==2.4.0
 stringparser==0.5
 toml==0.10.2
-typed-ast==1.4.3
+typed-ast==1.4.3; python_version<'3.8'
 typing-extensions==3.10.0.0
+types-pkg_resources>=0.1.2
+types_requests>=0.1.8
+types-tabulate>=0.1.0
 urllib3==1.26.5
 wincertstore==0.2
 wrapt==1.12.1
