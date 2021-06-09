@@ -508,7 +508,7 @@ A constant defining the name of the attribute set by
 converted to parameter.
 """
 
-_ParamSpec = TypeVar["_ParamSpec"]
+_ParamSpec = TypeVar("_ParamSpec")
 """
 A custom type to annotate the type hints of `add_parameter`.
 """
