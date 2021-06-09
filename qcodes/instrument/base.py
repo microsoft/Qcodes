@@ -508,12 +508,12 @@ A constant defining the name of the attribute set by
 converted to parameter.
 """
 
-_PARAM_SPEC = TypeVar["_PARAM_SPEC"]
+_ParamSpec = TypeVar["_ParamSpec"]
 """
 A custom type to annotate the type hints of `add_parameter`.
 """
 
-def add_parameter(method: Callable[_PARAM_SPEC]) -> Callable[_PARAM_SPEC]:
+def add_parameter(method: Callable[_ParamSpec]) -> Callable[_ParamSpec]:
     """
     A decorator function that wraps a method of an Instrument subclass such that the
     new method will be converted into the corresponding :code:`param_class`
