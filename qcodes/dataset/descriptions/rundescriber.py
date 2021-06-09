@@ -125,6 +125,8 @@ class RunDescriber:
             return False
         if self.interdeps != other.interdeps:
             return False
+        if self.shapes != other.shapes:
+            return False
         return True
 
     def __repr__(self) -> str:
