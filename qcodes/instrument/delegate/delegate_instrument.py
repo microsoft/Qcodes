@@ -108,8 +108,12 @@ class DelegateInstrument(InstrumentBase):
         self,
         name: str,
         station: Station,
-        parameters: Optional[Union[Mapping[str, Sequence[str]], Mapping[str, str]]] = None,
-        channels: Optional[Union[Mapping[str, Mapping[str, Any]], Mapping[str, str]]] = None,
+        parameters: Optional[
+            Union[Mapping[str, Sequence[str]], Mapping[str, str]]
+        ] = None,
+        channels: Optional[
+            Union[Mapping[str, Mapping[str, Any]], Mapping[str, str]]
+        ] = None,
         initial_values: Optional[Mapping[str, Any]] = None,
         set_initial_values_on_load: bool = False,
         setters: Optional[Mapping[str, MutableMapping[str, Any]]] = None,
@@ -136,7 +140,10 @@ class DelegateInstrument(InstrumentBase):
             self.set_initial_values()
 
     @staticmethod
-    def parse_instrument_path(parent: Union[Station, InstrumentBase], path: str) -> Any:
+    def parse_instrument_path(
+        parent: Union[Station, InstrumentBase],
+        path: str,
+    ) -> Any:
         """Parse a string path and return the object relative to a station or
         instrument, e.g. "my_instrument.my_param" returns
         station.my_instrument.my_param
@@ -201,7 +208,8 @@ class DelegateInstrument(InstrumentBase):
                 path_list = paths
             else:
                 raise ValueError(
-                    "Parameter paths should be either a string or Sequence of strings."
+                    "Parameter paths should be either a string or Sequence of \
+                        strings."
                 )
 
             self._create_and_add_parameter(
@@ -310,12 +318,10 @@ class DelegateInstrument(InstrumentBase):
                 optional input parameters if a channel wrapper class is used to
                 instantiate the channel. If no 'type' field is given, the
                 channel is added as is using ``self.add_submodule``.
-
         """
-
         channel_wrapper = None
-        channels_dict: Dict[str, Union[str, Mapping[str, Any]]] = dict(channels)
-        channel_type = channels_dict.pop("type", None)
+        chnnls_dict: Dict[str, Union[str, Mapping[str, Any]]] = dict(channels)
+        channel_type = chnnls_dict.pop("type", None)
         if channel_type is not None:
             channel_type_elems = str(channel_type).split(".")
             module_name = '.'.join(channel_type_elems[:-1])
@@ -323,7 +329,7 @@ class DelegateInstrument(InstrumentBase):
             module = importlib.import_module(module_name)
             channel_wrapper = getattr(module, instr_class_name)
 
-        for param_name, input_params in channels_dict.items():
+        for param_name, input_params in chnnls_dict.items():
             self._create_and_add_channel(
                 param_name=param_name,
                 station=station,
@@ -350,13 +356,13 @@ class DelegateInstrument(InstrumentBase):
                 other input arguments taken by channel_wrapper.
             channel_wrapper: Optional class to construct the channel. If none
                 given, the channel is added as is using ``self.add_submodule``.
-
         """
         if isinstance(input_params, str):
             try:
                 channel = self.parse_instrument_path(station, input_params)
-            except ValueError:
-                raise ValueError("Unknown channel path. Try: instrument.chXY")
+            except ValueError as v_err:
+                msg = "Unknown channel path. Try: instrument.chXY"
+                raise ValueError(msg) from v_err
 
         elif isinstance(input_params, Mapping) and channel_wrapper is not None:
             channel = self.parse_instrument_path(

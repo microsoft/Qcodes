@@ -5,7 +5,8 @@ from typing import Any, Sequence, Dict, Optional, Union, List
 import numpy as np
 
 from qcodes.instrument.base import Instrument, InstrumentBase
-from qcodes.utils.validators import Numbers, Arrays, OnOff, Strings, ComplexNumbers, Lists
+from qcodes.utils.validators import Numbers, Arrays, OnOff, Strings, \
+    ComplexNumbers, Lists
 from qcodes.instrument.parameter import MultiParameter, Parameter, \
     ArrayParameter, ParameterWithSetpoints
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
@@ -911,7 +912,6 @@ class MockCustomChannel(InstrumentChannel):
                 interesting features. It's just an example of an additional
                 parameter a regular instrument channel does not have.
         """
-
         if isinstance(channel, str):
             _ , channel_name = channel.split('.')
             instr_channel = getattr(parent, channel_name)
