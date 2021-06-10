@@ -30,6 +30,7 @@ from qcodes.utils.helpers import NumpyJSONEncoder
 from .data_set import SPECS, CompletedError
 from .data_set_cache import DataSetCacheInMem
 from .descriptions.versioning import serialization as serial
+from .linked_datasets.links import str_to_links
 
 if TYPE_CHECKING:
     import xarray as xr
@@ -40,7 +41,6 @@ log = logging.getLogger(__name__)
 
 
 class DataSetInMem(DataSetProtocol, Sized):
-
     def __init__(
         self,
         run_id: int,
@@ -55,6 +55,7 @@ class DataSetInMem(DataSetProtocol, Sized):
         completed_timestamp_raw: Optional[float],
         metadata: Optional[Mapping[str, Any]] = None,
         rundescriber: Optional[RunDescriber] = None,
+        parent_dataset_links: Optional[Sequence[Link]] = None,
     ) -> None:
         """Note that the constructor is considered private. A ``DataSetInMem``
         should be constructed either using ``create_new_run`` or ``load_from_netcdf``
@@ -80,6 +81,7 @@ class DataSetInMem(DataSetProtocol, Sized):
             rundescriber = RunDescriber(interdeps, shapes=None)
 
         self._rundescriber = rundescriber
+        self._parent_dataset_links = parent_dataset_links
 
     @classmethod
     def create_new_run(
@@ -144,6 +146,8 @@ class DataSetInMem(DataSetProtocol, Sized):
         # todo do we want to create this run in the sqlites run table if not
         # exists. e.g. load by guid and then if that is not there create one.
 
+        parent_dataset_links = loaded_data.attrs.get("parent_dataset_links", [])
+
         ds = cls(
             run_id=loaded_data.captured_run_id,
             counter=loaded_data.captured_counter,
@@ -157,6 +161,7 @@ class DataSetInMem(DataSetProtocol, Sized):
             completed_timestamp_raw=loaded_data.completed_timestamp_raw,
             metadata={"snapshot": loaded_data.snapshot},
             rundescriber=serial.from_json_to_current(loaded_data.run_description),
+            parent_dataset_links=parent_dataset_links,
         )
         ds._cache = DataSetCacheInMem(ds)
         ds._cache._data = cls._from_xarray_dataset_to_qcodes(loaded_data)
