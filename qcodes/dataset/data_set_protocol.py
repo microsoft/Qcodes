@@ -37,6 +37,27 @@ if TYPE_CHECKING:
 
 @runtime_checkable
 class DataSetProtocol(Protocol, Sized):
+
+    # the "persistent traits" are the attributes/properties of the DataSet
+    # that are NOT tied to the representation of the DataSet in any particular
+    # database
+    persistent_traits = (
+        "name",
+        "guid",
+        "number_of_results",
+        "exp_name",
+        "sample_name",
+        "completed",
+        "snapshot",
+        "run_timestamp_raw",
+        "description",
+        "completed_timestamp_raw",
+        "metadata",
+        "parent_dataset_links",
+        "captured_run_id",
+        "captured_counter",
+    )
+
     def prepare(
         self,
         *,
@@ -168,3 +189,37 @@ class DataSetProtocol(Protocol, Sized):
 
     def _flush_data_to_database(self, block: bool = False) -> None:
         pass
+
+    def the_same_dataset_as(self, other: DataSetProtocol) -> bool:
+        """
+        Check if two datasets correspond to the same run by comparing
+        all their persistent traits. Note that this method
+        does not compare the data itself.
+
+        This function raises if the GUIDs match but anything else doesn't
+
+        Args:
+            other: the dataset to compare self to
+        """
+
+        if not isinstance(other, self.__class__):
+            return False
+
+        guids_match = self.guid == other.guid
+
+        # note that the guid is in itself a persistent trait of the DataSet.
+        # We therefore do not need to handle the case of guids not equal
+        # but all persistent traits equal, as this is not possible.
+        # Thus, if all persistent traits are the same we can safely return True
+        for attr in self.persistent_traits:
+            if getattr(self, attr) != getattr(other, attr):
+                if guids_match:
+                    raise RuntimeError(
+                        "Critical inconsistency detected! "
+                        "The two datasets have the same GUID, "
+                        f'but their "{attr}" differ.'
+                    )
+                else:
+                    return False
+
+        return True

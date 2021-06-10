@@ -10,6 +10,7 @@ import numpy
 import numpy as np
 import xarray as xr
 
+from qcodes.dataset.data_set_protocol import DataSetProtocol
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
@@ -38,27 +39,7 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 
-class DataSetInMem(Sized):
-
-    # the "persistent traits" are the attributes/properties of the DataSet
-    # that are NOT tied to the representation of the DataSet in any particular
-    # database
-    persistent_traits = (
-        "name",
-        "guid",
-        "number_of_results",
-        "exp_name",
-        "sample_name",
-        "completed",
-        "snapshot",
-        "run_timestamp_raw",
-        "description",
-        "completed_timestamp_raw",
-        "metadata",
-        "parent_dataset_links",
-        "captured_run_id",
-        "captured_counter",
-    )
+class DataSetInMem(DataSetProtocol, Sized):
 
     def __init__(
         self,
@@ -175,7 +156,7 @@ class DataSetInMem(Sized):
             run_timestamp_raw=loaded_data.run_timestamp_raw,
             completed_timestamp_raw=loaded_data.completed_timestamp_raw,
             metadata={"snapshot": loaded_data.snapshot},
-            rundescriber=serial.from_json_to_current(loaded_data.run_description)
+            rundescriber=serial.from_json_to_current(loaded_data.run_description),
         )
         ds._cache = DataSetCacheInMem(ds)
         ds._cache._data = cls._from_xarray_dataset_to_qcodes(loaded_data)
