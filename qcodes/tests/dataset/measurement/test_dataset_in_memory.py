@@ -16,10 +16,13 @@ def test_dataset_in_memory_smoke_test(meas_with_registered_param, DMM, DAC, tmp_
     os.chdir(tmp_path)
     dataset.export(export_type="netcdf", path=".")
     loaded_ds = DataSetInMem.load_from_netcdf("qcodes_1.nc")
-    1 + 1
+    assert dataset.the_same_dataset_as(loaded_ds)
 
 
 # todo missing from runs table
 # snapshot, completed timestamp, parameters (do we care), verify other metadata
 # When should metadata be added. In the old dataset it used to be added as
 # soon as you call add_metadata
+
+
+# add a test to import from 0.26 data (missing parent dataset links)
