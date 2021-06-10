@@ -300,17 +300,6 @@ class DelegateInstrument(InstrumentBase):
     ) -> None:
         """Add channels to the instrument.
 
-        .. code-block:: yaml
-
-        field:
-            type: qcodes.instrument.delegate.DelegateInstrument
-            init:
-            channels:
-                type: mypackage.mydevice.mydevice_channel.MyDeviceChannel
-                top_barrier:
-                  channel: dac.ch01
-                  my_input_param: 0
-
         Args:
             station: QCoDeS station, i.e. representation of the entire physical
                 setup.
