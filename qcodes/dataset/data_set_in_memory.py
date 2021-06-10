@@ -73,6 +73,7 @@ class DataSetInMem(Sized):
         run_timestamp_raw: Optional[float],
         completed_timestamp_raw: Optional[float],
         metadata: Optional[Mapping[str, Any]] = None,
+        rundescriber: Optional[RunDescriber] = None,
     ) -> None:
         """Note that the constructor is considered private. A ``DataSetInMem``
         should be constructed either using ``create_new_run`` or ``load_from_netcdf``
@@ -93,6 +94,11 @@ class DataSetInMem(Sized):
             self._metadata = {}
         else:
             self._metadata = dict(metadata)
+        if rundescriber is None:
+            interdeps = InterDependencies_()
+            rundescriber = RunDescriber(interdeps, shapes=None)
+
+        self._rundescriber = rundescriber
 
     @classmethod
     def create_new_run(
@@ -169,6 +175,7 @@ class DataSetInMem(Sized):
             run_timestamp_raw=loaded_data.run_timestamp_raw,
             completed_timestamp_raw=loaded_data.completed_timestamp_raw,
             metadata={"snapshot": loaded_data.snapshot},
+            rundescriber=serial.from_json_to_current(loaded_data.run_description)
         )
         ds._cache = DataSetCacheInMem(ds)
         ds._cache._data = cls._from_xarray_dataset_to_qcodes(loaded_data)
