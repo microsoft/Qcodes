@@ -113,10 +113,13 @@ def _call_params(param_meas: Sequence[ParamMeasT]) -> OutType:
     return output
 
 
-def _process_params_meas(
+def process_params_meas(
     param_meas: Sequence[ParamMeasT],
-        use_threads: bool = False
-    ) -> OutType:
+    use_threads: Optional[bool] = None
+) -> OutType:
+
+    if use_threads is None:
+        use_threads = config.dataset.use_threads
 
     if use_threads:
         return _call_params_threaded(param_meas)
@@ -177,7 +180,7 @@ def do0d(
         measurement_name: str = "",
         exp: Optional[Experiment] = None,
         do_plot: Optional[bool] = None,
-        use_threads: bool = False,
+        use_threads: Optional[bool] = None,
         ) -> AxesTupleListWithDataSet:
     """
     Perform a measurement of a single parameter. This is probably most
@@ -225,7 +228,7 @@ def do0d(
 
     with meas.run() as datasaver:
         datasaver.add_result(
-            *_process_params_meas(
+            *process_params_meas(
                 param_meas,
                 use_threads=use_threads
             )
@@ -245,7 +248,7 @@ def do1d(
         measurement_name: str = "",
         exp: Optional[Experiment] = None,
         do_plot: Optional[bool] = None,
-        use_threads: bool = False,
+        use_threads: Optional[bool] = None,
         additional_setpoints: Sequence[ParamMeasT] = tuple(),
         show_progress: Optional[None] = None,
         ) -> AxesTupleListWithDataSet:
@@ -325,7 +328,7 @@ def do1d(
     # reimplemented from scratch
     with _catch_keyboard_interrupts() as interrupted, meas.run() as datasaver:
         dataset = datasaver.dataset
-        additional_setpoints_data = _process_params_meas(additional_setpoints)
+        additional_setpoints_data = process_params_meas(additional_setpoints)
         setpoints = np.linspace(start, stop, num_points)
 
         # flush to prevent unflushed print's to visually interrupt tqdm bar
@@ -337,7 +340,7 @@ def do1d(
             param_set.set(set_point)
             datasaver.add_result(
                 (param_set, set_point),
-                *_process_params_meas(param_meas, use_threads=use_threads),
+                *process_params_meas(param_meas, use_threads=use_threads),
                 *additional_setpoints_data
             )
 
@@ -362,7 +365,7 @@ def do2d(
         exp: Optional[Experiment] = None,
         flush_columns: bool = False,
         do_plot: Optional[bool] = None,
-        use_threads: bool = False,
+        use_threads: Optional[bool] = None,
         additional_setpoints: Sequence[ParamMeasT] = tuple(),
         show_progress: Optional[None] = None,
         ) -> AxesTupleListWithDataSet:
@@ -456,7 +459,7 @@ def do2d(
 
     with _catch_keyboard_interrupts() as interrupted, meas.run() as datasaver:
         dataset = datasaver.dataset
-        additional_setpoints_data = _process_params_meas(additional_setpoints)
+        additional_setpoints_data = process_params_meas(additional_setpoints)
         setpoints1 = np.linspace(start1, stop1, num_points1)
         for set_point1 in tqdm(setpoints1, disable=not show_progress):
             if set_before_sweep:
@@ -482,10 +485,12 @@ def do2d(
                 else:
                     param_set2.set(set_point2)
 
-                datasaver.add_result((param_set1, set_point1),
-                                     (param_set2, set_point2),
-                                     *_process_params_meas(param_meas, use_threads=use_threads),
-                                     *additional_setpoints_data)
+                datasaver.add_result(
+                    (param_set1, set_point1),
+                    (param_set2, set_point2),
+                    *process_params_meas(param_meas, use_threads=use_threads),
+                    *additional_setpoints_data
+                )
 
             for action in after_inner_actions:
                 action()
@@ -636,7 +641,7 @@ def dond(
     exit_actions: ActionsT = (),
     do_plot: Optional[bool] = None,
     show_progress: Optional[bool] = None,
-    use_threads: bool = False,
+    use_threads: Optional[bool] = None,
     additional_setpoints: Sequence[ParamMeasT] = tuple(),
 ) -> AxesTupleListWithDataSet:
     """
@@ -745,7 +750,8 @@ def dond(
 
     try:
         with _catch_keyboard_interrupts() as interrupted, meas.run() as datasaver:
-            additional_setpoints_data = _process_params_meas(additional_setpoints)
+            dataset = datasaver.dataset
+            additional_setpoints_data = process_params_meas(additional_setpoints)
             for setpoints in tqdm(nested_setpoints, disable=not show_progress):
                 param_set_list = []
                 param_value_pairs = zip(params_set[::-1], setpoints[::-1])
@@ -754,10 +760,9 @@ def dond(
                     param_set_list.append((setpoint_param, setpoint))
                 datasaver.add_result(
                     *param_set_list,
-                    *_process_params_meas(params_meas, use_threads=use_threads),
+                    *process_params_meas(params_meas, use_threads=use_threads),
                     *additional_setpoints_data,
                 )
-            dataset = datasaver.dataset
     finally:
         for parameter, original_delay in original_delays.items():
             parameter.post_delay = original_delay

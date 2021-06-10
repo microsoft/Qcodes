@@ -18,13 +18,16 @@
 #
 import os
 import sys
-import sphinx_rtd_theme
-import qcodes
-from packaging.version import parse
+
 # Import matplotlib and set the backend
 # before qcodes imports pyplot and automatically
 # sets the backend
 import matplotlib
+import sphinx_rtd_theme
+from packaging.version import parse
+
+import qcodes
+
 matplotlib.use('Agg')
 
 sys.path.insert(0, os.path.abspath('..'))
@@ -374,13 +377,14 @@ texinfo_show_urls = 'footnote'
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
-    'pandas': ('https://pandas.pydata.org/pandas-docs/stable/', None),
-    'matplotlib': ('https://matplotlib.org/', None),
-    'python': ('https://docs.python.org/3.7/', None),
-    'numpy': ('https://numpy.org/doc/stable/', None),
-    'py': ('https://pylib.readthedocs.io/en/stable/', None),
-    'pyvisa': ('https://pyvisa.readthedocs.io/en/master/', None),
-    'IPython': ('https://ipython.readthedocs.io/en/stable/', None)}
+    "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
+    "matplotlib": ("https://matplotlib.org/", None),
+    "python": ("https://docs.python.org/3.7/", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "py": ("https://pylib.readthedocs.io/en/stable/", None),
+    "pyvisa": ("https://pyvisa.readthedocs.io/en/stable/", None),
+    "IPython": ("https://ipython.readthedocs.io/en/stable/", None),
+}
 
 autoclass_content = "both"
 # classes should include both the
