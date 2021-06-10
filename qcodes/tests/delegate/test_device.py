@@ -3,7 +3,7 @@ import numpy as np
 import pytest
 
 from qcodes import Measurement
-from qcodes.tests.instrument_mocks import MockDACChannel, MockCustomChannel
+from qcodes.tests.instrument_mocks import MockCustomChannel
 
 
 def test_device(station, chip_config, dac, lockin):
