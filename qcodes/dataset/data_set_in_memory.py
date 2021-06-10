@@ -146,7 +146,9 @@ class DataSetInMem(DataSetProtocol, Sized):
         # todo do we want to create this run in the sqlites run table if not
         # exists. e.g. load by guid and then if that is not there create one.
 
-        parent_dataset_links = loaded_data.attrs.get("parent_dataset_links", [])
+        parent_dataset_links = str_to_links(
+            loaded_data.attrs.get("parent_dataset_links", "[]")
+        )
 
         ds = cls(
             run_id=loaded_data.captured_run_id,
