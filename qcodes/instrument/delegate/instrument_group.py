@@ -43,7 +43,7 @@ class InstrumentGroup(InstrumentBase):
         instr_class = getattr(module, instr_class_name)
 
         for submodule_name, inputs in submodules.items():
-            if not any(x in inputs.keys() for x in ['parameters', 'channels']):
+            if not any(x in inputs.keys() for x in ["parameters", "channels"]):
                 raise KeyError(
                     f"Missing keyworded input arguments for {submodule_name}"
                 )

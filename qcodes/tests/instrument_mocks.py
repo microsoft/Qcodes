@@ -1,16 +1,26 @@
-from functools import partial
 import logging
-from typing import Any, Sequence, Dict, Optional, Union, List
+import time
+from functools import partial
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 import numpy as np
 
 from qcodes.instrument.base import Instrument, InstrumentBase
-from qcodes.utils.validators import Numbers, Arrays, OnOff, Strings, \
-    ComplexNumbers, Lists
-from qcodes.instrument.parameter import MultiParameter, Parameter, \
-    ArrayParameter, ParameterWithSetpoints
-from qcodes.instrument.channel import InstrumentChannel, ChannelList
-import time
+from qcodes.instrument.channel import ChannelList, InstrumentChannel
+from qcodes.instrument.parameter import (
+    ArrayParameter,
+    MultiParameter,
+    Parameter,
+    ParameterWithSetpoints,
+)
+from qcodes.utils.validators import (
+    Arrays,
+    ComplexNumbers,
+    Lists,
+    Numbers,
+    OnOff,
+    Strings,
+)
 
 log = logging.getLogger(__name__)
 
@@ -913,7 +923,7 @@ class MockCustomChannel(InstrumentChannel):
                 parameter a regular instrument channel does not have.
         """
         if isinstance(channel, str):
-            _ , channel_name = channel.split('.')
+            _, channel_name = channel.split(".")
             instr_channel = getattr(parent, channel_name)
             self._dac_channel = instr_channel
         elif isinstance(channel, InstrumentChannel):
@@ -930,15 +940,17 @@ class MockCustomChannel(InstrumentChannel):
             label=f"{name} valid voltage range",
             initial_value=current_valid_range,
             vals=Lists(),
-            get_cmd=None, set_cmd=None,
+            get_cmd=None,
+            set_cmd=None,
         )
 
         self.add_parameter(
-            'voltage',
+            "voltage",
             parameter_class=Parameter,
-            initial_value=0.,
+            initial_value=0.0,
             label=f"Voltage_{name}",
-            unit='V',
-            vals=Numbers(-2., 2.),
-            get_cmd=None, set_cmd=None
+            unit="V",
+            vals=Numbers(-2.0, 2.0),
+            get_cmd=None,
+            set_cmd=None,
         )

@@ -126,7 +126,7 @@ class DelegateInstrument(InstrumentBase):
                 station=station,
                 parameters=parameters,
                 setters=setters or {},
-                units=units or {}
+                units=units or {},
             )
 
         if channels is not None:
@@ -313,7 +313,7 @@ class DelegateInstrument(InstrumentBase):
         channel_type = chnnls_dict.pop("type", None)
         if channel_type is not None:
             channel_type_elems = str(channel_type).split(".")
-            module_name = '.'.join(channel_type_elems[:-1])
+            module_name = ".".join(channel_type_elems[:-1])
             instr_class_name = channel_type_elems[-1]
             module = importlib.import_module(module_name)
             channel_wrapper = getattr(module, instr_class_name)
@@ -324,7 +324,7 @@ class DelegateInstrument(InstrumentBase):
                 station=station,
                 input_params=input_params,
                 channel_wrapper=channel_wrapper,
-                )
+            )
 
     def _create_and_add_channel(
         self,
@@ -332,7 +332,7 @@ class DelegateInstrument(InstrumentBase):
         station: Station,
         input_params: Union[str, Mapping[str, Any]],
         channel_wrapper: Optional[Type[InstrumentChannel]],
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         """Adds a channel to the instrument.
 
@@ -354,18 +354,12 @@ class DelegateInstrument(InstrumentBase):
                 raise ValueError(msg) from v_err
 
         elif isinstance(input_params, Mapping) and channel_wrapper is not None:
-            channel = self.parse_instrument_path(
-                station, input_params['channel']
-            )
+            channel = self.parse_instrument_path(station, input_params["channel"])
             kwargs = dict(kwargs, **input_params)
 
-            channel = channel_wrapper(
-                channel.parent,
-                param_name,
-                **kwargs
-            )
+            channel = channel_wrapper(channel.parent, param_name, **kwargs)
         else:
-            raise ValueError('Unknown input type.')
+            raise ValueError("Unknown input type.")
 
         self.add_submodule(param_name, channel)
 

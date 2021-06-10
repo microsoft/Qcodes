@@ -1,4 +1,5 @@
 import os
+
 import numpy as np
 import pytest
 
@@ -45,7 +46,7 @@ def test_device_with_channels(chip, station):
 
     assert device.gate_1 == station.dac.ch01
     assert device.gate_1.voltage.post_delay == 0.01
-    assert device.readout.source_parameters == (station.lockin.phase, )
+    assert device.readout.source_parameters == (station.lockin.phase,)
     assert device.readout() == 1e-5
 
 
