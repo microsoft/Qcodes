@@ -213,10 +213,10 @@
                         "cutoff_percentile":{
                             "description": "Upper and lower percentage of datapoints that may maximally be discarded by the auto color scale. For example for [1,1] the auto color scale will in a set of 10 0000 points not clip more than the 100 points of lowest and highest value.",
                             "type": "array",
-                            "items": {
-                                "type": "number",
-                                "type": "number"
-                            },
+                            "items": [
+                                {"type": "number"},
+                                {"type": "number"}
+                            ],
                             "default": [0.5, 0.5]
                         },
                         "color_over":{
@@ -306,6 +306,11 @@
                     "type": "number",
                     "default": 5.0,
                     "description": "How often should data be written to disk (s)"
+                },
+                "use_threads": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Should instruments be addresesed in parallel for process_params_meas() in doNd measurement"
                 },
                 "dond_plot": {
                     "type": "boolean",
