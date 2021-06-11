@@ -51,7 +51,9 @@ def load_to_xarray_dataarray_dict(
     dataarrays = _load_to_xarray_dataarray_dict_no_metadata(dataset, datadict)
 
     for dataarray in dataarrays.values():
+        _add_param_spec_to_xarray_coords(dataset, dataarray)
         _add_metadata_to_xarray(dataset, dataarray)
+
     return dataarrays
 
 
