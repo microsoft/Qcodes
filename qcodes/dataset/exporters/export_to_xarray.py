@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Any, Dict, Hashable, Mapping, Union, cast
+from typing import TYPE_CHECKING, Dict, Hashable, Mapping, Union, cast
 
 import numpy as np
 
@@ -17,7 +17,6 @@ if TYPE_CHECKING:
 
     from qcodes.dataset.data_set import ParameterData
     from qcodes.dataset.data_set_protocol import DataSetProtocol
-
 
 
 def _load_to_xarray_dataarray_dict_no_metadata(
