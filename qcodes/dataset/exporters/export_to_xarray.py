@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING, Dict, Hashable, Mapping, Union, cast
 
 import numpy as np
 
+from qcodes.dataset.linked_datasets.links import links_to_str
+
 from ..descriptions.versioning import serialization as serial
 from .export_to_pandas import (
     _data_to_dataframe,
@@ -72,6 +74,7 @@ def _add_metadata_to_xarray(
             "captured_counter": dataset.captured_counter,
             "run_id": dataset.run_id,
             "run_description": serial.to_json_for_storage(dataset.description),
+            "parent_dataset_links": links_to_str(dataset.parent_dataset_links),
         }
     )
     if dataset.run_timestamp_raw is not None:
