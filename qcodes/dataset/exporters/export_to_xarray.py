@@ -103,7 +103,9 @@ def load_to_xarray_dataset(dataset: DataSetProtocol, data: ParameterData) -> xr.
 
     for dim in xrdataset.dims:
         if "index" != dim:
-            paramspec_dict = dataset.paramspecs[str(dim)]._to_dict()
+            paramspec_dict = dict(dataset.paramspecs[str(dim)]._to_dict())
+            paramspec_dict["units"] = paramspec_dict.get("unit", "")
+            paramspec_dict["long_name"] = paramspec_dict.get("label", "")
             xrdataset.coords[str(dim)].attrs.update(paramspec_dict.items())
 
     _add_metadata_to_xarray(dataset, xrdataset)
