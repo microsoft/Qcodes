@@ -1499,6 +1499,7 @@ class DelegateParameter(Parameter):
 
         initial_cache_value = kwargs.pop("initial_cache_value", None)
         self.source = source
+        self._instrument = source.instrument
         super().__init__(name, *args, **kwargs)
         # explicitly set the source properties as
         # init will overwrite the ones set when assigning source
