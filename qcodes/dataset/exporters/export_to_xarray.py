@@ -34,14 +34,10 @@ def _load_to_xarray_dataarray_dict_no_metadata(
             for _name in subdict:
                 data_xrdarray_dict[_name] = _data_to_dataframe(
                     subdict, index).reset_index().to_xarray()[_name]
-                paramspec_dict = _paramspec_dict_with_extras(dataset, name)
-                data_xrdarray_dict[_name].attrs.update(paramspec_dict.items())
         else:
             xrdarray: xr.DataArray = _data_to_dataframe(
                 subdict, index).to_xarray()[name]
             data_xrdarray_dict[name] = xrdarray
-            paramspec_dict = _paramspec_dict_with_extras(dataset, name)
-            xrdarray.attrs.update(paramspec_dict.items())
 
     return data_xrdarray_dict
 
@@ -51,8 +47,10 @@ def load_to_xarray_dataarray_dict(
 ) -> Dict[str, xr.DataArray]:
     dataarrays = _load_to_xarray_dataarray_dict_no_metadata(dataset, datadict)
 
-    for dataarray in dataarrays.values():
+    for dataname, dataarray in dataarrays.items():
         _add_param_spec_to_xarray_coords(dataset, dataarray)
+        paramspec_dict = _paramspec_dict_with_extras(dataset, str(dataname))
+        dataarray.attrs.update(paramspec_dict.items())
         _add_metadata_to_xarray(dataset, dataarray)
 
     return dataarrays
@@ -106,6 +104,7 @@ def load_to_xarray_dataset(dataset: DataSetProtocol, data: ParameterData) -> xr.
         cast(Dict[Hashable, xr.DataArray], data_xrdarray_dict))
 
     _add_param_spec_to_xarray_coords(dataset, xrdataset)
+    _add_param_spec_to_xarray_data_vars(dataset, xrdataset)
     _add_metadata_to_xarray(dataset, xrdataset)
 
     return xrdataset
@@ -118,6 +117,14 @@ def _add_param_spec_to_xarray_coords(
         if coord != "index":
             paramspec_dict = _paramspec_dict_with_extras(dataset, str(coord))
             xrdataset.coords[str(coord)].attrs.update(paramspec_dict.items())
+
+
+def _add_param_spec_to_xarray_data_vars(
+    dataset: DataSetProtocol, xrdataset: xr.Dataset
+) -> None:
+    for data_var in xrdataset.data_vars:
+        paramspec_dict = _paramspec_dict_with_extras(dataset, str(data_var))
+        xrdataset.data_vars[str(data_var)].attrs.update(paramspec_dict.items())
 
 
 def _paramspec_dict_with_extras(
