@@ -124,7 +124,9 @@ def _paramspec_dict_with_extras(
     dataset: DataSetProtocol, dim_name: str
 ) -> Dict[str, object]:
     paramspec_dict = dict(dataset.paramspecs[str(dim_name)]._to_dict())
-
+    # units and long_name have special meaning in xarray that closely
+    # matches how qcodes uses unit and label so we copy these attributes
+    # https://xarray.pydata.org/en/stable/getting-started-guide/quick-overview.html#attributes
     paramspec_dict["units"] = paramspec_dict.get("unit", "")
     paramspec_dict["long_name"] = paramspec_dict.get("label", "")
     return paramspec_dict
