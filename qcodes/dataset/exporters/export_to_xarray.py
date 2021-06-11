@@ -101,14 +101,19 @@ def load_to_xarray_dataset(dataset: DataSetProtocol, data: ParameterData) -> xr.
     xrdataset = xr.Dataset(
         cast(Dict[Hashable, xr.DataArray], data_xrdarray_dict))
 
-    for dim in xrdataset.dims:
-        if "index" != dim:
-            paramspec_dict = _paramspec_dict_with_extras(dataset, str(dim))
-            xrdataset.coords[str(dim)].attrs.update(paramspec_dict.items())
-
+    _add_param_spec_to_xarray_coords(dataset, xrdataset)
     _add_metadata_to_xarray(dataset, xrdataset)
 
     return xrdataset
+
+
+def _add_param_spec_to_xarray_coords(
+    dataset: DataSetProtocol, xrdataset: Union[xr.Dataset, xr.DataArray]
+) -> None:
+    for coord in xrdataset.coords:
+        if coord != "index":
+            paramspec_dict = _paramspec_dict_with_extras(dataset, str(coord))
+            xrdataset.coords[str(coord)].attrs.update(paramspec_dict.items())
 
 
 def _paramspec_dict_with_extras(
