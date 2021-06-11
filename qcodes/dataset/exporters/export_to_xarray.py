@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Dict, Hashable, Mapping, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Hashable, Mapping, Union, cast
 
 import numpy as np
 
@@ -33,13 +33,13 @@ def _load_to_xarray_dataarray_dict_no_metadata(
             for _name in subdict:
                 data_xrdarray_dict[_name] = _data_to_dataframe(
                     subdict, index).reset_index().to_xarray()[_name]
-                paramspec_dict = dataset.paramspecs[_name]._to_dict()
+                paramspec_dict = _paramspec_dict_with_extras(dataset, name)
                 data_xrdarray_dict[_name].attrs.update(paramspec_dict.items())
         else:
             xrdarray: xr.DataArray = _data_to_dataframe(
                 subdict, index).to_xarray()[name]
             data_xrdarray_dict[name] = xrdarray
-            paramspec_dict = dataset.paramspecs[name]._to_dict()
+            paramspec_dict = _paramspec_dict_with_extras(dataset, name)
             xrdarray.attrs.update(paramspec_dict.items())
 
     return data_xrdarray_dict
@@ -103,11 +103,19 @@ def load_to_xarray_dataset(dataset: DataSetProtocol, data: ParameterData) -> xr.
 
     for dim in xrdataset.dims:
         if "index" != dim:
-            paramspec_dict = dict(dataset.paramspecs[str(dim)]._to_dict())
-            paramspec_dict["units"] = paramspec_dict.get("unit", "")
-            paramspec_dict["long_name"] = paramspec_dict.get("label", "")
+            paramspec_dict = _paramspec_dict_with_extras(dataset, str(dim))
             xrdataset.coords[str(dim)].attrs.update(paramspec_dict.items())
 
     _add_metadata_to_xarray(dataset, xrdataset)
 
     return xrdataset
+
+
+def _paramspec_dict_with_extras(
+    dataset: DataSetProtocol, dim_name: str
+) -> Dict[str, object]:
+    paramspec_dict = dict(dataset.paramspecs[str(dim_name)]._to_dict())
+
+    paramspec_dict["units"] = paramspec_dict.get("unit", "")
+    paramspec_dict["long_name"] = paramspec_dict.get("label", "")
+    return paramspec_dict
