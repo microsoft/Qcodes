@@ -49,6 +49,22 @@ def _make_mock_dataset_nonunique_index():
     return dataset
 
 
+@pytest.mark.usefixtures("experiment")
+@pytest.fixture(name="mock_dataset_label_unit")
+def _make_mock_dataset_label_unit():
+    dataset = new_data_set("dataset")
+    xparam = ParamSpecBase("x", "numeric", label="x label", unit="x unit")
+    yparam = ParamSpecBase("y", "numeric", label="y label", unit="y unit")
+    zparam = ParamSpecBase("z", "numeric", label="z label", unit="z unit")
+    idps = InterDependencies_(dependencies={yparam: (xparam,), zparam: (xparam,)})
+    dataset.set_interdependencies(idps)
+
+    dataset.mark_started()
+    results = [{"x": 0, "y": 1, "z": 2}]
+    dataset.add_results(results)
+    dataset.mark_completed()
+    return dataset
+
 @pytest.mark.usefixtures('experiment')
 def test_write_data_to_text_file_save(tmp_path_factory):
     dataset = new_data_set("dataset")
@@ -258,6 +274,42 @@ def test_export_to_xarray_extra_metadate_can_be_stored(mock_dataset, tmp_path):
     assert loaded_data.attrs["foo_metadata"] == json.dumps(nt_metadata)
     # check that all attrs roundtrip correctly within the xarray ds
     assert loaded_data.attrs == data_as_xarray.attrs
+
+
+def test_to_xarray_ds_paramspec_metadata_is_preserved(mock_dataset_label_unit):
+    xr_ds = mock_dataset_label_unit.to_xarray_dataset()
+    assert len(xr_ds.dims) == 1
+    for param_name in xr_ds.dims:
+        assert xr_ds.coords[param_name].attrs == _get_expected_param_spec_attrs(
+            mock_dataset_label_unit, param_name
+        )
+    for param_name in xr_ds.data_vars:
+        assert xr_ds.data_vars[param_name].attrs == _get_expected_param_spec_attrs(
+            mock_dataset_label_unit, param_name
+        )
+
+
+def test_to_xarray_da_dict_paramspec_metadata_is_preserved(mock_dataset_label_unit):
+    xr_das = mock_dataset_label_unit.to_xarray_dataarray_dict()
+
+    for outer_param_name, xr_da in xr_das.items():
+        for param_name in xr_da.dims:
+            assert xr_da.coords[param_name].attrs == _get_expected_param_spec_attrs(
+                mock_dataset_label_unit, param_name
+            )
+        expected_param_spec_attrs = _get_expected_param_spec_attrs(
+            mock_dataset_label_unit, outer_param_name
+        )
+        for spec_name, spec_value in expected_param_spec_attrs.items():
+            assert xr_da.attrs[spec_name] == spec_value
+
+
+def _get_expected_param_spec_attrs(dataset, dim):
+    expected_attrs = dict(dataset.paramspecs[str(dim)]._to_dict())
+    expected_attrs["units"] = expected_attrs["unit"]
+    expected_attrs["long_name"] = expected_attrs["label"]
+    assert len(expected_attrs.keys()) == 8
+    return expected_attrs
 
 
 def _assert_xarray_metadata_is_as_expected(xarray_ds, qc_dataset):
