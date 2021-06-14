@@ -49,6 +49,17 @@ def test_device_with_channels(chip, station):
     assert device.readout.source_parameters == (station.lockin.phase,)
     assert device.readout() == 1e-5
 
+    station.dac.ch01.voltage(-0.134)
+    assert device.gate_1.voltage() == -0.134
+    device.gate_1.voltage(-0.01)
+    assert station.dac.ch01.voltage() == -0.01
+
+    device.readout.source_parameters[0](0.5)
+    assert station.lockin.phase() == 0.5
+    station.lockin.phase(30)
+    assert device.readout.source_parameters[0]() == 30
+    assert device.readout() == 30
+
 
 def test_device_with_custom_channels(chip, station):
     device = chip.channel_device_custom
