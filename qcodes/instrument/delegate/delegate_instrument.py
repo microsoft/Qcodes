@@ -186,7 +186,6 @@ class DelegateInstrument(InstrumentBase):
                         )
                     else:
                         parent, name = self, path
-                    # print(parent, name, value)
                     setattr(parent, name, value)
             else:
                 print(f"Dry run: {msg}")
