@@ -6,9 +6,7 @@ from collections.abc import Sized
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Sequence, Union
 
-import numpy
 import numpy as np
-import xarray as xr
 
 from qcodes.dataset.data_set_protocol import DataSetProtocol
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
@@ -143,6 +141,7 @@ class DataSetInMem(DataSetProtocol, Sized):
 
     @classmethod
     def load_from_netcdf(cls, path: Union[Path, str]) -> "DataSetInMem":
+        import xarray as xr
         loaded_data = xr.load_dataset(path)
         # todo do we want to create this run in the sqlites run table if not
         # exists. e.g. load by guid and then if that is not there create one.
@@ -202,8 +201,8 @@ class DataSetInMem(DataSetProtocol, Sized):
 
         if interdeps == InterDependencies_():
             raise RuntimeError("No parameters supplied")
-        else:
-            self._set_interdependencies(interdeps, shapes)
+
+        self._set_interdependencies(interdeps, shapes)
         links = [Link(head=self.guid, **pdict) for pdict in parent_datasets]
         self._set_parent_dataset_links(links)
 
@@ -440,7 +439,7 @@ class DataSetInMem(DataSetProtocol, Sized):
         return self._cache
 
     def _enqueue_results(
-        self, result_dict: Mapping[ParamSpecBase, numpy.ndarray]
+        self, result_dict: Mapping[ParamSpecBase, np.ndarray]
     ) -> None:
         """
         Enqueue the results into self._results
@@ -458,7 +457,7 @@ class DataSetInMem(DataSetProtocol, Sized):
         interdeps = self._rundescriber.interdeps
 
         toplevel_params = set(interdeps.dependencies).intersection(set(result_dict))
-        new_results: Dict[str, Dict[str, numpy.ndarray]] = {}
+        new_results: Dict[str, Dict[str, np.ndarray]] = {}
         for toplevel_param in toplevel_params:
             inff_params = set(interdeps.inferences.get(toplevel_param, ()))
             deps_params = set(interdeps.dependencies.get(toplevel_param, ()))
@@ -634,8 +633,8 @@ class DataSetInMem(DataSetProtocol, Sized):
 
     @staticmethod
     def _reshape_array_for_cache(
-        param: ParamSpecBase, param_data: numpy.ndarray
-    ) -> numpy.ndarray:
+        param: ParamSpecBase, param_data: np.ndarray
+    ) -> np.ndarray:
         """
         Shape cache data so it matches data read from database.
         This means:
@@ -643,9 +642,9 @@ class DataSetInMem(DataSetProtocol, Sized):
         - Add an extra singleton dim to array data
         - flatten non array data into a linear array.
         """
-        param_data = numpy.atleast_1d(param_data)
+        param_data = np.atleast_1d(param_data)
         if param.type == "array":
-            new_data = numpy.reshape(param_data, (1,) + param_data.shape)
+            new_data = np.reshape(param_data, (1,) + param_data.shape)
         else:
             new_data = param_data.ravel()
         return new_data
