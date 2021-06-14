@@ -43,3 +43,6 @@ dependencies:
  - mypy_extensions
  - pip:
    - pyvisa-sim>=0.4.0  # required for testing
+   - types-pkg_resources
+   - types_requests
+   - types-tabulate

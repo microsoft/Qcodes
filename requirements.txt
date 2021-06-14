@@ -15,7 +15,7 @@ decorator~=5.0.9
 defusedxml~=0.7.1
 entrypoints~=0.3
 google-api-core~=1.30.0
-google-auth~=1.30.2
+google-auth~=1.31.0
 googleapis-common-protos~=1.53.0
 h5py~=3.2.1
 idna~=2.10
@@ -64,22 +64,22 @@ python-dateutil~=2.8.1
 pytz~=2021.1
 PyVISA~=1.11.3
 pywin32==301; sys_platform == 'win32'
-pywinpty~=1.1.1; sys_platform == 'win32'
+pywinpty~=1.1.2; sys_platform == 'win32'
 pyzmq~=22.1.0
 requests~=2.25.1
 requirements-parser~=0.2.0
 rsa~=4.7
-ruamel.yaml==0.17.7
+ruamel.yaml==0.17.9
 ruamel.yaml.clib~=0.2.2
 schema~=0.7.4
 Send2Trash~=1.5.0
 six~=1.16.0
 slack-sdk~=3.6.0
 tabulate~=0.8.9
-terminado~=0.10.0
+terminado~=0.10.1
 testpath~=0.5.0
 tornado~=6.1
-tqdm~=4.61.0
+tqdm~=4.61.1
 traitlets~=5.0.5
 typing-extensions~=3.10.0.0
 uncertainties>=3.0.2
