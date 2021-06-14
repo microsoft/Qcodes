@@ -909,7 +909,8 @@ class MockCustomChannel(InstrumentChannel):
         channel: Union[str, InstrumentChannel],
         current_valid_range: Optional[List[float]] = None,
     ) -> None:
-        """A custom instrument channel emulating an existing channel.
+        """
+        A custom instrument channel emulating an existing channel.
 
         It adds a parameter not found in the original channel, the
         current_valid_range.

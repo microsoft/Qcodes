@@ -299,7 +299,6 @@ class DelegateInstrument(InstrumentBase):
         channels: Union[Mapping[str, Mapping[str, Any]], Mapping[str, str]],
     ) -> None:
         """Add channels to the instrument.
-
         Args:
             station: QCoDeS station, i.e. representation of the entire physical
                 setup.
@@ -335,7 +334,6 @@ class DelegateInstrument(InstrumentBase):
         **kwargs: Any,
     ) -> None:
         """Adds a channel to the instrument.
-
         Args:
             param_name: Alias/name of the channel.
             station: QCoDeS' station containing the instrument containing the
