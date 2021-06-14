@@ -26,6 +26,7 @@ import numpy
 import pandas as pd
 
 import qcodes
+from qcodes.dataset.data_set_protocol import DataSetProtocol
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
@@ -196,7 +197,7 @@ class _WriterStatus:
 _WRITERS: Dict[str, _WriterStatus] = {}
 
 
-class DataSet(Sized):
+class DataSet(DataSetProtocol, Sized):
 
     # the "persistent traits" are the attributes/properties of the DataSet
     # that are NOT tied to the representation of the DataSet in any particular
