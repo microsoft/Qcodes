@@ -298,15 +298,7 @@ class DelegateInstrument(InstrumentBase):
         station: Station,
         channels: Union[Mapping[str, Mapping[str, Any]], Mapping[str, str]],
     ) -> None:
-        """Add channels to the instrument.
-        Args:
-            station: QCoDeS station, i.e. representation of the entire physical
-                setup.
-            channels: Mapping of names/aliases to instrument channels and
-                optional input parameters if a channel wrapper class is used to
-                instantiate the channel. If no 'type' field is given, the
-                channel is added as is using ``self.add_submodule``.
-        """
+        """Add channels to the instrument."""
         channel_wrapper = None
         chnnls_dict: Dict[str, Union[str, Mapping[str, Any]]] = dict(channels)
         channel_type = chnnls_dict.pop("type", None)
@@ -333,17 +325,7 @@ class DelegateInstrument(InstrumentBase):
         channel_wrapper: Optional[Type[InstrumentChannel]],
         **kwargs: Any,
     ) -> None:
-        """Adds a channel to the instrument.
-        Args:
-            param_name: Alias/name of the channel.
-            station: QCoDeS' station containing the instrument containing the
-                channel.
-            input_params: Either the path to the channel or keyworded arguments
-                with 'channel' key containing the path of the channel and any
-                other input arguments taken by channel_wrapper.
-            channel_wrapper: Optional class to construct the channel. If none
-                given, the channel is added as is using ``self.add_submodule``.
-        """
+        """Adds a channel to the instrument."""
         if isinstance(input_params, str):
             try:
                 channel = self.parse_instrument_path(station, input_params)
