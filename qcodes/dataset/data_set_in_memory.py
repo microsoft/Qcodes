@@ -31,11 +31,9 @@ from .data_set import SPECS, CompletedError
 from .data_set_cache import DataSetCacheInMem
 from .descriptions.versioning import serialization as serial
 from .linked_datasets.links import str_to_links
-
+from .exporters.export_to_csv import dataframe_to_csv
 if TYPE_CHECKING:
     import xarray as xr
-
-    from qcodes.station import Station
 
 log = logging.getLogger(__name__)
 
@@ -666,7 +664,13 @@ class DataSetInMem(DataSetProtocol, Sized):
 
     def _export_as_csv(self, path: str, file_name: str) -> str:
         """Export data as csv to a given path with file prefix"""
-        self.cache.to_csv(path=path, single_file=True, single_file_name=file_name)
+        dfdict = self.cache.to_pandas_dataframe_dict()
+        dataframe_to_csv(
+            dfdict=dfdict,
+            path=path,
+            single_file=True,
+            single_file_name=file_name,
+        )
         return os.path.join(path, file_name)
 
     def _export_data(
