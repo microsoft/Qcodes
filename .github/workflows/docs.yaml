@@ -92,6 +92,7 @@ jobs:
         branch: gh-pages
         folder: ${{ github.workspace }}/docs/_build/html
         clean: true
+        single-commit: true
         git-config-email: "bot"
         git-config-name: "Documentation Bot"
       if: ${{ fromJSON(env.UPLOAD_TO_GHPAGES) }}
