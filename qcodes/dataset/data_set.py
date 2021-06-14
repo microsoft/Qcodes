@@ -522,38 +522,6 @@ class DataSet(DataSetProtocol, Sized):
     def _writer_status(self) -> _WriterStatus:
         return _WRITERS[self.path_to_db]
 
-    def the_same_dataset_as(self, other: 'DataSet') -> bool:
-        """
-        Check if two datasets correspond to the same run by comparing
-        all their persistent traits. Note that this method
-        does not compare the data itself.
-
-        This function raises if the GUIDs match but anything else doesn't
-
-        Args:
-            other: the dataset to compare self to
-        """
-
-        if not isinstance(other, DataSet):
-            return False
-
-        guids_match = self.guid == other.guid
-
-        # note that the guid is in itself a persistent trait of the DataSet.
-        # We therefore do not need to handle the case of guids not equal
-        # but all persistent traits equal, as this is not possible.
-        # Thus, if all persistent traits are the same we can safely return True
-        for attr in DataSet.persistent_traits:
-            if getattr(self, attr) != getattr(other, attr):
-                if guids_match:
-                    raise RuntimeError('Critical inconsistency detected! '
-                                       'The two datasets have the same GUID, '
-                                       f'but their "{attr}" differ.')
-                else:
-                    return False
-
-        return True
-
     def run_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S") -> Optional[str]:
         """
         Returns run timestamp in a human-readable format
