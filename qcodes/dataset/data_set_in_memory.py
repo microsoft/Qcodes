@@ -89,9 +89,9 @@ class DataSetInMem(DataSetProtocol, Sized):
     def create_new_run(
         cls,
         name: str,
-        path_to_db: "Optional[Union[Path,str]]" = None,
+        path_to_db: Optional[Union[Path, str]] = None,
         exp_id: Optional[int] = None,
-    ) -> "DataSetInMem":
+    ) -> DataSetInMem:
 
         from qcodes.dataset.sqlite.database import conn_from_dbpath_or_conn
         from qcodes.dataset.sqlite.queries import (
@@ -143,7 +143,7 @@ class DataSetInMem(DataSetProtocol, Sized):
         return ds
 
     @classmethod
-    def load_from_netcdf(cls, path: Union[Path, str]) -> "DataSetInMem":
+    def load_from_netcdf(cls, path: Union[Path, str]) -> DataSetInMem:
         import xarray as xr
 
         loaded_data = xr.load_dataset(path)
