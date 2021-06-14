@@ -81,7 +81,10 @@ class DataSetInMem(DataSetProtocol, Sized):
             rundescriber = RunDescriber(interdeps, shapes=None)
 
         self._rundescriber = rundescriber
-        self._parent_dataset_links = parent_dataset_links
+        if parent_dataset_links is not None:
+            self._parent_dataset_links = list(parent_dataset_links)
+        else:
+            self._parent_dataset_links = []
 
     @classmethod
     def create_new_run(
