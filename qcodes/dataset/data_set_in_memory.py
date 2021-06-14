@@ -28,8 +28,9 @@ from qcodes.utils.helpers import NumpyJSONEncoder
 from .data_set import SPECS, CompletedError
 from .data_set_cache import DataSetCacheInMem
 from .descriptions.versioning import serialization as serial
-from .linked_datasets.links import str_to_links
 from .exporters.export_to_csv import dataframe_to_csv
+from .linked_datasets.links import str_to_links
+
 if TYPE_CHECKING:
     import xarray as xr
 
@@ -142,6 +143,7 @@ class DataSetInMem(DataSetProtocol, Sized):
     @classmethod
     def load_from_netcdf(cls, path: Union[Path, str]) -> "DataSetInMem":
         import xarray as xr
+
         loaded_data = xr.load_dataset(path)
         # todo do we want to create this run in the sqlites run table if not
         # exists. e.g. load by guid and then if that is not there create one.
@@ -438,9 +440,7 @@ class DataSetInMem(DataSetProtocol, Sized):
     def cache(self) -> DataSetCacheInMem:
         return self._cache
 
-    def _enqueue_results(
-        self, result_dict: Mapping[ParamSpecBase, np.ndarray]
-    ) -> None:
+    def _enqueue_results(self, result_dict: Mapping[ParamSpecBase, np.ndarray]) -> None:
         """
         Enqueue the results into self._results
 

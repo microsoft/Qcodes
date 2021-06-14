@@ -215,9 +215,11 @@ class DataSetProtocol(Protocol, Sized):
         for attr in self.persistent_traits:
             if getattr(self, attr) != getattr(other, attr):
                 if guids_match:
-                    raise RuntimeError('Critical inconsistency detected! '
-                                       'The two datasets have the same GUID, '
-                                       f'but their "{attr}" differ.')
+                    raise RuntimeError(
+                        "Critical inconsistency detected! "
+                        "The two datasets have the same GUID, "
+                        f'but their "{attr}" differ.'
+                    )
                 else:
                     return False
 
