@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING, Dict, Hashable, Mapping, Union, cast
 
 import numpy as np
 
+from qcodes.dataset.linked_datasets.links import links_to_str
+
 from ..descriptions.versioning import serialization as serial
 from .export_to_pandas import (
     _data_to_dataframe,
@@ -17,7 +19,6 @@ if TYPE_CHECKING:
 
     from qcodes.dataset.data_set import ParameterData
     from qcodes.dataset.data_set_protocol import DataSetProtocol
-
 
 
 def _load_to_xarray_dataarray_dict_no_metadata(
@@ -33,14 +34,10 @@ def _load_to_xarray_dataarray_dict_no_metadata(
             for _name in subdict:
                 data_xrdarray_dict[_name] = _data_to_dataframe(
                     subdict, index).reset_index().to_xarray()[_name]
-                paramspec_dict = dataset.paramspecs[_name]._to_dict()
-                data_xrdarray_dict[_name].attrs.update(paramspec_dict.items())
         else:
             xrdarray: xr.DataArray = _data_to_dataframe(
                 subdict, index).to_xarray()[name]
             data_xrdarray_dict[name] = xrdarray
-            paramspec_dict = dataset.paramspecs[name]._to_dict()
-            xrdarray.attrs.update(paramspec_dict.items())
 
     return data_xrdarray_dict
 
@@ -50,8 +47,12 @@ def load_to_xarray_dataarray_dict(
 ) -> Dict[str, xr.DataArray]:
     dataarrays = _load_to_xarray_dataarray_dict_no_metadata(dataset, datadict)
 
-    for dataarray in dataarrays.values():
+    for dataname, dataarray in dataarrays.items():
+        _add_param_spec_to_xarray_coords(dataset, dataarray)
+        paramspec_dict = _paramspec_dict_with_extras(dataset, str(dataname))
+        dataarray.attrs.update(paramspec_dict.items())
         _add_metadata_to_xarray(dataset, dataarray)
+
     return dataarrays
 
 
@@ -71,6 +72,7 @@ def _add_metadata_to_xarray(
             "captured_counter": dataset.captured_counter,
             "run_id": dataset.run_id,
             "run_description": serial.to_json_for_storage(dataset.description),
+            "parent_dataset_links": links_to_str(dataset.parent_dataset_links),
         }
     )
     if dataset.run_timestamp_raw is not None:
@@ -101,11 +103,37 @@ def load_to_xarray_dataset(dataset: DataSetProtocol, data: ParameterData) -> xr.
     xrdataset = xr.Dataset(
         cast(Dict[Hashable, xr.DataArray], data_xrdarray_dict))
 
-    for dim in xrdataset.dims:
-        if "index" != dim:
-            paramspec_dict = dataset.paramspecs[str(dim)]._to_dict()
-            xrdataset.coords[str(dim)].attrs.update(paramspec_dict.items())
-
+    _add_param_spec_to_xarray_coords(dataset, xrdataset)
+    _add_param_spec_to_xarray_data_vars(dataset, xrdataset)
     _add_metadata_to_xarray(dataset, xrdataset)
 
     return xrdataset
+
+
+def _add_param_spec_to_xarray_coords(
+    dataset: DataSetProtocol, xrdataset: Union[xr.Dataset, xr.DataArray]
+) -> None:
+    for coord in xrdataset.coords:
+        if coord != "index":
+            paramspec_dict = _paramspec_dict_with_extras(dataset, str(coord))
+            xrdataset.coords[str(coord)].attrs.update(paramspec_dict.items())
+
+
+def _add_param_spec_to_xarray_data_vars(
+    dataset: DataSetProtocol, xrdataset: xr.Dataset
+) -> None:
+    for data_var in xrdataset.data_vars:
+        paramspec_dict = _paramspec_dict_with_extras(dataset, str(data_var))
+        xrdataset.data_vars[str(data_var)].attrs.update(paramspec_dict.items())
+
+
+def _paramspec_dict_with_extras(
+    dataset: DataSetProtocol, dim_name: str
+) -> Dict[str, object]:
+    paramspec_dict = dict(dataset.paramspecs[str(dim_name)]._to_dict())
+    # units and long_name have special meaning in xarray that closely
+    # matches how qcodes uses unit and label so we copy these attributes
+    # https://xarray.pydata.org/en/stable/getting-started-guide/quick-overview.html#attributes
+    paramspec_dict["units"] = paramspec_dict.get("unit", "")
+    paramspec_dict["long_name"] = paramspec_dict.get("label", "")
+    return paramspec_dict
