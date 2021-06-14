@@ -10,7 +10,6 @@ from qcodes.dataset.sqlite.connection import ConnectionPlus
 from qcodes.dataset.sqlite.queries import completed, load_new_data_for_rundescriber
 from qcodes.utils.deprecate import deprecate
 
-from .exporters.export_to_csv import dataframe_to_csv
 from .exporters.export_to_pandas import (
     load_to_concatenated_dataframe,
     load_to_dataframe_dict,
@@ -195,20 +194,6 @@ class DataSetCache(Generic[DatasetType]):
         """
         data = self.data()
         return load_to_xarray_dataset(self._dataset, data)
-
-    def to_csv(
-        self,
-        path: str,
-        single_file: bool = False,
-        single_file_name: Optional[str] = None,
-    ) -> None:
-        dfdict = self.to_pandas_dataframe_dict()
-        dataframe_to_csv(
-            dfdict=dfdict,
-            path=path,
-            single_file=single_file,
-            single_file_name=single_file_name,
-        )
 
 
 def load_new_data_from_db_and_append(
