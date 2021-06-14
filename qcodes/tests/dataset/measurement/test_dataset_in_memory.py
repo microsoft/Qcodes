@@ -1,5 +1,3 @@
-import os
-
 import numpy as np
 
 from qcodes.dataset.data_set_in_memory import DataSetInMem
