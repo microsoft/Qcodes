@@ -21,7 +21,7 @@ from qcodes.utils.validators import (
     OnOff,
     Strings,
 )
-
+from qcodes.utils.validators import Sequence as ValidatorSequence
 log = logging.getLogger(__name__)
 
 
@@ -940,7 +940,7 @@ class MockCustomChannel(InstrumentChannel):
             name="current_valid_range",
             label=f"{name} valid voltage range",
             initial_value=current_valid_range,
-            vals=Sequence(Numbers(), length=2),
+            vals=ValidatorSequence(Numbers(), length=2),
             get_cmd=None,
             set_cmd=None,
         )
