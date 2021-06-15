@@ -1,6 +1,5 @@
 from typing import Any
 from qcodes import Parameter
-from qcodes.instrument.base import InstrumentBase
 
 
 class AbstractParameter(Parameter):
