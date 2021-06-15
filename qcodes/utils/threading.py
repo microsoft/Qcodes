@@ -4,7 +4,18 @@
 # That way the things we call need not be rewritten explicitly async.
 import logging
 import threading
-from typing import Any, Callable, Dict, List, Optional, Sequence, TypeVar
+from collections import defaultdict
+from typing import (
+    Any, Callable, Dict, List, Optional, Sequence, TypeVar, Tuple, Union
+)
+
+from qcodes.dataset.measurements import res_type
+from qcodes.instrument.parameter import ParamDataType, _BaseParameter
+from qcodes import config
+
+ParamMeasT = Union[_BaseParameter, Callable[[], None]]
+
+OutType = List[res_type]
 
 T = TypeVar("T")
 
@@ -90,3 +101,87 @@ def thread_map(
         t.start()
 
     return [t.output() for t in threads]
+
+
+class _ParamCaller:
+
+    def __init__(self, *parameters: _BaseParameter):
+
+        self._parameters = parameters
+
+    def __call__(self) -> Tuple[ParamDataType, ...]:
+        output = []
+        for param in self._parameters:
+            output.append(param.get())
+        return tuple(output)
+
+    def __repr__(self) -> str:
+        names = tuple(param.full_name for param in self._parameters)
+        return f"ParamCaller of {names}"
+
+
+def _instrument_to_param(
+        params: Sequence[ParamMeasT]
+) -> Dict[Optional[str], Tuple[_BaseParameter, ...]]:
+
+    real_parameters = [param for param in params
+                       if isinstance(param, _BaseParameter)]
+
+    output: Dict[Optional[str], Tuple[_BaseParameter, ...]] = defaultdict(tuple)
+    for param in real_parameters:
+        if param.underlying_instrument:
+            output[param.underlying_instrument.full_name] += (param,)
+        else:
+            output[None] += (param,)
+
+    return output
+
+
+def call_params_threaded(param_meas: Sequence[ParamMeasT]) -> OutType:
+
+    inst_param_mapping = _instrument_to_param(param_meas)
+    executors = tuple(_ParamCaller(*param_list)
+                      for param_list in
+                      inst_param_mapping.values())
+
+    output: OutType = []
+    threads = [RespondingThread(target=executor)
+               for executor in executors]
+
+    for t in threads:
+        t.start()
+
+    for t, param_list in zip(threads, inst_param_mapping.values()):
+        thread_output = t.output()
+        assert thread_output is not None
+        for param, value in zip(param_list, thread_output):
+            output.append((param, value))
+
+    return output
+
+
+def _call_params(param_meas: Sequence[ParamMeasT]) -> OutType:
+
+    output: OutType = []
+
+    for parameter in param_meas:
+        if isinstance(parameter, _BaseParameter):
+            output.append((parameter, parameter.get()))
+        elif callable(parameter):
+            parameter()
+
+    return output
+
+
+def process_params_meas(
+    param_meas: Sequence[ParamMeasT],
+    use_threads: Optional[bool] = None
+) -> OutType:
+
+    if use_threads is None:
+        use_threads = config.dataset.use_threads
+
+    if use_threads:
+        return call_params_threaded(param_meas)
+
+    return _call_params(param_meas)
