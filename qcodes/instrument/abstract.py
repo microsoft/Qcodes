@@ -3,6 +3,7 @@ from qcodes import Parameter
 
 
 class AbstractParameter(Parameter):
+
     """
     This is a trivial subclass of 'Parameter' to signal
     that this parameters *must* be overridden in
@@ -88,7 +89,8 @@ def abstract_instrument(cls: Type) -> Type:
             self.parameters[name] = param
 
         else:
-            # If it is a parameter other then abstract parameter, call the original method
+            # If it is a parameter other then abstract parameter, call the original
+            # method
             original_add_parameter(
                 self, name, parameter_class, **kwargs
             )
