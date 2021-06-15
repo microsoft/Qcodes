@@ -35,7 +35,7 @@ def abstract_instrument(cls: Type[InstrumentBase]) -> Type[InstrumentBase]:
         The decorated class
     """
 
-    def __init_subclass__(sub_cls: Type) -> None:
+    def __init_subclass__(sub_cls: Type[InstrumentBase]) -> None:
 
         __init__ = sub_cls.__init__
 
