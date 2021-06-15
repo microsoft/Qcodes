@@ -1533,7 +1533,7 @@ class DataSet(Sized):
                 path=file_path, engine="h5netcdf", invalid_netcdf=True
             )
         else:
-            xarr_dataset.to_netcdf(path=file_path)
+            xarr_dataset.to_netcdf(path=file_path, engine="h5netcdf")
         return path
 
     def _export_as_csv(self, path: str, file_name: str) -> str:
