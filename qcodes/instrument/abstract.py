@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Type
 from qcodes import Parameter
 
 
@@ -17,7 +17,7 @@ class AbstractParameterException(Exception):
     """
 
 
-def abstract_instrument(cls):
+def abstract_instrument(cls: Type) -> Type:
     """
     A class decorator to create an abstract instrument. Abstract
     instruments are allowed to have abstract parameters, but
@@ -32,11 +32,11 @@ def abstract_instrument(cls):
         The decorated class
     """
 
-    def __init_subclass__(sub_cls):
+    def __init_subclass__(sub_cls: Type) -> None:
 
         __init__ = sub_cls.__init__
 
-        def __init_new__(self, *args, **kwargs):
+        def __init_new__(self, *args: Any, **kwargs: Any) -> None:
             """
             Subclasses of an abstract instrument should check
             after initialization whether there still are
