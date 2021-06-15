@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from qcodes import Measurement
-from qcodes.tests.instrument_mocks import MockCustomChannel
+from qcodes.tests.instrument_mocks import MockCustomChannel, DummyChannel
 
 
 def test_device(station, chip_config, dac, lockin):
@@ -68,6 +68,9 @@ def test_device_with_custom_channels(chip, station):
     assert device.gate_1.current_valid_range() == [-0.5, 0]
     assert device.gate_1.parent == station.dac
     assert isinstance(device.gate_1, MockCustomChannel)
+
+    assert device.fast_gate._channel == 'dac.ch02'
+    assert isinstance(device.fast_gate, DummyChannel)
 
 
 def test_chip_definition(chip_config_typo, station):
