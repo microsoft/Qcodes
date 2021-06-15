@@ -22,7 +22,9 @@ def abstract_instrument(cls):
     """
     A class decorator to create an abstract instrument. Abstract
     instruments are allowed to have abstract parameters, but
-    their subclasses do not.
+    their subclasses do not. This works by replacing the
+    'add_parameter' and '__init_subclass__' methods of the class
+    dynamically.
 
     Args:
         cls: The class to be decorated
@@ -60,6 +62,8 @@ def abstract_instrument(cls):
 
         sub_cls.__init__ = __init_new__
 
+    original_add_parameter = cls.add_parameter
+
     def add_parameter(
             self, name: str, parameter_class: type = Parameter,
             **kwargs: Any
@@ -85,8 +89,8 @@ def abstract_instrument(cls):
             self.parameters[name] = param
 
         else:
-            # If it is a parameter other then abstract parameter, call the super class
-            InstrumentBase.add_parameter(
+            # If it is a parameter other then abstract parameter, call the original method
+            original_add_parameter(
                 self, name, parameter_class, **kwargs
             )
 
