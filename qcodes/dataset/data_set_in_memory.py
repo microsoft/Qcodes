@@ -56,7 +56,9 @@ class DataSetInMem(DataSetProtocol, Sized):
         rundescriber: Optional[RunDescriber] = None,
         parent_dataset_links: Optional[Sequence[Link]] = None,
     ) -> None:
-        """Note that the constructor is considered private. A ``DataSetInMem``
+        """Note that the constructor is considered private.
+
+        A ``DataSetInMem``
         should be constructed either using ``create_new_run`` or ``load_from_netcdf``
         """
 
@@ -118,7 +120,8 @@ class DataSetInMem(DataSetProtocol, Sized):
             sample_name = get_sample_name_from_experiment_id(conn, exp_id)
             exp_name = get_experiment_name_from_experiment_id(conn, exp_id)
             guid = generate_guid()
-            # todo replace with a better function that does not put in the results table name
+            # todo replace with a better function that
+            #  does not put in the results table name
 
             run_counter, run_id, __ = create_run(
                 conn, exp_id, name, guid=guid, parameters=None
@@ -215,8 +218,7 @@ class DataSetInMem(DataSetProtocol, Sized):
 
     @property
     def pristine(self) -> bool:
-        """
-        Is this :class:`.DataSet` pristine?
+        """Is this :class:`.DataSet` pristine?
 
         A pristine :class:`.DataSet` has not yet been started,
         meaning that parameters can still be added and removed, but results
@@ -351,7 +353,7 @@ class DataSetInMem(DataSetProtocol, Sized):
 
     @property
     def snapshot(self) -> Optional[Dict[str, Any]]:
-        """Snapshot of the run as dictionary (or None)"""
+        """Snapshot of the run as dictionary (or None)."""
         snapshot_json = self._snapshot_raw
         if snapshot_json is not None:
             return json.loads(snapshot_json)
@@ -360,7 +362,7 @@ class DataSetInMem(DataSetProtocol, Sized):
 
     def add_snapshot(self, snapshot: str, overwrite: bool = False) -> None:
         """
-        Adds a snapshot to this run
+        Adds a snapshot to this run.
 
         Args:
             snapshot: the raw JSON dump of the snapshot
@@ -376,7 +378,7 @@ class DataSetInMem(DataSetProtocol, Sized):
 
     @property
     def _snapshot_raw(self) -> Optional[str]:
-        """Snapshot of the run as a JSON-formatted string (or None)"""
+        """Snapshot of the run as a JSON-formatted string (or None)."""
         return self._metadata.get("snapshot")
 
     def add_metadata(self, tag: str, metadata: Any) -> None:
@@ -659,7 +661,7 @@ class DataSetInMem(DataSetProtocol, Sized):
         return new_data
 
     def _export_file_name(self, prefix: str, export_type: DataExportType) -> str:
-        """Get export file name"""
+        """Get export file name."""
         extension = export_type.value
         return f"{prefix}{self.run_id}.{extension}"
 
@@ -688,6 +690,7 @@ class DataSetInMem(DataSetProtocol, Sized):
         prefix: Optional[str] = None,
     ) -> Optional[str]:
         """Export data to disk with file name {prefix}{run_id}.{ext}.
+
         Values for the export type, path and prefix can also be set in the qcodes
         "dataset" config.
 
