@@ -202,7 +202,6 @@ class DataSetProtocol(Protocol, Sized):
         Args:
             other: the dataset to compare self to
         """
-
         if not isinstance(other, DataSetProtocol):
             return False
 
@@ -220,7 +219,6 @@ class DataSetProtocol(Protocol, Sized):
                         "The two datasets have the same GUID, "
                         f'but their "{attr}" differ.'
                     )
-                else:
-                    return False
+                return False
 
         return True

@@ -216,7 +216,9 @@ class DataSetInMem(DataSetProtocol, Sized):
     @property
     def pristine(self) -> bool:
         """
-        Is this :class:`.DataSet` pristine? A pristine :class:`.DataSet` has not yet been started,
+        Is this :class:`.DataSet` pristine?
+
+        A pristine :class:`.DataSet` has not yet been started,
         meaning that parameters can still be added and removed, but results
         can not be added.
         """
@@ -225,7 +227,9 @@ class DataSetInMem(DataSetProtocol, Sized):
     @property
     def running(self) -> bool:
         """
-        Is this :class:`.DataSet` currently running? A running :class:`.DataSet` has been started,
+        Is this :class:`.DataSet` currently running?
+
+        A running :class:`.DataSet` has been started,
         but not yet completed.
         """
         return (
@@ -236,7 +240,9 @@ class DataSetInMem(DataSetProtocol, Sized):
     @property
     def completed(self) -> bool:
         """
-        Is this :class:`.DataSet` completed? A completed :class:`.DataSet` may not be modified in
+        Is this :class:`.DataSet` completed?
+
+        A completed :class:`.DataSet` may not be modified in
         any way.
         """
         return self._completed_timestamp_raw is not None
@@ -375,8 +381,10 @@ class DataSetInMem(DataSetProtocol, Sized):
 
     def add_metadata(self, tag: str, metadata: Any) -> None:
         """
-        Adds metadata to the :class:`.DataSet`. The metadata is stored under the
-        provided tag. Note that None is not allowed as a metadata value.
+        Adds metadata to the :class:`.DataSet`.
+
+        The metadata is stored under the provided tag.
+        Note that None is not allowed as a metadata value.
 
         Args:
             tag: represents the key in the metadata dictionary
@@ -412,7 +420,9 @@ class DataSetInMem(DataSetProtocol, Sized):
         path: Optional[str] = None,
         prefix: Optional[str] = None,
     ) -> None:
-        """Export data to disk with file name {prefix}{run_id}.{ext}.
+        """
+        Export data to disk with file name {prefix}{run_id}.{ext}.
+
         Values for the export type, path and prefix can also be set in the "dataset"
         section of qcodes config.
 
@@ -539,9 +549,7 @@ class DataSetInMem(DataSetProtocol, Sized):
             )
 
         if not self.pristine:
-            mssg = (
-                "Can not set interdependencies on a DataSet that has " "been started."
-            )
+            mssg = "Can not set interdependencies on a DataSet that has been started."
             raise RuntimeError(mssg)
         self._rundescriber = RunDescriber(interdeps, shapes=shapes)
 
@@ -613,16 +621,15 @@ class DataSetInMem(DataSetProtocol, Sized):
         """
 
         valid_param_names = []
-        for maybeParam in params:
-            if isinstance(maybeParam, str):
-                valid_param_names.append(maybeParam)
-                continue
+        for maybe_param in params:
+            if isinstance(maybe_param, str):
+                valid_param_names.append(maybe_param)
             else:
                 try:
-                    maybeParam = maybeParam.name
+                    maybe_param_name = maybe_param.name
                 except Exception as e:
                     raise ValueError("This parameter does not have  a name") from e
-                valid_param_names.append(maybeParam)
+                valid_param_names.append(maybe_param_name)
         return valid_param_names
 
     def __len__(self) -> int:
@@ -657,14 +664,14 @@ class DataSetInMem(DataSetProtocol, Sized):
         return f"{prefix}{self.run_id}.{extension}"
 
     def _export_as_netcdf(self, path: str, file_name: str) -> str:
-        """Export data as netcdf to a given path with file prefix"""
+        """Export data as netcdf to a given path with file prefix."""
         file_path = os.path.join(path, file_name)
         xarr_dataset = self.cache.to_xarray_dataset()
         xarr_dataset.to_netcdf(path=file_path)
         return path
 
     def _export_as_csv(self, path: str, file_name: str) -> str:
-        """Export data as csv to a given path with file prefix"""
+        """Export data as csv to a given path with file prefix."""
         dfdict = self.cache.to_pandas_dataframe_dict()
         dataframe_to_csv(
             dfdict=dfdict,
