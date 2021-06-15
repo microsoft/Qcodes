@@ -1,9 +1,11 @@
-from typing import Any, Type
+from functools import wraps
+from typing import Any, Type, TypeVar
 from qcodes import Parameter
+from qcodes.instrument.base import InstrumentBase
+from qcodes.instrument.parameter import _BaseParameter
 
 
 class AbstractParameter(Parameter):
-
     """
     This is a trivial subclass of 'Parameter' to signal
     that this parameters *must* be overridden in
@@ -18,7 +20,10 @@ class AbstractParameterException(Exception):
     """
 
 
-def abstract_instrument(cls: Type) -> Type:
+InstrumentBaseT = TypeVar("InstrumentBaseT", bound=Type[InstrumentBase])
+
+
+def abstract_instrument(cls: InstrumentBaseT) -> InstrumentBaseT:
     """
     A class decorator to create an abstract instrument. Abstract
     instruments are allowed to have abstract parameters, but
@@ -64,8 +69,9 @@ def abstract_instrument(cls: Type) -> Type:
 
     original_add_parameter = cls.add_parameter
 
+    @wraps(original_add_parameter)
     def add_parameter(
-            self, name: str, parameter_class: type = Parameter,
+            self, name: str, parameter_class: Type[_BaseParameter] = Parameter,
             **kwargs: Any
     ) -> None:
 
@@ -80,20 +86,16 @@ def abstract_instrument(cls: Type) -> Type:
                 raise AbstractParameterException(
                     f"The unit of the parameter '{name}' is '{new_unit}', "
                     f"which is inconsistent with the unit '{existing_unit}' "
-                    f"specified earlier. This is usually because a driver "
-                    f"is a subclass of a baseclass which defines a parameter "
-                    f"of the same name but with different units"
+                    f"specified in the baseclass {cls.__name__!r} "
                 )
 
-            param = parameter_class(name=name, instrument=self, **kwargs)
-            self.parameters[name] = param
+            # Remove the original abstract parameter to make room for the implementation
+            # in the subclass.
+            del self.parameters[name]
 
-        else:
-            # If it is a parameter other then abstract parameter, call the original
-            # method
-            original_add_parameter(
-                self, name, parameter_class, **kwargs
-            )
+        original_add_parameter(
+            self, name, parameter_class, **kwargs
+        )
 
     cls.__init_subclass__ = classmethod(__init_subclass__)
     cls.add_parameter = add_parameter
