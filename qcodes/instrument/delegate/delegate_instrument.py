@@ -334,7 +334,7 @@ class DelegateInstrument(InstrumentBase):
 
         elif isinstance(input_params, Mapping) and channel_wrapper is not None:
             channel = self.parse_instrument_path(station, input_params["channel"])
-            kwargs = dict(kwargs, **input_params)
+            wrapper_kwargs = dict(kwargs, **input_params)
 
             channel = channel_wrapper(channel.parent, param_name, **kwargs)
         else:
