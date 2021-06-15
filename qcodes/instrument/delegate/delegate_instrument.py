@@ -308,7 +308,7 @@ class DelegateInstrument(InstrumentBase):
             module = importlib.import_module(module_name)
             channel_wrapper = getattr(module, instr_class_name)
 
-        for param_name, input_params in chnnls_dict.items():
+        for channel_name, input_params in chnnls_dict.items():
             self._create_and_add_channel(
                 param_name=param_name,
                 station=station,
