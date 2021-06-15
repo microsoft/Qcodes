@@ -329,7 +329,7 @@ class DelegateInstrument(InstrumentBase):
             try:
                 channel = self.parse_instrument_path(station, input_params)
             except ValueError as v_err:
-                msg = "Unknown channel path. Try: instrument.chXY"
+                msg = "Unknown channel path."
                 raise ValueError(msg) from v_err
 
         elif isinstance(input_params, Mapping) and channel_wrapper is not None:
