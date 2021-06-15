@@ -90,7 +90,9 @@ class DelegateInstrument(InstrumentBase):
         channels: A mapping from the name of an instrument channel to either
             the channel it emulates or a mapping of keyworded input parameters
             of a custom channel wrapper class. This custom channel wrapper
-            class needs to be specified under the `type` keyword.
+            class needs to be specified under the `type` keyword. Each
+            channel can have its own `type` if required. A single type for all
+            channels can also be specified.
         initial_values: Default values to set on the delegate instrument's
             parameters. Defaults to None (no initial values are specified or
             set).
@@ -300,15 +302,24 @@ class DelegateInstrument(InstrumentBase):
         """Add channels to the instrument."""
         channel_wrapper = None
         chnnls_dict: Dict[str, Union[str, Mapping[str, Any]]] = dict(channels)
-        channel_type = chnnls_dict.pop("type", None)
-        if channel_type is not None:
-            channel_type_elems = str(channel_type).split(".")
-            module_name = ".".join(channel_type_elems[:-1])
-            instr_class_name = channel_type_elems[-1]
-            module = importlib.import_module(module_name)
-            channel_wrapper = getattr(module, instr_class_name)
+
+        channel_wrapper_global = _get_channel_wrapper_class(
+            chnnls_dict.pop("type", None)
+        )
 
         for channel_name, input_params in chnnls_dict.items():
+            if isinstance(input_params, Mapping):
+                input_params = dict(input_params)
+                channel_wrapper_individual = _get_channel_wrapper_class(
+                    input_params.pop("type", None)
+                )
+                if channel_wrapper_individual is None:
+                    channel_wrapper = channel_wrapper_global
+                else:
+                    channel_wrapper = channel_wrapper_individual
+            else:
+                channel_wrapper = channel_wrapper_global
+
             self._create_and_add_channel(
                 channel_name=channel_name,
                 station=station,
@@ -349,3 +360,16 @@ class DelegateInstrument(InstrumentBase):
     def __repr__(self) -> str:
         params = ", ".join(self.parameters.keys())
         return f"DelegateInstrument(name={self.name}, parameters={params})"
+
+def _get_channel_wrapper_class(
+    channel_type: Optional[str],
+) -> Type[InstrumentChannel]:
+    """Get channel class from string specified in yaml."""
+    if channel_type is None:
+        return None
+    else:
+        channel_type_elems = str(channel_type).split(".")
+        module_name = ".".join(channel_type_elems[:-1])
+        instr_class_name = channel_type_elems[-1]
+        module = importlib.import_module(module_name)
+        return getattr(module, instr_class_name)
