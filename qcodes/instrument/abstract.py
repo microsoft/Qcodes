@@ -20,10 +20,7 @@ class AbstractParameterException(Exception):
     """
 
 
-InstrumentBaseT = TypeVar("InstrumentBaseT", bound=Type[InstrumentBase])
-
-
-def abstract_instrument(cls: InstrumentBaseT) -> InstrumentBaseT:
+def abstract_instrument(cls: Type[InstrumentBase]) -> Type[InstrumentBase]:
     """
     A class decorator to create an abstract instrument. Abstract
     instruments are allowed to have abstract parameters, but
