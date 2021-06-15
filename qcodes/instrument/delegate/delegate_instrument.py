@@ -336,7 +336,7 @@ class DelegateInstrument(InstrumentBase):
             channel = self.parse_instrument_path(station, input_params["channel"])
             wrapper_kwargs = dict(kwargs, **input_params)
 
-            channel = channel_wrapper(channel.parent, param_name, **kwargs)
+            channel = channel_wrapper(parent=channel.parent, name=param_name, **kwargs)
         else:
             raise ValueError(
                 "Channels can only be created from existing channels, "
