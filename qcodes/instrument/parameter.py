@@ -369,6 +369,7 @@ class _BaseParameter(Metadatable):
         # to perform a validation on get
         self._validate_on_get = False
 
+        self._underlying_instrument: Optional['InstrumentBase']
         if self._instrument is not None:
             self._underlying_instrument = self._instrument.root_instrument
         else:
@@ -965,7 +966,7 @@ class _BaseParameter(Metadatable):
         """
         return self._settable
 
-    @property
+    @property  # type: ignore
     @abstractmethod
     def underlying_instrument(self) -> Optional['InstrumentBase']:
         """
