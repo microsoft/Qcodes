@@ -88,7 +88,7 @@ class DelegateInstrument(InstrumentBase):
         parameters: A mapping from the name of a parameter to the sequence
             of source parameters that it points to.
         channels: A mapping from the name of an instrument channel to either
-            the channel it emulates or a mapping of keworded input parameters
+            the channel it emulates or a mapping of keyworded input parameters
             of a custom channel wrapper class. This custom channel wrapper
             class needs to be specified under the `type` keyword.
         initial_values: Default values to set on the delegate instrument's
