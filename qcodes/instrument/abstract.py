@@ -54,7 +54,7 @@ def abstract_instrument(cls):
                 cls_name = sub_cls.__name__
 
                 raise AbstractParameterException(
-                    f"Class '{cls_name}' un-implemented Abstract Parameter(s): " +
+                    f"Class '{cls_name}' has un-implemented Abstract Parameter(s): " +
                     ", ".join([f"'{name}'" for name in abstract_parameters])
                 )
 
@@ -85,7 +85,7 @@ def abstract_instrument(cls):
             self.parameters[name] = param
 
         else:
-            # If it is a usual parameter, call the super class
+            # If it is a parameter other then abstract parameter, call the super class
             InstrumentBase.add_parameter(
                 self, name, parameter_class, **kwargs
             )
