@@ -310,7 +310,7 @@ class DelegateInstrument(InstrumentBase):
 
         for channel_name, input_params in chnnls_dict.items():
             self._create_and_add_channel(
-                param_name=param_name,
+                channel_name=channel_name,
                 station=station,
                 input_params=input_params,
                 channel_wrapper=channel_wrapper,
@@ -318,7 +318,7 @@ class DelegateInstrument(InstrumentBase):
 
     def _create_and_add_channel(
         self,
-        param_name: str,
+        channel_name: str,
         station: Station,
         input_params: Union[str, Mapping[str, Any]],
         channel_wrapper: Optional[Type[InstrumentChannel]],
@@ -334,9 +334,9 @@ class DelegateInstrument(InstrumentBase):
 
         elif isinstance(input_params, Mapping) and channel_wrapper is not None:
             channel = self.parse_instrument_path(station, input_params["channel"])
-            wrapper_kwargs = dict(kwargs, **input_params)
+            wrapper_kwargs = dict(**kwargs, **input_params)
 
-            channel = channel_wrapper(parent=channel.parent, name=param_name, **kwargs)
+            channel = channel_wrapper(parent=channel.parent, name=channel_name, **wrapper_kwargs)
         else:
             raise ValueError(
                 "Channels can only be created from existing channels, "
@@ -344,7 +344,7 @@ class DelegateInstrument(InstrumentBase):
                 f"instead got {input_params!r} inputs with {channel_wrapper!r} channel wrapper."
             )
 
-        self.add_submodule(param_name, channel)
+        self.add_submodule(channel_name, channel)
 
     def __repr__(self) -> str:
         params = ", ".join(self.parameters.keys())
