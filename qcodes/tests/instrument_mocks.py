@@ -16,7 +16,6 @@ from qcodes.instrument.parameter import (
 from qcodes.utils.validators import (
     Arrays,
     ComplexNumbers,
-    Lists,
     Numbers,
     OnOff,
     Strings,

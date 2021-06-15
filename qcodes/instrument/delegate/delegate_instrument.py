@@ -345,15 +345,22 @@ class DelegateInstrument(InstrumentBase):
                 raise ValueError(msg) from v_err
 
         elif isinstance(input_params, Mapping) and channel_wrapper is not None:
-            channel = self.parse_instrument_path(station, input_params["channel"])
+            channel = self.parse_instrument_path(
+                station, input_params["channel"]
+            )
             wrapper_kwargs = dict(**kwargs, **input_params)
 
-            channel = channel_wrapper(parent=channel.parent, name=channel_name, **wrapper_kwargs)
+            channel = channel_wrapper(
+                parent=channel.parent,
+                name=channel_name,
+                **wrapper_kwargs
+            )
         else:
             raise ValueError(
                 "Channels can only be created from existing channels, "
                 "or using a wrapper channel class; "
-                f"instead got {input_params!r} inputs with {channel_wrapper!r} channel wrapper."
+                f"instead got {input_params!r} inputs with "
+                f"{channel_wrapper!r} channel wrapper."
             )
 
         self.add_submodule(channel_name, channel)
