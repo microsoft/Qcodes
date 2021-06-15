@@ -190,7 +190,8 @@ def test_export_netcdf_complex_data(tmp_path_factory, mock_dataset_complex):
     mock_dataset_complex.export(export_type="netcdf", path=path, prefix="qcodes_")
     assert os.listdir(path) == [f"qcodes_{mock_dataset_complex.run_id}.nc"]
     file_path = os.path.join(path, f"qcodes_{mock_dataset_complex.run_id}.nc")
-    ds = xr.open_dataset(file_path)
+    # need to explicitly use h5netcdf when reading or complex data vars will be empty
+    ds = xr.open_dataset(file_path, engine="h5netcdf")
     df = ds.to_dataframe()
     assert df.index.name == "x"
     assert df.index.values.tolist() == [0.0]
