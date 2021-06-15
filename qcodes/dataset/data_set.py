@@ -1519,7 +1519,21 @@ class DataSet(Sized):
         """Export data as netcdf to a given path with file prefix"""
         file_path = os.path.join(path, file_name)
         xarr_dataset = self.to_xarray_dataset()
-        xarr_dataset.to_netcdf(path=file_path)
+        data_var_kinds = [
+            xarr_dataset.data_vars[data_var].dtype.kind
+            for data_var in xarr_dataset.data_vars
+        ]
+        coord_kinds = [
+            xarr_dataset.coords[coord].dtype.kind for coord in xarr_dataset.coords
+        ]
+        if "c" in data_var_kinds or "c" in coord_kinds:
+            # see http://xarray.pydata.org/en/stable/howdoi.html
+            # for how to export complex numbers
+            xarr_dataset.to_netcdf(
+                path=file_path, engine="h5netcdf", invalid_netcdf=True
+            )
+        else:
+            xarr_dataset.to_netcdf(path=file_path)
         return path
 
     def _export_as_csv(self, path: str, file_name: str) -> str:
