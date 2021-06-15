@@ -369,6 +369,11 @@ class _BaseParameter(Metadatable):
         # to perform a validation on get
         self._validate_on_get = False
 
+        if self._instrument is not None:
+            self._underlying_instrument = self._instrument.root_instrument
+        else:
+            self._underlying_instrument = None
+
     @property
     def raw_value(self) -> ParamRawDataType:
         """
@@ -959,6 +964,18 @@ class _BaseParameter(Metadatable):
         Is it allowed to call set on this parameter?
         """
         return self._settable
+
+    @property
+    @abstractmethod
+    def underlying_instrument(self) -> Optional['InstrumentBase']:
+        """
+        This property is very useful for layered parameters created
+        quite often by the users. It allows the user to set the actual
+        instrument of a parameter to be the underlying instrument for a
+        layered parameter.
+        By default it return the root_instrument of the parameter.
+        """
+        return self._underlying_instrument
 
 
 class Parameter(_BaseParameter):
