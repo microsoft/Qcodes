@@ -338,7 +338,11 @@ class DelegateInstrument(InstrumentBase):
 
             channel = channel_wrapper(channel.parent, param_name, **kwargs)
         else:
-            raise ValueError("Unknown input type.")
+            raise ValueError(
+                "Channels can only be created from existing channels, "
+                "or using a wrapper channel class; "
+                f"instead got {input_params!r} inputs with {channel_wrapper!r} channel wrapper."
+            )
 
         self.add_submodule(param_name, channel)
 
