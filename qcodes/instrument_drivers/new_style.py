@@ -1,6 +1,8 @@
 """
 This module defines a few driver examples that use the new style of adding parameters.
 
+Author: Victor Negirneac, vnegirneac@qblox.com
+
 .. seealso::
 
     :func:`qcodes.intrument.base.add_parameter` decorator.

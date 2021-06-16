@@ -1,7 +1,12 @@
 """
 Sphinx extension for auto-documenting new-style parameters.
 
-Author: Victor Negirneac <vnegirneac@qblox.com>
+Author: Victor Negirneac, vnegirneac@qblox.com
+
+.. warning::
+
+    The functions in this modules are not intended to be used directly.
+    Intended to be called by sphinx only.
 
 A sphinx extension that patches several parts of sphinx and autodoc in order
 to allow nice auto-documentation of parameters added with the
@@ -12,11 +17,6 @@ to allow nice auto-documentation of parameters added with the
 
 The implementation is hacky but attempts to be minimally intrusive and somewhat
 resilient to future changes in the patched methods.
-
-.. warning::
-
-    The functions in this modules are not intended to be used directly.
-    Intended to be called by sphinx only.
 
 Usage
 ~~~~~
@@ -47,7 +47,7 @@ In the :code:`conf.py` add this extension to sphinx:
     qcodes_parameters_force_documenting = True # default value
     '''
     In your sphinx configuration you are likely not documenting primate methods,
-    but the :code:`@add_parameter` decorates a private method. This option forces
+    but the `@add_parameter` decorates a private method. This option forces
     these methods to be documented.
     '''
 
@@ -69,15 +69,20 @@ Which should produce an output similar to:
 
 The qcodes parameters of an Instrument added with
 :func:`@add_parameter <qcodes.instrument.base.add_parameter>`
-can be referenced in the .rst files with the :code:`:obj:` or :code:`:meth:` roles,
+can be referenced in the :code:`.rst` files with the :code:`:obj:` or :code:`:meth:` roles,
 assuming the class is documented in the API reference of your python project.
 
 .. code-block:: rst
 
-    A reference to :obj:`qcodes.instrument_drivers.new_style.MyInstrumentDriver.freq`
+    A reference to :obj:`qcodes.instrument_drivers.new_style.MyInstrumentDriver.freq` or
+    :meth:`~qcodes.instrument_drivers.new_style.MyInstrumentDriver.freq`.
 
----
+Will be displayed as "A reference to
+:obj:`qcodes.instrument_drivers.new_style.MyInstrumentDriver.freq` or
+:meth:`~qcodes.instrument_drivers.new_style.MyInstrumentDriver.freq` ."
 
+Module members
+~~~~~~~~~~~~~~
 """
 # referencing with :parameter: would be nicer but seemed challenging to implement.
 
@@ -149,7 +154,7 @@ def get_signature_prefix(self, sig: str) -> str:
 def add_parameter_spec_to_docstring(app, what, name, obj, options, lines):
     """
     Processes, and appends to the docstring, the signature of the methods decorated with
-    :func:`~qcodes.instrument.base.add_parameter` .
+    :func:`@add_parameter <qcodes.instrument.base.add_parameter>` .
 
     Intercepts :code:`"autodoc-process-docstring"` .
     """
@@ -188,7 +193,8 @@ def clear_parameter_method_signature(
 ):
     """
     Intercepts :code:`"autodoc-skip-member"` and forces documenting the methods that
-    have been decorated with :func:`~qcodes.instrument.base.add_parameter` .
+    have been decorated with
+    :func:`@add_parameter <qcodes.instrument.base.add_parameter>` .
     """
     modify_dosctring = app.config["qcodes_parameters_spec_in_docstring"]
     if modify_dosctring and hasattr(obj, ADD_PARAMETER_ATTR_NAME):
