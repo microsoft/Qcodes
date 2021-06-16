@@ -1,5 +1,5 @@
 from functools import wraps
-from typing import Any, Type, TypeVar
+from typing import Any, Type
 from qcodes import Parameter
 from qcodes.instrument.base import InstrumentBase
 from qcodes.instrument.parameter import _BaseParameter
@@ -62,7 +62,8 @@ def abstract_instrument(cls: Type[InstrumentBase]) -> Type[InstrumentBase]:
                     ", ".join([f"'{name}'" for name in abstract_parameters])
                 )
 
-        sub_cls.__init__ = __init_new__
+        # See https://github.com/python/mypy/issues/2427
+        sub_cls.__init__ = __init_new__  # type: ignore
 
     original_add_parameter = cls.add_parameter
 
@@ -94,7 +95,8 @@ def abstract_instrument(cls: Type[InstrumentBase]) -> Type[InstrumentBase]:
             self, name, parameter_class, **kwargs
         )
 
-    cls.__init_subclass__ = classmethod(__init_subclass__)
-    cls.add_parameter = add_parameter
+    # See https://github.com/python/mypy/issues/2427
+    cls.__init_subclass__ = classmethod(__init_subclass__)  # type: ignore
+    cls.add_parameter = add_parameter  # type: ignore
 
     return cls
