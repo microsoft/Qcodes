@@ -144,6 +144,17 @@ class MemoryParameter(Parameter):
         return get_func
 
 
+class LayeredParameter(Parameter):
+    def __init__(self, name: str, param: Parameter, **kwargs):
+        self._param = param
+        super().__init__(name=name,
+                         underlying_instrument=self._param.instrument,
+                         **kwargs)
+
+    def get_raw(self):
+        return self._param.get()
+
+
 blank_instruments = (
     None,  # no instrument at all
     namedtuple('noname', '')(),  # no .name
