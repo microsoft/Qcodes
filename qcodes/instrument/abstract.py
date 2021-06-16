@@ -1,4 +1,3 @@
-from functools import wraps
 from typing import Any, Type
 from qcodes import Parameter
 from qcodes.instrument.base import InstrumentBase
@@ -34,7 +33,7 @@ def abstract_instrument(klass: Type[InstrumentBase]) -> Type[InstrumentBase]:
     Returns:
         The decorated class
     """
-    _instrument_base_type: Any = klass  # to shut-up mypy
+    _instrument_base_type: Any = klass  # see https://github.com/python/mypy/issues/5865
 
     class Abstract(_instrument_base_type):
         def __init_subclass__(cls: Type[InstrumentBase]) -> None:
