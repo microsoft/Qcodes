@@ -1,10 +1,14 @@
 import pytest
 
-from qcodes.instrument.parameter import Parameter, _BaseParameter
 import qcodes.utils.validators as vals
 from qcodes.instrument.function import Function
+from qcodes.instrument.parameter import Parameter, _BaseParameter
+
 from .conftest import (
-    GettableParam, blank_instruments, named_instrument, LayeredParameter
+    GettableParam,
+    LayeredParameter,
+    blank_instruments,
+    named_instrument
 )
 
 
