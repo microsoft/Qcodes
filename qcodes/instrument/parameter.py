@@ -281,6 +281,7 @@ class _BaseParameter(Metadatable):
         snapshot_exclude: bool = False,
         max_val_age: Optional[float] = None,
         vals: Optional[Validator[Any]] = None,
+        underlying_instrument: Optional['InstrumentBase'] = None,
     ) -> None:
         super().__init__(metadata)
         if not str(name).isidentifier():
@@ -368,12 +369,7 @@ class _BaseParameter(Metadatable):
         # intended to be changed in a subclass if you want the subclass
         # to perform a validation on get
         self._validate_on_get = False
-
-        self._underlying_instrument: Optional['InstrumentBase']
-        if self._instrument is not None:
-            self._underlying_instrument = self._instrument.root_instrument
-        else:
-            self._underlying_instrument = None
+        self.underlying_instrument = underlying_instrument
 
     @property
     def raw_value(self) -> ParamRawDataType:
@@ -966,17 +962,27 @@ class _BaseParameter(Metadatable):
         """
         return self._settable
 
-    @property  # type: ignore
-    @abstractmethod
+    @property
     def underlying_instrument(self) -> Optional['InstrumentBase']:
         """
-        This property is very useful for layered parameters created
+        This property is useful for layered parameters created
         quite often by the users. It allows the user to set the actual
         instrument of a parameter to be the underlying instrument for a
         layered parameter.
         By default it return the root_instrument of the parameter.
         """
         return self._underlying_instrument
+
+    @underlying_instrument.setter
+    def underlying_instrument(self,
+                              underlying_instrument: Optional['InstrumentBase']
+                              ) -> None:
+        if underlying_instrument is None and self._instrument is not None:
+            self._underlying_instrument: Optional[
+                'InstrumentBase'
+            ] = self._instrument.root_instrument
+        else:
+            self._underlying_instrument = underlying_instrument
 
 
 class Parameter(_BaseParameter):
