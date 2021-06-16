@@ -18,55 +18,66 @@ resilient to future changes in the patched methods.
     The functions in this modules are not intended to be used directly.
     Intended to be called by sphinx only.
 
-.. note::
+Usage
+~~~~~
 
-    **Usage:** in the :code:`conf.py` add this extension to sphinx:
+In the :code:`conf.py` add this extension to sphinx:
 
-    .. code-block:: python
+.. code-block:: python
 
+    # ...
+
+    extensions = [
         # ...
+        "qcodes.sphinx_extensions.add_parameter",
+    ]
 
-        extensions = [
-            # ...
-            "qcodes.sphinx_extensions.add_parameter",
-        ]
+    # Optionally you can disable the modifications done to the docstring
 
-        # Optionally you can disable the modifications done to the docstring
+    qcodes_parameters_spec_in_docstring = True # default value
+    '''
+    Convert the signature of the decorated method to the docstring of parameter.
+    '''
 
-        qcodes_parameters_spec_in_docstring = True # default value
-        '''
-        Convert the signature of the decorated method to the docstring of parameter.
-        '''
+    qcodes_parameters_spec_with_links = True # default value
+    '''
+    Create a reference with a hyperlink to the parameter class.
+    Option exists in case this functionality creates broken links.
+    '''
+    qcodes_parameters_force_documenting = True # default value
+    '''
+    In your sphinx configuration you are likely not documenting primate methods,
+    but the :code:`@add_parameter` decorates a private method. This option forces
+    these methods to be documented.
+    '''
 
-        qcodes_parameters_spec_with_links = True # default value
-        '''
-        Create a reference with a hyperlink to the parameter class.
-        Option exists in case this functionality creates broken links.
-        '''
-        qcodes_parameters_force_documenting = True # default value
-        '''
-        In your sphinx configuration you are likely not documenting primate methods,
-        but the :code:`@add_parameter` decorates a private method. This option forces
-        these methods to be documented.
-        '''
+In your :code:`.rst` files use autodoc directives as usual.
 
-    In your `.rst` files use autodoc directives as usual.
+If you need to manually place the documentation of a specific parameter in some part
+of your docs you must point to the name of the method that was decorated with
+`@add_parameter`. E.g.,
 
-    If you need to manually place the documentation of a specific parameter in some part
-    of your docs you must point to the name of the method that was decorated with
-    `@add_parameter`. E.g.,
+.. code-block:: rst
 
-    .. code-block:: rst
+    .. automethod:: qcodes.instrument_drivers.new_style.MyInstrumentDriver._parameter_freq
 
-        .. automethod:: qcodes.instrument_drivers.new_style.MyInstrumentDriver._parameter_freq
+Which should produce an output similar to:
 
-    Which should produce an output similar to:
+    .. automethod:: qcodes.instrument_drivers.new_style.MyInstrumentDriver._parameter_freq
 
-        .. automethod:: qcodes.instrument_drivers.new_style.MyInstrumentDriver._parameter_freq
+---
 
 The qcodes parameters of an Instrument added with
 :func:`@add_parameter <qcodes.instrument.base.add_parameter>`
-can be referenced in the .rst files with the :code:`:obj:` or :code:`:meth:` roles.
+can be referenced in the .rst files with the :code:`:obj:` or :code:`:meth:` roles,
+assuming the class is documented in the API reference of your python project.
+
+.. code-block:: rst
+
+    A reference to :obj:`qcodes.instrument_drivers.new_style.MyInstrumentDriver.freq`
+
+---
+
 """
 # referencing with :parameter: would be nicer but seemed challenging to implement.
 
