@@ -34,8 +34,9 @@ def abstract_instrument(klass: Type[InstrumentBase]) -> Type[InstrumentBase]:
     Returns:
         The decorated class
     """
+    _instrument_base_type: Any = klass  # to shut-up mypy
 
-    class Abstract(klass):
+    class Abstract(_instrument_base_type):
         def __init_subclass__(cls: Type[InstrumentBase]) -> None:
 
             __init__ = cls.__init__
