@@ -297,12 +297,15 @@ class DelegateInstrument(InstrumentBase):
     def _create_and_add_channels(
         self,
         station: Station,
-        channels: Union[Mapping[str, Mapping[str, Any]], Mapping[str, str]],
+        channels: Mapping[str, Union[str, Mapping[str, Any]]],
     ) -> None:
         """Add channels to the instrument."""
         channel_wrapper = None
         chnnls_dict: Dict[str, Union[str, Mapping[str, Any]]] = dict(channels)
-        channel_type_global = str(chnnls_dict.pop("type", None))
+        channel_type_global = chnnls_dict.pop("type", None)
+        if channel_type_global is not None and \
+           not isinstance(channel_type_global, str):
+            raise ValueError("Wrong channel type.")
         channel_wrapper_global = _get_channel_wrapper_class(
             channel_type_global
         )
@@ -310,7 +313,7 @@ class DelegateInstrument(InstrumentBase):
         for channel_name, input_params in chnnls_dict.items():
             if isinstance(input_params, Mapping):
                 input_params = dict(input_params)
-                channel_type_individual = str(input_params.pop("type", None))
+                channel_type_individual = input_params.pop("type", None)
                 channel_wrapper_individual = _get_channel_wrapper_class(
                     channel_type_individual
                 )
@@ -371,10 +374,10 @@ class DelegateInstrument(InstrumentBase):
 
 
 def _get_channel_wrapper_class(
-    channel_type: str,
+    channel_type: Optional[str],
 ) -> Optional[Type[InstrumentChannel]]:
     """Get channel class from string specified in yaml."""
-    if channel_type == "None":
+    if channel_type is None:
         return None
     else:
         channel_type_elems = str(channel_type).split(".")
