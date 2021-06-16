@@ -78,6 +78,9 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
         self.log = get_instrument_logger(self, __name__)
 
+        # NB this attribute should not be added here otherwise full control over when
+        # the parameters are instantiated is not possible in sub classes.
+        # self._call_add_params_from_decorated_methods = True
         if getattr(self, "_call_add_params_from_decorated_methods", True):
             # setting self._call_add_params_from_decorated_methods=False before calling
             # `super().__init__()` gives more control in driver whose parameters require
@@ -414,9 +417,10 @@ class InstrumentBase(Metadatable, DelegateAttributes):
     def _add_params_from_decorated_methods(self) -> None:
         """
         Transforms methods decorated with `@add_parameter` into actual parameters and
-        uses `self.add_parameter(...)` to add them to this instrument.
+        uses :meth:`qcodes.instrument.base.Instrument.add_parameter` to add them to
+        this instrument.
 
-        Intended to be called in the `__init__()` of `InstrumentBase` or  in a driver
+        Intended to be called in the `__init__()` of `InstrumentBase` or in a driver
         subclass.
 
         .. seealso::
@@ -516,11 +520,21 @@ A custom type to annotate the type hints of `add_parameter`.
 def add_parameter(method: Callable[[_ParamSpec], None]) -> Callable[[_ParamSpec], None]:
     """
     A decorator function that wraps a method of an Instrument subclass such that the
-    new method will be converted into the corresponding :code:`param_class`
-    in the :code:`_add_params_from_decorated_methods`.
+    new method will be converted into the corresponding :code:`parameter_class` in the
+    :func:`!qcodes.instrument.base.Instrument._add_params_from_decorated_methods`.
 
     Args:
         method: The method to be wrapped and flagged to be converted to parameter.
+
+    Examples:
+
+        .. literalinclude:: ../../../qcodes/instrument_drivers/new_style.py
+            :pyobject: ManualInstrument
+
+    Which in can be rendered with :obj:`qcodes.sphinx_extension.add_parameter` to:
+
+    .. autoclass:: qcodes.instrument_drivers.new_style.ManualInstrument
+
     """
 
     if not method.__name__.startswith(DECORATED_METHOD_PREFIX):
