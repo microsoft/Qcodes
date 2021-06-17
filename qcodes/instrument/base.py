@@ -532,11 +532,16 @@ def add_parameter(method: Callable[[_ParamSpec], None]) -> Callable[[_ParamSpec]
     r"""
     A decorator function for adding parameters to instruments in the new style.
 
+    The new style has to main advantages:
+
+    - Allow to auto-document parameters of instruments using the
+        :mod:`qcodes.sphinx_extensions.add_parameter` sphinx extension.
+
     Intended to be used to decorate a method of an
     :class:`~qcodes.instrument.base.Instrument` subclass. The information contained in
     the definition of the decorated method will processed by
     :func:`!qcodes.instrument.base.Instrument._add_params_from_decorated_methods` and
-    passed to :meth:`~qcodes.instrument.base.InstrumentBase.add_parameter` during the
+    passed to :meth:`qcodes.instrument.base.InstrumentBase.add_parameter` during the
     instantiation of an instrument.
 
     Args:
@@ -565,13 +570,16 @@ def add_parameter(method: Callable[[_ParamSpec], None]) -> Callable[[_ParamSpec]
         .. literalinclude:: ../../../qcodes/instrument_drivers/new_style.py
             :pyobject: InstrumentWithInitValue
 
-        Which will be instantiated as:: python
+        Which will be instantiated as
+
+        .. nbinput:: ipython3
+            :execution-count: 1
 
             from qcodes.instrument_drivers.new_style import InstrumentWithInitValue
             instr = InstrumentWithInitValue(name="my_instr", some_arg=123)
             instr.print_readable_snapshot(update=True)
 
-        .. code-block:: bash
+        .. code-block:: python
 
             my_instr:
                 parameter value
@@ -579,12 +587,13 @@ def add_parameter(method: Callable[[_ParamSpec], None]) -> Callable[[_ParamSpec]
             IDN  :  {'vendor': None, 'model': 'my_instr', 'serial': None, 'firmware': None}
             time :  123 (s)
 
-        Inheritance and overriding parameters:
+        **Inheritance and overriding parameters:**
 
         .. literalinclude:: ../../../qcodes/instrument_drivers/new_style.py
             :pyobject: MyInstrumentDriver
 
-        .. code-block:: python
+        .. nbinput:: ipython3
+            :execution-count: 2
 
             from qcodes.instrument_drivers.new_style import MyInstrumentDriver
 
@@ -593,7 +602,7 @@ def add_parameter(method: Callable[[_ParamSpec], None]) -> Callable[[_ParamSpec]
             instr.print_readable_snapshot(update=True)
             print("\ninstr.time.label: ", instr.time.label)
 
-        .. code-block:: bash
+        .. code-block:: python
 
             instr:
                 parameter value
@@ -607,7 +616,8 @@ def add_parameter(method: Callable[[_ParamSpec], None]) -> Callable[[_ParamSpec]
         .. literalinclude:: ../../../qcodes/instrument_drivers/new_style.py
             :pyobject: SubMyInstrumentDriver
 
-        .. code-block:: python
+        .. nbinput:: ipython3
+            :execution-count: 3
 
             from qcodes.instrument_drivers.new_style import SubMyInstrumentDriver
 
@@ -616,7 +626,7 @@ def add_parameter(method: Callable[[_ParamSpec], None]) -> Callable[[_ParamSpec]
             sub_instr.print_readable_snapshot(update=True)
             print("\nsub_instr.time.label: ", sub_instr.time.label)
 
-        .. code-block:: bash
+        .. code-block:: python
 
             sub_instr:
                 parameter value

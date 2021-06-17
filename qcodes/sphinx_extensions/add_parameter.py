@@ -64,6 +64,7 @@ of your docs you must point to the name of the method that was decorated with
 Which should produce an output similar to:
 
     .. automethod:: qcodes.instrument_drivers.new_style.MyInstrumentDriver._parameter_freq
+        :noindex:
 
 ---
 

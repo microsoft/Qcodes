@@ -14,9 +14,6 @@ from qcodes import validators
 
 
 class ManualInstrument(qcodes.instrument.base.Instrument):
-    """
-    Docstring of ManualInstrument class.
-    """
 
     @qcodes.instrument.base.add_parameter
     def _parameter_time(  # NB the parameter name will be just `time`
@@ -59,12 +56,12 @@ class InstrumentWithCmds(qcodes.instrument.base.Instrument):
         return 1e9 # dummy value
 
 class InstrumentWithInitValue(qcodes.instrument.base.Instrument):
-    """
-    An instrument that requires information from its :code:`__init__` in order to
-    instantiate and add its parameters.
-    """
 
     def __init__(self, some_arg: float, *args, **kwargs):
+        """
+        An instrument that requires information from its :code:`__init__` in order to
+        instantiate and add its parameters.
+        """
         # manual control over when the parameters are added to this instance
         self._call_add_params_from_decorated_methods = False
         super().__init__(*args, **kwargs)
@@ -85,14 +82,15 @@ class InstrumentWithInitValue(qcodes.instrument.base.Instrument):
 
 
 class MyInstrumentDriver(qcodes.instrument.base.Instrument):
-    """
-    MyInstrumentDriver docstring.
-    """
 
-    def __init__(self, some_arg, *args, **kwargs):
+    def __init__(self, init_freq, *args, **kwargs):
+        """
+        Args:
+            init_freq: will define the initial value of `freq` parameter.
+        """
         self._call_add_params_from_decorated_methods = False
         super().__init__(*args, **kwargs)
-        self._freq = some_arg
+        self._freq = init_freq
 
         self._add_params_from_decorated_methods()
 
@@ -131,7 +129,9 @@ class MyInstrumentDriver(qcodes.instrument.base.Instrument):
 
 
 class SubMyInstrumentDriver(MyInstrumentDriver):
-    """Same as MyInstrumentDriver but overriding a parameter and adding a new one."""
+    """
+    Same as MyInstrumentDriver but overriding a parameter and adding a new one.
+    """
 
     @qcodes.instrument.base.add_parameter
     def _parameter_time(  # NB the parameter name will be just `time`
