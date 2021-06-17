@@ -5,6 +5,7 @@ from qcodes.instrument.parameter import _BaseParameter
 
 
 class AbstractParameter(Parameter):
+
     """
     This is a trivial subclass of 'Parameter' to signal
     that this parameters *must* be overridden in
@@ -59,8 +60,8 @@ def abstract_instrument(klass: Type[InstrumentBase]) -> Type[InstrumentBase]:
                     cls_name = cls.__name__
 
                     raise AbstractParameterException(
-                        f"Class '{cls_name}' has un-implemented Abstract Parameter(s): " +
-                        ", ".join([f"'{name}'" for name in abstract_parameters])
+                        f"Class '{cls_name}' has un-implemented Abstract Parameter(s): "
+                        f"" + ", ".join([f"'{name}'" for name in abstract_parameters])
                     )
 
             # See https://github.com/python/mypy/issues/2427
@@ -85,8 +86,8 @@ def abstract_instrument(klass: Type[InstrumentBase]) -> Type[InstrumentBase]:
                         f"specified in the baseclass {klass.__name__!r} "
                     )
 
-                # Remove the original abstract parameter to make room for the implementation
-                # in the subclass.
+                # Remove the original abstract parameter to make room for the
+                # implementation in the subclass.
                 del self.parameters[name]
 
             super().add_parameter(
