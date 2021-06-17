@@ -9,7 +9,6 @@ from qcodes.instrument.abstract import (
 @abstract_instrument
 class BaseVoltageSource(Instrument):
     """
-    
     We demand that all voltage sources implement a standard interface
     defined by this base class
     """
@@ -40,6 +39,9 @@ class MyVoltageSource(BaseVoltageSource):
     make and model.
     """
     def __init__(self, name: str):
+        """
+        A test voltage source
+        """
         super().__init__(name)
 
         self.add_parameter(
@@ -61,6 +63,9 @@ class WrongSource2(BaseVoltageSource):
     We implement the voltage parameter with the wrong unit
     """
     def __init__(self, name: str):
+        """
+        A test voltage source
+        """
         super().__init__(name)
 
         self.add_parameter(

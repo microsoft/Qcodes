@@ -6,7 +6,6 @@ from qcodes.instrument.parameter import _BaseParameter
 
 class AbstractParameter(Parameter):
     """
-
     This is a trivial subclass of 'Parameter' to signal
     that this parameters *must* be overridden in
     subclasses of abstract instruments.
