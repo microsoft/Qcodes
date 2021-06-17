@@ -9,11 +9,15 @@ from qcodes.instrument.abstract import (
 @abstract_instrument
 class BaseVoltageSource(Instrument):
     """
+    
     We demand that all voltage sources implement a standard interface
     defined by this base class
     """
 
     def __init__(self, name: str):
+        """
+        A test voltage source
+        """
         super().__init__(name)
 
         self.add_parameter(
