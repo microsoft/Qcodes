@@ -109,10 +109,10 @@ class _ParamCaller:
 
         self._parameters = parameters
 
-    def __call__(self) -> Tuple[ParamDataType, ...]:
+    def __call__(self) -> Tuple[Tuple[_BaseParameter, ParamDataType], ...]:
         output = []
         for param in self._parameters:
-            output.append(param.get())
+            output.append((param, param.get()))
         return tuple(output)
 
     def __repr__(self) -> str:
@@ -151,11 +151,11 @@ def call_params_threaded(param_meas: Sequence[ParamMeasT]) -> OutType:
     for t in threads:
         t.start()
 
-    for t, param_list in zip(threads, inst_param_mapping.values()):
+    for t in threads:
         thread_output = t.output()
         assert thread_output is not None
-        for param, value in zip(param_list, thread_output):
-            output.append((param, value))
+        for result in thread_output:
+            output.append(result)
 
     return output
 
