@@ -3,6 +3,7 @@ from typing import Any, Optional
 
 import pytest
 
+from qcodes.instrument.base import InstrumentBase
 from qcodes.instrument.parameter import Parameter
 import qcodes.utils.validators as vals
 
