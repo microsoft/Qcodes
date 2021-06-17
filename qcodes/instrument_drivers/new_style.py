@@ -1,97 +1,16 @@
 """
-This module defines a few driver examples that use the new style of adding parameters.
+This module defines a few driver examples that use the new
+:func:`@add_parameter <qcodes.instrument.base.add_parameter>` decorator-style
+of adding parameters.
 
-Author: Victor Negirneac, vnegirneac@qblox.com
-
-.. seealso::
-
-    :func:`qcodes.intrument.base.add_parameter` decorator.
+Author: Victor Negîrneac, vnegirneac@qblox.com
 """
+# NB Usage examples are not included in the corresponding docstrings because their
+# code is used throughout the docs with literal include, so we keep them minimal.
 
 import qcodes
 from qcodes import ManualParameter, Parameter
 from qcodes import validators
-
-class MyInstrumentDriver(qcodes.instrument.base.Instrument):
-    r"""
-    MyInstrumentDriver docstring
-
-    .. code-block:: python
-
-        from qcodes.instrument_drivers.new_style import MyInstrumentDriver
-
-        instr = MyInstrumentDriver(name="instr", special_par=8)
-        instr.freq(10)
-        instr.print_readable_snapshot()
-        print("\ninstr.time.label: ", instr.time.label)
-
-    """
-
-    def __init__(self, special_par, *args, **kwargs):
-        self._call_add_params_from_decorated_methods = False
-        super().__init__(*args, **kwargs)
-        self._freq = special_par
-
-        self._add_params_from_decorated_methods()
-
-    @qcodes.instrument.base.add_parameter
-    def _parameter_time(  # NB the parameter name will be just `time`
-        self,
-        parameter_class=ManualParameter,
-        initial_value=3,
-        unit="s",
-        label="Time",
-        vals=validators.Numbers(),
-    ) -> float:
-        """Docstring of `time` parameter"""
-
-    @qcodes.instrument.base.add_parameter
-    def _parameter_freq(  # NB the parameter name will be just `freq`
-        self,
-        parameter_class=Parameter,
-        unit="Hz",
-        label="Frequency",
-        vals=validators.Numbers(),
-        # `self._freq` will be passed to `Parameter`
-        initial_value=qcodes.instrument.base.InstanceAttr("_freq"),
-        # `self._set_freq` will be passed to `Parameter`
-        set_cmd=qcodes.instrument.base.InstanceAttr("_set_freq"),
-        # `self._get_freq` will be passed to `Parameter`
-        get_cmd=qcodes.instrument.base.InstanceAttr("_get_freq"),
-    ) -> float:
-        """Docstring of :code:`freq` parameter"""
-
-    def _set_freq(self, value) -> None:
-        self._freq = value
-
-    def _get_freq(self) -> float:
-        return self._freq
-
-
-class SubMyInstrumentDriver(MyInstrumentDriver):
-    r"""Same as MyInstrumentDriver but overriding a parameter
-
-    .. code-block:: python
-
-        from qcodes.instrument_drivers.new_style import SubMyInstrumentDriver
-
-        sub_instr = SubMyInstrumentDriver(name="sub_instr", special_par=99)
-        sub_instr.time(sub_instr.time() * 2)
-        sub_instr.print_readable_snapshot()
-        print("\nsub_instr.time.label: ", sub_instr.time.label)
-
-    """
-
-    @qcodes.instrument.base.add_parameter
-    def _parameter_time(  # NB the parameter name will be just `time`
-        self,
-        parameter_class=ManualParameter,
-        initial_value=7,
-        unit="s",
-        label="Time long",
-        vals=validators.Numbers(),
-    ) -> float:
-        """Docstring of `time` parameter in the subclass"""
 
 
 class ManualInstrument(qcodes.instrument.base.Instrument):
@@ -163,3 +82,77 @@ class InstrumentWithInitValue(qcodes.instrument.base.Instrument):
         vals=validators.Numbers(),
     ) -> float:
         """Docstring of `time` parameter"""
+
+
+class MyInstrumentDriver(qcodes.instrument.base.Instrument):
+    """
+    MyInstrumentDriver docstring.
+    """
+
+    def __init__(self, some_arg, *args, **kwargs):
+        self._call_add_params_from_decorated_methods = False
+        super().__init__(*args, **kwargs)
+        self._freq = some_arg
+
+        self._add_params_from_decorated_methods()
+
+    @qcodes.instrument.base.add_parameter
+    def _parameter_time(  # NB the parameter name will be just `time`
+        self,
+        parameter_class=ManualParameter,
+        initial_value=3,
+        unit="s",
+        label="Time",
+        vals=validators.Numbers(),
+    ) -> float:
+        """Docstring of `time` parameter"""
+
+    @qcodes.instrument.base.add_parameter
+    def _parameter_freq(  # NB the parameter name will be just `freq`
+        self,
+        parameter_class=Parameter,
+        unit="Hz",
+        label="Frequency",
+        vals=validators.Numbers(),
+        # `self._freq` will be passed to `Parameter`
+        initial_value=qcodes.instrument.base.InstanceAttr("_freq"),
+        # `self._set_freq` will be passed to `Parameter`
+        set_cmd=qcodes.instrument.base.InstanceAttr("_set_freq"),
+        # `self._get_freq` will be passed to `Parameter`
+        get_cmd=qcodes.instrument.base.InstanceAttr("_get_freq"),
+    ) -> float:
+        """Docstring of :code:`freq` parameter"""
+
+    def _set_freq(self, value) -> None:
+        self._freq = value
+
+    def _get_freq(self) -> float:
+        return self._freq
+
+
+class SubMyInstrumentDriver(MyInstrumentDriver):
+    """Same as MyInstrumentDriver but overriding a parameter and adding a new one."""
+
+    @qcodes.instrument.base.add_parameter
+    def _parameter_time(  # NB the parameter name will be just `time`
+        self,
+        parameter_class=ManualParameter,
+        initial_value=7,
+        unit="s",
+        label="Time long",
+        vals=validators.Numbers(),
+    ) -> float:
+        """Docstring of `time` parameter in the subclass."""
+
+    @qcodes.instrument.base.add_parameter
+    def _parameter_amplitude(  # NB the parameter name will be just `amplitude`
+        self,
+        parameter_class=ManualParameter,
+        initial_value=0.0,
+        unit="V",
+        label="Amplitude",
+        vals=validators.Numbers(),
+    ) -> float:
+        """
+        Docstring of `amplitude` parameter that is specific to the subclass.
+        """

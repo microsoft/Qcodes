@@ -102,6 +102,16 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         """
         Bind one Parameter to this instrument.
 
+        .. note::
+
+            QCoDeS provides a new style of adding parameters using the
+            :func:`@add_parameter <qcodes.instrument.base.add_parameter>` decorator
+            function.
+            This function will be called internally, when instantiating an instrument,
+            for each parameter added with the new style.
+            See the :func:`qcodes.instrument.base.add_parameter` docs for usage
+            examples.
+
         Instrument subclasses can call this repeatedly in their ``__init__``
         for every real parameter of the instrument.
 
@@ -485,9 +495,9 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 class InstanceAttr:
     """
     An auxiliary class to be used together with the
-    :obj:`qcodes.instrument.base.add_parameter` decorator to allow adding parameters
-    that require information available only during the `__init__()` of an Instrument
-    subclass.
+    :func:`@add_parameter <qcodes.instrument.base.add_parameter>` decorator to allow
+    adding parameters that require information available only during the `__init__()`
+    of an Instrument subclass.
     """
     def __init__(self, attr_name: str) -> None:
         """Instantiates the class and saves the passed in attr_name."""
@@ -500,41 +510,123 @@ class InstanceAttr:
 
 DECORATED_METHOD_PREFIX = "_parameter_"
 """
-A constant defining the prefix of the methods on which
-:obj:`qcodes.instrument.base.add_parameter` decorator can be used. The intention is to
-keep the name of these methods fairly unique and private to avoid any foreseeable clash.
+A constant defining the prefix of the methods on which the
+:func:`@add_parameter <qcodes.instrument.base.add_parameter>` decorator can be used.
+The intention is to keep the name of these methods fairly unique and private to avoid
+any foreseeable clash.
 """
 
 ADD_PARAMETER_ATTR_NAME = "_add_parameter"
 """
-A constant defining the name of the attribute set by
-:obj:`qcodes.instrument.base.add_parameter` decorator to flag a method that will be
-converted to parameter.
+A constant defining the name of the attribute set by the
+:func:`@add_parameter <qcodes.instrument.base.add_parameter>` decorator to flag a method
+that will be converted to parameter.
 """
 
 _ParamSpec = TypeVar("_ParamSpec")
 """
-A custom type to annotate the type hints of `add_parameter`.
+A custom type to annotate the type hints of :obj:`qcodes.instrument.base.add_parameter`.
 """
 
 def add_parameter(method: Callable[[_ParamSpec], None]) -> Callable[[_ParamSpec], None]:
-    """
-    A decorator function that wraps a method of an Instrument subclass such that the
-    new method will be converted into the corresponding :code:`parameter_class` in the
-    :func:`!qcodes.instrument.base.Instrument._add_params_from_decorated_methods`.
+    r"""
+    A decorator function for adding parameters to instruments in the new style.
+
+    Intended to be used to decorate a method of an
+    :class:`~qcodes.instrument.base.Instrument` subclass. The information contained in
+    the definition of the decorated method will processed by
+    :func:`!qcodes.instrument.base.Instrument._add_params_from_decorated_methods` and
+    passed to :meth:`~qcodes.instrument.base.InstrumentBase.add_parameter` during the
+    instantiation of an instrument.
 
     Args:
-        method: The method to be wrapped and flagged to be converted to parameter.
+        method: The method to be flagged to be converted to a parameter.
 
     Examples:
+
+        An instrument with a :class:`~qcodes.instrument.parameter.ManualParameter`:
 
         .. literalinclude:: ../../../qcodes/instrument_drivers/new_style.py
             :pyobject: ManualInstrument
 
-    Which in can be rendered with :obj:`qcodes.sphinx_extension.add_parameter` to:
+        The parameters will be added to the instrument only during its
+        :code:`__init__`. This means that when using this style of adding parameters we
+        do not have access to the :code:`self` object. As a workaround the class
+        :class:`qcodes.instrument.base.InstanceAttr` can be used to reference an
+        attribute that is expected to be available when the instrument is initialized:
 
-    .. autoclass:: qcodes.instrument_drivers.new_style.ManualInstrument
+        .. literalinclude:: ../../../qcodes/instrument_drivers/new_style.py
+            :pyobject: InstrumentWithCmds
 
+        In some cases you might need more control over when exactly the parameters
+        should be added to the instrument, e.g., when some information needed to create
+        the parameters is know only when an instance of the Instrument is created:
+
+        .. literalinclude:: ../../../qcodes/instrument_drivers/new_style.py
+            :pyobject: InstrumentWithInitValue
+
+        Which will be instantiated as:: python
+
+            from qcodes.instrument_drivers.new_style import InstrumentWithInitValue
+            instr = InstrumentWithInitValue(name="my_instr", some_arg=123)
+            instr.print_readable_snapshot(update=True)
+
+        .. code-block:: bash
+
+            my_instr:
+                parameter value
+            --------------------------------------------------------------------------------
+            IDN  :  {'vendor': None, 'model': 'my_instr', 'serial': None, 'firmware': None}
+            time :  123 (s)
+
+        Inheritance and overriding parameters:
+
+        .. literalinclude:: ../../../qcodes/instrument_drivers/new_style.py
+            :pyobject: MyInstrumentDriver
+
+        .. code-block:: python
+
+            from qcodes.instrument_drivers.new_style import MyInstrumentDriver
+
+            instr = MyInstrumentDriver(name="instr", some_arg=8)
+            instr.freq(10)
+            instr.print_readable_snapshot(update=True)
+            print("\ninstr.time.label: ", instr.time.label)
+
+        .. code-block:: bash
+
+            instr:
+                parameter value
+            --------------------------------------------------------------------------------
+            IDN  :  {'vendor': None, 'model': 'instr', 'serial': None, 'firmware': None}
+            freq :  10 (Hz)
+            time :  3 (s)
+
+            instr.time.label:  Time
+
+        .. literalinclude:: ../../../qcodes/instrument_drivers/new_style.py
+            :pyobject: SubMyInstrumentDriver
+
+        .. code-block:: python
+
+            from qcodes.instrument_drivers.new_style import SubMyInstrumentDriver
+
+            sub_instr = SubMyInstrumentDriver(name="sub_instr", some_arg=99)
+            sub_instr.time(sub_instr.time() * 2)
+            sub_instr.print_readable_snapshot(update=True)
+            print("\nsub_instr.time.label: ", sub_instr.time.label)
+
+        .. code-block:: bash
+
+            sub_instr:
+                parameter value
+            --------------------------------------------------------------------------------
+            IDN       : {'vendor': None, 'model': 'sub_instr', 'serial': None, 'firmware'...
+            amplitude : 0 (V)
+            freq      : 99 (Hz)
+            time      : 14 (s)
+
+            sub_instr.time.label:  Time long
     """
 
     if not method.__name__.startswith(DECORATED_METHOD_PREFIX):

@@ -1,7 +1,7 @@
 """
 Sphinx extension for auto-documenting new-style parameters.
 
-Author: Victor Negirneac, vnegirneac@qblox.com
+Author: Victor Negîrneac, vnegirneac@qblox.com
 
 .. warning::
 
