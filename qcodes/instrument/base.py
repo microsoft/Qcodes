@@ -437,8 +437,6 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
             - :obj:`qcodes.instrument.base.add_parameter`
             - :obj:`qcodes.instrument.base.InstanceAttr`
-            - :obj:`qcodes.instrument.base.DECORATED_METHOD_PREFIX`
-            - :obj:`qcodes.instrument.base.ADD_PARAMETER_ATTR_NAME`
 
         """
 
@@ -474,13 +472,13 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             return kwarg_value
 
         # decorated methods are required to have a specific prefix
-        has_parameter_prefix = lambda s: s.startswith(DECORATED_METHOD_PREFIX)
+        has_parameter_prefix = lambda s: s.startswith(_DECORATED_METHOD_PREFIX)
 
         for obj_name in filter(has_parameter_prefix, dir(self)):
             meth = getattr(self, obj_name)
             # the `@add_parameter` decorator adds an attribute we check for here
-            if hasattr(meth, ADD_PARAMETER_ATTR_NAME):
-                param_name = meth.__name__[len(DECORATED_METHOD_PREFIX):]
+            if hasattr(meth, _ADD_PARAMETER_ATTR_NAME):
+                param_name = meth.__name__[len(_DECORATED_METHOD_PREFIX):]
                 kwargs = {
                     kw_name: kwarg_to_attr(self, kw_name, kw_value.default, param_name)
                     for kw_name, kw_value in inspect.signature(meth).parameters.items()
@@ -496,19 +494,19 @@ class InstanceAttr:
     """
     An auxiliary class to be used together with the
     :func:`@add_parameter <qcodes.instrument.base.add_parameter>` decorator to allow
-    adding parameters that require information available only during the `__init__()`
-    of an Instrument subclass.
+    adding parameters that require information available only during the
+    :code:`__init__()` of an Instrument subclass.
     """
     def __init__(self, attr_name: str) -> None:
-        """Instantiates the class and saves the passed in attr_name."""
+        """Instantiates the class and saves the passed in :code:`attr_name`."""
         self.attr_name: str = attr_name
 
     def __repr__(self) -> str:
-        """Return the class name and `self.attr_name`."""
+        """Returns a formatted string the with class name and :code:`self.attr_name`."""
         return f"{self.__class__.__name__}({self.attr_name!r})"
 
 
-DECORATED_METHOD_PREFIX = "_parameter_"
+_DECORATED_METHOD_PREFIX = "_parameter_"
 """
 A constant defining the prefix of the methods on which the
 :func:`@add_parameter <qcodes.instrument.base.add_parameter>` decorator can be used.
@@ -516,7 +514,7 @@ The intention is to keep the name of these methods fairly unique and private to 
 any foreseeable clash.
 """
 
-ADD_PARAMETER_ATTR_NAME = "_add_parameter"
+_ADD_PARAMETER_ATTR_NAME = "_add_parameter"
 """
 A constant defining the name of the attribute set by the
 :func:`@add_parameter <qcodes.instrument.base.add_parameter>` decorator to flag a method
@@ -534,12 +532,12 @@ def add_parameter(method: Callable[[_ParamSpec], None]) -> Callable[[_ParamSpec]
 
     The new style has to main advantages:
 
-    - Allow to auto-document parameters of instruments using the
-        :mod:`qcodes.sphinx_extensions.add_parameter` sphinx extension.
+    - Allow to override inherited parameters.
+    - Allow to of instruments using the :mod:`qcodes.sphinx_extensions.add_parameter` sphinx extension.
 
     Intended to be used to decorate a method of an
     :class:`~qcodes.instrument.base.Instrument` subclass. The information contained in
-    the definition of the decorated method will processed by
+    the definition of the decorated method will be processed by
     :func:`!qcodes.instrument.base.Instrument._add_params_from_decorated_methods` and
     passed to :meth:`qcodes.instrument.base.InstrumentBase.add_parameter` during the
     instantiation of an instrument.
@@ -597,7 +595,7 @@ def add_parameter(method: Callable[[_ParamSpec], None]) -> Callable[[_ParamSpec]
 
             from qcodes.instrument_drivers.new_style import MyInstrumentDriver
 
-            instr = MyInstrumentDriver(name="instr", some_arg=8)
+            instr = MyInstrumentDriver(name="instr", init_freq=8)
             instr.freq(10)
             instr.print_readable_snapshot(update=True)
             print("\ninstr.time.label: ", instr.time.label)
@@ -621,7 +619,7 @@ def add_parameter(method: Callable[[_ParamSpec], None]) -> Callable[[_ParamSpec]
 
             from qcodes.instrument_drivers.new_style import SubMyInstrumentDriver
 
-            sub_instr = SubMyInstrumentDriver(name="sub_instr", some_arg=99)
+            sub_instr = SubMyInstrumentDriver(name="sub_instr", init_freq=99)
             sub_instr.time(sub_instr.time() * 2)
             sub_instr.print_readable_snapshot(update=True)
             print("\nsub_instr.time.label: ", sub_instr.time.label)
@@ -639,9 +637,9 @@ def add_parameter(method: Callable[[_ParamSpec], None]) -> Callable[[_ParamSpec]
             sub_instr.time.label:  Time long
     """
 
-    if not method.__name__.startswith(DECORATED_METHOD_PREFIX):
+    if not method.__name__.startswith(_DECORATED_METHOD_PREFIX):
         raise ValueError(
-            f"Only methods prefixed with {DECORATED_METHOD_PREFIX!r} can be decorated "
+            f"Only methods prefixed with {_DECORATED_METHOD_PREFIX!r} can be decorated "
             f"with `add_parameter` decorator."
         )
 
@@ -660,7 +658,7 @@ def add_parameter(method: Callable[[_ParamSpec], None]) -> Callable[[_ParamSpec]
         )
 
     # special attribute to flag method for conversion to parameter
-    setattr(kwargs_and_doc_container, ADD_PARAMETER_ATTR_NAME, True)
+    setattr(kwargs_and_doc_container, _ADD_PARAMETER_ATTR_NAME, True)
 
     return kwargs_and_doc_container
 

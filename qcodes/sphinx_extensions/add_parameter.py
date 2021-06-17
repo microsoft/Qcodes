@@ -91,7 +91,7 @@ import inspect
 from sphinx.ext import autodoc
 from sphinx.domains import python as sphinx_domains_python
 
-from qcodes.instrument.base import ADD_PARAMETER_ATTR_NAME, DECORATED_METHOD_PREFIX
+from qcodes.instrument.base import _ADD_PARAMETER_ATTR_NAME, _DECORATED_METHOD_PREFIX
 
 # ######################################################################################
 # Rename the special method and prefix it with "parameter " in docs output
@@ -100,14 +100,14 @@ from qcodes.instrument.base import ADD_PARAMETER_ATTR_NAME, DECORATED_METHOD_PRE
 def format_name(self) -> str:
     """
     Removes :code:`"_parameter_"` prefix
-    (:attr:`~qcodes.instrument.base.DECORATED_METHOD_PREFIX`) from the method name
+    (:attr:`~qcodes.instrument.base._DECORATED_METHOD_PREFIX`) from the method name
     so that only the qcodes parameter name will be displayed in the docs.
 
     Patches: :meth:`!sphinx.ext.autodoc.MethodDocumenter.format_name` .
     """
-    if hasattr(self.object, ADD_PARAMETER_ATTR_NAME):
+    if hasattr(self.object, _ADD_PARAMETER_ATTR_NAME):
         return ".".join(
-            self.objpath[:-1] + [self.objpath[-1][len(DECORATED_METHOD_PREFIX) :]]
+            self.objpath[:-1] + [self.objpath[-1][len(_DECORATED_METHOD_PREFIX) :]]
         )
     return ".".join(self.objpath) or self.modname
 
@@ -125,7 +125,7 @@ def add_directive_header(self, sig: str) -> None:
     Patches: :meth:`!sphinx.ext.autodoc.MethodDocumenter.add_directive_header` .
     """
     original_add_directive_header(self, sig)
-    if self.object_name.startswith(DECORATED_METHOD_PREFIX):
+    if self.object_name.startswith(_DECORATED_METHOD_PREFIX):
         sourcename = self.get_sourcename()
         self.add_line("   :parameter:", sourcename)
 
@@ -162,7 +162,7 @@ def add_parameter_spec_to_docstring(app, what, name, obj, options, lines):
     # name is e.g. `"my_module._parameter_time"
     modify_dosctring = app.config["qcodes_parameters_spec_in_docstring"]
     add_links = "" if app.config["qcodes_parameters_spec_with_links"] else "!"
-    if modify_dosctring and hasattr(obj, ADD_PARAMETER_ATTR_NAME):
+    if modify_dosctring and hasattr(obj, _ADD_PARAMETER_ATTR_NAME):
         lines += [
             "",
             ".. rubric:: Arguments passed to "
@@ -198,7 +198,7 @@ def clear_parameter_method_signature(
     :func:`@add_parameter <qcodes.instrument.base.add_parameter>` .
     """
     modify_dosctring = app.config["qcodes_parameters_spec_in_docstring"]
-    if modify_dosctring and hasattr(obj, ADD_PARAMETER_ATTR_NAME):
+    if modify_dosctring and hasattr(obj, _ADD_PARAMETER_ATTR_NAME):
         signature = "()"
     return (signature, return_annotation)
 
@@ -211,7 +211,7 @@ def dont_skip_qcodes_params(app, what, name, obj, skip, options) -> bool:
     Intercepts :code:`"autodoc-process-signature"` and sets the signature to
     :code:`"()"`.
     """
-    if hasattr(obj, ADD_PARAMETER_ATTR_NAME):
+    if hasattr(obj, _ADD_PARAMETER_ATTR_NAME):
         return not app.config["qcodes_parameters_force_documenting"]
     return skip
 
@@ -256,7 +256,7 @@ def setup(app):
     sphinx_domains_python.PyMethod.get_signature_prefix = get_signature_prefix
 
     # enforce always documenting the decorated private methods whose name is
-    # prefixed with ADD_PARAMETER_ATTR_NAME
+    # prefixed with _ADD_PARAMETER_ATTR_NAME
     app.connect("autodoc-skip-member", dont_skip_qcodes_params)
     # convert the signature of the decorated methods to a nicely formatted list in the
     # docstring

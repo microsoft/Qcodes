@@ -8,6 +8,8 @@ Author: Victor Negîrneac, vnegirneac@qblox.com
 # NB Usage examples are not included in the corresponding docstrings because their
 # code is used throughout the docs with literal include, so we keep them minimal.
 
+# Intentional module level import so that a literalinclude of the objects in this
+# file is as complete as possible
 import qcodes
 from qcodes import ManualParameter, Parameter
 from qcodes import validators
