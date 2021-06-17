@@ -281,7 +281,6 @@ class _BaseParameter(Metadatable):
         snapshot_exclude: bool = False,
         max_val_age: Optional[float] = None,
         vals: Optional[Validator[Any]] = None,
-        underlying_instrument: Optional['InstrumentBase'] = None,
     ) -> None:
         super().__init__(metadata)
         if not str(name).isidentifier():
@@ -369,7 +368,6 @@ class _BaseParameter(Metadatable):
         # intended to be changed in a subclass if you want the subclass
         # to perform a validation on get
         self._validate_on_get = False
-        self.underlying_instrument = underlying_instrument
 
     @property
     def raw_value(self) -> ParamRawDataType:
@@ -965,24 +963,13 @@ class _BaseParameter(Metadatable):
     @property
     def underlying_instrument(self) -> Optional['InstrumentBase']:
         """
-        This property is useful for layered parameters created
+        This property is useful for virtual parameters created
         quite often by the users. It allows the user to set the actual
         instrument of a parameter to be the underlying instrument for a
-        layered parameter.
+        virtual parameter.
         By default it return the root_instrument of the parameter.
         """
-        return self._underlying_instrument
-
-    @underlying_instrument.setter
-    def underlying_instrument(self,
-                              underlying_instrument: Optional['InstrumentBase']
-                              ) -> None:
-        if underlying_instrument is None and self._instrument is not None:
-            self._underlying_instrument: Optional[
-                'InstrumentBase'
-            ] = self._instrument.root_instrument
-        else:
-            self._underlying_instrument = underlying_instrument
+        return self.root_instrument
 
 
 class Parameter(_BaseParameter):
@@ -1547,6 +1534,13 @@ class DelegateParameter(Parameter):
     def source(self, source: Optional[Parameter]) -> None:
         self._set_properties_from_source(source)
         self._source: Optional[Parameter] = source
+
+    @property
+    def underlying_instrument(self) -> Optional['InstrumentBase']:
+        if self.source is not None:
+            return self.source.root_instrument
+        else:
+            return None
 
     def _set_properties_from_source(self, source: Optional[Parameter]) -> None:
         if source is None:
