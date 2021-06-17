@@ -6,7 +6,7 @@ from qcodes.instrument.parameter import Parameter, _BaseParameter
 
 from .conftest import (
     GettableParam,
-    LayeredParameter,
+    VirtualParameter,
     blank_instruments,
     named_instrument
 )
@@ -186,6 +186,6 @@ def test_unknown_args_to_baseparameter_raises():
 def test_underlying_instrument_for_layered_parameter():
     p = GettableParam('base_param', vals=vals.Numbers())
     p._instrument = named_instrument
-    lp = LayeredParameter('test_param', param=p)
+    vp = VirtualParameter('test_param', param=p)
 
-    assert lp.underlying_instrument is named_instrument
+    assert vp.underlying_instrument is named_instrument

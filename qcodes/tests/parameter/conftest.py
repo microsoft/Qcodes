@@ -1,5 +1,5 @@
 from collections import namedtuple
-from typing import Any
+from typing import Any, Optional
 
 import pytest
 
@@ -144,12 +144,14 @@ class MemoryParameter(Parameter):
         return get_func
 
 
-class LayeredParameter(Parameter):
+class VirtualParameter(Parameter):
     def __init__(self, name: str, param: Parameter, **kwargs):
         self._param = param
-        super().__init__(name=name,
-                         underlying_instrument=self._param.instrument,
-                         **kwargs)
+        super().__init__(name=name, **kwargs)
+
+    @property
+    def underlying_instrument(self) -> Optional['InstrumentBase']:
+        return self._param.instrument
 
     def get_raw(self):
         return self._param.get()
