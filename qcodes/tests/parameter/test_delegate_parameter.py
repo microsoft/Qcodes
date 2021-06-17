@@ -499,3 +499,14 @@ def test_cache_no_source():
         d.cache.get()
 
     d.cache.invalidate()
+
+
+def test_underlying_instrument_property_for_delegate_parameter():
+    p = BetterGettableParam('testparam', set_cmd=None, get_cmd=None)
+    d = DelegateParameter('delegate_parameter_with_source', p)
+
+    assert d.underlying_instrument is p.root_instrument
+
+    d = DelegateParameter('delegate_parameter_without_source', source=None)
+    assert d.underlying_instrument is None
+
