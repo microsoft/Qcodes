@@ -13,20 +13,22 @@ principle, the upgrade functions should not have dependecies from
 :mod:`.queries` module.
 """
 import logging
-from functools import wraps
-from typing import Dict, Callable, Any
 import sys
+from functools import wraps
+from typing import Any, Callable, Dict
 
 import numpy as np
 from tqdm import tqdm
 
 from qcodes.dataset.guids import generate_guid
-from qcodes.dataset.sqlite.connection import ConnectionPlus, \
-    atomic_transaction, atomic, transaction
-from qcodes.dataset.sqlite.db_upgrades.version import get_user_version, \
-    set_user_version
-from qcodes.dataset.sqlite.query_helpers import many_many, one, insert_column
-
+from qcodes.dataset.sqlite.connection import (
+    ConnectionPlus,
+    atomic,
+    atomic_transaction,
+    transaction,
+)
+from qcodes.dataset.sqlite.db_upgrades.version import get_user_version, set_user_version
+from qcodes.dataset.sqlite.query_helpers import insert_column, many_many, one
 
 log = logging.getLogger(__name__)
 
@@ -347,3 +349,19 @@ def perform_db_upgrade_8_to_9(conn: ConnectionPlus) -> None:
                 transaction(connection, _IX_runs_captured_run_id)
     else:
         raise RuntimeError(f"found {n_run_tables} runs tables expected 1")
+
+
+@upgrader
+def perform_db_upgrade_9_to_10(conn: ConnectionPlus) -> None:
+    """
+    Perform the upgrade from version 9 to version 10.
+
+    Add a new column to store info about where the dataset has been exported to.
+    """
+    with atomic(conn) as conn:
+        pbar = tqdm(range(1), file=sys.stdout)
+        pbar.set_description("Upgrading database; v9 -> v10")
+        # iterate through the pbar for the sake of the side effect; it
+        # prints that the database is being upgraded
+        for _ in pbar:
+            insert_column(conn, "runs", "export_info", "TEXT")
