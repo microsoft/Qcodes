@@ -483,6 +483,20 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                     kw_name: kwarg_to_attr(self, kw_name, kw_value.default, param_name)
                     for kw_name, kw_value in inspect.signature(meth).parameters.items()
                 }
+                if "docstring" in kwargs:
+                    raise RuntimeError(
+                        f"Failed to add parameter {param_name!r}.\n"
+                        f"`docstring` kwarg was provided to {meth.__name__!r} method. "
+                        f"Write the docstring under {meth.__name__!r} and it will be "
+                        f"be passed to the {param_name!r} constructor automatically."
+                    )
+                if "name" in kwargs:
+                    raise RuntimeError(
+                        f"Failed to add parameter {param_name!r}.\n"
+                        f"`name` kwarg was provided to {meth.__name__!r} method. "
+                        f"The parameter name is obtained from {meth.__name__!r} name. "
+                        f"Do not specify it manually."
+                    )
                 self.add_parameter(
                     name=param_name,
                     docstring=meth.__doc__,
