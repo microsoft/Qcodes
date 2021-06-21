@@ -1,5 +1,4 @@
-"""
-Sphinx extension for auto-documenting new-style parameters.
+"""Sphinx extension for auto-documenting new-style parameters.
 
 Author: Victor Negîrneac, vnegirneac@qblox.com
 
@@ -84,7 +83,7 @@ Will be displayed as "A reference to
 
 Module members
 ~~~~~~~~~~~~~~
-"""
+"""  # pylint: disable=line-too-long
 # referencing with :parameter: would be nicer but seemed challenging to implement.
 
 import inspect
@@ -217,7 +216,6 @@ def dont_skip_qcodes_params(app, what, name, obj, skip, options) -> bool:
 
 def setup(app):
     """Called by sphinx to setup the extension."""
-
     app.setup_extension('sphinx.ext.autodoc')  # Require autodoc extension
 
     # Register the extension configuration parameters

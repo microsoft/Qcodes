@@ -1,4 +1,5 @@
-"""
+"""Driver examples using the new @add_parameter decorator style.
+
 This module defines a few driver examples that use the new
 :func:`@add_parameter <qcodes.instrument.base.add_parameter>` decorator-style
 of adding parameters.
@@ -26,7 +27,7 @@ class ManualInstrument(qcodes.instrument.base.Instrument):
         label="Time",
         vals=validators.Numbers(),
     ) -> float:
-        """Docstring of `time` parameter"""
+        """Docstring of `time` parameter."""
 
 
 class InstrumentWithCmds(qcodes.instrument.base.Instrument):
@@ -47,13 +48,13 @@ class InstrumentWithCmds(qcodes.instrument.base.Instrument):
         # `self._get_freq` will be passed to `Parameter`
         get_cmd=qcodes.instrument.base.InstanceAttr("_get_freq"),
     ) -> float:
-        """Docstring of :code:`freq` parameter"""
+        """Docstring of :code:`freq` parameter."""
 
     def _set_freq(self, value) -> None:
         # ...
         pass
 
-    def _get_freq(self) -> float:
+    def _get_freq(self) -> float:  # pylint: disable=no-self-use
         # ...
         return 1e9 # dummy value
 

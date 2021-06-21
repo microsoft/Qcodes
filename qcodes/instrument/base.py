@@ -544,10 +544,9 @@ def add_parameter(method: Callable[[_ParamSpec], None]) -> Callable[[_ParamSpec]
     r"""
     A decorator function for adding parameters to instruments in the new style.
 
-    The new style has to main advantages:
-
-    - Allow to override inherited parameters.
-    - Allow to of instruments using the :mod:`qcodes.sphinx_extensions.add_parameter` sphinx extension.
+    The new style has to main advantages (1) Allow to override inherited parameters.;
+    and (2) Allow to document parameters of instruments using the
+    :mod:`qcodes.sphinx_extensions.add_parameter` sphinx extension.
 
     Intended to be used to decorate a method of an
     :class:`~qcodes.instrument.base.Instrument` subclass. The information contained in
@@ -595,8 +594,9 @@ def add_parameter(method: Callable[[_ParamSpec], None]) -> Callable[[_ParamSpec]
 
             my_instr:
                 parameter value
-            --------------------------------------------------------------------------------
-            IDN  :  {'vendor': None, 'model': 'my_instr', 'serial': None, 'firmware': None}
+            ----------------------------------------------------------------------------
+            IDN  :
+                {'vendor': None, 'model': 'my_instr', 'serial': None, 'firmware': None}
             time :  123 (s)
 
         **Inheritance and overriding parameters:**
@@ -618,8 +618,9 @@ def add_parameter(method: Callable[[_ParamSpec], None]) -> Callable[[_ParamSpec]
 
             instr:
                 parameter value
-            --------------------------------------------------------------------------------
-            IDN  :  {'vendor': None, 'model': 'instr', 'serial': None, 'firmware': None}
+            ----------------------------------------------------------------------------
+            IDN  :
+                {'vendor': None, 'model': 'instr', 'serial': None, 'firmware': None}
             freq :  10 (Hz)
             time :  3 (s)
 
@@ -642,15 +643,15 @@ def add_parameter(method: Callable[[_ParamSpec], None]) -> Callable[[_ParamSpec]
 
             sub_instr:
                 parameter value
-            --------------------------------------------------------------------------------
-            IDN       : {'vendor': None, 'model': 'sub_instr', 'serial': None, 'firmware'...
+            ----------------------------------------------------------------------------
+            IDN       :
+                {'vendor': None, 'model': 'sub_instr', 'serial': None, 'firmware'...
             amplitude : 0 (V)
             freq      : 99 (Hz)
             time      : 14 (s)
 
             sub_instr.time.label:  Time long
     """
-
     if not method.__name__.startswith(_DECORATED_METHOD_PREFIX):
         raise ValueError(
             f"Only methods prefixed with {_DECORATED_METHOD_PREFIX!r} can be decorated "
