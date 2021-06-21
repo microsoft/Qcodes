@@ -540,7 +540,7 @@ _ParamSpec = TypeVar("_ParamSpec")
 A custom type to annotate the type hints of :obj:`qcodes.instrument.base.add_parameter`.
 """
 
-def add_parameter(method: Callable[[_ParamSpec], None]) -> Callable[[_ParamSpec], None]:
+def add_parameter(method: Callable[[_ParamSpec], Any]) -> Callable[[_ParamSpec], Any]:
     r"""
     A decorator function for adding parameters to instruments in the new style.
 
