@@ -1,0 +1,27 @@
+Changelog for QCoDeS 0.27.0
+===========================
+
+The ? 2021 release of QCoDeS.
+
+----
+New:
+----
+
+- The default value for `default_parameter_name` in the Loop QCoDeS dataset changed from ``amplitude`` to ``None``.
+  The ``amplitude`` value interferes with datasets where one of the setpoint arrays is called `amplitude`. (#3095)
+
+---------
+Improved:
+---------
+
+-
+-----------------
+Improved drivers:
+-----------------
+
+-
+---------------
+Under the hood:
+---------------
+
+-
