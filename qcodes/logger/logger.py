@@ -6,26 +6,26 @@ the default configuration.
 """
 
 import io
-import platform
-from datetime import datetime
 import logging
+
 # logging.handlers is not imported by logging. This extra import is necessary
 import logging.handlers
-
 import os
+import platform
+import sys
 from collections import OrderedDict
 from contextlib import contextmanager
 from copy import copy
-
-from typing import Optional, Union, Sequence, TYPE_CHECKING, Iterator, Type
+from datetime import datetime
 from types import TracebackType
-from opencensus.ext.azure.log_exporter import AzureLogHandler
+from typing import TYPE_CHECKING, Dict, Iterator, Optional, Sequence, Type, Union
+
 from opencensus.ext.azure.common.protocol import Envelope
+from opencensus.ext.azure.log_exporter import AzureLogHandler
 
 import qcodes as qc
 import qcodes.utils.installation_info as ii
 from qcodes.utils.helpers import get_qcodes_user_path
-
 
 log: logging.Logger = logging.getLogger(__name__)
 
@@ -184,6 +184,63 @@ def flush_telemetry_traces() -> None:
         telemetry_handler.flush()
 
 
+def _create_telemetry_handler() -> AzureLogHandler:
+    """
+    Configure, create, and return the telemetry handler
+    """
+    global telemetry_handler
+
+    # The default_custom_dimensions will appear in the "customDimensions"
+    # field in Azure log analytics for every log message alongside any
+    # custom dimensions that message may have. All messages additionally come
+    # with custom dimensions fileName, level, lineNumber, module, and process
+    default_custom_dimensions = {"pythonExecutable": sys.executable}
+
+    class CustomDimensionsFilter(logging.Filter):
+        """
+        Add application-wide properties to the customDimension field of
+        AzureLogHandler records
+        """
+
+        def __init__(self, custom_dimensions: Dict[str, str]):
+            super().__init__()
+            self.custom_dimensions = custom_dimensions
+
+        def filter(self, record: logging.LogRecord) -> bool:
+            """
+            Add the default custom_dimensions into the current log record
+            """
+            cdim = self.custom_dimensions.copy()
+            cdim.update(getattr(record, "custom_dimensions", {}))
+            record.custom_dimensions = cdim  # type: ignore
+
+            return True
+
+    # Transport module of opencensus-ext-azure logs info 'transmission
+    # succeeded' which is also exported to azure if AzureLogHandler is
+    # in root_logger. The following lines stops that.
+    logging.getLogger("opencensus.ext.azure.common.transport").setLevel(logging.WARNING)
+
+    loc = qc.config.GUID_components.location
+    stat = qc.config.GUID_components.work_station
+
+    def callback_function(envelope: Envelope) -> bool:
+        envelope.tags["ai.user.accountId"] = platform.node()
+        envelope.tags["ai.user.id"] = f"{loc:02x}-{stat:06x}"
+        return True
+
+    telemetry_handler = AzureLogHandler(
+        connection_string=f"InstrumentationKey="
+        f"{qc.config.telemetry.instrumentation_key}"
+    )
+    telemetry_handler.add_telemetry_processor(callback_function)
+    telemetry_handler.setLevel(logging.INFO)
+    telemetry_handler.addFilter(CustomDimensionsFilter(default_custom_dimensions))
+    telemetry_handler.setFormatter(get_formatter_for_telemetry())
+
+    return telemetry_handler
+
+
 def start_logger() -> None:
     """
     Start logging of messages passed through the python logging module.
@@ -236,27 +293,7 @@ def start_logger() -> None:
     logging.captureWarnings(capture=True)
 
     if qc.config.telemetry.enabled:
-        # Transport module of opencensus-ext-azure logs info 'transmission
-        # succeeded' which is also exported to azure if AzureLogHandler is
-        # in root_logger. The following lines stops that.
-        logging.getLogger('opencensus.ext.azure.common.transport').setLevel(
-            logging.WARNING)
-
-        loc = qc.config.GUID_components.location
-        stat = qc.config.GUID_components.work_station
-
-        def callback_function(envelope: Envelope) -> bool:
-            envelope.tags['ai.user.accountId'] = platform.node()
-            envelope.tags['ai.user.id'] = f'{loc:02x}-{stat:06x}'
-            return True
-
-        telemetry_handler = AzureLogHandler(
-            connection_string=f'InstrumentationKey='
-                              f'{qc.config.telemetry.instrumentation_key}')
-        telemetry_handler.add_telemetry_processor(callback_function)
-        telemetry_handler.setLevel(logging.INFO)
-        telemetry_handler.setFormatter(get_formatter_for_telemetry())
-        root_logger.addHandler(telemetry_handler)
+        root_logger.addHandler(_create_telemetry_handler())
 
     log.info("QCoDes logger setup completed")
 
