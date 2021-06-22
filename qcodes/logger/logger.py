@@ -18,7 +18,7 @@ from contextlib import contextmanager
 from copy import copy
 from datetime import datetime
 from types import TracebackType
-from typing import TYPE_CHECKING, Dict, Iterator, Optional, Sequence, Type, Union
+from typing import Dict, Iterator, Optional, Sequence, Type, Union
 
 from opencensus.ext.azure.common.protocol import Envelope
 from opencensus.ext.azure.log_exporter import AzureLogHandler
