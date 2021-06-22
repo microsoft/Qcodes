@@ -11,7 +11,7 @@ from qcodes.dataset.export_config import DataExportType
 @dataclass
 class ExportInfo:
 
-    export_paths = Dict[DataExportType, str]
+    export_paths: Dict[DataExportType, str]
 
     def to_str(self) -> str:
         return json.dumps(asdict(self))
