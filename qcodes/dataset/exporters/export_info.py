@@ -1,7 +1,6 @@
 """
 This module defines the ExportInfo dataclass
 """
-import enum
 import json
 from dataclasses import asdict, dataclass
 from typing import Dict
