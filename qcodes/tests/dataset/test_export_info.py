@@ -12,7 +12,7 @@ def _make_basic_export_info() -> Generator[ExportInfo, None, None]:
     csv_path = "D:\\data\\33.csv"
 
     export_info = ExportInfo(
-        {DataExportType.NETCDF: nc_path, DataExportType.CSV: csv_path}
+        {DataExportType.NETCDF.value: nc_path, DataExportType.CSV.value: csv_path}
     )
     yield export_info
 
@@ -21,13 +21,22 @@ def test_export_info_basic() -> None:
     nc_path = "D:\\data\\33.nc"
     csv_path = "D:\\data\\33.csv"
 
-    a = ExportInfo({DataExportType.NETCDF: nc_path, DataExportType.CSV: csv_path})
-    assert a.export_paths[DataExportType.NETCDF] == nc_path
-    assert a.export_paths[DataExportType.CSV] == csv_path
+    a = ExportInfo(
+        {DataExportType.NETCDF.value: nc_path, DataExportType.CSV.value: csv_path}
+    )
+    assert a.export_paths[DataExportType.NETCDF.value] == nc_path
+    assert a.export_paths[DataExportType.CSV.value] == csv_path
+
+
+def test_invalid_key_raises() -> None:
+    nd_path = "D:\\data\\33.nd"
+
+    with pytest.raises(TypeError, match="The allowed keys for export type are"):
+        a = ExportInfo({"nd": nd_path})
 
 
 def test_export_info_json_roundtrip(basic_export_info) -> None:
 
-    loaded_export_info = basic_export_info.to_str()
-    1 + 1
-    # assert loaded_export_info == basic_export_info
+    exported_str = basic_export_info.to_str()
+    loaded_export_info = ExportInfo.from_str(exported_str)
+    assert loaded_export_info == basic_export_info

@@ -12,23 +12,21 @@ from qcodes.dataset.export_config import DataExportType
 @dataclass
 class ExportInfo:
 
-    export_paths: Dict[DataExportType, str]
+    export_paths: Dict[str, str]
+
+    def __post_init__(self):
+        allowed_keys = tuple(a.value for a in DataExportType)
+        for key in self.export_paths.keys():
+            if key not in allowed_keys:
+                raise TypeError(
+                    f"The allowed keys for export type are: {allowed_keys}. Got {key} "
+                    f"which is not in the allowed list"
+                )
 
     def to_str(self) -> str:
-        return json.dumps(asdict(self), cls=HandleKeyEnumEncoder)
+        return json.dumps(asdict(self))
 
     @classmethod
     def from_str(cls, string: str) -> "ExportInfo":
         datadict = json.loads(string)
         return cls(**datadict)
-
-
-def _sanitize(o):
-    if isinstance(o, enum.Enum):
-        return o.value
-    return o
-
-
-class HandleKeyEnumEncoder(json.JSONEncoder):
-    def encode(self, o):
-        return super().encode(_sanitize(o))
