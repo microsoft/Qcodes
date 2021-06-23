@@ -77,9 +77,6 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
         self.log = get_instrument_logger(self, __name__)
 
-        # NB this attribute should not be added here otherwise full control over when
-        # the parameters are instantiated is not possible in sub classes.
-        # self._call_add_params_from_decorated_methods = True
         if getattr(self, "_call_add_params_from_decorated_methods", True):
             # setting self._call_add_params_from_decorated_methods=False before calling
             # `super().__init__()` gives more control in driver whose parameters require
