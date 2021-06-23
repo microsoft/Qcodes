@@ -1,4 +1,5 @@
-"""Sphinx extension for auto-documenting decorator-style parameters.
+"""
+Sphinx extension for auto-documenting decorator-style parameters.
 
 Author: Victor Negîrneac, vnegirneac@qblox.com
 
@@ -95,8 +96,7 @@ from qcodes.instrument.base import _ADD_PARAMETER_ATTR_NAME, _DECORATED_METHOD_P
 # ######################################################################################
 
 def format_name(self) -> str:
-    """
-    Removes :code:`"_parameter_"` prefix
+    """Removes :code:`"_parameter_"` prefix
     (:attr:`!qcodes.instrument.base._DECORATED_METHOD_PREFIX`) from the method name
     so that only the qcodes parameter name will be displayed in the docs.
 

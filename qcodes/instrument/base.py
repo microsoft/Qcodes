@@ -539,7 +539,8 @@ A custom type to annotate the type hints of :obj:`qcodes.instrument.base.add_par
 """
 
 def add_parameter(method: Callable[[_ParamArgs], Any]) -> Callable[[_ParamArgs], Any]:
-    r"""Decorator function for adding parameters to instruments via method definitions.
+    r"""
+    Decorator function for adding parameters to instruments via method definitions.
 
     The decorator style has two main advantages:
     (1) Allow one to override inherited parameters without interacting with instrument's

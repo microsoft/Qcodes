@@ -1,4 +1,5 @@
-"""Driver examples using the :code:`@add_parameter` decorator style.
+"""
+Driver examples using the :code:`@add_parameter` decorator style.
 
 This module defines a few driver examples that use the
 :func:`@add_parameter <qcodes.instrument.base.add_parameter>` decorator style
@@ -31,6 +32,7 @@ class ManualInstrument(qcodes.instrument.base.Instrument):
 
 
 class InstrumentWithCmds(qcodes.instrument.base.Instrument):
+
     """
     An instrument that needs to pass methods when instantiating its parameters
     and adding them.
@@ -81,7 +83,7 @@ class InstrumentWithInitValue(qcodes.instrument.base.Instrument):
         label="Time",
         vals=validators.Numbers(),
     ) -> float:
-        """Docstring of `time` parameter"""
+        """Docstring of `time` parameter."""
 
 
 class MyInstrumentDriver(qcodes.instrument.base.Instrument):
@@ -106,7 +108,7 @@ class MyInstrumentDriver(qcodes.instrument.base.Instrument):
         label="Time",
         vals=validators.Numbers(),
     ) -> float:
-        """Docstring of `time` parameter"""
+        """Docstring of `time` parameter."""
 
     @qcodes.instrument.base.add_parameter
     def _parameter_freq(  # NB the parameter name will be just `freq`
@@ -122,7 +124,7 @@ class MyInstrumentDriver(qcodes.instrument.base.Instrument):
         # `self._get_freq` will be passed to `Parameter`
         get_cmd=qcodes.instrument.base.InstanceAttr("_get_freq"),
     ) -> float:
-        """Docstring of :code:`freq` parameter"""
+        """Docstring of :code:`freq` parameter."""
 
     def _set_freq(self, value) -> None:
         self._freq = value
