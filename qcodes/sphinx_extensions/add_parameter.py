@@ -45,7 +45,7 @@ In the :code:`conf.py` add this extension to sphinx:
     '''
     qcodes_parameters_force_documenting = True # default value
     '''
-    In your sphinx configuration you are likely not documenting primate methods,
+    In your sphinx configuration you are likely not documenting private methods,
     but the `@add_parameter` decorates a private method. This option forces
     these methods to be documented.
     '''
@@ -84,8 +84,6 @@ Will be displayed as "A reference to
 Module members
 ~~~~~~~~~~~~~~
 """  # pylint: disable=line-too-long
-# referencing with :parameter: would be nicer but seemed challenging to implement.
-
 import inspect
 from sphinx.ext import autodoc
 from sphinx.domains import python as sphinx_domains_python
@@ -159,9 +157,9 @@ def add_parameter_spec_to_docstring(app, what, name, obj, options, lines):
     Intercepts :code:`"autodoc-process-docstring"` .
     """
     # name is e.g. `"my_module._parameter_time"
-    modify_dosctring = app.config["qcodes_parameters_spec_in_docstring"]
+    modify_docstring = app.config["qcodes_parameters_spec_in_docstring"]
     add_links = "" if app.config["qcodes_parameters_spec_with_links"] else "!"
-    if modify_dosctring and hasattr(obj, _ADD_PARAMETER_ATTR_NAME):
+    if modify_docstring and hasattr(obj, _ADD_PARAMETER_ATTR_NAME):
         lines += [
             "",
             ".. rubric:: Arguments passed to "
@@ -240,13 +238,11 @@ def setup(app):
     # we can't have a method in the class with the same name as the desired
     # parameter, therefore we patch the method name displayed in the sphinx docs
     # monkey patching `MethodDocumenter`
-    # e.g. `_parameter_time` -> `_parameter_time` when displayed in the docs
+    # e.g. `_parameter_time` -> `time` when displayed in the docs
     autodoc.MethodDocumenter.format_name = format_name
 
     # Patch several parts of autodoc and sphinx so that we have a nice
     # "parameter " prefix added in the docs output, similar to, e.g., "classmethod ".
-    # Maybe a custom Documenter inheriting from MethodDocumenter could be developed
-    # though it is not clear if that would allow for all the functionality we want
     autodoc.MethodDocumenter.add_directive_header = add_directive_header
     sphinx_domains_python.PyMethod.option_spec.update(
         {"parameter": sphinx_domains_python.PyMethod.option_spec["classmethod"]}
