@@ -93,8 +93,6 @@ def test_repr(testdummy):
 
 
 def test_add_remove_f_p(testdummy):
-    with pytest.raises(KeyError, match='Duplicate parameter name dac1'):
-        testdummy.add_parameter('dac1', get_cmd='foo')
 
     testdummy.add_function('function', call_cmd='foo')
 

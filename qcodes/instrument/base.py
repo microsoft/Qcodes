@@ -109,8 +109,17 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             KeyError: If this instrument already has a parameter with this
                 name.
         """
-        if name in self.parameters:
-            raise KeyError(f'Duplicate parameter name {name}')
+        existing_parameter = self.parameters.get(name, None)
+        if existing_parameter:
+            existing_unit = getattr(existing_parameter, "unit", None)
+            new_unit = kwargs.get("unit", None)
+            if existing_unit != new_unit:
+                raise ValueError(
+                    f"The unit of the parameter '{name}' is '{new_unit}'. "
+                    f"This is inconsistent with the unit defined in the "
+                    f"base class"
+                )
+
         param = parameter_class(name=name, instrument=self, **kwargs)
         self.parameters[name] = param
 
@@ -429,6 +438,7 @@ class Instrument(InstrumentBase, AbstractInstrument):
     _all_instruments: "Dict[str, weakref.ref[Instrument]]" = {}
     _type = None
     _instances: "List[weakref.ref[Instrument]]" = []
+    __init_call_count = 0
 
     def __init__(self, name: str, metadata: Optional[Mapping[Any, Any]] = None) -> None:
         self._t0 = time.time()
@@ -437,6 +447,43 @@ class Instrument(InstrumentBase, AbstractInstrument):
 
         self.add_parameter('IDN', get_cmd=self.get_idn,
                            vals=Anything())
+
+        if Instrument.__init_call_count == 0:
+            self.__post_init__(name, metadata)
+
+    def __init_subclass__(cls, **kwargs):
+
+        init = cls.__init__
+
+        def __new_init__(self, *args, **sub_class_kwargs):
+            Instrument.__init_call_count += 1
+
+            try:
+                init(self, *args, **sub_class_kwargs)
+            except Exception:
+                Instrument.__init_call_count = 0
+                raise
+
+            Instrument.__init_call_count -= 1
+
+            if Instrument.__init_call_count == 0:
+                self.__post_init__(*args, **sub_class_kwargs)
+
+        cls.__init__ = __new_init__
+
+    def __post_init__(self, *args, **kwargs):
+        abstract_parameters = [
+            parameter.name for parameter in self.parameters.values()
+            if parameter.abstract
+        ]
+
+        if any(abstract_parameters):
+            cls_name = type(self).__name__
+
+            raise NotImplementedError(
+                f"Class '{cls_name}' has un-implemented Abstract Parameter(s): "
+                f"" + ", ".join([f"'{name}'" for name in abstract_parameters])
+            )
 
         self.record_instance(self)
 

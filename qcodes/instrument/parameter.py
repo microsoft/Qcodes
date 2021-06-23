@@ -261,6 +261,9 @@ class _BaseParameter(Metadatable):
 
         metadata: extra information to include with the
             JSON snapshot of the parameter
+
+        abstract: Specifies if this parameter is abstract or not. Default
+            is False
     """
 
     def __init__(
@@ -281,6 +284,7 @@ class _BaseParameter(Metadatable):
         snapshot_exclude: bool = False,
         max_val_age: Optional[float] = None,
         vals: Optional[Validator[Any]] = None,
+        abstract: Optional[bool] = False
     ) -> None:
         super().__init__(metadata)
         if not str(name).isidentifier():
@@ -368,6 +372,7 @@ class _BaseParameter(Metadatable):
         # intended to be changed in a subclass if you want the subclass
         # to perform a validation on get
         self._validate_on_get = False
+        self._abstract = abstract
 
     @property
     def raw_value(self) -> ParamRawDataType:
@@ -959,6 +964,10 @@ class _BaseParameter(Metadatable):
         Is it allowed to call set on this parameter?
         """
         return self._settable
+
+    @property
+    def abstract(self) -> bool:
+        return self._abstract
 
 
 class Parameter(_BaseParameter):
