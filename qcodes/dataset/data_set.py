@@ -90,6 +90,7 @@ from qcodes.utils.helpers import NumpyJSONEncoder
 
 from .data_set_cache import DataSetCacheWithDBBackend
 from .descriptions.versioning import serialization as serial
+from .exporters.export_info import ExportInfo
 from .exporters.export_to_csv import dataframe_to_csv
 from .exporters.export_to_pandas import (
     load_to_concatenated_dataframe,
@@ -276,7 +277,9 @@ class DataSet(Sized):
             self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
             self._started = self.run_timestamp_raw is not None
             self._parent_dataset_links = str_to_links(
-                get_parent_dataset_links(self.conn, self.run_id))
+                get_parent_dataset_links(self.conn, self.run_id)
+            )
+            self._export_info = ExportInfo({})  # load from db
         else:
             # Actually perform all the side effects needed for the creation
             # of a new dataset. Note that a dataset is created (in the DB)
@@ -312,6 +315,7 @@ class DataSet(Sized):
 
             self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
             self._parent_dataset_links = []
+            self._export_info = ExportInfo({})
 
         if _WRITERS.get(self.path_to_db) is None:
             queue: "Queue[Any]" = Queue()
@@ -1607,10 +1611,22 @@ class DataSet(Sized):
             path=path,
             prefix=prefix
         )
+        export_info = self.export_info
+        export_info.export_paths[export_type.value] = self._export_path
+
+        self._set_export_info(export_info)
 
     @property
     def export_path(self) -> Optional[str]:
         return self._export_path
+
+    @property
+    def export_info(self) -> ExportInfo:
+        return self._export_info
+
+    def _set_export_info(self, export_info: ExportInfo) -> None:
+        # todo write to db
+        self._export_info = export_info
 
 
 # public api

@@ -13,7 +13,7 @@ class ExportInfo:
 
     export_paths: Dict[str, str]
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         allowed_keys = tuple(a.value for a in DataExportType)
         for key in self.export_paths.keys():
             if key not in allowed_keys:
