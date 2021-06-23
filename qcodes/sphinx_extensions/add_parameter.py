@@ -1,4 +1,4 @@
-"""Sphinx extension for auto-documenting new-style parameters.
+"""Sphinx extension for auto-documenting decorator-style parameters.
 
 Author: Victor Negîrneac, vnegirneac@qblox.com
 
@@ -58,11 +58,11 @@ of your docs you must point to the name of the method that was decorated with
 
 .. code-block:: rst
 
-    .. automethod:: qcodes.instrument_drivers.new_style.MyInstrumentDriver._parameter_freq
+    .. automethod:: qcodes.instrument_drivers.decorator_style.MyInstrumentDriver._parameter_freq
 
 Which should produce an output similar to:
 
-    .. automethod:: qcodes.instrument_drivers.new_style.MyInstrumentDriver._parameter_freq
+    .. automethod:: qcodes.instrument_drivers.decorator_style.MyInstrumentDriver._parameter_freq
         :noindex:
 
 ---
@@ -74,12 +74,12 @@ assuming the class is documented in the API reference of your python project.
 
 .. code-block:: rst
 
-    A reference to :obj:`qcodes.instrument_drivers.new_style.MyInstrumentDriver.freq` or
-    :meth:`~qcodes.instrument_drivers.new_style.MyInstrumentDriver.freq`.
+    A reference to :obj:`qcodes.instrument_drivers.decorator_style.MyInstrumentDriver.freq` or
+    :meth:`~qcodes.instrument_drivers.decorator_style.MyInstrumentDriver.freq`.
 
 Will be displayed as "A reference to
-:obj:`qcodes.instrument_drivers.new_style.MyInstrumentDriver.freq` or
-:meth:`~qcodes.instrument_drivers.new_style.MyInstrumentDriver.freq` ."
+:obj:`qcodes.instrument_drivers.decorator_style.MyInstrumentDriver.freq` or
+:meth:`~qcodes.instrument_drivers.decorator_style.MyInstrumentDriver.freq` ."
 
 Module members
 ~~~~~~~~~~~~~~
@@ -99,7 +99,7 @@ from qcodes.instrument.base import _ADD_PARAMETER_ATTR_NAME, _DECORATED_METHOD_P
 def format_name(self) -> str:
     """
     Removes :code:`"_parameter_"` prefix
-    (:attr:`~qcodes.instrument.base._DECORATED_METHOD_PREFIX`) from the method name
+    (:attr:`!qcodes.instrument.base._DECORATED_METHOD_PREFIX`) from the method name
     so that only the qcodes parameter name will be displayed in the docs.
 
     Patches: :meth:`!sphinx.ext.autodoc.MethodDocumenter.format_name` .

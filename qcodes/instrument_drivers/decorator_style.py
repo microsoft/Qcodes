@@ -1,7 +1,7 @@
-"""Driver examples using the new @add_parameter decorator style.
+"""Driver examples using the :code:`@add_parameter` decorator style.
 
-This module defines a few driver examples that use the new
-:func:`@add_parameter <qcodes.instrument.base.add_parameter>` decorator-style
+This module defines a few driver examples that use the
+:func:`@add_parameter <qcodes.instrument.base.add_parameter>` decorator style
 of adding parameters.
 
 Author: Victor Negîrneac, vnegirneac@qblox.com
@@ -12,8 +12,8 @@ Author: Victor Negîrneac, vnegirneac@qblox.com
 # Intentional module level import so that a literalinclude of the objects in this
 # file is as complete as possible
 import qcodes
-from qcodes import ManualParameter, Parameter
-from qcodes import validators
+from qcodes.instrument.parameter import ManualParameter, Parameter
+from qcodes.utils import validators
 
 
 class ManualInstrument(qcodes.instrument.base.Instrument):

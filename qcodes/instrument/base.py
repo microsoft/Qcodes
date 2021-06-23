@@ -17,7 +17,6 @@ from typing import (
     cast,
     TypeVar
 )
-
 from functools import wraps
 import inspect
 
@@ -104,11 +103,11 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
         .. note::
 
-            QCoDeS provides a new style of adding parameters using the
+            QCoDeS provides also a decorator-style for adding parameters using the
             :func:`@add_parameter <qcodes.instrument.base.add_parameter>` decorator
             function.
             This function will be called internally, when instantiating an instrument,
-            for each parameter added with the new style.
+            for each parameter added with the decorator style.
             See the :func:`qcodes.instrument.base.add_parameter` docs for usage
             examples.
 
@@ -440,7 +439,9 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
         """
 
-        def kwarg_to_attr(self, kwarg_name, kwarg_value, param_name) -> Any:
+        def kwarg_to_attr(
+            self, kwarg_name: str, kwarg_value: Any, param_name: str
+        ) -> Any:
             """
             Returns the attribute that has the name `kwarg_value.attr_name`
             of this Instrument instance if the `kwarg_value` is of type `InstanceAttr`,
@@ -535,25 +536,33 @@ A constant defining the name of the attribute set by the
 that will be converted to parameter.
 """
 
-_ParamSpec = TypeVar("_ParamSpec")
+_ParamArgs = TypeVar("_ParamArgs")
 """
 A custom type to annotate the type hints of :obj:`qcodes.instrument.base.add_parameter`.
 """
 
-def add_parameter(method: Callable[[_ParamSpec], Any]) -> Callable[[_ParamSpec], Any]:
-    r"""
-    A decorator function for adding parameters to instruments in the new style.
+def add_parameter(method: Callable[[_ParamArgs], Any]) -> Callable[[_ParamArgs], Any]:
+    r"""Decorator function for adding parameters to instruments via method definitions.
 
-    The new style has to main advantages (1) Allow to override inherited parameters.;
-    and (2) Allow to document parameters of instruments using the
+    The decorator style has two main advantages:
+    (1) Allow one to override inherited parameters without interacting with instrument's
+    parameters dictionary.; and
+    (2) Allow one to document parameters of instruments using the
     :mod:`qcodes.sphinx_extensions.add_parameter` sphinx extension.
 
     Intended to be used to decorate a method of an
-    :class:`~qcodes.instrument.base.Instrument` subclass. The information contained in
-    the definition of the decorated method will be processed by
-    :func:`!qcodes.instrument.base.Instrument._add_params_from_decorated_methods` and
-    passed to :meth:`qcodes.instrument.base.InstrumentBase.add_parameter` during the
-    instantiation of an instrument.
+    :class:`~qcodes.instrument.base.InstrumentBase` subclass. The information contained
+    in the definition of the decorated method will be processed by
+    :func:`!qcodes.instrument.base.InstrumentBase._add_params_from_decorated_methods`
+    and passed to :meth:`qcodes.instrument.base.InstrumentBase.add_parameter`.
+
+    :func:`!qcodes.instrument.base.InstrumentBase._add_params_from_decorated_methods`
+    can be called directly in the instrument's ``__init__`` or,
+    if ``self._call_add_params_from_decorated_methods``
+    attribute is not defined (default behavior) or it is set to ``True`` before the call
+    to superclass' ``__init__``, then
+    :func:`!qcodes.instrument.base.InstrumentBase._add_params_from_decorated_methods`
+    will be called as part of the superclass' ``__init__``.
 
     Args:
         method: The method to be flagged to be converted to a parameter.
@@ -562,23 +571,23 @@ def add_parameter(method: Callable[[_ParamSpec], Any]) -> Callable[[_ParamSpec],
 
         An instrument with a :class:`~qcodes.instrument.parameter.ManualParameter`:
 
-        .. literalinclude:: ../../../qcodes/instrument_drivers/new_style.py
+        .. literalinclude:: ../../../qcodes/instrument_drivers/decorator_style.py
             :pyobject: ManualInstrument
 
         The parameters will be added to the instrument only during its
-        :code:`__init__`. This means that when using this style of adding parameters we
+        :code:`__init__`. This means that when using this style for adding parameters we
         do not have access to the :code:`self` object. As a workaround the class
         :class:`qcodes.instrument.base.InstanceAttr` can be used to reference an
         attribute that is expected to be available when the instrument is initialized:
 
-        .. literalinclude:: ../../../qcodes/instrument_drivers/new_style.py
+        .. literalinclude:: ../../../qcodes/instrument_drivers/decorator_style.py
             :pyobject: InstrumentWithCmds
 
         In some cases you might need more control over when exactly the parameters
         should be added to the instrument, e.g., when some information needed to create
         the parameters is know only when an instance of the Instrument is created:
 
-        .. literalinclude:: ../../../qcodes/instrument_drivers/new_style.py
+        .. literalinclude:: ../../../qcodes/instrument_drivers/decorator_style.py
             :pyobject: InstrumentWithInitValue
 
         Which will be instantiated as
@@ -586,7 +595,7 @@ def add_parameter(method: Callable[[_ParamSpec], Any]) -> Callable[[_ParamSpec],
         .. nbinput:: ipython3
             :execution-count: 1
 
-            from qcodes.instrument_drivers.new_style import InstrumentWithInitValue
+            from qcodes.instrument_drivers.decorator_style import InstrumentWithInitValue
             instr = InstrumentWithInitValue(name="my_instr", some_arg=123)
             instr.print_readable_snapshot(update=True)
 
@@ -601,13 +610,13 @@ def add_parameter(method: Callable[[_ParamSpec], Any]) -> Callable[[_ParamSpec],
 
         **Inheritance and overriding parameters:**
 
-        .. literalinclude:: ../../../qcodes/instrument_drivers/new_style.py
+        .. literalinclude:: ../../../qcodes/instrument_drivers/decorator_style.py
             :pyobject: MyInstrumentDriver
 
         .. nbinput:: ipython3
             :execution-count: 2
 
-            from qcodes.instrument_drivers.new_style import MyInstrumentDriver
+            from qcodes.instrument_drivers.decorator_style import MyInstrumentDriver
 
             instr = MyInstrumentDriver(name="instr", init_freq=8)
             instr.freq(10)
@@ -626,13 +635,13 @@ def add_parameter(method: Callable[[_ParamSpec], Any]) -> Callable[[_ParamSpec],
 
             instr.time.label:  Time
 
-        .. literalinclude:: ../../../qcodes/instrument_drivers/new_style.py
+        .. literalinclude:: ../../../qcodes/instrument_drivers/decorator_style.py
             :pyobject: SubMyInstrumentDriver
 
         .. nbinput:: ipython3
             :execution-count: 3
 
-            from qcodes.instrument_drivers.new_style import SubMyInstrumentDriver
+            from qcodes.instrument_drivers.decorator_style import SubMyInstrumentDriver
 
             sub_instr = SubMyInstrumentDriver(name="sub_instr", init_freq=99)
             sub_instr.time(sub_instr.time() * 2)
@@ -651,15 +660,15 @@ def add_parameter(method: Callable[[_ParamSpec], Any]) -> Callable[[_ParamSpec],
             time      : 14 (s)
 
             sub_instr.time.label:  Time long
-    """
+    """  # pylint: disable=line-too-long
     if not method.__name__.startswith(_DECORATED_METHOD_PREFIX):
         raise ValueError(
             f"Only methods prefixed with {_DECORATED_METHOD_PREFIX!r} can be decorated "
             f"with `add_parameter` decorator."
         )
 
-    @wraps(method)  # preserves info like `__doc__` and signature
-    def kwargs_and_doc_container(self, *args, **kwargs) -> None:
+    @wraps(method)
+    def kwargs_and_doc_container(self, *args: Any, **kwargs: Any) -> None:
         """
         Auxiliary function that serves as a container of information.
 
