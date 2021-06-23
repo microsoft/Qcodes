@@ -6,7 +6,7 @@ dependencies:
  # recommended to be explicitly specified by conda-incubator/setup-miniconda@v2
  - pip
  # dependencies for setup.cfg
- - numpy>=1.17
+ - numpy>=1.17, <1.21.0
  - pyvisa>=1.11.0, <1.12.0
  - h5py>=2.8.0
  - websockets>=7.0
