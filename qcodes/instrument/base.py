@@ -106,8 +106,9 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             **kwargs: Constructor arguments for ``parameter_class``.
 
         Raises:
-            KeyError: If this instrument already has a parameter with this
-                name.
+            ValueError: If this instrument already has a parameter with this
+                name but its unit are not equal to the unit of the parameter
+                being added.
         """
         existing_parameter = self.parameters.get(name, None)
         if existing_parameter:
@@ -438,9 +439,14 @@ class Instrument(InstrumentBase, AbstractInstrument):
     _all_instruments: "Dict[str, weakref.ref[Instrument]]" = {}
     _type = None
     _instances: "List[weakref.ref[Instrument]]" = []
-    __init_call_count = 0
+    _call_post_init = True
 
-    def __init__(self, name: str, metadata: Optional[Mapping[Any, Any]] = None) -> None:
+    def __init__(
+            self,
+            name: str,
+            metadata: Optional[Mapping[Any, Any]] = None
+    ) -> None:
+
         self._t0 = time.time()
 
         super().__init__(name, metadata)
@@ -448,28 +454,28 @@ class Instrument(InstrumentBase, AbstractInstrument):
         self.add_parameter('IDN', get_cmd=self.get_idn,
                            vals=Anything())
 
-        if Instrument.__init_call_count == 0:
+        if self._call_post_init:
             self.__post_init__(name, metadata)
 
     def __init_subclass__(cls, **kwargs):
 
-        init = cls.__init__
+        original_init = cls.__init__
 
         def __new_init__(self, *args, **sub_class_kwargs):
-            Instrument.__init_call_count += 1
 
-            try:
-                init(self, *args, **sub_class_kwargs)
-            except Exception:
-                Instrument.__init_call_count = 0
-                raise
+            # Call post init if `self._call_post_init`
+            # is True
+            call_post_init = self._call_post_init
+            # but prevent the init methods of
+            # base classes from also calling post init
+            self._call_post_init = False
+            original_init(self, *args, **sub_class_kwargs)
 
-            Instrument.__init_call_count -= 1
-
-            if Instrument.__init_call_count == 0:
+            if call_post_init:
                 self.__post_init__(*args, **sub_class_kwargs)
 
-        cls.__init__ = __new_init__
+        # See https://github.com/python/mypy/issues/2427
+        cls.__init__ = __new_init__  # type: ignore
 
     def __post_init__(self, *args, **kwargs):
         abstract_parameters = [
