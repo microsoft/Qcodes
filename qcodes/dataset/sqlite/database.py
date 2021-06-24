@@ -8,27 +8,29 @@ import sqlite3
 import sys
 from contextlib import contextmanager
 from os.path import expanduser, normpath
-from typing import Union, Iterator, Tuple, Optional
+from pathlib import Path
+from typing import Iterator, Optional, Tuple, Union
 
 import numpy as np
-from numpy import ndarray
 
+import qcodes
 from qcodes.dataset.sqlite.connection import ConnectionPlus
 from qcodes.dataset.sqlite.db_upgrades import (
     _latest_available_version,
     get_user_version,
-    perform_db_upgrade
+    perform_db_upgrade,
 )
 from qcodes.dataset.sqlite.initial_schema import init_db
-import qcodes
 from qcodes.utils.types import (
-    numpy_ints, numpy_floats, complex_types, complex_type_union
+    complex_type_union,
+    complex_types,
+    numpy_floats,
+    numpy_ints,
 )
-from pathlib import Path
 
 
 # utility function to allow sqlite/numpy type
-def _adapt_array(arr: ndarray) -> sqlite3.Binary:
+def _adapt_array(arr: np.ndarray) -> sqlite3.Binary:
     """
     See this:
     https://stackoverflow.com/questions/3425320/sqlite3-programmingerror-you-must-not-use-8-bit-bytestrings-unless-you-use-a-te
@@ -39,7 +41,7 @@ def _adapt_array(arr: ndarray) -> sqlite3.Binary:
     return sqlite3.Binary(out.read())
 
 
-def _convert_array(text: bytes) -> ndarray:
+def _convert_array(text: bytes) -> np.ndarray:
     out = io.BytesIO(text)
     out.seek(0)
     return np.load(out)
