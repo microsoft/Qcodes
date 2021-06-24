@@ -963,10 +963,11 @@ class _BaseParameter(Metadatable):
     @property
     def underlying_instrument(self) -> Optional['InstrumentBase']:
         """
-        This property is useful for virtual parameters created
-        quite often by the users. It allows the user to set the actual
-        instrument of a parameter to be the underlying instrument for a
-        virtual parameter.
+        Property to expose virtual parameters' underlying instrument i.e.
+        to allows the user to set the actual instrument of a parameter to be
+        the underlying instrument for a virtual parameter. A virtual
+        parameter is one which is built over another existing parameter.
+
         By default it return the root_instrument of the parameter.
         """
         return self.root_instrument

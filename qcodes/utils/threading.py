@@ -138,6 +138,14 @@ def _instrument_to_param(
 
 
 def call_params_threaded(param_meas: Sequence[ParamMeasT]) -> OutType:
+    """
+    Function to create threads per instrument for the given set of
+    measurement parameters.
+
+    Args:
+        param_meas: a Sequence of measurement parameters
+
+    """
 
     inst_param_mapping = _instrument_to_param(param_meas)
     executors = tuple(_ParamCaller(*param_list)
