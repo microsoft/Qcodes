@@ -282,7 +282,7 @@ class DataSet(Sized):
                 get_parent_dataset_links(self.conn, self.run_id)
             )
             self._export_info = ExportInfo.from_str(
-                get_export_info(self.conn, self.run_id)
+                self.get_metadata("export_info") or ""
             )
         else:
             # Actually perform all the side effects needed for the creation
@@ -1630,7 +1630,7 @@ class DataSet(Sized):
         return self._export_info
 
     def _set_export_info(self, export_info: ExportInfo) -> None:
-        update_export_info(self.conn, self.run_id, export_info.to_str())
+        self.add_metadata("export_info", export_info.to_str())
         self._export_info = export_info
 
 
