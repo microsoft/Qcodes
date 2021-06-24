@@ -1,5 +1,5 @@
 """
-Test suite for instument.base.*
+Test suite for instrument.base.*
 """
 import pytest
 import weakref
