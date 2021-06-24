@@ -461,7 +461,9 @@ class Instrument(InstrumentBase, AbstractInstrument):
 
         original_init = cls.__init__
 
-        def __new_init__(self, *args: Any, **sub_class_kwargs: Any) -> None:
+        def __new_init__(
+                self: Type[Instrument], *args: Any, **sub_class_kwargs: Any
+        ) -> None:
 
             # Call post init if `self._call_post_init`
             # is True
@@ -474,7 +476,7 @@ class Instrument(InstrumentBase, AbstractInstrument):
             if call_post_init:
                 self.__post_init__(*args, **sub_class_kwargs)
 
-        cls.__init__ = __new_init__
+        cls.__init__ = __new_init__  # type: ignore
 
     def __post_init__(self, *args: Any, **kwargs: Any) -> None:
         abstract_parameters = [
