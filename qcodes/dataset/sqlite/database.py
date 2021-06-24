@@ -134,11 +134,8 @@ def connect(name: Union[str, Path], debug: bool = False,
 
     """
     # register numpy->binary(TEXT) adapter
-    # the typing here is ignored due to what we think is a flaw in typeshed
-    # see https://github.com/python/typeshed/issues/2429
     sqlite3.register_adapter(np.ndarray, _adapt_array)
     # register binary(TEXT) -> numpy converter
-    # for some reasons mypy complains about this
     sqlite3.register_converter("array", _convert_array)
 
     sqlite3_conn = sqlite3.connect(name, detect_types=sqlite3.PARSE_DECLTYPES,
