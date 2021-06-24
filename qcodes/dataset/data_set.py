@@ -73,6 +73,7 @@ from qcodes.dataset.sqlite.queries import (
     remove_trigger,
     run_exists,
     set_run_timestamp,
+    update_export_info,
     update_parent_datasets,
     update_run_description,
 )
@@ -1626,7 +1627,7 @@ class DataSet(Sized):
         return self._export_info
 
     def _set_export_info(self, export_info: ExportInfo) -> None:
-        # todo write to db
+        update_export_info(self.conn, self.run_id, export_info.to_str())
         self._export_info = export_info
 
 
