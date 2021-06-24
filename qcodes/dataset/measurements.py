@@ -408,10 +408,10 @@ class DataSaver:
         toplevel_params = (set(self._interdeps.dependencies)
                            .intersection(set(results_dict)))
         for toplevel_param in toplevel_params:
-            required_shape = np.shape(results_dict[toplevel_param])
+            required_shape = np.shape(np.array(results_dict[toplevel_param]))
             for setpoint in self._interdeps.dependencies[toplevel_param]:
                 # a setpoint is allowed to be a scalar; shape is then ()
-                setpoint_shape = np.shape(results_dict[setpoint])
+                setpoint_shape = np.shape(np.array(results_dict[setpoint]))
                 if setpoint_shape not in [(), required_shape]:
                     raise ValueError(f'Incompatible shapes. Parameter '
                                      f"{toplevel_param.name} has shape "
