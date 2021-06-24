@@ -966,7 +966,7 @@ class _BaseParameter(Metadatable):
         return self._settable
 
     @property
-    def abstract(self) -> bool:
+    def abstract(self) -> Optional[bool]:
         return self._abstract
 
 

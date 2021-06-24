@@ -457,11 +457,11 @@ class Instrument(InstrumentBase, AbstractInstrument):
         if self._call_post_init:
             self.__post_init__(name, metadata)
 
-    def __init_subclass__(cls, **kwargs) -> None:
+    def __init_subclass__(cls, **kwargs: Any) -> None:
 
         original_init = cls.__init__
 
-        def __new_init__(self, *args, **sub_class_kwargs):
+        def __new_init__(self, *args: Any, **sub_class_kwargs: Any) -> None:
 
             # Call post init if `self._call_post_init`
             # is True
@@ -474,10 +474,9 @@ class Instrument(InstrumentBase, AbstractInstrument):
             if call_post_init:
                 self.__post_init__(*args, **sub_class_kwargs)
 
-        # See https://github.com/python/mypy/issues/2427
-        cls.__init__ = __new_init__  # type: ignore
+        cls.__init__ = __new_init__
 
-    def __post_init__(self, *args, **kwargs) -> None:
+    def __post_init__(self, *args: Any, **kwargs: Any) -> None:
         abstract_parameters = [
             parameter.name for parameter in self.parameters.values()
             if parameter.abstract

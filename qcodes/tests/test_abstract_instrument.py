@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from qcodes import Instrument
@@ -87,7 +89,9 @@ class VoltageSourceSubSub(VoltageSource):
     def __init__(self, name: str):
         super().__init__(name)
 
-    def __post_init__(self, name: str) -> None:
+    def __post_init__(
+            self, name: str, *args: Any, **kwargs: Any
+    ) -> None:
         super().__post_init__()
         self.call_count += 1
 
