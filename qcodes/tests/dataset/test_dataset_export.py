@@ -328,11 +328,15 @@ def test_export_to_xarray_extra_metadate_can_be_stored(mock_dataset, tmp_path):
 
     # check that the metadata in the qcodes dataset is roundtripped to the loaded
     # dataset
+    # export info is only set after the export so its not part of
+    # the exported metadata so skip it here.
     for key in mock_dataset.metadata.keys():
-        assert mock_dataset.metadata[key] == loaded_data.attrs[key]
+        if key != "export_info":
+            assert mock_dataset.metadata[key] == loaded_data.attrs[key]
     # check that the added metadata roundtrip correctly
     assert loaded_data.attrs["foo_metadata"] == json.dumps(nt_metadata)
     # check that all attrs roundtrip correctly within the xarray ds
+    data_as_xarray.attrs.pop("export_info")
     assert loaded_data.attrs == data_as_xarray.attrs
 
 
