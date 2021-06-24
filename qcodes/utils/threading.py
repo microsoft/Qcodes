@@ -8,6 +8,9 @@ from collections import defaultdict
 from typing import (
     Any, Callable, Dict, List, Optional, Sequence, TypeVar, Tuple, Union
 )
+import concurrent
+import concurrent.futures
+import itertools
 
 from qcodes.dataset.measurements import res_type
 from qcodes.instrument.parameter import ParamDataType, _BaseParameter
@@ -193,3 +196,25 @@ def process_params_meas(
         return call_params_threaded(param_meas)
 
     return _call_params(param_meas)
+
+
+_thread_pool = concurrent.futures.ThreadPoolExecutor(
+    thread_name_prefix="call_params"
+)
+
+
+def call_params_in_thread_pool(param_meas: Sequence[ParamMeasT]) -> OutType:
+    inst_param_mapping = _instrument_to_param(param_meas)
+    executors = tuple(
+        _ParamCaller(*param_list)
+        for param_list in inst_param_mapping.values()
+    )
+
+    output: OutType = list(itertools.chain.from_iterable(
+        future.result()
+        for future in concurrent.futures.as_completed(
+            _thread_pool.submit(executor) for executor in executors
+        )
+    ))
+
+    return output
