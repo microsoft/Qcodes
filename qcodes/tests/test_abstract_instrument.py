@@ -83,9 +83,9 @@ class VoltageSourceSubSub(VoltageSource):
 
 @pytest.fixture(scope="module")
 def driver():
-    driver = VoltageSource("driver")
-    yield driver
-    driver.close()
+    drvr = VoltageSource("driver")
+    yield drvr
+    drvr.close()
 
 
 def test_sanity(driver):
