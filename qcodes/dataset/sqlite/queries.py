@@ -80,7 +80,6 @@ RUNS_TABLE_COLUMNS = [
     "parent_datasets",
     "captured_run_id",
     "captured_counter",
-    "export_info",
 ]
 
 

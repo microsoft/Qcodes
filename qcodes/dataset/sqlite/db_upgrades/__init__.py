@@ -349,19 +349,3 @@ def perform_db_upgrade_8_to_9(conn: ConnectionPlus) -> None:
                 transaction(connection, _IX_runs_captured_run_id)
     else:
         raise RuntimeError(f"found {n_run_tables} runs tables expected 1")
-
-
-@upgrader
-def perform_db_upgrade_9_to_10(conn: ConnectionPlus) -> None:
-    """
-    Perform the upgrade from version 9 to version 10.
-
-    Add a new column to store info about where the dataset has been exported to.
-    """
-    with atomic(conn) as conn:
-        pbar = tqdm(range(1), file=sys.stdout)
-        pbar.set_description("Upgrading database; v9 -> v10")
-        # iterate through the pbar for the sake of the side effect; it
-        # prints that the database is being upgraded
-        for _ in pbar:
-            insert_column(conn, "runs", "export_info", "TEXT")
