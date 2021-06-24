@@ -40,3 +40,8 @@ def test_export_info_json_roundtrip(basic_export_info) -> None:
     exported_str = basic_export_info.to_str()
     loaded_export_info = ExportInfo.from_str(exported_str)
     assert loaded_export_info == basic_export_info
+
+
+def test_init_from_empty_str() -> None:
+    export_info = ExportInfo.from_str("")
+    assert export_info.export_paths == {}

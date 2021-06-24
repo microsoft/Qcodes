@@ -27,5 +27,8 @@ class ExportInfo:
 
     @classmethod
     def from_str(cls, string: str) -> "ExportInfo":
+        if string == "":
+            return cls({})
+
         datadict = json.loads(string)
         return cls(**datadict)
