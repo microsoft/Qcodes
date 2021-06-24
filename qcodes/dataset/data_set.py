@@ -58,7 +58,6 @@ from qcodes.dataset.sqlite.queries import (
     create_run,
     get_completed_timestamp_from_run_id,
     get_experiment_name_from_experiment_id,
-    get_export_info,
     get_guid_from_run_id,
     get_guids_from_run_spec,
     get_last_experiment,
@@ -74,7 +73,6 @@ from qcodes.dataset.sqlite.queries import (
     remove_trigger,
     run_exists,
     set_run_timestamp,
-    update_export_info,
     update_parent_datasets,
     update_run_description,
 )

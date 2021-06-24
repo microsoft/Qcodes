@@ -1424,19 +1424,6 @@ def update_parent_datasets(conn: ConnectionPlus,
         conn.cursor().execute(sql, (links_str, run_id))
 
 
-def update_export_info(conn: ConnectionPlus, run_id: int, expor_info: str) -> None:
-    """
-    Update (i.e. overwrite) the export_info field for the given run_id
-    """
-    sql = """
-          UPDATE runs
-          SET export_info = ?
-          WHERE run_id = ?
-          """
-    with atomic(conn) as conn:
-        conn.cursor().execute(sql, (expor_info, run_id))
-
-
 def set_run_timestamp(
     conn: ConnectionPlus, run_id: int, timestamp: Optional[float] = None
 ) -> None:
@@ -1684,33 +1671,6 @@ def get_run_description(conn: ConnectionPlus, run_id: int) -> str:
     """
     return select_one_where(conn, "runs", "run_description",
                             "run_id", run_id)
-
-
-def get_export_info(conn: ConnectionPlus, run_id: int) -> str:
-    """
-    Return the (JSON string) of the export_info for the
-    specified run. Returns an
-    """
-
-    # We cannot in general trust that NULLs will not appear in the column,
-    # even if the column is present in the runs table.
-
-    export_info_str: str
-    maybe_export_info_str: Optional[str]
-
-    if not is_column_in_table(conn, "runs", "export_info"):
-        maybe_export_info_str = None
-    else:
-        maybe_export_info_str = select_one_where(
-            conn, "runs", "export_info", "run_id", run_id
-        )
-
-    if maybe_export_info_str is None:
-        export_info_str = ""
-    else:
-        export_info_str = str(maybe_export_info_str)
-
-    return export_info_str
 
 
 def get_parent_dataset_links(conn: ConnectionPlus, run_id: int) -> str:
