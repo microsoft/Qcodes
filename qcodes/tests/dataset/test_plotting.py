@@ -268,7 +268,7 @@ def test__complex_to_real_preparser_complex_toplevel_param() -> None:
 
     data_out = _complex_to_real_preparser(data_in, conversion='real_and_imag')
 
-    assert np.shape(data_out) == (2, 2)
+    assert np.shape(np.array(data_out)) == (2, 2)
     assert data_out[0][0] == data_in[0][0]
 
     real_param = data_out[0][1]
@@ -336,7 +336,7 @@ def test__complex_to_real_preparser_complex_setpoint() -> None:
 
     data_out = _complex_to_real_preparser(data_in, conversion='real_and_imag')
 
-    assert np.shape(data_out) == (1, 3)
+    assert np.shape(np.array(data_out)) == (1, 3)
     assert data_out[0][-1] == data_in[0][-1]
 
     real_param = data_out[0][0]
