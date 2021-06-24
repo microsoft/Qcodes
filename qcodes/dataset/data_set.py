@@ -280,7 +280,7 @@ class DataSet(Sized):
                 get_parent_dataset_links(self.conn, self.run_id)
             )
             self._export_info = ExportInfo.from_str(
-                self.get_metadata("export_info") or ""
+                self.metadata.get("export_info", "")
             )
         else:
             # Actually perform all the side effects needed for the creation
