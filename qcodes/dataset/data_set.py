@@ -58,6 +58,7 @@ from qcodes.dataset.sqlite.queries import (
     create_run,
     get_completed_timestamp_from_run_id,
     get_experiment_name_from_experiment_id,
+    get_export_info,
     get_guid_from_run_id,
     get_guids_from_run_spec,
     get_last_experiment,
@@ -280,7 +281,9 @@ class DataSet(Sized):
             self._parent_dataset_links = str_to_links(
                 get_parent_dataset_links(self.conn, self.run_id)
             )
-            self._export_info = ExportInfo({})  # load from db
+            self._export_info = ExportInfo.from_str(
+                get_export_info(self.conn, self.run_id)
+            )
         else:
             # Actually perform all the side effects needed for the creation
             # of a new dataset. Note that a dataset is created (in the DB)
