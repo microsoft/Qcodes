@@ -134,6 +134,7 @@ class MyInstrumentDriver(qcodes.instrument.base.Instrument):
 
 
 class SubMyInstrumentDriver(MyInstrumentDriver):
+
     """
     Same as MyInstrumentDriver but overriding a parameter and adding a new one.
     """

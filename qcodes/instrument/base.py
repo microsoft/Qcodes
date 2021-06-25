@@ -525,7 +525,7 @@ A custom type to annotate the type hints of :obj:`qcodes.instrument.base.add_par
 """
 
 def add_parameter(method: Callable[[_ParamArgs], Any]) -> Callable[[_ParamArgs], Any]:
-    r"""
+    """
     Decorator function for adding parameters to instruments via method definitions.
 
     The decorator style has two main advantages:
@@ -610,7 +610,7 @@ def add_parameter(method: Callable[[_ParamArgs], Any]) -> Callable[[_ParamArgs],
             instr = MyInstrumentDriver(name="instr", init_freq=8)
             instr.freq(10)
             instr.print_readable_snapshot(update=True)
-            print("\ninstr.time.label: ", instr.time.label)
+            print("\\ninstr.time.label: ", instr.time.label)
 
         .. code-block:: python
 
@@ -635,7 +635,7 @@ def add_parameter(method: Callable[[_ParamArgs], Any]) -> Callable[[_ParamArgs],
             sub_instr = SubMyInstrumentDriver(name="sub_instr", init_freq=99)
             sub_instr.time(sub_instr.time() * 2)
             sub_instr.print_readable_snapshot(update=True)
-            print("\nsub_instr.time.label: ", sub_instr.time.label)
+            print("\\nsub_instr.time.label: ", sub_instr.time.label)
 
         .. code-block:: python
 

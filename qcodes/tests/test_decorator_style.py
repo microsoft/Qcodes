@@ -1,6 +1,4 @@
-"""
-Test suite for instrument.base.*
-"""
+"""Test suite for instrument.base.add_parameter and the decorator style."""
 import pytest
 import inspect
 
@@ -20,7 +18,7 @@ from qcodes.instrument_drivers.decorator_style import (
 )
 
 # pylint: disable=unused-import
-from .test_instrument import _close_before_and_after
+from .test_instrument import _close_before_and_after # noqa: F401
 
 def test_instanceattr():
     my_attr = InstanceAttr("_some_attribute")
