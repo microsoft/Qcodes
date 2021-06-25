@@ -183,7 +183,7 @@ def test_unknown_args_to_baseparameter_raises():
                            snapshotable=False)
 
 
-def test_underlying_instrument_for_layered_parameter():
+def test_underlying_instrument_for_virtual_parameter():
     p = GettableParam('base_param', vals=vals.Numbers())
     p._instrument = named_instrument
     vp = VirtualParameter('test_param', param=p)
