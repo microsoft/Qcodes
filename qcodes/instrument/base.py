@@ -114,24 +114,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 unit of the new parameter is inconsistent with the existing
                 one.
         """
-        existing_parameter = self.parameters.get(name, None)
-
-        if existing_parameter:
-
-            if not existing_parameter.abstract:
-                raise KeyError(f"Duplicate parameter name {name}")
-
-            existing_unit = getattr(existing_parameter, "unit", None)
-            new_unit = kwargs.get("unit", None)
-            if existing_unit != new_unit:
-                raise ValueError(
-                    f"The unit of the parameter '{name}' is '{new_unit}'. "
-                    f"This is inconsistent with the unit defined in the "
-                    f"base class"
-                )
-
-        param = parameter_class(name=name, instrument=self, **kwargs)
-        self.parameters[name] = param
+        parameter_class(name=name, instrument=self, **kwargs)
 
     def add_function(self, name: str, **kwargs: Any) -> None:
         """
