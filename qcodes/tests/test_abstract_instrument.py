@@ -2,7 +2,7 @@ from typing import Any
 
 import pytest
 
-from qcodes import ChannelList, Instrument, InstrumentChannel
+from qcodes import Instrument, InstrumentChannel
 from qcodes.instrument.base import InstrumentBase
 
 
