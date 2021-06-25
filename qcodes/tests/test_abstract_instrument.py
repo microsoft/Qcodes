@@ -2,7 +2,8 @@ from typing import Any
 
 import pytest
 
-from qcodes import Instrument
+from qcodes import ChannelList, Instrument, InstrumentChannel
+from qcodes.instrument.base import InstrumentBase
 
 
 class ExampleBaseVoltageSource(Instrument):
@@ -81,6 +82,28 @@ class VoltageSourceSubSub(VoltageSource):
         self.call_count += 1
 
 
+class VoltageChannelBase(InstrumentChannel):
+    """
+    Create a channel with an abstract parameter
+    """
+
+    def __init__(self, parent: InstrumentBase, name: str, **kwargs: Any):
+        super().__init__(parent, name, **kwargs)
+
+        self.add_parameter("voltage", unit="V", abstract=True)
+
+
+class VoltageChannel(VoltageChannelBase):
+    """
+    Create an implementation of the abstract channel
+    """
+
+    def __init__(self, parent: InstrumentBase, name: str, **kwargs: Any):
+        super().__init__(parent, name, **kwargs)
+
+        self.add_parameter("voltage", unit="V", get_cmd=None, set_cmd=None)
+
+
 @pytest.fixture(scope="module")
 def driver():
     drvr = VoltageSource("driver")
@@ -147,3 +170,15 @@ def test_subsub():
     """
     instance = VoltageSourceSubSub("driver5")
     assert instance.call_count == 1
+
+
+def test_channel(driver):
+    """
+    This should work without exceptions
+    """
+    VoltageChannel(driver, "driver6")
+
+    with pytest.raises(
+        NotImplementedError, match="has un-implemented Abstract Parameter"
+    ):
+        VoltageChannelBase(driver, "driver6")

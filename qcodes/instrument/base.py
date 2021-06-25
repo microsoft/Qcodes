@@ -45,6 +45,8 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             instrument's JSON snapshot.
     """
 
+    _call_post_init = True
+
     def __init__(self, name: str, metadata: Optional[Mapping[Any, Any]] = None) -> None:
         self._name = str(name)
         self._short_name = str(name)
@@ -73,6 +75,45 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         self._meta_attrs = ['name']
 
         self.log = get_instrument_logger(self, __name__)
+
+        if self._call_post_init:
+            self.__post_init__(name, metadata)
+
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+
+        original_init = cls.__init__
+
+        def __new_init__(
+            self: InstrumentBase, *args: Any, **sub_class_kwargs: Any
+        ) -> None:
+
+            # Call post init if `self._call_post_init`
+            # is True
+            call_post_init = self._call_post_init
+            # but prevent the init methods of
+            # base classes from also calling post init
+            self._call_post_init = False
+            original_init(self, *args, **sub_class_kwargs)
+
+            if call_post_init:
+                self.__post_init__(*args, **sub_class_kwargs)
+
+        cls.__init__ = __new_init__  # type: ignore
+
+    def __post_init__(self, *args: Any, **kwargs: Any) -> None:
+        abstract_parameters = [
+            parameter.name
+            for parameter in self.parameters.values()
+            if parameter.abstract
+        ]
+
+        if any(abstract_parameters):
+            cls_name = type(self).__name__
+
+            raise NotImplementedError(
+                f"Class '{cls_name}' has un-implemented Abstract Parameter(s): "
+                f"" + ", ".join([f"'{name}'" for name in abstract_parameters])
+            )
 
     @property
     def name(self) -> str:
@@ -111,7 +152,12 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 being added.
         """
         existing_parameter = self.parameters.get(name, None)
+
         if existing_parameter:
+
+            if not existing_parameter.abstract:
+                raise KeyError(f"Duplicate parameter name {name}")
+
             existing_unit = getattr(existing_parameter, "unit", None)
             new_unit = kwargs.get("unit", None)
             if existing_unit != new_unit:
@@ -439,7 +485,6 @@ class Instrument(InstrumentBase, AbstractInstrument):
     _all_instruments: "Dict[str, weakref.ref[Instrument]]" = {}
     _type = None
     _instances: "List[weakref.ref[Instrument]]" = []
-    _call_post_init = True
 
     def __init__(
             self,
@@ -454,42 +499,8 @@ class Instrument(InstrumentBase, AbstractInstrument):
         self.add_parameter('IDN', get_cmd=self.get_idn,
                            vals=Anything())
 
-        if self._call_post_init:
-            self.__post_init__(name, metadata)
-
-    def __init_subclass__(cls, **kwargs: Any) -> None:
-
-        original_init = cls.__init__
-
-        def __new_init__(self: Instrument, *args: Any, **sub_class_kwargs: Any) -> None:
-
-            # Call post init if `self._call_post_init`
-            # is True
-            call_post_init = self._call_post_init
-            # but prevent the init methods of
-            # base classes from also calling post init
-            self._call_post_init = False
-            original_init(self, *args, **sub_class_kwargs)
-
-            if call_post_init:
-                self.__post_init__(*args, **sub_class_kwargs)
-
-        cls.__init__ = __new_init__  # type: ignore
-
     def __post_init__(self, *args: Any, **kwargs: Any) -> None:
-        abstract_parameters = [
-            parameter.name for parameter in self.parameters.values()
-            if parameter.abstract
-        ]
-
-        if any(abstract_parameters):
-            cls_name = type(self).__name__
-
-            raise NotImplementedError(
-                f"Class '{cls_name}' has un-implemented Abstract Parameter(s): "
-                f"" + ", ".join([f"'{name}'" for name in abstract_parameters])
-            )
-
+        super().__post_init__(*args, **kwargs)
         self.record_instance(self)
 
     def get_idn(self) -> Dict[str, Optional[str]]:
