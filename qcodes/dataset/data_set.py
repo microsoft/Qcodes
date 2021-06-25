@@ -1612,7 +1612,8 @@ class DataSet(Sized):
             prefix=prefix
         )
         export_info = self.export_info
-        export_info.export_paths[export_type.value] = self._export_path
+        if self._export_path is not None:
+            export_info.export_paths[export_type.value] = self._export_path
 
         self._set_export_info(export_info)
 
