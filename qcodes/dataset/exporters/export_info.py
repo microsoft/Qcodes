@@ -2,6 +2,7 @@
 This module defines the ExportInfo dataclass
 """
 import json
+import warnings
 from dataclasses import asdict, dataclass
 from typing import Dict
 
@@ -17,9 +18,9 @@ class ExportInfo:
         allowed_keys = tuple(a.value for a in DataExportType)
         for key in self.export_paths.keys():
             if key not in allowed_keys:
-                raise TypeError(
-                    f"The allowed keys for export type are: {allowed_keys}. Got {key} "
-                    f"which is not in the allowed list"
+                warnings.warn(
+                    f"The supported export types are: {allowed_keys}. Got {key} "
+                    f"which is not supported"
                 )
 
     def to_str(self) -> str:

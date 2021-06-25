@@ -1,3 +1,4 @@
+import warnings
 from typing import Generator
 
 import pytest
@@ -31,8 +32,8 @@ def test_export_info_basic() -> None:
 def test_invalid_key_raises() -> None:
     nd_path = "D:\\data\\33.nd"
 
-    with pytest.raises(TypeError, match="The allowed keys for export type are"):
-        a = ExportInfo({"nd": nd_path})
+    with pytest.warns(Warning, match="The supported export types are"):
+        _ = ExportInfo({"nd": nd_path})
 
 
 def test_export_info_json_roundtrip(basic_export_info) -> None:
