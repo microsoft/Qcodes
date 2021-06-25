@@ -24,5 +24,6 @@ class Weinschel_8320(VisaInstrument):
             instrument=self,
             get_parser=float,
         )
+        """Control the attenuation"""
 
         self.connect_message()
