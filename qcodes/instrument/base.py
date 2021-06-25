@@ -481,20 +481,6 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                     kw_name: kwarg_to_attr(self, kw_name, kw_value.default, param_name)
                     for kw_name, kw_value in inspect.signature(meth).parameters.items()
                 }
-                if "docstring" in kwargs:
-                    raise RuntimeError(
-                        f"Failed to add parameter {param_name!r}.\n"
-                        f"`docstring` kwarg was provided to {meth.__name__!r} method. "
-                        f"Write the docstring under {meth.__name__!r} and it will be "
-                        f"be passed to the {param_name!r} constructor automatically."
-                    )
-                if "name" in kwargs:
-                    raise RuntimeError(
-                        f"Failed to add parameter {param_name!r}.\n"
-                        f"`name` kwarg was provided to {meth.__name__!r} method. "
-                        f"The parameter name is obtained from {meth.__name__!r} name. "
-                        f"Do not specify it manually."
-                    )
                 self.add_parameter(
                     name=param_name,
                     docstring=meth.__doc__,
@@ -564,6 +550,11 @@ def add_parameter(method: Callable[[_ParamArgs], Any]) -> Callable[[_ParamArgs],
 
     Args:
         method: The method to be flagged to be converted to a parameter.
+
+    Raises:
+        ValueError: The name of the decorated method does not have the correct prefix.
+        RuntimeError: :code:`name` or :code:`docstring` is specified in the signature of
+            the decorated method.
 
     Examples:
 
@@ -663,6 +654,20 @@ def add_parameter(method: Callable[[_ParamArgs], Any]) -> Callable[[_ParamArgs],
         raise ValueError(
             f"Only methods prefixed with {_DECORATED_METHOD_PREFIX!r} can be decorated "
             f"with `add_parameter` decorator."
+        )
+
+    method_kwargs = inspect.signature(method).parameters
+    if "docstring" in method_kwargs:
+        raise RuntimeError(
+            f"`docstring` kwarg was provided to {method.__name__!r} method. "
+            f"Write the docstring under {method.__name__!r} and it will be "
+            f"be passed to `self.add_parameter` automatically."
+        )
+    if "name" in method_kwargs:
+        raise RuntimeError(
+            f"`name` kwarg was provided to {method.__name__!r} method. "
+            f"The parameter name is obtained from {method.__name__!r} name. "
+            f"Do not specify it manually."
         )
 
     @wraps(method)
