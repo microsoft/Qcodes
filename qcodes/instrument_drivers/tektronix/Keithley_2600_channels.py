@@ -216,14 +216,20 @@ class _ParameterWithStatus(Parameter):
 
 class _MeasurementCurrentParameter(_ParameterWithStatus):
 
+    def __init__(self, *args: Any, **kwargs: Any):
+        super().__init__(*args, **kwargs)
+
     def _meas_status(self) -> None:
         smu = self.instrument
-        channel = self.instrument.name
+        channel = self.instrument.channel
 
         meas_status = smu.ask(f'status.measurement.instrument.'
                               f'{channel}.enable = measurementRegister')
 
-        status_bits = [int(i) for i in bin(meas_status).replace('0b', '')[::-1]]
+        status_bits = [int(i) for i in bin(
+            int(meas_status)
+        ).replace('0b', '').zfill(16)[::-1]]
+
         if status_bits[1]:
             self._measurement_status = 'Current compliance is hit.'
         else:
@@ -231,7 +237,7 @@ class _MeasurementCurrentParameter(_ParameterWithStatus):
 
     def get_raw(self) -> ParamRawDataType:
         smu = self.instrument
-        channel = self.instrument.name
+        channel = self.instrument.channel
 
         value = float(smu.ask(f'{channel}.measure.i()'))
 
