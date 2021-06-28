@@ -221,6 +221,8 @@ class _MeasurementCurrentParameter(_ParameterWithStatus):
 
     def _meas_status(self) -> None:
         smu = self.instrument
+        assert isinstance(smu, KeithleyChannel)
+
         channel = self.instrument.channel
 
         meas_status = smu.ask(f'status.measurement.instrument.'
@@ -237,6 +239,8 @@ class _MeasurementCurrentParameter(_ParameterWithStatus):
 
     def get_raw(self) -> ParamRawDataType:
         smu = self.instrument
+        assert isinstance(smu, KeithleyChannel)
+
         channel = self.instrument.channel
 
         value = float(smu.ask(f'{channel}.measure.i()'))
