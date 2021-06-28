@@ -185,6 +185,10 @@ devices:
         r: '2601B'
       - q: 'print(localnode.linefreq)'
         r: 50
+      - q: 'print(status.measurement.instrument.smua.enable = measurementRegister)'
+        r: 0
+      - q: 'print(status.measurement.instrument.smub.enable = measurementRegister)'
+        r: 0
 
 resources:
   GPIB::1::INSTR:
