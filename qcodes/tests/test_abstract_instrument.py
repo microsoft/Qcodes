@@ -104,8 +104,8 @@ class VoltageChannel(VoltageChannelBase):
         self.add_parameter("voltage", unit="V", get_cmd=None, set_cmd=None)
 
 
-@pytest.fixture(scope="module")
-def driver():
+@pytest.fixture(name="driver", scope="module")
+def _driver():
     drvr = VoltageSource("driver")
     yield drvr
     drvr.close()
