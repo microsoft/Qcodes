@@ -70,7 +70,7 @@ requests~=2.25.1
 requirements-parser~=0.2.0
 rsa~=4.7
 ruamel.yaml==0.17.10
-ruamel.yaml.clib~=0.2.2
+ruamel.yaml.clib~=0.2.4
 schema~=0.7.4
 Send2Trash~=1.7.1
 six~=1.16.0
