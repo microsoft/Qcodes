@@ -187,6 +187,9 @@ def test_export_netcdf(tmp_path_factory, mock_dataset):
     assert df.y.values.tolist() == [1.0]
     assert df.z.values.tolist() == [2.0]
 
+    assert mock_dataset.export_info.export_paths["nc"] == file_path
+    assert mock_dataset._export_path is not None
+
 
 @pytest.mark.usefixtures("experiment")
 def test_export_netcdf_complex_data(tmp_path_factory, mock_dataset_complex):
