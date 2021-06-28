@@ -40,7 +40,7 @@ typing-extensions==3.10.0.0
 types_requests==2.25.0
 types-setuptools==57.0.0
 types-tabulate==0.1.1
-urllib3==1.26.5
+urllib3==1.26.6
 wincertstore==0.2
 wrapt==1.12.1
 zipp==3.4.1
