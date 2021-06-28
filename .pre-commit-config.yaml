@@ -18,7 +18,7 @@ repos:
       args: ['--py37-plus', '--keep-runtime-typing']
       exclude: _version.py|versioneer.py
   - repo: https://github.com/akaihola/darker
-    rev: 1.2.3
+    rev: 1.2.4
     hooks:
       -   id: darker
           args: [-i]
