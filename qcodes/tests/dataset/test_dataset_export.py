@@ -192,6 +192,26 @@ def test_export_netcdf(tmp_path_factory, mock_dataset):
 
 
 @pytest.mark.usefixtures("experiment")
+def test_export_netcdf_csv(tmp_path_factory, mock_dataset):
+    tmp_path = tmp_path_factory.mktemp("export_netcdf")
+    path = str(tmp_path)
+    csv_path = os.path.join(path, f"qcodes_{mock_dataset.run_id}.csv")
+    nc_path = os.path.join(path, f"qcodes_{mock_dataset.run_id}.nc")
+
+    mock_dataset.export(export_type="netcdf", path=path, prefix="qcodes_")
+    mock_dataset.export(export_type="csv", path=path, prefix="qcodes_")
+
+    assert mock_dataset.export_info.export_paths["nc"] == nc_path
+    assert mock_dataset.export_info.export_paths["csv"] == csv_path
+
+    mock_dataset.export(export_type="netcdf", path=path, prefix="foobar_")
+    nc_path = os.path.join(path, f"foobar_{mock_dataset.run_id}.nc")
+
+    assert mock_dataset.export_info.export_paths["nc"] == nc_path
+    assert mock_dataset.export_info.export_paths["csv"] == csv_path
+
+
+@pytest.mark.usefixtures("experiment")
 def test_export_netcdf_complex_data(tmp_path_factory, mock_dataset_complex):
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
     path = str(tmp_path)
