@@ -1,4 +1,3 @@
-import warnings
 from typing import Generator
 
 import pytest

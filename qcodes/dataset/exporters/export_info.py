@@ -1,6 +1,4 @@
-"""
-This module defines the ExportInfo dataclass
-"""
+"""This module defines the ExportInfo dataclass"""
 import json
 import warnings
 from dataclasses import asdict, dataclass
@@ -15,6 +13,7 @@ class ExportInfo:
     export_paths: Dict[str, str]
 
     def __post_init__(self) -> None:
+        """Verify that keys used in export_paths are as expected"""
         allowed_keys = tuple(a.value for a in DataExportType)
         for key in self.export_paths.keys():
             if key not in allowed_keys:
