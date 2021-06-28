@@ -220,9 +220,9 @@ class _MeasurementCurrentParameter(_ParameterWithStatus):
         super().__init__(*args, **kwargs)
 
     def _meas_status(self) -> None:
-        smu = self.instrument
-        assert isinstance(smu, KeithleyChannel)
+        assert isinstance(self.instrument, KeithleyChannel)
 
+        smu = self.instrument
         channel = self.instrument.channel
 
         meas_status = smu.ask(f'status.measurement.instrument.'
@@ -238,9 +238,9 @@ class _MeasurementCurrentParameter(_ParameterWithStatus):
             self._measurement_status = 'Measurement status normal.'
 
     def get_raw(self) -> ParamRawDataType:
-        smu = self.instrument
-        assert isinstance(smu, KeithleyChannel)
+        assert isinstance(self.instrument, KeithleyChannel)
 
+        smu = self.instrument
         channel = self.instrument.channel
 
         value = float(smu.ask(f'{channel}.measure.i()'))
