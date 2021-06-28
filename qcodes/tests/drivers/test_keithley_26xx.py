@@ -47,6 +47,8 @@ def test_smu_channels_and_their_parameters(driver):
         smu.curr(1.0)
         assert 1.0 == smu.curr()
 
+        assert smu.curr.measurement_status == 'Measurement status normal.'
+
         assert 0.0 == smu.res()
 
         assert 'current' == smu.mode()
