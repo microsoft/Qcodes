@@ -263,7 +263,11 @@ class _BaseParameter(Metadatable):
             JSON snapshot of the parameter
 
         abstract: Specifies if this parameter is abstract or not. Default
-            is False
+            is False. If the parameter is 'abstract', it *must* be overridden
+            by a non-abstract parameter before the instrument containing
+            this parameter can be instantiated. We override a parameter by
+            adding one with the same name and unit. An abstract parameter
+            can be added in a base class and overridden in a subclass.
     """
 
     def __init__(
