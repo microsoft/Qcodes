@@ -1,17 +1,18 @@
 import logging
 import struct
 import warnings
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
 
 import numpy as np
 
-import qcodes as qc
 import qcodes.utils.validators as vals
 from qcodes import VisaInstrument
 from qcodes.data.data_set import DataSet
 from qcodes.instrument.base import Instrument, Parameter
 from qcodes.instrument.channel import InstrumentChannel
-from qcodes.instrument.parameter import ArrayParameter, ParameterWithSetpoints
+from qcodes.instrument.parameter import (
+    ArrayParameter, ParameterWithSetpoints, ParamRawDataType
+)
 from qcodes.measure import Measure
 from qcodes.utils.helpers import create_on_off_val_mapping
 
@@ -190,6 +191,55 @@ class TimeAxis(Parameter):
         return np.linspace(0, dt*npts, npts, endpoint=False)
 
 
+class _ParameterWithStatus(Parameter):
+    def __init__(self, *args: Any, **kwargs: Any):
+        super().__init__(*args, **kwargs)
+
+        self._measurement_status: Optional[str] = None
+
+    @property
+    def measurement_status(self) -> Optional[str]:
+        return self._measurement_status
+
+    def snapshot_base(self, update: Optional[bool] = True,
+                      params_to_skip_update: Optional[Sequence[str]] = None
+                      ) -> Dict[Any, Any]:
+        snapshot = super().snapshot_base(
+            update=update, params_to_skip_update=params_to_skip_update
+        )
+
+        if self._snapshot_value:
+            snapshot["measurement_status"] = self.measurement_status
+
+        return snapshot
+
+
+class _MeasurementCurrentParameter(_ParameterWithStatus):
+
+    def _meas_status(self) -> None:
+        smu = self.instrument
+        channel = self.instrument.name
+
+        meas_status = smu.ask(f'status.measurement.instrument.'
+                              f'{channel}.enable = measurementRegister')
+
+        status_bits = [int(i) for i in bin(meas_status).replace('0b', '')[::-1]]
+        if status_bits[1]:
+            self._measurement_status = 'Current compliance is hit.'
+        else:
+            self._measurement_status = 'Measurement status normal.'
+
+    def get_raw(self) -> ParamRawDataType:
+        smu = self.instrument
+        channel = self.instrument.name
+
+        value = float(smu.ask(f'{channel}.measure.i()'))
+
+        self._meas_status()
+
+        return value
+
+
 class KeithleyChannel(InstrumentChannel):
     """
     Class to hold the two Keithley channels, i.e.
@@ -227,11 +277,11 @@ class KeithleyChannel(InstrumentChannel):
                            unit='V')
 
         self.add_parameter('curr',
-                           get_cmd=f'{channel}.measure.i()',
-                           get_parser=float,
+                           parameter_class=_MeasurementCurrentParameter,
                            set_cmd=f'{channel}.source.leveli={{:.12f}}',
                            label='Current',
-                           unit='A')
+                           unit='A',
+                           snapshot_get=False)
 
         self.add_parameter('res',
                            get_cmd=f'{channel}.measure.r()',
