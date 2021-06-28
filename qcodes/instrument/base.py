@@ -15,7 +15,10 @@ from typing import (
     Type,
     Union,
     cast,
+    TypeVar
 )
+from functools import wraps
+import inspect
 
 import numpy as np
 
@@ -74,6 +77,12 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
         self.log = get_instrument_logger(self, __name__)
 
+        if getattr(self, "_call_add_params_from_decorated_methods", True):
+            # setting self._call_add_params_from_decorated_methods=False before calling
+            # `super().__init__()` gives more control in driver whose parameters require
+            # information available only in the `__init__()` of a driver.
+            self._add_params_from_decorated_methods()
+
     @property
     def name(self) -> str:
         """Name of the instrument"""
@@ -88,6 +97,16 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                       parameter_class: type = Parameter, **kwargs: Any) -> None:
         """
         Bind one Parameter to this instrument.
+
+        .. note::
+
+            QCoDeS provides also a decorator-style for adding parameters using the
+            :func:`@add_parameter <qcodes.instrument.base.add_parameter>` decorator
+            function.
+            This function will be called internally, when instantiating an instrument,
+            for each parameter added with the decorator style.
+            See the :func:`qcodes.instrument.base.add_parameter` docs for usage
+            examples.
 
         Instrument subclasses can call this repeatedly in their ``__init__``
         for every real parameter of the instrument.
@@ -400,6 +419,275 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 if verbose:
                     print(f'validate_status: param {k}: {value}')
                 p.validate(value)
+
+    def _add_params_from_decorated_methods(self) -> None:
+        """
+        Transforms methods decorated with `@add_parameter` into actual parameters and
+        uses :meth:`qcodes.instrument.base.Instrument.add_parameter` to add them to
+        this instrument.
+
+        Intended to be called in the `__init__()` of `InstrumentBase` or in a driver
+        subclass.
+
+        .. seealso::
+
+            - :obj:`qcodes.instrument.base.add_parameter`
+            - :obj:`qcodes.instrument.base.InstanceAttr`
+
+        """
+
+        def kwarg_to_attr(
+            self, kwarg_name: str, kwarg_value: Any, param_name: str
+        ) -> Any:
+            """
+            Returns the attribute that has the name `kwarg_value.attr_name`
+            of this Instrument instance if the `kwarg_value` is of type `InstanceAttr`,
+            otherwise just returns the `kwarg_value`.
+
+            Args:
+                kwarg_name: The name of the kwarg used in the definition of the
+                    method decorated with `@add_parameter`. Only necessary for raising
+                    informative exceptions.
+                kwarg_value: The default value of the kwarg used in the definition of
+                    the method decorated with `@add_parameter`.
+                param_name: The name of the parameter that is to be added. Only
+                    necessary for raising informative exceptions.
+
+            Raises:
+                AttributeError: When the `self` does not have the attribute the user
+                    expected the Instrument instance to have.
+            """
+            if isinstance(kwarg_value, InstanceAttr):
+                if not hasattr(self, kwarg_value.attr_name):
+                    raise AttributeError(
+                        f"Failed to determine the value of {kwarg_name!r} when creating"
+                        f" the {param_name!r} parameter.\nInstance {self} does not have"
+                        f" an attribute named {kwarg_value.attr_name!r}.\n"
+                        f"Make sure the {kwarg_value.attr_name!r} attribute exist when "
+                        "`self._add_params_from_decorated_methods()` is called."
+                    )
+                return getattr(self, kwarg_value.attr_name)
+            return kwarg_value
+
+        # decorated methods are required to have a specific prefix
+        has_parameter_prefix = lambda s: s.startswith(_DECORATED_METHOD_PREFIX)
+
+        for obj_name in filter(has_parameter_prefix, dir(self)):
+            meth = getattr(self, obj_name)
+            # the `@add_parameter` decorator adds an attribute we check for here
+            if hasattr(meth, _ADD_PARAMETER_ATTR_NAME):
+                param_name = meth.__name__[len(_DECORATED_METHOD_PREFIX):]
+                kwargs = {
+                    kw_name: kwarg_to_attr(self, kw_name, kw_value.default, param_name)
+                    for kw_name, kw_value in inspect.signature(meth).parameters.items()
+                }
+                self.add_parameter(
+                    name=param_name,
+                    docstring=meth.__doc__,
+                    **kwargs,
+                )
+
+
+class InstanceAttr:
+    """
+    An auxiliary class to be used together with the
+    :func:`@add_parameter <qcodes.instrument.base.add_parameter>` decorator to allow
+    adding parameters that require information available only during the
+    :code:`__init__()` of an Instrument subclass.
+    """
+    def __init__(self, attr_name: str) -> None:
+        """Instantiates the class and saves the passed in :code:`attr_name`."""
+        self.attr_name: str = attr_name
+
+    def __repr__(self) -> str:
+        """Returns a formatted string the with class name and :code:`self.attr_name`."""
+        return f"{self.__class__.__name__}({self.attr_name!r})"
+
+
+_DECORATED_METHOD_PREFIX = "_parameter_"
+"""
+A constant defining the prefix of the methods on which the
+:func:`@add_parameter <qcodes.instrument.base.add_parameter>` decorator can be used.
+The intention is to keep the name of these methods fairly unique and private to avoid
+any foreseeable clash.
+"""
+
+_ADD_PARAMETER_ATTR_NAME = "_add_parameter"
+"""
+A constant defining the name of the attribute set by the
+:func:`@add_parameter <qcodes.instrument.base.add_parameter>` decorator to flag a method
+that will be converted to parameter.
+"""
+
+_ParamArgs = TypeVar("_ParamArgs")
+"""
+A custom type to annotate the type hints of :obj:`qcodes.instrument.base.add_parameter`.
+"""
+
+def add_parameter(method: Callable[[_ParamArgs], Any]) -> Callable[[_ParamArgs], Any]:
+    """
+    Decorator function for adding parameters to instruments via method definitions.
+
+    The decorator style has two main advantages:
+    (1) Allow one to override inherited parameters without interacting with instrument's
+    parameters dictionary.; and
+    (2) Allow one to document parameters of instruments using the
+    :mod:`qcodes.sphinx_extensions.add_parameter` sphinx extension.
+
+    Intended to be used to decorate a method of an
+    :class:`~qcodes.instrument.base.InstrumentBase` subclass. The information contained
+    in the definition of the decorated method will be processed by
+    :func:`!qcodes.instrument.base.InstrumentBase._add_params_from_decorated_methods`
+    and passed to :meth:`qcodes.instrument.base.InstrumentBase.add_parameter`.
+
+    :func:`!qcodes.instrument.base.InstrumentBase._add_params_from_decorated_methods`
+    can be called directly in the instrument's ``__init__`` or,
+    if ``self._call_add_params_from_decorated_methods``
+    attribute is not defined (default behavior) or it is set to ``True`` before the call
+    to superclass' ``__init__``, then
+    :func:`!qcodes.instrument.base.InstrumentBase._add_params_from_decorated_methods`
+    will be called as part of the superclass' ``__init__``.
+
+    Args:
+        method: The method to be flagged to be converted to a parameter.
+
+    Raises:
+        ValueError: The name of the decorated method does not have the correct prefix.
+        RuntimeError: :code:`name` or :code:`docstring` is specified in the signature of
+            the decorated method.
+
+    Examples:
+
+        An instrument with a :class:`~qcodes.instrument.parameter.ManualParameter`:
+
+        .. literalinclude:: ../../../qcodes/instrument_drivers/decorator_style.py
+            :pyobject: ManualInstrument
+
+        The parameters will be added to the instrument only during its
+        :code:`__init__`. This means that when using this style for adding parameters we
+        do not have access to the :code:`self` object. As a workaround the class
+        :class:`qcodes.instrument.base.InstanceAttr` can be used to reference an
+        attribute that is expected to be available when the instrument is initialized:
+
+        .. literalinclude:: ../../../qcodes/instrument_drivers/decorator_style.py
+            :pyobject: InstrumentWithCmds
+
+        In some cases you might need more control over when exactly the parameters
+        should be added to the instrument, e.g., when some information needed to create
+        the parameters is know only when an instance of the Instrument is created:
+
+        .. literalinclude:: ../../../qcodes/instrument_drivers/decorator_style.py
+            :pyobject: InstrumentWithInitValue
+
+        Which will be instantiated as
+
+        .. nbinput:: ipython3
+            :execution-count: 1
+
+            from qcodes.instrument_drivers.decorator_style import InstrumentWithInitValue
+            instr = InstrumentWithInitValue(name="my_instr", some_arg=123)
+            instr.print_readable_snapshot(update=True)
+
+        .. code-block:: python
+
+            my_instr:
+                parameter value
+            ----------------------------------------------------------------------------
+            IDN  :
+                {'vendor': None, 'model': 'my_instr', 'serial': None, 'firmware': None}
+            time :  123 (s)
+
+        **Inheritance and overriding parameters:**
+
+        .. literalinclude:: ../../../qcodes/instrument_drivers/decorator_style.py
+            :pyobject: MyInstrumentDriver
+
+        .. nbinput:: ipython3
+            :execution-count: 2
+
+            from qcodes.instrument_drivers.decorator_style import MyInstrumentDriver
+
+            instr = MyInstrumentDriver(name="instr", init_freq=8)
+            instr.freq(10)
+            instr.print_readable_snapshot(update=True)
+            print("\\ninstr.time.label: ", instr.time.label)
+
+        .. code-block:: python
+
+            instr:
+                parameter value
+            ----------------------------------------------------------------------------
+            IDN  :
+                {'vendor': None, 'model': 'instr', 'serial': None, 'firmware': None}
+            freq :  10 (Hz)
+            time :  3 (s)
+
+            instr.time.label:  Time
+
+        .. literalinclude:: ../../../qcodes/instrument_drivers/decorator_style.py
+            :pyobject: SubMyInstrumentDriver
+
+        .. nbinput:: ipython3
+            :execution-count: 3
+
+            from qcodes.instrument_drivers.decorator_style import SubMyInstrumentDriver
+
+            sub_instr = SubMyInstrumentDriver(name="sub_instr", init_freq=99)
+            sub_instr.time(sub_instr.time() * 2)
+            sub_instr.print_readable_snapshot(update=True)
+            print("\\nsub_instr.time.label: ", sub_instr.time.label)
+
+        .. code-block:: python
+
+            sub_instr:
+                parameter value
+            ----------------------------------------------------------------------------
+            IDN       :
+                {'vendor': None, 'model': 'sub_instr', 'serial': None, 'firmware'...
+            amplitude : 0 (V)
+            freq      : 99 (Hz)
+            time      : 14 (s)
+
+            sub_instr.time.label:  Time long
+    """  # pylint: disable=line-too-long
+    if not method.__name__.startswith(_DECORATED_METHOD_PREFIX):
+        raise ValueError(
+            f"Only methods prefixed with {_DECORATED_METHOD_PREFIX!r} can be decorated "
+            f"with `add_parameter` decorator."
+        )
+
+    method_kwargs = inspect.signature(method).parameters
+    if "docstring" in method_kwargs:
+        raise RuntimeError(
+            f"`docstring` kwarg was provided to {method.__name__!r} method. "
+            f"Write the docstring under {method.__name__!r} and it will be "
+            f"be passed to `self.add_parameter` automatically."
+        )
+    if "name" in method_kwargs:
+        raise RuntimeError(
+            f"`name` kwarg was provided to {method.__name__!r} method. "
+            f"The parameter name is obtained from {method.__name__!r} name. "
+            f"Do not specify it manually."
+        )
+
+    @wraps(method)
+    def kwargs_and_doc_container(self, *args: Any, **kwargs: Any) -> None:
+        """
+        Auxiliary function that serves as a container of information.
+
+        Raises:
+            RuntimeError: Always.
+        """
+        raise RuntimeError(
+            f"Method not intended to be called.\n"
+            f"{method.__name__!r} is a special method used as information container "
+            f"for creating and assigning parameters to {self}."
+        )
+
+    # special attribute to flag method for conversion to parameter
+    setattr(kwargs_and_doc_container, _ADD_PARAMETER_ATTR_NAME, True)
+
+    return kwargs_and_doc_container
 
 
 class AbstractInstrument(ABC):

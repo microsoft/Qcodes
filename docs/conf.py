@@ -46,7 +46,7 @@ extensions = ['nbsphinx', 'sphinx.ext.autodoc', 'sphinx.ext.autosummary',
               'sphinx.ext.intersphinx', 'sphinx.ext.todo',
               'sphinx.ext.coverage', 'sphinx.ext.mathjax',
               'sphinx.ext.viewcode', 'sphinx.ext.githubpages',
-              'sphinx.ext.todo']
+              'sphinx.ext.todo', "qcodes.sphinx_extensions.add_parameter"]
 
 # include special __xxx__ that DO have a docstring
 # it probably means something important

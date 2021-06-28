@@ -25,6 +25,7 @@ QCoDeS API
    monitor/index
    station
    utils/index
+   sphinx_extensions/index
 
 Legacy API
 ----------
