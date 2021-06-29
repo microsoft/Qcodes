@@ -120,8 +120,6 @@ class DataSetInMem(DataSetProtocol, Sized):
             sample_name = get_sample_name_from_experiment_id(conn, exp_id)
             exp_name = get_experiment_name_from_experiment_id(conn, exp_id)
             guid = generate_guid()
-            # todo replace with a better function that
-            #  does not put in the results table name
 
             run_counter, run_id, __ = create_run(
                 conn, exp_id, name, guid=guid, parameters=None, create_run_table=False
@@ -392,9 +390,17 @@ class DataSetInMem(DataSetProtocol, Sized):
             tag: represents the key in the metadata dictionary
             metadata: actual metadata
         """
-        # todo this never commits the data to sqlite do we want that
-        # it also never updates any exported netcdf file
+        from qcodes.dataset.sqlite.connection import atomic
+        from qcodes.dataset.sqlite.database import conn_from_dbpath_or_conn
+        from qcodes.dataset.sqlite.queries import add_meta_data
         self._metadata[tag] = metadata
+        conn = conn_from_dbpath_or_conn(conn=None, path_to_db=self._path_to_db)
+
+        try:
+            with atomic(self.conn) as conn:
+                add_meta_data(conn, self.run_id, {tag: metadata})
+        finally:
+            conn.close()
 
     @property
     def metadata(self) -> Dict[str, Any]:
@@ -518,6 +524,7 @@ class DataSetInMem(DataSetProtocol, Sized):
         Args:
             links: The links to assign to this dataset
         """
+        # todo write to db
         if not self.pristine:
             raise RuntimeError(
                 "Can not set parent dataset links on a dataset "
@@ -545,6 +552,7 @@ class DataSetInMem(DataSetProtocol, Sized):
         optionally the shapes object that holds information about
         the shape of the data to be measured.
         """
+        # todo write to db
         if not isinstance(interdeps, InterDependencies_):
             raise TypeError(
                 "Wrong input type. Expected InterDepencies_, " f"got {type(interdeps)}"
