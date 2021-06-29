@@ -16,7 +16,7 @@ class ParameterWithThreadKnowledge(Parameter):
         super().__init__(*args, **kwargs)
 
     def get_raw(self) -> ParamRawDataType:
-        return threading.currentThread().ident
+        return threading.get_ident()
 
 
 @pytest.fixture(name='dummy_1', scope='function')
