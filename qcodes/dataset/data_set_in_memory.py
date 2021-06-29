@@ -124,7 +124,7 @@ class DataSetInMem(DataSetProtocol, Sized):
             #  does not put in the results table name
 
             run_counter, run_id, __ = create_run(
-                conn, exp_id, name, guid=guid, parameters=None
+                conn, exp_id, name, guid=guid, parameters=None, create_run_table=False
             )
 
             ds = cls(
