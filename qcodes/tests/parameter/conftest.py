@@ -151,7 +151,7 @@ class VirtualParameter(Parameter):
         super().__init__(name=name, **kwargs)
 
     @property
-    def underlying_instrument(self) -> Optional['InstrumentBase']:
+    def underlying_instrument(self) -> Optional[InstrumentBase]:
         return self._param.instrument
 
     def get_raw(self):
