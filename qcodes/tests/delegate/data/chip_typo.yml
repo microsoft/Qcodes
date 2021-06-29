@@ -5,7 +5,6 @@ instruments:
       submodules_type: qcodes.instrument.delegate.DelegateInstrument
       submodules:
         device1:
-          parameters:
             gate: dac.ch01.voltage
             source:
               - lockin.frequency
@@ -26,13 +25,10 @@ instruments:
           parameters:
             readout: lockin.phase
           channels:
+            type: qcodes.tests.instrument_mocks.MockCustomChannel
             gate_1:
               channel: dac.ch01
-              type: qcodes.tests.instrument_mocks.MockCustomChannel
               current_valid_range: [-0.5, 0]
-            fast_gate:
-              channel: dac.ch02
-              type: qcodes.tests.instrument_mocks.DummyChannel
 
       set_initial_values_on_load: true
       initial_values:
@@ -44,34 +40,3 @@ instruments:
           gate_1.voltage.post_delay: 0.01
         channel_device_custom:
           readout: 1e-5
-
-  field:
-    type: qcodes.instrument.delegate.DelegateInstrument
-    init:
-      parameters:
-        X: field_x.field
-        ramp_rate: field_x.ramp_rate
-        ramp_X:
-          - field_x.ramp_rate
-          - field_x.field
-      set_initial_values_on_load: true
-      initial_values:
-        ramp_rate: 0.02
-      setters:
-        X:
-          method: field_x.set_field
-          block: false
-      units:
-        X: T
-        ramp_rate: T/min
-
-  switch:
-    type: qcodes.instrument.delegate.DelegateChannelInstrument
-    init:
-      channels: dac.channels
-      parameters:
-        state:
-          - dac_output
-          - smc
-          - gnd
-          - bus
