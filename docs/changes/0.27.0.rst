@@ -1,0 +1,35 @@
+Changelog for QCoDeS 0.27.0
+===========================
+
+The June 2021 release of QCoDeS.
+
+-----------------
+Breaking Changes:
+-----------------
+
+- DelegateInstrument takes `parameters` as an optional, keyworded input argument. Any arguments passed as positional arguments after this one will break with this change (#3089).
+
+----
+New:
+----
+
+- The default value for `default_parameter_name` in the Loop QCoDeS dataset changed from ``amplitude`` to ``None``.
+  The ``amplitude`` value interferes with datasets where one of the setpoint arrays is called `amplitude`. (#3095)
+
+---------
+Improved:
+---------
+
+- DelegateInstrument can now have instrument channels. (#3089)
+
+-----------------
+Improved drivers:
+-----------------
+
+-
+
+---------------
+Under the hood:
+---------------
+
+-

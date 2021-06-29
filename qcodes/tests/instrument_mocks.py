@@ -1,16 +1,26 @@
-from functools import partial
 import logging
-from typing import Any, Sequence, Dict, Optional
+import time
+from functools import partial
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 import numpy as np
 
 from qcodes.instrument.base import Instrument, InstrumentBase
-from qcodes.utils.validators import Numbers, Arrays, OnOff, Strings, ComplexNumbers
-from qcodes.instrument.parameter import MultiParameter, Parameter, \
-    ArrayParameter, ParameterWithSetpoints
-from qcodes.instrument.channel import InstrumentChannel, ChannelList
-import time
-
+from qcodes.instrument.channel import ChannelList, InstrumentChannel
+from qcodes.instrument.parameter import (
+    ArrayParameter,
+    MultiParameter,
+    Parameter,
+    ParameterWithSetpoints,
+)
+from qcodes.utils.validators import (
+    Arrays,
+    ComplexNumbers,
+    Numbers,
+    OnOff,
+    Strings,
+)
+from qcodes.utils.validators import Sequence as ValidatorSequence
 log = logging.getLogger(__name__)
 
 
@@ -888,3 +898,59 @@ class MockDAC(Instrument):
             channels.append(channel)
             self.add_submodule(chan_name, channel)
         self.add_submodule("channels", channels)
+
+
+class MockCustomChannel(InstrumentChannel):
+    def __init__(
+        self,
+        parent: InstrumentBase,
+        name: str,
+        channel: Union[str, InstrumentChannel],
+        current_valid_range: Optional[List[float]] = None,
+    ) -> None:
+        """
+        A custom instrument channel emulating an existing channel.
+
+        It adds a parameter not found in the original channel, the
+        current_valid_range.
+        Args:
+            parent: Instrument to which the original channel belongs to,
+                usually a dac.
+            name: Name of channel.
+            channel: The original instrument channel.
+            current_valid_range: Voltage range the channel is expected to show
+                interesting features. It's just an example of an additional
+                parameter a regular instrument channel does not have.
+        """
+        if isinstance(channel, str):
+            _, channel_name = channel.split(".")
+            instr_channel = getattr(parent, channel_name)
+            self._dac_channel = instr_channel
+        elif isinstance(channel, InstrumentChannel):
+            self._dac_channel = channel
+        else:
+            raise ValueError('Unknown input type for "channel".')
+
+        super().__init__(parent, name)
+
+        if current_valid_range is None:
+            current_valid_range = []
+        super().add_parameter(
+            name="current_valid_range",
+            label=f"{name} valid voltage range",
+            initial_value=current_valid_range,
+            vals=ValidatorSequence(Numbers(), length=2),
+            get_cmd=None,
+            set_cmd=None,
+        )
+
+        self.add_parameter(
+            "voltage",
+            parameter_class=Parameter,
+            initial_value=0.0,
+            label=f"Voltage_{name}",
+            unit="V",
+            vals=Numbers(-2.0, 2.0),
+            get_cmd=None,
+            set_cmd=None,
+        )

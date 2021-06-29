@@ -1,11 +1,12 @@
-from collections import OrderedDict, UserDict
 import json
+from collections import OrderedDict, UserDict
 
 import numpy as np
-import uncertainties
 import pytest
+import uncertainties
+
 from qcodes.utils.helpers import NumpyJSONEncoder
-from qcodes.utils.types import numpy_ints, numpy_floats, numpy_complex
+from qcodes.utils.types import numpy_complex, numpy_floats, numpy_ints
 
 
 def test_python_types():
@@ -112,7 +113,7 @@ def test_object_with_serialization_method():
            '{"i_am_actually": "a_dict_addict"}'
 
 
-class SomeUserDict(UserDict):   # type:ignore[type-arg]
+class SomeUserDict(UserDict):
     pass
 
 EXAMPLEMETADATA = {

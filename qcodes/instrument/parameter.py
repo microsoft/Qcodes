@@ -261,6 +261,13 @@ class _BaseParameter(Metadatable):
 
         metadata: extra information to include with the
             JSON snapshot of the parameter
+
+        abstract: Specifies if this parameter is abstract or not. Default
+            is False. If the parameter is 'abstract', it *must* be overridden
+            by a non-abstract parameter before the instrument containing
+            this parameter can be instantiated. We override a parameter by
+            adding one with the same name and unit. An abstract parameter
+            can be added in a base class and overridden in a subclass.
     """
 
     def __init__(
@@ -281,6 +288,7 @@ class _BaseParameter(Metadatable):
         snapshot_exclude: bool = False,
         max_val_age: Optional[float] = None,
         vals: Optional[Validator[Any]] = None,
+        abstract: Optional[bool] = False
     ) -> None:
         super().__init__(metadata)
         if not str(name).isidentifier():
@@ -368,6 +376,7 @@ class _BaseParameter(Metadatable):
         # intended to be changed in a subclass if you want the subclass
         # to perform a validation on get
         self._validate_on_get = False
+        self._abstract = abstract
 
     @property
     def raw_value(self) -> ParamRawDataType:
@@ -972,6 +981,10 @@ class _BaseParameter(Metadatable):
         """
         return self.root_instrument
 
+    @property
+    def abstract(self) -> Optional[bool]:
+        return self._abstract
+
 
 class Parameter(_BaseParameter):
     """
@@ -1535,13 +1548,6 @@ class DelegateParameter(Parameter):
     def source(self, source: Optional[Parameter]) -> None:
         self._set_properties_from_source(source)
         self._source: Optional[Parameter] = source
-
-    @property
-    def underlying_instrument(self) -> Optional['InstrumentBase']:
-        if self.source is not None:
-            return self.source.root_instrument
-        else:
-            return None
 
     def _set_properties_from_source(self, source: Optional[Parameter]) -> None:
         if source is None:

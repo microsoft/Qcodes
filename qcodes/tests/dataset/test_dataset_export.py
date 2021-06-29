@@ -65,6 +65,23 @@ def _make_mock_dataset_label_unit():
     dataset.mark_completed()
     return dataset
 
+
+@pytest.mark.usefixtures("experiment")
+@pytest.fixture(name="mock_dataset_complex")
+def _make_mock_dataset_complex():
+    dataset = new_data_set("dataset")
+    xparam = ParamSpecBase("x", "numeric")
+    yparam = ParamSpecBase("y", "complex")
+    idps = InterDependencies_(dependencies={yparam: (xparam,)})
+    dataset.set_interdependencies(idps)
+
+    dataset.mark_started()
+    results = [{"x": 0, "y": 1 + 1j}]
+    dataset.add_results(results)
+    dataset.mark_completed()
+    return dataset
+
+
 @pytest.mark.usefixtures('experiment')
 def test_write_data_to_text_file_save(tmp_path_factory):
     dataset = new_data_set("dataset")
@@ -164,6 +181,21 @@ def test_export_netcdf(tmp_path_factory, mock_dataset):
     assert df.index.values.tolist() == [0.]
     assert df.y.values.tolist() == [1.0]
     assert df.z.values.tolist() == [2.0]
+
+
+@pytest.mark.usefixtures("experiment")
+def test_export_netcdf_complex_data(tmp_path_factory, mock_dataset_complex):
+    tmp_path = tmp_path_factory.mktemp("export_netcdf")
+    path = str(tmp_path)
+    mock_dataset_complex.export(export_type="netcdf", path=path, prefix="qcodes_")
+    assert os.listdir(path) == [f"qcodes_{mock_dataset_complex.run_id}.nc"]
+    file_path = os.path.join(path, f"qcodes_{mock_dataset_complex.run_id}.nc")
+    # need to explicitly use h5netcdf when reading or complex data vars will be empty
+    ds = xr.open_dataset(file_path, engine="h5netcdf")
+    df = ds.to_dataframe()
+    assert df.index.name == "x"
+    assert df.index.values.tolist() == [0.0]
+    assert df.y.values.tolist() == [1.0 + 1j]
 
 
 @pytest.mark.usefixtures('experiment')
