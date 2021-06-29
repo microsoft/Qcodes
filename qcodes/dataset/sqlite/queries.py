@@ -1160,8 +1160,7 @@ def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
                 captured_counter = existing_captured_counter + 1
             else:
                 captured_counter = run_counter
-    formatted_name = format_table_name(format_string, 'results', exp_id,
-                                       run_counter)
+    formatted_name = format_table_name(format_string, 'results', exp_id, run_counter)
     table = "runs"
 
     parameters = parameters or []
@@ -1599,16 +1598,20 @@ def _create_run_table(conn: ConnectionPlus,
             transaction(conn, query)
 
 
-def create_run(conn: ConnectionPlus, exp_id: int, name: str,
-               guid: str,
-               parameters: Optional[List[ParamSpec]] = None,
-               values:  Optional[List[Any]] = None,
-               metadata: Optional[Mapping[str, Any]] = None,
-               captured_run_id: Optional[int] = None,
-               captured_counter: Optional[int] = None,
-               parent_dataset_links: str = "[]"
-               ) -> Tuple[int, int, str]:
-    """ Create a single run for the experiment.
+def create_run(
+    conn: ConnectionPlus,
+    exp_id: int,
+    name: str,
+    guid: str,
+    parameters: Optional[List[ParamSpec]] = None,
+    values: Optional[List[Any]] = None,
+    metadata: Optional[Mapping[str, Any]] = None,
+    captured_run_id: Optional[int] = None,
+    captured_counter: Optional[int] = None,
+    parent_dataset_links: str = "[]",
+    create_run_table: bool = True,
+) -> Tuple[int, int, Optional[str]]:
+    """Create a single run for the experiment.
 
 
     This will register the run in the runs table, the counter in the
@@ -1628,13 +1631,14 @@ def create_run(conn: ConnectionPlus, exp_id: int, name: str,
         - captured_counter: The counter this data was originally captured with.
             Should only be supplied when inserting an already completed run
             from another database into this database. Otherwise leave as None.
+        - create_run_table: Should we create a table to insert the run into.
 
     Returns:
         - run_counter: the id of the newly created run (not unique)
         - run_id: the row id of the newly created run
         - formatted_name: the name of the newly created table
     """
-
+    formatted_name: Optional[str]
     with atomic(conn):
         run_counter, formatted_name, run_id = _insert_run(conn,
                                                           exp_id,
@@ -1647,8 +1651,10 @@ def create_run(conn: ConnectionPlus, exp_id: int, name: str,
         if metadata:
             add_data_to_dynamic_columns(conn, run_id, metadata)
         _update_experiment_run_counter(conn, exp_id, run_counter)
-        _create_run_table(conn, formatted_name, parameters, values)
-
+        if create_run_table:
+            _create_run_table(conn, formatted_name, parameters, values)
+        else:
+            formatted_name = None
     return run_counter, run_id, formatted_name
 
 
