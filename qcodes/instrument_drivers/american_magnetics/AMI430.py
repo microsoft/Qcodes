@@ -1,18 +1,28 @@
 import collections
 import logging
-import time
-from functools import partial
-from typing import Union, Iterable, Callable, Any, Optional, Tuple, List, \
-    Sequence, TypeVar, cast
 import numbers
+import time
 import warnings
+from functools import partial
+from typing import (
+    Any,
+    Callable,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    TypeVar,
+    Union,
+    cast,
+)
 
 import numpy as np
 
-from qcodes import Instrument, IPInstrument, InstrumentChannel
+from qcodes import Instrument, InstrumentChannel, IPInstrument
 from qcodes.math_utils.field_vector import FieldVector
-from qcodes.utils.validators import Bool, Numbers, Ints, Anything
 from qcodes.utils.deprecate import QCoDeSDeprecationWarning
+from qcodes.utils.validators import Anything, Bool, Ints, Numbers
 
 log = logging.getLogger(__name__)
 
@@ -755,7 +765,8 @@ class AMI430_3D(Instrument):
         # Now that we know we can proceed, call the individual instruments
 
         self.log.debug("Field values OK, proceeding")
-        for operator in [np.less, np.greater]:
+        operators: Tuple[Callable[[Any, Any], bool], ...] = (np.less, np.greater)
+        for operator in operators:
             # First ramp the coils that are decreasing in field strength.
             # This will ensure that we are always in a safe region as
             # far as the quenching of the magnets is concerned
