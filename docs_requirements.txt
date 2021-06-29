@@ -48,7 +48,7 @@ prompt-toolkit==3.0.19
 pycparser==2.20
 Pygments==2.9.0
 pyparsing==2.4.7
-pyrsistent==0.17.3
+pyrsistent==0.18.0
 python-dateutil==2.8.1
 pytz==2021.1
 PyVISA==1.11.3
