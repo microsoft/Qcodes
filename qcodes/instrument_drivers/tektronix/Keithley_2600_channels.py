@@ -1,7 +1,8 @@
 import logging
 import struct
 import warnings
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence, Tuple
+from enum import Enum
 
 import numpy as np
 
@@ -191,14 +192,24 @@ class TimeAxis(Parameter):
         return np.linspace(0, dt*npts, npts, endpoint=False)
 
 
+class StrEnum(str, Enum):
+    pass
+
+
+class MeasurementStatus(StrEnum):
+    """Keeps track of measurement status."""
+    compliance_error = 'Reached compliance limit.'
+    normal = 'No error occured.'
+
+
 class _ParameterWithStatus(Parameter):
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
 
-        self._measurement_status: Optional[str] = None
+        self._measurement_status: Optional[MeasurementStatus] = None
 
     @property
-    def measurement_status(self) -> Optional[str]:
+    def measurement_status(self) -> Optional[MeasurementStatus]:
         return self._measurement_status
 
     def snapshot_base(self, update: Optional[bool] = True,
@@ -219,33 +230,42 @@ class _MeasurementCurrentParameter(_ParameterWithStatus):
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
 
-    def _meas_status(self) -> None:
-        assert isinstance(self.instrument, KeithleyChannel)
+    @staticmethod
+    def _parse_response(res: str) -> Tuple[float, MeasurementStatus]:
 
-        smu = self.instrument
-        channel = self.instrument.channel
-
-        meas_status = smu.ask(f'status.measurement.instrument.'
-                              f'{channel}.enable = measurementRegister')
+        value, meas_status = res.split(',')
 
         status_bits = [int(i) for i in bin(
             int(meas_status)
         ).replace('0b', '').zfill(16)[::-1]]
 
         if status_bits[1]:
-            self._measurement_status = 'Current compliance is hit.'
+            return float(value), MeasurementStatus.compliance_error
         else:
-            self._measurement_status = 'Measurement status normal.'
+            return float(value), MeasurementStatus.normal
 
     def get_raw(self) -> ParamRawDataType:
         assert isinstance(self.instrument, KeithleyChannel)
+        assert isinstance(self.root_instrument, Keithley_2600)
 
         smu = self.instrument
         channel = self.instrument.channel
 
-        value = float(smu.ask(f'{channel}.measure.i()'))
+        script = [f'{channel}.measure.i()',
+                  f'status.measurement.instrument.'
+                  f'{channel}.enable = measurementRegister']
 
-        self._meas_status()
+        smu.write(self.root_instrument._scriptwrapper(program=script,
+                                                      debug=True))
+
+        with self.root_instrument.timeout.set_to(
+                self.instrument._extra_visa_timeout
+        ):
+            data = self.root_instrument.visa_handle.read_raw()
+
+        value, status = self._parse_response(data)
+
+        self._measurement_status = status
 
         return value
 
