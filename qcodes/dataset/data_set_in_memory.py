@@ -397,7 +397,7 @@ class DataSetInMem(DataSetProtocol, Sized):
         conn = conn_from_dbpath_or_conn(conn=None, path_to_db=self._path_to_db)
 
         try:
-            with atomic(self.conn) as conn:
+            with atomic(conn) as conn:
                 add_meta_data(conn, self.run_id, {tag: metadata})
         finally:
             conn.close()
