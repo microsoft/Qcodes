@@ -64,6 +64,7 @@ def test_call_params_threaded(dummy_1, dummy_2):
 
     params_per_thread_id = defaultdict(set)
     for param, thread_id in params_output:
+        assert thread_id is not None
         params_per_thread_id[thread_id].add(param)
     assert len(params_per_thread_id) == 2
     expected_params_per_thread = {
