@@ -2,6 +2,9 @@
 # we want to happen simultaneously within one process (namely getting
 # several parameters in parallel), we can parallelize them with threads.
 # That way the things we call need not be rewritten explicitly async.
+import concurrent
+import concurrent.futures
+import itertools
 import logging
 import os
 import threading
@@ -19,13 +22,10 @@ from typing import (
     TypeVar,
     Union,
 )
-import concurrent
-import concurrent.futures
-import itertools
 
+from qcodes import config
 from qcodes.dataset.measurements import res_type
 from qcodes.instrument.parameter import ParamDataType, _BaseParameter
-from qcodes import config
 
 ParamMeasT = Union[_BaseParameter, Callable[[], None]]
 
