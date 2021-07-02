@@ -2,6 +2,7 @@
 Test suite for utils.threading.*
 """
 import threading
+import time
 from collections import defaultdict
 from typing import Any
 
@@ -18,6 +19,7 @@ class ParameterWithThreadKnowledge(Parameter):
         super().__init__(*args, **kwargs)
 
     def get_raw(self) -> ParamRawDataType:
+        time.sleep(0.1)
         return threading.get_ident()
 
 
