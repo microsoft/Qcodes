@@ -6,8 +6,18 @@ import logging
 import os
 import threading
 from collections import defaultdict
+from types import TracebackType
 from typing import (
-    Any, Callable, Dict, List, Optional, Sequence, TypeVar, Tuple, Union
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
 )
 import concurrent
 import concurrent.futures
@@ -251,3 +261,15 @@ class ThreadPoolParamsCaller:
         ))
 
         return output
+
+    def __enter__(self) -> "ThreadPoolParamsCaller":
+        self._thread_pool.__enter__()
+        return self
+
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> None:
+        self._thread_pool.__exit__(exc_type, exc_val, exc_tb)
