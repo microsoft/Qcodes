@@ -3,12 +3,11 @@ Test suite for DelegateParameter
 """
 from typing import cast
 
+import hypothesis.strategies as hst
 import pytest
 from hypothesis import given
-import hypothesis.strategies as hst
 
-from qcodes.instrument.parameter import (
-    Parameter, DelegateParameter, ParamRawDataType)
+from qcodes.instrument.parameter import DelegateParameter, Parameter, ParamRawDataType
 from .conftest import BetterGettableParam
 
 # Disable warning that is created by using fixtures
@@ -499,3 +498,13 @@ def test_cache_no_source():
         d.cache.get()
 
     d.cache.invalidate()
+
+
+def test_underlying_instrument_property_for_delegate_parameter():
+    p = BetterGettableParam('testparam', set_cmd=None, get_cmd=None)
+    d = DelegateParameter('delegate_parameter_with_source', p)
+
+    assert d.underlying_instrument is p.root_instrument
+
+    d = DelegateParameter('delegate_parameter_without_source', source=None)
+    assert d.underlying_instrument is None
