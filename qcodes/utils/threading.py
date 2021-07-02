@@ -229,7 +229,9 @@ class ThreadPoolParamsCaller:
             for param_list in _instrument_to_param(param_meas).values()
         )
 
-        max_worker_threads = min(32, (os.cpu_count() or 1) + 4)
+        max_worker_threads = min(
+            len(self._param_callers), 32, (os.cpu_count() or 1) + 4
+        )
         thread_name_prefix = "params_call" + "".join(
             "__" + repr(pc).replace(" ", "_")
             for pc in self._param_callers
