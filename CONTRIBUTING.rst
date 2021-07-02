@@ -83,13 +83,13 @@ Then to test and view the coverage:
 
 ::
 
-    py.test --cov=qcodes --cov-report xml --cov-config=setup.cfg
+    pytest --cov=qcodes --cov-report xml --cov-config=setup.cfg
 
 To test and see the coverage (with missing lines) of a single module:
 
 ::
 
-    py.test --cov=qcodes.module.submodule --cov-report=term-missing qcodes/tests/test_file.py
+    pytest --cov=qcodes.module.submodule --cov-report=term-missing qcodes/tests/test_file.py
 
 You can also run single tests with something like:
 
@@ -265,6 +265,52 @@ Pull requests
    down, you can call ``git branch --merged`` to list branches that can
    be safely deleted, then ``git branch -d <branch-name>`` to delete it.
 
+Automatic Testing (CI)
+~~~~~~~~~~~~~~~~~~~~~~
+
+Once your pull request is opens a number of automatic jobs are created. These
+will run the tests and in other ways verify the correctness of the code.
+In the following we will describe what we test and provide a few tips on how to
+understand the results especially if something should fail.
+
+Note that the some of the automatic jobs are labeled with Required. These
+must pass before the pull request can be merged. The other jobs that do not
+have a required label may be considered guidelines. Please attempt to make these
+pass if possible but feel free to disregard them if the suggested changes do not make sense.
+If in doubt feel free to ask questions.
+
+Required checks
+^^^^^^^^^^^^^^^
+
+Our required checks consists of a number of jobs that performs the following actions using multiple python versions,
+on Linux and on Windows.
+
+- Run our test suite using pytest as described above.
+- Perform type checking of the code in QCoDeS using MyPy. For many of the modules we enforce that the code must be
+  type annotated. We encourage all contributors to type annotate any contribution to QCoDeS. If you need help with this
+  please feel free to reach out.
+- Build the documentation using Sphinx with Sphinx warnings as errors. This included execution of all example notebooks
+  that are not explicitly marked as not to be executed. Please see TODO Link for a how to disable execution of a
+  notebook.
+- A number of smaller static checks implemented using pre-commit hooks TODO link. You may want to
+  consider installing the pre-commit hooks in your local git config to have these checks performed automatically when
+  you commit.
+
+    - YAML, JSON and Python Syntax
+    - Trailing line space
+    - Line endings
+    - pyupgrade
+    - Darker
+
+
+Further more we also run our test suite with the minimum requirements stated to ensure that QCoDeS does work
+correctly with these.
+
+Optional checks
+^^^^^^^^^^^^^^^
+
+- Codacy
+- Code coverage
 
 Documenting QCoDeS
 ~~~~~~~~~~~~~~~~~~
