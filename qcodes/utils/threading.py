@@ -3,6 +3,7 @@
 # several parameters in parallel), we can parallelize them with threads.
 # That way the things we call need not be rewritten explicitly async.
 import logging
+import os
 import threading
 from collections import defaultdict
 from typing import (
