@@ -4,6 +4,7 @@ Test suite for utils.threading.*
 import pytest
 from typing import Any
 import threading
+from collections import defaultdict
 
 from qcodes.instrument.parameter import Parameter, ParamRawDataType
 from qcodes.utils.threading import call_params_threaded
@@ -65,7 +66,9 @@ def test_call_params_threaded(dummy_1, dummy_2):
         params_per_thread_id[thread_id].add(param)
     assert len(params_per_thread_id) == 2
     expected_params_per_thread = {
-        {dummy_1.voltage_1, dummy_1.voltage_2},
-        {dummy_2.voltage_1, dummy_2.voltage_2}
+        frozenset([dummy_1.voltage_1, dummy_1.voltage_2]),
+        frozenset([dummy_2.voltage_1, dummy_2.voltage_2])
     }
-    assert set(params_per_thread_id.values()) == expected_params_per_thread
+    assert set(
+        frozenset(value) for value in params_per_thread_id.values()
+    ) == expected_params_per_thread
