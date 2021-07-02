@@ -1,6 +1,7 @@
 """
 Test suite for utils.threading.*
 """
+from collections import defaultdict
 import pytest
 from typing import Any
 import threading
