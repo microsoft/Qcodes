@@ -4,7 +4,6 @@ Test suite for utils.threading.*
 import pytest
 from typing import Any
 import threading
-from collections import defaultdict
 
 from qcodes.instrument.parameter import Parameter, ParamRawDataType
 from qcodes.utils.threading import call_params_threaded
