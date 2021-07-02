@@ -9,7 +9,7 @@ from typing import Any
 import pytest
 
 from qcodes.instrument.parameter import Parameter, ParamRawDataType
-from qcodes.utils.threading import call_params_threaded
+from qcodes.utils.threading import ThreadPoolParamsCaller, call_params_threaded
 
 from .instrument_mocks import DummyInstrument
 
@@ -76,3 +76,14 @@ def test_call_params_threaded(dummy_1, dummy_2):
     assert {
         frozenset(value) for value in params_per_thread_id.values()
     } == expected_params_per_thread
+
+
+def test_thread_pool_params_caller(dummy_1, dummy_2):
+    params = (
+        dummy_1.voltage_1,
+        dummy_1.voltage_2,
+        dummy_2.voltage_1,
+        dummy_2.voltage_2,
+    )
+    with ThreadPoolParamsCaller(params) as pool_caller:
+        _ = pool_caller()
