@@ -60,17 +60,12 @@ def test_call_params_threaded(dummy_1, dummy_2):
                                           dummy_2.voltage_1,
                                           dummy_2.voltage_2))
 
-    param1 = params_output[0][0]
-    thread_id1 = params_output[0][1]
-    for i in range(1, 4):
-        param2 = params_output[i][0]
-        thread_id2 = params_output[i][1]
-
-        if param1.instrument is param2.instrument:
-            assert thread_id1 == thread_id2
-
-        if param1.instrument is not param2.instrument:
-            assert thread_id1 != thread_id2
-
-        param1 = param2
-        thread_id1 = thread_id2
+    params_per_thread_id = defaultdict(set)
+    for param, thread_id in params_output:
+        params_per_thread_id[thread_id].add(param)
+    assert len(params_per_thread_id) == 2
+    expected_params_per_thread = {
+        {dummy_1.voltage_1, dummy_1.voltage_2},
+        {dummy_2.voltage_1, dummy_2.voltage_2}
+    }
+    assert set(params_per_thread_id.values()) == expected_params_per_thread
