@@ -261,6 +261,13 @@ class _BaseParameter(Metadatable):
 
         metadata: extra information to include with the
             JSON snapshot of the parameter
+
+        abstract: Specifies if this parameter is abstract or not. Default
+            is False. If the parameter is 'abstract', it *must* be overridden
+            by a non-abstract parameter before the instrument containing
+            this parameter can be instantiated. We override a parameter by
+            adding one with the same name and unit. An abstract parameter
+            can be added in a base class and overridden in a subclass.
     """
 
     def __init__(
@@ -281,6 +288,7 @@ class _BaseParameter(Metadatable):
         snapshot_exclude: bool = False,
         max_val_age: Optional[float] = None,
         vals: Optional[Validator[Any]] = None,
+        abstract: Optional[bool] = False
     ) -> None:
         super().__init__(metadata)
         if not str(name).isidentifier():
@@ -368,6 +376,7 @@ class _BaseParameter(Metadatable):
         # intended to be changed in a subclass if you want the subclass
         # to perform a validation on get
         self._validate_on_get = False
+        self._abstract = abstract
 
     @property
     def raw_value(self) -> ParamRawDataType:
@@ -959,6 +968,31 @@ class _BaseParameter(Metadatable):
         Is it allowed to call set on this parameter?
         """
         return self._settable
+
+    @property
+    def underlying_instrument(self) -> Optional['InstrumentBase']:
+        """
+        Returns an instance of the underlying hardware instrument that this
+        parameter communicates with, per this parameter's implementation.
+
+        This is useful in the case where a parameter does not belongs to
+        an instrument instance that represents a real hardware instrument
+        but actually uses a real hardware instrument in its implementation
+        (e.g. via calls to one or more parameters of that real hardware
+        instrument). This is also useful when a parameter does belong to
+        an instrument instance but that instance does not represent the
+        real hardware instrument that the parameter interacts with: hence
+        ``root_instrument`` of the parameter cannot be the
+        ``hardware_instrument``, however ``underlying_instrument`` can be
+        implemented to return the ``hardware_instrument``.
+
+        By default it returns the ``root_instrument`` of the parameter.
+        """
+        return self.root_instrument
+
+    @property
+    def abstract(self) -> Optional[bool]:
+        return self._abstract
 
 
 class Parameter(_BaseParameter):

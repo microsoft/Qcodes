@@ -386,6 +386,10 @@ class AlazarTech_ATS(Instrument):
         internal_buffer_size_requested = (bits_per_sample * samples_per_record *
                                           records_per_buffer) // 8
 
+        if mode == 'TS':
+            transfer_buffer_size //= buffers_per_acquisition
+            internal_buffer_size_requested //= buffers_per_acquisition
+
         if internal_buffer_size_requested > max_buffer_size:
             raise RuntimeError(f"Requested a buffer of size: "
                                f"{internal_buffer_size_requested / 1024 ** 2}"

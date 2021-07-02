@@ -64,11 +64,23 @@ _unicode_categories = ('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nd', 'Pc', 'Pd', 'Zs')
 
 # in the current version, these are the standard columns of the "runs" table
 # Everything else is metadata
-RUNS_TABLE_COLUMNS = ["run_id", "exp_id", "name", "result_table_name",
-                      "result_counter", "run_timestamp", "completed_timestamp",
-                      "is_completed", "parameters", "guid",
-                      "run_description", "snapshot", "parent_datasets",
-                      "captured_run_id", "captured_counter"]
+RUNS_TABLE_COLUMNS = [
+    "run_id",
+    "exp_id",
+    "name",
+    "result_table_name",
+    "result_counter",
+    "run_timestamp",
+    "completed_timestamp",
+    "is_completed",
+    "parameters",
+    "guid",
+    "run_description",
+    "snapshot",
+    "parent_datasets",
+    "captured_run_id",
+    "captured_counter",
+]
 
 
 def is_run_id_in_database(conn: ConnectionPlus,
@@ -797,12 +809,16 @@ def new_experiment(conn: ConnectionPlus,
 
 # TODO(WilliamHPNielsen): we should remove the redundant
 # is_completed
-def mark_run_complete(conn: ConnectionPlus, run_id: int) -> None:
-    """ Mark run complete
+def mark_run_complete(
+    conn: ConnectionPlus, run_id: int, timestamp: Optional[float] = None
+) -> None:
+    """Mark run complete
 
     Args:
         conn: database connection
         run_id: id of the run to mark complete
+        timestamp: time stamp for completion. If None the function will
+            automatically get the current time.
     """
     query = """
     UPDATE
@@ -812,7 +828,9 @@ def mark_run_complete(conn: ConnectionPlus, run_id: int) -> None:
         is_completed=?
     WHERE run_id=?;
     """
-    atomic_transaction(conn, query, time.time(), True, run_id)
+    if timestamp is None:
+        timestamp = time.time()
+    atomic_transaction(conn, query, timestamp, True, run_id)
 
 
 def completed(conn: ConnectionPlus, run_id: int) -> bool:
@@ -1405,10 +1423,18 @@ def update_parent_datasets(conn: ConnectionPlus,
         conn.cursor().execute(sql, (links_str, run_id))
 
 
-def set_run_timestamp(conn: ConnectionPlus, run_id: int) -> None:
+def set_run_timestamp(
+    conn: ConnectionPlus, run_id: int, timestamp: Optional[float] = None
+) -> None:
     """
     Set the run_timestamp for the run with the given run_id. If the
     run_timestamp has already been set, a RuntimeError is raised.
+
+    Args:
+        conn: database connection
+        run_id: id of the run to mark complete
+        timestamp: time stamp for completion. If None the function will
+            automatically get the current time.
     """
 
     query = """
@@ -1424,15 +1450,17 @@ def set_run_timestamp(conn: ConnectionPlus, run_id: int) -> None:
 
     with atomic(conn) as conn:
         c = conn.cursor()
-        timestamp = one(c.execute(query, (run_id,)), 'run_timestamp')
-        if timestamp is not None:
-            raise RuntimeError('Can not set run_timestamp; it has already '
-                               f'been set to: {timestamp}')
+        old_timestamp = one(c.execute(query, (run_id,)), "run_timestamp")
+        if old_timestamp is not None:
+            raise RuntimeError(
+                "Can not set run_timestamp; it has already "
+                f"been set to: {old_timestamp}"
+            )
         else:
-            current_time = time.time()
-            c.execute(cmd, (current_time, run_id))
-            log.info(f"Set the run_timestamp of run_id {run_id} to "
-                     f"{current_time}")
+            if timestamp is None:
+                timestamp = time.time()
+            c.execute(cmd, (timestamp, run_id))
+            log.info(f"Set the run_timestamp of run_id {run_id} to " f"{timestamp}")
 
 
 def add_parameter(conn: ConnectionPlus,

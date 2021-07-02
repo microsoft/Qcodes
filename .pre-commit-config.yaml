@@ -5,16 +5,20 @@ repos:
     - id: trailing-whitespace
     - id: end-of-file-fixer
     - id: check-yaml
+    - id: check-json
+      exclude: asv.conf.json
     - id: debug-statements
     - id: check-ast
+    - id: mixed-line-ending
+      args: ['--fix=no']
   - repo: https://github.com/asottile/pyupgrade
-    rev: v2.18.3
+    rev: v2.19.4
     hooks:
     - id: pyupgrade
       args: ['--py37-plus', '--keep-runtime-typing']
       exclude: _version.py|versioneer.py
   - repo: https://github.com/akaihola/darker
-    rev: 1.2.3
+    rev: 1.2.4
     hooks:
       -   id: darker
           args: [-i]

@@ -6,16 +6,20 @@ MSO70000/C/DX Series Digital Oscilloscopes
 import textwrap
 import time
 from functools import partial
-from typing import Union, Callable, cast, Any
+from typing import Any, Callable, Union, cast
 
 import numpy as np
 
 from qcodes import (
-    Instrument, VisaInstrument, InstrumentChannel, ParameterWithSetpoints,
-    ChannelList, Parameter
+    ChannelList,
+    Instrument,
+    InstrumentChannel,
+    Parameter,
+    ParameterWithSetpoints,
+    VisaInstrument,
 )
 from qcodes.utils.helpers import create_on_off_val_mapping
-from qcodes.utils.validators import Enum, Arrays
+from qcodes.utils.validators import Arrays, Enum
 
 
 def strip_quotes(string: str) -> str:
@@ -796,7 +800,7 @@ class TektronixDPOMeasurement(InstrumentChannel):
             get_cmd=f"MEASUrement:MEAS{self._measurement_number}:TYPe?",
             set_cmd=self._set_measurement_type,
             get_parser=str.lower,
-            vals=Enum(*[m[0] for m in self.measurements]),
+            vals=Enum(*(m[0] for m in self.measurements)),
             docstring=textwrap.dedent(
                 "Please see page 566-569 of the programmers manual "
                 "for a detailed description of these arguments. "
