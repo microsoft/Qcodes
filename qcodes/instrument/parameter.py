@@ -972,12 +972,21 @@ class _BaseParameter(Metadatable):
     @property
     def underlying_instrument(self) -> Optional['InstrumentBase']:
         """
-        Property to expose virtual parameters' underlying instrument i.e.
-        to allow the user to set the actual instrument of a parameter to be
-        the underlying instrument for a virtual parameter. A virtual
-        parameter is one which is built over another existing parameter.
+        Returns an instance of the underlying hardware instrument that this
+        parameter communicates with, per this parameter's implementation.
 
-        By default it return the root_instrument of the parameter.
+        This is useful in the case where a parameter does not belongs to
+        an instrument instance that represents a real hardware instrument
+        but actually uses a real hardware instrument in its implementation
+        (e.g. via calls to one or more parameters of that real hardware
+        instrument). This is also useful when a parameter does belong to
+        an instrument instance but that instance does not represent the
+        real hardware instrument that the parameter interacts with: hence
+        ``root_instrument`` of the parameter cannot be the
+        ``hardware_instrument``, however ``underlying_instrument`` can be
+        implemented to return the ``hardware_instrument``.
+
+        By default it returns the ``root_instrument`` of the parameter.
         """
         return self.root_instrument
 
