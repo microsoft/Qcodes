@@ -268,7 +268,7 @@ Pull requests
 Automatic Testing (CI)
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Once your pull request is opens a number of automatic jobs are created. These
+Once your pull request is opened a number of automatic jobs are created. These
 will run the tests and in other ways verify the correctness of the code.
 In the following we will describe what we test and provide a few tips on how to
 understand the results especially if something should fail.
@@ -314,7 +314,7 @@ Optional checks
 In addition to the required checks we perform two optional checks that can be regarded as guidelines rather than
 requirements.
 
-- We use Codacy to perform a number of style checks using ``Pylint`` and ``Pydocstyle`` among others. Please
+- We use Codacy to perform a number of style checks using `Pylint` and `Pydocstyle` among others. Please
   adapt your changes to these recommendations as you see fit. It is not a requirement that all Codacy warnings and
   errors are fixed. Do not insert comments to disable these warnings.
 - We measure code coverage using `Codecov`. This measures if a line of code is executed as part of a test.
