@@ -213,7 +213,7 @@ class Motor(InstrumentChannel):
         self.add_parameter("relative_position",
                            unit="quadrature counts",
                            get_cmd=f"MG _PR{self._axis}",
-                           get_parser=int,
+                           get_parser=float,
                            set_cmd=self._set_relative_position,
                            vals=Ints(-2147483648, 2147483647),
                            docstring="sets relative position for the motor's "
@@ -222,7 +222,7 @@ class Motor(InstrumentChannel):
         self.add_parameter("speed",
                            unit="counts/sec",
                            get_cmd=f"MG _SP{self._axis}",
-                           get_parser=int,
+                           get_parser=float,
                            set_cmd=self._set_speed,
                            vals=Ints(0, 3000000),
                            docstring="speed for motor's motion")
@@ -230,7 +230,7 @@ class Motor(InstrumentChannel):
         self.add_parameter("acceleration",
                            unit="counts/sec2",
                            get_cmd=f"MG _AC{self._axis}",
-                           get_parser=int,
+                           get_parser=float,
                            set_cmd=self._set_acceleration,
                            vals=Ints(1024, 1073740800),
                            docstring="acceleration for motor's motion")
@@ -238,7 +238,7 @@ class Motor(InstrumentChannel):
         self.add_parameter("deceleration",
                            unit="counts/sec2",
                            get_cmd=f"MG _DC{self._axis}",
-                           get_parser=int,
+                           get_parser=float,
                            set_cmd=self._set_deceleration,
                            vals=Ints(1024, 1073740800),
                            docstring="deceleration for motor's motion")
@@ -246,7 +246,7 @@ class Motor(InstrumentChannel):
         self.add_parameter("homing_velocity",
                            unit="counts/sec",
                            get_cmd=f"MG _HV{self._axis}",
-                           get_parser=int,
+                           get_parser=float,
                            set_cmd=self._set_homing_velocity,
                            vals=Ints(0, 3000000),
                            docstring="sets the slew speed for the FI "
@@ -256,11 +256,11 @@ class Motor(InstrumentChannel):
         self.add_parameter("off_when_error_occurs",
                            get_cmd=f"MG _OE{self._axis}",
                            set_cmd=self._set_off_when_error_occurs,
-                           vals={"disable": 0,
-                                 "enable for position, amplifier error or "
-                                 "abort input": 1,
-                                 "enable for hardware limit switch": 2,
-                                 "enable for all": 3},
+                           val_mapping={"disable": 0,
+                                        "enable for position, amplifier error or "
+                                        "abort input": 1,
+                                        "enable for hardware limit switch": 2,
+                                        "enable for all": 3},
                            docstring="enables or disables the motor to "
                                      "automatically turn off when error occurs")
 
@@ -268,8 +268,8 @@ class Motor(InstrumentChannel):
             "stepper_position_maintenance_mode",
             get_cmd=self._stepper_position_maintenance_mode_status,
             set_cmd=self._enable_disable_spm_mode,
-            vals={"enable": 1,
-                  "disable": 0},
+            val_mapping={"enable": 1,
+                         "disable": 0},
             docstring="enables, disables and gives status of error in SPM mode")
 
     def _enable_disable_spm_mode(self, val: str) -> None:
