@@ -292,25 +292,34 @@ on Linux and on Windows.
 - Build the documentation using Sphinx with Sphinx warnings as errors. This included execution of all example notebooks
   that are not explicitly marked as not to be executed. Please see TODO Link for a how to disable execution of a
   notebook.
-- A number of smaller static checks implemented using pre-commit hooks TODO link. You may want to
+- A number of smaller static checks implemented using `pre-commit <https://pre-commit.com/>`_ hooks. You may want to
   consider installing the pre-commit hooks in your local git config to have these checks performed automatically when
   you commit.
 
-    - YAML, JSON and Python Syntax
-    - Trailing line space
-    - Line endings
-    - pyupgrade
-    - Darker
+    - Check that YAML, JSON and Python files are syntactically valid.
+    - Check that there are no trailing whitespace or blank lines at the end of python files.
+    - Check that all files uses the correct line endings (``\n`` for all files except ``.bat``)
+    - Run `pyupgrade  <https://github.com/asottile/pyupgrade>`_ on all python files.
+    - Run `darker <https://github.com/akaihola/darker/>`_. This will enforce `black <https://github.com/psf/black>`_
+      formatting and sorting of imports using `isort <https://pycqa.github.io/isort/>`_ on all new and changed code.
+      We do not format the entire codebase to not lose change history.
 
 
-Further more we also run our test suite with the minimum requirements stated to ensure that QCoDeS does work
+Furthermore we also run our test suite with the minimum requirements stated to ensure that QCoDeS does work
 correctly with these.
 
 Optional checks
 ^^^^^^^^^^^^^^^
 
-- Codacy
-- Code coverage
+In addition to the required checks we perform two optional checks that can be regarded as guidelines rather than
+requirements.
+
+- We use Codacy to perform a number of style checks using ``Pylint`` and ``Pydocstyle`` among others. Please
+  adapt your changes to these recommendations as you see fit. It is not a requirement that all Codacy warnings and
+  errors are fixed. Do not insert comments to disable these warnings.
+- We measure code coverage using `Codecov`. This measures if a line of code is executed as part of a test.
+  As much as possible we would encourage you to add tests to cover all changes. However, this may not always be
+  possible especially when writing instrument drivers.
 
 Documenting QCoDeS
 ~~~~~~~~~~~~~~~~~~
