@@ -290,7 +290,7 @@ on Linux and on Windows.
   type annotated. We encourage all contributors to type annotate any contribution to QCoDeS. If you need help with this
   please feel free to reach out.
 - Build the documentation using Sphinx with Sphinx warnings as errors. This included execution of all example notebooks
-  that are not explicitly marked as not to be executed. Please see TODO Link for a how to disable execution of a
+  that are not explicitly marked as not to be executed. Please see here_ for a how to disable execution of a
   notebook.
 - A number of smaller static checks implemented using `pre-commit <https://pre-commit.com/>`_ hooks. You may want to
   consider installing the pre-commit hooks in your local git config to have these checks performed automatically when
@@ -300,7 +300,7 @@ on Linux and on Windows.
     - Check that there are no trailing whitespace or blank lines at the end of python files.
     - Check that all files uses the correct line endings (``\n`` for all files except ``.bat``)
     - Run `pyupgrade  <https://github.com/asottile/pyupgrade>`_ on all python files.
-    - Run `darker <https://github.com/akaihola/darker/>`_. This will enforce `black <https://github.com/psf/black>`_
+    - Run `Darker <https://github.com/akaihola/darker/>`_. This will enforce `Black <https://github.com/psf/black>`_
       formatting and sorting of imports using `isort <https://pycqa.github.io/isort/>`_ on all new and changed code.
       We do not format the entire codebase to not lose change history.
 
@@ -378,3 +378,5 @@ The submodule ``a.py`` is documented in its own file (``a.rst``) containing::
 This automatically generates a page with the documentation of the module ``a.py``
 
 Finally the ``index.rst`` file should be included in the toctree in ``docs/api/index.rst``
+
+.. _here: ../examples/writing_drivers/Creating-Instrument-Drivers.ipynb
