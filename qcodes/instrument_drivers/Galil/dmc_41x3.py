@@ -94,6 +94,7 @@ class VectorMode(InstrumentChannel):
                  name: str,
                  **kwargs: Any) -> None:
         super().__init__(parent, name, **kwargs)
+        self._plane: str = "AB"
         self._available_planes = ["AB", "BC", "AC"]
 
         self.add_parameter("coordinate_system",
@@ -112,7 +113,7 @@ class VectorMode(InstrumentChannel):
 
         self.add_parameter("vector_mode_plane",
                            get_cmd=None,
-                           set_cmd="VM {}",
+                           set_cmd=self._set_vector_mode_plane,
                            vals=Enum(*self._available_planes),
                            docstring="sets plane of motion for the motors")
 
@@ -140,7 +141,8 @@ class VectorMode(InstrumentChannel):
                                        self.vec_pos_second_coordinate],
                                       set_cmd="VP {vec_pos_first_coordinate},"
                                               "{vec_pos_second_coordinate}",
-                                      get_cmd=None)
+                                      get_cmd=f"MG _VP{self._plane[0]},_VP{self._plane[1]}",
+                                      separator=' ')
 
         self.add_parameter("vector_acceleration",
                            get_cmd="VA ?",
@@ -177,6 +179,12 @@ class VectorMode(InstrumentChannel):
             return "T"
         else:
             return "S"
+
+    def _set_vector_mode_plane(self, val: str) -> None:
+        """Sets vector mode plane"""
+
+        self._plane = val
+        self.write(f"VM {self._plane}")
 
     def vector_seq_end(self) -> None:
         """
