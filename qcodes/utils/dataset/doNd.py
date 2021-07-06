@@ -1,3 +1,4 @@
+import contextlib
 import logging
 import os
 import sys
@@ -15,10 +16,11 @@ from qcodes.dataset.data_set_protocol import DataSetProtocol
 from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
 from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.experiment_container import Experiment
-from qcodes.dataset.measurements import Measurement, res_type
+from qcodes.dataset.measurements import Measurement, Runner, res_type
 from qcodes.dataset.plotting import plot_dataset
 from qcodes.instrument.parameter import ParamDataType, _BaseParameter
 from qcodes.utils.threading import RespondingThread
+import contextlib
 
 ActionsT = Sequence[Callable[[], None]]
 
@@ -633,7 +635,7 @@ class LogSweep(AbstractSweep):
 
 
 def dond(
-    *params: Union[AbstractSweep, ParamMeasT],
+    *params: Union[AbstractSweep, Union[ParamMeasT, Tuple[ParamMeasT]]],
     write_period: Optional[float] = None,
     measurement_name: str = "",
     exp: Optional[Experiment] = None,
@@ -685,16 +687,14 @@ def dond(
     if show_progress is None:
         show_progress = config.dataset.dond_show_progress
 
-    meas = Measurement(name=measurement_name, exp=exp)
-
     def _parse_dond_arguments(
-        *params: Union[AbstractSweep, ParamMeasT]
-    ) -> Tuple[List[AbstractSweep], List[ParamMeasT]]:
+        *params: Union[AbstractSweep, Union[ParamMeasT, Tuple[ParamMeasT]]]
+    ) -> Tuple[List[AbstractSweep], List[Union[ParamMeasT, Tuple[ParamMeasT]]]]:
         """
         Parse supplied arguments into sweep objects and measurement parameters.
         """
         sweep_instances: List[AbstractSweep] = []
-        params_meas: List[ParamMeasT] = []
+        params_meas: List[Union[ParamMeasT, Tuple[ParamMeasT]]] = []
         for par in params:
             if isinstance(par, AbstractSweep):
                 sweep_instances.append(par)
@@ -718,9 +718,25 @@ def dond(
         s for s in additional_setpoints
     )
 
-    measured_parameters = tuple(
-        par for par in params_meas if isinstance(par, _BaseParameter)
-    )
+    measured_parameters: List[_BaseParameter] = []
+    nested_groupe: List[ParamMeasT] = []
+    grouped_parameters: List[Union[ParamMeasT, Sequence[ParamMeasT]]] = []
+    for param in params_meas:
+        if not isinstance(param, Sequence):
+            print(param)
+            if isinstance(param, _BaseParameter):
+                measured_parameters.append(param)
+            nested_groupe.append(param)
+
+        else:
+            for nested_param in param:
+                if isinstance(nested_param, _BaseParameter):
+                    measured_parameters.append(nested_param)
+    if nested_groupe:
+        grouped_parameters.append(tuple(nested_groupe))
+    else:
+        grouped_parameters = params_meas
+    measured_parameters = tuple(measured_parameters)
 
     try:
         loop_shape = tuple(1 for _ in additional_setpoints) + tuple(
@@ -733,14 +749,24 @@ def dond(
             f"falling back to unknown shape."
         )
         shapes = None
-
-    _register_parameters(meas, all_setpoint_params)
-    _register_parameters(
-        meas, params_meas, setpoints=all_setpoint_params, shapes=shapes
-    )
-    _set_write_period(meas, write_period)
-    _register_actions(meas, enter_actions, exit_actions)
-
+    print('****************************')
+    print(nested_groupe)
+    print('****************************')
+    print(params_meas)
+    print('****************************')
+    print(grouped_parameters)
+    print('****************************')
+    meas_list: List[Measurement] = []
+    for groupe in grouped_parameters:
+        meas = Measurement(name=measurement_name, exp=exp)
+        _register_parameters(meas, all_setpoint_params)
+        _register_parameters(
+            meas, groupe, setpoints=all_setpoint_params, shapes=shapes
+        )
+        _set_write_period(meas, write_period)
+        _register_actions(meas, enter_actions, exit_actions)
+        meas_list.append(meas)
+    print(meas_list)
     original_delays: Dict[_BaseParameter, float] = {}
     params_set: List[_BaseParameter] = []
     for sweep in sweep_instances:
@@ -749,25 +775,27 @@ def dond(
         params_set.append(sweep.param)
 
     try:
-        with _catch_keyboard_interrupts() as interrupted, meas.run() as datasaver:
-            dataset = datasaver.dataset
+        with _catch_keyboard_interrupts() as interrupted, contextlib.ExitStack() as stack:
+            datasavers = [stack.enter_context(measure.run()) for measure in meas_list]
             additional_setpoints_data = process_params_meas(additional_setpoints)
             for setpoints in tqdm(nested_setpoints, disable=not show_progress):
                 param_set_list = []
                 param_value_pairs = zip(params_set[::-1], setpoints[::-1])
-                for setpoint_param, setpoint in param_value_pairs:
-                    setpoint_param(setpoint)
-                    param_set_list.append((setpoint_param, setpoint))
-                datasaver.add_result(
-                    *param_set_list,
-                    *process_params_meas(params_meas, use_threads=use_threads),
-                    *additional_setpoints_data,
-                )
+                for index, datasaver in enumerate(datasavers):
+                    for setpoint_param, setpoint in param_value_pairs:
+                        setpoint_param(setpoint)
+                        param_set_list.append((setpoint_param, setpoint))
+                    datasaver.add_result(
+                        *param_set_list,
+                        *process_params_meas(grouped_parameters[index], use_threads=use_threads),
+                        *additional_setpoints_data,
+                    )
     finally:
         for parameter, original_delay in original_delays.items():
             parameter.post_delay = original_delay
 
-    return _handle_plotting(dataset, do_plot, interrupted())
+    for datasaver in datasavers:
+        return _handle_plotting(datasaver.dataset, do_plot, interrupted())
 
 
 def _handle_plotting(
