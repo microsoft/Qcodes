@@ -723,7 +723,6 @@ def dond(
     grouped_parameters: List[Union[ParamMeasT, Sequence[ParamMeasT]]] = []
     for param in params_meas:
         if not isinstance(param, Sequence):
-            print(param)
             if isinstance(param, _BaseParameter):
                 measured_parameters.append(param)
             nested_groupe.append(param)
@@ -749,13 +748,6 @@ def dond(
             f"falling back to unknown shape."
         )
         shapes = None
-    print('****************************')
-    print(nested_groupe)
-    print('****************************')
-    print(params_meas)
-    print('****************************')
-    print(grouped_parameters)
-    print('****************************')
     meas_list: List[Measurement] = []
     for groupe in grouped_parameters:
         meas = Measurement(name=measurement_name, exp=exp)
@@ -766,7 +758,7 @@ def dond(
         _set_write_period(meas, write_period)
         _register_actions(meas, enter_actions, exit_actions)
         meas_list.append(meas)
-    print(meas_list)
+
     original_delays: Dict[_BaseParameter, float] = {}
     params_set: List[_BaseParameter] = []
     for sweep in sweep_instances:
