@@ -254,7 +254,7 @@ class Motor(InstrumentChannel):
                                      "first stage of HM (home)")
 
         self.add_parameter("off_when_error_occurs",
-                           get_cmd=f"MG _OE{self._axis}",
+                           get_cmd=self._get_off_when_error_occurs,
                            set_cmd=self._set_off_when_error_occurs,
                            val_mapping={"disable": 0,
                                         "enable for position, amplifier error or "
@@ -265,35 +265,42 @@ class Motor(InstrumentChannel):
                                      "automatically turn off when error occurs")
 
         self.add_parameter(
-            "stepper_position_maintenance_mode",
-            get_cmd=self._stepper_position_maintenance_mode_status,
+            "enable_stepper_position_maintenance_mode",
+            get_cmd=None,
             set_cmd=self._enable_disable_spm_mode,
             val_mapping={"enable": 1,
                          "disable": 0},
             docstring="enables, disables and gives status of error in SPM mode")
 
-    def _enable_disable_spm_mode(self, val: str) -> None:
+    def _get_off_when_error_occurs(self) -> int:
+        """Gets the status if motor is automatically set to turn off when error occurs."""
+
+        val = self.ask(f"MG _OE{self._axis}")
+
+        return int(val[0])
+
+    def _enable_disable_spm_mode(self, val: int) -> None:
         """
         enables/disables Stepper Position Maintenance mode and allows for error
         correction when error happens
         """
-        if val == "1":
+        if val:
             self.off_when_error_occurs("enable for position, amplifier error "
                                        "or abort input")
             self._setup_spm()
             self.servo_here()  # Enable axis
-            self.root_instrument.wait(50)  # Allow slight settle time
             self.write(f"YS{self._axis}={val}")
         else:
             self.write(f"YS{self._axis}={val}")
             self.off_when_error_occurs("disable")
+            self.off()
 
-    def _stepper_position_maintenance_mode_status(self) -> str:
+    def stepper_position_maintenance_mode_status(self) -> str:
         """
         gives the status if the motor is in SPM mode enabled, disabled or an
         error has occurred. if error has occurred status is received,
-        then error can be cleared by setting
-        `stepper_position_maintenance_mode` to enable.
+        then error can be cleared by enabling
+        `enable_stepper_position_maintenance_mode`.
         """
         val = self.ask(f"MG _YS{self._axis}")
         if val[0] == "0":
@@ -303,11 +310,11 @@ class Motor(InstrumentChannel):
         else:
             return "Error Occurred"
 
-    def _set_off_when_error_occurs(self, val: str) -> None:
+    def _set_off_when_error_occurs(self, val: int) -> None:
         """
         sets the motor to turn off automatically when the error occurs
         """
-        self.write(f"OE{self.axis}={val}")
+        self.write(f"OE{self._axis}={val}")
 
     def _set_homing_velocity(self, val: str) -> None:
         """
@@ -419,6 +426,8 @@ class Motor(InstrumentChannel):
         # home command
         self.write(f"HM {self._axis}")
 
+        self.servo_here()
+
         # begin motion
         self.begin()
 
@@ -436,10 +445,9 @@ class Motor(InstrumentChannel):
         """
         this allows the user to correct for position error in Stepper Position
         Maintenance mode and after correction sets
-        `stepper_position_maintenance_mode` back to enable
+        `stepper_position_maintenance_mode_status` back to enable
         """
         self.write(f"YR{self._axis}=_QS{self._axis}")
-        self.stepper_position_maintenance_mode()
 
 
 class DMC4133Controller(GalilMotionController):
