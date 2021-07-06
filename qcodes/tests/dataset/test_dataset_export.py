@@ -163,8 +163,13 @@ def test_export_csv(tmp_path_factory, mock_dataset):
     tmp_path = tmp_path_factory.mktemp("export_csv")
     path = str(tmp_path)
     mock_dataset.export(export_type="csv", path=path, prefix="qcodes_")
-    assert os.listdir(path) == [f"qcodes_{mock_dataset.run_id}.csv"]
-    with open(os.path.join(path, f"qcodes_{mock_dataset.run_id}.csv")) as f:
+
+    expected_path = f"qcodes_{mock_dataset.run_id}.csv"
+    expected_full_path = os.path.join(path, f"qcodes_{mock_dataset.run_id}.csv")
+    assert mock_dataset.export_info.export_paths["csv"] == expected_full_path
+    assert mock_dataset._export_path is not None
+    assert os.listdir(path) == [expected_path]
+    with open(expected_full_path) as f:
         assert f.readlines() == ['0.0\t1.0\t2.0\n']
 
 
@@ -181,6 +186,29 @@ def test_export_netcdf(tmp_path_factory, mock_dataset):
     assert df.index.values.tolist() == [0.]
     assert df.y.values.tolist() == [1.0]
     assert df.z.values.tolist() == [2.0]
+
+    assert mock_dataset.export_info.export_paths["nc"] == file_path
+    assert mock_dataset._export_path is not None
+
+
+@pytest.mark.usefixtures("experiment")
+def test_export_netcdf_csv(tmp_path_factory, mock_dataset):
+    tmp_path = tmp_path_factory.mktemp("export_netcdf")
+    path = str(tmp_path)
+    csv_path = os.path.join(path, f"qcodes_{mock_dataset.run_id}.csv")
+    nc_path = os.path.join(path, f"qcodes_{mock_dataset.run_id}.nc")
+
+    mock_dataset.export(export_type="netcdf", path=path, prefix="qcodes_")
+    mock_dataset.export(export_type="csv", path=path, prefix="qcodes_")
+
+    assert mock_dataset.export_info.export_paths["nc"] == nc_path
+    assert mock_dataset.export_info.export_paths["csv"] == csv_path
+
+    mock_dataset.export(export_type="netcdf", path=path, prefix="foobar_")
+    nc_path = os.path.join(path, f"foobar_{mock_dataset.run_id}.nc")
+
+    assert mock_dataset.export_info.export_paths["nc"] == nc_path
+    assert mock_dataset.export_info.export_paths["csv"] == csv_path
 
 
 @pytest.mark.usefixtures("experiment")
@@ -300,11 +328,15 @@ def test_export_to_xarray_extra_metadate_can_be_stored(mock_dataset, tmp_path):
 
     # check that the metadata in the qcodes dataset is roundtripped to the loaded
     # dataset
+    # export info is only set after the export so its not part of
+    # the exported metadata so skip it here.
     for key in mock_dataset.metadata.keys():
-        assert mock_dataset.metadata[key] == loaded_data.attrs[key]
+        if key != "export_info":
+            assert mock_dataset.metadata[key] == loaded_data.attrs[key]
     # check that the added metadata roundtrip correctly
     assert loaded_data.attrs["foo_metadata"] == json.dumps(nt_metadata)
     # check that all attrs roundtrip correctly within the xarray ds
+    data_as_xarray.attrs.pop("export_info")
     assert loaded_data.attrs == data_as_xarray.attrs
 
 

@@ -970,6 +970,27 @@ class _BaseParameter(Metadatable):
         return self._settable
 
     @property
+    def underlying_instrument(self) -> Optional['InstrumentBase']:
+        """
+        Returns an instance of the underlying hardware instrument that this
+        parameter communicates with, per this parameter's implementation.
+
+        This is useful in the case where a parameter does not belongs to
+        an instrument instance that represents a real hardware instrument
+        but actually uses a real hardware instrument in its implementation
+        (e.g. via calls to one or more parameters of that real hardware
+        instrument). This is also useful when a parameter does belong to
+        an instrument instance but that instance does not represent the
+        real hardware instrument that the parameter interacts with: hence
+        ``root_instrument`` of the parameter cannot be the
+        ``hardware_instrument``, however ``underlying_instrument`` can be
+        implemented to return the ``hardware_instrument``.
+
+        By default it returns the ``root_instrument`` of the parameter.
+        """
+        return self.root_instrument
+
+    @property
     def abstract(self) -> Optional[bool]:
         return self._abstract
 
