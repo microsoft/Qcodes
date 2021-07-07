@@ -167,13 +167,21 @@ def add_parameter_spec_to_docstring(app, what, name, obj, options, lines):
         ]
         for kw_name, par_obj in inspect.signature(obj).parameters.items():
             if kw_name != "self":
+                py_obj = par_obj.default
                 if kw_name == "parameter_class":
                     # create link to the parameter class
-                    mod = par_obj.default.__module__
-                    class_name = par_obj.default.__name__
+                    mod = py_obj.__module__
+                    class_name = py_obj.__name__
                     value = f":class:`{add_links}{mod}.{class_name}`"
                 else:
-                    value = f"*{par_obj.default!r}*"
+                    value = f"*{py_obj!r}*"
+
+                if isinstance(py_obj, type(lambda:0)):
+                    value = inspect.getsource(py_obj)
+                    value = value.replace("\n", "").replace("\r", "")
+                    value = value[:-1] if value[-1] == "," else value # source code might end with `,`
+                    value = value.rsplit("=", 1)[-1].strip()  # source code includes the name of the argument
+                    value = f":code:`{value}`"
 
                 if add_links == "" and kw_name == "vals":
                     kw_name = ":mod:`vals <qcodes.utils.validators>`"
