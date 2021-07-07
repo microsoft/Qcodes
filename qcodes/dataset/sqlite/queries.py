@@ -7,7 +7,6 @@ import sqlite3
 import time
 import unicodedata
 import warnings
-from copy import copy
 from pathlib import Path
 from typing import (
     Any,
