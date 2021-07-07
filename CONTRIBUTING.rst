@@ -83,13 +83,13 @@ Then to test and view the coverage:
 
 ::
 
-    py.test --cov=qcodes --cov-report xml --cov-config=setup.cfg
+    pytest --cov=qcodes --cov-report xml --cov-config=setup.cfg
 
 To test and see the coverage (with missing lines) of a single module:
 
 ::
 
-    py.test --cov=qcodes.module.submodule --cov-report=term-missing qcodes/tests/test_file.py
+    pytest --cov=qcodes.module.submodule --cov-report=term-missing qcodes/tests/test_file.py
 
 You can also run single tests with something like:
 
@@ -265,6 +265,61 @@ Pull requests
    down, you can call ``git branch --merged`` to list branches that can
    be safely deleted, then ``git branch -d <branch-name>`` to delete it.
 
+Automatic Testing (CI)
+~~~~~~~~~~~~~~~~~~~~~~
+
+Once your pull request is opened a number of automatic jobs are created. These
+will run the tests and in other ways verify the correctness of the code.
+In the following we will describe what we test and provide a few tips on how to
+understand the results especially if something should fail.
+
+Note that the some of the automatic jobs are labeled with Required. These
+must pass before the pull request can be merged. The other jobs that do not
+have a required label may be considered guidelines. Please attempt to make these
+pass if possible but feel free to disregard them if the suggested changes do not make sense.
+If in doubt feel free to ask questions.
+
+Required checks
+^^^^^^^^^^^^^^^
+
+Our required checks consists of a number of jobs that performs the following actions using multiple python versions,
+on Linux and on Windows.
+
+- Run our test suite using pytest as described above.
+- Perform type checking of the code in QCoDeS using MyPy. For many of the modules we enforce that the code must be
+  type annotated. We encourage all contributors to type annotate any contribution to QCoDeS. If you need help with this
+  please feel free to reach out.
+- Build the documentation using Sphinx with Sphinx warnings as errors. This includes execution of all example notebooks
+  that are not explicitly marked as not to be executed. Please see here_ for information on how to disable execution of a
+  notebook.
+- A number of smaller static checks implemented using `pre-commit <https://pre-commit.com/>`_ hooks. You may want to
+  consider installing the pre-commit hooks in your local git config to have these checks performed automatically when
+  you commit.
+
+    - Check that YAML, JSON and Python files are syntactically valid.
+    - Check that there are no trailing whitespace or blank lines at the end of python files.
+    - Check that all files uses the correct line endings (``\n`` for all files except ``.bat``)
+    - Run `pyupgrade  <https://github.com/asottile/pyupgrade>`_ on all python files.
+    - Run `Darker <https://github.com/akaihola/darker/>`_. This will enforce `Black <https://github.com/psf/black>`_
+      formatting and sorting of imports using `isort <https://pycqa.github.io/isort/>`_ on all new and changed code.
+      We do not format the entire codebase to not lose change history.
+
+
+Furthermore we also run our test suite with the minimum requirements stated to ensure that QCoDeS does work
+correctly with these.
+
+Optional checks
+^^^^^^^^^^^^^^^
+
+In addition to the required checks we perform two optional checks that can be regarded as guidelines rather than
+requirements.
+
+- We use Codacy to perform a number of style checks using `Pylint` and `Pydocstyle` among others. Please
+  adapt your changes to these recommendations as you see fit. It is not a requirement that all Codacy warnings and
+  errors are fixed. Do not insert comments to disable these warnings.
+- We measure code coverage using `Codecov`. This measures if a line of code is executed as part of a test.
+  As much as possible we would encourage you to add tests to cover all changes. However, this may not always be
+  possible especially when writing instrument drivers.
 
 Documenting QCoDeS
 ~~~~~~~~~~~~~~~~~~
@@ -323,3 +378,5 @@ The submodule ``a.py`` is documented in its own file (``a.rst``) containing::
 This automatically generates a page with the documentation of the module ``a.py``
 
 Finally the ``index.rst`` file should be included in the toctree in ``docs/api/index.rst``
+
+.. _here: ../examples/writing_drivers/Creating-Instrument-Drivers.ipynb
