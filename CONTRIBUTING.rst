@@ -289,8 +289,8 @@ on Linux and on Windows.
 - Perform type checking of the code in QCoDeS using MyPy. For many of the modules we enforce that the code must be
   type annotated. We encourage all contributors to type annotate any contribution to QCoDeS. If you need help with this
   please feel free to reach out.
-- Build the documentation using Sphinx with Sphinx warnings as errors. This included execution of all example notebooks
-  that are not explicitly marked as not to be executed. Please see here_ for a how to disable execution of a
+- Build the documentation using Sphinx with Sphinx warnings as errors. This includes execution of all example notebooks
+  that are not explicitly marked as not to be executed. Please see here_ for information on how to disable execution of a
   notebook.
 - A number of smaller static checks implemented using `pre-commit <https://pre-commit.com/>`_ hooks. You may want to
   consider installing the pre-commit hooks in your local git config to have these checks performed automatically when
