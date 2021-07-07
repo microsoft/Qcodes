@@ -307,14 +307,14 @@ def get_parameter_data_for_one_paramtree(
     res_t = map(list, zip(*data))
 
     for paramspec, column_data in zip(paramspecs, res_t):
+        if paramspec.type == "numeric":
+            # there is no reliable way to
+            # tell the difference between a float and and int loaded
+            # from sqlite numeric columns so always fall back to float
+            dtype: Optional[type] = np.float64
+        else:
+            dtype = None
         try:
-            if paramspec.type == "numeric":
-                # there is no reliable way to
-                # tell the difference between a float and and int loaded
-                # from sqlite numeric columns so always fall back to float
-                dtype: Optional[type] = np.float64
-            else:
-                dtype = None
             with warnings.catch_warnings():
                 warnings.filterwarnings(
                     "ignore",
