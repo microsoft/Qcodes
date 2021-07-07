@@ -191,24 +191,55 @@ are two widely  used options:
  - **Jupyter**, a browser based notebook
  - **Spyder**, an integrated development environment
 
-Both can be installed using conda or pip.
-
-To start either of them you can use the shortcuts in the start menu under
-*Anaconda3* with a trailing *(qcodes)*.
-
-For other options you can launch a terminal either via the *Anaconda Navigator*
-by selecting *qcodes* in the *Environments tab* and left-clicking on the *play*
-button or by entering
+Both can be installed using ``conda`` or ``pip`` in the created ``conda`` environment
+for QCoDeS. Then installation can be simply done by activating the QCoDeS environment
+in the terminal and running the following:
 
 .. code:: bash
 
-    conda activate qcodes
+    pip install spyder
+    pip install jupyter
 
-in the *Anaconda prompt*
+If you prefer *jupyterlab* over classic *jupyter notebook*, you should install it
+separately:
 
-From the terminal you can then start any other application, such as *IPython* or
+.. code:: bash
+
+    pip install jupyterlab
+
+If you installed QCoDeS using conda-forge, you may want to install above using
+``conda install`` rather than ``pip install``. After installation, they could be easily
+called in your QCoDeS-activated ``conda`` terminal.
+
+For running spyder:
+
+.. code:: bash
+
+    spyder
+
+or for jupyter notebook:
+
+.. code:: bash
+
+    jupyter notebook
+
+or jupyter lab:
+
+.. code:: bash
+
+    jupyter lab
+
+For other options from the terminal you can activate the QCoDeS in that terminal
+then start any other application, such as *IPython* or
 just plain old *Python*.
 
+It is also possible to install *Anaconda* for managing ``conda`` environments, however,
+you should be mindful about using it as *Anaconda* installs a wide verity of packages in
+the ``root`` environment upon installation. It comes with a *GUI* called *Anaconda Navigator*
+to work with. If you rather to use this *GUI* over the ``conda`` terminal, make sure to select
+the QCoDeS environment in the program, then you could be able to run the packages installed
+in that environment. The reason is because by default, *Anaconda Navigator* starts with the
+``base(root)`` environment.
 
 Getting started
 ---------------
