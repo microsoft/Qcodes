@@ -7,6 +7,7 @@ from typing_extensions import TypedDict
 from qcodes.dataset.data_set import load_by_id
 from qcodes.dataset.data_set_protocol import DataSetProtocol
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
+from qcodes.dataset.sqlite.queries import list_of_data_to_maybe_ragged_nd_array
 from qcodes.utils.deprecate import deprecate
 
 log = logging.getLogger(__name__)
@@ -180,7 +181,7 @@ def _rows_from_datapoints(inputsetpoints: np.ndarray) -> np.ndarray:
         rows.append(temp)
         setpoints = np.delete(setpoints, inds)
 
-    return np.array(rows)
+    return list_of_data_to_maybe_ragged_nd_array(rows)
 
 
 def _all_in_group_or_subgroup(rows: np.ndarray) -> bool:

@@ -321,7 +321,7 @@ def get_parameter_data_for_one_paramtree(
 
 def list_of_data_to_maybe_ragged_nd_array(
     column_data: Sequence[Any],
-    dtype,
+    dtype: Optional[type] = None,
 ) -> np.ndarray:
     """
     Convert a (nested) Sequence of data to numpy arrays. Handle that
