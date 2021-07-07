@@ -7,7 +7,6 @@ import sqlite3
 import time
 import unicodedata
 import warnings
-from copy import copy
 from pathlib import Path
 from typing import (
     Any,
@@ -24,7 +23,6 @@ from typing import (
 )
 
 import numpy as np
-from numpy import VisibleDeprecationWarning
 
 import qcodes as qc
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
@@ -55,6 +53,7 @@ from qcodes.dataset.sqlite.query_helpers import (
     update_where,
 )
 from qcodes.utils.deprecate import deprecate
+from qcodes.utils.numpy_utils import list_of_data_to_maybe_ragged_nd_array
 
 log = logging.getLogger(__name__)
 
@@ -307,32 +306,16 @@ def get_parameter_data_for_one_paramtree(
     res_t = map(list, zip(*data))
 
     for paramspec, column_data in zip(paramspecs, res_t):
-        try:
-            if paramspec.type == "numeric":
-                # there is no reliable way to
-                # tell the difference between a float and and int loaded
-                # from sqlite numeric columns so always fall back to float
-                dtype: Optional[type] = np.float64
-            else:
-                dtype = None
-            with warnings.catch_warnings():
-                warnings.filterwarnings(
-                    "ignore",
-                    category=VisibleDeprecationWarning,
-                    message="Creating an ndarray from ragged nested sequences"
-                )
-                # numpy warns here and coming versions
-                # will eventually raise
-                # for ragged arrays if you don't explicitly set
-                # dtype=object
-                # It is time consuming to detect ragged arrays here
-                # and it is expected to be a relatively rare situation
-                # so fallback to object if the regular dtype fail
-                param_data[paramspec.name] = np.array(column_data, dtype=dtype)
-        except:
-            # Not clear which error to catch here. This will only be clarified
-            # once numpy actually starts to raise here.
-            param_data[paramspec.name] = np.array(column_data, dtype=object)
+        if paramspec.type == "numeric":
+            # there is no reliable way to
+            # tell the difference between a float and and int loaded
+            # from sqlite numeric columns so always fall back to float
+            dtype: Optional[type] = np.float64
+        else:
+            dtype = None
+        param_data[paramspec.name] = list_of_data_to_maybe_ragged_nd_array(
+            column_data, dtype
+        )
     return param_data, n_rows
 
 
