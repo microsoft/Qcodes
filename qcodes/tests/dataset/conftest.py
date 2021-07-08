@@ -14,14 +14,19 @@ from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.sqlite.database import connect, initialise_database
-from qcodes.instrument.parameter import (ArrayParameter, Parameter,
-                                         ParameterWithSetpoints)
-from qcodes.tests.instrument_mocks import (ArraySetPointParam,
-                                           DummyChannelInstrument,
-                                           DummyInstrument,
-                                           Multi2DSetPointParam,
-                                           Multi2DSetPointParam2Sizes,
-                                           setpoint_generator)
+from qcodes.instrument.parameter import (
+    ArrayParameter,
+    Parameter,
+    ParameterWithSetpoints,
+)
+from qcodes.tests.instrument_mocks import (
+    ArraySetPointParam,
+    DummyChannelInstrument,
+    DummyInstrument,
+    Multi2DSetPointParam,
+    Multi2DSetPointParam2Sizes,
+    setpoint_generator,
+)
 from qcodes.utils.validators import Arrays, ComplexNumbers, Numbers
 
 n_experiments = 0
@@ -583,17 +588,19 @@ def SpectrumAnalyzer():
     class Spectrum(ArrayParameter):
 
         def __init__(self, name, instrument):
-            super().__init__(name=name,
-                             shape=(1,),  # this attribute should be removed
-                             label='Flower Power Spectrum',
-                             unit='V/sqrt(Hz)',
-                             setpoint_names=('Frequency',),
-                             setpoint_units=('Hz',))
+            super().__init__(
+                name=name,
+                shape=(1,),  # this attribute should be removed
+                label="Flower Power Spectrum",
+                unit="V/sqrt(Hz)",
+                setpoint_names=("Frequency",),
+                setpoint_units=("Hz",),
+                instrument=instrument,
+            )
 
             self.npts = 100
             self.start = 0
             self.stop = 2e6
-            self._instrument = instrument
 
         def get_raw(self):
             # This is how it should be: the setpoints are generated at the
