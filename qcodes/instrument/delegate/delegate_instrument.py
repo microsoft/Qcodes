@@ -237,14 +237,14 @@ class DelegateInstrument(InstrumentBase):
         name: str,
         source: Parameter,
     ) -> DelegateGroupParameter:
+        param_name = "{group_name}_{name}"
+        if param_name in self.parameters:
+            raise KeyError(f"Duplicate parameter name {param_name} on {self.name}")
         param = self.param_cls(
             name=f"{group_name}_{name}",
             instrument=self,
             source=source
         )
-        if param.name in self.parameters:
-            raise KeyError(f'Duplicate parameter name {param.name}')
-        self.parameters[param.name] = param
         return param
 
     def _create_and_add_parameter(
