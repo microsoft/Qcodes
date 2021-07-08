@@ -288,10 +288,11 @@ class _BaseParameter(Metadatable):
         snapshot_exclude: bool = False,
         max_val_age: Optional[float] = None,
         vals: Optional[Validator[Any]] = None,
-        abstract: Optional[bool] = False
+        abstract: Optional[bool] = False,
+        bind_to_instrument: bool = True,
     ) -> None:
 
-        if instrument is not None:
+        if instrument is not None and bind_to_instrument:
             existing_parameter = instrument.parameters.get(name, None)
 
             if existing_parameter:
@@ -1147,19 +1148,22 @@ class Parameter(_BaseParameter):
     """
 
     def __init__(
-            self, name: str,
-            instrument: Optional['InstrumentBase'] = None,
-            label: Optional[str] = None,
-            unit: Optional[str] = None,
-            get_cmd: Optional[Union[str, Callable[..., Any], bool]] = None,
-            set_cmd:  Optional[Union[str, Callable[..., Any], bool]] = False,
-            initial_value: Optional[Union[float, str]] = None,
-            max_val_age: Optional[float] = None,
-            vals: Optional[Validator[Any]] = None,
-            docstring: Optional[str] = None,
-            initial_cache_value: Optional[Union[float, str]] = None,
-            **kwargs: Any) -> None:
-        if instrument is not None:
+        self,
+        name: str,
+        instrument: Optional["InstrumentBase"] = None,
+        label: Optional[str] = None,
+        unit: Optional[str] = None,
+        get_cmd: Optional[Union[str, Callable[..., Any], bool]] = None,
+        set_cmd: Optional[Union[str, Callable[..., Any], bool]] = False,
+        initial_value: Optional[Union[float, str]] = None,
+        max_val_age: Optional[float] = None,
+        vals: Optional[Validator[Any]] = None,
+        docstring: Optional[str] = None,
+        initial_cache_value: Optional[Union[float, str]] = None,
+        bind_to_instrument: bool = True,
+        **kwargs: Any,
+    ) -> None:
+        if instrument is not None and bind_to_instrument:
             existing_parameter = instrument.parameters.get(name, None)
 
             if existing_parameter:
@@ -1172,8 +1176,14 @@ class Parameter(_BaseParameter):
                         f"base class"
                     )
 
-        super().__init__(name=name, instrument=instrument, vals=vals,
-                         max_val_age=max_val_age, **kwargs)
+        super().__init__(
+            name=name,
+            instrument=instrument,
+            vals=vals,
+            max_val_age=max_val_age,
+            bind_to_instrument=bind_to_instrument,
+            **kwargs,
+        )
 
         no_instrument_get = not self.gettable and \
             (get_cmd is None or get_cmd is False)
@@ -1735,6 +1745,7 @@ class ArrayParameter(_BaseParameter):
         snapshot_value: bool = False,
         snapshot_exclude: bool = False,
         metadata: Optional[Mapping[Any, Any]] = None,
+        **kwargs: Any,
     ) -> None:
         super().__init__(
             name,
@@ -1743,6 +1754,7 @@ class ArrayParameter(_BaseParameter):
             metadata,
             snapshot_value=snapshot_value,
             snapshot_exclude=snapshot_exclude,
+            **kwargs,
         )
 
         if self.settable:
@@ -1949,6 +1961,7 @@ class MultiParameter(_BaseParameter):
         snapshot_value: bool = False,
         snapshot_exclude: bool = False,
         metadata: Optional[Mapping[Any, Any]] = None,
+        **kwargs: Any,
     ) -> None:
         super().__init__(
             name,
@@ -1957,6 +1970,7 @@ class MultiParameter(_BaseParameter):
             metadata,
             snapshot_value=snapshot_value,
             snapshot_exclude=snapshot_exclude,
+            **kwargs,
         )
 
         self._meta_attrs.extend(['setpoint_names', 'setpoint_labels',
