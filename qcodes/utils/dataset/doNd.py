@@ -645,7 +645,7 @@ def dond(
     show_progress: Optional[bool] = None,
     use_threads: Optional[bool] = None,
     additional_setpoints: Sequence[ParamMeasT] = tuple(),
-) -> AxesTupleListWithDataSet:
+) -> List[AxesTupleListWithDataSet]:
     """
     Perform n-dimentional scan from slowest (first) to the fastest (last), to
     measure m measurement parameters. The dimensions should be specified
@@ -766,6 +766,7 @@ def dond(
         sweep.param.post_delay = sweep.delay
         params_set.append(sweep.param)
 
+    handle_plots: List[AxesTupleListWithDataSet] = []
     try:
         with _catch_keyboard_interrupts() as interrupted, contextlib.ExitStack() as stack:
             datasavers = [stack.enter_context(measure.run()) for measure in meas_list]
@@ -786,8 +787,9 @@ def dond(
         for parameter, original_delay in original_delays.items():
             parameter.post_delay = original_delay
 
-    for datasaver in datasavers:
-        return _handle_plotting(datasaver.dataset, do_plot, interrupted())
+        handle_plots = [_handle_plotting(datasaver.dataset, do_plot, interrupted()) for datasaver in datasavers]
+
+    return handle_plots
 
 
 def _handle_plotting(
