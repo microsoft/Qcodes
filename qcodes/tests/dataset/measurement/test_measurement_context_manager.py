@@ -265,10 +265,7 @@ def test_measurement_name_changed_via_attribute(experiment, DAC, DMM):
         run_id = datasaver.run_id
         expected_name = fmt.format('results', exp_id, run_id)
         assert datasaver.dataset.table_name == expected_name
-        assert datasaver.dataset.name == 'results'
-        assert datasaver.dataset.snapshot.get(
-            'station'
-        )['measurement_name'] == name
+        assert datasaver.dataset.name == name
 
 
 def test_measurement_name_set_as_argument(experiment, DAC, DMM):
@@ -286,10 +283,7 @@ def test_measurement_name_set_as_argument(experiment, DAC, DMM):
         run_id = datasaver.run_id
         expected_name = fmt.format('results', exp_id, run_id)
         assert datasaver.dataset.table_name == expected_name
-        assert datasaver.dataset.name == 'results'
-        assert datasaver.dataset.snapshot.get(
-            'station'
-        )['measurement_name'] == name
+        assert datasaver.dataset.name == name
 
 
 @settings(deadline=None)

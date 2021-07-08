@@ -1155,7 +1155,7 @@ def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
                 captured_counter = existing_captured_counter + 1
             else:
                 captured_counter = run_counter
-    formatted_name = format_table_name(format_string, name, exp_id,
+    formatted_name = format_table_name(format_string, 'results', exp_id,
                                        run_counter)
     table = "runs"
 
