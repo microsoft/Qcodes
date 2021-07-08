@@ -109,7 +109,7 @@ class ChannelBuffer(ArrayParameter):
             setpoint_names=("Time",),
             setpoint_labels=("Time",),
             setpoint_units=("s",),
-            docstring="Holds an acquired (part of the) " "data buffer of one channel.",
+            docstring="Holds an acquired (part of the) data buffer of one channel.",
             instrument=instrument,
         )
 
