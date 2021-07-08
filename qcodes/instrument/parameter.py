@@ -1168,6 +1168,13 @@ class Parameter(_BaseParameter):
 
             if existing_parameter:
 
+                # this check is redundant since its also in the baseclass
+                # but if we do not put it here it would be an api break
+                # as KeyErrors are now transformed into ValueErrors.
+                # do we care about that?
+                if not existing_parameter.abstract:
+                    raise KeyError(f"Duplicate parameter name {name}")
+
                 existing_unit = getattr(existing_parameter, "unit", None)
                 if existing_unit != unit:
                     raise ValueError(
