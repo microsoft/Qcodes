@@ -50,10 +50,10 @@ class VoltageParameter(MultiParameter):
 
     def get_raw(self) -> Tuple[ParamRawDataType, ParamRawDataType]:
         volt = self._measured_param.get()
-        assert isinstance(self._instrument, SR560)
-        volt_amp = (volt / self._instrument.gain.get())
+        assert isinstance(self.instrument, SR560)
+        volt_amp = volt / self.instrument.gain.get()
 
-        if self._instrument.invert.get():
+        if self.instrument.invert.get():
             volt_amp *= -1
 
         value = (volt, volt_amp)

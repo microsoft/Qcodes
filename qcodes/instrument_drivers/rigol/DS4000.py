@@ -7,6 +7,7 @@ from distutils.version import LooseVersion
 from typing import Any
 
 import numpy as np
+
 from qcodes import VisaInstrument
 from qcodes import validators as vals
 from qcodes.instrument.channel import ChannelList, InstrumentChannel
@@ -21,21 +22,24 @@ class TraceNotReady(Exception):
 
 class ScopeArray(ArrayParameter):
     def __init__(
-            self,
-            name: str,
-            instrument: "RigolDS4000Channel",
-            channel: int,
-            raw: bool = False):
-        super().__init__(name=name,
-                         shape=(1400,),
-                         label='Voltage',
-                         unit='V',
-                         setpoint_names=('Time', ),
-                         setpoint_labels=('Time', ),
-                         setpoint_units=('s',),
-                         docstring='holds an array from scope')
+        self,
+        name: str,
+        instrument: "RigolDS4000Channel",
+        channel: int,
+        raw: bool = False,
+    ):
+        super().__init__(
+            name=name,
+            shape=(1400,),
+            label="Voltage",
+            unit="V",
+            setpoint_names=("Time",),
+            setpoint_labels=("Time",),
+            setpoint_units=("s",),
+            docstring="holds an array from scope",
+            instrument=instrument,
+        )
         self.channel = channel
-        self._instrument = instrument
         self.raw = raw
         self.max_read_step = 50
         self.trace_ready = False
