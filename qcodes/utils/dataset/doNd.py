@@ -719,20 +719,20 @@ def dond(
     )
 
     measured_parameters: List[_BaseParameter] = []
-    nested_groupe: List[ParamMeasT] = []
+    nested_group: List[ParamMeasT] = []
     grouped_parameters: List[Union[ParamMeasT, Sequence[ParamMeasT]]] = []
     for param in params_meas:
         if not isinstance(param, Sequence):
             if isinstance(param, _BaseParameter):
                 measured_parameters.append(param)
-            nested_groupe.append(param)
+            nested_group.append(param)
 
         else:
             for nested_param in param:
                 if isinstance(nested_param, _BaseParameter):
                     measured_parameters.append(nested_param)
-    if nested_groupe:
-        grouped_parameters.append(tuple(nested_groupe))
+    if nested_group:
+        grouped_parameters.append(tuple(nested_group))
     else:
         grouped_parameters = params_meas
     measured_parameters = tuple(measured_parameters)
@@ -749,11 +749,11 @@ def dond(
         )
         shapes = None
     meas_list: List[Measurement] = []
-    for groupe in grouped_parameters:
+    for group in grouped_parameters:
         meas = Measurement(name=measurement_name, exp=exp)
         _register_parameters(meas, all_setpoint_params)
         _register_parameters(
-            meas, groupe, setpoints=all_setpoint_params, shapes=shapes
+            meas, group, setpoints=all_setpoint_params, shapes=shapes
         )
         _set_write_period(meas, write_period)
         _register_actions(meas, enter_actions, exit_actions)
