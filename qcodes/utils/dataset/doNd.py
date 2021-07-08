@@ -774,10 +774,10 @@ def dond(
             for setpoints in tqdm(nested_setpoints, disable=not show_progress):
                 param_set_list = []
                 param_value_pairs = zip(params_set[::-1], setpoints[::-1])
+                for setpoint_param, setpoint in param_value_pairs:
+                    setpoint_param(setpoint)
+                    param_set_list.append((setpoint_param, setpoint))
                 for index, datasaver in enumerate(datasavers):
-                    for setpoint_param, setpoint in param_value_pairs:
-                        setpoint_param(setpoint)
-                        param_set_list.append((setpoint_param, setpoint))
                     datasaver.add_result(
                         *param_set_list,
                         *process_params_meas(grouped_parameters[index], use_threads=use_threads),
