@@ -871,14 +871,14 @@ def test_dond_explicit_exp_meas_sample(_param, experiment):
     experiment_2 = new_experiment("new-exp", "no-sample")
 
     data1 = dond(_param, do_plot=False, exp=experiment)
-    assert data1[0].exp_name == "test-experiment"
+    assert data1[0][0].exp_name == "test-experiment"
     data2 = dond(_param, do_plot=False, exp=experiment_2, measurement_name="Meas")
-    assert data2[0].name == "Meas"
-    assert data2[0].sample_name == "no-sample"
-    assert data2[0].exp_name == "new-exp"
+    assert data2[0][0].name == "Meas"
+    assert data2[0][0].sample_name == "no-sample"
+    assert data2[0][0].exp_name == "new-exp"
     # by default the last experiment is used
     data3 = dond(_param, do_plot=False)
-    assert data3[0].exp_name == "new-exp"
+    assert data3[0][0].exp_name == "new-exp"
 
 
 @pytest.mark.usefixtures("experiment")
@@ -1394,3 +1394,7 @@ def test_dond_2d_output_data(_param, _param_complex, _param_set, _param_set_2):
     np.testing.assert_array_equal(
         loaded_data_2[_param_complex.name][_param_set_2.name], expected_setpoints_2
     )
+
+
+# @pytest.mark.usefixtures("plot_close", "experiment")
+# def test_multiple_measurement_creation_dond_0d(_param, _param_complex):
