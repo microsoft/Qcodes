@@ -271,7 +271,7 @@ def test_add_experiments(experiment_name,
     expected_ds_counter = 1
     assert loaded_dataset.name == dataset_name
     assert loaded_dataset.counter == expected_ds_counter
-    assert loaded_dataset.table_name == "{}-{}-{}".format(dataset_name,
+    assert loaded_dataset.table_name == "{}-{}-{}".format("results",
                                                           exp.exp_id,
                                                           loaded_dataset.counter)
     expected_ds_counter += 1
@@ -280,7 +280,7 @@ def test_add_experiments(experiment_name,
     loaded_dataset = load_by_id(dsid)
     assert loaded_dataset.name == dataset_name
     assert loaded_dataset.counter == expected_ds_counter
-    assert loaded_dataset.table_name == "{}-{}-{}".format(dataset_name,
+    assert loaded_dataset.table_name == "{}-{}-{}".format("results",
                                                           exp.exp_id,
                                                           loaded_dataset.counter)
 
