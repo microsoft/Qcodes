@@ -511,7 +511,7 @@ class Runner:
         self.station = station
         self._interdependencies = interdeps
         self._shapes: Shapes = shapes
-        self.name = name
+        self.name = name if name else 'results'
         self._parent_datasets = parent_datasets
         self._extra_log_info = extra_log_info
         self._write_in_background = write_in_background
@@ -556,7 +556,7 @@ class Runner:
         if self._dataset_class is DataSet:
             dataset_class = cast(Type[DataSet], self._dataset_class)
             self.ds = dataset_class(
-                name='results',
+                name=self.name,
                 exp_id=exp_id,
                 conn=conn,
                 in_memory_cache=self._in_memory_cache,
@@ -573,9 +573,6 @@ class Runner:
             snapshot = station.snapshot()
         else:
             snapshot = {}
-
-        if len(self.name) != 0:
-            snapshot['measurement_name'] = self.name
 
         self.ds.prepare(
             snapshot=snapshot,
@@ -666,9 +663,9 @@ class Measurement:
             is the latest one created.
         station: The QCoDeS station to snapshot. If not given, the
             default one is used.
-        name: Name of the measurement. It is added to the snapshot in the
-            dataset.  If not given, no measurement name gets appended to the
-            snapshot is dataset.
+        name: Name of the measurement. This will be passed down to the dataset
+            produced by the measurement. If not given, a default value of
+            'results' is used for the dataset.
     """
 
     def __init__(self, exp: Optional[Experiment] = None,
