@@ -663,18 +663,26 @@ def test_metadata(experiment, request):
     request.addfinalizer(loaded_ds2.conn.close)
     assert loaded_ds2.metadata == metadata2
 
-    badtag = 'lex luthor'
-    sorry_metadata = {'superman': 1, badtag: None, 'spiderman': 'two'}
-
-    bad_tag_msg = (f'Tag {badtag} has value None. '
-                   ' That is not a valid metadata value!')
-
+    bad_tag = "lex luthor"
+    bad_tag_msg = (
+      f"Tag {bad_tag} is not a valid tag. "
+      "Use only alphanumeric characters and underscores!"
+    )
     with pytest.raises(RuntimeError,
-                       match='Rolling back due to unhandled exception') as e:
-        for tag, value in sorry_metadata.items():
-            ds1.add_metadata(tag, value)
+                       match="Rolling back due to unhandled exception") as e1:
+        ds1.add_metadata(bad_tag, "value")
+    assert error_caused_by(e1, bad_tag_msg)
 
-    assert error_caused_by(e, bad_tag_msg)
+    good_tag = "tag"
+    none_value_msg = (
+      f"Tag {good_tag} has value None. "
+      "That is not a valid metadata value!"
+    )
+    with pytest.raises(RuntimeError,
+                       match="Rolling back due to unhandled exception") as e2:
+        for tag, value in sorry_metadata.items():
+            ds1.add_metadata(good_tag, None)
+    assert error_caused_by(e2, none_value_msg)
 
 
 def test_the_same_dataset_as(some_interdeps, experiment):
