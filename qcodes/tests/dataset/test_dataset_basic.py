@@ -680,8 +680,7 @@ def test_metadata(experiment, request):
     )
     with pytest.raises(RuntimeError,
                        match="Rolling back due to unhandled exception") as e2:
-        for tag, value in sorry_metadata.items():
-            ds1.add_metadata(good_tag, None)
+        ds1.add_metadata(good_tag, None)
     assert error_caused_by(e2, none_value_msg)
 
 
