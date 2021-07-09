@@ -298,7 +298,9 @@ class _BaseParameter(Metadatable):
             if existing_parameter:
 
                 if not existing_parameter.abstract:
-                    raise KeyError(f"Duplicate parameter name {name} on instrument {instrument}")
+                    raise KeyError(
+                        f"Duplicate parameter name {name} on instrument {instrument}"
+                    )
 
             instrument.parameters[name] = self
         super().__init__(metadata)
@@ -1172,10 +1174,12 @@ class Parameter(_BaseParameter):
                 # but if we do not put it here it would be an api break
                 # as parameter duplication check won't be done first,
                 # hence for parameters that are duplicates and have
-                # wrong units, users will be getting ValueError where 
+                # wrong units, users will be getting ValueError where
                 # they used to have KeyError before.
                 if not existing_parameter.abstract:
-                    raise KeyError(f"Duplicate parameter name {name} on instrument {instrument}")
+                    raise KeyError(
+                        f"Duplicate parameter name {name} on instrument {instrument}"
+                    )
 
                 existing_unit = getattr(existing_parameter, "unit", None)
                 if existing_unit != unit:
