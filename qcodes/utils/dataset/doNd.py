@@ -645,7 +645,9 @@ def dond(
     show_progress: Optional[bool] = None,
     use_threads: Optional[bool] = None,
     additional_setpoints: Sequence[ParamMeasT] = tuple(),
-) -> List[AxesTupleListWithDataSet]:
+) -> Tuple[Union[AxesTupleListWithDataSet, Tuple[Tuple[DataSetProtocol],
+           Tuple[matplotlib.axes.Axes],
+           Tuple[Optional[matplotlib.colorbar.Colorbar]]]]]:
     """
     Perform n-dimentional scan from slowest (first) to the fastest (last), to
     measure m measurement parameters. The dimensions should be specified
@@ -766,7 +768,9 @@ def dond(
         sweep.param.post_delay = sweep.delay
         params_set.append(sweep.param)
 
-    handle_plots: List[AxesTupleListWithDataSet] = []
+    datasets: List[DataSetProtocol] = []
+    plots_axes: List[matplotlib.axes.Axes] = []
+    plots_colorbar: List[Optional[matplotlib.colorbar.Colorbar]] = []
     try:
         with _catch_keyboard_interrupts() as interrupted, contextlib.ExitStack() as stack:
             datasavers = [stack.enter_context(measure.run()) for measure in meas_list]
@@ -787,9 +791,15 @@ def dond(
         for parameter, original_delay in original_delays.items():
             parameter.post_delay = original_delay
 
-        handle_plots = [_handle_plotting(datasaver.dataset, do_plot, interrupted()) for datasaver in datasavers]
-
-    return handle_plots
+        for datasaver in datasavers:
+            ds, plot_axis, plot_color = _handle_plotting(datasaver.dataset, do_plot, interrupted())
+            datasets.append(ds)
+            plots_axes.append(plot_axis)
+            plots_colorbar.append(plot_color)
+    if len(grouped_parameters) == 1:
+        return datasets[0], plots_axes[0], plots_colorbar[0]
+    else:
+        return tuple(datasets), tuple(plots_axes), tuple(plots_colorbar)
 
 
 def _handle_plotting(
