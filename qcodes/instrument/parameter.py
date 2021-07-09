@@ -1175,7 +1175,7 @@ class Parameter(_BaseParameter):
                 # wrong units, users will be getting ValueError where 
                 # they used to have KeyError before.
                 if not existing_parameter.abstract:
-                    raise KeyError(f"Duplicate parameter name {name}")
+                    raise KeyError(f"Duplicate parameter name {name} on instrument {instrument}")
 
                 existing_unit = getattr(existing_parameter, "unit", None)
                 if existing_unit != unit:
