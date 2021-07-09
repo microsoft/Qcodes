@@ -622,7 +622,9 @@ class DataSet(Sized):
     def add_metadata(self, tag: str, metadata: Any) -> None:
         """
         Adds metadata to the :class:`.DataSet`. The metadata is stored under the
-        provided tag. Note that None is not allowed as a metadata value.
+        provided tag. Note that None is not allowed as a metadata value, and the
+        tag has to be a valid python identified (e.g. containing alphanumeric
+        characters and underscores).
 
         Args:
             tag: represents the key in the metadata dictionary
