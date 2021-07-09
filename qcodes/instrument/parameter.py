@@ -1170,8 +1170,10 @@ class Parameter(_BaseParameter):
 
                 # this check is redundant since its also in the baseclass
                 # but if we do not put it here it would be an api break
-                # as KeyErrors are now transformed into ValueErrors.
-                # do we care about that?
+                # as parameter duplication check won't be done first,
+                # hence for parameters that are duplicates ANd have
+                # wrong units, users will be getting ValueError where 
+                # they used to have KeyError before.
                 if not existing_parameter.abstract:
                     raise KeyError(f"Duplicate parameter name {name}")
 
