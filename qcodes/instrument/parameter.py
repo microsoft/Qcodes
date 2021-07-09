@@ -298,7 +298,7 @@ class _BaseParameter(Metadatable):
             if existing_parameter:
 
                 if not existing_parameter.abstract:
-                    raise KeyError(f"Duplicate parameter name {name}")
+                    raise KeyError(f"Duplicate parameter name {name} on instrument {instrument}")
 
             instrument.parameters[name] = self
         super().__init__(metadata)
