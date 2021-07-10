@@ -1722,11 +1722,30 @@ def get_metadata_from_run_id(
     return metadata
 
 
+def validate_meta_data(metadata: Mapping[str, Any]) -> None:
+    """
+    Validate metadata tags and values. Note that None is not a valid
+    metadata value, and keys should be valid SQLite column names
+    (i.e. contain only alphanumeric characters and underscores).
+
+    Args:
+        metadata: the metadata mapping (tags to values)
+    """
+    for tag, val in metadata.items():
+        if not tag.isidentifier():
+            raise KeyError(f'Tag {tag} is not a valid tag. '
+                            'Use only alphanumeric characters and underscores!')
+        if val is None:
+            raise ValueError(f'Tag {tag} has value None. '
+                              'That is not a valid metadata value!')
+
+
 def insert_meta_data(conn: ConnectionPlus, row_id: int, table_name: str,
                      metadata: Mapping[str, Any]) -> None:
     """
     Insert new metadata column and add values. Note that None is not a valid
-    metadata value
+    metadata value, and keys should be valid SQLite column names
+    (i.e. contain only alphanumeric characters and underscores).
 
     Args:
         - conn: the connection to the sqlite database
@@ -1734,10 +1753,7 @@ def insert_meta_data(conn: ConnectionPlus, row_id: int, table_name: str,
         - table_name: the table to add to, defaults to runs
         - metadata: the metadata to add
     """
-    for tag, val in metadata.items():
-        if val is None:
-            raise ValueError(f'Tag {tag} has value None. '
-                             ' That is not a valid metadata value!')
+    validate_meta_data(metadata)
     for key in metadata.keys():
         insert_column(conn, table_name, key)
     update_meta_data(conn, row_id, table_name, metadata)
@@ -1754,6 +1770,7 @@ def update_meta_data(conn: ConnectionPlus, row_id: int, table_name: str,
         - table_name: the table to add to, defaults to runs
         - metadata: the metadata to add
     """
+    validate_meta_data(metadata)
     update_where(conn, table_name, 'rowid', row_id, **metadata)
 
 
@@ -1763,7 +1780,9 @@ def add_meta_data(conn: ConnectionPlus,
                   table_name: str = "runs") -> None:
     """
     Add metadata data (updates if exists, create otherwise).
-    Note that None is not a valid metadata value.
+    Note that None is not a valid metadata value, and keys
+    should be valid SQLite column names (i.e. contain only
+    alphanumeric characters and underscores).
 
     Args:
         - conn: the connection to the sqlite database
