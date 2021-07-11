@@ -9,6 +9,7 @@ from typing import Callable, Dict, Iterator, List, Optional, Sequence, Tuple, Un
 
 import matplotlib
 import numpy as np
+from numpy.core.fromnumeric import squeeze
 from tqdm.auto import tqdm
 
 from qcodes import config
@@ -635,7 +636,7 @@ class LogSweep(AbstractSweep):
 
 
 def dond(
-    *params: Union[AbstractSweep, Union[ParamMeasT, Tuple[ParamMeasT]]],
+    *params: Union[AbstractSweep, Union[ParamMeasT, Sequence[ParamMeasT]]],
     write_period: Optional[float] = None,
     measurement_name: str = "",
     exp: Optional[Experiment] = None,
@@ -645,9 +646,7 @@ def dond(
     show_progress: Optional[bool] = None,
     use_threads: Optional[bool] = None,
     additional_setpoints: Sequence[ParamMeasT] = tuple(),
-) -> Tuple[Union[AxesTupleListWithDataSet, Tuple[Tuple[DataSetProtocol],
-           Tuple[matplotlib.axes.Axes],
-           Tuple[Optional[matplotlib.colorbar.Colorbar]]]]]:
+) -> AxesTupleListWithDataSet:
     """
     Perform n-dimentional scan from slowest (first) to the fastest (last), to
     measure m measurement parameters. The dimensions should be specified
@@ -690,13 +689,13 @@ def dond(
         show_progress = config.dataset.dond_show_progress
 
     def _parse_dond_arguments(
-        *params: Union[AbstractSweep, Union[ParamMeasT, Tuple[ParamMeasT]]]
-    ) -> Tuple[List[AbstractSweep], List[Union[ParamMeasT, Tuple[ParamMeasT]]]]:
+        *params: Union[AbstractSweep, Union[ParamMeasT, Sequence[ParamMeasT]]]
+    ) -> Tuple[List[AbstractSweep], List[Union[ParamMeasT, Sequence[ParamMeasT]]]]:
         """
         Parse supplied arguments into sweep objects and measurement parameters.
         """
         sweep_instances: List[AbstractSweep] = []
-        params_meas: List[Union[ParamMeasT, Tuple[ParamMeasT]]] = []
+        params_meas: List[Union[ParamMeasT, Sequence[ParamMeasT]]] = []
         for par in params:
             if isinstance(par, AbstractSweep):
                 sweep_instances.append(par)
@@ -722,13 +721,12 @@ def dond(
 
     measured_parameters: List[_BaseParameter] = []
     nested_group: List[ParamMeasT] = []
-    grouped_parameters: List[Union[ParamMeasT, Sequence[ParamMeasT]]] = []
+    grouped_parameters: List[Sequence[ParamMeasT]] = []
     for param in params_meas:
         if not isinstance(param, Sequence):
             if isinstance(param, _BaseParameter):
                 measured_parameters.append(param)
             nested_group.append(param)
-
         else:
             for nested_param in param:
                 if isinstance(nested_param, _BaseParameter):
@@ -737,13 +735,12 @@ def dond(
         grouped_parameters.append(tuple(nested_group))
     else:
         grouped_parameters = params_meas
-    measured_parameters = tuple(measured_parameters)
 
     try:
         loop_shape = tuple(1 for _ in additional_setpoints) + tuple(
             sweep.num_points for sweep in sweep_instances
         )
-        shapes: Shapes = detect_shape_of_measurement(measured_parameters, loop_shape)
+        shapes: Shapes = detect_shape_of_measurement(tuple(measured_parameters), loop_shape)
     except TypeError:
         LOG.exception(
             f"Could not detect shape of {measured_parameters} "
