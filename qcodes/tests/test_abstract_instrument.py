@@ -78,7 +78,7 @@ class VoltageSourceSubSub(VoltageSource):
         super().__init__(name)
 
     def __post_init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__post_init__()
+        super().__post_init__()  # type: ignore[misc]
         self.call_count += 1
 
 
