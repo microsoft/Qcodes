@@ -1,6 +1,7 @@
 """Instrument base class."""
 import logging
 import time
+import warnings
 import weakref
 from abc import ABC, abstractmethod
 from typing import (
@@ -30,6 +31,8 @@ from .parameter import Parameter, _BaseParameter
 if TYPE_CHECKING:
     from qcodes.instrument.channel import ChannelList
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
+
+from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 log = logging.getLogger(__name__)
 
@@ -114,7 +117,17 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 unit of the new parameter is inconsistent with the existing
                 one.
         """
-        parameter_class(name=name, instrument=self, **kwargs)
+        param = parameter_class(name=name, instrument=self, **kwargs)
+
+        existing_parameter = self.parameters.get(name, None)
+        if not existing_parameter:
+            warnings.warn(
+                f"Parameter {name} does not correctly register on instrument {self.name}. "
+                f"Please check that instrument argument is passed "
+                f"to '_BaseParameter'. This will be an error in the future.",
+                QCoDeSDeprecationWarning,
+            )
+            self.parameters[name] = param
 
     def add_function(self, name: str, **kwargs: Any) -> None:
         """
