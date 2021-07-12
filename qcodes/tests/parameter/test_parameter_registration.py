@@ -1,6 +1,14 @@
 import pytest
 
+from qcodes.instrument.parameter import Parameter
 from qcodes.tests.instrument_mocks import DummyAttrInstrument
+from qcodes.utils.deprecate import QCoDeSDeprecationWarning
+
+
+class BrokenParameter(Parameter):
+    def __init__(self, name, instrument, *args, **kwargs):
+        super().__init__(name, *args, **kwargs)
+        self._instrument = instrument
 
 
 @pytest.fixture(name="dummy_attr_instr")
@@ -19,3 +27,16 @@ def test_parameter_registration_on_instr(dummy_attr_instr):
         dummy_attr_instr.snapshot()["parameters"]["ch1"]["full_name"]
         == "dummy_attr_instr_ch1"
     )
+
+
+def test_parameter_registration_with_broken_parameter(dummy_attr_instr):
+    with pytest.warns(QCoDeSDeprecationWarning):
+        dummy_attr_instr.add_parameter(
+            name="brokenparameter",
+            parameter_class=BrokenParameter,
+            set_cmd=None,
+            get_cmd=None,
+        )
+    # test that even if the parameter does not pass instrument to the baseclass
+    # it will still be registered on the instr
+    assert "brokenparameter" in dummy_attr_instr.parameters.keys()
