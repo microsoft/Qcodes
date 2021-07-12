@@ -233,15 +233,13 @@ class _MeasurementCurrentParameter(_ParameterWithStatus):
     @staticmethod
     def _parse_response(data: str) -> Tuple[float, MeasurementStatus]:
 
-        data = data[2:-1]
-        outdata = np.array(list(struct.iter_unpack('<f', data)))
-        value, meas_status = tuple(np.reshape(outdata, len(outdata)))
+        value, meas_status = data.split('\t')
 
         status_bits = [int(i) for i in bin(
-            int(meas_status)
-        ).replace('0b', '').zfill(8)[::-1]]
+            int(float(meas_status))
+        ).replace('0b', '').zfill(16)[::-1]]
 
-        if status_bits[6]:
+        if status_bits[1]:
             return float(value), MeasurementStatus.compliance_error
         else:
             return float(value), MeasurementStatus.normal
@@ -253,18 +251,8 @@ class _MeasurementCurrentParameter(_ParameterWithStatus):
         smu = self.instrument
         channel = self.instrument.channel
 
-        script = [f'{channel}.nvbuffer1.clear()',
-                  f'{channel}.measure.i({channel}.nvbuffer1)',
-                  'format.data = format.REAL32',
-                  'format.byteorder = format.LITTLEENDIAN',
-                  f'printbuffer(1,1,{channel}.nvbuffer1.readings,'
-                  f'{channel}.nvbuffer1.statuses)']
-
-        smu.write(self.root_instrument._scriptwrapper(program=script,
-                                                      debug=True))
-
-        data = self.root_instrument.visa_handle.read_raw()
-
+        data = smu.ask(f'{channel}.measure.i(), '
+                       f'status.measurement.instrument.{channel}.condition')
         value, status = self._parse_response(data)
 
         self._measurement_status = status
