@@ -122,8 +122,8 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         existing_parameter = self.parameters.get(name, None)
         if not existing_parameter:
             warnings.warn(
-                f"Parameter {name} does not correctly register on instrument {self.name}. "
-                f"Please check that instrument argument is passed "
+                f"Parameter {name} does not correctly register on instrument"
+                f" {self.name}. Please check that instrument argument is passed "
                 f"to '_BaseParameter'. This will be an error in the future.",
                 QCoDeSDeprecationWarning,
             )
