@@ -45,8 +45,6 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             instrument's JSON snapshot.
     """
 
-    _call_post_init = True
-
     def __init__(self, name: str, metadata: Optional[Mapping[Any, Any]] = None) -> None:
         self._name = str(name)
         self._short_name = str(name)
@@ -75,62 +73,6 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         self._meta_attrs = ['name']
 
         self.log = get_instrument_logger(self, __name__)
-
-        if self._call_post_init:
-            self.__post_init__(name, metadata)
-
-    def __init_subclass__(cls, **kwargs: Any) -> None:
-        """
-        The original `__init__` method is replaced by a new
-        one which calls the original init, followed immediately by a
-        conditional call to `__post_init__`. The call is conditioned upon
-        whether or not the `__post_init__` is already scheduled to be
-        called, which will prevent multiple calls to this function.
-        """
-        original_init = cls.__init__
-
-        def __new_init__(
-            self: InstrumentBase, *args: Any, **sub_class_kwargs: Any
-        ) -> None:
-
-            # `__post_init__` is scheduled to be called after running the
-            # original init function if `self._call_post_init` is True
-            call_post_init = self._call_post_init
-            # setting `self._call_post_init` to False will signal that
-            # `__post_init__` is already scheduled to be called and that
-            # further calls are unwanted.
-            self._call_post_init = False
-            original_init(self, *args, **sub_class_kwargs)
-
-            if call_post_init:
-                self.__post_init__(*args, **sub_class_kwargs)
-
-        cls.__init__ = __new_init__  # type: ignore[assignment]
-
-    def __post_init__(self, *args: Any, **kwargs: Any) -> None:
-        """
-        This method is run after the initialization of a subclass of
-        `InstrumentBase`. If we have a chain of base classes like so:
-
-        InstrumentBase -> Instrument -> VisaInstrument -> Driver
-
-        This method is run after the instantiation of the class `Driver`.
-        Please see the docstring of `InstrumentBase.__init_subclass__`
-        for details about the mechanism which makes this possible.
-        """
-        abstract_parameters = [
-            parameter.name
-            for parameter in self.parameters.values()
-            if parameter.abstract
-        ]
-
-        if any(abstract_parameters):
-            cls_name = type(self).__name__
-
-            raise NotImplementedError(
-                f"Class '{cls_name}' has un-implemented Abstract Parameter(s): "
-                f"" + ", ".join([f"'{name}'" for name in abstract_parameters])
-            )
 
     @property
     def name(self) -> str:
@@ -519,9 +461,6 @@ class Instrument(InstrumentBase, AbstractInstrument):
 
         self.add_parameter('IDN', get_cmd=self.get_idn,
                            vals=Anything())
-
-    def __post_init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__post_init__(*args, **kwargs)
         self.record_instance(self)
 
     def get_idn(self) -> Dict[str, Optional[str]]:
