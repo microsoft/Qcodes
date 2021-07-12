@@ -197,9 +197,11 @@ class StrEnum(str, Enum):
 
 
 class MeasurementStatus(StrEnum):
-    """Keeps track of measurement status."""
-    compliance_error = 'Reached compliance limit.'
-    normal = 'No error occured.'
+    """
+    Keeps track of measurement status.
+    """
+    COMPLIANCE_ERROR = 'Reached compliance limit.'
+    NORMAL = 'No error occured.'
 
 
 class _ParameterWithStatus(Parameter):
@@ -240,9 +242,9 @@ class _MeasurementCurrentParameter(_ParameterWithStatus):
         ).replace('0b', '').zfill(16)[::-1]]
 
         if status_bits[1]:
-            return float(value), MeasurementStatus.compliance_error
+            return float(value), MeasurementStatus.COMPLIANCE_ERROR
         else:
-            return float(value), MeasurementStatus.normal
+            return float(value), MeasurementStatus.NORMAL
 
     def get_raw(self) -> ParamRawDataType:
         assert isinstance(self.instrument, KeithleyChannel)
