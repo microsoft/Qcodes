@@ -3,7 +3,7 @@ import numpy as np
 from collections import Counter
 
 from qcodes.instrument_drivers.tektronix.Keithley_2600_channels import \
-    Keithley_2600
+    Keithley_2600, MeasurementStatus
 
 import qcodes.instrument.sims as sims
 visalib = sims.__file__.replace('__init__.py', 'Keithley_2600.yaml@sim')
@@ -47,7 +47,7 @@ def test_smu_channels_and_their_parameters(driver):
         smu.curr(1.0)
         assert 1.0 == smu.curr()
 
-        assert smu.curr.measurement_status == 'Measurement status normal.'
+        assert smu.curr.measurement_status == MeasurementStatus.normal
 
         assert 0.0 == smu.res()
 
