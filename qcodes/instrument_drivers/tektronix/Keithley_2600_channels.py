@@ -231,15 +231,17 @@ class _MeasurementCurrentParameter(_ParameterWithStatus):
         super().__init__(*args, **kwargs)
 
     @staticmethod
-    def _parse_response(res: str) -> Tuple[float, MeasurementStatus]:
+    def _parse_response(data: str) -> Tuple[float, MeasurementStatus]:
 
-        value, meas_status = res.split(',')
+        data = data[2:-1]
+        outdata = np.array(list(struct.iter_unpack('<f', data)))
+        value, meas_status = tuple(np.reshape(outdata, len(outdata)))
 
         status_bits = [int(i) for i in bin(
             int(meas_status)
-        ).replace('0b', '').zfill(16)[::-1]]
+        ).replace('0b', '').zfill(7)[::-1]]
 
-        if status_bits[1]:
+        if status_bits[5]:
             return float(value), MeasurementStatus.compliance_error
         else:
             return float(value), MeasurementStatus.normal
@@ -251,17 +253,17 @@ class _MeasurementCurrentParameter(_ParameterWithStatus):
         smu = self.instrument
         channel = self.instrument.channel
 
-        script = [f'{channel}.measure.i()',
-                  f'status.measurement.instrument.'
-                  f'{channel}.enable = measurementRegister']
+        script = [f'{channel}.nvbuffer1.clear()',
+                  f'{channel}.measure.i({channel}.nvbuffer1)',
+                  'format.data = format.REAL32',
+                  'format.byteorder = format.LITTLEENDIAN',
+                  f'printbuffer(1,1,{channel}.nvbuffer1.readings,'
+                  f'{channel}.nvbuffer1.statuses)']
 
         smu.write(self.root_instrument._scriptwrapper(program=script,
                                                       debug=True))
 
-        with self.root_instrument.timeout.set_to(
-                self.instrument._extra_visa_timeout
-        ):
-            data = self.root_instrument.visa_handle.read_raw()
+        data = self.root_instrument.visa_handle.read_raw()
 
         value, status = self._parse_response(data)
 
