@@ -4,12 +4,11 @@ import os
 import sys
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from contextlib import contextmanager
+from contextlib import contextmanager, ExitStack
 from typing import Callable, Dict, Iterator, List, Optional, Sequence, Tuple, Union, Any
 
 import matplotlib
 import numpy as np
-from numpy.core.fromnumeric import squeeze
 from tqdm.auto import tqdm
 
 from qcodes import config
@@ -17,11 +16,10 @@ from qcodes.dataset.data_set_protocol import DataSetProtocol
 from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
 from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.experiment_container import Experiment
-from qcodes.dataset.measurements import Measurement, Runner, res_type
+from qcodes.dataset.measurements import Measurement, res_type
 from qcodes.dataset.plotting import plot_dataset
 from qcodes.instrument.parameter import ParamDataType, _BaseParameter
 from qcodes.utils.threading import RespondingThread
-import contextlib
 
 ActionsT = Sequence[Callable[[], None]]
 
@@ -790,7 +788,7 @@ def dond(
     plots_axes = []
     plots_colorbar = []
     try:
-        with _catch_keyboard_interrupts() as interrupted, contextlib.ExitStack() as stack:
+        with _catch_keyboard_interrupts() as interrupted, ExitStack() as stack:
             datasavers = [stack.enter_context(measure.run()) for measure in meas_list]
             additional_setpoints_data = process_params_meas(additional_setpoints)
             for setpoints in tqdm(nested_setpoints, disable=not show_progress):
