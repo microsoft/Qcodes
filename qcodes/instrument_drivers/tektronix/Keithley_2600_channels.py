@@ -239,9 +239,9 @@ class _MeasurementCurrentParameter(_ParameterWithStatus):
 
         status_bits = [int(i) for i in bin(
             int(meas_status)
-        ).replace('0b', '').zfill(7)[::-1]]
+        ).replace('0b', '').zfill(8)[::-1]]
 
-        if status_bits[5]:
+        if status_bits[6]:
             return float(value), MeasurementStatus.compliance_error
         else:
             return float(value), MeasurementStatus.normal
