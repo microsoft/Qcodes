@@ -268,6 +268,9 @@ class _BaseParameter(Metadatable):
             this parameter can be instantiated. We override a parameter by
             adding one with the same name and unit. An abstract parameter
             can be added in a base class and overridden in a subclass.
+
+        bind_to_instrument: Should the parameter be registered as a delegate attribute
+            on the instrument passed via the instrument argument.
     """
 
     def __init__(
@@ -1147,6 +1150,16 @@ class Parameter(_BaseParameter):
 
         metadata: Extra information to include with the
             JSON snapshot of the parameter.
+
+        abstract: Specifies if this parameter is abstract or not. Default
+            is False. If the parameter is 'abstract', it *must* be overridden
+            by a non-abstract parameter before the instrument containing
+            this parameter can be instantiated. We override a parameter by
+            adding one with the same name and unit. An abstract parameter
+            can be added in a base class and overridden in a subclass.
+
+        bind_to_instrument: Should the parameter be registered as a delegate attribute
+            on the instrument passed via the instrument argument.
     """
 
     def __init__(
