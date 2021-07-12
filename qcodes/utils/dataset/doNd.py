@@ -5,7 +5,7 @@ import sys
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import Callable, Dict, Iterator, List, Optional, Sequence, Tuple, Union
+from typing import Callable, Dict, Iterator, List, Optional, Sequence, Tuple, Union, Any
 
 import matplotlib
 import numpy as np
@@ -36,6 +36,11 @@ AxesTupleListWithDataSet = Tuple[
     List[matplotlib.axes.Axes],
     List[Optional[matplotlib.colorbar.Colorbar]],
 ]
+MultiAxesTupleListWithDataSet = Tuple[
+    Tuple[DataSetProtocol, ...],
+    Tuple[List[matplotlib.axes.Axes], ...],
+    Tuple[List[Optional[matplotlib.colorbar.Colorbar]],...]
+    ]
 
 OutType = List[res_type]
 
@@ -646,7 +651,7 @@ def dond(
     show_progress: Optional[bool] = None,
     use_threads: Optional[bool] = None,
     additional_setpoints: Sequence[ParamMeasT] = tuple(),
-) -> AxesTupleListWithDataSet:
+) -> Union[AxesTupleListWithDataSet, MultiAxesTupleListWithDataSet]:
     """
     Perform n-dimentional scan from slowest (first) to the fastest (last), to
     measure m measurement parameters. The dimensions should be specified
@@ -720,21 +725,33 @@ def dond(
     )
 
     measured_parameters: List[_BaseParameter] = []
-    nested_group: List[ParamMeasT] = []
-    grouped_parameters: List[Sequence[ParamMeasT]] = []
+    all_meas_parameters: List[ParamMeasT] = []
+    single_group: List[ParamMeasT] = []
+    multi_group: List[Sequence[ParamMeasT]] = []
+    grouped_parameters: Dict[str, Dict[str, Any]] = {}
     for param in params_meas:
         if not isinstance(param, Sequence):
+            single_group.append(param)
+            all_meas_parameters.append(param)
             if isinstance(param, _BaseParameter):
                 measured_parameters.append(param)
-            nested_group.append(param)
-        else:
+        elif not isinstance(param, str):
+            multi_group.append(param)
             for nested_param in param:
+                all_meas_parameters.append(nested_param)
                 if isinstance(nested_param, _BaseParameter):
                     measured_parameters.append(nested_param)
-    if nested_group:
-        grouped_parameters.append(tuple(nested_group))
-    else:
-        grouped_parameters = params_meas
+    if single_group:
+        grouped_parameters['group_0'] = {}
+        grouped_parameters['group_0']['params'] = tuple(single_group)
+        grouped_parameters['group_0']['meas_name'] = measurement_name
+        grouped_parameters['group_0']['measured_params'] = []
+    if multi_group:
+        for index, par in enumerate(multi_group):
+            grouped_parameters[f'group_{index}'] = {}
+            grouped_parameters[f'group_{index}']['params'] = tuple(par)
+            grouped_parameters[f'group_{index}']['meas_name'] = f'{measurement_name}_data_{index}'
+            grouped_parameters[f'group_{index}']['measured_params'] = []
 
     try:
         loop_shape = tuple(1 for _ in additional_setpoints) + tuple(
@@ -748,12 +765,16 @@ def dond(
         )
         shapes = None
     meas_list: List[Measurement] = []
-    for group in grouped_parameters:
-        meas = Measurement(name=measurement_name, exp=exp)
+    for ind in range(len(grouped_parameters)):
+        meas_name = grouped_parameters[f'group_{ind}']['meas_name']
+        meas_params = grouped_parameters[f'group_{ind}']['params']
+        if isinstance(meas_name, str):
+            meas = Measurement(name=meas_name, exp=exp)
         _register_parameters(meas, all_setpoint_params)
-        _register_parameters(
-            meas, group, setpoints=all_setpoint_params, shapes=shapes
-        )
+        if not isinstance(meas_params, str):
+            _register_parameters(
+                meas, meas_params, setpoints=all_setpoint_params, shapes=shapes
+            )
         _set_write_period(meas, write_period)
         _register_actions(meas, enter_actions, exit_actions)
         meas_list.append(meas)
@@ -765,9 +786,9 @@ def dond(
         sweep.param.post_delay = sweep.delay
         params_set.append(sweep.param)
 
-    datasets: List[DataSetProtocol] = []
-    plots_axes: List[matplotlib.axes.Axes] = []
-    plots_colorbar: List[Optional[matplotlib.colorbar.Colorbar]] = []
+    datasets = []
+    plots_axes = []
+    plots_colorbar = []
     try:
         with _catch_keyboard_interrupts() as interrupted, contextlib.ExitStack() as stack:
             datasavers = [stack.enter_context(measure.run()) for measure in meas_list]
@@ -778,10 +799,15 @@ def dond(
                 for setpoint_param, setpoint in param_value_pairs:
                     setpoint_param(setpoint)
                     param_set_list.append((setpoint_param, setpoint))
-                for index, datasaver in enumerate(datasavers):
+                meas_value_pair = process_params_meas(all_meas_parameters, use_threads=use_threads)
+                for ind in range(len(grouped_parameters)):
+                    for measured in meas_value_pair:
+                        if measured[0] in grouped_parameters[f'group_{ind}']['params']:
+                            grouped_parameters[f'group_{ind}']['measured_params'].append(measured)
+                for ind, datasaver in enumerate(datasavers):
                     datasaver.add_result(
                         *param_set_list,
-                        *process_params_meas(grouped_parameters[index], use_threads=use_threads),
+                        *grouped_parameters[f'group_{ind}']['measured_params'],
                         *additional_setpoints_data,
                     )
     finally:
@@ -793,6 +819,7 @@ def dond(
             datasets.append(ds)
             plots_axes.append(plot_axis)
             plots_colorbar.append(plot_color)
+
     if len(grouped_parameters) == 1:
         return datasets[0], plots_axes[0], plots_colorbar[0]
     else:
