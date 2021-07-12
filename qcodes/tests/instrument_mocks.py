@@ -13,14 +13,10 @@ from qcodes.instrument.parameter import (
     Parameter,
     ParameterWithSetpoints,
 )
-from qcodes.utils.validators import (
-    Arrays,
-    ComplexNumbers,
-    Numbers,
-    OnOff,
-    Strings,
-)
+from qcodes.utils.validators import Arrays, ComplexNumbers, Numbers, OnOff
 from qcodes.utils.validators import Sequence as ValidatorSequence
+from qcodes.utils.validators import Strings
+
 log = logging.getLogger(__name__)
 
 
@@ -128,13 +124,52 @@ class DummyInstrument(Instrument):
 
         # make gates
         for _, g in enumerate(gates):
-            self.add_parameter(g,
-                               parameter_class=Parameter,
-                               initial_value=0,
-                               label=f'Gate {g}',
-                               unit="V",
-                               vals=Numbers(-800, 400),
-                               get_cmd=None, set_cmd=None)
+            self.add_parameter(
+                g,
+                parameter_class=Parameter,
+                initial_value=0,
+                label=f"Gate {g}",
+                unit="V",
+                vals=Numbers(-800, 400),
+                get_cmd=None,
+                set_cmd=None,
+            )
+
+
+class DummyAttrInstrument(Instrument):
+    def __init__(self, name: str = "dummy", **kwargs: Any):
+
+        """
+        Create a dummy instrument that can be used for testing
+
+        Args:
+            name: name for the instrument
+            gates: list of names that is used to create parameters for
+                            the instrument
+        """
+        super().__init__(name, **kwargs)
+
+        self.ch1 = Parameter(
+            "ch1",
+            instrument=self,
+            initial_value=0,
+            label=f"Gate ch1",
+            unit="V",
+            vals=Numbers(-800, 400),
+            get_cmd=None,
+            set_cmd=None,
+        )
+
+        self.ch2 = Parameter(
+            "ch2",
+            instrument=self,
+            initial_value=0,
+            label=f"Gate ch2",
+            unit="V",
+            vals=Numbers(-800, 400),
+            get_cmd=None,
+            set_cmd=None,
+        )
 
 
 class DmmExponentialParameter(Parameter):
