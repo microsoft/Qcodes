@@ -4,7 +4,8 @@ import numpy as np
 import pytest
 
 from qcodes import Measurement
-from qcodes.tests.instrument_mocks import MockCustomChannel, DummyChannel
+from qcodes.tests.dataset.conftest import empty_temp_db, experiment
+from qcodes.tests.instrument_mocks import DummyChannel, MockCustomChannel
 
 
 def test_device(station, chip_config, dac, lockin):
@@ -25,12 +26,14 @@ def test_device(station, chip_config, dac, lockin):
     )
 
 
+@pytest.mark.usefixtures("experiment")
 def test_device_meas(station, chip):
     meas = Measurement(station=station)
     device = chip.device1
     meas.register_parameter(device.gate)
     meas.register_parameter(device.drain, setpoints=(device.gate,))
-
+    device.gate.inter_delay = 0
+    device.gate.step = 1
     with meas.run() as datasaver:
         for set_v in np.linspace(0, 1.5, 10):
             device.gate.set(set_v)
