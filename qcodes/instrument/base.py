@@ -118,7 +118,9 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 unit of the new parameter is inconsistent with the existing
                 one.
         """
-        kwargs["bind_to_instrument"] = True
+        if "bind_to_instrument" not in kwargs.keys():
+            kwargs["bind_to_instrument"] = True
+
         try:
             param = parameter_class(name=name, instrument=self, **kwargs)
         except TypeError:

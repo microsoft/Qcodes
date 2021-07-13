@@ -1574,9 +1574,10 @@ class DelegateParameter(Parameter):
         name: str,
         source: Optional[Parameter],
         *args: Any,
-        bind_to_instrument: bool = False,
         **kwargs: Any,
     ):
+        if "bind_to_instrument" not in kwargs.keys():
+            kwargs["bind_to_instrument"] = False
 
         self._attr_inherit = {"label": {"fixed": False,
                                         "value_when_without_source": name},
@@ -1605,7 +1606,7 @@ class DelegateParameter(Parameter):
 
         initial_cache_value = kwargs.pop("initial_cache_value", None)
         self.source = source
-        super().__init__(name, *args, bind_to_instrument=bind_to_instrument, **kwargs)
+        super().__init__(name, *args, **kwargs)
         # explicitly set the source properties as
         # init will overwrite the ones set when assigning source
         self._set_properties_from_source(source)
