@@ -7,7 +7,6 @@ import sqlite3
 import time
 import unicodedata
 import warnings
-from copy import copy
 from pathlib import Path
 from typing import (
     Any,
@@ -24,7 +23,6 @@ from typing import (
 )
 
 import numpy as np
-from numpy import VisibleDeprecationWarning
 
 import qcodes as qc
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
@@ -55,6 +53,7 @@ from qcodes.dataset.sqlite.query_helpers import (
     update_where,
 )
 from qcodes.utils.deprecate import deprecate
+from qcodes.utils.numpy_utils import list_of_data_to_maybe_ragged_nd_array
 
 log = logging.getLogger(__name__)
 
@@ -64,11 +63,23 @@ _unicode_categories = ('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nd', 'Pc', 'Pd', 'Zs')
 
 # in the current version, these are the standard columns of the "runs" table
 # Everything else is metadata
-RUNS_TABLE_COLUMNS = ["run_id", "exp_id", "name", "result_table_name",
-                      "result_counter", "run_timestamp", "completed_timestamp",
-                      "is_completed", "parameters", "guid",
-                      "run_description", "snapshot", "parent_datasets",
-                      "captured_run_id", "captured_counter"]
+RUNS_TABLE_COLUMNS = [
+    "run_id",
+    "exp_id",
+    "name",
+    "result_table_name",
+    "result_counter",
+    "run_timestamp",
+    "completed_timestamp",
+    "is_completed",
+    "parameters",
+    "guid",
+    "run_description",
+    "snapshot",
+    "parent_datasets",
+    "captured_run_id",
+    "captured_counter",
+]
 
 
 def is_run_id_in_database(conn: ConnectionPlus,
@@ -295,32 +306,16 @@ def get_parameter_data_for_one_paramtree(
     res_t = map(list, zip(*data))
 
     for paramspec, column_data in zip(paramspecs, res_t):
-        try:
-            if paramspec.type == "numeric":
-                # there is no reliable way to
-                # tell the difference between a float and and int loaded
-                # from sqlite numeric columns so always fall back to float
-                dtype: Optional[type] = np.float64
-            else:
-                dtype = None
-            with warnings.catch_warnings():
-                warnings.filterwarnings(
-                    "ignore",
-                    category=VisibleDeprecationWarning,
-                    message="Creating an ndarray from ragged nested sequences"
-                )
-                # numpy warns here and coming versions
-                # will eventually raise
-                # for ragged arrays if you don't explicitly set
-                # dtype=object
-                # It is time consuming to detect ragged arrays here
-                # and it is expected to be a relatively rare situation
-                # so fallback to object if the regular dtype fail
-                param_data[paramspec.name] = np.array(column_data, dtype=dtype)
-        except:
-            # Not clear which error to catch here. This will only be clarified
-            # once numpy actually starts to raise here.
-            param_data[paramspec.name] = np.array(column_data, dtype=object)
+        if paramspec.type == "numeric":
+            # there is no reliable way to
+            # tell the difference between a float and and int loaded
+            # from sqlite numeric columns so always fall back to float
+            dtype: Optional[type] = np.float64
+        else:
+            dtype = None
+        param_data[paramspec.name] = list_of_data_to_maybe_ragged_nd_array(
+            column_data, dtype
+        )
     return param_data, n_rows
 
 
@@ -1160,7 +1155,7 @@ def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
                 captured_counter = existing_captured_counter + 1
             else:
                 captured_counter = run_counter
-    formatted_name = format_table_name(format_string, name, exp_id,
+    formatted_name = format_table_name(format_string, 'results', exp_id,
                                        run_counter)
     table = "runs"
 
@@ -1727,11 +1722,30 @@ def get_metadata_from_run_id(
     return metadata
 
 
+def validate_meta_data(metadata: Mapping[str, Any]) -> None:
+    """
+    Validate metadata tags and values. Note that None is not a valid
+    metadata value, and keys should be valid SQLite column names
+    (i.e. contain only alphanumeric characters and underscores).
+
+    Args:
+        metadata: the metadata mapping (tags to values)
+    """
+    for tag, val in metadata.items():
+        if not tag.isidentifier():
+            raise KeyError(f'Tag {tag} is not a valid tag. '
+                            'Use only alphanumeric characters and underscores!')
+        if val is None:
+            raise ValueError(f'Tag {tag} has value None. '
+                              'That is not a valid metadata value!')
+
+
 def insert_meta_data(conn: ConnectionPlus, row_id: int, table_name: str,
                      metadata: Mapping[str, Any]) -> None:
     """
     Insert new metadata column and add values. Note that None is not a valid
-    metadata value
+    metadata value, and keys should be valid SQLite column names
+    (i.e. contain only alphanumeric characters and underscores).
 
     Args:
         - conn: the connection to the sqlite database
@@ -1739,10 +1753,7 @@ def insert_meta_data(conn: ConnectionPlus, row_id: int, table_name: str,
         - table_name: the table to add to, defaults to runs
         - metadata: the metadata to add
     """
-    for tag, val in metadata.items():
-        if val is None:
-            raise ValueError(f'Tag {tag} has value None. '
-                             ' That is not a valid metadata value!')
+    validate_meta_data(metadata)
     for key in metadata.keys():
         insert_column(conn, table_name, key)
     update_meta_data(conn, row_id, table_name, metadata)
@@ -1759,6 +1770,7 @@ def update_meta_data(conn: ConnectionPlus, row_id: int, table_name: str,
         - table_name: the table to add to, defaults to runs
         - metadata: the metadata to add
     """
+    validate_meta_data(metadata)
     update_where(conn, table_name, 'rowid', row_id, **metadata)
 
 
@@ -1768,7 +1780,9 @@ def add_meta_data(conn: ConnectionPlus,
                   table_name: str = "runs") -> None:
     """
     Add metadata data (updates if exists, create otherwise).
-    Note that None is not a valid metadata value.
+    Note that None is not a valid metadata value, and keys
+    should be valid SQLite column names (i.e. contain only
+    alphanumeric characters and underscores).
 
     Args:
         - conn: the connection to the sqlite database

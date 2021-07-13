@@ -133,8 +133,9 @@ class Sweep(MultiParameter):
         # The __init__ requires that we supply names and shapes,
         # but there is no way to know what they could be known at this time.
         # They are updated via build_sweep.
-        super().__init__(name, names=('',), shapes=((1,),), **kwargs)
-        self._instrument = instrument
+        super().__init__(
+            name, names=("",), shapes=((1,),), instrument=instrument, **kwargs
+        )
 
     def build_sweep(self):
         """
@@ -155,8 +156,8 @@ class Sweep(MultiParameter):
 
         """
 
-        signals = self._instrument._sweeper_signals
-        sweepdict = self._instrument._sweepdict
+        signals = self.instrument._sweeper_signals
+        sweepdict = self.instrument._sweepdict
 
         log.info('Built a sweep')
 
@@ -215,9 +216,9 @@ class Sweep(MultiParameter):
         # Now actually send  the settings to the instrument
         for (setting, value) in sweepdict.items():
             setting = 'sweep/' + setting
-            self._instrument.sweeper.set(setting, value)
+            self.instrument.sweeper.set(setting, value)
 
-        self._instrument.sweep_correctly_built = True
+        self.instrument.sweep_correctly_built = True
 
     def get_raw(self):
         """
@@ -234,14 +235,14 @@ class Sweep(MultiParameter):
             ValueError: If a sweep setting has been modified since
               the last sweep, but Sweep.build_sweep has not been run
         """
-        daq = self._instrument.daq
-        signals = self._instrument._sweeper_signals
-        sweeper = self._instrument.sweeper
+        daq = self.instrument.daq
+        signals = self.instrument._sweeper_signals
+        sweeper = self.instrument.sweeper
 
         if signals == []:
             raise ValueError('No signals selected! Can not perform sweep.')
 
-        if self._instrument.sweep_correctly_built is False:
+        if self.instrument.sweep_correctly_built is False:
             raise ValueError('The sweep has not been correctly built.' +
                              ' Please run Sweep.build_sweep.')
 
@@ -268,7 +269,7 @@ class Sweep(MultiParameter):
             sweeper.subscribe(path)
 
         sweeper.execute()
-        timeout = self._instrument.sweeper_timeout.get()
+        timeout = self.instrument.sweeper_timeout.get()
         start = time.time()
         while not sweeper.finished():  # Wait until the sweep is done/timeout
             time.sleep(0.2)  # Check every 200 ms whether the sweep is done
@@ -308,7 +309,7 @@ class Sweep(MultiParameter):
                  'Xrms': 'xpwr', 'Yrms': 'ypwr', 'Rrms': 'rpwr'}
         returndata = []
 
-        for signal in self._instrument._sweeper_signals:
+        for signal in self.instrument._sweeper_signals:
             path = '/'.join(signal.split('/')[:-1])
             attr = signal.split('/')[-1]
             data = sweepresult[path][0][0][trans[attr]]
@@ -340,8 +341,9 @@ class Scope(MultiParameter):
         # The __init__ requires that we supply names and shapes,
         # but there is no way to know what they could be known at this time.
         # They are updated via build_scope.
-        super().__init__(name, names=('',), shapes=((1,),), **kwargs)
-        self._instrument = instrument
+        super().__init__(
+            name, names=("",), shapes=((1,),), instrument=instrument, **kwargs
+        )
         self._scopeactions = []  # list of callables
 
     def add_post_trigger_action(self, action: Callable[..., Any]) -> None:
@@ -366,7 +368,7 @@ class Scope(MultiParameter):
         log.info('Preparing the scope')
 
         # A convenient reference
-        params = self._instrument.parameters
+        params = self.instrument.parameters
 
         # First figure out what the user has asked for
         chans = {1: (True, False), 2: (False, True), 3: (True, True)}
@@ -503,8 +505,8 @@ class Scope(MultiParameter):
         self.labels = ('Scope channel 1', 'Scope channel 2')
         self.shapes = ((segs, npts), (segs, npts))
 
-        self._instrument.daq.sync()
-        self._instrument.scope_correctly_built = True
+        self.instrument.daq.sync()
+        self.instrument.scope_correctly_built = True
 
     def get_raw(self):
         """
@@ -521,12 +523,12 @@ class Scope(MultiParameter):
         t_start = time.monotonic()
         log.info('Scope get method called')
 
-        if not self._instrument.scope_correctly_built:
+        if not self.instrument.scope_correctly_built:
             raise ValueError('Scope not properly prepared. Please run '
                              'prepare_scope before measuring.')
 
         # A convenient reference
-        params = self._instrument.parameters
+        params = self.instrument.parameters
         #
         chans = {1: (True, False), 2: (False, True), 3: (True, True)}
         channels = chans[params['scope_channels'].get()]
@@ -540,7 +542,7 @@ class Scope(MultiParameter):
         # The following steps SEEM to give the correct result
 
         # Make sure all settings have taken effect
-        self._instrument.daq.sync()
+        self.instrument.daq.sync()
 
         # Calculate the time needed for the measurement. We often have failed
         # measurements, so a timeout is needed.
@@ -564,17 +566,18 @@ class Scope(MultiParameter):
                 # we wrap this in try finally to ensure that
                 # scope.finish is always called even if the
                 # measurement is interrupted
-                self._instrument.daq.setInt(f'/{self._instrument.device}/scopes/0/single', 1)
+                self.instrument.daq.setInt(
+                    f"/{self.instrument.device}/scopes/0/single", 1
+                )
 
-
-                scope = self._instrument.scope
+                scope = self.instrument.scope
                 scope.set('scopeModule/clearhistory', 1)
 
                 # Start the scope triggering/acquiring
                 # set /dev/scopes/0/enable to 1
                 params['scope_runstop'].set('run')
 
-                self._instrument.daq.sync()
+                self.instrument.daq.sync()
 
                 log.debug('Starting ZI scope acquisition.')
                 # Start something... hauling data from the scopeModule?
@@ -604,10 +607,11 @@ class Scope(MultiParameter):
                 if not (timedout or zi_error):
                     log.info('[+] ZI scope acquisition completed OK')
                     rawdata = scope.read()
-                    if 'error' in rawdata:
-                        zi_error = bool(rawdata['error'][0])
-                    data = self._scopedataparser(rawdata, self._instrument.device,
-                                                 npts, segs, channels)
+                    if "error" in rawdata:
+                        zi_error = bool(rawdata["error"][0])
+                    data = self._scopedataparser(
+                        rawdata, self.instrument.device, npts, segs, channels
+                    )
                 else:
                     log.warning('[-] ZI scope acquisition attempt {} '
                                 'failed, Timeout: {}, Error: {}, '

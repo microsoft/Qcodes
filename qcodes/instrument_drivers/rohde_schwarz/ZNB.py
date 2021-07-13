@@ -654,8 +654,10 @@ class ZNBChannel(InstrumentChannel):
     def _set_npts(self, val: int) -> None:
         channel = self._instrument_channel
         self.write(f"SENS{channel}:SWE:POIN {val:.7f}")
-        self.update_lin_traces()
-        self.update_cw_traces()
+        if self.sweep_type().startswith("CW"):
+            self.update_cw_traces()
+        else:
+            self.update_lin_traces()
 
     def _set_bandwidth(self, val: int) -> None:
         channel = self._instrument_channel

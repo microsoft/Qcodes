@@ -3,10 +3,10 @@ Driver for the Tekronix S46 RF switch
 """
 import re
 from itertools import product
-
 from typing import Any, Dict, List, Optional
+
 from qcodes import Instrument, VisaInstrument
-from qcodes.instrument.parameter import ParamRawDataType, Parameter
+from qcodes.instrument.parameter import Parameter, ParamRawDataType
 
 
 class LockAcquisitionError(Exception):
@@ -101,10 +101,10 @@ class S46Parameter(Parameter):
         elif value == "open":
             self._lock.release(self._channel_number)
 
-        if self._instrument is None:
+        if self.instrument is None:
             raise RuntimeError("Cannot set the value on a parameter "
                                "that is not attached to an instrument.")
-        self._instrument.write(f":{value} (@{self._channel_number})")
+        self.instrument.write(f":{value} (@{self._channel_number})")
 
     def is_closed(self) -> bool:
         """

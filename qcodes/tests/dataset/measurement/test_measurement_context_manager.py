@@ -263,7 +263,7 @@ def test_measurement_name_changed_via_attribute(experiment, DAC, DMM):
 
     with meas.run() as datasaver:
         run_id = datasaver.run_id
-        expected_name = fmt.format(name, exp_id, run_id)
+        expected_name = fmt.format('results', exp_id, run_id)
         assert datasaver.dataset.table_name == expected_name
         assert datasaver.dataset.name == name
 
@@ -281,7 +281,7 @@ def test_measurement_name_set_as_argument(experiment, DAC, DMM):
 
     with meas.run() as datasaver:
         run_id = datasaver.run_id
-        expected_name = fmt.format(name, exp_id, run_id)
+        expected_name = fmt.format('results', exp_id, run_id)
         assert datasaver.dataset.table_name == expected_name
         assert datasaver.dataset.name == name
 
