@@ -32,7 +32,8 @@ def test_device_meas(station, chip):
     device = chip.device1
     meas.register_parameter(device.gate)
     meas.register_parameter(device.drain, setpoints=(device.gate,))
-
+    device.gate.inter_delay = 0
+    device.gate.step = 1
     with meas.run() as datasaver:
         for set_v in np.linspace(0, 1.5, 10):
             device.gate.set(set_v)
