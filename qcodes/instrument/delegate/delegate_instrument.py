@@ -243,7 +243,8 @@ class DelegateInstrument(InstrumentBase):
         param = self.param_cls(
             name=f"{group_name}_{name}",
             instrument=self,
-            source=source
+            source=source,
+            bind_to_instrument=True,
         )
         return param
 
