@@ -140,7 +140,15 @@ def test_unit_value_error():
     with pytest.raises(ValueError, match="This is inconsistent with the unit defined"):
         VoltageSourceBadUnit("driver3")
 
-    # assert not VoltageSourceBadUnit.instances()
+
+@pytest.mark.xfail()
+def test_unit_value_error_does_not_register_instrument():
+    """
+    Units should match between subclasses and base classes
+    """
+    with pytest.raises(ValueError, match="This is inconsistent with the unit defined"):
+        VoltageSourceBadUnit("driver3a")
+    assert not VoltageSourceBadUnit.instances()
 
 
 @pytest.mark.skip("tests unimplemented feature")
