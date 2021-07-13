@@ -7,7 +7,6 @@ import numpy as np
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.channel import InstrumentChannel
-from qcodes.instrument.group_parameter import GroupParameter, Group
 from qcodes.utils.validators import Enum, Ints, Union
 
 try:
@@ -86,7 +85,7 @@ class GalilMotionController(Instrument):
 
 class VectorMode(InstrumentChannel):
     """
-    Class to control motors independently
+    Class to control motors in vector mode
     """
 
     def __init__(self,
@@ -94,8 +93,7 @@ class VectorMode(InstrumentChannel):
                  name: str,
                  **kwargs: Any) -> None:
         super().__init__(parent, name, **kwargs)
-        self._plane: str = "AB"
-        self._available_planes = ["AB", "BC", "AC"]
+        self._plane = name
 
         self.add_parameter("coordinate_system",
                            get_cmd="CA ?",
@@ -110,39 +108,6 @@ class VectorMode(InstrumentChannel):
                            vals=Enum("S", "T"),
                            docstring="clears vectors specified in the given "
                                      "coordinate system")
-
-        self.add_parameter("vector_mode_plane",
-                           get_cmd=None,
-                           set_cmd=self._set_vector_mode_plane,
-                           vals=Enum(*self._available_planes),
-                           docstring="sets plane of motion for the motors")
-
-        self.add_parameter("vec_pos_first_coordinate",
-                           unit="quadrature counts",
-                           vals=Ints(-2147483648, 2147483647),
-                           parameter_class=GroupParameter,
-                           docstring="sets vector position for plane's first"
-                                     "axis. e.g., if vector_mode_plane "
-                                     "is specified 'AC'. this param sets "
-                                     "vector position for 'A' axis to be used"
-                                     "in motion")
-
-        self.add_parameter("vec_pos_second_coordinate",
-                           unit="quadrature counts",
-                           vals=Ints(-2147483648, 2147483647),
-                           parameter_class=GroupParameter,
-                           docstring="sets vector position for plane's second"
-                                     "axis. e.g., if vector_mode_plane "
-                                     "is specified 'AC'. this param sets "
-                                     "vector position for 'C' axis to be used"
-                                     "in motion")
-
-        self._vector_position = Group([self.vec_pos_first_coordinate,
-                                       self.vec_pos_second_coordinate],
-                                      set_cmd="VP {vec_pos_first_coordinate},"
-                                              "{vec_pos_second_coordinate}",
-                                      get_cmd=f"MG _VP{self._plane[0]},_VP{self._plane[1]}",
-                                      separator=' ')
 
         self.add_parameter("vector_acceleration",
                            get_cmd="VA ?",
@@ -180,11 +145,17 @@ class VectorMode(InstrumentChannel):
         else:
             return "S"
 
-    def _set_vector_mode_plane(self, val: str) -> None:
-        """Sets vector mode plane"""
-
-        self._plane = val
+    def activate(self) -> None:
+        """
+        activate plane of motion
+        """
         self.write(f"VM {self._plane}")
+
+    def vector_position(self, first_coord: int, second_coord: int) -> None:
+        """
+        sets the final vector position for the motion considering current position as the origin
+        """
+        self.write(f"VP {first_coord},{second_coord}")
 
     def vector_seq_end(self) -> None:
         """
@@ -496,7 +467,9 @@ class DMC4133Controller(GalilMotionController):
         self.add_submodule("motor_a", Motor(self, "A"))
         self.add_submodule("motor_b", Motor(self, "B"))
         self.add_submodule("motor_c", Motor(self, "C"))
-        self.add_submodule("vector_mode", VectorMode(self, "vector_mode"))
+        self.add_submodule("plane_ab", VectorMode(self, "AB"))
+        self.add_submodule("plane_bc", VectorMode(self, "BC"))
+        self.add_submodule("plane_ac", VectorMode(self, "AC"))
 
         self.connect_message()
 
