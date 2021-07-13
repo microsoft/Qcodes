@@ -26,12 +26,15 @@ class LuaSweepParameter(ArrayParameter):
     deployed Lua script sweep.
     """
 
-    def __init__(self, name: str, instrument: Instrument) -> None:
+    def __init__(self, name: str, instrument: Instrument, **kwargs) -> None:
 
-        super().__init__(name=name,
-                         shape=(1,),
-                         docstring='Holds a sweep',
-                         instrument=instrument)
+        super().__init__(
+            name=name,
+            shape=(1,),
+            docstring="Holds a sweep",
+            instrument=instrument,
+            **kwargs,
+        )
 
     def prepareSweep(self, start: float, stop: float, steps: int,
                      mode: str) -> None:

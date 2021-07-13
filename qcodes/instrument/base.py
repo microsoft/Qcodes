@@ -87,8 +87,9 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         """Short name of the instrument"""
         return self._short_name
 
-    def add_parameter(self, name: str,
-                      parameter_class: type = Parameter, **kwargs: Any) -> None:
+    def add_parameter(
+        self, name: str, parameter_class: type = Parameter, **kwargs: Any
+    ) -> None:
         """
         Bind one Parameter to this instrument.
 
@@ -117,6 +118,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 unit of the new parameter is inconsistent with the existing
                 one.
         """
+        kwargs["bind_to_instrument"] = True
         param = parameter_class(name=name, instrument=self, **kwargs)
 
         existing_parameter = self.parameters.get(name, None)
