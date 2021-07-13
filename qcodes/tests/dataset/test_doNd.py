@@ -1390,11 +1390,8 @@ def test_dond_2d_output_type(_param, _param_complex, _param_set, _param_set_2):
     sweep_1 = LinSweep(_param_set, 0, 0.5, 2, 0)
     sweep_2 = LinSweep(_param_set_2, 0.5, 1, 2, 0)
 
-    data_1 = dond(sweep_1, _param, _param_complex)
+    data_1 = dond(sweep_1, sweep_2, _param, _param_complex)
     assert isinstance(data_1[0], DataSet) is True
-
-    data_2 = dond(sweep_1, sweep_2, _param, _param_complex)
-    assert isinstance(data_2[0], DataSet) is True
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
