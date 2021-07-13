@@ -119,7 +119,17 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 one.
         """
         kwargs["bind_to_instrument"] = True
-        param = parameter_class(name=name, instrument=self, **kwargs)
+        try:
+            param = parameter_class(name=name, instrument=self, **kwargs)
+        except TypeError:
+            kwargs.pop("bind_to_instrument")
+            warnings.warn(
+                f"Parameter {name} on instrument {self.name} does "
+                f"not correctly pass kwargs to its baseclass. A "
+                f"Parameter class must take `**kwargs` and forward "
+                f"them to its baseclass."
+            )
+            param = parameter_class(name=name, instrument=self, **kwargs)
 
         existing_parameter = self.parameters.get(name, None)
         if not existing_parameter:
