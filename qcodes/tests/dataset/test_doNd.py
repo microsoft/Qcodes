@@ -50,10 +50,27 @@ def _param():
 
 
 @pytest.fixture()
+def _param_2():
+    p = Parameter('simple_parameter',
+                  set_cmd=None,
+                  get_cmd=lambda: 2)
+    return p
+
+
+@pytest.fixture()
 def _param_complex():
     p = Parameter('simple_complex_parameter',
                   set_cmd=None,
                   get_cmd=lambda: 1 + 1j,
+                  vals=validators.ComplexNumbers())
+    return p
+
+
+@pytest.fixture()
+def _param_complex_2():
+    p = Parameter('simple_complex_parameter',
+                  set_cmd=None,
+                  get_cmd=lambda: 2 + 2j,
                   vals=validators.ComplexNumbers())
     return p
 
@@ -92,6 +109,11 @@ def _param_callable(_param):
 def test_param_callable(_param_callable):
     _param_modified = _param_callable
     assert _param_modified.get() == 2
+
+
+@pytest.fixture()
+def _string_callable():
+    return 'Call'
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
@@ -881,6 +903,24 @@ def test_dond_explicit_exp_meas_sample(_param, experiment):
     assert data3[0].exp_name == "new-exp"
 
 
+def test_dond_multi_datasets_explicit_exp_meas_sample(_param, _param_complex, experiment):
+    experiment_2 = new_experiment("new-exp", "no-sample")
+
+    data1 = dond([_param], [_param_complex], do_plot=False, exp=experiment)
+    assert data1[0][0].exp_name == "test-experiment"
+    data2 = dond([_param], [_param_complex], do_plot=False, exp=experiment_2, measurement_name="Meas")
+    assert data2[0][0].name == "Meas_data_0"
+    assert data2[0][1].name == "Meas_data_1"
+    assert data2[0][0].sample_name == "no-sample"
+    assert data2[0][1].sample_name == "no-sample"
+    assert data2[0][0].exp_name == "new-exp"
+    assert data2[0][1].exp_name == "new-exp"
+    # by default the last experiment is used
+    data3 = dond([_param], [_param_complex], do_plot=False)
+    assert data3[0][0].exp_name == "new-exp"
+    assert data3[0][1].exp_name == "new-exp"
+
+
 @pytest.mark.usefixtures("experiment")
 @pytest.mark.parametrize(
     "multiparamtype",
@@ -1393,4 +1433,119 @@ def test_dond_2d_output_data(_param, _param_complex, _param_set, _param_set_2):
     ).reshape(sweep_1._num_points, sweep_2._num_points)
     np.testing.assert_array_equal(
         loaded_data_2[_param_complex.name][_param_set_2.name], expected_setpoints_2
+    )
+
+
+@pytest.mark.usefixtures("plot_close", "experiment")
+def test_dond_2d_multi_datasets_output_type(_param, _param_complex, _param_set, _param_set_2):
+
+    sweep_1 = LinSweep(_param_set, 0, 0.5, 2, 0)
+    sweep_2 = LinSweep(_param_set_2, 0.5, 1, 2, 0)
+
+    data_1 = dond(sweep_1, sweep_2, [_param], [_param_complex])
+    assert isinstance(data_1[0][0], DataSet) is True
+    assert isinstance(data_1[0][1], DataSet) is True
+
+
+@pytest.mark.usefixtures("plot_close", "experiment")
+@pytest.mark.parametrize("plot", [None, True, False])
+@pytest.mark.parametrize("plot_config", [None, True, False])
+def test_dond_2d_multiple_datasets_plot(_param_set, _param_set_2, _param,
+                                        _param_2, plot, plot_config):
+
+    if plot_config is not None:
+        config.dataset.dond_plot = plot_config
+
+    sweep_1 = LinSweep(_param_set, 0, 1, 1, 0)
+    sweep_2 = LinSweep(_param_set_2, 0.1, 1.1, 2, 0)
+
+    output = dond(sweep_1, sweep_2, [_param], [_param_2], do_plot=plot)
+
+    assert len(output[1]) == 2
+    assert len(output[1][0]) == 1
+    assert len(output[1][1]) == 1
+    if plot is True or plot is None and plot_config is True:
+        assert isinstance(output[1][0][0], matplotlib.axes.Axes)
+        assert isinstance(output[1][1][0], matplotlib.axes.Axes)
+    else:
+        assert output[1][0][0] is None
+        assert output[1][1][0] is None
+
+
+@pytest.mark.usefixtures("plot_close", "experiment")
+def test_dond_2d_multi_datasets_with_callable_output_data(_param, _param_2, _param_complex,
+                                                          _param_complex_2, _param_set,
+                                                          _param_set_2, _string_callable):
+    sweep_1 = LinSweep(_param_set, 0, 0.5, 5, 0)
+    sweep_2 = LinSweep(_param_set_2, 0.5, 1, 5, 0)
+    exp_1 = dond(sweep_1, sweep_2, [_string_callable, _param, _param_complex],
+                 [_string_callable, _param_2, _param_complex_2])
+    data_1 = exp_1[0][0]
+    data_2 = exp_1[0][1]
+
+    assert data_1.parameters == (
+        f"{_param_set.name},{_param_set_2.name}," f"{_param.name},{_param_complex.name}"
+    )
+    assert data_2.parameters == (
+        f"{_param_set.name},{_param_set_2.name}," f"{_param_2.name},{_param_complex_2.name}"
+    )
+    loaded_data_1 = data_1.get_parameter_data()
+    expected_data_1_1 = np.ones(25).reshape(sweep_1._num_points, sweep_2._num_points)
+
+    np.testing.assert_array_equal(
+        loaded_data_1[_param.name][_param.name], expected_data_1_1
+    )
+    expected_data_1_2 = (1 + 1j) * np.ones(25).reshape(
+        sweep_1._num_points, sweep_2._num_points
+    )
+    np.testing.assert_array_equal(
+        loaded_data_1[_param_complex.name][_param_complex.name], expected_data_1_2
+    )
+
+    loaded_data_2 = data_2.get_parameter_data()
+    expected_data_2_1 = 2*np.ones(25).reshape(sweep_1._num_points, sweep_2._num_points)
+
+    np.testing.assert_array_equal(
+        loaded_data_2[_param_2.name][_param_2.name], expected_data_2_1
+    )
+    expected_data_2_2 = (2 + 2j) * np.ones(25).reshape(
+        sweep_1._num_points, sweep_2._num_points
+    )
+    np.testing.assert_array_equal(
+        loaded_data_2[_param_complex_2.name][_param_complex_2.name], expected_data_2_2
+    )
+
+    expected_setpoints_1 = np.repeat(
+        np.linspace(sweep_1._start, sweep_1._stop, sweep_1._num_points),
+        sweep_2._num_points,
+    ).reshape(sweep_1._num_points, sweep_2._num_points)
+
+    expected_setpoints_2 = np.tile(
+        np.linspace(sweep_2._start, sweep_2._stop, sweep_2._num_points),
+        sweep_1._num_points,
+    ).reshape(sweep_1._num_points, sweep_2._num_points)
+
+    np.testing.assert_array_equal(
+        loaded_data_1[_param_complex.name][_param_set.name], expected_setpoints_1
+    )
+    np.testing.assert_array_equal(
+        loaded_data_1[_param_complex.name][_param_set_2.name], expected_setpoints_2
+    )
+    np.testing.assert_array_equal(
+        loaded_data_2[_param_complex_2.name][_param_set.name], expected_setpoints_1
+    )
+    np.testing.assert_array_equal(
+        loaded_data_2[_param_complex_2.name][_param_set_2.name], expected_setpoints_2
+    )
+    np.testing.assert_array_equal(
+        loaded_data_1[_param.name][_param_set.name], expected_setpoints_1
+    )
+    np.testing.assert_array_equal(
+        loaded_data_1[_param.name][_param_set_2.name], expected_setpoints_2
+    )
+    np.testing.assert_array_equal(
+        loaded_data_2[_param_2.name][_param_set.name], expected_setpoints_1
+    )
+    np.testing.assert_array_equal(
+        loaded_data_2[_param_2.name][_param_set_2.name], expected_setpoints_2
     )
