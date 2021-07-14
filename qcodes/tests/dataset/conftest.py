@@ -587,7 +587,7 @@ def SpectrumAnalyzer():
 
     class Spectrum(ArrayParameter):
 
-        def __init__(self, name, instrument):
+        def __init__(self, name, instrument, **kwargs):
             super().__init__(
                 name=name,
                 shape=(1,),  # this attribute should be removed
@@ -596,6 +596,7 @@ def SpectrumAnalyzer():
                 setpoint_names=("Frequency",),
                 setpoint_units=("Hz",),
                 instrument=instrument,
+                **kwargs,
             )
 
             self.npts = 100

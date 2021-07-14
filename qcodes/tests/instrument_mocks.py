@@ -439,24 +439,33 @@ class MultiSetPointParam(MultiParameter):
     Multiparameter which only purpose it to test that units, setpoints
     and so on are copied correctly to the individual arrays in the datarray.
     """
-    def __init__(self, instrument=None, name='multi_setpoint_param'):
+
+    def __init__(self, instrument=None, name="multi_setpoint_param", **kwargs):
         shapes = ((5,), (5,))
         names = ('multi_setpoint_param_this', 'multi_setpoint_param_that')
         labels = ('this label', 'that label')
         units = ('this unit', 'that unit')
         sp_base = tuple(np.linspace(5, 9, 5))
         setpoints = ((sp_base,), (sp_base,))
-        setpoint_names = (('multi_setpoint_param_this_setpoint',), ('multi_setpoint_param_this_setpoint',))
-        setpoint_labels = (('this setpoint',), ('this setpoint',))
-        setpoint_units = (('this setpointunit',), ('this setpointunit',))
-        super().__init__(name, names, shapes,
-                         instrument=instrument,
-                         labels=labels,
-                         units=units,
-                         setpoints=setpoints,
-                         setpoint_labels=setpoint_labels,
-                         setpoint_names=setpoint_names,
-                         setpoint_units=setpoint_units)
+        setpoint_names = (
+            ("multi_setpoint_param_this_setpoint",),
+            ("multi_setpoint_param_this_setpoint",),
+        )
+        setpoint_labels = (("this setpoint",), ("this setpoint",))
+        setpoint_units = (("this setpointunit",), ("this setpointunit",))
+        super().__init__(
+            name,
+            names,
+            shapes,
+            instrument=instrument,
+            labels=labels,
+            units=units,
+            setpoints=setpoints,
+            setpoint_labels=setpoint_labels,
+            setpoint_names=setpoint_names,
+            setpoint_units=setpoint_units,
+            **kwargs,
+        )
 
     def get_raw(self):
         items = (np.zeros(5), np.ones(5))
@@ -469,7 +478,7 @@ class Multi2DSetPointParam(MultiParameter):
     and so on are copied correctly to the individual arrays in the datarray.
     """
 
-    def __init__(self, instrument=None, name='multi_2d_setpoint_param'):
+    def __init__(self, instrument=None, name="multi_2d_setpoint_param", **kwargs):
         shapes = ((5, 3), (5, 3))
         names = ('this', 'that')
         labels = ('this label', 'that label')
@@ -478,22 +487,37 @@ class Multi2DSetPointParam(MultiParameter):
         sp_base_2 = tuple(np.linspace(9, 11, 3))
         array_setpoints = setpoint_generator(sp_base_1, sp_base_2)
         setpoints = (array_setpoints, array_setpoints)
-        setpoint_names = (('multi_2d_setpoint_param_this_setpoint', 'multi_2d_setpoint_param_that_setpoint'),
-                          ('multi_2d_setpoint_param_this_setpoint', 'multi_2d_setpoint_param_that_setpoint'))
-        setpoint_labels = (('this setpoint', 'that setpoint'),
-                           ('this setpoint', 'that setpoint'))
-        setpoint_units = (('this setpointunit',
-                           'that setpointunit'),
-                          ('this setpointunit',
-                           'that setpointunit'))
-        super().__init__(name, names, shapes,
-                         instrument=instrument,
-                         labels=labels,
-                         units=units,
-                         setpoints=setpoints,
-                         setpoint_labels=setpoint_labels,
-                         setpoint_names=setpoint_names,
-                         setpoint_units=setpoint_units)
+        setpoint_names = (
+            (
+                "multi_2d_setpoint_param_this_setpoint",
+                "multi_2d_setpoint_param_that_setpoint",
+            ),
+            (
+                "multi_2d_setpoint_param_this_setpoint",
+                "multi_2d_setpoint_param_that_setpoint",
+            ),
+        )
+        setpoint_labels = (
+            ("this setpoint", "that setpoint"),
+            ("this setpoint", "that setpoint"),
+        )
+        setpoint_units = (
+            ("this setpointunit", "that setpointunit"),
+            ("this setpointunit", "that setpointunit"),
+        )
+        super().__init__(
+            name,
+            names,
+            shapes,
+            instrument=instrument,
+            labels=labels,
+            units=units,
+            setpoints=setpoints,
+            setpoint_labels=setpoint_labels,
+            setpoint_names=setpoint_names,
+            setpoint_units=setpoint_units,
+            **kwargs,
+        )
 
     def get_raw(self):
         items = (np.zeros((5, 3)), np.ones((5, 3)))
@@ -507,7 +531,7 @@ class Multi2DSetPointParam2Sizes(MultiParameter):
     shapes.
     """
 
-    def __init__(self, instrument=None, name='multi_2d_setpoint_param'):
+    def __init__(self, instrument=None, name="multi_2d_setpoint_param", **kwargs):
         shapes = ((5, 3), (2, 7))
         names = ('this_5_3', 'this_2_7')
         labels = ('this label', 'that label')
@@ -519,22 +543,37 @@ class Multi2DSetPointParam2Sizes(MultiParameter):
         sp_base_2_2 = tuple(np.linspace(9, 11, 7))
         array_setpoints_2 = setpoint_generator(sp_base_1_2, sp_base_2_2)
         setpoints = (array_setpoints_1, array_setpoints_2)
-        setpoint_names = (('multi_2d_setpoint_param_this_setpoint_1', 'multi_2d_setpoint_param_that_setpoint_1'),
-                          ('multi_2d_setpoint_param_this_setpoint_2', 'multi_2d_setpoint_param_that_setpoint_2'))
-        setpoint_labels = (('this setpoint 1', 'that setpoint 1'),
-                           ('this setpoint 2', 'that setpoint 2'))
-        setpoint_units = (('this setpointunit',
-                           'that setpointunit'),
-                          ('this setpointunit',
-                           'that setpointunit'))
-        super().__init__(name, names, shapes,
-                         instrument=instrument,
-                         labels=labels,
-                         units=units,
-                         setpoints=setpoints,
-                         setpoint_labels=setpoint_labels,
-                         setpoint_names=setpoint_names,
-                         setpoint_units=setpoint_units)
+        setpoint_names = (
+            (
+                "multi_2d_setpoint_param_this_setpoint_1",
+                "multi_2d_setpoint_param_that_setpoint_1",
+            ),
+            (
+                "multi_2d_setpoint_param_this_setpoint_2",
+                "multi_2d_setpoint_param_that_setpoint_2",
+            ),
+        )
+        setpoint_labels = (
+            ("this setpoint 1", "that setpoint 1"),
+            ("this setpoint 2", "that setpoint 2"),
+        )
+        setpoint_units = (
+            ("this setpointunit", "that setpointunit"),
+            ("this setpointunit", "that setpointunit"),
+        )
+        super().__init__(
+            name,
+            names,
+            shapes,
+            instrument=instrument,
+            labels=labels,
+            units=units,
+            setpoints=setpoints,
+            setpoint_labels=setpoint_labels,
+            setpoint_names=setpoint_names,
+            setpoint_units=setpoint_units,
+            **kwargs,
+        )
 
     def get_raw(self):
         items = (np.zeros((5, 3)), np.ones((2, 7)))
@@ -546,17 +585,23 @@ class MultiScalarParam(MultiParameter):
     Multiparameter whos elements are scalars i.e. similar to
     Parameter with no setpoints etc.
     """
-    def __init__(self, instrument=None, name='multiscalarparameter'):
+
+    def __init__(self, instrument=None, name="multiscalarparameter", **kwargs):
         shapes = ((), ())
         names = ('thisparam', 'thatparam')
         labels = ('thisparam label', 'thatparam label')
         units = ('thisparam unit', 'thatparam unit')
         setpoints = ((), ())
-        super().__init__(name, names, shapes,
-                         instrument=instrument,
-                         labels=labels,
-                         units=units,
-                         setpoints=setpoints)
+        super().__init__(
+            name,
+            names,
+            shapes,
+            instrument=instrument,
+            labels=labels,
+            units=units,
+            setpoints=setpoints,
+            **kwargs,
+        )
 
     def get_raw(self):
         items = (0, 1)
@@ -569,24 +614,27 @@ class ArraySetPointParam(ArrayParameter):
     and so on are copied correctly to the individual arrays in the datarray.
     """
 
-    def __init__(self, instrument=None, name='array_setpoint_param'):
+    def __init__(self, instrument=None, name="array_setpoint_param", **kwargs):
         shape = (5,)
         label = 'this label'
         unit = 'this unit'
         sp_base = tuple(np.linspace(5, 9, 5))
         setpoints = (sp_base,)
-        setpoint_names = ('array_setpoint_param_this_setpoint',)
-        setpoint_labels = ('this setpoint',)
-        setpoint_units = ('this setpointunit',)
-        super().__init__(name,
-                         shape,
-                         instrument,
-                         label=label,
-                         unit=unit,
-                         setpoints=setpoints,
-                         setpoint_labels=setpoint_labels,
-                         setpoint_names=setpoint_names,
-                         setpoint_units=setpoint_units)
+        setpoint_names = ("array_setpoint_param_this_setpoint",)
+        setpoint_labels = ("this setpoint",)
+        setpoint_units = ("this setpointunit",)
+        super().__init__(
+            name,
+            shape,
+            instrument,
+            label=label,
+            unit=unit,
+            setpoints=setpoints,
+            setpoint_labels=setpoint_labels,
+            setpoint_names=setpoint_names,
+            setpoint_units=setpoint_units,
+            **kwargs,
+        )
 
     def get_raw(self):
         item = np.ones(5) + 1
@@ -598,24 +646,27 @@ class ComplexArraySetPointParam(ArrayParameter):
     Arrayparameter that returns complex numbers
     """
 
-    def __init__(self, instrument=None, name='testparameter'):
+    def __init__(self, instrument=None, name="testparameter", **kwargs):
         shape = (5,)
         label = 'this label'
         unit = 'this unit'
         sp_base = tuple(np.linspace(5, 9, 5))
         setpoints = (sp_base,)
-        setpoint_names = ('this_setpoint',)
-        setpoint_labels = ('this setpoint',)
-        setpoint_units = ('this setpointunit',)
-        super().__init__(name,
-                         shape,
-                         instrument,
-                         label=label,
-                         unit=unit,
-                         setpoints=setpoints,
-                         setpoint_labels=setpoint_labels,
-                         setpoint_names=setpoint_names,
-                         setpoint_units=setpoint_units)
+        setpoint_names = ("this_setpoint",)
+        setpoint_labels = ("this setpoint",)
+        setpoint_units = ("this setpointunit",)
+        super().__init__(
+            name,
+            shape,
+            instrument,
+            label=label,
+            unit=unit,
+            setpoints=setpoints,
+            setpoint_labels=setpoint_labels,
+            setpoint_names=setpoint_names,
+            setpoint_units=setpoint_units,
+            **kwargs,
+        )
 
     def get_raw(self):
         item = np.arange(5) - 1j*np.arange(5)

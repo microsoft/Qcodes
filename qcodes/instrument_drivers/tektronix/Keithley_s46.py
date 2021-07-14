@@ -60,13 +60,14 @@ class S46Parameter(Parameter):
         lock: Acquire the lock when closing and release when opening
     """
     def __init__(
-            self,
-            name: str,
-            instrument: Optional[Instrument],
-            channel_number: int,
-            lock: RelayLock
+        self,
+        name: str,
+        instrument: Optional[Instrument],
+        channel_number: int,
+        lock: RelayLock,
+        **kwargs: Any,
     ):
-        super().__init__(name, instrument)
+        super().__init__(name, instrument, **kwargs)
 
         self._lock = lock
         self._channel_number = channel_number

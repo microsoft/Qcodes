@@ -20,9 +20,9 @@ log = logging.getLogger(__name__)
 
 
 class ScopeTrace(ArrayParameter):
-
-    def __init__(self, name: str, instrument: InstrumentChannel,
-                 channum: int) -> None:
+    def __init__(
+        self, name: str, instrument: InstrumentChannel, channum: int, **kwargs: Any
+    ) -> None:
         """
         The ScopeTrace parameter is attached to a channel of the oscilloscope.
 
@@ -39,6 +39,7 @@ class ScopeTrace(ArrayParameter):
             docstring="Holds scope trace",
             snapshot_value=False,
             instrument=instrument,
+            **kwargs,
         )
 
         self.channel = instrument
