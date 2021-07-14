@@ -2,18 +2,18 @@
 # for firmware 3.65, 2017
 
 import logging
-import warnings
 import time
-from typing import Optional, Any
+import warnings
+from distutils.version import LooseVersion
+from typing import Any, Optional
 
 import numpy as np
-from distutils.version import LooseVersion
 
 from qcodes import Instrument
-from qcodes.instrument.visa import VisaInstrument
 from qcodes.instrument.channel import InstrumentChannel
-from qcodes.utils import validators as vals
 from qcodes.instrument.parameter import ArrayParameter
+from qcodes.instrument.visa import VisaInstrument
+from qcodes.utils import validators as vals
 from qcodes.utils.helpers import create_on_off_val_mapping
 
 log = logging.getLogger(__name__)
@@ -28,14 +28,18 @@ class ScopeTrace(ArrayParameter):
 
         For now, we only support reading out the entire trace.
         """
-        super().__init__(name=name,
-                         shape=(1,),
-                         label='Voltage',  # TODO: Is this sometimes dbm?
-                         unit='V',
-                         setpoint_names=('Time',),
-                         setpoint_labels=('Time',),
-                         setpoint_units=('s',),
-                         docstring='Holds scope trace')
+        super().__init__(
+            name=name,
+            shape=(1,),
+            label="Voltage",  # TODO: Is this sometimes dbm?
+            unit="V",
+            setpoint_names=("Time",),
+            setpoint_labels=("Time",),
+            setpoint_units=("s",),
+            docstring="Holds scope trace",
+            snapshot_value=False,
+            instrument=instrument,
+        )
 
         self.channel = instrument
         self.channum = channum
