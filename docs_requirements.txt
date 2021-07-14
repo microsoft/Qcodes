@@ -13,7 +13,7 @@ decorator==5.0.9
 defusedxml==0.7.1
 docutils==0.16
 entrypoints==0.3
-idna==2.10
+idna==3.2
 imagesize==1.2.0
 importlib-metadata==3.10.1; python_version<'3.8'
 ipykernel==6.0.1
