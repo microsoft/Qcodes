@@ -660,7 +660,7 @@ def dond(
         for index, par in enumerate(multi_group):
             grouped_parameters[f'group_{index}'] = {}
             grouped_parameters[f'group_{index}']['params'] = tuple(par)
-            grouped_parameters[f'group_{index}']['meas_name'] = f'{measurement_name}_data_{index}'
+            grouped_parameters[f'group_{index}']['meas_name'] = measurement_name
             grouped_parameters[f'group_{index}']['measured_params'] = []
 
     try:
