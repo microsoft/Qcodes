@@ -909,8 +909,8 @@ def test_dond_multi_datasets_explicit_exp_meas_sample(_param, _param_complex, ex
     data1 = dond([_param], [_param_complex], do_plot=False, exp=experiment)
     assert data1[0][0].exp_name == "test-experiment"
     data2 = dond([_param], [_param_complex], do_plot=False, exp=experiment_2, measurement_name="Meas")
-    assert data2[0][0].name == "Meas_data_0"
-    assert data2[0][1].name == "Meas_data_1"
+    assert data2[0][0].name == "Meas"
+    assert data2[0][1].name == "Meas"
     assert data2[0][0].sample_name == "no-sample"
     assert data2[0][1].sample_name == "no-sample"
     assert data2[0][0].exp_name == "new-exp"
