@@ -613,7 +613,7 @@ def SpectrumAnalyzer():
 
     class MultiDimSpectrum(ArrayParameter):
 
-        def __init__(self, name, instrument):
+        def __init__(self, name, instrument, **kwargs):
             self.start = 0
             self.stop = 2e6
             self.npts = (100, 50, 20)
@@ -625,15 +625,17 @@ def SpectrumAnalyzer():
                               self.npts[2])
             setpoints = setpoint_generator(sp1, sp2, sp3)
 
-            super().__init__(name=name,
-                             instrument=instrument,
-                             setpoints=setpoints,
-                             shape=(100, 50, 20),
-                             label='Flower Power Spectrum in 3D',
-                             unit='V/sqrt(Hz)',
-                             setpoint_names=('Frequency0', 'Frequency1',
-                                             'Frequency2'),
-                             setpoint_units=('Hz', 'Other Hz', "Third Hz"))
+            super().__init__(
+                name=name,
+                instrument=instrument,
+                setpoints=setpoints,
+                shape=(100, 50, 20),
+                label="Flower Power Spectrum in 3D",
+                unit="V/sqrt(Hz)",
+                setpoint_names=("Frequency0", "Frequency1", "Frequency2"),
+                setpoint_units=("Hz", "Other Hz", "Third Hz"),
+                **kwargs,
+            )
 
         def get_raw(self):
             return np.random.randn(*self.npts)
