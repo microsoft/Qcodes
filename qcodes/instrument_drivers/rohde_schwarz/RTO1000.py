@@ -49,6 +49,8 @@ class ScopeTrace(ArrayParameter):
         """
         Prepare the scope for returning data, calculate the setpoints
         """
+        assert self.root_instrument is not None
+
         # We always use 16 bit integers for the data format
         self.root_instrument.dataformat("INT,16")
         # ensure little-endianess
@@ -89,6 +91,7 @@ class ScopeTrace(ArrayParameter):
         """
 
         instr = self.root_instrument
+        assert instr is not None
 
         if not self._trace_ready:
             raise ValueError('Trace not ready! Please call '
