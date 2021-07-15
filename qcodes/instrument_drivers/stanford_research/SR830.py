@@ -102,27 +102,28 @@ class ChannelBuffer(ArrayParameter):
             raise ValueError('Invalid parent instrument. ChannelBuffer '
                              'can only live on an SR830.')
 
-        super().__init__(name,
-                         shape=(1,),  # dummy initial shape
-                         unit='V',  # dummy initial unit
-                         setpoint_names=('Time',),
-                         setpoint_labels=('Time',),
-                         setpoint_units=('s',),
-                         docstring='Holds an acquired (part of the) '
-                                   'data buffer of one channel.')
+        super().__init__(
+            name,
+            shape=(1,),  # dummy initial shape
+            unit="V",  # dummy initial unit
+            setpoint_names=("Time",),
+            setpoint_labels=("Time",),
+            setpoint_units=("s",),
+            docstring="Holds an acquired (part of the) data buffer of one channel.",
+            instrument=instrument,
+        )
 
         self.channel = channel
-        self._instrument = instrument
 
     def prepare_buffer_readout(self) -> None:
         """
         Function to generate the setpoints for the channel buffer and
         get the right units
         """
-        assert isinstance(self._instrument, SR830)
-        N = self._instrument.buffer_npts()  # problem if this is zero?
+        assert isinstance(self.instrument, SR830)
+        N = self.instrument.buffer_npts()  # problem if this is zero?
         # TODO (WilliamHPNielsen): what if SR was changed during acquisition?
-        SR = self._instrument.buffer_SR()
+        SR = self.instrument.buffer_SR()
         if SR == 'Trigger':
             self.setpoint_units = ('',)
             self.setpoint_names = ('trig_events',)
@@ -137,7 +138,7 @@ class ChannelBuffer(ArrayParameter):
 
         self.shape = (N,)
 
-        params = self._instrument.parameters
+        params = self.instrument.parameters
         # YES, it should be: comparing to the string 'none' and not
         # the None literal
         if params[f'ch{self.channel}_ratio'].get() != 'none':
@@ -150,31 +151,31 @@ class ChannelBuffer(ArrayParameter):
                 self.unit = 'V'
 
         if self.channel == 1:
-            self._instrument._buffer1_ready = True
+            self.instrument._buffer1_ready = True
         else:
-            self._instrument._buffer2_ready = True
+            self.instrument._buffer2_ready = True
 
     def get_raw(self) -> ParamRawDataType:
         """
         Get command. Returns numpy array
         """
-        assert isinstance(self._instrument, SR830)
+        assert isinstance(self.instrument, SR830)
         if self.channel == 1:
-            ready = self._instrument._buffer1_ready
+            ready = self.instrument._buffer1_ready
         else:
-            ready = self._instrument._buffer2_ready
+            ready = self.instrument._buffer2_ready
 
         if not ready:
             raise RuntimeError('Buffer not ready. Please run '
                                'prepare_buffer_readout')
-        N = self._instrument.buffer_npts()
+        N = self.instrument.buffer_npts()
         if N == 0:
             raise ValueError('No points stored in SR830 data buffer.'
                              ' Can not poll anything.')
 
         # poll raw binary data
-        self._instrument.write(f'TRCL ? {self.channel}, 0, {N}')
-        rawdata = self._instrument.visa_handle.read_raw()
+        self.instrument.write(f"TRCL ? {self.channel}, 0, {N}")
+        rawdata = self.instrument.visa_handle.read_raw()
 
         # parse it
         realdata = np.fromstring(rawdata, dtype='<i2')

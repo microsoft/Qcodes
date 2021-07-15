@@ -90,6 +90,7 @@ from qcodes.utils.helpers import NumpyJSONEncoder
 
 from .data_set_cache import DataSetCacheWithDBBackend
 from .descriptions.versioning import serialization as serial
+from .exporters.export_info import ExportInfo
 from .exporters.export_to_csv import dataframe_to_csv
 from .exporters.export_to_pandas import (
     load_to_concatenated_dataframe,
@@ -276,7 +277,11 @@ class DataSet(Sized):
             self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
             self._started = self.run_timestamp_raw is not None
             self._parent_dataset_links = str_to_links(
-                get_parent_dataset_links(self.conn, self.run_id))
+                get_parent_dataset_links(self.conn, self.run_id)
+            )
+            self._export_info = ExportInfo.from_str(
+                self.metadata.get("export_info", "")
+            )
         else:
             # Actually perform all the side effects needed for the creation
             # of a new dataset. Note that a dataset is created (in the DB)
@@ -312,6 +317,7 @@ class DataSet(Sized):
 
             self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
             self._parent_dataset_links = []
+            self._export_info = ExportInfo({})
 
         if _WRITERS.get(self.path_to_db) is None:
             queue: "Queue[Any]" = Queue()
@@ -616,7 +622,9 @@ class DataSet(Sized):
     def add_metadata(self, tag: str, metadata: Any) -> None:
         """
         Adds metadata to the :class:`.DataSet`. The metadata is stored under the
-        provided tag. Note that None is not allowed as a metadata value.
+        provided tag. Note that None is not allowed as a metadata value, and the
+        tag has to be a valid python identified (e.g. containing alphanumeric
+        characters and underscores).
 
         Args:
             tag: represents the key in the metadata dictionary
@@ -1534,7 +1542,7 @@ class DataSet(Sized):
             )
         else:
             xarr_dataset.to_netcdf(path=file_path, engine="h5netcdf")
-        return path
+        return file_path
 
     def _export_as_csv(self, path: str, file_name: str) -> str:
         """Export data as csv to a given path with file prefix"""
@@ -1607,10 +1615,23 @@ class DataSet(Sized):
             path=path,
             prefix=prefix
         )
+        export_info = self.export_info
+        if self._export_path is not None:
+            export_info.export_paths[export_type.value] = self._export_path
+
+        self._set_export_info(export_info)
 
     @property
     def export_path(self) -> Optional[str]:
         return self._export_path
+
+    @property
+    def export_info(self) -> ExportInfo:
+        return self._export_info
+
+    def _set_export_info(self, export_info: ExportInfo) -> None:
+        self.add_metadata("export_info", export_info.to_str())
+        self._export_info = export_info
 
 
 # public api

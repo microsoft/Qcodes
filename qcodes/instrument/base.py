@@ -107,10 +107,29 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
         Raises:
             KeyError: If this instrument already has a parameter with this
-                name.
+                name and the parameter being replaced is not an abstract
+                parameter.
+
+            ValueError: If there is an existing abstract parameter and the
+                unit of the new parameter is inconsistent with the existing
+                one.
         """
-        if name in self.parameters:
-            raise KeyError(f'Duplicate parameter name {name}')
+        existing_parameter = self.parameters.get(name, None)
+
+        if existing_parameter:
+
+            if not existing_parameter.abstract:
+                raise KeyError(f"Duplicate parameter name {name}")
+
+            existing_unit = getattr(existing_parameter, "unit", None)
+            new_unit = kwargs.get("unit", None)
+            if existing_unit != new_unit:
+                raise ValueError(
+                    f"The unit of the parameter '{name}' is '{new_unit}'. "
+                    f"This is inconsistent with the unit defined in the "
+                    f"base class"
+                )
+
         param = parameter_class(name=name, instrument=self, **kwargs)
         self.parameters[name] = param
 
@@ -430,14 +449,18 @@ class Instrument(InstrumentBase, AbstractInstrument):
     _type = None
     _instances: "List[weakref.ref[Instrument]]" = []
 
-    def __init__(self, name: str, metadata: Optional[Mapping[Any, Any]] = None) -> None:
+    def __init__(
+            self,
+            name: str,
+            metadata: Optional[Mapping[Any, Any]] = None
+    ) -> None:
+
         self._t0 = time.time()
 
         super().__init__(name, metadata)
 
         self.add_parameter('IDN', get_cmd=self.get_idn,
                            vals=Anything())
-
         self.record_instance(self)
 
     def get_idn(self) -> Dict[str, Optional[str]]:

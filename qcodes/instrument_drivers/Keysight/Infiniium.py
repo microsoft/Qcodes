@@ -1,15 +1,19 @@
 import logging
-from typing import Dict, Callable, Optional, Sequence, Any
 from functools import partial
+from typing import Any, Callable, Dict, Optional, Sequence
 
 import numpy as np
 
-from qcodes import VisaInstrument, validators as vals
-from qcodes import InstrumentChannel, ChannelList, Instrument
-from qcodes import ArrayParameter
-from qcodes.utils.validators import Enum, Numbers
+from qcodes import (
+    ArrayParameter,
+    ChannelList,
+    Instrument,
+    InstrumentChannel,
+    VisaInstrument,
+)
+from qcodes import validators as vals
 from qcodes.instrument.parameter import ParamRawDataType
-
+from qcodes.utils.validators import Enum, Numbers
 
 log = logging.getLogger(__name__)
 
@@ -50,7 +54,7 @@ class RawTrace(ArrayParameter):
         # in question must be displayed
 
         # shorthand
-        instr = self._instrument
+        instr = self.instrument
         assert isinstance(instr, InfiniiumChannel)
 
         # number of set points
@@ -80,14 +84,14 @@ class RawTrace(ArrayParameter):
         # (saving data issue). Therefor create additional prepare function that
         # queries for the size.
         # check if already prepared
-        assert isinstance(self._instrument, InfiniiumChannel)
+        instr = self.instrument
+        assert isinstance(instr, InfiniiumChannel)
 
-        if not self._instrument.root_instrument.trace_ready:
+        if not instr.root_instrument.trace_ready:
             raise TraceNotReady('Please run prepare_curvedata to prepare '
                                 'the scope for acquiring a trace.')
 
         # shorthand
-        instr = self._instrument
 
         # set up the instrument
         # ---------------------------------------------------------------------

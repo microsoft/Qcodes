@@ -1,13 +1,13 @@
-from functools import partial
+import logging
 import re
 import time
+from functools import partial
+
 import numpy as np
 
 from qcodes import IPInstrument, MultiParameter
-from qcodes.utils.validators import Enum, Bool
 from qcodes.utils.deprecate import deprecate
-
-import logging
+from qcodes.utils.validators import Bool, Enum
 
 log = logging.getLogger(__name__)
 
@@ -20,10 +20,11 @@ class MercuryiPSArray(MultiParameter):
     """
     def __init__(self, name, instrument, names, units, get_cmd, set_cmd, **kwargs):
         shapes = tuple(() for i in names)
-        super().__init__(name, names, shapes, snapshot_value=True, **kwargs)
+        super().__init__(
+            name, names, shapes, snapshot_value=True, instrument=instrument, **kwargs
+        )
         self._get = get_cmd
         self._set = set_cmd
-        self._instrument = instrument
         self.units = units
 
     def get_raw(self):

@@ -22,6 +22,8 @@ from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.export_config import DataExportType
 from qcodes.dataset.linked_datasets.links import Link
 
+from .exporters.export_info import ExportInfo
+
 SPECS = List[ParamSpec]
 # Transition period type: SpecsOrInterDeps. We will allow both as input to
 # the DataSet constructor for a while, then deprecate SPECS and finally remove
@@ -150,6 +152,10 @@ class DataSetProtocol(Protocol, Sized):
         path: Optional[str] = None,
         prefix: Optional[str] = None,
     ) -> None:
+        pass
+
+    @property
+    def export_info(self) -> ExportInfo:
         pass
 
     @property
