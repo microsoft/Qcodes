@@ -122,9 +122,11 @@ def do0d(
     if do_plot is None:
         do_plot = config.dataset.dond_plot
     meas = Measurement(name=measurement_name, exp=exp)
+    meas._extra_log_info = f"{measurement_name} using do0d"
 
-    measured_parameters = tuple(param for param in param_meas
-                                if isinstance(param, _BaseParameter))
+    measured_parameters = tuple(
+        param for param in param_meas if isinstance(param, _BaseParameter)
+    )
 
     try:
         shapes: Shapes = detect_shape_of_measurement(
@@ -209,12 +211,13 @@ def do1d(
         show_progress = config.dataset.dond_show_progress
 
     meas = Measurement(name=measurement_name, exp=exp)
+    meas._extra_log_info = f"{measurement_name} using do1d"
 
-    all_setpoint_params = (param_set,) + tuple(
-        s for s in additional_setpoints)
+    all_setpoint_params = (param_set,) + tuple(s for s in additional_setpoints)
 
-    measured_parameters = tuple(param for param in param_meas
-                                if isinstance(param, _BaseParameter))
+    measured_parameters = tuple(
+        param for param in param_meas if isinstance(param, _BaseParameter)
+    )
     try:
         loop_shape = tuple(1 for _ in additional_setpoints) + (num_points,)
         shapes: Shapes = detect_shape_of_measurement(
@@ -338,8 +341,11 @@ def do2d(
         show_progress = config.dataset.dond_show_progress
 
     meas = Measurement(name=measurement_name, exp=exp)
-    all_setpoint_params = (param_set1, param_set2,) + tuple(
-            s for s in additional_setpoints)
+    meas._extra_log_info = f"{measurement_name} using do2d"
+    all_setpoint_params = (
+        param_set1,
+        param_set2,
+    ) + tuple(s for s in additional_setpoints)
 
     measured_parameters = tuple(param for param in param_meas
                                 if isinstance(param, _BaseParameter))
@@ -599,6 +605,7 @@ def dond(
         show_progress = config.dataset.dond_show_progress
 
     meas = Measurement(name=measurement_name, exp=exp)
+    meas._extra_log_info = f"{measurement_name} using dond"
 
     def _parse_dond_arguments(
         *params: Union[AbstractSweep, ParamMeasT]
