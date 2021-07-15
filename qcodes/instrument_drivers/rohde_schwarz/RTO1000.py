@@ -43,25 +43,25 @@ class ScopeTrace(ArrayParameter):
 
         self.channel = instrument
         self.channum = channum
+        self._trace_ready = False
 
     def prepare_trace(self) -> None:
         """
         Prepare the scope for returning data, calculate the setpoints
         """
         # We always use 16 bit integers for the data format
-        self.channel._parent.dataformat('INT,16')
+        self.root_instrument.dataformat("INT,16")
         # ensure little-endianess
-        self.channel._parent.write('FORMat:BORder LSBFirst')
+        self.root_instrument.write("FORMat:BORder LSBFirst")
         # only export y-values
-        self.channel._parent.write('EXPort:WAVeform:INCXvalues OFF')
+        self.root_instrument.write("EXPort:WAVeform:INCXvalues OFF")
         # only export one channel
-        self.channel._parent.write('EXPort:WAVeform:MULTichannel OFF')
+        self.root_instrument.write("EXPort:WAVeform:MULTichannel OFF")
 
         # now get setpoints
 
-        hdr = self.channel._parent.ask(f'CHANnel{self.channum}:'
-                                       'DATA:HEADER?')
-        hdr_vals = list(map(float, hdr.split(',')))
+        hdr = self.root_instrument.ask(f"CHANnel{self.channum}:" "DATA:HEADER?")
+        hdr_vals = list(map(float, hdr.split(",")))
         t_start = hdr_vals[0]
         t_stop = hdr_vals[1]
         no_samples = int(hdr_vals[2])
@@ -81,14 +81,14 @@ class ScopeTrace(ArrayParameter):
 
         self._trace_ready = True
         # we must ensure that all this took effect before proceeding
-        self.channel._parent.ask('*OPC?')
+        self.root_instrument.ask("*OPC?")
 
     def get_raw(self) -> np.ndarray:
         """
         Returns a trace
         """
 
-        instr = self.channel._parent
+        instr = self.root_instrument
 
         if not self._trace_ready:
             raise ValueError('Trace not ready! Please call '
