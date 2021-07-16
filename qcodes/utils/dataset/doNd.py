@@ -122,7 +122,7 @@ def do0d(
     if do_plot is None:
         do_plot = config.dataset.dond_plot
     meas = Measurement(name=measurement_name, exp=exp)
-    meas._extra_log_info = f"{measurement_name} using do0d"
+    meas._extra_log_info = "Using 'qcodes.utils.dataset.doNd.do0d'"
 
     measured_parameters = tuple(
         param for param in param_meas if isinstance(param, _BaseParameter)
@@ -211,7 +211,7 @@ def do1d(
         show_progress = config.dataset.dond_show_progress
 
     meas = Measurement(name=measurement_name, exp=exp)
-    meas._extra_log_info = f"{measurement_name} using do1d"
+    meas._extra_log_info = "Using 'qcodes.utils.dataset.doNd.do1d'"
 
     all_setpoint_params = (param_set,) + tuple(s for s in additional_setpoints)
 
@@ -341,7 +341,7 @@ def do2d(
         show_progress = config.dataset.dond_show_progress
 
     meas = Measurement(name=measurement_name, exp=exp)
-    meas._extra_log_info = f"{measurement_name} using do2d"
+    meas._extra_log_info = "Using 'qcodes.utils.dataset.doNd.do2d'"
     all_setpoint_params = (
         param_set1,
         param_set2,
@@ -605,7 +605,7 @@ def dond(
         show_progress = config.dataset.dond_show_progress
 
     meas = Measurement(name=measurement_name, exp=exp)
-    meas._extra_log_info = f"{measurement_name} using dond"
+    meas._extra_log_info = "Using 'qcodes.utils.dataset.doNd.dond'"
 
     def _parse_dond_arguments(
         *params: Union[AbstractSweep, ParamMeasT]
