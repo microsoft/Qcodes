@@ -65,7 +65,7 @@ Send2Trash==1.7.1
 six==1.16.0
 snowballstemmer==2.1.0
 Sphinx==4.1.1
-sphinx-jsonschema==1.16.10
+sphinx-jsonschema==1.16.11
 sphinx-rtd-theme==0.5.2
 sphinxcontrib-applehelp==1.0.2
 sphinxcontrib-devhelp==1.0.2
