@@ -21,7 +21,7 @@ h5netcdf~=0.11.0
 h5py~=3.3.0
 idna~=3.2
 importlib-metadata==3.10.1; python_version<'3.8'
-ipykernel~=6.0.1
+ipykernel~=6.0.2
 ipython~=7.25.0
 ipython-genutils~=0.2.0
 ipywidgets~=7.6.3
@@ -74,7 +74,7 @@ ruamel.yaml.clib~=0.2.6
 schema~=0.7.4
 Send2Trash~=1.7.1
 six~=1.16.0
-slack-sdk~=3.7.0
+slack-sdk~=3.8.0
 tabulate~=0.8.9
 terminado~=0.10.1
 testpath~=0.5.0

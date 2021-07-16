@@ -16,7 +16,7 @@ entrypoints==0.3
 idna==3.2
 imagesize==1.2.0
 importlib-metadata==3.10.1; python_version<'3.8'
-ipykernel==6.0.1
+ipykernel==6.0.2
 ipython==7.25.0
 ipython-genutils==0.2.0
 ipywidgets==7.6.3
@@ -65,7 +65,7 @@ Send2Trash==1.7.1
 six==1.16.0
 snowballstemmer==2.1.0
 Sphinx==4.1.1
-sphinx-jsonschema==1.16.10
+sphinx-jsonschema==1.16.11
 sphinx-rtd-theme==0.5.2
 sphinxcontrib-applehelp==1.0.2
 sphinxcontrib-devhelp==1.0.2
