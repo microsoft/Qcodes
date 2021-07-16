@@ -88,13 +88,14 @@ def _catch_keyboard_interrupts() -> Iterator[Callable[[], bool]]:
 
 
 def do0d(
-        *param_meas: ParamMeasT,
-        write_period: Optional[float] = None,
-        measurement_name: str = "",
-        exp: Optional[Experiment] = None,
-        do_plot: Optional[bool] = None,
-        use_threads: Optional[bool] = None,
-        ) -> AxesTupleListWithDataSet:
+    *param_meas: ParamMeasT,
+    write_period: Optional[float] = None,
+    measurement_name: str = "",
+    exp: Optional[Experiment] = None,
+    do_plot: Optional[bool] = None,
+    use_threads: Optional[bool] = None,
+    log_info: Optional[str] = None,
+) -> AxesTupleListWithDataSet:
     """
     Perform a measurement of a single parameter. This is probably most
     useful for an ArrayParameter that already returns an array of data points
@@ -115,6 +116,8 @@ def do0d(
         use_threads: If True measurements from each instrument will be done on
             separate threads. If you are measuring from several instruments
             this may give a significant speedup.
+        log_info: Message that is logged during the measurement. If None a default
+            message is used.
 
     Returns:
         The QCoDeS dataset.
@@ -122,7 +125,10 @@ def do0d(
     if do_plot is None:
         do_plot = config.dataset.dond_plot
     meas = Measurement(name=measurement_name, exp=exp)
-    meas._extra_log_info = "Using 'qcodes.utils.dataset.doNd.do0d'"
+    if log_info is not None:
+        meas._extra_log_info = log_info
+    else:
+        meas._extra_log_info = "Using 'qcodes.utils.dataset.doNd.do0d'"
 
     measured_parameters = tuple(
         param for param in param_meas if isinstance(param, _BaseParameter)
@@ -154,19 +160,23 @@ def do0d(
 
 
 def do1d(
-        param_set: _BaseParameter, start: float, stop: float,
-        num_points: int, delay: float,
-        *param_meas: ParamMeasT,
-        enter_actions: ActionsT = (),
-        exit_actions: ActionsT = (),
-        write_period: Optional[float] = None,
-        measurement_name: str = "",
-        exp: Optional[Experiment] = None,
-        do_plot: Optional[bool] = None,
-        use_threads: Optional[bool] = None,
-        additional_setpoints: Sequence[ParamMeasT] = tuple(),
-        show_progress: Optional[None] = None,
-        ) -> AxesTupleListWithDataSet:
+    param_set: _BaseParameter,
+    start: float,
+    stop: float,
+    num_points: int,
+    delay: float,
+    *param_meas: ParamMeasT,
+    enter_actions: ActionsT = (),
+    exit_actions: ActionsT = (),
+    write_period: Optional[float] = None,
+    measurement_name: str = "",
+    exp: Optional[Experiment] = None,
+    do_plot: Optional[bool] = None,
+    use_threads: Optional[bool] = None,
+    additional_setpoints: Sequence[ParamMeasT] = tuple(),
+    show_progress: Optional[None] = None,
+    log_info: Optional[str] = None,
+) -> AxesTupleListWithDataSet:
     """
     Perform a 1D scan of ``param_set`` from ``start`` to ``stop`` in
     ``num_points`` measuring param_meas at each step. In case param_meas is
@@ -201,6 +211,8 @@ def do1d(
             this may give a significant speedup.
         show_progress: should a progress bar be displayed during the
             measurement. If None the setting will be read from ``qcodesrc.json`
+        log_info: Message that is logged during the measurement. If None a default
+            message is used.
 
     Returns:
         The QCoDeS dataset.
@@ -211,7 +223,10 @@ def do1d(
         show_progress = config.dataset.dond_show_progress
 
     meas = Measurement(name=measurement_name, exp=exp)
-    meas._extra_log_info = "Using 'qcodes.utils.dataset.doNd.do1d'"
+    if log_info is not None:
+        meas._extra_log_info = log_info
+    else:
+        meas._extra_log_info = "Using 'qcodes.utils.dataset.doNd.do1d'"
 
     all_setpoint_params = (param_set,) + tuple(s for s in additional_setpoints)
 
@@ -266,25 +281,32 @@ def do1d(
 
 
 def do2d(
-        param_set1: _BaseParameter, start1: float, stop1: float,
-        num_points1: int, delay1: float,
-        param_set2: _BaseParameter, start2: float, stop2: float,
-        num_points2: int, delay2: float,
-        *param_meas: ParamMeasT,
-        set_before_sweep: Optional[bool] = True,
-        enter_actions: ActionsT = (),
-        exit_actions: ActionsT = (),
-        before_inner_actions: ActionsT = (),
-        after_inner_actions: ActionsT = (),
-        write_period: Optional[float] = None,
-        measurement_name: str = "",
-        exp: Optional[Experiment] = None,
-        flush_columns: bool = False,
-        do_plot: Optional[bool] = None,
-        use_threads: Optional[bool] = None,
-        additional_setpoints: Sequence[ParamMeasT] = tuple(),
-        show_progress: Optional[None] = None,
-        ) -> AxesTupleListWithDataSet:
+    param_set1: _BaseParameter,
+    start1: float,
+    stop1: float,
+    num_points1: int,
+    delay1: float,
+    param_set2: _BaseParameter,
+    start2: float,
+    stop2: float,
+    num_points2: int,
+    delay2: float,
+    *param_meas: ParamMeasT,
+    set_before_sweep: Optional[bool] = True,
+    enter_actions: ActionsT = (),
+    exit_actions: ActionsT = (),
+    before_inner_actions: ActionsT = (),
+    after_inner_actions: ActionsT = (),
+    write_period: Optional[float] = None,
+    measurement_name: str = "",
+    exp: Optional[Experiment] = None,
+    flush_columns: bool = False,
+    do_plot: Optional[bool] = None,
+    use_threads: Optional[bool] = None,
+    additional_setpoints: Sequence[ParamMeasT] = tuple(),
+    show_progress: Optional[None] = None,
+    log_info: Optional[str] = None,
+) -> AxesTupleListWithDataSet:
     """
     Perform a 1D scan of ``param_set1`` from ``start1`` to ``stop1`` in
     ``num_points1`` and ``param_set2`` from ``start2`` to ``stop2`` in
@@ -330,6 +352,8 @@ def do2d(
             this may give a significant speedup.
         show_progress: should a progress bar be displayed during the
             measurement. If None the setting will be read from ``qcodesrc.json`
+        log_info: Message that is logged during the measurement. If None a default
+            message is used.
 
     Returns:
         The QCoDeS dataset.
@@ -341,7 +365,10 @@ def do2d(
         show_progress = config.dataset.dond_show_progress
 
     meas = Measurement(name=measurement_name, exp=exp)
-    meas._extra_log_info = "Using 'qcodes.utils.dataset.doNd.do2d'"
+    if log_info is not None:
+        meas._extra_log_info = log_info
+    else:
+        meas._extra_log_info = "Using 'qcodes.utils.dataset.doNd.do2d'"
     all_setpoint_params = (
         param_set1,
         param_set2,
@@ -562,6 +589,7 @@ def dond(
     show_progress: Optional[bool] = None,
     use_threads: Optional[bool] = None,
     additional_setpoints: Sequence[ParamMeasT] = tuple(),
+    log_info: Optional[str] = None,
 ) -> AxesTupleListWithDataSet:
     """
     Perform n-dimentional scan from slowest (first) to the fastest (last), to
@@ -598,6 +626,8 @@ def dond(
             this may give a significant speedup.
         additional_setpoints: A list of setpoint parameters to be registered in
             the measurement but not scanned/swept-over.
+        log_info: Message that is logged during the measurement. If None a default
+            message is used.
     """
     if do_plot is None:
         do_plot = config.dataset.dond_plot
@@ -605,7 +635,10 @@ def dond(
         show_progress = config.dataset.dond_show_progress
 
     meas = Measurement(name=measurement_name, exp=exp)
-    meas._extra_log_info = "Using 'qcodes.utils.dataset.doNd.dond'"
+    if log_info is not None:
+        meas._extra_log_info = log_info
+    else:
+        meas._extra_log_info = "Using 'qcodes.utils.dataset.doNd.dond'"
 
     def _parse_dond_arguments(
         *params: Union[AbstractSweep, ParamMeasT]
