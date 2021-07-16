@@ -288,7 +288,10 @@ class DataSet(Sized):
             # with no parameters; they are written to disk when the dataset
             # is marked as started
             if exp_id is None:
-                exp_id = get_last_experiment(self.conn)
+                exp_id = qcodes.config["dataset"]["active_experiment"]
+                if exp_id is None:
+                    exp_id = get_last_experiment(self.conn)
+                    qcodes.config["dataset"]["active_experiment"] = exp_id
                 if exp_id is None:  # if it's still None, then...
                     raise ValueError("No experiments found."
                                      "You can start a new one with:"
