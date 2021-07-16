@@ -217,6 +217,7 @@ def initialise_database(journal_mode: Optional[str] = 'WAL') -> None:
     # calling connect performs all the needed actions to create and upgrade
     # the db to the latest version.
     conn = connect(get_DB_location(), get_DB_debug())
+    qcodes.config['dataset']['active_experiment'] = None
     if journal_mode is not None:
         set_journal_mode(conn, journal_mode)
     conn.close()
@@ -259,6 +260,7 @@ def initialise_or_create_database_at(db_file_with_abs_path: str,
     """
     qcodes.config.core.db_location = db_file_with_abs_path
     initialise_database(journal_mode)
+    qcodes.config['dataset']['active_experiment'] = None
 
 
 @contextmanager
@@ -277,6 +279,7 @@ def initialised_database_at(db_file_with_abs_path: str) -> Iterator[None]:
         yield
     finally:
         qcodes.config["core"]["db_location"] = db_location
+        qcodes.config['dataset']['active_experiment'] = None
 
 
 def conn_from_dbpath_or_conn(conn: Optional[ConnectionPlus],
