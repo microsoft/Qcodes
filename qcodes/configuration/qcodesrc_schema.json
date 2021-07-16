@@ -342,6 +342,11 @@
                     "type": "string",
                     "default": "qcodes_",
                     "description": "Prefix to add to filename for exporting datasets to disk after a measurement finishes. Only activated if export_type is set"
+                },
+                "active_experiment": {
+                    "type": ["integer", "null"],
+                    "default": null,
+                    "description": "Active experiment's exp_id. Default is None means no active experiment by default."
                 }
             },
             "description": "Settings related to the DataSet and Measurement Context manager",
