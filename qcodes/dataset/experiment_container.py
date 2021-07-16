@@ -209,9 +209,11 @@ def new_experiment(name: str,
         the new experiment
     """
     conn = conn or connect(get_DB_location())
-    return Experiment(name=name, sample_name=sample_name,
-                      format_string=format_string,
-                      conn=conn)
+    experiment = Experiment(name=name, sample_name=sample_name,
+                            format_string=format_string,
+                            conn=conn)
+    set_active_experiment(experiment)
+    return experiment
 
 
 def load_experiment(exp_id: int,
@@ -229,8 +231,9 @@ def load_experiment(exp_id: int,
     """
     if not isinstance(exp_id, int):
         raise ValueError('Experiment ID must be an integer')
-    return Experiment(exp_id=exp_id,
-                      conn=conn)
+    experiment = Experiment(exp_id=exp_id, conn=conn)
+    set_active_experiment(experiment)
+    return experiment
 
 
 def load_last_experiment() -> Experiment:
@@ -243,7 +246,9 @@ def load_last_experiment() -> Experiment:
     last_exp_id = get_last_experiment(connect(get_DB_location()))
     if last_exp_id is None:
         raise ValueError('There are no experiments in the database file')
-    return Experiment(exp_id=last_exp_id)
+    experiment = Experiment(exp_id=last_exp_id)
+    set_active_experiment(experiment)
+    return experiment
 
 
 def load_experiment_by_name(name: str,
@@ -304,6 +309,7 @@ def load_experiment_by_name(name: str,
                          f" found:\n{_repr_str}")
     else:
         e = Experiment(exp_id=rows[0]['exp_id'], conn=conn)
+    set_active_experiment(e)
     return e
 
 
@@ -333,4 +339,24 @@ def load_or_create_experiment(experiment_name: str,
                                         conn=conn)
         else:
             raise exception
+    set_active_experiment(experiment)
     return experiment
+
+
+def set_active_experiment(exp: Experiment) -> None:
+    """
+    Sets qcodes.config["dataset"]["active_experiment"] = exp.exp_id
+    """
+    qcodes.config["dataset"]["active_experiment"] = exp.exp_id
+
+
+def get_active_experiment() -> Optional[Experiment]:
+    """
+    Gets the active experiment from qcodes.config["dataset"]["active_experiment"]
+    """
+    exp_id = qcodes.config["dataset"]["active_experiment"]
+    if exp_id is None:
+        raise RuntimeError('No active_experiment because no experiment has '
+                           'been created or loaded')
+    else:
+        return load_experiment(exp_id)
