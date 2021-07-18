@@ -1010,6 +1010,22 @@ def get_last_experiment(conn: ConnectionPlus) -> Optional[int]:
     return c.fetchall()[0][0]
 
 
+def _get_active_exp() -> Optional[int]:
+    """
+    Wrapper function that returns get_active_experiment.
+    """
+    from qcodes.dataset.experiment_container import get_active_experiment
+    return get_active_experiment()
+
+
+def _load_active_exp(exp_id: int, conn: ConnectionPlus) -> None:
+    """
+    Wrapper function around load_experiment.
+    """
+    from qcodes.dataset.experiment_container import load_experiment
+    load_experiment(exp_id, conn)
+
+
 def get_runs(conn: ConnectionPlus,
              exp_id: Optional[int] = None) -> List[sqlite3.Row]:
     """ Get a list of runs.
