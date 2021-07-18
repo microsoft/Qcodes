@@ -89,3 +89,11 @@ class SQLiteSettings:
     """
 
     limits, settings = _read_settings()
+
+
+def _reset_active_exp() -> None:
+    """
+    Wrapper function around reset_active_experiment.
+    """
+    from qcodes.dataset.experiment_container import reset_active_experiment
+    reset_active_experiment()
