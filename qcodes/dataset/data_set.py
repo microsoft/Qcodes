@@ -75,6 +75,8 @@ from qcodes.dataset.sqlite.queries import (
     set_run_timestamp,
     update_parent_datasets,
     update_run_description,
+    _get_active_exp,
+    _load_active_exp
 )
 from qcodes.dataset.sqlite.query_helpers import (
     VALUE,
@@ -287,12 +289,16 @@ class DataSet(Sized):
             # of a new dataset. Note that a dataset is created (in the DB)
             # with no parameters; they are written to disk when the dataset
             # is marked as started
-            if exp_id is None:
-                exp_id = get_last_experiment(self.conn)
-                if exp_id is None:  # if it's still None, then...
-                    raise ValueError("No experiments found."
-                                     "You can start a new one with:"
-                                     " new_experiment(name, sample_name)")
+            if exp_id is None:  # First, try to get the active exp_id
+                exp_id = _get_active_exp()
+                if exp_id is None:  # If no active exp, get the last exp_id
+                    exp_id = get_last_experiment(self.conn)
+                    if exp_id is not None:  # If last exp exists, Activate it
+                        _load_active_exp(exp_id, self.conn)
+                    else:  # if it's still None, then...
+                        raise ValueError("No experiments found."
+                                         "You can start a new one with:"
+                                         " new_experiment(name, sample_name)")
             name = name or "dataset"
             _, run_id, __ = create_run(self.conn, exp_id, name,
                                        generate_guid(),
