@@ -59,7 +59,7 @@ Under the hood:
 - Add export info metadata to dataset (#3135)
 - Export complex numbers to netcdf (#3126)
 - Pin typing packages the same way as other test dependancies do (#3123)
-- Do not preserve gh pages branch history (#3122)
+- Do not preserve gh pages branch history significantly reducing the size of the full clone of the QCoDeS repository (#3122)
 - Add typing packages to conda CI (#3115)
 - Fix link to pyvisa intersphinx (#3106)
 - Compare shapes in ``RunDescriber`` equality method (#3105)
