@@ -140,12 +140,9 @@ class DummyAttrInstrument(Instrument):
     def __init__(self, name: str = "dummy", **kwargs: Any):
 
         """
-        Create a dummy instrument that can be used for testing
-
-        Args:
-            name: name for the instrument
-            gates: list of names that is used to create parameters for
-                            the instrument
+        Create a dummy instrument that can be used for testing.
+        This instrument has its parameters declared as attributes
+        and does not use add_parameter.
         """
         super().__init__(name, **kwargs)
 
