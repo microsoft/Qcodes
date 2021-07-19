@@ -614,7 +614,7 @@ class _BaseParameter(Metadatable):
                                 " that is not gettable.")
             if self.abstract:
                 raise NotImplementedError(
-                    f"Trying to get an abstract " f"parameter: {self.full_name}"
+                    f"Trying to get an abstract parameter: {self.full_name}"
                 )
             try:
                 # There might be cases where a .get also has args/kwargs
@@ -645,7 +645,7 @@ class _BaseParameter(Metadatable):
                                     " that is not settable.")
                 if self.abstract:
                     raise NotImplementedError(
-                        f"Trying to set an abstract " f"parameter: {self.full_name}"
+                        f"Trying to set an abstract parameter: {self.full_name}"
                     )
                 self.validate(value)
 
