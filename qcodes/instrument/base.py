@@ -129,7 +129,8 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 f"Parameter {name} on instrument {self.name} does "
                 f"not correctly pass kwargs to its baseclass. A "
                 f"Parameter class must take `**kwargs` and forward "
-                f"them to its baseclass."
+                f"them to its baseclass.",
+                QCoDeSDeprecationWarning,
             )
             param = parameter_class(name=name, instrument=self, **kwargs)
 

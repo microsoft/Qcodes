@@ -6,9 +6,17 @@ from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 
 class BrokenParameter(Parameter):
+    """A parameter that incorrectly does not forward instrument to the base parameter"""
     def __init__(self, name, instrument, *args, **kwargs):
         super().__init__(name, *args, **kwargs)
         self._instrument = instrument
+
+
+class BrokenParameter2(Parameter):
+    """A parameter that does not pass kwargs to the _BaseParameter class"""
+
+    def __init__(self, name, instrument, set_cmd, get_cmd):
+        super().__init__(name=name, instrument=instrument)
 
 
 @pytest.fixture(name="dummy_attr_instr")
@@ -29,8 +37,11 @@ def test_parameter_registration_on_instr(dummy_attr_instr):
     )
 
 
-def test_parameter_registration_with_broken_parameter(dummy_attr_instr):
-    with pytest.warns(QCoDeSDeprecationWarning):
+def test_parameter_registration_with_non_instr_passing_parameter(dummy_attr_instr):
+    with pytest.warns(
+        QCoDeSDeprecationWarning,
+        match="Parameter brokenparameter does not correctly register on instrument",
+    ):
         dummy_attr_instr.add_parameter(
             name="brokenparameter",
             parameter_class=BrokenParameter,
@@ -40,3 +51,19 @@ def test_parameter_registration_with_broken_parameter(dummy_attr_instr):
     # test that even if the parameter does not pass instrument to the baseclass
     # it will still be registered on the instr
     assert "brokenparameter" in dummy_attr_instr.parameters.keys()
+
+
+def test_parameter_registration_with_non_kwargs_passing_parameter(dummy_attr_instr):
+    with pytest.warns(
+        QCoDeSDeprecationWarning,
+        match="does not correctly pass kwargs to its baseclass",
+    ):
+        dummy_attr_instr.add_parameter(
+            name="brokenparameter2",
+            parameter_class=BrokenParameter2,
+            set_cmd=None,
+            get_cmd=None,
+        )
+    # test that even if the parameter does not pass kwargs (bind_to_instrument specifically)
+    # to the baseclass it will still be registered on the instr
+    assert "brokenparameter2" in dummy_attr_instr.parameters.keys()
