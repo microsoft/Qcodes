@@ -15,8 +15,7 @@ New:
 
 - The default value for `default_parameter_name` in the Loop QCoDeS dataset changed from ``amplitude`` to ``None``.
   The ``amplitude`` value interferes with datasets where one of the setpoint arrays is called `amplitude`. (#3095)
-- Abstract parameters has been added which allow one to create abstract instrument types that are guaranteed 
-to have certain parameters present. (#3125)
+- Abstract parameters has been added which allow one to create abstract instrument types that have parameters which can be overwritten in a subclass allowing the creation of instruments subclasses with a well-defined api. (#3125)
 
 
 
