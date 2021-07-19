@@ -62,5 +62,4 @@ Under the hood:
 - Add typing packages to conda CI (#3115)
 - Fix link to pyvisa intersphinx (#3106)
 - Compare shapes in ``RunDescriber`` equality method (#3105)
-- Grammer improvements in doNd example notebook (#3104)
 - Fix invalid array syntax in json schema (#3097)
