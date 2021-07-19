@@ -30,6 +30,7 @@ Improved:
 - Add ``underlying_instrument`` property to ``_BaseParameter`` and use it in ``call_params_threaded`` instead of ``root_instrument``. (3127)
 - Ensure that the per array metadata is also exported to dataarrays and not just datasets. (#3116)
 - Use threaded setting from config in doNd functions, and make ``process_params_meas`` public. (#3096)
+- Don't allow metadata tags that are not valid python identifiers (#3192)
 
 
 -----------------
@@ -49,7 +50,6 @@ Under the hood:
 - Fix to speed up and properly set experiment in delegate device test (#3199)
 - Remove bare wait test due to random failures (#3198)
 - Revert checking of abstract parameters in post init due to unintended side effects (#3197)
-- Don't allow metadata tags that are not valid python identifiers (#3192)
 - Use public interface for instrument in parameters (#3187)
 - Fix numpy deprecation for ragged arrays (#3184)
 - Add documentation to explain automatic CI (#3169)
