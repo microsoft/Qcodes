@@ -1014,8 +1014,8 @@ def _get_active_exp() -> Optional[int]:
     """
     Wrapper function that returns get_active_experiment.
     """
-    from qcodes.dataset.experiment_container import get_active_experiment
-    return get_active_experiment()
+    from qcodes.dataset.experiment_container import get_active_experiment_id
+    return get_active_experiment_id()
 
 
 def _load_active_exp(exp_id: int, conn: ConnectionPlus) -> None:

@@ -356,7 +356,7 @@ def _set_active_experiment(exp: Experiment) -> None:
     active_experiment = exp.exp_id
 
 
-def get_active_experiment() -> Optional[int]:
+def get_active_experiment_id() -> Optional[int]:
     """
     Gets the active_experiment's exp_id of the created/ loaded experiment.
 
