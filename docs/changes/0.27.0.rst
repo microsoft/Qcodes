@@ -37,7 +37,6 @@ Improved:
 Improved drivers:
 -----------------
 
-- Fixed bug in RTO1000 digitial oscilloscope by forwarding instrument to parameter baseclass. (#3205)
 - Fix to Rohde & Schwarz ZNB driver for setting npts in CW mode. (#3168)
 - Update Keithley 2600 SMU current parameter to be aware of if current compliance is hit during measurement. (#3160)
 - Alazar ATS drivers: Fix buffer size for mode='TS' and buffers_per_acquisition > 1. (#3118)
