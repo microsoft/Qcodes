@@ -1481,6 +1481,10 @@ class DelegateParameter(Parameter):
         (e.g. a bijection). It is therefor not allowed to create a
         :class:`.DelegateParameter` that performs non invertible
         transforms in its ``get_raw`` method.
+
+        A DelegateParameter is not registered on the instrument by default.
+        You should pass ``bind_to_instrument=True`` if you want this to
+        be the case.
     """
 
     class _DelegateCache:
