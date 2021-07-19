@@ -10,7 +10,7 @@ from qcodes.dataset.experiment_container import (load_experiment_by_name,
                                                  load_experiment,
                                                  Experiment,
                                                  load_last_experiment,
-                                                 get_active_experiment,
+                                                 get_active_experiment_id,
                                                  reset_active_experiment)
 from qcodes.dataset.measurements import Measurement
 
@@ -37,6 +37,7 @@ def test_run_loaded_experiment():
 
     with meas.run():
         pass
+
 
 def test_last_data_set_from_experiment(dataset):
     experiment = load_experiment(dataset.exp_id)
@@ -312,25 +313,31 @@ def test_load_last_experiment(empty_temp_db):
 
 @pytest.mark.usefixtures("empty_temp_db")
 def test_active_experiment():
+    NA = None
+
+    exp_id = get_active_experiment_id()
+    assert exp_id == NA
+
     exp_1 = load_or_create_experiment('test_exp', sample_name='no_sample')
-    assert get_active_experiment() == exp_1.exp_id
+    assert get_active_experiment_id() == exp_1.exp_id
 
     exp_2 = new_experiment('test_exp_2', sample_name='no_sample')
-    assert get_active_experiment() == exp_2.exp_id
+    assert get_active_experiment_id() == exp_2.exp_id
 
     exp_3 = load_experiment(1)
-    assert get_active_experiment() == exp_1.exp_id
-    assert get_active_experiment() == exp_3.exp_id
+    assert get_active_experiment_id() == exp_1.exp_id
+    assert get_active_experiment_id() == exp_3.exp_id
 
-    exp_4 = load_experiment_by_name('test_exp_2', sample='no_sample')
-    assert get_active_experiment() == exp_2.exp_id
-    assert get_active_experiment() == exp_4.exp_id
+    exp_4 = new_experiment('test_exp_3', sample_name='no_sample')
 
-    exp_5 = load_last_experiment()
-    assert get_active_experiment() == exp_2.exp_id
-    assert get_active_experiment() == exp_5.exp_id
+    exp_5 = load_experiment_by_name('test_exp_2', sample='no_sample')
+    assert get_active_experiment_id() == exp_2.exp_id
+    assert get_active_experiment_id() == exp_5.exp_id
+
+    exp_6 = load_last_experiment()
+    assert get_active_experiment_id() == exp_4.exp_id
+    assert get_active_experiment_id() == exp_6.exp_id
 
     reset_active_experiment()
-    exp_id = get_active_experiment()
-    NA = None
+    exp_id = get_active_experiment_id()
     assert exp_id == NA
