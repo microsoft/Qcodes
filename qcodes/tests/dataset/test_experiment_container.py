@@ -9,10 +9,10 @@ from qcodes.dataset.experiment_container import (load_experiment_by_name,
                                                  experiments,
                                                  load_experiment,
                                                  Experiment,
-                                                 load_last_experiment,
-                                                 get_active_experiment_id,
-                                                 reset_active_experiment)
+                                                 load_last_experiment)
 from qcodes.dataset.measurements import Measurement
+from qcodes.dataset.experiment_setting import (get_active_experiment_id,
+                                               reset_active_experiment_id)
 
 
 def assert_experiments_equal(exp, exp_2):
@@ -338,6 +338,6 @@ def test_active_experiment():
     assert get_active_experiment_id() == exp_4.exp_id
     assert get_active_experiment_id() == exp_6.exp_id
 
-    reset_active_experiment()
+    reset_active_experiment_id()
     exp_id = get_active_experiment_id()
     assert exp_id == NA
