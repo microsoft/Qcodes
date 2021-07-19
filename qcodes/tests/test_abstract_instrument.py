@@ -16,7 +16,9 @@ class ExampleBaseVoltageSource(Instrument):
     def __init__(self, name: str):
         super().__init__(name)
 
-        self.add_parameter("voltage", unit="V", abstract=True)
+        self.add_parameter(
+            "voltage", unit="V", abstract=True, get_cmd=None, set_cmd=None
+        )
 
         self.add_parameter("current", unit="A", get_cmd=None, set_cmd=None)
 
@@ -131,6 +133,24 @@ def test_not_implemented_error():
     ):
         VoltageSourceNotImplemented("driver2")
     assert not VoltageSourceNotImplemented.instances()
+
+
+def test_get_set_raises():
+    """
+    If not all abstract parameters are implemented, we should see
+    an exception
+    """
+    vs = VoltageSourceNotImplemented("driver2")
+
+    with pytest.raises(
+        NotImplementedError, match="Trying to get an abstract parameter"
+    ):
+        vs.voltage.get()
+
+    with pytest.raises(
+        NotImplementedError, match="Trying to set an abstract parameter"
+    ):
+        vs.voltage.set(0)
 
 
 def test_unit_value_error():
