@@ -612,6 +612,10 @@ class _BaseParameter(Metadatable):
             if not self.gettable:
                 raise TypeError("Trying to get a parameter"
                                 " that is not gettable.")
+            if self.abstract:
+                raise NotImplementedError(
+                    f"Trying to get an abstract parameter: {self.full_name}"
+                )
             try:
                 # There might be cases where a .get also has args/kwargs
                 raw_value = get_function(*args, **kwargs)
@@ -639,7 +643,10 @@ class _BaseParameter(Metadatable):
                 if not self.settable:
                     raise TypeError("Trying to set a parameter"
                                     " that is not settable.")
-
+                if self.abstract:
+                    raise NotImplementedError(
+                        f"Trying to set an abstract parameter: {self.full_name}"
+                    )
                 self.validate(value)
 
                 # In some cases intermediate sweep values must be used.
