@@ -330,6 +330,7 @@ def test_active_experiment():
     assert get_active_experiment() == exp_2.exp_id
     assert get_active_experiment() == exp_5.exp_id
 
-    exp_id = reset_active_experiment()
+    reset_active_experiment()
+    exp_id = get_active_experiment()
     NA = None
     assert exp_id == NA
