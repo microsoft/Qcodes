@@ -14,10 +14,9 @@ from qcodes.dataset.sqlite.queries import new_experiment as ne, \
 from qcodes.dataset.sqlite.database import get_DB_location, get_DB_debug, \
     connect, conn_from_dbpath_or_conn
 from qcodes.dataset.sqlite.query_helpers import select_one_where, VALUES
+from qcodes.dataset.experiment_setting import _set_active_experiment_id
 
 log = logging.getLogger(__name__)
-
-active_experiment: Optional[int] = None
 
 
 class Experiment(Sized):
@@ -214,7 +213,7 @@ def new_experiment(name: str,
     experiment = Experiment(name=name, sample_name=sample_name,
                             format_string=format_string,
                             conn=conn)
-    _set_active_experiment(experiment)
+    _set_active_experiment_id(experiment.exp_id)
     return experiment
 
 
@@ -234,7 +233,7 @@ def load_experiment(exp_id: int,
     if not isinstance(exp_id, int):
         raise ValueError('Experiment ID must be an integer')
     experiment = Experiment(exp_id=exp_id, conn=conn)
-    _set_active_experiment(experiment)
+    _set_active_experiment_id(experiment.exp_id)
     return experiment
 
 
@@ -249,7 +248,7 @@ def load_last_experiment() -> Experiment:
     if last_exp_id is None:
         raise ValueError('There are no experiments in the database file')
     experiment = Experiment(exp_id=last_exp_id)
-    _set_active_experiment(experiment)
+    _set_active_experiment_id(experiment.exp_id)
     return experiment
 
 
@@ -311,7 +310,7 @@ def load_experiment_by_name(name: str,
                          f" found:\n{_repr_str}")
     else:
         e = Experiment(exp_id=rows[0]['exp_id'], conn=conn)
-    _set_active_experiment(e)
+    _set_active_experiment_id(e.exp_id)
     return e
 
 
@@ -341,36 +340,5 @@ def load_or_create_experiment(experiment_name: str,
                                         conn=conn)
         else:
             raise exception
-    _set_active_experiment(experiment)
+    _set_active_experiment_id(experiment.exp_id)
     return experiment
-
-
-def _set_active_experiment(exp: Experiment) -> None:
-    """
-    Sets the active_experiment to the exp_id of the created/ loaded experiment.
-
-    Args:
-        exp: Experiment object
-    """
-    global active_experiment
-    active_experiment = exp.exp_id
-
-
-def get_active_experiment_id() -> Optional[int]:
-    """
-    Gets the active_experiment's exp_id of the created/ loaded experiment.
-
-    Returns:
-        exp_id of the active_experiment or None if no experiment created/
-        loaded.
-    """
-    global active_experiment
-    return active_experiment
-
-
-def reset_active_experiment() -> None:
-    """
-    Resets the active_experiment to None.
-    """
-    global active_experiment
-    active_experiment = None
