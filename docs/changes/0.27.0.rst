@@ -15,8 +15,9 @@ New:
 
 - The default value for `default_parameter_name` in the Loop QCoDeS dataset changed from ``amplitude`` to ``None``.
   The ``amplitude`` value interferes with datasets where one of the setpoint arrays is called `amplitude`. (#3095)
-- Abstract parameters has been added which allow one to create abstract instrument types that have parameters which can be overwritten in a subclass allowing the creation of instruments subclasses with a well-defined api. (#3125)
-
+- Abstract parameters has been added which allow one to create abstract instrument types that have parameters which can be overwritten in a subclass allowing the creation of instruments 
+  subclasses with a well-defined api. (#3125)
+- Export complex numbers to netcdf. (#3126)
 
 
 ---------
@@ -56,7 +57,6 @@ Under the hood:
 - Minimum changes to allow type checking to pass with numpy 1.21 (#3150)
 - Add customDimensionsFilter to inject custom dim, and inject pythonExecutable (#3143)
 - Add export info metadata to dataset (#3135)
-- Export complex numbers to netcdf (#3126)
 - Pin typing packages the same way as other test dependancies do (#3123)
 - Do not preserve gh pages branch history significantly reducing the size of the full clone of the QCoDeS repository (#3122)
 - Add typing packages to conda CI (#3115)
