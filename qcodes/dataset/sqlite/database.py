@@ -215,9 +215,9 @@ def initialise_database(journal_mode: Optional[str] = 'WAL') -> None:
             Options are DELETE, TRUNCATE, PERSIST, MEMORY, WAL and OFF. If set to None
             no changes are made.
     """
+    reset_active_experiment_id()
     # calling connect performs all the needed actions to create and upgrade
     # the db to the latest version.
-    reset_active_experiment_id()
     conn = connect(get_DB_location(), get_DB_debug())
     if journal_mode is not None:
         set_journal_mode(conn, journal_mode)
@@ -259,7 +259,6 @@ def initialise_or_create_database_at(db_file_with_abs_path: str,
             Options are DELETE, TRUNCATE, PERSIST, MEMORY, WAL and OFF. If set to None
             no changes are made.
     """
-    reset_active_experiment_id()
     qcodes.config.core.db_location = db_file_with_abs_path
     initialise_database(journal_mode)
 
@@ -274,7 +273,6 @@ def initialised_database_at(db_file_with_abs_path: str) -> Iterator[None]:
             Database file name with absolute path, for example
             ``C:\\mydata\\majorana_experiments.db``
     """
-    reset_active_experiment_id()
     db_location = qcodes.config["core"]["db_location"]
     try:
         initialise_or_create_database_at(db_file_with_abs_path)
