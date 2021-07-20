@@ -11,7 +11,7 @@ from qcodes.dataset.experiment_container import (
     load_or_create_experiment,
     new_experiment,
 )
-from qcodes.dataset.experiment_setting import (
+from qcodes.dataset.experiment_settings import (
     get_active_experiment_id,
     reset_active_experiment_id,
 )

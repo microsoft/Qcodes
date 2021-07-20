@@ -3,7 +3,7 @@ from collections.abc import Sized
 from typing import Any, List, Optional
 
 from qcodes.dataset.data_set import SPECS, DataSet, load_by_id, new_data_set
-from qcodes.dataset.experiment_setting import _set_active_experiment_id
+from qcodes.dataset.experiment_settings import _set_active_experiment_id
 from qcodes.dataset.sqlite.connection import ConnectionPlus, transaction
 from qcodes.dataset.sqlite.database import (
     conn_from_dbpath_or_conn,
