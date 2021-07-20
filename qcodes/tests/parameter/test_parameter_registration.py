@@ -10,6 +10,7 @@ class BrokenParameter(Parameter):
     A parameter that incorrectly sets instrument to the super-class parameter,
     instead, it should forward it via ``instrument`` argument
     """
+
     def __init__(self, name, instrument, *args, **kwargs):
         super().__init__(name, *args, **kwargs)
         self._instrument = instrument
