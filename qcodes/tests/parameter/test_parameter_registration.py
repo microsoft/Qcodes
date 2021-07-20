@@ -6,7 +6,10 @@ from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 
 class BrokenParameter(Parameter):
-    """A parameter that incorrectly does not forward instrument to the base parameter"""
+    """
+    A parameter that incorrectly sets instrument to the super-class parameter,
+    instead, it should forward it via ``instrument`` argument
+    """
     def __init__(self, name, instrument, *args, **kwargs):
         super().__init__(name, *args, **kwargs)
         self._instrument = instrument
