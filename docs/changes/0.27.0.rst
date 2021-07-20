@@ -17,10 +17,10 @@ New:
   sweep objects are ``LinSweep`` and ``LogSweep`` that can be used for `dond` measurements. (#2990)
 - The default value for `default_parameter_name` in the Loop QCoDeS dataset changed from ``amplitude`` to ``None``.
   The ``amplitude`` value interferes with datasets where one of the setpoint arrays is called `amplitude`. (#3095)
-- Abstract parameters has been added which allow one to create abstract instrument types that have parameters which can be overwritten in a subclass allowing the creation of instruments 
+- Abstract parameters has been added which allow one to create abstract instrument types that have parameters which can be overwritten in a subclass allowing the creation of instruments
   subclasses with a well-defined api. (#3125, #3217, #3197)
 - ``DataSetProtocol`` created to define the protocol that datasets must implement to be able to act as a storage device for the measurement class. (#3075, #3092)
-- Export complex numbers to netcdf. (#3126)
+- Enable exporting complex numbers to netcdf. (#3126)
 
 
 ---------
@@ -45,6 +45,7 @@ Improved drivers:
 - Update Keithley 2600 SMU current parameter to be aware of if current compliance is hit during measurement. (#3160)
 - Alazar ATS drivers: Fix buffer size for mode='TS' and buffers_per_acquisition > 1. (#3118)
 - New parameter ``complex_voltage`` has been added to the SR830 lockin amplifier. (#3078)
+
 
 ---------------
 Under the hood:
