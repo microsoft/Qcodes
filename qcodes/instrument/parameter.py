@@ -294,18 +294,6 @@ class _BaseParameter(Metadatable):
         abstract: Optional[bool] = False,
         bind_to_instrument: bool = True,
     ) -> None:
-
-        if instrument is not None and bind_to_instrument:
-            existing_parameter = instrument.parameters.get(name, None)
-
-            if existing_parameter:
-
-                if not existing_parameter.abstract:
-                    raise KeyError(
-                        f"Duplicate parameter name {name} on instrument {instrument}"
-                    )
-
-            instrument.parameters[name] = self
         super().__init__(metadata)
         if not str(name).isidentifier():
             raise ValueError(f"Parameter name must be a valid identifier "
@@ -393,6 +381,18 @@ class _BaseParameter(Metadatable):
         # to perform a validation on get
         self._validate_on_get = False
         self._abstract = abstract
+
+        if instrument is not None and bind_to_instrument:
+            existing_parameter = instrument.parameters.get(name, None)
+
+            if existing_parameter:
+
+                if not existing_parameter.abstract:
+                    raise KeyError(
+                        f"Duplicate parameter name {name} on instrument {instrument}"
+                    )
+
+            instrument.parameters[name] = self
 
     @property
     def raw_value(self) -> ParamRawDataType:
