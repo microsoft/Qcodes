@@ -32,6 +32,7 @@ from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning.converters import new_to_old, old_to_new
 from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
+from qcodes.dataset.experiment_setting import get_active_experiment_id
 from qcodes.dataset.export_config import (
     DataExportType,
     get_data_export_path,
@@ -101,7 +102,6 @@ from .exporters.export_to_xarray import (
     load_to_xarray_dataset,
 )
 from .subscriber import _Subscriber
-from qcodes.dataset.experiment_setting import get_active_experiment_id
 
 if TYPE_CHECKING:
     import pandas as pd

@@ -1,20 +1,36 @@
-from collections.abc import Sized
-from typing import Optional, List, Any
 import logging
+from collections.abc import Sized
+from typing import Any, List, Optional
 
 import qcodes
-from qcodes.dataset.data_set import (DataSet, load_by_id, load_by_counter,
-                                     new_data_set, SPECS)
-from qcodes.dataset.sqlite.connection import transaction, ConnectionPlus
-from qcodes.dataset.sqlite.queries import new_experiment as ne, \
-    finish_experiment, get_run_counter, get_runs, get_last_run, \
-    get_last_experiment, get_experiments, \
-    get_experiment_name_from_experiment_id, get_runid_from_expid_and_counter, \
-    get_sample_name_from_experiment_id
-from qcodes.dataset.sqlite.database import get_DB_location, get_DB_debug, \
-    connect, conn_from_dbpath_or_conn
-from qcodes.dataset.sqlite.query_helpers import select_one_where, VALUES
+from qcodes.dataset.data_set import (
+    SPECS,
+    DataSet,
+    load_by_counter,
+    load_by_id,
+    new_data_set,
+)
 from qcodes.dataset.experiment_setting import _set_active_experiment_id
+from qcodes.dataset.sqlite.connection import ConnectionPlus, transaction
+from qcodes.dataset.sqlite.database import (
+    conn_from_dbpath_or_conn,
+    connect,
+    get_DB_debug,
+    get_DB_location,
+)
+from qcodes.dataset.sqlite.queries import (
+    finish_experiment,
+    get_experiment_name_from_experiment_id,
+    get_experiments,
+    get_last_experiment,
+    get_last_run,
+    get_run_counter,
+    get_runid_from_expid_and_counter,
+    get_runs,
+    get_sample_name_from_experiment_id,
+)
+from qcodes.dataset.sqlite.queries import new_experiment as ne
+from qcodes.dataset.sqlite.query_helpers import VALUES, select_one_where
 
 log = logging.getLogger(__name__)
 
@@ -210,9 +226,9 @@ def new_experiment(name: str,
         the new experiment
     """
     conn = conn or connect(get_DB_location())
-    experiment = Experiment(name=name, sample_name=sample_name,
-                            format_string=format_string,
-                            conn=conn)
+    experiment = Experiment(
+        name=name, sample_name=sample_name, format_string=format_string, conn=conn
+    )
     _set_active_experiment_id(experiment.exp_id)
     return experiment
 

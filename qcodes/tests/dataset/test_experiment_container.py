@@ -2,17 +2,21 @@ import re
 
 import pytest
 
-from qcodes.dataset.sqlite.database import get_DB_location
-from qcodes.dataset.experiment_container import (load_experiment_by_name,
-                                                 new_experiment,
-                                                 load_or_create_experiment,
-                                                 experiments,
-                                                 load_experiment,
-                                                 Experiment,
-                                                 load_last_experiment)
+from qcodes.dataset.experiment_container import (
+    Experiment,
+    experiments,
+    load_experiment,
+    load_experiment_by_name,
+    load_last_experiment,
+    load_or_create_experiment,
+    new_experiment,
+)
+from qcodes.dataset.experiment_setting import (
+    get_active_experiment_id,
+    reset_active_experiment_id,
+)
 from qcodes.dataset.measurements import Measurement
-from qcodes.dataset.experiment_setting import (get_active_experiment_id,
-                                               reset_active_experiment_id)
+from qcodes.dataset.sqlite.database import get_DB_location
 
 
 def assert_experiments_equal(exp, exp_2):
@@ -318,19 +322,19 @@ def test_active_experiment():
     exp_id = get_active_experiment_id()
     assert exp_id == NA
 
-    exp_1 = load_or_create_experiment('test_exp', sample_name='no_sample')
+    exp_1 = load_or_create_experiment("test_exp", sample_name="no_sample")
     assert get_active_experiment_id() == exp_1.exp_id
 
-    exp_2 = new_experiment('test_exp_2', sample_name='no_sample')
+    exp_2 = new_experiment("test_exp_2", sample_name="no_sample")
     assert get_active_experiment_id() == exp_2.exp_id
 
     exp_3 = load_experiment(1)
     assert get_active_experiment_id() == exp_1.exp_id
     assert get_active_experiment_id() == exp_3.exp_id
 
-    exp_4 = new_experiment('test_exp_3', sample_name='no_sample')
+    exp_4 = new_experiment("test_exp_3", sample_name="no_sample")
 
-    exp_5 = load_experiment_by_name('test_exp_2', sample='no_sample')
+    exp_5 = load_experiment_by_name("test_exp_2", sample="no_sample")
     assert get_active_experiment_id() == exp_2.exp_id
     assert get_active_experiment_id() == exp_5.exp_id
 

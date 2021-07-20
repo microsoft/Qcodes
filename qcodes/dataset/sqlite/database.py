@@ -14,6 +14,7 @@ from typing import Iterator, Optional, Tuple, Union
 import numpy as np
 
 import qcodes
+from qcodes.dataset.experiment_setting import reset_active_experiment_id
 from qcodes.dataset.sqlite.connection import ConnectionPlus
 from qcodes.dataset.sqlite.db_upgrades import (
     _latest_available_version,
@@ -27,7 +28,6 @@ from qcodes.utils.types import (
     numpy_floats,
     numpy_ints,
 )
-from qcodes.dataset.experiment_setting import reset_active_experiment_id
 
 
 # utility function to allow sqlite/numpy type
