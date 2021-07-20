@@ -348,5 +348,4 @@ def load_or_create_experiment(experiment_name: str,
                                         conn=conn)
         else:
             raise exception
-    _set_active_experiment_id(experiment.exp_id)
     return experiment
