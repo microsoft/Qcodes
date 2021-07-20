@@ -317,10 +317,8 @@ def test_load_last_experiment(empty_temp_db):
 
 @pytest.mark.usefixtures("empty_temp_db")
 def test_active_experiment():
-    NA = None
-
     exp_id = get_active_experiment_id()
-    assert exp_id == NA
+    assert exp_id is None
 
     exp_1 = load_or_create_experiment("test_exp", sample_name="no_sample")
     assert get_active_experiment_id() == exp_1.exp_id
@@ -344,4 +342,4 @@ def test_active_experiment():
 
     reset_active_experiment_id()
     exp_id = get_active_experiment_id()
-    assert exp_id == NA
+    assert exp_id is None
