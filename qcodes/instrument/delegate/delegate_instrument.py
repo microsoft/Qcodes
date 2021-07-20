@@ -1,6 +1,5 @@
 import importlib
 import logging
-import warnings
 from collections import abc
 from functools import partial
 from typing import (
@@ -25,7 +24,6 @@ from qcodes.instrument.delegate.grouped_parameter import (
 )
 from qcodes.instrument.parameter import Parameter
 from qcodes.station import Station
-from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 _log = logging.getLogger(__name__)
 
@@ -243,35 +241,14 @@ class DelegateInstrument(InstrumentBase):
         if param_name in self.parameters:
             raise KeyError(f"Duplicate parameter name {param_name} on {self.name}")
 
-        try:
-            param = self.param_cls(
-                name=param_name,
-                instrument=self,
-                source=source,
-                bind_to_instrument=True,
-            )
-        except TypeError:
-            warnings.warn(
-                f"Parameter {param_name} on instrument {self.name} does "
-                f"not correctly pass kwargs to its baseclass. A "
-                f"Parameter class must take `**kwargs` and forward "
-                f"them to its baseclass.",
-                QCoDeSDeprecationWarning,
-            )
-            param = self.param_cls(
-                name=param_name,
-                instrument=self,
-                source=source,
-            )
-        existing_parameter = self.parameters.get(param_name, None)
-        if not existing_parameter:
-            warnings.warn(
-                f"Parameter {param_name} does not correctly register on instrument"
-                f" {self.name}. Please check that instrument argument is passed "
-                f"to '_BaseParameter'. This will be an error in the future.",
-                QCoDeSDeprecationWarning,
-            )
-            self.parameters[param_name] = param
+        self.add_parameter(
+            parameter_class=self.param_cls,
+            name=param_name,
+            source=source,
+        )
+        param = self.parameters[param_name]
+        assert isinstance(param, DelegateGroupParameter)
+
         return param
 
     def _create_and_add_parameter(
