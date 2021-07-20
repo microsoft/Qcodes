@@ -1,4 +1,4 @@
-"""Module for setttings indirectly related to experiments."""
+"""Settings that are indirectly related to experiments."""
 
 from typing import Optional
 
