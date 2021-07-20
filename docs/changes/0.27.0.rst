@@ -13,10 +13,13 @@ Breaking Changes:
 New:
 ----
 
+- A generalized N-dimensional ``dond`` function has been created to work with sweep objects and measurement parameters. Currently available
+  sweep objects are ``LinSweep`` and ``LogSweep`` that can be used for `dond` measurements. (#2990)
 - The default value for `default_parameter_name` in the Loop QCoDeS dataset changed from ``amplitude`` to ``None``.
   The ``amplitude`` value interferes with datasets where one of the setpoint arrays is called `amplitude`. (#3095)
 - Abstract parameters has been added which allow one to create abstract instrument types that have parameters which can be overwritten in a subclass allowing the creation of instruments 
   subclasses with a well-defined api. (#3125, #3217, #3197)
+- ``DataSetProtocol`` created to define the protocol that datasets must implement to be able to act as a storage device for the measurement class. (#3075, #3092)
 - Export complex numbers to netcdf. (#3126)
 
 
@@ -24,13 +27,14 @@ New:
 Improved:
 ---------
 
-- DelegateInstrument can now have instrument channels. (#3089)
+- DelegateInstrument can now support instrument channels. (#3089)
 - Decouple measurement name from dataset results table name to allow special characters in the measurement name. (#3185)
 - Update the get started document with installing and using spyder and jupyter. (#3179)
 - Add ``underlying_instrument`` property to ``_BaseParameter`` and use it in ``call_params_threaded`` instead of ``root_instrument``. (3127)
 - Ensure that the per array metadata is also exported to dataarrays and not just datasets. (#3116)
 - Use threaded setting from config in doNd functions, and make ``process_params_meas`` public. (#3096)
 - Don't allow metadata tags that are not valid python identifiers (#3192)
+- Pulled out ``dataframe_to_csv`` into it's own submodule ``export_to_csv`` from the ``data_set`` submodule for easier reuse. (#3061)
 
 
 -----------------
@@ -40,6 +44,7 @@ Improved drivers:
 - Fix to Rohde & Schwarz ZNB driver for setting npts in CW mode. (#3168)
 - Update Keithley 2600 SMU current parameter to be aware of if current compliance is hit during measurement. (#3160)
 - Alazar ATS drivers: Fix buffer size for mode='TS' and buffers_per_acquisition > 1. (#3118)
+- New parameter ``complex_voltage`` has been added to the SR830 lockin amplifier. (#3078)
 
 ---------------
 Under the hood:
