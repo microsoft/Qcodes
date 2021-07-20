@@ -2,20 +2,12 @@ import logging
 from collections.abc import Sized
 from typing import Any, List, Optional
 
-import qcodes
-from qcodes.dataset.data_set import (
-    SPECS,
-    DataSet,
-    load_by_counter,
-    load_by_id,
-    new_data_set,
-)
+from qcodes.dataset.data_set import SPECS, DataSet, load_by_id, new_data_set
 from qcodes.dataset.experiment_setting import _set_active_experiment_id
 from qcodes.dataset.sqlite.connection import ConnectionPlus, transaction
 from qcodes.dataset.sqlite.database import (
     conn_from_dbpath_or_conn,
     connect,
-    get_DB_debug,
     get_DB_location,
 )
 from qcodes.dataset.sqlite.queries import (
