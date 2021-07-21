@@ -14,8 +14,8 @@ from typing import Iterator, Optional, Tuple, Union
 import numpy as np
 
 import qcodes
-from qcodes.dataset.experiment_settings import reset_active_experiment_id
-from qcodes.dataset.sqlite.connection import ConnectionPlus
+from qcodes.dataset.experiment_settings import _set_active_experiment_id
+from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic_transaction
 from qcodes.dataset.sqlite.db_upgrades import (
     _latest_available_version,
     get_user_version,
@@ -215,12 +215,19 @@ def initialise_database(journal_mode: Optional[str] = 'WAL') -> None:
             Options are DELETE, TRUNCATE, PERSIST, MEMORY, WAL and OFF. If set to None
             no changes are made.
     """
-    reset_active_experiment_id()
     # calling connect performs all the needed actions to create and upgrade
     # the db to the latest version.
     conn = connect(get_DB_location(), get_DB_debug())
     if journal_mode is not None:
         set_journal_mode(conn, journal_mode)
+
+    # We want the last exp_id in the database becomes active when the database
+    # is initialized. If there is no experiment in the database, the active
+    # exp_id will be set to None.
+    query = "SELECT MAX(exp_id) FROM experiments"
+    c = atomic_transaction(conn, query)
+    _set_active_experiment_id(c.fetchall()[0][0])
+
     conn.close()
     del conn
 
