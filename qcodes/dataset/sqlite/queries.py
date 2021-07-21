@@ -52,6 +52,7 @@ from qcodes.dataset.sqlite.query_helpers import (
 )
 from qcodes.utils.deprecate import deprecate
 from qcodes.utils.numpy_utils import list_of_data_to_maybe_ragged_nd_array
+from qcodes.dataset.experiment_settings import _set_active_experiment_id
 
 log = logging.getLogger(__name__)
 
@@ -784,6 +785,14 @@ def new_experiment(conn: ConnectionPlus,
     start_time = start_time or time.time()
     values = (name, sample_name, format_string, 0, start_time, end_time)
     curr = atomic_transaction(conn, query, *values)
+
+    # We want to make this experiment's exp_id is active. A new experiment is
+    # always the last experiment in the database, so we query the maximum
+    # exp_id in the database.
+    query_1 = "SELECT MAX(exp_id) FROM experiments"
+    c = atomic_transaction(conn, query_1)
+    _set_active_experiment_id(c.fetchall()[0][0])
+
     return curr.lastrowid
 
 
