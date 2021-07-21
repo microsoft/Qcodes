@@ -32,7 +32,7 @@ from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning.converters import new_to_old, old_to_new
 from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
-from qcodes.dataset.experiment_settings import get_active_experiment_id
+from qcodes.dataset.experiment_settings import _handle_active_experiment_id_return
 from qcodes.dataset.export_config import (
     DataExportType,
     get_data_export_path,
@@ -288,14 +288,9 @@ class DataSet(Sized):
             # of a new dataset. Note that a dataset is created (in the DB)
             # with no parameters; they are written to disk when the dataset
             # is marked as started
-            if exp_id is None:  # First, try to get the active exp_id
-                exp_id = get_active_experiment_id()
-                if exp_id is None:  # If no active exp_id, get the last exp_id
-                    exp_id = get_last_experiment(self.conn)
-                if exp_id is None:  # if it's still None, then...
-                    raise ValueError("No experiments found."
-                                     "You can start a new one with:"
-                                     " new_experiment(name, sample_name)")
+            if exp_id is None:
+                exp_id = _handle_active_experiment_id_return()
+            assert isinstance(exp_id, int)
             name = name or "dataset"
             _, run_id, __ = create_run(self.conn, exp_id, name,
                                        generate_guid(),
