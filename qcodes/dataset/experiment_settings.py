@@ -46,7 +46,7 @@ def _handle_active_experiment_id_return() -> Optional[int]:
     Checks if get_active_experiment_id is an existing exp_id and return it,
     and if it is None, raise error that no experiment is initialized.
     """
-    active_experiment = get_active_experiment_id()
+    global active_experiment
     if active_experiment is not None:
         return active_experiment
     else:
