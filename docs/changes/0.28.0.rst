@@ -1,0 +1,32 @@
+Changelog for QCoDeS 0.28.0
+===========================
+
+The August 2021 release of QCoDeS.
+
+-----------------
+Breaking Changes:
+-----------------
+
+- get_guids_from_multiple_run_ids accepts connection over dbpath in the function. (#3222)
+
+----
+New:
+----
+
+
+
+---------
+Improved:
+---------
+
+
+
+-----------------
+Improved drivers:
+-----------------
+
+
+
+---------------
+Under the hood:
+---------------
