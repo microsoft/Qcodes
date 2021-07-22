@@ -41,9 +41,9 @@ def reset_default_experiment_id() -> None:
 def get_default_experiment_id(conn: ConnectionPlus) -> Optional[int]:
     """
     Returns the latest created/ loaded experiment's exp_id as the default
-    experiment. If it is None, maximum exp_id from an initialized database
-    is returned as the default. if no experiment found in the database, then
-    raises an error.
+    experiment. If it is None, maximum exp_id from the currently active
+    initialized database is returned as the default. if no experiment
+    found in the database, a ValueError is raised.
 
     Returns:
         exp_id of the default experiment.
