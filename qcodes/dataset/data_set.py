@@ -32,7 +32,7 @@ from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning.converters import new_to_old, old_to_new
 from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
-from qcodes.dataset.experiment_settings import _handle_active_experiment_id_return
+from qcodes.dataset.experiment_settings import get_default_experiment_id
 from qcodes.dataset.export_config import (
     DataExportType,
     get_data_export_path,
@@ -289,7 +289,7 @@ class DataSet(Sized):
             # with no parameters; they are written to disk when the dataset
             # is marked as started
             if exp_id is None:
-                exp_id = _handle_active_experiment_id_return()
+                exp_id = get_default_experiment_id(self.conn)
             assert isinstance(exp_id, int)
             name = name or "dataset"
             _, run_id, __ = create_run(self.conn, exp_id, name,
