@@ -1,18 +1,31 @@
 """Instrument base class."""
+import logging
 import time
 import weakref
-import logging
 from abc import ABC, abstractmethod
-from typing import Sequence, Optional, Dict, Union, Callable, Any, List, \
-    TYPE_CHECKING, cast, Type
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Type,
+    Union,
+    cast,
+)
 
 import numpy as np
-from qcodes.utils.helpers import DelegateAttributes, strip_attrs, full_class
+
+from qcodes.logger.instrument_logger import get_instrument_logger
+from qcodes.utils.helpers import DelegateAttributes, full_class, strip_attrs
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.validators import Anything
-from qcodes.logger.instrument_logger import get_instrument_logger
-from .parameter import Parameter, _BaseParameter
+
 from .function import Function
+from .parameter import Parameter, _BaseParameter
 
 if TYPE_CHECKING:
     from qcodes.instrument.channel import ChannelList
@@ -31,8 +44,8 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         metadata: additional static metadata to add to this
             instrument's JSON snapshot.
     """
-    def __init__(self, name: str,
-                 metadata: Optional[Dict[Any, Any]] = None) -> None:
+
+    def __init__(self, name: str, metadata: Optional[Mapping[Any, Any]] = None) -> None:
         self._name = str(name)
         self._short_name = str(name)
 
@@ -94,10 +107,29 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
         Raises:
             KeyError: If this instrument already has a parameter with this
-                name.
+                name and the parameter being replaced is not an abstract
+                parameter.
+
+            ValueError: If there is an existing abstract parameter and the
+                unit of the new parameter is inconsistent with the existing
+                one.
         """
-        if name in self.parameters:
-            raise KeyError(f'Duplicate parameter name {name}')
+        existing_parameter = self.parameters.get(name, None)
+
+        if existing_parameter:
+
+            if not existing_parameter.abstract:
+                raise KeyError(f"Duplicate parameter name {name}")
+
+            existing_unit = getattr(existing_parameter, "unit", None)
+            new_unit = kwargs.get("unit", None)
+            if existing_unit != new_unit:
+                raise ValueError(
+                    f"The unit of the parameter '{name}' is '{new_unit}'. "
+                    f"This is inconsistent with the unit defined in the "
+                    f"base class"
+                )
+
         param = parameter_class(name=name, instrument=self, **kwargs)
         self.parameters[name] = param
 
@@ -417,15 +449,18 @@ class Instrument(InstrumentBase, AbstractInstrument):
     _type = None
     _instances: "List[weakref.ref[Instrument]]" = []
 
-    def __init__(self, name: str,
-                 metadata: Optional[Dict[Any, Any]] = None) -> None:
+    def __init__(
+            self,
+            name: str,
+            metadata: Optional[Mapping[Any, Any]] = None
+    ) -> None:
+
         self._t0 = time.time()
 
         super().__init__(name, metadata)
 
         self.add_parameter('IDN', get_cmd=self.get_idn,
                            vals=Anything())
-
         self.record_instance(self)
 
     def get_idn(self) -> Dict[str, Optional[str]]:
@@ -496,7 +531,7 @@ class Instrument(InstrumentBase, AbstractInstrument):
 
     def __repr__(self) -> str:
         """Simplified repr giving just the class and name."""
-        return '<{}: {}>'.format(type(self).__name__, self.name)
+        return f"<{type(self).__name__}: {self.name}>"
 
     def __del__(self) -> None:
         """Close the instrument and remove its instance record."""
@@ -625,6 +660,8 @@ class Instrument(InstrumentBase, AbstractInstrument):
             TypeError: If a specific class was requested but a different
                 type was found.
         """
+        if name not in cls._all_instruments:
+            raise KeyError(f"Instrument with name {name} does not exist")
         ins = cls._all_instruments[name]()
 
         if ins is None:

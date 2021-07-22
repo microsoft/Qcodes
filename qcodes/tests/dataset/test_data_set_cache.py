@@ -2,7 +2,6 @@ from typing import Dict
 from math import ceil
 import hypothesis.strategies as hst
 import numpy as np
-from numpy.testing import assert_array_equal
 import pytest
 from hypothesis import HealthCheck, given, settings
 from string import ascii_uppercase
@@ -13,69 +12,143 @@ from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measuremen
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
+@pytest.mark.parametrize("set_shape", [True, False])
 @pytest.mark.parametrize("setpoints_type", ['text', 'numeric'])
+@pytest.mark.parametrize("in_memory_cache", [True, False])
 @settings(deadline=None, max_examples=10,
           suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(n_points=hst.integers(min_value=1, max_value=11))
 def test_cache_1d(experiment, DAC, DMM, n_points, bg_writing,
-                  channel_array_instrument, setpoints_type):
+                  channel_array_instrument, setpoints_type,
+                  set_shape, in_memory_cache):
 
     setpoints_param, setpoints_values = _prepare_setpoints_1d(
         DAC, channel_array_instrument,
         n_points, setpoints_type
     )
 
-    meas = Measurement()
+    meas1 = Measurement()
 
-    meas.register_parameter(setpoints_param)
+    meas1.register_parameter(setpoints_param)
 
-    meas_parameters = (DMM.v1,
-                       channel_array_instrument.A.dummy_multi_parameter,
-                       channel_array_instrument.A.dummy_scalar_multi_parameter,
-                       channel_array_instrument.A.dummy_2d_multi_parameter,
-                       channel_array_instrument.A.dummy_2d_multi_parameter_2,
-                       channel_array_instrument.A.dummy_array_parameter,
-                       channel_array_instrument.A.dummy_complex_array_parameter,
-                       channel_array_instrument.A.dummy_complex,
-                       channel_array_instrument.A.dummy_parameter_with_setpoints,
-                       channel_array_instrument.A.dummy_parameter_with_setpoints_complex,
-                       )
+    meas_parameters1 = (
+        DMM.v1,
+        channel_array_instrument.A.dummy_multi_parameter,
+        channel_array_instrument.A.dummy_scalar_multi_parameter,
+        channel_array_instrument.A.dummy_2d_multi_parameter,
+        channel_array_instrument.A.dummy_2d_multi_parameter_2,
+        channel_array_instrument.A.dummy_array_parameter,
+        channel_array_instrument.A.dummy_complex_array_parameter,
+        channel_array_instrument.A.dummy_complex,
+        channel_array_instrument.A.dummy_parameter_with_setpoints,
+        channel_array_instrument.A.dummy_parameter_with_setpoints_complex,
+    )
+    pws_shape_1 = 10
+    pws_shape_2 = 3
     channel_array_instrument.A.dummy_start(0)
     channel_array_instrument.A.dummy_stop(10)
-    channel_array_instrument.A.dummy_n_points(10)
-    for param in meas_parameters:
-        meas.register_parameter(param, setpoints=(setpoints_param,))
+    channel_array_instrument.A.dummy_n_points(pws_shape_1)
+    channel_array_instrument.A.dummy_start_2(2)
+    channel_array_instrument.A.dummy_stop_2(7)
+    channel_array_instrument.A.dummy_n_points_2(pws_shape_2)
 
-    with meas.run(write_in_background=bg_writing) as datasaver:
-        dataset = datasaver.dataset
-        _assert_parameter_data_is_identical(dataset.get_parameter_data(), dataset.cache.data())
-        for i, v in enumerate(setpoints_values):
-            setpoints_param.set(v)
+    if set_shape:
+        meas1.set_shapes(
+            {
+                DMM.v1.full_name: (n_points,),
+                channel_array_instrument.A.dummy_multi_parameter.full_names[0]: (n_points, 5),
+                channel_array_instrument.A.dummy_multi_parameter.full_names[1]: (n_points, 5),
+                channel_array_instrument.A.dummy_scalar_multi_parameter.full_names[0]: (n_points,),
+                channel_array_instrument.A.dummy_scalar_multi_parameter.full_names[1]: (n_points,),
+                channel_array_instrument.A.dummy_scalar_multi_parameter.full_names[0]: (n_points,),
+                channel_array_instrument.A.dummy_scalar_multi_parameter.full_names[1]: (n_points,),
+                channel_array_instrument.A.dummy_2d_multi_parameter.full_names[0]: (n_points, 5, 3),
+                channel_array_instrument.A.dummy_2d_multi_parameter.full_names[1]: (n_points, 5, 3),
+                channel_array_instrument.A.dummy_2d_multi_parameter_2.full_names[0]: (n_points, 5, 3),
+                channel_array_instrument.A.dummy_2d_multi_parameter_2.full_names[1]: (n_points, 2, 7),
+                channel_array_instrument.A.dummy_array_parameter.full_name: (n_points, 5),
+                channel_array_instrument.A.dummy_complex_array_parameter.full_name: (n_points, 5),
+                channel_array_instrument.A.dummy_complex.full_name: (n_points,),
+                channel_array_instrument.A.dummy_parameter_with_setpoints.full_name: (n_points, pws_shape_1),
+                channel_array_instrument.A.dummy_parameter_with_setpoints_complex.full_name: (n_points, pws_shape_1)
+             }
+        )
 
-            meas_vals = [(param, param.get()) for param in meas_parameters[:-2]]
-            meas_vals += expand_setpoints_helper(meas_parameters[-2])
-            meas_vals += expand_setpoints_helper(meas_parameters[-1])
+    for param in meas_parameters1:
+        meas1.register_parameter(param, setpoints=(setpoints_param,))
 
-            datasaver.add_result((setpoints_param, v),
-                                 *meas_vals)
-            datasaver.flush_data_to_database(block=True)
-            data = dataset.cache.data()
-            _assert_parameter_data_is_identical(dataset.get_parameter_data(),
-                                                data)
-    _assert_parameter_data_is_identical(dataset.get_parameter_data(),
-                                        dataset.cache.data())
-    assert dataset.cache._loaded_from_completed_ds is True
-    _assert_parameter_data_is_identical(dataset.get_parameter_data(),
-                                        dataset.cache.data())
+    meas2 = Measurement()
+
+    meas2.register_parameter(setpoints_param)
+
+    meas_parameters2 = (channel_array_instrument.A.dummy_parameter_with_setpoints_2d,)
+
+    if set_shape:
+        meas2.set_shapes(
+            {meas_parameters2[0].full_name: (n_points, pws_shape_1, pws_shape_2)})
+
+    for param in meas_parameters2:
+        meas2.register_parameter(param, setpoints=(setpoints_param,))
+
+    with meas1.run(
+            write_in_background=bg_writing,
+            in_memory_cache=in_memory_cache
+    ) as datasaver1:
+        with meas2.run(
+                write_in_background=bg_writing,
+                in_memory_cache=in_memory_cache
+        ) as datasaver2:
+
+            dataset1 = datasaver1.dataset
+            dataset2 = datasaver2.dataset
+            _assert_parameter_data_is_identical(dataset1.get_parameter_data(), dataset1.cache.data())
+            _assert_parameter_data_is_identical(dataset2.get_parameter_data(), dataset2.cache.data())
+            for i, v in enumerate(setpoints_values):
+                setpoints_param.set(v)
+
+                meas_vals1 = [(param, param.get()) for param in meas_parameters1]#[:-2]]
+                meas_vals1 += expand_setpoints_helper(meas_parameters1[-2])
+                meas_vals1 += expand_setpoints_helper(meas_parameters1[-1])
+
+                datasaver1.add_result((setpoints_param, v),
+                                      *meas_vals1)
+                datasaver1.flush_data_to_database(block=True)
+
+                meas_vals2 = [(param, param.get()) for param in meas_parameters2]
+
+                datasaver2.add_result((setpoints_param, v),
+                                      *meas_vals2)
+                datasaver2.flush_data_to_database(block=True)
+
+                _assert_parameter_data_is_identical(dataset1.get_parameter_data(),
+                                                    dataset1.cache.data(),
+                                                    shaped_partial=set_shape)
+                _assert_parameter_data_is_identical(dataset2.get_parameter_data(),
+                                                    dataset2.cache.data(),
+                                                    shaped_partial=set_shape)
+    _assert_parameter_data_is_identical(dataset1.get_parameter_data(),
+                                        dataset1.cache.data())
+    if in_memory_cache is False:
+        assert dataset1.cache._loaded_from_completed_ds is True
+    assert dataset1.completed is True
+    assert dataset1.cache.live is in_memory_cache
+    _assert_parameter_data_is_identical(dataset2.get_parameter_data(),
+                                        dataset2.cache.data())
+    if in_memory_cache is False:
+        assert dataset2.cache._loaded_from_completed_ds is True
+    assert dataset2.completed is True
+    assert dataset1.cache.live is in_memory_cache
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("setpoints_type", ['text', 'numeric'])
+@pytest.mark.parametrize("in_memory_cache", [True, False])
 @settings(deadline=None, max_examples=10,
           suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(n_points=hst.integers(min_value=1, max_value=101))
 def test_cache_1d_every_other_point(experiment, DAC, DMM, n_points, bg_writing,
-                                    channel_array_instrument, setpoints_type):
+                                    channel_array_instrument, setpoints_type,
+                                    in_memory_cache):
 
     setpoints_param, setpoints_values = _prepare_setpoints_1d(DAC, channel_array_instrument,
                                                                                    n_points, setpoints_type)
@@ -91,7 +164,10 @@ def test_cache_1d_every_other_point(experiment, DAC, DMM, n_points, bg_writing,
     for param in meas_parameters:
         meas.register_parameter(param, setpoints=(setpoints_param,))
 
-    with meas.run(write_in_background=bg_writing) as datasaver:
+    with meas.run(
+            write_in_background=bg_writing,
+            in_memory_cache=in_memory_cache
+    ) as datasaver:
         dataset = datasaver.dataset
         _assert_parameter_data_is_identical(dataset.get_parameter_data(), dataset.cache.data())
         for i, v in enumerate(setpoints_values):
@@ -113,29 +189,23 @@ def test_cache_1d_every_other_point(experiment, DAC, DMM, n_points, bg_writing,
                                                 data)
     _assert_parameter_data_is_identical(dataset.get_parameter_data(),
                                         dataset.cache.data())
-    assert dataset.cache._loaded_from_completed_ds is True
+    if in_memory_cache is False:
+        assert dataset.cache._loaded_from_completed_ds is True
+    assert dataset.completed is True
+    assert dataset.cache.live is in_memory_cache
     _assert_parameter_data_is_identical(dataset.get_parameter_data(),
                                         dataset.cache.data())
 
 
-def _prepare_setpoints_1d(DAC, channel_array_instrument, n_points, setpoints_type):
-    if setpoints_type == 'numeric':
-        setpoints_param = DAC.ch1
-        setpoints_values = np.linspace(-1, 1, n_points)
-    else:
-        setpoints_param = channel_array_instrument.A.dummy_text
-        setpoints_values = [l*(i+1) for i, l in
-                            enumerate(ascii_uppercase*(n_points//26+1))][0:n_points]
-    return setpoints_param, setpoints_values
-
-
 @pytest.mark.parametrize("bg_writing", [True, False])
+@pytest.mark.parametrize("in_memory_cache", [True, False])
 @settings(deadline=None, max_examples=10,
           suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(n_points_outer=hst.integers(min_value=1, max_value=11),
        n_points_inner=hst.integers(min_value=1, max_value=11))
 def test_cache_2d(experiment, DAC, DMM, n_points_outer,
-                      n_points_inner, bg_writing, channel_array_instrument):
+                  n_points_inner, bg_writing, channel_array_instrument,
+                  in_memory_cache):
     meas = Measurement()
 
     meas.register_parameter(DAC.ch1)
@@ -158,7 +228,9 @@ def test_cache_2d(experiment, DAC, DMM, n_points_outer,
     for param in meas_parameters:
         meas.register_parameter(param, setpoints=(DAC.ch1, DAC.ch2))
     n_rows_written = 0
-    with meas.run(write_in_background=bg_writing) as datasaver:
+    with meas.run(
+            write_in_background=bg_writing,
+            in_memory_cache=in_memory_cache) as datasaver:
         dataset = datasaver.dataset
         _assert_parameter_data_is_identical(dataset.get_parameter_data(), dataset.cache.data())
         for v1 in np.linspace(-1, 1, n_points_outer):
@@ -183,12 +255,13 @@ def test_cache_2d(experiment, DAC, DMM, n_points_outer,
 
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("storage_type", ['numeric', 'array', None])
+@pytest.mark.parametrize("in_memory_cache", [True, False])
 @settings(deadline=None, max_examples=10,
           suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(n_points_outer=hst.integers(min_value=1, max_value=11),
        n_points_inner=hst.integers(min_value=1, max_value=11))
 def test_cache_2d_num_with_multiple_storage_types(experiment, DAC, DMM, n_points_outer,
-                      n_points_inner, bg_writing, storage_type):
+                      n_points_inner, bg_writing, storage_type, in_memory_cache):
     meas = Measurement()
 
     meas.register_parameter(DAC.ch1, paramtype=storage_type)
@@ -196,7 +269,8 @@ def test_cache_2d_num_with_multiple_storage_types(experiment, DAC, DMM, n_points
     meas.register_parameter(DMM.v1, setpoints=(DAC.ch1, DAC.ch2), paramtype=storage_type)
     array_used = _array_param_used_in_tree(meas)
     n_rows_written = 0
-    with meas.run(write_in_background=bg_writing) as datasaver:
+    with meas.run(write_in_background=bg_writing,
+                  in_memory_cache=in_memory_cache) as datasaver:
         dataset = datasaver.dataset
         _assert_parameter_data_is_identical(dataset.get_parameter_data(), dataset.cache.data())
         for v1 in np.linspace(-1, 1, n_points_outer):
@@ -223,10 +297,12 @@ def test_cache_2d_num_with_multiple_storage_types(experiment, DAC, DMM, n_points
 
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("storage_type", ['numeric', 'array', None])
+@pytest.mark.parametrize("in_memory_cache", [True, False])
 @settings(deadline=None, max_examples=10,
           suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(n_points=hst.integers(min_value=1, max_value=21))
-def test_cache_1d_array_in_1d(experiment, DAC, channel_array_instrument, n_points, bg_writing, storage_type):
+def test_cache_1d_array_in_1d(experiment, DAC, channel_array_instrument,
+                              n_points, bg_writing, storage_type, in_memory_cache):
     param = channel_array_instrument.A.dummy_array_parameter
     meas = Measurement()
     meas.register_parameter(DAC.ch1, paramtype=storage_type)
@@ -235,7 +311,8 @@ def test_cache_1d_array_in_1d(experiment, DAC, channel_array_instrument, n_point
 
     setpoint_name = "_".join((param.instrument.full_name, param.setpoint_names[0]))
 
-    with meas.run(write_in_background=bg_writing) as datasaver:
+    with meas.run(write_in_background=bg_writing,
+                  in_memory_cache=in_memory_cache) as datasaver:
         dataset = datasaver.dataset
         for i, v1 in enumerate(np.linspace(-1, 1, n_points)):
             datasaver.add_result((DAC.ch1, v1),
@@ -247,10 +324,7 @@ def test_cache_1d_array_in_1d(experiment, DAC, channel_array_instrument, n_point
                 shape = (n_rows_written, param.shape[0])
             else:
                 shape = (n_rows_written * param.shape[0],)
-            if storage_type != 'array':
-                # with explicit array types the shape is incorrect
-                # https://github.com/QCoDeS/Qcodes/issues/2105
-                assert data[param.full_name][DAC.ch1.full_name].shape == shape
+            assert data[param.full_name][DAC.ch1.full_name].shape == shape
             assert data[param.full_name][setpoint_name].shape == shape
             assert data[param.full_name][param.full_name].shape == shape
             _assert_parameter_data_is_identical(dataset.get_parameter_data(),
@@ -261,17 +335,20 @@ def test_cache_1d_array_in_1d(experiment, DAC, channel_array_instrument, n_point
 
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("storage_type", ['numeric', 'array', None])
+@pytest.mark.parametrize("in_memory_cache", [True, False])
 @settings(deadline=None, max_examples=10,
           suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(n_points=hst.integers(min_value=1, max_value=21))
-def test_cache_multiparam_in_1d(experiment, DAC, channel_array_instrument, n_points, bg_writing, storage_type):
+def test_cache_multiparam_in_1d(experiment, DAC, channel_array_instrument,
+                                n_points, bg_writing, storage_type, in_memory_cache):
     param = channel_array_instrument.A.dummy_2d_multi_parameter
     meas = Measurement()
     meas.register_parameter(DAC.ch1, paramtype=storage_type)
     meas.register_parameter(param, setpoints=(DAC.ch1,), paramtype=storage_type)
     array_used = _array_param_used_in_tree(meas)
 
-    with meas.run(write_in_background=bg_writing) as datasaver:
+    with meas.run(write_in_background=bg_writing,
+                  in_memory_cache=in_memory_cache) as datasaver:
         dataset = datasaver.dataset
         for i, v1 in enumerate(np.linspace(-1, 1, n_points)):
             datasaver.add_result((DAC.ch1, v1),
@@ -283,12 +360,9 @@ def test_cache_multiparam_in_1d(experiment, DAC, channel_array_instrument, n_poi
                 if array_used:
                     expected_shape = (n_rows_written,) + param.shapes[j]
                 else:
-                    expected_shape = n_rows_written * np.prod(param.shapes[j])
+                    expected_shape = (n_rows_written * np.prod(param.shapes[j]), )
                 assert data[subparam][subparam].shape == expected_shape
-                if storage_type != 'array':
-                    # with explicit array types the shape is incorrect
-                    # https://github.com/QCoDeS/Qcodes/issues/2105
-                    assert data[subparam][DAC.ch1.full_name].shape == expected_shape
+                assert data[subparam][DAC.ch1.full_name].shape == expected_shape
                 for setpoint_name in param.setpoint_full_names[j]:
                     assert data[subparam][setpoint_name].shape == expected_shape
             _assert_parameter_data_is_identical(dataset.get_parameter_data(),
@@ -300,10 +374,13 @@ def test_cache_multiparam_in_1d(experiment, DAC, channel_array_instrument, n_poi
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("storage_type", ['array', None])
 @pytest.mark.parametrize("outer_param_type", ['numeric', 'text'])
+@pytest.mark.parametrize("in_memory_cache", [True, False])
 @settings(deadline=None, max_examples=10,
           suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(n_points=hst.integers(min_value=1, max_value=21))
-def test_cache_complex_array_param_in_1d(experiment, DAC, channel_array_instrument, n_points, bg_writing, storage_type, outer_param_type):
+def test_cache_complex_array_param_in_1d(experiment, DAC, channel_array_instrument,
+                                         n_points, bg_writing, storage_type, outer_param_type,
+                                         in_memory_cache):
     param = channel_array_instrument.A.dummy_complex_array_parameter
     meas = Measurement()
     if outer_param_type == 'numeric':
@@ -317,7 +394,8 @@ def test_cache_complex_array_param_in_1d(experiment, DAC, channel_array_instrume
     meas.register_parameter(outer_param, paramtype=outer_storage_type)
     meas.register_parameter(param, setpoints=(outer_param,), paramtype=storage_type)
     array_used = _array_param_used_in_tree(meas)
-    with meas.run(write_in_background=bg_writing) as datasaver:
+    with meas.run(write_in_background=bg_writing,
+                  in_memory_cache=in_memory_cache) as datasaver:
         dataset = datasaver.dataset
         for i, v1 in enumerate(outer_setpoints):
             datasaver.add_result((outer_param, v1),
@@ -331,10 +409,7 @@ def test_cache_complex_array_param_in_1d(experiment, DAC, channel_array_instrume
             else:
                 expected_shape = n_rows_written * np.prod(param.shape)
             assert data[param.full_name][param.full_name].shape == expected_shape
-            if storage_type != 'array':
-                # with explicit array types the shape is incorrect
-                # https://github.com/QCoDeS/Qcodes/issues/2105
-                assert data[param.full_name][outer_param.full_name].shape == expected_shape
+            assert data[param.full_name][outer_param.full_name].shape == expected_shape
             for setpoint_name in param.setpoint_full_names:
                 assert data[param.full_name][setpoint_name].shape == expected_shape
             _assert_parameter_data_is_identical(dataset.get_parameter_data(),
@@ -345,11 +420,13 @@ def test_cache_complex_array_param_in_1d(experiment, DAC, channel_array_instrume
 
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("setpoints_type", ['text', 'numeric'])
+@pytest.mark.parametrize("in_memory_cache", [True, False])
 @settings(deadline=None, max_examples=10,
           suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(n_points=hst.integers(min_value=1, max_value=11))
 def test_cache_1d_shape(experiment, DAC, DMM, n_points, bg_writing,
-                  channel_array_instrument, setpoints_type):
+                  channel_array_instrument, setpoints_type,
+                  in_memory_cache):
 
     setpoints_param, setpoints_values = _prepare_setpoints_1d(
         DAC, channel_array_instrument,
@@ -400,7 +477,8 @@ def test_cache_1d_shape(experiment, DAC, DMM, n_points, bg_writing,
         (n_points,))
     )
     n_points_measured = 0
-    with meas.run(write_in_background=bg_writing) as datasaver:
+    with meas.run(write_in_background=bg_writing,
+                  in_memory_cache=in_memory_cache) as datasaver:
         dataset = datasaver.dataset
         _assert_parameter_data_is_identical(dataset.get_parameter_data(), dataset.cache.data())
         for i, v in enumerate(setpoints_values):
@@ -547,24 +625,47 @@ def _assert_completed_cache_is_as_expected(
         param_data_trees,
         flatten=False,
         clip=False):
+
+    # there is a tiny round trip loss in accuracy
+    # when serializing float types
+    approx_kinds = ('f', 'c')
+
     for outer_key, cache_data_tree in cache_data_trees.items():
         for inner_key, cache_data in cache_data_tree.items():
             if flatten:
-                assert_array_equal(
-                    cache_data.flatten(),
-                    param_data_trees[outer_key][inner_key].flatten()
-                )
+                if cache_data.dtype.kind in approx_kinds:
+                    np.testing.assert_array_almost_equal(
+                        cache_data.flatten(),
+                        param_data_trees[outer_key][inner_key].flatten()
+                    )
+                else:
+                    np.testing.assert_array_equal(
+                        cache_data.flatten(),
+                        param_data_trees[outer_key][inner_key].flatten()
+                    )
             elif clip:
                 size = param_data_trees[outer_key][inner_key].size
-                assert_array_equal(
-                    cache_data.ravel()[:size],
-                    param_data_trees[outer_key][inner_key].ravel()
-                )
+                if cache_data.dtype.kind in approx_kinds:
+                    np.testing.assert_array_almost_equal(
+                        cache_data.ravel()[:size],
+                        param_data_trees[outer_key][inner_key].ravel()
+                    )
+                else:
+                    np.testing.assert_array_equal(
+                        cache_data.ravel()[:size],
+                        param_data_trees[outer_key][inner_key].ravel()
+                    )
             else:
-                assert_array_equal(
-                    cache_data,
-                    param_data_trees[outer_key][inner_key]
-                )
+                if cache_data.dtype.kind in approx_kinds:
+                    np.testing.assert_array_almost_equal(
+                        cache_data,
+                        param_data_trees[outer_key][inner_key]
+                    )
+                else:
+                    np.testing.assert_array_equal(
+                        cache_data,
+                        param_data_trees[outer_key][inner_key]
+                    )
 
 
 def _assert_partial_cache_is_as_expected(
@@ -575,6 +676,10 @@ def _assert_partial_cache_is_as_expected(
         cache_correct=True
 ):
     assert sorted(cache_data_trees.keys()) == sorted(expected_shapes.keys())
+    # there is a tiny round trip loss in accuracy
+    # when serializing float types
+    approx_kinds = ('f', 'c')
+
     for outer_key, cache_data_tree in cache_data_trees.items():
         exshape = expected_shapes[outer_key]
         if len(exshape) > 2:
@@ -585,23 +690,59 @@ def _assert_partial_cache_is_as_expected(
         for inner_key, cache_data in cache_data_tree.items():
             if cache_correct:
                 assert cache_data.shape == exshape
-            assert_array_equal(
-                cache_data.ravel()[:n_points_measured * array_shape],
-                param_data_trees[outer_key][inner_key].ravel()[:n_points_measured * array_shape]
-            )
+            if cache_data.dtype.kind in approx_kinds:
+                np.testing.assert_array_almost_equal(
+                    cache_data.ravel()[:n_points_measured * array_shape],
+                    param_data_trees[outer_key][inner_key].ravel()[:n_points_measured * array_shape]
+                )
+            else:
+                np.testing.assert_array_equal(
+                    cache_data.ravel()[:n_points_measured * array_shape],
+                    param_data_trees[outer_key][inner_key].ravel()[:n_points_measured * array_shape]
+                )
 
 
-def _assert_parameter_data_is_identical(expected: Dict[str, Dict[str, np.ndarray]],
-                                        actual: Dict[str, Dict[str, np.ndarray]]):
+def _assert_parameter_data_is_identical(
+        expected: Dict[str, Dict[str, np.ndarray]],
+        actual: Dict[str, Dict[str, np.ndarray]],
+        shaped_partial: bool = False
+):
     assert expected.keys() == actual.keys()
+    # there is a tiny round trip loss in accuracy
+    # when serializing float types
+    approx_kinds = ('f', 'c')
 
     for outer_key in expected.keys():
         expected_inner = expected[outer_key]
         actual_inner = actual[outer_key]
         assert expected_inner.keys() == actual_inner.keys()
         for inner_key in expected_inner.keys():
-            np.testing.assert_array_equal(expected_inner[inner_key],
-                                          actual_inner[inner_key])
+            expected_np_array = expected_inner[inner_key]
+            actual_np_array = actual_inner[inner_key]
+            if shaped_partial:
+                if len(expected_np_array.shape) > 1:
+                    assert expected_np_array.shape[1:] == actual_np_array.shape[1:]
+                if expected_np_array.dtype.kind in approx_kinds:
+                    np.testing.assert_array_almost_equal(
+                        expected_np_array.ravel(),
+                        actual_np_array.ravel()[:expected_np_array.size]
+                    )
+                else:
+                    np.testing.assert_array_equal(
+                        expected_np_array.ravel(),
+                        actual_np_array.ravel()[:expected_np_array.size]
+                    )
+            else:
+                if expected_np_array.dtype.kind in approx_kinds:
+                    np.testing.assert_array_almost_equal(
+                        expected_np_array.ravel(),
+                        actual_np_array.ravel()
+                    )
+                else:
+                    np.testing.assert_array_equal(
+                        expected_np_array.ravel(),
+                        actual_np_array.ravel()
+                    )
 
 
 def _array_param_used_in_tree(measurement: Measurement) -> bool:
@@ -610,3 +751,14 @@ def _array_param_used_in_tree(measurement: Measurement) -> bool:
         if paramspecbase.type == 'array':
             found_array = True
     return found_array
+
+
+def _prepare_setpoints_1d(DAC, channel_array_instrument, n_points, setpoints_type):
+    if setpoints_type == 'numeric':
+        setpoints_param = DAC.ch1
+        setpoints_values = np.linspace(-1, 1, n_points)
+    else:
+        setpoints_param = channel_array_instrument.A.dummy_text
+        setpoints_values = [l*(i+1) for i, l in
+                            enumerate(ascii_uppercase*(n_points//26+1))][0:n_points]
+    return setpoints_param, setpoints_values

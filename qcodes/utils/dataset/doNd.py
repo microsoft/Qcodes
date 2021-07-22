@@ -1,44 +1,43 @@
 import logging
 import os
+import sys
+from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from typing import Callable, Iterator, List, Optional, Sequence, Tuple, Union
+from typing import Callable, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
 import matplotlib
 import numpy as np
+from tqdm.auto import tqdm
 
 from qcodes import config
-from qcodes.dataset.data_set import DataSet
-from qcodes.dataset.descriptions.detect_shapes import \
-    detect_shape_of_measurement
+from qcodes.dataset.data_set_protocol import DataSetProtocol
+from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
 from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
-from qcodes.dataset.measurements import Measurement, res_type
-from qcodes.dataset.plotting import plot_dataset
-from qcodes.instrument.base import _BaseParameter
 from qcodes.dataset.experiment_container import Experiment
+from qcodes.dataset.measurements import Measurement
+from qcodes.dataset.plotting import plot_dataset
+from qcodes.instrument.parameter import _BaseParameter
+from qcodes.utils.threading import process_params_meas
 
 ActionsT = Sequence[Callable[[], None]]
 
 ParamMeasT = Union[_BaseParameter, Callable[[], None]]
 
 AxesTuple = Tuple[matplotlib.axes.Axes, matplotlib.colorbar.Colorbar]
-AxesTupleList = Tuple[List[matplotlib.axes.Axes],
-                      List[Optional[matplotlib.colorbar.Colorbar]]]
-AxesTupleListWithDataSet = Tuple[DataSet, List[matplotlib.axes.Axes],
-                                 List[Optional[matplotlib.colorbar.Colorbar]]]
-
-OutType = List[res_type]
+AxesTupleList = Tuple[
+    List[matplotlib.axes.Axes], List[Optional[matplotlib.colorbar.Colorbar]]
+]
+AxesTupleListWithDataSet = Tuple[
+    DataSetProtocol,
+    List[matplotlib.axes.Axes],
+    List[Optional[matplotlib.colorbar.Colorbar]],
+]
 
 LOG = logging.getLogger(__name__)
 
 
-def _process_params_meas(param_meas: Sequence[ParamMeasT]) -> OutType:
-    output: OutType = []
-    for parameter in param_meas:
-        if isinstance(parameter, _BaseParameter):
-            output.append((parameter, parameter.get()))
-        elif callable(parameter):
-            parameter()
-    return output
+class UnsafeThreadingException(Exception):
+    pass
 
 
 def _register_parameters(
@@ -89,12 +88,14 @@ def _catch_keyboard_interrupts() -> Iterator[Callable[[], bool]]:
 
 
 def do0d(
-        *param_meas: ParamMeasT,
-        write_period: Optional[float] = None,
-        measurement_name: str = "",
-        exp: Optional[Experiment] = None,
-        do_plot: Optional[bool] = None
-        ) -> AxesTupleListWithDataSet:
+    *param_meas: ParamMeasT,
+    write_period: Optional[float] = None,
+    measurement_name: str = "",
+    exp: Optional[Experiment] = None,
+    do_plot: Optional[bool] = None,
+    use_threads: Optional[bool] = None,
+    log_info: Optional[str] = None,
+) -> AxesTupleListWithDataSet:
     """
     Perform a measurement of a single parameter. This is probably most
     useful for an ArrayParameter that already returns an array of data points
@@ -112,6 +113,11 @@ def do0d(
         exp: The experiment to use for this measurement.
         do_plot: should png and pdf versions of the images be saved after the
             run. If None the setting will be read from ``qcodesrc.json``
+        use_threads: If True measurements from each instrument will be done on
+            separate threads. If you are measuring from several instruments
+            this may give a significant speedup.
+        log_info: Message that is logged during the measurement. If None a default
+            message is used.
 
     Returns:
         The QCoDeS dataset.
@@ -119,9 +125,14 @@ def do0d(
     if do_plot is None:
         do_plot = config.dataset.dond_plot
     meas = Measurement(name=measurement_name, exp=exp)
+    if log_info is not None:
+        meas._extra_log_info = log_info
+    else:
+        meas._extra_log_info = "Using 'qcodes.utils.dataset.doNd.do0d'"
 
-    measured_parameters = tuple(param for param in param_meas
-                                if isinstance(param, _BaseParameter))
+    measured_parameters = tuple(
+        param for param in param_meas if isinstance(param, _BaseParameter)
+    )
 
     try:
         shapes: Shapes = detect_shape_of_measurement(
@@ -137,24 +148,35 @@ def do0d(
     _set_write_period(meas, write_period)
 
     with meas.run() as datasaver:
-        datasaver.add_result(*_process_params_meas(param_meas))
+        datasaver.add_result(
+            *process_params_meas(
+                param_meas,
+                use_threads=use_threads
+            )
+        )
         dataset = datasaver.dataset
 
     return _handle_plotting(dataset, do_plot)
 
 
 def do1d(
-        param_set: _BaseParameter, start: float, stop: float,
-        num_points: int, delay: float,
-        *param_meas: ParamMeasT,
-        enter_actions: ActionsT = (),
-        exit_actions: ActionsT = (),
-        write_period: Optional[float] = None,
-        measurement_name: str = "",
-        exp: Optional[Experiment] = None,
-        do_plot: Optional[bool] = None,
-        additional_setpoints: Sequence[ParamMeasT] = tuple(),
-        ) -> AxesTupleListWithDataSet:
+    param_set: _BaseParameter,
+    start: float,
+    stop: float,
+    num_points: int,
+    delay: float,
+    *param_meas: ParamMeasT,
+    enter_actions: ActionsT = (),
+    exit_actions: ActionsT = (),
+    write_period: Optional[float] = None,
+    measurement_name: str = "",
+    exp: Optional[Experiment] = None,
+    do_plot: Optional[bool] = None,
+    use_threads: Optional[bool] = None,
+    additional_setpoints: Sequence[ParamMeasT] = tuple(),
+    show_progress: Optional[None] = None,
+    log_info: Optional[str] = None,
+) -> AxesTupleListWithDataSet:
     """
     Perform a 1D scan of ``param_set`` from ``start`` to ``stop`` in
     ``num_points`` measuring param_meas at each step. In case param_meas is
@@ -183,20 +205,34 @@ def do1d(
             value of 'results' is used for the dataset.
         exp: The experiment to use for this measurement.
         do_plot: should png and pdf versions of the images be saved after the
-            run. If None the setting will be read from ``qcodesrc.json``
+            run. If None the setting will be read from ``qcodesrc.json`
+        use_threads: If True measurements from each instrument will be done on
+            separate threads. If you are measuring from several instruments
+            this may give a significant speedup.
+        show_progress: should a progress bar be displayed during the
+            measurement. If None the setting will be read from ``qcodesrc.json`
+        log_info: Message that is logged during the measurement. If None a default
+            message is used.
 
     Returns:
         The QCoDeS dataset.
     """
     if do_plot is None:
         do_plot = config.dataset.dond_plot
+    if show_progress is None:
+        show_progress = config.dataset.dond_show_progress
+
     meas = Measurement(name=measurement_name, exp=exp)
+    if log_info is not None:
+        meas._extra_log_info = log_info
+    else:
+        meas._extra_log_info = "Using 'qcodes.utils.dataset.doNd.do1d'"
 
-    all_setpoint_params = (param_set,) + tuple(
-        s for s in additional_setpoints)
+    all_setpoint_params = (param_set,) + tuple(s for s in additional_setpoints)
 
-    measured_parameters = tuple(param for param in param_meas
-                                if isinstance(param, _BaseParameter))
+    measured_parameters = tuple(
+        param for param in param_meas if isinstance(param, _BaseParameter)
+    )
     try:
         loop_shape = tuple(1 for _ in additional_setpoints) + (num_points,)
         shapes: Shapes = detect_shape_of_measurement(
@@ -214,40 +250,63 @@ def do1d(
                          shapes=shapes)
     _set_write_period(meas, write_period)
     _register_actions(meas, enter_actions, exit_actions)
+
+    original_delay = param_set.post_delay
     param_set.post_delay = delay
 
     # do1D enforces a simple relationship between measured parameters
     # and set parameters. For anything more complicated this should be
     # reimplemented from scratch
     with _catch_keyboard_interrupts() as interrupted, meas.run() as datasaver:
-        additional_setpoints_data = _process_params_meas(additional_setpoints)
-        for set_point in np.linspace(start, stop, num_points):
-            param_set.set(set_point)
-            datasaver.add_result((param_set, set_point),
-                                 *_process_params_meas(param_meas),
-                                 *additional_setpoints_data)
         dataset = datasaver.dataset
+        additional_setpoints_data = process_params_meas(additional_setpoints)
+        setpoints = np.linspace(start, stop, num_points)
+
+        # flush to prevent unflushed print's to visually interrupt tqdm bar
+        # updates
+        sys.stdout.flush()
+        sys.stderr.flush()
+
+        for set_point in tqdm(setpoints, disable=not show_progress):
+            param_set.set(set_point)
+            datasaver.add_result(
+                (param_set, set_point),
+                *process_params_meas(param_meas, use_threads=use_threads),
+                *additional_setpoints_data
+            )
+
+    param_set.post_delay = original_delay
+
     return _handle_plotting(dataset, do_plot, interrupted())
 
 
 def do2d(
-        param_set1: _BaseParameter, start1: float, stop1: float,
-        num_points1: int, delay1: float,
-        param_set2: _BaseParameter, start2: float, stop2: float,
-        num_points2: int, delay2: float,
-        *param_meas: ParamMeasT,
-        set_before_sweep: Optional[bool] = True,
-        enter_actions: ActionsT = (),
-        exit_actions: ActionsT = (),
-        before_inner_actions: ActionsT = (),
-        after_inner_actions: ActionsT = (),
-        write_period: Optional[float] = None,
-        measurement_name: str = "",
-        exp: Optional[Experiment] = None,
-        flush_columns: bool = False,
-        do_plot: Optional[bool] = None,
-        additional_setpoints: Sequence[ParamMeasT] = tuple(),
-        ) -> AxesTupleListWithDataSet:
+    param_set1: _BaseParameter,
+    start1: float,
+    stop1: float,
+    num_points1: int,
+    delay1: float,
+    param_set2: _BaseParameter,
+    start2: float,
+    stop2: float,
+    num_points2: int,
+    delay2: float,
+    *param_meas: ParamMeasT,
+    set_before_sweep: Optional[bool] = True,
+    enter_actions: ActionsT = (),
+    exit_actions: ActionsT = (),
+    before_inner_actions: ActionsT = (),
+    after_inner_actions: ActionsT = (),
+    write_period: Optional[float] = None,
+    measurement_name: str = "",
+    exp: Optional[Experiment] = None,
+    flush_columns: bool = False,
+    do_plot: Optional[bool] = None,
+    use_threads: Optional[bool] = None,
+    additional_setpoints: Sequence[ParamMeasT] = tuple(),
+    show_progress: Optional[None] = None,
+    log_info: Optional[str] = None,
+) -> AxesTupleListWithDataSet:
     """
     Perform a 1D scan of ``param_set1`` from ``start1`` to ``stop1`` in
     ``num_points1`` and ``param_set2`` from ``start2`` to ``stop2`` in
@@ -288,15 +347,32 @@ def do2d(
             the measurement but not scanned.
         do_plot: should png and pdf versions of the images be saved after the
             run. If None the setting will be read from ``qcodesrc.json``
+        use_threads: If True measurements from each instrument will be done on
+            separate threads. If you are measuring from several instruments
+            this may give a significant speedup.
+        show_progress: should a progress bar be displayed during the
+            measurement. If None the setting will be read from ``qcodesrc.json`
+        log_info: Message that is logged during the measurement. If None a default
+            message is used.
 
     Returns:
         The QCoDeS dataset.
     """
+
     if do_plot is None:
         do_plot = config.dataset.dond_plot
+    if show_progress is None:
+        show_progress = config.dataset.dond_show_progress
+
     meas = Measurement(name=measurement_name, exp=exp)
-    all_setpoint_params = (param_set1, param_set2,) + tuple(
-            s for s in additional_setpoints)
+    if log_info is not None:
+        meas._extra_log_info = log_info
+    else:
+        meas._extra_log_info = "Using 'qcodes.utils.dataset.doNd.do2d'"
+    all_setpoint_params = (
+        param_set1,
+        param_set2,
+    ) + tuple(s for s in additional_setpoints)
 
     measured_parameters = tuple(param for param in param_meas
                                 if isinstance(param, _BaseParameter))
@@ -321,41 +397,335 @@ def do2d(
     _set_write_period(meas, write_period)
     _register_actions(meas, enter_actions, exit_actions)
 
+    original_delay1 = param_set1.post_delay
+    original_delay2 = param_set2.post_delay
+
     param_set1.post_delay = delay1
     param_set2.post_delay = delay2
 
     with _catch_keyboard_interrupts() as interrupted, meas.run() as datasaver:
-        additional_setpoints_data = _process_params_meas(additional_setpoints)
-        for set_point1 in np.linspace(start1, stop1, num_points1):
+        dataset = datasaver.dataset
+        additional_setpoints_data = process_params_meas(additional_setpoints)
+        setpoints1 = np.linspace(start1, stop1, num_points1)
+        for set_point1 in tqdm(setpoints1, disable=not show_progress):
             if set_before_sweep:
                 param_set2.set(start2)
 
             param_set1.set(set_point1)
+
             for action in before_inner_actions:
                 action()
-            for set_point2 in np.linspace(start2, stop2, num_points2):
+
+            setpoints2 = np.linspace(start2, stop2, num_points2)
+
+            # flush to prevent unflushed print's to visually interrupt tqdm bar
+            # updates
+            sys.stdout.flush()
+            sys.stderr.flush()
+            for set_point2 in tqdm(setpoints2,
+                                   disable=not show_progress,
+                                   leave=False):
                 # skip first inner set point if `set_before_sweep`
                 if set_point2 == start2 and set_before_sweep:
                     pass
                 else:
                     param_set2.set(set_point2)
 
-                datasaver.add_result((param_set1, set_point1),
-                                     (param_set2, set_point2),
-                                     *_process_params_meas(param_meas),
-                                     *additional_setpoints_data)
+                datasaver.add_result(
+                    (param_set1, set_point1),
+                    (param_set2, set_point2),
+                    *process_params_meas(param_meas, use_threads=use_threads),
+                    *additional_setpoints_data
+                )
+
             for action in after_inner_actions:
                 action()
             if flush_columns:
                 datasaver.flush_data_to_database()
-        dataset = datasaver.dataset
+
+    param_set1.post_delay = original_delay1
+    param_set2.post_delay = original_delay2
+
+    return _handle_plotting(dataset, do_plot, interrupted())
+
+
+class AbstractSweep(ABC):
+    """
+    Abstract sweep class that defines an interface for concrete sweep classes.
+    """
+
+    @abstractmethod
+    def get_setpoints(self) -> np.ndarray:
+        """
+        Returns an array of setpoint values for this sweep.
+        """
+        pass
+
+    @property
+    @abstractmethod
+    def param(self) -> _BaseParameter:
+        """
+        Returns the Qcodes sweep parameter.
+        """
+        pass
+
+    @property
+    @abstractmethod
+    def delay(self) -> float:
+        """
+        Delay between two consecutive sweep points.
+        """
+        pass
+
+    @property
+    @abstractmethod
+    def num_points(self) -> int:
+        """
+        Number of sweep points.
+        """
+        pass
+
+
+class LinSweep(AbstractSweep):
+    """
+    Linear sweep.
+
+    Args:
+        param: Qcodes parameter to sweep.
+        start: Sweep start value.
+        stop: Sweep end value.
+        num_points: Number of sweep points.
+        delay: Time in seconds between two consequtive sweep points
+    """
+
+    def __init__(
+        self,
+        param: _BaseParameter,
+        start: float,
+        stop: float,
+        num_points: int,
+        delay: float = 0,
+    ):
+        self._param = param
+        self._start = start
+        self._stop = stop
+        self._num_points = num_points
+        self._delay = delay
+
+    def get_setpoints(self) -> np.ndarray:
+        """
+        Linear (evenly spaced) numpy array for supplied start, stop and
+        num_points.
+        """
+        return np.linspace(self._start, self._stop, self._num_points)
+
+    @property
+    def param(self) -> _BaseParameter:
+        return self._param
+
+    @property
+    def delay(self) -> float:
+        return self._delay
+
+    @property
+    def num_points(self) -> int:
+        return self._num_points
+
+
+class LogSweep(AbstractSweep):
+    """
+    Logarithmic sweep.
+
+    Args:
+        param: Qcodes parameter for sweep.
+        start: Sweep start value.
+        stop: Sweep end value.
+        num_points: Number of sweep points.
+        delay: Time in seconds between two consequtive sweep points.
+    """
+
+    def __init__(
+        self,
+        param: _BaseParameter,
+        start: float,
+        stop: float,
+        num_points: int,
+        delay: float = 0,
+    ):
+        self._param = param
+        self._start = start
+        self._stop = stop
+        self._num_points = num_points
+        self._delay = delay
+
+    def get_setpoints(self) -> np.ndarray:
+        """
+        Logarithmically spaced numpy array for supplied start, stop and
+        num_points.
+        """
+        return np.logspace(self._start, self._stop, self._num_points)
+
+    @property
+    def param(self) -> _BaseParameter:
+        return self._param
+
+    @property
+    def delay(self) -> float:
+        return self._delay
+
+    @property
+    def num_points(self) -> int:
+        return self._num_points
+
+
+def dond(
+    *params: Union[AbstractSweep, ParamMeasT],
+    write_period: Optional[float] = None,
+    measurement_name: str = "",
+    exp: Optional[Experiment] = None,
+    enter_actions: ActionsT = (),
+    exit_actions: ActionsT = (),
+    do_plot: Optional[bool] = None,
+    show_progress: Optional[bool] = None,
+    use_threads: Optional[bool] = None,
+    additional_setpoints: Sequence[ParamMeasT] = tuple(),
+    log_info: Optional[str] = None,
+) -> AxesTupleListWithDataSet:
+    """
+    Perform n-dimentional scan from slowest (first) to the fastest (last), to
+    measure m measurement parameters. The dimensions should be specified
+    as sweep objects, and after them the parameters to measure should be passed.
+
+    Args:
+        *params: Instances of n sweep classes and m measurement parameters,
+            e.g. if linear sweep is considered:
+
+            .. code-block::
+
+                LinSweep(param_set_1, start_1, stop_1, num_points_1, delay_1), ...,
+                LinSweep(param_set_n, start_n, stop_n, num_points_n, delay_n),
+                param_meas_1, param_meas_2, ..., param_meas_m
+
+        write_period: The time after which the data is actually written to the
+            database.
+        measurement_name: Name of the measurement. This will be passed down to
+            the dataset produced by the measurement. If not given, a default
+            value of 'results' is used for the dataset.
+        exp: The experiment to use for this measurement.
+        enter_actions: A list of functions taking no arguments that will be
+            called before the measurements start.
+        exit_actions: A list of functions taking no arguments that will be
+            called after the measurements ends.
+        do_plot: should png and pdf versions of the images be saved and plots
+            are shown after the run. If None the setting will be read from
+            ``qcodesrc.json``
+        show_progress: should a progress bar be displayed during the
+            measurement. If None the setting will be read from ``qcodesrc.json`
+        use_threads: If True, measurements from each instrument will be done on
+            separate threads. If you are measuring from several instruments
+            this may give a significant speedup.
+        additional_setpoints: A list of setpoint parameters to be registered in
+            the measurement but not scanned/swept-over.
+        log_info: Message that is logged during the measurement. If None a default
+            message is used.
+    """
+    if do_plot is None:
+        do_plot = config.dataset.dond_plot
+    if show_progress is None:
+        show_progress = config.dataset.dond_show_progress
+
+    meas = Measurement(name=measurement_name, exp=exp)
+    if log_info is not None:
+        meas._extra_log_info = log_info
+    else:
+        meas._extra_log_info = "Using 'qcodes.utils.dataset.doNd.dond'"
+
+    def _parse_dond_arguments(
+        *params: Union[AbstractSweep, ParamMeasT]
+    ) -> Tuple[List[AbstractSweep], List[ParamMeasT]]:
+        """
+        Parse supplied arguments into sweep objects and measurement parameters.
+        """
+        sweep_instances: List[AbstractSweep] = []
+        params_meas: List[ParamMeasT] = []
+        for par in params:
+            if isinstance(par, AbstractSweep):
+                sweep_instances.append(par)
+            else:
+                params_meas.append(par)
+        return sweep_instances, params_meas
+
+    def _make_nested_setpoints(sweeps: List[AbstractSweep]) -> np.ndarray:
+        """Create the cartesian product of all the setpoint values."""
+        if len(sweeps) == 0:
+            return np.array([[]])  # 0d sweep (do0d)
+        setpoint_values = [sweep.get_setpoints() for sweep in sweeps]
+        setpoint_grids = np.meshgrid(*setpoint_values, indexing="ij")
+        flat_setpoint_grids = [np.ravel(grid, order="C") for grid in setpoint_grids]
+        return np.vstack(flat_setpoint_grids).T
+
+    sweep_instances, params_meas = _parse_dond_arguments(*params)
+    nested_setpoints = _make_nested_setpoints(sweep_instances)
+
+    all_setpoint_params = tuple(sweep.param for sweep in sweep_instances) + tuple(
+        s for s in additional_setpoints
+    )
+
+    measured_parameters = tuple(
+        par for par in params_meas if isinstance(par, _BaseParameter)
+    )
+
+    try:
+        loop_shape = tuple(1 for _ in additional_setpoints) + tuple(
+            sweep.num_points for sweep in sweep_instances
+        )
+        shapes: Shapes = detect_shape_of_measurement(measured_parameters, loop_shape)
+    except TypeError:
+        LOG.exception(
+            f"Could not detect shape of {measured_parameters} "
+            f"falling back to unknown shape."
+        )
+        shapes = None
+
+    _register_parameters(meas, all_setpoint_params)
+    _register_parameters(
+        meas, params_meas, setpoints=all_setpoint_params, shapes=shapes
+    )
+    _set_write_period(meas, write_period)
+    _register_actions(meas, enter_actions, exit_actions)
+
+    original_delays: Dict[_BaseParameter, float] = {}
+    params_set: List[_BaseParameter] = []
+    for sweep in sweep_instances:
+        original_delays[sweep.param] = sweep.param.post_delay
+        sweep.param.post_delay = sweep.delay
+        params_set.append(sweep.param)
+
+    try:
+        with _catch_keyboard_interrupts() as interrupted, meas.run() as datasaver:
+            dataset = datasaver.dataset
+            additional_setpoints_data = process_params_meas(additional_setpoints)
+            for setpoints in tqdm(nested_setpoints, disable=not show_progress):
+                param_set_list = []
+                param_value_pairs = zip(params_set[::-1], setpoints[::-1])
+                for setpoint_param, setpoint in param_value_pairs:
+                    setpoint_param(setpoint)
+                    param_set_list.append((setpoint_param, setpoint))
+                datasaver.add_result(
+                    *param_set_list,
+                    *process_params_meas(params_meas, use_threads=use_threads),
+                    *additional_setpoints_data,
+                )
+    finally:
+        for parameter, original_delay in original_delays.items():
+            parameter.post_delay = original_delay
+
     return _handle_plotting(dataset, do_plot, interrupted())
 
 
 def _handle_plotting(
-        data: DataSet,
-        do_plot: bool = True,
-        interrupted: bool = False) -> AxesTupleListWithDataSet:
+    data: DataSetProtocol, do_plot: bool = True, interrupted: bool = False
+) -> AxesTupleListWithDataSet:
     """
     Save the plots created by datasaver as pdf and png
 
@@ -377,12 +747,12 @@ def _handle_plotting(
 
 
 def plot(
-        data: DataSet,
-        save_pdf: bool = True,
-        save_png: bool = True
-) -> Tuple[DataSet,
-           List[matplotlib.axes.Axes],
-           List[Optional[matplotlib.colorbar.Colorbar]]]:
+    data: DataSetProtocol, save_pdf: bool = True, save_png: bool = True
+) -> Tuple[
+    DataSetProtocol,
+    List[matplotlib.axes.Axes],
+    List[Optional[matplotlib.colorbar.Colorbar]],
+]:
     """
     The utility function to plot results and save the figures either in pdf or
     png or both formats.
@@ -392,7 +762,7 @@ def plot(
         save_pdf: Save figure in pdf format.
         save_png: Save figure in png format.
     """
-    dataid = data.run_id
+    dataid = data.captured_run_id
     axes, cbs = plot_dataset(data)
     mainfolder = config.user.mainfolder
     experiment_name = data.exp_name

@@ -1,14 +1,16 @@
 """
 Tests for `qcodes.utils.plotting`.
 """
+import matplotlib
+# set matplotlib backend before importing pyplot
+matplotlib.use("Agg")
 
 from pytest import fixture
-
 from matplotlib import pyplot as plt
 
 # we only need `dataset` here, but pytest does not discover the dependencies
 # by itself so we also need to import all the fixtures this one is dependent
-# on
+# on.
 # pylint: disable=unused-import
 from qcodes.tests.dataset.conftest import (empty_temp_db,
                                            experiment, dataset)
@@ -17,6 +19,7 @@ from qcodes.tests.common import default_config
 from qcodes.dataset.plotting import plot_by_id
 from .dataset_generators import dataset_with_outliers_generator
 import qcodes
+
 
 @fixture(scope='function')
 def dataset_with_data_outside_iqr_high_outlier(dataset):

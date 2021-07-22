@@ -2,7 +2,6 @@ import json
 import logging
 import os
 import re
-import sys
 import traceback
 from time import sleep
 
@@ -11,9 +10,9 @@ import numpy as np
 import pytest
 from hypothesis import HealthCheck, given, settings
 from numpy.testing import assert_allclose, assert_array_equal
+from unittest.mock import patch
 
 import qcodes as qc
-from qcodes.dataset.data_export import get_data_by_id
 from qcodes.dataset.data_set import load_by_id
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.experiment_container import new_experiment
@@ -26,6 +25,7 @@ from qcodes.tests.common import retry_until_does_not_throw, reset_config_on_exit
 # pylint: disable=unused-import
 from qcodes.tests.test_station import set_default_station_to_none
 from qcodes.utils.validators import Arrays
+from qcodes.dataset.export_config import DataExportType
 
 
 def test_log_messages(caplog, meas_with_registered_param):
@@ -263,7 +263,7 @@ def test_measurement_name_changed_via_attribute(experiment, DAC, DMM):
 
     with meas.run() as datasaver:
         run_id = datasaver.run_id
-        expected_name = fmt.format(name, exp_id, run_id)
+        expected_name = fmt.format('results', exp_id, run_id)
         assert datasaver.dataset.table_name == expected_name
         assert datasaver.dataset.name == name
 
@@ -281,7 +281,7 @@ def test_measurement_name_set_as_argument(experiment, DAC, DMM):
 
     with meas.run() as datasaver:
         run_id = datasaver.run_id
-        expected_name = fmt.format(name, exp_id, run_id)
+        expected_name = fmt.format('results', exp_id, run_id)
         assert datasaver.dataset.table_name == expected_name
         assert datasaver.dataset.name == name
 
@@ -1022,14 +1022,6 @@ def test_datasaver_array_parameters_channel(channel_array_instrument,
             expected_shape = (N*M, )
         assert loaded_data[param].shape == expected_shape
 
-    datadicts = get_data_by_id(datasaver.run_id)
-    # one dependent parameter
-    assert len(datadicts) == 1
-    datadicts = datadicts[0]
-    assert len(datadicts) == len(meas.parameters)
-    for datadict in datadicts:
-        assert datadict['data'].shape == (N * M,)
-
 
 @settings(max_examples=5, deadline=None,
           suppress_health_check=(HealthCheck.function_scoped_fixture,))
@@ -1517,27 +1509,9 @@ def test_datasaver_array_parameters_array(channel_array_instrument, DAC, N,
                     expected_output)
 
     if storage_type == 'array':
-        # also test get_data_by_id (used by plot_by_dataset)
         for data_array, setpoint_array in zip(data_arrays, setpoint_arrays):
             assert_array_equal(setpoint_array, np.linspace(5, 9, 5))
             assert_array_equal(data_array, np.array([2., 2., 2., 2., 2.]))
-
-        datadicts = get_data_by_id(datasaver.run_id)
-        # one dependent parameter
-        assert len(datadicts) == 1
-        datadicts = datadicts[0]
-        assert len(datadicts) == len(meas.parameters)
-        for datadict in datadicts:
-            if datadict['name'] == 'dummy_dac_ch1':
-                expected_data = np.repeat(dac_datapoints, M)
-            if datadict['name'] == dependency_name:
-                expected_data = np.tile(np.linspace(5, 9, 5), N)
-            if datadict['name'] == 'dummy_channel_inst_ChanA_dummy_array_parameter':
-                expected_data = np.empty(N * M)
-                expected_data[:] = 2.
-            assert_allclose(datadict['data'], expected_data)
-
-            assert datadict['data'].shape == (N * M,)
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
@@ -1602,26 +1576,6 @@ def test_datasaver_complex_array_parameters_array(channel_array_instrument,
         assert_array_equal(setpoint_array, np.linspace(5, 9, 5))
         assert_array_equal(data_array, np.arange(5) - 1j*np.arange(5))
 
-    # also test get_data_by_id (used by plot_by_dataset)
-    datadicts = get_data_by_id(datasaver.run_id)
-    # one dependent parameter
-    assert len(datadicts) == 1
-    datadicts = datadicts[0]
-    assert len(datadicts) == len(meas.parameters)
-    for datadict in datadicts:
-        if datadict['name'] == 'dummy_dac_ch1':
-            expected_data = np.repeat(dac_datapoints, M)
-            assert_allclose(datadict['data'], expected_data)
-        if datadict['name'] == 'dummy_channel_inst_ChanA_this_setpoint':
-            expected_data = np.tile(np.linspace(5, 9, 5), N)
-            assert_allclose(datadict['data'], expected_data)
-        if datadict['name'] == param_name:
-            ca = np.arange(M) - 1j * np.arange(M)
-            expected_data = np.tile(ca, reps=N)
-            assert_allclose(datadict['data'], expected_data)
-
-        assert datadict['data'].shape == (N * M,)
-
 
 @pytest.mark.parametrize("bg_writing", [True, False])
 def test_datasaver_multidim_array(experiment, bg_writing):  # noqa: F811
@@ -1666,16 +1620,51 @@ def test_datasaver_multidim_array(experiment, bg_writing):  # noqa: F811
             assert mydata.shape == (1, size1, size2)
             assert_array_equal(mydata[0], expected[innerid])
 
-    datadicts = get_data_by_id(datasaver.run_id)
-    assert len(datadicts) == 2
-    for datadict_list in datadicts:
-        assert len(datadict_list) == 3
-        for datadict in datadict_list:
-            dataindex = data_mapping[datadict['name']]
-            expected_data = data[dataindex, :, :].ravel()
-            assert_allclose(datadict['data'], expected_data)
 
-            assert datadict['data'].shape == (size1 * size2,)
+@pytest.mark.parametrize("bg_writing", [True, False])
+@pytest.mark.parametrize("export", [True, False])
+def test_datasaver_export(experiment, bg_writing, tmp_path_factory,
+                          export):
+    """
+    Test export data to csv after measurement ends
+    """
+    meas = Measurement(experiment)
+    size1 = 10
+    size2 = 15
+
+    x1 = qc.ManualParameter('x1')
+    x2 = qc.ManualParameter('x2')
+    y1 = qc.ManualParameter('y1')
+    y2 = qc.ManualParameter('y2')
+
+    meas.register_parameter(x1, paramtype='array')
+    meas.register_parameter(x2, paramtype='array')
+    meas.register_parameter(y1, setpoints=[x1, x2], paramtype='array')
+    meas.register_parameter(y2, setpoints=[x1, x2], paramtype='array')
+    data = np.random.rand(4, size1, size2)
+    expected = {'x1': data[0, :, :],
+                'x2': data[1, :, :],
+                'y1': data[2, :, :],
+                'y2': data[3, :, :]}
+
+    tmp_path = tmp_path_factory.mktemp("export_from_config")
+    path = str(tmp_path)
+
+    with patch("qcodes.dataset.data_set.get_data_export_type") as mock_type, \
+    patch("qcodes.dataset.data_set.get_data_export_path") as mock_path, \
+    patch("qcodes.dataset.measurements.get_data_export_automatic") as mock_automatic:
+        mock_type.return_value = DataExportType.CSV
+        mock_path.return_value = path
+        mock_automatic.return_value = export
+        with meas.run(write_in_background=bg_writing) as datasaver:
+            datasaver.add_result((str(x1), expected['x1']),
+                                 (str(x2), expected['x2']),
+                                 (str(y1), expected['y1']),
+                                 (str(y2), expected['y2']))
+    if export:
+        assert os.listdir(path) == [f"qcodes_{datasaver.dataset.run_id}.csv"]
+    else:
+        assert os.listdir(path) == []
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
@@ -1713,17 +1702,6 @@ def test_datasaver_multidim_numeric(experiment, bg_writing):
             mydata = all_data[outer][inner]
             assert mydata.shape == (size1 * size2, )
             assert mydata.dtype == np.float64
-
-    datadicts = get_data_by_id(datasaver.run_id)
-    assert len(datadicts) == 2
-    for datadict_list in datadicts:
-        assert len(datadict_list) == 3
-        for datadict in datadict_list:
-            dataindex = data_mapping[datadict['name']]
-            expected_data = data[dataindex, :, :].ravel()
-            assert_allclose(datadict['data'], expected_data)
-
-            assert datadict['data'].shape == (size1 * size2,)
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
@@ -1764,35 +1742,6 @@ def test_datasaver_multidimarrayparameter_as_array(SpectrumAnalyzer,
                                    np.linspace(array_param.start,
                                                array_param.stop,
                                                array_param.npts[i]))
-
-    datadicts = get_data_by_id(datasaver.run_id)
-    assert len(datadicts) == 1
-    for datadict_list in datadicts:
-        assert len(datadict_list) == 4
-        for i, datadict in enumerate(datadict_list):
-
-            datadict['data'].shape = (np.prod(expected_shape),)
-            if i == 0:
-                temp_data = np.linspace(array_param.start,
-                                        array_param.stop,
-                                        array_param.npts[0])
-                expected_data = np.repeat(temp_data,
-                                          expected_shape[2] * expected_shape[3])
-            if i == 1:
-                temp_data = np.linspace(array_param.start,
-                                        array_param.stop,
-                                        array_param.npts[i])
-                expected_data = np.tile(np.repeat(temp_data, expected_shape[3]),
-                                        expected_shape[1])
-            if i == 2:
-                temp_data = np.linspace(array_param.start,
-                                        array_param.stop,
-                                        array_param.npts[i])
-                expected_data = np.tile(temp_data,
-                                        expected_shape[1] * expected_shape[2])
-            if i == 3:
-                expected_data = inserted_data.ravel()
-            assert_allclose(datadict['data'], expected_data)
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
@@ -1838,35 +1787,6 @@ def test_datasaver_multidimarrayparameter_as_numeric(SpectrumAnalyzer,
                         expected_setpoints[i])
     data = loaded_data['dummy_SA_multidimspectrum']['dummy_SA_multidimspectrum'].squeeze()
     assert_allclose(data, inserted_data.ravel())
-
-    datadicts = get_data_by_id(datasaver.run_id)
-    assert len(datadicts) == 1
-    for datadict_list in datadicts:
-        assert len(datadict_list) == 4
-        for i, datadict in enumerate(datadict_list):
-
-            datadict['data'].shape = (np.prod(expected_shape),)
-            if i == 0:
-                temp_data = np.linspace(array_param.start,
-                                        array_param.stop,
-                                        array_param.npts[0])
-                expected_data = np.repeat(temp_data,
-                                          expected_shape[1] * expected_shape[2])
-            if i == 1:
-                temp_data = np.linspace(array_param.start,
-                                        array_param.stop,
-                                        array_param.npts[i])
-                expected_data = np.tile(np.repeat(temp_data, expected_shape[2]),
-                                        expected_shape[0])
-            if i == 2:
-                temp_data = np.linspace(array_param.start,
-                                        array_param.stop,
-                                        array_param.npts[i])
-                expected_data = np.tile(temp_data,
-                                        expected_shape[0] * expected_shape[1])
-            if i == 3:
-                expected_data = inserted_data.ravel()
-            assert_allclose(datadict['data'], expected_data)
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])

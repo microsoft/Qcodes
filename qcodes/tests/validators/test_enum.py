@@ -1,4 +1,5 @@
 import pytest
+
 from qcodes.utils.validators import Enum
 
 enums = [
@@ -22,7 +23,7 @@ def test_good():
             with pytest.raises((ValueError, TypeError)):
                 e.validate(v)
 
-        assert repr(e) == '<Enum: {}>'.format(repr(set(enum)))
+        assert repr(e) == f"<Enum: {repr(set(enum))}>"
 
         # Enum is never numeric, even if its members are all numbers
         # because the use of is_numeric is for sweeping

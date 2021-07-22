@@ -1,35 +1,34 @@
 # Since all other tests of data_set and measurements will inevitably also
 # test the sqlite module, we mainly test exceptions and small helper
 # functions here
-from sqlite3 import OperationalError
-from contextlib import contextmanager
 import time
-
-import pytest
-import hypothesis.strategies as hst
-from hypothesis import given
 import unicodedata
-import numpy as np
+from contextlib import contextmanager
+from sqlite3 import OperationalError
 from unittest.mock import patch
 
+import hypothesis.strategies as hst
+import numpy as np
+import pytest
+from hypothesis import given
+
+import qcodes.dataset.descriptions.versioning.serialization as serial
+from qcodes.dataset.data_set import DataSet
+from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpec
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
-from qcodes.dataset.descriptions.dependencies import InterDependencies_
-import qcodes.dataset.descriptions.versioning.serialization as serial
+from qcodes.dataset.guids import generate_guid
+
+# mut: module under test
+from qcodes.dataset.sqlite import connection as mut_conn
+from qcodes.dataset.sqlite import database as mut_db
+from qcodes.dataset.sqlite import queries as mut_queries
+from qcodes.dataset.sqlite import query_helpers as mut_help
 from qcodes.dataset.sqlite.connection import path_to_dbfile
 from qcodes.dataset.sqlite.database import get_DB_location
-from qcodes.dataset.guids import generate_guid
-from qcodes.dataset.data_set import DataSet
 from qcodes.tests.common import error_caused_by
 
 from .helper_functions import verify_data_dict
-
-# mut: module under test
-from qcodes.dataset.sqlite import queries as mut_queries
-from qcodes.dataset.sqlite import query_helpers as mut_help
-from qcodes.dataset.sqlite import connection as mut_conn
-from qcodes.dataset.sqlite import database as mut_db
-
 
 _unicode_categories = ('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nd', 'Pc', 'Pd', 'Zs')
 
@@ -351,23 +350,69 @@ def test_atomic_creation(experiment):
         assert len(runs) == 1
 
 
-def test_set_run_timestamp(experiment):
+def test_set_run_timestamp(dataset):
 
-    ds = DataSet()
-
-    assert ds.run_timestamp_raw is None
+    assert dataset.run_timestamp_raw is None
+    assert dataset.completed_timestamp_raw is None
 
     time_now = time.time()
     time.sleep(1)  # for slower test platforms
-    mut_queries.set_run_timestamp(ds.conn, ds.run_id)
+    mut_queries.set_run_timestamp(dataset.conn, dataset.run_id)
 
-    assert ds.run_timestamp_raw > time_now
+    assert dataset.run_timestamp_raw > time_now
+    assert dataset.completed_timestamp_raw is None
 
     with pytest.raises(RuntimeError, match="Rolling back due to unhandled "
                                            "exception") as ei:
-        mut_queries.set_run_timestamp(ds.conn, ds.run_id)
+        mut_queries.set_run_timestamp(dataset.conn, dataset.run_id)
 
     assert error_caused_by(ei, ("Can not set run_timestamp; it has already "
                                 "been set"))
 
-    ds.conn.close()
+
+def test_set_run_timestamp_explicit(dataset):
+
+    assert dataset.run_timestamp_raw is None
+    assert dataset.completed_timestamp_raw is None
+
+    time_now = time.time()
+    time.sleep(1)  # for slower test platforms
+    mut_queries.set_run_timestamp(dataset.conn, dataset.run_id, time_now)
+
+    assert dataset.run_timestamp_raw == time_now
+    assert dataset.completed_timestamp_raw is None
+
+    with pytest.raises(
+        RuntimeError, match="Rolling back due to unhandled " "exception"
+    ) as ei:
+        mut_queries.set_run_timestamp(dataset.conn, dataset.run_id)
+
+    assert error_caused_by(ei, "Can not set run_timestamp; it has already " "been set")
+
+
+def test_mark_run_complete(dataset):
+
+    assert dataset.run_timestamp_raw is None
+    assert dataset.completed_timestamp_raw is None
+
+    time_now = time.time()
+    mut_queries.set_run_timestamp(dataset.conn, dataset.run_id)
+    time.sleep(1)  # for slower test platforms
+    mut_queries.mark_run_complete(dataset.conn, dataset.run_id)
+
+    assert dataset.completed_timestamp_raw > time_now
+
+
+def test_mark_run_complete_explicit_time(dataset):
+
+    assert dataset.run_timestamp_raw is None
+    assert dataset.completed_timestamp_raw is None
+
+    mut_queries.set_run_timestamp(dataset.conn, dataset.run_id)
+    time_now = time.time()
+    time.sleep(1)  # for slower test platforms
+    mut_queries.mark_run_complete(dataset.conn, dataset.run_id, time_now)
+
+    assert dataset.completed_timestamp_raw == time_now
+
+    mut_queries.mark_run_complete(dataset.conn, dataset.run_id)

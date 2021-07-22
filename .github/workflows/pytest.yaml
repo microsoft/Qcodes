@@ -23,23 +23,23 @@ jobs:
       PYTHON: ${{ matrix.python-version }}
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v2.3.4
       with:
-        fetch-depth: '0'
+        submodules: true
     - name: setup ubuntu-latest xvfb
       uses: ./.github/actions/setup-ubuntu-latest-xvfb
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v2.2.2
       with:
         python-version: ${{ matrix.python-version }}
     - name: prepare pip cache
       id: prepare-cache-pip
       uses: ./.github/actions/prepare-cache-pip
     - name: pip cache
-      uses: actions/cache@v2
+      uses: actions/cache@v2.1.6
       with:
         path: ${{ steps.prepare-cache-pip.outputs.cache-dir }}
-        key: ${{ runner.os }}-${{ matrix.python-version }}-pip-${{ hashFiles('**/requirements.txt') }}-${{ hashFiles('**/test_requirements.txt') }}-${{ hashFiles('**/setup.py') }}
+        key: ${{ runner.os }}-${{ matrix.python-version }}-pip-${{ hashFiles('**/requirements.txt') }}-${{ hashFiles('**/test_requirements.txt') }}-${{ hashFiles('**/setup.cfg') }}
         restore-keys: |
           ${{ runner.os }}-${{ matrix.python-version }}-pip-
     - name: install requirements.txt
@@ -48,18 +48,16 @@ jobs:
     - name: install test_requirements.txt
       run: |
         pip install -r test_requirements.txt
-    - name: generate test dbs
-      uses: ./.github/actions/generate-test-dbs
     - name: install qcodes
-      run: pip install .
+      run: |
+        pip install .
     - name: Run Mypy
       run: mypy qcodes
     - name: Run tests
       run: |
-        cd qcodes
-        py.test --cov=qcodes --cov-report xml --cov-config=.coveragerc --hypothesis-profile ci
+        pytest --cov=qcodes --cov-report xml --cov-config=setup.cfg --hypothesis-profile ci qcodes
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v1
+      uses: codecov/codecov-action@v2.0.1
       with:
-        file: ./qcodes/coverage.xml
+        file: ./coverage.xml
         env_vars: OS,PYTHON

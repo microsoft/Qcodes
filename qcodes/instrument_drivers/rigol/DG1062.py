@@ -311,7 +311,7 @@ class DG1062Channel(InstrumentChannel):
                              f"{param_names}")
 
         string = f":SOUR{self.channel}:APPL:{waveform} "
-        values = ["{:7e}".format(params_dict[param]) for param in param_names]
+        values = [f"{params_dict[param]:7e}" for param in param_names]
         string += ",".join(values)
         self.parent.write_raw(string)
 

@@ -3,25 +3,29 @@
 # the instrument drivers package
 # Version 2.1 QDevil 2020-02-10
 
-from typing import Optional, Sequence, Dict, Any, Tuple, Union
+import logging
 import time
+from collections import namedtuple
+from enum import Enum
+from functools import partial
+from typing import Any, Dict, Optional, Sequence, Tuple, Union
+
 import pyvisa as visa
 from pyvisa.resources.serial import SerialInstrument
-import logging
 
-from functools import partial
-from qcodes.instrument.channel import InstrumentChannel, ChannelList
-from qcodes.instrument.channel import MultiChannelInstrumentParameter
+from qcodes.instrument.channel import (
+    ChannelList,
+    InstrumentChannel,
+    MultiChannelInstrumentParameter,
+)
+from qcodes.instrument.parameter import ParamRawDataType
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.utils import validators as vals
-from qcodes.instrument.parameter import ParamRawDataType
-from enum import Enum
-from collections import namedtuple
 
 LOG = logging.getLogger(__name__)
 
 
-_ModeTuple = namedtuple('Mode', 'v i')
+_ModeTuple = namedtuple('_ModeTuple', 'v i')
 
 
 class Mode(Enum):
@@ -839,17 +843,18 @@ class QDac(VisaInstrument):
         self._update_cache(update_currents=update_currents)
 
         for ii in range(self.num_chans):
-            line = 'Channel {} \n'.format(ii+1)
-            line += '    Voltage: {} ({}).\n'.format(
-                    self.channels[ii].v.cache(), self.channels[ii].v.unit)
-            line += '    Current: {} ({}).\n'.format(
-                    self.channels[ii].i.cache.get(get_if_invalid=False),
-                                                self.channels[ii].i.unit)
-            line += '    Mode: {}.\n'.format(
-                    self.channels[ii].mode.cache().get_label())
-            line += '    Slope: {} ({}).\n'.format(
-                    self.channels[ii].slope.cache(),
-                    self.channels[ii].slope.unit)
+            line = f"Channel {ii+1} \n"
+            line += "    Voltage: {} ({}).\n".format(
+                self.channels[ii].v.cache(), self.channels[ii].v.unit
+            )
+            line += "    Current: {} ({}).\n".format(
+                self.channels[ii].i.cache.get(get_if_invalid=False),
+                self.channels[ii].i.unit,
+            )
+            line += f"    Mode: {self.channels[ii].mode.cache().get_label()}.\n"
+            line += "    Slope: {} ({}).\n".format(
+                self.channels[ii].slope.cache(), self.channels[ii].slope.unit
+            )
             if self.channels[ii].sync.cache() > 0:
                 line += '    Sync Out: {}, Delay: {} ({}), '\
                         'Duration: {} ({}).\n'.format(
@@ -1072,7 +1077,7 @@ class QDac(VisaInstrument):
             fg = self._assigned_fgs[ch].fg
             if trigger > 0:  # Trigger 0 is not a trigger
                 self._assigned_triggers[fg] = trigger
-            msg += 'wav {} {} {} {}'.format(ch, fg, amplitude, v_startlist[i])
+            msg += f"wav {ch} {fg} {amplitude} {v_startlist[i]}"
             # using staircase = function 4
             nsteps = slow_steps if ch in slow_chans else fast_steps
             repetitions = slow_steps if ch in fast_chans else 1

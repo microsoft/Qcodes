@@ -77,63 +77,39 @@ It's easy to install:
 
 ::
 
-    pip install coverage pytest-cov pytest
+    pip install -r test_requirements.txt
 
 Then to test and view the coverage:
 
 ::
-    py.test --cov=qcodes --cov-report xml --cov-config=.coveragerc
 
+    pytest --cov=qcodes --cov-report xml --cov-config=setup.cfg
 
-You can also run single tests with:
+To test and see the coverage (with missing lines) of a single module:
 
 ::
 
-    # python -m unittest module
-    # python -m unittest module.class
-    # python -m unittest module.class.function
-    python -m unittest qcodes.tests.test_metadata
+    pytest --cov=qcodes.module.submodule --cov-report=term-missing qcodes/tests/test_file.py
+
+You can also run single tests with something like:
+
+::
+
+    pytest.exe .\qcodes\tests\test_config.py
     # or
-    python -m unittest qcodes.tests.test_metadata.TestMetadatable.test_snapshot
+    pytest.exe .\qcodes\tests\test_config.py::test_add_and_describe
+
 
 If the tests pass, you should be ready to start developing!
 
-To tests actual instruments, first instantiate them in an interactive
-python session, then run ``qcodes.test_instruments()``:
-
-.. code:: python
-
-    import qcodes
-    sig_gen = qcodes.instrument_drivers.agilent.E8527D.Agilent_E8527D('source', address='...')
-    qcodes.test_instruments()  # optional verbosity = 1 (default) or 2
-
-The output of this command should include lines like:
-
-::
-
-    ***** found one Agilent_E8527D, testing *****
-
-for each class of instrument you have defined. Note that if you
-instantiate several instruments of the same class, only the *last* one
-will be tested unless you write the test to explicitly test more than
-this.
-
-Coverage testing is generally meaningless for instrument drivers, as
-calls to ``add_parameter`` and ``add_function`` do not add any code
-other than the call itself, which is covered immediately on
-instantiation rather than on calling these parameters/functions. So it
-is up to the driver author to ensure that all functionality the
-instrument supports is covered by tests. Also, it's mentioned below but
-bears repeating: if you fix a bug, write a test that would have failed
-before your fix, so we can be sure the bug does not reappear later!
 
 New code and testing
 ~~~~~~~~~~~~~~~~~~~~
 -  Fork the repo into your github account
 -  Make a branch within this repo
--  branch naming matters:
+-  It is worth considering a good branch name:
 
-   -  always select a prefix:
+   -  for example selecting a prefix can be useful:
 
       -  feature/bar (if you add the feature bar)
       -  hotfix/bar (if you fix the bug bar)
@@ -144,75 +120,6 @@ New code and testing
       exercise to model the problem before you try to solve it. Also,
       ping on slack. We <3 you in the first place.
 
-Commit Message Format
-^^^^^^^^^^^^^^^^^^^^^
-
-A useful git repo starts with great commits. This is not optional, and
-it may seem daunting at first but you'll soon get the hang of it and
-will find out that it helps with developing good software. Nobody will
-get shot/tortured if the guidelines are not followed but you'll have to
-fix your commits.
-
-Each commit message consists of a **header**, a **body** and a
-**footer**. The header has a special format that includes a **type** and
-a **subject**:
-
-::
-
-    <type>: <subject>
-    <BLANK LINE>
-    <body>
-    <BLANK LINE>
-    <footer>
-
-Limit the subject line to 50 characters. This is mandatory, github will
-truncate otherwise making the commit hard to read. No line may exceed
-100 characters. This makes it easier to read the message on GitHub as
-well as in various git tools.
-
-Type
-
-
-Must be one of the following:
-
--  **feat**: A new feature
--  **fix**: A bug fix
--  **docs**: Documentation only changes
--  **style**: Changes that do not affect the meaning of the code
-   (white-space, formatting, missing semi-colons, etc)
--  **refactor**: A code change that neither fixes a bug nor adds a
-   feature
--  **perf**: A code change that improves performance
--  **test**: Adding missing tests
--  **chore**: Changes to the build process or auxiliary tools and
-   libraries such as documentation generation
-
-Subject
-
-
-The subject contains succinct description of the change:
-
--  use the imperative, present tense: "change" not "changed" nor
-   "changes"
--  capitalize first letter
--  no dot (.) at the end
-
-Body
-
-
-Just as in the **subject**, use the imperative, present tense: "change"
-not "changed" nor "changes"The body should include the motivation for
-the change and contrast this with previous behavior.
-
-Footer
-
-
-The footer should contain any information about **Breaking Changes** and
-is also the place to reference GitHub issues that this commit
-**Closes**.
-
-You are allowed to skip both body and footer only and only if your
-header is indeed enough to understandable 10 years after.
 
 A note on committing and pushing (if you are not really familiar with git).
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -239,12 +146,8 @@ born familiar with git, and everybody makes mistakes.
    inputs, coverage in itself will not ensure that this is tested.
 
 -  Write the docs, following the other documentation files (.rst) in the
-   repo.
-
-NOTE(giulioungaretti): maybe running test locally should be simplified,
-and then unit testing should be run on pull-request, using CI. Maybe
-simplify to a one command that says: if there's enough cover, and all
-good or fail and where it fails.
+   repo as an example. Or write the docs in the form of example IPython
+   notebook (there are many of those in our docs as well).
 
 -  We should have a *few* high-level "integration" tests, but simple
    unit tests (that just depend on code in one module) are more valuable
@@ -256,26 +159,30 @@ good or fail and where it fails.
 -  If you're having difficulty making unit tests, first consider whether
    your code could be restructured to make it less dependent on other
    modules. Often, however, extra techniques are needed to break down a
-   complex test into simpler ones. @alexcjohnson or @giulioungaretti are
-   happy to help with this. Two ideas that are useful here:
--  Patching, one of the most useful parts of the
-   `unittest.mock <https://docs.python.org/3/library/unittest.mock.html>`__
-   library. This lets you specify exactly how other functions/objects
-   should behave when they're called by the code you are testing.
+   complex test into simpler ones. We are happy to help with this on Slack.
+   Two ideas that are useful here:
 
--  Supporting files / data: Lets say you have a test of data acquisition
-   and analysis. You can break that up into an acquisition test and an
-   analysis by saving the intermediate state, namely the data file, in
-   the test directory. Use it to compare to the output of the
-   acquisition test, and as the input for the analysis test.
+   -  Patching, one of the most useful parts of the
+      `unittest.mock <https://docs.python.org/3/library/unittest.mock.html>`__
+      library. This lets you specify exactly how other functions/objects
+      should behave when they're called by the code you are testing.
+   -  Supporting files / data: Lets say you have a test of data acquisition
+      and analysis. You can break that up into an acquisition test and an
+      analysis by saving the intermediate state, namely the data file, in
+      the test directory. Use it to compare to the output of the
+      acquisition test, and as the input for the analysis test.
 
--  We have not yet settled on a framework for testing real hardware.
-   Stay tuned, or post any ideas you have as issues!
+-  Refer to QCoDeS documentation on how to implement tests for the
+   instrument drivers.
+
+   -  We have not yet settled on a framework for testing real hardware.
+      For some tests we use `pyvisa-sim <https://github.com/pyvisa/pyvisa-sim>`__
+      but it's flexibility is limited. Another interesting candidate is
+      `pyvisa-mock <https://github.com/microsoft/pyvisa-mock>`__.
+      So, stay tuned, or post any ideas you have as GitHub issues!
 
 Coding Style
 ~~~~~~~~~~~~
-
-NOTE(giulioungaretti): is this enough ?
 
 -  Try to make your code self-documenting. Python is generally quite
    amenable to that, but some things that can help are:
@@ -309,7 +216,7 @@ NOTE(giulioungaretti): is this enough ?
 -  Use `PEP8 <http://legacy.python.org/dev/peps/pep-0008/>`__ style. Not
    only is this style good for readability in an absolute sense, but
    consistent styling helps us all read each other's code.
--  There is a command-line tool (``pip install pep8``) you can run after
+-  There is a command-line tool (``pip install pycodestyle``) you can run after
    writing code to validate its style.
 -  A lot of editors have plugins that will check this for you
    automatically as you type. Sublime Text for example has
@@ -328,7 +235,7 @@ Pull requests
 ~~~~~~~~~~~~~
 
 -  Push your branch back to github and make a pull request (PR). If you
-   visit the repo `home page <ht://github.com/qdev-dk/Qcodes>`__ soon
+   visit the repo `home page <ht://github.com/qcodes/Qcodes>`__ soon
    after pushing to a branch, github will automatically ask you if you
    want to make a PR and help you with it.
 
@@ -352,17 +259,67 @@ Pull requests
    (``- [ ] take over the world``) to let others know what more to
    expect in the near future.
 
--  There are a number of emoji that have specific meanings within our
-   github conversations. The most important one is :dancer: which means
-   "approved" - typically one of the core contributors should give the
-   dancer. Ideally this person was also tagged when you opened the PR.
-
 -  Delete your branch once you have merged (using the helpful button
    provided by github after the merge) to keep the repository clean.
    Then on your own computer, after you merge and pull the merged master
    down, you can call ``git branch --merged`` to list branches that can
    be safely deleted, then ``git branch -d <branch-name>`` to delete it.
 
+Automatic Testing (CI)
+~~~~~~~~~~~~~~~~~~~~~~
+
+Once your pull request is opened a number of automatic jobs are created. These
+will run the tests and in other ways verify the correctness of the code.
+In the following we will describe what we test and provide a few tips on how to
+understand the results especially if something should fail.
+
+Note that the some of the automatic jobs are labeled with Required. These
+must pass before the pull request can be merged. The other jobs that do not
+have a required label may be considered guidelines. Please attempt to make these
+pass if possible but feel free to disregard them if the suggested changes do not make sense.
+If in doubt feel free to ask questions.
+
+Required checks
+^^^^^^^^^^^^^^^
+
+Our required checks consists of a number of jobs that performs the following actions using multiple python versions,
+on Linux and on Windows.
+
+- Run our test suite using pytest as described above.
+- Perform type checking of the code in QCoDeS using MyPy. For many of the modules we enforce that the code must be
+  type annotated. We encourage all contributors to type annotate any contribution to QCoDeS. If you need help with this
+  please feel free to reach out.
+- Build the documentation using Sphinx with Sphinx warnings as errors. This includes execution of all example notebooks
+  that are not explicitly marked as not to be executed. Please see here_ for information on how to disable execution of a
+  notebook.
+- A number of smaller static checks implemented using `pre-commit <https://pre-commit.com/>`_ hooks. You may want to
+  consider installing the pre-commit hooks in your local git config to have these checks performed automatically when
+  you commit.
+
+    - Check that YAML, JSON and Python files are syntactically valid.
+    - Check that there are no trailing whitespace or blank lines at the end of python files.
+    - Check that all files uses the correct line endings (``\n`` for all files except ``.bat``)
+    - Run `pyupgrade  <https://github.com/asottile/pyupgrade>`_ on all python files.
+    - Run `Darker <https://github.com/akaihola/darker/>`_. This will enforce `Black <https://github.com/psf/black>`_
+      formatting and sorting of imports using `isort <https://pycqa.github.io/isort/>`_ on all new and changed code.
+      We do not format the entire codebase to not lose change history.
+
+
+Furthermore we also run our test suite with the minimum requirements stated to ensure that QCoDeS does work
+correctly with these.
+
+Optional checks
+^^^^^^^^^^^^^^^
+
+In addition to the required checks we perform two optional checks that can be regarded as guidelines rather than
+requirements.
+
+- We use Codacy to perform a number of style checks using `Pylint` and `Pydocstyle` among others. Please
+  adapt your changes to these recommendations as you see fit. It is not a requirement that all Codacy warnings and
+  errors are fixed. Do not insert comments to disable these warnings.
+- We measure code coverage using `Codecov`. This measures if a line of code is executed as part of a test.
+  As much as possible we would encourage you to add tests to cover all changes. However, this may not always be
+  possible especially when writing instrument drivers.
 
 Documenting QCoDeS
 ~~~~~~~~~~~~~~~~~~
@@ -421,3 +378,5 @@ The submodule ``a.py`` is documented in its own file (``a.rst``) containing::
 This automatically generates a page with the documentation of the module ``a.py``
 
 Finally the ``index.rst`` file should be included in the toctree in ``docs/api/index.rst``
+
+.. _here: ../examples/writing_drivers/Creating-Instrument-Drivers.ipynb

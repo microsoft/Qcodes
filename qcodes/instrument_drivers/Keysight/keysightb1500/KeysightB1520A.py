@@ -1,21 +1,30 @@
 import re
 import textwrap
+from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Union
+
 import numpy as np
-from typing import Optional, TYPE_CHECKING, Tuple, Union, Dict, Any
 
-from qcodes.instrument.parameter import MultiParameter
-from qcodes.instrument.group_parameter import GroupParameter, Group
-from qcodes.instrument.channel import InstrumentChannel
 import qcodes.utils.validators as vals
+from qcodes.instrument.channel import InstrumentChannel
+from qcodes.instrument.group_parameter import Group, GroupParameter
+from qcodes.instrument.parameter import MultiParameter
 
-from .KeysightB1500_module import B1500Module, parse_dcorr_query_response, \
-    format_dcorr_response, _DCORRResponse, parse_dcv_measurement_response, \
-    _FMTResponse, fmt_response_base_parser, fixed_negative_float, \
-    get_name_label_unit_of_impedance_model, StatusMixin, \
-    convert_dummy_val_to_nan
-from .message_builder import MessageBuilder
 from . import constants
-from .constants import ModuleKind, ChNr, MM
+from .constants import MM, ChNr, ModuleKind
+from .KeysightB1500_module import (
+    B1500Module,
+    StatusMixin,
+    _DCORRResponse,
+    _FMTResponse,
+    convert_dummy_val_to_nan,
+    fixed_negative_float,
+    fmt_response_base_parser,
+    format_dcorr_response,
+    get_name_label_unit_of_impedance_model,
+    parse_dcorr_query_response,
+    parse_dcv_measurement_response,
+)
+from .message_builder import MessageBuilder
 
 if TYPE_CHECKING:
     from .KeysightB1500_base import KeysightB1500
@@ -892,22 +901,16 @@ class CVSweepMeasurement(MultiParameter, StatusMixin):
             parsed_data = fmt_response_base_parser(raw_data)
 
         if len(set(parsed_data.type)) == 2:
-            self.param1 = _FMTResponse(
-                *[parsed_data[i][::2] for i in range(0, 4)])
-            self.param2 = _FMTResponse(
-                *[parsed_data[i][1::2] for i in range(0, 4)])
+            self.param1 = _FMTResponse(*(parsed_data[i][::2] for i in range(0, 4)))
+            self.param2 = _FMTResponse(*(parsed_data[i][1::2] for i in range(0, 4)))
 
             self.shapes = ((num_steps,),) * 2
             self.setpoints = ((self.instrument.cv_sweep_voltages(),),) * 2
         else:
-            self.param1 = _FMTResponse(
-                *[parsed_data[i][::4] for i in range(0, 4)])
-            self.param2 = _FMTResponse(
-                *[parsed_data[i][1::4] for i in range(0, 4)])
-            self.ac_voltage = _FMTResponse(
-                *[parsed_data[i][2::4] for i in range(0, 4)])
-            self.dc_voltage = _FMTResponse(
-                *[parsed_data[i][3::4] for i in range(0, 4)])
+            self.param1 = _FMTResponse(*(parsed_data[i][::4] for i in range(0, 4)))
+            self.param2 = _FMTResponse(*(parsed_data[i][1::4] for i in range(0, 4)))
+            self.ac_voltage = _FMTResponse(*(parsed_data[i][2::4] for i in range(0, 4)))
+            self.dc_voltage = _FMTResponse(*(parsed_data[i][3::4] for i in range(0, 4)))
 
             self.shapes = ((len(self.dc_voltage.value),),) * 2
             self.setpoints = ((self.dc_voltage.value,),) * 2
