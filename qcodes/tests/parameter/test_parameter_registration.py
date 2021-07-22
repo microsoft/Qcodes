@@ -44,7 +44,7 @@ def test_parameter_registration_on_instr(dummy_attr_instr):
 def test_parameter_registration_with_non_instr_passing_parameter(dummy_attr_instr):
     with pytest.warns(
         QCoDeSDeprecationWarning,
-        match="Parameter brokenparameter does not correctly register on instrument",
+        match="Parameter brokenparameter did not correctly register itself on instrument dummy_attr_instr",
     ):
         dummy_attr_instr.add_parameter(
             name="brokenparameter",
