@@ -12,8 +12,7 @@ from qcodes.dataset.experiment_container import (
     new_experiment,
 )
 from qcodes.dataset.experiment_settings import (
-    get_active_experiment_id,
-    reset_active_experiment_id,
+    reset_default_experiment_id, get_default_experiment_id
 )
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.sqlite.database import get_DB_location
@@ -316,30 +315,30 @@ def test_load_last_experiment(empty_temp_db):
 
 
 @pytest.mark.usefixtures("empty_temp_db")
-def test_active_experiment():
-    exp_id = get_active_experiment_id()
-    assert exp_id is None
+def test_active_experiment(empty_temp_db_connection):
+    with pytest.raises(ValueError):
+        get_default_experiment_id(empty_temp_db_connection)
 
     exp_1 = load_or_create_experiment("test_exp", sample_name="no_sample")
-    assert get_active_experiment_id() == exp_1.exp_id
+    assert get_default_experiment_id(empty_temp_db_connection) == exp_1.exp_id
 
     exp_2 = new_experiment("test_exp_2", sample_name="no_sample")
-    assert get_active_experiment_id() == exp_2.exp_id
+    assert get_default_experiment_id(empty_temp_db_connection) == exp_2.exp_id
 
     exp_3 = load_experiment(1)
-    assert get_active_experiment_id() == exp_1.exp_id
-    assert get_active_experiment_id() == exp_3.exp_id
+    assert get_default_experiment_id(empty_temp_db_connection) == exp_1.exp_id
+    assert get_default_experiment_id(empty_temp_db_connection) == exp_3.exp_id
 
     exp_4 = new_experiment("test_exp_3", sample_name="no_sample")
 
     exp_5 = load_experiment_by_name("test_exp_2", sample="no_sample")
-    assert get_active_experiment_id() == exp_2.exp_id
-    assert get_active_experiment_id() == exp_5.exp_id
+    assert get_default_experiment_id(empty_temp_db_connection) == exp_2.exp_id
+    assert get_default_experiment_id(empty_temp_db_connection) == exp_5.exp_id
 
     exp_6 = load_last_experiment()
-    assert get_active_experiment_id() == exp_4.exp_id
-    assert get_active_experiment_id() == exp_6.exp_id
+    assert get_default_experiment_id(empty_temp_db_connection) == exp_4.exp_id
+    assert get_default_experiment_id(empty_temp_db_connection) == exp_6.exp_id
 
-    reset_active_experiment_id()
-    exp_id = get_active_experiment_id()
-    assert exp_id is None
+    reset_default_experiment_id()
+    with pytest.raises(ValueError):
+        get_default_experiment_id(empty_temp_db_connection)
