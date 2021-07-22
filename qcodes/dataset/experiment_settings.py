@@ -1,55 +1,60 @@
 """Settings that are indirectly related to experiments."""
 
 from typing import Optional
+from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic_transaction
 
-# The active experiment's exp_id. The default is None.
-active_experiment: Optional[int] = None
+# The default experiment's exp_id. This changes to the exp_id of a created/
+# loaded experiment.
+default_experiment: Optional[int] = None
 
 
-def _set_active_experiment_id(exp_id: Optional[int]) -> None:
+def _set_default_experiment_id(exp_id: int) -> None:
     """
-    Sets the global active_experiment to the exp_id of a created/ loaded
-    experiment. When a database is loaded, sets to the maximum exp_id in
-    the database. If it is a new database, sets to None.
+    Sets the default_experiment to the exp_id of a created/ loaded experiment.
 
     Args:
         exp_id: The exp_id of an experiment.
     """
-    global active_experiment
-    active_experiment = exp_id
+    global default_experiment
+    default_experiment = exp_id
 
 
-def get_active_experiment_id() -> Optional[int]:
+def _get_latest_default_experiment_id() -> Optional[int]:
     """
-    Gets the updated global active_experiment.
+    Gets the lastest created or loaded experiment's exp_id.
 
     Returns:
-        Returns the latest created/ loaded experiment's exp_id in the kernel.
-        If no experiment is started in the kernel and only a database is
-        initialized, the return will be the maximum exp_id in the database
-        or None, if it is a new database.
+        The latest created/ loaded experiment's exp_id.
     """
-    global active_experiment
-    return active_experiment
+    global default_experiment
+    return default_experiment
 
 
-def reset_active_experiment_id() -> None:
+def reset_default_experiment_id() -> None:
     """
-    Resets the active_experiment to None.
+    Resets the default_experiment to None.
     """
-    global active_experiment
-    active_experiment = None
+    global default_experiment
+    default_experiment = None
 
 
-def _handle_active_experiment_id_return() -> Optional[int]:
+def get_default_experiment_id(conn: ConnectionPlus) -> Optional[int]:
     """
-    Checks if get_active_experiment_id is an existing exp_id and return it,
-    and if it is None, raise error that no experiment is initialized.
+    Returns the latest created/ loaded experiment's exp_id as the default
+    experiment. If it is None, maximum exp_id from an initialized database
+    is returned as the default. if no experiment found in the database, then
+    raises an error.
+
+    Returns:
+        exp_id of the default experiment.
     """
-    global active_experiment
-    if active_experiment is not None:
-        return active_experiment
-    else:
+    exp_id = _get_latest_default_experiment_id()
+    if exp_id is None:
+        query = "SELECT MAX(exp_id) FROM experiments"
+        c = atomic_transaction(conn, query)
+        exp_id = c.fetchall()[0][0]
+    if exp_id is None:
         raise ValueError("No experiments found."
                          " You can create one with:"
-                         " load_or_create_experiment(name, sample_name)")
+                         " new_experiment(name, sample_name)")
+    return exp_id
