@@ -1,21 +1,20 @@
-from qcodes.dataset.sqlite.connection import ConnectionPlus
-from typing import cast, List, Tuple
 from collections import defaultdict
 from pathlib import Path
+from typing import List, Tuple, cast
 
 import numpy as np
-
-from qcodes.dataset.experiment_container import new_experiment, \
-    load_or_create_experiment
-from qcodes.dataset.measurements import Measurement
-from qcodes.dataset.sqlite.database import initialised_database_at
-from qcodes.instrument.parameter import Parameter
-
-
-from qcodes.dataset.guid_helpers import guids_from_dir, guids_from_list_str
-from qcodes.dataset.sqlite.queries import get_guids_from_multiple_run_ids
-
 import pytest
+
+from qcodes.dataset.experiment_container import (
+    load_or_create_experiment,
+    new_experiment,
+)
+from qcodes.dataset.guid_helpers import guids_from_dir, guids_from_list_str
+from qcodes.dataset.measurements import Measurement
+from qcodes.dataset.sqlite.connection import ConnectionPlus
+from qcodes.dataset.sqlite.database import initialised_database_at
+from qcodes.dataset.sqlite.queries import get_guids_from_multiple_run_ids
+from qcodes.instrument.parameter import Parameter
 
 
 def test_guids_from_dir(tmp_path: Path) -> None:
@@ -111,8 +110,7 @@ def test_get_guids_from_multiple_run_ids(tmp_path: Path) -> None:
     path = tmp_path/'dbfile2.db'
     guids, conn = generate_local_exp(path)
 
-    assert get_guids_from_multiple_run_ids(conn=conn, run_ids=[1, 2]) \
-        == guids
+    assert get_guids_from_multiple_run_ids(conn=conn, run_ids=[1, 2]) == guids
 
     assert len(guids) == 2
 
