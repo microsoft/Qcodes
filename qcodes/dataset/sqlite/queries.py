@@ -879,7 +879,7 @@ def get_guids_from_multiple_run_ids(
             run_id_guid = get_guid_from_run_id(conn=conn, run_id=run_id)
             guids.append(run_id_guid)
         else:
-            raise RuntimeError(f"run id {run_id} does not" " exist in the database")
+            raise RuntimeError(f"run id {run_id} does not exist in the database")
 
     return guids
 
