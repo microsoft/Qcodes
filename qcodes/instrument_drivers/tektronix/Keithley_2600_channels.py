@@ -1,8 +1,8 @@
 import logging
 import struct
 import warnings
-from typing import Any, Dict, List, Optional, Sequence, Tuple
 from enum import Enum
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
@@ -12,7 +12,9 @@ from qcodes.data.data_set import DataSet
 from qcodes.instrument.base import Instrument, Parameter
 from qcodes.instrument.channel import InstrumentChannel
 from qcodes.instrument.parameter import (
-    ArrayParameter, ParameterWithSetpoints, ParamRawDataType
+    ArrayParameter,
+    ParameterWithSetpoints,
+    ParamRawDataType,
 )
 from qcodes.measure import Measure
 from qcodes.utils.helpers import create_on_off_val_mapping
@@ -26,12 +28,15 @@ class LuaSweepParameter(ArrayParameter):
     deployed Lua script sweep.
     """
 
-    def __init__(self, name: str, instrument: Instrument) -> None:
+    def __init__(self, name: str, instrument: Instrument, **kwargs: Any) -> None:
 
-        super().__init__(name=name,
-                         shape=(1,),
-                         docstring='Holds a sweep',
-                         instrument=instrument)
+        super().__init__(
+            name=name,
+            shape=(1,),
+            docstring="Holds a sweep",
+            instrument=instrument,
+            **kwargs,
+        )
 
     def prepareSweep(self, start: float, stop: float, steps: int,
                      mode: str) -> None:
