@@ -3,7 +3,7 @@ from collections.abc import Sized
 from typing import Any, List, Optional
 
 from qcodes.dataset.data_set import SPECS, DataSet, load_by_id, new_data_set
-from qcodes.dataset.experiment_settings import _set_active_experiment_id
+from qcodes.dataset.experiment_settings import _set_default_experiment_id
 from qcodes.dataset.sqlite.connection import ConnectionPlus, transaction
 from qcodes.dataset.sqlite.database import (
     conn_from_dbpath_or_conn,
@@ -221,7 +221,7 @@ def new_experiment(name: str,
     experiment = Experiment(
         name=name, sample_name=sample_name, format_string=format_string, conn=conn
     )
-    _set_active_experiment_id(experiment.exp_id)
+    _set_default_experiment_id(experiment.exp_id)
     return experiment
 
 
@@ -241,7 +241,7 @@ def load_experiment(exp_id: int,
     if not isinstance(exp_id, int):
         raise ValueError('Experiment ID must be an integer')
     experiment = Experiment(exp_id=exp_id, conn=conn)
-    _set_active_experiment_id(experiment.exp_id)
+    _set_default_experiment_id(experiment.exp_id)
     return experiment
 
 
@@ -256,7 +256,7 @@ def load_last_experiment() -> Experiment:
     if last_exp_id is None:
         raise ValueError('There are no experiments in the database file')
     experiment = Experiment(exp_id=last_exp_id)
-    _set_active_experiment_id(experiment.exp_id)
+    _set_default_experiment_id(experiment.exp_id)
     return experiment
 
 
@@ -318,7 +318,7 @@ def load_experiment_by_name(name: str,
                          f" found:\n{_repr_str}")
     else:
         e = Experiment(exp_id=rows[0]['exp_id'], conn=conn)
-    _set_active_experiment_id(e.exp_id)
+    _set_default_experiment_id(e.exp_id)
     return e
 
 
