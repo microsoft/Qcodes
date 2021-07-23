@@ -1,15 +1,10 @@
 import inspect
 from typing import Any, Dict, Optional, Tuple
 
-import numpy as np
 import parso
 from sphinx.util.inspect import safe_getattr
 
-# adhock imports required to run eval below
-# this should be parsed out rather
-import qcodes.utils.validators as vals
 from qcodes.instrument.base import InstrumentBase
-from qcodes.instrument.parameter import Parameter
 
 
 class ParameterProxy:
