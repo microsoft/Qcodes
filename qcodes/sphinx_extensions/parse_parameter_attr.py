@@ -12,6 +12,14 @@ from qcodes.instrument.base import InstrumentBase
 from qcodes.instrument.parameter import Parameter
 
 
+class ParameterProxy:
+    def __init__(self, repr: str):
+        self._repr = repr
+
+    def __repr__(self) -> str:
+        return self._repr
+
+
 def parse_init_function_from_str(
     code: str, classname
 ) -> Optional[parso.python.tree.Function]:
@@ -65,7 +73,7 @@ def extract_statements_from_func_node(parso_func: parso.python.tree.Function):
     return statement_lines
 
 
-def eval_params_from_code(code: str, classname: str) -> Dict[str, Parameter]:
+def eval_params_from_code(code: str, classname: str) -> Dict[str, ParameterProxy]:
     init_func_tree = parse_init_function_from_str(code, classname)
     if init_func_tree is None:
         return {}
@@ -74,15 +82,12 @@ def eval_params_from_code(code: str, classname: str) -> Dict[str, Parameter]:
 
     for stm in stms:
         try:
-            name_code = extract_code_without_self_from_statement(stm)
-        except:
+            name_code = extract_code_as_repr(stm)
+        except Exception:
             continue
         if name_code is not None:
-            name, code = name_code
-            try:
-                param_dict[name] = eval(code)
-            except Exception as e:
-                param_dict[name] = None
+            name, proxy_param = name_code
+            param_dict[name] = proxy_param
     return param_dict
 
 
@@ -105,23 +110,15 @@ def parse_string_or_node(stm):
     return skip
 
 
-def extract_code_without_self_from_statement(
+def extract_code_as_repr(
     stm: parso.python.tree.ExprStmt,
-) -> Optional[Tuple[str, str]]:
+) -> Optional[Tuple[str, ParameterProxy]]:
     lhs = stm.children[0]
     rhs = stm.get_rhs()
     if len(lhs.children) == 2 and lhs.children[0].value == "self":
         name = lhs.children[1].children[1].value
-        arglist = rhs.children[1].children[1]
-        to_remove = []
-        for i, arg in enumerate(arglist.children):
-            if parse_string_or_node(arg):
-                to_remove.append(i)
-                to_remove.append(i + 1)
-        to_remove.sort(reverse=True)
-        for j in to_remove:
-            arglist.children.pop(j)
-        return name, rhs.get_code().strip()
+        pp = ParameterProxy(rhs.get_code().strip())
+        return name, pp
     else:
         return None
 
