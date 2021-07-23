@@ -117,7 +117,8 @@ def extract_code_as_repr(
     rhs = stm.get_rhs()
     if len(lhs.children) == 2 and lhs.children[0].value == "self":
         name = lhs.children[1].children[1].value
-        pp = ParameterProxy(rhs.get_code().strip())
+        code = " ".join(rhs.get_code().strip().split())
+        pp = ParameterProxy(code)
         return name, pp
     else:
         return None
