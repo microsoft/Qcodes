@@ -1,5 +1,5 @@
 import inspect
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, Type, Union
 
 import parso
 from sphinx.util.inspect import safe_getattr
@@ -16,7 +16,7 @@ class ParameterProxy:
 
 
 def parse_init_function_from_str(
-    code: str, classname
+    code: str, classname: str
 ) -> Optional[parso.python.tree.Function]:
     module = parso.parse(code)
     classes = tuple(
@@ -50,7 +50,9 @@ def parse_init_function_from_str(
     return init_funcs[0]
 
 
-def extract_statements_from_func_node(parso_func: parso.python.tree.Function):
+def extract_statements_from_func_node(
+    parso_func: parso.python.tree.Function,
+) -> Tuple[Any, ...]:
     function_bodys = tuple(
         child
         for child in parso_func.children
@@ -91,16 +93,27 @@ def extract_code_as_repr(
 ) -> Optional[Tuple[str, ParameterProxy]]:
     lhs = stm.children[0]
     rhs = stm.get_rhs()
-    if len(lhs.children) == 2 and lhs.children[0].value == "self":
-        name = lhs.children[1].children[1].value
-        code = " ".join(rhs.get_code().strip().split())
-        pp = ParameterProxy(code)
-        return name, pp
+
+    if isinstance(lhs, parso.python.tree.BaseNode) and len(lhs.children) == 2:
+        obj1 = lhs.children[0]
+        obj2 = lhs.children[1]
+        if (
+            isinstance(obj1, parso.python.tree.Leaf)
+            and obj1.value == "self"
+            and isinstance(obj2, parso.python.tree.BaseNode)
+            and isinstance(obj2.children[1], parso.python.tree.Leaf)
+        ):
+            name = obj2.children[1].value
+            code = " ".join(rhs.get_code().strip().split())
+            pp = ParameterProxy(code)
+            return name, pp
+        else:
+            return None
     else:
         return None
 
 
-def qcodes_parameter_attr_getter(object: Any, name: str, *default: Any) -> Any:
+def qcodes_parameter_attr_getter(object: Type[object], name: str, *default: Any) -> Any:
     if (
         inspect.isclass(object)
         and issubclass(object, InstrumentBase)
@@ -124,7 +137,7 @@ def qcodes_parameter_attr_getter(object: Any, name: str, *default: Any) -> Any:
         return safe_getattr(object, name, default)
 
 
-def setup(app):
+def setup(app: Any) -> Dict[str, Union[str, bool]]:
     """Called by sphinx to setup the extension."""
     app.setup_extension("sphinx.ext.autodoc")  # Require autodoc extension
 
