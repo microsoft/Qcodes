@@ -52,7 +52,7 @@ def parse_init_function_from_str(
 
 def extract_statements_from_func_node(
     parso_func: parso.python.tree.Function,
-) -> Tuple[Any, ...]:
+) -> Tuple[parso.python.tree.ExprStmt, ...]:
     function_bodys = tuple(
         child
         for child in parso_func.children
