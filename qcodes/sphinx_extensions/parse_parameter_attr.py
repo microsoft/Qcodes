@@ -86,25 +86,6 @@ def eval_params_from_code(code: str, classname: str) -> Dict[str, ParameterProxy
     return param_dict
 
 
-def parse_string_or_node(stm):
-    skip = False
-    if isinstance(stm, parso.python.tree.PythonNode):
-        for child in stm.children:
-            if not isinstance(child, parso.python.tree.PythonNode):
-                # todo more robust parsing of recursive nodes
-                if child.value == "self":
-                    skip = True
-            if isinstance(child, parso.python.tree.PythonNode):
-                maybeskip = parse_string_or_node(child)
-                if maybeskip:
-                    skip = True
-    else:
-        if stm.value == "self":
-            skip = True
-
-    return skip
-
-
 def extract_code_as_repr(
     stm: parso.python.tree.ExprStmt,
 ) -> Optional[Tuple[str, ParameterProxy]]:
