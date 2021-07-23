@@ -1,7 +1,8 @@
 """Settings that are indirectly related to experiments."""
 
 from typing import Optional
-from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic_transaction
+from qcodes.dataset.sqlite.connection import ConnectionPlus
+from qcodes.dataset.sqlite.queries import get_last_experiment
 
 # The default experiment's exp_id. This changes to the exp_id of a created/
 # loaded experiment.
@@ -50,9 +51,7 @@ def get_default_experiment_id(conn: ConnectionPlus) -> Optional[int]:
     """
     exp_id = _get_latest_default_experiment_id()
     if exp_id is None:
-        query = "SELECT MAX(exp_id) FROM experiments"
-        c = atomic_transaction(conn, query)
-        exp_id = c.fetchall()[0][0]
+        exp_id = get_last_experiment(conn)
     if exp_id is None:
         raise ValueError("No experiments found."
                          " You can create one with:"
