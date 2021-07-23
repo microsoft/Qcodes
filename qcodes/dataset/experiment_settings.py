@@ -6,18 +6,18 @@ from qcodes.dataset.sqlite.queries import get_last_experiment
 
 # The default experiment's exp_id. This changes to the exp_id of a created/
 # loaded experiment.
-default_experiment: Optional[int] = None
+_default_experiment: Optional[int] = None
 
 
 def _set_default_experiment_id(exp_id: int) -> None:
     """
-    Sets the default_experiment to the exp_id of a created/ loaded experiment.
+    Sets the _default_experiment to the exp_id of a created/ loaded experiment.
 
     Args:
         exp_id: The exp_id of an experiment.
     """
-    global default_experiment
-    default_experiment = exp_id
+    global _default_experiment
+    _default_experiment = exp_id
 
 
 def _get_latest_default_experiment_id() -> Optional[int]:
@@ -27,16 +27,16 @@ def _get_latest_default_experiment_id() -> Optional[int]:
     Returns:
         The latest created/ loaded experiment's exp_id.
     """
-    global default_experiment
-    return default_experiment
+    global _default_experiment
+    return _default_experiment
 
 
 def reset_default_experiment_id() -> None:
     """
-    Resets the default_experiment to None.
+    Resets the _default_experiment to None.
     """
-    global default_experiment
-    default_experiment = None
+    global _default_experiment
+    _default_experiment = None
 
 
 def get_default_experiment_id(conn: ConnectionPlus) -> Optional[int]:
