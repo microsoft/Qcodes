@@ -15,7 +15,7 @@ from qcodes.dataset.experiment_settings import (
     reset_default_experiment_id, get_default_experiment_id
 )
 from qcodes.dataset.measurements import Measurement
-from qcodes.dataset.sqlite.database import get_DB_location
+from qcodes.dataset.sqlite.database import conn_from_dbpath_or_conn, get_DB_location
 
 
 def assert_experiments_equal(exp, exp_2):
@@ -314,31 +314,35 @@ def test_load_last_experiment(empty_temp_db):
     assert last_exp.path_to_db == exp2.path_to_db
 
 
-@pytest.mark.usefixtures("empty_temp_db")
-def test_active_experiment(empty_temp_db_connection):
+def test_active_experiment(empty_temp_db):
+
+    conn = conn_from_dbpath_or_conn(conn=None, path_to_db=empty_temp_db)
     with pytest.raises(ValueError):
-        get_default_experiment_id(empty_temp_db_connection)
+        get_default_experiment_id(conn)
 
     exp_1 = load_or_create_experiment("test_exp", sample_name="no_sample")
-    assert get_default_experiment_id(empty_temp_db_connection) == exp_1.exp_id
+    assert get_default_experiment_id(conn) == exp_1.exp_id
 
     exp_2 = new_experiment("test_exp_2", sample_name="no_sample")
-    assert get_default_experiment_id(empty_temp_db_connection) == exp_2.exp_id
+    assert get_default_experiment_id(conn) == exp_2.exp_id
 
     exp_3 = load_experiment(1)
-    assert get_default_experiment_id(empty_temp_db_connection) == exp_1.exp_id
-    assert get_default_experiment_id(empty_temp_db_connection) == exp_3.exp_id
+    assert get_default_experiment_id(conn) == exp_1.exp_id
+    assert get_default_experiment_id(conn) == exp_3.exp_id
 
     exp_4 = new_experiment("test_exp_3", sample_name="no_sample")
 
     exp_5 = load_experiment_by_name("test_exp_2", sample="no_sample")
-    assert get_default_experiment_id(empty_temp_db_connection) == exp_2.exp_id
-    assert get_default_experiment_id(empty_temp_db_connection) == exp_5.exp_id
+    assert get_default_experiment_id(conn) == exp_2.exp_id
+    assert get_default_experiment_id(conn) == exp_5.exp_id
 
     exp_6 = load_last_experiment()
-    assert get_default_experiment_id(empty_temp_db_connection) == exp_4.exp_id
-    assert get_default_experiment_id(empty_temp_db_connection) == exp_6.exp_id
+    assert get_default_experiment_id(conn) == exp_4.exp_id
+    assert get_default_experiment_id(conn) == exp_6.exp_id
+
+    last_exp = new_experiment("last_exp", sample_name="no_sample")
+    exp_7 = load_experiment(3)
 
     reset_default_experiment_id()
-    with pytest.raises(ValueError):
-        get_default_experiment_id(empty_temp_db_connection)
+    assert get_default_experiment_id(conn) != exp_7.exp_id
+    assert get_default_experiment_id(conn) == last_exp.exp_id
