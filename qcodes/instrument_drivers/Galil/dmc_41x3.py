@@ -544,7 +544,7 @@ class Arm:
         self.controller = controller
         self.begin_position: Tuple[int, int, int]
         self.end_position: Tuple[int, int, int]
-        self._chip_plane_vector: Tuple[float, float, float]
+        self._chip_vector_begin_to_end: Tuple[float, float, float]
         self._orthogonal_vector: Tuple[float, float, float]
 
     def set_current_position_as_begin(self) -> None:
@@ -556,25 +556,42 @@ class Arm:
 
         pos = self.controller.absolute_position()
         self.end_position = (pos["A"], pos["B"], pos["C"])
-        self._chip_plane_vector = (self.end_position[0]-self.begin_position[0],
-                                   self.end_position[1]-self.begin_position[1],
-                                   self.end_position[2]-self.begin_position[2])
-
-        self._calculate_orthogonal_vector()
-
-    def _calculate_orthogonal_vector(self) -> None:
-
-        v1, v2, v3 = self._chip_plane_vector
-        x0, y0, z0 = self.begin_position
-
-        a = 1/v1 * (- v2*y0 - v3*z0)
-        b = 1/v2 * (- v1*x0 - v3*z0)
-        c = 1/v3 * (- v1*x0 - v2*y0)
-
-        self._orthogonal_vector = (a, b, c)
 
 
+    def set_third_point_on_chip_plane(self) -> None:
 
+        pos = self.controller.absolute_position()
+        self.third_point_on_chip = (pos["A"], pos["B"], pos["C"])
+
+        self._calculate_ortho_vector()
+
+    def _calculate_ortho_vector(self) -> None:
+
+        a = tuple(map(lambda i, j: i - j, self.third_point_on_chip, self.begin_position))
+        b = tuple(map(lambda i, j: i - j, self.end_position, self.begin_position))
+
+        n = np.cross(a, b)
+
+        norm_n = np.linalg.norm(n)
+
+        self._orthogonal_vector = tuple(80000 * n / norm_n)
+
+    def setup_motion_in_ab(self, a: int, b: int) -> None:
+        ab = self.controller.plane_ab
+        ab.activate()
+
+        ab.vector_speed(2000)
+        ab.vector_acceleration(50000)
+        ab.vector_deceleration(50000)
+        ab.vector_position(a, b)
+        ab.vector_seq_end()
+
+        self.controller.motor_a.servo_here()
+        self.controller.motor_b.servo_here()
+
+    def move_in_ab(self) -> None:
+        ab = self.controller.plane_ab
+        ab.begin_seq()
 
 
 
