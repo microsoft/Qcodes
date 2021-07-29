@@ -1,15 +1,18 @@
 """Settings that are indirectly related to experiments."""
 
-from typing import Optional
+from typing import Optional, Dict
+import warnings
+
 from qcodes.dataset.sqlite.connection import ConnectionPlus
 from qcodes.dataset.sqlite.queries import get_last_experiment
 
 # The default experiment's exp_id. This changes to the exp_id of a created/
-# loaded experiment.
-_default_experiment: Optional[int] = None
+# loaded experiment. The idea is to store experiment id only for a single
+# database path.
+_default_experiment: Optional[Dict[str, int]] = None
 
 
-def _set_default_experiment_id(exp_id: int) -> None:
+def _set_default_experiment_id(db_path: str, exp_id: int) -> None:
     """
     Sets the default experiment to the exp_id of a created/ loaded experiment.
 
@@ -17,7 +20,7 @@ def _set_default_experiment_id(exp_id: int) -> None:
         exp_id: The exp_id of an experiment.
     """
     global _default_experiment
-    _default_experiment = exp_id
+    _default_experiment = {db_path: exp_id}
 
 
 def _get_latest_default_experiment_id() -> Optional[int]:
@@ -28,7 +31,23 @@ def _get_latest_default_experiment_id() -> Optional[int]:
         The latest created/ loaded experiment's exp_id.
     """
     global _default_experiment
-    return _default_experiment
+
+    to_return: Optional[int] = None
+
+    if _default_experiment is None:
+        to_return = None
+    else:
+        default_experiments = tuple(_default_experiment.values())
+        if len(default_experiments) == 1:
+            to_return = default_experiments[0]
+        elif len(default_experiments) == 0:
+            _default_experiment = None
+            to_return = None
+        else:
+            warnings.warn(f"Unclear which default experiment to use {_default_experiment}, using None")
+            to_return = None
+
+    return to_return
 
 
 def reset_default_experiment_id() -> None:
