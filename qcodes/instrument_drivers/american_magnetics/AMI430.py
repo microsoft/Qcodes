@@ -19,10 +19,10 @@ from typing import (
 
 import numpy as np
 
-from qcodes import Instrument, InstrumentChannel, IPInstrument
+from qcodes import Instrument, InstrumentChannel, IPInstrument, Parameter
 from qcodes.math_utils.field_vector import FieldVector
 from qcodes.utils.deprecate import QCoDeSDeprecationWarning
-from qcodes.utils.validators import Anything, Bool, Ints, Numbers
+from qcodes.utils.validators import Anything, Bool, Enum, Ints, Numbers
 
 log = logging.getLogger(__name__)
 
@@ -724,6 +724,66 @@ class AMI430_3D(Instrument):
             vals=Bool()
         )
 
+        self.ramp_mode = Parameter(
+            name="ramp_mode",
+            instrument=self,
+            get_cmd=None,
+            set_cmd=None,
+            vals=Enum("default", "linear"),
+            initial_value="default",
+        )
+
+    def _get_measured_field_vector(self) -> FieldVector:
+        return FieldVector(
+            x=self._instrument_x.field(),
+            y=self._instrument_y.field(),
+            z=self._instrument_z.field(),
+        )
+
+    def ramp_linearly(self, setpoint: FieldVector, time: float) -> None:
+        if self.ramp_rate_units() != "s":
+            raise ValueError(
+                f"Support linear ramp only in seconds, current "
+                f"ramp rate units are {self.ramp_rate_units()}"
+            )
+
+        if self.field_units() != "T":
+            raise ValueError(
+                f"Support linear ramp only in Tesla, current "
+                f"field units are {self.field_units()}"
+            )
+
+        self.log.debug(
+            f"Linear ramp: setpoint {setpoint.repr_cartesian()} T " f"in {time} s"
+        )
+
+        self.ramp_mode("linear")
+
+        # calculate field ramps
+        start_field = self._get_measured_field_vector()
+        self.log.debug(f"Linear ramp: start {start_field.repr_cartesian()}")
+
+        delta_field = setpoint - start_field
+        self.log.debug(f"Linear ramp: delta {delta_field.repr_cartesian()}")
+
+        xyz = ("x", "y", "z")
+        instruments = (self._instrument_x, self._instrument_y, self._instrument_z)
+
+        instrument: AMI430
+        for component, instrument in zip(xyz, instruments):
+
+            component_value = delta_field.get_components(component)
+            component_rate = component_value / time
+            self.log.debug(
+                f"Linear ramp: new rate for {component} is " f"{component_rate} T/s"
+            )
+
+            instrument.ramp_rate.set_to(component_rate)
+
+        # launch the ramp
+
+        self.cartesian(setpoint.get_components(xyz))
+
     def _verify_safe_setpoint(
             self,
             setpoint_values: Tuple[float, float, float]
@@ -766,7 +826,41 @@ class AMI430_3D(Instrument):
 
         self.log.debug("Field values OK, proceeding")
 
-        self._perform_default_ramp(values)
+        if self.ramp_mode() == "linear":
+            self._perform_linear_ramp(values)
+        else:
+            self._perform_default_ramp(values)
+
+    def _perform_linear_ramp(self, values: Tuple[float, float, float]) -> None:
+        axes = (self._instrument_x, self._instrument_y, self._instrument_z)
+
+        for axis_instrument, value in zip(axes, values):
+            current_actual = axis_instrument.field()
+
+            # If the new set point is practically equal to the
+            # current one then do nothing
+            if np.isclose(value, current_actual, rtol=0, atol=1e-8):
+                self.log.debug(
+                    f"Linear ramp: {axis_instrument.short_name} is already "
+                    f"at target field {value} T ({current_actual} exactly)"
+                )
+                continue
+
+            self.log.debug(
+                f"Linear ramp: setting {axis_instrument.short_name} "
+                f"target field to {value} T"
+            )
+            axis_instrument.set_field(value, perform_safety_check=False, block=False)
+
+        if self.block_during_ramp() is True:
+            self.log.debug(f"Linear ramp: blocking until ramp is finished")
+
+            while all(
+                axis_instrument.ramping_state() == "ramping" for axis_instrument in axes
+            ):
+                self._sleep(self.ramping_state_check_interval())
+
+        self.log.debug(f"Linear ramp: returning from the ramp call")
 
     def _perform_default_ramp(self, values: Tuple[float, float, float]) -> None:
         operators: Tuple[Callable[[Any, Any], bool], ...] = (np.less, np.greater)
