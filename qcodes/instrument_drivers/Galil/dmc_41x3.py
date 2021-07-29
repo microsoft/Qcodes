@@ -82,6 +82,12 @@ class GalilMotionController(Instrument):
         """
         self.g.GClose()
 
+    def motion_complete(self, axes: str) -> None:
+        """
+        Wait for motion to complete for given axes
+        """
+        self.g.GMotionComplete(axes)
+
 
 class VectorMode(InstrumentChannel):
     """
@@ -542,14 +548,30 @@ class Arm:
                  controller: DMC4133Controller) -> None:
 
         self.controller = controller
+
+        # initialization
         self.begin_position: Tuple[int, int, int]
         self.end_position: Tuple[int, int, int]
         self.third_point_on_chip: Tuple[int, int, int]
-        self._a: np.ndarray
-        self._b: np.ndarray
+
+        # motion directions
+        self._a: np.ndarray     # third pt - begin
+        self._b: np.ndarray     # end - begin
+        self._c: np.ndarray     # third pt - end
         self._n: np.ndarray
         self.norm_a: float
         self.norm_b: float
+        self.norm_c: float
+
+        # current vars
+        self.current_row: Optional[int] = None
+        self.current_pad: Optional[int] = None
+
+        # chip details
+        self.rows: int
+        self.pads: int
+        self.inter_row_dis: float
+        self.inter_pad_dis: float
 
     def set_current_position_as_begin(self) -> None:
 
@@ -578,6 +600,10 @@ class Arm:
         b = np.array(tuple(map(lambda i, j: i - j, self.end_position, self.begin_position)))
         self.norm_b = np.linalg.norm(b)
         self._b = b / self.norm_b
+
+        c = np.array(tuple(map(lambda i, j: i - j, self.third_point_on_chip, self.end_position)))
+        self.norm_c = np.linalg.norm(c)
+        self._c = c / self.norm_c
 
         n = np.cross(self._a, self._b)
         norm_n = np.linalg.norm(n)
@@ -628,9 +654,42 @@ class Arm:
         motion_vec = -1*self._a
         self._setup_motion(rel_vec=motion_vec, d=self.norm_a, speed=3000)
         self._move()
+        self.current_row = 1
+        self.current_pad = 1
 
     def put_down(self) -> None:
 
         motion_vec = -1*self._n
         self._setup_motion(rel_vec=motion_vec, d=60000, speed=3000)
+        self._move()
+
+    def move_to_next_row_pad(self) -> None:
+
+        if self.current_row is None or self.current_pad is None:
+            raise RuntimeError("Current position unknown.")
+
+        if self.current_row == self.rows:
+            raise RuntimeError("Cannot move further")
+
+        self.current_row = self.current_row + 1
+
+        self._setup_motion(rel_vec=self._b, d=self.inter_row_dis, speed=3000)
+        self._move()
+
+    def move_to_begin_row_pad(self) -> None:
+
+        if self.current_row is None or self.current_pad is None:
+            raise RuntimeError("Current position unknown.")
+
+        if self.current_pad == self.pads:
+            raise RuntimeError("Cannot move further")
+
+        self.current_row = 1
+        self.current_pad = self.current_pad + 1
+
+        motion_vec = -1 * self._b * self.norm_b + self._c * self.inter_pad_dis
+        norm = np.linalg.norm(motion_vec)
+        motion_vec_cap = motion_vec / norm
+
+        self._setup_motion(rel_vec=motion_vec_cap, d=norm, speed=3000)
         self._move()
