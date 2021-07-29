@@ -765,6 +765,10 @@ class AMI430_3D(Instrument):
         # Now that we know we can proceed, call the individual instruments
 
         self.log.debug("Field values OK, proceeding")
+
+        self._perform_default_ramp(values)
+
+    def _perform_default_ramp(self, values: Tuple[float, float, float]) -> None:
         operators: Tuple[Callable[[Any, Any], bool], ...] = (np.less, np.greater)
         for operator in operators:
             # First ramp the coils that are decreasing in field strength.
