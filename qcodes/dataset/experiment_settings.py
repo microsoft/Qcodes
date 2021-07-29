@@ -11,7 +11,7 @@ _default_experiment: Optional[int] = None
 
 def _set_default_experiment_id(exp_id: int) -> None:
     """
-    Sets the default_experiment to the exp_id of a created/ loaded experiment.
+    Sets the default experiment to the exp_id of a created/ loaded experiment.
 
     Args:
         exp_id: The exp_id of an experiment.
@@ -33,7 +33,7 @@ def _get_latest_default_experiment_id() -> Optional[int]:
 
 def reset_default_experiment_id() -> None:
     """
-    Resets the default_experiment to None.
+    Resets the default experiment to None.
     """
     global _default_experiment
     _default_experiment = None
