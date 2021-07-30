@@ -741,9 +741,9 @@ class AMI430_3D(Instrument):
         )
 
     def ramp_linearly(self, setpoint: FieldVector, time: float) -> None:
-        if self.ramp_rate_units() != "s":
+        if self.ramp_rate_units() != "minutes":
             raise ValueError(
-                f"Support linear ramp only in seconds, current "
+                f"Support linear ramp only in minutes, current "
                 f"ramp rate units are {self.ramp_rate_units()}"
             )
 
@@ -754,7 +754,7 @@ class AMI430_3D(Instrument):
             )
 
         self.log.debug(
-            f"Linear ramp: setpoint {setpoint.repr_cartesian()} T " f"in {time} s"
+            f"Linear ramp: setpoint {setpoint.repr_cartesian()} T " f"in {time} minutes"
         )
 
         self.ramp_mode("linear")
@@ -775,7 +775,7 @@ class AMI430_3D(Instrument):
             component_value = delta_field.get_components(component)
             component_rate = abs(component_value) / time
             self.log.debug(
-                f"Linear ramp: new rate for {component} is " f"{component_rate} T/s"
+                f"Linear ramp: new rate for {component} is " f"{component_rate} T/min"
             )
 
             instrument.ramp_rate.set_to(component_rate)
