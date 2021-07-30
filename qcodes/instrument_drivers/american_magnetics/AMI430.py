@@ -784,7 +784,7 @@ class AMI430_3D(Instrument):
 
         # launch the ramp
 
-        self.cartesian(*setpoint.get_components(*xyz))
+        self.cartesian(setpoint.get_components(*xyz))
 
     def _verify_safe_setpoint(
             self,
