@@ -780,7 +780,7 @@ class AMI430_3D(Instrument):
                 f"Linear ramp: new rate for {component} is " f"{component_rate} T/min"
             )
 
-            instrument.ramp_rate.set_to(component_rate)
+            instrument.ramp_rate.set(component_rate)
 
         # launch the ramp
 
