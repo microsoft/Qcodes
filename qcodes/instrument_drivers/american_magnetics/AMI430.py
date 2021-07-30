@@ -741,17 +741,20 @@ class AMI430_3D(Instrument):
         )
 
     def ramp_linearly(self, setpoint: FieldVector, time: float) -> None:
-        if self.ramp_rate_units() != "minutes":
-            raise ValueError(
-                f"Support linear ramp only in minutes, current "
-                f"ramp rate units are {self.ramp_rate_units()}"
-            )
+        instruments = (self._instrument_x, self._instrument_y, self._instrument_z)
 
-        if self.field_units() != "T":
-            raise ValueError(
-                f"Support linear ramp only in Tesla, current "
-                f"field units are {self.field_units()}"
-            )
+        for instrument in instruments:
+            if instrument.ramp_rate_units() != "minutes":
+                raise ValueError(
+                    f"Support linear ramp only in minutes, current "
+                    f"ramp rate units are {self.ramp_rate_units()}"
+                )
+
+            if instrument.field_units() != "tesla":
+                raise ValueError(
+                    f"Support linear ramp only in tesla, current "
+                    f"field units are {self.field_units()}"
+                )
 
         self.log.debug(
             f"Linear ramp: setpoint {setpoint.repr_cartesian()} T " f"in {time} minutes"
@@ -767,7 +770,6 @@ class AMI430_3D(Instrument):
         self.log.debug(f"Linear ramp: delta {delta_field.repr_cartesian()}")
 
         xyz = ("x", "y", "z")
-        instruments = (self._instrument_x, self._instrument_y, self._instrument_z)
 
         instrument: AMI430
         for component, instrument in zip(xyz, instruments):
