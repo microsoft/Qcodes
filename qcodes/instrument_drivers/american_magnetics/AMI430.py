@@ -747,13 +747,15 @@ class AMI430_3D(Instrument):
             if instrument.ramp_rate_units() != "minutes":
                 raise ValueError(
                     f"Support linear ramp only in minutes, current "
-                    f"ramp rate units are {self.ramp_rate_units()}"
+                    f"ramp rate units are {instrument.ramp_rate_units()} on "
+                    f"{instrument.full_name}"
                 )
 
             if instrument.field_units() != "tesla":
                 raise ValueError(
                     f"Support linear ramp only in tesla, current "
-                    f"field units are {self.field_units()}"
+                    f"field units are {instrument.field_units()} on "
+                    f"{instrument.full_name}"
                 )
 
         self.log.debug(
