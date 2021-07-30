@@ -774,7 +774,7 @@ class AMI430_3D(Instrument):
         instrument: AMI430
         for component, instrument in zip(xyz, instruments):
 
-            component_value = delta_field.get_components(component)
+            component_value = delta_field.get_components(component)[0]
             component_rate = abs(component_value) / time
             self.log.debug(
                 f"Linear ramp: new rate for {component} is " f"{component_rate} T/min"
