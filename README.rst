@@ -1,4 +1,4 @@
-QCoDeS |PyPi| |DOCS| |PyPI python versions| |DOI|
+QCoDeS (JDSY Lab edit) |PyPi| |DOCS| |PyPI python versions| |DOI|
 =================================================
 |Build Status Github| |Build Status Github Docs| |Codacy badge|
 
