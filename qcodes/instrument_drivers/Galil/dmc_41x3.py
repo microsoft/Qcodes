@@ -620,6 +620,53 @@ class Arm:
         intercept = np.array(-1 * self._n * self.left_bottom_position)
         self._plane_eqn = np.append(self._n, intercept)
 
+    def move_motor_A_by(self, distance: float) -> None:
+        """Moves motor A by distance given in micro meters"""
+
+        a = self.controller.motor_a
+
+        d = self._convert_micro_meter_to_quadrature_counts(distance)
+
+        a.relative_position(d)
+        a.speed(2000)
+        a.acceleration(50000)
+        a.deceleration(50000)
+        a.servo_here()
+        a.begin()
+
+    def move_motor_B_by(self, distance: float) -> None:
+        """Moves motor B by distance given in micro meters"""
+
+        b = self.controller.motor_b
+
+        d = self._convert_micro_meter_to_quadrature_counts(distance)
+
+        b.relative_position(d)
+        b.speed(2000)
+        b.acceleration(50000)
+        b.deceleration(50000)
+        b.servo_here()
+        b.begin()
+
+    def move_motor_C_by(self, distance: float) -> None:
+        """Moves motor B by distance given in micro meters"""
+
+        c = self.controller.motor_c
+
+        d = self._convert_micro_meter_to_quadrature_counts(distance)
+
+        c.relative_position(d)
+        c.speed(2000)
+        c.acceleration(50000)
+        c.deceleration(50000)
+        c.servo_here()
+        c.begin()
+
+    def _convert_micro_meter_to_quadrature_counts(self, d: float) -> int:
+
+        return int(20*d)
+
+
     def _setup_motion(self, rel_vec: np.ndarray, d: float, speed: float) -> None:
 
         pos = self.controller.absolute_position()
