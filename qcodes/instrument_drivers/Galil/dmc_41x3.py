@@ -370,9 +370,12 @@ class Motor(InstrumentChannel):
 
     def begin(self) -> None:
         """
-        begins motion of the motor
+        begins motion of the motor and waits until motor stops moving
         """
         self.write(f"BG {self._axis}")
+
+        while int(float(self.ask(f"MG _BG{self._axis}"))):
+            pass
 
     def home(self) -> None:
         """
@@ -540,6 +543,9 @@ class DMC4133Controller(GalilMotionController):
         begin motion of all motors simultaneously
         """
         self.write("BG")
+
+        while int(float(self.ask("MG _BGA"))) or int(float(self.ask("MG _BGB"))) or int(float(self.ask("MG _BGC"))):
+            pass
 
 
 class Arm:
