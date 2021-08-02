@@ -569,6 +569,8 @@ class Arm:
         self.norm_b: float
         self.norm_c: float
 
+        self._plane_eqn: np.ndarray    # eqn of the chip plane
+
         # current vars
         self.current_row: Optional[int] = None
         self.current_pad: Optional[int] = None
@@ -615,11 +617,21 @@ class Arm:
         norm_n = np.linalg.norm(n)
         self._n = n / norm_n
 
+        intercept = np.array(-1 * self._n * self.left_bottom_position)
+        self._plane_eqn = np.append(self._n, intercept)
+
     def _setup_motion(self, rel_vec: np.ndarray, d: float, speed: float) -> None:
+
+        pos = self.controller.absolute_position()
 
         a = int(np.round(rel_vec[0] * d))
         b = int(np.round(rel_vec[1] * d))
         c = int(np.round(rel_vec[2] * d))
+
+        target = np.array(pos["A"] + a, pos["B"] + b, pos["C"] + c, 1)
+
+        if np.dot(self._plane_eqn, target) < 0:
+            raise RuntimeError(f"Cannot move to {target[:2]}. Target location is below chip plane.")
 
         sp_a = int(np.round(abs(rel_vec[0]) * speed))
         sp_b = int(np.round(abs(rel_vec[1]) * speed))
