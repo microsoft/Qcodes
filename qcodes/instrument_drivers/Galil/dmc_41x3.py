@@ -556,14 +556,14 @@ class Arm:
         self.controller = controller
 
         # initialization
-        self.begin_position: Tuple[int, int, int]
-        self.end_position: Tuple[int, int, int]
-        self.third_point_on_chip: Tuple[int, int, int]
+        self.left_bottom_position: Tuple[int, int, int]
+        self.left_top_position: Tuple[int, int, int]
+        self.right_top_position: Tuple[int, int, int]
 
         # motion directions
-        self._a: np.ndarray     # third pt - begin
-        self._b: np.ndarray     # end - begin
-        self._c: np.ndarray     # third pt - end
+        self._a: np.ndarray     # right_top - left_bottom
+        self._b: np.ndarray     # left_top - left_bottom
+        self._c: np.ndarray     # right_top - left_top
         self._n: np.ndarray
         self.norm_a: float
         self.norm_b: float
@@ -579,35 +579,35 @@ class Arm:
         self.inter_row_dis: float
         self.inter_pad_dis: float
 
-    def set_current_position_as_begin(self) -> None:
+    def set_left_bottom_position(self) -> None:
 
         pos = self.controller.absolute_position()
-        self.begin_position = (pos["A"], pos["B"], pos["C"])
+        self.left_bottom_position = (pos["A"], pos["B"], pos["C"])
 
-    def set_current_position_as_end(self) -> None:
-
-        pos = self.controller.absolute_position()
-        self.end_position = (pos["A"], pos["B"], pos["C"])
-
-
-    def set_third_point_on_chip_plane(self) -> None:
+    def set_left_top_position(self) -> None:
 
         pos = self.controller.absolute_position()
-        self.third_point_on_chip = (pos["A"], pos["B"], pos["C"])
+        self.left_top_position = (pos["A"], pos["B"], pos["C"])
+
+
+    def set_right_top_position(self) -> None:
+
+        pos = self.controller.absolute_position()
+        self.right_top_position = (pos["A"], pos["B"], pos["C"])
 
         self._calculate_ortho_vector()
 
     def _calculate_ortho_vector(self) -> None:
 
-        a = np.array(tuple(map(lambda i, j: i - j, self.third_point_on_chip, self.begin_position)))
+        a = np.array(tuple(map(lambda i, j: i - j, self.right_top_position, self.left_bottom_position)))
         self.norm_a = np.linalg.norm(a)
         self._a = a / self.norm_a
 
-        b = np.array(tuple(map(lambda i, j: i - j, self.end_position, self.begin_position)))
+        b = np.array(tuple(map(lambda i, j: i - j, self.left_top_position, self.left_bottom_position)))
         self.norm_b = np.linalg.norm(b)
         self._b = b / self.norm_b
 
-        c = np.array(tuple(map(lambda i, j: i - j, self.third_point_on_chip, self.end_position)))
+        c = np.array(tuple(map(lambda i, j: i - j, self.right_top_position, self.left_top_position)))
         self.norm_c = np.linalg.norm(c)
         self._c = c / self.norm_c
 
@@ -650,12 +650,20 @@ class Arm:
     def _move(self) -> None:
         self.controller.begin_motors()
 
-    def pick_up(self) -> None:
+    def _pick_up(self) -> None:
 
         self._setup_motion(rel_vec=self._n, d=60000, speed=3000)
         self._move()
 
-    def move_towards_begin(self) -> None:
+    def _put_down(self) -> None:
+
+        motion_vec = -1*self._n
+        self._setup_motion(rel_vec=motion_vec, d=60000, speed=3000)
+        self._move()
+
+    def move_towards_left_bottom_position(self) -> None:
+
+        self._pick_up()
 
         motion_vec = -1*self._a
         self._setup_motion(rel_vec=motion_vec, d=self.norm_a, speed=3000)
@@ -663,11 +671,7 @@ class Arm:
         self.current_row = 1
         self.current_pad = 1
 
-    def put_down(self) -> None:
-
-        motion_vec = -1*self._n
-        self._setup_motion(rel_vec=motion_vec, d=60000, speed=3000)
-        self._move()
+        self._put_down()
 
     def move_to_next_row_pad(self) -> None:
 
