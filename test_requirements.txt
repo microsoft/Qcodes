@@ -37,7 +37,7 @@ stringparser==0.5
 toml==0.10.2
 typed-ast==1.4.3; python_version<'3.8'
 typing-extensions==3.10.0.0
-types_requests==2.25.1
+types_requests==2.25.2
 types-setuptools==57.0.0
 types-tabulate==0.1.1
 urllib3==1.26.6
