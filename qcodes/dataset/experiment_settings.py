@@ -3,49 +3,58 @@
 from typing import Optional, Dict
 import warnings
 
-from qcodes.dataset.sqlite.connection import ConnectionPlus
+from qcodes.dataset.sqlite.connection import ConnectionPlus, path_to_dbfile
 from qcodes.dataset.sqlite.queries import get_last_experiment
+import qcodes
 
-# The default experiment's exp_id. This changes to the exp_id of a created/
-# loaded experiment. The idea is to store experiment id only for a single
-# database path.
+# The default experiment. This changes to the exp_id of a created/
+# loaded experiment. The idea is to store exp_id only for a single
+# db_path.
 _default_experiment: Optional[Dict[str, int]] = None
 
 
 def _set_default_experiment_id(db_path: str, exp_id: int) -> None:
     """
-    Sets the default experiment to the exp_id of a created/ loaded experiment.
+    Sets the default experiment with the exp_id of a created/ loaded
+    experiment for the database that this experiment belongs to.
 
     Args:
-        exp_id: The exp_id of an experiment.
+        db_path: The database that a created/ loaded experiment belongs to.
+        exp_id: The exp_id of a created/ loaded experiment.
     """
     global _default_experiment
     _default_experiment = {db_path: exp_id}
 
 
-def _get_latest_default_experiment_id() -> Optional[int]:
+def _get_latest_default_experiment_id(db_path: str) -> Optional[int]:
     """
-    Gets the lastest created or loaded experiment's exp_id.
+    Gets the lastest created or loaded experiment's exp_id. It makes sure that
+    the supplied db_path to match with the db_path of the default experiment
+    and returns the exp_id of that experiment. If there is no match, a warning
+    will be raised and the default_experiment will be reset.
+
+    Args:
+        db_path: Database path.
 
     Returns:
         The latest created/ loaded experiment's exp_id.
     """
     global _default_experiment
-
     to_return: Optional[int] = None
 
-    if _default_experiment is None:
-        to_return = None
-    else:
-        default_experiments = tuple(_default_experiment.values())
-        if len(default_experiments) == 1:
-            to_return = default_experiments[0]
-        elif len(default_experiments) == 0:
-            _default_experiment = None
-            to_return = None
+    if _default_experiment is not None:
+        db_id = [(db, id) for db, id in _default_experiment.items()]
+        if db_id[0][0] == db_path:
+            to_return = db_id[0][1]
         else:
-            warnings.warn(f"Unclear which default experiment to use {_default_experiment}, using None")
-            to_return = None
+            warnings.warn(f"Connected db_path {db_path} does not match with "
+                          f"the default experiment's db_path {db_id[0][0]}. "
+                          f"Reseting default experiment, i.e., latest exp_id "
+                          f"of databsae {qcodes.config['core']['db_location']}"
+                          f" will be used as the default experiment, unless "
+                          f"you change this default by load/ create another "
+                          f"experiment.")
+            reset_default_experiment_id()
 
     return to_return
 
@@ -68,7 +77,8 @@ def get_default_experiment_id(conn: ConnectionPlus) -> Optional[int]:
     Returns:
         exp_id of the default experiment.
     """
-    exp_id = _get_latest_default_experiment_id()
+    db_path = path_to_dbfile(conn)
+    exp_id = _get_latest_default_experiment_id(db_path)
     if exp_id is None:
         exp_id = get_last_experiment(conn)
     if exp_id is None:
