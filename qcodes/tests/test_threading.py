@@ -85,5 +85,5 @@ def test_thread_pool_params_caller(dummy_1, dummy_2):
         dummy_2.voltage_1,
         dummy_2.voltage_2,
     )
-    with ThreadPoolParamsCaller(params) as pool_caller:
+    with ThreadPoolParamsCaller(*params) as pool_caller:
         _ = pool_caller()

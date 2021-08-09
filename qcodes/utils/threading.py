@@ -209,9 +209,7 @@ def process_params_meas(
 
 
 class ThreadPoolParamsCaller:
-    def __init__(
-        self, param_meas: Sequence[ParamMeasT], *, max_workers: Optional[int] = None
-    ):
+    def __init__(self, *param_meas: ParamMeasT, max_workers: Optional[int] = None):
         self._param_callers = tuple(
             _ParamCaller(*param_list)
             for param_list in _instrument_to_param(param_meas).values()
