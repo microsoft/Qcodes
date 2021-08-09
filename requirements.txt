@@ -72,7 +72,7 @@ rsa~=4.7
 ruamel.yaml==0.17.10
 ruamel.yaml.clib~=0.2.6
 schema~=0.7.4
-Send2Trash~=1.7.1
+Send2Trash~=1.8.0
 six~=1.16.0
 slack-sdk~=3.8.0
 tabulate~=0.8.9

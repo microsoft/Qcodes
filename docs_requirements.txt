@@ -61,7 +61,7 @@ qtconsole==5.1.1
 QtPy==1.9.0
 requests==2.26.0
 scipy==1.7.1
-Send2Trash==1.7.1
+Send2Trash==1.8.0
 six==1.16.0
 snowballstemmer==2.1.0
 Sphinx==4.1.2
