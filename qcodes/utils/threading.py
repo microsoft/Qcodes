@@ -209,29 +209,6 @@ def process_params_meas(
     return _call_params(param_meas)
 
 
-_thread_pool = concurrent.futures.ThreadPoolExecutor(
-    max_workers=min(32, (os.cpu_count() or 1) + 4),
-    thread_name_prefix="call_params",
-)
-
-
-def call_params_in_thread_pool(param_meas: Sequence[ParamMeasT]) -> OutType:
-    inst_param_mapping = _instrument_to_param(param_meas)
-    executors = tuple(
-        _ParamCaller(*param_list)
-        for param_list in inst_param_mapping.values()
-    )
-
-    output: OutType = list(itertools.chain.from_iterable(
-        future.result()
-        for future in concurrent.futures.as_completed(
-            _thread_pool.submit(executor) for executor in executors
-        )
-    ))
-
-    return output
-
-
 class ThreadPoolParamsCaller:
     def __init__(self, param_meas: Sequence[ParamMeasT]):
         self._param_callers = tuple(
