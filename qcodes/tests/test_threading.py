@@ -85,5 +85,22 @@ def test_thread_pool_params_caller(dummy_1, dummy_2):
         dummy_2.voltage_1,
         dummy_2.voltage_2,
     )
+
     with ThreadPoolParamsCaller(*params) as pool_caller:
-        _ = pool_caller()
+        output1 = pool_caller()
+        output2 = pool_caller()
+
+    for output in (output1, output2):
+        params_per_thread_id = defaultdict(set)
+        for param, thread_id in output:
+            assert thread_id is not None
+            params_per_thread_id[thread_id].add(param)
+        assert len(params_per_thread_id) == 2
+
+        expected_params_per_thread = {
+            frozenset([dummy_1.voltage_1, dummy_1.voltage_2]),
+            frozenset([dummy_2.voltage_1, dummy_2.voltage_2]),
+        }
+        assert {
+            frozenset(value) for value in params_per_thread_id.values()
+        } == expected_params_per_thread
