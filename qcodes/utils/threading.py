@@ -131,7 +131,7 @@ class _ParamCaller:
 
     def __repr__(self) -> str:
         names = tuple(param.full_name for param in self._parameters)
-        return f"ParamCaller of {names}"
+        return f"ParamCaller of {','.join(names)}"
 
 
 def _instrument_to_param(
