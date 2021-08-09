@@ -721,8 +721,17 @@ def dond(
         sweep.param.post_delay = sweep.delay
         params_set.append(sweep.param)
 
+    if use_threads is None:
+        use_threads = config.dataset.use_threads
+
+    params_meas_caller = (
+        ThreadPoolParamsCaller(*params_meas)
+        if use_threads
+        else SequentialParamsCaller(*params_meas)
+    )
+
     try:
-        with _catch_keyboard_interrupts() as interrupted, meas.run() as datasaver:
+        with _catch_keyboard_interrupts() as interrupted, meas.run() as datasaver, params_meas_caller as call_params_meas:
             dataset = datasaver.dataset
             additional_setpoints_data = process_params_meas(additional_setpoints)
             for setpoints in tqdm(nested_setpoints, disable=not show_progress):
@@ -733,7 +742,7 @@ def dond(
                     param_set_list.append((setpoint_param, setpoint))
                 datasaver.add_result(
                     *param_set_list,
-                    *process_params_meas(params_meas, use_threads=use_threads),
+                    *call_params_meas(),
                     *additional_setpoints_data,
                 )
     finally:
