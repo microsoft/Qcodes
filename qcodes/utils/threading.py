@@ -8,6 +8,7 @@ import itertools
 import logging
 import threading
 from collections import defaultdict
+from functools import partial
 from types import TracebackType
 from typing import (
     Any,
@@ -21,6 +22,8 @@ from typing import (
     TypeVar,
     Union,
 )
+
+from typing_extensions import Protocol
 
 from qcodes import config
 from qcodes.dataset.measurements import res_type
@@ -208,7 +211,36 @@ def process_params_meas(
     return _call_params(param_meas)
 
 
-class ThreadPoolParamsCaller:
+class _ParamsCallerProtocol(Protocol):
+    def __enter__(self) -> Callable[[], OutType]:
+        pass
+
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> None:
+        pass
+
+
+class SequentialParamsCaller(_ParamsCallerProtocol):
+    def __init__(self, *param_meas: ParamMeasT):
+        self._param_meas = tuple(param_meas)
+
+    def __enter__(self) -> Callable[[], OutType]:
+        return partial(_call_params, self._param_meas)
+
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> None:
+        return None
+
+
+class ThreadPoolParamsCaller(_ParamsCallerProtocol):
     def __init__(self, *param_meas: ParamMeasT, max_workers: Optional[int] = None):
         self._param_callers = tuple(
             _ParamCaller(*param_list)
