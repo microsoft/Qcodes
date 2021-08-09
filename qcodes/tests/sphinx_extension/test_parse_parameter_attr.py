@@ -26,10 +26,10 @@ class DummyTestClass(InstrumentBase):
 
 def test_extract_class_attr():
     a = safe_getattr(DummyTestClass, "myattr")
-    assert a == "SomeAttribute"
+    assert a == "ClassAttribute"
 
     b = qcodes_parameter_attr_getter(DummyTestClass, "myattr")
-    assert b == "SomeAttribute"
+    assert b == "ClassAttribute"
 
 
 def test_extract_instance_attr():
