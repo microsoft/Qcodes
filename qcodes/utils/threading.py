@@ -266,6 +266,7 @@ class ThreadPoolParamsCaller(_ParamsCallerProtocol):
             the number of worker threads will be equal to the number of
             unique "underlying instruments"
     """
+
     def __init__(self, *param_meas: ParamMeasT, max_workers: Optional[int] = None):
         self._param_callers = tuple(
             _ParamCaller(*param_list)
@@ -289,13 +290,15 @@ class ThreadPoolParamsCaller(_ParamsCallerProtocol):
         """
         Call parameters in the thread pool and return `(param, value)` tuples.
         """
-        output: OutType = list(itertools.chain.from_iterable(
-            future.result()
-            for future in concurrent.futures.as_completed(
-                self._thread_pool.submit(param_caller)
-                for param_caller in self._param_callers
+        output: OutType = list(
+            itertools.chain.from_iterable(
+                future.result()
+                for future in concurrent.futures.as_completed(
+                    self._thread_pool.submit(param_caller)
+                    for param_caller in self._param_callers
+                )
             )
-        ))
+        )
 
         return output
 
