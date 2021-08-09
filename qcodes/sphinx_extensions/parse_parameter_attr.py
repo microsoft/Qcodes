@@ -131,9 +131,9 @@ def qcodes_parameter_attr_getter(
         and not name.startswith("_")
     ):
         try:
-            return safe_getattr(object_to_document_attr_on, name)
-        except AttributeError:
-            print(f"Parsing attribute {name} on {object_to_document_attr_on}")
+            attr = safe_getattr(object_to_document_attr_on, name)
+        except AttributeError as e:
+            print(f"Parsing attribute {name} on {object_to_document_attr_on} after {e}")
             obj_name = object_to_document_attr_on.__name__
             with open(
                 inspect.getfile(object_to_document_attr_on), encoding="utf8"
@@ -141,13 +141,13 @@ def qcodes_parameter_attr_getter(
                 code = file.read()
             param_dict = eval_params_from_code(code, obj_name)
             if param_dict.get(name) is not None:
-                return param_dict[name]
+                attr = param_dict[name]
             else:
                 print("fall back to default")
-                return safe_getattr(object_to_document_attr_on, name, default)
+                attr = safe_getattr(object_to_document_attr_on, name, default)
     else:
-
-        return safe_getattr(object_to_document_attr_on, name, default)
+        attr = safe_getattr(object_to_document_attr_on, name, default)
+    return attr
 
 
 def setup(app: Any) -> Dict[str, Union[str, bool]]:
