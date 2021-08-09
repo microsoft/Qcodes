@@ -414,7 +414,16 @@ def do2d(
     param_set1.post_delay = delay1
     param_set2.post_delay = delay2
 
-    with _catch_keyboard_interrupts() as interrupted, meas.run() as datasaver:
+    if use_threads is None:
+        use_threads = config.dataset.use_threads
+
+    param_meas_caller = (
+        ThreadPoolParamsCaller(*param_meas)
+        if use_threads
+        else SequentialParamsCaller(*param_meas)
+    )
+
+    with _catch_keyboard_interrupts() as interrupted, meas.run() as datasaver, param_meas_caller as call_params_meas:
         dataset = datasaver.dataset
         additional_setpoints_data = process_params_meas(additional_setpoints)
         setpoints1 = np.linspace(start1, stop1, num_points1)
@@ -445,7 +454,7 @@ def do2d(
                 datasaver.add_result(
                     (param_set1, set_point1),
                     (param_set2, set_point2),
-                    *process_params_meas(param_meas, use_threads=use_threads),
+                    *call_params_meas(),
                     *additional_setpoints_data
                 )
 
