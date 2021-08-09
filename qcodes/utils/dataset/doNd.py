@@ -17,7 +17,11 @@ from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.plotting import plot_dataset
 from qcodes.instrument.parameter import _BaseParameter
-from qcodes.utils.threading import process_params_meas
+from qcodes.utils.threading import (
+    SequentialParamsCaller,
+    ThreadPoolParamsCaller,
+    process_params_meas,
+)
 
 ActionsT = Sequence[Callable[[], None]]
 
@@ -254,10 +258,19 @@ def do1d(
     original_delay = param_set.post_delay
     param_set.post_delay = delay
 
+    if use_threads is None:
+        use_threads = config.dataset.use_threads
+
+    param_meas_caller = (
+        ThreadPoolParamsCaller(*param_meas)
+        if use_threads
+        else SequentialParamsCaller(*param_meas)
+    )
+
     # do1D enforces a simple relationship between measured parameters
     # and set parameters. For anything more complicated this should be
     # reimplemented from scratch
-    with _catch_keyboard_interrupts() as interrupted, meas.run() as datasaver:
+    with _catch_keyboard_interrupts() as interrupted, meas.run() as datasaver, param_meas_caller as call_params_meas:
         dataset = datasaver.dataset
         additional_setpoints_data = process_params_meas(additional_setpoints)
         setpoints = np.linspace(start, stop, num_points)
@@ -270,9 +283,7 @@ def do1d(
         for set_point in tqdm(setpoints, disable=not show_progress):
             param_set.set(set_point)
             datasaver.add_result(
-                (param_set, set_point),
-                *process_params_meas(param_meas, use_threads=use_threads),
-                *additional_setpoints_data
+                (param_set, set_point), *call_params_meas(), *additional_setpoints_data
             )
 
     param_set.post_delay = original_delay
