@@ -2,9 +2,12 @@ import inspect
 from typing import Any, Dict, Optional, Tuple, Type, Union
 
 import parso
+from sphinx.util import logging
 from sphinx.util.inspect import safe_getattr
 
 from qcodes.instrument.base import InstrumentBase
+
+LOGGER = logging.getLogger(__name__)
 
 
 class ParameterProxy:
@@ -34,7 +37,8 @@ def parse_init_function_from_str(
         if isinstance(child, parso.python.tree.Class) and child.name.value == classname
     )
     if len(classes) != 1:
-        print(f"Could not find exactly one class for {classname}")
+
+        LOGGER.warning(f"Could not find exactly one class for {classname}")
         return None
     assert len(classes) == 1
     myclass = classes[0]
@@ -44,7 +48,7 @@ def parse_init_function_from_str(
         if isinstance(child, parso.python.tree.PythonNode)
     )
     if len(nodes) != 1:
-        print(f"Could not find a single node from {classname}")
+        LOGGER.warning(f"Could not find a single node from {classname}")
         return None
     node = nodes[0]
     init_funcs = tuple(
@@ -54,7 +58,9 @@ def parse_init_function_from_str(
         and child.name.value == "__init__"
     )
     if len(init_funcs) != 1:
-        print(f"Did not find an init func or found more than one from {init_funcs}")
+        LOGGER.warning(
+            f"Did not find an init func or found more than one from {init_funcs}"
+        )
         return None
     return init_funcs[0]
 
@@ -133,7 +139,7 @@ def qcodes_parameter_attr_getter(
         try:
             attr = safe_getattr(object_to_document_attr_on, name)
         except AttributeError as e:
-            print(f"Parsing attribute {name} on {object_to_document_attr_on} after {e}")
+            LOGGER.debug(f"Parsing attribute {name} on {object_to_document_attr_on}")
             obj_name = object_to_document_attr_on.__name__
             with open(
                 inspect.getfile(object_to_document_attr_on), encoding="utf8"
@@ -143,7 +149,9 @@ def qcodes_parameter_attr_getter(
             if param_dict.get(name) is not None:
                 attr = param_dict[name]
             else:
-                print("fall back to default")
+                LOGGER.debug(
+                    f"fall back to default for {name} on {object_to_document_attr_on}"
+                )
                 attr = safe_getattr(object_to_document_attr_on, name, default)
     else:
         attr = safe_getattr(object_to_document_attr_on, name, default)
