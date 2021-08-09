@@ -219,9 +219,10 @@ class ThreadPoolParamsCaller:
         max_worker_threads = min(
             len(self._param_callers), 32, (os.cpu_count() or 1) + 4
         )
-        thread_name_prefix = "params_call" + "".join(
-            "__" + repr(pc).replace(" ", "_")
-            for pc in self._param_callers
+        thread_name_prefix = (
+            self.__class__.__name__
+            + ":"
+            + "".join(" " + repr(pc) for pc in self._param_callers)
         )
         self._thread_pool = concurrent.futures.ThreadPoolExecutor(
             max_workers=max_worker_threads,
