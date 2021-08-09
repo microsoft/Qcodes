@@ -8,10 +8,19 @@ from qcodes.instrument.base import InstrumentBase
 
 
 class ParameterProxy:
-    def __init__(self, repr: str):
-        self._repr = repr
+    """
+    An object that acts as a proxy for documenting containing
+    a repr that can be set from a string.
+
+    """
+
+    def __init__(self, repr_str: str):
+        self._repr = repr_str
 
     def __repr__(self) -> str:
+        """
+        A repr based on the string set in init.
+        """
         return self._repr
 
 
@@ -113,28 +122,32 @@ def extract_code_as_repr(
         return None
 
 
-def qcodes_parameter_attr_getter(object: Type[object], name: str, *default: Any) -> Any:
+def qcodes_parameter_attr_getter(
+    object_to_document_attr_on: Type[object], name: str, *default: Any
+) -> Any:
     if (
-        inspect.isclass(object)
-        and issubclass(object, InstrumentBase)
+        inspect.isclass(object_to_document_attr_on)
+        and issubclass(object_to_document_attr_on, InstrumentBase)
         and not name.startswith("_")
     ):
         try:
-            return safe_getattr(object, name)
+            return safe_getattr(object_to_document_attr_on, name)
         except AttributeError:
-            print(f"Parsing attribute {name} on {object}")
-            obj_name = object.__name__
-            with open(inspect.getfile(object), encoding="utf8") as file:
+            print(f"Parsing attribute {name} on {object_to_document_attr_on}")
+            obj_name = object_to_document_attr_on.__name__
+            with open(
+                inspect.getfile(object_to_document_attr_on), encoding="utf8"
+            ) as file:
                 code = file.read()
             param_dict = eval_params_from_code(code, obj_name)
             if param_dict.get(name) is not None:
                 return param_dict[name]
             else:
                 print("fall back to default")
-                return safe_getattr(object, name, default)
+                return safe_getattr(object_to_document_attr_on, name, default)
     else:
 
-        return safe_getattr(object, name, default)
+        return safe_getattr(object_to_document_attr_on, name, default)
 
 
 def setup(app: Any) -> Dict[str, Union[str, bool]]:
