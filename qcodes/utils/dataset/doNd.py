@@ -270,7 +270,7 @@ def do1d(
     # do1D enforces a simple relationship between measured parameters
     # and set parameters. For anything more complicated this should be
     # reimplemented from scratch
-    with _catch_keyboard_interrupts() as interrupted, meas.run() as datasaver, param_meas_caller as call_params_meas:
+    with _catch_keyboard_interrupts() as interrupted, meas.run() as datasaver, param_meas_caller as call_param_meas:
         dataset = datasaver.dataset
         additional_setpoints_data = process_params_meas(additional_setpoints)
         setpoints = np.linspace(start, stop, num_points)
@@ -283,7 +283,7 @@ def do1d(
         for set_point in tqdm(setpoints, disable=not show_progress):
             param_set.set(set_point)
             datasaver.add_result(
-                (param_set, set_point), *call_params_meas(), *additional_setpoints_data
+                (param_set, set_point), *call_param_meas(), *additional_setpoints_data
             )
 
     param_set.post_delay = original_delay
@@ -423,7 +423,7 @@ def do2d(
         else SequentialParamsCaller(*param_meas)
     )
 
-    with _catch_keyboard_interrupts() as interrupted, meas.run() as datasaver, param_meas_caller as call_params_meas:
+    with _catch_keyboard_interrupts() as interrupted, meas.run() as datasaver, param_meas_caller as call_param_meas:
         dataset = datasaver.dataset
         additional_setpoints_data = process_params_meas(additional_setpoints)
         setpoints1 = np.linspace(start1, stop1, num_points1)
@@ -454,7 +454,7 @@ def do2d(
                 datasaver.add_result(
                     (param_set1, set_point1),
                     (param_set2, set_point2),
-                    *call_params_meas(),
+                    *call_param_meas(),
                     *additional_setpoints_data
                 )
 
