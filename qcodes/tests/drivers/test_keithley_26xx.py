@@ -44,6 +44,8 @@ def test_smu_channels_and_their_parameters(driver):
         smu.volt(1.0)
         assert 1.0 == smu.volt()
 
+        assert smu.volt.measurement_status == MeasurementStatus.NORMAL
+
         smu.curr(1.0)
         assert 1.0 == smu.curr()
 
