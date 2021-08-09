@@ -6,7 +6,6 @@ import concurrent
 import concurrent.futures
 import itertools
 import logging
-import os
 import threading
 from collections import defaultdict
 from types import TracebackType
@@ -210,14 +209,16 @@ def process_params_meas(
 
 
 class ThreadPoolParamsCaller:
-    def __init__(self, param_meas: Sequence[ParamMeasT]):
+    def __init__(
+        self, param_meas: Sequence[ParamMeasT], *, max_workers: Optional[int] = None
+    ):
         self._param_callers = tuple(
             _ParamCaller(*param_list)
             for param_list in _instrument_to_param(param_meas).values()
         )
 
-        max_worker_threads = min(
-            len(self._param_callers), 32, (os.cpu_count() or 1) + 4
+        max_worker_threads = (
+            len(self._param_callers) if max_workers is None else max_workers
         )
         thread_name_prefix = (
             self.__class__.__name__
