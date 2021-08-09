@@ -218,25 +218,6 @@ class _ParameterWithStatus(Parameter):
     def measurement_status(self) -> Optional[MeasurementStatus]:
         return self._measurement_status
 
-    def snapshot_base(self, update: Optional[bool] = True,
-                      params_to_skip_update: Optional[Sequence[str]] = None
-                      ) -> Dict[Any, Any]:
-        snapshot = super().snapshot_base(
-            update=update, params_to_skip_update=params_to_skip_update
-        )
-
-        if self._snapshot_value:
-            snapshot["measurement_status"] = self.measurement_status
-
-        return snapshot
-
-
-
-class _MeasurementParseParameter(_ParameterWithStatus):
-
-    def __init__(self, *args: Any, **kwargs: Any):
-        super().__init__(*args, **kwargs)
-
     @staticmethod
     def _parse_response(data: str) -> Tuple[float, MeasurementStatus]:
 
@@ -251,8 +232,20 @@ class _MeasurementParseParameter(_ParameterWithStatus):
         else:
             return float(value), MeasurementStatus.NORMAL
 
+    def snapshot_base(self, update: Optional[bool] = True,
+                      params_to_skip_update: Optional[Sequence[str]] = None
+                      ) -> Dict[Any, Any]:
+        snapshot = super().snapshot_base(
+            update=update, params_to_skip_update=params_to_skip_update
+        )
 
-class _MeasurementCurrentParameter(_MeasurementParseParameter):
+        if self._snapshot_value:
+            snapshot["measurement_status"] = self.measurement_status
+
+        return snapshot
+
+
+class _MeasurementCurrentParameter(_ParameterWithStatus):
 
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
@@ -273,7 +266,7 @@ class _MeasurementCurrentParameter(_MeasurementParseParameter):
         return value
 
 
-class _MeasurementVoltageParameter(_MeasurementParseParameter):
+class _MeasurementVoltageParameter(_ParameterWithStatus):
 
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
