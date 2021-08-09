@@ -241,6 +241,31 @@ class SequentialParamsCaller(_ParamsCallerProtocol):
 
 
 class ThreadPoolParamsCaller(_ParamsCallerProtocol):
+    """
+    Context manager for calling given parameters in a thread pool.
+    Note that parameters that have the same underlying instrument will be
+    called in the same thread.
+
+    Usage:
+
+        .. code-block:: python
+
+           ...
+           with ThreadPoolParamsCaller(p1, p2, ...) as pool_caller:
+               ...
+               output = pool_caller()
+               ...
+               # Output can be passed directly into DataSaver.add_result:
+               # datasaver.add_result(*output)
+               ...
+           ...
+
+    Args:
+        param_meas: parameter or a callable without arguments
+        max_workers: number of worker threads to create in the pool; if None,
+            the number of worker threads will be equal to the number of
+            unique "underlying instruments"
+    """
     def __init__(self, *param_meas: ParamMeasT, max_workers: Optional[int] = None):
         self._param_callers = tuple(
             _ParamCaller(*param_list)
@@ -261,6 +286,9 @@ class ThreadPoolParamsCaller(_ParamsCallerProtocol):
         )
 
     def __call__(self) -> OutType:
+        """
+        Call parameters in the thread pool and return `(param, value)` tuples.
+        """
         output: OutType = list(itertools.chain.from_iterable(
             future.result()
             for future in concurrent.futures.as_completed(
