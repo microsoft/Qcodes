@@ -3,11 +3,11 @@ from sphinx.util.inspect import safe_getattr
 
 from qcodes.instrument.base import InstrumentBase
 from qcodes.instrument.visa import VisaInstrument
-from qcodes.instrument_drivers.ZI.ZIUHFLI import ZIUHFLI
 from qcodes.sphinx_extensions.parse_parameter_attr import (
     ParameterProxy,
     qcodes_parameter_attr_getter,
 )
+from qcodes.utils.deprecate import deprecate
 
 
 class DummyTestClass(InstrumentBase):
@@ -17,6 +17,23 @@ class DummyTestClass(InstrumentBase):
     A class attribute
     """
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.other_attr = "InstanceAttribute"
+        """
+        An instance attribute
+        """
+
+
+class DummyDeprecatedTestClass(InstrumentBase):
+
+    myattr: str = "ClassAttribute"
+    """
+    A class attribute
+    """
+
+    @deprecate("Deprecate to test that decorated init is handled correctly")
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -56,5 +73,5 @@ def test_visa_instr_get_attr():
 
 
 def test_zi():
-    scope = qcodes_parameter_attr_getter(ZIUHFLI, "scope")
+    scope = qcodes_parameter_attr_getter(DummyDeprecatedTestClass, "other_attr")
     # not currently correctly resolved since init is decorated
