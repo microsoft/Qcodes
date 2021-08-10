@@ -218,6 +218,20 @@ class _ParameterWithStatus(Parameter):
     def measurement_status(self) -> Optional[MeasurementStatus]:
         return self._measurement_status
 
+    @staticmethod
+    def _parse_response(data: str) -> Tuple[float, MeasurementStatus]:
+
+        value, meas_status = data.split('\t')
+
+        status_bits = [int(i) for i in bin(
+            int(float(meas_status))
+        ).replace('0b', '').zfill(16)[::-1]]
+
+        if status_bits[1]:
+            return float(value), MeasurementStatus.COMPLIANCE_ERROR
+        else:
+            return float(value), MeasurementStatus.NORMAL
+
     def snapshot_base(self, update: Optional[bool] = True,
                       params_to_skip_update: Optional[Sequence[str]] = None
                       ) -> Dict[Any, Any]:
@@ -233,23 +247,6 @@ class _ParameterWithStatus(Parameter):
 
 class _MeasurementCurrentParameter(_ParameterWithStatus):
 
-    def __init__(self, *args: Any, **kwargs: Any):
-        super().__init__(*args, **kwargs)
-
-    @staticmethod
-    def _parse_response(data: str) -> Tuple[float, MeasurementStatus]:
-
-        value, meas_status = data.split('\t')
-
-        status_bits = [int(i) for i in bin(
-            int(float(meas_status))
-        ).replace('0b', '').zfill(16)[::-1]]
-
-        if status_bits[1]:
-            return float(value), MeasurementStatus.COMPLIANCE_ERROR
-        else:
-            return float(value), MeasurementStatus.NORMAL
-
     def get_raw(self) -> ParamRawDataType:
         assert isinstance(self.instrument, KeithleyChannel)
         assert isinstance(self.root_instrument, Keithley_2600)
@@ -258,6 +255,24 @@ class _MeasurementCurrentParameter(_ParameterWithStatus):
         channel = self.instrument.channel
 
         data = smu.ask(f'{channel}.measure.i(), '
+                       f'status.measurement.instrument.{channel}.condition')
+        value, status = self._parse_response(data)
+
+        self._measurement_status = status
+
+        return value
+
+
+class _MeasurementVoltageParameter(_ParameterWithStatus):
+
+    def get_raw(self) -> ParamRawDataType:
+        assert isinstance(self.instrument, KeithleyChannel)
+        assert isinstance(self.root_instrument, Keithley_2600)
+
+        smu = self.instrument
+        channel = self.instrument.channel
+
+        data = smu.ask(f'{channel}.measure.v(), '
                        f'status.measurement.instrument.{channel}.condition')
         value, status = self._parse_response(data)
 
@@ -296,11 +311,11 @@ class KeithleyChannel(InstrumentChannel):
         ilimit_minmax = self.parent._ilimit_minmax
 
         self.add_parameter('volt',
-                           get_cmd=f'{channel}.measure.v()',
-                           get_parser=float,
+                           parameter_class=_MeasurementVoltageParameter,
                            set_cmd=f'{channel}.source.levelv={{:.12f}}',
                            label='Voltage',
-                           unit='V')
+                           unit='V',
+                           snapshot_get=False)
 
         self.add_parameter('curr',
                            parameter_class=_MeasurementCurrentParameter,
