@@ -140,12 +140,15 @@ def qcodes_parameter_attr_getter(
             mro = inspect.getmro(object_to_document_attr_on)
             attr = None
             for classobj in mro:
-                param_dict = eval_params_from_code(
-                    inspect.getsource(classobj), classobj.__name__
-                )
-                if param_dict.get(name) is not None:
-                    attr = param_dict[name]
-                    break
+                try:
+                    param_dict = eval_params_from_code(
+                        inspect.getsource(classobj), classobj.__name__
+                    )
+                    if param_dict.get(name) is not None:
+                        attr = param_dict[name]
+                        break
+                except TypeError:
+                    continue
             if attr is None:
                 LOGGER.debug(
                     f"fall back to default for {name} on {object_to_document_attr_on}"
