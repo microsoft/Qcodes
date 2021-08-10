@@ -247,9 +247,6 @@ class _ParameterWithStatus(Parameter):
 
 class _MeasurementCurrentParameter(_ParameterWithStatus):
 
-    def __init__(self, *args: Any, **kwargs: Any):
-        super().__init__(*args, **kwargs)
-
     def get_raw(self) -> ParamRawDataType:
         assert isinstance(self.instrument, KeithleyChannel)
         assert isinstance(self.root_instrument, Keithley_2600)
@@ -267,9 +264,6 @@ class _MeasurementCurrentParameter(_ParameterWithStatus):
 
 
 class _MeasurementVoltageParameter(_ParameterWithStatus):
-
-    def __init__(self, *args: Any, **kwargs: Any):
-        super().__init__(*args, **kwargs)
 
     def get_raw(self) -> ParamRawDataType:
         assert isinstance(self.instrument, KeithleyChannel)
