@@ -38,7 +38,9 @@ def parse_init_function_from_str(
     )
     if len(classes) != 1:
 
-        LOGGER.warning(f"Could not find exactly one class for {classname}")
+        LOGGER.warning(
+            f"Could not find exactly one class for {classname}: Found {classes}"
+        )
         return None
     assert len(classes) == 1
     myclass = classes[0]
