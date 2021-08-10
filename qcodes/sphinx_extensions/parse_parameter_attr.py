@@ -137,15 +137,16 @@ def qcodes_parameter_attr_getter(
             attr = safe_getattr(object_to_document_attr_on, name)
         except AttributeError as e:
             LOGGER.debug(f"Parsing attribute {name} on {object_to_document_attr_on}")
-            obj_name = object_to_document_attr_on.__name__
-            with open(
-                inspect.getfile(object_to_document_attr_on), encoding="utf8"
-            ) as file:
-                code = file.read()
-            param_dict = eval_params_from_code(code, obj_name)
-            if param_dict.get(name) is not None:
-                attr = param_dict[name]
-            else:
+            mro = inspect.getmro(object_to_document_attr_on)
+            attr = None
+            for classobj in mro:
+                param_dict = eval_params_from_code(
+                    inspect.getsource(classobj), classobj.__name__
+                )
+                if param_dict.get(name) is not None:
+                    attr = param_dict[name]
+                    break
+            if attr is None:
                 LOGGER.debug(
                     f"fall back to default for {name} on {object_to_document_attr_on}"
                 )
