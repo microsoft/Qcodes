@@ -56,7 +56,7 @@ def parse_init_function_from_str(
     )
     if len(init_funcs) != 1:
         LOGGER.warning(
-            f"Did not find an init func or found more than one from {init_funcs}"
+            f"Did not find an init func or found more than one for {classname}: Found {init_funcs}"
         )
         return None
     return init_funcs[0]
