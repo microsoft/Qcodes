@@ -47,10 +47,7 @@ def parse_init_function_from_str(
         for child in myclass.children
         if isinstance(child, parso.python.tree.PythonNode)
     )
-    if len(nodes) != 1:
-        LOGGER.warning(f"Could not find a single node from {classname}")
-        return None
-    node = nodes[0]
+    node = nodes[-1]
     init_funcs = tuple(
         child
         for child in node.children
