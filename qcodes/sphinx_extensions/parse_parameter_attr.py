@@ -31,6 +31,7 @@ def parse_init_function_from_str(
     code: str, classname: str
 ) -> Optional[parso.python.tree.Function]:
     module = parso.parse(code)
+    # todo this fails if the class is decorated since its nested one more level
     classes = tuple(
         child
         for child in module.children
