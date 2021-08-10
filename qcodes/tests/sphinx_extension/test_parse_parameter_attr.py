@@ -2,6 +2,7 @@ import pytest
 from sphinx.util.inspect import safe_getattr
 
 from qcodes.instrument.base import InstrumentBase
+from qcodes.instrument.visa import VisaInstrument
 from qcodes.sphinx_extensions.parse_parameter_attr import (
     ParameterProxy,
     qcodes_parameter_attr_getter,
@@ -39,3 +40,15 @@ def test_extract_instance_attr():
     b = qcodes_parameter_attr_getter(DummyTestClass, "other_attr")
     assert isinstance(b, ParameterProxy)
     assert repr(b) == '"InstanceAttribute"'
+
+
+def test_instrument_base_get_attr():
+    parameters = qcodes_parameter_attr_getter(InstrumentBase, "parameters")
+    assert isinstance(parameters, ParameterProxy)
+    assert repr(parameters) == "{}"
+
+
+def test_visa_instr_get_attr():
+    parameters = qcodes_parameter_attr_getter(VisaInstrument, "parameters")
+    assert isinstance(parameters, ParameterProxy)
+    assert repr(parameters) == "{}"
