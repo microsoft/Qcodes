@@ -26,7 +26,7 @@ class DummyTestClass(InstrumentBase):
         """
 
 
-class DummyDeprecatedTestClass(InstrumentBase):
+class DummyDecoratedInitTestClass(InstrumentBase):
 
     myattr: str = "ClassAttribute"
     """
@@ -34,6 +34,23 @@ class DummyDeprecatedTestClass(InstrumentBase):
     """
 
     @deprecate("Deprecate to test that decorated init is handled correctly")
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.other_attr = "InstanceAttribute"
+        """
+        An instance attribute
+        """
+
+
+@deprecate("Deprecate to test that decorated class is handled correctly")
+class DummyDecoratedClassTestClass(InstrumentBase):
+
+    myattr: str = "ClassAttribute"
+    """
+    A class attribute
+    """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -72,6 +89,13 @@ def test_visa_instr_get_attr():
     assert repr(parameters) == "{}"
 
 
-def test_zi():
-    scope = qcodes_parameter_attr_getter(DummyDeprecatedTestClass, "other_attr")
-    # not currently correctly resolved since init is decorated
+def test_decorated_init_func():
+    attr = qcodes_parameter_attr_getter(DummyDecoratedInitTestClass, "other_attr")
+    assert isinstance(attr, ParameterProxy)
+    assert repr(attr) == '"InstanceAttribute"'
+
+
+def test_decorated_class():
+    attr = qcodes_parameter_attr_getter(DummyDecoratedClassTestClass, "other_attr")
+    assert isinstance(attr, ParameterProxy)
+    assert repr(attr) == '"InstanceAttribute"'
