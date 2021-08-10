@@ -55,7 +55,7 @@ def parse_init_function_from_str(
         and child.name.value == "__init__"
     )
     if len(init_funcs) != 1:
-        LOGGER.warning(
+        LOGGER.debug(
             f"Did not find an init func or found more than one for {classname}: Found {init_funcs}"
         )
         return None
