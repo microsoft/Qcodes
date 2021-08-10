@@ -3,6 +3,7 @@ from sphinx.util.inspect import safe_getattr
 
 from qcodes.instrument.base import InstrumentBase
 from qcodes.instrument.visa import VisaInstrument
+from qcodes.instrument_drivers.ZI.ZIUHFLI import ZIUHFLI
 from qcodes.sphinx_extensions.parse_parameter_attr import (
     ParameterProxy,
     qcodes_parameter_attr_getter,
@@ -52,3 +53,8 @@ def test_visa_instr_get_attr():
     parameters = qcodes_parameter_attr_getter(VisaInstrument, "parameters")
     assert isinstance(parameters, ParameterProxy)
     assert repr(parameters) == "{}"
+
+
+def test_zi():
+    scope = qcodes_parameter_attr_getter(ZIUHFLI, "scope")
+    # not currently correctly resolved since init is decorated

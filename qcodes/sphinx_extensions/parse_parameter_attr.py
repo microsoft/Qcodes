@@ -48,6 +48,8 @@ def parse_init_function_from_str(
         if isinstance(child, parso.python.tree.PythonNode)
     )
     node = nodes[-1]
+    # todo this does not correctly handle a node in a decorated init functions
+    # since that is nested one level further down
     init_funcs = tuple(
         child
         for child in node.children
