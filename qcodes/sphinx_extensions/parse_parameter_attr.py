@@ -27,40 +27,47 @@ class ParameterProxy:
         return self._repr
 
 
+def find_class(
+    nodeorleaf: parso.tree.NodeOrLeaf, classname: str
+) -> Tuple[parso.python.tree.Class, ...]:
+    nodes = []
+    for child in nodeorleaf.children:
+        if isinstance(child, parso.python.tree.Class) and child.name.value == classname:
+            nodes.append(child)
+        elif isinstance(child, parso.python.tree.Node):
+            nodes.extend(find_class(child, classname))
+    return tuple(nodes)
+
+
+def find_init_func(
+    nodeorleaf: parso.tree.NodeOrLeaf,
+) -> Tuple[parso.python.tree.Function, ...]:
+    nodes = []
+    for child in nodeorleaf.children:
+        if (
+            isinstance(child, parso.python.tree.Function)
+            and child.name.value == "__init__"
+        ):
+            nodes.append(child)
+        elif isinstance(child, parso.python.tree.Node):
+            nodes.extend(find_init_func(child))
+    return tuple(nodes)
+
+
 def parse_init_function_from_str(
     code: str, classname: str
 ) -> Optional[parso.python.tree.Function]:
     module = parso.parse(code)
-    # todo this fails if the class is decorated since its nested one more level
-    classes = tuple(
-        child
-        for child in module.children
-        if isinstance(child, parso.python.tree.Class) and child.name.value == classname
-    )
+    classes = find_class(module, classname)
     if len(classes) != 1:
 
         LOGGER.warning(
             f"Could not find exactly one class for {classname}: Found {classes}"
         )
         return None
-    assert len(classes) == 1
-    myclass = classes[0]
-    nodes = tuple(
-        child
-        for child in myclass.children
-        if isinstance(child, parso.python.tree.PythonNode)
-    )
-    node = nodes[-1]
-    # todo this does not correctly handle a node in a decorated init functions
-    # since that is nested one level further down
-    init_funcs = tuple(
-        child
-        for child in node.children
-        if isinstance(child, parso.python.tree.Function)
-        and child.name.value == "__init__"
-    )
+    init_funcs = find_init_func(classes[0])
     if len(init_funcs) != 1:
-        LOGGER.debug(
+        LOGGER.warning(
             f"Did not find an init func or found more than one for {classname}: Found {init_funcs}"
         )
         return None
