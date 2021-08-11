@@ -4,7 +4,7 @@ async-generator==1.10
 attrs==21.2.0
 Babel==2.9.1
 backcall==0.2.0
-bleach==3.3.1
+bleach==4.0.0
 certifi==2021.5.30
 cffi==1.14.6
 chardet==4.0.0
@@ -34,9 +34,9 @@ mistune==0.8.4
 nbclient==0.5.3
 nbconvert==6.1.0
 nbformat==5.1.3
-nbsphinx==0.8.6
+nbsphinx==0.8.7
 nest-asyncio==1.5.1
-notebook==6.4.0
+notebook==6.4.2
 numpy==1.21.1
 packaging==21.0
 pandas==1.3.1
@@ -56,12 +56,12 @@ PyVISA-sim==0.4.0
 pywin32==301; sys_platform == 'win32'
 pywinpty==1.1.3; sys_platform == 'win32'
 PyYAML==5.4.1
-pyzmq==22.1.0
+pyzmq==22.2.1
 qtconsole==5.1.1
 QtPy==1.9.0
 requests==2.26.0
 scipy==1.7.1
-Send2Trash==1.7.1
+Send2Trash==1.8.0
 six==1.16.0
 snowballstemmer==2.1.0
 Sphinx==4.1.2
