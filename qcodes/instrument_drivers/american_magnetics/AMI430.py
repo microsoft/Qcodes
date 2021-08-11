@@ -922,11 +922,7 @@ class AMI430_3D(Instrument):
 
         if self.block_during_ramp() is True:
             self.log.debug(f"Simultaneous ramp: blocking until ramp is finished")
-
-            while all(
-                axis_instrument.ramping_state() == "ramping" for axis_instrument in axes
-            ):
-                self._sleep(self.ramping_state_check_interval())
+            self.wait_while_all_axes_ramping()
 
         self.log.debug(f"Simultaneous ramp: returning from the ramp call")
 
@@ -952,6 +948,13 @@ class AMI430_3D(Instrument):
 
                 instrument.set_field(value, perform_safety_check=False,
                                      block=self.block_during_ramp.get())
+
+    def wait_while_all_axes_ramping(self) -> None:
+        axes = (self._instrument_x, self._instrument_y, self._instrument_z)
+        while all(
+            axis_instrument.ramping_state() == "ramping" for axis_instrument in axes
+        ):
+            self._sleep(self.ramping_state_check_interval())
 
     def _request_field_change(self, instrument: AMI430,
                               value: numbers.Real) -> None:
