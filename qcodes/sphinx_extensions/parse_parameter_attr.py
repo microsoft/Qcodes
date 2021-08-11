@@ -29,11 +29,11 @@ class ParameterProxy:
 
 
 def find_class(
-    nodeorleaf: parso.tree.BaseNode, classname: str
+    node: parso.tree.BaseNode, classname: str
 ) -> Tuple[parso.python.tree.Class, ...]:
     """Find all classes in a given Parso node named ``classname``."""
     nodes = []
-    for child in nodeorleaf.children:
+    for child in node.children:
         if isinstance(child, parso.python.tree.Class) and child.name.value == classname:
             nodes.append(child)
         elif isinstance(child, parso.python.tree.Node):
@@ -42,11 +42,11 @@ def find_class(
 
 
 def find_init_func(
-    nodeorleaf: parso.tree.BaseNode,
+    node: parso.tree.BaseNode,
 ) -> Tuple[parso.python.tree.Function, ...]:
     """Find all ``__init__`` functions in the supplied Parso node."""
     nodes = []
-    for child in nodeorleaf.children:
+    for child in node.children:
         if (
             isinstance(child, parso.python.tree.Function)
             and child.name.value == "__init__"
