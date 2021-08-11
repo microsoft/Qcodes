@@ -59,17 +59,23 @@ def parse_init_function_from_str(
 ) -> Optional[parso.python.tree.Function]:
     module = parso.parse(code)
     classes = find_class(module, classname)
-    if len(classes) != 1:
+    if len(classes) > 1:
 
         LOGGER.warning(
-            f"Could not find exactly one class for {classname}: Found {classes}"
+            f"Found more than one class definition for {classname}: Found {classes}"
         )
         return None
+    if len(classes) == 0:
+        LOGGER.debug(f"Could not find a class definition for {classname}")
+        return None
     init_funcs = find_init_func(classes[0])
-    if len(init_funcs) != 1:
+    if len(init_funcs) > 1:
         LOGGER.warning(
-            f"Did not find an init func or found more than one for {classname}: Found {init_funcs}"
+            f"Found more than one init function for {classname}: " f"Found {init_funcs}"
         )
+        return None
+    if len(init_funcs) == 0:
+        LOGGER.debug(f"Found no init function for {classname}")
         return None
     return init_funcs[0]
 
@@ -148,7 +154,10 @@ def qcodes_parameter_attr_getter(
         try:
             attr = safe_getattr(object_to_document_attr_on, name)
         except AttributeError as e:
-            LOGGER.debug(f"Parsing attribute {name} on {object_to_document_attr_on}")
+            LOGGER.debug(
+                f"Attempting to load attribute {name} on "
+                f"{object_to_document_attr_on} via parsing"
+            )
             mro = inspect.getmro(object_to_document_attr_on)
             attr = None
             for classobj in mro:
@@ -163,7 +172,8 @@ def qcodes_parameter_attr_getter(
                     continue
             if attr is None:
                 LOGGER.debug(
-                    f"fall back to default for {name} on {object_to_document_attr_on}"
+                    f"Falling back to default Sphinx attribute loader for {name}"
+                    f" on {object_to_document_attr_on}"
                 )
                 attr = safe_getattr(object_to_document_attr_on, name, default)
     else:
