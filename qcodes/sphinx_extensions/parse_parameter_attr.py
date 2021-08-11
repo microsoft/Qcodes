@@ -28,7 +28,7 @@ class ParameterProxy:
 
 
 def find_class(
-    nodeorleaf: parso.tree.NodeOrLeaf, classname: str
+    nodeorleaf: parso.tree.BaseNode, classname: str
 ) -> Tuple[parso.python.tree.Class, ...]:
     nodes = []
     for child in nodeorleaf.children:
@@ -40,7 +40,7 @@ def find_class(
 
 
 def find_init_func(
-    nodeorleaf: parso.tree.NodeOrLeaf,
+    nodeorleaf: parso.tree.BaseNode,
 ) -> Tuple[parso.python.tree.Function, ...]:
     nodes = []
     for child in nodeorleaf.children:
@@ -80,8 +80,8 @@ def parse_init_function_from_str(
     return init_funcs[0]
 
 
-def extract_statements_from_func_node(
-    parso_func: parso.python.tree.Function,
+def extract_statements_from_node(
+    parso_node: parso.tree.BaseNode,
 ) -> Tuple[parso.python.tree.ExprStmt, ...]:
     function_bodys = tuple(
         child
