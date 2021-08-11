@@ -759,7 +759,7 @@ class AMI430_3D(Instrument):
                 )
 
         self.log.debug(
-            f"Linear ramp: setpoint {setpoint.repr_cartesian()} T " f"in {time} minutes"
+            f"Linear ramp: setpoint {setpoint.repr_cartesian()} T in {time} minutes"
         )
 
         self.ramp_mode("linear")
