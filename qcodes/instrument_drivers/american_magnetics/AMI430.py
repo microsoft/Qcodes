@@ -745,22 +745,19 @@ class AMI430_3D(Instrument):
             common_ramp_rate_units,
         ) = self._raise_if_not_same_field_and_ramp_rate_units()
 
-        ramp_rate_units_short = AMI430._SHORT_UNITS[common_ramp_rate_units]
-        field_units_short = AMI430._SHORT_UNITS[common_field_units]
-
         self.log.debug(
             f"Linear ramp: setpoint {setpoint.repr_cartesian()} "
-            f"{field_units_short} in {time} {ramp_rate_units_short}"
+            f"{common_field_units} in {time} {common_ramp_rate_units}"
         )
 
         # calculate new ramp rates based on time and setpoint
 
         start_field = self._get_measured_field_vector()
         self.log.debug(
-            f"Linear ramp: start {start_field.repr_cartesian()} {field_units_short}"
+            f"Linear ramp: start {start_field.repr_cartesian()} {common_field_units}"
         )
         self.log.debug(
-            f"Linear ramp: delta {(setpoint - start_field).repr_cartesian()} {field_units_short}"
+            f"Linear ramp: delta {(setpoint - start_field).repr_cartesian()} {common_field_units}"
         )
 
         new_ramp_rates = self.calculate_ramp_rates_for(
