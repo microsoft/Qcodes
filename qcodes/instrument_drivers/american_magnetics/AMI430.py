@@ -783,6 +783,11 @@ class AMI430_3D(Instrument):
     def calculate_ramp_rates_for(
         start: FieldVector, setpoint: FieldVector, time: float
     ) -> Tuple[float, float, float]:
+        """
+        Given starting and setpoint fields and expected ramp time calculates
+        required ramp rates for x, y, z axes (in this order) where axes are
+        ramped simultaneously.
+        """
         delta_field = setpoint - start
         new_ramp_rates = tuple(
             abs(float(delta_field.get_components(component)[0])) / time
