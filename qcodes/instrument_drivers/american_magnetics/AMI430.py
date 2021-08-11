@@ -908,14 +908,15 @@ class AMI430_3D(Instrument):
             if np.isclose(value, current_actual, rtol=0, atol=1e-8):
                 self.log.debug(
                     f"Simultaneous ramp: {axis_instrument.short_name} is "
-                    f"already at target field {value} T "
+                    f"already at target field {value} "
+                    f"{axis_instrument.field.unit} "
                     f"({current_actual} exactly)"
                 )
                 continue
 
             self.log.debug(
                 f"Simultaneous ramp: setting {axis_instrument.short_name} "
-                f"target field to {value} T"
+                f"target field to {value} {axis_instrument.field.unit}"
             )
             axis_instrument.set_field(value, perform_safety_check=False, block=False)
 
