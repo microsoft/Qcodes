@@ -432,19 +432,17 @@ class AMI430(IPInstrument):
         return new_coil_constant
 
     def _update_units(
-            self,
-            ramp_rate_units: Optional[str] = None,
-            field_units: Optional[str] = None
+        self, ramp_rate_units: Optional[int] = None, field_units: Optional[int] = None
     ) -> None:
         # Get or set units on device
         if ramp_rate_units is None:
-            ramp_rate_units_int = self.ramp_rate_units()
+            ramp_rate_units_int: str = self.ramp_rate_units()
         else:
             self.write(f"CONF:RAMP:RATE:UNITS {ramp_rate_units}")
             ramp_rate_units_int = self.ramp_rate_units.\
                 inverse_val_mapping[ramp_rate_units]
         if field_units is None:
-            field_units_int = self.field_units()
+            field_units_int: str = self.field_units()
         else:
             self.write(f"CONF:FIELD:UNITS {field_units}")
             field_units_int = self.field_units.inverse_val_mapping[field_units]
