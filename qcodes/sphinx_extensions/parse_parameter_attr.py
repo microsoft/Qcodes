@@ -11,6 +11,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class ParameterProxy:
+
     """
     An object that acts as a proxy for documenting containing
     a repr that can be set from a string.
@@ -30,7 +31,7 @@ class ParameterProxy:
 def find_class(
     nodeorleaf: parso.tree.BaseNode, classname: str
 ) -> Tuple[parso.python.tree.Class, ...]:
-    """Find all classes in a given Parso node named ``classname``"""
+    """Find all classes in a given Parso node named ``classname``."""
     nodes = []
     for child in nodeorleaf.children:
         if isinstance(child, parso.python.tree.Class) and child.name.value == classname:
@@ -164,7 +165,7 @@ def qcodes_parameter_attr_getter(
     ):
         try:
             attr = safe_getattr(object_to_document_attr_on, name)
-        except AttributeError as e:
+        except AttributeError:
             LOGGER.debug(
                 f"Attempting to load attribute {name} on "
                 f"{object_to_document_attr_on} via parsing"
