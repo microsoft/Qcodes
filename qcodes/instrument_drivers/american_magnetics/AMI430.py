@@ -3,6 +3,7 @@ import logging
 import numbers
 import time
 import warnings
+from collections import defaultdict
 from functools import partial
 from typing import (
     Any,
@@ -739,52 +740,81 @@ class AMI430_3D(Instrument):
         )
 
     def ramp_linearly(self, setpoint: FieldVector, time: float) -> None:
-        instruments = (self._instrument_x, self._instrument_y, self._instrument_z)
+        (
+            common_field_units,
+            common_ramp_rate_units,
+        ) = self._raise_if_not_same_field_and_ramp_rate_units()
 
-        for instrument in instruments:
-            if instrument.ramp_rate_units() != "minutes":
-                raise ValueError(
-                    f"Support linear ramp only in minutes, current "
-                    f"ramp rate units are {instrument.ramp_rate_units()} on "
-                    f"{instrument.full_name}"
-                )
-
-            if instrument.field_units() != "tesla":
-                raise ValueError(
-                    f"Support linear ramp only in tesla, current "
-                    f"field units are {instrument.field_units()} on "
-                    f"{instrument.full_name}"
-                )
+        ramp_rate_units_short = AMI430._SHORT_UNITS[common_ramp_rate_units]
+        field_units_short = AMI430._SHORT_UNITS[common_field_units]
 
         self.log.debug(
-            f"Linear ramp: setpoint {setpoint.repr_cartesian()} T in {time} minutes"
+            f"Linear ramp: setpoint {setpoint.repr_cartesian()} "
+            f"{field_units_short} in {time} {ramp_rate_units_short}"
         )
-
-        self.ramp_mode("linear")
 
         # calculate field ramps
         start_field = self._get_measured_field_vector()
-        self.log.debug(f"Linear ramp: start {start_field.repr_cartesian()}")
+        self.log.debug(
+            f"Linear ramp: start {start_field.repr_cartesian()} {field_units_short}"
+        )
 
         delta_field = setpoint - start_field
-        self.log.debug(f"Linear ramp: delta {delta_field.repr_cartesian()}")
+        self.log.debug(
+            f"Linear ramp: delta {delta_field.repr_cartesian()} {field_units_short}"
+        )
 
+        instruments = (self._instrument_x, self._instrument_y, self._instrument_z)
         xyz = ("x", "y", "z")
 
-        instrument: AMI430
         for component, instrument in zip(xyz, instruments):
 
             component_value = delta_field.get_components(component)[0]
             component_rate = abs(component_value) / time
             self.log.debug(
-                f"Linear ramp: new rate for {component} is " f"{component_rate} T/min"
+                f"Linear ramp: new rate for {component} "
+                f"({instrument.full_name}) is {component_rate} "
+                f"{instrument.ramp_rate.unit}"
             )
 
             instrument.ramp_rate.set(component_rate)
 
         # launch the ramp
-
+        self.ramp_mode("linear")
         self.cartesian(setpoint.get_components(*xyz))
+
+    def _raise_if_not_same_field_and_ramp_rate_units(self) -> Tuple[str, str]:
+        instruments = (self._instrument_x, self._instrument_y, self._instrument_z)
+
+        field_units_of_instruments = defaultdict(set)
+        ramp_rate_units_of_instruments = defaultdict(set)
+
+        for instrument in instruments:
+            ramp_rate_units_of_instruments[instrument.ramp_rate_units()].add(
+                instrument.full_name
+            )
+            field_units_of_instruments[instrument.field_units()].add(
+                instrument.full_name
+            )
+
+        if len(field_units_of_instruments) != 1:
+            raise ValueError(
+                f"Magnet axes instruments should have the same "
+                f"`field_units`, instead they have: "
+                f"{field_units_of_instruments}"
+            )
+
+        if len(ramp_rate_units_of_instruments) != 1:
+            raise ValueError(
+                f"Magnet axes instruments should have the same "
+                f"`ramp_rate_units`, instead they have: "
+                f"{ramp_rate_units_of_instruments}"
+            )
+
+        common_field_units = tuple(field_units_of_instruments.keys())[0]
+        common_ramp_rate_units = tuple(ramp_rate_units_of_instruments.keys())[0]
+
+        return common_field_units, common_ramp_rate_units
 
     def _verify_safe_setpoint(
             self,
