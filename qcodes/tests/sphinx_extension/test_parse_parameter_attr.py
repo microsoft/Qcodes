@@ -26,6 +26,17 @@ class DummyTestClass(InstrumentBase):
         """
 
 
+class DummyNoInitClass(InstrumentBase):
+
+    myattr: str = "ClassAttribute"
+    """
+    A class attribute
+    """
+
+    def foo(self) -> str:
+        return self.myattr
+
+
 class DummyDecoratedInitTestClass(InstrumentBase):
 
     myattr: str = "ClassAttribute"
@@ -99,3 +110,12 @@ def test_decorated_class():
     attr = qcodes_parameter_attr_getter(DummyDecoratedClassTestClass, "other_attr")
     assert isinstance(attr, ParameterProxy)
     assert repr(attr) == '"InstanceAttribute"'
+
+
+def test_no_init():
+    """
+    Test that attribute can be found from a class without an init function
+    """
+    attr = qcodes_parameter_attr_getter(DummyNoInitClass, "parameters")
+    assert isinstance(attr, ParameterProxy)
+    assert repr(attr) == "{}"
