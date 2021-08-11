@@ -30,6 +30,7 @@ class ParameterProxy:
 def find_class(
     nodeorleaf: parso.tree.BaseNode, classname: str
 ) -> Tuple[parso.python.tree.Class, ...]:
+    """Find all classes in a given Parso node named ``classname``"""
     nodes = []
     for child in nodeorleaf.children:
         if isinstance(child, parso.python.tree.Class) and child.name.value == classname:
@@ -42,6 +43,7 @@ def find_class(
 def find_init_func(
     nodeorleaf: parso.tree.BaseNode,
 ) -> Tuple[parso.python.tree.Function, ...]:
+    """Find all ``__init__`` functions in the supplied Parso node."""
     nodes = []
     for child in nodeorleaf.children:
         if (
@@ -146,6 +148,22 @@ def extract_code_as_repr(
 def qcodes_parameter_attr_getter(
     object_to_document_attr_on: Type[object], name: str, *default: Any
 ) -> Any:
+    """
+    Try to extract an attribute as a proxy object with a repr containing the code
+    if the class the attribute is bound to is a subclass of ``InstrumentBase``
+    and the attribute is not private.
+
+    Args:
+        object_to_document_attr_on: The type (not instance of the object to detect the
+            attribute on.
+        name: Name of the attribute to look for.
+        *default: Default obejct to use as a replacement if the attribute could not be
+            found.
+
+    Returns:
+        Attribute looked up, proxy object containing the code of the attribute as a
+        repr or a default object.
+    """
     if (
         inspect.isclass(object_to_document_attr_on)
         and issubclass(object_to_document_attr_on, InstrumentBase)
