@@ -728,7 +728,7 @@ class AMI430_3D(Instrument):
             instrument=self,
             get_cmd=None,
             set_cmd=None,
-            vals=Enum("default", "linear"),
+            vals=Enum("default", "simultaneous"),
             initial_value="default",
         )
 
@@ -739,7 +739,7 @@ class AMI430_3D(Instrument):
             z=self._instrument_z.field(),
         )
 
-    def ramp_linearly(self, setpoint: FieldVector, time: float) -> None:
+    def ramp_simultaneously(self, setpoint: FieldVector, time: float) -> None:
         """
         Ramp all axes simultaneously to the given setpoint and in the given time
 
@@ -766,7 +766,7 @@ class AMI430_3D(Instrument):
         ) = self._raise_if_not_same_field_and_ramp_rate_units()
 
         self.log.debug(
-            f"Linear ramp: setpoint {setpoint.repr_cartesian()} "
+            f"Simultaneous ramp: setpoint {setpoint.repr_cartesian()} "
             f"{common_field_units} in {time} {common_ramp_rate_units}"
         )
 
@@ -774,10 +774,12 @@ class AMI430_3D(Instrument):
 
         start_field = self._get_measured_field_vector()
         self.log.debug(
-            f"Linear ramp: start {start_field.repr_cartesian()} {common_field_units}"
+            f"Simultaneous ramp: start {start_field.repr_cartesian()} "
+            f"{common_field_units}"
         )
         self.log.debug(
-            f"Linear ramp: delta {(setpoint - start_field).repr_cartesian()} {common_field_units}"
+            f"Simultaneous ramp: delta {(setpoint - start_field).repr_cartesian()} "
+            f"{common_field_units}"
         )
 
         new_ramp_rates = self.calculate_ramp_rates_for(
@@ -790,13 +792,13 @@ class AMI430_3D(Instrument):
         for instrument, new_axis_ramp_rate in zip(instruments, new_ramp_rates):
             instrument.ramp_rate.set(new_axis_ramp_rate)
             self.log.debug(
-                f"Linear ramp: new rate for {instrument.full_name} "
+                f"Simultaneous ramp: new rate for {instrument.full_name} "
                 f"is {new_axis_ramp_rate} {instrument.ramp_rate.unit}"
             )
 
         # Launch the simultaneous ramp
 
-        self.ramp_mode("linear")
+        self.ramp_mode("simultaneous")
         self.cartesian(setpoint.get_components("x", "y", "z"))
 
     @staticmethod
@@ -890,12 +892,12 @@ class AMI430_3D(Instrument):
 
         self.log.debug("Field values OK, proceeding")
 
-        if self.ramp_mode() == "linear":
-            self._perform_linear_ramp(values)
+        if self.ramp_mode() == "simultaneous":
+            self._perform_simultaneous_ramp(values)
         else:
             self._perform_default_ramp(values)
 
-    def _perform_linear_ramp(self, values: Tuple[float, float, float]) -> None:
+    def _perform_simultaneous_ramp(self, values: Tuple[float, float, float]) -> None:
         axes = (self._instrument_x, self._instrument_y, self._instrument_z)
 
         for axis_instrument, value in zip(axes, values):
@@ -905,26 +907,27 @@ class AMI430_3D(Instrument):
             # current one then do nothing
             if np.isclose(value, current_actual, rtol=0, atol=1e-8):
                 self.log.debug(
-                    f"Linear ramp: {axis_instrument.short_name} is already "
-                    f"at target field {value} T ({current_actual} exactly)"
+                    f"Simultaneous ramp: {axis_instrument.short_name} is "
+                    f"already at target field {value} T "
+                    f"({current_actual} exactly)"
                 )
                 continue
 
             self.log.debug(
-                f"Linear ramp: setting {axis_instrument.short_name} "
+                f"Simultaneous ramp: setting {axis_instrument.short_name} "
                 f"target field to {value} T"
             )
             axis_instrument.set_field(value, perform_safety_check=False, block=False)
 
         if self.block_during_ramp() is True:
-            self.log.debug(f"Linear ramp: blocking until ramp is finished")
+            self.log.debug(f"Simultaneous ramp: blocking until ramp is finished")
 
             while all(
                 axis_instrument.ramping_state() == "ramping" for axis_instrument in axes
             ):
                 self._sleep(self.ramping_state_check_interval())
 
-        self.log.debug(f"Linear ramp: returning from the ramp call")
+        self.log.debug(f"Simultaneous ramp: returning from the ramp call")
 
     def _perform_default_ramp(self, values: Tuple[float, float, float]) -> None:
         operators: Tuple[Callable[[Any, Any], bool], ...] = (np.less, np.greater)
