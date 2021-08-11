@@ -753,35 +753,45 @@ class AMI430_3D(Instrument):
             f"{field_units_short} in {time} {ramp_rate_units_short}"
         )
 
-        # calculate field ramps
+        # calculate new ramp rates based on time and setpoint
+
         start_field = self._get_measured_field_vector()
         self.log.debug(
             f"Linear ramp: start {start_field.repr_cartesian()} {field_units_short}"
         )
-
-        delta_field = setpoint - start_field
         self.log.debug(
-            f"Linear ramp: delta {delta_field.repr_cartesian()} {field_units_short}"
+            f"Linear ramp: delta {(setpoint - start_field).repr_cartesian()} {field_units_short}"
         )
 
+        new_ramp_rates = self.calculate_ramp_rates_for(
+            start=start_field, setpoint=setpoint, time=time
+        )
+
+        # Set new ramp rates
+
         instruments = (self._instrument_x, self._instrument_y, self._instrument_z)
-        xyz = ("x", "y", "z")
-
-        for component, instrument in zip(xyz, instruments):
-
-            component_value = delta_field.get_components(component)[0]
-            component_rate = abs(component_value) / time
+        for instrument, new_axis_ramp_rate in zip(instruments, new_ramp_rates):
+            instrument.ramp_rate.set(new_axis_ramp_rate)
             self.log.debug(
-                f"Linear ramp: new rate for {component} "
-                f"({instrument.full_name}) is {component_rate} "
-                f"{instrument.ramp_rate.unit}"
+                f"Linear ramp: new rate for {instrument.full_name} "
+                f"is {new_axis_ramp_rate} {instrument.ramp_rate.unit}"
             )
 
-            instrument.ramp_rate.set(component_rate)
+        # Launch the simultaneous ramp
 
-        # launch the ramp
         self.ramp_mode("linear")
-        self.cartesian(setpoint.get_components(*xyz))
+        self.cartesian(setpoint.get_components("x", "y", "z"))
+
+    @staticmethod
+    def calculate_ramp_rates_for(
+        start: FieldVector, setpoint: FieldVector, time: float
+    ) -> Tuple[float, float, float]:
+        delta_field = setpoint - start
+        new_ramp_rates = tuple(
+            abs(float(delta_field.get_components(component)[0])) / time
+            for component in ("x", "y", "z")
+        )
+        return new_ramp_rates[0], new_ramp_rates[1], new_ramp_rates[2]
 
     def _raise_if_not_same_field_and_ramp_rate_units(self) -> Tuple[str, str]:
         instruments = (self._instrument_x, self._instrument_y, self._instrument_z)
