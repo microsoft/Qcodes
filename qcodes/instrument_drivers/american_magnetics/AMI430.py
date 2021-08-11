@@ -740,6 +740,26 @@ class AMI430_3D(Instrument):
         )
 
     def ramp_linearly(self, setpoint: FieldVector, time: float) -> None:
+        """
+        Ramp all axes simultaneously to the given setpoint and in the given time
+
+        The method calculates and sets the required ramp rates per magnet
+        axis, and then initiates a ramp simultaneously on all the axes. The
+        trajectory of the tip of the magnetic field vector is thus linear in
+        3D space, from the current field value to the setpoint.
+
+        If ``block_during_ramp`` parameter is ``True``, the method will block
+        until all axes finished ramping.
+
+        It is required for all axis instruments to have the same units for
+        ramp rate and field, otherwise an exception is raised. The given
+        setpoint and time are assumed to be in those common units.
+
+        Args:
+            setpoint: ``FieldVector`` setpoint
+            time: time in which the setpoint field has to be reached on all axes
+
+        """
         (
             common_field_units,
             common_ramp_rate_units,
