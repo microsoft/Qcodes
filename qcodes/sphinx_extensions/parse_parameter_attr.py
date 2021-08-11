@@ -11,8 +11,8 @@ LOGGER = logging.getLogger(__name__)
 
 
 class ParameterProxy:
-
     """
+
     An object that acts as a proxy for documenting containing
     a repr that can be set from a string.
 

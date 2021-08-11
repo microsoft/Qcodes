@@ -113,9 +113,7 @@ def test_decorated_class():
 
 
 def test_no_init():
-    """
-    Test that attribute can be found from a class without an init function
-    """
+    """Test that attribute can be found from a class without an init function"""
     attr = qcodes_parameter_attr_getter(DummyNoInitClass, "parameters")
     assert isinstance(attr, ParameterProxy)
     assert repr(attr) == "{}"
