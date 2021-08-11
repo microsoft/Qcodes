@@ -85,28 +85,20 @@ def parse_init_function_from_str(
 def extract_statements_from_node(
     parso_node: parso.tree.BaseNode,
 ) -> Tuple[parso.python.tree.ExprStmt, ...]:
-    function_bodys = tuple(
-        child
-        for child in parso_func.children
-        if isinstance(child, parso.python.tree.PythonNode) and child.type == "suite"
-    )
-    assert len(function_bodys) == 1
-    function_body = function_bodys[0]
-    statement_lines = tuple(
-        child.children[0]
-        for child in function_body.children
-        if isinstance(child, parso.python.tree.PythonNode)
-        and isinstance(child.children[0], parso.python.tree.ExprStmt)
-    )
-
-    return statement_lines
+    nodes = []
+    for child in parso_node.children:
+        if isinstance(child, parso.python.tree.ExprStmt):
+            nodes.append(child)
+        elif isinstance(child, parso.python.tree.Node):
+            nodes.extend(extract_statements_from_node(child))
+    return tuple(nodes)
 
 
 def eval_params_from_code(code: str, classname: str) -> Dict[str, ParameterProxy]:
     init_func_tree = parse_init_function_from_str(code, classname)
     if init_func_tree is None:
         return {}
-    stms = extract_statements_from_func_node(init_func_tree)
+    stms = extract_statements_from_node(init_func_tree)
     param_dict = {}
 
     for stm in stms:
