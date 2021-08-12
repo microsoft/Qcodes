@@ -68,7 +68,9 @@ def get_default_experiment_id(conn: ConnectionPlus) -> int:
     if exp_id is None:
         exp_id = get_last_experiment(conn)
     if exp_id is None:
-        raise ValueError("No experiments found."
-                         " You can create one with:"
-                         " new_experiment(name, sample_name)")
+        raise ValueError(
+            "No experiments found."
+            " You can create one with:"
+            " new_experiment(name, sample_name)"
+        )
     return exp_id
