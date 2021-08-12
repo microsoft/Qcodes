@@ -290,7 +290,6 @@ class DataSet(Sized):
             # is marked as started
             if exp_id is None:
                 exp_id = get_default_experiment_id(self.conn)
-            assert isinstance(exp_id, int)
             name = name or "dataset"
             _, run_id, __ = create_run(self.conn, exp_id, name,
                                        generate_guid(),

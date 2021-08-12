@@ -1,11 +1,11 @@
 """Settings that are indirectly related to experiments."""
 
-from typing import Optional, Dict
 import warnings
+from typing import Dict, Optional
 
+import qcodes
 from qcodes.dataset.sqlite.connection import ConnectionPlus, path_to_dbfile
 from qcodes.dataset.sqlite.queries import get_last_experiment
-import qcodes
 
 # The default experiment. This changes to the exp_id of a created/
 # loaded experiment. The idea is to store exp_id only for a single
@@ -67,7 +67,7 @@ def reset_default_experiment_id() -> None:
     _default_experiment = None
 
 
-def get_default_experiment_id(conn: ConnectionPlus) -> Optional[int]:
+def get_default_experiment_id(conn: ConnectionPlus) -> int:
     """
     Returns the latest created/ loaded experiment's exp_id as the default
     experiment. If it is None, maximum exp_id from the currently active
