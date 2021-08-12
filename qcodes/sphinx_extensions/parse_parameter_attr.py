@@ -1,3 +1,9 @@
+"""A Sphinx extension that uses Parso to extract the code of a
+instance attribute as a proxy object with a repr containing the code defining the
+attribute. This enables better documentation of instance attributes.
+Especially QCoDeS Parameters.  Note that this is for the moment limited to
+attributes on QCoDeS instruments."""
+
 import inspect
 from typing import Any, Dict, Optional, Tuple, Type, Union
 
