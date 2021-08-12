@@ -581,6 +581,8 @@ class Arm:
         self.inter_row_dis: float
         self.inter_pad_dis: float
 
+        self._target: np.ndarray
+
     def set_left_bottom_position(self) -> None:
 
         pos = self.controller.absolute_position()
@@ -617,7 +619,7 @@ class Arm:
         norm_n = np.linalg.norm(n)
         self._n = n / norm_n
 
-        intercept = np.array(-1 * self._n * self.left_bottom_position)
+        intercept = np.array(sum(-1 * self._n * self.left_bottom_position))
         self._plane_eqn = np.append(self._n, intercept)
 
     def move_motor_A_by(self, distance: float) -> None:
@@ -675,10 +677,10 @@ class Arm:
         b = int(np.round(rel_vec[1] * d))
         c = int(np.round(rel_vec[2] * d))
 
-        target = np.array(pos["A"] + a, pos["B"] + b, pos["C"] + c, 1)
+        self._target = np.array([pos["A"] + a, pos["B"] + b, pos["C"] + c, 1])
 
-        if np.dot(self._plane_eqn, target) < 0:
-            raise RuntimeError(f"Cannot move to {target[:2]}. Target location is below chip plane.")
+        if np.dot(self._plane_eqn, self._target) < 0:
+            raise RuntimeError(f"Cannot move to {self._target[:3]}. Target location is below chip plane.")
 
         sp_a = int(np.round(abs(rel_vec[0]) * speed))
         sp_b = int(np.round(abs(rel_vec[1]) * speed))
