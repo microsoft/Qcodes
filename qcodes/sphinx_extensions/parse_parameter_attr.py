@@ -4,6 +4,7 @@ attribute. This enables better documentation of instance attributes.
 Especially QCoDeS Parameters.  Note that this is for the moment limited to
 attributes on QCoDeS instruments."""
 
+import functools
 import inspect
 from typing import Any, Dict, Optional, Tuple, Type, Union
 
@@ -101,6 +102,7 @@ def extract_statements_from_node(
     return tuple(nodes)
 
 
+@functools.lru_cache(maxsize=None, typed=True)
 def eval_params_from_code(code: str, classname: str) -> Dict[str, ParameterProxy]:
     init_func_tree = parse_init_function_from_str(code, classname)
     if init_func_tree is None:
