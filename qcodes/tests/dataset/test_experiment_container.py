@@ -12,7 +12,8 @@ from qcodes.dataset.experiment_container import (
     new_experiment,
 )
 from qcodes.dataset.experiment_settings import (
-    reset_default_experiment_id, get_default_experiment_id
+    get_default_experiment_id,
+    reset_default_experiment_id,
 )
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.sqlite.database import conn_from_dbpath_or_conn, get_DB_location
@@ -341,8 +342,13 @@ def test_active_experiment(empty_temp_db):
     assert get_default_experiment_id(conn) == exp_6.exp_id
 
     last_exp = new_experiment("last_exp", sample_name="no_sample")
-    exp_7 = load_experiment(3)
+    load_experiment(3)
+
+    reset_default_experiment_id(conn)
+    assert get_default_experiment_id(conn) is last_exp.exp_id
+
+    load_experiment(exp_1.exp_id)
+    assert get_default_experiment_id(conn) == exp_1.exp_id
 
     reset_default_experiment_id()
-    assert get_default_experiment_id(conn) != exp_7.exp_id
-    assert get_default_experiment_id(conn) == last_exp.exp_id
+    assert get_default_experiment_id(conn) is last_exp.exp_id
