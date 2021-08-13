@@ -1,19 +1,28 @@
-from collections.abc import Sized
-from typing import Optional, List, Any
 import logging
+from collections.abc import Sized
+from typing import Any, List, Optional
 
-import qcodes
-from qcodes.dataset.data_set import (DataSet, load_by_id, load_by_counter,
-                                     new_data_set, SPECS)
-from qcodes.dataset.sqlite.connection import transaction, ConnectionPlus
-from qcodes.dataset.sqlite.queries import new_experiment as ne, \
-    finish_experiment, get_run_counter, get_runs, get_last_run, \
-    get_last_experiment, get_experiments, \
-    get_experiment_name_from_experiment_id, get_runid_from_expid_and_counter, \
-    get_sample_name_from_experiment_id
-from qcodes.dataset.sqlite.database import get_DB_location, get_DB_debug, \
-    connect, conn_from_dbpath_or_conn
-from qcodes.dataset.sqlite.query_helpers import select_one_where, VALUES
+from qcodes.dataset.data_set import SPECS, DataSet, load_by_id, new_data_set
+from qcodes.dataset.experiment_settings import _set_default_experiment_id
+from qcodes.dataset.sqlite.connection import ConnectionPlus, path_to_dbfile, transaction
+from qcodes.dataset.sqlite.database import (
+    conn_from_dbpath_or_conn,
+    connect,
+    get_DB_location,
+)
+from qcodes.dataset.sqlite.queries import (
+    finish_experiment,
+    get_experiment_name_from_experiment_id,
+    get_experiments,
+    get_last_experiment,
+    get_last_run,
+    get_run_counter,
+    get_runid_from_expid_and_counter,
+    get_runs,
+    get_sample_name_from_experiment_id,
+)
+from qcodes.dataset.sqlite.queries import new_experiment as ne
+from qcodes.dataset.sqlite.query_helpers import VALUES, select_one_where
 
 log = logging.getLogger(__name__)
 
@@ -209,9 +218,11 @@ def new_experiment(name: str,
         the new experiment
     """
     conn = conn or connect(get_DB_location())
-    return Experiment(name=name, sample_name=sample_name,
-                      format_string=format_string,
-                      conn=conn)
+    experiment = Experiment(
+        name=name, sample_name=sample_name, format_string=format_string, conn=conn
+    )
+    _set_default_experiment_id(path_to_dbfile(conn), experiment.exp_id)
+    return experiment
 
 
 def load_experiment(exp_id: int,
@@ -227,10 +238,12 @@ def load_experiment(exp_id: int,
     Returns:
         experiment with the specified id
     """
+    conn = conn_from_dbpath_or_conn(conn=conn, path_to_db=None)
     if not isinstance(exp_id, int):
         raise ValueError('Experiment ID must be an integer')
-    return Experiment(exp_id=exp_id,
-                      conn=conn)
+    experiment = Experiment(exp_id=exp_id, conn=conn)
+    _set_default_experiment_id(path_to_dbfile(conn), experiment.exp_id)
+    return experiment
 
 
 def load_last_experiment() -> Experiment:
@@ -240,10 +253,13 @@ def load_last_experiment() -> Experiment:
     Returns:
         last experiment
     """
-    last_exp_id = get_last_experiment(connect(get_DB_location()))
+    conn = connect(get_DB_location())
+    last_exp_id = get_last_experiment(conn)
     if last_exp_id is None:
         raise ValueError('There are no experiments in the database file')
-    return Experiment(exp_id=last_exp_id)
+    experiment = Experiment(exp_id=last_exp_id)
+    _set_default_experiment_id(get_DB_location(), experiment.exp_id)
+    return experiment
 
 
 def load_experiment_by_name(name: str,
@@ -304,6 +320,7 @@ def load_experiment_by_name(name: str,
                          f" found:\n{_repr_str}")
     else:
         e = Experiment(exp_id=rows[0]['exp_id'], conn=conn)
+    _set_default_experiment_id(path_to_dbfile(conn), e.exp_id)
     return e
 
 
