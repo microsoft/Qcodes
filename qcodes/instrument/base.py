@@ -1,6 +1,7 @@
 """Instrument base class."""
 import logging
 import time
+import warnings
 import weakref
 from abc import ABC, abstractmethod
 from typing import (
@@ -30,6 +31,8 @@ from .parameter import Parameter, _BaseParameter
 if TYPE_CHECKING:
     from qcodes.instrument.channel import ChannelList
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
+
+from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 log = logging.getLogger(__name__)
 
@@ -84,8 +87,9 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         """Short name of the instrument"""
         return self._short_name
 
-    def add_parameter(self, name: str,
-                      parameter_class: type = Parameter, **kwargs: Any) -> None:
+    def add_parameter(
+        self, name: str, parameter_class: type = Parameter, **kwargs: Any
+    ) -> None:
         """
         Bind one Parameter to this instrument.
 
@@ -114,24 +118,32 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 unit of the new parameter is inconsistent with the existing
                 one.
         """
+        if "bind_to_instrument" not in kwargs.keys():
+            kwargs["bind_to_instrument"] = True
+
+        try:
+            param = parameter_class(name=name, instrument=self, **kwargs)
+        except TypeError:
+            kwargs.pop("bind_to_instrument")
+            warnings.warn(
+                f"Parameter {name} on instrument {self.name} does "
+                f"not correctly pass kwargs to its baseclass. A "
+                f"Parameter class must take `**kwargs` and forward "
+                f"them to its baseclass.",
+                QCoDeSDeprecationWarning,
+            )
+            param = parameter_class(name=name, instrument=self, **kwargs)
+
         existing_parameter = self.parameters.get(name, None)
-
-        if existing_parameter:
-
-            if not existing_parameter.abstract:
-                raise KeyError(f"Duplicate parameter name {name}")
-
-            existing_unit = getattr(existing_parameter, "unit", None)
-            new_unit = kwargs.get("unit", None)
-            if existing_unit != new_unit:
-                raise ValueError(
-                    f"The unit of the parameter '{name}' is '{new_unit}'. "
-                    f"This is inconsistent with the unit defined in the "
-                    f"base class"
-                )
-
-        param = parameter_class(name=name, instrument=self, **kwargs)
-        self.parameters[name] = param
+        if not existing_parameter:
+            warnings.warn(
+                f"Parameter {name} did not correctly register itself on instrument"
+                f" {self.name}. Please check that `instrument` argument is passed "
+                f"from {parameter_class!r} all the way to `_BaseParameter`. "
+                "This will be an error in the future.",
+                QCoDeSDeprecationWarning,
+            )
+            self.parameters[name] = param
 
     def add_function(self, name: str, **kwargs: Any) -> None:
         """
