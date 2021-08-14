@@ -39,8 +39,8 @@ AxesTupleListWithDataSet = Tuple[
 MultiAxesTupleListWithDataSet = Tuple[
     Tuple[DataSetProtocol, ...],
     Tuple[List[matplotlib.axes.Axes], ...],
-    Tuple[List[Optional[matplotlib.colorbar.Colorbar]],...]
-    ]
+    Tuple[List[Optional[matplotlib.colorbar.Colorbar]], ...],
+]
 
 LOG = logging.getLogger(__name__)
 
@@ -714,22 +714,24 @@ def dond(
                 if isinstance(nested_param, _BaseParameter):
                     measured_parameters.append(nested_param)
     if single_group:
-        grouped_parameters['group_0'] = {}
-        grouped_parameters['group_0']['params'] = tuple(single_group)
-        grouped_parameters['group_0']['meas_name'] = measurement_name
-        grouped_parameters['group_0']['measured_params'] = []
+        grouped_parameters["group_0"] = {}
+        grouped_parameters["group_0"]["params"] = tuple(single_group)
+        grouped_parameters["group_0"]["meas_name"] = measurement_name
+        grouped_parameters["group_0"]["measured_params"] = []
     if multi_group:
         for index, par in enumerate(multi_group):
-            grouped_parameters[f'group_{index}'] = {}
-            grouped_parameters[f'group_{index}']['params'] = tuple(par)
-            grouped_parameters[f'group_{index}']['meas_name'] = measurement_name
-            grouped_parameters[f'group_{index}']['measured_params'] = []
+            grouped_parameters[f"group_{index}"] = {}
+            grouped_parameters[f"group_{index}"]["params"] = tuple(par)
+            grouped_parameters[f"group_{index}"]["meas_name"] = measurement_name
+            grouped_parameters[f"group_{index}"]["measured_params"] = []
 
     try:
         loop_shape = tuple(1 for _ in additional_setpoints) + tuple(
             sweep.num_points for sweep in sweep_instances
         )
-        shapes: Shapes = detect_shape_of_measurement(tuple(measured_parameters), loop_shape)
+        shapes: Shapes = detect_shape_of_measurement(
+            tuple(measured_parameters), loop_shape
+        )
     except TypeError:
         LOG.exception(
             f"Could not detect shape of {measured_parameters} "
@@ -738,8 +740,8 @@ def dond(
         shapes = None
     meas_list: List[Measurement] = []
     for ind in range(len(grouped_parameters)):
-        meas_name = grouped_parameters[f'group_{ind}']['meas_name']
-        meas_params = grouped_parameters[f'group_{ind}']['params']
+        meas_name = grouped_parameters[f"group_{ind}"]["meas_name"]
+        meas_params = grouped_parameters[f"group_{ind}"]["params"]
         if isinstance(meas_name, str):
             meas = Measurement(name=meas_name, exp=exp)
         _register_parameters(meas, all_setpoint_params)
@@ -782,15 +784,19 @@ def dond(
                     setpoint_param(setpoint)
                     param_set_list.append((setpoint_param, setpoint))
 
-                meas_value_pair = process_params_meas(all_meas_parameters, use_threads=use_threads)
+                meas_value_pair = process_params_meas(
+                    all_meas_parameters, use_threads=use_threads
+                )
                 for ind in range(len(grouped_parameters)):
                     for measured in meas_value_pair:
-                        if measured[0] in grouped_parameters[f'group_{ind}']['params']:
-                            grouped_parameters[f'group_{ind}']['measured_params'].append(measured)
+                        if measured[0] in grouped_parameters[f"group_{ind}"]["params"]:
+                            grouped_parameters[f"group_{ind}"][
+                                "measured_params"
+                            ].append(measured)
                 for ind, datasaver in enumerate(datasavers):
                     datasaver.add_result(
                         *param_set_list,
-                        *grouped_parameters[f'group_{ind}']['measured_params'],
+                        *grouped_parameters[f"group_{ind}"]["measured_params"],
                         *additional_setpoints_data,
                     )
 
@@ -805,7 +811,9 @@ def dond(
             parameter.post_delay = original_delay
 
         for datasaver in datasavers:
-            ds, plot_axis, plot_color = _handle_plotting(datasaver.dataset, do_plot, interrupted())
+            ds, plot_axis, plot_color = _handle_plotting(
+                datasaver.dataset, do_plot, interrupted()
+            )
             datasets.append(ds)
             plots_axes.append(plot_axis)
             plots_colorbar.append(plot_color)

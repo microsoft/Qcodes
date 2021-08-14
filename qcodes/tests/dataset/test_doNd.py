@@ -51,27 +51,29 @@ def _param():
 
 @pytest.fixture()
 def _param_2():
-    p = Parameter('simple_parameter',
-                  set_cmd=None,
-                  get_cmd=lambda: 2)
+    p = Parameter("simple_parameter", set_cmd=None, get_cmd=lambda: 2)
     return p
 
 
 @pytest.fixture()
 def _param_complex():
-    p = Parameter('simple_complex_parameter',
-                  set_cmd=None,
-                  get_cmd=lambda: 1 + 1j,
-                  vals=validators.ComplexNumbers())
+    p = Parameter(
+        "simple_complex_parameter",
+        set_cmd=None,
+        get_cmd=lambda: 1 + 1j,
+        vals=validators.ComplexNumbers(),
+    )
     return p
 
 
 @pytest.fixture()
 def _param_complex_2():
-    p = Parameter('simple_complex_parameter',
-                  set_cmd=None,
-                  get_cmd=lambda: 2 + 2j,
-                  vals=validators.ComplexNumbers())
+    p = Parameter(
+        "simple_complex_parameter",
+        set_cmd=None,
+        get_cmd=lambda: 2 + 2j,
+        vals=validators.ComplexNumbers(),
+    )
     return p
 
 
@@ -113,7 +115,7 @@ def test_param_callable(_param_callable):
 
 @pytest.fixture()
 def _string_callable():
-    return 'Call'
+    return "Call"
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
@@ -903,12 +905,20 @@ def test_dond_explicit_exp_meas_sample(_param, experiment):
     assert data3[0].exp_name == "new-exp"
 
 
-def test_dond_multi_datasets_explicit_exp_meas_sample(_param, _param_complex, experiment):
+def test_dond_multi_datasets_explicit_exp_meas_sample(
+    _param, _param_complex, experiment
+):
     experiment_2 = new_experiment("new-exp", "no-sample")
 
     data1 = dond([_param], [_param_complex], do_plot=False, exp=experiment)
     assert data1[0][0].exp_name == "test-experiment"
-    data2 = dond([_param], [_param_complex], do_plot=False, exp=experiment_2, measurement_name="Meas")
+    data2 = dond(
+        [_param],
+        [_param_complex],
+        do_plot=False,
+        exp=experiment_2,
+        measurement_name="Meas",
+    )
     assert data2[0][0].name == "Meas"
     assert data2[0][1].name == "Meas"
     assert data2[0][0].sample_name == "no-sample"
@@ -1434,7 +1444,9 @@ def test_dond_2d_output_data(_param, _param_complex, _param_set, _param_set_2):
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-def test_dond_2d_multi_datasets_output_type(_param, _param_complex, _param_set, _param_set_2):
+def test_dond_2d_multi_datasets_output_type(
+    _param, _param_complex, _param_set, _param_set_2
+):
 
     sweep_1 = LinSweep(_param_set, 0, 0.5, 2, 0)
     sweep_2 = LinSweep(_param_set_2, 0.5, 1, 2, 0)
@@ -1447,8 +1459,9 @@ def test_dond_2d_multi_datasets_output_type(_param, _param_complex, _param_set, 
 @pytest.mark.usefixtures("plot_close", "experiment")
 @pytest.mark.parametrize("plot", [None, True, False])
 @pytest.mark.parametrize("plot_config", [None, True, False])
-def test_dond_2d_multiple_datasets_plot(_param_set, _param_set_2, _param,
-                                        _param_2, plot, plot_config):
+def test_dond_2d_multiple_datasets_plot(
+    _param_set, _param_set_2, _param, _param_2, plot, plot_config
+):
 
     if plot_config is not None:
         config.dataset.dond_plot = plot_config
@@ -1470,13 +1483,23 @@ def test_dond_2d_multiple_datasets_plot(_param_set, _param_set_2, _param,
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-def test_dond_2d_multi_datasets_with_callable_output_data(_param, _param_2, _param_complex,
-                                                          _param_complex_2, _param_set,
-                                                          _param_set_2, _string_callable):
+def test_dond_2d_multi_datasets_with_callable_output_data(
+    _param,
+    _param_2,
+    _param_complex,
+    _param_complex_2,
+    _param_set,
+    _param_set_2,
+    _string_callable,
+):
     sweep_1 = LinSweep(_param_set, 0, 0.5, 5, 0)
     sweep_2 = LinSweep(_param_set_2, 0.5, 1, 5, 0)
-    exp_1 = dond(sweep_1, sweep_2, [_string_callable, _param, _param_complex],
-                 [_string_callable, _param_2, _param_complex_2])
+    exp_1 = dond(
+        sweep_1,
+        sweep_2,
+        [_string_callable, _param, _param_complex],
+        [_string_callable, _param_2, _param_complex_2],
+    )
     data_1 = exp_1[0][0]
     data_2 = exp_1[0][1]
 
@@ -1484,7 +1507,8 @@ def test_dond_2d_multi_datasets_with_callable_output_data(_param, _param_2, _par
         f"{_param_set.name},{_param_set_2.name}," f"{_param.name},{_param_complex.name}"
     )
     assert data_2.parameters == (
-        f"{_param_set.name},{_param_set_2.name}," f"{_param_2.name},{_param_complex_2.name}"
+        f"{_param_set.name},{_param_set_2.name},"
+        f"{_param_2.name},{_param_complex_2.name}"
     )
     loaded_data_1 = data_1.get_parameter_data()
     expected_data_1_1 = np.ones(25).reshape(sweep_1._num_points, sweep_2._num_points)
@@ -1500,7 +1524,9 @@ def test_dond_2d_multi_datasets_with_callable_output_data(_param, _param_2, _par
     )
 
     loaded_data_2 = data_2.get_parameter_data()
-    expected_data_2_1 = 2*np.ones(25).reshape(sweep_1._num_points, sweep_2._num_points)
+    expected_data_2_1 = 2 * np.ones(25).reshape(
+        sweep_1._num_points, sweep_2._num_points
+    )
 
     np.testing.assert_array_equal(
         loaded_data_2[_param_2.name][_param_2.name], expected_data_2_1
