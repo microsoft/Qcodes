@@ -2,8 +2,8 @@ import logging
 import os
 import sys
 from abc import ABC, abstractmethod
-from contextlib import contextmanager, ExitStack
-from typing import Callable, Dict, Iterator, List, Optional, Sequence, Tuple, Union, Any
+from contextlib import ExitStack, contextmanager
+from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
 import matplotlib
 import numpy as np
@@ -772,7 +772,7 @@ def dond(
     )
 
     try:
-        with _catch_keyboard_interrupts() as interrupted, meas.run() as datasaver, params_meas_caller as call_params_meas:
+        with _catch_keyboard_interrupts() as interrupted, ExitStack() as stack, params_meas_caller as call_params_meas:
             datasavers = [stack.enter_context(measure.run()) for measure in meas_list]
             additional_setpoints_data = process_params_meas(additional_setpoints)
             for setpoints in tqdm(nested_setpoints, disable=not show_progress):
