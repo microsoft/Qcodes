@@ -742,13 +742,11 @@ def dond(
     for ind in range(len(grouped_parameters)):
         meas_name = grouped_parameters[f"group_{ind}"]["meas_name"]
         meas_params = grouped_parameters[f"group_{ind}"]["params"]
-        if isinstance(meas_name, str):
-            meas = Measurement(name=meas_name, exp=exp)
+        meas = Measurement(name=meas_name, exp=exp)
         _register_parameters(meas, all_setpoint_params)
-        if not isinstance(meas_params, str):
-            _register_parameters(
-                meas, meas_params, setpoints=all_setpoint_params, shapes=shapes
-            )
+        _register_parameters(
+            meas, meas_params, setpoints=all_setpoint_params, shapes=shapes
+        )
         _set_write_period(meas, write_period)
         _register_actions(meas, enter_actions, exit_actions)
         meas_list.append(meas)
@@ -760,7 +758,6 @@ def dond(
         sweep.param.post_delay = sweep.delay
         params_set.append(sweep.param)
 
-
     datasets = []
     plots_axes = []
     plots_colorbar = []
@@ -768,9 +765,9 @@ def dond(
         use_threads = config.dataset.use_threads
 
     params_meas_caller = (
-        ThreadPoolParamsCaller(*params_meas)
+        ThreadPoolParamsCaller(*all_meas_parameters)
         if use_threads
-        else SequentialParamsCaller(*params_meas)
+        else SequentialParamsCaller(*all_meas_parameters)
     )
 
     try:
@@ -784,9 +781,7 @@ def dond(
                     setpoint_param(setpoint)
                     param_set_list.append((setpoint_param, setpoint))
 
-                meas_value_pair = process_params_meas(
-                    all_meas_parameters, use_threads=use_threads
-                )
+                meas_value_pair = call_params_meas()
                 for ind in range(len(grouped_parameters)):
                     for measured in meas_value_pair:
                         if measured[0] in grouped_parameters[f"group_{ind}"]["params"]:
@@ -799,12 +794,6 @@ def dond(
                         *grouped_parameters[f"group_{ind}"]["measured_params"],
                         *additional_setpoints_data,
                     )
-
-                datasaver.add_result(
-                    *param_set_list,
-                    *call_params_meas(),
-                    *additional_setpoints_data,
-                )
 
     finally:
         for parameter, original_delay in original_delays.items():
