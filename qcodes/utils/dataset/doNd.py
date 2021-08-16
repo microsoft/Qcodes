@@ -746,6 +746,7 @@ def dond(
 
                 meas_value_pair = call_params_meas()
                 for group in grouped_parameters.values():
+                    group["measured_params"] = []
                     for measured in meas_value_pair:
                         if measured[0] in group["params"]:
                             group["measured_params"].append(measured)
@@ -784,9 +785,9 @@ def _create_measurements(
     write_period: Optional[float],
 ) -> Tuple[Measurement, ...]:
     meas_list: List[Measurement] = []
-    for ind in range(len(grouped_parameters)):
-        meas_name = grouped_parameters[f"group_{ind}"]["meas_name"]
-        meas_params = grouped_parameters[f"group_{ind}"]["params"]
+    for group in grouped_parameters.values():
+        meas_name = group["meas_name"]
+        meas_params = group["params"]
         meas = Measurement(name=meas_name, exp=exp)
         _register_parameters(meas, all_setpoint_params)
         _register_parameters(
