@@ -8,6 +8,7 @@ from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Tupl
 import matplotlib
 import numpy as np
 from tqdm.auto import tqdm
+from typing_extensions import TypedDict
 
 from qcodes import config
 from qcodes.dataset.data_set_protocol import DataSetProtocol
@@ -43,6 +44,12 @@ MultiAxesTupleListWithDataSet = Tuple[
 ]
 
 LOG = logging.getLogger(__name__)
+
+
+class ParameterGroup(TypedDict):
+    params: Tuple[ParamMeasT, ...]
+    meas_name: str
+    measured_params: List[Any]
 
 
 class UnsafeThreadingException(Exception):
@@ -790,7 +797,7 @@ def _create_measurements(
     enter_actions: ActionsT,
     exit_actions: ActionsT,
     exp: Optional[Experiment],
-    grouped_parameters: Dict[str, Dict[str, Any]],
+    grouped_parameters: Dict[str, ParameterGroup],
     shapes: Shapes,
     write_period: Optional[float],
 ) -> Tuple[Measurement, ...]:
@@ -813,13 +820,13 @@ def _extract_paramters_by_type_and_group(
     measurement_name: str,
     params_meas: Sequence[Union[ParamMeasT, Sequence[ParamMeasT]]],
 ) -> Tuple[
-    Tuple[ParamMeasT, ...], Dict[str, Dict[str, Any]], Tuple[_BaseParameter, ...]
+    Tuple[ParamMeasT, ...], Dict[str, ParameterGroup], Tuple[_BaseParameter, ...]
 ]:
     measured_parameters: List[_BaseParameter] = []
     all_meas_parameters: List[ParamMeasT] = []
     single_group: List[ParamMeasT] = []
     multi_group: List[Sequence[ParamMeasT]] = []
-    grouped_parameters: Dict[str, Dict[str, Any]] = {}
+    grouped_parameters: Dict[str, ParameterGroup] = {}
     for param in params_meas:
         if not isinstance(param, Sequence):
             single_group.append(param)
@@ -833,16 +840,20 @@ def _extract_paramters_by_type_and_group(
                 if isinstance(nested_param, _BaseParameter):
                     measured_parameters.append(nested_param)
     if single_group:
-        grouped_parameters["group_0"] = {}
-        grouped_parameters["group_0"]["params"] = tuple(single_group)
-        grouped_parameters["group_0"]["meas_name"] = measurement_name
-        grouped_parameters["group_0"]["measured_params"] = []
+        pg: ParameterGroup = {
+            "params": tuple(single_group),
+            "meas_name": measurement_name,
+            "measured_params": [],
+        }
+        grouped_parameters["group_0"] = pg
     if multi_group:
         for index, par in enumerate(multi_group):
-            grouped_parameters[f"group_{index}"] = {}
-            grouped_parameters[f"group_{index}"]["params"] = tuple(par)
-            grouped_parameters[f"group_{index}"]["meas_name"] = measurement_name
-            grouped_parameters[f"group_{index}"]["measured_params"] = []
+            pg = {
+                "params": tuple(par),
+                "meas_name": measurement_name,
+                "measured_params": [],
+            }
+            grouped_parameters[f"group_{index}"] = pg
     return tuple(all_meas_parameters), grouped_parameters, tuple(measured_parameters)
 
 
