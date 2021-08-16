@@ -374,8 +374,7 @@ class Motor(InstrumentChannel):
         """
         self.write(f"BG {self._axis}")
 
-        while int(float(self.ask(f"MG _BG{self._axis}"))):
-            pass
+        self.root_instrument.motion_complete(f"{self._axis}")
 
     def home(self) -> None:
         """
@@ -544,8 +543,7 @@ class DMC4133Controller(GalilMotionController):
         """
         self.write("BG")
 
-        while int(float(self.ask("MG _BGA"))) or int(float(self.ask("MG _BGB"))) or int(float(self.ask("MG _BGC"))):
-            pass
+        self.motion_complete("ABC")
 
 
 class Arm:
@@ -673,18 +671,18 @@ class Arm:
 
         pos = self.controller.absolute_position()
 
-        a = int(np.round(rel_vec[0] * d))
-        b = int(np.round(rel_vec[1] * d))
-        c = int(np.round(rel_vec[2] * d))
+        a = int(np.floor(rel_vec[0] * d))
+        b = int(np.floor(rel_vec[1] * d))
+        c = int(np.floor(rel_vec[2] * d))
 
         self._target = np.array([pos["A"] + a, pos["B"] + b, pos["C"] + c, 1])
 
         if np.dot(self._plane_eqn, self._target) < 0:
             raise RuntimeError(f"Cannot move to {self._target[:3]}. Target location is below chip plane.")
 
-        sp_a = int(np.round(abs(rel_vec[0]) * speed))
-        sp_b = int(np.round(abs(rel_vec[1]) * speed))
-        sp_c = int(np.round(abs(rel_vec[2]) * speed))
+        sp_a = int(np.floor(abs(rel_vec[0]) * speed))
+        sp_b = int(np.floor(abs(rel_vec[1]) * speed))
+        sp_c = int(np.floor(abs(rel_vec[2]) * speed))
 
         motorA = self.controller.motor_a
         motorB = self.controller.motor_b
@@ -719,7 +717,17 @@ class Arm:
     def _put_down(self) -> None:
 
         motion_vec = -1*self._n
-        self._setup_motion(rel_vec=motion_vec, d=60000, speed=3000)
+
+        pos = self.controller.absolute_position()
+        x1 = pos['A']
+        y1 = pos['B']
+        z1 = pos['C']
+        current = np.array([x1, y1, z1, 1])
+
+        denominator = np.sqrt(self._plane_eqn[0]**2 + self._plane_eqn[1]**2 + self._plane_eqn[2]**2)
+        d = abs(sum(self._plane_eqn * current))/denominator
+
+        self._setup_motion(rel_vec=motion_vec, d=d, speed=3000)
         self._move()
 
     def move_towards_left_bottom_position(self) -> None:
