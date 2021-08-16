@@ -706,9 +706,7 @@ def dond(
         loop_shape = tuple(1 for _ in additional_setpoints) + tuple(
             sweep.num_points for sweep in sweep_instances
         )
-        shapes: Shapes = detect_shape_of_measurement(
-            tuple(measured_parameters), loop_shape
-        )
+        shapes: Shapes = detect_shape_of_measurement(measured_parameters, loop_shape)
     except TypeError:
         LOG.exception(
             f"Could not detect shape of {measured_parameters} "
@@ -793,7 +791,9 @@ def dond(
 def _extract_paramters_by_type_and_group(
     measurement_name: str,
     params_meas: Sequence[Union[ParamMeasT, Sequence[ParamMeasT]]],
-) -> Tuple[List[ParamMeasT], Dict[str, Dict[str, Any]], List[_BaseParameter]]:
+) -> Tuple[
+    Tuple[ParamMeasT, ...], Dict[str, Dict[str, Any]], Tuple[_BaseParameter, ...]
+]:
     measured_parameters: List[_BaseParameter] = []
     all_meas_parameters: List[ParamMeasT] = []
     single_group: List[ParamMeasT] = []
@@ -822,7 +822,7 @@ def _extract_paramters_by_type_and_group(
             grouped_parameters[f"group_{index}"]["params"] = tuple(par)
             grouped_parameters[f"group_{index}"]["meas_name"] = measurement_name
             grouped_parameters[f"group_{index}"]["measured_params"] = []
-    return all_meas_parameters, grouped_parameters, measured_parameters
+    return tuple(all_meas_parameters), grouped_parameters, tuple(measured_parameters)
 
 
 def _handle_plotting(
