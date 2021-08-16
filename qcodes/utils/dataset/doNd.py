@@ -3,7 +3,7 @@ import os
 import sys
 from abc import ABC, abstractmethod
 from contextlib import ExitStack, contextmanager
-from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Tuple, Union
+from typing import Callable, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
 import matplotlib
 import numpy as np
