@@ -650,12 +650,6 @@ def dond(
     if show_progress is None:
         show_progress = config.dataset.dond_show_progress
 
-    meas = Measurement(name=measurement_name, exp=exp)
-    if log_info is not None:
-        meas._extra_log_info = log_info
-    else:
-        meas._extra_log_info = "Using 'qcodes.utils.dataset.doNd.dond'"
-
     def _parse_dond_arguments(
         *params: Union[AbstractSweep, Union[ParamMeasT, Sequence[ParamMeasT]]]
     ) -> Tuple[List[AbstractSweep], List[Union[ParamMeasT, Sequence[ParamMeasT]]]]:
@@ -712,6 +706,7 @@ def dond(
         grouped_parameters,
         shapes,
         write_period,
+        log_info,
     )
 
     original_delays: Dict[_BaseParameter, float] = {}
@@ -783,12 +778,18 @@ def _create_measurements(
     grouped_parameters: Dict[str, ParameterGroup],
     shapes: Shapes,
     write_period: Optional[float],
+    log_info: Optional[str],
 ) -> Tuple[Measurement, ...]:
     meas_list: List[Measurement] = []
+    if log_info is not None:
+        _extra_log_info = log_info
+    else:
+        _extra_log_info = "Using 'qcodes.utils.dataset.doNd.dond'"
     for group in grouped_parameters.values():
         meas_name = group["meas_name"]
         meas_params = group["params"]
         meas = Measurement(name=meas_name, exp=exp)
+        meas._extra_log_info = _extra_log_info
         _register_parameters(meas, all_setpoint_params)
         _register_parameters(
             meas, meas_params, setpoints=all_setpoint_params, shapes=shapes
