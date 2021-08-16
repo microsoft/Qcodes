@@ -11,6 +11,7 @@ from tqdm.auto import tqdm
 from typing_extensions import TypedDict
 
 from qcodes import config
+from qcodes.dataset.data_set import res_type
 from qcodes.dataset.data_set_protocol import DataSetProtocol
 from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
 from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
@@ -49,7 +50,7 @@ LOG = logging.getLogger(__name__)
 class ParameterGroup(TypedDict):
     params: Tuple[ParamMeasT, ...]
     meas_name: str
-    measured_params: List[Any]
+    measured_params: List[res_type]
 
 
 class UnsafeThreadingException(Exception):
