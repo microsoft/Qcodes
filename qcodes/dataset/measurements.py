@@ -4,7 +4,7 @@ to measure and storing results. The user is expected to mainly interact with it
 using the :class:`.Measurement` class.
 """
 
-
+import collections
 import io
 import logging
 import traceback as tb_module
@@ -176,7 +176,14 @@ class DataSaver:
                                 if isinstance(partial_result[0], _BaseParameter) else partial_result[0]
                                 for partial_result in res_tuple)
         if len(set(parameter_names)) != len(parameter_names):
-            raise ValueError("Not all parameter names are unique.")
+            non_unique = [
+                item
+                for item, count in collections.Counter(parameter_names).items()
+                if count > 1
+            ]
+            raise ValueError(
+                f"Not all parameter names are unique. Got multiple values for {non_unique}"
+            )
 
         for partial_result in res_tuple:
             parameter = partial_result[0]
