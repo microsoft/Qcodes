@@ -762,12 +762,10 @@ def dond(
                     param_set_list.append((setpoint_param, setpoint))
 
                 meas_value_pair = call_params_meas()
-                for ind in range(len(grouped_parameters)):
+                for group in grouped_parameters.values():
                     for measured in meas_value_pair:
-                        if measured[0] in grouped_parameters[f"group_{ind}"]["params"]:
-                            grouped_parameters[f"group_{ind}"][
-                                "measured_params"
-                            ].append(measured)
+                        if measured[0] in group["params"]:
+                            group["measured_params"].append(measured)
                 for ind, datasaver in enumerate(datasavers):
                     datasaver.add_result(
                         *param_set_list,
