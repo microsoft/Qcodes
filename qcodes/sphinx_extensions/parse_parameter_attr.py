@@ -1,7 +1,8 @@
-"""A Sphinx extension that uses Parso to extract the code of a
-instance attribute as a proxy object with a repr containing the code defining the
+"""A Sphinx extension that uses Parso to extract the code of a instance attribute.
+
+The code is used to produce a proxy object with a repr containing the code defining the
 attribute. This enables better documentation of instance attributes.
-Especially QCoDeS Parameters.  Note that this is for the moment limited to
+Especially QCoDeS Parameters. Note that this is for the moment limited to
 attributes on QCoDeS instruments."""
 
 import functools
@@ -18,8 +19,8 @@ LOGGER = logging.getLogger(__name__)
 
 
 class ParameterProxy:
-    """
 
+    """
     An object that acts as a proxy for documenting containing
     a repr that can be set from a string.
 
