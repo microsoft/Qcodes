@@ -2,8 +2,6 @@ import re
 
 import numpy as np
 import pytest
-from hypothesis import given
-from hypothesis import strategies as hst
 
 import qcodes as qc
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
