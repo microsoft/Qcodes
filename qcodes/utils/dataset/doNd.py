@@ -763,6 +763,7 @@ def dond(
 
                 meas_value_pair = call_params_meas()
                 for group in grouped_parameters.values():
+                    group["measured_params"] = []
                     for measured in meas_value_pair:
                         if measured[0] in group["params"]:
                             group["measured_params"].append(measured)
