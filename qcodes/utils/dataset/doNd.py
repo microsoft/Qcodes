@@ -8,8 +8,10 @@ from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Tupl
 import matplotlib
 import numpy as np
 from tqdm.auto import tqdm
+from typing_extensions import TypedDict
 
 from qcodes import config
+from qcodes.dataset.data_set import res_type
 from qcodes.dataset.data_set_protocol import DataSetProtocol
 from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
 from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
@@ -43,6 +45,12 @@ MultiAxesTupleListWithDataSet = Tuple[
 ]
 
 LOG = logging.getLogger(__name__)
+
+
+class ParameterGroup(TypedDict):
+    params: Tuple[ParamMeasT, ...]
+    meas_name: str
+    measured_params: List[res_type]
 
 
 class UnsafeThreadingException(Exception):
@@ -679,60 +687,32 @@ def dond(
         s for s in additional_setpoints
     )
 
-    measured_parameters: List[_BaseParameter] = []
-    all_meas_parameters: List[ParamMeasT] = []
-    single_group: List[ParamMeasT] = []
-    multi_group: List[Sequence[ParamMeasT]] = []
-    grouped_parameters: Dict[str, Dict[str, Any]] = {}
-    for param in params_meas:
-        if not isinstance(param, Sequence):
-            single_group.append(param)
-            all_meas_parameters.append(param)
-            if isinstance(param, _BaseParameter):
-                measured_parameters.append(param)
-        elif not isinstance(param, str):
-            multi_group.append(param)
-            for nested_param in param:
-                all_meas_parameters.append(nested_param)
-                if isinstance(nested_param, _BaseParameter):
-                    measured_parameters.append(nested_param)
-    if single_group:
-        grouped_parameters["group_0"] = {}
-        grouped_parameters["group_0"]["params"] = tuple(single_group)
-        grouped_parameters["group_0"]["meas_name"] = measurement_name
-        grouped_parameters["group_0"]["measured_params"] = []
-    if multi_group:
-        for index, par in enumerate(multi_group):
-            grouped_parameters[f"group_{index}"] = {}
-            grouped_parameters[f"group_{index}"]["params"] = tuple(par)
-            grouped_parameters[f"group_{index}"]["meas_name"] = measurement_name
-            grouped_parameters[f"group_{index}"]["measured_params"] = []
+    (
+        all_meas_parameters,
+        grouped_parameters,
+        measured_parameters,
+    ) = _extract_paramters_by_type_and_group(measurement_name, params_meas)
 
     try:
         loop_shape = tuple(1 for _ in additional_setpoints) + tuple(
             sweep.num_points for sweep in sweep_instances
         )
-        shapes: Shapes = detect_shape_of_measurement(
-            tuple(measured_parameters), loop_shape
-        )
+        shapes: Shapes = detect_shape_of_measurement(measured_parameters, loop_shape)
     except TypeError:
         LOG.exception(
             f"Could not detect shape of {measured_parameters} "
             f"falling back to unknown shape."
         )
         shapes = None
-    meas_list: List[Measurement] = []
-    for ind in range(len(grouped_parameters)):
-        meas_name = grouped_parameters[f"group_{ind}"]["meas_name"]
-        meas_params = grouped_parameters[f"group_{ind}"]["params"]
-        meas = Measurement(name=meas_name, exp=exp)
-        _register_parameters(meas, all_setpoint_params)
-        _register_parameters(
-            meas, meas_params, setpoints=all_setpoint_params, shapes=shapes
-        )
-        _set_write_period(meas, write_period)
-        _register_actions(meas, enter_actions, exit_actions)
-        meas_list.append(meas)
+    meas_list = _create_measurements(
+        all_setpoint_params,
+        enter_actions,
+        exit_actions,
+        exp,
+        grouped_parameters,
+        shapes,
+        write_period,
+    )
 
     original_delays: Dict[_BaseParameter, float] = {}
     params_set: List[_BaseParameter] = []
@@ -765,12 +745,10 @@ def dond(
                     param_set_list.append((setpoint_param, setpoint))
 
                 meas_value_pair = call_params_meas()
-                for ind in range(len(grouped_parameters)):
+                for group in grouped_parameters.values():
                     for measured in meas_value_pair:
-                        if measured[0] in grouped_parameters[f"group_{ind}"]["params"]:
-                            grouped_parameters[f"group_{ind}"][
-                                "measured_params"
-                            ].append(measured)
+                        if measured[0] in group["params"]:
+                            group["measured_params"].append(measured)
                 for ind, datasaver in enumerate(datasavers):
                     datasaver.add_result(
                         *param_set_list,
@@ -794,6 +772,71 @@ def dond(
         return datasets[0], plots_axes[0], plots_colorbar[0]
     else:
         return tuple(datasets), tuple(plots_axes), tuple(plots_colorbar)
+
+
+def _create_measurements(
+    all_setpoint_params: Sequence[_BaseParameter],
+    enter_actions: ActionsT,
+    exit_actions: ActionsT,
+    exp: Optional[Experiment],
+    grouped_parameters: Dict[str, ParameterGroup],
+    shapes: Shapes,
+    write_period: Optional[float],
+) -> Tuple[Measurement, ...]:
+    meas_list: List[Measurement] = []
+    for ind in range(len(grouped_parameters)):
+        meas_name = grouped_parameters[f"group_{ind}"]["meas_name"]
+        meas_params = grouped_parameters[f"group_{ind}"]["params"]
+        meas = Measurement(name=meas_name, exp=exp)
+        _register_parameters(meas, all_setpoint_params)
+        _register_parameters(
+            meas, meas_params, setpoints=all_setpoint_params, shapes=shapes
+        )
+        _set_write_period(meas, write_period)
+        _register_actions(meas, enter_actions, exit_actions)
+        meas_list.append(meas)
+    return tuple(meas_list)
+
+
+def _extract_paramters_by_type_and_group(
+    measurement_name: str,
+    params_meas: Sequence[Union[ParamMeasT, Sequence[ParamMeasT]]],
+) -> Tuple[
+    Tuple[ParamMeasT, ...], Dict[str, ParameterGroup], Tuple[_BaseParameter, ...]
+]:
+    measured_parameters: List[_BaseParameter] = []
+    all_meas_parameters: List[ParamMeasT] = []
+    single_group: List[ParamMeasT] = []
+    multi_group: List[Sequence[ParamMeasT]] = []
+    grouped_parameters: Dict[str, ParameterGroup] = {}
+    for param in params_meas:
+        if not isinstance(param, Sequence):
+            single_group.append(param)
+            all_meas_parameters.append(param)
+            if isinstance(param, _BaseParameter):
+                measured_parameters.append(param)
+        elif not isinstance(param, str):
+            multi_group.append(param)
+            for nested_param in param:
+                all_meas_parameters.append(nested_param)
+                if isinstance(nested_param, _BaseParameter):
+                    measured_parameters.append(nested_param)
+    if single_group:
+        pg: ParameterGroup = {
+            "params": tuple(single_group),
+            "meas_name": measurement_name,
+            "measured_params": [],
+        }
+        grouped_parameters["group_0"] = pg
+    if multi_group:
+        for index, par in enumerate(multi_group):
+            pg = {
+                "params": tuple(par),
+                "meas_name": measurement_name,
+                "measured_params": [],
+            }
+            grouped_parameters[f"group_{index}"] = pg
+    return tuple(all_meas_parameters), grouped_parameters, tuple(measured_parameters)
 
 
 def _handle_plotting(
