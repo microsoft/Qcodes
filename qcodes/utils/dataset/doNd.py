@@ -713,18 +713,15 @@ def dond(
             f"falling back to unknown shape."
         )
         shapes = None
-    meas_list: List[Measurement] = []
-    for ind in range(len(grouped_parameters)):
-        meas_name = grouped_parameters[f"group_{ind}"]["meas_name"]
-        meas_params = grouped_parameters[f"group_{ind}"]["params"]
-        meas = Measurement(name=meas_name, exp=exp)
-        _register_parameters(meas, all_setpoint_params)
-        _register_parameters(
-            meas, meas_params, setpoints=all_setpoint_params, shapes=shapes
-        )
-        _set_write_period(meas, write_period)
-        _register_actions(meas, enter_actions, exit_actions)
-        meas_list.append(meas)
+    meas_list = _create_measurements(
+        all_setpoint_params,
+        enter_actions,
+        exit_actions,
+        exp,
+        grouped_parameters,
+        shapes,
+        write_period,
+    )
 
     original_delays: Dict[_BaseParameter, float] = {}
     params_set: List[_BaseParameter] = []
@@ -786,6 +783,30 @@ def dond(
         return datasets[0], plots_axes[0], plots_colorbar[0]
     else:
         return tuple(datasets), tuple(plots_axes), tuple(plots_colorbar)
+
+
+def _create_measurements(
+    all_setpoint_params: Sequence[_BaseParameter],
+    enter_actions: ActionsT,
+    exit_actions: ActionsT,
+    exp: Optional[Experiment],
+    grouped_parameters: Dict[str, Dict[str, Any]],
+    shapes: Shapes,
+    write_period: Optional[float],
+) -> Tuple[Measurement, ...]:
+    meas_list: List[Measurement] = []
+    for ind in range(len(grouped_parameters)):
+        meas_name = grouped_parameters[f"group_{ind}"]["meas_name"]
+        meas_params = grouped_parameters[f"group_{ind}"]["params"]
+        meas = Measurement(name=meas_name, exp=exp)
+        _register_parameters(meas, all_setpoint_params)
+        _register_parameters(
+            meas, meas_params, setpoints=all_setpoint_params, shapes=shapes
+        )
+        _set_write_period(meas, write_period)
+        _register_actions(meas, enter_actions, exit_actions)
+        meas_list.append(meas)
+    return tuple(meas_list)
 
 
 def _extract_paramters_by_type_and_group(
