@@ -38,14 +38,12 @@ def set_tmp_output_dir(tmpdir):
 @pytest.fixture()
 def plot_close():
     yield
-    plt.close('all')
+    plt.close("all")
 
 
 @pytest.fixture()
 def _param():
-    p = Parameter('simple_parameter',
-                  set_cmd=None,
-                  get_cmd=lambda: 1)
+    p = Parameter("simple_parameter", set_cmd=None, get_cmd=lambda: 1)
     return p
 
 
@@ -79,17 +77,13 @@ def _param_complex_2():
 
 @pytest.fixture()
 def _param_set():
-    p = Parameter('simple_setter_parameter',
-                  set_cmd=None,
-                  get_cmd=None)
+    p = Parameter("simple_setter_parameter", set_cmd=None, get_cmd=None)
     return p
 
 
 @pytest.fixture()
 def _param_set_2():
-    p = Parameter('simple_setter_parameter_2',
-                  set_cmd=None,
-                  get_cmd=None)
+    p = Parameter("simple_setter_parameter_2", set_cmd=None, get_cmd=None)
     return p
 
 
@@ -97,9 +91,9 @@ def _param_func(_p):
     """
     A private utility function.
     """
-    _new_param = Parameter('modified_parameter',
-                           set_cmd=None,
-                           get_cmd=lambda: _p.get()*2)
+    _new_param = Parameter(
+        "modified_parameter", set_cmd=None, get_cmd=lambda: _p.get() * 2
+    )
     return _new_param
 
 
@@ -119,11 +113,11 @@ def _string_callable():
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-@pytest.mark.parametrize('period', [None, 1])
-@pytest.mark.parametrize('plot', [None, True, False])
-@pytest.mark.parametrize('plot_config', [None, True, False])
+@pytest.mark.parametrize("period", [None, 1])
+@pytest.mark.parametrize("plot", [None, True, False])
+@pytest.mark.parametrize("plot_config", [None, True, False])
 def test_do0d_with_real_parameter(period, plot, plot_config):
-    arrayparam = ArraySetPointParam(name='arrayparam')
+    arrayparam = ArraySetPointParam(name="arrayparam")
 
     if plot_config is not None:
         config.dataset.dond_plot = plot_config
@@ -137,31 +131,36 @@ def test_do0d_with_real_parameter(period, plot, plot_config):
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-@pytest.mark.parametrize('period, plot', [(None, True), (None, False),
-                         (1, True), (1, False)])
+@pytest.mark.parametrize(
+    "period, plot", [(None, True), (None, False), (1, True), (1, False)]
+)
 def test_do0d_with_complex_parameter(_param_complex, period, plot):
     do0d(_param_complex, write_period=period, do_plot=plot)
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-@pytest.mark.parametrize('period, plot', [(None, True), (None, False),
-                         (1, True), (1, False)])
+@pytest.mark.parametrize(
+    "period, plot", [(None, True), (None, False), (1, True), (1, False)]
+)
 def test_do0d_with_a_callable(_param_callable, period, plot):
     do0d(_param_callable, write_period=period, do_plot=plot)
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-@pytest.mark.parametrize('period, plot', [(None, True), (None, False),
-                         (1, True), (1, False)])
+@pytest.mark.parametrize(
+    "period, plot", [(None, True), (None, False), (1, True), (1, False)]
+)
 def test_do0d_with_2_parameters(_param, _param_complex, period, plot):
     do0d(_param, _param_complex, write_period=period, do_plot=plot)
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-@pytest.mark.parametrize('period, plot', [(None, True), (None, False),
-                         (1, True), (1, False)])
-def test_do0d_with_parameter_and_a_callable(_param_complex, _param_callable,
-                                            period, plot):
+@pytest.mark.parametrize(
+    "period, plot", [(None, True), (None, False), (1, True), (1, False)]
+)
+def test_do0d_with_parameter_and_a_callable(
+    _param_complex, _param_callable, period, plot
+):
     do0d(_param_callable, _param_complex, write_period=period, do_plot=plot)
 
 
@@ -188,35 +187,37 @@ def test_do0d_output_data(_param):
     exp = do0d(_param)
     data = exp[0]
     assert data.parameters == _param.name
-    loaded_data = data.get_parameter_data()['simple_parameter']['simple_parameter']
+    loaded_data = data.get_parameter_data()["simple_parameter"]["simple_parameter"]
     assert loaded_data == np.array([_param.get()])
 
 
 @pytest.mark.usefixtures("experiment")
-@pytest.mark.parametrize("multiparamtype", [MultiSetPointParam,
-                                            Multi2DSetPointParam,
-                                            Multi2DSetPointParam2Sizes])
+@pytest.mark.parametrize(
+    "multiparamtype",
+    [MultiSetPointParam, Multi2DSetPointParam, Multi2DSetPointParam2Sizes],
+)
 @given(n_points_pws=hst.integers(min_value=1, max_value=1000))
 @settings(deadline=None, suppress_health_check=(HealthCheck.function_scoped_fixture,))
-def test_do0d_verify_shape(_param, _param_complex, multiparamtype,
-                           dummyinstrument, n_points_pws):
-    arrayparam = ArraySetPointParam(name='arrayparam')
-    multiparam = multiparamtype(name='multiparam')
+def test_do0d_verify_shape(
+    _param, _param_complex, multiparamtype, dummyinstrument, n_points_pws
+):
+    arrayparam = ArraySetPointParam(name="arrayparam")
+    multiparam = multiparamtype(name="multiparam")
     paramwsetpoints = dummyinstrument.A.dummy_parameter_with_setpoints
     dummyinstrument.A.dummy_start(0)
     dummyinstrument.A.dummy_stop(1)
     dummyinstrument.A.dummy_n_points(n_points_pws)
 
-    results = do0d(arrayparam, multiparam, paramwsetpoints,
-                   _param, _param_complex,
-                   do_plot=False)
+    results = do0d(
+        arrayparam, multiparam, paramwsetpoints, _param, _param_complex, do_plot=False
+    )
     expected_shapes = {}
     for i, name in enumerate(multiparam.full_names):
         expected_shapes[name] = tuple(multiparam.shapes[i])
-    expected_shapes['arrayparam'] = tuple(arrayparam.shape)
-    expected_shapes['simple_parameter'] = (1,)
-    expected_shapes['simple_complex_parameter'] = (1,)
-    expected_shapes[paramwsetpoints.full_name] = (n_points_pws, )
+    expected_shapes["arrayparam"] = tuple(arrayparam.shape)
+    expected_shapes["simple_parameter"] = (1,)
+    expected_shapes["simple_complex_parameter"] = (1,)
+    expected_shapes[paramwsetpoints.full_name] = (n_points_pws,)
     assert results[0].description.shapes == expected_shapes
 
     ds = results[0]
@@ -232,14 +233,14 @@ def test_do0d_verify_shape(_param, _param_complex, multiparamtype,
 
 @pytest.mark.usefixtures("experiment")
 def test_do0d_parameter_with_array_vals():
-    param = ArrayshapedParam(name='paramwitharrayval', vals=Arrays(shape=(10,)))
+    param = ArrayshapedParam(name="paramwitharrayval", vals=Arrays(shape=(10,)))
     results = do0d(param)
-    expected_shapes = {'paramwitharrayval': (10,)}
+    expected_shapes = {"paramwitharrayval": (10,)}
     assert results[0].description.shapes == expected_shapes
 
 
 def test_do0d_explicit_experiment(_param, experiment):
-    experiment_2 = new_experiment('new-exp', 'no-sample')
+    experiment_2 = new_experiment("new-exp", "no-sample")
 
     data1 = do0d(_param, do_plot=False, exp=experiment)
     assert data1[0].exp_name == "test-experiment"
@@ -257,7 +258,7 @@ def test_do0d_explicit_name(_param):
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-@pytest.mark.parametrize('delay', [0, 0.1, 1])
+@pytest.mark.parametrize("delay", [0, 0.1, 1])
 def test_do1d_with_real_parameter(_param_set, _param, delay):
 
     start = 0
@@ -268,8 +269,8 @@ def test_do1d_with_real_parameter(_param_set, _param, delay):
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-@pytest.mark.parametrize('plot', [None, True, False])
-@pytest.mark.parametrize('plot_config', [None, True, False])
+@pytest.mark.parametrize("plot", [None, True, False])
+@pytest.mark.parametrize("plot_config", [None, True, False])
 def test_do1d_plot(_param_set, _param, plot, plot_config):
 
     if plot_config is not None:
@@ -288,7 +289,7 @@ def test_do1d_plot(_param_set, _param, plot, plot_config):
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-@pytest.mark.parametrize('delay', [0, 0.1, 1])
+@pytest.mark.parametrize("delay", [0, 0.1, 1])
 def test_do1d_with_complex_parameter(_param_set, _param_complex, delay):
 
     start = 0
@@ -299,7 +300,7 @@ def test_do1d_with_complex_parameter(_param_set, _param_complex, delay):
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-@pytest.mark.parametrize('delay', [0, 0.1, 1])
+@pytest.mark.parametrize("delay", [0, 0.1, 1])
 def test_do1d_with_2_parameter(_param_set, _param, _param_complex, delay):
 
     start = 0
@@ -310,7 +311,7 @@ def test_do1d_with_2_parameter(_param_set, _param, _param_complex, delay):
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-@pytest.mark.parametrize('delay', [0, 0.1, 1])
+@pytest.mark.parametrize("delay", [0, 0.1, 1])
 def test_do1d_output_type_real_parameter(_param_set, _param, delay):
 
     start = 0
@@ -332,8 +333,8 @@ def test_do1d_output_data(_param, _param_set):
     exp = do1d(_param_set, start, stop, num_points, delay, _param)
     data = exp[0]
 
-    assert data.parameters == f'{_param_set.name},{_param.name}'
-    loaded_data = data.get_parameter_data()['simple_parameter']
+    assert data.parameters == f"{_param_set.name},{_param.name}"
+    loaded_data = data.get_parameter_data()["simple_parameter"]
 
     np.testing.assert_array_equal(loaded_data[_param.name], np.ones(5))
     np.testing.assert_array_equal(loaded_data[_param_set.name], np.linspace(0, 1, 5))
@@ -348,7 +349,9 @@ def test_do0d_parameter_with_setpoints_2d(dummyinstrument):
     dummyinstrument.A.dummy_n_points_2(3)
     dataset, _, _ = do0d(dummyinstrument.A.dummy_parameter_with_setpoints_2d)
 
-    data = dataset.cache.data()['dummyinstrument_ChanA_dummy_parameter_with_setpoints_2d']
+    data = dataset.cache.data()[
+        "dummyinstrument_ChanA_dummy_parameter_with_setpoints_2d"
+    ]
     for array in data.values():
         assert array.shape == (10, 3)
 
@@ -363,10 +366,17 @@ def test_do0d_parameter_with_setpoints_2d(dummyinstrument):
     n_points_pws=hst.integers(min_value=1, max_value=500),
 )
 @settings(deadline=None, suppress_health_check=(HealthCheck.function_scoped_fixture,))
-def test_do1d_verify_shape(_param, _param_complex, _param_set, multiparamtype,
-                           dummyinstrument, num_points, n_points_pws):
-    arrayparam = ArraySetPointParam(name='arrayparam')
-    multiparam = multiparamtype(name='multiparam')
+def test_do1d_verify_shape(
+    _param,
+    _param_complex,
+    _param_set,
+    multiparamtype,
+    dummyinstrument,
+    num_points,
+    n_points_pws,
+):
+    arrayparam = ArraySetPointParam(name="arrayparam")
+    multiparam = multiparamtype(name="multiparam")
     paramwsetpoints = dummyinstrument.A.dummy_parameter_with_setpoints
     dummyinstrument.A.dummy_start(0)
     dummyinstrument.A.dummy_stop(1)
@@ -376,31 +386,39 @@ def test_do1d_verify_shape(_param, _param_complex, _param_set, multiparamtype,
     stop = 1
     delay = 0
 
-    results = do1d(_param_set, start, stop, num_points, delay,
-                   arrayparam, multiparam, paramwsetpoints,
-                   _param, _param_complex,
-                   do_plot=False)
+    results = do1d(
+        _param_set,
+        start,
+        stop,
+        num_points,
+        delay,
+        arrayparam,
+        multiparam,
+        paramwsetpoints,
+        _param,
+        _param_complex,
+        do_plot=False,
+    )
     expected_shapes = {}
     for i, name in enumerate(multiparam.full_names):
-        expected_shapes[name] = (num_points, ) + tuple(multiparam.shapes[i])
-    expected_shapes['arrayparam'] = (num_points, ) + tuple(arrayparam.shape)
-    expected_shapes['simple_parameter'] = (num_points, )
-    expected_shapes['simple_complex_parameter'] = (num_points, )
+        expected_shapes[name] = (num_points,) + tuple(multiparam.shapes[i])
+    expected_shapes["arrayparam"] = (num_points,) + tuple(arrayparam.shape)
+    expected_shapes["simple_parameter"] = (num_points,)
+    expected_shapes["simple_complex_parameter"] = (num_points,)
     expected_shapes[paramwsetpoints.full_name] = (num_points, n_points_pws)
     assert results[0].description.shapes == expected_shapes
 
 
 @pytest.mark.usefixtures("experiment")
 def test_do1d_parameter_with_array_vals(_param_set):
-    param = ArrayshapedParam(name='paramwitharrayval', vals=Arrays(shape=(10,)))
+    param = ArrayshapedParam(name="paramwitharrayval", vals=Arrays(shape=(10,)))
     start = 0
     stop = 1
     num_points = 15  # make param
     delay = 0
 
-    results = do1d(_param_set, start, stop, num_points, delay,
-                   param, do_plot=False)
-    expected_shapes = {'paramwitharrayval': (num_points, 10)}
+    results = do1d(_param_set, start, stop, num_points, delay, param, do_plot=False)
+    expected_shapes = {"paramwitharrayval": (num_points, 10)}
 
     ds = results[0]
 
@@ -419,17 +437,32 @@ def test_do1d_explicit_experiment(_param_set, _param, experiment):
     num_points = 5
     delay = 0
 
-    experiment_2 = new_experiment('new-exp', 'no-sample')
+    experiment_2 = new_experiment("new-exp", "no-sample")
 
-    data1 = do1d(_param_set, start, stop, num_points, delay,
-                 _param, do_plot=False, exp=experiment)
+    data1 = do1d(
+        _param_set,
+        start,
+        stop,
+        num_points,
+        delay,
+        _param,
+        do_plot=False,
+        exp=experiment,
+    )
     assert data1[0].exp_name == "test-experiment"
-    data2 = do1d(_param_set, start, stop, num_points, delay,
-                 _param, do_plot=False, exp=experiment_2)
+    data2 = do1d(
+        _param_set,
+        start,
+        stop,
+        num_points,
+        delay,
+        _param,
+        do_plot=False,
+        exp=experiment_2,
+    )
     assert data2[0].exp_name == "new-exp"
     # by default the last experiment is used
-    data3 = do1d(_param_set, start, stop, num_points, delay,
-                 _param, do_plot=False)
+    data3 = do1d(_param_set, start, stop, num_points, delay, _param, do_plot=False)
     assert data3[0].exp_name == "new-exp"
 
 
@@ -440,14 +473,23 @@ def test_do1d_explicit_name(_param_set, _param):
     num_points = 5
     delay = 0
 
-    data1 = do1d(_param_set, start, stop, num_points, delay,
-                 _param, do_plot=False, measurement_name="my measurement")
+    data1 = do1d(
+        _param_set,
+        start,
+        stop,
+        num_points,
+        delay,
+        _param,
+        do_plot=False,
+        measurement_name="my measurement",
+    )
     assert data1[0].name == "my measurement"
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-@pytest.mark.parametrize('sweep, columns', [(False, False), (False, True),
-                         (True, False), (True, True)])
+@pytest.mark.parametrize(
+    "sweep, columns", [(False, False), (False, True), (True, False), (True, True)]
+)
 def test_do2d(_param, _param_complex, _param_set, _param_set_2, sweep, columns):
 
     start_p1 = 0
@@ -460,14 +502,27 @@ def test_do2d(_param, _param_complex, _param_set, _param_set_2, sweep, columns):
     num_points_p2 = 2
     delay_p2 = 0.01
 
-    do2d(_param_set, start_p1, stop_p1, num_points_p1, delay_p1,
-         _param_set_2, start_p2, stop_p2, num_points_p2, delay_p2,
-         _param, _param_complex, set_before_sweep=sweep, flush_columns=columns)
+    do2d(
+        _param_set,
+        start_p1,
+        stop_p1,
+        num_points_p1,
+        delay_p1,
+        _param_set_2,
+        start_p2,
+        stop_p2,
+        num_points_p2,
+        delay_p2,
+        _param,
+        _param_complex,
+        set_before_sweep=sweep,
+        flush_columns=columns,
+    )
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-@pytest.mark.parametrize('plot', [None, True, False])
-@pytest.mark.parametrize('plot_config', [None, True, False])
+@pytest.mark.parametrize("plot", [None, True, False])
+@pytest.mark.parametrize("plot_config", [None, True, False])
 def test_do2d_plot(_param_set, _param_set_2, _param, plot, plot_config):
 
     if plot_config is not None:
@@ -484,9 +539,18 @@ def test_do2d_plot(_param_set, _param_set_2, _param, plot, plot_config):
     delay_p2 = 0
 
     output = do2d(
-        _param_set, start_p1, stop_p1, num_points_p1, delay_p1,
-        _param_set_2, start_p2, stop_p2, num_points_p2, delay_p2,
-        _param, do_plot=plot
+        _param_set,
+        start_p1,
+        stop_p1,
+        num_points_p1,
+        delay_p1,
+        _param_set_2,
+        start_p2,
+        stop_p2,
+        num_points_p2,
+        delay_p2,
+        _param,
+        do_plot=plot,
     )
 
     assert len(output[1]) == 1
@@ -509,9 +573,20 @@ def test_do2d_output_type(_param, _param_complex, _param_set, _param_set_2):
     num_points_p2 = 2
     delay_p2 = 0.025
 
-    data = do2d(_param_set, start_p1, stop_p1, num_points_p1, delay_p1,
-                _param_set_2, start_p2, stop_p2, num_points_p2, delay_p2,
-                _param, _param_complex)
+    data = do2d(
+        _param_set,
+        start_p1,
+        stop_p1,
+        num_points_p1,
+        delay_p1,
+        _param_set_2,
+        start_p2,
+        stop_p2,
+        num_points_p2,
+        delay_p2,
+        _param,
+        _param_complex,
+    )
     assert isinstance(data[0], DataSet) is True
 
 
@@ -528,38 +603,48 @@ def test_do2d_output_data(_param, _param_complex, _param_set, _param_set_2):
     num_points_p2 = 5
     delay_p2 = 0.0
 
-    exp = do2d(_param_set, start_p1, stop_p1, num_points_p1, delay_p1,
-               _param_set_2, start_p2, stop_p2, num_points_p2, delay_p2,
-               _param, _param_complex)
+    exp = do2d(
+        _param_set,
+        start_p1,
+        stop_p1,
+        num_points_p1,
+        delay_p1,
+        _param_set_2,
+        start_p2,
+        stop_p2,
+        num_points_p2,
+        delay_p2,
+        _param,
+        _param_complex,
+    )
     data = exp[0]
 
-    assert data.parameters == (f'{_param_set.name},{_param_set_2.name},'
-                               f'{_param.name},{_param_complex.name}')
+    assert data.parameters == (
+        f"{_param_set.name},{_param_set_2.name}," f"{_param.name},{_param_complex.name}"
+    )
     loaded_data = data.get_parameter_data()
     expected_data_1 = np.ones(25).reshape(num_points_p1, num_points_p2)
 
-    np.testing.assert_array_equal(loaded_data[_param.name][_param.name],
-                                  expected_data_1)
-    expected_data_2 = (1+1j)*np.ones(25).reshape(num_points_p1, num_points_p2)
     np.testing.assert_array_equal(
-        loaded_data[_param_complex.name][_param_complex.name],
-        expected_data_2
+        loaded_data[_param.name][_param.name], expected_data_1
+    )
+    expected_data_2 = (1 + 1j) * np.ones(25).reshape(num_points_p1, num_points_p2)
+    np.testing.assert_array_equal(
+        loaded_data[_param_complex.name][_param_complex.name], expected_data_2
     )
 
     expected_setpoints_1 = np.repeat(
-        np.linspace(start_p1, stop_p1, num_points_p1),
-        num_points_p2).reshape(num_points_p1, num_points_p2)
+        np.linspace(start_p1, stop_p1, num_points_p1), num_points_p2
+    ).reshape(num_points_p1, num_points_p2)
     np.testing.assert_array_equal(
-        loaded_data[_param_complex.name][_param_set.name],
-        expected_setpoints_1
+        loaded_data[_param_complex.name][_param_set.name], expected_setpoints_1
     )
 
     expected_setpoints_2 = np.tile(
-        np.linspace(start_p2, stop_p2, num_points_p2),
-                    num_points_p1).reshape(num_points_p1, num_points_p2)
+        np.linspace(start_p2, stop_p2, num_points_p2), num_points_p1
+    ).reshape(num_points_p1, num_points_p2)
     np.testing.assert_array_equal(
-        loaded_data[_param_complex.name][_param_set_2.name],
-        expected_setpoints_2
+        loaded_data[_param_complex.name][_param_set_2.name], expected_setpoints_2
     )
 
 
@@ -577,13 +662,21 @@ def test_do2d_output_data(_param, _param_complex, _param_set, _param_set_2):
     n_points_pws=hst.integers(min_value=1, max_value=500),
 )
 @settings(deadline=None, suppress_health_check=(HealthCheck.function_scoped_fixture,))
-def test_do2d_verify_shape(_param, _param_complex, _param_set, _param_set_2,
-                           multiparamtype,
-                           dummyinstrument,
-                           sweep, columns,
-                           num_points_p1, num_points_p2, n_points_pws):
-    arrayparam = ArraySetPointParam(name='arrayparam')
-    multiparam = multiparamtype(name='multiparam')
+def test_do2d_verify_shape(
+    _param,
+    _param_complex,
+    _param_set,
+    _param_set_2,
+    multiparamtype,
+    dummyinstrument,
+    sweep,
+    columns,
+    num_points_p1,
+    num_points_p2,
+    n_points_pws,
+):
+    arrayparam = ArraySetPointParam(name="arrayparam")
+    multiparam = multiparamtype(name="multiparam")
     paramwsetpoints = dummyinstrument.A.dummy_parameter_with_setpoints
     dummyinstrument.A.dummy_start(0)
     dummyinstrument.A.dummy_stop(1)
@@ -597,23 +690,41 @@ def test_do2d_verify_shape(_param, _param_complex, _param_set, _param_set_2,
     stop_p2 = 1.1
     delay_p2 = 0
 
-    results = do2d(_param_set, start_p1, stop_p1, num_points_p1, delay_p1,
-                   _param_set_2, start_p2, stop_p2, num_points_p2, delay_p2,
-                   arrayparam, multiparam, paramwsetpoints,
-                   _param, _param_complex,
-                   set_before_sweep=sweep,
-                   flush_columns=columns, do_plot=False)
+    results = do2d(
+        _param_set,
+        start_p1,
+        stop_p1,
+        num_points_p1,
+        delay_p1,
+        _param_set_2,
+        start_p2,
+        stop_p2,
+        num_points_p2,
+        delay_p2,
+        arrayparam,
+        multiparam,
+        paramwsetpoints,
+        _param,
+        _param_complex,
+        set_before_sweep=sweep,
+        flush_columns=columns,
+        do_plot=False,
+    )
     expected_shapes = {}
     for i, name in enumerate(multiparam.full_names):
-        expected_shapes[name] = ((num_points_p1, num_points_p2) +
-                                 tuple(multiparam.shapes[i]))
-    expected_shapes['arrayparam'] = ((num_points_p1, num_points_p2) +
-                                     tuple(arrayparam.shape))
-    expected_shapes['simple_parameter'] = (num_points_p1, num_points_p2)
-    expected_shapes['simple_complex_parameter'] = (num_points_p1, num_points_p2)
-    expected_shapes[paramwsetpoints.full_name] = (num_points_p1,
-                                                  num_points_p2,
-                                                  n_points_pws)
+        expected_shapes[name] = (num_points_p1, num_points_p2) + tuple(
+            multiparam.shapes[i]
+        )
+    expected_shapes["arrayparam"] = (num_points_p1, num_points_p2) + tuple(
+        arrayparam.shape
+    )
+    expected_shapes["simple_parameter"] = (num_points_p1, num_points_p2)
+    expected_shapes["simple_complex_parameter"] = (num_points_p1, num_points_p2)
+    expected_shapes[paramwsetpoints.full_name] = (
+        num_points_p1,
+        num_points_p2,
+        n_points_pws,
+    )
 
     assert results[0].description.shapes == expected_shapes
     ds = results[0]
@@ -627,10 +738,10 @@ def test_do2d_verify_shape(_param, _param_complex, _param_set, _param_set_2,
 
 @pytest.mark.usefixtures("plot_close", "experiment")
 def test_do1d_additional_setpoints(_param, _param_complex, _param_set):
-    additional_setpoints = [Parameter(
-        f'additional_setter_parameter_{i}',
-        set_cmd=None,
-        get_cmd=None) for i in range(2)]
+    additional_setpoints = [
+        Parameter(f"additional_setter_parameter_{i}", set_cmd=None, get_cmd=None)
+        for i in range(2)
+    ]
     start_p1 = 0
     stop_p1 = 0.5
     num_points_p1 = 5
@@ -641,28 +752,35 @@ def test_do1d_additional_setpoints(_param, _param_complex, _param_set):
             additional_setpoints[0](x)
             additional_setpoints[1](y)
             results = do1d(
-                _param_set, start_p1, stop_p1, num_points_p1, delay_p1,
-                _param, _param_complex,
-                additional_setpoints=additional_setpoints)
+                _param_set,
+                start_p1,
+                stop_p1,
+                num_points_p1,
+                delay_p1,
+                _param,
+                _param_complex,
+                additional_setpoints=additional_setpoints,
+            )
             for deps in results[0].description.interdeps.dependencies.values():
                 assert len(deps) == 1 + len(additional_setpoints)
             # Calling the fixture won't work here due to loop-scope.
             # Thus, we make an explicit call to close plots. This will be
             # repeated in similarly design tests.
-            plt.close('all')
+            plt.close("all")
 
 
 @settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(num_points_p1=hst.integers(min_value=1, max_value=10))
 @pytest.mark.usefixtures("experiment")
-def test_do1d_additional_setpoints_shape(_param, _param_complex, _param_set,
-                                         num_points_p1):
-    arrayparam = ArraySetPointParam(name='arrayparam')
+def test_do1d_additional_setpoints_shape(
+    _param, _param_complex, _param_set, num_points_p1
+):
+    arrayparam = ArraySetPointParam(name="arrayparam")
     array_shape = arrayparam.shape
-    additional_setpoints = [Parameter(
-        f'additional_setter_parameter_{i}',
-        set_cmd=None,
-        get_cmd=None) for i in range(2)]
+    additional_setpoints = [
+        Parameter(f"additional_setter_parameter_{i}", set_cmd=None, get_cmd=None)
+        for i in range(2)
+    ]
     start_p1 = 0
     stop_p1 = 0.5
     delay_p1 = 0
@@ -673,24 +791,29 @@ def test_do1d_additional_setpoints_shape(_param, _param_complex, _param_set,
     additional_setpoints[0](x)
     additional_setpoints[1](y)
     results = do1d(
-        _param_set, start_p1, stop_p1, num_points_p1, delay_p1,
-        _param, arrayparam,
+        _param_set,
+        start_p1,
+        stop_p1,
+        num_points_p1,
+        delay_p1,
+        _param,
+        arrayparam,
         additional_setpoints=additional_setpoints,
-        do_plot=False)
+        do_plot=False,
+    )
     expected_shapes = {
-        'arrayparam': (1, 1, num_points_p1, array_shape[0]),
-        'simple_parameter': (1, 1, num_points_p1)
+        "arrayparam": (1, 1, num_points_p1, array_shape[0]),
+        "simple_parameter": (1, 1, num_points_p1),
     }
     assert results[0].description.shapes == expected_shapes
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-def test_do2d_additional_setpoints(_param, _param_complex,
-                                   _param_set, _param_set_2):
-    additional_setpoints = [Parameter(
-        f'additional_setter_parameter_{i}',
-        set_cmd=None,
-        get_cmd=None) for i in range(2)]
+def test_do2d_additional_setpoints(_param, _param_complex, _param_set, _param_set_2):
+    additional_setpoints = [
+        Parameter(f"additional_setter_parameter_{i}", set_cmd=None, get_cmd=None)
+        for i in range(2)
+    ]
     start_p1 = 0
     stop_p1 = 0.5
     num_points_p1 = 5
@@ -705,13 +828,23 @@ def test_do2d_additional_setpoints(_param, _param_complex,
             additional_setpoints[0](x)
             additional_setpoints[1](y)
             results = do2d(
-                _param_set, start_p1, stop_p1, num_points_p1, delay_p1,
-                _param_set_2, start_p2, stop_p2, num_points_p2, delay_p2,
-                _param, _param_complex,
-                additional_setpoints=additional_setpoints)
+                _param_set,
+                start_p1,
+                stop_p1,
+                num_points_p1,
+                delay_p1,
+                _param_set_2,
+                start_p2,
+                stop_p2,
+                num_points_p2,
+                delay_p2,
+                _param,
+                _param_complex,
+                additional_setpoints=additional_setpoints,
+            )
             for deps in results[0].description.interdeps.dependencies.values():
                 assert len(deps) == 2 + len(additional_setpoints)
-            plt.close('all')
+            plt.close("all")
 
 
 @given(
@@ -721,15 +854,14 @@ def test_do2d_additional_setpoints(_param, _param_complex,
 @settings(deadline=None, suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @pytest.mark.usefixtures("experiment")
 def test_do2d_additional_setpoints_shape(
-        _param, _param_complex,
-        _param_set, _param_set_2,
-        num_points_p1, num_points_p2):
-    arrayparam = ArraySetPointParam(name='arrayparam')
+    _param, _param_complex, _param_set, _param_set_2, num_points_p1, num_points_p2
+):
+    arrayparam = ArraySetPointParam(name="arrayparam")
     array_shape = arrayparam.shape
-    additional_setpoints = [Parameter(
-        f'additional_setter_parameter_{i}',
-        set_cmd=None,
-        get_cmd=None) for i in range(2)]
+    additional_setpoints = [
+        Parameter(f"additional_setter_parameter_{i}", set_cmd=None, get_cmd=None)
+        for i in range(2)
+    ]
     start_p1 = 0
     stop_p1 = 0.5
     delay_p1 = 0
@@ -744,15 +876,26 @@ def test_do2d_additional_setpoints_shape(
     additional_setpoints[0](x)
     additional_setpoints[1](y)
     results = do2d(
-        _param_set, start_p1, stop_p1, num_points_p1, delay_p1,
-        _param_set_2, start_p2, stop_p2, num_points_p2, delay_p2,
-        _param, _param_complex, arrayparam,
+        _param_set,
+        start_p1,
+        stop_p1,
+        num_points_p1,
+        delay_p1,
+        _param_set_2,
+        start_p2,
+        stop_p2,
+        num_points_p2,
+        delay_p2,
+        _param,
+        _param_complex,
+        arrayparam,
         additional_setpoints=additional_setpoints,
-        do_plot=False)
+        do_plot=False,
+    )
     expected_shapes = {
-        'arrayparam': (1, 1, num_points_p1, num_points_p2, array_shape[0]),
-        'simple_complex_parameter': (1, 1, num_points_p1, num_points_p2),
-        'simple_parameter': (1, 1, num_points_p1, num_points_p2)
+        "arrayparam": (1, 1, num_points_p1, num_points_p2, array_shape[0]),
+        "simple_complex_parameter": (1, 1, num_points_p1, num_points_p2),
+        "simple_parameter": (1, 1, num_points_p1, num_points_p2),
     }
     assert results[0].description.shapes == expected_shapes
 
@@ -768,20 +911,55 @@ def test_do2d_explicit_experiment(_param_set, _param_set_2, _param, experiment):
     num_points_p2 = 5
     delay_p2 = 0.0
 
-    experiment_2 = new_experiment('new-exp', 'no-sample')
+    experiment_2 = new_experiment("new-exp", "no-sample")
 
-    data1 = do2d(_param_set, start_p1, stop_p1, num_points_p1, delay_p1,
-                 _param_set_2, start_p2, stop_p2, num_points_p2, delay_p2,
-                 _param, do_plot=False, exp=experiment)
+    data1 = do2d(
+        _param_set,
+        start_p1,
+        stop_p1,
+        num_points_p1,
+        delay_p1,
+        _param_set_2,
+        start_p2,
+        stop_p2,
+        num_points_p2,
+        delay_p2,
+        _param,
+        do_plot=False,
+        exp=experiment,
+    )
     assert data1[0].exp_name == "test-experiment"
-    data2 = do2d(_param_set, start_p1, stop_p1, num_points_p1, delay_p1,
-                 _param_set_2, start_p2, stop_p2, num_points_p2, delay_p2,
-                 _param, do_plot=False, exp=experiment_2)
+    data2 = do2d(
+        _param_set,
+        start_p1,
+        stop_p1,
+        num_points_p1,
+        delay_p1,
+        _param_set_2,
+        start_p2,
+        stop_p2,
+        num_points_p2,
+        delay_p2,
+        _param,
+        do_plot=False,
+        exp=experiment_2,
+    )
     assert data2[0].exp_name == "new-exp"
     # by default the last experiment is used
-    data3 = do2d(_param_set, start_p1, stop_p1, num_points_p1, delay_p1,
-                 _param_set_2, start_p2, stop_p2, num_points_p2, delay_p2,
-                 _param, do_plot=False)
+    data3 = do2d(
+        _param_set,
+        start_p1,
+        stop_p1,
+        num_points_p1,
+        delay_p1,
+        _param_set_2,
+        start_p2,
+        stop_p2,
+        num_points_p2,
+        delay_p2,
+        _param,
+        do_plot=False,
+    )
     assert data3[0].exp_name == "new-exp"
 
 
@@ -797,9 +975,21 @@ def test_do2d_explicit_name(_param_set, _param_set_2, _param):
     num_points_p2 = 5
     delay_p2 = 0.0
 
-    data1 = do2d(_param_set, start_p1, stop_p1, num_points_p1, delay_p1,
-                 _param_set_2, start_p2, stop_p2, num_points_p2, delay_p2,
-                 _param, do_plot=False, measurement_name="my measurement")
+    data1 = do2d(
+        _param_set,
+        start_p1,
+        stop_p1,
+        num_points_p1,
+        delay_p1,
+        _param_set_2,
+        start_p2,
+        stop_p2,
+        num_points_p2,
+        delay_p2,
+        _param,
+        do_plot=False,
+        measurement_name="my measurement",
+    )
     assert data1[0].name == "my measurement"
 
 

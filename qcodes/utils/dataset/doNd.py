@@ -50,22 +50,20 @@ class UnsafeThreadingException(Exception):
 
 
 def _register_parameters(
-        meas: Measurement,
-        param_meas: Sequence[ParamMeasT],
-        setpoints: Optional[Sequence[_BaseParameter]] = None,
-        shapes: Shapes = None
-        ) -> None:
+    meas: Measurement,
+    param_meas: Sequence[ParamMeasT],
+    setpoints: Optional[Sequence[_BaseParameter]] = None,
+    shapes: Shapes = None,
+) -> None:
     for parameter in param_meas:
         if isinstance(parameter, _BaseParameter):
-            meas.register_parameter(parameter,
-                                    setpoints=setpoints)
+            meas.register_parameter(parameter, setpoints=setpoints)
     meas.set_shapes(shapes=shapes)
 
 
 def _register_actions(
-        meas: Measurement,
-        enter_actions: ActionsT,
-        exit_actions: ActionsT) -> None:
+    meas: Measurement, enter_actions: ActionsT, exit_actions: ActionsT
+) -> None:
     for action in enter_actions:
         # this omits the possibility of passing
         # argument to enter and exit actions.
@@ -75,9 +73,7 @@ def _register_actions(
         meas.add_after_run(action, ())
 
 
-def _set_write_period(
-        meas: Measurement,
-        write_period: Optional[float] = None) -> None:
+def _set_write_period(meas: Measurement, write_period: Optional[float] = None) -> None:
     if write_period is not None:
         meas.write_period = write_period
 
@@ -150,19 +146,15 @@ def do0d(
     except TypeError:
         LOG.exception(
             f"Could not detect shape of {measured_parameters} "
-            f"falling back to unknown shape.")
+            f"falling back to unknown shape."
+        )
         shapes = None
 
     _register_parameters(meas, param_meas, shapes=shapes)
     _set_write_period(meas, write_period)
 
     with meas.run() as datasaver:
-        datasaver.add_result(
-            *process_params_meas(
-                param_meas,
-                use_threads=use_threads
-            )
-        )
+        datasaver.add_result(*process_params_meas(param_meas, use_threads=use_threads))
         dataset = datasaver.dataset
 
     return _handle_plotting(dataset, do_plot)
@@ -244,19 +236,16 @@ def do1d(
     )
     try:
         loop_shape = tuple(1 for _ in additional_setpoints) + (num_points,)
-        shapes: Shapes = detect_shape_of_measurement(
-            measured_parameters,
-            loop_shape
-        )
+        shapes: Shapes = detect_shape_of_measurement(measured_parameters, loop_shape)
     except TypeError:
         LOG.exception(
             f"Could not detect shape of {measured_parameters} "
-            f"falling back to unknown shape.")
+            f"falling back to unknown shape."
+        )
         shapes = None
 
     _register_parameters(meas, all_setpoint_params)
-    _register_parameters(meas, param_meas, setpoints=all_setpoint_params,
-                         shapes=shapes)
+    _register_parameters(meas, param_meas, setpoints=all_setpoint_params, shapes=shapes)
     _set_write_period(meas, write_period)
     _register_actions(meas, enter_actions, exit_actions)
 
@@ -390,26 +379,22 @@ def do2d(
         param_set2,
     ) + tuple(s for s in additional_setpoints)
 
-    measured_parameters = tuple(param for param in param_meas
-                                if isinstance(param, _BaseParameter))
+    measured_parameters = tuple(
+        param for param in param_meas if isinstance(param, _BaseParameter)
+    )
 
     try:
-        loop_shape = tuple(
-            1 for _ in additional_setpoints
-        ) + (num_points1, num_points2)
-        shapes: Shapes = detect_shape_of_measurement(
-            measured_parameters,
-            loop_shape
-        )
+        loop_shape = tuple(1 for _ in additional_setpoints) + (num_points1, num_points2)
+        shapes: Shapes = detect_shape_of_measurement(measured_parameters, loop_shape)
     except TypeError:
         LOG.exception(
             f"Could not detect shape of {measured_parameters} "
-            f"falling back to unknown shape.")
+            f"falling back to unknown shape."
+        )
         shapes = None
 
     _register_parameters(meas, all_setpoint_params)
-    _register_parameters(meas, param_meas, setpoints=all_setpoint_params,
-                         shapes=shapes)
+    _register_parameters(meas, param_meas, setpoints=all_setpoint_params, shapes=shapes)
     _set_write_period(meas, write_period)
     _register_actions(meas, enter_actions, exit_actions)
 
@@ -447,9 +432,7 @@ def do2d(
             # updates
             sys.stdout.flush()
             sys.stderr.flush()
-            for set_point2 in tqdm(setpoints2,
-                                   disable=not show_progress,
-                                   leave=False):
+            for set_point2 in tqdm(setpoints2, disable=not show_progress, leave=False):
                 # skip first inner set point if `set_before_sweep`
                 if set_point2 == start2 and set_before_sweep:
                     pass
@@ -460,7 +443,7 @@ def do2d(
                     (param_set1, set_point1),
                     (param_set2, set_point2),
                     *call_param_meas(),
-                    *additional_setpoints_data
+                    *additional_setpoints_data,
                 )
 
             for action in after_inner_actions:
@@ -859,16 +842,16 @@ def plot(
     sample_name = data.sample_name
     storage_dir = os.path.join(mainfolder, experiment_name, sample_name)
     os.makedirs(storage_dir, exist_ok=True)
-    png_dir = os.path.join(storage_dir, 'png')
-    pdf_dif = os.path.join(storage_dir, 'pdf')
+    png_dir = os.path.join(storage_dir, "png")
+    pdf_dif = os.path.join(storage_dir, "pdf")
     os.makedirs(png_dir, exist_ok=True)
     os.makedirs(pdf_dif, exist_ok=True)
     for i, ax in enumerate(axes):
         if save_pdf:
-            full_path = os.path.join(pdf_dif, f'{dataid}_{i}.pdf')
+            full_path = os.path.join(pdf_dif, f"{dataid}_{i}.pdf")
             ax.figure.savefig(full_path, dpi=500)
         if save_png:
-            full_path = os.path.join(png_dir, f'{dataid}_{i}.png')
+            full_path = os.path.join(png_dir, f"{dataid}_{i}.png")
             ax.figure.savefig(full_path, dpi=500)
     res = data, axes, cbs
     return res
