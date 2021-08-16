@@ -160,6 +160,7 @@ class DataSaver:
             ValueError: If the shapes of parameters do not match, i.e. if a
                 parameter gets values of a different shape than its setpoints
                 (the exception being that setpoints can always be scalar)
+            ValueError: If multiple results are given for the same parameter.
             ParameterTypeError: If a parameter is given a value not matching
                 its type.
         """
@@ -174,6 +175,8 @@ class DataSaver:
         parameter_names = tuple(partial_result[0].full_name
                                 if isinstance(partial_result[0], _BaseParameter) else partial_result[0]
                                 for partial_result in res_tuple)
+        if len(set(parameter_names)) != len(parameter_names):
+            raise ValueError("Not all parameter names are unique.")
 
         for partial_result in res_tuple:
             parameter = partial_result[0]
