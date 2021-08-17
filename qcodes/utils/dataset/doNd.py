@@ -622,6 +622,15 @@ def dond(
                 LinSweep(param_set_n, start_n, stop_n, num_points_n, delay_n),
                 param_meas_1, param_meas_2, ..., param_meas_m
 
+            If multiple DataSets creation is needed, measurement parameters should
+            be grouped, so one dataset will be created for each group. e.g.:
+
+            .. code-block::
+
+                LinSweep(param_set_1, start_1, stop_1, num_points_1, delay_1), ...,
+                LinSweep(param_set_n, start_n, stop_n, num_points_n, delay_n),
+                [param_meas_1, param_meas_2], ..., [param_meas_m]
+
         write_period: The time after which the data is actually written to the
             database.
         measurement_name: Name of the measurement. This will be passed down to
@@ -644,6 +653,14 @@ def dond(
             the measurement but not scanned/swept-over.
         log_info: Message that is logged during the measurement. If None a default
             message is used.
+
+        Returns:
+            A tuple of QCoDeS DataSet, Matplotlib axis, Matplotlib colorbar. If
+            more than one group of measurement parameters is supplied, the output
+            will be a tuple of tuple(QCoDeS DataSet), tuple(Matplotlib axis),
+            tuple(Matplotlib colorbar), in which each element of each sub-tuple
+            belongs to one group, and the order of elements is the order of
+            the supplied groups.
     """
     if do_plot is None:
         do_plot = config.dataset.dond_plot
