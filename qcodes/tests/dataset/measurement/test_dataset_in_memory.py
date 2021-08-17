@@ -39,6 +39,7 @@ def test_dataset_in_memory_does_not_create_runs_table(
     tablenames = tuple(table[1] for table in tables)
     assert all(dataset.name not in table_name for table_name in tablenames)
 
+
 # todo missing from runs table
 # snapshot, completed timestamp, parameters (do we care), verify other metadata
 # When should metadata be added. In the old dataset it used to be added as

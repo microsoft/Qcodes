@@ -393,6 +393,7 @@ class DataSetInMem(DataSetProtocol, Sized):
         from qcodes.dataset.sqlite.connection import atomic
         from qcodes.dataset.sqlite.database import conn_from_dbpath_or_conn
         from qcodes.dataset.sqlite.queries import add_meta_data
+
         self._metadata[tag] = metadata
         conn = conn_from_dbpath_or_conn(conn=None, path_to_db=self._path_to_db)
 
