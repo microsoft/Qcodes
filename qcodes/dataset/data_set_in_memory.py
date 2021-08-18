@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import json
 import logging
 import os
@@ -107,8 +108,9 @@ class DataSetInMem(DataSetProtocol, Sized):
         if path_to_db is not None:
             path_to_db = str(path_to_db)
 
-        conn = conn_from_dbpath_or_conn(conn=None, path_to_db=path_to_db)
-        try:
+        with contextlib.closing(
+            conn_from_dbpath_or_conn(conn=None, path_to_db=path_to_db)
+        ) as conn:
             if exp_id is None:
                 exp_id = get_default_experiment_id(conn)
             name = name or "dataset"
@@ -133,8 +135,6 @@ class DataSetInMem(DataSetProtocol, Sized):
                 completed_timestamp_raw=None,
                 metadata=None,
             )
-        finally:
-            conn.close()
 
         return ds
 
@@ -411,13 +411,12 @@ class DataSetInMem(DataSetProtocol, Sized):
         from qcodes.dataset.sqlite.queries import add_meta_data
 
         self._metadata[tag] = metadata
-        conn = conn_from_dbpath_or_conn(conn=None, path_to_db=self._path_to_db)
 
-        try:
-            with atomic(conn) as conn:
-                add_meta_data(conn, self.run_id, {tag: metadata})
-        finally:
-            conn.close()
+        with contextlib.closing(
+            conn_from_dbpath_or_conn(conn=None, path_to_db=self._path_to_db)
+        ) as conn:
+            with atomic(conn) as aconn:
+                add_meta_data(aconn, self.run_id, {tag: metadata})
 
     @property
     def metadata(self) -> Dict[str, Any]:
@@ -588,10 +587,12 @@ class DataSetInMem(DataSetProtocol, Sized):
         from qcodes.dataset.sqlite.database import conn_from_dbpath_or_conn
         from qcodes.dataset.sqlite.queries import mark_run_complete
 
-        conn = conn_from_dbpath_or_conn(conn=None, path_to_db=self._path_to_db)
-        if value:
-            self._completed_timestamp_raw = time.time()
-            mark_run_complete(conn, self.run_id, self._completed_timestamp_raw)
+        with contextlib.closing(
+            conn_from_dbpath_or_conn(conn=None, path_to_db=self._path_to_db)
+        ) as conn:
+            if value:
+                self._completed_timestamp_raw = time.time()
+                mark_run_complete(conn, self.run_id, self._completed_timestamp_raw)
 
     def _perform_start_actions(self) -> None:
         """
@@ -604,9 +605,9 @@ class DataSetInMem(DataSetProtocol, Sized):
             update_run_description,
         )
 
-        conn = conn_from_dbpath_or_conn(conn=None, path_to_db=self._path_to_db)
-
-        try:
+        with contextlib.closing(
+            conn_from_dbpath_or_conn(conn=None, path_to_db=self._path_to_db)
+        ) as conn:
             # paramspecs = new_to_old(self.description.interdeps).paramspecs
             #
             # # for spec in paramspecs:
@@ -621,8 +622,6 @@ class DataSetInMem(DataSetProtocol, Sized):
 
             pdl_str = links_to_str(self._parent_dataset_links)
             update_parent_datasets(conn, self.run_id, pdl_str)
-        finally:
-            conn.close()
 
     def _raise_if_not_writable(self) -> None:
         if self.pristine:
