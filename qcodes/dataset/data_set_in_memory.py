@@ -161,9 +161,6 @@ class DataSetInMem(DataSetProtocol, Sized):
         import xarray as xr
 
         loaded_data = xr.load_dataset(path)
-        # todo do we want to create this run in the sqlites run table if not
-        # exists. e.g. load by guid and then if that is not there create one.
-        # Yes in a separate method to be added later.
 
         parent_dataset_links = str_to_links(
             loaded_data.attrs.get("parent_dataset_links", "[]")
@@ -540,7 +537,6 @@ class DataSetInMem(DataSetProtocol, Sized):
         Args:
             links: The links to assign to this dataset
         """
-        # todo write to db
         if not self.pristine:
             raise RuntimeError(
                 "Can not set parent dataset links on a dataset "
@@ -600,6 +596,7 @@ class DataSetInMem(DataSetProtocol, Sized):
         """
         from qcodes.dataset.sqlite.database import conn_from_dbpath_or_conn
         from qcodes.dataset.sqlite.queries import (
+            add_parameter,
             set_run_timestamp,
             update_parent_datasets,
             update_run_description,
@@ -608,11 +605,10 @@ class DataSetInMem(DataSetProtocol, Sized):
         with contextlib.closing(
             conn_from_dbpath_or_conn(conn=None, path_to_db=self._path_to_db)
         ) as conn:
-            # paramspecs = new_to_old(self.description.interdeps).paramspecs
-            #
-            # # for spec in paramspecs:
-            # #     add_parameter(conn, self.table_name, spec)
-            # todo do we want to keep adding parameters to the runs table?
+            paramspecs = new_to_old(self.description.interdeps).paramspecs
+
+            for spec in paramspecs:
+                add_parameter(conn, self.table_name, spec)
 
             desc_str = serial.to_json_for_storage(self.description)
 
