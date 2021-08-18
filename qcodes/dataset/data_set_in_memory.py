@@ -99,9 +99,10 @@ class DataSetInMem(DataSetProtocol, Sized):
         from qcodes.dataset.sqlite.queries import (
             create_run,
             get_experiment_name_from_experiment_id,
-            get_last_experiment,
             get_sample_name_from_experiment_id,
         )
+
+        from .experiment_settings import get_default_experiment_id
 
         if path_to_db is not None:
             path_to_db = str(path_to_db)
@@ -109,13 +110,7 @@ class DataSetInMem(DataSetProtocol, Sized):
         conn = conn_from_dbpath_or_conn(conn=None, path_to_db=path_to_db)
         try:
             if exp_id is None:
-                exp_id = get_last_experiment(conn)
-                if exp_id is None:  # if it's still None, then...
-                    raise ValueError(
-                        "No experiments found."
-                        "You can start a new one with:"
-                        " new_experiment(name, sample_name)"
-                    )
+                exp_id = get_default_experiment_id(conn)
             name = name or "dataset"
             sample_name = get_sample_name_from_experiment_id(conn, exp_id)
             exp_name = get_experiment_name_from_experiment_id(conn, exp_id)
