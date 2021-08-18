@@ -49,7 +49,7 @@ class DataSetInMem(DataSetProtocol, Sized):
         exp_name: str,
         sample_name: str,
         guid: str,
-        path_to_db: str,
+        path_to_db: Optional[str],
         run_timestamp_raw: Optional[float],
         completed_timestamp_raw: Optional[float],
         metadata: Optional[Mapping[str, Any]] = None,
@@ -139,16 +139,37 @@ class DataSetInMem(DataSetProtocol, Sized):
         return ds
 
     @classmethod
-    def load_from_netcdf(cls, path: Union[Path, str]) -> DataSetInMem:
+    def load_from_netcdf(
+        cls, path: Union[Path, str], path_to_db: Optional[Union[Path, str]]
+    ) -> DataSetInMem:
+        """
+        Create a in memory dataset from a netcdf file.
+        The netcdf file is expected to contain a QCoDeS dataset that
+        has been exported using the QCoDeS netcdf export functions.
+
+
+        Args:
+            path: Path to the netcdf file to import.
+            path_to_db: Optional path to a database where this dataset may be
+             exported to. If not supplied the path can be given at export time
+             or the dataset exported to the default db as set in the QCoDeS config.
+
+        Returns:
+            The loaded dataset.
+        """
+
         import xarray as xr
 
         loaded_data = xr.load_dataset(path)
         # todo do we want to create this run in the sqlites run table if not
         # exists. e.g. load by guid and then if that is not there create one.
+        # Yes in a separate method to be added later.
 
         parent_dataset_links = str_to_links(
             loaded_data.attrs.get("parent_dataset_links", "[]")
         )
+        if path_to_db is not None:
+            path_to_db = str(path_to_db)
 
         ds = cls(
             run_id=loaded_data.captured_run_id,
@@ -158,7 +179,7 @@ class DataSetInMem(DataSetProtocol, Sized):
             exp_name=loaded_data.exp_name,
             sample_name=loaded_data.sample_name,
             guid=loaded_data.guid,
-            path_to_db="",  # todo what should this be?
+            path_to_db=path_to_db,
             run_timestamp_raw=loaded_data.run_timestamp_raw,
             completed_timestamp_raw=loaded_data.completed_timestamp_raw,
             metadata={"snapshot": loaded_data.snapshot},
