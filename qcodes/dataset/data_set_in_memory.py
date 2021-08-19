@@ -140,7 +140,7 @@ class DataSetInMem(DataSetProtocol, Sized):
 
     @classmethod
     def load_from_netcdf(
-        cls, path: Union[Path, str], path_to_db: Optional[Union[Path, str]]
+        cls, path: Union[Path, str], path_to_db: Optional[Union[Path, str]] = None
     ) -> DataSetInMem:
         """
         Create a in memory dataset from a netcdf file.
