@@ -608,7 +608,7 @@ class DataSetInMem(DataSetProtocol, Sized):
             paramspecs = new_to_old(self.description.interdeps).paramspecs
 
             for spec in paramspecs:
-                add_parameter(conn, self.table_name, spec)
+                add_parameter(conn, self.run_id, False, spec)
 
             desc_str = serial.to_json_for_storage(self.description)
 

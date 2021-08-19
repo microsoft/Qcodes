@@ -689,7 +689,7 @@ class DataSet(DataSetProtocol, Sized):
         paramspecs = new_to_old(self._rundescriber.interdeps).paramspecs
 
         for spec in paramspecs:
-            add_parameter(self.conn, self.table_name, spec)
+            add_parameter(self.conn, self.run_id, True, spec)
 
         desc_str = serial.to_json_for_storage(self.description)
 
