@@ -501,6 +501,14 @@ class AbstractSweep(ABC):
         """
         pass
 
+    @property
+    @abstractmethod
+    def action(self) -> ActionsT:
+        """
+        actions to be performed after setting param to its setpoint.
+        """
+        pass
+
 
 class LinSweep(AbstractSweep):
     """
@@ -521,12 +529,14 @@ class LinSweep(AbstractSweep):
         stop: float,
         num_points: int,
         delay: float = 0,
+        action: ActionsT = (),
     ):
         self._param = param
         self._start = start
         self._stop = stop
         self._num_points = num_points
         self._delay = delay
+        self._action = action
 
     def get_setpoints(self) -> np.ndarray:
         """
@@ -546,6 +556,10 @@ class LinSweep(AbstractSweep):
     @property
     def num_points(self) -> int:
         return self._num_points
+
+    @property
+    def action(self) -> ActionsT:
+        return self._action
 
 
 class LogSweep(AbstractSweep):
@@ -567,12 +581,14 @@ class LogSweep(AbstractSweep):
         stop: float,
         num_points: int,
         delay: float = 0,
+        action: ActionsT = (),
     ):
         self._param = param
         self._start = start
         self._stop = stop
         self._num_points = num_points
         self._delay = delay
+        self._action = action
 
     def get_setpoints(self) -> np.ndarray:
         """
@@ -592,6 +608,10 @@ class LogSweep(AbstractSweep):
     @property
     def num_points(self) -> int:
         return self._num_points
+
+    @property
+    def action(self) -> ActionsT:
+        return self._action
 
 
 def dond(
@@ -728,10 +748,12 @@ def dond(
 
     original_delays: Dict[_BaseParameter, float] = {}
     params_set: List[_BaseParameter] = []
+    actions: List[ActionsT] = []
     for sweep in sweep_instances:
         original_delays[sweep.param] = sweep.param.post_delay
         sweep.param.post_delay = sweep.delay
         params_set.append(sweep.param)
+        actions.append(sweep.action)
 
     datasets = []
     plots_axes = []
@@ -749,12 +771,22 @@ def dond(
         with _catch_keyboard_interrupts() as interrupted, ExitStack() as stack, params_meas_caller as call_params_meas:
             datasavers = [stack.enter_context(measure.run()) for measure in meas_list]
             additional_setpoints_data = process_params_meas(additional_setpoints)
+            temp_setpoints = ['temp'] * len(sweep_instances)
             for setpoints in tqdm(nested_setpoints, disable=not show_progress):
+
+                actions_list: List[ActionsT] = [()] * len(sweep_instances)
+                for ind, (new_setpoint, old_setpoint) in enumerate(zip(setpoints, temp_setpoints)):
+                    if new_setpoint != old_setpoint:
+                        actions_list[ind] = actions[ind]
+                temp_setpoints = setpoints
+
                 param_set_list = []
-                param_value_pairs = zip(params_set[::-1], setpoints[::-1])
-                for setpoint_param, setpoint in param_value_pairs:
+                param_value_action = zip(params_set, setpoints, actions_list)
+                for setpoint_param, setpoint, action in param_value_action:
                     setpoint_param(setpoint)
                     param_set_list.append((setpoint_param, setpoint))
+                    for act in action:
+                        act()
 
                 meas_value_pair = call_params_meas()
                 for group in grouped_parameters.values():
