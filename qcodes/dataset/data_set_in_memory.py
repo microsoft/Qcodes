@@ -659,8 +659,16 @@ class DataSetInMem(DataSetProtocol, Sized):
         return 0
 
     def __repr__(self) -> str:
-        # todo what to put in
-        return "dataset"
+        out = []
+        heading = f"{self.name} #{self.run_id}@memory"
+        out.append(heading)
+        out.append("-" * len(heading))
+        ps = self.description.interdeps.paramspecs
+        if len(ps) > 0:
+            for p in ps:
+                out.append(f"{p.name} - {p.type}")
+
+        return "\n".join(out)
 
     @staticmethod
     def _reshape_array_for_cache(
