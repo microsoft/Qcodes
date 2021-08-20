@@ -88,6 +88,21 @@ class DataSetInMem(DataSetProtocol, Sized):
         else:
             self._parent_dataset_links = []
 
+    def _dataset_is_in_runs_table(self) -> bool:
+        """
+        Does this run exist in the given db
+
+        """
+        raise NotImplementedError()
+
+    def write_metadata_to_db(self, path_to_db: Optional[Union[str, Path]]) -> None:
+        if path_to_db is not None:
+            self._path_to_db = str(path_to_db)
+        if self._dataset_is_in_runs_table():
+            raise ValueError("Dataset metadata is already in db")
+
+        raise NotImplementedError
+
     @classmethod
     def create_new_run(
         cls,
@@ -214,6 +229,8 @@ class DataSetInMem(DataSetProtocol, Sized):
         parent_datasets: Sequence[Mapping[Any, Any]] = (),
         write_in_background: bool = False,
     ) -> None:
+        if not self.pristine:
+            raise RuntimeError("Cannot prepare a dataset that is not pristine.")
 
         self.add_snapshot(json.dumps({"station": snapshot}, cls=NumpyJSONEncoder))
 
@@ -407,6 +424,8 @@ class DataSetInMem(DataSetProtocol, Sized):
         from qcodes.dataset.sqlite.database import conn_from_dbpath_or_conn
         from qcodes.dataset.sqlite.queries import add_meta_data
 
+        if not self._dataset_is_in_runs_table():
+            raise RuntimeError
         self._metadata[tag] = metadata
 
         with contextlib.closing(
