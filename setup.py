@@ -10,7 +10,9 @@ import versioneer
 
 sys.path.pop()
 
-setup(
-    version=versioneer.get_version(),
-    cmdclass=versioneer.get_cmdclass(),
-)
+
+if __name__ == "__main__":
+    setup(
+        version=versioneer.get_version(),
+        cmdclass=versioneer.get_cmdclass(),
+    )
