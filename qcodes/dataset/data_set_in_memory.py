@@ -93,12 +93,22 @@ class DataSetInMem(DataSetProtocol, Sized):
         Does this run exist in the given db
 
         """
-        raise NotImplementedError()
+        from qcodes.dataset.sqlite.database import conn_from_dbpath_or_conn
+        from qcodes.dataset.sqlite.queries import get_runid_from_guid
+
+        with contextlib.closing(
+            conn_from_dbpath_or_conn(conn=None, path_to_db=self._path_to_db)
+        ) as conn:
+            run_id = get_runid_from_guid(conn, self.guid)
+        # todo check that metadata is identical?
+        return run_id != -1
 
     def write_metadata_to_db(self, path_to_db: Optional[Union[str, Path]]) -> None:
         if path_to_db is not None:
             self._path_to_db = str(path_to_db)
         if self._dataset_is_in_runs_table():
+            # TODO only raise if metadata is different
+            # should it have an option to overwrite
             raise ValueError("Dataset metadata is already in db")
 
         raise NotImplementedError
@@ -425,7 +435,8 @@ class DataSetInMem(DataSetProtocol, Sized):
         from qcodes.dataset.sqlite.queries import add_meta_data
 
         if not self._dataset_is_in_runs_table():
-            raise RuntimeError
+            # todo should this just add it?
+            raise RuntimeError(f"Dataset is not in database {self._path_to_db}")
         self._metadata[tag] = metadata
 
         with contextlib.closing(
@@ -583,7 +594,6 @@ class DataSetInMem(DataSetProtocol, Sized):
         optionally the shapes object that holds information about
         the shape of the data to be measured.
         """
-        # todo write to db
         if not isinstance(interdeps, InterDependencies_):
             raise TypeError(
                 "Wrong input type. Expected InterDepencies_, " f"got {type(interdeps)}"
