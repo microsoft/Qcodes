@@ -771,11 +771,13 @@ def dond(
         with _catch_keyboard_interrupts() as interrupted, ExitStack() as stack, params_meas_caller as call_params_meas:
             datasavers = [stack.enter_context(measure.run()) for measure in meas_list]
             additional_setpoints_data = process_params_meas(additional_setpoints)
-            temp_setpoints = ['temp'] * len(sweep_instances)
+            temp_setpoints = ["temp"] * len(sweep_instances)
             for setpoints in tqdm(nested_setpoints, disable=not show_progress):
 
                 actions_list: List[ActionsT] = [()] * len(sweep_instances)
-                for ind, (new_setpoint, old_setpoint) in enumerate(zip(setpoints, temp_setpoints)):
+                for ind, (new_setpoint, old_setpoint) in enumerate(
+                    zip(setpoints, temp_setpoints)
+                ):
                     if new_setpoint != old_setpoint:
                         actions_list[ind] = actions[ind]
                 temp_setpoints = setpoints
