@@ -821,6 +821,10 @@ def dond(
 def _select_active_actions(
     actions: Sequence[ActionsT], setpoints: np.ndarray, previous_setpoints: np.ndarray
 ) -> List[ActionsT]:
+    """
+    Select ActionT (Sequence[Callable]) from a Sequence of ActionsT  if
+    the corresponding setpoint has changed. Otherwise select an empty Sequence.
+    """
     actions_list: List[ActionsT] = [()] * len(setpoints)
     for ind, (new_setpoint, old_setpoint) in enumerate(
         zip(setpoints, previous_setpoints)
