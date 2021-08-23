@@ -11,6 +11,8 @@ from qcodes.utils.helpers import add_to_spyder_UMR_excludelist
 
 from . import _version
 
+__version__ = _version.get_versions()["version"]
+
 config: qcconfig.Config = qcconfig.Config()
 
 conditionally_start_all_logging()
@@ -137,5 +139,3 @@ def test(**kwargs: Any) -> int:
 
 
 test.__test__ = False  # type: ignore[attr-defined] # Don't try to run this method as a test
-
-__version__ = _version.get_versions()["version"]
