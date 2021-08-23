@@ -503,7 +503,7 @@ class AbstractSweep(ABC):
 
     @property
     @abstractmethod
-    def action(self) -> ActionsT:
+    def post_actions(self) -> ActionsT:
         """
         actions to be performed after setting param to its setpoint.
         """
@@ -529,14 +529,14 @@ class LinSweep(AbstractSweep):
         stop: float,
         num_points: int,
         delay: float = 0,
-        action: ActionsT = (),
+        post_actions: ActionsT = (),
     ):
         self._param = param
         self._start = start
         self._stop = stop
         self._num_points = num_points
         self._delay = delay
-        self._action = action
+        self._post_actions = post_actions
 
     def get_setpoints(self) -> np.ndarray:
         """
@@ -558,8 +558,8 @@ class LinSweep(AbstractSweep):
         return self._num_points
 
     @property
-    def action(self) -> ActionsT:
-        return self._action
+    def post_actions(self) -> ActionsT:
+        return self._post_actions
 
 
 class LogSweep(AbstractSweep):
@@ -581,14 +581,14 @@ class LogSweep(AbstractSweep):
         stop: float,
         num_points: int,
         delay: float = 0,
-        action: ActionsT = (),
+        post_actions: ActionsT = (),
     ):
         self._param = param
         self._start = start
         self._stop = stop
         self._num_points = num_points
         self._delay = delay
-        self._action = action
+        self._post_actions = post_actions
 
     def get_setpoints(self) -> np.ndarray:
         """
@@ -610,8 +610,8 @@ class LogSweep(AbstractSweep):
         return self._num_points
 
     @property
-    def action(self) -> ActionsT:
-        return self._action
+    def post_actions(self) -> ActionsT:
+        return self._post_actions
 
 
 def dond(
@@ -748,12 +748,12 @@ def dond(
 
     original_delays: Dict[_BaseParameter, float] = {}
     params_set: List[_BaseParameter] = []
-    actions: List[ActionsT] = []
+    post_actions: List[ActionsT] = []
     for sweep in sweep_instances:
         original_delays[sweep.param] = sweep.param.post_delay
         sweep.param.post_delay = sweep.delay
         params_set.append(sweep.param)
-        actions.append(sweep.action)
+        post_actions.append(sweep.post_actions)
 
     datasets = []
     plots_axes = []
@@ -775,7 +775,7 @@ def dond(
             for setpoints in tqdm(nested_setpoints, disable=not show_progress):
 
                 active_actions = _select_active_actions(
-                    actions, setpoints, previous_setpoints
+                    post_actions, setpoints, previous_setpoints
                 )
                 previous_setpoints = setpoints
 
@@ -822,7 +822,7 @@ def _select_active_actions(
     actions: Sequence[ActionsT], setpoints: np.ndarray, previous_setpoints: np.ndarray
 ) -> List[ActionsT]:
     """
-    Select ActionT (Sequence[Callable]) from a Sequence of ActionsT  if
+    Select ActionT (Sequence[Callable]) from a Sequence of ActionsT if
     the corresponding setpoint has changed. Otherwise select an empty Sequence.
     """
     actions_list: List[ActionsT] = [()] * len(setpoints)
