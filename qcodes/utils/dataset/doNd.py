@@ -771,19 +771,16 @@ def dond(
         with _catch_keyboard_interrupts() as interrupted, ExitStack() as stack, params_meas_caller as call_params_meas:
             datasavers = [stack.enter_context(measure.run()) for measure in meas_list]
             additional_setpoints_data = process_params_meas(additional_setpoints)
-            temp_setpoints = ["temp"] * len(sweep_instances)
+            previous_setpoints = np.empty(len(sweep_instances))
             for setpoints in tqdm(nested_setpoints, disable=not show_progress):
 
-                actions_list: List[ActionsT] = [()] * len(sweep_instances)
-                for ind, (new_setpoint, old_setpoint) in enumerate(
-                    zip(setpoints, temp_setpoints)
-                ):
-                    if new_setpoint != old_setpoint:
-                        actions_list[ind] = actions[ind]
-                temp_setpoints = setpoints
+                active_actions = _select_active_actions(
+                    actions, setpoints, previous_setpoints
+                )
+                previous_setpoints = setpoints
 
                 param_set_list = []
-                param_value_action = zip(params_set, setpoints, actions_list)
+                param_value_action = zip(params_set, setpoints, active_actions)
                 for setpoint_param, setpoint, action in param_value_action:
                     setpoint_param(setpoint)
                     param_set_list.append((setpoint_param, setpoint))
@@ -819,6 +816,18 @@ def dond(
         return datasets[0], plots_axes[0], plots_colorbar[0]
     else:
         return tuple(datasets), tuple(plots_axes), tuple(plots_colorbar)
+
+
+def _select_active_actions(
+    actions: Sequence[ActionsT], setpoints: np.ndarray, previous_setpoints: np.ndarray
+) -> List[ActionsT]:
+    actions_list: List[ActionsT] = [()] * len(setpoints)
+    for ind, (new_setpoint, old_setpoint) in enumerate(
+        zip(setpoints, previous_setpoints)
+    ):
+        if new_setpoint != old_setpoint:
+            actions_list[ind] = actions[ind]
+    return actions_list
 
 
 def _create_measurements(
