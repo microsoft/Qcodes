@@ -25,12 +25,27 @@ from qcodes.dataset.export_config import (
 )
 from qcodes.dataset.guids import generate_guid
 from qcodes.dataset.linked_datasets.links import Link, links_to_str
+from qcodes.dataset.sqlite.connection import atomic
+from qcodes.dataset.sqlite.database import conn_from_dbpath_or_conn
+from qcodes.dataset.sqlite.queries import (
+    add_meta_data,
+    add_parameter,
+    create_run,
+    get_experiment_name_from_experiment_id,
+    get_runid_from_guid,
+    get_sample_name_from_experiment_id,
+    mark_run_complete,
+    set_run_timestamp,
+    update_parent_datasets,
+    update_run_description,
+)
 from qcodes.instrument.parameter import _BaseParameter
 from qcodes.utils.helpers import NumpyJSONEncoder
 
 from .data_set import SPECS, CompletedError
 from .data_set_cache import DataSetCacheInMem
 from .descriptions.versioning import serialization as serial
+from .experiment_settings import get_default_experiment_id
 from .exporters.export_to_csv import dataframe_to_csv
 from .linked_datasets.links import str_to_links
 
@@ -93,9 +108,6 @@ class DataSetInMem(DataSetProtocol, Sized):
         Does this run exist in the given db
 
         """
-        from qcodes.dataset.sqlite.database import conn_from_dbpath_or_conn
-        from qcodes.dataset.sqlite.queries import get_runid_from_guid
-
         with contextlib.closing(
             conn_from_dbpath_or_conn(conn=None, path_to_db=self._path_to_db)
         ) as conn:
@@ -120,16 +132,6 @@ class DataSetInMem(DataSetProtocol, Sized):
         path_to_db: Optional[Union[Path, str]] = None,
         exp_id: Optional[int] = None,
     ) -> DataSetInMem:
-
-        from qcodes.dataset.sqlite.database import conn_from_dbpath_or_conn
-        from qcodes.dataset.sqlite.queries import (
-            create_run,
-            get_experiment_name_from_experiment_id,
-            get_sample_name_from_experiment_id,
-        )
-
-        from .experiment_settings import get_default_experiment_id
-
         if path_to_db is not None:
             path_to_db = str(path_to_db)
 
@@ -430,9 +432,7 @@ class DataSetInMem(DataSetProtocol, Sized):
             tag: represents the key in the metadata dictionary
             metadata: actual metadata
         """
-        from qcodes.dataset.sqlite.connection import atomic
-        from qcodes.dataset.sqlite.database import conn_from_dbpath_or_conn
-        from qcodes.dataset.sqlite.queries import add_meta_data
+
 
         if not self._dataset_is_in_runs_table():
             # todo should this just add it?
@@ -609,8 +609,6 @@ class DataSetInMem(DataSetProtocol, Sized):
         return list(old_interdeps.paramspecs)
 
     def _complete(self, value: bool) -> None:
-        from qcodes.dataset.sqlite.database import conn_from_dbpath_or_conn
-        from qcodes.dataset.sqlite.queries import mark_run_complete
 
         with contextlib.closing(
             conn_from_dbpath_or_conn(conn=None, path_to_db=self._path_to_db)
@@ -623,13 +621,6 @@ class DataSetInMem(DataSetProtocol, Sized):
         """
         Perform the actions that must take place once the run has been started
         """
-        from qcodes.dataset.sqlite.database import conn_from_dbpath_or_conn
-        from qcodes.dataset.sqlite.queries import (
-            add_parameter,
-            set_run_timestamp,
-            update_parent_datasets,
-            update_run_description,
-        )
 
         with contextlib.closing(
             conn_from_dbpath_or_conn(conn=None, path_to_db=self._path_to_db)
