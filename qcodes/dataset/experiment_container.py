@@ -220,7 +220,7 @@ def new_experiment(name: str,
     """
     conn = conn or connect(get_DB_location())
     rows = _find_exp_rows(name=name, sample=sample_name, conn=conn)
-    if len(rows) > 1:
+    if len(rows) >= 1:
         log.warn(f"There is already experiment(s) with the name of {name} "
                  f"and sample name of {sample_name} in the database.")
     experiment = Experiment(
