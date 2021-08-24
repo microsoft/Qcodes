@@ -1,5 +1,6 @@
 import logging
 from collections.abc import Sized
+import sqlite3
 from typing import Any, List, Optional
 
 from qcodes.dataset.data_set import SPECS, DataSet, load_by_id, new_data_set
@@ -218,6 +219,10 @@ def new_experiment(name: str,
         the new experiment
     """
     conn = conn or connect(get_DB_location())
+    rows = _find_exp_rows(name=name, sample=sample_name, conn=conn)
+    if len(rows) > 1:
+        log.warn(f"There is already experiment(s) with the name of {name} "
+                 f"and sample name of {sample_name} in the database.")
     experiment = Experiment(
         name=name, sample_name=sample_name, format_string=format_string, conn=conn
     )
@@ -264,16 +269,22 @@ def load_last_experiment() -> Experiment:
 
 def load_experiment_by_name(name: str,
                             sample: Optional[str] = None,
-                            conn: Optional[ConnectionPlus]=None) -> Experiment:
+                            load_last_duplicate: bool = False,
+                            conn: Optional[ConnectionPlus]=None,
+                            ) -> Experiment:
     """
     Try to load experiment with the specified name.
 
     Nothing stops you from having many experiments with the same name and
-    sample_name. In that case this won't work. And warn you.
+    sample_name. In that case this won't work unless load_last_duplicate
+    is set to True. Then, the last of duplicated experiments will be loaded.
 
     Args:
         name: the name of the experiment
         sample: the name of the sample
+        load_last_duplicate: To prevent raising error for having multiple
+            experiment with the same name and sample name, and to load the
+            last duplicated experiment.
         conn: connection to the database. If not supplied, a new connection
           to the DB file specified in the config is made
 
@@ -281,7 +292,77 @@ def load_experiment_by_name(name: str,
         the requested experiment
 
     Raises:
-        ValueError if the name is not unique and sample name is None.
+        ValueError either if the name and sample are not unique, unless
+        load_last_duplicate is True, or if no experiment found for the
+        supplied name and sample.
+        .
+    """
+    conn = conn or connect(get_DB_location())
+    rows = _find_exp_rows(name, sample, conn)
+    if len(rows) == 0:
+        raise ValueError("Experiment not found")
+    elif len(rows) > 1:
+        _repr = []
+        for row in rows:
+            s = (f"exp_id:{row['exp_id']} ({row['name']}-{row['sample_name']})"
+                 f" started at ({row['start_time']})")
+            _repr.append(s)
+        _repr_str = "\n".join(_repr)
+        last_duplicate_id = row['exp_id']
+        if load_last_duplicate is False:
+            raise ValueError(f"Many experiments matching your request"
+                             f" found:\n{_repr_str}")
+        else:
+            e = load_experiment(last_duplicate_id)
+    else:
+        e = Experiment(exp_id=rows[0]['exp_id'], conn=conn)
+    _set_default_experiment_id(path_to_dbfile(conn), e.exp_id)
+    return e
+
+
+def load_or_create_experiment(experiment_name: str,
+                              sample_name: Optional[str] = None,
+                              load_last_duplicate: bool = False,
+                              conn: Optional[ConnectionPlus]=None,
+                              ) -> Experiment:
+    """
+    Find and return an experiment with the given name and sample name,
+    or create one if not found.
+
+    Args:
+        experiment_name: Name of the experiment to find or create.
+        sample_name: Name of the sample.
+        load_last_duplicate: To prevent raising error for having multiple
+            experiment with the same name and sample_name, and to load the
+            last duplicated experiment.
+        conn: Connection to the database. If not supplied, a new connection
+          to the DB file specified in the config is made.
+
+    Returns:
+        The found or created experiment
+    """
+    conn = conn or connect(get_DB_location())
+    try:
+        experiment = load_experiment_by_name(experiment_name, sample_name,
+                                             load_last_duplicate=load_last_duplicate,
+                                             conn=conn,)
+    except ValueError as exception:
+        if "Experiment not found" in str(exception):
+            experiment = new_experiment(experiment_name, sample_name,
+                                        conn=conn)
+        else:
+            raise exception
+    return experiment
+
+
+def _find_exp_rows(
+    name: str,
+    sample: Optional[str] = None,
+    conn: Optional[ConnectionPlus] = None,
+) -> List[sqlite3.Row]:
+    """
+    Queries the connected database to find experiment rows for the
+    supplied name and sample.
     """
     conn = conn or connect(get_DB_location())
 
@@ -307,47 +388,4 @@ def load_experiment_by_name(name: str,
         """
         c = transaction(conn, sql, name)
     rows = c.fetchall()
-    if len(rows) == 0:
-        raise ValueError("Experiment not found")
-    elif len(rows) > 1:
-        _repr = []
-        for row in rows:
-            s = (f"exp_id:{row['exp_id']} ({row['name']}-{row['sample_name']})"
-                 f" started at ({row['start_time']})")
-            _repr.append(s)
-        _repr_str = "\n".join(_repr)
-        raise ValueError(f"Many experiments matching your request"
-                         f" found:\n{_repr_str}")
-    else:
-        e = Experiment(exp_id=rows[0]['exp_id'], conn=conn)
-    _set_default_experiment_id(path_to_dbfile(conn), e.exp_id)
-    return e
-
-
-def load_or_create_experiment(experiment_name: str,
-                              sample_name: Optional[str] = None,
-                              conn: Optional[ConnectionPlus]=None)->Experiment:
-    """
-    Find and return an experiment with the given name and sample name,
-    or create one if not found.
-
-    Args:
-        experiment_name: Name of the experiment to find or create
-        sample_name: Name of the sample
-        conn: Connection to the database. If not supplied, a new connection
-          to the DB file specified in the config is made
-
-    Returns:
-        The found or created experiment
-    """
-    conn = conn or connect(get_DB_location())
-    try:
-        experiment = load_experiment_by_name(experiment_name, sample_name,
-                                             conn=conn)
-    except ValueError as exception:
-        if "Experiment not found" in str(exception):
-            experiment = new_experiment(experiment_name, sample_name,
-                                        conn=conn)
-        else:
-            raise exception
-    return experiment
+    return rows
