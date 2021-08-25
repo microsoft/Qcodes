@@ -21,6 +21,7 @@ from qcodes.dataset.sqlite.queries import (
     get_runid_from_expid_and_counter,
     get_runs,
     get_sample_name_from_experiment_id,
+    get_matching_exp_ids,
 )
 from qcodes.dataset.sqlite.queries import new_experiment as ne
 from qcodes.dataset.sqlite.query_helpers import VALUES, select_one_where
@@ -219,8 +220,8 @@ def new_experiment(name: str,
         the new experiment
     """
     conn = conn or connect(get_DB_location())
-    rows = _find_exp_rows(name=name, sample=sample_name, conn=conn)
-    if len(rows) >= 1:
+    exp_ids = get_matching_exp_ids(conn, name=name, sample_name=sample_name)
+    if len(exp_ids) >= 1:
         log.warn(f"There is already experiment(s) with the name of {name} "
                  f"and sample name of {sample_name} in the database.")
     experiment = Experiment(
@@ -298,24 +299,24 @@ def load_experiment_by_name(name: str,
         .
     """
     conn = conn or connect(get_DB_location())
-    rows = _find_exp_rows(name, sample, conn)
-    if len(rows) == 0:
+    exp_ids = get_matching_exp_ids(conn, name=name, sample_name=sample)
+    if len(exp_ids) == 0:
         raise ValueError("Experiment not found")
-    elif len(rows) > 1:
+    elif len(exp_ids) > 1:
         _repr = []
-        for row in rows:
-            s = (f"exp_id:{row['exp_id']} ({row['name']}-{row['sample_name']})"
-                 f" started at ({row['start_time']})")
+        for id in exp_ids:
+            exp = load_experiment(id)
+            s = (f"exp_id:{exp.exp_id} ({exp.name}-{exp.sample_name})"
+                 f" started at ({exp.started_at})")
             _repr.append(s)
         _repr_str = "\n".join(_repr)
-        last_duplicate_id = row['exp_id']
         if load_last_duplicate is False:
             raise ValueError(f"Many experiments matching your request"
                              f" found:\n{_repr_str}")
         else:
-            e = load_experiment(last_duplicate_id)
+            e = exp
     else:
-        e = Experiment(exp_id=rows[0]['exp_id'], conn=conn)
+        e = Experiment(exp_id=exp_ids[0], conn=conn)
     _set_default_experiment_id(path_to_dbfile(conn), e.exp_id)
     return e
 
