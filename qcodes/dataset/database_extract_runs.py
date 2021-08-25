@@ -9,15 +9,21 @@ from qcodes.dataset.descriptions.versioning.converters import new_to_old
 from qcodes.dataset.linked_datasets.links import links_to_str
 from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic
 from qcodes.dataset.sqlite.database import (
-    connect, get_db_version_and_newest_available_version)
-from qcodes.dataset.sqlite.queries import (add_meta_data, create_run,
-                                           get_exp_ids_from_run_ids,
-                                           get_matching_exp_ids,
-                                           get_runid_from_guid,
-                                           is_run_id_in_database,
-                                           mark_run_complete, new_experiment)
-from qcodes.dataset.sqlite.query_helpers import (select_many_where,
-                                                 sql_placeholder_string)
+    connect,
+    get_db_version_and_newest_available_version,
+)
+from qcodes.dataset.sqlite.queries import (
+    add_meta_data,
+    create_run,
+    get_exp_ids_from_run_ids,
+    get_experiment_attributes_by_exp_id,
+    get_matching_exp_ids,
+    get_runid_from_guid,
+    is_run_id_in_database,
+    mark_run_complete,
+    new_experiment,
+)
+from qcodes.dataset.sqlite.query_helpers import sql_placeholder_string
 
 
 def extract_runs_into_db(source_db_path: str,
@@ -78,19 +84,9 @@ def extract_runs_into_db(source_db_path: str,
 
     # Fetch the attributes of the runs' experiment
     # hopefully, this is enough to uniquely identify the experiment
+    exp_attrs = get_experiment_attributes_by_exp_id(source_conn, source_exp_ids[0])
 
-    exp_attr_names = ['name', 'sample_name', 'start_time', 'end_time',
-                      'format_string']
-
-    exp_attr_vals = select_many_where(source_conn,
-                                      'experiments',
-                                      *exp_attr_names,
-                                      where_column='exp_id',
-                                      where_value=source_exp_ids[0])
-
-    exp_attrs = dict(zip(exp_attr_names, exp_attr_vals))
-
-    # Massage the target DB file to accomodate the runs
+    # Massage the target DB file to accommodate the runs
     # (create new experiment if needed)
 
     target_conn = connect(target_db_path)
