@@ -221,8 +221,8 @@ def new_experiment(name: str,
     conn = conn or connect(get_DB_location())
     exp_ids = get_matching_exp_ids(conn, name=name, sample_name=sample_name)
     if len(exp_ids) >= 1:
-        log.warn(f"There is (are) already experiment(s) with the name of {name} "
-                 f"and sample name of {sample_name} in the database.")
+        log.warning(f"There is (are) already experiment(s) with the name of {name} "
+                    f"and sample name of {sample_name} in the database.")
     experiment = Experiment(
         name=name, sample_name=sample_name, format_string=format_string, conn=conn
     )
@@ -268,7 +268,7 @@ def load_last_experiment() -> Experiment:
 
 
 def load_experiment_by_name(name: str,
-                            sample_name: Optional[str] = None,
+                            sample: Optional[str] = None,
                             load_last_duplicate: bool = False,
                             conn: Optional[ConnectionPlus] = None,
                             ) -> Experiment:
@@ -298,22 +298,26 @@ def load_experiment_by_name(name: str,
         .
     """
     conn = conn or connect(get_DB_location())
-    exp_ids = get_matching_exp_ids(conn, name=name, sample_name=sample_name)
+    if sample is not None:
+        args_to_find = {"name": name, "sample_name": sample}
+    else:
+        args_to_find = {"name": name}
+    exp_ids = get_matching_exp_ids(conn, **args_to_find)
     if len(exp_ids) == 0:
         raise ValueError("Experiment not found")
     elif len(exp_ids) > 1:
         _repr = []
-        for id in exp_ids:
-            exp = load_experiment(id, conn=conn)
+        for exp_id in exp_ids:
+            exp = load_experiment(exp_id, conn=conn)
             s = (f"exp_id:{exp.exp_id} ({exp.name}-{exp.sample_name})"
                  f" started at ({exp.started_at})")
             _repr.append(s)
         _repr_str = "\n".join(_repr)
-        if load_last_duplicate is False:
-            raise ValueError(f"Many experiments matching your request"
-                             f" found:\n{_repr_str}")
-        else:
+        if load_last_duplicate:
             e = exp
+        else:
+            raise ValueError(f"Many experiments matching your request"
+                             f" found:\n{_repr_str}")   
     else:
         e = Experiment(exp_id=exp_ids[0], conn=conn)
     _set_default_experiment_id(path_to_dbfile(conn), e.exp_id)
