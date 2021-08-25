@@ -1,11 +1,10 @@
 import logging
 from collections.abc import Sized
-import sqlite3
 from typing import Any, List, Optional
 
 from qcodes.dataset.data_set import SPECS, DataSet, load_by_id, new_data_set
 from qcodes.dataset.experiment_settings import _set_default_experiment_id
-from qcodes.dataset.sqlite.connection import ConnectionPlus, path_to_dbfile, transaction
+from qcodes.dataset.sqlite.connection import ConnectionPlus, path_to_dbfile
 from qcodes.dataset.sqlite.database import (
     conn_from_dbpath_or_conn,
     connect,
@@ -271,7 +270,7 @@ def load_last_experiment() -> Experiment:
 def load_experiment_by_name(name: str,
                             sample: Optional[str] = None,
                             load_last_duplicate: bool = False,
-                            conn: Optional[ConnectionPlus]=None,
+                            conn: Optional[ConnectionPlus] = None,
                             ) -> Experiment:
     """
     Try to load experiment with the specified name.
@@ -283,11 +282,11 @@ def load_experiment_by_name(name: str,
     Args:
         name: the name of the experiment
         sample: the name of the sample
-        load_last_duplicate: To prevent raising error for having multiple
-            experiment with the same name and sample name, and to load the
-            last duplicated experiment.
+        load_last_duplicate: If True, prevent raising error for having
+            multiple experiments with the same name and sample name, and
+            load the last duplicated experiment, instead.
         conn: connection to the database. If not supplied, a new connection
-          to the DB file specified in the config is made
+            to the DB file specified in the config is made
 
     Returns:
         the requested experiment
@@ -305,7 +304,7 @@ def load_experiment_by_name(name: str,
     elif len(exp_ids) > 1:
         _repr = []
         for id in exp_ids:
-            exp = load_experiment(id)
+            exp = load_experiment(id, conn=conn)
             s = (f"exp_id:{exp.exp_id} ({exp.name}-{exp.sample_name})"
                  f" started at ({exp.started_at})")
             _repr.append(s)
@@ -324,7 +323,7 @@ def load_experiment_by_name(name: str,
 def load_or_create_experiment(experiment_name: str,
                               sample_name: Optional[str] = None,
                               load_last_duplicate: bool = False,
-                              conn: Optional[ConnectionPlus]=None,
+                              conn: Optional[ConnectionPlus] = None,
                               ) -> Experiment:
     """
     Find and return an experiment with the given name and sample name,
@@ -333,11 +332,11 @@ def load_or_create_experiment(experiment_name: str,
     Args:
         experiment_name: Name of the experiment to find or create.
         sample_name: Name of the sample.
-        load_last_duplicate: To prevent raising error for having multiple
-            experiment with the same name and sample_name, and to load the
-            last duplicated experiment.
+        load_last_duplicate: If True, prevent raising error for having
+            multiple experiments with the same name and sample name, and
+            load the last duplicated experiment, instead.
         conn: Connection to the database. If not supplied, a new connection
-          to the DB file specified in the config is made.
+            to the DB file specified in the config is made.
 
     Returns:
         The found or created experiment
@@ -346,7 +345,7 @@ def load_or_create_experiment(experiment_name: str,
     try:
         experiment = load_experiment_by_name(experiment_name, sample_name,
                                              load_last_duplicate=load_last_duplicate,
-                                             conn=conn,)
+                                             conn=conn)
     except ValueError as exception:
         if "Experiment not found" in str(exception):
             experiment = new_experiment(experiment_name, sample_name,
