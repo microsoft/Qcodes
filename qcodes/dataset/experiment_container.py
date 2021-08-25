@@ -268,7 +268,7 @@ def load_last_experiment() -> Experiment:
 
 
 def load_experiment_by_name(name: str,
-                            sample: Optional[str] = None,
+                            sample_name: Optional[str] = None,
                             load_last_duplicate: bool = False,
                             conn: Optional[ConnectionPlus] = None,
                             ) -> Experiment:
@@ -276,7 +276,7 @@ def load_experiment_by_name(name: str,
     Try to load experiment with the specified name.
 
     Nothing stops you from having many experiments with the same name and
-    sample_name. In that case this won't work unless load_last_duplicate
+    sample name. In that case this won't work unless load_last_duplicate
     is set to True. Then, the last of duplicated experiments will be loaded.
 
     Args:
@@ -292,13 +292,13 @@ def load_experiment_by_name(name: str,
         the requested experiment
 
     Raises:
-        ValueError either if the name and sample are not unique, unless
+        ValueError either if the name and sample name are not unique, unless
         load_last_duplicate is True, or if no experiment found for the
         supplied name and sample.
         .
     """
     conn = conn or connect(get_DB_location())
-    exp_ids = get_matching_exp_ids(conn, name=name, sample_name=sample)
+    exp_ids = get_matching_exp_ids(conn, name=name, sample_name=sample_name)
     if len(exp_ids) == 0:
         raise ValueError("Experiment not found")
     elif len(exp_ids) > 1:
