@@ -218,6 +218,7 @@ def new_experiment(name: str,
     Returns:
         the new experiment
     """
+    sample_name = sample_name or "some_sample"
     conn = conn or connect(get_DB_location())
     exp_ids = get_matching_exp_ids(conn, name=name, sample_name=sample_name)
     if len(exp_ids) >= 1:
