@@ -355,38 +355,3 @@ def load_or_create_experiment(experiment_name: str,
             raise exception
     return experiment
 
-
-def _find_exp_rows(
-    name: str,
-    sample: Optional[str] = None,
-    conn: Optional[ConnectionPlus] = None,
-) -> List[sqlite3.Row]:
-    """
-    Queries the connected database to find experiment rows for the
-    supplied name and sample.
-    """
-    conn = conn or connect(get_DB_location())
-
-    if sample:
-        sql = """
-        SELECT
-            *
-        FROM
-            experiments
-        WHERE
-            sample_name = ? AND
-            name = ?
-        """
-        c = transaction(conn, sql, sample, name)
-    else:
-        sql = """
-        SELECT
-            *
-        FROM
-            experiments
-        WHERE
-            name = ?
-        """
-        c = transaction(conn, sql, name)
-    rows = c.fetchall()
-    return rows
