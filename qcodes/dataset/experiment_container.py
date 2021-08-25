@@ -222,7 +222,7 @@ def new_experiment(name: str,
     conn = conn or connect(get_DB_location())
     exp_ids = get_matching_exp_ids(conn, name=name, sample_name=sample_name)
     if len(exp_ids) >= 1:
-        log.warn(f"There is already experiment(s) with the name of {name} "
+        log.warn(f"There is (are) already experiment(s) with the name of {name} "
                  f"and sample name of {sample_name} in the database.")
     experiment = Experiment(
         name=name, sample_name=sample_name, format_string=format_string, conn=conn
@@ -354,4 +354,3 @@ def load_or_create_experiment(experiment_name: str,
         else:
             raise exception
     return experiment
-
