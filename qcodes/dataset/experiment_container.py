@@ -16,11 +16,11 @@ from qcodes.dataset.sqlite.queries import (
     get_experiments,
     get_last_experiment,
     get_last_run,
+    get_matching_exp_ids,
     get_run_counter,
     get_runid_from_expid_and_counter,
     get_runs,
     get_sample_name_from_experiment_id,
-    get_matching_exp_ids,
 )
 from qcodes.dataset.sqlite.queries import new_experiment as ne
 from qcodes.dataset.sqlite.query_helpers import VALUES, select_one_where
@@ -316,8 +316,9 @@ def load_experiment_by_name(name: str,
         if load_last_duplicate:
             e = exp
         else:
-            raise ValueError(f"Many experiments matching your request"
-                             f" found:\n{_repr_str}")   
+            raise ValueError(
+                f"Many experiments matching your request" f" found:\n{_repr_str}"
+            )
     else:
         e = Experiment(exp_id=exp_ids[0], conn=conn)
     _set_default_experiment_id(path_to_dbfile(conn), e.exp_id)
