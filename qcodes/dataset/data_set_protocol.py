@@ -183,13 +183,19 @@ class DataSetProtocol(Protocol, Sized):
     def cache(self) -> DataSetCache[DataSetProtocol]:
         pass
 
-    # private members called doing measurement
+    # private members called by various other parts or the api
 
     def _enqueue_results(self, result_dict: Mapping[ParamSpecBase, np.ndarray]) -> None:
         pass
 
     def _flush_data_to_database(self, block: bool = False) -> None:
         pass
+
+    @property
+    def _parameters(self) -> Optional[str]:
+        pass
+
+    # shared methods between all implementations
 
     def the_same_dataset_as(self, other: DataSetProtocol) -> bool:
         """

@@ -429,7 +429,7 @@ class DataSet(DataSetProtocol, Sized):
         return captured_counter
 
     @property
-    def parameters(self) -> Optional[str]:
+    def _parameters(self) -> Optional[str]:
         if self.pristine:
             psnames = [ps.name for ps in self.description.interdeps.paramspecs]
             if len(psnames) > 0:
@@ -442,6 +442,10 @@ class DataSet(DataSetProtocol, Sized):
             )
             assert isinstance(parameters, (str, type(None)))
             return parameters
+
+    @property
+    def parameters(self) -> Optional[str]:
+        return self._parameters
 
     @property
     def paramspecs(self) -> Dict[str, ParamSpec]:
