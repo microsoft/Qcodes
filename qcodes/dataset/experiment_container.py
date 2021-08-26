@@ -270,8 +270,8 @@ def load_last_experiment() -> Experiment:
 
 def load_experiment_by_name(name: str,
                             sample: Optional[str] = None,
-                            load_last_duplicate: bool = False,
                             conn: Optional[ConnectionPlus] = None,
+                            load_last_duplicate: bool = False,
                             ) -> Experiment:
     """
     Try to load experiment with the specified name.
@@ -328,8 +328,8 @@ def load_experiment_by_name(name: str,
 
 def load_or_create_experiment(experiment_name: str,
                               sample_name: Optional[str] = None,
-                              load_last_duplicate: bool = False,
                               conn: Optional[ConnectionPlus] = None,
+                              load_last_duplicate: bool = False,
                               ) -> Experiment:
     """
     Find and return an experiment with the given name and sample name,
