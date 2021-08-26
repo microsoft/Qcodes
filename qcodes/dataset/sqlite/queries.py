@@ -1127,13 +1127,16 @@ def format_table_name(fmt_str: str, name: str, exp_id: int,
     return table_name
 
 
-def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
-                guid: str,
-                parameters: Optional[List[ParamSpec]] = None,
-                captured_run_id: Optional[int] = None,
-                captured_counter: Optional[int] = None,
-                parent_dataset_links: str = "[]"
-                ) -> Tuple[int, str, int]:
+def _insert_run(
+    conn: ConnectionPlus,
+    exp_id: int,
+    name: str,
+    guid: str,
+    parameters: Optional[Sequence[ParamSpec]] = None,
+    captured_run_id: Optional[int] = None,
+    captured_counter: Optional[int] = None,
+    parent_dataset_links: str = "[]",
+) -> Tuple[int, str, int]:
 
     # get run counter and formatter from experiments
     run_counter, format_string = select_many_where(conn,
@@ -1555,11 +1558,12 @@ def _validate_table_name(table_name: str) -> bool:
     return valid
 
 
-def _create_run_table(conn: ConnectionPlus,
-                      formatted_name: str,
-                      parameters: Optional[List[ParamSpec]] = None,
-                      values: Optional[VALUES] = None
-                      ) -> None:
+def _create_run_table(
+    conn: ConnectionPlus,
+    formatted_name: str,
+    parameters: Optional[Sequence[ParamSpec]] = None,
+    values: Optional[VALUES] = None,
+) -> None:
     """Create run table with formatted_name as name
 
     Args:
@@ -1605,8 +1609,8 @@ def create_run(
     exp_id: int,
     name: str,
     guid: str,
-    parameters: Optional[List[ParamSpec]] = None,
-    values: Optional[List[Any]] = None,
+    parameters: Optional[Sequence[ParamSpec]] = None,
+    values: Optional[Sequence[Any]] = None,
     metadata: Optional[Mapping[str, Any]] = None,
     captured_run_id: Optional[int] = None,
     captured_counter: Optional[int] = None,

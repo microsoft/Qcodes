@@ -21,7 +21,7 @@ from qcodes.utils.deprecate import deprecate
 
 # represent the type of  data we can/want map to sqlite column
 VALUE = Union[str, complex, List, ndarray, bool, None]
-VALUES = List[VALUE]
+VALUES = Sequence[VALUE]
 
 
 def one(curr: sqlite3.Cursor, column: Union[int, str]) -> Any:
