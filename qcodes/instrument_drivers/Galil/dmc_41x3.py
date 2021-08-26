@@ -742,7 +742,7 @@ class Arm:
 
         self._put_down()
 
-    def move_to_next_row_pad(self) -> None:
+    def move_to_next_row(self) -> None:
 
         if self.current_row is None or self.current_pad is None:
             raise RuntimeError("Current position unknown.")
@@ -752,10 +752,14 @@ class Arm:
 
         self.current_row = self.current_row + 1
 
+        self._pick_up()
+
         self._setup_motion(rel_vec=self._b, d=self.inter_row_dis, speed=3000)
         self._move()
 
-    def move_to_begin_row_pad(self) -> None:
+        self._put_down()
+
+    def move_to_begin_row_pad_from_end_row_last_pad(self) -> None:
 
         if self.current_row is None or self.current_pad is None:
             raise RuntimeError("Current position unknown.")
@@ -770,5 +774,58 @@ class Arm:
         norm = np.linalg.norm(motion_vec)
         motion_vec_cap = motion_vec / norm
 
+        self._pick_up()
+
         self._setup_motion(rel_vec=motion_vec_cap, d=norm, speed=3000)
         self._move()
+
+        self._put_down()
+
+    def move_to_row(self, num: int) -> None:
+
+        if num < 1 or num > self.rows:
+            raise RuntimeError(f"Row num: {num} is out of range. Row numbers start from 1 and max number of rows is"
+                               f" {self.rows}.")
+
+        sign = 1
+        d = (num - self.current_row) * self.inter_row_dis
+
+        if d == 0:
+            raise RuntimeError(f"You are at the row where you want to be. Current row number is {self.current_row}.")
+        elif d < 0:
+            sign = -1
+            d = abs(d)
+
+        self._pick_up()
+
+        self._setup_motion(rel_vec=sign*self._b, d=d, speed=3000)
+        self._move()
+
+        self._put_down()
+
+        self.current_row = num
+
+
+    def move_to_pad(self, num: int) -> None:
+
+        if num < 1 or num > self.pads:
+            raise RuntimeError(f"Pad num: {num} is out of range. Pad number start from 1 and max number is"
+                               f" {self.pads}.")
+
+        sign = 1
+        d = (num - self.current_pad) * self.inter_pad_dis
+
+        if d == 0:
+            raise RuntimeError(f"You are at the pad where you want to be. Current pad number is {self.current_pad}.")
+        elif d < 0:
+            sign = -1
+            d = abs(d)
+
+        self._pick_up()
+
+        self._setup_motion(rel_vec=sign*self._c, d=d, speed=3000)
+        self._move()
+
+        self._put_down()
+
+        self.current_pad = num
