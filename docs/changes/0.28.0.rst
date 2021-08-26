@@ -12,8 +12,14 @@ Breaking Changes:
 ----
 New:
 ----
-
+- Use thread pool when acquiring parameters to save time on recreating threads, new ThreadPoolParamsCaller,
+  use it in do1d, do2d, dond. (#3170)
 - Default experiment in QCoDeS and updated The_Experiment_Container notebook to show that. (#3214)
+- Enabeling dond function to handle multiple datasets. (#3186)
+- Make parameter registration on instrument part of parameter init. (#3191)
+- Add post sweep actions to doND sweeps. (#3283)
+- load experiment functions accept duplicated experiment name and new_experiment warns if creates duplicated
+  experiment. (#3296)
 
 ---------
 Improved:
@@ -32,3 +38,8 @@ Under the hood:
 ---------------
 
 - Adding a Sphinx extension to document Parameter attributes. (#3224)
+- Work around legacy test issue with hf51.12.1 on conda forge. (#3278)
+- Make qcodes install mostly pep517/518 compliant. (#3288)
+- Log all installed packages. (#3289)
+- Remove pre-commit job from the repository in favor of pre-commit integration in the CI. (#3293, #3290)
+- Explicitly depend on setuptools. (#3294)
