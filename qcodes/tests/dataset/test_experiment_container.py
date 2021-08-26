@@ -237,30 +237,33 @@ def test_load_experiment_by_name_bad_sample_name(empty_temp_db):
 
 
 def test_load_experiment_by_name_duplicate_name(empty_temp_db):
-    exp1 = Experiment(exp_id=None, name='exp')
-    exp2 = Experiment(exp_id=None, name='exp')
+    exp1 = Experiment(exp_id=None, name="exp")
+    exp2 = Experiment(exp_id=None, name="exp")
 
-    repr_str_1_2 = f"Many experiments matching your request found:\n" \
-                   f"exp_id:{exp1.exp_id} ({exp1.name}-{exp1.sample_name}) " \
-                   f"started at ({exp1.started_at})\n" \
-                   f"exp_id:{exp2.exp_id} ({exp2.name}-{exp2.sample_name}) " \
-                   f"started at ({exp2.started_at})"
+    repr_str_1_2 = (
+        f"Many experiments matching your request found:\n"
+        f"exp_id:{exp1.exp_id} ({exp1.name}-{exp1.sample_name}) "
+        f"started at ({exp1.started_at})\n"
+        f"exp_id:{exp2.exp_id} ({exp2.name}-{exp2.sample_name}) "
+        f"started at ({exp2.started_at})"
+    )
     repr_str_1_2_regex = re.escape(repr_str_1_2)
     with pytest.raises(ValueError, match=repr_str_1_2_regex):
-        load_experiment_by_name('exp', 'some_sample')
+        load_experiment_by_name("exp", "some_sample")
 
     last_exp = load_experiment_by_name("exp", load_last_duplicate=True)
     assert last_exp.name == "exp"
     assert last_exp.sample_name == "some_sample"
     assert last_exp.exp_id == 2
 
-    exp3 = Experiment(exp_id=None, name='exp', sample_name='my_sample')
-    repr_str_1_2_3 = repr_str_1_2 + "\n" + \
-        f"exp_id:{exp3.exp_id} ({exp3.name}-{exp3.sample_name}) " \
+    exp3 = Experiment(exp_id=None, name="exp", sample_name="my_sample")
+    repr_str_1_2_3 = (
+        repr_str_1_2 + "\n" + f"exp_id:{exp3.exp_id} ({exp3.name}-{exp3.sample_name}) "
         f"started at ({exp3.started_at})"
+    )
     repr_str_1_2_3_regex = re.escape(repr_str_1_2_3)
     with pytest.raises(ValueError, match=repr_str_1_2_3_regex):
-        load_experiment_by_name('exp')
+        load_experiment_by_name("exp")
     last_exp = load_experiment_by_name("exp", load_last_duplicate=True)
     assert last_exp.name == "exp"
     assert last_exp.sample_name == "my_sample"
@@ -302,7 +305,7 @@ def test_load_experiment_by_name_duplicate_name_and_sample_name(empty_temp_db):
         load_experiment_by_name('exp')
 
     with pytest.raises(ValueError, match=repr_str_regex):
-        load_experiment_by_name('exp', 'sss')
+        load_experiment_by_name("exp", "sss")
 
     last_exp = load_experiment_by_name("exp", "sss", load_last_duplicate=True)
     assert last_exp.name == "exp"
@@ -316,8 +319,10 @@ def test_new_experiment_duplicate_name_and_sample_name(empty_temp_db, caplog):
     with a duplicate experiment name and sample name.
     """
     exp_1 = new_experiment("exp", "sample")
-    warn_msg = (f"There is (are) already experiment(s) with the name of {exp_1.name} "
-                f"and sample name of {exp_1.sample_name} in the database.")
+    warn_msg = (
+        f"There is (are) already experiment(s) with the name of {exp_1.name} "
+        f"and sample name of {exp_1.sample_name} in the database."
+    )
     caplog.clear()
     with caplog.at_level(logging.WARNING):
         new_experiment("exp", "sample")
@@ -326,8 +331,10 @@ def test_new_experiment_duplicate_name_and_sample_name(empty_temp_db, caplog):
         assert warn_msg in caplog.text
 
     exp_2 = new_experiment("exp_2", None)
-    warn_msg = (f"There is (are) already experiment(s) with the name of {exp_2.name} "
-                f"and sample name of {exp_2.sample_name} in the database.")
+    warn_msg = (
+        f"There is (are) already experiment(s) with the name of {exp_2.name} "
+        f"and sample name of {exp_2.sample_name} in the database."
+    )
     assert exp_2.sample_name == "some_sample"
     caplog.clear()
     with caplog.at_level(logging.WARNING):

@@ -222,8 +222,10 @@ def new_experiment(name: str,
     conn = conn or connect(get_DB_location())
     exp_ids = get_matching_exp_ids(conn, name=name, sample_name=sample_name)
     if len(exp_ids) >= 1:
-        log.warning(f"There is (are) already experiment(s) with the name of {name} "
-                    f"and sample name of {sample_name} in the database.")
+        log.warning(
+            f"There is (are) already experiment(s) with the name of {name} "
+            f"and sample name of {sample_name} in the database."
+        )
     experiment = Experiment(
         name=name, sample_name=sample_name, format_string=format_string, conn=conn
     )
@@ -268,11 +270,12 @@ def load_last_experiment() -> Experiment:
     return experiment
 
 
-def load_experiment_by_name(name: str,
-                            sample: Optional[str] = None,
-                            conn: Optional[ConnectionPlus] = None,
-                            load_last_duplicate: bool = False,
-                            ) -> Experiment:
+def load_experiment_by_name(
+    name: str,
+    sample: Optional[str] = None,
+    conn: Optional[ConnectionPlus] = None,
+    load_last_duplicate: bool = False,
+) -> Experiment:
     """
     Try to load experiment with the specified name.
 
@@ -310,8 +313,10 @@ def load_experiment_by_name(name: str,
         _repr = []
         for exp_id in exp_ids:
             exp = load_experiment(exp_id, conn=conn)
-            s = (f"exp_id:{exp.exp_id} ({exp.name}-{exp.sample_name})"
-                 f" started at ({exp.started_at})")
+            s = (
+                f"exp_id:{exp.exp_id} ({exp.name}-{exp.sample_name})"
+                f" started at ({exp.started_at})"
+            )
             _repr.append(s)
         _repr_str = "\n".join(_repr)
         if load_last_duplicate:
@@ -326,11 +331,12 @@ def load_experiment_by_name(name: str,
     return e
 
 
-def load_or_create_experiment(experiment_name: str,
-                              sample_name: Optional[str] = None,
-                              conn: Optional[ConnectionPlus] = None,
-                              load_last_duplicate: bool = False,
-                              ) -> Experiment:
+def load_or_create_experiment(
+    experiment_name: str,
+    sample_name: Optional[str] = None,
+    conn: Optional[ConnectionPlus] = None,
+    load_last_duplicate: bool = False,
+) -> Experiment:
     """
     Find and return an experiment with the given name and sample name,
     or create one if not found.
@@ -349,9 +355,12 @@ def load_or_create_experiment(experiment_name: str,
     """
     conn = conn or connect(get_DB_location())
     try:
-        experiment = load_experiment_by_name(experiment_name, sample_name,
-                                             load_last_duplicate=load_last_duplicate,
-                                             conn=conn)
+        experiment = load_experiment_by_name(
+            experiment_name,
+            sample_name,
+            load_last_duplicate=load_last_duplicate,
+            conn=conn,
+        )
     except ValueError as exception:
         if "Experiment not found" in str(exception):
             experiment = new_experiment(experiment_name, sample_name,
