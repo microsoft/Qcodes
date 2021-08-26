@@ -321,8 +321,7 @@ class DataSetInMem(DataSetProtocol, Sized):
 
     @property
     def number_of_results(self) -> int:
-        # todo how to replace
-        return 0
+        return self.__len__()
 
     @property
     def name(self) -> str:
