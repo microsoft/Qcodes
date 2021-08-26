@@ -315,22 +315,26 @@ def test_new_experiment_duplicate_name_and_sample_name(empty_temp_db, caplog):
     Test new_experiment to raise warning if it wants to create experiment
     with a duplicate experiment name and sample name.
     """
-    caplog.clear()
     exp_1 = new_experiment("exp", "sample")
     warn_msg = (f"There is (are) already experiment(s) with the name of {exp_1.name} "
                 f"and sample name of {exp_1.sample_name} in the database.")
-
+    caplog.clear()
     with caplog.at_level(logging.WARNING):
         new_experiment("exp", "sample")
-        assert caplog.records[0].message == warn_msg
+        for record in caplog.records:
+            assert record.levelname == "WARNING"
+        assert warn_msg in caplog.text
 
     exp_2 = new_experiment("exp_2", None)
     warn_msg = (f"There is (are) already experiment(s) with the name of {exp_2.name} "
                 f"and sample name of {exp_2.sample_name} in the database.")
     assert exp_2.sample_name == "some_sample"
+    caplog.clear()
     with caplog.at_level(logging.WARNING):
         new_experiment("exp_2", None)
-        assert caplog.records[1].message == warn_msg
+        for record in caplog.records:
+            assert record.levelname == "WARNING"
+        assert warn_msg in caplog.text
     caplog.clear()
 
 
