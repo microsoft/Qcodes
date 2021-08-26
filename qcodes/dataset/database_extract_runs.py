@@ -146,7 +146,7 @@ def _extract_single_dataset_into_db(dataset: DataSet,
         return
 
     target_table_name = _add_run_to_runs_table(dataset, target_conn, target_exp_id)
-
+    assert target_table_name is not None
     _populate_results_table(
         source_conn, target_conn, dataset.table_name, target_table_name
     )
@@ -154,7 +154,7 @@ def _extract_single_dataset_into_db(dataset: DataSet,
 
 def _add_run_to_runs_table(
     dataset: DataSet, target_conn: ConnectionPlus, target_exp_id: int
-) -> str:
+) -> Optional[str]:
     if dataset.parameters is not None:
         param_names = dataset.parameters.split(',')
     else:
@@ -179,7 +179,6 @@ def _add_run_to_runs_table(
         captured_counter=captured_counter,
         parent_dataset_links=parent_dataset_links,
     )
-    assert target_table_name is not None
     mark_run_complete(target_conn, target_run_id)
     _rewrite_timestamps(target_conn,
                         target_run_id,
