@@ -2,7 +2,7 @@ argon2-cffi~=20.1.0
 async-generator~=1.10
 attrs~=21.2.0
 backcall~=0.2.0
-bleach~=4.0.0
+bleach~=4.1.0
 broadbean~=0.10.0
 cachetools~=4.2.2
 certifi~=2021.5.30
@@ -69,12 +69,12 @@ pyzmq~=22.2.1
 requests~=2.26.0
 requirements-parser~=0.2.0
 rsa~=4.7
-ruamel.yaml==0.17.13
+ruamel.yaml==0.17.14
 ruamel.yaml.clib~=0.2.6
 schema~=0.7.4
 Send2Trash~=1.8.0
 six~=1.16.0
-slack-sdk~=3.9.1
+slack-sdk~=3.10.0
 tabulate~=0.8.9
 terminado~=0.11.1
 testpath~=0.5.0
