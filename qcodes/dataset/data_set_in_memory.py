@@ -796,3 +796,8 @@ class DataSetInMem(DataSetProtocol, Sized):
     @property
     def export_path(self) -> Optional[str]:
         return self._export_path
+
+    @property
+    def _parameters(self) -> Optional[str]:
+        psnames = [ps.name for ps in self.description.interdeps.paramspecs]
+        return ",".join(psnames)
