@@ -1,16 +1,23 @@
+import logging
 import re
 
 import pytest
 
-from qcodes.dataset.sqlite.database import get_DB_location
-from qcodes.dataset.experiment_container import (load_experiment_by_name,
-                                                 new_experiment,
-                                                 load_or_create_experiment,
-                                                 experiments,
-                                                 load_experiment,
-                                                 Experiment,
-                                                 load_last_experiment)
+from qcodes.dataset.experiment_container import (
+    Experiment,
+    experiments,
+    load_experiment,
+    load_experiment_by_name,
+    load_last_experiment,
+    load_or_create_experiment,
+    new_experiment,
+)
+from qcodes.dataset.experiment_settings import (
+    get_default_experiment_id,
+    reset_default_experiment_id,
+)
 from qcodes.dataset.measurements import Measurement
+from qcodes.dataset.sqlite.database import conn_from_dbpath_or_conn, get_DB_location
 
 
 def assert_experiments_equal(exp, exp_2):
@@ -35,6 +42,7 @@ def test_run_loaded_experiment():
 
     with meas.run():
         pass
+
 
 def test_last_data_set_from_experiment(dataset):
     experiment = load_experiment(dataset.exp_id)
@@ -229,26 +237,37 @@ def test_load_experiment_by_name_bad_sample_name(empty_temp_db):
 
 
 def test_load_experiment_by_name_duplicate_name(empty_temp_db):
-    exp1 = Experiment(exp_id=None, name='exp')
-    exp2 = Experiment(exp_id=None, name='exp')
-    exp3 = Experiment(exp_id=None, name='exp', sample_name='my_sample')
+    exp1 = Experiment(exp_id=None, name="exp")
+    exp2 = Experiment(exp_id=None, name="exp")
 
-    repr_str_1_2 = f"Many experiments matching your request found:\n" \
-                   f"exp_id:{exp1.exp_id} ({exp1.name}-{exp1.sample_name}) " \
-                   f"started at ({exp1.started_at})\n" \
-                   f"exp_id:{exp2.exp_id} ({exp2.name}-{exp2.sample_name}) " \
-                   f"started at ({exp2.started_at})"
-    repr_str_1_2_3 = repr_str_1_2 + "\n" + \
-        f"exp_id:{exp3.exp_id} ({exp3.name}-{exp3.sample_name}) " \
-        f"started at ({exp3.started_at})"
+    repr_str_1_2 = (
+        f"Many experiments matching your request found:\n"
+        f"exp_id:{exp1.exp_id} ({exp1.name}-{exp1.sample_name}) "
+        f"started at ({exp1.started_at})\n"
+        f"exp_id:{exp2.exp_id} ({exp2.name}-{exp2.sample_name}) "
+        f"started at ({exp2.started_at})"
+    )
     repr_str_1_2_regex = re.escape(repr_str_1_2)
-    repr_str_1_2_3_regex = re.escape(repr_str_1_2_3)
-
-    with pytest.raises(ValueError, match=repr_str_1_2_3_regex):
-        load_experiment_by_name('exp')
-
     with pytest.raises(ValueError, match=repr_str_1_2_regex):
-        load_experiment_by_name('exp', 'some_sample')
+        load_experiment_by_name("exp", "some_sample")
+
+    last_exp = load_experiment_by_name("exp", load_last_duplicate=True)
+    assert last_exp.name == "exp"
+    assert last_exp.sample_name == "some_sample"
+    assert last_exp.exp_id == 2
+
+    exp3 = Experiment(exp_id=None, name="exp", sample_name="my_sample")
+    repr_str_1_2_3 = (
+        repr_str_1_2 + "\n" + f"exp_id:{exp3.exp_id} ({exp3.name}-{exp3.sample_name}) "
+        f"started at ({exp3.started_at})"
+    )
+    repr_str_1_2_3_regex = re.escape(repr_str_1_2_3)
+    with pytest.raises(ValueError, match=repr_str_1_2_3_regex):
+        load_experiment_by_name("exp")
+    last_exp = load_experiment_by_name("exp", load_last_duplicate=True)
+    assert last_exp.name == "exp"
+    assert last_exp.sample_name == "my_sample"
+    assert last_exp.exp_id == 3
 
     exp3_loaded = load_experiment_by_name('exp', 'my_sample')
     assert_experiments_equal(exp3, exp3_loaded)
@@ -286,7 +305,44 @@ def test_load_experiment_by_name_duplicate_name_and_sample_name(empty_temp_db):
         load_experiment_by_name('exp')
 
     with pytest.raises(ValueError, match=repr_str_regex):
-        load_experiment_by_name('exp', 'sss')
+        load_experiment_by_name("exp", "sss")
+
+    last_exp = load_experiment_by_name("exp", "sss", load_last_duplicate=True)
+    assert last_exp.name == "exp"
+    assert last_exp.sample_name == "sss"
+    assert last_exp.exp_id == 2
+
+
+def test_new_experiment_duplicate_name_and_sample_name(empty_temp_db, caplog):
+    """
+    Test new_experiment to raise warning if it wants to create experiment
+    with a duplicate experiment name and sample name.
+    """
+    exp_1 = new_experiment("exp", "sample")
+    warn_msg = (
+        f"There is (are) already experiment(s) with the name of {exp_1.name} "
+        f"and sample name of {exp_1.sample_name} in the database."
+    )
+    caplog.clear()
+    with caplog.at_level(logging.WARNING):
+        new_experiment("exp", "sample")
+        for record in caplog.records:
+            assert record.levelname == "WARNING"
+        assert warn_msg in caplog.text
+
+    exp_2 = new_experiment("exp_2", None)
+    warn_msg = (
+        f"There is (are) already experiment(s) with the name of {exp_2.name} "
+        f"and sample name of {exp_2.sample_name} in the database."
+    )
+    assert exp_2.sample_name == "some_sample"
+    caplog.clear()
+    with caplog.at_level(logging.WARNING):
+        new_experiment("exp_2", None)
+        for record in caplog.records:
+            assert record.levelname == "WARNING"
+        assert warn_msg in caplog.text
+    caplog.clear()
 
 
 def test_load_last_experiment(empty_temp_db):
@@ -306,3 +362,42 @@ def test_load_last_experiment(empty_temp_db):
     assert last_exp.exp_id == exp2.exp_id
     assert last_exp.exp_id != exp1.exp_id
     assert last_exp.path_to_db == exp2.path_to_db
+
+
+def test_active_experiment(empty_temp_db):
+
+    conn = conn_from_dbpath_or_conn(conn=None, path_to_db=empty_temp_db)
+    with pytest.raises(ValueError):
+        get_default_experiment_id(conn)
+
+    exp_1 = load_or_create_experiment("test_exp", sample_name="no_sample")
+    assert get_default_experiment_id(conn) == exp_1.exp_id
+
+    exp_2 = new_experiment("test_exp_2", sample_name="no_sample")
+    assert get_default_experiment_id(conn) == exp_2.exp_id
+
+    exp_3 = load_experiment(1)
+    assert get_default_experiment_id(conn) == exp_1.exp_id
+    assert get_default_experiment_id(conn) == exp_3.exp_id
+
+    exp_4 = new_experiment("test_exp_3", sample_name="no_sample")
+
+    exp_5 = load_experiment_by_name("test_exp_2", sample="no_sample")
+    assert get_default_experiment_id(conn) == exp_2.exp_id
+    assert get_default_experiment_id(conn) == exp_5.exp_id
+
+    exp_6 = load_last_experiment()
+    assert get_default_experiment_id(conn) == exp_4.exp_id
+    assert get_default_experiment_id(conn) == exp_6.exp_id
+
+    last_exp = new_experiment("last_exp", sample_name="no_sample")
+    load_experiment(3)
+
+    reset_default_experiment_id(conn)
+    assert get_default_experiment_id(conn) is last_exp.exp_id
+
+    load_experiment(exp_1.exp_id)
+    assert get_default_experiment_id(conn) == exp_1.exp_id
+
+    reset_default_experiment_id()
+    assert get_default_experiment_id(conn) is last_exp.exp_id
