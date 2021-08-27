@@ -567,7 +567,8 @@ class Arm:
         self.norm_b: float
         self.norm_c: float
 
-        self._plane_eqn: np.ndarray    # eqn of the chip plane
+        # eqn of the chip plane
+        self._plane_eqn: np.ndarray
 
         # current vars
         self.current_row: Optional[int] = None
@@ -579,7 +580,24 @@ class Arm:
         self.inter_row_dis: float
         self.inter_pad_dis: float
 
+        # arm kinematics
+        self.speed: int
+        self.acceleration: int
+        self.deceleration: int
+
+        self._arm_pick_up_dis: int
+
         self._target: np.ndarray
+
+    def set_arm_kinematics(self, speed: int = 100, acceleration: int = 2500, deceleration: int = 2500) -> None:
+
+        self.speed = self._convert_micro_meter_to_quadrature_counts(speed)
+        self.acceleration = self._convert_micro_meter_to_quadrature_counts(acceleration)
+        self.deceleration = self._convert_micro_meter_to_quadrature_counts(deceleration)
+
+    def set_pick_up_distance(self, distance: float = 3000) -> None:
+
+        self._arm_pick_up_dis = self._convert_micro_meter_to_quadrature_counts(distance)
 
     def set_left_bottom_position(self) -> None:
 
@@ -628,9 +646,9 @@ class Arm:
         d = self._convert_micro_meter_to_quadrature_counts(distance)
 
         a.relative_position(d)
-        a.speed(2000)
-        a.acceleration(50000)
-        a.deceleration(50000)
+        a.speed(self.speed)
+        a.acceleration(self.acceleration)
+        a.deceleration(self.deceleration)
         a.servo_here()
         a.begin()
 
@@ -642,9 +660,9 @@ class Arm:
         d = self._convert_micro_meter_to_quadrature_counts(distance)
 
         b.relative_position(d)
-        b.speed(2000)
-        b.acceleration(50000)
-        b.deceleration(50000)
+        b.speed(self.speed)
+        b.acceleration(self.acceleration)
+        b.deceleration(self.deceleration)
         b.servo_here()
         b.begin()
 
@@ -656,15 +674,15 @@ class Arm:
         d = self._convert_micro_meter_to_quadrature_counts(distance)
 
         c.relative_position(d)
-        c.speed(2000)
-        c.acceleration(50000)
-        c.deceleration(50000)
+        c.speed(self.speed)
+        c.acceleration(self.acceleration)
+        c.deceleration(self.deceleration)
         c.servo_here()
         c.begin()
 
-    def _convert_micro_meter_to_quadrature_counts(self, d: float) -> int:
+    def _convert_micro_meter_to_quadrature_counts(self, val: float) -> int:
 
-        return int(20*d)
+        return int(20*val)
 
 
     def _setup_motion(self, rel_vec: np.ndarray, d: float, speed: float) -> None:
@@ -690,20 +708,20 @@ class Arm:
 
         motorA.relative_position(a)
         motorA.speed(sp_a)
-        motorA.acceleration(50000)
-        motorA.deceleration(50000)
+        motorA.acceleration(self.acceleration)
+        motorA.deceleration(self.deceleration)
         motorA.servo_here()
 
         motorB.relative_position(b)
         motorB.speed(sp_b)
-        motorB.acceleration(50000)
-        motorB.deceleration(50000)
+        motorB.acceleration(self.acceleration)
+        motorB.deceleration(self.deceleration)
         motorB.servo_here()
 
         motorC.relative_position(c)
         motorC.speed(sp_c)
-        motorC.acceleration(50000)
-        motorC.deceleration(50000)
+        motorC.acceleration(self.acceleration)
+        motorC.deceleration(self.deceleration)
         motorC.servo_here()
 
     def _move(self) -> None:
@@ -711,7 +729,7 @@ class Arm:
 
     def _pick_up(self) -> None:
 
-        self._setup_motion(rel_vec=self._n, d=60000, speed=3000)
+        self._setup_motion(rel_vec=self._n, d=self._arm_pick_up_dis, speed=self.speed)
         self._move()
 
     def _put_down(self) -> None:
@@ -727,7 +745,7 @@ class Arm:
         denominator = np.sqrt(self._plane_eqn[0]**2 + self._plane_eqn[1]**2 + self._plane_eqn[2]**2)
         d = abs(sum(self._plane_eqn * current))/denominator
 
-        self._setup_motion(rel_vec=motion_vec, d=d, speed=3000)
+        self._setup_motion(rel_vec=motion_vec, d=d, speed=self.speed)
         self._move()
 
     def move_towards_left_bottom_position(self) -> None:
@@ -735,7 +753,7 @@ class Arm:
         self._pick_up()
 
         motion_vec = -1*self._a
-        self._setup_motion(rel_vec=motion_vec, d=self.norm_a, speed=3000)
+        self._setup_motion(rel_vec=motion_vec, d=self.norm_a, speed=self.speed)
         self._move()
         self.current_row = 1
         self.current_pad = 1
@@ -754,7 +772,7 @@ class Arm:
 
         self._pick_up()
 
-        self._setup_motion(rel_vec=self._b, d=self.inter_row_dis, speed=3000)
+        self._setup_motion(rel_vec=self._b, d=self.inter_row_dis, speed=self.speed)
         self._move()
 
         self._put_down()
@@ -776,7 +794,7 @@ class Arm:
 
         self._pick_up()
 
-        self._setup_motion(rel_vec=motion_vec_cap, d=norm, speed=3000)
+        self._setup_motion(rel_vec=motion_vec_cap, d=norm, speed=self.speed)
         self._move()
 
         self._put_down()
@@ -798,7 +816,7 @@ class Arm:
 
         self._pick_up()
 
-        self._setup_motion(rel_vec=sign*self._b, d=d, speed=3000)
+        self._setup_motion(rel_vec=sign*self._b, d=d, speed=self.speed)
         self._move()
 
         self._put_down()
@@ -823,7 +841,7 @@ class Arm:
 
         self._pick_up()
 
-        self._setup_motion(rel_vec=sign*self._c, d=d, speed=3000)
+        self._setup_motion(rel_vec=sign*self._c, d=d, speed=self.speed)
         self._move()
 
         self._put_down()
