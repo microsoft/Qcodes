@@ -802,8 +802,8 @@ def test_do1d_additional_setpoints_shape(
         do_plot=False,
     )
     expected_shapes = {
-        "arrayparam": (1, 1, num_points_p1, array_shape[0]),
-        "simple_parameter": (1, 1, num_points_p1),
+        "arrayparam": (num_points_p1, 1, 1, array_shape[0]),
+        "simple_parameter": (num_points_p1, 1, 1),
     }
     assert results[0].description.shapes == expected_shapes
 
@@ -893,9 +893,9 @@ def test_do2d_additional_setpoints_shape(
         do_plot=False,
     )
     expected_shapes = {
-        "arrayparam": (1, 1, num_points_p1, num_points_p2, array_shape[0]),
-        "simple_complex_parameter": (1, 1, num_points_p1, num_points_p2),
-        "simple_parameter": (1, 1, num_points_p1, num_points_p2),
+        "arrayparam": (num_points_p1, num_points_p2, 1, 1, array_shape[0]),
+        "simple_complex_parameter": (num_points_p1, num_points_p2, 1, 1),
+        "simple_parameter": (num_points_p1, num_points_p2, 1, 1),
     }
     assert results[0].description.shapes == expected_shapes
 
@@ -1347,8 +1347,8 @@ def test_dond_1d_additional_setpoints_shape(_param, _param_set, num_points_p1):
     )
 
     expected_shapes = {
-        "arrayparam": (1, 1, num_points_p1, array_shape[0]),
-        "simple_parameter": (1, 1, num_points_p1),
+        "arrayparam": (num_points_p1, 1, 1, array_shape[0]),
+        "simple_parameter": (num_points_p1, 1, 1),
     }
     assert results[0].description.shapes == expected_shapes
 
@@ -1557,9 +1557,9 @@ def test_dond_2d_additional_setpoints_shape(
         do_plot=False,
     )
     expected_shapes = {
-        "arrayparam": (1, 1, num_points_p1, num_points_p2, array_shape[0]),
-        "simple_complex_parameter": (1, 1, num_points_p1, num_points_p2),
-        "simple_parameter": (1, 1, num_points_p1, num_points_p2),
+        "arrayparam": (num_points_p1, num_points_p2, 1, 1, array_shape[0]),
+        "simple_complex_parameter": (num_points_p1, num_points_p2, 1, 1),
+        "simple_parameter": (num_points_p1, num_points_p2, 1, 1),
     }
     assert results[0].description.shapes == expected_shapes
 
