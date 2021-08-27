@@ -1,21 +1,21 @@
-from unittest import TestCase
 import os
-import numpy as np
-import h5py
 from shutil import copy
+from unittest import TestCase
+
+import h5py
+import numpy as np
 
 import qcodes.data
-from qcodes.station import Station
-from qcodes.loops import Loop
-from qcodes.data.location import FormatLocation
-from qcodes.data.hdf5_format import HDF5Format, str_to_bool
-
-from qcodes.data.data_set import new_data, load_data, DataSet
 from qcodes.data.data_array import DataArray
-from qcodes.utils.helpers import compare_dictionaries
-from .data_mocks import DataSet1D, DataSet2D
-
+from qcodes.data.data_set import DataSet, load_data, new_data
+from qcodes.data.hdf5_format import HDF5Format, str_to_bool
+from qcodes.data.location import FormatLocation
+from qcodes.loops import Loop
+from qcodes.station import Station
 from qcodes.tests.instrument_mocks import MockParabola
+from qcodes.utils.helpers import compare_dictionaries
+
+from .data_mocks import DataSet1D, DataSet2D
 
 
 class TestHDF5_Format(TestCase):
@@ -231,6 +231,8 @@ class TestHDF5_Format(TestCase):
         self.formatter.write(data, flush=True)
         fp = data._h5_base_group.filename
         fp2 = fp[:-5]+'_2.hdf5'
+        # the file cannot be copied unless the ref is deleted first
+        del data._h5_base_group
         copy(fp, fp2)
         # Opening this copy should not raise an error
         F2 = h5py.File(fp2, mode='a')
@@ -244,6 +246,8 @@ class TestHDF5_Format(TestCase):
         # Attaching the formatter like this should not be neccesary
         data.formatter = self.formatter
         data.finalize()
+        # the file cannot be copied unless the ref is deleted first
+        del data._h5_base_group
         fp3 = fp[:-5]+'_4.hdf5'
         copy(fp, fp3)
         # Should now not raise an error because the file was properly closed

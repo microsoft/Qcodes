@@ -14,6 +14,7 @@ from typing import Iterator, Optional, Tuple, Union
 import numpy as np
 
 import qcodes
+from qcodes.dataset.experiment_settings import reset_default_experiment_id
 from qcodes.dataset.sqlite.connection import ConnectionPlus
 from qcodes.dataset.sqlite.db_upgrades import (
     _latest_available_version,
@@ -217,6 +218,7 @@ def initialise_database(journal_mode: Optional[str] = 'WAL') -> None:
     # calling connect performs all the needed actions to create and upgrade
     # the db to the latest version.
     conn = connect(get_DB_location(), get_DB_debug())
+    reset_default_experiment_id(conn)
     if journal_mode is not None:
         set_journal_mode(conn, journal_mode)
     conn.close()
