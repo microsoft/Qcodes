@@ -14,17 +14,18 @@ New:
 ----
 - Use thread pool when acquiring parameters to save time on recreating threads, new ThreadPoolParamsCaller,
   use it in do1d, do2d, dond. (#3170)
-- Default experiment in QCoDeS and updated The_Experiment_Container notebook to show that. (#3214)
-- Enabeling dond function to handle multiple datasets. (#3186)
+- QCoDeS has not the ability to set a default experiment in a Python session, and now, creating/ loading an experiment
+  automatically sets that experiment as the default one. (#3214)
+- The dond function has gained the ability to produce multiple datasets when measuring multiple parameters. (#3186)
 - Make parameter registration on instrument part of parameter init. (#3191)
 - Add post sweep actions to doND sweeps. (#3283)
-- load experiment functions accept duplicated experiment name and new_experiment warns if creates duplicated
+- load experiment functions accept duplicated experiment name, and new_experiment warns if creates duplicated
   experiment. (#3296)
 
 ---------
 Improved:
 ---------
-
+- Fix shapes of dond datasets with additional setpoints. (#3305)
 
 
 -----------------
