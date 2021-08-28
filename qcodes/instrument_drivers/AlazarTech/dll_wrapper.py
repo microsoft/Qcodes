@@ -59,7 +59,7 @@ def _mark_params_as_updated(*args: Any) -> None:
 
 def _check_error_code(
         return_code: int,
-        func: Callable,
+        func: Callable[..., Any],
         arguments: Tuple[Any, ...]
 ) -> Tuple[Any, ...]:
     if (return_code != API_SUCCESS) and (return_code != API_DMA_IN_PROGRESS):
@@ -86,7 +86,7 @@ def _check_error_code(
 
 def _convert_bytes_to_str(
         output: bytes,
-        func: Callable,
+        func: Callable[..., Any],
         arguments: Tuple[Any, ...]
 ) -> str:
     return output.decode()
@@ -96,15 +96,15 @@ def _convert_bytes_to_str(
 
 
 class Signature(NamedTuple):
-    return_type: Type = RETURN_CODE
-    argument_types: Sequence[Type] = ()
+    return_type: Type[Any] = RETURN_CODE
+    argument_types: Sequence[Type[Any]] = ()
 
 
 class DllWrapperMeta(type):
     """DLL-path-based 'singleton' metaclass for DLL wrapper classes"""
 
     # Only allow a single instance per DLL path.
-    _instances: WeakValueDictionary = WeakValueDictionary()  # of [str, Any]
+    _instances: "WeakValueDictionary[str, Any]" = WeakValueDictionary()
 
     # Note: without the 'type: ignore' for the ``__call__`` method below, mypy
     # generates 'Signature of "__call__" incompatible with supertype "type"'

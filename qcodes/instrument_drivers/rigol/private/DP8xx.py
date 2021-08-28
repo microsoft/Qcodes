@@ -149,7 +149,7 @@ class _RigolDP8xx(VisaInstrument):
         # channel-specific parameters
         channels = ChannelList(self, "SupplyChannel", RigolDP8xxChannel, snapshotable=False)
         for ch_num, channel_range in enumerate(channels_ranges):
-            ch_name = "ch{}".format(ch_num + 1)
+            ch_name = f"ch{ch_num + 1}"
             channel = RigolDP8xxChannel(
                 self,
                 ch_name,

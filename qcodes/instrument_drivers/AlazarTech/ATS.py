@@ -53,7 +53,7 @@ class AlazarTech_ATS(Instrument):
     channels = 2
 
     @classmethod
-    def find_boards(cls, dll_path: Optional[str] = None) -> List[dict]:
+    def find_boards(cls, dll_path: Optional[str] = None) -> List[Dict[str, Any]]:
         """
         Find connected Alazar boards
 
@@ -132,9 +132,8 @@ class AlazarTech_ATS(Instrument):
 
         self.buffer_list: List['Buffer'] = []
 
-    def get_idn(self) -> dict:
-        # TODO this is really Dict[str, Optional[Union[str,int]]]
-        # But that is inconsistent with the super class. We should consider
+    def get_idn(self) -> Dict[str, Optional[Union[str, int]]]:  # type: ignore[override]
+        # TODO return type is inconsistent with the super class. We should consider
         # if ints and floats are allowed as values in the dict
         """
         This methods gets the most relevant information of this instrument
@@ -294,7 +293,7 @@ class AlazarTech_ATS(Instrument):
             get_processed_data: Optional[str] = None,
             allocated_buffers: Optional[int] = None,
             buffer_timeout: Optional[int] = None,
-            acquisition_controller: Optional["AcquisitionController"] = None
+            acquisition_controller: Optional["AcquisitionController[Any]"] = None
     ) -> OutputType:
         """
         perform a single acquisition with the Alazar board, and set certain
@@ -328,7 +327,7 @@ class AlazarTech_ATS(Instrument):
 
         # region set parameters from args
         start_func = time.perf_counter()
-        if self._parameters_synced == False:
+        if self._parameters_synced is False:
             raise RuntimeError("You must sync parameters to Alazar card "
                                "before calling acquire by calling "
                                "sync_settings_to_card")
@@ -386,6 +385,10 @@ class AlazarTech_ATS(Instrument):
             ctypes.c_uint16 if whole_bytes_per_sample > 1 else ctypes.c_uint8)
         internal_buffer_size_requested = (bits_per_sample * samples_per_record *
                                           records_per_buffer) // 8
+
+        if mode == 'TS':
+            transfer_buffer_size //= buffers_per_acquisition
+            internal_buffer_size_requested //= buffers_per_acquisition
 
         if internal_buffer_size_requested > max_buffer_size:
             raise RuntimeError(f"Requested a buffer of size: "
@@ -853,7 +856,7 @@ class AcquisitionInterface(Generic[OutputType]):
         pass
 
 
-class AcquisitionController(Instrument, AcquisitionInterface, Generic[OutputType]):
+class AcquisitionController(Instrument, AcquisitionInterface[Any], Generic[OutputType]):
     """
     Compatibility class. The methods of :class:`AcquisitionController`
     have been extracted. This class is the base class fro AcquisitionInterfaces

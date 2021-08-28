@@ -1,7 +1,6 @@
-from typing import Any
+from typing import Any, Mapping
 
-
-json_template_linear={"type": 'linear',
+json_template_linear = {"type": 'linear',
                       'x': {'data': [], 'name': "", 'full_name': '', 'is_setpoint':True,  'unit':''},
                       'y': {'data': [], 'name': "", 'full_name': '', 'is_setpoint':False, 'unit':''}}
 
@@ -12,9 +11,11 @@ json_template_heatmap = {"type": 'heatmap',
 
 
 def export_data_as_json_linear(
-        data: Any, length: int, state: dict, location: str) -> None:
-    import numpy as np
+    data: Any, length: int, state: Mapping[str, Any], location: str
+) -> None:
     import json
+
+    import numpy as np
     if len(data) > 0:
         npdata = np.array(data)
         xdata = npdata[:,0]
@@ -27,9 +28,11 @@ def export_data_as_json_linear(
 
 
 def export_data_as_json_heatmap(
-        data: Any, length: int, state: dict, location: str) -> None:
-    import numpy as np
+    data: Any, length: int, state: Mapping[str, Any], location: str
+) -> None:
     import json
+
+    import numpy as np
     if len(data) > 0:
         npdata = np.array(data)
         array_start = state['data']['location']

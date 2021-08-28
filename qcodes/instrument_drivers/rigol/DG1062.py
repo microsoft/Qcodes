@@ -243,7 +243,7 @@ class DG1062Channel(InstrumentChannel):
         """
         self._set_waveform_params(**kwargs)
 
-    def current_waveform(self) -> Dict:
+    def current_waveform(self) -> Dict[Any, Any]:
         """Public interface to get the current waveform"""
         return self._get_waveform_params()
 
@@ -255,7 +255,7 @@ class DG1062Channel(InstrumentChannel):
         params_dict = self._get_waveform_params()
         return params_dict.get(param, None)
 
-    def _get_waveform_params(self) -> Dict:
+    def _get_waveform_params(self) -> Dict[Any, Any]:
         """
         Get all the parameters of the current waveform and
         """
@@ -311,7 +311,7 @@ class DG1062Channel(InstrumentChannel):
                              f"{param_names}")
 
         string = f":SOUR{self.channel}:APPL:{waveform} "
-        values = ["{:7e}".format(params_dict[param]) for param in param_names]
+        values = [f"{params_dict[param]:7e}" for param in param_names]
         string += ",".join(values)
         self.parent.write_raw(string)
 

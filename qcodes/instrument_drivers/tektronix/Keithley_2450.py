@@ -1,5 +1,5 @@
 from types import TracebackType
-from typing import Any, Dict, List, Optional, Type, Union, cast
+from typing import Any, Dict, List, Optional, Type, Union, cast, Set
 
 import numpy as np
 from qcodes import InstrumentChannel, ParameterWithSetpoints, VisaInstrument
@@ -17,9 +17,9 @@ class ParameterWithSetpointsCustomized(ParameterWithSetpoints):
 
     This customized class is used for the "sweep" parameter.
     """
-    _user_selected_data: Optional[list] = None
+    _user_selected_data: Optional[List[Any]] = None
 
-    def get_selected(self) -> Optional[list]:
+    def get_selected(self) -> Optional[List[Any]]:
         return self._user_selected_data
 
 
@@ -121,7 +121,7 @@ class Buffer2450(InstrumentChannel):
         self.delete()
 
     @property
-    def available_elements(self) -> set:
+    def available_elements(self) -> Set[str]:
         return set(self.buffer_elements.keys())
 
     def get_last_reading(self) -> str:
@@ -143,7 +143,7 @@ class Buffer2450(InstrumentChannel):
             start_idx: int,
             end_idx: int,
             readings_only: bool = False
-    ) -> list:
+    ) -> List[Any]:
         """
         This command returns specified data elements from reading buffer.
 
@@ -484,11 +484,10 @@ class Source2450(InstrumentChannel):
             raise ValueError(
                 "Please setup the sweep before getting values of this parameter"
             )
-
         return np.linspace(
             start=self._sweep_arguments["start"],
             stop=self._sweep_arguments["stop"],
-            num=self._sweep_arguments["step_count"]
+            num=int(self._sweep_arguments["step_count"])
         )
 
     def sweep_setup(

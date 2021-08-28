@@ -1,5 +1,5 @@
 import numpy as np
-from typing import cast, Optional, List, Union, Sequence, Any, Tuple, Dict, Type
+from typing import cast, Optional, List, Union, Sequence, Any, Tuple, Dict, Type, Set
 from types import TracebackType
 
 from qcodes import VisaInstrument, InstrumentChannel
@@ -18,7 +18,7 @@ class DataArray7510(MultiParameter):
     def __init__(self,
                  names: Sequence[str],
                  shapes: Sequence[Sequence[int]],
-                 setpoints: Optional[Sequence[Sequence]],
+                 setpoints: Optional[Sequence[Sequence[Any]]],
                  **kwargs: Any):
         super().__init__(name='data_array_7510',
                          names=names,
@@ -28,7 +28,7 @@ class DataArray7510(MultiParameter):
         for param_name in self.names:
             self.__dict__.update({param_name: []})
 
-    def get_raw(self) -> Optional[tuple]:
+    def get_raw(self) -> Optional[Tuple[ParamRawDataType, ...]]:
         return self._data
 
 
@@ -49,7 +49,14 @@ class GeneratedSetPoints(Parameter):
         self._n_points = n_points
 
     def get_raw(self) -> np.ndarray:
-        return np.linspace(self._start(), self._stop(), self._n_points())
+        start = self._start()
+        assert start is not None
+        stop = self._stop()
+        assert stop is not None
+        n_points = self._n_points()
+        assert n_points is not None
+
+        return np.linspace(start, stop, n_points)
 
 
 class Buffer7510(InstrumentChannel):
@@ -247,7 +254,7 @@ class Buffer7510(InstrumentChannel):
         self.delete()
 
     @property
-    def available_elements(self) -> set:
+    def available_elements(self) -> Set[str]:
         return set(self.buffer_elements.keys())
 
     @property

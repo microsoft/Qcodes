@@ -341,8 +341,7 @@ class AlazarTech_ATS9373(AlazarTech_ATS):
 
     def _get_trigger_holdoff(self) -> bool:
         fwversion = self.get_idn()['firmware']
-
-        if LooseVersion(fwversion) < \
+        if not isinstance(fwversion, str) or LooseVersion(fwversion) < \
                 LooseVersion(self._trigger_holdoff_min_fw_version):
             return False
 
@@ -361,7 +360,7 @@ class AlazarTech_ATS9373(AlazarTech_ATS):
 
     def _set_trigger_holdoff(self, value: bool) -> None:
         fwversion = self.get_idn()['firmware']
-        if LooseVersion(fwversion) < \
+        if not isinstance(fwversion, str) or LooseVersion(fwversion) < \
                 LooseVersion(self._trigger_holdoff_min_fw_version):
             raise RuntimeError(f"Alazar 9373 requires at least firmware "
                                f"version {self._trigger_holdoff_min_fw_version}"
@@ -384,4 +383,4 @@ class AlazarTech_ATS9373(AlazarTech_ATS):
             # otherwise
             disable_mask = ~np.uint32(1 << 26)
             new_value = current_value & disable_mask
-        self._write_register(58, new_value)
+        self._write_register(58, int(new_value))

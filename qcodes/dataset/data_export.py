@@ -1,19 +1,35 @@
-from typing import List, Any, Sequence, Tuple, Dict, Union, cast
 import logging
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 
 import numpy as np
+from typing_extensions import TypedDict
 
-from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.data_set import load_by_id
+from qcodes.dataset.data_set_protocol import DataSetProtocol
+from qcodes.dataset.descriptions.param_spec import ParamSpecBase
+from qcodes.utils.deprecate import deprecate
+from qcodes.utils.numpy_utils import list_of_data_to_maybe_ragged_nd_array
 
 log = logging.getLogger(__name__)
 
 
+class DSPlotData(TypedDict):
+    """
+    The dictionary used to represent data for use within `plot_dataset`
+    """
+    name: str
+    unit: str
+    label: str
+    data: np.ndarray
+    shape: Optional[Tuple[int, ...]]
+
+
+@deprecate(alternative="ndarray.flatten()")
 def flatten_1D_data_for_plot(rawdata: Union[Sequence[Sequence[Any]],
                                             np.ndarray]) -> np.ndarray:
     """
     Cast the return value of the database query to
-    a numpy array
+    a 1D numpy array
 
     Args:
         rawdata: The return of the get_values function
@@ -22,15 +38,12 @@ def flatten_1D_data_for_plot(rawdata: Union[Sequence[Sequence[Any]],
         A one-dimensional numpy array
 
     """
-    dataarray = np.array(rawdata)
-    shape = np.shape(dataarray)
-    dataarray = dataarray.reshape(np.product(shape))
-
+    dataarray = np.array(rawdata).flatten()
     return dataarray
 
 
-def get_data_by_id(run_id: int) -> \
-        List[List[Dict[str, Union[str, np.ndarray]]]]:
+@deprecate(alternative="dataset.get_parameter_data")
+def get_data_by_id(run_id: int) -> List[List[DSPlotData]]:
     """
     Load data from database and reshapes into 1D arrays with minimal
     name, unit and label metadata.
@@ -69,40 +82,39 @@ def get_data_by_id(run_id: int) -> \
 
     """
     ds = load_by_id(run_id)
+    output = _get_data_from_ds(ds)
+    return output
 
-    dependent_parameters: Tuple[ParamSpecBase, ...] = ds.dependent_parameters
 
-    parameter_data = ds.get_parameter_data(
-        *[ps.name for ps in dependent_parameters])
+def _get_data_from_ds(ds: DataSetProtocol) -> List[List[DSPlotData]]:
+    dependent_parameters: Tuple[ParamSpecBase, ...] = tuple(
+        ds.description.interdeps.dependencies.keys()
+    )
+
+    all_data = ds.cache.data()
+
+    parameter_data = {ps.name: all_data[ps.name] for ps in dependent_parameters}
 
     output = []
 
     for dep_name, data_dict in parameter_data.items():
         data_dicts_list = []
 
-        dep_data_dict_index = None
+        dependent = ds.description.interdeps[dep_name]
+        dependencies = ds.description.interdeps.dependencies[dependent]
 
-        for param_name, data in data_dict.items():
-            my_data_dict: Dict[str, Union[str, np.ndarray]] = {}
-
-            my_data_dict['name'] = param_name
-
-            my_data_dict['data'] = data.flatten()
-
-            ps = ds.paramspecs[param_name]
-            my_data_dict['unit'] = ps.unit
-            my_data_dict['label'] = ps.label
-
+        for param_spec_base in dependencies + (dependent,):
+            my_data_dict: DSPlotData = {
+                "name": param_spec_base.name,
+                "unit": param_spec_base.unit,
+                "label": param_spec_base.label,
+                "data": data_dict[param_spec_base.name],
+                "shape": None,
+            }
             data_dicts_list.append(my_data_dict)
 
-            if param_name == dep_name:
-                dep_data_dict_index = len(data_dicts_list) - 1
-
-        # put the data dict of the dependent one at the very end of the list
-        if dep_data_dict_index is None:
-            raise RuntimeError(f'{dep_name} not found in its own "datadict".')
-        else:
-            data_dicts_list.append(data_dicts_list.pop(dep_data_dict_index))
+        if ds.description.shapes is not None:
+            data_dicts_list[-1]["shape"] = ds.description.shapes.get(dependent.name)
 
         output.append(data_dicts_list)
 
@@ -122,12 +134,12 @@ def _all_steps_multiples_of_min_step(rows: np.ndarray) -> bool:
         The answer to the question
     """
 
-    steps: List[np.ndarray] = []
+    steps_list: List[np.ndarray] = []
     for row in rows:
         # TODO: What is an appropriate precision?
-        steps += list(np.unique(np.diff(row).round(decimals=15)))
+        steps_list += list(np.unique(np.diff(row).round(decimals=15)))
 
-    steps = np.unique(steps)
+    steps = np.unique(steps_list)
     remainders = np.mod(steps[1:]/steps[0], 1)
 
     # TODO: What are reasonable tolerances for allclose?
@@ -169,7 +181,7 @@ def _rows_from_datapoints(inputsetpoints: np.ndarray) -> np.ndarray:
         rows.append(temp)
         setpoints = np.delete(setpoints, inds)
 
-    return np.array(rows)
+    return list_of_data_to_maybe_ragged_nd_array(rows)
 
 
 def _all_in_group_or_subgroup(rows: np.ndarray) -> bool:
@@ -211,7 +223,7 @@ def _all_in_group_or_subgroup(rows: np.ndarray) -> bool:
     # are all contained in the rows of the other
     if aigos and switchindex > 0:
         for row in rows[1+switchindex:]:
-            if sum([r in rows[0] for r in row]) != len(row):
+            if sum(r in rows[0] for r in row) != len(row):
                 aigos = False
                 break
 
@@ -384,8 +396,8 @@ def reshape_2D_data(x: np.ndarray, y: np.ndarray, z: np.ndarray
         z_to_plot = np.full((ny, nx), '', dtype=z.dtype)
     else:
         z_to_plot = np.full((ny, nx), np.nan)
-    x_index = np.zeros_like(x, dtype=np.int)
-    y_index = np.zeros_like(y, dtype=np.int)
+    x_index = np.zeros_like(x, dtype=np.dtype(np.int_))
+    y_index = np.zeros_like(y, dtype=np.dtype(np.int_))
     for i, xval in enumerate(xrow):
         x_index[np.where(x == xval)[0]] = i
     for i, yval in enumerate(yrow):
@@ -396,7 +408,10 @@ def reshape_2D_data(x: np.ndarray, y: np.ndarray, z: np.ndarray
     return xrow, yrow, z_to_plot
 
 
-def get_shaped_data_by_runid(run_id: int) -> List:
+@deprecate(alternative="dataset.get_parameter_data")
+def get_shaped_data_by_runid(
+        run_id: int
+) -> List[List[Dict[str, Union[str, np.ndarray]]]]:
     """
     Get data for a given run ID, but shaped according to its nature
 

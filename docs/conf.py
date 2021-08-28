@@ -18,13 +18,16 @@
 #
 import os
 import sys
-import sphinx_rtd_theme
-import qcodes
-from packaging.version import parse
+
 # Import matplotlib and set the backend
 # before qcodes imports pyplot and automatically
 # sets the backend
 import matplotlib
+import sphinx_rtd_theme
+from packaging.version import parse
+
+import qcodes
+
 matplotlib.use('Agg')
 
 sys.path.insert(0, os.path.abspath('..'))
@@ -38,12 +41,22 @@ sys.path.insert(0, os.path.abspath('..'))
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['nbsphinx', 'sphinx.ext.autodoc', 'sphinx.ext.autosummary',
-              'sphinx.ext.napoleon', 'sphinx-jsonschema', 'sphinx.ext.doctest',
-              'sphinx.ext.intersphinx', 'sphinx.ext.todo',
-              'sphinx.ext.coverage', 'sphinx.ext.mathjax',
-              'sphinx.ext.viewcode', 'sphinx.ext.githubpages',
-              'sphinx.ext.todo']
+extensions = [
+    "nbsphinx",
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
+    "sphinx.ext.napoleon",
+    "sphinx-jsonschema",
+    "sphinx.ext.doctest",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.todo",
+    "sphinx.ext.coverage",
+    "sphinx.ext.mathjax",
+    "sphinx.ext.viewcode",
+    "sphinx.ext.githubpages",
+    "sphinx.ext.todo",
+    "qcodes.sphinx_extensions.parse_parameter_attr",
+]
 
 # include special __xxx__ that DO have a docstring
 # it probably means something important
@@ -176,7 +189,7 @@ html_theme = "sphinx_rtd_theme"
 # html_theme_options = {}
 
 # Add any paths that contain custom themes here, relative to this directory.
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+# html_theme_path = []
 
 # The name for this set of Sphinx documents.
 # "<project> v<release> documentation" by default.
@@ -374,13 +387,14 @@ texinfo_show_urls = 'footnote'
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
-    'pandas': ('https://pandas.pydata.org/pandas-docs/stable/', None),
-    'matplotlib': ('https://matplotlib.org/', None),
-    'python': ('https://docs.python.org/3.7/', None),
-    'numpy': ('https://numpy.org/doc/stable/', None),
-    'py': ('https://pylib.readthedocs.io/en/stable/', None),
-    'pyvisa': ('https://pyvisa.readthedocs.io/en/master/', None),
-    'IPython': ('https://ipython.readthedocs.io/en/stable/', None)}
+    "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
+    "matplotlib": ("https://matplotlib.org/", None),
+    "python": ("https://docs.python.org/3.7/", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "py": ("https://pylib.readthedocs.io/en/stable/", None),
+    "pyvisa": ("https://pyvisa.readthedocs.io/en/stable/", None),
+    "IPython": ("https://ipython.readthedocs.io/en/stable/", None),
+}
 
 autoclass_content = "both"
 # classes should include both the
@@ -394,7 +408,7 @@ autodoc_default_options = {'members': True, 'undoc-members': True,
 # there when generating the docs
 autodoc_mock_imports = ['pyspcm', 'zhinst', 'zhinst.utils', 'keysightSD1',
                         'cffi', 'spirack', 'clr', 'win32com',
-                        'win32com.client', 'pythoncom', 'slacker', 'hickle']
+                        'win32com.client', 'pythoncom', 'slack-sdk', 'hickle']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

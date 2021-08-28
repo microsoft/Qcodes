@@ -1,4 +1,7 @@
 import pytest
+
+from typing import Any, Dict
+
 from qcodes.utils.helpers import strip_attrs
 
 
@@ -7,12 +10,12 @@ class A:
     y = 6
 
 
-class BadKeysDict(dict):
+class BadKeysDict(Dict[Any, Any]):
     def keys(self):
         raise RuntimeError('you can\'t have the keys!')
 
 
-class NoDelDict(dict):
+class NoDelDict(Dict[Any, Any]):
     def __delitem__(self, item):
         raise KeyError('get your hands off me!')
 

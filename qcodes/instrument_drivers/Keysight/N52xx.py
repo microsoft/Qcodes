@@ -1,13 +1,13 @@
-from typing import Sequence, Union, Any
-import time
-import re
 import logging
+import re
+import time
+from typing import Any, Sequence, Union
 
 import numpy as np
 from pyvisa import VisaIOError, errors
-from qcodes import (VisaInstrument, InstrumentChannel, ArrayParameter,
-                    ChannelList)
-from qcodes.utils.validators import Ints, Numbers, Enum, Bool
+
+from qcodes import ArrayParameter, ChannelList, InstrumentChannel, VisaInstrument
+from qcodes.utils.validators import Bool, Enum, Ints, Numbers
 
 logger = logging.getLogger()
 
@@ -25,22 +25,23 @@ class PNASweep(ArrayParameter):
 
     @property  # type: ignore[override]
     def shape(self) -> Sequence[int]:  # type: ignore[override]
-        if self._instrument is None:
+        if self.instrument is None:
             return (0,)
-        return (self._instrument.root_instrument.points(),)
+        return (self.instrument.root_instrument.points(),)
 
     @shape.setter
     def shape(self, val: Sequence[int]) -> None:
         pass
 
     @property  # type: ignore[override]
-    def setpoints(self) -> Sequence:  # type: ignore[override]
-        if self._instrument is None:
+    def setpoints(self) -> Sequence[np.ndarray]:  # type: ignore[override]
+        if self.instrument is None:
             raise RuntimeError("Cannot return setpoints if not attached "
                                "to instrument")
-        start = self._instrument.root_instrument.start()
-        stop = self._instrument.root_instrument.stop()
+        start = self.instrument.root_instrument.start()
+        stop = self.instrument.root_instrument.stop()
         return (np.linspace(start, stop, self.shape[0]),)
+
     @setpoints.setter
     def setpoints(self, val: Sequence[int]) -> None:
         pass
@@ -70,14 +71,14 @@ class FormattedSweep(PNASweep):
         self.memory = memory
 
     def get_raw(self) -> Sequence[float]:
-        if self._instrument is None:
+        if self.instrument is None:
             raise RuntimeError("Cannot get data without instrument")
-        root_instr = self._instrument.root_instrument
+        root_instr = self.instrument.root_instrument
         # Check if we should run a new sweep
         if root_instr.auto_sweep():
-            prev_mode = self._instrument.run_sweep()
+            prev_mode = self.instrument.run_sweep()
         # Ask for data, setting the format to the requested form
-        self._instrument.format(self.sweep_format)
+        self.instrument.format(self.sweep_format)
         data = root_instr.visa_handle.query_binary_values('CALC:DATA? FDATA',
                                                           datatype='f',
                                                           is_big_endian=True)

@@ -1,17 +1,18 @@
 """
 Test suite for instument.base.*
 """
-import pytest
-import weakref
-import io
 import contextlib
+import io
 import re
+import weakref
+
+import pytest
 
 from qcodes.instrument.base import Instrument, InstrumentBase, find_or_create_instrument
-from qcodes.instrument.parameter import Parameter
 from qcodes.instrument.function import Function
+from qcodes.instrument.parameter import Parameter
 
-from .instrument_mocks import DummyInstrument, MockParabola, MockMetaParabola
+from .instrument_mocks import DummyInstrument, MockMetaParabola, MockParabola
 
 
 @pytest.fixture(name='testdummy', scope='function')
@@ -93,8 +94,8 @@ def test_repr(testdummy):
 
 
 def test_add_remove_f_p(testdummy):
-    with pytest.raises(KeyError, match='Duplicate parameter name dac1'):
-        testdummy.add_parameter('dac1', get_cmd='foo')
+    with pytest.raises(KeyError, match="Duplicate parameter name dac1"):
+        testdummy.add_parameter("dac1", get_cmd="foo")
 
     testdummy.add_function('function', call_cmd='foo')
 

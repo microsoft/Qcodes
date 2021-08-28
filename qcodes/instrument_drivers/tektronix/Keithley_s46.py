@@ -3,10 +3,10 @@ Driver for the Tekronix S46 RF switch
 """
 import re
 from itertools import product
-
 from typing import Any, Dict, List, Optional
+
 from qcodes import Instrument, VisaInstrument
-from qcodes.instrument.parameter import ParamRawDataType, Parameter
+from qcodes.instrument.parameter import Parameter, ParamRawDataType
 
 
 class LockAcquisitionError(Exception):
@@ -60,13 +60,14 @@ class S46Parameter(Parameter):
         lock: Acquire the lock when closing and release when opening
     """
     def __init__(
-            self,
-            name: str,
-            instrument: Optional[Instrument],
-            channel_number: int,
-            lock: RelayLock
+        self,
+        name: str,
+        instrument: Optional[Instrument],
+        channel_number: int,
+        lock: RelayLock,
+        **kwargs: Any,
     ):
-        super().__init__(name, instrument)
+        super().__init__(name, instrument, **kwargs)
 
         self._lock = lock
         self._channel_number = channel_number
@@ -101,10 +102,10 @@ class S46Parameter(Parameter):
         elif value == "open":
             self._lock.release(self._channel_number)
 
-        if self._instrument is None:
+        if self.instrument is None:
             raise RuntimeError("Cannot set the value on a parameter "
                                "that is not attached to an instrument.")
-        self._instrument.write(f":{value} (@{self._channel_number})")
+        self.instrument.write(f":{value} (@{self._channel_number})")
 
     def is_closed(self) -> bool:
         """
@@ -119,7 +120,8 @@ class S46Parameter(Parameter):
 
 class S46(VisaInstrument):
 
-    relay_names: list = ["A", "B", "C", "D"] + [f"R{j}" for j in range(1, 9)]
+    relay_names: List[str] = (["A", "B", "C", "D"] +
+                              [f"R{j}" for j in range(1, 9)])
 
     # Make a dictionary where keys are channel aliases (e.g. 'A1', 'B3', etc)
     # and values are corresponding channel numbers.

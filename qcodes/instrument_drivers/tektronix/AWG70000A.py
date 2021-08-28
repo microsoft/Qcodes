@@ -1,20 +1,20 @@
 import datetime as dt
-import time
-import struct
 import io
-import zipfile as zf
 import logging
-from functools import partial
-from typing import List, Sequence, Dict, Union, Optional, Any
+import struct
 import time
-
 import xml.etree.ElementTree as ET
-import numpy as np
+import zipfile as zf
+from functools import partial
+from typing import Any, Dict, List, Optional, Sequence, Union
 
-from qcodes import Instrument, VisaInstrument, validators as vals
-from qcodes.instrument.channel import InstrumentChannel, ChannelList
+import numpy as np
+from broadbean.sequence import InvalidForgedSequenceError, fs_schema
+
+from qcodes import Instrument, VisaInstrument
+from qcodes import validators as vals
+from qcodes.instrument.channel import ChannelList, InstrumentChannel
 from qcodes.utils.validators import Validator
-from broadbean.sequence import fs_schema, InvalidForgedSequenceError
 
 log = logging.getLogger(__name__)
 
@@ -90,7 +90,7 @@ _marker_low = {'70001A': (-1.4, 1.4),
                '5208': (-0.3, 1.55)}
 
 
-class SRValidator(Validator):
+class SRValidator(Validator[float]):
     """
     Validator to validate the AWG clock sample rate
     """
@@ -871,11 +871,11 @@ class AWG70000A(VisaInstrument):
 
     @staticmethod
     def make_SEQX_from_forged_sequence(
-            seq: Dict[int, Dict],
+            seq: Dict[int, Dict[Any, Any]],
             amplitudes: List[float],
             seqname: str,
-            channel_mapping: Optional[Dict[Union[str, int],
-                                           int]]=None) -> bytes:
+            channel_mapping: Optional[Dict[Union[str, int], int]] = None
+    ) -> bytes:
         """
         Make a .seqx from a forged broadbean sequence.
         Supports subsequences.
@@ -1308,8 +1308,8 @@ class AWG70000A(VisaInstrument):
                 rep.text = 'Once'
                 repcount.text = '1'
             else:
-                rep.text = 'RepeatCount'
-                repcount.text = '{:d}'.format(nreps[n-1])
+                rep.text = "RepeatCount"
+                repcount.text = f"{nreps[n-1]:d}"
             # trigger wait
             temp_elem = ET.SubElement(step, 'WaitInput')
             temp_elem.text = waitinputs[trig_waits[n-1]]
@@ -1322,8 +1322,8 @@ class AWG70000A(VisaInstrument):
                 jumpto.text = 'Next'
                 jumpstep.text = '1'
             else:
-                jumpto.text = 'StepIndex'
-                jumpstep.text = '{:d}'.format(event_jump_to[n-1])
+                jumpto.text = "StepIndex"
+                jumpstep.text = f"{event_jump_to[n-1]:d}"
             # Go to
             goto = ET.SubElement(step, 'GoTo')
             gotostep = ET.SubElement(step, 'GoToStep')
@@ -1331,8 +1331,8 @@ class AWG70000A(VisaInstrument):
                 goto.text = 'Next'
                 gotostep.text = '1'
             else:
-                goto.text = 'StepIndex'
-                gotostep.text = '{:d}'.format(go_to[n-1])
+                goto.text = "StepIndex"
+                gotostep.text = f"{go_to[n-1]:d}"
 
             assets = ET.SubElement(step, 'Assets')
             for assetname in elem_names[n-1]:

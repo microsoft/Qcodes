@@ -13,11 +13,28 @@ from copy import deepcopy
 from functools import partial
 from inspect import signature
 from pathlib import Path
-from typing import (TYPE_CHECKING, Any, Callable, Dict, Iterator, List,
-                    Mapping, MutableMapping, Optional, Sequence, SupportsAbs,
-                    Tuple, Type, Union, cast)
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Hashable,
+    Iterator,
+    List,
+    Mapping,
+    MutableMapping,
+    Optional,
+    Sequence,
+    SupportsAbs,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 
 import numpy as np
+import uncertainties
 
 if TYPE_CHECKING:
     from PyQt5.QtWidgets import QMainWindow
@@ -41,22 +58,27 @@ class NumpyJSONEncoder(json.JSONEncoder):
     def default(self, obj: Any) -> Any:
         """
         List of conversions that this encoder performs:
+
         * ``numpy.generic`` (all integer, floating, and other types) gets
-        converted to its python equivalent using its ``item`` method (see
-        ``numpy`` docs for more information,
-        https://docs.scipy.org/doc/numpy/reference/arrays.scalars.html).
+          converted to its python equivalent using its ``item`` method (see
+          ``numpy`` docs for more information,
+          https://docs.scipy.org/doc/numpy/reference/arrays.scalars.html).
         * ``numpy.ndarray`` gets converted to python list using its ``tolist``
-        method.
+          method.
         * Complex number (a number that conforms to ``numbers.Complex`` ABC) gets
-        converted to a dictionary with fields ``re`` and ``im`` containing floating
-        numbers for the real and imaginary parts respectively, and a field
-        ``__dtype__`` containing value ``complex``.
+          converted to a dictionary with fields ``re`` and ``im`` containing floating
+          numbers for the real and imaginary parts respectively, and a field
+          ``__dtype__`` containing value ``complex``.
+        * Numbers with uncertainties  (numbers that conforms to ``uncertainties.UFloat``) get
+          converted to a dictionary with fields ``nominal_value`` and ``std_dev`` containing floating
+          numbers for the nominal and uncertainty parts respectively, and a field
+          ``__dtype__`` containing value ``UFloat``.
         * Object with a ``_JSONEncoder`` method get converted the return value of
-        that method.
+          that method.
         * Objects which support the pickle protocol get converted using the
-        data provided by that protocol.
+          data provided by that protocol.
         * Other objects which cannot be serialized get converted to their
-        string representation (suing the ``str`` function).
+          string representation (using the ``str`` function).
         """
         if isinstance(obj, np.generic) \
                 and not isinstance(obj, np.complexfloating):
@@ -71,6 +93,12 @@ class NumpyJSONEncoder(json.JSONEncoder):
                 '__dtype__': 'complex',
                 're': float(obj.real),
                 'im': float(obj.imag)
+            }
+        elif isinstance(obj, uncertainties.UFloat):
+            return {
+                '__dtype__': 'UFloat',
+                'nominal_value': float(obj.nominal_value),
+                'std_dev': float(obj.std_dev)
             }
         elif hasattr(obj, '_JSONEncoder'):
             # Use object's custom JSON encoder
@@ -166,7 +194,8 @@ def is_sequence_of(obj: Any,
     return True
 
 
-def is_function(f: Callable, arg_count: int, coroutine: bool = False) -> bool:
+def is_function(f: Callable[..., Any],
+                arg_count: int, coroutine: bool = False) -> bool:
     """
     Check and require a function that can accept the specified number of
     positional arguments, which either is or is not a coroutine
@@ -223,7 +252,14 @@ def named_repr(obj: Any) -> str:
     return s
 
 
-def deep_update(dest: MutableMapping, update: Mapping) -> MutableMapping:
+K = TypeVar('K', bound=Hashable)
+L = TypeVar('L', bound=Hashable)
+
+
+def deep_update(
+        dest: MutableMapping[K, Any],
+        update: Mapping[L, Any]
+) -> MutableMapping[Union[K, L], Any]:
     """
     Recursively update one JSON structure with another.
 
@@ -231,13 +267,14 @@ def deep_update(dest: MutableMapping, update: Mapping) -> MutableMapping:
     If the original value is a dictionary and the new value is not, or vice versa,
     we also replace the value completely.
     """
+    dest_int = cast(MutableMapping[Union[K, L], Any], dest)
     for k, v_update in update.items():
-        v_dest = dest.get(k)
+        v_dest = dest_int.get(k)
         if isinstance(v_update, abc.Mapping) and isinstance(v_dest, abc.MutableMapping):
             deep_update(v_dest, v_update)
         else:
-            dest[k] = deepcopy(v_update)
-    return dest
+            dest_int[k] = deepcopy(v_update)
+    return dest_int
 
 
 # could use numpy.arange here, but
@@ -312,9 +349,11 @@ def make_sweep(start: float,
                 'the the given `start`, `stop`, and `step` '
                 'values. \nNumber of points is {:d} or {:d}.'
                 .format(steps_lo + 1, steps_hi + 1))
-        num = steps_lo + 1
+        num_steps = steps_lo + 1
+    elif num is not None:
+        num_steps = num
 
-    output_list = np.linspace(start, stop, num=num).tolist()
+    output_list = np.linspace(start, stop, num=num_steps).tolist()
     return cast(List[float], output_list)
 
 
@@ -435,7 +474,8 @@ def strip_attrs(obj: object, whitelist: Sequence[str] = ()) -> None:
         pass
 
 
-def compare_dictionaries(dict_1: Dict, dict_2: Dict,
+def compare_dictionaries(dict_1: Dict[Hashable, Any],
+                         dict_2: Dict[Hashable, Any],
                          dict_1_name: Optional[str] = 'd1',
                          dict_2_name: Optional[str] = 'd2',
                          path: str = "") -> Tuple[bool, str]:
@@ -564,8 +604,7 @@ def add_to_spyder_UMR_excludelist(modulename: str) -> None:
             sitecustomize_found = True
         if sitecustomize_found is False:
             try:
-                from spyder_kernels.customize import \
-                    spydercustomize as sitecustomize
+                from spyder_kernels.customize import spydercustomize as sitecustomize
 
             except ImportError:
                 pass
@@ -607,9 +646,9 @@ def attribute_set_to(object_: object,
         setattr(object_, attribute_name, old_value)
 
 
-def partial_with_docstring(func: Callable,
+def partial_with_docstring(func: Callable[..., Any],
                            docstring: str,
-                           **kwargs: Any) -> Callable:
+                           **kwargs: Any) -> Callable[..., Any]:
     """
     We want to have a partial function which will allow us access the docstring
     through the python built-in help function. This is particularly important
@@ -639,7 +678,7 @@ def partial_with_docstring(func: Callable,
 
 
 def create_on_off_val_mapping(on_val: Any = True, off_val: Any = False
-                              ) -> Dict:
+                              ) -> Dict[Union[str, bool], Any]:
     """
     Returns a value mapping which maps inputs which reasonably mean "on"/"off"
     to the specified ``on_val``/``off_val`` which are to be sent to the
@@ -666,7 +705,7 @@ def create_on_off_val_mapping(on_val: Any = True, off_val: Any = False
                        + [(off, off_val) for off in offs])
 
 
-def abstractmethod(funcobj: Callable) -> Callable:
+def abstractmethod(funcobj: Callable[..., Any]) -> Callable[..., Any]:
     """
     A decorator indicating abstract methods.
 

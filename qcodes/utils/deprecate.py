@@ -39,7 +39,7 @@ def issue_deprecation_warning(
 def deprecate(
         reason: Optional[str] = None,
         alternative: Optional[str] = None
-) -> Callable:
+) -> Callable[..., Any]:
     """
     A utility function to decorate deprecated functions and classes.
 
@@ -51,7 +51,8 @@ def deprecate(
     """
 
     @wrapt.decorator  # type: ignore[misc]
-    def decorate_callable(func: Callable, instance: object, args: Any, kwargs: Any) -> Any:
+    def decorate_callable(func: Callable[..., Any],
+                          instance: object, args: Any, kwargs: Any) -> Any:
         t, n = (('class', instance.__class__.__name__)
                 if func.__name__ == '__init__'
                 else ('function', func.__name__))
@@ -60,7 +61,7 @@ def deprecate(
 
     def actual_decorator(obj: Any) -> Any:
         if isinstance(obj, (types.FunctionType, types.MethodType)):
-            func = cast(Callable, obj)
+            func = cast(Callable[..., Any], obj)
             # pylint: disable=no-value-for-parameter
             return decorate_callable(func)
             # pylint: enable=no-value-for-parameter

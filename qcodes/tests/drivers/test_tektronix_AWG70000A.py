@@ -1,4 +1,5 @@
 from io import StringIO, BytesIO
+import logging
 import zipfile
 
 import pytest
@@ -59,8 +60,8 @@ def random_wfm_m1_m2_package():
     return make
 
 
-@pytest.fixture(scope='module')
-def forged_sequence():
+@pytest.fixture(scope='module', name="forged_sequence")
+def _make_forged_sequence():
     """
     Return an example forged sequence containing a
     subsequence
@@ -175,6 +176,21 @@ def test_seqxfilefromfs_failing(forged_sequence):
         make_seqx(forged_sequence, [1, 1, 1],
                   seqname='dummyname',
                   channel_mapping={1: 10, 2: 8, 3: -1})
+
+
+def test_seqxfilefromfs_warns(forged_sequence, caplog):
+    """
+    Test that a warning is logged when waveform is clipped
+    """
+    make_seqx = AWG70000A.make_SEQX_from_forged_sequence
+
+    max_elem = forged_sequence[1]['content'][1]['data'][1]['wfm'].max()
+    amplitude = max_elem/2
+    with caplog.at_level(logging.WARNING):
+        make_seqx(forged_sequence, [amplitude, amplitude, amplitude], 'myseq')
+    assert len(caplog.messages) > 0
+    for message in caplog.messages:
+        assert "Waveform exceeds specified channel range" in message
 
 
 def test_seqxfile_from_fs(forged_sequence):

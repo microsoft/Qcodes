@@ -13,20 +13,22 @@ principle, the upgrade functions should not have dependecies from
 :mod:`.queries` module.
 """
 import logging
-from functools import wraps
-from typing import Dict, Callable
 import sys
+from functools import wraps
+from typing import Any, Callable, Dict
 
 import numpy as np
 from tqdm import tqdm
 
 from qcodes.dataset.guids import generate_guid
-from qcodes.dataset.sqlite.connection import ConnectionPlus, \
-    atomic_transaction, atomic, transaction
-from qcodes.dataset.sqlite.db_upgrades.version import get_user_version, \
-    set_user_version
-from qcodes.dataset.sqlite.query_helpers import many_many, one, insert_column
-
+from qcodes.dataset.sqlite.connection import (
+    ConnectionPlus,
+    atomic,
+    atomic_transaction,
+    transaction,
+)
+from qcodes.dataset.sqlite.db_upgrades.version import get_user_version, set_user_version
+from qcodes.dataset.sqlite.query_helpers import insert_column, many_many, one
 
 log = logging.getLogger(__name__)
 
@@ -40,7 +42,7 @@ TUpgraderFunction = Callable[[ConnectionPlus], None]
 # The newest database version is thus determined by the number of upgrades
 # in this module
 # The key is the TARGET VERSION of the upgrade, i.e. the first key is 1
-_UPGRADE_ACTIONS: Dict[int, Callable] = {}
+_UPGRADE_ACTIONS: Dict[int, Callable[..., Any]] = {}
 
 
 def _latest_available_version() -> int:

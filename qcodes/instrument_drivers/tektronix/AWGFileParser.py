@@ -1,8 +1,8 @@
 # awg file -> (what, we, put, into, make_send_and_load_awg_file)
 # This module parses an awg file using THREE sub-parser. This code could
 # probably be streamlined somewhat.
-from typing import Tuple, Union, Dict, List
 import struct
+from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
 
@@ -295,9 +295,9 @@ AWG_TRANSLATER = {
     }
 
 _parser3_output = Tuple[
-    List[List[Dict]],
-    List[List[Dict]],
-    List[List[Dict]],
+    List[List[Dict[Any, Any]]],
+    List[List[Dict[Any, Any]]],
+    List[List[Dict[Any, Any]]],
     List[Union[str, int]],
     List[Union[str, int]],
     List[Union[str, int]],
@@ -340,7 +340,7 @@ def _unpacker(
     return wf, m1, m2
 
 
-def _unwrap(bites: bytes, fmt: str) -> Union[str, int, Tuple]:
+def _unwrap(bites: bytes, fmt: str) -> Union[str, int, Tuple[Any, ...]]:
     """
     Helper function for interpreting the bytes from the awg file.
 
@@ -349,7 +349,7 @@ def _unwrap(bites: bytes, fmt: str) -> Union[str, int, Tuple]:
         fmt: the format string (either 's', 'h' or 'd')
 
     """
-    value: Union[str, int, Tuple]
+    value: Union[str, int, Tuple[Any, ...]]
     if fmt == 's':
         value = bites[:-1].decode('ascii')
     elif fmt == 'ignore':
@@ -394,7 +394,7 @@ awgfilepath2 = ('/Users/william/AuxiliaryQCoDeS/AWGhelpers/awgfiles/' +
 
 def _parser1(
         awgfilepath: str
-) -> Tuple[Dict[str, Union[str, int, Tuple]], List[List], List[List]]:
+) -> Tuple[Dict[str, Union[str, int, Tuple[Any, ...]]], List[List[Any]], List[List[Any]]]:
     """
     Helper function doing the heavy lifting of reading and understanding the
     binary .awg file format.
@@ -407,8 +407,8 @@ def _parser1(
     """
 
     instdict = {}
-    waveformlist: List[List] = [[], []]
-    sequencelist: List[List] = [[], []]
+    waveformlist: List[List[Any]] = [[], []]
+    sequencelist: List[List[Any]] = [[], []]
     wfmlen: int
 
     with open(awgfilepath, 'rb') as fid:
@@ -438,7 +438,7 @@ def _parser1(
                 assert file_format is not None
                 value = _unwrap(rawvalue, file_format)
                 (number, barename) = _getendingnumber(name)
-                fieldname = barename + '{}'.format(number-20)
+                fieldname = barename + f"{number-20}"
                 waveformlist[0].append(fieldname)
                 waveformlist[1].append(value)
 
@@ -470,7 +470,7 @@ def _parser1(
     return instdict, waveformlist, sequencelist
 
 
-def _parser2(waveformlist: List[List]) -> Dict:
+def _parser2(waveformlist: List[List[Any]]) -> Dict[str, Dict[str, np.ndarray]]:
     """
     Cast the waveformlist from _parser1 into a dict used by _parser3.
 
@@ -496,14 +496,14 @@ def _parser2(waveformlist: List[List]) -> Dict:
 
 
 def _parser3(
-        sequencelist: List,
-        wfmdict: Dict
+        sequencelist: List[List[Any]],
+        wfmdict: Dict[Any, Any]
              ) -> _parser3_output:
     """
     The final parser! OMG+1
     """
 
-    sequencedict: Dict[str, List] = {
+    sequencedict: Dict[str, List[Any]] = {
         'SEQUENCE_WAIT': [],
         'SEQUENCE_LOOP': [],
         'SEQUENCE_JUMP': [],
@@ -558,7 +558,7 @@ def _parser3(
 
 def parse_awg_file(
         awgfilepath: str
-) -> Tuple[_parser3_output, Dict[str, Union[str, int, Tuple]]]:
+) -> Tuple[_parser3_output, Dict[str, Union[str, int, Tuple[Any, ...]]]]:
     """
     Parser for a binary .awg file. Returns a tuple matching the call signature
     of make_send_and_load_awg_file and a dictionary with instrument settings
