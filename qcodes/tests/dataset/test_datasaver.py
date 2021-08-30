@@ -132,7 +132,7 @@ def test_saving_numeric_values_as_text(numeric_type, bg_writing):
 @pytest.mark.usefixtures("experiment")
 def test_duplicated_parameter_raises():
     """
-    Test the saving numeric values into 'text' parameter raises an exception
+    Test that passing same parameter multiple times to ``add_result`` raises an exception
     """
     p = ParamSpecBase("p", "text")
 
