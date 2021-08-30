@@ -243,7 +243,7 @@ def do1d(
         param for param in param_meas if isinstance(param, _BaseParameter)
     )
     try:
-        loop_shape = tuple(1 for _ in additional_setpoints) + (num_points,)
+        loop_shape = (num_points,) + tuple(1 for _ in additional_setpoints)
         shapes: Shapes = detect_shape_of_measurement(measured_parameters, loop_shape)
     except TypeError:
         LOG.exception(
@@ -392,7 +392,7 @@ def do2d(
     )
 
     try:
-        loop_shape = tuple(1 for _ in additional_setpoints) + (num_points1, num_points2)
+        loop_shape = (num_points1, num_points2) + tuple(1 for _ in additional_setpoints)
         shapes: Shapes = detect_shape_of_measurement(measured_parameters, loop_shape)
     except TypeError:
         LOG.exception(
@@ -725,8 +725,8 @@ def dond(
     ) = _extract_paramters_by_type_and_group(measurement_name, params_meas)
 
     try:
-        loop_shape = tuple(1 for _ in additional_setpoints) + tuple(
-            sweep.num_points for sweep in sweep_instances
+        loop_shape = tuple(sweep.num_points for sweep in sweep_instances) + tuple(
+            1 for _ in additional_setpoints
         )
         shapes: Shapes = detect_shape_of_measurement(measured_parameters, loop_shape)
     except TypeError:
