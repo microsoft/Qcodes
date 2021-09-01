@@ -16,16 +16,16 @@ entrypoints==0.3
 idna==3.2
 imagesize==1.2.0
 importlib-metadata==4.6.3; python_version<'3.8'
-ipykernel==6.2.0
+ipykernel==6.3.1
 ipython==7.27.0
 ipython-genutils==0.2.0
-ipywidgets==7.6.3
+ipywidgets==7.6.4
 jedi==0.18.0
 Jinja2==3.0.1
 jsonpointer==2.1
 jsonschema==3.2.0
 jupyter==1.0.0
-jupyter-client==7.0.1
+jupyter-client==7.0.2
 jupyter-console==6.4.0
 jupyter-core==4.7.1
 jupyterlab-pygments==0.1.2
@@ -77,8 +77,8 @@ stringparser==0.5
 terminado==0.11.1
 testpath==0.5.0
 tornado==6.1
-traitlets==5.0.5
-typing-extensions==3.10.0.1
+traitlets==5.1.0
+typing-extensions==3.10.0.2
 urllib3==1.26.6
 wcwidth==0.2.5
 webencodings==0.5.1
