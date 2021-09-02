@@ -371,7 +371,16 @@ class Motor(InstrumentChannel):
         """
         self.write(f"BG {self._axis}")
 
-        self.root_instrument.motion_complete(f"{self._axis}")
+    def wait_till_motor_motion_complete(self) -> None:
+        """
+        this method on call waits for motion to complete on the motor
+        """
+        try:
+            while int(float(self.ask(f"MG _BG{self._axis}"))):
+                pass
+        except KeyboardInterrupt:
+            self.root_instrument.abort()
+            self.off()
 
     def home(self) -> None:
         """
@@ -540,7 +549,18 @@ class DMC4133Controller(GalilMotionController):
         """
         self.write("BG")
 
-        self.motion_complete("ABC")
+    def wait_till_motion_complete(self) -> None:
+        """
+        this method waits for the motion on all motors to complete
+        """
+        try:
+            while int(float(self.ask("MG _BGA"))) or \
+                    int(float(self.ask("MG _BGB"))) or \
+                    int(float(self.ask("MG _BGC"))):
+                pass
+        except KeyboardInterrupt:
+            self.abort()
+            self.motors_off()
 
 
 class Arm:
@@ -586,7 +606,10 @@ class Arm:
 
         self._target: np.ndarray
 
-    def set_arm_kinematics(self, speed: int = 100, acceleration: int = 2500, deceleration: int = 2500) -> None:
+    def set_arm_kinematics(self, speed: int = 100, acceleration: int = 2048, deceleration: int = 2048) -> None:
+
+        if acceleration%256 != 0 or deceleration%256 !=0:
+            raise RuntimeError("Acceleration and deceleration must be a multiple of 256.")
 
         self.speed = self._convert_micro_meter_to_quadrature_counts(speed)
         self.acceleration = self._convert_micro_meter_to_quadrature_counts(acceleration)
@@ -648,6 +671,7 @@ class Arm:
         a.deceleration(self.deceleration)
         a.servo_here()
         a.begin()
+        a.wait_till_motor_motion_complete()
 
     def move_motor_B_by(self, distance: float) -> None:
         """Moves motor B by distance given in micro meters"""
@@ -662,6 +686,7 @@ class Arm:
         b.deceleration(self.deceleration)
         b.servo_here()
         b.begin()
+        b.wait_till_motor_motion_complete()
 
     def move_motor_C_by(self, distance: float) -> None:
         """Moves motor B by distance given in micro meters"""
@@ -676,6 +701,7 @@ class Arm:
         c.deceleration(self.deceleration)
         c.servo_here()
         c.begin()
+        c.wait_till_motor_motion_complete()
 
     def _convert_micro_meter_to_quadrature_counts(self, val: float) -> int:
 
@@ -696,8 +722,16 @@ class Arm:
             raise RuntimeError(f"Cannot move to {self._target[:3]}. Target location is below chip plane.")
 
         sp_a = int(np.floor(abs(rel_vec[0]) * speed))
+        if sp_a%2 != 0:
+            sp_a += 1
+
         sp_b = int(np.floor(abs(rel_vec[1]) * speed))
+        if sp_b%2 != 0:
+            sp_b += 1
+
         sp_c = int(np.floor(abs(rel_vec[2]) * speed))
+        if sp_c%2 != 0:
+            sp_c += 1
 
         motorA = self.controller.motor_a
         motorB = self.controller.motor_b
@@ -723,6 +757,7 @@ class Arm:
 
     def _move(self) -> None:
         self.controller.begin_motors()
+        self.controller.wait_till_motion_complete()
 
     def _pick_up(self) -> None:
 
