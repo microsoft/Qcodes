@@ -7,7 +7,7 @@ import numpy as np
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.channel import InstrumentChannel
-from qcodes.utils.validators import Enum, Ints, Union
+from qcodes.utils.validators import Enum, Ints, Multiples
 
 try:
     import gclib
@@ -69,10 +69,10 @@ class GalilMotionController(Instrument):
         Sets timeout for the instrument
 
         Args:
-            val: time in milliseconds
+            val: time in milliseconds. -1 disables the timeout
         """
-        if val < 1:
-            raise RuntimeError("Timeout can not be less than 1 ms")
+        if val < -1:
+            raise RuntimeError("Timeout value cannot be set less than -1")
 
         self.g.GTimeout(val)
 
@@ -119,7 +119,7 @@ class VectorMode(InstrumentChannel):
                            get_cmd="VA ?",
                            get_parser=int,
                            set_cmd="VA {}",
-                           vals=Ints(1024, 1073740800),
+                           vals=Multiples(min_value=1024, max_value=1073740800, divisor=1024),
                            unit="counts/sec2",
                            docstring="sets and gets the defined vector's "
                                      "acceleration")
@@ -128,7 +128,7 @@ class VectorMode(InstrumentChannel):
                            get_cmd="VD ?",
                            get_parser=int,
                            set_cmd="VD {}",
-                           vals=Ints(1024, 1073740800),
+                           vals=Multiples(min_value=1024, max_value=1073740800, divisor=1024),
                            unit="counts/sec2",
                            docstring="sets and gets the defined vector's "
                                      "deceleration")
@@ -137,7 +137,7 @@ class VectorMode(InstrumentChannel):
                            get_cmd="VS ?",
                            get_parser=int,
                            set_cmd="VS {}",
-                           vals=Ints(2, 15000000),
+                           vals=Multiples(min_value=2, max_value=15000000, divisor=2),
                            unit="counts/sec",
                            docstring="sets and gets defined vector's speed")
 
@@ -198,42 +198,41 @@ class Motor(InstrumentChannel):
         self.add_parameter("relative_position",
                            unit="quadrature counts",
                            get_cmd=f"MG _PR{self._axis}",
-                           get_parser=float,
+                           get_parser=lambda s: int(float(s)),
                            set_cmd=self._set_relative_position,
                            vals=Ints(-2147483648, 2147483647),
-                           docstring="sets relative position for the motor's "
-                                     "move")
+                           docstring="sets relative position for the motor's move")
 
         self.add_parameter("speed",
                            unit="counts/sec",
                            get_cmd=f"MG _SP{self._axis}",
-                           get_parser=float,
+                           get_parser=lambda s: int(float(s)),
                            set_cmd=self._set_speed,
-                           vals=Ints(0, 3000000),
+                           vals=Multiples(min_value=0, max_value=3000000, divisor=2),
                            docstring="speed for motor's motion")
 
         self.add_parameter("acceleration",
                            unit="counts/sec2",
                            get_cmd=f"MG _AC{self._axis}",
-                           get_parser=float,
+                           get_parser=lambda s: int(float(s)),
                            set_cmd=self._set_acceleration,
-                           vals=Ints(1024, 1073740800),
+                           vals=Multiples(min_value=1024, max_value=1073740800, divisor=1024),
                            docstring="acceleration for motor's motion")
 
         self.add_parameter("deceleration",
                            unit="counts/sec2",
                            get_cmd=f"MG _DC{self._axis}",
-                           get_parser=float,
+                           get_parser=lambda s: int(float(s)),
                            set_cmd=self._set_deceleration,
-                           vals=Ints(1024, 1073740800),
+                           vals=Multiples(min_value=1024, max_value=1073740800, divisor=1024),
                            docstring="deceleration for motor's motion")
 
         self.add_parameter("homing_velocity",
                            unit="counts/sec",
                            get_cmd=f"MG _HV{self._axis}",
-                           get_parser=float,
+                           get_parser=lambda s: int(float(s)),
                            set_cmd=self._set_homing_velocity,
-                           vals=Ints(0, 3000000),
+                           vals=Multiples(min_value=0, max_value=3000000, divisor=2),
                            docstring="sets the slew speed for the FI "
                                      "final move to the index and all but the "
                                      "first stage of HM (home)")
@@ -242,9 +241,8 @@ class Motor(InstrumentChannel):
                            get_cmd=self._get_off_when_error_occurs,
                            set_cmd=self._set_off_when_error_occurs,
                            val_mapping={"disable": 0,
-                                        "enable for position, amplifier error or "
-                                        "abort input": 1,
-                                        "enable for hardware limit switch": 2,
+                                        "enable for position, amp error or abort": 1,
+                                        "enable for hw limit switch": 2,
                                         "enable for all": 3},
                            docstring="enables or disables the motor to "
                                      "automatically turn off when error occurs")
@@ -270,8 +268,7 @@ class Motor(InstrumentChannel):
         correction when error happens
         """
         if val:
-            self.off_when_error_occurs("enable for position, amplifier error "
-                                       "or abort input")
+            self.off_when_error_occurs("enable for position, amp error or abort")
             self._setup_spm()
             self.servo_here()  # Enable axis
             self.write(f"YS{self._axis}={val}")
@@ -466,7 +463,7 @@ class DMC4133Controller(GalilMotionController):
                            get_cmd=None,
                            set_cmd="WT {}",
                            unit="ms",
-                           vals=Ints(2, 2147483646),
+                           vals=Multiples(min_value=2, max_value=2147483646, divisor=2),
                            docstring="controller will wait for the amount of "
                                      "time specified before executing the next "
                                      "command")
