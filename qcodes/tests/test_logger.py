@@ -283,7 +283,7 @@ def test_instrument_connect_message():
     code, but it is more conveniently written here
     """
 
-    with open(logger.get_log_file_name()) as f:
+    with open(logger.get_log_file_name(), encoding="utf-8") as f:
         lines = f.readlines()
 
     con_mssg_log_line = lines[-1]
