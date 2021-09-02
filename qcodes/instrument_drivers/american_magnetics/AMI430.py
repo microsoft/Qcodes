@@ -951,7 +951,7 @@ class AMI430_3D(Instrument):
 
     def wait_while_all_axes_ramping(self) -> None:
         axes = (self._instrument_x, self._instrument_y, self._instrument_z)
-        while all(
+        while any(
             axis_instrument.ramping_state() == "ramping" for axis_instrument in axes
         ):
             self._sleep(self.ramping_state_check_interval())
