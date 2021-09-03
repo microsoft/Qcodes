@@ -255,6 +255,34 @@ class Motor(InstrumentChannel):
                          "disable": 0},
             docstring="enables, disables and gives status of error in SPM mode")
 
+        self.add_parameter("reverse_sw_limit",
+                           get_cmd=f"MG _BL{self._axis}",
+                           get_parser=lambda s: int(float(s)),
+                           set_cmd=self._set_reverse_sw_limit,
+                           vals=Ints(-2147483648, 2147483647),
+                           docstring="can be used to set software reverse limit for the motor. "
+                                     "motor motion will stop beyond this limit automatically."
+                                     "default value is -2147483648. this value effectively disables the reverse limit.")
+
+        self.add_parameter("forward_sw_limit",
+                           get_cmd=f"MG _FL{self._axis}",
+                           get_parser=lambda s: int(float(s)),
+                           set_cmd=self._set_forward_sw_limit,
+                           vals=Ints(-2147483648, 2147483647),
+                           docstring="can be used to set software forward limit for the motor. "
+                                     "motor motion will stop beyond this limit automatically."
+                                     "default value is 2147483647. this value effectively disables the forward limit.")
+
+    def _set_reverse_sw_limit(self, val: int) -> None:
+        """Sets reverse software limit"""
+
+        self.write(f"BL{self._axis}={val}")
+
+    def _set_forward_sw_limit(self, val: int) -> None:
+        """Sets forward software limit"""
+
+        self.write(f"FL{self._axis}={val}")
+
     def _get_off_when_error_occurs(self) -> int:
         """Gets the status if motor is automatically set to turn off when error occurs."""
 
@@ -879,3 +907,33 @@ class Arm:
         self._put_down()
 
         self.current_pad = num
+
+    def set_motor_A_forward_limit(self) -> None:
+
+        pos = self.controller.absolute_position()
+        self.controller.motor_a.forward_sw_limit(pos['A'])
+
+    def set_motor_A_reverse_limit(self) -> None:
+
+        pos = self.controller.absolute_position()
+        self.controller.motor_a.reverse_sw_limit(pos['A'])
+
+    def set_motor_B_forward_limit(self) -> None:
+
+        pos = self.controller.absolute_position()
+        self.controller.motor_b.forward_sw_limit(pos['B'])
+
+    def set_motor_B_reverse_limit(self) -> None:
+
+        pos = self.controller.absolute_position()
+        self.controller.motor_b.reverse_sw_limit(pos['B'])
+
+    def set_motor_C_forward_limit(self) -> None:
+
+        pos = self.controller.absolute_position()
+        self.controller.motor_c.forward_sw_limit(pos['C'])
+
+    def set_motor_C_reverse_limit(self) -> None:
+
+        pos = self.controller.absolute_position()
+        self.controller.motor_c.reverse_sw_limit(pos['C'])
