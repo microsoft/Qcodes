@@ -18,13 +18,15 @@ except ImportError as e:
         "motion controller software for your OS. Afterwards go "
         "to https://www.galil.com/sw/pub/all/doc/gclib/html/python.html and "
         "follow instruction to be able to import gclib package in your "
-        "environment.") from e
+        "environment."
+    ) from e
 
 
 class GalilMotionController(Instrument):
     """
     Base class for Galil Motion Controller drivers
     """
+
     def __init__(self, name: str, address: str, **kwargs: Any) -> None:
         super().__init__(name=name, **kwargs)
         self.g = gclib.py()
@@ -40,29 +42,33 @@ class GalilMotionController(Instrument):
         and a connection to the Motion controller can be done by the IP
         address burned in.
         """
-        self.g.GOpen(self.address + ' --direct -s ALL')
+        self.g.GOpen(self.address + " --direct -s ALL")
 
     def get_idn(self) -> Dict[str, Optional[str]]:
         """
         Get Galil motion controller hardware information
         """
         data = self.g.GInfo().split(" ")
-        idparts: List[Optional[str]] = ["Galil Motion Control, Inc.",
-                                        data[1], data[4], data[3][:-1]]
+        idparts: List[Optional[str]] = [
+            "Galil Motion Control, Inc.",
+            data[1],
+            data[4],
+            data[3][:-1],
+        ]
 
-        return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
+        return dict(zip(("vendor", "model", "serial", "firmware"), idparts))
 
     def write_raw(self, cmd: str) -> None:
         """
         Write for Galil motion controller
         """
-        self.g.GCommand(cmd+"\r")
+        self.g.GCommand(cmd + "\r")
 
     def ask_raw(self, cmd: str) -> str:
         """
         Asks/Reads data from Galil motion controller
         """
-        return self.g.GCommand(cmd+"\r")
+        return self.g.GCommand(cmd + "\r")
 
     def timeout(self, val: int) -> None:
         """
@@ -94,52 +100,56 @@ class VectorMode(InstrumentChannel):
     Class to control motors in vector mode
     """
 
-    def __init__(self,
-                 parent: "DMC4133Controller",
-                 name: str,
-                 **kwargs: Any) -> None:
+    def __init__(self, parent: "DMC4133Controller", name: str, **kwargs: Any) -> None:
         super().__init__(parent, name, **kwargs)
         self._plane = name
 
-        self.add_parameter("coordinate_system",
-                           get_cmd="CA ?",
-                           get_parser=self._parse_coordinate_system_active,
-                           set_cmd="CA {}",
-                           vals=Enum("S", "T"),
-                           docstring="sets coordinate system for the motion")
+        self.add_parameter(
+            "coordinate_system",
+            get_cmd="CA ?",
+            get_parser=self._parse_coordinate_system_active,
+            set_cmd="CA {}",
+            vals=Enum("S", "T"),
+            docstring="sets coordinate system for the motion",
+        )
 
-        self.add_parameter("clear_sequence",
-                           get_cmd=None,
-                           set_cmd="CS {}",
-                           vals=Enum("S", "T"),
-                           docstring="clears vectors specified in the given "
-                                     "coordinate system")
+        self.add_parameter(
+            "clear_sequence",
+            get_cmd=None,
+            set_cmd="CS {}",
+            vals=Enum("S", "T"),
+            docstring="clears vectors specified in the given " "coordinate system",
+        )
 
-        self.add_parameter("vector_acceleration",
-                           get_cmd="VA ?",
-                           get_parser=int,
-                           set_cmd="VA {}",
-                           vals=Multiples(min_value=1024, max_value=1073740800, divisor=1024),
-                           unit="counts/sec2",
-                           docstring="sets and gets the defined vector's "
-                                     "acceleration")
+        self.add_parameter(
+            "vector_acceleration",
+            get_cmd="VA ?",
+            get_parser=int,
+            set_cmd="VA {}",
+            vals=Multiples(min_value=1024, max_value=1073740800, divisor=1024),
+            unit="counts/sec2",
+            docstring="sets and gets the defined vector's " "acceleration",
+        )
 
-        self.add_parameter("vector_deceleration",
-                           get_cmd="VD ?",
-                           get_parser=int,
-                           set_cmd="VD {}",
-                           vals=Multiples(min_value=1024, max_value=1073740800, divisor=1024),
-                           unit="counts/sec2",
-                           docstring="sets and gets the defined vector's "
-                                     "deceleration")
+        self.add_parameter(
+            "vector_deceleration",
+            get_cmd="VD ?",
+            get_parser=int,
+            set_cmd="VD {}",
+            vals=Multiples(min_value=1024, max_value=1073740800, divisor=1024),
+            unit="counts/sec2",
+            docstring="sets and gets the defined vector's " "deceleration",
+        )
 
-        self.add_parameter("vector_speed",
-                           get_cmd="VS ?",
-                           get_parser=int,
-                           set_cmd="VS {}",
-                           vals=Multiples(min_value=2, max_value=15000000, divisor=2),
-                           unit="counts/sec",
-                           docstring="sets and gets defined vector's speed")
+        self.add_parameter(
+            "vector_speed",
+            get_cmd="VS ?",
+            get_parser=int,
+            set_cmd="VS {}",
+            vals=Multiples(min_value=2, max_value=15000000, divisor=2),
+            unit="counts/sec",
+            docstring="sets and gets defined vector's speed",
+        )
 
     @staticmethod
     def _parse_coordinate_system_active(val: str) -> str:
@@ -188,90 +198,105 @@ class Motor(InstrumentChannel):
     Class to control motors independently
     """
 
-    def __init__(self,
-                 parent: "DMC4133Controller",
-                 name: str,
-                 **kwargs: Any) -> None:
+    def __init__(self, parent: "DMC4133Controller", name: str, **kwargs: Any) -> None:
         super().__init__(parent, name, **kwargs)
         self._axis = name
 
-        self.add_parameter("relative_position",
-                           unit="quadrature counts",
-                           get_cmd=f"MG _PR{self._axis}",
-                           get_parser=lambda s: int(float(s)),
-                           set_cmd=self._set_relative_position,
-                           vals=Ints(-2147483648, 2147483647),
-                           docstring="sets relative position for the motor's move")
+        self.add_parameter(
+            "relative_position",
+            unit="quadrature counts",
+            get_cmd=f"MG _PR{self._axis}",
+            get_parser=lambda s: int(float(s)),
+            set_cmd=self._set_relative_position,
+            vals=Ints(-2147483648, 2147483647),
+            docstring="sets relative position for the motor's move",
+        )
 
-        self.add_parameter("speed",
-                           unit="counts/sec",
-                           get_cmd=f"MG _SP{self._axis}",
-                           get_parser=lambda s: int(float(s)),
-                           set_cmd=self._set_speed,
-                           vals=Multiples(min_value=0, max_value=3000000, divisor=2),
-                           docstring="speed for motor's motion")
+        self.add_parameter(
+            "speed",
+            unit="counts/sec",
+            get_cmd=f"MG _SP{self._axis}",
+            get_parser=lambda s: int(float(s)),
+            set_cmd=self._set_speed,
+            vals=Multiples(min_value=0, max_value=3000000, divisor=2),
+            docstring="speed for motor's motion",
+        )
 
-        self.add_parameter("acceleration",
-                           unit="counts/sec2",
-                           get_cmd=f"MG _AC{self._axis}",
-                           get_parser=lambda s: int(float(s)),
-                           set_cmd=self._set_acceleration,
-                           vals=Multiples(min_value=1024, max_value=1073740800, divisor=1024),
-                           docstring="acceleration for motor's motion")
+        self.add_parameter(
+            "acceleration",
+            unit="counts/sec2",
+            get_cmd=f"MG _AC{self._axis}",
+            get_parser=lambda s: int(float(s)),
+            set_cmd=self._set_acceleration,
+            vals=Multiples(min_value=1024, max_value=1073740800, divisor=1024),
+            docstring="acceleration for motor's motion",
+        )
 
-        self.add_parameter("deceleration",
-                           unit="counts/sec2",
-                           get_cmd=f"MG _DC{self._axis}",
-                           get_parser=lambda s: int(float(s)),
-                           set_cmd=self._set_deceleration,
-                           vals=Multiples(min_value=1024, max_value=1073740800, divisor=1024),
-                           docstring="deceleration for motor's motion")
+        self.add_parameter(
+            "deceleration",
+            unit="counts/sec2",
+            get_cmd=f"MG _DC{self._axis}",
+            get_parser=lambda s: int(float(s)),
+            set_cmd=self._set_deceleration,
+            vals=Multiples(min_value=1024, max_value=1073740800, divisor=1024),
+            docstring="deceleration for motor's motion",
+        )
 
-        self.add_parameter("homing_velocity",
-                           unit="counts/sec",
-                           get_cmd=f"MG _HV{self._axis}",
-                           get_parser=lambda s: int(float(s)),
-                           set_cmd=self._set_homing_velocity,
-                           vals=Multiples(min_value=0, max_value=3000000, divisor=2),
-                           docstring="sets the slew speed for the FI "
-                                     "final move to the index and all but the "
-                                     "first stage of HM (home)")
+        self.add_parameter(
+            "homing_velocity",
+            unit="counts/sec",
+            get_cmd=f"MG _HV{self._axis}",
+            get_parser=lambda s: int(float(s)),
+            set_cmd=self._set_homing_velocity,
+            vals=Multiples(min_value=0, max_value=3000000, divisor=2),
+            docstring="sets the slew speed for the FI "
+            "final move to the index and all but the "
+            "first stage of HM (home)",
+        )
 
-        self.add_parameter("off_when_error_occurs",
-                           get_cmd=self._get_off_when_error_occurs,
-                           set_cmd=self._set_off_when_error_occurs,
-                           val_mapping={"disable": 0,
-                                        "enable for position, amp error or abort": 1,
-                                        "enable for hw limit switch": 2,
-                                        "enable for all": 3},
-                           docstring="enables or disables the motor to "
-                                     "automatically turn off when error occurs")
+        self.add_parameter(
+            "off_when_error_occurs",
+            get_cmd=self._get_off_when_error_occurs,
+            set_cmd=self._set_off_when_error_occurs,
+            val_mapping={
+                "disable": 0,
+                "enable for position, amp error or abort": 1,
+                "enable for hw limit switch": 2,
+                "enable for all": 3,
+            },
+            docstring="enables or disables the motor to "
+            "automatically turn off when error occurs",
+        )
 
         self.add_parameter(
             "enable_stepper_position_maintenance_mode",
             get_cmd=None,
             set_cmd=self._enable_disable_spm_mode,
-            val_mapping={"enable": 1,
-                         "disable": 0},
-            docstring="enables, disables and gives status of error in SPM mode")
+            val_mapping={"enable": 1, "disable": 0},
+            docstring="enables, disables and gives status of error in SPM mode",
+        )
 
-        self.add_parameter("reverse_sw_limit",
-                           get_cmd=f"MG _BL{self._axis}",
-                           get_parser=lambda s: int(float(s)),
-                           set_cmd=self._set_reverse_sw_limit,
-                           vals=Ints(-2147483648, 2147483647),
-                           docstring="can be used to set software reverse limit for the motor. "
-                                     "motor motion will stop beyond this limit automatically."
-                                     "default value is -2147483648. this value effectively disables the reverse limit.")
+        self.add_parameter(
+            "reverse_sw_limit",
+            get_cmd=f"MG _BL{self._axis}",
+            get_parser=lambda s: int(float(s)),
+            set_cmd=self._set_reverse_sw_limit,
+            vals=Ints(-2147483648, 2147483647),
+            docstring="can be used to set software reverse limit for the motor. "
+            "motor motion will stop beyond this limit automatically."
+            "default value is -2147483648. this value effectively disables the reverse limit.",
+        )
 
-        self.add_parameter("forward_sw_limit",
-                           get_cmd=f"MG _FL{self._axis}",
-                           get_parser=lambda s: int(float(s)),
-                           set_cmd=self._set_forward_sw_limit,
-                           vals=Ints(-2147483648, 2147483647),
-                           docstring="can be used to set software forward limit for the motor. "
-                                     "motor motion will stop beyond this limit automatically."
-                                     "default value is 2147483647. this value effectively disables the forward limit.")
+        self.add_parameter(
+            "forward_sw_limit",
+            get_cmd=f"MG _FL{self._axis}",
+            get_parser=lambda s: int(float(s)),
+            set_cmd=self._set_forward_sw_limit,
+            vals=Ints(-2147483648, 2147483647),
+            docstring="can be used to set software forward limit for the motor. "
+            "motor motion will stop beyond this limit automatically."
+            "default value is 2147483647. this value effectively disables the forward limit.",
+        )
 
     def _set_reverse_sw_limit(self, val: int) -> None:
         """Sets reverse software limit"""
@@ -364,7 +389,7 @@ class Motor(InstrumentChannel):
         # Set the profiler to stop axis upon error
         self.write(f"KS{self._axis}=16")  # Set step smoothing
         self.write(f"MT{self._axis}=-2")  # Motor type set to stepper
-        self.write(f"YA{self._axis}=64")   # Step resolution of the drive
+        self.write(f"YA{self._axis}=64")  # Step resolution of the drive
 
         # Motor resolution (full steps per revolution)
         self.write(f"YB{self._axis}=200")
@@ -476,34 +501,35 @@ class DMC4133Controller(GalilMotionController):
     Driver for Galil DMC-4133 Controller
     """
 
-    def __init__(self,
-                 name: str,
-                 address: str,
-                 **kwargs: Any) -> None:
+    def __init__(self, name: str, address: str, **kwargs: Any) -> None:
         super().__init__(name=name, address=address, **kwargs)
 
-        self.add_parameter("position_format_decimals",
-                           get_cmd=None,
-                           set_cmd="PF 10.{}",
-                           vals=Ints(0, 4),
-                           docstring="sets number of decimals in the format "
-                                     "of the position")
+        self.add_parameter(
+            "position_format_decimals",
+            get_cmd=None,
+            set_cmd="PF 10.{}",
+            vals=Ints(0, 4),
+            docstring="sets number of decimals in the format " "of the position",
+        )
 
-        self.add_parameter("absolute_position",
-                           get_cmd=self._get_absolute_position,
-                           set_cmd=None,
-                           unit="quadrature counts",
-                           docstring="gets absolute position of the motors "
-                                     "from the set origin")
+        self.add_parameter(
+            "absolute_position",
+            get_cmd=self._get_absolute_position,
+            set_cmd=None,
+            unit="quadrature counts",
+            docstring="gets absolute position of the motors " "from the set origin",
+        )
 
-        self.add_parameter("wait",
-                           get_cmd=None,
-                           set_cmd="WT {}",
-                           unit="ms",
-                           vals=Multiples(min_value=2, max_value=2147483646, divisor=2),
-                           docstring="controller will wait for the amount of "
-                                     "time specified before executing the next "
-                                     "command")
+        self.add_parameter(
+            "wait",
+            get_cmd=None,
+            set_cmd="WT {}",
+            unit="ms",
+            vals=Multiples(min_value=2, max_value=2147483646, divisor=2),
+            docstring="controller will wait for the amount of "
+            "time specified before executing the next "
+            "command",
+        )
 
         self._set_default_update_time()
         self.add_submodule("motor_a", Motor(self, "A"))
@@ -582,9 +608,11 @@ class DMC4133Controller(GalilMotionController):
         this method waits for the motion on all motors to complete
         """
         try:
-            while int(float(self.ask("MG _BGA"))) or \
-                    int(float(self.ask("MG _BGB"))) or \
-                    int(float(self.ask("MG _BGC"))):
+            while (
+                int(float(self.ask("MG _BGA")))
+                or int(float(self.ask("MG _BGB")))
+                or int(float(self.ask("MG _BGC")))
+            ):
                 pass
         except KeyboardInterrupt:
             self.abort()
@@ -592,9 +620,9 @@ class DMC4133Controller(GalilMotionController):
 
 
 class Arm:
-    """ Module to control probe arm"""
-    def __init__(self,
-                 controller: DMC4133Controller) -> None:
+    """Module to control probe arm"""
+
+    def __init__(self, controller: DMC4133Controller) -> None:
 
         self.controller = controller
 
@@ -604,9 +632,9 @@ class Arm:
         self.right_top_position: Tuple[int, int, int]
 
         # motion directions
-        self._a: np.ndarray     # right_top - left_bottom
-        self._b: np.ndarray     # left_top - left_bottom
-        self._c: np.ndarray     # right_top - left_top
+        self._a: np.ndarray  # right_top - left_bottom
+        self._b: np.ndarray  # left_top - left_bottom
+        self._c: np.ndarray  # right_top - left_top
         self._n: np.ndarray
         self.norm_a: float
         self.norm_b: float
@@ -634,10 +662,14 @@ class Arm:
 
         self._target: np.ndarray
 
-    def set_arm_kinematics(self, speed: int = 100, acceleration: int = 2048, deceleration: int = 2048) -> None:
+    def set_arm_kinematics(
+        self, speed: int = 100, acceleration: int = 2048, deceleration: int = 2048
+    ) -> None:
 
-        if acceleration%256 != 0 or deceleration%256 !=0:
-            raise RuntimeError("Acceleration and deceleration must be a multiple of 256.")
+        if acceleration % 256 != 0 or deceleration % 256 != 0:
+            raise RuntimeError(
+                "Acceleration and deceleration must be a multiple of 256."
+            )
 
         self.speed = self._convert_micro_meter_to_quadrature_counts(speed)
         self.acceleration = self._convert_micro_meter_to_quadrature_counts(acceleration)
@@ -657,7 +689,6 @@ class Arm:
         pos = self.controller.absolute_position()
         self.left_top_position = (pos["A"], pos["B"], pos["C"])
 
-
     def set_right_top_position(self) -> None:
 
         pos = self.controller.absolute_position()
@@ -667,15 +698,35 @@ class Arm:
 
     def _calculate_ortho_vector(self) -> None:
 
-        a = np.array(tuple(map(lambda i, j: i - j, self.right_top_position, self.left_bottom_position)))
+        a = np.array(
+            tuple(
+                map(
+                    lambda i, j: i - j,
+                    self.right_top_position,
+                    self.left_bottom_position,
+                )
+            )
+        )
         self.norm_a = np.linalg.norm(a)
         self._a = a / self.norm_a
 
-        b = np.array(tuple(map(lambda i, j: i - j, self.left_top_position, self.left_bottom_position)))
+        b = np.array(
+            tuple(
+                map(
+                    lambda i, j: i - j,
+                    self.left_top_position,
+                    self.left_bottom_position,
+                )
+            )
+        )
         self.norm_b = np.linalg.norm(b)
         self._b = b / self.norm_b
 
-        c = np.array(tuple(map(lambda i, j: i - j, self.right_top_position, self.left_top_position)))
+        c = np.array(
+            tuple(
+                map(lambda i, j: i - j, self.right_top_position, self.left_top_position)
+            )
+        )
         self.norm_c = np.linalg.norm(c)
         self._c = c / self.norm_c
 
@@ -733,8 +784,7 @@ class Arm:
 
     def _convert_micro_meter_to_quadrature_counts(self, val: float) -> int:
 
-        return int(20*val)
-
+        return int(20 * val)
 
     def _setup_motion(self, rel_vec: np.ndarray, d: float, speed: float) -> None:
 
@@ -747,18 +797,20 @@ class Arm:
         self._target = np.array([pos["A"] + a, pos["B"] + b, pos["C"] + c, 1])
 
         if np.dot(self._plane_eqn, self._target) < 0:
-            raise RuntimeError(f"Cannot move to {self._target[:3]}. Target location is below chip plane.")
+            raise RuntimeError(
+                f"Cannot move to {self._target[:3]}. Target location is below chip plane."
+            )
 
         sp_a = int(np.floor(abs(rel_vec[0]) * speed))
-        if sp_a%2 != 0:
+        if sp_a % 2 != 0:
             sp_a += 1
 
         sp_b = int(np.floor(abs(rel_vec[1]) * speed))
-        if sp_b%2 != 0:
+        if sp_b % 2 != 0:
             sp_b += 1
 
         sp_c = int(np.floor(abs(rel_vec[2]) * speed))
-        if sp_c%2 != 0:
+        if sp_c % 2 != 0:
             sp_c += 1
 
         motorA = self.controller.motor_a
@@ -794,16 +846,18 @@ class Arm:
 
     def _put_down(self) -> None:
 
-        motion_vec = -1*self._n
+        motion_vec = -1 * self._n
 
         pos = self.controller.absolute_position()
-        x1 = pos['A']
-        y1 = pos['B']
-        z1 = pos['C']
+        x1 = pos["A"]
+        y1 = pos["B"]
+        z1 = pos["C"]
         current = np.array([x1, y1, z1, 1])
 
-        denominator = np.sqrt(self._plane_eqn[0]**2 + self._plane_eqn[1]**2 + self._plane_eqn[2]**2)
-        d = abs(sum(self._plane_eqn * current))/denominator
+        denominator = np.sqrt(
+            self._plane_eqn[0] ** 2 + self._plane_eqn[1] ** 2 + self._plane_eqn[2] ** 2
+        )
+        d = abs(sum(self._plane_eqn * current)) / denominator
 
         self._setup_motion(rel_vec=motion_vec, d=d, speed=self.speed)
         self._move()
@@ -812,7 +866,7 @@ class Arm:
 
         self._pick_up()
 
-        motion_vec = -1*self._a
+        motion_vec = -1 * self._a
         self._setup_motion(rel_vec=motion_vec, d=self.norm_a, speed=self.speed)
         self._move()
         self.current_row = 1
@@ -862,46 +916,53 @@ class Arm:
     def move_to_row(self, num: int) -> None:
 
         if num < 1 or num > self.rows:
-            raise RuntimeError(f"Row num: {num} is out of range. Row numbers start from 1 and max number of rows is"
-                               f" {self.rows}.")
+            raise RuntimeError(
+                f"Row num: {num} is out of range. Row numbers start from 1 and max number of rows is"
+                f" {self.rows}."
+            )
 
         sign = 1
         d = (num - self.current_row) * self.inter_row_dis
 
         if d == 0:
-            raise RuntimeError(f"You are at the row where you want to be. Current row number is {self.current_row}.")
+            raise RuntimeError(
+                f"You are at the row where you want to be. Current row number is {self.current_row}."
+            )
         elif d < 0:
             sign = -1
             d = abs(d)
 
         self._pick_up()
 
-        self._setup_motion(rel_vec=sign*self._b, d=d, speed=self.speed)
+        self._setup_motion(rel_vec=sign * self._b, d=d, speed=self.speed)
         self._move()
 
         self._put_down()
 
         self.current_row = num
 
-
     def move_to_pad(self, num: int) -> None:
 
         if num < 1 or num > self.pads:
-            raise RuntimeError(f"Pad num: {num} is out of range. Pad number start from 1 and max number is"
-                               f" {self.pads}.")
+            raise RuntimeError(
+                f"Pad num: {num} is out of range. Pad number start from 1 and max number is"
+                f" {self.pads}."
+            )
 
         sign = 1
         d = (num - self.current_pad) * self.inter_pad_dis
 
         if d == 0:
-            raise RuntimeError(f"You are at the pad where you want to be. Current pad number is {self.current_pad}.")
+            raise RuntimeError(
+                f"You are at the pad where you want to be. Current pad number is {self.current_pad}."
+            )
         elif d < 0:
             sign = -1
             d = abs(d)
 
         self._pick_up()
 
-        self._setup_motion(rel_vec=sign*self._c, d=d, speed=self.speed)
+        self._setup_motion(rel_vec=sign * self._c, d=d, speed=self.speed)
         self._move()
 
         self._put_down()
@@ -911,29 +972,29 @@ class Arm:
     def set_motor_A_forward_limit(self) -> None:
 
         pos = self.controller.absolute_position()
-        self.controller.motor_a.forward_sw_limit(pos['A'])
+        self.controller.motor_a.forward_sw_limit(pos["A"])
 
     def set_motor_A_reverse_limit(self) -> None:
 
         pos = self.controller.absolute_position()
-        self.controller.motor_a.reverse_sw_limit(pos['A'])
+        self.controller.motor_a.reverse_sw_limit(pos["A"])
 
     def set_motor_B_forward_limit(self) -> None:
 
         pos = self.controller.absolute_position()
-        self.controller.motor_b.forward_sw_limit(pos['B'])
+        self.controller.motor_b.forward_sw_limit(pos["B"])
 
     def set_motor_B_reverse_limit(self) -> None:
 
         pos = self.controller.absolute_position()
-        self.controller.motor_b.reverse_sw_limit(pos['B'])
+        self.controller.motor_b.reverse_sw_limit(pos["B"])
 
     def set_motor_C_forward_limit(self) -> None:
 
         pos = self.controller.absolute_position()
-        self.controller.motor_c.forward_sw_limit(pos['C'])
+        self.controller.motor_c.forward_sw_limit(pos["C"])
 
     def set_motor_C_reverse_limit(self) -> None:
 
         pos = self.controller.absolute_position()
-        self.controller.motor_c.reverse_sw_limit(pos['C'])
+        self.controller.motor_c.reverse_sw_limit(pos["C"])
