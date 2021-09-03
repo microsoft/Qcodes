@@ -100,7 +100,10 @@ class VectorMode(InstrumentChannel):
     Class to control motors in vector mode
     """
 
-    def __init__(self, parent: "DMC4133Controller", name: str, **kwargs: Any) -> None:
+    def __init__(self,
+                 parent: "DMC4133Controller",
+                 name: str,
+                 **kwargs: Any) -> None:
         super().__init__(parent, name, **kwargs)
         self._plane = name
 
@@ -118,7 +121,8 @@ class VectorMode(InstrumentChannel):
             get_cmd=None,
             set_cmd="CS {}",
             vals=Enum("S", "T"),
-            docstring="clears vectors specified in the given " "coordinate system",
+            docstring="clears vectors specified in the given "
+                      "coordinate system",
         )
 
         self.add_parameter(
@@ -169,7 +173,8 @@ class VectorMode(InstrumentChannel):
 
     def vector_position(self, first_coord: int, second_coord: int) -> None:
         """
-        sets the final vector position for the motion considering current position as the origin
+        sets the final vector position for the motion considering current
+        position as the origin
         """
         self.write(f"VP {first_coord},{second_coord}")
 
@@ -198,7 +203,10 @@ class Motor(InstrumentChannel):
     Class to control motors independently
     """
 
-    def __init__(self, parent: "DMC4133Controller", name: str, **kwargs: Any) -> None:
+    def __init__(self,
+                 parent: "DMC4133Controller",
+                 name: str,
+                 **kwargs: Any) -> None:
         super().__init__(parent, name, **kwargs)
         self._axis = name
 
@@ -282,9 +290,10 @@ class Motor(InstrumentChannel):
             get_parser=lambda s: int(float(s)),
             set_cmd=self._set_reverse_sw_limit,
             vals=Ints(-2147483648, 2147483647),
-            docstring="can be used to set software reverse limit for the motor. "
-            "motor motion will stop beyond this limit automatically."
-            "default value is -2147483648. this value effectively disables the reverse limit.",
+            docstring="can be used to set software reverse limit for the motor."
+                      " motor motion will stop beyond this limit automatically."
+                      " default value is -2147483648. this value effectively "
+                      "disables the reverse limit.",
         )
 
         self.add_parameter(
@@ -293,9 +302,10 @@ class Motor(InstrumentChannel):
             get_parser=lambda s: int(float(s)),
             set_cmd=self._set_forward_sw_limit,
             vals=Ints(-2147483648, 2147483647),
-            docstring="can be used to set software forward limit for the motor. "
-            "motor motion will stop beyond this limit automatically."
-            "default value is 2147483647. this value effectively disables the forward limit.",
+            docstring="can be used to set software forward limit for the motor."
+                      " motor motion will stop beyond this limit automatically."
+                      " default value is 2147483647. this value effectively "
+                      "disables the forward limit.",
         )
 
     def _set_reverse_sw_limit(self, val: int) -> None:
@@ -309,7 +319,10 @@ class Motor(InstrumentChannel):
         self.write(f"FL{self._axis}={val}")
 
     def _get_off_when_error_occurs(self) -> int:
-        """Gets the status if motor is automatically set to turn off when error occurs."""
+        """
+        Gets the status if motor is automatically set to turn off when error
+        occurs.
+        """
 
         val = self.ask(f"MG _OE{self._axis}")
 
@@ -321,7 +334,8 @@ class Motor(InstrumentChannel):
         correction when error happens
         """
         if val:
-            self.off_when_error_occurs("enable for position, amp error or abort")
+            self.off_when_error_occurs("enable for position, "
+                                       "amp error or abort")
             self._setup_spm()
             self.servo_here()  # Enable axis
             self.write(f"YS{self._axis}={val}")
@@ -509,7 +523,8 @@ class DMC4133Controller(GalilMotionController):
             get_cmd=None,
             set_cmd="PF 10.{}",
             vals=Ints(0, 4),
-            docstring="sets number of decimals in the format " "of the position",
+            docstring="sets number of decimals in the format "
+                      "of the position",
         )
 
         self.add_parameter(
@@ -517,7 +532,8 @@ class DMC4133Controller(GalilMotionController):
             get_cmd=self._get_absolute_position,
             set_cmd=None,
             unit="quadrature counts",
-            docstring="gets absolute position of the motors " "from the set origin",
+            docstring="gets absolute position of the motors "
+                      "from the set origin",
         )
 
         self.add_parameter(
@@ -663,7 +679,10 @@ class Arm:
         self._target: np.ndarray
 
     def set_arm_kinematics(
-        self, speed: int = 100, acceleration: int = 2048, deceleration: int = 2048
+        self,
+        speed: int = 100,
+        acceleration: int = 2048,
+        deceleration: int = 2048
     ) -> None:
 
         if acceleration % 256 != 0 or deceleration % 256 != 0:
@@ -672,12 +691,15 @@ class Arm:
             )
 
         self.speed = self._convert_micro_meter_to_quadrature_counts(speed)
-        self.acceleration = self._convert_micro_meter_to_quadrature_counts(acceleration)
-        self.deceleration = self._convert_micro_meter_to_quadrature_counts(deceleration)
+        self.acceleration = \
+            self._convert_micro_meter_to_quadrature_counts(acceleration)
+        self.deceleration = \
+            self._convert_micro_meter_to_quadrature_counts(deceleration)
 
     def set_pick_up_distance(self, distance: float = 3000) -> None:
 
-        self._arm_pick_up_dis = self._convert_micro_meter_to_quadrature_counts(distance)
+        self._arm_pick_up_dis = \
+            self._convert_micro_meter_to_quadrature_counts(distance)
 
     def set_left_bottom_position(self) -> None:
 
@@ -724,7 +746,9 @@ class Arm:
 
         c = np.array(
             tuple(
-                map(lambda i, j: i - j, self.right_top_position, self.left_top_position)
+                map(lambda i, j: i - j,
+                    self.right_top_position,
+                    self.left_top_position)
             )
         )
         self.norm_c = np.linalg.norm(c)
@@ -786,7 +810,10 @@ class Arm:
 
         return int(20 * val)
 
-    def _setup_motion(self, rel_vec: np.ndarray, d: float, speed: float) -> None:
+    def _setup_motion(self,
+                      rel_vec: np.ndarray,
+                      d: float,
+                      speed: float) -> None:
 
         pos = self.controller.absolute_position()
 
@@ -798,7 +825,8 @@ class Arm:
 
         if np.dot(self._plane_eqn, self._target) < 0:
             raise RuntimeError(
-                f"Cannot move to {self._target[:3]}. Target location is below chip plane."
+                f"Cannot move to {self._target[:3]}. Target location is below "
+                f"chip plane."
             )
 
         sp_a = int(np.floor(abs(rel_vec[0]) * speed))
@@ -841,7 +869,9 @@ class Arm:
 
     def _pick_up(self) -> None:
 
-        self._setup_motion(rel_vec=self._n, d=self._arm_pick_up_dis, speed=self.speed)
+        self._setup_motion(rel_vec=self._n,
+                           d=self._arm_pick_up_dis,
+                           speed=self.speed)
         self._move()
 
     def _put_down(self) -> None:
@@ -854,9 +884,12 @@ class Arm:
         z1 = pos["C"]
         current = np.array([x1, y1, z1, 1])
 
-        denominator = np.sqrt(
-            self._plane_eqn[0] ** 2 + self._plane_eqn[1] ** 2 + self._plane_eqn[2] ** 2
-        )
+        denominator = \
+            np.sqrt(
+                self._plane_eqn[0] ** 2 + \
+                self._plane_eqn[1] ** 2 + \
+                self._plane_eqn[2] ** 2
+            )
         d = abs(sum(self._plane_eqn * current)) / denominator
 
         self._setup_motion(rel_vec=motion_vec, d=d, speed=self.speed)
@@ -886,7 +919,9 @@ class Arm:
 
         self._pick_up()
 
-        self._setup_motion(rel_vec=self._b, d=self.inter_row_dis, speed=self.speed)
+        self._setup_motion(rel_vec=self._b,
+                           d=self.inter_row_dis,
+                           speed=self.speed)
         self._move()
 
         self._put_down()
@@ -917,8 +952,8 @@ class Arm:
 
         if num < 1 or num > self.rows:
             raise RuntimeError(
-                f"Row num: {num} is out of range. Row numbers start from 1 and max number of rows is"
-                f" {self.rows}."
+                f"Row num: {num} is out of range. Row numbers start from 1 "
+                f"and max number of rows is {self.rows}."
             )
 
         sign = 1
@@ -927,7 +962,8 @@ class Arm:
 
         if d == 0:
             raise RuntimeError(
-                f"You are at the row where you want to be. Current row number is {self.current_row}."
+                f"You are at the row where you want to be. Current row number "
+                f"is {self.current_row}."
             )
         elif d < 0:
             sign = -1
@@ -946,8 +982,8 @@ class Arm:
 
         if num < 1 or num > self.pads:
             raise RuntimeError(
-                f"Pad num: {num} is out of range. Pad number start from 1 and max number is"
-                f" {self.pads}."
+                f"Pad num: {num} is out of range. Pad number start from 1 "
+                f"and max number is {self.pads}."
             )
 
         sign = 1
@@ -956,7 +992,8 @@ class Arm:
 
         if d == 0:
             raise RuntimeError(
-                f"You are at the pad where you want to be. Current pad number is {self.current_pad}."
+                f"You are at the pad where you want to be. Current pad "
+                f"number is {self.current_pad}."
             )
         elif d < 0:
             sign = -1
