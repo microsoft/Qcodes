@@ -922,6 +922,7 @@ class Arm:
             )
 
         sign = 1
+        assert self.current_row is not None
         d = (num - self.current_row) * self.inter_row_dis
 
         if d == 0:
@@ -950,6 +951,7 @@ class Arm:
             )
 
         sign = 1
+        assert self.current_pad is not None
         d = (num - self.current_pad) * self.inter_pad_dis
 
         if d == 0:
