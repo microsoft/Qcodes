@@ -742,6 +742,22 @@ class AMI430_3D(Instrument):
             get_cmd=None,
         )
 
+        self.vector_ramp_rate = Parameter(
+            name="vector_ramp_rate",
+            instrument=self,
+            unit="T/s",
+            vals=Numbers(min_value=0.0),
+            set_cmd=None,
+            get_cmd=None,
+            set_parser=self._set_vector_ramp_rate_units,
+        )
+        """Ramp rate along a line (vector) in 3D field space"""
+
+    def _set_vector_ramp_rate_units(self, val: float) -> float:
+        _, common_ramp_rate_units = self._raise_if_not_same_field_and_ramp_rate_units()
+        self.vector_ramp_rate.unit = common_ramp_rate_units
+        return val
+
     def _get_measured_field_vector(self) -> FieldVector:
         return FieldVector(
             x=self._instrument_x.field(),
