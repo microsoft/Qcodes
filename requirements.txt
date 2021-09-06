@@ -95,4 +95,4 @@ zipp~=3.5.0
 # not strict requirements but needed for the legacy pyqtgraph based plotting
 PyQt5<5.16
 pyqtgraph~=0.12.2
-QtPy==1.10.0
+QtPy==1.11.0
