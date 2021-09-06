@@ -834,10 +834,10 @@ class AMI430_3D(Instrument):
         ramp_rate_units_of_instruments = defaultdict(set)
 
         for instrument in instruments:
-            ramp_rate_units_of_instruments[instrument.ramp_rate_units()].add(
+            ramp_rate_units_of_instruments[instrument.ramp_rate_units.cache.get()].add(
                 instrument.full_name
             )
-            field_units_of_instruments[instrument.field_units()].add(
+            field_units_of_instruments[instrument.field_units.cache.get()].add(
                 instrument.full_name
             )
 
