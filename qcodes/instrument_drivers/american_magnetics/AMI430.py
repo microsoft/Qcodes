@@ -732,6 +732,16 @@ class AMI430_3D(Instrument):
             initial_value="default",
         )
 
+        self.ramping_state_check_interval = Parameter(
+            name="ramping_state_check_interval",
+            instrument=self,
+            initial_value=0.05,
+            unit="s",
+            vals=Numbers(0, 10),
+            set_cmd=None,
+            get_cmd=None,
+        )
+
     def _get_measured_field_vector(self) -> FieldVector:
         return FieldVector(
             x=self._instrument_x.field(),
@@ -954,7 +964,7 @@ class AMI430_3D(Instrument):
         while any(
             axis_instrument.ramping_state() == "ramping" for axis_instrument in axes
         ):
-            self._sleep(self.ramping_state_check_interval())
+            self._instrument_x._sleep(self.ramping_state_check_interval.get())
 
     def _request_field_change(self, instrument: AMI430,
                               value: numbers.Real) -> None:
