@@ -279,6 +279,12 @@ class FieldVector:
 
         return self * other
 
+    def __truediv__(self, other: Any) -> "FieldVector":
+        if not isinstance(other, (int, float)):
+            return NotImplemented
+
+        return self * (1.0 / other)
+
     def __neg__(self) -> "FieldVector":
         return -1 * self
 
