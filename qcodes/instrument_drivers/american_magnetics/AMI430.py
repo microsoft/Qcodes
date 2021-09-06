@@ -960,11 +960,18 @@ class AMI430_3D(Instrument):
                                      block=self.block_during_ramp.get())
 
     def wait_while_all_axes_ramping(self) -> None:
-        axes = (self._instrument_x, self._instrument_y, self._instrument_z)
-        while any(
-            axis_instrument.ramping_state() == "ramping" for axis_instrument in axes
-        ):
+        while self.any_axis_is_ramping():
             self._instrument_x._sleep(self.ramping_state_check_interval.get())
+
+    def any_axis_is_ramping(self) -> bool:
+        return any(
+            axis_instrument.ramping_state() == "ramping"
+            for axis_instrument in (
+                self._instrument_x,
+                self._instrument_y,
+                self._instrument_z,
+            )
+        )
 
     def _request_field_change(self, instrument: AMI430,
                               value: numbers.Real) -> None:
