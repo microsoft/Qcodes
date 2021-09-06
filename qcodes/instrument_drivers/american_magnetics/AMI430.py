@@ -765,7 +765,7 @@ class AMI430_3D(Instrument):
             z=self._instrument_z.field(),
         )
 
-    def ramp_simultaneously(self, setpoint: FieldVector, time: float) -> None:
+    def ramp_simultaneously(self, setpoint: FieldVector, duration: float) -> None:
         """
         Ramp all axes simultaneously to the given setpoint and in the given time
 
@@ -783,7 +783,7 @@ class AMI430_3D(Instrument):
 
         Args:
             setpoint: ``FieldVector`` setpoint
-            time: time in which the setpoint field has to be reached on all axes
+            duration: time in which the setpoint field has to be reached on all axes
 
         """
         (
@@ -793,10 +793,10 @@ class AMI430_3D(Instrument):
 
         self.log.debug(
             f"Simultaneous ramp: setpoint {setpoint.repr_cartesian()} "
-            f"{common_field_units} in {time} {common_ramp_rate_units}"
+            f"{common_field_units} in {duration} {common_ramp_rate_units}"
         )
 
-        # calculate new ramp rates based on time and setpoint
+        # Get starting field value
 
         start_field = self._get_measured_field_vector()
         self.log.debug(
@@ -808,19 +808,16 @@ class AMI430_3D(Instrument):
             f"{common_field_units}"
         )
 
-        new_ramp_rates = self.calculate_ramp_rates_for(
-            start=start_field, setpoint=setpoint, time=time
+        # Calculate new vector ramp rate based on time and setpoint
+
+        vector_ramp_rate = self.calculate_vector_ramp_rate_from_duration(
+            start=start_field, setpoint=setpoint, duration=duration
         )
-
-        # Set new ramp rates
-
-        instruments = (self._instrument_x, self._instrument_y, self._instrument_z)
-        for instrument, new_axis_ramp_rate in zip(instruments, new_ramp_rates):
-            instrument.ramp_rate.set(new_axis_ramp_rate)
-            self.log.debug(
-                f"Simultaneous ramp: new rate for {instrument.full_name} "
-                f"is {new_axis_ramp_rate} {instrument.ramp_rate.unit}"
-            )
+        self.vector_ramp_rate(vector_ramp_rate)
+        self.log.debug(
+            f"Simultaneous ramp: new vector ramp rate for {self.full_name} "
+            f"is {vector_ramp_rate} {common_ramp_rate_units}"
+        )
 
         # Launch the simultaneous ramp
 
@@ -828,20 +825,34 @@ class AMI430_3D(Instrument):
         self.cartesian(setpoint.get_components("x", "y", "z"))
 
     @staticmethod
-    def calculate_ramp_rates_for(
-        start: FieldVector, setpoint: FieldVector, time: float
+    def calculate_axes_ramp_rates_for(
+        start: FieldVector, setpoint: FieldVector, duration: float
     ) -> Tuple[float, float, float]:
         """
         Given starting and setpoint fields and expected ramp time calculates
         required ramp rates for x, y, z axes (in this order) where axes are
         ramped simultaneously.
         """
-        delta_field = setpoint - start
-        new_ramp_rates = tuple(
-            abs(float(delta_field.get_components(component)[0])) / time
-            for component in ("x", "y", "z")
+        vector_ramp_rate = AMI430_3D.calculate_vector_ramp_rate_from_duration(
+            start, setpoint, duration
         )
-        return new_ramp_rates[0], new_ramp_rates[1], new_ramp_rates[2]
+        return AMI430_3D.calculate_axes_ramp_rates_from_vector_ramp_rate(
+            start, setpoint, vector_ramp_rate
+        )
+
+    @staticmethod
+    def calculate_vector_ramp_rate_from_duration(
+        start: FieldVector, setpoint: FieldVector, duration: float
+    ) -> float:
+        return setpoint.distance(start) / duration
+
+    @staticmethod
+    def calculate_axes_ramp_rates_from_vector_ramp_rate(
+        start: FieldVector, setpoint: FieldVector, vector_ramp_rate: float
+    ) -> Tuple[float, float, float]:
+        delta_field = setpoint - start
+        ramp_rate_3d = delta_field / delta_field.norm() * vector_ramp_rate
+        return ramp_rate_3d["x"], ramp_rate_3d["y"], ramp_rate_3d["z"]
 
     def _raise_if_not_same_field_and_ramp_rate_units(self) -> Tuple[str, str]:
         instruments = (self._instrument_x, self._instrument_y, self._instrument_z)
@@ -923,7 +934,25 @@ class AMI430_3D(Instrument):
         else:
             self._perform_default_ramp(values)
 
+    def _update_individual_axes_ramp_rates(
+        self, values: Tuple[float, float, float]
+    ) -> None:
+        new_axes_ramp_rates = self.calculate_axes_ramp_rates_from_vector_ramp_rate(
+            start=self._get_measured_field_vector(),
+            setpoint=FieldVector(x=values[0], y=values[1], z=values[2]),
+            vector_ramp_rate=self.vector_ramp_rate.get(),
+        )
+        instruments = (self._instrument_x, self._instrument_y, self._instrument_z)
+        for instrument, new_axis_ramp_rate in zip(instruments, new_axes_ramp_rates):
+            instrument.ramp_rate.set(new_axis_ramp_rate)
+            self.log.debug(
+                f"Simultaneous ramp: new rate for {instrument.full_name} "
+                f"is {new_axis_ramp_rate} {instrument.ramp_rate.unit}"
+            )
+
     def _perform_simultaneous_ramp(self, values: Tuple[float, float, float]) -> None:
+        self._update_individual_axes_ramp_rates(values)
+
         axes = (self._instrument_x, self._instrument_y, self._instrument_z)
 
         for axis_instrument, value in zip(axes, values):
