@@ -6,6 +6,7 @@ the default configuration.
 """
 
 import io
+import json
 import logging
 
 # logging.handlers is not imported by logging. This extra import is necessary
@@ -282,8 +283,9 @@ def start_logger() -> None:
     filename = get_log_file_name()
     os.makedirs(os.path.dirname(filename), exist_ok=True)
 
-    file_handler = logging.handlers.TimedRotatingFileHandler(filename,
-                                                             when='midnight')
+    file_handler = logging.handlers.TimedRotatingFileHandler(
+        filename, when="midnight", encoding="utf-8"
+    )
 
     file_handler.setLevel(qc.config.logger.file_level)
     file_handler.setFormatter(get_formatter())
@@ -332,16 +334,19 @@ def log_qcodes_versions(logger: logging.Logger) -> None:
     """
     Log the version information relevant to QCoDeS. This function logs
     the currently installed qcodes version, whether QCoDeS is installed in
-    editable mode, and the installed versions of QCoDeS' requirements.
+    editable mode, the installed versions of QCoDeS' requirements, and the
+    versions of all installed packages.
     """
 
     qc_version = ii.get_qcodes_version()
     qc_e_inst = ii.is_qcodes_installed_editably()
     qc_req_vs = ii.get_qcodes_requirements_versions()
+    ipvs = ii.get_all_installed_package_versions()
 
-    logger.info(f'QCoDeS version: {qc_version}')
-    logger.info(f'QCoDeS installed in editable mode: {qc_e_inst}')
-    logger.info(f'QCoDeS requirements versions: {qc_req_vs}')
+    logger.info(f"QCoDeS version: {qc_version}")
+    logger.info(f"QCoDeS installed in editable mode: {qc_e_inst}")
+    logger.info(f"QCoDeS requirements versions: {qc_req_vs}")
+    logger.info(f"All installed package versions: {json.dumps(ipvs)}")
 
 
 def start_all_logging() -> None:

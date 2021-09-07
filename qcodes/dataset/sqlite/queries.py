@@ -7,7 +7,6 @@ import sqlite3
 import time
 import unicodedata
 import warnings
-from pathlib import Path
 from typing import (
     Any,
     Callable,
@@ -38,7 +37,6 @@ from qcodes.dataset.sqlite.connection import (
     atomic_transaction,
     transaction,
 )
-from qcodes.dataset.sqlite.database import connect
 from qcodes.dataset.sqlite.query_helpers import (
     VALUES,
     insert_column,
@@ -785,7 +783,6 @@ def new_experiment(conn: ConnectionPlus,
 
     start_time = start_time or time.time()
     values = (name, sample_name, format_string, 0, start_time, end_time)
-
     curr = atomic_transaction(conn, query, *values)
     return curr.lastrowid
 
@@ -860,15 +857,15 @@ def get_guid_from_run_id(conn: ConnectionPlus, run_id: int) -> str:
     return select_one_where(conn, "runs", "guid", "run_id", run_id)
 
 
-def get_guids_from_multiple_run_ids(db_path: Union[str, Path],
-                                    run_ids: Iterable[int]
-                                    ) -> List[str]:
+def get_guids_from_multiple_run_ids(
+    conn: ConnectionPlus, run_ids: Iterable[int]
+) -> List[str]:
     """
-    Retrieve guids of runs in the given database specified by their run ids.
+    Retrieve guids of runs in the connected database specified by their run ids.
     run ids are run_id in the database and not captured_run_id.
 
     Args:
-        db_path: The path to the database file.
+        conn: database connection
         run_ids: An integer iterable of run ids to get their guids.
 
     Returns:
@@ -877,19 +874,12 @@ def get_guids_from_multiple_run_ids(db_path: Union[str, Path],
 
     guids: List[str] = []
 
-    try:
-        conn = connect(db_path)
-        for run_id in run_ids:
-            if run_exists(conn=conn, run_id=run_id):
-                run_id_guid = get_guid_from_run_id(conn=conn,
-                                                   run_id=run_id)
-                guids.append(run_id_guid)
-            else:
-                raise RuntimeError(f'run id {run_id} does not'
-                                   ' exist in the database')
-    finally:
-        conn.close()
-        del conn
+    for run_id in run_ids:
+        if run_exists(conn=conn, run_id=run_id):
+            run_id_guid = get_guid_from_run_id(conn=conn, run_id=run_id)
+            guids.append(run_id_guid)
+        else:
+            raise RuntimeError(f"run id {run_id} does not exist in the database")
 
     return guids
 

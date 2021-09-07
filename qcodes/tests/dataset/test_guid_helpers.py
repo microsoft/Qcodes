@@ -1,20 +1,20 @@
-from typing import cast, List
 from collections import defaultdict
 from pathlib import Path
+from typing import List, Tuple, cast
 
 import numpy as np
-
-from qcodes.dataset.experiment_container import new_experiment, \
-    load_or_create_experiment
-from qcodes.dataset.measurements import Measurement
-from qcodes.dataset.sqlite.database import initialised_database_at
-from qcodes.instrument.parameter import Parameter
-
-
-from qcodes.dataset.guid_helpers import guids_from_dir, guids_from_list_str
-from qcodes.dataset.sqlite.queries import get_guids_from_multiple_run_ids
-
 import pytest
+
+from qcodes.dataset.experiment_container import (
+    load_or_create_experiment,
+    new_experiment,
+)
+from qcodes.dataset.guid_helpers import guids_from_dir, guids_from_list_str
+from qcodes.dataset.measurements import Measurement
+from qcodes.dataset.sqlite.connection import ConnectionPlus
+from qcodes.dataset.sqlite.database import initialised_database_at
+from qcodes.dataset.sqlite.queries import get_guids_from_multiple_run_ids
+from qcodes.instrument.parameter import Parameter
 
 
 def test_guids_from_dir(tmp_path: Path) -> None:
@@ -84,10 +84,11 @@ def test_many_guids_from_list_str() -> None:
 
 
 def test_get_guids_from_multiple_run_ids(tmp_path: Path) -> None:
-    def generate_local_exp(dbpath: Path) -> List[str]:
+    def generate_local_exp(dbpath: Path) -> Tuple[List[str], ConnectionPlus]:
         with initialised_database_at(str(dbpath)):
             guids = []
             exp = load_or_create_experiment(experiment_name="test_guid")
+            conn = exp.conn
 
             p1 = Parameter('Voltage', set_cmd=None)
             p2 = Parameter('Current', get_cmd=np.random.randn)
@@ -104,14 +105,15 @@ def test_get_guids_from_multiple_run_ids(tmp_path: Path) -> None:
                                              (p2, cast(float, p2())))
                 guid = datasaver.dataset.guid
                 guids.append(guid)
-        return guids
+        return guids, conn
 
     path = tmp_path/'dbfile2.db'
-    guids = generate_local_exp(path)
+    guids, conn = generate_local_exp(path)
 
-    assert get_guids_from_multiple_run_ids(db_path=path, run_ids=[1, 2]) \
-        == guids
+    assert get_guids_from_multiple_run_ids(conn=conn, run_ids=[1, 2]) == guids
+
+    assert len(guids) == 2
 
     with pytest.raises(RuntimeError, match="run id 3 does not"
                        " exist in the database"):
-        get_guids_from_multiple_run_ids(db_path=path, run_ids=[1, 2, 3])
+        get_guids_from_multiple_run_ids(conn=conn, run_ids=[1, 2, 3])

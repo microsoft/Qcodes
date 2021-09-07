@@ -471,18 +471,21 @@ class ChannelList(Metadatable):
             else:
                 shapes = tuple(() for _ in self._channels)
 
-            param = self._paramclass(self._channels,
-                                     param_name=name,
-                                     name=f"Multi_{name}",
-                                     names=names,
-                                     shapes=shapes,
-                                     instrument=self._parent,
-                                     labels=labels,
-                                     units=units,
-                                     setpoints=setpoints,
-                                     setpoint_names=setpoint_names,
-                                     setpoint_units=setpoint_units,
-                                     setpoint_labels=setpoint_labels)
+            param = self._paramclass(
+                self._channels,
+                param_name=name,
+                name=f"Multi_{name}",
+                names=names,
+                shapes=shapes,
+                instrument=self._parent,
+                labels=labels,
+                units=units,
+                setpoints=setpoints,
+                setpoint_names=setpoint_names,
+                setpoint_units=setpoint_units,
+                setpoint_labels=setpoint_labels,
+                bind_to_instrument=False,
+            )
             return param
 
         # Check if this is a valid function
