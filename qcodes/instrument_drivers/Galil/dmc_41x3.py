@@ -221,6 +221,13 @@ class Motor(InstrumentChannel):
                  parent: "DMC4133Controller",
                  name: str,
                  **kwargs: Any) -> None:
+        """
+        Initializes individual motor submodules
+
+        Args:
+            parent: an instance of DMC4133Controller
+            name: name of the motor to be controlled
+        """
         super().__init__(parent, name, **kwargs)
         self._axis = name
 
@@ -323,11 +330,15 @@ class Motor(InstrumentChannel):
         )
 
     def _set_reverse_sw_limit(self, val: int) -> None:
-        """Sets reverse software limit"""
+        """
+        Sets reverse software limit
+        """
         self.write(f"BL{self._axis}={val}")
 
     def _set_forward_sw_limit(self, val: int) -> None:
-        """Sets forward software limit"""
+        """
+        Sets forward software limit
+        """
         self.write(f"FL{self._axis}={val}")
 
     def _get_off_when_error_occurs(self) -> int:
@@ -527,6 +538,13 @@ class DMC4133Controller(GalilMotionController):
     """
 
     def __init__(self, name: str, address: str, **kwargs: Any) -> None:
+        """
+        Initializes the DMC4133Controller class
+
+        Args:
+            name: name for the instance
+            address: address of the controller burned in
+        """
         super().__init__(name=name, address=address, **kwargs)
 
         self.add_parameter(
@@ -1046,6 +1064,7 @@ class Arm:
 
         pos = self.controller.absolute_position()
         self.controller.motor_c.reverse_sw_limit(pos["C"])
+
 
 def _convert_micro_meter_to_quadrature_counts(val: float) -> int:
 
