@@ -28,6 +28,13 @@ class GalilMotionController(Instrument):
     """
 
     def __init__(self, name: str, address: str, **kwargs: Any) -> None:
+        """
+        Initializes and opens the connection to the Galil Motion Controller
+
+        Args:
+            name: name for the instrument
+            address: address of the controller
+        """
         super().__init__(name=name, **kwargs)
         self.g = gclib.py()
         self.address = address
@@ -104,6 +111,13 @@ class VectorMode(InstrumentChannel):
                  parent: "DMC4133Controller",
                  name: str,
                  **kwargs: Any) -> None:
+        """
+        Initializes the vector mode submodule for the controller
+
+        Args:
+            parent: an instance of DMC4133Controller
+            name: name of the vector mode plane
+        """
         super().__init__(parent, name, **kwargs)
         self._plane = name
 
@@ -310,12 +324,10 @@ class Motor(InstrumentChannel):
 
     def _set_reverse_sw_limit(self, val: int) -> None:
         """Sets reverse software limit"""
-
         self.write(f"BL{self._axis}={val}")
 
     def _set_forward_sw_limit(self, val: int) -> None:
         """Sets forward software limit"""
-
         self.write(f"FL{self._axis}={val}")
 
     def _get_off_when_error_occurs(self) -> int:
@@ -323,7 +335,6 @@ class Motor(InstrumentChannel):
         Gets the status if motor is automatically set to turn off when error
         occurs.
         """
-
         val = self.ask(f"MG _OE{self._axis}")
 
         return int(val[0])
@@ -639,7 +650,12 @@ class Arm:
     """Module to control probe arm"""
 
     def __init__(self, controller: DMC4133Controller) -> None:
+        """
+        Initializes the arm class
 
+        Args:
+            controller: an instance of DMC4133Controller
+        """
         self.controller = controller
 
         # initialization
@@ -761,9 +777,8 @@ class Arm:
         intercept = np.array(sum(-1 * self._n * self.left_bottom_position))
         self._plane_eqn = np.append(self._n, intercept)
 
-    def move_motor_A_by(self, distance: float) -> None:
+    def move_motor_a_by(self, distance: float) -> None:
         """Moves motor A by distance given in micro meters"""
-
         a = self.controller.motor_a
 
         d = self._convert_micro_meter_to_quadrature_counts(distance)
@@ -776,9 +791,8 @@ class Arm:
         a.begin()
         a.wait_till_motor_motion_complete()
 
-    def move_motor_B_by(self, distance: float) -> None:
+    def move_motor_b_by(self, distance: float) -> None:
         """Moves motor B by distance given in micro meters"""
-
         b = self.controller.motor_b
 
         d = self._convert_micro_meter_to_quadrature_counts(distance)
@@ -791,9 +805,8 @@ class Arm:
         b.begin()
         b.wait_till_motor_motion_complete()
 
-    def move_motor_C_by(self, distance: float) -> None:
+    def move_motor_c_by(self, distance: float) -> None:
         """Moves motor B by distance given in micro meters"""
-
         c = self.controller.motor_c
 
         d = self._convert_micro_meter_to_quadrature_counts(distance)
@@ -841,27 +854,27 @@ class Arm:
         if sp_c % 2 != 0:
             sp_c += 1
 
-        motorA = self.controller.motor_a
-        motorB = self.controller.motor_b
-        motorC = self.controller.motor_c
+        motor_a = self.controller.motor_a
+        motor_b = self.controller.motor_b
+        motor_c = self.controller.motor_c
 
-        motorA.relative_position(a)
-        motorA.speed(sp_a)
-        motorA.acceleration(self.acceleration)
-        motorA.deceleration(self.deceleration)
-        motorA.servo_here()
+        motor_a.relative_position(a)
+        motor_a.speed(sp_a)
+        motor_a.acceleration(self.acceleration)
+        motor_a.deceleration(self.deceleration)
+        motor_a.servo_here()
 
-        motorB.relative_position(b)
-        motorB.speed(sp_b)
-        motorB.acceleration(self.acceleration)
-        motorB.deceleration(self.deceleration)
-        motorB.servo_here()
+        motor_b.relative_position(b)
+        motor_b.speed(sp_b)
+        motor_b.acceleration(self.acceleration)
+        motor_b.deceleration(self.deceleration)
+        motor_b.servo_here()
 
-        motorC.relative_position(c)
-        motorC.speed(sp_c)
-        motorC.acceleration(self.acceleration)
-        motorC.deceleration(self.deceleration)
-        motorC.servo_here()
+        motor_c.relative_position(c)
+        motor_c.speed(sp_c)
+        motor_c.acceleration(self.acceleration)
+        motor_c.deceleration(self.deceleration)
+        motor_c.servo_here()
 
     def _move(self) -> None:
         self.controller.begin_motors()
@@ -965,7 +978,7 @@ class Arm:
                 f"You are at the row where you want to be. Current row number "
                 f"is {self.current_row}."
             )
-        elif d < 0:
+        if d < 0:
             sign = -1
             d = abs(d)
 
@@ -995,7 +1008,7 @@ class Arm:
                 f"You are at the pad where you want to be. Current pad "
                 f"number is {self.current_pad}."
             )
-        elif d < 0:
+        if d < 0:
             sign = -1
             d = abs(d)
 
@@ -1008,32 +1021,32 @@ class Arm:
 
         self.current_pad = num
 
-    def set_motor_A_forward_limit(self) -> None:
+    def set_motor_a_forward_limit(self) -> None:
 
         pos = self.controller.absolute_position()
         self.controller.motor_a.forward_sw_limit(pos["A"])
 
-    def set_motor_A_reverse_limit(self) -> None:
+    def set_motor_a_reverse_limit(self) -> None:
 
         pos = self.controller.absolute_position()
         self.controller.motor_a.reverse_sw_limit(pos["A"])
 
-    def set_motor_B_forward_limit(self) -> None:
+    def set_motor_b_forward_limit(self) -> None:
 
         pos = self.controller.absolute_position()
         self.controller.motor_b.forward_sw_limit(pos["B"])
 
-    def set_motor_B_reverse_limit(self) -> None:
+    def set_motor_b_reverse_limit(self) -> None:
 
         pos = self.controller.absolute_position()
         self.controller.motor_b.reverse_sw_limit(pos["B"])
 
-    def set_motor_C_forward_limit(self) -> None:
+    def set_motor_c_forward_limit(self) -> None:
 
         pos = self.controller.absolute_position()
         self.controller.motor_c.forward_sw_limit(pos["C"])
 
-    def set_motor_C_reverse_limit(self) -> None:
+    def set_motor_c_reverse_limit(self) -> None:
 
         pos = self.controller.absolute_position()
         self.controller.motor_c.reverse_sw_limit(pos["C"])
