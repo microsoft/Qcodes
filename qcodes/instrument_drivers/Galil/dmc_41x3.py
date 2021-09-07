@@ -1,6 +1,7 @@
 """
-This file holds the QCoDeS driver for the Galil DMC-41x3 motor controllers,
-colloquially known as the "stepper motors".
+This file holds the QCoDeS driver for the Galil DMC-41x3 motor controllers.
+
+Colloquially known as the "stepper motors".
 """
 from typing import Any, Dict, Optional, List, Tuple
 import numpy as np
@@ -665,7 +666,9 @@ class DMC4133Controller(GalilMotionController):
 
 
 class Arm:
-    """Module to control probe arm"""
+    """
+    Module to control probe arm
+    """
 
     def __init__(self, controller: DMC4133Controller) -> None:
         """
@@ -796,7 +799,9 @@ class Arm:
         self._plane_eqn = np.append(self._n, intercept)
 
     def move_motor_a_by(self, distance: float) -> None:
-        """Moves motor A by distance given in micro meters"""
+        """
+        Moves motor A by distance given in micro meters
+        """
         a = self.controller.motor_a
 
         d = _convert_micro_meter_to_quadrature_counts(distance)
@@ -810,7 +815,9 @@ class Arm:
         a.wait_till_motor_motion_complete()
 
     def move_motor_b_by(self, distance: float) -> None:
-        """Moves motor B by distance given in micro meters"""
+        """
+        Moves motor B by distance given in micro meters
+        """
         b = self.controller.motor_b
 
         d = _convert_micro_meter_to_quadrature_counts(distance)
@@ -824,7 +831,9 @@ class Arm:
         b.wait_till_motor_motion_complete()
 
     def move_motor_c_by(self, distance: float) -> None:
-        """Moves motor B by distance given in micro meters"""
+        """
+        Moves motor B by distance given in micro meters
+        """
         c = self.controller.motor_c
 
         d = _convert_micro_meter_to_quadrature_counts(distance)
