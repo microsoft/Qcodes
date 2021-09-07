@@ -121,6 +121,8 @@ class VectorMode(InstrumentChannel):
         """
         super().__init__(parent, name, **kwargs)
         self._plane = name
+        self._vector_position_validator = Ints(min_value=-2147483648,
+                                               max_value=2147483647)
 
         self.add_parameter(
             "coordinate_system",
@@ -143,7 +145,7 @@ class VectorMode(InstrumentChannel):
         self.add_parameter(
             "vector_acceleration",
             get_cmd="VA ?",
-            get_parser=int,
+            get_parser=lambda s: int(float(s)),
             set_cmd="VA {}",
             vals=Multiples(min_value=1024, max_value=1073740800, divisor=1024),
             unit="counts/sec2",
@@ -153,7 +155,7 @@ class VectorMode(InstrumentChannel):
         self.add_parameter(
             "vector_deceleration",
             get_cmd="VD ?",
-            get_parser=int,
+            get_parser=lambda s: int(float(s)),
             set_cmd="VD {}",
             vals=Multiples(min_value=1024, max_value=1073740800, divisor=1024),
             unit="counts/sec2",
@@ -163,7 +165,7 @@ class VectorMode(InstrumentChannel):
         self.add_parameter(
             "vector_speed",
             get_cmd="VS ?",
-            get_parser=int,
+            get_parser=lambda s: int(float(s)),
             set_cmd="VS {}",
             vals=Multiples(min_value=2, max_value=15000000, divisor=2),
             unit="counts/sec",
@@ -175,7 +177,7 @@ class VectorMode(InstrumentChannel):
         """
         parses the the current active coordinate system
         """
-        if int(val):
+        if int(float(val)):
             return "T"
         else:
             return "S"
@@ -191,6 +193,9 @@ class VectorMode(InstrumentChannel):
         sets the final vector position for the motion considering current
         position as the origin
         """
+        self._vector_position_validator.validate(first_coord)
+        self._vector_position_validator.validate(second_coord)
+
         self.write(f"VP {first_coord},{second_coord}")
 
     def vector_seq_end(self) -> None:
