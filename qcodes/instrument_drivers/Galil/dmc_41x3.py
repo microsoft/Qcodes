@@ -706,16 +706,16 @@ class Arm:
                 "Acceleration and deceleration must be a multiple of 256."
             )
 
-        self.speed = self._convert_micro_meter_to_quadrature_counts(speed)
+        self.speed = _convert_micro_meter_to_quadrature_counts(speed)
         self.acceleration = \
-            self._convert_micro_meter_to_quadrature_counts(acceleration)
+            _convert_micro_meter_to_quadrature_counts(acceleration)
         self.deceleration = \
-            self._convert_micro_meter_to_quadrature_counts(deceleration)
+            _convert_micro_meter_to_quadrature_counts(deceleration)
 
     def set_pick_up_distance(self, distance: float = 3000) -> None:
 
         self._arm_pick_up_dis = \
-            self._convert_micro_meter_to_quadrature_counts(distance)
+            _convert_micro_meter_to_quadrature_counts(distance)
 
     def set_left_bottom_position(self) -> None:
 
@@ -781,7 +781,7 @@ class Arm:
         """Moves motor A by distance given in micro meters"""
         a = self.controller.motor_a
 
-        d = self._convert_micro_meter_to_quadrature_counts(distance)
+        d = _convert_micro_meter_to_quadrature_counts(distance)
 
         a.relative_position(d)
         a.speed(self.speed)
@@ -795,7 +795,7 @@ class Arm:
         """Moves motor B by distance given in micro meters"""
         b = self.controller.motor_b
 
-        d = self._convert_micro_meter_to_quadrature_counts(distance)
+        d = _convert_micro_meter_to_quadrature_counts(distance)
 
         b.relative_position(d)
         b.speed(self.speed)
@@ -809,7 +809,7 @@ class Arm:
         """Moves motor B by distance given in micro meters"""
         c = self.controller.motor_c
 
-        d = self._convert_micro_meter_to_quadrature_counts(distance)
+        d = _convert_micro_meter_to_quadrature_counts(distance)
 
         c.relative_position(d)
         c.speed(self.speed)
@@ -818,10 +818,6 @@ class Arm:
         c.servo_here()
         c.begin()
         c.wait_till_motor_motion_complete()
-
-    def _convert_micro_meter_to_quadrature_counts(self, val: float) -> int:
-
-        return int(20 * val)
 
     def _setup_motion(self,
                       rel_vec: np.ndarray,
@@ -1050,3 +1046,7 @@ class Arm:
 
         pos = self.controller.absolute_position()
         self.controller.motor_c.reverse_sw_limit(pos["C"])
+
+def _convert_micro_meter_to_quadrature_counts(val: float) -> int:
+
+    return int(20 * val)
