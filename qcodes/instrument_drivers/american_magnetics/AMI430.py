@@ -758,13 +758,6 @@ class AMI430_3D(Instrument):
         self.vector_ramp_rate.unit = common_ramp_rate_units
         return val
 
-    def _get_measured_field_vector(self) -> FieldVector:
-        return FieldVector(
-            x=self._instrument_x.field(),
-            y=self._instrument_y.field(),
-            z=self._instrument_z.field(),
-        )
-
     def ramp_simultaneously(self, setpoint: FieldVector, duration: float) -> None:
         """
         Ramp all axes simultaneously to the given setpoint and in the given time
@@ -1035,15 +1028,20 @@ class AMI430_3D(Instrument):
             msg = 'This magnet doesnt belong to its specified parent {}'
             raise NameError(msg.format(self))
 
+    def _get_measured_field_vector(self) -> FieldVector:
+        return FieldVector(
+            x=self._instrument_x.field(),
+            y=self._instrument_y.field(),
+            z=self._instrument_z.field(),
+        )
+
     def _get_measured(
             self,
             *names: str
     ) -> Union[numbers.Real, List[numbers.Real]]:
+        measured_field_vector = self._get_measured_field_vector()
 
-        x = self._instrument_x.field()
-        y = self._instrument_y.field()
-        z = self._instrument_z.field()
-        measured_values = FieldVector(x=x, y=y, z=z).get_components(*names)
+        measured_values = measured_field_vector.get_components(*names)
 
         # Convert angles from radians to degrees
         d = dict(zip(names, measured_values))
