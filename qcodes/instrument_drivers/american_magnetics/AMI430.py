@@ -852,7 +852,7 @@ class AMI430_3D(Instrument):
     ) -> Tuple[float, float, float]:
         delta_field = setpoint - start
         ramp_rate_3d = delta_field / delta_field.norm() * vector_ramp_rate
-        return ramp_rate_3d["x"], ramp_rate_3d["y"], ramp_rate_3d["z"]
+        return abs(ramp_rate_3d["x"]), abs(ramp_rate_3d["y"]), abs(ramp_rate_3d["z"])
 
     def _raise_if_not_same_field_and_ramp_rate_units(self) -> Tuple[str, str]:
         instruments = (self._instrument_x, self._instrument_y, self._instrument_z)
