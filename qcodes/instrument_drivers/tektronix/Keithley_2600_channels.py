@@ -208,6 +208,7 @@ class MeasurementStatus(StrEnum):
     VOLTAGE_COMPLIANCE_ERROR = 'Reached voltage compliance limit.'
     VOLTAGE_AND_CURRENT_COMPLIANCE_ERROR = 'Reached both voltage and current compliance limits.'
     NORMAL = 'No error occured.'
+    COMPLIANCE_ERROR = 'Reached compliance limit.'  # deprecated, dont use it. It exists only for backwards compatibility
 
 
 _from_bits_tuple_to_status = {
