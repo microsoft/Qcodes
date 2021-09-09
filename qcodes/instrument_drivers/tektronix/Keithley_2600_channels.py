@@ -204,8 +204,19 @@ class MeasurementStatus(StrEnum):
     """
     Keeps track of measurement status.
     """
-    COMPLIANCE_ERROR = 'Reached compliance limit.'
+    CURRENT_COMPLIANCE_ERROR = 'Reached current compliance limit.'
+    VOLTAGE_COMPLIANCE_ERROR = 'Reached voltage compliance limit.'
+    VOLTAGE_AND_CURRENT_COMPLIANCE_ERROR = 'Reached both voltage and current compliance limits.'
     NORMAL = 'No error occured.'
+    COMPLIANCE_ERROR = 'Reached compliance limit.'  # deprecated, dont use it. It exists only for backwards compatibility
+
+
+_from_bits_tuple_to_status = {
+    (0, 0): MeasurementStatus.NORMAL,
+    (1, 0): MeasurementStatus.VOLTAGE_COMPLIANCE_ERROR,
+    (0, 1): MeasurementStatus.CURRENT_COMPLIANCE_ERROR,
+    (1, 1): MeasurementStatus.VOLTAGE_AND_CURRENT_COMPLIANCE_ERROR,
+}
 
 
 class _ParameterWithStatus(Parameter):
@@ -220,17 +231,15 @@ class _ParameterWithStatus(Parameter):
 
     @staticmethod
     def _parse_response(data: str) -> Tuple[float, MeasurementStatus]:
-
         value, meas_status = data.split('\t')
 
         status_bits = [int(i) for i in bin(
             int(float(meas_status))
         ).replace('0b', '').zfill(16)[::-1]]
 
-        if status_bits[1]:
-            return float(value), MeasurementStatus.COMPLIANCE_ERROR
-        else:
-            return float(value), MeasurementStatus.NORMAL
+        status = _from_bits_tuple_to_status[(status_bits[0], status_bits[1])]
+
+        return float(value), status
 
     def snapshot_base(self, update: Optional[bool] = True,
                       params_to_skip_update: Optional[Sequence[str]] = None
