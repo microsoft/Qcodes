@@ -75,6 +75,9 @@ target/
 *.hdf5
 *.json
 
+venv/*
+!devcontainer.json
+
 # Temporary files
 *.md~
 *.py~
