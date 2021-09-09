@@ -210,6 +210,14 @@ class MeasurementStatus(StrEnum):
     NORMAL = 'No error occured.'
 
 
+_from_bits_tuple_to_status = {
+    (0, 0): MeasurementStatus.NORMAL,
+    (1, 0): MeasurementStatus.VOLTAGE_COMPLIANCE_ERROR,
+    (0, 1): MeasurementStatus.CURRENT_COMPLIANCE_ERROR,
+    (1, 1): MeasurementStatus.VOLTAGE_AND_CURRENT_COMPLIANCE_ERROR,
+}
+
+
 class _ParameterWithStatus(Parameter):
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
@@ -219,13 +227,6 @@ class _ParameterWithStatus(Parameter):
     @property
     def measurement_status(self) -> Optional[MeasurementStatus]:
         return self._measurement_status
-
-    _from_bits_tuple_to_status = {
-        (0, 0): MeasurementStatus.NORMAL,
-        (1, 0): MeasurementStatus.VOLTAGE_COMPLIANCE_ERROR,
-        (0, 1): MeasurementStatus.CURRENT_COMPLIANCE_ERROR,
-        (1, 1): MeasurementStatus.VOLTAGE_AND_CURRENT_COMPLIANCE_ERROR,
-    }
 
     @staticmethod
     def _parse_response(data: str) -> Tuple[float, MeasurementStatus]:
