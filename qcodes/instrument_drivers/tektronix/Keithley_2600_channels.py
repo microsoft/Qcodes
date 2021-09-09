@@ -236,7 +236,7 @@ class _ParameterWithStatus(Parameter):
             int(float(meas_status))
         ).replace('0b', '').zfill(16)[::-1]]
 
-        status = _from_bits_tuple_to_status[tuple(status_bits[0:2])]
+        status = _from_bits_tuple_to_status[(status_bits[0], status_bits[1])]
 
         return float(value), status
 
