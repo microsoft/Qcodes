@@ -24,7 +24,7 @@ It would be helpful to provide such information:
 
 **operating system**
 
-If you are on a released version:
+If you are using a released version of qcodes (recommended):
 **qcodes version**
 
 If you are using the development version of qcodes:
