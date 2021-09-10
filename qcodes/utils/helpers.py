@@ -34,7 +34,6 @@ from typing import (
 )
 
 import numpy as np
-import uncertainties
 
 if TYPE_CHECKING:
     from PyQt5.QtWidgets import QMainWindow
@@ -80,6 +79,8 @@ class NumpyJSONEncoder(json.JSONEncoder):
         * Other objects which cannot be serialized get converted to their
           string representation (using the ``str`` function).
         """
+        import uncertainties
+
         if isinstance(obj, np.generic) \
                 and not isinstance(obj, np.complexfloating):
             # for numpy scalars
