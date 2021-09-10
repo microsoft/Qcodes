@@ -24,9 +24,9 @@ It would be helpful to provide such information:
 
 **operating system**
 
+If you are on a released version:
+**qcodes version**
+
 If you are using the development version of qcodes:
 **qcodes branch** 
 **qcodes commit**
-
-If you are on a released version:
-**qcodes version**
