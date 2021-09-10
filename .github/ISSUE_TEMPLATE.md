@@ -28,5 +28,5 @@ If you are using a released version of qcodes (recommended):
 **qcodes version**
 
 If you are using the development version of qcodes:
-**qcodes branch** 
+**qcodes branch**
 **qcodes commit**

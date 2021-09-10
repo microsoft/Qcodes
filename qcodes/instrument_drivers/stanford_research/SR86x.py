@@ -20,7 +20,7 @@ class SR86xBufferReadout(ArrayParameter):
         name: Name of the parameter.
         instrument: The instrument to add this parameter to.
     """
-    def __init__(self, name: str, instrument: 'SR86x') -> None:
+    def __init__(self, name: str, instrument: 'SR86x', **kwargs: Any) -> None:
 
         unit = "deg"
         if name in ["X", "Y", "R"]:
@@ -34,7 +34,8 @@ class SR86xBufferReadout(ArrayParameter):
                          setpoint_units=('s',),
                          instrument=instrument,
                          docstring='Holds an acquired (part of the) data '
-                                   'buffer of one channel.')
+                                   'buffer of one channel.',
+                         **kwargs)
 
         self._capture_data: Optional[np.ndarray] = None
 
