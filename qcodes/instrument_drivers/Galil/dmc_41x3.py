@@ -45,7 +45,7 @@ class GalilMotionController(Instrument):
         """
         Open connection to Galil motion controller. This method assumes that
         the initial mapping of Galil motion controller's hardware's
-        to an IP address is done using GDK and the IP address in burned in.
+        to an IP address is done using GDK and the IP address is burned in.
         This applies that Motion controller no more requests for an IP address
         and a connection to the Motion controller can be done by the IP
         address burned in.
