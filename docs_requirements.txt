@@ -9,7 +9,7 @@ certifi==2021.5.30
 cffi==1.14.6
 chardet==4.0.0
 colorama==0.4.4
-decorator==5.0.9
+decorator==5.1.0
 defusedxml==0.7.1
 docutils==0.16
 entrypoints==0.3
