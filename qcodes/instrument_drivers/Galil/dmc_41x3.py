@@ -393,7 +393,7 @@ class Motor(InstrumentChannel):
 
     def begin(self) -> None:
         """
-        begins motion of the motor and waits until motor stops moving
+        begins motion of the motor (returns immediately)
         """
         self.write(f"BG {self._axis}")
 
