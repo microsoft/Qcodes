@@ -815,10 +815,10 @@ class Arm:
         motion_vec = -1 * self._a
         self._setup_motion(rel_vec=motion_vec, d=self.norm_a, speed=self.speed)
         self._move()
+        self._put_down()
+
         self.current_row = 1
         self.current_pad = 1
-
-        self._put_down()
 
     def move_to_next_row(self) -> None:
 
