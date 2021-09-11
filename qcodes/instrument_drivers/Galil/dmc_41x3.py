@@ -44,7 +44,7 @@ class GalilMotionController(Instrument):
     def open(self) -> None:
         """
         Open connection to Galil motion controller. This method assumes that
-        the initial mapping of Galil motion controller's hardware's mapping
+        the initial mapping of Galil motion controller's hardware's
         to an IP address is done using GDK and the IP address in burned in.
         This applies that Motion controller no more requests for an IP address
         and a connection to the Motion controller can be done by the IP
