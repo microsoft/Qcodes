@@ -150,7 +150,7 @@ class VectorMode(InstrumentChannel):
             set_cmd="VA {}",
             vals=Multiples(min_value=1024, max_value=1073740800, divisor=1024),
             unit="counts/sec2",
-            docstring="sets and gets the defined vector's " "acceleration",
+            docstring="sets and gets the defined vector's acceleration",
         )
 
         self.add_parameter(
