@@ -399,7 +399,7 @@ class Motor(InstrumentChannel):
 
     def wait_till_motor_motion_complete(self) -> None:
         """
-        this method on call waits for motion to complete on the motor
+        wait for motion on the motor to complete
         """
         try:
             while int(float(self.ask(f"MG _BG{self._axis}"))):
