@@ -160,7 +160,7 @@ class VectorMode(InstrumentChannel):
             set_cmd="VD {}",
             vals=Multiples(min_value=1024, max_value=1073740800, divisor=1024),
             unit="counts/sec2",
-            docstring="sets and gets the defined vector's " "deceleration",
+            docstring="sets and gets the defined vector's deceleration",
         )
 
         self.add_parameter(
