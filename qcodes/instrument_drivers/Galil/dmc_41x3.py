@@ -596,7 +596,7 @@ class Arm:
         self.acceleration: int
         self.deceleration: int
 
-        self._arm_pick_up_dis: int
+        self._arm_pick_up_distance: int
 
         self._target: np.ndarray
 
