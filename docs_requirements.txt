@@ -16,7 +16,7 @@ entrypoints==0.3
 idna==3.2
 imagesize==1.2.0
 importlib-metadata==4.6.3; python_version<'3.8'
-ipykernel==6.4.0
+ipykernel==6.4.1
 ipython==7.27.0
 ipython-genutils==0.2.0
 ipywidgets==7.6.4
