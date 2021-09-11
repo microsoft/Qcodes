@@ -591,7 +591,7 @@ class Arm:
         self.inter_row_dis: float
         self.inter_pad_dis: float
 
-        # arm kinematics
+        # arm kinematics in the units of quandrature counts
         self.speed: int
         self.acceleration: int
         self.deceleration: int
