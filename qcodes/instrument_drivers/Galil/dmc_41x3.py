@@ -410,7 +410,7 @@ class Motor(InstrumentChannel):
 
     def error_magnitude(self) -> float:
         """
-        gives the magnitude of error, in drive step counts, for axes
+        gives the magnitude of error, in drive step counts, for this motor
 
         a step count is directly proportional to the micro-stepping
         resolution of the stepper drive.
