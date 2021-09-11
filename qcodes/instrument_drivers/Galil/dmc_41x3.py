@@ -642,15 +642,7 @@ class Arm:
 
     def _calculate_ortho_vector(self) -> None:
 
-        a = np.array(
-            tuple(
-                map(
-                    lambda i, j: i - j,
-                    self.right_top_position,
-                    self.left_bottom_position,
-                )
-            )
-        )
+        a = np.asarray(self.right_top_position) - np.asarray(self.left_bottom_position)
         self.norm_a = np.linalg.norm(a)
         self._a = a / self.norm_a
 
