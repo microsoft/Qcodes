@@ -98,7 +98,8 @@ class GalilMotionController(Instrument):
 
     def motion_complete(self, axes: str) -> None:
         """
-        Wait for motion to complete for given axes
+        Wait for motion to complete for given axes, e.g. ``"A"``
+        for axis A, ``"ABC"`` for axes A, B, and C
         """
         self.g.GMotionComplete(axes)
 
