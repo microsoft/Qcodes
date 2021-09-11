@@ -221,7 +221,7 @@ class VectorMode(InstrumentChannel):
 
 class Motor(InstrumentChannel):
     """
-    Class to control motors independently
+    Class to control a single motor (independent of possible other motors)
     """
 
     def __init__(self,
