@@ -176,7 +176,7 @@ class VectorMode(InstrumentChannel):
     @staticmethod
     def _parse_coordinate_system_active(val: str) -> str:
         """
-        parses the the current active coordinate system
+        parses the current active coordinate system
         """
         if int(float(val)):
             return "T"
