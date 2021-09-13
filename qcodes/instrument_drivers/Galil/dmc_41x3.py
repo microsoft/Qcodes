@@ -587,12 +587,13 @@ class Arm:
         """
         self.controller = controller
 
-        # initialization
+        # initialization (all these points will have values in quadrature
+        # counts)
         self._left_bottom_position: Tuple[int, int, int]
         self._left_top_position: Tuple[int, int, int]
         self._right_top_position: Tuple[int, int, int]
 
-        # motion directions
+        # motion directions (all these values are in quadrature counts)
         self._a: np.ndarray  # right_top - left_bottom
         self._b: np.ndarray  # left_top - left_bottom
         self._c: np.ndarray  # right_top - left_top
@@ -601,7 +602,7 @@ class Arm:
         self.norm_b: float
         self.norm_c: float
 
-        # eqn of the chip plane
+        # eqn of the chip plane (in quadrature counts)
         self._plane_eqn: np.ndarray
 
         # current vars
@@ -611,13 +612,13 @@ class Arm:
         # chip details
         self.rows: int
         self.pads: int
-        self.inter_row_dis: float
-        self.inter_pad_dis: float
+        self.inter_row_distance: float  # in quadrature counts
+        self.inter_pad_distance: float  # in quadrature counts
 
-        # arm kinematics in the units of quandrature counts
-        self.speed: int
-        self.acceleration: int
-        self.deceleration: int
+        # arm kinematics (in the units of quadrature counts)
+        self._speed: int
+        self._acceleration: int
+        self._deceleration: int
 
         self._arm_pick_up_distance: int
 
@@ -635,15 +636,15 @@ class Arm:
                 "Acceleration and deceleration must be a multiple of 256."
             )
 
-        self.speed = _convert_micro_meter_to_quadrature_counts(speed)
-        self.acceleration = \
+        self._speed = _convert_micro_meter_to_quadrature_counts(speed)
+        self._acceleration = \
             _convert_micro_meter_to_quadrature_counts(acceleration)
-        self.deceleration = \
+        self._deceleration = \
             _convert_micro_meter_to_quadrature_counts(deceleration)
 
     def set_pick_up_distance(self, distance: float = 3000) -> None:
 
-        self._arm_pick_up_dis = \
+        self._arm_pick_up_distance = \
             _convert_micro_meter_to_quadrature_counts(distance)
 
     def set_left_bottom_position(self) -> None:
@@ -708,9 +709,9 @@ class Arm:
         d = _convert_micro_meter_to_quadrature_counts(distance)
 
         a.relative_position(d)
-        a.speed(self.speed)
-        a.acceleration(self.acceleration)
-        a.deceleration(self.deceleration)
+        a.speed(self._speed)
+        a.acceleration(self._acceleration)
+        a.deceleration(self._deceleration)
         a.servo_here()
         a.begin()
         a.wait_till_motor_motion_complete()
@@ -724,9 +725,9 @@ class Arm:
         d = _convert_micro_meter_to_quadrature_counts(distance)
 
         b.relative_position(d)
-        b.speed(self.speed)
-        b.acceleration(self.acceleration)
-        b.deceleration(self.deceleration)
+        b.speed(self._speed)
+        b.acceleration(self._acceleration)
+        b.deceleration(self._deceleration)
         b.servo_here()
         b.begin()
         b.wait_till_motor_motion_complete()
@@ -740,9 +741,9 @@ class Arm:
         d = _convert_micro_meter_to_quadrature_counts(distance)
 
         c.relative_position(d)
-        c.speed(self.speed)
-        c.acceleration(self.acceleration)
-        c.deceleration(self.deceleration)
+        c.speed(self._speed)
+        c.acceleration(self._acceleration)
+        c.deceleration(self._deceleration)
         c.servo_here()
         c.begin()
         c.wait_till_motor_motion_complete()
@@ -784,20 +785,20 @@ class Arm:
 
         motor_a.relative_position(a)
         motor_a.speed(sp_a)
-        motor_a.acceleration(self.acceleration)
-        motor_a.deceleration(self.deceleration)
+        motor_a.acceleration(self._acceleration)
+        motor_a.deceleration(self._deceleration)
         motor_a.servo_here()
 
         motor_b.relative_position(b)
         motor_b.speed(sp_b)
-        motor_b.acceleration(self.acceleration)
-        motor_b.deceleration(self.deceleration)
+        motor_b.acceleration(self._acceleration)
+        motor_b.deceleration(self._deceleration)
         motor_b.servo_here()
 
         motor_c.relative_position(c)
         motor_c.speed(sp_c)
-        motor_c.acceleration(self.acceleration)
-        motor_c.deceleration(self.deceleration)
+        motor_c.acceleration(self._acceleration)
+        motor_c.deceleration(self._deceleration)
         motor_c.servo_here()
 
     def _move(self) -> None:
@@ -807,8 +808,8 @@ class Arm:
     def _pick_up(self) -> None:
 
         self._setup_motion(rel_vec=self._n,
-                           d=self._arm_pick_up_dis,
-                           speed=self.speed)
+                           d=self._arm_pick_up_distance,
+                           speed=self._speed)
         self._move()
 
     def _put_down(self) -> None:
@@ -829,7 +830,7 @@ class Arm:
             )
         d = abs(sum(self._plane_eqn * current)) / denominator
 
-        self._setup_motion(rel_vec=motion_vec, d=d, speed=self.speed)
+        self._setup_motion(rel_vec=motion_vec, d=d, speed=self._speed)
         self._move()
 
     def move_towards_left_bottom_position(self) -> None:
@@ -837,7 +838,7 @@ class Arm:
         self._pick_up()
 
         motion_vec = -1 * self._a
-        self._setup_motion(rel_vec=motion_vec, d=self.norm_a, speed=self.speed)
+        self._setup_motion(rel_vec=motion_vec, d=self.norm_a, speed=self._speed)
         self._move()
         self._put_down()
 
@@ -857,8 +858,8 @@ class Arm:
         self._pick_up()
 
         self._setup_motion(rel_vec=self._b,
-                           d=self.inter_row_dis,
-                           speed=self.speed)
+                           d=self.inter_row_distance,
+                           speed=self._speed)
         self._move()
 
         self._put_down()
@@ -874,13 +875,14 @@ class Arm:
         self.current_row = 1
         self.current_pad = self.current_pad + 1
 
-        motion_vec = -1 * self._b * self.norm_b + self._c * self.inter_pad_dis
+        motion_vec = -1 * self._b * self.norm_b + self._c * \
+                     self.inter_pad_distance
         norm = np.linalg.norm(motion_vec)
         motion_vec_cap = motion_vec / norm
 
         self._pick_up()
 
-        self._setup_motion(rel_vec=motion_vec_cap, d=norm, speed=self.speed)
+        self._setup_motion(rel_vec=motion_vec_cap, d=norm, speed=self._speed)
         self._move()
 
         self._put_down()
@@ -895,7 +897,7 @@ class Arm:
 
         sign = 1
         assert self.current_row is not None
-        d = (num - self.current_row) * self.inter_row_dis
+        d = (num - self.current_row) * self.inter_row_distance
 
         if d == 0:
             raise RuntimeError(
@@ -908,7 +910,7 @@ class Arm:
 
         self._pick_up()
 
-        self._setup_motion(rel_vec=sign * self._b, d=d, speed=self.speed)
+        self._setup_motion(rel_vec=sign * self._b, d=d, speed=self._speed)
         self._move()
 
         self._put_down()
@@ -925,7 +927,7 @@ class Arm:
 
         sign = 1
         assert self.current_pad is not None
-        d = (num - self.current_pad) * self.inter_pad_dis
+        d = (num - self.current_pad) * self.inter_pad_distance
 
         if d == 0:
             raise RuntimeError(
@@ -938,7 +940,7 @@ class Arm:
 
         self._pick_up()
 
-        self._setup_motion(rel_vec=sign * self._c, d=d, speed=self.speed)
+        self._setup_motion(rel_vec=sign * self._c, d=d, speed=self._speed)
         self._move()
 
         self._put_down()
