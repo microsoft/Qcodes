@@ -564,7 +564,18 @@ class DMC4133Controller(GalilMotionController):
 
 class Arm:
     """
-    Module to control probe arm
+    Module to control probe arm. It is assumed that the chip to be probed has
+    one or more rows with each row having one or more pads. Design of the
+    chip to be probed should resemble the following:
+            |--------------------------|
+            |--------------------------|
+            |--------------------------|
+            |--------------------------|
+            |--------------------------|
+    Needle head for the arm in assumed to have rows of needles which is a
+    divisor of the number of rows in the chip and number of needles in each
+    row of the needle head is a divisor for the number of pads in each row
+    of the chip.
     """
 
     def __init__(self, controller: DMC4133Controller) -> None:
