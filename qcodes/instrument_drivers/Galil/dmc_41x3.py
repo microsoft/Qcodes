@@ -132,7 +132,10 @@ class VectorMode(InstrumentChannel):
             get_parser=self._parse_coordinate_system_active,
             set_cmd="CA {}",
             vals=Enum("S", "T"),
-            docstring="sets coordinate system for the motion",
+            docstring="activates coordinate system for the motion. Two "
+                      " coordinate systems are possible with values "
+                      "'S' and 'T'. All vector mode commands will apply to "
+                      "the active coordinate system.",
         )
 
         self.add_parameter(
