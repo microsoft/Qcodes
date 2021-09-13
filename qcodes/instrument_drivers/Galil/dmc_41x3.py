@@ -763,6 +763,9 @@ class Arm:
                       rel_vec: np.ndarray,
                       d: float,
                       speed: float) -> None:
+        """
+        sets up motion parameters. all arguments have units in quadrature counts
+        """
 
         pos = self.controller.absolute_position()
 
