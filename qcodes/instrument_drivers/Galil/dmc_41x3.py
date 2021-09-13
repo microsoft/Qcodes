@@ -588,9 +588,9 @@ class Arm:
         self.controller = controller
 
         # initialization
-        self.left_bottom_position: Tuple[int, int, int]
-        self.left_top_position: Tuple[int, int, int]
-        self.right_top_position: Tuple[int, int, int]
+        self._left_bottom_position: Tuple[int, int, int]
+        self._left_top_position: Tuple[int, int, int]
+        self._right_top_position: Tuple[int, int, int]
 
         # motion directions
         self._a: np.ndarray  # right_top - left_bottom
@@ -649,23 +649,24 @@ class Arm:
     def set_left_bottom_position(self) -> None:
 
         pos = self.controller.absolute_position()
-        self.left_bottom_position = (pos["A"], pos["B"], pos["C"])
+        self._left_bottom_position = (pos["A"], pos["B"], pos["C"])
 
     def set_left_top_position(self) -> None:
 
         pos = self.controller.absolute_position()
-        self.left_top_position = (pos["A"], pos["B"], pos["C"])
+        self._left_top_position = (pos["A"], pos["B"], pos["C"])
 
     def set_right_top_position(self) -> None:
 
         pos = self.controller.absolute_position()
-        self.right_top_position = (pos["A"], pos["B"], pos["C"])
+        self._right_top_position = (pos["A"], pos["B"], pos["C"])
 
         self._calculate_ortho_vector()
 
     def _calculate_ortho_vector(self) -> None:
 
-        a = np.asarray(self.right_top_position) - np.asarray(self.left_bottom_position)
+        a = np.asarray(self._right_top_position) - np.asarray(
+            self._left_bottom_position)
         self.norm_a = np.linalg.norm(a)
         self._a = a / self.norm_a
 
@@ -673,8 +674,8 @@ class Arm:
             tuple(
                 map(
                     lambda i, j: i - j,
-                    self.left_top_position,
-                    self.left_bottom_position,
+                    self._left_top_position,
+                    self._left_bottom_position,
                 )
             )
         )
@@ -684,8 +685,8 @@ class Arm:
         c = np.array(
             tuple(
                 map(lambda i, j: i - j,
-                    self.right_top_position,
-                    self.left_top_position)
+                    self._right_top_position,
+                    self._left_top_position)
             )
         )
         self.norm_c = np.linalg.norm(c)
@@ -695,7 +696,7 @@ class Arm:
         norm_n = np.linalg.norm(n)
         self._n = n / norm_n
 
-        intercept = np.array(sum(-1 * self._n * self.left_bottom_position))
+        intercept = np.array(sum(-1 * self._n * self._left_bottom_position))
         self._plane_eqn = np.append(self._n, intercept)
 
     def move_motor_a_by(self, distance: float) -> None:
