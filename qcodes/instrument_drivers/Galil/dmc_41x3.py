@@ -635,7 +635,8 @@ class Arm:
 
         if acceleration % 256 != 0 or deceleration % 256 != 0:
             raise RuntimeError(
-                "Acceleration and deceleration must be a multiple of 256."
+                "Acceleration and deceleration must be a multiple of 256. "
+                "Units are micro meters/sec^2"
             )
 
         self._speed = _convert_micro_meter_to_quadrature_counts(speed)
