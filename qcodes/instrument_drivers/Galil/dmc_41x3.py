@@ -604,8 +604,8 @@ class Arm:
         self._plane_eqn: np.ndarray
 
         # current vars
-        self.current_row: Optional[int] = None
-        self.current_pad: Optional[int] = None
+        self._current_row: Optional[int] = None
+        self._current_pad: Optional[int] = None
 
         # chip details
         self.rows: int
@@ -621,6 +621,14 @@ class Arm:
         self._arm_pick_up_distance: int
 
         self._target: np.ndarray
+
+    @property
+    def current_row(self) -> Optional[int]:
+        return self._current_row
+
+    @property
+    def current_pad(self) -> Optional[int]:
+        return self._current_pad
 
     def set_arm_kinematics(
         self,
@@ -856,15 +864,15 @@ class Arm:
         self._move()
         self._put_down()
 
-        self.current_row = 1
-        self.current_pad = 1
+        self._current_row = 1
+        self._current_pad = 1
 
     def move_to_next_row(self) -> None:
 
-        if self.current_row is None or self.current_pad is None:
+        if self._current_row is None or self._current_pad is None:
             raise RuntimeError("Current position unknown.")
 
-        if self.current_row == self.rows:
+        if self._current_row == self.rows:
             raise RuntimeError("Cannot move further")
 
         self._pick_up()
@@ -876,14 +884,14 @@ class Arm:
 
         self._put_down()
 
-        self.current_row = self.current_row + 1
+        self._current_row = self._current_row + 1
 
     def move_to_begin_row_pad_from_end_row_last_pad(self) -> None:
 
-        if self.current_row is None or self.current_pad is None:
+        if self._current_row is None or self._current_pad is None:
             raise RuntimeError("Current position unknown.")
 
-        if self.current_pad == self.pads:
+        if self._current_pad == self.pads:
             raise RuntimeError("Cannot move further")
 
         motion_vec = -1 * self._b * self.norm_b + self._c * \
@@ -898,8 +906,8 @@ class Arm:
 
         self._put_down()
 
-        self.current_row = 1
-        self.current_pad = self.current_pad + 1
+        self._current_row = 1
+        self._current_pad = self._current_pad + 1
 
     def move_to_row(self, num: int) -> None:
 
@@ -910,13 +918,13 @@ class Arm:
             )
 
         sign = 1
-        assert self.current_row is not None
-        d = (num - self.current_row) * self.inter_row_distance
+        assert self._current_row is not None
+        d = (num - self._current_row) * self.inter_row_distance
 
         if d == 0:
             raise RuntimeError(
                 f"You are at the row where you want to be. Current row number "
-                f"is {self.current_row}."
+                f"is {self._current_row}."
             )
         if d < 0:
             sign = -1
@@ -929,7 +937,7 @@ class Arm:
 
         self._put_down()
 
-        self.current_row = num
+        self._current_row = num
 
     def move_to_pad(self, num: int) -> None:
 
@@ -940,13 +948,13 @@ class Arm:
             )
 
         sign = 1
-        assert self.current_pad is not None
-        d = (num - self.current_pad) * self.inter_pad_distance
+        assert self._current_pad is not None
+        d = (num - self._current_pad) * self.inter_pad_distance
 
         if d == 0:
             raise RuntimeError(
                 f"You are at the pad where you want to be. Current pad "
-                f"number is {self.current_pad}."
+                f"number is {self._current_pad}."
             )
         if d < 0:
             sign = -1
@@ -959,7 +967,7 @@ class Arm:
 
         self._put_down()
 
-        self.current_pad = num
+        self._current_pad = num
 
     def set_motor_a_forward_limit(self) -> None:
 
