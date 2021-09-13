@@ -589,9 +589,9 @@ class Arm:
 
         # initialization (all these points will have values in quadrature
         # counts)
-        self._left_bottom_position: Tuple[int, int, int]
-        self._left_top_position: Tuple[int, int, int]
-        self._right_top_position: Tuple[int, int, int]
+        self._left_bottom_position: Optional[Tuple[int, int, int]] = None
+        self._left_top_position: Optional[Tuple[int, int, int]] = None
+        self._right_top_position: Optional[Tuple[int, int, int]] = None
 
         # motion directions (all these values are in quadrature counts)
         self._a: np.ndarray  # right_top - left_bottom
@@ -652,10 +652,14 @@ class Arm:
         pos = self.controller.absolute_position()
         self._left_bottom_position = (pos["A"], pos["B"], pos["C"])
 
+        self._calculate_ortho_vector()
+
     def set_left_top_position(self) -> None:
 
         pos = self.controller.absolute_position()
         self._left_top_position = (pos["A"], pos["B"], pos["C"])
+
+        self._calculate_ortho_vector()
 
     def set_right_top_position(self) -> None:
 
@@ -665,6 +669,10 @@ class Arm:
         self._calculate_ortho_vector()
 
     def _calculate_ortho_vector(self) -> None:
+
+        if self._left_bottom_position is None or self._left_top_position is \
+                None or self._right_top_position is None:
+            return
 
         a = np.asarray(
             self._right_top_position
