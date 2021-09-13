@@ -628,6 +628,10 @@ class Arm:
         acceleration: int = 2048,
         deceleration: int = 2048
     ) -> None:
+        """
+        sets the arm kinematics values for speed, acceleration and
+        deceleration in micro meters/sec and micro meters/sec^2 respectively
+        """
 
         if acceleration % 256 != 0 or deceleration % 256 != 0:
             raise RuntimeError(
@@ -641,6 +645,9 @@ class Arm:
             _convert_micro_meter_to_quadrature_counts(deceleration)
 
     def set_pick_up_distance(self, distance: float = 3000) -> None:
+        """
+        sets pick up distance in micrometers for the arm
+        """
 
         self._arm_pick_up_distance = \
             _convert_micro_meter_to_quadrature_counts(distance)
@@ -856,8 +863,6 @@ class Arm:
         if self.current_row == self.rows:
             raise RuntimeError("Cannot move further")
 
-        self.current_row = self.current_row + 1
-
         self._pick_up()
 
         self._setup_motion(rel_vec=self._b,
@@ -867,6 +872,8 @@ class Arm:
 
         self._put_down()
 
+        self.current_row = self.current_row + 1
+
     def move_to_begin_row_pad_from_end_row_last_pad(self) -> None:
 
         if self.current_row is None or self.current_pad is None:
@@ -874,9 +881,6 @@ class Arm:
 
         if self.current_pad == self.pads:
             raise RuntimeError("Cannot move further")
-
-        self.current_row = 1
-        self.current_pad = self.current_pad + 1
 
         motion_vec = -1 * self._b * self.norm_b + self._c * \
                      self.inter_pad_distance
@@ -889,6 +893,9 @@ class Arm:
         self._move()
 
         self._put_down()
+
+        self.current_row = 1
+        self.current_pad = self.current_pad + 1
 
     def move_to_row(self, num: int) -> None:
 
