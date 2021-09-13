@@ -482,8 +482,6 @@ class DMC4133Controller(GalilMotionController):
         self.add_submodule("plane_bc", VectorMode(self, "BC"))
         self.add_submodule("plane_ac", VectorMode(self, "AC"))
 
-        self.connect_message()
-
     def _set_default_update_time(self) -> None:
         """
         sets sampling period to default value of 1000. sampling period affects
