@@ -40,6 +40,7 @@ class GalilMotionController(Instrument):
         self.g = gclib.py()
         self.address = address
         self.open()
+        self.connect_message()
 
     def open(self) -> None:
         """
