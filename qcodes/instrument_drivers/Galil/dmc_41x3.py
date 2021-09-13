@@ -403,12 +403,19 @@ class Motor(InstrumentChannel):
         """
         self.write(f"BG {self._axis}")
 
+    def is_in_motion(self) -> int:
+        """
+        checks if the motor is in motion or not. return 1, if motor is in
+        motion otherwise 0
+        """
+        return int(float(self.ask(f"MG _BG{self._axis}")))
+
     def wait_till_motor_motion_complete(self) -> None:
         """
         wait for motion on the motor to complete
         """
         try:
-            while int(float(self.ask(f"MG _BG{self._axis}"))):
+            while self.is_in_motion():
                 pass
         except KeyboardInterrupt:
             self.root_instrument.abort()
