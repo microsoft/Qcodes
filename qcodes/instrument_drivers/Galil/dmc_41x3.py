@@ -38,7 +38,7 @@ class GalilMotionController(Instrument):
         """
         super().__init__(name=name, **kwargs)
         self.g = gclib.py()
-        self.address = address
+        self._address = address
         self.open()
         self.connect_message()
 
@@ -51,7 +51,7 @@ class GalilMotionController(Instrument):
         and a connection to the Motion controller can be done by the IP
         address burned in.
         """
-        self.g.GOpen(self.address + " --direct -s ALL")
+        self.g.GOpen(self._address + " --direct -s ALL")
 
     def get_idn(self) -> Dict[str, Optional[str]]:
         """
