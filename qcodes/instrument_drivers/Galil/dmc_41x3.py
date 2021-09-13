@@ -139,15 +139,6 @@ class VectorMode(InstrumentChannel):
         )
 
         self.add_parameter(
-            "clear_sequence",
-            get_cmd=None,
-            set_cmd="CS {}",
-            vals=Enum("S", "T"),
-            docstring="clears vectors specified in the given "
-                      "coordinate system",
-        )
-
-        self.add_parameter(
             "vector_acceleration",
             get_cmd="VA ?",
             get_parser=lambda s: int(float(s)),
@@ -221,6 +212,17 @@ class VectorMode(InstrumentChannel):
         wait till motion ends
         """
         self.write("AM S")
+
+    def clear_sequence(self, coord_sys: str) -> None:
+        """
+        clears vectors specified in the given coordinate system
+        """
+        if coord_sys not in ['S', 'T']:
+            raise RuntimeError(f"possible coordinate systems are 'S' or 'T'. "
+                               f"you provided the following value instead: "
+                               f" '{coord_sys}'")
+
+        self.write(f"CS {coord_sys}")
 
 
 class Motor(InstrumentChannel):
