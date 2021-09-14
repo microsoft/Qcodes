@@ -630,6 +630,34 @@ class Arm:
     def current_pad(self) -> Optional[int]:
         return self._current_pad
 
+    @property
+    def left_bottom_position(self) -> Optional[Tuple[int, int, int]]:
+        return self._left_bottom_position
+
+    @property
+    def left_top_position(self) -> Optional[Tuple[int, int, int]]:
+        return self._left_top_position
+
+    @property
+    def right_top_position(self) -> Optional[Tuple[int, int, int]]:
+        return self._right_top_position
+
+    @property
+    def arm_pick_up_distance(self) -> int:
+        return self._arm_pick_up_distance
+
+    @property
+    def speed(self) -> int:
+        return self._speed
+
+    @property
+    def acceleration(self) -> int:
+        return self._acceleration
+
+    @property
+    def deceleration(self) -> int:
+        return self._deceleration
+
     def set_arm_kinematics(
         self,
         speed: int = 100,
