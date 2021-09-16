@@ -256,14 +256,14 @@ class _ParameterWithStatus(Parameter):
 
 class _MeasurementCurrentParameter(_ParameterWithStatus):
 
-    def set_raw(self, val: ParamRawDataType) -> None:
+    def set_raw(self, value: ParamRawDataType) -> None:
         assert isinstance(self.instrument, KeithleyChannel)
         assert isinstance(self.root_instrument, Keithley_2600)
 
         smu_chan = self.instrument
         channel = smu_chan.channel
 
-        smu_chan.write(f'{channel}.source.leveli={val:.12f}')
+        smu_chan.write(f'{channel}.source.leveli={value:.12f}')
 
         smu_chan._reset_measurement_statuses_of_parameters()
 
@@ -285,14 +285,14 @@ class _MeasurementCurrentParameter(_ParameterWithStatus):
 
 class _MeasurementVoltageParameter(_ParameterWithStatus):
 
-    def set_raw(self, val: ParamRawDataType) -> None:
+    def set_raw(self, value: ParamRawDataType) -> None:
         assert isinstance(self.instrument, KeithleyChannel)
         assert isinstance(self.root_instrument, Keithley_2600)
 
         smu_chan = self.instrument
         channel = smu_chan.channel
 
-        smu_chan.write(f'{channel}.source.levelv={val:.12f}')
+        smu_chan.write(f'{channel}.source.levelv={value:.12f}')
 
         smu_chan._reset_measurement_statuses_of_parameters()
 
