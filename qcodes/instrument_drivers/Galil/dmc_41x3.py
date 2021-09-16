@@ -814,10 +814,57 @@ class Arm:
         self._target = np.array([pos["A"] + a, pos["B"] + b, pos["C"] + c, 1])
 
         if np.dot(self._plane_eqn, self._target) < 0:
-            raise RuntimeError(
-                f"Cannot move to {self._target[:3]}. Target location is below "
-                f"chip plane."
-            )
+            flag = 1
+            for idx, coord in enumerate([a, b, c]):
+                temp1 = coord - 1
+                temp2 = coord + 1
+                if idx == 0:
+                    target1 = np.array(
+                        [pos["A"] + temp1, pos["B"] + b, pos["C"] + c, 1]
+                    )
+                    target2 = np.array(
+                        [pos["A"] + temp2, pos["B"] + b, pos["C"] + c, 1]
+                    )
+                elif idx == 1:
+                    target1 = np.array(
+                        [pos["A"] + a, pos["B"] + temp1, pos["C"] + c, 1]
+                    )
+                    target2 = np.array(
+                        [pos["A"] + a, pos["B"] + temp2, pos["C"] + c, 1]
+                    )
+                else:
+                    target1 = np.array(
+                        [pos["A"] + a, pos["B"] + b, pos["C"] + temp1, 1]
+                    )
+                    target2 = np.array(
+                        [pos["A"] + a, pos["B"] + b, pos["C"] + temp2, 1]
+                    )
+
+                if np.dot(self._plane_eqn, target1) >= 0:
+                    flag = 0
+                    if idx == 0:
+                        a = temp1
+                    elif idx == 1:
+                        b = temp1
+                    else:
+                        c = temp1
+                    break
+
+                if np.dot(self._plane_eqn, target2) >= 0:
+                    flag = 0
+                    if idx == 0:
+                        a = temp2
+                    elif idx == 1:
+                        b = temp2
+                    else:
+                        c = temp2
+                    break
+
+            if flag:
+                raise RuntimeError(
+                    f"Cannot move to {self._target[:3]}. Target location is "
+                    f"below chip plane."
+                )
 
         sp_a = int(np.floor(abs(rel_vec[0]) * speed))
         if sp_a % 2 != 0:
@@ -831,26 +878,41 @@ class Arm:
         if sp_c % 2 != 0:
             sp_c += 1
 
+        acc_a = _calculate_vector_component(vec=rel_vec[0],
+                                            val=self._acceleration)
+        acc_b = _calculate_vector_component(vec=rel_vec[1],
+                                            val=self._acceleration)
+        acc_c = _calculate_vector_component(vec=rel_vec[2],
+                                            val=self._acceleration)
+
+        dec_a = _calculate_vector_component(vec=rel_vec[0],
+                                            val=self._deceleration)
+        dec_b = _calculate_vector_component(vec=rel_vec[1],
+                                            val=self._deceleration)
+        dec_c = _calculate_vector_component(vec=rel_vec[2],
+                                            val=self._deceleration)
+
+
         motor_a = self.controller.motor_a
         motor_b = self.controller.motor_b
         motor_c = self.controller.motor_c
 
         motor_a.relative_position(a)
         motor_a.speed(sp_a)
-        motor_a.acceleration(self._acceleration)
-        motor_a.deceleration(self._deceleration)
+        motor_a.acceleration(acc_a)
+        motor_a.deceleration(dec_a)
         motor_a.servo_here()
 
         motor_b.relative_position(b)
         motor_b.speed(sp_b)
-        motor_b.acceleration(self._acceleration)
-        motor_b.deceleration(self._deceleration)
+        motor_b.acceleration(acc_b)
+        motor_b.deceleration(dec_b)
         motor_b.servo_here()
 
         motor_c.relative_position(c)
         motor_c.speed(sp_c)
-        motor_c.acceleration(self._acceleration)
-        motor_c.deceleration(self._deceleration)
+        motor_c.acceleration(acc_c)
+        motor_c.deceleration(dec_c)
         motor_c.servo_here()
 
     def _move(self) -> None:
@@ -859,6 +921,7 @@ class Arm:
 
     def _pick_up(self) -> None:
 
+        self.move_motor_c_by(distance=50)
         self._setup_motion(rel_vec=self._n,
                            d=self._arm_pick_up_distance,
                            speed=self._speed)
@@ -1033,3 +1096,13 @@ class Arm:
 def _convert_micro_meter_to_quadrature_counts(val: float) -> int:
 
     return int(20 * val)
+
+def _calculate_vector_component(vec: float, val: int) -> int:
+    return_val = int(np.floor(abs(vec) * val))
+    return_val = return_val + 1024
+    rem = return_val % 1024
+    return_val = return_val - rem
+
+    assert return_val % 1024 == 0
+
+    return return_val
