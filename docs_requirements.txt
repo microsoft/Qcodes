@@ -56,7 +56,7 @@ PyVISA-sim==0.4.0
 pywin32==301; sys_platform == 'win32'
 pywinpty==1.1.4; sys_platform == 'win32'
 PyYAML==5.4.1
-pyzmq==22.2.1
+pyzmq==22.3.0
 qtconsole==5.1.1
 QtPy==1.11.1
 requests==2.26.0
