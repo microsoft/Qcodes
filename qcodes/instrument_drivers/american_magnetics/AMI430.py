@@ -932,6 +932,11 @@ class AMI430_3D(Instrument):
     def _update_individual_axes_ramp_rates(
         self, values: Tuple[float, float, float]
     ) -> None:
+        if self.vector_ramp_rate() is None or self.vector_ramp_rate() == 0:
+            raise ValueError('The value of the `vector_ramp_rate` Parameter is '
+                             'currently None or 0. Set it to an appropriate '
+                             'value to use the simultaneous ramping feature.')
+        
         new_axes_ramp_rates = self.calculate_axes_ramp_rates_from_vector_ramp_rate(
             start=self._get_measured_field_vector(),
             setpoint=FieldVector(x=values[0], y=values[1], z=values[2]),
