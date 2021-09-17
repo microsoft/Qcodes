@@ -750,6 +750,8 @@ class AMI430_3D(Instrument):
             set_cmd=None,
             get_cmd=None,
             set_parser=self._set_vector_ramp_rate_units,
+            docstring="Ramp rate along a line (vector) in 3D space. Only active"
+                      " if `ramp_mode='simultaneous'`."
         )
         """Ramp rate along a line (vector) in 3D field space"""
 
