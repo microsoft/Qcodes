@@ -936,7 +936,7 @@ class AMI430_3D(Instrument):
             raise ValueError('The value of the `vector_ramp_rate` Parameter is '
                              'currently None or 0. Set it to an appropriate '
                              'value to use the simultaneous ramping feature.')
-        
+
         new_axes_ramp_rates = self.calculate_axes_ramp_rates_from_vector_ramp_rate(
             start=self._get_measured_field_vector(),
             setpoint=FieldVector(x=values[0], y=values[1], z=values[2]),
@@ -1022,7 +1022,7 @@ class AMI430_3D(Instrument):
                 self._instrument_z,
             )
         )
-        
+
     def pause(self) -> None:
         """ Pause all magnet axes. """
         for axis_instrument in (self._instrument_x, self._instrument_y, self._instrument_z):
