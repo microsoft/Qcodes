@@ -1000,10 +1000,17 @@ class AMI430_3D(Instrument):
                                      block=self.block_during_ramp.get())
 
     def wait_while_all_axes_ramping(self) -> None:
+        """ Wait and blocks as long as any magnet axis is ramping. """
+        
         while self.any_axis_is_ramping():
             self._instrument_x._sleep(self.ramping_state_check_interval.get())
 
     def any_axis_is_ramping(self) -> bool:
+        """
+        Returns True if any of the magnet axes are currently ramping, or False
+        if none of the axes are ramping.
+        """
+        
         return any(
             axis_instrument.ramping_state() == "ramping"
             for axis_instrument in (
