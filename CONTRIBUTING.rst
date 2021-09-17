@@ -6,12 +6,14 @@ from developers of all skill levels.
 
 Jens H. Nielsen, William H.P Nielsen, Mikhail Astafev and Trevor Morgan
 are the current maintainers of QCoDeS (aka core developers), along with a
-group of talented and smart volunteers. Please don't hesitate to reach out at
-qcodes-support@microsoft.com if you have any questions, or just need a
-little help getting started.
+group of talented and smart volunteers.
 
-Join us on Slack, where informal discussion is more than welcome.
-(Please email us to be invited!)
+Need help?
+What we recommend to be used for any kind of help and support is to open
+a thread in a relevant Discussions page in `QCoDeS GitHub 
+<https://github.com/QCoDeS/Qcodes/discussions>`__.
+You can also reach out at qcodes-support@microsoft.com or join us on Slack,
+(Please email us to be invited!).
 
 .. contents::
 
@@ -32,19 +34,19 @@ Bugs reports and feature requests
 ---------------------------------
 
 We use github's `issues <https://github.com/QCoDeS/Qcodes/issues>`__.
-Search for existing and closed issues. If your problem or idea is not yet
+Search for existing and closed issues. If your problem is not yet
 addressed, `please open a new issue
-<https://github.com/QCoDeS/Qcodes/issues/new>`__
+<https://github.com/QCoDeS/Qcodes/issues/new>`__.
 
-The github GUI will show you a template both for bugs and features.
+The github GUI will show you a template both for bugs.
 Delete the wrong part and try to follow the template. Writing a good
 issue helps you in the first place. Bug reports must be accompanied by a
 reproducible example.
 
 Have an idea about future directions to go with Qcodes? Visions of
 data-utopia that would take more than a few weeks to add or might change
-some core ideas in the package? We can use issues for this too. We will pick the
-``long-term`` or ``discussion`` labels.
+some core ideas in the package? Please use "Ideas" section in the GitHub
+Discussions. We will pick the ``long-term`` or ``discussion`` labels.
 
  If somebody is assigned to an issue it means that somebody is working on it.
 
@@ -53,8 +55,8 @@ Clever usage
 
 Figured out a new way to use QCoDeS? Found a package that makes your
 life better and easier? Got realtime analysis working after struggling
-with it for days? Write it on Slack so we can keep github more
-organized.
+with it for days? Write it on the "General" section of GitHub Discussions
+so we can keep our github more organized.
 
 Development
 -----------
@@ -118,7 +120,7 @@ New code and testing
    -  never use your username If you can't figure out a name for your
       branch, re-think about what you would be doing. It's always a good
       exercise to model the problem before you try to solve it. Also,
-      ping on slack. We <3 you in the first place.
+      use GitHub Discussions for getting help. We <3 you in the first place.
 
 
 A note on committing and pushing (if you are not really familiar with git).
@@ -179,7 +181,7 @@ born familiar with git, and everybody makes mistakes.
       For some tests we use `pyvisa-sim <https://github.com/pyvisa/pyvisa-sim>`__
       but it's flexibility is limited. Another interesting candidate is
       `pyvisa-mock <https://github.com/microsoft/pyvisa-mock>`__.
-      So, stay tuned, or post any ideas you have as GitHub issues!
+      So, stay tuned, or post any ideas you have as "Ideas" in GitHub Discussions!
 
 Coding Style
 ~~~~~~~~~~~~
