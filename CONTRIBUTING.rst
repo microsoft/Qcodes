@@ -38,7 +38,7 @@ Search for existing and closed issues. If your problem is not yet
 addressed, `please open a new issue
 <https://github.com/QCoDeS/Qcodes/issues/new>`__.
 
-The github GUI will show you a template both for bugs.
+The github GUI will show you a template for bugs.
 Delete the wrong part and try to follow the template. Writing a good
 issue helps you in the first place. Bug reports must be accompanied by a
 reproducible example.
