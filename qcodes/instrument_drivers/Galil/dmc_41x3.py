@@ -921,7 +921,7 @@ class Arm:
 
     def _pick_up(self) -> None:
 
-        self.move_motor_c_by(distance=50)
+        self.move_motor_c_by(distance=-50)
         self._setup_motion(rel_vec=self._n,
                            d=self._arm_pick_up_distance,
                            speed=self._speed)
