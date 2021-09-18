@@ -3,7 +3,8 @@ This file holds the QCoDeS driver for the Galil DMC-41x3 motor controllers.
 
 Colloquially known as the "stepper motors".
 """
-from typing import Any, Dict, Optional, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
+
 import numpy as np
 
 from qcodes.instrument.base import Instrument
