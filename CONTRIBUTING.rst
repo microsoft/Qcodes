@@ -12,8 +12,8 @@ Need help?
 What we recommend to be used for any kind of help and support is to open
 a thread in a relevant Discussions page in `QCoDeS GitHub
 <https://github.com/QCoDeS/Qcodes/discussions>`__.
-You can also reach out at qcodes-support@microsoft.com or join us on Slack,
-(Please email us to be invited!).
+You can also join us on Slack,
+(Please send an email to qcodes-support@microsoft.com to be invited!).
 
 .. contents::
 
