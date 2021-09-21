@@ -111,10 +111,7 @@ class VectorMode(InstrumentChannel):
     Class to control motors in vector mode
     """
 
-    def __init__(self,
-                 parent: "DMC4133Controller",
-                 name: str,
-                 **kwargs: Any) -> None:
+    def __init__(self, parent: "DMC4133Controller", name: str, **kwargs: Any) -> None:
         """
         Initializes the vector mode submodule for the controller
 
@@ -124,8 +121,9 @@ class VectorMode(InstrumentChannel):
         """
         super().__init__(parent, name, **kwargs)
         self._plane = name
-        self._vector_position_validator = Ints(min_value=-2147483648,
-                                               max_value=2147483647)
+        self._vector_position_validator = Ints(
+            min_value=-2147483648, max_value=2147483647
+        )
 
         self.add_parameter(
             "coordinate_system",
@@ -134,9 +132,9 @@ class VectorMode(InstrumentChannel):
             set_cmd="CA {}",
             vals=Enum("S", "T"),
             docstring="activates coordinate system for the motion. Two "
-                      " coordinate systems are possible with values "
-                      "'S' and 'T'. All vector mode commands will apply to "
-                      "the active coordinate system.",
+            " coordinate systems are possible with values "
+            "'S' and 'T'. All vector mode commands will apply to "
+            "the active coordinate system.",
         )
 
         self.add_parameter(
@@ -218,10 +216,12 @@ class VectorMode(InstrumentChannel):
         """
         clears vectors specified in the given coordinate system
         """
-        if coord_sys not in ['S', 'T']:
-            raise RuntimeError(f"possible coordinate systems are 'S' or 'T'. "
-                               f"you provided the following value instead: "
-                               f" '{coord_sys}'")
+        if coord_sys not in ["S", "T"]:
+            raise RuntimeError(
+                f"possible coordinate systems are 'S' or 'T'. "
+                f"you provided the following value instead: "
+                f" '{coord_sys}'"
+            )
 
         self.write(f"CS {coord_sys}")
 
@@ -231,10 +231,7 @@ class Motor(InstrumentChannel):
     Class to control a single motor (independent of possible other motors)
     """
 
-    def __init__(self,
-                 parent: "DMC4133Controller",
-                 name: str,
-                 **kwargs: Any) -> None:
+    def __init__(self, parent: "DMC4133Controller", name: str, **kwargs: Any) -> None:
         """
         Initializes individual motor submodules
 
@@ -307,9 +304,9 @@ class Motor(InstrumentChannel):
             set_cmd=self._set_reverse_sw_limit,
             vals=Ints(-2147483648, 2147483647),
             docstring="can be used to set software reverse limit for the motor."
-                      " motor motion will stop beyond this limit automatically."
-                      " default value is -2147483648. this value effectively "
-                      "disables the reverse limit.",
+            " motor motion will stop beyond this limit automatically."
+            " default value is -2147483648. this value effectively "
+            "disables the reverse limit.",
         )
 
         self.add_parameter(
@@ -320,9 +317,9 @@ class Motor(InstrumentChannel):
             set_cmd=self._set_forward_sw_limit,
             vals=Ints(-2147483648, 2147483647),
             docstring="can be used to set software forward limit for the motor."
-                      " motor motion will stop beyond this limit automatically."
-                      " default value is 2147483647. this value effectively "
-                      "disables the forward limit.",
+            " motor motion will stop beyond this limit automatically."
+            " default value is 2147483647. this value effectively "
+            "disables the forward limit.",
         )
 
     def _set_reverse_sw_limit(self, val: int) -> None:
@@ -451,8 +448,7 @@ class DMC4133Controller(GalilMotionController):
             get_cmd=None,
             set_cmd="PF 10.{}",
             vals=Ints(0, 4),
-            docstring="sets number of decimals in the format "
-                      "of the position",
+            docstring="sets number of decimals in the format " "of the position",
         )
 
         self.add_parameter(
@@ -460,8 +456,7 @@ class DMC4133Controller(GalilMotionController):
             get_cmd=self._get_absolute_position,
             set_cmd=None,
             unit="quadrature counts",
-            docstring="gets absolute position of the motors "
-                      "from the set origin",
+            docstring="gets absolute position of the motors " "from the set origin",
         )
 
         self.add_parameter(
@@ -662,10 +657,7 @@ class Arm:
         return self._deceleration
 
     def set_arm_kinematics(
-        self,
-        speed: int = 100,
-        acceleration: int = 2048,
-        deceleration: int = 2048
+        self, speed: int = 100, acceleration: int = 2048, deceleration: int = 2048
     ) -> None:
         """
         sets the arm kinematics values for speed, acceleration and
@@ -679,18 +671,15 @@ class Arm:
             )
 
         self._speed = _convert_micro_meter_to_quadrature_counts(speed)
-        self._acceleration = \
-            _convert_micro_meter_to_quadrature_counts(acceleration)
-        self._deceleration = \
-            _convert_micro_meter_to_quadrature_counts(deceleration)
+        self._acceleration = _convert_micro_meter_to_quadrature_counts(acceleration)
+        self._deceleration = _convert_micro_meter_to_quadrature_counts(deceleration)
 
     def set_pick_up_distance(self, distance: float = 3000) -> None:
         """
         sets pick up distance in micrometers for the arm
         """
 
-        self._arm_pick_up_distance = \
-            _convert_micro_meter_to_quadrature_counts(distance)
+        self._arm_pick_up_distance = _convert_micro_meter_to_quadrature_counts(distance)
 
     def set_left_bottom_position(self) -> None:
 
@@ -715,31 +704,24 @@ class Arm:
 
     def _calculate_ortho_vector(self) -> None:
 
-        if self._left_bottom_position is None or self._left_top_position is \
-                None or self._right_top_position is None:
+        if (
+            self._left_bottom_position is None
+            or self._left_top_position is None
+            or self._right_top_position is None
+        ):
             return
 
-        a = np.asarray(
-            self._right_top_position
-        ) - np.asarray(
+        a = np.asarray(self._right_top_position) - np.asarray(
             self._left_bottom_position
         )
         self.norm_a = np.linalg.norm(a)
         self._a = a / self.norm_a
 
-        b = np.asarray(
-            self._left_top_position
-        ) - np.asarray(
-            self._left_bottom_position
-        )
+        b = np.asarray(self._left_top_position) - np.asarray(self._left_bottom_position)
         self.norm_b = np.linalg.norm(b)
         self._b = b / self.norm_b
 
-        c = np.asarray(
-            self._right_top_position
-        ) - np.asarray(
-            self._left_top_position
-        )
+        c = np.asarray(self._right_top_position) - np.asarray(self._left_top_position)
         self.norm_c = np.linalg.norm(c)
         self._c = c / self.norm_c
 
@@ -798,10 +780,7 @@ class Arm:
         c.begin()
         c.wait_till_motor_motion_complete()
 
-    def _setup_motion(self,
-                      rel_vec: np.ndarray,
-                      d: float,
-                      speed: float) -> None:
+    def _setup_motion(self, rel_vec: np.ndarray, d: float, speed: float) -> None:
         """
         sets up motion parameters. all arguments have units in quadrature counts
         """
@@ -879,20 +858,13 @@ class Arm:
         if sp_c % 2 != 0:
             sp_c += 1
 
-        acc_a = _calculate_vector_component(vec=rel_vec[0],
-                                            val=self._acceleration)
-        acc_b = _calculate_vector_component(vec=rel_vec[1],
-                                            val=self._acceleration)
-        acc_c = _calculate_vector_component(vec=rel_vec[2],
-                                            val=self._acceleration)
+        acc_a = _calculate_vector_component(vec=rel_vec[0], val=self._acceleration)
+        acc_b = _calculate_vector_component(vec=rel_vec[1], val=self._acceleration)
+        acc_c = _calculate_vector_component(vec=rel_vec[2], val=self._acceleration)
 
-        dec_a = _calculate_vector_component(vec=rel_vec[0],
-                                            val=self._deceleration)
-        dec_b = _calculate_vector_component(vec=rel_vec[1],
-                                            val=self._deceleration)
-        dec_c = _calculate_vector_component(vec=rel_vec[2],
-                                            val=self._deceleration)
-
+        dec_a = _calculate_vector_component(vec=rel_vec[0], val=self._deceleration)
+        dec_b = _calculate_vector_component(vec=rel_vec[1], val=self._deceleration)
+        dec_c = _calculate_vector_component(vec=rel_vec[2], val=self._deceleration)
 
         motor_a = self.controller.motor_a
         motor_b = self.controller.motor_b
@@ -923,9 +895,9 @@ class Arm:
     def _pick_up(self) -> None:
 
         self.move_motor_c_by(distance=-20)
-        self._setup_motion(rel_vec=self._n,
-                           d=self._arm_pick_up_distance,
-                           speed=self._speed)
+        self._setup_motion(
+            rel_vec=self._n, d=self._arm_pick_up_distance, speed=self._speed
+        )
         self._move()
 
     def _put_down(self) -> None:
@@ -938,12 +910,9 @@ class Arm:
         z1 = pos["C"]
         current = np.array([x1, y1, z1, 1])
 
-        denominator = \
-            np.sqrt(
-                self._plane_eqn[0] ** 2 + \
-                self._plane_eqn[1] ** 2 + \
-                self._plane_eqn[2] ** 2
-            )
+        denominator = np.sqrt(
+            self._plane_eqn[0] ** 2 + self._plane_eqn[1] ** 2 + self._plane_eqn[2] ** 2
+        )
         d = abs(sum(self._plane_eqn * current)) / denominator
 
         self._setup_motion(rel_vec=motion_vec, d=d, speed=self._speed)
@@ -971,9 +940,9 @@ class Arm:
 
         self._pick_up()
 
-        self._setup_motion(rel_vec=self._b,
-                           d=self.inter_row_distance,
-                           speed=self._speed)
+        self._setup_motion(
+            rel_vec=self._b, d=self.inter_row_distance, speed=self._speed
+        )
         self._move()
 
         self._put_down()
@@ -988,8 +957,7 @@ class Arm:
         if self._current_pad == self.pads:
             raise RuntimeError("Cannot move further")
 
-        motion_vec = -1 * self._b * self.norm_b + self._c * \
-                     self.inter_pad_distance
+        motion_vec = -1 * self._b * self.norm_b + self._c * self.inter_pad_distance
         norm = np.linalg.norm(motion_vec)
         motion_vec_cap = motion_vec / norm
 
@@ -1097,6 +1065,7 @@ class Arm:
 def _convert_micro_meter_to_quadrature_counts(val: float) -> int:
 
     return int(20 * val)
+
 
 def _calculate_vector_component(vec: float, val: int) -> int:
     return_val = int(np.floor(abs(vec) * val))
