@@ -43,10 +43,8 @@ Under the hood:
   preventing issues on systems with less widespread encodings. (#3327)
 - Add type packages discovered by mypy --install-types. (#3379)
 - Resolved uncertainties package issues. (#3334)
-- Explicitly depend on setuptools. (#3294)
 - Work around legacy test issue with ``hf5`` ``1.12.1`` on conda forge. (#3278)
 - ISSUE_TEMPLATE.md updates for reporting a bug. (#3345)
 - Make it possible to manually trigger codeql, using codeql-analysis.yml
   recommended by github. (#3314, #3329)
 - Remove redundant filters from test runner. (#3295)
-- Remove precommit job that is now handled by dedicated precommit ci. (#3293)
