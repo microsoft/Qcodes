@@ -38,12 +38,10 @@ Improved drivers:
 Under the hood:
 ---------------
 
-- Make qcodes install mostly pep517/518 compliant. (#3288)
 - Logging update to explicitly set encoding for file handler thus
   preventing issues on systems with less widespread encodings. (#3327)
 - Add type packages discovered by mypy --install-types. (#3379)
 - Resolved uncertainties package issues. (#3334)
-- Work around legacy test issue with ``hf5`` ``1.12.1`` on conda forge. (#3278)
 - ISSUE_TEMPLATE.md updates for reporting a bug. (#3345)
 - Make it possible to manually trigger codeql, using codeql-analysis.yml
   recommended by github. (#3314, #3329)
