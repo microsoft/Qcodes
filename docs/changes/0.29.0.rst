@@ -21,26 +21,16 @@ New:
 Improved:
 ---------
 
-- Documentation updates, contrib (#3375, #3370)
-- Fix shapes of dond datasets with additional set-points. (#3305)
-- Allow load experiment functions to accept duplicate experiment name
-  and new experiment raises warning if duplicate experiment is created. (#3296)
-- Improvements to logging where we log the versions of installed packages in
-  the environment where QCoDeS runs. (#3289)
-- Enables dond to take inner actions that are passed in the Sweep instances.
-  Actions for a sweep parameter will be called when the set value of that
-  parameter is changed. (#3283)
-- Raise ``ValueError`` if given more than one result for the same parameter name. (#3265)
-- Sphinx extension that documents parameter attributes on instrument classes.
-  There are documented using a proxy object that contains a __repr__ that contains
-  the code to construct the parameter class. (#3224)
+- Documentation: clarified contribution guides and contacts (#3375, #3370)
+- Raise ``ValueError`` if given more than one result for the same parameter name
+  in ``DataSaver.add_result``. (#3265)
 
 
 -----------------
 Improved drivers:
 -----------------
 
-- Keithley 2600 SMU support to return both voltage and current compliance limit errors. (#3251, #3339, #3362)
+- Keithley 2600 SMU support to return both voltage and current compliance limit errors. (#3339, #3362)
 - Make ``SR86xBufferReadout`` parameter take kwargs and pass them to base class. (#3341)
 
 
@@ -48,14 +38,15 @@ Improved drivers:
 Under the hood:
 ---------------
 
-- Add type packages discovered by mypy --install-types. (#3379)
-- ISSUE_TEMPLATE.md updates for reporting a bug. (#3345)
-- Resolved uncertainties package issues. (#3334)
-- Make it possible to manually trigger codeql. (#3329)
-- Logging update to explicitly set encoding for file handler. (#3327)
-- Create codeql-analysis.yml recommended by github. (#3314)
-- Remove redundant filters from test runner. (#3295)
-- Explicitly depend on setuptools. (#3294)
-- Remove precommit job that is now handled by dedicated precommit ci. (#3293)
 - Make qcodes install mostly pep517/518 compliant. (#3288)
-- Work around legacy test issue with hf51.12.1 on conda forge. (#3278)
+- Logging update to explicitly set encoding for file handler thus
+  preventing issues on systems with less widespread encodings. (#3327)
+- Add type packages discovered by mypy --install-types. (#3379)
+- Resolved uncertainties package issues. (#3334)
+- Explicitly depend on setuptools. (#3294)
+- Work around legacy test issue with ``hf5`` ``1.12.1`` on conda forge. (#3278)
+- ISSUE_TEMPLATE.md updates for reporting a bug. (#3345)
+- Make it possible to manually trigger codeql, using codeql-analysis.yml
+  recommended by github. (#3314, #3329)
+- Remove redundant filters from test runner. (#3295)
+- Remove precommit job that is now handled by dedicated precommit ci. (#3293)
