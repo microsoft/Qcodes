@@ -156,6 +156,9 @@ class ChannelList(Metadatable):
             method of :class:`ChannelList`.
             Should be a subclass of :class:`MultiChannelInstrumentParameter`.
 
+        index_origin: Origin for indexing and slicing.
+            Useful if you want the channel number to start from one.
+
     Raises:
         ValueError: If ``chan_type`` is not a subclass of
             :class:`InstrumentChannel`
@@ -170,7 +173,8 @@ class ChannelList(Metadatable):
                  chan_type: type,
                  chan_list: Optional[Sequence[InstrumentChannel]] = None,
                  snapshotable: bool = True,
-                 multichan_paramclass: type = MultiChannelInstrumentParameter):
+                 multichan_paramclass: type = MultiChannelInstrumentParameter,
+                 index_origin: int = 0):
         super().__init__()
 
         self._parent = parent
@@ -188,6 +192,7 @@ class ChannelList(Metadatable):
         self._chan_type = chan_type
         self._snapshotable = snapshotable
         self._paramclass = multichan_paramclass
+        self.index_origin = index_origin
 
         self._channel_mapping: Dict[str, InstrumentChannel] = {}
         # provide lookup of channels by name
@@ -212,21 +217,24 @@ class ChannelList(Metadatable):
             Union['InstrumentChannel', 'ChannelList']:
         """
         Return either a single channel, or a new :class:`ChannelList`
-        containing only the specified channels
+        containing only the specified channels.
+        Respects the index_origin setting.
 
         Args:
             i: Either a single channel index or a slice of channels
               to get
         """
+        i0 = self.index_origin
         if isinstance(i, slice):
+            shifted_slice = slice(i.start - i0, i.stop - i0, i.step)
             return ChannelList(self._parent, self._name, self._chan_type,
-                               self._channels[i],
+                               self._channels[shifted_slice],
                                multichan_paramclass=self._paramclass)
         elif isinstance(i, tuple):
             return ChannelList(self._parent, self._name, self._chan_type,
-                               [self._channels[j] for j in i],
+                               [self._channels[j - i0] for j in i],
                                multichan_paramclass=self._paramclass)
-        return self._channels[i]
+        return self._channels[i - i0]
 
     def __iter__(self) -> Iterator['InstrumentChannel']:
         return iter(self._channels)
@@ -337,16 +345,18 @@ class ChannelList(Metadatable):
 
     def index(self, obj: InstrumentChannel) -> int:
         """
-        Return the index of the given object
+        Return the index of the given object.
+        Respects the index_origin setting.
 
         Args:
             obj: The object to find in the channel list.
         """
-        return self._channels.index(obj)
+        return self._channels.index(obj) + self.index_origin
 
     def insert(self, index: int, obj: InstrumentChannel) -> None:
         """
         Insert an object into the channel list at a specific index.
+        Respects the index_origin setting.
 
         Args:
             index: Index to insert object.
@@ -361,7 +371,7 @@ class ChannelList(Metadatable):
                             ".".format(type(obj).__name__,
                                        self._chan_type.__name__))
         self._channels = cast(List[InstrumentChannel], self._channels)
-        self._channels.insert(index, obj)
+        self._channels.insert(index - self.index_origin, obj)
 
     def get_validator(self) -> 'ChannelListValidator':
         """
