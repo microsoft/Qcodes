@@ -1962,7 +1962,7 @@ def get_experiment_attributes_by_exp_id(
         exp_id: the id of the experiment
 
     Returns:
-
+        A dictionary of the experiment attributes.
     """
     exp_attr_names = ["name", "sample_name", "start_time", "end_time", "format_string"]
 
