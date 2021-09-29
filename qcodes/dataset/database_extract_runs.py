@@ -13,6 +13,8 @@ from qcodes.dataset.sqlite.database import (
     get_db_version_and_newest_available_version,
 )
 from qcodes.dataset.sqlite.queries import (
+    _populate_results_table,
+    _rewrite_timestamps,
     add_meta_data,
     create_run,
     get_exp_ids_from_run_ids,
@@ -23,7 +25,6 @@ from qcodes.dataset.sqlite.queries import (
     mark_run_complete,
     new_experiment,
 )
-from qcodes.dataset.sqlite.query_helpers import sql_placeholder_string
 
 
 def extract_runs_into_db(source_db_path: str,
@@ -226,53 +227,3 @@ def _add_run_to_runs_table(
     if snapshot_raw is not None:
         add_meta_data(target_conn, target_run_id, {'snapshot': snapshot_raw})
     return target_table_name
-
-
-def _populate_results_table(source_conn: ConnectionPlus,
-                            target_conn: ConnectionPlus,
-                            source_table_name: str,
-                            target_table_name: str) -> None:
-    """
-    Copy over all the entries of the results table
-    """
-    get_data_query = f"""
-                     SELECT *
-                     FROM "{source_table_name}"
-                     """
-
-    source_cursor = source_conn.cursor()
-    target_cursor = target_conn.cursor()
-
-    for row in source_cursor.execute(get_data_query):
-        column_names = ','.join(row.keys()[1:])  # the first key is "id"
-        values = tuple(val for val in row[1:])
-        value_placeholders = sql_placeholder_string(len(values))
-        insert_data_query = f"""
-                             INSERT INTO "{target_table_name}"
-                             ({column_names})
-                             values {value_placeholders}
-                             """
-        target_cursor.execute(insert_data_query, values)
-
-
-def _rewrite_timestamps(target_conn: ConnectionPlus, target_run_id: int,
-                        correct_run_timestamp: Optional[float],
-                        correct_completed_timestamp: Optional[float]) -> None:
-    """
-    Update the timestamp to match the original one
-    """
-    query = """
-            UPDATE runs
-            SET run_timestamp = ?
-            WHERE run_id = ?
-            """
-    cursor = target_conn.cursor()
-    cursor.execute(query, (correct_run_timestamp, target_run_id))
-
-    query = """
-            UPDATE runs
-            SET completed_timestamp = ?
-            WHERE run_id = ?
-            """
-    cursor = target_conn.cursor()
-    cursor.execute(query, (correct_completed_timestamp, target_run_id))
