@@ -193,7 +193,7 @@ class ChannelList(Metadatable):
         self._chan_type = chan_type
         self._snapshotable = snapshotable
         self._paramclass = multichan_paramclass
-        self.index_origin = index_origin
+        self._index_origin = index_origin
 
         self._channel_mapping: Dict[str, InstrumentChannel] = {}
         # provide lookup of channels by name
@@ -225,7 +225,7 @@ class ChannelList(Metadatable):
             i: Either a single channel index or a slice of channels
               to get
         """
-        i0 = self.index_origin
+        i0 = self._index_origin
         if isinstance(i, slice):
             shifted_slice = slice(i.start - i0, i.stop - i0, i.step)
             return ChannelList(self._parent, self._name, self._chan_type,
@@ -352,7 +352,7 @@ class ChannelList(Metadatable):
         Args:
             obj: The object to find in the channel list.
         """
-        return self._channels.index(obj) + self.index_origin
+        return self._channels.index(obj) + self._index_origin
 
     def insert(self, index: int, obj: InstrumentChannel) -> None:
         """
@@ -372,7 +372,7 @@ class ChannelList(Metadatable):
                             ".".format(type(obj).__name__,
                                        self._chan_type.__name__))
         self._channels = cast(List[InstrumentChannel], self._channels)
-        self._channels.insert(index - self.index_origin, obj)
+        self._channels.insert(index - self._index_origin, obj)
 
     def get_validator(self) -> 'ChannelListValidator':
         """
