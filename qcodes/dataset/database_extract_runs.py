@@ -9,15 +9,21 @@ from qcodes.dataset.descriptions.versioning.converters import new_to_old
 from qcodes.dataset.linked_datasets.links import links_to_str
 from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic
 from qcodes.dataset.sqlite.database import (
-    connect, get_db_version_and_newest_available_version)
-from qcodes.dataset.sqlite.queries import (add_meta_data, create_run,
-                                           get_exp_ids_from_run_ids,
-                                           get_matching_exp_ids,
-                                           get_runid_from_guid,
-                                           is_run_id_in_database,
-                                           mark_run_complete, new_experiment)
-from qcodes.dataset.sqlite.query_helpers import (select_many_where,
-                                                 sql_placeholder_string)
+    connect,
+    get_db_version_and_newest_available_version,
+)
+from qcodes.dataset.sqlite.queries import (
+    add_meta_data,
+    create_run,
+    get_exp_ids_from_run_ids,
+    get_experiment_attributes_by_exp_id,
+    get_matching_exp_ids,
+    get_runid_from_guid,
+    is_run_id_in_database,
+    mark_run_complete,
+    new_experiment,
+)
+from qcodes.dataset.sqlite.query_helpers import sql_placeholder_string
 
 
 def extract_runs_into_db(source_db_path: str,
@@ -78,19 +84,9 @@ def extract_runs_into_db(source_db_path: str,
 
     # Fetch the attributes of the runs' experiment
     # hopefully, this is enough to uniquely identify the experiment
+    exp_attrs = get_experiment_attributes_by_exp_id(source_conn, source_exp_ids[0])
 
-    exp_attr_names = ['name', 'sample_name', 'start_time', 'end_time',
-                      'format_string']
-
-    exp_attr_vals = select_many_where(source_conn,
-                                      'experiments',
-                                      *exp_attr_names,
-                                      where_column='exp_id',
-                                      where_value=source_exp_ids[0])
-
-    exp_attrs = dict(zip(exp_attr_names, exp_attr_vals))
-
-    # Massage the target DB file to accomodate the runs
+    # Massage the target DB file to accommodate the runs
     # (create new experiment if needed)
 
     target_conn = connect(target_db_path)
@@ -187,6 +183,16 @@ def _extract_single_dataset_into_db(dataset: DataSet,
     if run_id != -1:
         return
 
+    target_table_name = _add_run_to_runs_table(dataset, target_conn, target_exp_id)
+
+    _populate_results_table(
+        source_conn, target_conn, dataset.table_name, target_table_name
+    )
+
+
+def _add_run_to_runs_table(
+    dataset: DataSet, target_conn: ConnectionPlus, target_exp_id: int
+) -> str:
     if dataset.parameters is not None:
         param_names = dataset.parameters.split(',')
     else:
@@ -195,36 +201,31 @@ def _extract_single_dataset_into_db(dataset: DataSet,
         p.name: p for p in new_to_old(dataset.description.interdeps).paramspecs
     }
     parspecs = [parspecs_dict[p] for p in param_names]
-
     metadata = dataset.metadata
     snapshot_raw = dataset.snapshot_raw
     captured_run_id = dataset.captured_run_id
     captured_counter = dataset.captured_counter
     parent_dataset_links = links_to_str(dataset.parent_dataset_links)
-
     _, target_run_id, target_table_name = create_run(
-            target_conn,
-            target_exp_id,
-            name=dataset.name,
-            guid=dataset.guid,
-            parameters=parspecs,
-            metadata=metadata,
-            captured_run_id=captured_run_id,
-            captured_counter=captured_counter,
-            parent_dataset_links=parent_dataset_links)
-
-    _populate_results_table(source_conn,
-                            target_conn,
-                            dataset.table_name,
-                            target_table_name)
+        target_conn,
+        target_exp_id,
+        name=dataset.name,
+        guid=dataset.guid,
+        parameters=parspecs,
+        metadata=metadata,
+        captured_run_id=captured_run_id,
+        captured_counter=captured_counter,
+        parent_dataset_links=parent_dataset_links,
+    )
+    assert target_table_name is not None
     mark_run_complete(target_conn, target_run_id)
     _rewrite_timestamps(target_conn,
                         target_run_id,
                         dataset.run_timestamp_raw,
                         dataset.completed_timestamp_raw)
-
     if snapshot_raw is not None:
         add_meta_data(target_conn, target_run_id, {'snapshot': snapshot_raw})
+    return target_table_name
 
 
 def _populate_results_table(source_conn: ConnectionPlus,
