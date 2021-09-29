@@ -642,7 +642,8 @@ class DataSet(Sized):
             overwrite: force overwrite an existing snapshot
         """
         if self.snapshot is None or overwrite:
-            add_meta_data(self.conn, self.run_id, {'snapshot': snapshot})
+            with atomic(self.conn) as conn:
+                add_meta_data(conn, self.run_id, {"snapshot": snapshot})
         elif self.snapshot is not None and not overwrite:
             log.warning('This dataset already has a snapshot. Use overwrite'
                         '=True to overwrite that')
