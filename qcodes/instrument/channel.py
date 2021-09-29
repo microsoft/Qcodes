@@ -157,7 +157,8 @@ class ChannelList(Metadatable):
             Should be a subclass of :class:`MultiChannelInstrumentParameter`.
 
         index_origin: Origin for indexing and slicing.
-            Useful if you want the channel number to start from one.
+            Useful if you want the channel indexing to start from a
+            number other than ``0`` (e.g. ``1``).
 
     Raises:
         ValueError: If ``chan_type`` is not a subclass of
