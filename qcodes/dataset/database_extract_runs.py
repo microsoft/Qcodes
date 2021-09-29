@@ -183,6 +183,16 @@ def _extract_single_dataset_into_db(dataset: DataSet,
     if run_id != -1:
         return
 
+    target_table_name = _add_run_to_runs_table(dataset, target_conn, target_exp_id)
+
+    _populate_results_table(
+        source_conn, target_conn, dataset.table_name, target_table_name
+    )
+
+
+def _add_run_to_runs_table(
+    dataset: DataSet, target_conn: ConnectionPlus, target_exp_id: int
+) -> str:
     if dataset.parameters is not None:
         param_names = dataset.parameters.split(',')
     else:
@@ -191,36 +201,31 @@ def _extract_single_dataset_into_db(dataset: DataSet,
         p.name: p for p in new_to_old(dataset.description.interdeps).paramspecs
     }
     parspecs = [parspecs_dict[p] for p in param_names]
-
     metadata = dataset.metadata
     snapshot_raw = dataset.snapshot_raw
     captured_run_id = dataset.captured_run_id
     captured_counter = dataset.captured_counter
     parent_dataset_links = links_to_str(dataset.parent_dataset_links)
-
     _, target_run_id, target_table_name = create_run(
-            target_conn,
-            target_exp_id,
-            name=dataset.name,
-            guid=dataset.guid,
-            parameters=parspecs,
-            metadata=metadata,
-            captured_run_id=captured_run_id,
-            captured_counter=captured_counter,
-            parent_dataset_links=parent_dataset_links)
-
-    _populate_results_table(source_conn,
-                            target_conn,
-                            dataset.table_name,
-                            target_table_name)
+        target_conn,
+        target_exp_id,
+        name=dataset.name,
+        guid=dataset.guid,
+        parameters=parspecs,
+        metadata=metadata,
+        captured_run_id=captured_run_id,
+        captured_counter=captured_counter,
+        parent_dataset_links=parent_dataset_links,
+    )
+    assert target_table_name is not None
     mark_run_complete(target_conn, target_run_id)
     _rewrite_timestamps(target_conn,
                         target_run_id,
                         dataset.run_timestamp_raw,
                         dataset.completed_timestamp_raw)
-
     if snapshot_raw is not None:
         add_meta_data(target_conn, target_run_id, {'snapshot': snapshot_raw})
+    return target_table_name
 
 
 def _populate_results_table(source_conn: ConnectionPlus,
