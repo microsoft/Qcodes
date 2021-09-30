@@ -2,6 +2,7 @@ import sqlite3
 
 import numpy as np
 
+from qcodes.dataset import load_by_run_spec
 from qcodes.dataset.data_set_in_memory import DataSetInMem
 from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic_transaction
 
@@ -38,6 +39,24 @@ def test_dataset_in_memory_does_not_create_runs_table(
     assert len(tables) == 4
     tablenames = tuple(table[1] for table in tables)
     assert all(dataset.name not in table_name for table_name in tablenames)
+
+
+def test_load_from_netcdf_and_write_metadata_to_db(empty_temp_db):
+    # todo this needs to be loaded from a fixture
+    ds = DataSetInMem.load_from_netcdf(f"qcodes_2.nc")
+    ds.write_metadata_to_db()
+
+    ds_loaded = load_by_run_spec(captured_run_id=ds.captured_run_id)
+
+    assert ds_loaded.captured_run_id == ds.captured_run_id
+    assert ds_loaded.captured_counter == ds.captured_counter
+    assert ds_loaded.run_timestamp_raw == ds.run_timestamp_raw
+    assert ds_loaded.completed_timestamp_raw == ds.completed_timestamp_raw
+
+    #     db_path = get_DB_location()
+    # ds_loaded.cache.data()
+    # this will currently fail as the ds is loaded not as an in mem ds
+    # and no knowledge of the location of the netcdf file is given
 
 
 # todo missing from runs table
