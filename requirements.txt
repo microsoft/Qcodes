@@ -91,7 +91,7 @@ widgetsnbextension~=3.5.1
 wincertstore~=0.2
 wrapt~=1.12.1
 xarray~=0.19.0
-zipp~=3.5.1
+zipp~=3.6.0
 # not strict requirements but needed for the legacy pyqtgraph based plotting
 PyQt5<5.16
 pyqtgraph~=0.12.2
