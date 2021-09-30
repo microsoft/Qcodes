@@ -1,6 +1,7 @@
 import logging
 from collections.abc import Sized
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
+from warnings import warn
 
 from qcodes.dataset.data_set import SPECS, DataSet, load_by_id, new_data_set
 from qcodes.dataset.experiment_settings import _set_default_experiment_id
@@ -368,3 +369,48 @@ def load_or_create_experiment(
         else:
             raise exception
     return experiment
+
+
+def _create_exp_if_needed(
+    target_conn: ConnectionPlus,
+    exp_name: str,
+    sample_name: str,
+    fmt_str: str,
+    start_time: float,
+    end_time: Union[float, None],
+) -> int:
+    """
+    Look up in the database whether an experiment already exists and create
+    it if it doesn't. Note that experiments do not have GUIDs, so this method
+    is not guaranteed to work. Matching names and times is the best we can do.
+    """
+
+    matching_exp_ids = get_matching_exp_ids(
+        target_conn,
+        name=exp_name,
+        sample_name=sample_name,
+        format_string=fmt_str,
+        start_time=start_time,
+        end_time=end_time,
+    )
+
+    if len(matching_exp_ids) > 1:
+        exp_id = matching_exp_ids[0]
+        warn(
+            f"{len(matching_exp_ids)} experiments found in target DB that "
+            "match name, sample_name, fmt_str, start_time, and end_time. "
+            f"Inserting into the experiment with exp_id={exp_id}."
+        )
+        return exp_id
+    if len(matching_exp_ids) == 1:
+        return matching_exp_ids[0]
+    else:
+        lastrowid = ne(
+            target_conn,
+            name=exp_name,
+            sample_name=sample_name,
+            format_string=fmt_str,
+            start_time=start_time,
+            end_time=end_time,
+        )
+        return lastrowid

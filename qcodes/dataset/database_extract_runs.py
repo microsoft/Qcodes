@@ -1,11 +1,11 @@
 import os
-from typing import Optional, Union
 from warnings import warn
 
 import numpy as np
 
 from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.descriptions.versioning.converters import new_to_old
+from qcodes.dataset.experiment_container import _create_exp_if_needed
 from qcodes.dataset.linked_datasets.links import links_to_str
 from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic
 from qcodes.dataset.sqlite.database import (
@@ -19,11 +19,9 @@ from qcodes.dataset.sqlite.queries import (
     create_run,
     get_exp_ids_from_run_ids,
     get_experiment_attributes_by_exp_id,
-    get_matching_exp_ids,
     get_runid_from_guid,
     is_run_id_in_database,
     mark_run_complete,
-    new_experiment,
 )
 
 
@@ -114,43 +112,6 @@ def extract_runs_into_db(source_db_path: str,
     finally:
         source_conn.close()
         target_conn.close()
-
-
-def _create_exp_if_needed(target_conn: ConnectionPlus,
-                          exp_name: str,
-                          sample_name: str,
-                          fmt_str: str,
-                          start_time: float,
-                          end_time: Union[float, None]) -> int:
-    """
-    Look up in the database whether an experiment already exists and create
-    it if it doesn't. Note that experiments do not have GUIDs, so this method
-    is not guaranteed to work. Matching names and times is the best we can do.
-    """
-
-    matching_exp_ids = get_matching_exp_ids(target_conn,
-                                            name=exp_name,
-                                            sample_name=sample_name,
-                                            format_string=fmt_str,
-                                            start_time=start_time,
-                                            end_time=end_time)
-
-    if len(matching_exp_ids) > 1:
-        exp_id = matching_exp_ids[0]
-        warn(f'{len(matching_exp_ids)} experiments found in target DB that '
-             'match name, sample_name, fmt_str, start_time, and end_time. '
-             f'Inserting into the experiment with exp_id={exp_id}.')
-        return exp_id
-    if len(matching_exp_ids) == 1:
-        return matching_exp_ids[0]
-    else:
-        lastrowid = new_experiment(target_conn,
-                                   name=exp_name,
-                                   sample_name=sample_name,
-                                   format_string=fmt_str,
-                                   start_time=start_time,
-                                   end_time=end_time)
-        return lastrowid
 
 
 def _extract_single_dataset_into_db(dataset: DataSet,
