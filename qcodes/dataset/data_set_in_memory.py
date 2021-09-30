@@ -44,7 +44,11 @@ from qcodes.utils.helpers import NumpyJSONEncoder
 
 from .data_set import SPECS, CompletedError
 from .data_set_cache import DataSetCacheInMem
+from .database_extract_runs import (
+    _add_run_to_runs_table,  # todo move to shared location
+)
 from .descriptions.versioning import serialization as serial
+from .experiment_container import load_or_create_experiment
 from .experiment_settings import get_default_experiment_id
 from .exporters.export_to_csv import dataframe_to_csv
 from .linked_datasets.links import str_to_links
@@ -102,7 +106,9 @@ class DataSetInMem(DataSetProtocol, Sized):
             self._parent_dataset_links = list(parent_dataset_links)
         else:
             self._parent_dataset_links = []
-        self._export_path = None  # todo set this when importing from netcdf
+        self._export_path: Optional[
+            str
+        ] = None  # todo set this when importing from netcdf
 
     def _dataset_is_in_runs_table(self) -> bool:
         """
@@ -116,7 +122,9 @@ class DataSetInMem(DataSetProtocol, Sized):
         # todo check that metadata is identical?
         return run_id != -1
 
-    def write_metadata_to_db(self, path_to_db: Optional[Union[str, Path]]) -> None:
+    def write_metadata_to_db(
+        self, path_to_db: Optional[Union[str, Path]] = None
+    ) -> None:
         if path_to_db is not None:
             self._path_to_db = str(path_to_db)
         if self._dataset_is_in_runs_table():
@@ -124,7 +132,19 @@ class DataSetInMem(DataSetProtocol, Sized):
             # should it have an option to overwrite
             raise ValueError("Dataset metadata is already in db")
 
-        raise NotImplementedError
+        with contextlib.closing(
+            conn_from_dbpath_or_conn(conn=None, path_to_db=self._path_to_db)
+        ) as conn:
+            with atomic(conn) as aconn:
+                # note that we do not check if format string and times match
+                # unlike _create_exp_if_needed
+                exp = load_or_create_experiment(
+                    conn=aconn,
+                    experiment_name=self.exp_name,
+                    sample_name=self.sample_name,
+                    load_last_duplicate=True,
+                )
+                _add_run_to_runs_table(self, aconn, exp.exp_id, create_run_table=False)
 
     @classmethod
     def create_new_run(
