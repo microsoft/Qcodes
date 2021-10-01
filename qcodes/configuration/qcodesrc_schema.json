@@ -1,5 +1,5 @@
 {
-    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$schema": "http://json-schema.org/draft-07/schema#",
     "type" : "object",
     "description": "schema for a qcodes config file",
     "properties":{
@@ -9,7 +9,7 @@
             "properties" : {
                 "default_fmt": {
                     "type" : "string",
-                    "description": "default location formatter",
+                    "description": "default location formatter used for the legacy dataset",
                     "default": "data/{date}/#{counter}_{name}_{time}"
                 },
                 "loglevel" :{
@@ -37,7 +37,8 @@
                     ]
                 },
                 "register_magic" : {
-                    "description": "Register QCoDeS magic when in iPython. Can be set to True, False, or a list of magic commands to be registered",
+                    "description": "Register QCoDeS magic when in IPython. Can be set to True, False, or a list of magic commands to be registered",
+
                     "anyOf" : [
                         {"type": "boolean"},
                         {"type": "array"}
@@ -188,10 +189,10 @@
         },
         "plotting" : {
             "type" : "object",
-            "description": "controls plotting functions i.e. `plot_by_id`",
+            "description": "controls plotting functions i.e. `plot_dataset`",
             "properties" : {
                 "default_color_map":{
-                    "description": "Default colormap to use for `plot_by_id`.",
+                    "description": "Default colormap to use for `plot_dataset`.",
                     "type": "string",
                     "default": "viridis"
                 },
@@ -212,10 +213,10 @@
                         "cutoff_percentile":{
                             "description": "Upper and lower percentage of datapoints that may maximally be discarded by the auto color scale. For example for [1,1] the auto color scale will in a set of 10 0000 points not clip more than the 100 points of lowest and highest value.",
                             "type": "array",
-                            "items": {
-                                "type": "number",
-                                "type": "number"
-                            },
+                            "items": [
+                                {"type": "number"},
+                                {"type": "number"}
+                            ],
                             "default": [0.5, 0.5]
                         },
                         "color_over":{
@@ -293,6 +294,59 @@
         },
         "description": "Identifiers for creating a GUID per run in the dataset database."
         },
+        "dataset": {
+            "type": "object",
+            "properties": {
+                "write_in_background": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Should the data be written from a background thread"
+                },
+                "write_period": {
+                    "type": "number",
+                    "default": 5.0,
+                    "description": "How often should data be written to disk (s)"
+                },
+                "use_threads": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Should instruments be addresesed in parallel for process_params_meas() in doNd measurement"
+                },
+                "dond_plot": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Should dond functions automatically open a plot after the measurement completes"
+                },
+                "dond_show_progress": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Should dond functions show a progress bar during the measurement"
+                },
+                "export_automatic": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Should the data be exported automatically when a measurement is completed? If this is set 'export_type' must be set to a non null value."
+                },
+                "export_type": {
+                    "type": ["string", "null"],
+                    "enum": ["netcdf", "csv", null],
+                    "default": null,
+                    "description": "Data export type for exporting datasets to disk after a measurement finishes. Does not export if set to null (default). Currently supported type(s): netcdf, csv"
+                },
+                "export_path": {
+                    "type": "string",
+                    "default": "~",
+                    "description": "Data export path for exporting datasets to disk after a measurement finishes. Only activated if export_type is set"
+                },
+                "export_prefix": {
+                    "type": "string",
+                    "default": "qcodes_",
+                    "description": "Prefix to add to filename for exporting datasets to disk after a measurement finishes. Only activated if export_type is set"
+                }
+            },
+            "description": "Settings related to the DataSet and Measurement Context manager",
+            "required":[ "write_in_background", "write_period", "dond_plot", "dond_show_progress"]
+        },
         "telemetry":{
             "type": "object",
             "properties": {
@@ -309,5 +363,5 @@
             }
         }
     },
-    "required":[ "gui", "core", "GUID_components", "telemetry"]
+    "required":[ "gui", "core", "GUID_components", "dataset", "telemetry"]
 }

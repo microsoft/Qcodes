@@ -7,11 +7,22 @@ import sqlite3
 import time
 import unicodedata
 import warnings
-from typing import (Any, Callable, Dict, List, Mapping, Optional, Sequence,
-                    Tuple, Union, cast)
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    cast,
+)
 
 import numpy as np
-from numpy import VisibleDeprecationWarning
+from typing_extensions import TypedDict
 
 import qcodes as qc
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
@@ -21,17 +32,27 @@ from qcodes.dataset.descriptions.versioning import serialization as serial
 from qcodes.dataset.descriptions.versioning import v0
 from qcodes.dataset.descriptions.versioning.converters import old_to_new
 from qcodes.dataset.guids import generate_guid, parse_guid
-from qcodes.dataset.sqlite.connection import (ConnectionPlus, atomic,
-                                              atomic_transaction, transaction)
-from qcodes.dataset.sqlite.query_helpers import (VALUES, insert_column,
-                                                 insert_values,
-                                                 is_column_in_table, many,
-                                                 many_many, one,
-                                                 select_many_where,
-                                                 select_one_where,
-                                                 sql_placeholder_string,
-                                                 update_where)
+from qcodes.dataset.sqlite.connection import (
+    ConnectionPlus,
+    atomic,
+    atomic_transaction,
+    transaction,
+)
+from qcodes.dataset.sqlite.query_helpers import (
+    VALUES,
+    insert_column,
+    insert_values,
+    is_column_in_table,
+    many,
+    many_many,
+    one,
+    select_many_where,
+    select_one_where,
+    sql_placeholder_string,
+    update_where,
+)
 from qcodes.utils.deprecate import deprecate
+from qcodes.utils.numpy_utils import list_of_data_to_maybe_ragged_nd_array
 
 log = logging.getLogger(__name__)
 
@@ -41,11 +62,23 @@ _unicode_categories = ('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nd', 'Pc', 'Pd', 'Zs')
 
 # in the current version, these are the standard columns of the "runs" table
 # Everything else is metadata
-RUNS_TABLE_COLUMNS = ["run_id", "exp_id", "name", "result_table_name",
-                      "result_counter", "run_timestamp", "completed_timestamp",
-                      "is_completed", "parameters", "guid",
-                      "run_description", "snapshot", "parent_datasets",
-                      "captured_run_id", "captured_counter"]
+RUNS_TABLE_COLUMNS = [
+    "run_id",
+    "exp_id",
+    "name",
+    "result_table_name",
+    "result_counter",
+    "run_timestamp",
+    "completed_timestamp",
+    "is_completed",
+    "parameters",
+    "guid",
+    "run_description",
+    "snapshot",
+    "parent_datasets",
+    "captured_run_id",
+    "captured_counter",
+]
 
 
 def is_run_id_in_database(conn: ConnectionPlus,
@@ -177,9 +210,57 @@ def get_parameter_data(conn: ConnectionPlus,
 
     # loop over all the requested parameters
     for output_param in columns:
-        one_param_output, _ = get_parameter_data_for_one_paramtree(conn, table_name, rundescriber, output_param, start, end)
-        output[output_param] = one_param_output
+        output[output_param] = get_shaped_parameter_data_for_one_paramtree(
+            conn,
+            table_name,
+            rundescriber,
+            output_param,
+            start,
+            end)
     return output
+
+
+def get_shaped_parameter_data_for_one_paramtree(
+        conn: ConnectionPlus,
+        table_name: str,
+        rundescriber: RunDescriber,
+        output_param: str,
+        start: Optional[int],
+        end: Optional[int]
+) -> Dict[str, np.ndarray]:
+    """
+    Get the data for a parameter tree and reshape it according to the
+    metadata about the dataset. This will only reshape the loaded data if
+    the number of points in the loaded data matches the expected number of
+    points registered in the metadata.
+    If there are more measured datapoints
+    than expected a warning will be given.
+    """
+
+    one_param_output, _ = get_parameter_data_for_one_paramtree(
+        conn,
+        table_name,
+        rundescriber,
+        output_param,
+        start,
+        end
+    )
+    if rundescriber.shapes is not None:
+        shape = rundescriber.shapes.get(output_param)
+
+        if shape is not None:
+            total_len_shape = np.prod(shape)
+            for name, paramdata in one_param_output.items():
+                total_data_shape = np.prod(paramdata.shape)
+                if total_data_shape == total_len_shape:
+                    one_param_output[name] = paramdata.reshape(shape)
+                elif total_data_shape > total_len_shape:
+                    log.warning(f"Tried to set data shape for {name} in "
+                                f"dataset {output_param} "
+                                f"from metadata when "
+                                f"loading but found inconsistent lengths "
+                                f"{total_data_shape} and {total_len_shape}")
+    return one_param_output
 
 
 def get_rundescriber_from_result_table_name(
@@ -224,25 +305,16 @@ def get_parameter_data_for_one_paramtree(
     res_t = map(list, zip(*data))
 
     for paramspec, column_data in zip(paramspecs, res_t):
-        try:
-            with warnings.catch_warnings():
-                warnings.filterwarnings(
-                    "ignore",
-                    category=VisibleDeprecationWarning,
-                    message="Creating an ndarray from ragged nested sequences"
-                )
-                # numpy warns here and coming versions
-                # will eventually raise
-                # for ragged arrays if you don't explicitly set
-                # dtype=object
-                # It is time consuming to detect ragged arrays here
-                # and it is expected to be a relatively rare situation
-                # so fallback to object if the regular dtype fail
-                param_data[paramspec.name] = np.array(column_data)
-        except:
-            # Not clear which error to catch here. This will only be clarified
-            # once numpy actually starts to raise here.
-            param_data[paramspec.name] = np.array(column_data, dtype=np.object)
+        if paramspec.type == "numeric":
+            # there is no reliable way to
+            # tell the difference between a float and and int loaded
+            # from sqlite numeric columns so always fall back to float
+            dtype: Optional[type] = np.float64
+        else:
+            dtype = None
+        param_data[paramspec.name] = list_of_data_to_maybe_ragged_nd_array(
+            column_data, dtype
+        )
     return param_data, n_rows
 
 
@@ -250,34 +322,54 @@ def _expand_data_to_arrays(data: List[List[Any]], paramspecs: Sequence[ParamSpec
     types = [param.type for param in paramspecs]
     # if we have array type parameters expand all other parameters
     # to arrays
-    if 'array' in types and ('numeric' in types or 'text' in types
-                             or 'complex' in types):
-        first_array_element = types.index('array')
-        numeric_elms = [i for i, x in enumerate(types)
-                        if x == "numeric"]
-        complex_elms = [i for i, x in enumerate(types)
-                        if x == 'complex']
-        text_elms = [i for i, x in enumerate(types)
-                     if x == "text"]
+    if 'array' in types:
+
+        if ('numeric' in types or 'text' in types
+                or 'complex' in types):
+            first_array_element = types.index('array')
+            numeric_elms = [i for i, x in enumerate(types)
+                            if x == "numeric"]
+            complex_elms = [i for i, x in enumerate(types)
+                            if x == 'complex']
+            text_elms = [i for i, x in enumerate(types)
+                         if x == "text"]
+            for row in data:
+                for element in numeric_elms:
+                    row[element] = np.full_like(row[first_array_element],
+                                                row[element],
+                                                dtype=np.dtype(np.float64))
+                    # todo should we handle int/float types here
+                    # we would in practice have to perform another
+                    # loop to check that all elements of a given can be cast to
+                    # int without loosing precision before choosing an integer
+                    # representation of the array
+                for element in complex_elms:
+                    row[element] = np.full_like(row[first_array_element],
+                                                row[element],
+                                                dtype=np.dtype(np.complex128))
+                for element in text_elms:
+                    strlen = len(row[element])
+                    row[element] = np.full_like(row[first_array_element],
+                                                row[element],
+                                                dtype=np.dtype(f'U{strlen}'))
+
         for row in data:
-            for element in numeric_elms:
-                row[element] = np.full_like(row[first_array_element],
-                                            row[element],
-                                            dtype=np.float)
-                # todo should we handle int/float types here
-                # we would in practice have to perform another
-                # loop to check that all elements of a given can be cast to
-                # int without loosing precision before choosing an integer
-                # representation of the array
-            for element in complex_elms:
-                row[element] = np.full_like(row[first_array_element],
-                                            row[element],
-                                            dtype=np.complex)
-            for element in text_elms:
-                strlen = len(row[element])
-                row[element] = np.full_like(row[first_array_element],
-                                            row[element],
-                                            dtype=f'U{strlen}')
+            # now expand all one element arrays to match the expected size
+            # one element arrays are introduced if scalar values are stored
+            # with an explicit array storage type
+            sizes = tuple(array.size for array in row)
+            max_size = max(sizes)
+            max_index = sizes.index(max_size)
+
+            for i, array in enumerate(row):
+                if array.size != max_size:
+                    if array.size == 1:
+                        row[i] = np.full_like(row[max_index],
+                                              row[i],
+                                              dtype=row[i].dtype)
+                    else:
+                        log.warning(f"Cannot expand array of size {array.size} "
+                                    f"to size {row[max_index].size}")
 
 
 def _get_data_for_one_param_tree(conn: ConnectionPlus, table_name: str,
@@ -692,19 +784,22 @@ def new_experiment(conn: ConnectionPlus,
 
     start_time = start_time or time.time()
     values = (name, sample_name, format_string, 0, start_time, end_time)
-
     curr = atomic_transaction(conn, query, *values)
     return curr.lastrowid
 
 
 # TODO(WilliamHPNielsen): we should remove the redundant
 # is_completed
-def mark_run_complete(conn: ConnectionPlus, run_id: int) -> None:
-    """ Mark run complete
+def mark_run_complete(
+    conn: ConnectionPlus, run_id: int, timestamp: Optional[float] = None
+) -> None:
+    """Mark run complete
 
     Args:
         conn: database connection
         run_id: id of the run to mark complete
+        timestamp: time stamp for completion. If None the function will
+            automatically get the current time.
     """
     query = """
     UPDATE
@@ -714,7 +809,9 @@ def mark_run_complete(conn: ConnectionPlus, run_id: int) -> None:
         is_completed=?
     WHERE run_id=?;
     """
-    atomic_transaction(conn, query, time.time(), True, run_id)
+    if timestamp is None:
+        timestamp = time.time()
+    atomic_transaction(conn, query, timestamp, True, run_id)
 
 
 def completed(conn: ConnectionPlus, run_id: int) -> bool:
@@ -754,8 +851,38 @@ def get_guid_from_run_id(conn: ConnectionPlus, run_id: int) -> str:
     Args:
         conn: database connection
         run_id: id of the run
+
+    Returns:
+        The guid of the run_id.
     """
     return select_one_where(conn, "runs", "guid", "run_id", run_id)
+
+
+def get_guids_from_multiple_run_ids(
+    conn: ConnectionPlus, run_ids: Iterable[int]
+) -> List[str]:
+    """
+    Retrieve guids of runs in the connected database specified by their run ids.
+    run ids are run_id in the database and not captured_run_id.
+
+    Args:
+        conn: database connection
+        run_ids: An integer iterable of run ids to get their guids.
+
+    Returns:
+        A list of guids for the supplied run_ids.
+    """
+
+    guids: List[str] = []
+
+    for run_id in run_ids:
+        if run_exists(conn=conn, run_id=run_id):
+            run_id_guid = get_guid_from_run_id(conn=conn, run_id=run_id)
+            guids.append(run_id_guid)
+        else:
+            raise RuntimeError(f"run id {run_id} does not exist in the database")
+
+    return guids
 
 
 def finish_experiment(conn: ConnectionPlus, exp_id: int) -> None:
@@ -1019,7 +1146,7 @@ def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
                 captured_counter = existing_captured_counter + 1
             else:
                 captured_counter = run_counter
-    formatted_name = format_table_name(format_string, name, exp_id,
+    formatted_name = format_table_name(format_string, 'results', exp_id,
                                        run_counter)
     table = "runs"
 
@@ -1062,19 +1189,22 @@ def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
             VALUES
                 (?,?,?,?,?,?,?,?,?,?,?,?)
             """
-            curr = transaction(conn, query,
-                               name,
-                               exp_id,
-                               guid,
-                               formatted_name,
-                               run_counter,
-                               None,
-                               ",".join([p.name for p in parameters]),
-                               False,
-                               desc_str,
-                               captured_run_id,
-                               captured_counter,
-                               parent_dataset_links)
+            curr = transaction(
+                conn,
+                query,
+                name,
+                exp_id,
+                guid,
+                formatted_name,
+                run_counter,
+                None,
+                ",".join(p.name for p in parameters),
+                False,
+                desc_str,
+                captured_run_id,
+                captured_counter,
+                parent_dataset_links,
+            )
 
             _add_parameters_to_layout_and_deps(conn, formatted_name,
                                                *parameters)
@@ -1267,10 +1397,18 @@ def update_parent_datasets(conn: ConnectionPlus,
         conn.cursor().execute(sql, (links_str, run_id))
 
 
-def set_run_timestamp(conn: ConnectionPlus, run_id: int) -> None:
+def set_run_timestamp(
+    conn: ConnectionPlus, run_id: int, timestamp: Optional[float] = None
+) -> None:
     """
     Set the run_timestamp for the run with the given run_id. If the
     run_timestamp has already been set, a RuntimeError is raised.
+
+    Args:
+        conn: database connection
+        run_id: id of the run to mark complete
+        timestamp: time stamp for completion. If None the function will
+            automatically get the current time.
     """
 
     query = """
@@ -1286,15 +1424,17 @@ def set_run_timestamp(conn: ConnectionPlus, run_id: int) -> None:
 
     with atomic(conn) as conn:
         c = conn.cursor()
-        timestamp = one(c.execute(query, (run_id,)), 'run_timestamp')
-        if timestamp is not None:
-            raise RuntimeError('Can not set run_timestamp; it has already '
-                               f'been set to: {timestamp}')
+        old_timestamp = one(c.execute(query, (run_id,)), "run_timestamp")
+        if old_timestamp is not None:
+            raise RuntimeError(
+                "Can not set run_timestamp; it has already "
+                f"been set to: {old_timestamp}"
+            )
         else:
-            current_time = time.time()
-            c.execute(cmd, (current_time, run_id))
-            log.info(f"Set the run_timestamp of run_id {run_id} to "
-                     f"{current_time}")
+            if timestamp is None:
+                timestamp = time.time()
+            c.execute(cmd, (timestamp, run_id))
+            log.info(f"Set the run_timestamp of run_id {run_id} to " f"{timestamp}")
 
 
 def add_parameter(conn: ConnectionPlus,
@@ -1416,7 +1556,7 @@ def _create_run_table(conn: ConnectionPlus,
     with atomic(conn) as conn:
 
         if parameters and values:
-            _parameters = ",".join([p.sql_repr() for p in parameters])
+            _parameters = ",".join(p.sql_repr() for p in parameters)
             query = f"""
             CREATE TABLE "{formatted_name}" (
                 id INTEGER PRIMARY KEY,
@@ -1428,7 +1568,7 @@ def _create_run_table(conn: ConnectionPlus,
             insert_values(conn, formatted_name,
                           [p.name for p in parameters], values)
         elif parameters:
-            _parameters = ",".join([p.sql_repr() for p in parameters])
+            _parameters = ",".join(p.sql_repr() for p in parameters)
             query = f"""
             CREATE TABLE "{formatted_name}" (
                 id INTEGER PRIMARY KEY,
@@ -1539,7 +1679,9 @@ def get_metadata(conn: ConnectionPlus, tag: str, table_name: str) -> str:
                             "result_table_name", table_name)
 
 
-def get_metadata_from_run_id(conn: ConnectionPlus, run_id: int) -> Dict:
+def get_metadata_from_run_id(
+        conn: ConnectionPlus, run_id: int
+) -> Dict[str, Any]:
     """
     Get all metadata associated with the specified run
     """
@@ -1571,11 +1713,30 @@ def get_metadata_from_run_id(conn: ConnectionPlus, run_id: int) -> Dict:
     return metadata
 
 
+def validate_meta_data(metadata: Mapping[str, Any]) -> None:
+    """
+    Validate metadata tags and values. Note that None is not a valid
+    metadata value, and keys should be valid SQLite column names
+    (i.e. contain only alphanumeric characters and underscores).
+
+    Args:
+        metadata: the metadata mapping (tags to values)
+    """
+    for tag, val in metadata.items():
+        if not tag.isidentifier():
+            raise KeyError(f'Tag {tag} is not a valid tag. '
+                            'Use only alphanumeric characters and underscores!')
+        if val is None:
+            raise ValueError(f'Tag {tag} has value None. '
+                              'That is not a valid metadata value!')
+
+
 def insert_meta_data(conn: ConnectionPlus, row_id: int, table_name: str,
                      metadata: Mapping[str, Any]) -> None:
     """
     Insert new metadata column and add values. Note that None is not a valid
-    metadata value
+    metadata value, and keys should be valid SQLite column names
+    (i.e. contain only alphanumeric characters and underscores).
 
     Args:
         - conn: the connection to the sqlite database
@@ -1583,10 +1744,7 @@ def insert_meta_data(conn: ConnectionPlus, row_id: int, table_name: str,
         - table_name: the table to add to, defaults to runs
         - metadata: the metadata to add
     """
-    for tag, val in metadata.items():
-        if val is None:
-            raise ValueError(f'Tag {tag} has value None. '
-                             ' That is not a valid metadata value!')
+    validate_meta_data(metadata)
     for key in metadata.keys():
         insert_column(conn, table_name, key)
     update_meta_data(conn, row_id, table_name, metadata)
@@ -1603,6 +1761,7 @@ def update_meta_data(conn: ConnectionPlus, row_id: int, table_name: str,
         - table_name: the table to add to, defaults to runs
         - metadata: the metadata to add
     """
+    validate_meta_data(metadata)
     update_where(conn, table_name, 'rowid', row_id, **metadata)
 
 
@@ -1612,7 +1771,9 @@ def add_meta_data(conn: ConnectionPlus,
                   table_name: str = "runs") -> None:
     """
     Add metadata data (updates if exists, create otherwise).
-    Note that None is not a valid metadata value.
+    Note that None is not a valid metadata value, and keys
+    should be valid SQLite column names (i.e. contain only
+    alphanumeric characters and underscores).
 
     Args:
         - conn: the connection to the sqlite database
@@ -1709,7 +1870,8 @@ def update_GUIDs(conn: ConnectionPlus) -> None:
 
         log.info(f'Succesfully updated run number {run_id}.')
 
-    actions: Dict[Tuple[bool, bool], Callable]
+    actions: Dict[Tuple[bool, bool],
+                  Callable[[int, ConnectionPlus, Dict[str, Any]], None]]
     actions = {(True, True): _both_zero,
                (False, True): _workstation_only_zero,
                (True, False): _location_only_zero,
@@ -1736,3 +1898,147 @@ def remove_trigger(conn: ConnectionPlus, trigger_id: str) -> None:
         trigger_id: id of the trigger
     """
     transaction(conn, f"DROP TRIGGER IF EXISTS {trigger_id};")
+
+
+def load_new_data_for_rundescriber(
+        conn: ConnectionPlus,
+        table_name: str,
+        rundescriber: RunDescriber,
+        read_status: Mapping[str, int],
+) -> Tuple[Dict[str, Dict[str, np.ndarray]], Dict[str, int]]:
+    """
+    Load all new data for a given rundesciber since the rows given by read_status.
+
+    Args:
+        conn: The connection to the sqlite database
+        table_name: The name of the table the data is stored in
+        rundescriber: The rundescriber that describes the run
+        read_status: Mapping from dependent parameter name to number of rows
+          read from the db previously.
+
+    Returns:
+        new data and an updated number of rows read.
+
+    """
+
+    parameters = tuple(ps.name for ps in
+                       rundescriber.interdeps.non_dependencies)
+    updated_read_status: Dict[str, int] = dict(read_status)
+    new_data_dict: Dict[str, Dict[str, np.ndarray]] = {}
+
+    for meas_parameter in parameters:
+
+        start = read_status.get(meas_parameter, 0) + 1
+        new_data, n_rows_read = get_parameter_data_for_one_paramtree(
+            conn,
+            table_name,
+            rundescriber=rundescriber,
+            output_param=meas_parameter,
+            start=start,
+            end=None
+        )
+        new_data_dict[meas_parameter] = new_data
+        updated_read_status[meas_parameter] = start + n_rows_read - 1
+    return new_data_dict, updated_read_status
+
+
+class ExperimentAttributeDict(TypedDict):
+    exp_id: int
+    name: str
+    sample_name: str
+    start_time: float
+    end_time: Optional[float]
+    format_string: str
+
+
+def get_experiment_attributes_by_exp_id(
+    conn: ConnectionPlus, exp_id: int
+) -> ExperimentAttributeDict:
+    """
+    Return a dict of all attributes describing an experiment from the exp_id.
+
+    Args:
+        conn: The connection to the sqlite database
+        exp_id: the id of the experiment
+
+    Returns:
+        A dictionary of the experiment attributes.
+    """
+    exp_attr_names = ["name", "sample_name", "start_time", "end_time", "format_string"]
+
+    exp_attr_vals = select_many_where(
+        conn, "experiments", *exp_attr_names, where_column="exp_id", where_value=exp_id
+    )
+
+    temp_exp_attrs = dict(zip(exp_attr_names, exp_attr_vals))
+    end_time = (
+        float(temp_exp_attrs["end_time"])
+        if temp_exp_attrs["end_time"] is not None
+        else None
+    )
+
+    exp_attrs: ExperimentAttributeDict = {
+        "name": str(temp_exp_attrs["name"]),
+        "sample_name": str(temp_exp_attrs["sample_name"]),
+        "start_time": float(temp_exp_attrs["start_time"]),
+        "end_time": end_time,
+        "format_string": str(temp_exp_attrs["format_string"]),
+        "exp_id": exp_id,
+    }
+
+    return exp_attrs
+
+
+def _populate_results_table(
+    source_conn: ConnectionPlus,
+    target_conn: ConnectionPlus,
+    source_table_name: str,
+    target_table_name: str,
+) -> None:
+    """
+    Copy over all the entries of the results table
+    """
+    get_data_query = f"""
+                     SELECT *
+                     FROM "{source_table_name}"
+                     """
+
+    source_cursor = source_conn.cursor()
+    target_cursor = target_conn.cursor()
+
+    for row in source_cursor.execute(get_data_query):
+        column_names = ",".join(row.keys()[1:])  # the first key is "id"
+        values = tuple(val for val in row[1:])
+        value_placeholders = sql_placeholder_string(len(values))
+        insert_data_query = f"""
+                             INSERT INTO "{target_table_name}"
+                             ({column_names})
+                             values {value_placeholders}
+                             """
+        target_cursor.execute(insert_data_query, values)
+
+
+def _rewrite_timestamps(
+    target_conn: ConnectionPlus,
+    target_run_id: int,
+    correct_run_timestamp: Optional[float],
+    correct_completed_timestamp: Optional[float],
+) -> None:
+    """
+    Update the timestamp to match the original one
+    """
+    query = """
+            UPDATE runs
+            SET run_timestamp = ?
+            WHERE run_id = ?
+            """
+    cursor = target_conn.cursor()
+    cursor.execute(query, (correct_run_timestamp, target_run_id))
+
+    query = """
+            UPDATE runs
+            SET completed_timestamp = ?
+            WHERE run_id = ?
+            """
+    cursor = target_conn.cursor()
+    cursor.execute(query, (correct_completed_timestamp, target_run_id))

@@ -4,9 +4,10 @@ coordinate systems.
 """
 
 
+from typing import Any, List, Optional, Sequence, Type, TypeVar, Union
+
 import numpy as np
 
-from typing import Union, Type, TypeVar, Optional
 NormOrder = Union[str, float]
 T = TypeVar('T', bound='FieldVector')
 
@@ -59,7 +60,7 @@ class FieldVector:
 
         self._compute_unknowns()
 
-    def _set_attribute_value(self, attr_name, value):
+    def _set_attribute_value(self, attr_name: str, value: Optional[float]) -> None:
         if value is None:
             return
 
@@ -74,7 +75,9 @@ class FieldVector:
                     f"value"
                 )
 
-    def _set_attribute_values(self, attr_names, values):
+    def _set_attribute_values(
+        self, attr_names: Sequence[str], values: Sequence[Optional[float]]
+    ) -> None:
         for attr_name, value in zip(attr_names, values):
             self._set_attribute_value(attr_name, value)
 
@@ -126,7 +129,7 @@ class FieldVector:
 
         return x, y, z, r, theta, phi, rho
 
-    def _compute_unknowns(self):
+    def _compute_unknowns(self) -> None:
         """
         Compute all coordinates. To do this we need either the set (x, y, z)
         to contain no ``None`` values, or the set (r, theta, phi), or the set
@@ -148,13 +151,13 @@ class FieldVector:
                 self._set_attribute_values(FieldVector.attributes, new_values)
                 break
 
-    def copy(self: T, other: T):
+    def copy(self: T, other: T) -> None:
         """Copy the properties of other vector to yourself."""
         for att in FieldVector.attributes:
             value = getattr(other, "_" + att)
             setattr(self, "_" + att, value)
 
-    def set_vector(self, **new_values):
+    def set_vector(self, **new_values: float) -> None:
         """
         Reset the the values of the vector.
 
@@ -179,7 +182,7 @@ class FieldVector:
         new_vector = FieldVector(**new_values)
         self.copy(new_vector)
 
-    def set_component(self, **new_values):
+    def set_component(self, **new_values: float) -> None:
         """
         Set a single component of the vector to some new value. It is
         disallowed for the user to set vector components manually as this can
@@ -227,13 +230,13 @@ class FieldVector:
 
         self._compute_unknowns()
 
-    def get_components(self, *names):
+    def get_components(self, *names: str):
         """Get field components by name."""
 
-        def convert_angle_to_degrees(name, value):
+        def convert_angle_to_degrees(name: str, value: float) -> float:
             # Convert all angles to degrees
             if name in ["theta", "phi"]:
-                return np.degrees(value)
+                return float(np.degrees(value))
             else:
                 return value
 
@@ -243,7 +246,7 @@ class FieldVector:
 
         return components
 
-    def is_equal(self, other):
+    def is_equal(self, other: "FieldVector") -> bool:
         """
         Returns ``True`` if ``other`` is equivalent to ``self``, ``False`` otherwise.
         """
@@ -255,13 +258,13 @@ class FieldVector:
 
         return True
 
-    def __getitem__(self, component):
+    def __getitem__(self, component: str) -> float:
         return self.get_components(component)[0]
 
-    def __setitem__(self, component, value):
+    def __setitem__(self, component: str, value: float) -> None:
         self.set_component(**{component: value})
 
-    def __mul__(self, other):
+    def __mul__(self, other: Any) -> "FieldVector":
         if not isinstance(other, (float, int)):
             return NotImplemented
 
@@ -270,16 +273,22 @@ class FieldVector:
             for component in 'xyz'
         })
 
-    def __rmul__(self, other):
+    def __rmul__(self, other: Any) -> "FieldVector":
         if not isinstance(other, (int, float)):
             return NotImplemented
 
         return self * other
 
-    def __neg__(self):
+    def __truediv__(self, other: Any) -> "FieldVector":
+        if not isinstance(other, (int, float)):
+            return NotImplemented
+
+        return self * (1.0 / other)
+
+    def __neg__(self) -> "FieldVector":
         return -1 * self
 
-    def __add__(self, other):
+    def __add__(self, other: Any) -> "FieldVector":
         if not isinstance(other, FieldVector):
             return NotImplemented
 
@@ -288,7 +297,7 @@ class FieldVector:
             for component in 'xyz'
         })
 
-    def __sub__(self, other):
+    def __sub__(self, other: Any) -> "FieldVector":
         if not isinstance(other, FieldVector):
             return NotImplemented
 
@@ -331,6 +340,8 @@ class FieldVector:
 
     @property
     def theta(self) -> Optional[float]:
+        if self._theta is None:
+            return None
         return float(np.degrees(self._theta))
 
     @property
@@ -339,6 +350,8 @@ class FieldVector:
 
     @property
     def phi(self) -> Optional[float]:
+        if self._phi is None:
+            return None
         return float(np.degrees(self._phi))
 
     # Representation Methods #

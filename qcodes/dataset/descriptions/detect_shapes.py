@@ -1,6 +1,6 @@
 from collections import abc
 from numbers import Integral
-from typing import Dict, List, Sequence, Sized, Tuple, Union
+from typing import Any, Dict, List, Sequence, Sized, Tuple, Union
 
 import numpy as np
 
@@ -55,13 +55,16 @@ def detect_shape_of_measurement(
     shapes: Dict[str, Tuple[int, ...]] = {}
 
     for param_name in array_shapes.keys():
-        shapes[param_name] = tuple(loop_shape) + array_shapes[param_name]
+        total_shape = tuple(loop_shape) + array_shapes[param_name]
+        if total_shape == ():
+            total_shape = (1,)
+        shapes[param_name] = total_shape
 
     return shapes
 
 
 def _get_shape_of_step(
-        step: Union[int, np.integer, Sized, np.ndarray]
+        step: Union[int, "np.integer[Any]", Sized, np.ndarray]
 ) -> int:
     if isinstance(step, Integral):
         return int(step)

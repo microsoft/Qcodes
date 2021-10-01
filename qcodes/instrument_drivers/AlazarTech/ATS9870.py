@@ -28,7 +28,7 @@ class AlazarTech_ATS9870(AlazarTech_ATS):
                            val_mapping={'INTERNAL_CLOCK': 1,
                                         'SLOW_EXTERNAL_CLOCK': 4,
                                         'EXTERNAL_CLOCK_AC': 5,
-                                        'EXTERNAL_CLOCK_10_MHz_REF': 7})
+                                        'EXTERNAL_CLOCK_10MHz_REF': 7})
 
         self.add_parameter(name='external_sample_rate',
                            get_cmd=None,

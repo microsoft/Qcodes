@@ -7,6 +7,7 @@ from distutils.version import LooseVersion
 from typing import Any
 
 import numpy as np
+
 from qcodes import VisaInstrument
 from qcodes import validators as vals
 from qcodes.instrument.channel import ChannelList, InstrumentChannel
@@ -21,21 +22,24 @@ class TraceNotReady(Exception):
 
 class ScopeArray(ArrayParameter):
     def __init__(
-            self,
-            name: str,
-            instrument: "RigolDS4000Channel",
-            channel: int,
-            raw: bool = False):
-        super().__init__(name=name,
-                         shape=(1400,),
-                         label='Voltage',
-                         unit='V',
-                         setpoint_names=('Time', ),
-                         setpoint_labels=('Time', ),
-                         setpoint_units=('s',),
-                         docstring='holds an array from scope')
+        self,
+        name: str,
+        instrument: "RigolDS4000Channel",
+        channel: int,
+        raw: bool = False,
+    ):
+        super().__init__(
+            name=name,
+            shape=(1400,),
+            label="Voltage",
+            unit="V",
+            setpoint_names=("Time",),
+            setpoint_labels=("Time",),
+            setpoint_units=("s",),
+            docstring="holds an array from scope",
+            instrument=instrument,
+        )
         self.channel = channel
-        self._instrument = instrument
         self.raw = raw
         self.max_read_step = 50
         self.trace_ready = False
@@ -162,7 +166,7 @@ class ScopeArray(ArrayParameter):
 
     def get_preamble(self) -> None:
         assert isinstance(self.instrument, RigolDS4000Channel)
-        preamble_nt = namedtuple('preamble', ["format", "mode", "points", "count", "xincrement", "xorigin",
+        preamble_nt = namedtuple('preamble_nt', ["format", "mode", "points", "count", "xincrement", "xorigin",
                                               "xreference", "yincrement", "yorigin", "yreference"])
         conv = lambda x: int(x) if x.isdigit() else float(x)
 
@@ -201,6 +205,7 @@ class RigolDS4000Channel(InstrumentChannel):
                            parameter_class=ScopeArray,
                            raw=True
                            )
+
 
 class DS4000(VisaInstrument):
     """

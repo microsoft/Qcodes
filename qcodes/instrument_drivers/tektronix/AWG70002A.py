@@ -1,3 +1,5 @@
+from typing import Any
+
 from .AWG70000A import AWG70000A
 
 
@@ -9,7 +11,7 @@ class AWG70002A(AWG70000A):
     """
 
     def __init__(self, name: str, address: str,
-                 timeout: float=10, **kwargs) -> None:
+                 timeout: float=10, **kwargs: Any) -> None:
         """
         Args:
             name: The name used internally by QCoDeS in the DataSet

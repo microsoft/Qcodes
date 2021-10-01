@@ -1,12 +1,12 @@
-import numpy as np
 import logging
-from typing import Sequence, Dict, Callable, Tuple, Optional, List, Any
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
+
+import numpy as np
 
 from qcodes import VisaInstrument
-from qcodes.instrument.channel import InstrumentChannel, ChannelList
-from qcodes.utils.validators import Numbers, Ints, Enum
+from qcodes.instrument.channel import ChannelList, InstrumentChannel
 from qcodes.instrument.parameter import ArrayParameter
-
+from qcodes.utils.validators import ComplexNumbers, Enum, Ints, Numbers
 
 log = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ class SR86xBufferReadout(ArrayParameter):
         name: Name of the parameter.
         instrument: The instrument to add this parameter to.
     """
-    def __init__(self, name: str, instrument: 'SR86x') -> None:
+    def __init__(self, name: str, instrument: 'SR86x', **kwargs: Any) -> None:
 
         unit = "deg"
         if name in ["X", "Y", "R"]:
@@ -34,7 +34,8 @@ class SR86xBufferReadout(ArrayParameter):
                          setpoint_units=('s',),
                          instrument=instrument,
                          docstring='Holds an acquired (part of the) data '
-                                   'buffer of one channel.')
+                                   'buffer of one channel.',
+                         **kwargs)
 
         self._capture_data: Optional[np.ndarray] = None
 
@@ -157,7 +158,7 @@ class SR86xBuffer(InstrumentChannel):
 
     def snapshot_base(self, update: Optional[bool] = False,
                       params_to_skip_update: Optional[Sequence[str]] = None
-                      ) -> Dict:
+                      ) -> Dict[Any, Any]:
         if params_to_skip_update is None:
             params_to_skip_update = []
         # we omit count_capture_kilobytes from the snapshot because
@@ -230,11 +231,10 @@ class SR86xBuffer(InstrumentChannel):
         nearest_valid_rate = max_rate / 2 ** n_round
         if abs(capture_rate_hz - nearest_valid_rate) > 1:
             available_frequencies = ", ".join(
-                [str(f) for f in self.available_frequencies])
-            log.warning("Warning: Setting capture rate to {:.5} Hz"
-                        .format(nearest_valid_rate))
-            log.warning("The available frequencies are: {}"
-                        .format(available_frequencies))
+                str(f) for f in self.available_frequencies
+            )
+            log.warning(f"Warning: Setting capture rate to {nearest_valid_rate:.5} Hz")
+            log.warning(f"The available frequencies are: {available_frequencies}")
 
         return n_round
 
@@ -322,7 +322,7 @@ class SR86xBuffer(InstrumentChannel):
         while n_captured_bytes < n_bytes_to_capture:
             n_captured_bytes = self.count_capture_bytes()
 
-    def get_capture_data(self, sample_count: int) -> dict:
+    def get_capture_data(self, sample_count: int) -> Dict[str, np.ndarray]:
         """
         Read the given number of samples of the capture data from the buffer.
 
@@ -463,10 +463,11 @@ class SR86xBuffer(InstrumentChannel):
 
         return np.array(values)
 
-    def capture_one_sample_per_trigger(self,
-                                       trigger_count: int,
-                                       start_triggers_pulsetrain: Callable
-                                       ) -> dict:
+    def capture_one_sample_per_trigger(
+            self,
+            trigger_count: int,
+            start_triggers_pulsetrain: Callable[..., Any]
+    ) -> Dict[str, np.ndarray]:
         """
         Capture one sample per each trigger, and return when the specified
         number of triggers has been received.
@@ -492,8 +493,8 @@ class SR86xBuffer(InstrumentChannel):
 
     def capture_samples_after_trigger(self,
                                       sample_count: int,
-                                      send_trigger: Callable
-                                      ) -> dict:
+                                      send_trigger: Callable[..., Any]
+                                      ) -> Dict[str, np.ndarray]:
         """
         Capture a number of samples after a trigger has been received.
         Please refer to page 135 of the manual for details.
@@ -517,7 +518,7 @@ class SR86xBuffer(InstrumentChannel):
         self.stop_capture()
         return self.get_capture_data(sample_count)
 
-    def capture_samples(self, sample_count: int) -> dict:
+    def capture_samples(self, sample_count: int) -> Dict[str, np.ndarray]:
         """
         Capture a number of samples at a capture rate, starting immediately.
         Unlike the "continuous" capture mode, here the buffer does not get
@@ -875,6 +876,11 @@ class SR86x(VisaInstrument):
                            get_cmd='OUTP? 3',
                            get_parser=float,
                            unit='deg')
+        self.add_parameter('complex_voltage',
+                           label='Voltage',
+                           get_cmd=self._get_complex_voltage,
+                           unit='V',
+                           vals=ComplexNumbers())
 
         # CH1/CH2 Output Commands
         self.add_parameter('X_offset',
@@ -968,6 +974,10 @@ class SR86x(VisaInstrument):
     def _set_units(self, unit: str) -> None:
         for param in [self.X, self.Y, self.R, self.sensitivity]:
             param.unit = unit
+
+    def _get_complex_voltage(self) -> complex:
+        x, y = self.get_values('X', 'Y')
+        return x + 1.0j*y
 
     def _get_input_config(self, s: int) -> str:
         mode = self._N_TO_INPUT_SIGNAL[int(s)]

@@ -1,4 +1,3 @@
-import functools
 import importlib
 import json
 import logging
@@ -6,60 +5,111 @@ import os
 import time
 import uuid
 from dataclasses import dataclass
-from queue import Empty, Queue
+from queue import Queue
 from threading import Thread
-from typing import (TYPE_CHECKING, Any, Callable, Dict, List, Mapping,
-                    Optional, Sequence, Set, Sized, Tuple, Union)
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    Sized,
+    Tuple,
+    Union,
+)
 
 import numpy
+import pandas as pd
 
 import qcodes
-from qcodes.dataset.descriptions.dependencies import (DependencyError,
-                                                      InterDependencies_)
+from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
-from qcodes.dataset.descriptions.versioning.converters import (new_to_old,
-                                                               old_to_new)
+from qcodes.dataset.descriptions.versioning.converters import new_to_old, old_to_new
 from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
-from qcodes.dataset.guids import (filter_guids_by_parts, generate_guid,
-                                  parse_guid)
-from qcodes.dataset.linked_datasets.links import (Link, links_to_str,
-                                                  str_to_links)
-from qcodes.dataset.sqlite.connection import (ConnectionPlus, atomic,
-                                              atomic_transaction, transaction)
-from qcodes.dataset.sqlite.database import (conn_from_dbpath_or_conn, connect,
-                                            get_DB_location)
+from qcodes.dataset.experiment_settings import get_default_experiment_id
+from qcodes.dataset.export_config import (
+    DataExportType,
+    get_data_export_path,
+    get_data_export_prefix,
+    get_data_export_type,
+)
+from qcodes.dataset.guids import filter_guids_by_parts, generate_guid, parse_guid
+from qcodes.dataset.linked_datasets.links import Link, links_to_str, str_to_links
+from qcodes.dataset.sqlite.connection import (
+    ConnectionPlus,
+    atomic,
+    atomic_transaction,
+    transaction,
+)
+from qcodes.dataset.sqlite.database import (
+    conn_from_dbpath_or_conn,
+    connect,
+    get_DB_location,
+)
 from qcodes.dataset.sqlite.queries import (
-    add_meta_data, add_parameter, completed, create_run,
+    add_meta_data,
+    add_parameter,
+    completed,
+    create_run,
     get_completed_timestamp_from_run_id,
-    get_experiment_name_from_experiment_id, get_guid_from_run_id,
-    get_guids_from_run_spec, get_last_experiment, get_metadata,
-    get_metadata_from_run_id, get_parameter_data, get_parent_dataset_links,
-    get_run_description, get_run_timestamp_from_run_id, get_runid_from_guid,
-    get_sample_name_from_experiment_id, get_setpoints, mark_run_complete,
-    remove_trigger, run_exists, set_run_timestamp, update_parent_datasets,
-    update_run_description)
-from qcodes.dataset.sqlite.query_helpers import (VALUE, VALUES,
-                                                 insert_many_values,
-                                                 insert_values, length, one,
-                                                 select_one_where)
+    get_experiment_name_from_experiment_id,
+    get_guid_from_run_id,
+    get_guids_from_run_spec,
+    get_last_experiment,
+    get_metadata,
+    get_metadata_from_run_id,
+    get_parameter_data,
+    get_parent_dataset_links,
+    get_run_description,
+    get_run_timestamp_from_run_id,
+    get_runid_from_guid,
+    get_sample_name_from_experiment_id,
+    mark_run_complete,
+    remove_trigger,
+    run_exists,
+    set_run_timestamp,
+    update_parent_datasets,
+    update_run_description,
+)
+from qcodes.dataset.sqlite.query_helpers import (
+    VALUE,
+    VALUES,
+    insert_many_values,
+    length,
+    one,
+    select_one_where,
+)
 from qcodes.instrument.parameter import _BaseParameter
 from qcodes.utils.deprecate import deprecate
+from qcodes.utils.helpers import NumpyJSONEncoder
 
-from .data_set_cache import DataSetCache
+from .data_set_cache import DataSetCacheWithDBBackend
 from .descriptions.versioning import serialization as serial
+from .exporters.export_info import ExportInfo
+from .exporters.export_to_csv import dataframe_to_csv
+from .exporters.export_to_pandas import (
+    load_to_concatenated_dataframe,
+    load_to_dataframe_dict,
+)
+from .exporters.export_to_xarray import (
+    load_to_xarray_dataarray_dict,
+    load_to_xarray_dataset,
+)
+from .subscriber import _Subscriber
 
 if TYPE_CHECKING:
     import pandas as pd
-
+    import xarray as xr
 
 
 log = logging.getLogger(__name__)
 
-
-# TODO: as of now every time a result is inserted with add_result the db is
-# saved same for add_results. IS THIS THE BEHAVIOUR WE WANT?
 
 # TODO: storing parameters in separate table as an extension (dropping
 # the column parametenrs would be much nicer
@@ -92,133 +142,13 @@ ParameterData = Dict[str, Dict[str, numpy.ndarray]]
 class CompletedError(RuntimeError):
     pass
 
-class DataLengthException(Exception):
-    pass
-
-class DataPathException(Exception):
-    pass
-
-
-class _Subscriber(Thread):
-    """
-    Class to add a subscriber to a :class:`.DataSet`. The subscriber gets called every
-    time an insert is made to the results_table.
-
-    The _Subscriber is not meant to be instantiated directly, but rather used
-    via the 'subscribe' method of the :class:`.DataSet`.
-
-    NOTE: A subscriber should be added *after* all parameters have been added.
-
-    NOTE: Special care shall be taken when using the *state* object: it is the
-    user's responsibility to operate with it in a thread-safe way.
-    """
-    def __init__(self,
-                 dataSet: 'DataSet',
-                 id_: str,
-                 callback: Callable[..., None],
-                 state: Optional[Any] = None,
-                 loop_sleep_time: int = 0,  # in milliseconds
-                 min_queue_length: int = 1,
-                 callback_kwargs: Optional[Mapping[str, Any]] = None
-                 ) -> None:
-        super().__init__()
-
-        self._id = id_
-
-        self.dataSet = dataSet
-        self.table_name = dataSet.table_name
-        self._data_set_len = len(dataSet)
-
-        self.state = state
-
-        self.data_queue: Queue = Queue()
-        self._queue_length: int = 0
-        self._stop_signal: bool = False
-        # convert milliseconds to seconds
-        self._loop_sleep_time = loop_sleep_time / 1000
-        self.min_queue_length = min_queue_length
-
-        if callback_kwargs is None or len(callback_kwargs) == 0:
-            self.callback = callback
-        else:
-            self.callback = functools.partial(callback, **callback_kwargs)
-
-        self.callback_id = f"callback{self._id}"
-        self.trigger_id = f"sub{self._id}"
-
-        conn = dataSet.conn
-
-        conn.create_function(self.callback_id, -1, self._cache_data_to_queue)
-
-        parameters = dataSet.get_parameters()
-        sql_param_list = ",".join([f"NEW.{p.name}" for p in parameters])
-        sql_create_trigger_for_callback = f"""
-        CREATE TRIGGER {self.trigger_id}
-            AFTER INSERT ON '{self.table_name}'
-        BEGIN
-            SELECT {self.callback_id}({sql_param_list});
-        END;"""
-        atomic_transaction(conn, sql_create_trigger_for_callback)
-
-        self.log = logging.getLogger(f"_Subscriber {self._id}")
-
-    def _cache_data_to_queue(self, *args: Any) -> None:
-        self.data_queue.put(args)
-        self._data_set_len += 1
-        self._queue_length += 1
-
-    def run(self) -> None:
-        self.log.debug("Starting subscriber")
-        self._loop()
-
-    @staticmethod
-    def _exhaust_queue(queue: Queue) -> List:
-        result_list = []
-        while True:
-            try:
-                result_list.append(queue.get(block=False))
-            except Empty:
-                break
-        return result_list
-
-    def _call_callback_on_queue_data(self) -> None:
-        result_list = self._exhaust_queue(self.data_queue)
-        self.callback(result_list, self._data_set_len, self.state)
-
-    def _loop(self) -> None:
-        while True:
-            if self._stop_signal:
-                self._clean_up()
-                break
-
-            if self._queue_length >= self.min_queue_length:
-                self._call_callback_on_queue_data()
-                self._queue_length = 0
-
-            time.sleep(self._loop_sleep_time)
-
-            if self.dataSet.completed:
-                self._call_callback_on_queue_data()
-                break
-
-    def done_callback(self) -> None:
-        self._call_callback_on_queue_data()
-
-    def schedule_stop(self) -> None:
-        if not self._stop_signal:
-            self.log.debug("Scheduling stop")
-            self._stop_signal = True
-
-    def _clean_up(self) -> None:
-        self.log.debug("Stopped subscriber")
-
 
 class _BackgroundWriter(Thread):
     """
     Write the results from the DataSet's dataqueue in a new thread
     """
 
-    def __init__(self, queue: Queue, conn: ConnectionPlus):
+    def __init__(self, queue: "Queue[Any]", conn: ConnectionPlus):
         super().__init__(daemon=True)
         self.queue = queue
         self.path = conn.path_to_dbfile
@@ -237,7 +167,8 @@ class _BackgroundWriter(Thread):
             elif item['keys'] == 'finalize':
                 _WRITERS[self.path].active_datasets.remove(item['values'])
             else:
-                self.write_results(item['keys'], item['values'], item['table_name'])
+                self.write_results(
+                    item['keys'], item['values'], item['table_name'])
             self.queue.task_done()
 
     def write_results(self, keys: Sequence[str],
@@ -262,7 +193,7 @@ class _BackgroundWriter(Thread):
 class _WriterStatus:
     bg_writer: Optional[_BackgroundWriter]
     write_in_background: Optional[bool]
-    data_write_queue: Queue
+    data_write_queue: "Queue[Any]"
     active_datasets: Set[int]
 
 
@@ -290,7 +221,8 @@ class DataSet(Sized):
                  specs: Optional[SpecsOrInterDeps] = None,
                  values: Optional[VALUES] = None,
                  metadata: Optional[Mapping[str, Any]] = None,
-                 shapes: Optional[Shapes] = None) -> None:
+                 shapes: Optional[Shapes] = None,
+                 in_memory_cache: bool = True) -> None:
         """
         Create a new :class:`.DataSet` object. The object can either hold a new run or
         an already existing run. If a ``run_id`` is provided, then an old run is
@@ -298,27 +230,31 @@ class DataSet(Sized):
 
         Args:
             path_to_db: path to the sqlite file on disk. If not provided, the
-              path will be read from the config.
+                path will be read from the config.
             run_id: provide this when loading an existing run, leave it
-              as None when creating a new run
+                as None when creating a new run
             conn: connection to the DB; if provided and ``path_to_db`` is
-              provided as well, then a ``ValueError`` is raised (this is to
-              prevent the possibility of providing a connection to a DB
-              file that is different from ``path_to_db``)
+                provided as well, then a ``ValueError`` is raised (this is to
+                prevent the possibility of providing a connection to a DB
+                file that is different from ``path_to_db``)
             exp_id: the id of the experiment in which to create a new run.
-              Ignored if ``run_id`` is provided.
+                Ignored if ``run_id`` is provided.
             name: the name of the dataset. Ignored if ``run_id`` is provided.
             specs: paramspecs belonging to the dataset or an ``InterDependencies_``
-              object that describes the dataset. Ignored if ``run_id`` is provided.
+                object that describes the dataset. Ignored if ``run_id``
+                is provided.
             values: values to insert into the dataset. Ignored if ``run_id`` is
-              provided.
+                provided.
             metadata: metadata to insert into the dataset. Ignored if ``run_id``
-              is provided.
+                is provided.
             shapes:
                 An optional dict from names of dependent parameters to the shape
                 of the data captured as a list of integers. The list is in the
                 same order as the interdependencies or paramspecs provided.
                 Ignored if ``run_id`` is provided.
+            in_memory_cache: Should measured data be keep in memory
+                and available as part of the `dataset.cache` object.
+
         """
         self.conn = conn_from_dbpath_or_conn(conn, path_to_db)
 
@@ -326,8 +262,10 @@ class DataSet(Sized):
         self.subscribers: Dict[str, _Subscriber] = {}
         self._parent_dataset_links: List[Link]
         #: In memory representation of the data in the dataset.
-        self.cache: DataSetCache = DataSetCache(self)
+        self._cache: DataSetCacheWithDBBackend = DataSetCacheWithDBBackend(self)
         self._results: List[Dict[str, VALUE]] = []
+        self._in_memory_cache = in_memory_cache
+        self._export_path: Optional[str] = None
 
         if run_id is not None:
             if not run_exists(self.conn, run_id):
@@ -340,18 +278,18 @@ class DataSet(Sized):
             self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
             self._started = self.run_timestamp_raw is not None
             self._parent_dataset_links = str_to_links(
-                get_parent_dataset_links(self.conn, self.run_id))
+                get_parent_dataset_links(self.conn, self.run_id)
+            )
+            self._export_info = ExportInfo.from_str(
+                self.metadata.get("export_info", "")
+            )
         else:
             # Actually perform all the side effects needed for the creation
             # of a new dataset. Note that a dataset is created (in the DB)
             # with no parameters; they are written to disk when the dataset
             # is marked as started
             if exp_id is None:
-                exp_id = get_last_experiment(self.conn)
-                if exp_id is None:  # if it's still None, then...
-                    raise ValueError("No experiments found."
-                                     "You can start a new one with:"
-                                     " new_experiment(name, sample_name)")
+                exp_id = get_default_experiment_id(self.conn)
             name = name or "dataset"
             _, run_id, __ = create_run(self.conn, exp_id, name,
                                        generate_guid(),
@@ -376,15 +314,40 @@ class DataSet(Sized):
 
             self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
             self._parent_dataset_links = []
+            self._export_info = ExportInfo({})
 
         if _WRITERS.get(self.path_to_db) is None:
-            queue: Queue = Queue()
+            queue: "Queue[Any]" = Queue()
             ws: _WriterStatus = _WriterStatus(
                 bg_writer=None,
                 write_in_background=None,
                 data_write_queue=queue,
                 active_datasets=set())
             _WRITERS[self.path_to_db] = ws
+
+    def prepare(
+        self,
+        *,
+        snapshot: Mapping[Any, Any],
+        interdeps: InterDependencies_,
+        shapes: Shapes = None,
+        parent_datasets: Sequence[Mapping[Any, Any]] = (),
+        write_in_background: bool = False,
+    ) -> None:
+
+        self.add_snapshot(json.dumps({"station": snapshot}, cls=NumpyJSONEncoder))
+
+        if interdeps == InterDependencies_():
+            raise RuntimeError("No parameters supplied")
+
+        self.set_interdependencies(interdeps, shapes)
+        links = [Link(head=self.guid, **pdict) for pdict in parent_datasets]
+        self.parent_dataset_links = links
+        self.mark_started(start_bg_writer=write_in_background)
+
+    @property
+    def cache(self) -> DataSetCacheWithDBBackend:
+        return self._cache
 
     @property
     def run_id(self) -> int:
@@ -414,7 +377,7 @@ class DataSet(Sized):
         return get_guid_from_run_id(self.conn, self.run_id)
 
     @property
-    def snapshot(self) -> Optional[dict]:
+    def snapshot(self) -> Optional[Dict[str, Any]]:
         """Snapshot of the run as dictionary (or None)"""
         snapshot_json = self.snapshot_raw
         if snapshot_json is not None:
@@ -423,10 +386,15 @@ class DataSet(Sized):
             return None
 
     @property
-    def snapshot_raw(self) -> Optional[str]:
+    def _snapshot_raw(self) -> Optional[str]:
         """Snapshot of the run as a JSON-formatted string (or None)"""
         return select_one_where(self.conn, "runs", "snapshot",
                                 "run_id", self.run_id)
+
+    @property
+    def snapshot_raw(self) -> Optional[str]:
+        """Snapshot of the run as a JSON-formatted string (or None)"""
+        return self._snapshot_raw
 
     @property
     def number_of_results(self) -> int:
@@ -493,7 +461,7 @@ class DataSet(Sized):
         return self._rundescriber
 
     @property
-    def metadata(self) -> Dict:
+    def metadata(self) -> Dict[str, Any]:
         return self._metadata
 
     @property
@@ -625,14 +593,6 @@ class DataSet(Sized):
         self.conn.close()
         self.conn = connect(self.path_to_db, self._debug)
 
-    def add_parameter(self, spec: ParamSpec) -> None:
-        """
-        Old method; don't use it.
-        """
-        raise NotImplementedError('This method has been removed. '
-                                  'Please use DataSet.set_interdependencies '
-                                  'instead.')
-
     def set_interdependencies(self,
                               interdeps: InterDependencies_,
                               shapes: Shapes = None) -> None:
@@ -659,7 +619,9 @@ class DataSet(Sized):
     def add_metadata(self, tag: str, metadata: Any) -> None:
         """
         Adds metadata to the :class:`.DataSet`. The metadata is stored under the
-        provided tag. Note that None is not allowed as a metadata value.
+        provided tag. Note that None is not allowed as a metadata value, and the
+        tag has to be a valid python identified (e.g. containing alphanumeric
+        characters and underscores).
 
         Args:
             tag: represents the key in the metadata dictionary
@@ -680,7 +642,8 @@ class DataSet(Sized):
             overwrite: force overwrite an existing snapshot
         """
         if self.snapshot is None or overwrite:
-            add_meta_data(self.conn, self.run_id, {'snapshot': snapshot})
+            with atomic(self.conn) as conn:
+                add_meta_data(conn, self.run_id, {"snapshot": snapshot})
         elif self.snapshot is not None and not overwrite:
             log.warning('This dataset already has a snapshot. Use overwrite'
                         '=True to overwrite that')
@@ -767,7 +730,8 @@ class DataSet(Sized):
         if start_bg_writer:
             writer_status.write_in_background = True
             if writer_status.bg_writer is None:
-                writer_status.bg_writer = _BackgroundWriter(writer_status.data_write_queue, self.conn)
+                writer_status.bg_writer = _BackgroundWriter(
+                    writer_status.data_write_queue, self.conn)
             if not writer_status.bg_writer.is_alive():
                 writer_status.bg_writer.start()
         else:
@@ -796,43 +760,6 @@ class DataSet(Sized):
             sub.done_callback()
         self._ensure_dataset_written()
 
-    @deprecate(alternative='add_results')
-    def add_result(self, results: Mapping[str, VALUE]) -> int:
-        """
-        Add a logically single result to existing parameters
-
-        Args:
-            results: dictionary with name of a parameter as the key and the
-                value to associate as the value.
-
-        Returns:
-            index in the DataSet that the result was stored at
-
-        If a parameter exist in the :class:`.DataSet` and it's not in the results
-        dictionary, "Null" values are inserted.
-
-        It is an error to provide a value for a key or keyword that is not
-        the name of a parameter in this :class:`.DataSet`.
-
-        It is an error to add results to a completed :class:`.DataSet`.
-        """
-
-        self._raise_if_not_writable()
-
-        try:
-            parameters = [self._rundescriber.interdeps._id_to_paramspec[name]
-                          for name in results]
-            self._rundescriber.interdeps.validate_subset(parameters)
-        except DependencyError as de:
-            raise ValueError(
-                'Can not add result, missing setpoint values') from de
-
-        index = insert_values(self.conn, self.table_name,
-                              list(results.keys()),
-                              list(results.values())
-                              )
-        return index
-
     def add_results(self, results: Sequence[Mapping[str, VALUE]]) -> None:
         """
         Adds a sequence of results to the :class:`.DataSet`.
@@ -851,7 +778,7 @@ class DataSet(Sized):
 
         self._raise_if_not_writable()
 
-        expected_keys = frozenset.union(*[frozenset(d) for d in results])
+        expected_keys = frozenset.union(*(frozenset(d) for d in results))
         values = [[d.get(k, None) for k in expected_keys] for d in results]
 
         writer_status = self._writer_status
@@ -873,29 +800,12 @@ class DataSet(Sized):
             raise CompletedError('This DataSet is complete, no further '
                                  'results can be added to it.')
 
-    @deprecate(alternative='add_results')
-    def add_result_to_queue(self,
-                            results: Sequence[Mapping[str, VALUE]]) -> None:
-        """
-        Add result to the output Queue from which a worker in a separate thread
-        consumes
-        """
-        self._raise_if_not_writable()
-
-        expected_keys = frozenset.union(*[frozenset(d) for d in results])
-        values = [[d.get(k, None) for k in expected_keys] for d in results]
-
-        item = {'keys': list(expected_keys), 'values': values,
-                "table_name": self.table_name}
-        writer_status = self._writer_status
-
-        writer_status.data_write_queue.put(item)
-
     def _ensure_dataset_written(self) -> None:
         writer_status = self._writer_status
 
         if writer_status.write_in_background:
-            writer_status.data_write_queue.put({'keys': 'finalize', 'values': self.run_id})
+            writer_status.data_write_queue.put(
+                {'keys': 'finalize', 'values': self.run_id})
             while self.run_id in writer_status.active_datasets:
                 time.sleep(self.background_sleep_time)
         else:
@@ -944,10 +854,21 @@ class DataSet(Sized):
         The values are returned as a dictionary with names of the requested
         parameters as keys and values consisting of dictionaries with the
         names of the parameters and its dependencies as keys and numpy arrays
-        of the data as values. If some of the parameters are stored as arrays
+        of the data as values. If the dataset has a shape recorded
+        in its metadata and the number of datapoints recorded matches the
+        expected number of points the data will be returned as numpy arrays
+        in this shape. If there are less datapoints recorded than expected
+        from the metadata the dataset will be returned as is. This could happen
+        if you call `get_parameter_data` on an incomplete dataset. See
+        :py:meth:`dataset.cache.data <.DataSetCache.data>` for an implementation that
+        returns the data with the expected shape using `NaN` or zeros as
+        placeholders.
+
+        If there are more datapoints than expected the dataset will be returned
+        as is and a warning raised.
+
+        If some of the parameters are stored as arrays
         the remaining parameters are expanded to the same shape as these.
-        Apart from this expansion the data returned by this method
-        is the transpose of the date returned by ``get_data``.
 
         If provided, the start and end arguments select a range of results
         by result count (index). If the range is empty - that is, if the end is
@@ -977,6 +898,58 @@ class DataSet(Sized):
         return get_parameter_data(self.conn, self.table_name,
                                   valid_param_names, start, end)
 
+    def to_pandas_dataframe_dict(self,
+                                 *params: Union[str,
+                                                ParamSpec,
+                                                _BaseParameter],
+                                 start: Optional[int] = None,
+                                 end: Optional[int] = None) ->\
+            Dict[str, "pd.DataFrame"]:
+        """
+        Returns the values stored in the :class:`.DataSet` for the specified parameters
+        and their dependencies as a dict of :py:class:`pandas.DataFrame` s
+        Each element in the dict is indexed by the names of the requested
+        parameters.
+
+        Each DataFrame contains a column for the data and is indexed by a
+        :py:class:`pandas.MultiIndex` formed from all the setpoints
+        of the parameter.
+
+        If no parameters are supplied data will be be
+        returned for all parameters in the :class:`.DataSet` that are not them self
+        dependencies of other parameters.
+
+        If provided, the start and end arguments select a range of results
+        by result count (index). If the range is empty - that is, if the end is
+        less than or equal to the start, or if start is after the current end
+        of the :class:`.DataSet` – then a dict of empty :py:class:`pandas.DataFrame` s is
+        returned.
+
+        Args:
+            *params: string parameter names, QCoDeS Parameter objects, and
+                ParamSpec objects. If no parameters are supplied data for
+                all parameters that are not a dependency of another
+                parameter will be returned.
+            start: start value of selection range (by result count); ignored
+                if None
+            end: end value of selection range (by results count); ignored if
+                None
+
+        Returns:
+            Dictionary from requested parameter names to
+            :py:class:`pandas.DataFrame` s with the requested parameter as
+            a column and a indexed by a :py:class:`pandas.MultiIndex` formed
+            by the dependencies.
+        """
+        datadict = self.get_parameter_data(*params,
+                                           start=start,
+                                           end=end)
+        dfs_dict = load_to_dataframe_dict(datadict)
+        return dfs_dict
+
+    @deprecate(reason='This method will be removed due to inconcise naming, please '
+               'use the renamed method to_pandas_dataframe_dict',
+               alternative='to_pandas_dataframe_dict')
     def get_data_as_pandas_dataframe(self,
                                      *params: Union[str,
                                                     ParamSpec,
@@ -1020,57 +993,157 @@ class DataSet(Sized):
             a column and a indexed by a :py:class:`pandas.MultiIndex` formed
             by the dependencies.
         """
+        return self.to_pandas_dataframe_dict(*params, start=start, end=end)
+
+    def to_pandas_dataframe(self,
+                            *params: Union[str,
+                                           ParamSpec,
+                                           _BaseParameter],
+                            start: Optional[int] = None,
+                            end: Optional[int] = None) -> "pd.DataFrame":
+        """
+        Returns the values stored in the :class:`.DataSet` for the specified parameters
+        and their dependencies as a concatenated :py:class:`pandas.DataFrame` s
+
+        The DataFrame contains a column for the data and is indexed by a
+        :py:class:`pandas.MultiIndex` formed from all the setpoints
+        of the parameter.
+
+        If no parameters are supplied data will be be
+        returned for all parameters in the :class:`.DataSet` that are not them self
+        dependencies of other parameters.
+
+        If provided, the start and end arguments select a range of results
+        by result count (index). If the range is empty - that is, if the end is
+        less than or equal to the start, or if start is after the current end
+        of the :class:`.DataSet` – then a dict of empty :py:class:`pandas.DataFrame` s is
+        returned.
+
+        Args:
+            *params: string parameter names, QCoDeS Parameter objects, and
+                ParamSpec objects. If no parameters are supplied data for
+                all parameters that are not a dependency of another
+                parameter will be returned.
+            start: start value of selection range (by result count); ignored
+                if None
+            end: end value of selection range (by results count); ignored if
+                None
+
+        Returns:
+            :py:class:`pandas.DataFrame` s with the requested parameter as
+            a column and a indexed by a :py:class:`pandas.MultiIndex` formed
+            by the dependencies.
+
+        Example:
+            Return a pandas DataFrame with
+                df = ds.to_pandas_dataframe()
+        """
         datadict = self.get_parameter_data(*params,
                                            start=start,
                                            end=end)
-        dfs = self._load_to_dataframes(datadict)
-        return dfs
+        return load_to_concatenated_dataframe(datadict)
 
-    @staticmethod
-    def _data_to_dataframe(data: Dict[str, numpy.ndarray], index: Union["pd.Index", "pd.MultiIndex"]) -> "pd.DataFrame":
-        import pandas as pd
-        if len(data) == 0:
-            return pd.DataFrame()
-        dependent_col_name = list(data.keys())[0]
-        dependent_data = data[dependent_col_name]
-        if dependent_data.dtype == numpy.dtype('O'):
-            # ravel will not fully unpack a numpy array of arrays
-            # which are of "object" dtype. This can happen if a variable
-            # length array is stored in the db. We use concatenate to
-            # flatten these
-            mydata = numpy.concatenate(dependent_data)
-        else:
-            mydata = dependent_data.ravel()
-        df = pd.DataFrame(mydata, index=index,
-                          columns=[dependent_col_name])
-        return df
+    def to_xarray_dataarray_dict(self,
+                                 *params: Union[str,
+                                                ParamSpec,
+                                                _BaseParameter],
+                                 start: Optional[int] = None,
+                                 end: Optional[int] = None) -> \
+            Dict[str, "xr.DataArray"]:
+        """
+        Returns the values stored in the :class:`.DataSet` for the specified parameters
+        and their dependencies as a dict of :py:class:`xr.DataArray` s
+        Each element in the dict is indexed by the names of the requested
+        parameters.
 
-    @staticmethod
-    def _generate_pandas_index(data: Dict[str, numpy.ndarray]) -> Union["pd.Index", "pd.MultiIndex"]:
-        # the first element in the dict given by parameter_tree is always the dependent
-        # parameter and the index is therefore formed from the rest
-        import pandas as pd
-        keys = list(data.keys())
-        if len(data) <= 1:
-            index = None
-        elif len(data) == 2:
-            index = pd.Index(data[keys[1]].ravel(), name=keys[1])
-        else:
-            index_data = tuple(numpy.concatenate(data[key])
-                               if data[key].dtype == numpy.dtype('O')
-                               else data[key].ravel()
-                               for key in keys[1:])
-            index = pd.MultiIndex.from_arrays(
-                index_data,
-                names=keys[1:])
-        return index
+        If no parameters are supplied data will be be
+        returned for all parameters in the :class:`.DataSet` that are not them self
+        dependencies of other parameters.
 
-    def _load_to_dataframes(self, datadict: ParameterData) -> Dict[str, "pd.DataFrame"]:
-        dfs = {}
-        for name, subdict in datadict.items():
-            index = self._generate_pandas_index(subdict)
-            dfs[name] = self._data_to_dataframe(subdict, index)
-        return dfs
+        If provided, the start and end arguments select a range of results
+        by result count (index). If the range is empty - that is, if the end is
+        less than or equal to the start, or if start is after the current end
+        of the :class:`.DataSet` – then a dict of empty :py:class:`xr.DataArray` s is
+        returned.
+
+        The dependent parameters of the Dataset are normally used as coordinates of the
+        XArray dataframe. However if non unique values are found for the dependent parameter
+        values we will fall back to using an index as coordinates.
+
+        Args:
+            *params: string parameter names, QCoDeS Parameter objects, and
+                ParamSpec objects. If no parameters are supplied data for
+                all parameters that are not a dependency of another
+                parameter will be returned.
+            start: start value of selection range (by result count); ignored
+                if None
+            end: end value of selection range (by results count); ignored if
+                None
+
+        Returns:
+            Dictionary from requested parameter names to :py:class:`xr.DataArray` s
+            with the requested parameter(s) as a column(s) and coordinates
+            formed by the dependencies.
+
+        Example:
+            Return a dict of xr.DataArray with
+
+                dataarray_dict = ds.to_xarray_dataarray_dict()
+        """
+        data = self.get_parameter_data(*params,
+                                       start=start,
+                                       end=end)
+        datadict = load_to_xarray_dataarray_dict(self, data)
+
+        return datadict
+
+    def to_xarray_dataset(self, *params: Union[str,
+                                               ParamSpec,
+                                               _BaseParameter],
+                          start: Optional[int] = None,
+                          end: Optional[int] = None) -> "xr.Dataset":
+        """
+        Returns the values stored in the :class:`.DataSet` for the specified parameters
+        and their dependencies as a :py:class:`xr.Dataset` object.
+
+        If no parameters are supplied data will be be
+        returned for all parameters in the :class:`.DataSet` that are not then self
+        dependencies of other parameters.
+
+        If provided, the start and end arguments select a range of results
+        by result count (index). If the range is empty - that is, if the end is
+        less than or equal to the start, or if start is after the current end
+        of the :class:`.DataSet` – then a empty :py:class:`xr.Dataset` s is
+        returned.
+
+        The dependent parameters of the Dataset are normally used as coordinates of the
+        XArray dataframe. However if non unique values are found for the dependent parameter
+        values we will fall back to using an index as coordinates.
+
+        Args:
+            *params: string parameter names, QCoDeS Parameter objects, and
+                ParamSpec objects. If no parameters are supplied data for
+                all parameters that are not a dependency of another
+                parameter will be returned.
+            start: start value of selection range (by result count); ignored
+                if None
+            end: end value of selection range (by results count); ignored if
+                None
+
+        Returns:
+            :py:class:`xr.Dataset` with the requested parameter(s) data as
+            :py:class:`xr.DataArray` s and coordinates formed by the dependencies.
+
+        Example:
+            Return a concatenated xr.Dataset with
+
+                xds = ds.to_xarray_dataset()
+        """
+        data = self.get_parameter_data(*params,
+                                       start=start,
+                                       end=end)
+
+        return load_to_xarray_dataset(self, data)
 
     def write_data_to_text_file(self, path: str,
                                 single_file: bool = False,
@@ -1101,6 +1174,8 @@ class DataSet(Sized):
             single_file: If true, merges the data of same length of multiple
                          dependent parameters to a single file.
             single_file_name: User defined name for the data to be concatenated.
+                              If no extension is passed (.dat, .csv or .txt),
+                              .dat is automatically appended.
 
         Raises:
             DataLengthException: If the data of multiple parameters have not same
@@ -1108,50 +1183,13 @@ class DataSet(Sized):
             DataPathException: If the data of multiple parameters are wanted to be merged
                                in a single file but no filename provided.
         """
-        import pandas as pd
-        dfdict = self.get_data_as_pandas_dataframe()
-        dfs_to_save = list()
-        for parametername, df in dfdict.items():
-            if not single_file:
-                dst = os.path.join(path, f'{parametername}.dat')
-                df.to_csv(path_or_buf=dst, header=False, sep='\t')
-            else:
-                dfs_to_save.append(df)
-        if single_file:
-            df_length = len(dfs_to_save[0])
-            if any(len(df) != df_length for df in dfs_to_save):
-                raise DataLengthException("You cannot concatenate data " +
-                                          "with different length to a " +
-                                          "single file.")
-            if single_file_name == None:
-                raise DataPathException("Please provide the desired file name " +
-                                        "for the concatenated data.")
-            else:
-                dst = os.path.join(path, f'{single_file_name}.dat')
-                df_to_save = pd.concat(dfs_to_save, axis=1)
-                df_to_save.to_csv(path_or_buf=dst, header=False, sep='\t')
-
-    @deprecate(alternative="get_parameter_data")
-    def get_setpoints(self, param_name: str) -> Dict[str, List[List[Any]]]:
-        """
-        Get the setpoints for the specified parameter
-
-        Args:
-            param_name: The name of the parameter for which to get the
-                setpoints
-        """
-
-        paramspec: ParamSpecBase = self._rundescriber.interdeps._id_to_paramspec[param_name]
-
-        if param_name not in self.parameters:
-            raise ValueError('Unknown parameter, not in this DataSet')
-
-        if paramspec not in self._rundescriber.interdeps.dependencies.keys():
-            raise ValueError(f'Parameter {param_name} has no setpoints.')
-
-        setpoints = get_setpoints(self.conn, self.table_name, param_name)
-
-        return setpoints
+        dfdict = self.to_pandas_dataframe_dict()
+        dataframe_to_csv(
+            dfdict=dfdict,
+            path=path,
+            single_file=single_file,
+            single_file_name=single_file_name,
+        )
 
     def subscribe(self,
                   callback: Callable[[Any, int, Optional[Any]], None],
@@ -1248,8 +1286,8 @@ class DataSet(Sized):
         Enqueue the results into self._results
 
         Before we can enqueue the results, all values of the results dict
-        must have the same length. We enqueue each parameter tree seperately,
-        effectively mimicking making one call to add_result per parameter
+        must have the same length. We enqueue each parameter tree separately,
+        effectively mimicking making one call to add_results per parameter
         tree.
 
         Deal with 'numeric' type parameters. If a 'numeric' top level parameter
@@ -1261,22 +1299,37 @@ class DataSet(Sized):
 
         toplevel_params = (set(interdeps.dependencies)
                            .intersection(set(result_dict)))
+        if self._in_memory_cache:
+            new_results: Dict[str, Dict[str, numpy.ndarray]] = {}
         for toplevel_param in toplevel_params:
             inff_params = set(interdeps.inferences.get(toplevel_param, ()))
             deps_params = set(interdeps.dependencies.get(toplevel_param, ()))
             all_params = (inff_params
                           .union(deps_params)
                           .union({toplevel_param}))
-            res_dict: Dict[str, VALUE] = {}  # the dict to append to _results
+
+            if self._in_memory_cache:
+                new_results[toplevel_param.name] = {}
+                new_results[toplevel_param.name][toplevel_param.name] = self._reshape_array_for_cache(
+                    toplevel_param,
+                    result_dict[toplevel_param]
+                )
+                for param in all_params:
+                    if param is not toplevel_param:
+                        new_results[toplevel_param.name][param.name] = self._reshape_array_for_cache(
+                            param,
+                            result_dict[param]
+                        )
+
             if toplevel_param.type == 'array':
                 res_list = self._finalize_res_dict_array(
                     result_dict, all_params)
             elif toplevel_param.type in ('numeric', 'text', 'complex'):
                 res_list = self._finalize_res_dict_numeric_text_or_complex(
-                               result_dict, toplevel_param,
-                               inff_params, deps_params)
+                    result_dict, toplevel_param,
+                    inff_params, deps_params)
             else:
-                res_dict = {ps.name: result_dict[ps] for ps in all_params}
+                res_dict: Dict[str, VALUE] = {ps.name: result_dict[ps] for ps in all_params}
                 res_list = [res_dict]
             self._results += res_list
 
@@ -1288,6 +1341,36 @@ class DataSet(Sized):
         if standalones:
             stdln_dict = {st: result_dict[st] for st in standalones}
             self._results += self._finalize_res_dict_standalones(stdln_dict)
+            if self._in_memory_cache:
+                for st in standalones:
+                    new_results[st.name] = {
+                        st.name: self._reshape_array_for_cache(st, result_dict[st])
+                    }
+
+        if self._in_memory_cache:
+            self.cache.add_data(new_results)
+
+    @staticmethod
+    def _reshape_array_for_cache(
+            param: ParamSpecBase,
+            param_data: numpy.ndarray
+    ) -> numpy.ndarray:
+        """
+        Shape cache data so it matches data read from database.
+        This means:
+
+        - Add an extra singleton dim to array data
+        - flatten non array data into a linear array.
+        """
+        param_data = numpy.atleast_1d(param_data)
+        if param.type == "array":
+            new_data = numpy.reshape(
+                param_data,
+                (1,) + param_data.shape
+            )
+        else:
+            new_data = param_data.ravel()
+        return new_data
 
     @staticmethod
     def _finalize_res_dict_array(
@@ -1432,6 +1515,121 @@ class DataSet(Sized):
         if writer_status.write_in_background and block:
             log.debug(f"Waiting for write queue to empty.")
             writer_status.data_write_queue.join()
+
+    def _export_file_name(self, prefix: str, export_type: DataExportType) -> str:
+        """Get export file name"""
+        extension = export_type.value
+        return f"{prefix}{self.run_id}.{extension}"
+
+    def _export_as_netcdf(self, path: str, file_name: str) -> str:
+        """Export data as netcdf to a given path with file prefix"""
+        file_path = os.path.join(path, file_name)
+        xarr_dataset = self.to_xarray_dataset()
+        data_var_kinds = [
+            xarr_dataset.data_vars[data_var].dtype.kind
+            for data_var in xarr_dataset.data_vars
+        ]
+        coord_kinds = [
+            xarr_dataset.coords[coord].dtype.kind for coord in xarr_dataset.coords
+        ]
+        if "c" in data_var_kinds or "c" in coord_kinds:
+            # see http://xarray.pydata.org/en/stable/howdoi.html
+            # for how to export complex numbers
+            xarr_dataset.to_netcdf(
+                path=file_path, engine="h5netcdf", invalid_netcdf=True
+            )
+        else:
+            xarr_dataset.to_netcdf(path=file_path, engine="h5netcdf")
+        return file_path
+
+    def _export_as_csv(self, path: str, file_name: str) -> str:
+        """Export data as csv to a given path with file prefix"""
+        self.write_data_to_text_file(path=path, single_file=True, single_file_name=file_name)
+        return os.path.join(path, file_name)
+
+    def _export_data(self,
+                     export_type: DataExportType,
+                     path: Optional[str] = None,
+                     prefix: Optional[str] = None
+                     ) -> Optional[str]:
+        """Export data to disk with file name {prefix}{run_id}.{ext}.
+        Values for the export type, path and prefix can also be set in the qcodes
+        "dataset" config.
+
+        Args:
+            export_type: Data export type, e.g. DataExportType.NETCDF
+            path: Export path, defaults to value set in config
+            prefix: File prefix, e.g. "qcodes_", defaults to value set in config.
+
+        Returns:
+            str: Path file was saved to, returns None if no file was saved.
+        """
+        # Set defaults to values in config if the value was not set
+        # (defaults to None)
+        path = path if path is not None else get_data_export_path()
+        prefix = prefix if prefix is not None else get_data_export_prefix()
+
+        if DataExportType.NETCDF == export_type:
+            file_name = self._export_file_name(
+                prefix=prefix, export_type=DataExportType.NETCDF)
+            return self._export_as_netcdf(path=path, file_name=file_name)
+
+        elif DataExportType.CSV == export_type:
+            file_name = self._export_file_name(
+                prefix=prefix, export_type=DataExportType.CSV)
+            return self._export_as_csv(path=path, file_name=file_name)
+
+        else:
+            return None
+
+    def export(self,
+               export_type: Optional[Union[DataExportType, str]] = None,
+               path: Optional[str] = None,
+               prefix: Optional[str] = None) -> None:
+        """Export data to disk with file name {prefix}{run_id}.{ext}.
+        Values for the export type, path and prefix can also be set in the "dataset"
+        section of qcodes config.
+
+        Args:
+            export_type: Data export type, e.g. "netcdf" or ``DataExportType.NETCDF``,
+                defaults to a value set in qcodes config
+            path: Export path, defaults to value set in config
+            prefix: File prefix, e.g. ``qcodes_``, defaults to value set in config.
+
+        Raises:
+            ValueError: If the export data type is not specified, raise an error
+        """
+        export_type = get_data_export_type(export_type)
+
+        if export_type is None:
+            raise ValueError(
+                "No data export type specified. Please set the export data type "
+                "by using ``qcodes.dataset.export_config.set_data_export_type`` or "
+                "give an explicit export_type when calling ``dataset.export`` manually."
+            )
+
+        self._export_path = self._export_data(
+            export_type=export_type,
+            path=path,
+            prefix=prefix
+        )
+        export_info = self.export_info
+        if self._export_path is not None:
+            export_info.export_paths[export_type.value] = self._export_path
+
+        self._set_export_info(export_info)
+
+    @property
+    def export_path(self) -> Optional[str]:
+        return self._export_path
+
+    @property
+    def export_info(self) -> ExportInfo:
+        return self._export_info
+
+    def _set_export_info(self, export_info: ExportInfo) -> None:
+        self.add_metadata("export_info", export_info.to_str())
+        self._export_info = export_info
 
 
 # public api
@@ -1590,7 +1788,9 @@ def new_data_set(name: str,
                  specs: Optional[SPECS] = None,
                  values: Optional[VALUES] = None,
                  metadata: Optional[Any] = None,
-                 conn: Optional[ConnectionPlus] = None) -> DataSet:
+                 conn: Optional[ConnectionPlus] = None,
+                 in_memory_cache: bool = True,
+                 ) -> DataSet:
     """
     Create a new dataset in the currently active/selected database.
 
@@ -1603,6 +1803,8 @@ def new_data_set(name: str,
         specs: list of parameters to create this dataset with
         values: the values to associate with the parameters
         metadata: the metadata to associate with the dataset
+        in_memory_cache: Should measured data be keep in memory
+            and available as part of the `dataset.cache` object.
 
     Return:
         the newly created :class:`.DataSet`
@@ -1611,7 +1813,7 @@ def new_data_set(name: str,
     # in `Runner` to pass a connection from an existing `Experiment`.
     d = DataSet(path_to_db=None, run_id=None, conn=conn,
                 name=name, specs=specs, values=values,
-                metadata=metadata, exp_id=exp_id)
+                metadata=metadata, exp_id=exp_id, in_memory_cache=in_memory_cache)
 
     return d
 

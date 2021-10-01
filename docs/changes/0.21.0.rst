@@ -1,0 +1,52 @@
+Changelog for QCoDeS 0.21.0
+===========================
+
+The December 2020 release of QCoDeS.
+
+-----------------
+Breaking Changes:
+-----------------
+
+- The default behavior of do_plot in doNd functions changed to False.
+  The default value can be configured in the qcodesrc.json config file (#2478)
+- plotting: Don't scale empty units (#2488)
+
+----
+New:
+----
+
+- Example notebook for using Plottr with Qcodes measurements for live plotting (#2494)
+- Add kwarg for passing experiment to doNd functions (With tests)  (#2526)
+
+---------
+Improved:
+---------
+
+- The old loop and plotting methods are removed from driver notebooks: Alazar9360 (#2477)
+- Add PycQED to related projects (#2446)
+- Updated HP8753D notebook with doNd and its driver timeout (#2520)
+- Add config options for dataset write_in_background and write_periode (#2511)
+- filter urllib3.connection related warnings from console logger (#2540)
+
+-----------------
+Improved drivers:
+-----------------
+
+- Keysight 34465A: Add missing parameters to pyvisa sim yaml file (#2452, #2493)
+- Driver SR86x: Add complex voltage (#2458)
+- Fix parameter name in Alazar ATS9870: EXTERNAL_CLOCK_10MHz_REF (#2492)
+- Add DC bias and measurement time params to Keysight E4980A driver (#2502)
+- Add impedance autorange parameter to Keysight E4980A driver (#2531)
+- Keysight B1500: ensure making snapshot of the pyvisa-sim instrument does not raise warnings (#2532)
+
+---------------
+Under the hood:
+---------------
+
+- Verify that requirements are compatible with Spyder (#2443)
+- Require use of Any in all generic types (#2450, #2453, #2454, #2457, #2463, #2468, #2469)
+- Minor typing improvements (#2456, #2475)
+- refactor logic to find scale and prefix for units into a public function (#2480)
+- Use the latest json schema draft supported by python jsonschema validator (#2510)
+- GitHub actions cleanup (#2535)
+- Update readme badge to point to github actions (#2538)

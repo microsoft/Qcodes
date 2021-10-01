@@ -3,10 +3,10 @@ Driver for the Tekronix S46 RF switch
 """
 import re
 from itertools import product
-from functools import partial
-
 from typing import Any, Dict, List, Optional
-from qcodes import Instrument, VisaInstrument, Parameter
+
+from qcodes import Instrument, VisaInstrument
+from qcodes.instrument.parameter import Parameter, ParamRawDataType
 
 
 class LockAcquisitionError(Exception):
@@ -60,13 +60,14 @@ class S46Parameter(Parameter):
         lock: Acquire the lock when closing and release when opening
     """
     def __init__(
-            self,
-            name: str,
-            instrument: Optional[Instrument],
-            channel_number: int,
-            lock: RelayLock
+        self,
+        name: str,
+        instrument: Optional[Instrument],
+        channel_number: int,
+        lock: RelayLock,
+        **kwargs: Any,
     ):
-        super().__init__(name, instrument)
+        super().__init__(name, instrument, **kwargs)
 
         self._lock = lock
         self._channel_number = channel_number
@@ -82,29 +83,29 @@ class S46Parameter(Parameter):
                     "Refusing to initialize driver!"
                 ) from e
 
-    def _get(self, get_cached):
-
-        closed_channels = self._instrument.closed_channels.get_latest()
+    def _get(self, get_cached: bool) -> str:
+        assert isinstance(self.instrument, S46)
+        closed_channels = self.instrument.closed_channels.get_latest()
 
         if not get_cached or closed_channels is None:
-            closed_channels = self._instrument.closed_channels.get()
+            closed_channels = self.instrument.closed_channels.get()
 
         return "close" if self.name in closed_channels else "open"
 
-    def get_raw(self):
+    def get_raw(self) -> ParamRawDataType:
         return self._get(get_cached=False)
 
-    def set_raw(self, value) -> None:
+    def set_raw(self, value: ParamRawDataType) -> None:
 
         if value == "close":
             self._lock.acquire(self._channel_number)
         elif value == "open":
             self._lock.release(self._channel_number)
 
-        if self._instrument is None:
+        if self.instrument is None:
             raise RuntimeError("Cannot set the value on a parameter "
                                "that is not attached to an instrument.")
-        self._instrument.write(f":{value} (@{self._channel_number})")
+        self.instrument.write(f":{value} (@{self._channel_number})")
 
     def is_closed(self) -> bool:
         """
@@ -119,7 +120,8 @@ class S46Parameter(Parameter):
 
 class S46(VisaInstrument):
 
-    relay_names: list = ["A", "B", "C", "D"] + [f"R{j}" for j in range(1, 9)]
+    relay_names: List[str] = (["A", "B", "C", "D"] +
+                              [f"R{j}" for j in range(1, 9)])
 
     # Make a dictionary where keys are channel aliases (e.g. 'A1', 'B3', etc)
     # and values are corresponding channel numbers.
