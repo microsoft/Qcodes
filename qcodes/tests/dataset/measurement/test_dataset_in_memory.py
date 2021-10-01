@@ -1,4 +1,6 @@
+import os
 import sqlite3
+from pathlib import Path
 
 import numpy as np
 
@@ -42,8 +44,15 @@ def test_dataset_in_memory_does_not_create_runs_table(
 
 
 def test_load_from_netcdf_and_write_metadata_to_db(empty_temp_db):
-    # todo this needs to be loaded from a fixture
-    ds = DataSetInMem.load_from_netcdf(f"qcodes_2.nc")
+    cwd = os.getcwd()
+    netcdf_file_path = (
+        Path(__file__).parent.parent
+        / "fixtures"
+        / "db_files"
+        / "version8"
+        / "qcodes_2.nc"
+    )
+    ds = DataSetInMem.load_from_netcdf(netcdf_file_path)
     ds.write_metadata_to_db()
 
     ds_loaded = load_by_run_spec(captured_run_id=ds.captured_run_id)
