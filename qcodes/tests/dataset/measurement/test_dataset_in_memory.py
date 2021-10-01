@@ -1,4 +1,3 @@
-import os
 import sqlite3
 from pathlib import Path
 
@@ -44,7 +43,6 @@ def test_dataset_in_memory_does_not_create_runs_table(
 
 
 def test_load_from_netcdf_and_write_metadata_to_db(empty_temp_db):
-    cwd = os.getcwd()
     netcdf_file_path = (
         Path(__file__).parent.parent
         / "fixtures"
