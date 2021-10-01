@@ -45,10 +45,11 @@ reproducible example.
 
 Have an idea about future directions to go with Qcodes? Visions of
 data-utopia that would take more than a few weeks to add or might change
-some core ideas in the package? Please use "Ideas" section in the GitHub
-Discussions. We will pick the ``long-term`` or ``discussion`` labels.
+some core ideas in the package? Please use "Ideas" section in
+`Github Discussions <https://github.com/QCoDeS/Qcodes/discussions>`__.
+We will pick the ``long-term`` or ``discussion`` labels.
 
- If somebody is assigned to an issue it means that somebody is working on it.
+If somebody is assigned to an issue it means that somebody is working on it.
 
 Clever usage
 ------------
@@ -252,9 +253,6 @@ Pull requests
    PRs are much easier to review, and easier for others to work around,
    than large ones that touch the whole code base.
 
--  tag AT LEAST ONE person in the description of the PR (a tag is
-   ``@username``) who you would like to have look at your work. Of
-   course everyone is welcome and encouraged to chime in.
 
 -  It's OK (in fact encouraged) to open a pull request when you still
    have some work to do. Just make a checklist
