@@ -119,7 +119,6 @@ class DataSetInMem(DataSetProtocol, Sized):
             conn_from_dbpath_or_conn(conn=None, path_to_db=self._path_to_db)
         ) as conn:
             run_id = get_runid_from_guid(conn, self.guid)
-        # todo check that metadata is identical?
         return run_id != -1
 
     def write_metadata_to_db(
@@ -128,9 +127,7 @@ class DataSetInMem(DataSetProtocol, Sized):
         if path_to_db is not None:
             self._path_to_db = str(path_to_db)
         if self._dataset_is_in_runs_table():
-            # TODO only raise if metadata is different
-            # should it have an option to overwrite
-            raise ValueError("Dataset metadata is already in db")
+            return
 
         with contextlib.closing(
             conn_from_dbpath_or_conn(conn=None, path_to_db=self._path_to_db)
@@ -138,6 +135,7 @@ class DataSetInMem(DataSetProtocol, Sized):
             with atomic(conn) as aconn:
                 # note that we do not check if format string and times match
                 # unlike _create_exp_if_needed
+                # TODO we should extend this to also use start time
                 exp = load_or_create_experiment(
                     conn=aconn,
                     experiment_name=self.exp_name,
@@ -145,6 +143,10 @@ class DataSetInMem(DataSetProtocol, Sized):
                     load_last_duplicate=True,
                 )
                 _add_run_to_runs_table(self, aconn, exp.exp_id, create_run_table=False)
+
+    def write_to_db(self, path_to_db: Optional[Union[str, Path]] = None) -> None:
+        self.write_metadata_to_db()
+        self._add_data_to_db()
 
     @classmethod
     def create_new_run(
@@ -453,16 +455,14 @@ class DataSetInMem(DataSetProtocol, Sized):
             metadata: actual metadata
         """
 
-        if not self._dataset_is_in_runs_table():
-            # todo should this just add it?
-            raise RuntimeError(f"Dataset is not in database {self._path_to_db}")
         self._metadata[tag] = metadata
 
-        with contextlib.closing(
-            conn_from_dbpath_or_conn(conn=None, path_to_db=self._path_to_db)
-        ) as conn:
-            with atomic(conn) as aconn:
-                add_meta_data(aconn, self.run_id, {tag: metadata})
+        if self._dataset_is_in_runs_table():
+            with contextlib.closing(
+                conn_from_dbpath_or_conn(conn=None, path_to_db=self._path_to_db)
+            ) as conn:
+                with atomic(conn) as aconn:
+                    add_meta_data(aconn, self.run_id, {tag: metadata})
 
     @property
     def metadata(self) -> Dict[str, Any]:
