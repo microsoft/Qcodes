@@ -265,6 +265,16 @@ Pull requests
    down, you can call ``git branch --merged`` to list branches that can
    be safely deleted, then ``git branch -d <branch-name>`` to delete it.
 
+-  Document your changes so everyone can see that they are part of the next release:
+   We are using `TownCrier <https://pypi.org/project/towncrier/>`__ to automatically
+   generate a changelog from a set of individual files with one file per pull request.
+   Please create a file in the format ``number.categoryofcontribution``. Here the number
+   should either be the number of the pull request. To get the number of the pull request one must
+   first the pull request and then subsequently update the number. The category of contribution should be
+   one of ``breaking``, ``new``, ``improved``, ``new_driver`` ``improved_driver``, ``underthehood``.
+   The file should contain a small description of what is changed. If you have contributed documentation or an example
+   the file can also contain a link to this.
+
 Automatic Testing (CI)
 ~~~~~~~~~~~~~~~~~~~~~~
 
