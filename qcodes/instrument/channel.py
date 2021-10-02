@@ -214,6 +214,23 @@ class ChannelList(Metadatable):
                 raise TypeError("All items in this channel list must be of "
                                 "type {}.".format(chan_type.__name__))
 
+    def _shift_index(self, i: Optional[int]) -> Optional[int]:
+        """
+        Shifts an index by -index_origin unless it is None or negative.
+
+        Args:
+            i: int or None
+
+        Raises:
+            IndexError: If 0 <= i < index_origin
+        """
+        if i is None or i < 0:
+            return i
+        elif 0 <= i < self._index_origin:
+            raise IndexError("Index is smaller than the index_origin")
+        else:
+            return i - self._index_origin
+
     def __getitem__(self, i: Union[int, slice, Tuple[int, ...]]) -> \
             Union['InstrumentChannel', 'ChannelList']:
         """
@@ -225,17 +242,17 @@ class ChannelList(Metadatable):
             i: Either a single channel index or a slice of channels
               to get
         """
-        i0 = self._index_origin
         if isinstance(i, slice):
-            shifted_slice = slice(i.start - i0, i.stop - i0, i.step)
+            start = self._shift_index(i.start)
+            stop = self._shift_index(i.stop)
             return ChannelList(self._parent, self._name, self._chan_type,
-                               self._channels[shifted_slice],
+                               self._channels[start:stop:i.step],
                                multichan_paramclass=self._paramclass)
         elif isinstance(i, tuple):
+            channels = (self._channels[self._shift_index(x)] for x in i)
             return ChannelList(self._parent, self._name, self._chan_type,
-                               [self._channels[j - i0] for j in i],
-                               multichan_paramclass=self._paramclass)
-        return self._channels[i - i0]
+                               channels, multichan_paramclass=self._paramclass)
+        return self._channels[self._shift_index(i)]
 
     def __iter__(self) -> Iterator['InstrumentChannel']:
         return iter(self._channels)
@@ -372,7 +389,8 @@ class ChannelList(Metadatable):
                             ".".format(type(obj).__name__,
                                        self._chan_type.__name__))
         self._channels = cast(List[InstrumentChannel], self._channels)
-        self._channels.insert(index - self._index_origin, obj)
+        shifted_index = self._shift_index(index)
+        self._channels.insert(shifted_index, obj)
 
     def get_validator(self) -> 'ChannelListValidator':
         """
