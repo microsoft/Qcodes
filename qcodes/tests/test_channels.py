@@ -519,3 +519,122 @@ def _verify_array_data(data, channels=('A',)):
         data.arrays['dci_ChanA_temperature_set'].ndarray,
         np.arange(0, 10.1, 1)
     )
+
+
+# tests of one-based indexing (index_origin = 1)
+
+
+@pytest.fixture(scope='function', name='dci1')
+def _make_dci_1based():
+
+    dci1 = DummyChannelInstrument(name='dci1', index_origin=1)
+    try:
+        yield dci1
+    finally:
+        dci1.close()
+
+
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
+@given(value=hst.floats(0, 300), channel=hst.integers(1, 4))
+def test_channel_access_is_identical_1based(dci1, value, channel):
+    channel_to_label = {1: 'A', 2: 'B', 3: 'C', 4: "D"}
+    label = channel_to_label[channel]
+    channel_via_label = getattr(dci1, label)
+    # set via labeled channel
+    channel_via_label.temperature(value)
+    assert channel_via_label.temperature() == value
+    assert dci1.channels[channel].temperature() == value
+    assert dci1.channels.temperature()[channel-1] == value
+    # reset
+    channel_via_label.temperature(0)
+    assert channel_via_label.temperature() == 0
+    assert dci1.channels[channel].temperature() == 0
+    assert dci1.channels.temperature()[channel-1] == 0
+    # set via index into list
+    dci1.channels[channel].temperature(value)
+    assert channel_via_label.temperature() == value
+    assert dci1.channels[channel].temperature() == value
+    assert dci1.channels.temperature()[channel-1] == value
+    # it's not possible to set via dci.channels.temperature
+    # as this is a multi parameter that currently does not support set.
+
+
+def test_insert_channel_1based(dci1):
+    n_channels = len(dci1.channels)
+    name = 'foo'
+    channel = DummyChannel(dci1, 'Chan'+name, name)
+    dci1.channels.insert(2, channel)
+    dci1.add_submodule(name, channel)
+
+    assert len(dci1.channels) == n_channels+1
+    assert dci1.channels[2] is channel
+    dci1.channels.lock()
+    # after locking the channels it's not possible to add any more channels
+    with pytest.raises(AttributeError):
+        name = 'bar'
+        channel = DummyChannel(dci1, 'Chan' + name, name)
+        dci1.channels.insert(3, channel)
+    assert len(dci1.channels) == n_channels + 1
+
+
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
+@given(setpoints=hst.lists(hst.floats(0, 300), min_size=4, max_size=4))
+def test_combine_channels_1based(dci1, setpoints):
+    assert len(dci1.channels) == 6
+
+    mychannels = dci1.channels[1:3] + dci1.channels[5:]
+
+    assert len(mychannels) == 4
+    assert mychannels[0] is dci1.A
+    assert mychannels[1] is dci1.B
+    assert mychannels[2] is dci1.E
+    assert mychannels[3] is dci1.F
+
+    for i, chan in enumerate(mychannels):
+        chan.temperature(setpoints[i])
+
+    expected = tuple(setpoints[0:2] + [0, 0] + setpoints[2:])
+    assert dci1.channels.temperature() == expected
+
+
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
+@given(start=hst.one_of(hst.integers(-8, -1), hst.integers(1, 8)),
+       stop=hst.one_of(hst.integers(-8, -1), hst.integers(1, 8)),
+       step=hst.integers(1, 7))
+def test_access_channels_by_slice_1based(dci, start, stop, step):
+    names = ('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H')
+    channels = tuple(DummyChannel(dci,
+                                  'Chan'+name, name) for name in names)
+    chlist = ChannelList(dci, 'channels',
+                         DummyChannel, channels, index_origin=1)
+    if stop < start:
+        step = -step
+    myslice = slice(start, stop, step)
+    mychans = chlist[myslice]
+
+    # create a zero-based version of myslice
+    start0 = start if start < 0 else start - 1
+    stop0 = stop if stop < 0 else stop - 1
+    myslice0 = slice(start0, stop0, step)
+
+    expected_channels = names[myslice0]
+    for chan, exp_chan in zip(mychans, expected_channels):
+        assert chan.name == f'dci_Chan{exp_chan}'
+
+
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
+@given(myindexs=hst.lists(
+    elements=hst.one_of(hst.integers(-8, -1), hst.integers(1, 8)),
+    min_size=1))
+def test_access_channels_by_tuple_1based(dci, myindexs):
+    names = ('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H')
+    mytuple = tuple(myindexs)
+    channels = tuple(DummyChannel(dci,
+                                  'Chan'+name, name) for name in names)
+    chlist = ChannelList(dci, 'channels',
+                         DummyChannel, channels, index_origin=1)
+
+    mychans = chlist[mytuple]
+    for chan, chanindex in zip(mychans, mytuple):
+        index0 = chanindex if chanindex < 0 else chanindex - 1  # zero-based
+        assert chan.name == f'dci_Chan{names[index0]}'

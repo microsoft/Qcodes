@@ -395,10 +395,11 @@ class DummyChannelInstrument(Instrument):
     Dummy instrument with channels
     """
 
-    def __init__(self, name, **kwargs):
+    def __init__(self, name, index_origin=0, **kwargs):
         super().__init__(name, **kwargs)
 
-        channels = ChannelList(self, "TempSensors", DummyChannel, snapshotable=False)
+        channels = ChannelList(self, "TempSensors", DummyChannel,
+                               snapshotable=False, index_origin=index_origin)
         for chan_name in ('A', 'B', 'C', 'D', 'E', 'F'):
             channel = DummyChannel(self, f'Chan{chan_name}', chan_name)
             channels.append(channel)
