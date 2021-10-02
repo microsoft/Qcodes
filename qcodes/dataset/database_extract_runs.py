@@ -1,11 +1,11 @@
 import os
-from typing import Optional, Union
 from warnings import warn
 
 import numpy as np
 
 from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.descriptions.versioning.converters import new_to_old
+from qcodes.dataset.experiment_container import _create_exp_if_needed
 from qcodes.dataset.linked_datasets.links import links_to_str
 from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic
 from qcodes.dataset.sqlite.database import (
@@ -13,18 +13,15 @@ from qcodes.dataset.sqlite.database import (
     get_db_version_and_newest_available_version,
 )
 from qcodes.dataset.sqlite.queries import (
+    _populate_results_table,
+    _rewrite_timestamps,
     add_meta_data,
     create_run,
     get_exp_ids_from_run_ids,
-    get_matching_exp_ids,
+    get_experiment_attributes_by_exp_id,
     get_runid_from_guid,
     is_run_id_in_database,
     mark_run_complete,
-    new_experiment,
-)
-from qcodes.dataset.sqlite.query_helpers import (
-    select_many_where,
-    sql_placeholder_string,
 )
 
 
@@ -86,19 +83,9 @@ def extract_runs_into_db(source_db_path: str,
 
     # Fetch the attributes of the runs' experiment
     # hopefully, this is enough to uniquely identify the experiment
+    exp_attrs = get_experiment_attributes_by_exp_id(source_conn, source_exp_ids[0])
 
-    exp_attr_names = ['name', 'sample_name', 'start_time', 'end_time',
-                      'format_string']
-
-    exp_attr_vals = select_many_where(source_conn,
-                                      'experiments',
-                                      *exp_attr_names,
-                                      where_column='exp_id',
-                                      where_value=source_exp_ids[0])
-
-    exp_attrs = dict(zip(exp_attr_names, exp_attr_vals))
-
-    # Massage the target DB file to accomodate the runs
+    # Massage the target DB file to accommodate the runs
     # (create new experiment if needed)
 
     target_conn = connect(target_db_path)
@@ -125,43 +112,6 @@ def extract_runs_into_db(source_db_path: str,
     finally:
         source_conn.close()
         target_conn.close()
-
-
-def _create_exp_if_needed(target_conn: ConnectionPlus,
-                          exp_name: str,
-                          sample_name: str,
-                          fmt_str: str,
-                          start_time: float,
-                          end_time: Union[float, None]) -> int:
-    """
-    Look up in the database whether an experiment already exists and create
-    it if it doesn't. Note that experiments do not have GUIDs, so this method
-    is not guaranteed to work. Matching names and times is the best we can do.
-    """
-
-    matching_exp_ids = get_matching_exp_ids(target_conn,
-                                            name=exp_name,
-                                            sample_name=sample_name,
-                                            format_string=fmt_str,
-                                            start_time=start_time,
-                                            end_time=end_time)
-
-    if len(matching_exp_ids) > 1:
-        exp_id = matching_exp_ids[0]
-        warn(f'{len(matching_exp_ids)} experiments found in target DB that '
-             'match name, sample_name, fmt_str, start_time, and end_time. '
-             f'Inserting into the experiment with exp_id={exp_id}.')
-        return exp_id
-    if len(matching_exp_ids) == 1:
-        return matching_exp_ids[0]
-    else:
-        lastrowid = new_experiment(target_conn,
-                                   name=exp_name,
-                                   sample_name=sample_name,
-                                   format_string=fmt_str,
-                                   start_time=start_time,
-                                   end_time=end_time)
-        return lastrowid
 
 
 def _extract_single_dataset_into_db(dataset: DataSet,
@@ -238,53 +188,3 @@ def _add_run_to_runs_table(
     if snapshot_raw is not None:
         add_meta_data(target_conn, target_run_id, {'snapshot': snapshot_raw})
     return target_table_name
-
-
-def _populate_results_table(source_conn: ConnectionPlus,
-                            target_conn: ConnectionPlus,
-                            source_table_name: str,
-                            target_table_name: str) -> None:
-    """
-    Copy over all the entries of the results table
-    """
-    get_data_query = f"""
-                     SELECT *
-                     FROM "{source_table_name}"
-                     """
-
-    source_cursor = source_conn.cursor()
-    target_cursor = target_conn.cursor()
-
-    for row in source_cursor.execute(get_data_query):
-        column_names = ','.join(row.keys()[1:])  # the first key is "id"
-        values = tuple(val for val in row[1:])
-        value_placeholders = sql_placeholder_string(len(values))
-        insert_data_query = f"""
-                             INSERT INTO "{target_table_name}"
-                             ({column_names})
-                             values {value_placeholders}
-                             """
-        target_cursor.execute(insert_data_query, values)
-
-
-def _rewrite_timestamps(target_conn: ConnectionPlus, target_run_id: int,
-                        correct_run_timestamp: Optional[float],
-                        correct_completed_timestamp: Optional[float]) -> None:
-    """
-    Update the timestamp to match the original one
-    """
-    query = """
-            UPDATE runs
-            SET run_timestamp = ?
-            WHERE run_id = ?
-            """
-    cursor = target_conn.cursor()
-    cursor.execute(query, (correct_run_timestamp, target_run_id))
-
-    query = """
-            UPDATE runs
-            SET completed_timestamp = ?
-            WHERE run_id = ?
-            """
-    cursor = target_conn.cursor()
-    cursor.execute(query, (correct_completed_timestamp, target_run_id))

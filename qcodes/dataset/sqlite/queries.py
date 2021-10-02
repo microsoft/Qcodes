@@ -22,6 +22,7 @@ from typing import (
 )
 
 import numpy as np
+from typing_extensions import TypedDict
 
 import qcodes as qc
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
@@ -1939,3 +1940,105 @@ def load_new_data_for_rundescriber(
         new_data_dict[meas_parameter] = new_data
         updated_read_status[meas_parameter] = start + n_rows_read - 1
     return new_data_dict, updated_read_status
+
+
+class ExperimentAttributeDict(TypedDict):
+    exp_id: int
+    name: str
+    sample_name: str
+    start_time: float
+    end_time: Optional[float]
+    format_string: str
+
+
+def get_experiment_attributes_by_exp_id(
+    conn: ConnectionPlus, exp_id: int
+) -> ExperimentAttributeDict:
+    """
+    Return a dict of all attributes describing an experiment from the exp_id.
+
+    Args:
+        conn: The connection to the sqlite database
+        exp_id: the id of the experiment
+
+    Returns:
+        A dictionary of the experiment attributes.
+    """
+    exp_attr_names = ["name", "sample_name", "start_time", "end_time", "format_string"]
+
+    exp_attr_vals = select_many_where(
+        conn, "experiments", *exp_attr_names, where_column="exp_id", where_value=exp_id
+    )
+
+    temp_exp_attrs = dict(zip(exp_attr_names, exp_attr_vals))
+    end_time = (
+        float(temp_exp_attrs["end_time"])
+        if temp_exp_attrs["end_time"] is not None
+        else None
+    )
+
+    exp_attrs: ExperimentAttributeDict = {
+        "name": str(temp_exp_attrs["name"]),
+        "sample_name": str(temp_exp_attrs["sample_name"]),
+        "start_time": float(temp_exp_attrs["start_time"]),
+        "end_time": end_time,
+        "format_string": str(temp_exp_attrs["format_string"]),
+        "exp_id": exp_id,
+    }
+
+    return exp_attrs
+
+
+def _populate_results_table(
+    source_conn: ConnectionPlus,
+    target_conn: ConnectionPlus,
+    source_table_name: str,
+    target_table_name: str,
+) -> None:
+    """
+    Copy over all the entries of the results table
+    """
+    get_data_query = f"""
+                     SELECT *
+                     FROM "{source_table_name}"
+                     """
+
+    source_cursor = source_conn.cursor()
+    target_cursor = target_conn.cursor()
+
+    for row in source_cursor.execute(get_data_query):
+        column_names = ",".join(row.keys()[1:])  # the first key is "id"
+        values = tuple(val for val in row[1:])
+        value_placeholders = sql_placeholder_string(len(values))
+        insert_data_query = f"""
+                             INSERT INTO "{target_table_name}"
+                             ({column_names})
+                             values {value_placeholders}
+                             """
+        target_cursor.execute(insert_data_query, values)
+
+
+def _rewrite_timestamps(
+    target_conn: ConnectionPlus,
+    target_run_id: int,
+    correct_run_timestamp: Optional[float],
+    correct_completed_timestamp: Optional[float],
+) -> None:
+    """
+    Update the timestamp to match the original one
+    """
+    query = """
+            UPDATE runs
+            SET run_timestamp = ?
+            WHERE run_id = ?
+            """
+    cursor = target_conn.cursor()
+    cursor.execute(query, (correct_run_timestamp, target_run_id))
+
+    query = """
+            UPDATE runs
+            SET completed_timestamp = ?
+            WHERE run_id = ?
+            """
+    cursor = target_conn.cursor()
+    cursor.execute(query, (correct_completed_timestamp, target_run_id))
