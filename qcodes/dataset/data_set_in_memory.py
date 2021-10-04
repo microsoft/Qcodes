@@ -498,8 +498,6 @@ class DataSetInMem(DataSetProtocol, Sized):
         Return a list of Link objects. Each Link object describes a link from
         this dataset to one of its parent datasets
         """
-        # Todo neither here nor the regular dataset can set this exept during prepare
-        # is that an issue?
         return self._parent_dataset_links
 
     def export(
