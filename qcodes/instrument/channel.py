@@ -227,7 +227,7 @@ class ChannelList(Metadatable):
         if i is None or i < 0:
             return i
         elif 0 <= i < self._index_origin:
-            raise IndexError("Index is smaller than the index_origin")
+            raise IndexError(f"Index {i} is smaller than the index_origin {self._index_origin}")
         else:
             return i - self._index_origin
 
