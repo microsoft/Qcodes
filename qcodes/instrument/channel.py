@@ -217,6 +217,9 @@ class ChannelList(Metadatable):
     def _shift_index(self, i: Optional[int]) -> Optional[int]:
         """
         Shifts an index by -index_origin unless it is None or negative.
+        This method can be used to correctly shift a slice even when its start
+        or stop value is omitted. This is because their omission is represented
+        by None, which this method passes through.
 
         Args:
             i: int or None
