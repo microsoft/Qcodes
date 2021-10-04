@@ -50,6 +50,7 @@ from .database_extract_runs import (
 from .descriptions.versioning import serialization as serial
 from .experiment_container import load_or_create_experiment
 from .experiment_settings import get_default_experiment_id
+from .exporters.export_info import ExportInfo
 from .exporters.export_to_csv import dataframe_to_csv
 from .linked_datasets.links import str_to_links
 
@@ -75,6 +76,7 @@ class DataSetInMem(DataSetProtocol, Sized):
         metadata: Optional[Mapping[str, Any]] = None,
         rundescriber: Optional[RunDescriber] = None,
         parent_dataset_links: Optional[Sequence[Link]] = None,
+        export_info: Optional[ExportInfo] = None,
     ) -> None:
         """Note that the constructor is considered private.
 
@@ -106,9 +108,12 @@ class DataSetInMem(DataSetProtocol, Sized):
             self._parent_dataset_links = list(parent_dataset_links)
         else:
             self._parent_dataset_links = []
-        self._export_path: Optional[
-            str
-        ] = None  # todo set this when importing from netcdf
+        if export_info is not None:
+            self._export_info = export_info
+            self._export_path = str(Path(export_info.export_paths["nc"]).parent)
+        else:
+            self._export_info = ExportInfo({})
+            self._export_path = None
 
     def _dataset_is_in_runs_table(self) -> bool:
         """
@@ -218,6 +223,10 @@ class DataSetInMem(DataSetProtocol, Sized):
         if path_to_db is not None:
             path_to_db = str(path_to_db)
 
+        path = str(path)
+        path = os.path.abspath(path)
+        export_info = ExportInfo({"nc": path})
+
         ds = cls(
             run_id=loaded_data.captured_run_id,
             counter=loaded_data.captured_counter,
@@ -232,6 +241,7 @@ class DataSetInMem(DataSetProtocol, Sized):
             metadata={"snapshot": loaded_data.snapshot},
             rundescriber=serial.from_json_to_current(loaded_data.run_description),
             parent_dataset_links=parent_dataset_links,
+            export_info=export_info,
         )
         ds._cache = DataSetCacheInMem(ds)
         ds._cache._data = cls._from_xarray_dataset_to_qcodes(loaded_data)
@@ -519,10 +529,25 @@ class DataSetInMem(DataSetProtocol, Sized):
         self._export_path = self._export_data(
             export_type=export_type, path=path, prefix=prefix
         )
+        export_info = self.export_info
+        if self._export_path is not None:
+            export_info.export_paths[export_type.value] = os.path.abspath(
+                self._export_path
+            )
+
+        self._set_export_info(export_info)
 
     @property
     def cache(self) -> DataSetCacheInMem:
         return self._cache
+
+    @property
+    def export_info(self) -> ExportInfo:
+        return self._export_info
+
+    def _set_export_info(self, export_info: ExportInfo) -> None:
+        self.add_metadata("export_info", export_info.to_str())
+        self._export_info = export_info
 
     def _enqueue_results(self, result_dict: Mapping[ParamSpecBase, np.ndarray]) -> None:
         """
