@@ -687,30 +687,6 @@ def dond(
     if show_progress is None:
         show_progress = config.dataset.dond_show_progress
 
-    def _parse_dond_arguments(
-        *params: Union[AbstractSweep, Union[ParamMeasT, Sequence[ParamMeasT]]]
-    ) -> Tuple[List[AbstractSweep], List[Union[ParamMeasT, Sequence[ParamMeasT]]]]:
-        """
-        Parse supplied arguments into sweep objects and measurement parameters.
-        """
-        sweep_instances: List[AbstractSweep] = []
-        params_meas: List[Union[ParamMeasT, Sequence[ParamMeasT]]] = []
-        for par in params:
-            if isinstance(par, AbstractSweep):
-                sweep_instances.append(par)
-            else:
-                params_meas.append(par)
-        return sweep_instances, params_meas
-
-    def _make_nested_setpoints(sweeps: List[AbstractSweep]) -> np.ndarray:
-        """Create the cartesian product of all the setpoint values."""
-        if len(sweeps) == 0:
-            return np.array([[]])  # 0d sweep (do0d)
-        setpoint_values = [sweep.get_setpoints() for sweep in sweeps]
-        setpoint_grids = np.meshgrid(*setpoint_values, indexing="ij")
-        flat_setpoint_grids = [np.ravel(grid, order="C") for grid in setpoint_grids]
-        return np.vstack(flat_setpoint_grids).T
-
     sweep_instances, params_meas = _parse_dond_arguments(*params)
     nested_setpoints = _make_nested_setpoints(sweep_instances)
 
@@ -816,6 +792,33 @@ def dond(
         return datasets[0], plots_axes[0], plots_colorbar[0]
     else:
         return tuple(datasets), tuple(plots_axes), tuple(plots_colorbar)
+
+
+def _parse_dond_arguments(
+        *params: Union[AbstractSweep, Union[ParamMeasT, Sequence[ParamMeasT]]]
+    ) -> Tuple[List[AbstractSweep], List[Union[ParamMeasT, Sequence[ParamMeasT]]]]:
+        """
+        Parse supplied arguments into sweep objects and measurement parameters
+        and their callables.
+        """
+        sweep_instances: List[AbstractSweep] = []
+        params_meas: List[Union[ParamMeasT, Sequence[ParamMeasT]]] = []
+        for par in params:
+            if isinstance(par, AbstractSweep):
+                sweep_instances.append(par)
+            else:
+                params_meas.append(par)
+        return sweep_instances, params_meas
+
+
+def _make_nested_setpoints(sweeps: List[AbstractSweep]) -> np.ndarray:
+        """Create the cartesian product of all the setpoint values."""
+        if len(sweeps) == 0:
+            return np.array([[]])  # 0d sweep (do0d)
+        setpoint_values = [sweep.get_setpoints() for sweep in sweeps]
+        setpoint_grids = np.meshgrid(*setpoint_values, indexing="ij")
+        flat_setpoint_grids = [np.ravel(grid, order="C") for grid in setpoint_grids]
+        return np.vstack(flat_setpoint_grids).T
 
 
 def _select_active_actions(
