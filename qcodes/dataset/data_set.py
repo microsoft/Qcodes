@@ -1615,7 +1615,9 @@ class DataSet(Sized):
         )
         export_info = self.export_info
         if self._export_path is not None:
-            export_info.export_paths[export_type.value] = self._export_path
+            export_info.export_paths[export_type.value] = os.path.abspath(
+                self._export_path
+            )
 
         self._set_export_info(export_info)
 
