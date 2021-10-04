@@ -763,7 +763,7 @@ class DataSetInMem(DataSetProtocol, Sized):
             )
         else:
             xarr_dataset.to_netcdf(path=file_path, engine="h5netcdf")
-        return path
+        return file_path
 
     def _export_as_csv(self, path: str, file_name: str) -> str:
         """Export data as csv to a given path with file prefix."""
