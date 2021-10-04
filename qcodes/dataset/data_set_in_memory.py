@@ -110,10 +110,13 @@ class DataSetInMem(DataSetProtocol, Sized):
             self._parent_dataset_links = []
         if export_info is not None:
             self._export_info = export_info
-            self._export_path = str(Path(export_info.export_paths["nc"]).parent)
+            self._export_path: Optional[str] = str(
+                Path(export_info.export_paths["nc"]).parent
+            )
         else:
             self._export_info = ExportInfo({})
             self._export_path = None
+        self._metadata["export_info"] = self._export_info.to_str()
 
     def _dataset_is_in_runs_table(self) -> bool:
         """
@@ -153,7 +156,7 @@ class DataSetInMem(DataSetProtocol, Sized):
         self.write_metadata_to_db(path_to_db=path_to_db)
         self._add_data_to_db()
 
-    def _add_data_to_db(self):
+    def _add_data_to_db(self) -> None:
         raise NotImplementedError
 
     @classmethod
