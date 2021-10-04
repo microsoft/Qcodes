@@ -1,9 +1,15 @@
 import json
+import warnings
 from collections import OrderedDict, UserDict
 
 import numpy as np
 import pytest
-import uncertainties
+
+with warnings.catch_warnings():
+    # this context manager can be removed when uncertainties
+    # no longer triggers deprecation warnings
+    warnings.simplefilter("ignore", category=DeprecationWarning)
+    import uncertainties
 
 from qcodes.utils.helpers import NumpyJSONEncoder
 from qcodes.utils.types import numpy_complex, numpy_floats, numpy_ints
@@ -37,10 +43,12 @@ def test_complex_types():
         assert e.encode(complex_type(complex(1, 2))) == \
                '{"__dtype__": "complex", "re": 1.0, "im": 2.0}'
 
+
 def test_UFloat_type():
     e = NumpyJSONEncoder()
     assert e.encode(uncertainties.ufloat(1.0, 2.0)) == \
            '{"__dtype__": "UFloat", "nominal_value": 1.0, "std_dev": 2.0}'
+
 
 def test_numpy_int_types():
     e = NumpyJSONEncoder()
@@ -115,6 +123,7 @@ def test_object_with_serialization_method():
 
 class SomeUserDict(UserDict):
     pass
+
 
 EXAMPLEMETADATA = {
     'name': 'Rapunzel',
