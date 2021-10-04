@@ -150,8 +150,11 @@ class DataSetInMem(DataSetProtocol, Sized):
                 _add_run_to_runs_table(self, aconn, exp.exp_id, create_run_table=False)
 
     def write_to_db(self, path_to_db: Optional[Union[str, Path]] = None) -> None:
-        self.write_metadata_to_db()
+        self.write_metadata_to_db(path_to_db=path_to_db)
         self._add_data_to_db()
+
+    def _add_data_to_db(self):
+        raise NotImplementedError
 
     @classmethod
     def create_new_run(
