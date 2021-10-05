@@ -2167,7 +2167,13 @@ def raw_time_to_str_time(
         return time.strftime(fmt, time.localtime(raw_timestamp))
 
 
-def _check_if_table_found(conn: ConnectionPlus, table_name: str) -> Any:
+def _check_if_table_found(conn: ConnectionPlus, table_name: str) -> bool:
     query = "SELECT name FROM sqlite_master WHERE type='table' AND name=?"
     cursor = conn.cursor()
     return not many_many(cursor.execute(query, (table_name,)), "name") == []
+
+
+def _get_result_table_name_by_guid(conn, guid: str) -> str:
+    sql = "SELECT result_table_name FROM runs WHERE guid=?"
+    formatted_name = one(transaction(conn, sql, guid), "result_table_name")
+    return formatted_name
