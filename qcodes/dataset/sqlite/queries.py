@@ -2165,3 +2165,9 @@ def raw_time_to_str_time(
         return None
     else:
         return time.strftime(fmt, time.localtime(raw_timestamp))
+
+
+def _check_if_table_found(conn: ConnectionPlus, table_name: str) -> Any:
+    query = "SELECT name FROM sqlite_master WHERE type='table' AND name=?"
+    cursor = conn.cursor()
+    return not many_many(cursor.execute(query, (table_name,)), "name") == []
