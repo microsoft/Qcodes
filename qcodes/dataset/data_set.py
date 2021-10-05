@@ -49,6 +49,8 @@ from qcodes.dataset.sqlite.database import (
     get_DB_location,
 )
 from qcodes.dataset.sqlite.queries import (
+    _check_if_table_found,
+    _get_result_table_name_by_guid,
     add_data_to_dynamic_columns,
     add_parameter,
     completed,
@@ -1647,7 +1649,12 @@ def load_by_id(run_id: int, conn: Optional[ConnectionPlus] = None) -> DataSet:
 
     conn = conn or connect(get_DB_location())
 
+    guid = get_guid_from_run_id(conn, run_id)
+    result_table_name = _get_result_table_name_by_guid(conn, guid)
+    # if _check_if_table_found(conn, result_table_name):
     d = DataSet(conn=conn, run_id=run_id)
+    # else:
+    #     d = DataSetInMem.load_from_db(conn=conn, guid=guid)
     return d
 
 
