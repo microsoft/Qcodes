@@ -49,19 +49,23 @@ def test_channel_access_is_identical(dci, value, channel):
     channel_to_label = {0: 'A', 1: 'B', 2: 'C', 3: "D"}
     label = channel_to_label[channel]
     channel_via_label = getattr(dci, label)
+    channel_via_name = dci.channels.get_channel_by_name(f'Chan{label}')
     # set via labeled channel
     channel_via_label.temperature(value)
     assert channel_via_label.temperature() == value
+    assert channel_via_name.temperature() == value
     assert dci.channels[channel].temperature() == value
     assert dci.channels.temperature()[channel] == value
-    # reset
-    channel_via_label.temperature(0)
+    # reset via channel name
+    channel_via_name.temperature(0)
     assert channel_via_label.temperature() == 0
+    assert channel_via_name.temperature() == 0
     assert dci.channels[channel].temperature() == 0
     assert dci.channels.temperature()[channel] == 0
     # set via index into list
     dci.channels[channel].temperature(value)
     assert channel_via_label.temperature() == value
+    assert channel_via_name.temperature() == value
     assert dci.channels[channel].temperature() == value
     assert dci.channels.temperature()[channel] == value
     # it's not possible to set via dci.channels.temperature
@@ -237,6 +241,21 @@ def test_access_channels_by_tuple(dci, myindexs):
 
     mychans = chlist[mytuple]
     for chan, chanindex in zip(mychans, mytuple):
+        assert chan.name == f'dci_Chan{names[chanindex]}'
+
+
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
+@given(myindexs=hst.lists(elements=hst.integers(0, 7), min_size=2))
+def test_access_channels_by_name(dci, myindexs):
+    names = ('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H')
+    channels = tuple(DummyChannel(dci,
+                                  'Chan'+name, name) for name in names)
+    chlist = ChannelList(dci, 'channels',
+                         DummyChannel, channels)
+
+    channel_names = (f'Chan{names[i]}' for i in myindexs)
+    mychans = chlist.get_channel_by_name(*channel_names)
+    for chan, chanindex in zip(mychans, myindexs):
         assert chan.name == f'dci_Chan{names[chanindex]}'
 
 
