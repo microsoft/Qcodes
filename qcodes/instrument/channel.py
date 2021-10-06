@@ -363,7 +363,8 @@ class ChannelList(Metadatable):
         self._channels = cast(List[InstrumentChannel], self._channels)
         self._channels.insert(index, obj)
 
-    def get_channel_by_name(self, *names: str) -> 'ChannelList':
+    def get_channel_by_name(self, *names: str) -> \
+            Union[InstrumentChannel, 'ChannelList']:
         """
         Get a channel by name, or a ChannelList if multiple names are given.
 
