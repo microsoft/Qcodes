@@ -50,17 +50,27 @@ _fg_path_val_map = {'5208': {'DC High BW': "DCHB",
                                'AC': 'AC'},
                     '70002A': {'direct': 'DIR',
                                'DCamplified': 'DCAM',
+                               'AC': 'AC'},
+                    '70001B': {'direct': 'DIR',
+                               'DCamplified': 'DCAM',
+                               'AC': 'AC'},
+                    '70002B': {'direct': 'DIR',
+                               'DCamplified': 'DCAM',
                                'AC': 'AC'}}
 
 # number of markers per channel
 _num_of_markers_map = {'5208': 4,
                        '70001A': 2,
-                       '70002A': 2}
+                       '70002A': 2,
+                       '70001B': 2,
+                       '70002B': 2}
 
 # channel resolution
 _chan_resolutions = {'5208': [12, 13, 14, 15, 16],
                      '70001A': [8, 9, 10],
-                     '70002A': [8, 9, 10]}
+                     '70002A': [8, 9, 10],
+                     '70001B': [8, 9, 10],
+                     '70002B': [8, 9, 10]}
 
 # channel resolution docstrings
 _chan_resolution_docstrings = {'5208': "12 bit resolution allows for four "
@@ -74,19 +84,33 @@ _chan_resolution_docstrings = {'5208': "12 bit resolution allows for four "
                                '70002A': "8 bit resolution allows for two "
                                          "markers, 9 bit resolution "
                                          "allows for one, and 10 bit "
+                                         "does NOT allow for markers ",
+                               '70001B': "8 bit resolution allows for two "
+                                         "markers, 9 bit resolution "
+                                         "allows for one, and 10 bit "
+                                         "does NOT allow for markers ",
+                               '70002B': "8 bit resolution allows for two "
+                                         "markers, 9 bit resolution "
+                                         "allows for one, and 10 bit "
                                          "does NOT allow for markers "}
 
 # channel amplitudes
 _chan_amps = {'70001A': 0.5,
               '70002A': 0.5,
+              '70001B': 0.5,
+              '70002B': 0.5,
               '5208': 1.5}
 
 # marker ranges
 _marker_high = {'70001A': (-1.4, 1.4),
                 '70002A': (-1.4, 1.4),
+                '70001B': (-1.4, 1.4),
+                '70002B': (-1.4, 1.4),
                 '5208': (-0.5, 1.75)}
 _marker_low = {'70001A': (-1.4, 1.4),
                '70002A': (-1.4, 1.4),
+               '70001B': (-1.4, 1.4),
+               '70002B': (-1.4, 1.4),
                '5208': (-0.3, 1.55)}
 
 
@@ -102,10 +126,10 @@ class SRValidator(Validator[float]):
                 rate validation depends on many clock settings
         """
         self.awg = awg
-        if self.awg.model == '70001A':
+        if self.awg.model in ['70001A', '70001B']:
             self._internal_validator = vals.Numbers(1.49e3, 50e9)
             self._freq_multiplier = 4
-        elif self.awg.model == '70002A':
+        elif self.awg.model in ['70002A', '70002B']:
             self._internal_validator = vals.Numbers(1.49e3, 25e9)
             self._freq_multiplier = 2
         elif self.awg.model == '5208':
@@ -367,7 +391,7 @@ class AWG70000A(VisaInstrument):
     """
     The QCoDeS driver for Tektronix AWG70000A series AWG's.
 
-    The drivers for AWG70001A and AWG70002A should be subclasses of this
+    The drivers for AWG70001A/AWG70001B and AWG70002A/AWG70002B should be subclasses of this
     general class.
     """
 
@@ -389,7 +413,7 @@ class AWG70000A(VisaInstrument):
         # The 'model' value begins with 'AWG'
         self.model = self.IDN()['model'][3:]
 
-        if self.model not in ['70001A', '70002A', '5208']:
+        if self.model not in ['70001A', '70002A', '70001B', '70002B', '5208']:
             raise ValueError('Unknown model type: {}. Are you using '
                              'the right driver for your instrument?'
                              ''.format(self.model))
