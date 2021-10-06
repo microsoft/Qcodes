@@ -363,6 +363,22 @@ class ChannelList(Metadatable):
         self._channels = cast(List[InstrumentChannel], self._channels)
         self._channels.insert(index, obj)
 
+    def get_channel_by_name(self, *names: str) -> 'ChannelList':
+        """
+        Get a channel by name, or a ChannelList if multiple names are given.
+
+        Args:
+            *names: channel names
+        """
+        if len(names) == 0:
+            raise Exception('one or more names must be given')
+        if len(names) == 1:
+            return self._channel_mapping[names[0]]
+        selected_channels = (self._channel_mapping[name] for name in names)
+        return ChannelList(self._parent, self._name, self._chan_type,
+                           selected_channels, self._snapshotable,
+                           self._paramclass)
+
     def get_validator(self) -> 'ChannelListValidator':
         """
         Returns a validator that checks that the returned object is a channel
