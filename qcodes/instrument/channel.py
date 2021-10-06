@@ -375,7 +375,7 @@ class ChannelList(Metadatable):
             raise Exception('one or more names must be given')
         if len(names) == 1:
             return self._channel_mapping[names[0]]
-        selected_channels = (self._channel_mapping[name] for name in names)
+        selected_channels = tuple(self._channel_mapping[name] for name in names)
         return ChannelList(self._parent, self._name, self._chan_type,
                            selected_channels, self._snapshotable,
                            self._paramclass)
