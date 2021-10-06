@@ -21,11 +21,11 @@ ipython==7.28.0
 ipython-genutils==0.2.0
 ipywidgets==7.6.5
 jedi==0.18.0
-Jinja2==3.0.1
+Jinja2==3.0.2
 jsonpointer==2.1
 jsonschema==4.0.1
 jupyter==1.0.0
-jupyter-client==7.0.5
+jupyter-client==7.0.6
 jupyter-console==6.4.0
 jupyter-core==4.8.1
 jupyterlab-pygments==0.1.2
@@ -50,7 +50,7 @@ Pygments==2.10.0
 pyparsing==2.4.7
 pyrsistent==0.18.0
 python-dateutil==2.8.2
-pytz==2021.1
+pytz==2021.3
 PyVISA==1.11.3
 PyVISA-sim==0.4.0
 pywin32==301; sys_platform == 'win32'
