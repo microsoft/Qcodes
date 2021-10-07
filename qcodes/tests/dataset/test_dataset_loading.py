@@ -3,15 +3,20 @@ from math import floor
 
 import pytest
 
-from qcodes.dataset.data_set import (DataSet,
-                                     new_data_set,
-                                     load_by_guid,
-                                     load_by_id,
-                                     load_by_counter,
-                                     load_by_run_spec)
-
-from qcodes.dataset.sqlite.queries import get_guids_from_run_spec
+from qcodes.dataset.data_set import (
+    DataSet,
+    load_by_counter,
+    load_by_guid,
+    load_by_id,
+    load_by_run_spec,
+    new_data_set,
+)
 from qcodes.dataset.experiment_container import new_experiment
+from qcodes.dataset.sqlite.queries import (
+    get_experiment_attributes_by_exp_id,
+    get_guids_from_run_spec,
+    get_run_attributes,
+)
 
 
 @pytest.mark.usefixtures("experiment")
@@ -27,6 +32,8 @@ def test_load_by_id():
     assert ds.running is False
     assert loaded_ds.completed is True
     assert loaded_ds.exp_id == 1
+
+    loaded_attrs = get_run_attributes(ds.conn, ds.guid)
 
     ds = new_data_set("test-dataset-unfinished")
     run_id = ds.run_id
@@ -67,6 +74,34 @@ def test_load_by_counter():
     assert loaded_ds.started is True
     assert loaded_ds.running is False
     assert loaded_ds.completed is True
+
+
+@pytest.mark.usefixtures("experiment")
+def test_get_run_attributes() -> None:
+    name = "test-dataset"
+    ds = new_data_set(name)
+    ds.mark_started()
+    ds.mark_completed()
+    ds.add_metadata("foo", "bar")
+
+    loaded_attrs = get_run_attributes(ds.conn, ds.guid)
+
+    assert loaded_attrs["run_id"] == ds.run_id
+    assert loaded_attrs["counter"] == ds.counter
+    assert loaded_attrs["captured_counter"] == ds.captured_counter
+    assert loaded_attrs["captured_run_id"] == ds.captured_run_id
+    assert loaded_attrs["captured_run_id"] == ds.captured_run_id
+    assert loaded_attrs["experiment"] == get_experiment_attributes_by_exp_id(
+        ds.conn, ds.exp_id
+    )
+    assert loaded_attrs["experiment"]["exp_id"] == ds.exp_id
+    assert loaded_attrs["name"] == name
+    assert loaded_attrs["run_timestamp"] == ds.run_timestamp_raw
+    assert loaded_attrs["completed_timestamp"] == ds.completed_timestamp_raw
+    assert loaded_attrs["parent_dataset_links"] == "[]"
+    assert "interdependencies" in loaded_attrs["run_description"]
+    assert loaded_attrs["snapshot"] is None
+    assert loaded_attrs["metadata"] == {"foo": "bar"}
 
 
 @pytest.mark.usefixtures("empty_temp_db")
