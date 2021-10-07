@@ -2091,3 +2091,12 @@ def get_raw_run_attributes(
     }
 
     return output
+
+
+def raw_time_to_str_time(
+    raw_timestamp: Optional[float], fmt: str = "%Y-%m-%d %H:%M:%S"
+) -> Optional[str]:
+    if raw_timestamp is None:
+        return None
+    else:
+        return time.strftime(fmt, time.localtime(raw_timestamp))
