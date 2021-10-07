@@ -2048,7 +2048,7 @@ class RawRunAttributesDict(TypedDict):
     run_id: int
     counter: int
     captured_run_id: int
-    caputed_counter: int
+    captured_counter: int
     experiment: ExperimentAttributeDict
     name: str
     run_timestamp: Optional[float]
@@ -2078,7 +2078,7 @@ def get_run_attributes(
         "captured_run_id": select_one_where(
             conn, "runs", "captured_run_id", "guid", guid
         ),
-        "caputed_counter": select_one_where(
+        "captured_counter": select_one_where(
             conn, "runs", "captured_counter", "guid", guid
         ),
         "name": select_one_where(conn, "runs", "name", "guid", guid),
