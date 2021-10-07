@@ -1095,7 +1095,8 @@ class AWG70000A(VisaInstrument):
                      go_to: Sequence[int],
                      wfms: Sequence[Sequence[np.ndarray]],
                      amplitudes: Sequence[float],
-                     seqname: str) -> bytes:
+                     seqname: str,
+                     flags: Sequence[int]=()) -> bytes:
         """
         Make a full .seqx file (bundle)
         A .seqx file can presumably hold several sequences, but for now
@@ -1134,6 +1135,10 @@ class AWG70000A(VisaInstrument):
                 a list [ch1_amp, ch2_amp].
             seqname: The name of the sequence. This name will appear in the
                 sequence list. Note that all spaces are converted to '_'
+            flags (optional): Flags for the auxiliary outputs. 0 for 
+                'No change', 1 for 'High', 2 for 'Low', 3 for 'Swap'. 4 flags 
+                [A, B, C, D] for every channel in every element, packed like:
+                [[ch1pos1, ch1pos2, ...], [ch2pos1, ...], ...]
 
         Returns:
             The binary .seqx file, ready to be sent to the instrument.
@@ -1160,7 +1165,7 @@ class AWG70000A(VisaInstrument):
                                           event_jumps, event_jump_to,
                                           go_to, wfm_names,
                                           seqname,
-                                          chans)
+                                          chans, flags)
 
         user_file = b''
         setup_file = AWG70000A._makeSetupFile(seqname)
@@ -1223,7 +1228,8 @@ class AWG70000A(VisaInstrument):
                      elem_names: Sequence[Sequence[str]],
                      seqname: str,
                      chans: int,
-                     subseq_positions: Sequence[int] = ()) -> str:
+                     subseq_positions: Sequence[int] = (),
+                     flags: Sequence[int] = ()) -> str:
         """
         Make an xml file describing a sequence.
 
@@ -1250,6 +1256,10 @@ class AWG70000A(VisaInstrument):
                 up front.
             subseq_positions: The positions (step numbers) occupied by
                 subsequences
+            flags (optional): Flags for the auxiliary outputs. 0 for 
+                'No change', 1 for 'High', 2 for 'Low', 3 for 'Swap'. 4 flags 
+                [A, B, C, D] for every channel in every element, packed like:
+                [[ch1pos1, ch1pos2, ...], [ch2pos1, ...], ...]
 
         Returns:
             A str containing the file contents, to be saved as an .sml file
