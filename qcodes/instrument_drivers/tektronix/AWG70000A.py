@@ -391,7 +391,7 @@ class AWG70000A(VisaInstrument):
     """
     The QCoDeS driver for Tektronix AWG70000A series AWG's.
 
-    The drivers for AWG70001A/AWG70001B and AWG70002A/AWG70002B should be 
+    The drivers for AWG70001A/AWG70001B and AWG70002A/AWG70002B should be
     subclasses of this general class.
     """
 
