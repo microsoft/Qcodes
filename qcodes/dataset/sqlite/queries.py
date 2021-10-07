@@ -2059,7 +2059,7 @@ class RawRunAttributesDict(TypedDict):
     snapshot: str
 
 
-def get_run_attributes(
+def get_raw_run_attributes(
     conn: ConnectionPlus, guid: str
 ) -> Optional[RawRunAttributesDict]:
 

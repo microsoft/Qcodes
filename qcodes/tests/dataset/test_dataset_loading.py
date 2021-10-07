@@ -15,7 +15,7 @@ from qcodes.dataset.experiment_container import new_experiment
 from qcodes.dataset.sqlite.queries import (
     get_experiment_attributes_by_exp_id,
     get_guids_from_run_spec,
-    get_run_attributes,
+    get_raw_run_attributes,
 )
 
 
@@ -32,8 +32,6 @@ def test_load_by_id():
     assert ds.running is False
     assert loaded_ds.completed is True
     assert loaded_ds.exp_id == 1
-
-    loaded_attrs = get_run_attributes(ds.conn, ds.guid)
 
     ds = new_data_set("test-dataset-unfinished")
     run_id = ds.run_id
@@ -84,7 +82,7 @@ def test_get_run_attributes() -> None:
     ds.mark_completed()
     ds.add_metadata("foo", "bar")
 
-    loaded_attrs = get_run_attributes(ds.conn, ds.guid)
+    loaded_attrs = get_raw_run_attributes(ds.conn, ds.guid)
     assert loaded_attrs is not None
 
     assert loaded_attrs["run_id"] == ds.run_id
