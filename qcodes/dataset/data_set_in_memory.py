@@ -127,7 +127,7 @@ class DataSetInMem(DataSetProtocol, Sized):
             conn_from_dbpath_or_conn(conn=None, path_to_db=self._path_to_db)
         ) as conn:
             run_id = get_runid_from_guid(conn, self.guid)
-        return run_id != -1
+        return run_id is not None
 
     def write_metadata_to_db(
         self, path_to_db: Optional[Union[str, Path]] = None
