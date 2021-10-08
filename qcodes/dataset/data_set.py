@@ -375,7 +375,9 @@ class DataSet(Sized):
 
     @property
     def guid(self) -> str:
-        return get_guid_from_run_id(self.conn, self.run_id)
+        guid = get_guid_from_run_id(self.conn, self.run_id)
+        assert guid is not None
+        return guid
 
     @property
     def snapshot(self) -> Optional[Dict[str, Any]]:
@@ -1734,7 +1736,7 @@ def load_by_guid(guid: str, conn: Optional[ConnectionPlus] = None) -> DataSet:
     # this function raises a RuntimeError if more than one run matches the GUID
     run_id = get_runid_from_guid(conn, guid)
 
-    if run_id == -1:
+    if run_id is None:
         raise NameError(f'No run with GUID: {guid} found in database.')
 
     return DataSet(run_id=run_id, conn=conn)
