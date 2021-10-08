@@ -1136,8 +1136,9 @@ class AWG70000A(VisaInstrument):
             seqname: The name of the sequence. This name will appear in the
                 sequence list. Note that all spaces are converted to '_'
             flags (optional): Flags for the auxiliary outputs. 0 for 
-                'No change', 1 for 'High', 2 for 'Low', 3 for 'Swap'. 4 flags 
-                [A, B, C, D] for every channel in every element, packed like:
+                'NoChange', 1 for 'High', 2 for 'Low', 3 for 'Toggle', or
+                4 for 'Pulse'. 4 flags [A, B, C, D] for every channel
+                in every element, packed in a list:
                 [[ch1pos1, ch1pos2, ...], [ch2pos1, ...], ...]
 
         Returns:
@@ -1269,7 +1270,7 @@ class AWG70000A(VisaInstrument):
 
         waitinputs = {0: 'None', 1: 'TrigA', 2: 'TrigB', 3: 'Internal'}
         eventinputs = {0: 'None', 1: 'TrigA', 2: 'TrigB', 3: 'Internal'}
-        flaginputs = {0:'NoChange', 1:'High', 2:'Low', 3:'Toggle'}
+        flaginputs = {0:'NoChange', 1:'High', 2:'Low', 3:'Toggle', 4:'Pulse'}
 
         inputlsts = [trig_waits, nreps, event_jump_to, go_to]
         lstlens = [len(lst) for lst in inputlsts]
