@@ -2042,3 +2042,61 @@ def _rewrite_timestamps(
             """
     cursor = target_conn.cursor()
     cursor.execute(query, (correct_completed_timestamp, target_run_id))
+
+
+class RawRunAttributesDict(TypedDict):
+    run_id: int
+    counter: int
+    captured_run_id: int
+    captured_counter: int
+    experiment: ExperimentAttributeDict
+    name: str
+    run_timestamp: Optional[float]
+    completed_timestamp: Optional[float]
+    metadata: Dict[str, Any]
+    parent_dataset_links: str
+    run_description: str
+    snapshot: str
+
+
+def get_raw_run_attributes(
+    conn: ConnectionPlus, guid: str
+) -> Optional[RawRunAttributesDict]:
+
+    run_id = get_runid_from_guid(conn, guid)
+
+    if run_id is None:
+        return None
+
+    exp_id = get_exp_ids_from_run_ids(conn, [run_id])[0]
+    experiment = get_experiment_attributes_by_exp_id(conn, exp_id)
+
+    output: RawRunAttributesDict = {
+        "run_id": run_id,
+        "experiment": experiment,
+        "counter": select_one_where(conn, "runs", "result_counter", "guid", guid),
+        "captured_run_id": select_one_where(
+            conn, "runs", "captured_run_id", "guid", guid
+        ),
+        "captured_counter": select_one_where(
+            conn, "runs", "captured_counter", "guid", guid
+        ),
+        "name": select_one_where(conn, "runs", "name", "guid", guid),
+        "run_timestamp": get_run_timestamp_from_run_id(conn, run_id),
+        "completed_timestamp": get_completed_timestamp_from_run_id(conn, run_id),
+        "metadata": get_metadata_from_run_id(conn, run_id),
+        "parent_dataset_links": get_parent_dataset_links(conn, run_id),
+        "run_description": get_run_description(conn, run_id),
+        "snapshot": select_one_where(conn, "runs", "snapshot", "guid", guid),
+    }
+
+    return output
+
+
+def raw_time_to_str_time(
+    raw_timestamp: Optional[float], fmt: str = "%Y-%m-%d %H:%M:%S"
+) -> Optional[str]:
+    if raw_timestamp is None:
+        return None
+    else:
+        return time.strftime(fmt, time.localtime(raw_timestamp))
