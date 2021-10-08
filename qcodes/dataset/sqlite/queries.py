@@ -597,7 +597,7 @@ def get_runid_from_guid(conn: ConnectionPlus, guid: str) -> Optional[int]:
     cursor.execute(query, (guid,))
     rows = cursor.fetchall()
     if len(rows) == 0:
-        run_id = -1
+        run_id = None
     elif len(rows) > 1:
         errormssg = ('Critical consistency error: multiple runs with'
                      f' the same GUID found! {len(rows)} runs have GUID '
