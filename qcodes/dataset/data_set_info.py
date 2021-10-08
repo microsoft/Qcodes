@@ -31,6 +31,17 @@ class RunAttributesDict(TypedDict):
 
 
 def get_run_attributes(conn: ConnectionPlus, guid: str) -> Optional[RunAttributesDict]:
+    """
+    Look up all information and metadata about a given dataset captured
+    in the database.
+
+    Args:
+        conn: Connection to the database
+        guid: GUID of the dataset to look up
+
+    Returns:
+        Dictionary of information about the dataset.
+    """
     raw_attributes = get_raw_run_attributes(conn, guid)
 
     if raw_attributes is None:
