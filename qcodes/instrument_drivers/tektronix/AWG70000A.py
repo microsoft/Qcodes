@@ -1165,7 +1165,7 @@ class AWG70000A(VisaInstrument):
                                           event_jumps, event_jump_to,
                                           go_to, wfm_names,
                                           seqname,
-                                          chans, flags)
+                                          chans, flags=flags)
 
         user_file = b''
         setup_file = AWG70000A._makeSetupFile(seqname)
@@ -1269,6 +1269,7 @@ class AWG70000A(VisaInstrument):
 
         waitinputs = {0: 'None', 1: 'TrigA', 2: 'TrigB', 3: 'Internal'}
         eventinputs = {0: 'None', 1: 'TrigA', 2: 'TrigB', 3: 'Internal'}
+        flaginputs = {0:'NoChange', 1:'High', 2:'Low', 3:'Toggle'}
 
         inputlsts = [trig_waits, nreps, event_jump_to, go_to]
         lstlens = [len(lst) for lst in inputlsts]
@@ -1379,13 +1380,18 @@ class AWG70000A(VisaInstrument):
                 else:
                     temp_elem.text = 'Waveform'
 
-            flags = ET.SubElement(step, 'Flags')
-            for _ in range(chans):
-                flagset = ET.SubElement(flags, 'FlagSet')
-                for flg in ['A', 'B', 'C', 'D']:
+            # convert flag settings to strings
+            flags_list = ET.SubElement(step, 'Flags')
+            for chan in range(chans):
+                flagset = ET.SubElement(flags_list, 'FlagSet')
+                for flgind, flg in enumerate(['A', 'B', 'C', 'D']):
                     temp_elem = ET.SubElement(flagset, 'Flag')
                     temp_elem.set('name', flg)
-                    temp_elem.text = 'NoChange'
+                    if flags == ():
+                        # no flags were passed to the function
+                        temp_elem.text = 'NoChange'
+                    else:
+                        temp_elem.text = flaginputs[flags[chan][n-1][flgind]]
 
         temp_elem = ET.SubElement(datasets, 'ProductSpecific')
         temp_elem.set('name', '')
