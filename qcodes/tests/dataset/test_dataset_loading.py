@@ -97,7 +97,7 @@ def test_get_run_attributes() -> None:
         ds.conn, ds.exp_id
     )
     assert loaded_raw_attrs["experiment"]["exp_id"] == ds.exp_id
-    assert loaded_raw_attrs["experiment"]["exp_name"] == ds.exp_name
+    assert loaded_raw_attrs["experiment"]["name"] == ds.exp_name
     assert loaded_raw_attrs["experiment"]["sample_name"] == ds.sample_name
     assert loaded_raw_attrs["name"] == name
     assert loaded_raw_attrs["run_timestamp"] == ds.run_timestamp_raw
