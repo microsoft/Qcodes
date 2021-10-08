@@ -11,11 +11,14 @@ from qcodes.dataset.data_set import (
     load_by_run_spec,
     new_data_set,
 )
+from qcodes.dataset.data_set_info import get_run_attributes
+from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.experiment_container import new_experiment
 from qcodes.dataset.sqlite.queries import (
     get_experiment_attributes_by_exp_id,
     get_guids_from_run_spec,
     get_raw_run_attributes,
+    raw_time_to_str_time,
 )
 
 
@@ -82,8 +85,27 @@ def test_get_run_attributes() -> None:
     ds.mark_completed()
     ds.add_metadata("foo", "bar")
 
-    loaded_attrs = get_raw_run_attributes(ds.conn, ds.guid)
-    assert loaded_attrs is not None
+    loaded_raw_attrs = get_raw_run_attributes(ds.conn, ds.guid)
+    assert loaded_raw_attrs is not None
+
+    assert loaded_raw_attrs["run_id"] == ds.run_id
+    assert loaded_raw_attrs["counter"] == ds.counter
+    assert loaded_raw_attrs["captured_counter"] == ds.captured_counter
+    assert loaded_raw_attrs["captured_run_id"] == ds.captured_run_id
+    assert loaded_raw_attrs["captured_run_id"] == ds.captured_run_id
+    assert loaded_raw_attrs["experiment"] == get_experiment_attributes_by_exp_id(
+        ds.conn, ds.exp_id
+    )
+    assert loaded_raw_attrs["experiment"]["exp_id"] == ds.exp_id
+    assert loaded_raw_attrs["name"] == name
+    assert loaded_raw_attrs["run_timestamp"] == ds.run_timestamp_raw
+    assert loaded_raw_attrs["completed_timestamp"] == ds.completed_timestamp_raw
+    assert loaded_raw_attrs["parent_dataset_links"] == "[]"
+    assert "interdependencies" in loaded_raw_attrs["run_description"]
+    assert loaded_raw_attrs["snapshot"] is None
+    assert loaded_raw_attrs["metadata"] == {"foo": "bar"}
+
+    loaded_attrs = get_run_attributes(ds.conn, ds.guid)
 
     assert loaded_attrs["run_id"] == ds.run_id
     assert loaded_attrs["counter"] == ds.counter
@@ -95,10 +117,12 @@ def test_get_run_attributes() -> None:
     )
     assert loaded_attrs["experiment"]["exp_id"] == ds.exp_id
     assert loaded_attrs["name"] == name
-    assert loaded_attrs["run_timestamp"] == ds.run_timestamp_raw
-    assert loaded_attrs["completed_timestamp"] == ds.completed_timestamp_raw
-    assert loaded_attrs["parent_dataset_links"] == "[]"
-    assert "interdependencies" in loaded_attrs["run_description"]
+    assert loaded_attrs["run_timestamp"] == raw_time_to_str_time(ds.run_timestamp_raw)
+    assert loaded_attrs["completed_timestamp"] == raw_time_to_str_time(
+        ds.completed_timestamp_raw
+    )
+    assert loaded_attrs["parent_dataset_links"] == []
+    assert isinstance(loaded_attrs["run_description"], RunDescriber)
     assert loaded_attrs["snapshot"] is None
     assert loaded_attrs["metadata"] == {"foo": "bar"}
 
