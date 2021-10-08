@@ -1,4 +1,4 @@
-apipkg==2.0.1
+apipkg==2.1.0
 atomicwrites==1.4.0
 attrs==21.2.0
 certifi==2021.5.30
