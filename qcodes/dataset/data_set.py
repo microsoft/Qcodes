@@ -1650,10 +1650,14 @@ def load_by_id(run_id: int, conn: Optional[ConnectionPlus] = None) -> DataSet:
     conn = conn or connect(get_DB_location())
 
     guid = get_guid_from_run_id(conn, run_id)
+
+    if guid is None:
+        raise ValueError(f"Run with run_id {run_id} does not exist in " f"the database")
     result_table_name = _get_result_table_name_by_guid(conn, guid)
-    # if _check_if_table_found(conn, result_table_name):
-    d = DataSet(conn=conn, run_id=run_id)
-    # else:
+    if _check_if_table_found(conn, result_table_name):
+        d = DataSet(conn=conn, run_id=run_id)
+    else:
+        raise NotImplementedError
     #     d = DataSetInMem.load_from_db(conn=conn, guid=guid)
     return d
 
