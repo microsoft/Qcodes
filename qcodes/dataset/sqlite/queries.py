@@ -2173,7 +2173,7 @@ def _check_if_table_found(conn: ConnectionPlus, table_name: str) -> bool:
     return not many_many(cursor.execute(query, (table_name,)), "name") == []
 
 
-def _get_result_table_name_by_guid(conn, guid: str) -> str:
+def _get_result_table_name_by_guid(conn: ConnectionPlus, guid: str) -> str:
     sql = "SELECT result_table_name FROM runs WHERE guid=?"
     formatted_name = one(transaction(conn, sql, guid), "result_table_name")
     return formatted_name
