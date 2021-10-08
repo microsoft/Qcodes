@@ -52,6 +52,8 @@ def get_run_attributes(conn: ConnectionPlus, guid: str) -> Optional[RunAttribute
         "run_description": serialization.from_json_to_current(
             raw_attributes["run_description"]
         ),
-        "snapshot": json.loads(raw_attributes["snapshot"]),
+        "snapshot": json.loads(raw_attributes["snapshot"])
+        if raw_attributes["snapshot"] is not None
+        else None,
     }
     return attributes
