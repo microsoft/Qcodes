@@ -24,7 +24,7 @@ class RunAttributesDict(TypedDict):
     name: str
     run_timestamp: Optional[str]
     completed_timestamp: Optional[str]
-    metadata: Any
+    metadata: Dict[str, Any]
     parent_dataset_links: List[Link]
     run_description: RunDescriber
     snapshot: Optional[Dict[str, Any]]

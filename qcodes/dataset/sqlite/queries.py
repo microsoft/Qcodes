@@ -2053,7 +2053,7 @@ class RawRunAttributesDict(TypedDict):
     name: str
     run_timestamp: Optional[float]
     completed_timestamp: Optional[float]
-    metadata: Any
+    metadata: Dict[str, Any]
     parent_dataset_links: str
     run_description: str
     snapshot: str
