@@ -574,7 +574,7 @@ def get_runid_from_expid_and_counter(conn: ConnectionPlus, exp_id: int,
     return run_id
 
 
-def get_runid_from_guid(conn: ConnectionPlus, guid: str) -> Union[int, None]:
+def get_runid_from_guid(conn: ConnectionPlus, guid: str) -> Optional[int]:
     """
     Get the run_id of a run based on the guid
 
@@ -583,10 +583,10 @@ def get_runid_from_guid(conn: ConnectionPlus, guid: str) -> Union[int, None]:
         guid: the guid to look up
 
     Returns:
-        The run_id if found, else -1.
+        The run_id if found, else None
 
     Raises:
-        RuntimeError if more than one run with the given    GUID exists
+        RuntimeError if more than one run with the given GUID exists
     """
     query = """
             SELECT run_id
@@ -597,7 +597,7 @@ def get_runid_from_guid(conn: ConnectionPlus, guid: str) -> Union[int, None]:
     cursor.execute(query, (guid,))
     rows = cursor.fetchall()
     if len(rows) == 0:
-        run_id = -1
+        run_id = None
     elif len(rows) > 1:
         errormssg = ('Critical consistency error: multiple runs with'
                      f' the same GUID found! {len(rows)} runs have GUID '
@@ -844,9 +844,9 @@ def get_completed_timestamp_from_run_id(
                             "run_id", run_id)
 
 
-def get_guid_from_run_id(conn: ConnectionPlus, run_id: int) -> str:
+def get_guid_from_run_id(conn: ConnectionPlus, run_id: int) -> Optional[str]:
     """
-    Get the guid of the given run
+    Get the guid of the given run. Returns None if the run is not found
 
     Args:
         conn: database connection
@@ -855,7 +855,11 @@ def get_guid_from_run_id(conn: ConnectionPlus, run_id: int) -> str:
     Returns:
         The guid of the run_id.
     """
-    return select_one_where(conn, "runs", "guid", "run_id", run_id)
+    try:
+        guid = select_one_where(conn, "runs", "guid", "run_id", run_id)
+    except RuntimeError:
+        return None
+    return guid
 
 
 def get_guids_from_multiple_run_ids(
@@ -876,8 +880,8 @@ def get_guids_from_multiple_run_ids(
     guids: List[str] = []
 
     for run_id in run_ids:
-        if run_exists(conn=conn, run_id=run_id):
-            run_id_guid = get_guid_from_run_id(conn=conn, run_id=run_id)
+        run_id_guid = get_guid_from_run_id(conn=conn, run_id=run_id)
+        if run_id_guid is not None:
             guids.append(run_id_guid)
         else:
             raise RuntimeError(f"run id {run_id} does not exist in the database")
@@ -1879,6 +1883,7 @@ def update_GUIDs(conn: ConnectionPlus) -> None:
 
     for run_id in range(1, no_of_runs+1):
         guid_str = get_guid_from_run_id(conn, run_id)
+        assert guid_str is not None
         guid_comps = parse_guid(guid_str)
         loc = guid_comps['location']
         ws = guid_comps['work_station']
