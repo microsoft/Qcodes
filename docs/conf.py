@@ -406,9 +406,21 @@ autodoc_default_options = {'members': True, 'undoc-members': True,
 
 # we mock modules that for one reason or another is not
 # there when generating the docs
-autodoc_mock_imports = ['pyspcm', 'zhinst', 'zhinst.utils', 'keysightSD1',
-                        'cffi', 'spirack', 'clr', 'win32com',
-                        'win32com.client', 'pythoncom', 'slack-sdk', 'hickle']
+autodoc_mock_imports = [
+    "pyspcm",
+    "zhinst",
+    "zhinst.utils",
+    "keysightSD1",
+    "cffi",
+    "spirack",
+    "clr",
+    "win32com",
+    "win32com.client",
+    "pythoncom",
+    "slack-sdk",
+    "hickle",
+    "gclib",
+]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
