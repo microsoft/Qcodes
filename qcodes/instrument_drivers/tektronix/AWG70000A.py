@@ -1258,8 +1258,9 @@ class AWG70000A(VisaInstrument):
             subseq_positions: The positions (step numbers) occupied by
                 subsequences
             flags (optional): Flags for the auxiliary outputs. 0 for
-                'No change', 1 for 'High', 2 for 'Low', 3 for 'Swap'. 4 flags
-                [A, B, C, D] for every channel in every element, packed like:
+                'No change', 1 for 'High', 2 for 'Low', 3 for 'Toggle',
+                or 4 for 'Pulse'. 4 flags [A, B, C, D] for every channel
+                in every element, packed like:
                 [[ch1pos1, ch1pos2, ...], [ch2pos1, ...], ...]
 
         Returns:
