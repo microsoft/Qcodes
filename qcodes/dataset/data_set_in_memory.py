@@ -43,9 +43,7 @@ from qcodes.instrument.parameter import _BaseParameter
 from qcodes.utils.helpers import NumpyJSONEncoder
 
 from .data_set_cache import DataSetCacheInMem
-from .database_extract_runs import (
-    _add_run_to_runs_table,  # todo move to shared location
-)
+from .dataset_helpers import _add_run_to_runs_table
 from .descriptions.versioning import serialization as serial
 from .experiment_container import load_or_create_experiment
 from .experiment_settings import get_default_experiment_id
