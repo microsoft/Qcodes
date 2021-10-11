@@ -36,16 +36,14 @@ import numpy as np
 
 import qcodes as qc
 import qcodes.utils.validators as vals
-from qcodes.dataset.data_set import (
-    VALUE,
-    DataSet,
-    load_by_guid,
+from qcodes.dataset.data_set import VALUE, DataSet, load_by_guid
+from qcodes.dataset.data_set_in_memory import DataSetInMem
+from qcodes.dataset.data_set_protocol import (
+    DataSetProtocol,
     res_type,
     setpoints_type,
     values_type,
 )
-from qcodes.dataset.data_set_in_memory import DataSetInMem
-from qcodes.dataset.data_set_protocol import DataSetProtocol
 from qcodes.dataset.descriptions.dependencies import (
     DependencyError,
     InferenceError,
