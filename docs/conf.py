@@ -56,6 +56,7 @@ extensions = [
     "sphinx.ext.githubpages",
     "sphinx.ext.todo",
     "qcodes.sphinx_extensions.parse_parameter_attr",
+    "sphinxcontrib.towncrier",
 ]
 
 # include special __xxx__ that DO have a docstring
@@ -459,3 +460,7 @@ numfig = True
 nbsphinx_kernel_name = 'python3'
 # always execute notebooks.
 nbsphinx_execute = 'always'
+
+towncrier_draft_autoversion_mode = "draft"
+towncrier_draft_include_empty = True
+towncrier_draft_working_directory = ".."
