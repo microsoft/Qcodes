@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Sequence, 
 
 import numpy as np
 
-from qcodes.dataset.data_set_protocol import DataSetProtocol
+from qcodes.dataset.data_set_protocol import SPECS, CompletedError, DataSetProtocol
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
@@ -42,7 +42,6 @@ from qcodes.dataset.sqlite.queries import (
 from qcodes.instrument.parameter import _BaseParameter
 from qcodes.utils.helpers import NumpyJSONEncoder
 
-from .data_set import SPECS, CompletedError
 from .data_set_cache import DataSetCacheInMem
 from .database_extract_runs import (
     _add_run_to_runs_table,  # todo move to shared location

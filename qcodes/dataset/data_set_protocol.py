@@ -22,18 +22,28 @@ from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.export_config import DataExportType
 from qcodes.dataset.linked_datasets.links import Link
+from qcodes.instrument.parameter import _BaseParameter
 
 from .exporters.export_info import ExportInfo
 
+if TYPE_CHECKING:
+    from .data_set_cache import DataSetCache
+
+array_like_types = (tuple, list, np.ndarray)
+scalar_res_types = Union[str, complex, np.integer, np.floating, np.complexfloating]
+values_type = Union[scalar_res_types, np.ndarray, Sequence[scalar_res_types]]
+res_type = Tuple[Union[_BaseParameter, str], values_type]
+setpoints_type = Sequence[Union[str, _BaseParameter]]
 SPECS = List[ParamSpec]
 # Transition period type: SpecsOrInterDeps. We will allow both as input to
 # the DataSet constructor for a while, then deprecate SPECS and finally remove
 # the ParamSpec class
 SpecsOrInterDeps = Union[SPECS, InterDependencies_]
+ParameterData = Dict[str, Dict[str, np.ndarray]]
 
 
-if TYPE_CHECKING:
-    from .data_set_cache import DataSetCache
+class CompletedError(RuntimeError):
+    pass
 
 
 @runtime_checkable

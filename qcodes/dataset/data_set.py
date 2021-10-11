@@ -26,7 +26,14 @@ import numpy
 import pandas as pd
 
 import qcodes
-from qcodes.dataset.data_set_protocol import DataSetProtocol
+from qcodes.dataset.data_set_protocol import (
+    SPECS,
+    CompletedError,
+    DataSetProtocol,
+    ParameterData,
+    SpecsOrInterDeps,
+    values_type,
+)
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
@@ -121,25 +128,6 @@ log = logging.getLogger(__name__)
 # TODO: fixix  a subset of metadata that we define well known (and create them)
 # i.e. no dynamic creation of metadata columns, but add stuff to
 # a json inside a 'metadata' column
-
-array_like_types = (tuple, list, numpy.ndarray)
-scalar_res_types = Union[str, complex,
-                         numpy.integer, numpy.floating, numpy.complexfloating]
-values_type = Union[scalar_res_types, numpy.ndarray,
-                    Sequence[scalar_res_types]]
-res_type = Tuple[Union[_BaseParameter, str],
-                 values_type]
-setpoints_type = Sequence[Union[str, _BaseParameter]]
-SPECS = List[ParamSpec]
-# Transition period type: SpecsOrInterDeps. We will allow both as input to
-# the DataSet constructor for a while, then deprecate SPECS and finally remove
-# the ParamSpec class
-SpecsOrInterDeps = Union[SPECS, InterDependencies_]
-ParameterData = Dict[str, Dict[str, numpy.ndarray]]
-
-
-class CompletedError(RuntimeError):
-    pass
 
 
 class _BackgroundWriter(Thread):
