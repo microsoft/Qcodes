@@ -1135,8 +1135,8 @@ class AWG70000A(VisaInstrument):
                 a list [ch1_amp, ch2_amp].
             seqname: The name of the sequence. This name will appear in the
                 sequence list. Note that all spaces are converted to '_'
-            flags: Flags for the auxiliary outputs. 0 for 'No change', 1 for 
-                'High', 2 for 'Low', 3 for 'Toggle', or 4 for 'Pulse'. 4 flags 
+            flags: Flags for the auxiliary outputs. 0 for 'No change', 1 for
+                'High', 2 for 'Low', 3 for 'Toggle', or 4 for 'Pulse'. 4 flags
                 [A, B, C, D] for every channel in every element, packed like:
                 [[ch1pos1, ch1pos2, ...], [ch2pos1, ...], ...]
                 If omitted, no flags will be set.
@@ -1257,8 +1257,8 @@ class AWG70000A(VisaInstrument):
                 up front.
             subseq_positions: The positions (step numbers) occupied by
                 subsequences
-            flags: Flags for the auxiliary outputs. 0 for 'No change', 1 for 
-                'High', 2 for 'Low', 3 for 'Toggle', or 4 for 'Pulse'. 4 flags 
+            flags: Flags for the auxiliary outputs. 0 for 'No change', 1 for
+                'High', 2 for 'Low', 3 for 'Toggle', or 4 for 'Pulse'. 4 flags
                 [A, B, C, D] for every channel in every element, packed like:
                 [[ch1pos1, ch1pos2, ...], [ch2pos1, ...], ...]
                 If omitted, no flags will be set.
