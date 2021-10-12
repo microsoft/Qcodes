@@ -432,6 +432,10 @@ class DataSetInMem(DataSetProtocol, Sized):
     def sample_name(self) -> str:
         return self._sample_name
 
+    @property
+    def path_to_db(self) -> Optional[str]:
+        return self._path_to_db
+
     def run_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S") -> Optional[str]:
         """
         Returns run timestamp in a human-readable format

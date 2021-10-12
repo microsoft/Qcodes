@@ -302,7 +302,7 @@ class DataSet(DataSetProtocol, Sized):
             self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
             self._parent_dataset_links = []
             self._export_info = ExportInfo({})
-
+        assert self.path_to_db is not None
         if _WRITERS.get(self.path_to_db) is None:
             queue: "Queue[Any]" = Queue()
             ws: _WriterStatus = _WriterStatus(
@@ -350,7 +350,7 @@ class DataSet(DataSetProtocol, Sized):
         return run_id
 
     @property
-    def path_to_db(self) -> str:
+    def path_to_db(self) -> Optional[str]:
         return self.conn.path_to_dbfile
 
     @property
@@ -515,6 +515,7 @@ class DataSet(DataSetProtocol, Sized):
 
     @property
     def _writer_status(self) -> _WriterStatus:
+        assert self.path_to_db is not None
         return _WRITERS[self.path_to_db]
 
     def run_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S") -> Optional[str]:
@@ -528,7 +529,6 @@ class DataSet(DataSetProtocol, Sized):
         Consult with :func:`time.strftime` for information about the format.
         """
         return raw_time_to_str_time(self.run_timestamp_raw, fmt)
-
 
     @property
     def completed_timestamp_raw(self) -> Optional[float]:
@@ -564,9 +564,11 @@ class DataSet(DataSetProtocol, Sized):
         Toggle debug mode, if debug mode is on all the queries made are
         echoed back.
         """
+        path_to_db = self.path_to_db
+        assert path_to_db is not None
         self._debug = not self._debug
         self.conn.close()
-        self.conn = connect(self.path_to_db, self._debug)
+        self.conn = connect(path_to_db, self._debug)
 
     def set_interdependencies(self,
                               interdeps: InterDependencies_,
