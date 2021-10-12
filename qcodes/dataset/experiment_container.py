@@ -3,8 +3,8 @@ from collections.abc import Sized
 from typing import Any, List, Optional, Union
 from warnings import warn
 
-from qcodes.dataset.data_set import SPECS, DataSet, load_by_id, new_data_set
-from qcodes.dataset.data_set_protocol import DataSetProtocol
+from qcodes.dataset.data_set import DataSet, load_by_id, new_data_set
+from qcodes.dataset.data_set_protocol import SPECS, DataSetProtocol
 from qcodes.dataset.experiment_settings import _set_default_experiment_id
 from qcodes.dataset.sqlite.connection import ConnectionPlus, path_to_dbfile
 from qcodes.dataset.sqlite.database import (
