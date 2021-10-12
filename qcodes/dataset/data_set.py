@@ -1628,12 +1628,15 @@ def load_by_id(run_id: int, conn: Optional[ConnectionPlus] = None) -> DataSetPro
     data to another db file. We recommend using :func:`.load_by_run_spec` which
     does not have this issue and is significantly more flexible.
 
+    If the raw data is in the database this will be loaded as a :class:`.DataSet`
+    otherwise it will be loaded as a :class:`.DataSetInMemory`
+
     Args:
         run_id: run id of the dataset
         conn: connection to the database to load from
 
     Returns:
-        :class:`.DataSet` with the given run id
+        :class:`.DataSet` or :class:`.DataSetInMemory` with the given run id
     """
     if run_id is None:
         raise ValueError('run_id has to be a positive integer, not None.')
@@ -1652,21 +1655,26 @@ def load_by_id(run_id: int, conn: Optional[ConnectionPlus] = None) -> DataSetPro
     return d
 
 
-def load_by_run_spec(*,
-                     captured_run_id: Optional[int] = None,
-                     captured_counter: Optional[int] = None,
-                     experiment_name: Optional[str] = None,
-                     sample_name: Optional[str] = None,
-                     # guid parts
-                     sample_id: Optional[int] = None,
-                     location: Optional[int] = None,
-                     work_station: Optional[int] = None,
-                     conn: Optional[ConnectionPlus] = None) -> DataSet:
+def load_by_run_spec(
+    *,
+    captured_run_id: Optional[int] = None,
+    captured_counter: Optional[int] = None,
+    experiment_name: Optional[str] = None,
+    sample_name: Optional[str] = None,
+    # guid parts
+    sample_id: Optional[int] = None,
+    location: Optional[int] = None,
+    work_station: Optional[int] = None,
+    conn: Optional[ConnectionPlus] = None,
+) -> DataSetProtocol:
     """
     Load a run from one or more pieces of runs specification. All
     fields are optional but the function will raise an error if more than one
     run matching the supplied specification is found. Along with the error
     specs of the runs found will be printed.
+
+    If the raw data is in the database this will be loaded as a :class:`.DataSet`
+    otherwise it will be loaded as a :class:`.DataSetInMemory`
 
     Args:
         captured_run_id: The ``run_id`` that was originally assigned to this
@@ -1686,7 +1694,7 @@ def load_by_run_spec(*,
          exists in the database
 
     Returns:
-        :class:`.DataSet` matching the provided specification.
+        :class:`.DataSet` or :class:`.DataSetInMemory` matching the provided specification.
     """
     conn = conn or connect(get_DB_location())
     guids = get_guids_from_run_spec(conn,
@@ -1710,19 +1718,22 @@ def load_by_run_spec(*,
                         f'found.')
 
 
-def load_by_guid(guid: str, conn: Optional[ConnectionPlus] = None) -> DataSet:
+def load_by_guid(guid: str, conn: Optional[ConnectionPlus] = None) -> DataSetProtocol:
     """
     Load a dataset by its GUID
 
     If no connection is provided, lookup is performed in the database file that
     is specified in the config.
 
+    If the raw data is in the database this will be loaded as a :class:`.DataSet`
+    otherwise it will be loaded as a :class:`.DataSetInMemory`
+
     Args:
         guid: guid of the dataset
         conn: connection to the database to load from
 
     Returns:
-        :class:`.DataSet` with the given guid
+        :class:`.DataSet` or :class:`.DataSetInMemory` with the given guid
 
     Raises:
         NameError: if no run with the given GUID exists in the database
@@ -1732,15 +1743,21 @@ def load_by_guid(guid: str, conn: Optional[ConnectionPlus] = None) -> DataSet:
 
     # this function raises a RuntimeError if more than one run matches the GUID
     run_id = get_runid_from_guid(conn, guid)
-
     if run_id is None:
         raise NameError(f'No run with GUID: {guid} found in database.')
 
-    return DataSet(run_id=run_id, conn=conn)
+    result_table_name = _get_result_table_name_by_guid(conn, guid)
+    if _check_if_table_found(conn, result_table_name):
+        d: DataSetProtocol = DataSet(conn=conn, run_id=run_id)
+    else:
+        d = DataSetInMem.load_from_db(conn=conn, guid=guid)
+
+    return d
 
 
-def load_by_counter(counter: int, exp_id: int,
-                    conn: Optional[ConnectionPlus] = None) -> DataSet:
+def load_by_counter(
+    counter: int, exp_id: int, conn: Optional[ConnectionPlus] = None
+) -> DataSetProtocol:
     """
     Load a dataset given its counter in a given experiment
 
@@ -1750,6 +1767,9 @@ def load_by_counter(counter: int, exp_id: int,
     data to another db file. We recommend using :func:`.load_by_run_spec` which
     does not have this issue and is significantly more flexible.
 
+    If the raw data is in the database this will be loaded as a :class:`.DataSet`
+    otherwise it will be loaded as a :class:`.DataSetInMemory`
+
     Args:
         counter: counter of the dataset within the given experiment
         exp_id: id of the experiment where to look for the dataset
@@ -1757,12 +1777,20 @@ def load_by_counter(counter: int, exp_id: int,
           connection to the DB file specified in the config is made
 
     Returns:
-        :class:`.DataSet` of the given counter in the given experiment
+        :class:`.DataSet` or :class:`.DataSetInMemory` of the given counter in the given experiment
     """
     conn = conn or connect(get_DB_location())
     run_id = get_runid_from_expid_and_counter(conn, exp_id, counter)
 
-    d = DataSet(conn=conn, run_id=run_id)
+    guid = get_guid_from_run_id(conn, run_id)
+
+    if guid is None:
+        raise ValueError(f"Run with run_id {run_id} does not exist in the database")
+    result_table_name = _get_result_table_name_by_guid(conn, guid)
+    if _check_if_table_found(conn, result_table_name):
+        d: DataSetProtocol = DataSet(conn=conn, run_id=run_id)
+    else:
+        d = DataSetInMem.load_from_db(conn=conn, guid=guid)
     return d
 
 
