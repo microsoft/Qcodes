@@ -170,6 +170,10 @@ class DataSetProtocol(Protocol, Sized):
     def metadata(self) -> Dict[str, Any]:
         pass
 
+    @property
+    def path_to_db(self) -> Optional[str]:
+        pass
+
     # dataset description and links
     @property
     def paramspecs(self) -> Dict[str, ParamSpec]:
