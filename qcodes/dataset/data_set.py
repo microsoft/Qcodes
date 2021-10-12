@@ -96,6 +96,7 @@ from qcodes.utils.deprecate import deprecate, issue_deprecation_warning
 from qcodes.utils.helpers import NumpyJSONEncoder
 
 from .data_set_cache import DataSetCacheWithDBBackend
+from .data_set_in_memory import DataSetInMem
 from .descriptions.versioning import serialization as serial
 from .exporters.export_info import ExportInfo
 from .exporters.export_to_csv import dataframe_to_csv
@@ -1616,7 +1617,7 @@ class DataSet(DataSetProtocol, Sized):
 
 
 # public api
-def load_by_id(run_id: int, conn: Optional[ConnectionPlus] = None) -> DataSet:
+def load_by_id(run_id: int, conn: Optional[ConnectionPlus] = None) -> DataSetProtocol:
     """
     Load a dataset by run id
 
@@ -1645,10 +1646,9 @@ def load_by_id(run_id: int, conn: Optional[ConnectionPlus] = None) -> DataSet:
         raise ValueError(f"Run with run_id {run_id} does not exist in " f"the database")
     result_table_name = _get_result_table_name_by_guid(conn, guid)
     if _check_if_table_found(conn, result_table_name):
-        d = DataSet(conn=conn, run_id=run_id)
+        d: DataSetProtocol = DataSet(conn=conn, run_id=run_id)
     else:
-        raise NotImplementedError
-    #     d = DataSetInMem.load_from_db(conn=conn, guid=guid)
+        d = DataSetInMem.load_from_db(conn=conn, guid=guid)
     return d
 
 
