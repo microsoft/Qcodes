@@ -32,6 +32,7 @@ from qcodes.dataset.sqlite.queries import (
     add_parameter,
     create_run,
     get_experiment_name_from_experiment_id,
+    get_raw_run_attributes,
     get_runid_from_guid,
     get_sample_name_from_experiment_id,
     mark_run_complete,
@@ -251,56 +252,33 @@ class DataSetInMem(DataSetProtocol, Sized):
 
         return ds
 
-    @staticmethod
-    def load_from_db(conn: ConnectionPlus, guid: str) -> DataSetInMem:
-        raise NotImplementedError
+    @classmethod
+    def load_from_db(cls, conn: ConnectionPlus, guid: str) -> DataSetInMem:
 
-        # self._run_id = run_id
-        # self._completed = completed(self.conn, self.run_id)
-        # run_desc = self._get_run_description_from_db()
-        # self._rundescriber = run_desc
-        # self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
-        # self._started = self.run_timestamp_raw is not None
-        # self._parent_dataset_links = str_to_links(
-        #     get_parent_dataset_links(self.conn, self.run_id)
-        # )
-        # self._export_info = ExportInfo.from_str(
-        #     self.metadata.get("export_info", "")
-        # )
-        # import xarray as xr
-        #
-        # loaded_data = xr.load_dataset(path)
-        #
-        # parent_dataset_links = str_to_links(
-        #     loaded_data.attrs.get("parent_dataset_links", "[]")
-        # )
-        # if path_to_db is not None:
-        #     path_to_db = str(path_to_db)
-        #
-        # path = str(path)
-        # path = os.path.abspath(path)
-        # export_info = ExportInfo({"nc": path})
-        #
-        # ds = cls(
-        #     run_id=loaded_data.captured_run_id,
-        #     counter=loaded_data.captured_counter,
-        #     name=loaded_data.ds_name,
-        #     exp_id=0,
-        #     exp_name=loaded_data.exp_name,
-        #     sample_name=loaded_data.sample_name,
-        #     guid=loaded_data.guid,
-        #     path_to_db=path_to_db,
-        #     run_timestamp_raw=loaded_data.run_timestamp_raw,
-        #     completed_timestamp_raw=loaded_data.completed_timestamp_raw,
-        #     metadata={"snapshot": loaded_data.snapshot},
-        #     rundescriber=serial.from_json_to_current(loaded_data.run_description),
-        #     parent_dataset_links=parent_dataset_links,
-        #     export_info=export_info,
-        # )
+        run_attributes = get_raw_run_attributes(conn, guid)
+        if run_attributes is None:
+            raise RuntimeError("This is wrong")
+
+        ds = cls(
+            run_id=run_attributes["captured_run_id"],
+            counter=run_attributes["captured_counter"],
+            name=run_attributes["name"],
+            exp_id=run_attributes["experiment"]["exp_id"],
+            exp_name=run_attributes["experiment"]["name"],
+            sample_name=run_attributes["experiment"]["sample_name"],
+            guid=guid,
+            path_to_db=conn.path_to_dbfile,
+            run_timestamp_raw=run_attributes["run_timestamp"],
+            completed_timestamp_raw=run_attributes["completed_timestamp"],
+            # metadata={"snapshot": loaded_data.snapshot},
+            rundescriber=serial.from_json_to_current(run_attributes["run_description"]),
+            # parent_dataset_links=parent_dataset_links,
+            # export_info=export_info,
+        )
+
         # ds._cache = DataSetCacheInMem(ds)
         # ds._cache._data = cls._from_xarray_dataset_to_qcodes(loaded_data)
-        #
-        # return ds
+        return ds
 
     @staticmethod
     def _from_xarray_dataset_to_qcodes(
