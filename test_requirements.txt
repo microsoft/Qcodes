@@ -47,7 +47,7 @@ types-pyOpenSSL==20.0.7
 types-pytz==2021.1.2
 types-requests==2.25.9
 types-setuptools==57.4.1
-types-six==1.16.1
+types-six==1.16.2
 types-tabulate==0.8.3
 types-toml==0.10.1
 types-typed-ast==1.4.5
