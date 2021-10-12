@@ -45,7 +45,7 @@ types-docutils==0.17.1
 types-ipaddress==1.0.1
 types-pyOpenSSL==20.0.8
 types-pytz==2021.1.2
-types-requests==2.25.9
+types-requests==2.25.10
 types-setuptools==57.4.1
 types-six==1.16.2
 types-tabulate==0.8.3
