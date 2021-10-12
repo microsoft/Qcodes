@@ -1096,7 +1096,8 @@ class AWG70000A(VisaInstrument):
                      wfms: Sequence[Sequence[np.ndarray]],
                      amplitudes: Sequence[float],
                      seqname: str,
-                     flags: Sequence[int] = None) -> bytes:
+                     flags: Optional[Sequence[Sequence[Sequence[int]]]] = None
+                     ) -> bytes:
         """
         Make a full .seqx file (bundle)
         A .seqx file can presumably hold several sequences, but for now
@@ -1230,7 +1231,8 @@ class AWG70000A(VisaInstrument):
                      seqname: str,
                      chans: int,
                      subseq_positions: Sequence[int] = (),
-                     flags: Sequence[int] = None) -> str:
+                     flags: Optional[Sequence[Sequence[Sequence[int]]]] = None
+                     ) -> str:
         """
         Make an xml file describing a sequence.
 
