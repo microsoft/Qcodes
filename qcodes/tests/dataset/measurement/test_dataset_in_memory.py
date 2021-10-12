@@ -3,6 +3,7 @@ from pathlib import Path
 
 import numpy as np
 
+from qcodes import load_by_id
 from qcodes.dataset import load_by_run_spec
 from qcodes.dataset.data_set_in_memory import DataSetInMem
 from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic_transaction
@@ -64,6 +65,18 @@ def test_load_from_netcdf_and_write_metadata_to_db(empty_temp_db):
     # ds_loaded.cache.data()
     # this will currently fail as the ds is loaded not as an in mem ds
     # and no knowledge of the location of the netcdf file is given
+
+
+def test_load_from_db(meas_with_registered_param, DMM, DAC, tmp_path):
+    with meas_with_registered_param.run(dataset_class=DataSetInMem) as datasaver:
+        for set_v in np.linspace(0, 25, 10):
+            DAC.ch1.set(set_v)
+            get_v = DMM.v1()
+            datasaver.add_result((DAC.ch1, set_v), (DMM.v1, get_v))
+
+    dataset = datasaver.dataset
+    dataset.export(export_type="netcdf", path=tmp_path)
+    loaded_ds = load_by_id(dataset.run_id)
 
 
 # todo missing from runs table
