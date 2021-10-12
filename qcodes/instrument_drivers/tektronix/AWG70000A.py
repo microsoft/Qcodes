@@ -1391,7 +1391,7 @@ class AWG70000A(VisaInstrument):
                 for flgind, flg in enumerate(['A', 'B', 'C', 'D']):
                     temp_elem = ET.SubElement(flagset, 'Flag')
                     temp_elem.set('name', flg)
-                    if flags == None:
+                    if flags is None:
                         # no flags were passed to the function
                         temp_elem.text = 'NoChange'
                     else:
