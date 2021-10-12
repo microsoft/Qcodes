@@ -1096,7 +1096,7 @@ class AWG70000A(VisaInstrument):
                      wfms: Sequence[Sequence[np.ndarray]],
                      amplitudes: Sequence[float],
                      seqname: str,
-                     flags: Sequence[int]=()) -> bytes:
+                     flags: Sequence[int] = None) -> bytes:
         """
         Make a full .seqx file (bundle)
         A .seqx file can presumably hold several sequences, but for now
@@ -1230,7 +1230,7 @@ class AWG70000A(VisaInstrument):
                      seqname: str,
                      chans: int,
                      subseq_positions: Sequence[int] = (),
-                     flags: Sequence[int] = ()) -> str:
+                     flags: Sequence[int] = None) -> str:
         """
         Make an xml file describing a sequence.
 
@@ -1389,7 +1389,7 @@ class AWG70000A(VisaInstrument):
                 for flgind, flg in enumerate(['A', 'B', 'C', 'D']):
                     temp_elem = ET.SubElement(flagset, 'Flag')
                     temp_elem.set('name', flg)
-                    if flags == ():
+                    if flags == None:
                         # no flags were passed to the function
                         temp_elem.text = 'NoChange'
                     else:
