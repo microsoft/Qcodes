@@ -1763,6 +1763,7 @@ def load_by_counter(counter: int, exp_id: int,
     Returns:
         :class:`.DataSet` of the given counter in the given experiment
     """
+    conn = conn or connect(get_DB_location())
     run_id = get_runid_from_expid_and_counter(conn, exp_id, counter)
 
     d = DataSet(conn=conn, run_id=run_id)
