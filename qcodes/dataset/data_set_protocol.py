@@ -106,6 +106,10 @@ class DataSetProtocol(Protocol, Sized):
         pass
 
     @property
+    def counter(self) -> int:
+        pass
+
+    @property
     def captured_counter(self) -> int:
         pass
 
@@ -123,6 +127,10 @@ class DataSetProtocol(Protocol, Sized):
 
     @property
     def exp_name(self) -> str:
+        pass
+
+    @property
+    def exp_id(self) -> int:
         pass
 
     @property

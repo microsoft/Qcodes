@@ -396,10 +396,16 @@ class DataSetInMem(DataSetProtocol, Sized):
 
     @property
     def captured_run_id(self) -> int:
+        # todo is this really safe
         return self._run_id
 
     @property
+    def counter(self) -> int:
+        return self._counter
+
+    @property
     def captured_counter(self) -> int:
+        # todo is this really safe
         return self._counter
 
     @property
@@ -417,6 +423,10 @@ class DataSetInMem(DataSetProtocol, Sized):
     @property
     def exp_name(self) -> str:
         return self._exp_name
+
+    @property
+    def exp_id(self) -> int:
+        return self._exp_id
 
     @property
     def sample_name(self) -> str:
@@ -652,10 +662,6 @@ class DataSetInMem(DataSetProtocol, Sized):
         pass
 
     # not part of the protocol specified api
-
-    @property
-    def counter(self) -> int:
-        return self._counter
 
     def _set_parent_dataset_links(self, links: List[Link]) -> None:
         """
