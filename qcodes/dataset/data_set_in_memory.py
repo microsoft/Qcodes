@@ -259,6 +259,9 @@ class DataSetInMem(DataSetProtocol, Sized):
         if run_attributes is None:
             raise RuntimeError("This is wrong")
 
+        metadata = run_attributes["metadata"]
+        metadata["snapshot"] = run_attributes["snapshot"]
+
         ds = cls(
             run_id=run_attributes["captured_run_id"],
             counter=run_attributes["captured_counter"],
@@ -270,10 +273,10 @@ class DataSetInMem(DataSetProtocol, Sized):
             path_to_db=conn.path_to_dbfile,
             run_timestamp_raw=run_attributes["run_timestamp"],
             completed_timestamp_raw=run_attributes["completed_timestamp"],
-            # metadata={"snapshot": loaded_data.snapshot},
+            metadata=metadata,
             rundescriber=serial.from_json_to_current(run_attributes["run_description"]),
-            # parent_dataset_links=parent_dataset_links,
-            # export_info=export_info,
+            parent_dataset_links=str_to_links(run_attributes["parent_dataset_links"]),
+            export_info=ExportInfo.from_str(metadata["export_info"]),
         )
 
         # ds._cache = DataSetCacheInMem(ds)
@@ -522,6 +525,7 @@ class DataSetInMem(DataSetProtocol, Sized):
 
     @property
     def metadata(self) -> Dict[str, Any]:
+        # todo unlike the query this does not filter snapshot
         return self._metadata
 
     @property

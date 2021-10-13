@@ -7,6 +7,7 @@ from qcodes import load_by_id
 from qcodes.dataset import load_by_run_spec
 from qcodes.dataset.data_set_in_memory import DataSetInMem
 from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic_transaction
+from qcodes.station import Station
 
 
 def test_dataset_in_memory_smoke_test(meas_with_registered_param, DMM, DAC, tmp_path):
@@ -68,6 +69,7 @@ def test_load_from_netcdf_and_write_metadata_to_db(empty_temp_db):
 
 
 def test_load_from_db(meas_with_registered_param, DMM, DAC, tmp_path):
+    Station(DAC, DMM)
     with meas_with_registered_param.run(dataset_class=DataSetInMem) as datasaver:
         for set_v in np.linspace(0, 25, 10):
             DAC.ch1.set(set_v)
@@ -75,8 +77,19 @@ def test_load_from_db(meas_with_registered_param, DMM, DAC, tmp_path):
             datasaver.add_result((DAC.ch1, set_v), (DMM.v1, get_v))
 
     dataset = datasaver.dataset
+    dataset.add_metadata("foo", "bar")
     dataset.export(export_type="netcdf", path=tmp_path)
     loaded_ds = load_by_id(dataset.run_id)
+
+    assert loaded_ds.snapshot == dataset.snapshot
+    assert loaded_ds.export_info == dataset.export_info
+    assert loaded_ds.metadata == dataset.metadata
+
+    assert "foo" in loaded_ds.metadata.keys()
+    # todo do we want this. e.g. should metadata contain
+    # snapshot and export info even if this is accessible in other way
+    assert "snapshot" in loaded_ds.metadata.keys()
+    assert "export_info" in loaded_ds.metadata.keys()
 
 
 # todo missing from runs table
