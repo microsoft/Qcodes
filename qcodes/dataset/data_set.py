@@ -68,6 +68,7 @@ from qcodes.dataset.sqlite.queries import (
     get_parent_dataset_links,
     get_run_description,
     get_run_timestamp_from_run_id,
+    get_runid_from_expid_and_counter,
     get_runid_from_guid,
     get_sample_name_from_experiment_id,
     mark_run_complete,
@@ -1763,16 +1764,7 @@ def load_by_counter(counter: int, exp_id: int,
         :class:`.DataSet` of the given counter in the given experiment
     """
     conn = conn or connect(get_DB_location())
-    sql = """
-    SELECT run_id
-    FROM
-      runs
-    WHERE
-      result_counter= ? AND
-      exp_id = ?
-    """
-    c = transaction(conn, sql, counter, exp_id)
-    run_id = one(c, 'run_id')
+    run_id = get_runid_from_expid_and_counter(conn, exp_id, counter)
 
     d = DataSet(conn=conn, run_id=run_id)
     return d
