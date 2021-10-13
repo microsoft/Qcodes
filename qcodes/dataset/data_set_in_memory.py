@@ -284,7 +284,7 @@ class DataSetInMem(DataSetProtocol, Sized):
 
         if xr_path is not None:
             try:
-                loaded_data = xr.load_dataset("../foobar.nc")
+                loaded_data = xr.load_dataset(xr_path)
                 ds._cache = DataSetCacheInMem(ds)
                 ds._cache._data = cls._from_xarray_dataset_to_qcodes(loaded_data)
             except FileNotFoundError:
