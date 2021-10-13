@@ -127,7 +127,7 @@ class DataSaver:
         self._results: List[Dict[str, VALUE]] = []
         self._last_save_time = perf_counter()
         self._known_dependencies: Dict[str, List[str]] = {}
-        self.parent_datasets: List[DataSet] = []
+        self.parent_datasets: List[DataSetProtocol] = []
 
         for link in self._dataset.parent_dataset_links:
             self.parent_datasets.append(load_by_guid(link.tail))
