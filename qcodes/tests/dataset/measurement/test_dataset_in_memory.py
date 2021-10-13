@@ -23,9 +23,11 @@ def test_dataset_in_memory_smoke_test(meas_with_registered_param, DMM, DAC, tmp_
     ds.export(export_type="netcdf", path=tmp_path)
     loaded_ds = DataSetInMem.load_from_netcdf(tmp_path / "qcodes_1.nc")
     assert ds.the_same_dataset_as(loaded_ds)
+    assert all(loaded_ds.cache.to_xarray_dataset() == ds.cache.to_xarray_dataset())
 
     loaded_ds_2 = load_by_id(ds.run_id)
     assert ds.the_same_dataset_as(loaded_ds_2)
+    assert all(loaded_ds_2.cache.to_xarray_dataset() == ds.cache.to_xarray_dataset())
 
 
 def test_dataset_in_memory_does_not_create_runs_table(
