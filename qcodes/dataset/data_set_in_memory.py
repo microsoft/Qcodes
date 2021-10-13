@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import time
+import warnings
 from collections.abc import Sized
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Sequence, Union
@@ -254,13 +255,14 @@ class DataSetInMem(DataSetProtocol, Sized):
 
     @classmethod
     def load_from_db(cls, conn: ConnectionPlus, guid: str) -> DataSetInMem:
-
+        import xarray as xr
         run_attributes = get_raw_run_attributes(conn, guid)
         if run_attributes is None:
             raise RuntimeError("This is wrong")
 
         metadata = run_attributes["metadata"]
         metadata["snapshot"] = run_attributes["snapshot"]
+        export_info = ExportInfo.from_str(metadata["export_info"])
 
         ds = cls(
             run_id=run_attributes["captured_run_id"],
@@ -276,11 +278,22 @@ class DataSetInMem(DataSetProtocol, Sized):
             metadata=metadata,
             rundescriber=serial.from_json_to_current(run_attributes["run_description"]),
             parent_dataset_links=str_to_links(run_attributes["parent_dataset_links"]),
-            export_info=ExportInfo.from_str(metadata["export_info"]),
+            export_info=export_info,
         )
+        xr_path = export_info.export_paths.get("nc")
 
-        # ds._cache = DataSetCacheInMem(ds)
-        # ds._cache._data = cls._from_xarray_dataset_to_qcodes(loaded_data)
+        if xr_path is not None:
+            try:
+                loaded_data = xr.load_dataset("../foobar.nc")
+                ds._cache = DataSetCacheInMem(ds)
+                ds._cache._data = cls._from_xarray_dataset_to_qcodes(loaded_data)
+            except FileNotFoundError:
+                warnings.warn(
+                    "Could not load raw data for dataset with guid :"
+                    f"{guid} from location {xr_path}"
+                )
+        else:
+            warnings.warn(f"No raw data stored for dataset with guid : {guid}")
         return ds
 
     @staticmethod
