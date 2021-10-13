@@ -1,7 +1,9 @@
+import os
 import sqlite3
 from pathlib import Path
 
 import numpy as np
+import pytest
 
 from qcodes import load_by_id
 from qcodes.dataset import load_by_run_spec
@@ -55,6 +57,10 @@ def test_load_from_netcdf_and_write_metadata_to_db(empty_temp_db):
         / "version8"
         / "qcodes_2.nc"
     )
+
+    if not os.path.exists(str(netcdf_file_path)):
+        pytest.skip("No netcdf fixtures found.")
+
     ds = DataSetInMem.load_from_netcdf(netcdf_file_path)
     ds.write_metadata_to_db()
 
