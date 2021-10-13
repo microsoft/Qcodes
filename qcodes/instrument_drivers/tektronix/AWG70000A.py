@@ -1095,7 +1095,9 @@ class AWG70000A(VisaInstrument):
                      go_to: Sequence[int],
                      wfms: Sequence[Sequence[np.ndarray]],
                      amplitudes: Sequence[float],
-                     seqname: str) -> bytes:
+                     seqname: str,
+                     flags: Optional[Sequence[Sequence[Sequence[int]]]] = None
+                     ) -> bytes:
         """
         Make a full .seqx file (bundle)
         A .seqx file can presumably hold several sequences, but for now
@@ -1134,6 +1136,11 @@ class AWG70000A(VisaInstrument):
                 a list [ch1_amp, ch2_amp].
             seqname: The name of the sequence. This name will appear in the
                 sequence list. Note that all spaces are converted to '_'
+            flags: Flags for the auxiliary outputs. 0 for 'No change', 1 for
+                'High', 2 for 'Low', 3 for 'Toggle', or 4 for 'Pulse'. 4 flags
+                [A, B, C, D] for every channel in every element, packed like:
+                [[ch1pos1, ch1pos2, ...], [ch2pos1, ...], ...]
+                If omitted, no flags will be set.
 
         Returns:
             The binary .seqx file, ready to be sent to the instrument.
@@ -1160,7 +1167,7 @@ class AWG70000A(VisaInstrument):
                                           event_jumps, event_jump_to,
                                           go_to, wfm_names,
                                           seqname,
-                                          chans)
+                                          chans, flags=flags)
 
         user_file = b''
         setup_file = AWG70000A._makeSetupFile(seqname)
@@ -1223,7 +1230,9 @@ class AWG70000A(VisaInstrument):
                      elem_names: Sequence[Sequence[str]],
                      seqname: str,
                      chans: int,
-                     subseq_positions: Sequence[int] = ()) -> str:
+                     subseq_positions: Sequence[int] = (),
+                     flags: Optional[Sequence[Sequence[Sequence[int]]]] = None
+                     ) -> str:
         """
         Make an xml file describing a sequence.
 
@@ -1250,6 +1259,11 @@ class AWG70000A(VisaInstrument):
                 up front.
             subseq_positions: The positions (step numbers) occupied by
                 subsequences
+            flags: Flags for the auxiliary outputs. 0 for 'No change', 1 for
+                'High', 2 for 'Low', 3 for 'Toggle', or 4 for 'Pulse'. 4 flags
+                [A, B, C, D] for every channel in every element, packed like:
+                [[ch1pos1, ch1pos2, ...], [ch2pos1, ...], ...]
+                If omitted, no flags will be set.
 
         Returns:
             A str containing the file contents, to be saved as an .sml file
@@ -1259,6 +1273,7 @@ class AWG70000A(VisaInstrument):
 
         waitinputs = {0: 'None', 1: 'TrigA', 2: 'TrigB', 3: 'Internal'}
         eventinputs = {0: 'None', 1: 'TrigA', 2: 'TrigB', 3: 'Internal'}
+        flaginputs = {0:'NoChange', 1:'High', 2:'Low', 3:'Toggle', 4:'Pulse'}
 
         inputlsts = [trig_waits, nreps, event_jump_to, go_to]
         lstlens = [len(lst) for lst in inputlsts]
@@ -1369,13 +1384,18 @@ class AWG70000A(VisaInstrument):
                 else:
                     temp_elem.text = 'Waveform'
 
-            flags = ET.SubElement(step, 'Flags')
-            for _ in range(chans):
-                flagset = ET.SubElement(flags, 'FlagSet')
-                for flg in ['A', 'B', 'C', 'D']:
+            # convert flag settings to strings
+            flags_list = ET.SubElement(step, 'Flags')
+            for chan in range(chans):
+                flagset = ET.SubElement(flags_list, 'FlagSet')
+                for flgind, flg in enumerate(['A', 'B', 'C', 'D']):
                     temp_elem = ET.SubElement(flagset, 'Flag')
                     temp_elem.set('name', flg)
-                    temp_elem.text = 'NoChange'
+                    if flags is None:
+                        # no flags were passed to the function
+                        temp_elem.text = 'NoChange'
+                    else:
+                        temp_elem.text = flaginputs[flags[chan][n-1][flgind]]
 
         temp_elem = ET.SubElement(datasets, 'ProductSpecific')
         temp_elem.set('name', '')
