@@ -9,7 +9,7 @@ coverage==6.0.2
 deepdiff==5.5.0
 execnet==1.9.0
 hypothesis==6.23.2
-idna==3.2
+idna==3.3
 importlib-metadata==4.6.3; python_version<'3.8'
 iniconfig==1.1.1
 lxml==4.6.3
