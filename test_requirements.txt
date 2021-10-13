@@ -9,7 +9,7 @@ coverage==6.0.2
 deepdiff==5.5.0
 execnet==1.9.0
 hypothesis==6.23.2
-idna==3.2
+idna==3.3
 importlib-metadata==4.6.3; python_version<'3.8'
 iniconfig==1.1.1
 lxml==4.6.3
@@ -44,7 +44,7 @@ types-cryptography==3.3.6
 types-docutils==0.17.1
 types-ipaddress==1.0.1
 types-pyOpenSSL==20.0.8
-types-pytz==2021.1.2
+types-pytz==2021.3.0
 types-requests==2.25.10
 types-setuptools==57.4.1
 types-six==1.16.2
@@ -53,5 +53,5 @@ types-toml==0.10.1
 types-typed-ast==1.4.5
 urllib3==1.26.7
 wincertstore==0.2
-wrapt==1.13.1
+wrapt==1.13.2
 zipp==3.6.0
