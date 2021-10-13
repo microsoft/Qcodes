@@ -22,12 +22,18 @@ def test_dataset_in_memory_smoke_test(meas_with_registered_param, DMM, DAC, tmp_
     ds = datasaver.dataset
     ds.export(export_type="netcdf", path=tmp_path)
     loaded_ds = DataSetInMem.load_from_netcdf(tmp_path / "qcodes_1.nc")
-    assert ds.the_same_dataset_as(loaded_ds)
-    assert all(loaded_ds.cache.to_xarray_dataset() == ds.cache.to_xarray_dataset())
+    compare_datasets(ds, loaded_ds)
 
     loaded_ds_2 = load_by_id(ds.run_id)
-    assert ds.the_same_dataset_as(loaded_ds_2)
-    assert all(loaded_ds_2.cache.to_xarray_dataset() == ds.cache.to_xarray_dataset())
+    compare_datasets(ds, loaded_ds_2)
+
+
+def compare_datasets(ds, loaded_ds):
+    assert ds.the_same_dataset_as(loaded_ds)
+    xds = ds.cache.to_xarray_dataset()
+    loaded_xds = loaded_ds.cache.to_xarray_dataset()
+    assert xds.sizes == loaded_xds.sizes
+    assert all(xds == loaded_xds)
 
 
 def test_dataset_in_memory_does_not_create_runs_table(
@@ -73,8 +79,7 @@ def test_load_from_netcdf_and_write_metadata_to_db(empty_temp_db):
     assert loaded_ds.run_timestamp_raw == ds.run_timestamp_raw
     assert loaded_ds.completed_timestamp_raw == ds.completed_timestamp_raw
 
-    ds.the_same_dataset_as(loaded_ds)
-    assert all(loaded_ds.cache.to_xarray_dataset() == ds.cache.to_xarray_dataset())
+    compare_datasets(ds, loaded_ds)
 
 
 def test_load_from_db(meas_with_registered_param, DMM, DAC, tmp_path):
@@ -90,8 +95,6 @@ def test_load_from_db(meas_with_registered_param, DMM, DAC, tmp_path):
     ds.export(export_type="netcdf", path=tmp_path)
     loaded_ds = load_by_id(ds.run_id)
 
-    ds.the_same_dataset_as(loaded_ds)
-
     assert loaded_ds.snapshot == ds.snapshot
     assert loaded_ds.export_info == ds.export_info
     assert loaded_ds.metadata == ds.metadata
@@ -102,7 +105,7 @@ def test_load_from_db(meas_with_registered_param, DMM, DAC, tmp_path):
     assert "snapshot" in loaded_ds.metadata.keys()
     assert "export_info" in loaded_ds.metadata.keys()
 
-    assert all(loaded_ds.cache.to_xarray_dataset() == ds.cache.to_xarray_dataset())
+    compare_datasets(ds, loaded_ds)
 
 
 # todo missing from runs table
