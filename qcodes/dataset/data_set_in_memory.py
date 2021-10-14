@@ -229,8 +229,6 @@ class DataSetInMem(DataSetProtocol, Sized):
         Returns:
             The loaded dataset.
         """
-        # todo if this run is already in the attached db we should get run id and counter from there
-
         import xarray as xr
 
         loaded_data = xr.load_dataset(path)
