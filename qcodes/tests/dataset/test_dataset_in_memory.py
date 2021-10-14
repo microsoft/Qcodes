@@ -59,11 +59,7 @@ def test_dataset_in_memory_does_not_create_runs_table(
 
 def test_load_from_netcdf_and_write_metadata_to_db(empty_temp_db):
     netcdf_file_path = (
-        Path(__file__).parent.parent
-        / "fixtures"
-        / "db_files"
-        / "version8"
-        / "qcodes_2.nc"
+        Path(__file__).parent / "fixtures" / "db_files" / "version8" / "qcodes_2.nc"
     )
 
     if not os.path.exists(str(netcdf_file_path)):
