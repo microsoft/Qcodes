@@ -154,9 +154,6 @@ class DataSetInMem(DataSetProtocol, Sized):
             conn_from_dbpath_or_conn(conn=None, path_to_db=self._path_to_db)
         ) as conn:
             with atomic(conn) as aconn:
-                # note that we do not check if format string and times match
-                # unlike _create_exp_if_needed
-                # TODO we should extend this to also use start time
                 exp = load_or_create_experiment(
                     conn=aconn,
                     experiment_name=self.exp_name,
