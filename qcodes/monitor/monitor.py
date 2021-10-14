@@ -271,7 +271,7 @@ class Monitor(Thread):
         webbrowser.open(f"http://localhost:{SERVER_PORT}")
 
 
-def main():
+def main() -> None:
     import http.server
 
     # If this file is run, create a simple webserver that serves a simple
