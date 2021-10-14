@@ -276,13 +276,13 @@ def main() -> None:
 
     # If this file is run, create a simple webserver that serves a simple
     # website that can be used to view monitored parameters.
-    STATIC_DIR = os.path.join(os.path.dirname(__file__), 'dist')
-    os.chdir(STATIC_DIR)
+    static_dir = os.path.join(os.path.dirname(__file__), "dist")
+    os.chdir(static_dir)
     try:
         log.info("Starting HTTP Server at http://localhost:%i", SERVER_PORT)
         with socketserver.TCPServer(("", SERVER_PORT),
                                     http.server.SimpleHTTPRequestHandler) as httpd:
-            log.debug("serving directory %s", STATIC_DIR)
+            log.debug("serving directory %s", static_dir)
             webbrowser.open(f"http://localhost:{SERVER_PORT}")
             httpd.serve_forever()
     except KeyboardInterrupt:
