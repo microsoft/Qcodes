@@ -115,3 +115,5 @@ def test_load_from_db(meas_with_registered_param, DMM, DAC, tmp_path):
 
 
 # add a test to import from 0.26 data (missing parent dataset links)
+
+# test length of datasets when writing / loading etc (needed for plottr)
