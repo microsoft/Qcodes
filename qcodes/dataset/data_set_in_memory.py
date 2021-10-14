@@ -155,6 +155,10 @@ class DataSetInMem(DataSetProtocol, Sized):
         self.write_metadata_to_db(path_to_db=path_to_db)
         self._add_data_to_db()
 
+    def get_parameters(self) -> SPECS:
+        old_interdeps = new_to_old(self.description.interdeps)
+        return list(old_interdeps.paramspecs)
+
     def _add_data_to_db(self) -> None:
         raise NotImplementedError
 
