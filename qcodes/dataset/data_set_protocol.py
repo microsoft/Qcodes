@@ -205,6 +205,10 @@ class DataSetProtocol(Protocol, Sized):
     def cache(self) -> DataSetCache[DataSetProtocol]:
         pass
 
+    def get_parameters(self) -> SPECS:
+        # used by plottr
+        pass
+
     # private members called by various other parts or the api
 
     def _enqueue_results(self, result_dict: Mapping[ParamSpecBase, np.ndarray]) -> None:
