@@ -8,7 +8,17 @@ import time
 import warnings
 from collections.abc import Sized
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Sequence, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Union,
+    cast,
+)
 
 import numpy as np
 
@@ -242,7 +252,12 @@ class DataSetInMem(DataSetProtocol, Sized):
         with contextlib.closing(
             conn_from_dbpath_or_conn(conn=None, path_to_db=path_to_db)
         ) as conn:
-            run_data = get_raw_run_attributes(conn, guid=loaded_data.guid) or {}
+            run_data = (
+                cast(
+                    Dict[str, int], get_raw_run_attributes(conn, guid=loaded_data.guid)
+                )
+                or {}
+            )
 
         run_id = run_data.get("run_id") or loaded_data.captured_run_id
         counter = run_data.get("counter") or loaded_data.captured_counter
