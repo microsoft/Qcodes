@@ -29,7 +29,7 @@ pytest-rerunfailures==10.2
 pytest-xdist==2.4.0
 PyVISA==1.11.3
 PyVISA-sim==0.4.0
-PyYAML==5.4.1
+PyYAML==6.0
 requests==2.26.0
 six==1.16.0
 sortedcontainers==2.4.0
