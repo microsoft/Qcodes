@@ -20,20 +20,17 @@ def test_dataset_in_memory_smoke_test(meas_with_registered_param, DMM, DAC, tmp_
             datasaver.add_result((DAC.ch1, set_v), (DMM.v1, get_v))
 
     ds = datasaver.dataset
-    ds.export(export_type="netcdf", path=tmp_path)
+
+    assert isinstance(ds, DataSetInMem)
+
+    ds.export(export_type="netcdf", path=str(tmp_path))
     loaded_ds = DataSetInMem.load_from_netcdf(tmp_path / "qcodes_1.nc")
+    assert isinstance(loaded_ds, DataSetInMem)
     compare_datasets(ds, loaded_ds)
 
     loaded_ds_2 = load_by_id(ds.run_id)
+    assert isinstance(loaded_ds_2, DataSetInMem)
     compare_datasets(ds, loaded_ds_2)
-
-
-def compare_datasets(ds, loaded_ds):
-    assert ds.the_same_dataset_as(loaded_ds)
-    xds = ds.cache.to_xarray_dataset()
-    loaded_xds = loaded_ds.cache.to_xarray_dataset()
-    assert xds.sizes == loaded_xds.sizes
-    assert all(xds == loaded_xds)
 
 
 def test_dataset_in_memory_does_not_create_runs_table(
@@ -69,7 +66,7 @@ def test_load_from_netcdf_and_write_metadata_to_db(empty_temp_db):
     ds.write_metadata_to_db()
 
     loaded_ds = load_by_run_spec(captured_run_id=ds.captured_run_id)
-
+    assert isinstance(loaded_ds, DataSetInMem)
     assert loaded_ds.captured_run_id == ds.captured_run_id
     assert loaded_ds.captured_counter == ds.captured_counter
     assert loaded_ds.run_timestamp_raw == ds.run_timestamp_raw
@@ -90,7 +87,7 @@ def test_load_from_db(meas_with_registered_param, DMM, DAC, tmp_path):
     ds.add_metadata("foo", "bar")
     ds.export(export_type="netcdf", path=tmp_path)
     loaded_ds = load_by_id(ds.run_id)
-
+    assert isinstance(loaded_ds, DataSetInMem)
     assert loaded_ds.snapshot == ds.snapshot
     assert loaded_ds.export_info == ds.export_info
     assert loaded_ds.metadata == ds.metadata
@@ -112,4 +109,12 @@ def test_load_from_db(meas_with_registered_param, DMM, DAC, tmp_path):
 
 # add a test to import from 0.26 data (missing parent dataset links)
 
-# test length of datasets when writing / loading etc (needed for plottr)
+
+def compare_datasets(ds, loaded_ds):
+    assert ds.the_same_dataset_as(loaded_ds)
+    assert len(ds) == len(loaded_ds)
+    assert len(ds) != 0
+    xds = ds.cache.to_xarray_dataset()
+    loaded_xds = loaded_ds.cache.to_xarray_dataset()
+    assert xds.sizes == loaded_xds.sizes
+    assert all(xds == loaded_xds)
