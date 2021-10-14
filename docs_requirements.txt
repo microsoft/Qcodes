@@ -55,7 +55,7 @@ PyVISA==1.11.3
 PyVISA-sim==0.4.0
 pywin32==302; sys_platform == 'win32'
 pywinpty==1.1.4; sys_platform == 'win32'
-PyYAML==5.4.1
+PyYAML==6.0
 pyzmq==22.3.0
 qtconsole==5.1.1
 QtPy==1.11.2
