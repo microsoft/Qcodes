@@ -27,7 +27,7 @@ from qcodes.dataset.export_config import (
 from qcodes.dataset.guids import generate_guid
 from qcodes.dataset.linked_datasets.links import Link, links_to_str
 from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic
-from qcodes.dataset.sqlite.database import conn_from_dbpath_or_conn
+from qcodes.dataset.sqlite.database import conn_from_dbpath_or_conn, get_DB_location
 from qcodes.dataset.sqlite.queries import (
     add_meta_data,
     add_parameter,
@@ -240,15 +240,25 @@ class DataSetInMem(DataSetProtocol, Sized):
         )
         if path_to_db is not None:
             path_to_db = str(path_to_db)
+        else:
+            path_to_db = get_DB_location()
+
+        with contextlib.closing(
+            conn_from_dbpath_or_conn(conn=None, path_to_db=path_to_db)
+        ) as conn:
+            run_data = get_raw_run_attributes(conn, guid=loaded_data.guid) or {}
+
+        run_id = run_data.get("run_id") or loaded_data.captured_run_id
+        counter = run_data.get("counter") or loaded_data.captured_counter
 
         path = str(path)
         path = os.path.abspath(path)
         export_info = ExportInfo({"nc": path})
 
         ds = cls(
-            run_id=loaded_data.captured_run_id,
+            run_id=run_id,
             captured_run_id=loaded_data.captured_run_id,
-            counter=loaded_data.captured_counter,
+            counter=counter,
             captured_counter=loaded_data.captured_counter,
             name=loaded_data.ds_name,
             exp_id=0,
