@@ -62,7 +62,9 @@ class DataSetInMem(DataSetProtocol, Sized):
     def __init__(
         self,
         run_id: int,
+        captured_run_id: int,
         counter: int,
+        captured_counter: int,
         name: str,
         exp_id: int,
         exp_name: str,
@@ -83,7 +85,9 @@ class DataSetInMem(DataSetProtocol, Sized):
         """
 
         self._run_id = run_id
+        self._captured_run_id = captured_run_id
         self._counter = counter
+        self._captured_counter = captured_counter
         self._name = name
         self._exp_id = exp_id
         self._exp_name = exp_name
@@ -130,6 +134,8 @@ class DataSetInMem(DataSetProtocol, Sized):
     def write_metadata_to_db(
         self, path_to_db: Optional[Union[str, Path]] = None
     ) -> None:
+        # todo make sure this always sets path to db
+        # todo this should update the run id and counter
         from .experiment_container import load_or_create_experiment
         if path_to_db is not None:
             self._path_to_db = str(path_to_db)
@@ -188,7 +194,9 @@ class DataSetInMem(DataSetProtocol, Sized):
 
             ds = cls(
                 run_id=run_id,
+                captured_run_id=run_id,
                 counter=run_counter,
+                captured_counter=run_counter,
                 name=name,
                 exp_id=exp_id,
                 exp_name=exp_name,
@@ -221,6 +229,7 @@ class DataSetInMem(DataSetProtocol, Sized):
         Returns:
             The loaded dataset.
         """
+        # todo if this run is already in the attached db we should get run id and counter from there
 
         import xarray as xr
 
@@ -238,7 +247,9 @@ class DataSetInMem(DataSetProtocol, Sized):
 
         ds = cls(
             run_id=loaded_data.captured_run_id,
+            captured_run_id=loaded_data.captured_run_id,
             counter=loaded_data.captured_counter,
+            captured_counter=loaded_data.captured_counter,
             name=loaded_data.ds_name,
             exp_id=0,
             exp_name=loaded_data.exp_name,
@@ -269,8 +280,10 @@ class DataSetInMem(DataSetProtocol, Sized):
         export_info = ExportInfo.from_str(metadata["export_info"])
 
         ds = cls(
-            run_id=run_attributes["captured_run_id"],
-            counter=run_attributes["captured_counter"],
+            run_id=run_attributes["run_id"],
+            captured_run_id=run_attributes["captured_run_id"],
+            counter=run_attributes["counter"],
+            captured_counter=run_attributes["captured_counter"],
             name=run_attributes["name"],
             exp_id=run_attributes["experiment"]["exp_id"],
             exp_name=run_attributes["experiment"]["name"],
@@ -394,8 +407,7 @@ class DataSetInMem(DataSetProtocol, Sized):
 
     @property
     def captured_run_id(self) -> int:
-        # todo is this really safe
-        return self._run_id
+        return self._captured_run_id
 
     @property
     def counter(self) -> int:
@@ -403,8 +415,7 @@ class DataSetInMem(DataSetProtocol, Sized):
 
     @property
     def captured_counter(self) -> int:
-        # todo is this really safe
-        return self._counter
+        return self._captured_counter
 
     @property
     def guid(self) -> str:
