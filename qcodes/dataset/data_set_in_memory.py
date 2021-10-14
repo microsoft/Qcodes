@@ -784,11 +784,12 @@ class DataSetInMem(DataSetProtocol, Sized):
     def __len__(self) -> int:
         """
         The in memory dataset does not have a concept of sqlite rows
-        so the length is represented by the maximum number of datapoints written.
+        so the length is represented by the maximum number of datapoints in any dataset.
         """
-        values = tuple(
-            val for val in self.cache._write_status.values() if val is not None
-        )
+        values = []
+        for sub_dataset in self.cache.data().values():
+            subvals = tuple(val.size for val in sub_dataset.values() if val is not None)
+            values.extend(subvals)
 
         if len(values):
             return max(values)
