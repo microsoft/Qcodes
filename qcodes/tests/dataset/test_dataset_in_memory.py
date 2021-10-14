@@ -116,13 +116,8 @@ def test_load_from_db(meas_with_registered_param, DMM, DAC, tmp_path):
     compare_datasets(ds, loaded_ds)
 
 
-# todo missing from runs table
-# snapshot, completed timestamp, parameters (do we care), verify other metadata
-# When should metadata be added. In the old dataset it used to be added as
-# soon as you call add_metadata
-
-
 # add a test to import from 0.26 data (missing parent dataset links)
+# test if counter/run_id do not match captured (with a copy)
 
 
 def compare_datasets(ds, loaded_ds):
