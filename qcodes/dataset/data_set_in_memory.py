@@ -786,7 +786,7 @@ class DataSetInMem(DataSetProtocol, Sized):
         The in memory dataset does not have a concept of sqlite rows
         so the length is represented by the maximum number of datapoints in any dataset.
         """
-        values = []
+        values: List[int] = []
         for sub_dataset in self.cache.data().values():
             subvals = tuple(val.size for val in sub_dataset.values() if val is not None)
             values.extend(subvals)
