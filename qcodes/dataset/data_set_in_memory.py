@@ -134,8 +134,6 @@ class DataSetInMem(DataSetProtocol, Sized):
     def write_metadata_to_db(
         self, path_to_db: Optional[Union[str, Path]] = None
     ) -> None:
-        # todo make sure this always sets path to db
-        # todo this should update the run id and counter
         from .experiment_container import load_or_create_experiment
         if path_to_db is not None:
             self._path_to_db = str(path_to_db)
