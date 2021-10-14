@@ -75,6 +75,21 @@ def test_load_from_netcdf_and_write_metadata_to_db(empty_temp_db):
     compare_datasets(ds, loaded_ds)
 
 
+def test_load_from_netcdf_no_db_file(non_created_db):
+    netcdf_file_path = (
+        Path(__file__).parent / "fixtures" / "db_files" / "version8" / "qcodes_2.nc"
+    )
+
+    if not os.path.exists(str(netcdf_file_path)):
+        pytest.skip("No netcdf fixtures found.")
+
+    ds = DataSetInMem.load_from_netcdf(netcdf_file_path)
+    ds.write_metadata_to_db()
+    loaded_ds = load_by_run_spec(captured_run_id=ds.captured_run_id)
+    assert isinstance(loaded_ds, DataSetInMem)
+    compare_datasets(ds, loaded_ds)
+
+
 def test_load_from_db(meas_with_registered_param, DMM, DAC, tmp_path):
     Station(DAC, DMM)
     with meas_with_registered_param.run(dataset_class=DataSetInMem) as datasaver:

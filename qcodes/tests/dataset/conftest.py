@@ -8,6 +8,7 @@ from typing import Iterator
 import numpy as np
 import pytest
 
+import qcodes as qc
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 from qcodes.dataset.measurements import Measurement
@@ -26,6 +27,27 @@ from qcodes.tests.instrument_mocks import (
     setpoint_generator,
 )
 from qcodes.utils.validators import Arrays, ComplexNumbers, Numbers
+
+
+@pytest.fixture(scope="function")
+def non_created_db(tmp_path):
+    global n_experiments
+    n_experiments = 0
+    # set db location to a non existing file
+    try:
+        qc.config["core"]["db_location"] = str(tmp_path / "temp.db")
+        if os.environ.get("QCODES_SQL_DEBUG"):
+            qc.config["core"]["db_debug"] = True
+        else:
+            qc.config["core"]["db_debug"] = False
+        yield
+    finally:
+        # there is a very real chance that the tests will leave open
+        # connections to the database. These will have gone out of scope at
+        # this stage but a gc collection may not have run. The gc
+        # collection ensures that all connections belonging to now out of
+        # scope objects will be closed
+        gc.collect()
 
 
 @pytest.fixture(scope='function')
