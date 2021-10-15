@@ -15,7 +15,7 @@ from qcodes.dataset.sqlite.database import (
 from qcodes.dataset.sqlite.queries import (
     _populate_results_table,
     _rewrite_timestamps,
-    add_meta_data,
+    add_data_to_dynamic_columns,
     create_run,
     get_exp_ids_from_run_ids,
     get_experiment_attributes_by_exp_id,
@@ -186,5 +186,7 @@ def _add_run_to_runs_table(
                         dataset.run_timestamp_raw,
                         dataset.completed_timestamp_raw)
     if snapshot_raw is not None:
-        add_meta_data(target_conn, target_run_id, {'snapshot': snapshot_raw})
+        add_data_to_dynamic_columns(
+            target_conn, target_run_id, {"snapshot": snapshot_raw}
+        )
     return target_table_name
