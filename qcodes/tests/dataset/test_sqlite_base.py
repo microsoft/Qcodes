@@ -91,7 +91,9 @@ def test_insert_many_values_raises(experiment):
 
 def test_get_metadata_raises(experiment):
     with pytest.raises(RuntimeError) as excinfo:
-        mut_queries.get_metadata(experiment.conn, 'something', 'results')
+        mut_queries.get_data_by_tag_and_table_name(
+            experiment.conn, "something", "results"
+        )
     assert error_caused_by(excinfo, "no such column: something")
 
 
@@ -303,18 +305,23 @@ def test_atomic_creation(experiment):
     # first we patch add_meta_data to throw an exception
     # if create_data is not atomic this would create a partial
     # run in the db. Causing the next create_run to fail
-    with patch('qcodes.dataset.sqlite.queries.add_meta_data', new=just_throw):
-        x = ParamSpec('x', 'numeric')
-        t = ParamSpec('t', 'numeric')
-        y = ParamSpec('y', 'numeric', depends_on=['x', 't'])
-        with pytest.raises(RuntimeError,
-                           match="Rolling back due to unhandled exception")as e:
-            mut_queries.create_run(experiment.conn,
-                                   experiment.exp_id,
-                                   name='testrun',
-                                   guid=generate_guid(),
-                                   parameters=[x, t, y],
-                                   metadata={'a': 1})
+    with patch(
+        "qcodes.dataset.sqlite.queries.add_data_to_dynamic_columns", new=just_throw
+    ):
+        x = ParamSpec("x", "numeric")
+        t = ParamSpec("t", "numeric")
+        y = ParamSpec("y", "numeric", depends_on=["x", "t"])
+        with pytest.raises(
+            RuntimeError, match="Rolling back due to unhandled exception"
+        ) as e:
+            mut_queries.create_run(
+                experiment.conn,
+                experiment.exp_id,
+                name="testrun",
+                guid=generate_guid(),
+                parameters=[x, t, y],
+                metadata={"a": 1},
+            )
     assert error_caused_by(e, "This breaks adding metadata")
     # since we are starting from an empty database and the above transaction
     # should be rolled back there should be no runs in the run table
