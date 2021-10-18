@@ -4,7 +4,6 @@
 import time
 import unicodedata
 from contextlib import contextmanager
-from sqlite3 import OperationalError
 from unittest.mock import patch
 
 import hypothesis.strategies as hst
@@ -76,12 +75,10 @@ def test_atomic_raises(experiment):
 
     bad_sql = '""'
 
-    # it seems that the type of error raised differs between python versions
-    # 3.6.0 (OperationalError) and 3.6.3 (RuntimeError)
-    # -strange, huh?
-    with pytest.raises((OperationalError, RuntimeError)):
+    with pytest.raises(RuntimeError) as excinfo:
         with mut_conn.atomic(conn):
             mut_conn.transaction(conn, bad_sql)
+    assert error_caused_by(excinfo, "syntax error")
 
 
 def test_insert_many_values_raises(experiment):
@@ -126,8 +123,7 @@ def test_get_dependents(experiment):
 
     deps = mut_queries._get_dependents(experiment.conn, run_id)
 
-    layout_id = mut_queries._get_layout_id(experiment.conn,
-                                  'y', run_id)
+    layout_id = mut_queries._get_layout_id(experiment.conn, "y", run_id)
 
     assert deps == [layout_id]
 
@@ -230,17 +226,15 @@ def test_get_parameter_data(scalar_dataset):
 
     assert len(data.keys()) == len(input_names)
 
-    expected_names = {}
-    expected_names['param_3'] = ['param_0', 'param_1', 'param_2',
-                                 'param_3']
-    expected_shapes = {}
-    expected_shapes['param_3'] = [(10 ** 3,)] * 4
+    expected_names = {"param_3": ["param_0", "param_1", "param_2", "param_3"]}
+    expected_shapes = {"param_3": [(10 ** 3,)] * 4}
 
-    expected_values = {}
-    expected_values['param_3'] = [np.arange(10000 * a, 10000 * a + 1000)
-                                  for a in range(4)]
-    verify_data_dict(data, None, input_names, expected_names,
-                     expected_shapes, expected_values)
+    expected_values = {
+        "param_3": [np.arange(10000 * a, 10000 * a + 1000) for a in range(4)]
+    }
+    verify_data_dict(
+        data, None, input_names, expected_names, expected_shapes, expected_values
+    )
 
 
 def test_get_parameter_data_independent_parameters(
@@ -256,21 +250,22 @@ def test_get_parameter_data_independent_parameters(
 
     assert len(data.keys()) == len(expected_toplevel_params)
 
-    expected_names = {}
-    expected_names['param_1'] = ['param_1']
-    expected_names['param_2'] = ['param_2']
-    expected_names['param_3'] = ['param_3', 'param_0']
+    expected_names = {
+        "param_1": ["param_1"],
+        "param_2": ["param_2"],
+        "param_3": ["param_3", "param_0"],
+    }
 
-    expected_shapes = {}
-    expected_shapes['param_1'] = [(10 ** 3,)]
-    expected_shapes['param_2'] = [(10 ** 3,)]
-    expected_shapes['param_3'] = [(10 ** 3,)] * 2
-
-    expected_values = {}
-    expected_values['param_1'] = [np.arange(10000, 10000 + 1000)]
-    expected_values['param_2'] = [np.arange(20000, 20000 + 1000)]
-    expected_values['param_3'] = [np.arange(30000, 30000 + 1000),
-                                  np.arange(0, 1000)]
+    expected_shapes = {
+        "param_1": [(10 ** 3,)],
+        "param_2": [(10 ** 3,)],
+        "param_3": [(10 ** 3,)] * 2,
+    }
+    expected_values = {
+        "param_1": [np.arange(10000, 10000 + 1000)],
+        "param_2": [np.arange(20000, 20000 + 1000)],
+        "param_3": [np.arange(30000, 30000 + 1000), np.arange(0, 1000)],
+    }
 
     verify_data_dict(data, None, expected_toplevel_params, expected_names,
                      expected_shapes, expected_values)
@@ -359,6 +354,7 @@ def test_set_run_timestamp(dataset):
     time.sleep(1)  # for slower test platforms
     mut_queries.set_run_timestamp(dataset.conn, dataset.run_id)
 
+    assert dataset.run_timestamp_raw is not None
     assert dataset.run_timestamp_raw > time_now
     assert dataset.completed_timestamp_raw is None
 
@@ -397,9 +393,12 @@ def test_mark_run_complete(dataset):
 
     time_now = time.time()
     mut_queries.set_run_timestamp(dataset.conn, dataset.run_id)
+    assert dataset.run_timestamp_raw is not None
+    assert dataset.completed_timestamp_raw is None
     time.sleep(1)  # for slower test platforms
     mut_queries.mark_run_complete(dataset.conn, dataset.run_id)
-
+    assert dataset.run_timestamp_raw is not None
+    assert dataset.completed_timestamp_raw is not None
     assert dataset.completed_timestamp_raw > time_now
 
 
