@@ -124,8 +124,7 @@ def test_get_dependents(experiment):
 
     deps = mut_queries._get_dependents(experiment.conn, run_id)
 
-    layout_id = mut_queries._get_layout_id(experiment.conn,
-                                  'y', run_id)
+    layout_id = mut_queries._get_layout_id(experiment.conn, "y", run_id)
 
     assert deps == [layout_id]
 
