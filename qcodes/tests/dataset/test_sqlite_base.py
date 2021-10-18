@@ -230,17 +230,15 @@ def test_get_parameter_data(scalar_dataset):
 
     assert len(data.keys()) == len(input_names)
 
-    expected_names = {}
-    expected_names['param_3'] = ['param_0', 'param_1', 'param_2',
-                                 'param_3']
-    expected_shapes = {}
-    expected_shapes['param_3'] = [(10 ** 3,)] * 4
+    expected_names = {"param_3": ["param_0", "param_1", "param_2", "param_3"]}
+    expected_shapes = {"param_3": [(10 ** 3,)] * 4}
 
-    expected_values = {}
-    expected_values['param_3'] = [np.arange(10000 * a, 10000 * a + 1000)
-                                  for a in range(4)]
-    verify_data_dict(data, None, input_names, expected_names,
-                     expected_shapes, expected_values)
+    expected_values = {
+        "param_3": [np.arange(10000 * a, 10000 * a + 1000) for a in range(4)]
+    }
+    verify_data_dict(
+        data, None, input_names, expected_names, expected_shapes, expected_values
+    )
 
 
 def test_get_parameter_data_independent_parameters(
@@ -256,21 +254,22 @@ def test_get_parameter_data_independent_parameters(
 
     assert len(data.keys()) == len(expected_toplevel_params)
 
-    expected_names = {}
-    expected_names['param_1'] = ['param_1']
-    expected_names['param_2'] = ['param_2']
-    expected_names['param_3'] = ['param_3', 'param_0']
+    expected_names = {
+        "param_1": ["param_1"],
+        "param_2": ["param_2"],
+        "param_3": ["param_3", "param_0"],
+    }
 
-    expected_shapes = {}
-    expected_shapes['param_1'] = [(10 ** 3,)]
-    expected_shapes['param_2'] = [(10 ** 3,)]
-    expected_shapes['param_3'] = [(10 ** 3,)] * 2
-
-    expected_values = {}
-    expected_values['param_1'] = [np.arange(10000, 10000 + 1000)]
-    expected_values['param_2'] = [np.arange(20000, 20000 + 1000)]
-    expected_values['param_3'] = [np.arange(30000, 30000 + 1000),
-                                  np.arange(0, 1000)]
+    expected_shapes = {
+        "param_1": [(10 ** 3,)],
+        "param_2": [(10 ** 3,)],
+        "param_3": [(10 ** 3,)] * 2,
+    }
+    expected_values = {
+        "param_1": [np.arange(10000, 10000 + 1000)],
+        "param_2": [np.arange(20000, 20000 + 1000)],
+        "param_3": [np.arange(30000, 30000 + 1000), np.arange(0, 1000)],
+    }
 
     verify_data_dict(data, None, expected_toplevel_params, expected_names,
                      expected_shapes, expected_values)
