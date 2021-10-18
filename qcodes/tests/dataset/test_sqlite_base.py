@@ -76,12 +76,10 @@ def test_atomic_raises(experiment):
 
     bad_sql = '""'
 
-    # it seems that the type of error raised differs between python versions
-    # 3.6.0 (OperationalError) and 3.6.3 (RuntimeError)
-    # -strange, huh?
-    with pytest.raises((OperationalError, RuntimeError)):
+    with pytest.raises(RuntimeError) as excinfo:
         with mut_conn.atomic(conn):
             mut_conn.transaction(conn, bad_sql)
+    assert error_caused_by(excinfo, "syntax error")
 
 
 def test_insert_many_values_raises(experiment):
