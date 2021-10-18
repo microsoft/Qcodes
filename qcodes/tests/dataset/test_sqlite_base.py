@@ -4,7 +4,6 @@
 import time
 import unicodedata
 from contextlib import contextmanager
-from sqlite3 import OperationalError
 from unittest.mock import patch
 
 import hypothesis.strategies as hst
