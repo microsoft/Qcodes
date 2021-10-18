@@ -358,6 +358,7 @@ def test_set_run_timestamp(dataset):
     time.sleep(1)  # for slower test platforms
     mut_queries.set_run_timestamp(dataset.conn, dataset.run_id)
 
+    assert dataset.run_timestamp_raw is not None
     assert dataset.run_timestamp_raw > time_now
     assert dataset.completed_timestamp_raw is None
 
@@ -396,9 +397,12 @@ def test_mark_run_complete(dataset):
 
     time_now = time.time()
     mut_queries.set_run_timestamp(dataset.conn, dataset.run_id)
+    assert dataset.run_timestamp_raw is not None
+    assert dataset.completed_timestamp_raw is None
     time.sleep(1)  # for slower test platforms
     mut_queries.mark_run_complete(dataset.conn, dataset.run_id)
-
+    assert dataset.run_timestamp_raw is not None
+    assert dataset.completed_timestamp_raw is not None
     assert dataset.completed_timestamp_raw > time_now
 
 
