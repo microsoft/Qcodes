@@ -39,6 +39,7 @@ from qcodes.dataset.sqlite.connection import (
     transaction,
 )
 from qcodes.dataset.sqlite.query_helpers import (
+    VALUE,
     VALUES,
     insert_column,
     insert_values,
@@ -62,7 +63,7 @@ _unicode_categories = ('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nd', 'Pc', 'Pd', 'Zs')
 
 # in the current version, these are the standard columns of the "runs" table
 # Everything else is metadata
-RUNS_TABLE_COLUMNS = [
+RUNS_TABLE_COLUMNS = (
     "run_id",
     "exp_id",
     "name",
@@ -78,7 +79,7 @@ RUNS_TABLE_COLUMNS = [
     "parent_datasets",
     "captured_run_id",
     "captured_counter",
-]
+)
 
 
 def is_run_id_in_database(conn: ConnectionPlus,
@@ -1678,9 +1679,20 @@ def get_parent_dataset_links(conn: ConnectionPlus, run_id: int) -> str:
 
 def get_data_by_tag_and_table_name(
     conn: ConnectionPlus, tag: str, table_name: str
-) -> str:
-    """Get data under the tag from table"""
-    return select_one_where(conn, "runs", tag, "result_table_name", table_name)
+) -> Optional[VALUE]:
+    """Get data under the tag from table returns None if the column is missing"""
+    try:
+        data = select_one_where(conn, "runs", tag, "result_table_name", table_name)
+    except RuntimeError as e:
+        # all errors trigger an runtime error here since select_one_where is wrapped
+        # in an atomic that will do a rollback
+        # this probably just means that the column is not there
+        # and therefore it contains no data
+        if str(e.__cause__).startswith("no such column"):
+            data = None
+        else:
+            raise e
+    return data
 
 
 def get_metadata_from_run_id(

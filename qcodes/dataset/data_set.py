@@ -1250,7 +1250,8 @@ class DataSet(Sized):
                 sub.join()
             self.subscribers.clear()
 
-    def get_metadata(self, tag: str) -> str:
+    def get_metadata(self, tag: str) -> Optional[VALUE]:
+        """Get metadata by tag. Returns None if no metadata is stored under that tag"""
         return get_data_by_tag_and_table_name(self.conn, tag, self.table_name)
 
     def __len__(self) -> int:

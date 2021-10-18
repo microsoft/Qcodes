@@ -89,12 +89,13 @@ def test_insert_many_values_raises(experiment):
                                     values=[[1], [1, 3]])
 
 
-def test_get_metadata_raises(experiment):
-    with pytest.raises(RuntimeError) as excinfo:
+def test_get_non_existing_metadata_returns_none(experiment):
+    assert (
         mut_queries.get_data_by_tag_and_table_name(
             experiment.conn, "something", "results"
         )
-    assert error_caused_by(excinfo, "no such column: something")
+        is None
+    )
 
 
 @given(table_name=hst.text(max_size=50))
@@ -199,7 +200,7 @@ def test_runs_table_columns(empty_temp_db):
     """
     Ensure that the column names of a pristine runs table are what we expect
     """
-    colnames = mut_queries.RUNS_TABLE_COLUMNS.copy()
+    colnames = list(mut_queries.RUNS_TABLE_COLUMNS)
     conn = mut_db.connect(get_DB_location())
     query = "PRAGMA table_info(runs)"
     cursor = conn.cursor()
