@@ -167,7 +167,6 @@ def test_export_csv(tmp_path_factory, mock_dataset):
     expected_path = f"qcodes_{mock_dataset.run_id}.csv"
     expected_full_path = os.path.join(path, f"qcodes_{mock_dataset.run_id}.csv")
     assert mock_dataset.export_info.export_paths["csv"] == expected_full_path
-    assert mock_dataset._export_path is not None
     assert os.listdir(path) == [expected_path]
     with open(expected_full_path) as f:
         assert f.readlines() == ['0.0\t1.0\t2.0\n']
@@ -188,7 +187,6 @@ def test_export_netcdf(tmp_path_factory, mock_dataset):
     assert df.z.values.tolist() == [2.0]
 
     assert mock_dataset.export_info.export_paths["nc"] == file_path
-    assert mock_dataset._export_path is not None
 
 
 @pytest.mark.usefixtures("experiment")
