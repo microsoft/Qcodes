@@ -253,7 +253,6 @@ class DataSet(DataSetProtocol, Sized):
         self._cache: DataSetCacheWithDBBackend = DataSetCacheWithDBBackend(self)
         self._results: List[Dict[str, VALUE]] = []
         self._in_memory_cache = in_memory_cache
-        self._export_path: Optional[str] = None
 
         if run_id is not None:
             if not run_exists(self.conn, run_id):
@@ -1591,21 +1590,25 @@ class DataSet(DataSetProtocol, Sized):
                 f"Export type {export_type} is unknown. Export type should be a member of the `DataExportType` enum"
             )
 
-        self._export_path = self._export_data(
-            export_type=parsed_export_type, path=path, prefix=prefix
+        export_path = self._export_data(
+            export_type=export_type,
+            path=path,
+            prefix=prefix
         )
         export_info = self.export_info
-        if self._export_path is not None:
-            export_info.export_paths[parsed_export_type.value] = os.path.abspath(
-                self._export_path
-            )
+        if export_path is not None:
+            export_info.export_paths[export_type.value] = os.path.abspath(export_path)
 
         self._set_export_info(export_info)
 
     @property
     def export_path(self) -> Optional[str]:
         issue_deprecation_warning("method export_path", alternative="export_info")
-        return self._export_path
+        known_export_paths = list(self.export_info.export_paths.values())
+        if len(known_export_paths) > 0:
+            return known_export_paths[-1]
+        else:
+            return None
 
     @property
     def export_info(self) -> ExportInfo:
