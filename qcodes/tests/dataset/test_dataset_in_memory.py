@@ -32,6 +32,53 @@ def test_dataset_in_memory_reload_from_db(
     compare_datasets(ds, loaded_ds)
 
 
+def test_dataset_in_memory_reload_from_db_complex(
+    meas_with_registered_param_complex, DAC, complex_num_instrument, tmp_path
+):
+    with meas_with_registered_param_complex.run(
+        dataset_class=DataSetInMem
+    ) as datasaver:
+        for set_v in np.linspace(0, 25, 10):
+            DAC.ch1.set(set_v)
+            get_v = complex_num_instrument.complex_num()
+            datasaver.add_result(
+                (DAC.ch1, set_v), (complex_num_instrument.complex_num, get_v)
+            )
+
+    ds = datasaver.dataset
+    ds.add_metadata("mymetadatatag", 42)
+    ds.export(export_type="netcdf", path=str(tmp_path))
+
+    assert isinstance(ds, DataSetInMem)
+
+    loaded_ds = load_by_id(ds.run_id)
+    assert isinstance(loaded_ds, DataSetInMem)
+    compare_datasets(ds, loaded_ds)
+
+
+def test_dataset_in_memory_reload_from_netcdf_complex(
+    meas_with_registered_param_complex, DAC, complex_num_instrument, tmp_path
+):
+    with meas_with_registered_param_complex.run(
+        dataset_class=DataSetInMem
+    ) as datasaver:
+        for set_v in np.linspace(0, 25, 10):
+            DAC.ch1.set(set_v)
+            get_v = complex_num_instrument.complex_num()
+            datasaver.add_result(
+                (DAC.ch1, set_v), (complex_num_instrument.complex_num, get_v)
+            )
+
+    ds = datasaver.dataset
+    ds.add_metadata("mymetadatatag", 42)
+    ds.export(export_type="netcdf", path=str(tmp_path))
+
+    assert isinstance(ds, DataSetInMem)
+    loaded_ds = DataSetInMem.load_from_netcdf(tmp_path / "qcodes_1.nc")
+    assert isinstance(loaded_ds, DataSetInMem)
+    compare_datasets(ds, loaded_ds)
+
+
 def test_dataset_in_memory_no_export_warns(
     meas_with_registered_param, DMM, DAC, tmp_path
 ):
