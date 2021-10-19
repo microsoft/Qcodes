@@ -254,7 +254,7 @@ class DataSetInMem(DataSetProtocol, Sized):
         path = str(path)
         path = os.path.abspath(path)
 
-        export_info = ExportInfo.from_str(loaded_data.export_info)
+        export_info = ExportInfo.from_str(loaded_data.attrs.get("export_info", ""))
         export_info.export_paths["nc"] = path
         non_metadata = {
             "run_timestamp_raw",
