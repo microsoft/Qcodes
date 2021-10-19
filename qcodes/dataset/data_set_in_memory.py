@@ -333,7 +333,10 @@ class DataSetInMem(DataSetProtocol, Sized):
                 loaded_data = xr.load_dataset(xr_path)
                 ds._cache = DataSetCacheInMem(ds)
                 ds._cache._data = cls._from_xarray_dataset_to_qcodes(loaded_data)
-            except FileNotFoundError:
+            except (
+                FileNotFoundError,
+                OSError,
+            ):  # older versions of h5py may throw a OSError here
                 warnings.warn(
                     "Could not load raw data for dataset with guid :"
                     f"{guid} from location {xr_path}"
