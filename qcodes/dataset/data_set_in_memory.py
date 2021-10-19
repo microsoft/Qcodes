@@ -633,14 +633,12 @@ class DataSetInMem(DataSetProtocol, Sized):
                 "give an explicit export_type when calling ``dataset.export`` manually."
             )
 
-        self._export_path = self._export_data(
+        _export_path = self._export_data(
             export_type=export_type, path=path, prefix=prefix
         )
         export_info = self.export_info
-        if self._export_path is not None:
-            export_info.export_paths[export_type.value] = os.path.abspath(
-                self._export_path
-            )
+        if _export_path is not None:
+            export_info.export_paths[export_type.value] = os.path.abspath(_export_path)
 
         self._set_export_info(export_info)
 
