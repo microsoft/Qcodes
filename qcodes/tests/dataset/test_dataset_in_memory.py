@@ -109,8 +109,7 @@ def test_load_from_db(meas_with_registered_param, DMM, DAC, tmp_path):
 
     assert "foo" in loaded_ds.metadata.keys()
     # todo do we want this. e.g. should metadata contain
-    # snapshot and export info even if this is accessible in other way
-    assert "snapshot" in loaded_ds.metadata.keys()
+    # export info even if this is accessible in other way
     assert "export_info" in loaded_ds.metadata.keys()
 
     compare_datasets(ds, loaded_ds)
