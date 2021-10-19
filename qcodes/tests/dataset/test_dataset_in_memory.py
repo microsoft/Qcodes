@@ -12,6 +12,26 @@ from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic_transaction
 from qcodes.station import Station
 
 
+def test_dataset_in_memory_reload_from_db(
+    meas_with_registered_param, DMM, DAC, tmp_path
+):
+    with meas_with_registered_param.run(dataset_class=DataSetInMem) as datasaver:
+        for set_v in np.linspace(0, 25, 10):
+            DAC.ch1.set(set_v)
+            get_v = DMM.v1()
+            datasaver.add_result((DAC.ch1, set_v), (DMM.v1, get_v))
+
+    ds = datasaver.dataset
+    # ds.add_metadata("foo", "bar")
+    ds.export(export_type="netcdf", path=str(tmp_path))
+
+    assert isinstance(ds, DataSetInMem)
+
+    loaded_ds = load_by_id(ds.run_id)
+    assert isinstance(loaded_ds, DataSetInMem)
+    compare_datasets(ds, loaded_ds)
+
+
 def test_dataset_in_memory_smoke_test(meas_with_registered_param, DMM, DAC, tmp_path):
     with meas_with_registered_param.run(dataset_class=DataSetInMem) as datasaver:
         for set_v in np.linspace(0, 25, 10):
@@ -20,7 +40,7 @@ def test_dataset_in_memory_smoke_test(meas_with_registered_param, DMM, DAC, tmp_
             datasaver.add_result((DAC.ch1, set_v), (DMM.v1, get_v))
 
     ds = datasaver.dataset
-
+    # ds.add_metadata("foo", "bar")
     assert isinstance(ds, DataSetInMem)
 
     ds.export(export_type="netcdf", path=str(tmp_path))
