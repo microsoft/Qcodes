@@ -39,6 +39,7 @@ from qcodes.dataset.linked_datasets.links import Link, links_to_str
 from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic
 from qcodes.dataset.sqlite.database import conn_from_dbpath_or_conn, get_DB_location
 from qcodes.dataset.sqlite.queries import (
+    RUNS_TABLE_COLUMNS,
     add_meta_data,
     add_parameter,
     create_run,
@@ -252,7 +253,23 @@ class DataSetInMem(DataSetProtocol, Sized):
 
         path = str(path)
         path = os.path.abspath(path)
-        export_info = ExportInfo({"nc": path})
+
+        export_info = ExportInfo.from_str(loaded_data.export_info)
+        export_info.export_paths["nc"] = path
+        non_metadata = {
+            "run_timestamp_raw",
+            "completed_timestamp_raw",
+            "ds_name",
+            "exp_name",
+            "sample_name",
+            "export_info",
+            "parent_dataset_links",
+        }
+
+        metadata_keys = (
+            set(loaded_data.attrs.keys()) - set(RUNS_TABLE_COLUMNS) - non_metadata
+        )
+        metadata = {key: loaded_data.attrs[key] for key in metadata_keys}
 
         ds = cls(
             run_id=run_id,
@@ -267,7 +284,7 @@ class DataSetInMem(DataSetProtocol, Sized):
             path_to_db=path_to_db,
             run_timestamp_raw=loaded_data.run_timestamp_raw,
             completed_timestamp_raw=loaded_data.completed_timestamp_raw,
-            metadata=None,  # todo
+            metadata=metadata,
             rundescriber=serial.from_json_to_current(loaded_data.run_description),
             parent_dataset_links=parent_dataset_links,
             export_info=export_info,
