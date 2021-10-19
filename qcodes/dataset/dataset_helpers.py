@@ -42,6 +42,7 @@ def _add_run_to_runs_table(
         captured_counter=captured_counter,
         parent_dataset_links=parent_dataset_links,
         create_run_table=create_run_table,
+        snapshot_raw=snapshot_raw,
     )
     mark_run_complete(target_conn, target_run_id)
     _rewrite_timestamps(
@@ -50,8 +51,4 @@ def _add_run_to_runs_table(
         dataset.run_timestamp_raw,
         dataset.completed_timestamp_raw,
     )
-    if snapshot_raw is not None:
-        add_data_to_dynamic_columns(
-            target_conn, target_run_id, {"snapshot": snapshot_raw}
-        )
     return target_table_name

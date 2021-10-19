@@ -1616,6 +1616,7 @@ def create_run(
     captured_counter: Optional[int] = None,
     parent_dataset_links: str = "[]",
     create_run_table: bool = True,
+    snapshot_raw: Optional[str] = None,
 ) -> Tuple[int, int, Optional[str]]:
     """Create a single run for the experiment.
 
@@ -1638,6 +1639,7 @@ def create_run(
             Should only be supplied when inserting an already completed run
             from another database into this database. Otherwise leave as None.
         - create_run_table: Should we create a table to insert the run into.
+        - snapshot_raw: Raw string of the snapshot to add to the run.
 
     Returns:
         - run_counter: the id of the newly created run (not unique)
@@ -1656,6 +1658,8 @@ def create_run(
                                                           parent_dataset_links)
         if metadata:
             add_data_to_dynamic_columns(conn, run_id, metadata)
+        if snapshot_raw:
+            add_data_to_dynamic_columns(conn, run_id, {"snapshot": snapshot_raw})
         _update_experiment_run_counter(conn, exp_id, run_counter)
         if create_run_table:
             _create_run_table(conn, formatted_name, parameters, values)
