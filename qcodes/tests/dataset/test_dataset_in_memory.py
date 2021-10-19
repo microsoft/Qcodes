@@ -22,7 +22,7 @@ def test_dataset_in_memory_reload_from_db(
             datasaver.add_result((DAC.ch1, set_v), (DMM.v1, get_v))
 
     ds = datasaver.dataset
-    # ds.add_metadata("foo", "bar")
+    ds.add_metadata("mymetadatatag", 42)
     ds.export(export_type="netcdf", path=str(tmp_path))
 
     assert isinstance(ds, DataSetInMem)
