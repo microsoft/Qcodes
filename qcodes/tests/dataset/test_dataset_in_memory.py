@@ -32,7 +32,7 @@ def test_dataset_in_memory_reload_from_db(
     compare_datasets(ds, loaded_ds)
 
 
-def test_dataset_in_memory_smoke_test(meas_with_registered_param, DMM, DAC, tmp_path):
+def test_dataset_in_reload_from_netcdf(meas_with_registered_param, DMM, DAC, tmp_path):
     with meas_with_registered_param.run(dataset_class=DataSetInMem) as datasaver:
         for set_v in np.linspace(0, 25, 10):
             DAC.ch1.set(set_v)
@@ -40,17 +40,13 @@ def test_dataset_in_memory_smoke_test(meas_with_registered_param, DMM, DAC, tmp_
             datasaver.add_result((DAC.ch1, set_v), (DMM.v1, get_v))
 
     ds = datasaver.dataset
-    # ds.add_metadata("foo", "bar")
+    ds.add_metadata("mymetadatatag", 42)
     assert isinstance(ds, DataSetInMem)
 
     ds.export(export_type="netcdf", path=str(tmp_path))
     loaded_ds = DataSetInMem.load_from_netcdf(tmp_path / "qcodes_1.nc")
     assert isinstance(loaded_ds, DataSetInMem)
     compare_datasets(ds, loaded_ds)
-
-    loaded_ds_2 = load_by_id(ds.run_id)
-    assert isinstance(loaded_ds_2, DataSetInMem)
-    compare_datasets(ds, loaded_ds_2)
 
 
 def test_dataset_in_memory_does_not_create_runs_table(
