@@ -228,7 +228,7 @@ class DataSetInMem(DataSetProtocol, Sized):
         """
         import xarray as xr
 
-        loaded_data = xr.load_dataset(path)
+        loaded_data = xr.load_dataset(path, engine="h5netcdf")
 
         parent_dataset_links = str_to_links(
             loaded_data.attrs.get("parent_dataset_links", "[]")
@@ -330,7 +330,7 @@ class DataSetInMem(DataSetProtocol, Sized):
 
         if xr_path is not None:
             try:
-                loaded_data = xr.load_dataset(xr_path)
+                loaded_data = xr.load_dataset(xr_path, engine="h5netcdf")
                 ds._cache = DataSetCacheInMem(ds)
                 ds._cache._data = cls._from_xarray_dataset_to_qcodes(loaded_data)
             except (
