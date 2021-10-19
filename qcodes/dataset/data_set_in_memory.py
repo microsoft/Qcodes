@@ -290,7 +290,9 @@ class DataSetInMem(DataSetProtocol, Sized):
             raise RuntimeError("This is wrong")
 
         metadata = run_attributes["metadata"]
-        export_info = ExportInfo.from_str(metadata["export_info"])
+
+        export_info_str = metadata.get("export_info", "")
+        export_info = ExportInfo.from_str(export_info_str)
 
         ds = cls(
             run_id=run_attributes["run_id"],
