@@ -32,6 +32,52 @@ def test_dataset_in_memory_reload_from_db(
     compare_datasets(ds, loaded_ds)
 
 
+def test_dataset_in_memory_no_export_warns(
+    meas_with_registered_param, DMM, DAC, tmp_path
+):
+    with meas_with_registered_param.run(dataset_class=DataSetInMem) as datasaver:
+        for set_v in np.linspace(0, 25, 10):
+            DAC.ch1.set(set_v)
+            get_v = DMM.v1()
+            datasaver.add_result((DAC.ch1, set_v), (DMM.v1, get_v))
+
+    ds = datasaver.dataset
+    ds.add_metadata("mymetadatatag", 42)
+    assert isinstance(ds, DataSetInMem)
+    ds.export(export_type="netcdf", path=str(tmp_path))
+    os.remove(ds.export_info.export_paths["nc"])
+
+    with pytest.warns(
+        UserWarning, match="Could not load raw data for dataset with guid"
+    ):
+        loaded_ds = load_by_id(ds.run_id)
+
+    assert isinstance(loaded_ds, DataSetInMem)
+
+    assert loaded_ds.cache.data() == {}
+
+
+def test_dataset_in_memory_missing_file_warns(
+    meas_with_registered_param, DMM, DAC, tmp_path
+):
+    with meas_with_registered_param.run(dataset_class=DataSetInMem) as datasaver:
+        for set_v in np.linspace(0, 25, 10):
+            DAC.ch1.set(set_v)
+            get_v = DMM.v1()
+            datasaver.add_result((DAC.ch1, set_v), (DMM.v1, get_v))
+
+    ds = datasaver.dataset
+    ds.add_metadata("mymetadatatag", 42)
+
+    assert isinstance(ds, DataSetInMem)
+
+    with pytest.warns(UserWarning, match="No raw data stored for dataset with guid"):
+        loaded_ds = load_by_id(ds.run_id)
+    assert isinstance(loaded_ds, DataSetInMem)
+
+    assert loaded_ds.cache.data() == {}
+
+
 def test_dataset_in_reload_from_netcdf(meas_with_registered_param, DMM, DAC, tmp_path):
     with meas_with_registered_param.run(dataset_class=DataSetInMem) as datasaver:
         for set_v in np.linspace(0, 25, 10):
