@@ -615,7 +615,15 @@ def meas_with_registered_param(experiment, DAC, DMM):
     yield meas
 
 
-@pytest.fixture(name='dummyinstrument')
+@pytest.fixture
+def meas_with_registered_param_complex(experiment, DAC, complex_num_instrument):
+    meas = Measurement()
+    meas.register_parameter(DAC.ch1)
+    meas.register_parameter(complex_num_instrument.complex_num, setpoints=[DAC.ch1])
+    yield meas
+
+
+@pytest.fixture(name="dummyinstrument")
 def _make_dummy_instrument() -> Iterator[DummyChannelInstrument]:
     inst = DummyChannelInstrument('dummyinstrument')
     try:
