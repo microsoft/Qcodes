@@ -83,6 +83,7 @@ class DataSetInMem(DataSetProtocol, Sized):
         path_to_db: Optional[str],
         run_timestamp_raw: Optional[float],
         completed_timestamp_raw: Optional[float],
+        snapshot: Optional[str] = None,
         metadata: Optional[Mapping[str, Any]] = None,
         rundescriber: Optional[RunDescriber] = None,
         parent_dataset_links: Optional[Sequence[Link]] = None,
@@ -129,6 +130,7 @@ class DataSetInMem(DataSetProtocol, Sized):
             self._export_info = ExportInfo({})
             self._export_path = None
         self._metadata["export_info"] = self._export_info.to_str()
+        self._snapshot_raw_data = snapshot
 
     def _dataset_is_in_runs_table(self) -> bool:
         """
@@ -269,10 +271,11 @@ class DataSetInMem(DataSetProtocol, Sized):
             path_to_db=path_to_db,
             run_timestamp_raw=loaded_data.run_timestamp_raw,
             completed_timestamp_raw=loaded_data.completed_timestamp_raw,
-            metadata={"snapshot": loaded_data.snapshot},
+            metadata=None,  # todo
             rundescriber=serial.from_json_to_current(loaded_data.run_description),
             parent_dataset_links=parent_dataset_links,
             export_info=export_info,
+            snapshot=loaded_data.snapshot,
         )
         ds._cache = DataSetCacheInMem(ds)
         ds._cache._data = cls._from_xarray_dataset_to_qcodes(loaded_data)
@@ -287,7 +290,6 @@ class DataSetInMem(DataSetProtocol, Sized):
             raise RuntimeError("This is wrong")
 
         metadata = run_attributes["metadata"]
-        metadata["snapshot"] = run_attributes["snapshot"]
         export_info = ExportInfo.from_str(metadata["export_info"])
 
         ds = cls(
@@ -307,6 +309,7 @@ class DataSetInMem(DataSetProtocol, Sized):
             rundescriber=serial.from_json_to_current(run_attributes["run_description"]),
             parent_dataset_links=str_to_links(run_attributes["parent_dataset_links"]),
             export_info=export_info,
+            snapshot=run_attributes["snapshot"],
         )
         xr_path = export_info.export_paths.get("nc")
 
@@ -529,7 +532,8 @@ class DataSetInMem(DataSetProtocol, Sized):
             overwrite: force overwrite an existing snapshot
         """
         if self.snapshot is None or overwrite:
-            self.add_metadata("snapshot", snapshot)
+            self._add_to_dyn_column_if_in_db("snapshot", snapshot)
+            self._snapshot_raw_data = snapshot
         elif self.snapshot is not None and not overwrite:
             log.warning(
                 "This dataset already has a snapshot. Use overwrite"
@@ -539,7 +543,7 @@ class DataSetInMem(DataSetProtocol, Sized):
     @property
     def _snapshot_raw(self) -> Optional[str]:
         """Snapshot of the run as a JSON-formatted string (or None)."""
-        return self._metadata.get("snapshot")
+        return self._snapshot_raw_data
 
     def add_metadata(self, tag: str, metadata: Any) -> None:
         """
@@ -554,17 +558,18 @@ class DataSetInMem(DataSetProtocol, Sized):
         """
 
         self._metadata[tag] = metadata
+        self._add_to_dyn_column_if_in_db(tag, metadata)
 
+    def _add_to_dyn_column_if_in_db(self, tag: str, data: Any) -> None:
         if self._dataset_is_in_runs_table():
             with contextlib.closing(
                 conn_from_dbpath_or_conn(conn=None, path_to_db=self._path_to_db)
             ) as conn:
                 with atomic(conn) as aconn:
-                    add_meta_data(aconn, self.run_id, {tag: metadata})
+                    add_meta_data(aconn, self.run_id, {tag: data})
 
     @property
     def metadata(self) -> Dict[str, Any]:
-        # todo unlike the query this does not filter snapshot
         return self._metadata
 
     @property
