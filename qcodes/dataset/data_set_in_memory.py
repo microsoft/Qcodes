@@ -123,12 +123,8 @@ class DataSetInMem(DataSetProtocol, Sized):
             self._parent_dataset_links = []
         if export_info is not None:
             self._export_info = export_info
-            self._export_path: Optional[str] = str(
-                Path(export_info.export_paths["nc"]).parent
-            )
         else:
             self._export_info = ExportInfo({})
-            self._export_path = None
         self._metadata["export_info"] = self._export_info.to_str()
         self._snapshot_raw_data = snapshot
 
@@ -933,7 +929,11 @@ class DataSetInMem(DataSetProtocol, Sized):
 
     @property
     def export_path(self) -> Optional[str]:
-        return self._export_path
+        known_export_paths = list(self.export_info.export_paths.values())
+        if len(known_export_paths) > 0:
+            return known_export_paths[-1]
+        else:
+            return None
 
     @property
     def _parameters(self) -> Optional[str]:
