@@ -414,7 +414,10 @@ class DataSet(Sized):
     def parameters(self) -> str:
         if self.pristine:
             psnames = [ps.name for ps in self.description.interdeps.paramspecs]
-            return ','.join(psnames)
+            if len(psnames) > 0:
+                return ",".join(psnames)
+            else:
+                return None
         else:
             return select_one_where(self.conn, "runs",
                                     "parameters", "run_id", self.run_id)

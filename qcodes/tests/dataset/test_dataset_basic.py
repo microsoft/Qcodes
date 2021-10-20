@@ -1268,7 +1268,7 @@ def limit_data_to_start_end(start, end, input_names, expected_names,
 
 
 @pytest.mark.usefixtures("experiment")
-def test_empty_ds_parameters(empty_temp_db):
+def test_empty_ds_parameters():
 
     ds = new_data_set("mydataset")
     assert ds.parameters is None
