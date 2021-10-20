@@ -411,7 +411,7 @@ class DataSet(Sized):
                                 "captured_counter", "run_id", self.run_id)
 
     @property
-    def parameters(self) -> str:
+    def parameters(self) -> Optional[str]:
         if self.pristine:
             psnames = [ps.name for ps in self.description.interdeps.paramspecs]
             if len(psnames) > 0:
