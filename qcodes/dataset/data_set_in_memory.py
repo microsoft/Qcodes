@@ -102,6 +102,7 @@ class DataSetInMem(DataSetProtocol, Sized):
             self._parent_dataset_links = list(parent_dataset_links)
         else:
             self._parent_dataset_links = []
+        self._export_path = None  # todo set this when importing from netcdf
 
     def _dataset_is_in_runs_table(self) -> bool:
         """
@@ -432,7 +433,6 @@ class DataSetInMem(DataSetProtocol, Sized):
             metadata: actual metadata
         """
 
-
         if not self._dataset_is_in_runs_table():
             # todo should this just add it?
             raise RuntimeError(f"Dataset is not in database {self._path_to_db}")
@@ -462,6 +462,8 @@ class DataSetInMem(DataSetProtocol, Sized):
         Return a list of Link objects. Each Link object describes a link from
         this dataset to one of its parent datasets
         """
+        # Todo neither here nor the regular dataset can set this exept during prepare
+        # is that an issue?
         return self._parent_dataset_links
 
     def export(
