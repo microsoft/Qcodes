@@ -9,8 +9,13 @@ import pytest
 from hypothesis import HealthCheck, given, settings
 
 import qcodes as qc
-from qcodes import (experiments, load_by_counter, load_by_id, new_data_set,
-                    new_experiment)
+from qcodes import (
+    experiments,
+    load_by_counter,
+    load_by_id,
+    new_data_set,
+    new_experiment,
+)
 from qcodes.dataset.data_set import CompletedError, DataSet
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
@@ -20,10 +25,9 @@ from qcodes.dataset.sqlite.connection import path_to_dbfile
 from qcodes.dataset.sqlite.database import get_DB_location
 from qcodes.dataset.sqlite.queries import _unicode_categories
 from qcodes.tests.common import error_caused_by
-from qcodes.tests.dataset.test_links import generate_some_links
-from qcodes.utils.types import numpy_ints, numpy_floats
-
 from qcodes.tests.dataset.helper_functions import verify_data_dict
+from qcodes.tests.dataset.test_links import generate_some_links
+from qcodes.utils.types import numpy_floats, numpy_ints
 
 n_experiments = 0
 
@@ -1261,3 +1265,14 @@ def limit_data_to_start_end(start, end, input_names, expected_names,
                     expected_values[name][i] = \
                         expected_values[name][i][start - 1:end]
     return start, end
+
+
+@pytest.mark.usefixtures("experiment")
+def test_empty_ds_parameters():
+
+    ds = new_data_set("mydataset")
+    assert ds.parameters is None
+    ds.mark_started()
+    assert ds.parameters is None
+    ds.mark_completed()
+    assert ds.parameters is None
