@@ -6,7 +6,6 @@ from qcodes.dataset.linked_datasets.links import links_to_str
 from qcodes.dataset.sqlite.connection import ConnectionPlus
 from qcodes.dataset.sqlite.queries import (
     _rewrite_timestamps,
-    add_data_to_dynamic_columns,
     create_run,
     mark_run_complete,
 )
