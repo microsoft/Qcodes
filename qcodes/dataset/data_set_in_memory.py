@@ -300,7 +300,9 @@ class DataSetInMem(DataSetProtocol, Sized):
         import xarray as xr
         run_attributes = get_raw_run_attributes(conn, guid)
         if run_attributes is None:
-            raise RuntimeError("This is wrong")
+            raise RuntimeError(
+                f"Could not find the requested run with {guid} in the db"
+            )
 
         metadata = run_attributes["metadata"]
 
