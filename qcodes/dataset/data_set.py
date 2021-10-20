@@ -617,7 +617,7 @@ class DataSet(Sized):
         """
 
         self._metadata[tag] = metadata
-        # `add_meta_data` is not atomic by itself, hence using `atomic`
+        # `add_data_to_dynamic_columns` is not atomic by itself, hence using `atomic`
         with atomic(self.conn) as conn:
             add_data_to_dynamic_columns(conn, self.run_id, {tag: metadata})
 

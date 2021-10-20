@@ -1680,7 +1680,11 @@ def get_parent_dataset_links(conn: ConnectionPlus, run_id: int) -> str:
 def get_data_by_tag_and_table_name(
     conn: ConnectionPlus, tag: str, table_name: str
 ) -> Optional[VALUE]:
-    """Get data under the tag from table returns None if the column is missing"""
+    """
+    Get data from the "tag" column for the row in "runs" table where
+    "result_table_name" matches "table_name".
+    Returns None if the "tag" column is missing in "runs" table.
+    """
     try:
         data = select_one_where(conn, "runs", tag, "result_table_name", table_name)
     except RuntimeError as e:
@@ -1746,7 +1750,7 @@ def validate_dynamic_column_data(data: Mapping[str, Any]) -> None:
             )
         if val is None:
             raise ValueError(
-                f"Tag {tag} has value None. " "That is not a valid metadata value!"
+                f"Tag {tag} has value None. That is not a valid metadata value!"
             )
 
 
@@ -1791,7 +1795,7 @@ def add_data_to_dynamic_columns(
 ) -> None:
     """
     Add columns from keys and insert values.
-    (updates if exists, create otherwise)
+    (updates if exists, creates otherwise)
 
     Note that None is not a valid value, and keys
     should be valid SQLite column names (i.e. contain only
