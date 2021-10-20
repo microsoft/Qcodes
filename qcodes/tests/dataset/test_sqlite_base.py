@@ -303,7 +303,7 @@ def test_atomic_creation(experiment):
     def just_throw(*args):
         raise RuntimeError("This breaks adding metadata")
 
-    # first we patch add_meta_data to throw an exception
+    # first we patch add_data_to_dynamic_columns to throw an exception
     # if create_data is not atomic this would create a partial
     # run in the db. Causing the next create_run to fail
     with patch(
