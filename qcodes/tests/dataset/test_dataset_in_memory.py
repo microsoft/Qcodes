@@ -23,6 +23,11 @@ def test_dataset_in_memory_reload_from_db(
 
     ds = datasaver.dataset
     ds.add_metadata("mymetadatatag", 42)
+
+    paramspecs = ds.get_parameters()
+    assert len(paramspecs) == 2
+    assert paramspecs[0].name == "dummy_dac_ch1"
+    assert paramspecs[1].name == "dummy_dmm_v1"
     ds.export(export_type="netcdf", path=str(tmp_path))
 
     assert isinstance(ds, DataSetInMem)
