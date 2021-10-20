@@ -33,3 +33,19 @@ def test_empty_ds_parameters(experiment):
     ds.mark_completed()
 
     assert ds._parameters is None
+
+
+def test_write_metadata_to_explicit_db(empty_temp_db):
+    default_db_location = qc.config["core"]["db_location"]
+    extra_db_location = str(Path(default_db_location).parent / "extra.db")
+    load_or_create_experiment(experiment_name="myexp", sample_name="mysample")
+    load_or_create_experiment(
+        conn=connect(extra_db_location), experiment_name="myexp", sample_name="mysample"
+    )
+    ds = DataSetInMem.create_new_run(name="foo")
+    assert ds._parameters is None
+    assert ds.path_to_db == default_db_location
+    ds.write_metadata_to_db(path_to_db=extra_db_location)
+    loaded_ds = load_by_guid(ds.guid, conn=connect(extra_db_location))
+
+    ds.the_same_dataset_as(loaded_ds)
