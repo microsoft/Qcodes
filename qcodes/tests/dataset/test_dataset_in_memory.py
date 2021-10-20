@@ -183,6 +183,19 @@ def test_load_from_netcdf_and_write_metadata_to_db(empty_temp_db):
 
     compare_datasets(ds, loaded_ds)
 
+    # now we attempt to write again. This should be a noop so everything should
+    # stay the same
+    ds.write_metadata_to_db()
+    loaded_ds = load_by_run_spec(captured_run_id=ds.captured_run_id)
+    assert isinstance(loaded_ds, DataSetInMem)
+    assert loaded_ds.captured_run_id == ds.captured_run_id
+    assert loaded_ds.captured_counter == ds.captured_counter
+    assert loaded_ds.run_timestamp_raw == ds.run_timestamp_raw
+    assert loaded_ds.completed_timestamp_raw == ds.completed_timestamp_raw
+
+    compare_datasets(ds, loaded_ds)
+
+
 
 def test_load_from_netcdf_no_db_file(non_created_db):
     netcdf_file_path = (
