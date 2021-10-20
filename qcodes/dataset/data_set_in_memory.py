@@ -958,4 +958,7 @@ class DataSetInMem(DataSetProtocol, Sized):
     @property
     def _parameters(self) -> Optional[str]:
         psnames = [ps.name for ps in self.description.interdeps.paramspecs]
-        return ",".join(psnames)
+        if len(psnames) > 0:
+            return ",".join(psnames)
+        else:
+            return None
