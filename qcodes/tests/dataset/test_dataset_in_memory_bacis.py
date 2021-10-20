@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import qcodes as qc
-from qcodes import load_or_create_experiment
+from qcodes import load_by_guid, load_or_create_experiment, new_data_set
 from qcodes.dataset.data_set_in_memory import DataSetInMem
 from qcodes.dataset.sqlite.database import connect
 
@@ -19,3 +19,17 @@ def test_create_dataset_in_memory_explicit_db(empty_temp_db):
 
     assert ds.path_to_db == extra_db_location
     assert default_db_location != extra_db_location
+
+
+def test_empty_ds_parameters(experiment):
+
+    ds = DataSetInMem.create_new_run(name="foo")
+
+    assert ds._parameters is None
+
+    ds._perform_start_actions()
+    assert ds._parameters is None
+
+    ds.mark_completed()
+
+    assert ds._parameters is None
