@@ -41,28 +41,22 @@ from qcodes.dataset.export_config import (
 )
 from qcodes.dataset.guids import filter_guids_by_parts, generate_guid, parse_guid
 from qcodes.dataset.linked_datasets.links import Link, links_to_str, str_to_links
-from qcodes.dataset.sqlite.connection import (
-    ConnectionPlus,
-    atomic,
-    atomic_transaction,
-    transaction,
-)
+from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic, atomic_transaction
 from qcodes.dataset.sqlite.database import (
     conn_from_dbpath_or_conn,
     connect,
     get_DB_location,
 )
 from qcodes.dataset.sqlite.queries import (
-    add_meta_data,
+    add_data_to_dynamic_columns,
     add_parameter,
     completed,
     create_run,
     get_completed_timestamp_from_run_id,
+    get_data_by_tag_and_table_name,
     get_experiment_name_from_experiment_id,
     get_guid_from_run_id,
     get_guids_from_run_spec,
-    get_last_experiment,
-    get_metadata,
     get_metadata_from_run_id,
     get_parameter_data,
     get_parent_dataset_links,
@@ -623,9 +617,9 @@ class DataSet(Sized):
         """
 
         self._metadata[tag] = metadata
-        # `add_meta_data` is not atomic by itself, hence using `atomic`
+        # `add_data_to_dynamic_columns` is not atomic by itself, hence using `atomic`
         with atomic(self.conn) as conn:
-            add_meta_data(conn, self.run_id, {tag: metadata})
+            add_data_to_dynamic_columns(conn, self.run_id, {tag: metadata})
 
     def add_snapshot(self, snapshot: str, overwrite: bool = False) -> None:
         """
@@ -637,7 +631,7 @@ class DataSet(Sized):
         """
         if self.snapshot is None or overwrite:
             with atomic(self.conn) as conn:
-                add_meta_data(conn, self.run_id, {"snapshot": snapshot})
+                add_data_to_dynamic_columns(conn, self.run_id, {"snapshot": snapshot})
         elif self.snapshot is not None and not overwrite:
             log.warning('This dataset already has a snapshot. Use overwrite'
                         '=True to overwrite that')
@@ -1256,8 +1250,9 @@ class DataSet(Sized):
                 sub.join()
             self.subscribers.clear()
 
-    def get_metadata(self, tag: str) -> str:
-        return get_metadata(self.conn, tag, self.table_name)
+    def get_metadata(self, tag: str) -> Optional[VALUE]:
+        """Get metadata by tag. Returns None if no metadata is stored under that tag"""
+        return get_data_by_tag_and_table_name(self.conn, tag, self.table_name)
 
     def __len__(self) -> int:
         return length(self.conn, self.table_name)

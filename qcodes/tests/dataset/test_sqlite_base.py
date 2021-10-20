@@ -89,10 +89,13 @@ def test_insert_many_values_raises(experiment):
                                     values=[[1], [1, 3]])
 
 
-def test_get_metadata_raises(experiment):
-    with pytest.raises(RuntimeError) as excinfo:
-        mut_queries.get_metadata(experiment.conn, 'something', 'results')
-    assert error_caused_by(excinfo, "no such column: something")
+def test_get_non_existing_metadata_returns_none(experiment):
+    assert (
+        mut_queries.get_data_by_tag_and_table_name(
+            experiment.conn, "something", "results"
+        )
+        is None
+    )
 
 
 @given(table_name=hst.text(max_size=50))
@@ -197,7 +200,7 @@ def test_runs_table_columns(empty_temp_db):
     """
     Ensure that the column names of a pristine runs table are what we expect
     """
-    colnames = mut_queries.RUNS_TABLE_COLUMNS.copy()
+    colnames = list(mut_queries.RUNS_TABLE_COLUMNS)
     conn = mut_db.connect(get_DB_location())
     query = "PRAGMA table_info(runs)"
     cursor = conn.cursor()
@@ -300,21 +303,26 @@ def test_atomic_creation(experiment):
     def just_throw(*args):
         raise RuntimeError("This breaks adding metadata")
 
-    # first we patch add_meta_data to throw an exception
+    # first we patch add_data_to_dynamic_columns to throw an exception
     # if create_data is not atomic this would create a partial
     # run in the db. Causing the next create_run to fail
-    with patch('qcodes.dataset.sqlite.queries.add_meta_data', new=just_throw):
-        x = ParamSpec('x', 'numeric')
-        t = ParamSpec('t', 'numeric')
-        y = ParamSpec('y', 'numeric', depends_on=['x', 't'])
-        with pytest.raises(RuntimeError,
-                           match="Rolling back due to unhandled exception")as e:
-            mut_queries.create_run(experiment.conn,
-                                   experiment.exp_id,
-                                   name='testrun',
-                                   guid=generate_guid(),
-                                   parameters=[x, t, y],
-                                   metadata={'a': 1})
+    with patch(
+        "qcodes.dataset.sqlite.queries.add_data_to_dynamic_columns", new=just_throw
+    ):
+        x = ParamSpec("x", "numeric")
+        t = ParamSpec("t", "numeric")
+        y = ParamSpec("y", "numeric", depends_on=["x", "t"])
+        with pytest.raises(
+            RuntimeError, match="Rolling back due to unhandled exception"
+        ) as e:
+            mut_queries.create_run(
+                experiment.conn,
+                experiment.exp_id,
+                name="testrun",
+                guid=generate_guid(),
+                parameters=[x, t, y],
+                metadata={"a": 1},
+            )
     assert error_caused_by(e, "This breaks adding metadata")
     # since we are starting from an empty database and the above transaction
     # should be rolled back there should be no runs in the run table

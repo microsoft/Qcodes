@@ -39,6 +39,7 @@ from qcodes.dataset.sqlite.connection import (
     transaction,
 )
 from qcodes.dataset.sqlite.query_helpers import (
+    VALUE,
     VALUES,
     insert_column,
     insert_values,
@@ -62,7 +63,7 @@ _unicode_categories = ('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nd', 'Pc', 'Pd', 'Zs')
 
 # in the current version, these are the standard columns of the "runs" table
 # Everything else is metadata
-RUNS_TABLE_COLUMNS = [
+RUNS_TABLE_COLUMNS = (
     "run_id",
     "exp_id",
     "name",
@@ -78,7 +79,7 @@ RUNS_TABLE_COLUMNS = [
     "parent_datasets",
     "captured_run_id",
     "captured_counter",
-]
+)
 
 
 def is_run_id_in_database(conn: ConnectionPlus,
@@ -1635,7 +1636,7 @@ def create_run(conn: ConnectionPlus, exp_id: int, name: str,
                                                           captured_counter,
                                                           parent_dataset_links)
         if metadata:
-            add_meta_data(conn, run_id, metadata)
+            add_data_to_dynamic_columns(conn, run_id, metadata)
         _update_experiment_run_counter(conn, exp_id, run_counter)
         _create_run_table(conn, formatted_name, parameters, values)
 
@@ -1676,11 +1677,26 @@ def get_parent_dataset_links(conn: ConnectionPlus, run_id: int) -> str:
     return link_str
 
 
-def get_metadata(conn: ConnectionPlus, tag: str, table_name: str) -> str:
-    """ Get metadata under the tag from table
+def get_data_by_tag_and_table_name(
+    conn: ConnectionPlus, tag: str, table_name: str
+) -> Optional[VALUE]:
     """
-    return select_one_where(conn, "runs", tag,
-                            "result_table_name", table_name)
+    Get data from the "tag" column for the row in "runs" table where
+    "result_table_name" matches "table_name".
+    Returns None if the "tag" column is missing in "runs" table.
+    """
+    try:
+        data = select_one_where(conn, "runs", tag, "result_table_name", table_name)
+    except RuntimeError as e:
+        # all errors trigger an runtime error here since select_one_where is wrapped
+        # in an atomic that will do a rollback
+        # this probably just means that the column is not there
+        # and therefore it contains no data
+        if str(e.__cause__).startswith("no such column"):
+            data = None
+        else:
+            raise e
+    return data
 
 
 def get_metadata_from_run_id(
@@ -1717,81 +1733,87 @@ def get_metadata_from_run_id(
     return metadata
 
 
-def validate_meta_data(metadata: Mapping[str, Any]) -> None:
+def validate_dynamic_column_data(data: Mapping[str, Any]) -> None:
     """
-    Validate metadata tags and values. Note that None is not a valid
-    metadata value, and keys should be valid SQLite column names
+    Validate the given dicts tags and values. Note that None is not a valid
+    value, and keys should be valid SQLite column names
     (i.e. contain only alphanumeric characters and underscores).
 
     Args:
-        metadata: the metadata mapping (tags to values)
+        data: the metadata mapping (tags to values)
     """
-    for tag, val in metadata.items():
+    for tag, val in data.items():
         if not tag.isidentifier():
-            raise KeyError(f'Tag {tag} is not a valid tag. '
-                            'Use only alphanumeric characters and underscores!')
+            raise KeyError(
+                f"Tag {tag} is not a valid tag. "
+                "Use only alphanumeric characters and underscores!"
+            )
         if val is None:
-            raise ValueError(f'Tag {tag} has value None. '
-                              'That is not a valid metadata value!')
+            raise ValueError(
+                f"Tag {tag} has value None. That is not a valid metadata value!"
+            )
 
 
-def insert_meta_data(conn: ConnectionPlus, row_id: int, table_name: str,
-                     metadata: Mapping[str, Any]) -> None:
+def insert_data_in_dynamic_columns(
+    conn: ConnectionPlus, row_id: int, table_name: str, data: Mapping[str, Any]
+) -> None:
     """
-    Insert new metadata column and add values. Note that None is not a valid
-    metadata value, and keys should be valid SQLite column names
+    Insert new data column and add values. Note that None is not a valid
+    value, and keys should be valid SQLite column names
     (i.e. contain only alphanumeric characters and underscores).
 
     Args:
         - conn: the connection to the sqlite database
         - row_id: the row to add the metadata at
         - table_name: the table to add to, defaults to runs
-        - metadata: the metadata to add
+        - data: A mapping from columns to data to add
     """
-    validate_meta_data(metadata)
-    for key in metadata.keys():
+    validate_dynamic_column_data(data)
+    for key in data.keys():
         insert_column(conn, table_name, key)
-    update_meta_data(conn, row_id, table_name, metadata)
+    update_columns(conn, row_id, table_name, data)
 
 
-def update_meta_data(conn: ConnectionPlus, row_id: int, table_name: str,
-                     metadata: Mapping[str, Any]) -> None:
+def update_columns(
+    conn: ConnectionPlus, row_id: int, table_name: str, data: Mapping[str, Any]
+) -> None:
     """
-    Updates metadata (they must exist already)
+    Updates data in columns matching the given keys (they must exist already)
 
     Args:
         - conn: the connection to the sqlite database
         - row_id: the row to add the metadata at
         - table_name: the table to add to, defaults to runs
-        - metadata: the metadata to add
+        - data: the data to add
     """
-    validate_meta_data(metadata)
-    update_where(conn, table_name, 'rowid', row_id, **metadata)
+    validate_dynamic_column_data(data)
+    update_where(conn, table_name, "rowid", row_id, **data)
 
 
-def add_meta_data(conn: ConnectionPlus,
-                  row_id: int,
-                  metadata: Mapping[str, Any],
-                  table_name: str = "runs") -> None:
+def add_data_to_dynamic_columns(
+    conn: ConnectionPlus, row_id: int, data: Mapping[str, Any], table_name: str = "runs"
+) -> None:
     """
-    Add metadata data (updates if exists, create otherwise).
-    Note that None is not a valid metadata value, and keys
+    Add columns from keys and insert values.
+    (updates if exists, creates otherwise)
+
+    Note that None is not a valid value, and keys
     should be valid SQLite column names (i.e. contain only
     alphanumeric characters and underscores).
 
     Args:
         - conn: the connection to the sqlite database
         - row_id: the row to add the metadata at
-        - metadata: the metadata to add
+        - data: the data to add
         - table_name: the table to add to, defaults to runs
     """
     try:
-        insert_meta_data(conn, row_id, table_name, metadata)
+        insert_data_in_dynamic_columns(conn, row_id, table_name, data)
     except sqlite3.OperationalError as e:
         # this means that the column already exists
         # so just insert the new value
         if str(e).startswith("duplicate"):
-            update_meta_data(conn, row_id, table_name, metadata)
+            update_columns(conn, row_id, table_name, data)
         else:
             raise e
 
