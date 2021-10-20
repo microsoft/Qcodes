@@ -40,7 +40,7 @@ from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic
 from qcodes.dataset.sqlite.database import conn_from_dbpath_or_conn, get_DB_location
 from qcodes.dataset.sqlite.queries import (
     RUNS_TABLE_COLUMNS,
-    add_meta_data,
+    add_data_to_dynamic_columns,
     add_parameter,
     create_run,
     get_experiment_name_from_experiment_id,
@@ -584,7 +584,7 @@ class DataSetInMem(DataSetProtocol, Sized):
                 conn_from_dbpath_or_conn(conn=None, path_to_db=self._path_to_db)
             ) as conn:
                 with atomic(conn) as aconn:
-                    add_meta_data(aconn, self.run_id, {tag: data})
+                    add_data_to_dynamic_columns(aconn, self.run_id, {tag: data})
 
     @property
     def metadata(self) -> Dict[str, Any]:
