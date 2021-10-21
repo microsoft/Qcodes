@@ -75,7 +75,7 @@ def many_many(curr: sqlite3.Cursor, *columns: str) -> List[List[Any]]:
 
 
 def select_one_where(
-    conn: ConnectionPlus, table: str, column: str, where_column: str, where_value: Any
+    conn: ConnectionPlus, table: str, column: str, where_column: str, where_value: VALUE
 ) -> VALUE:
     """
     Select a value from a given column given a match of a value in a
@@ -107,7 +107,11 @@ def select_one_where(
 
 
 def select_many_where(
-    conn: ConnectionPlus, table: str, *columns: str, where_column: str, where_value: Any
+    conn: ConnectionPlus,
+    table: str,
+    *columns: str,
+    where_column: str,
+    where_value: VALUE,
 ) -> VALUES:
     _columns = ",".join(columns)
     query = f"""
