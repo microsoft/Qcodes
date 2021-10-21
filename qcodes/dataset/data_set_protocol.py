@@ -95,7 +95,7 @@ class DataSetProtocol(Protocol, Sized):
         pass
 
     @property
-    def sample_name(self) -> str:
+    def sample_name(self) -> Optional[str]:
         pass
 
     def run_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S") -> Optional[str]:
