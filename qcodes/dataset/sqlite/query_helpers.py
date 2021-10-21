@@ -77,6 +77,23 @@ def many_many(curr: sqlite3.Cursor, *columns: str) -> List[List[Any]]:
 def select_one_where(
     conn: ConnectionPlus, table: str, column: str, where_column: str, where_value: Any
 ) -> VALUE:
+    """
+    Select a value from a given column given a match of a value in a
+    different column. If the given matched row/column intersect is empty
+    None will be returned.
+
+    Args:
+        conn: Connection to the db
+        table: Table to look for values in
+        column: Column to return value from
+        where_column: Column to match on
+        where_value: Value to match in where_column
+
+    Returns:
+        Value found
+    raises:
+        RuntimeError if not exactly match is found.
+    """
     query = f"""
     SELECT {column}
     FROM
