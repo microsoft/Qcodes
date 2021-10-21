@@ -96,7 +96,7 @@ class Experiment(Sized):
         return get_experiment_name_from_experiment_id(self.conn, self.exp_id)
 
     @property
-    def sample_name(self) -> str:
+    def sample_name(self) -> Optional[str]:
         return get_sample_name_from_experiment_id(self.conn, self.exp_id)
 
     @property
@@ -104,19 +104,28 @@ class Experiment(Sized):
         return get_run_counter(self.conn, self.exp_id)
 
     @property
-    def started_at(self) -> int:
-        return select_one_where(self.conn, "experiments", "start_time",
-                                "exp_id", self.exp_id)
+    def started_at(self) -> float:
+        start_time = select_one_where(
+            self.conn, "experiments", "start_time", "exp_id", self.exp_id
+        )
+        assert isinstance(start_time, float)
+        return start_time
 
     @property
-    def finished_at(self) -> int:
-        return select_one_where(self.conn, "experiments", "end_time",
-                                "exp_id", self.exp_id)
+    def finished_at(self) -> Optional[float]:
+        finish_time = select_one_where(
+            self.conn, "experiments", "end_time", "exp_id", self.exp_id
+        )
+        assert isinstance(finish_time, (float, type(None)))
+        return finish_time
 
     @property
     def format_string(self) -> str:
-        return select_one_where(self.conn, "experiments", "format_string",
-                                "exp_id", self.exp_id)
+        format_str = select_one_where(
+            self.conn, "experiments", "format_string", "exp_id", self.exp_id
+        )
+        assert isinstance(format_str, str)
+        return format_str
 
     def new_data_set(self, name: str,
                      specs: Optional[SPECS] = None,
