@@ -108,6 +108,7 @@ def test_get_run_attributes() -> None:
     assert loaded_raw_attrs["metadata"] == {"foo": "bar"}
 
     loaded_attrs = get_run_attributes(ds.conn, ds.guid)
+    assert loaded_attrs is not None
 
     assert loaded_attrs["run_id"] == ds.run_id
     assert loaded_attrs["counter"] == ds.counter
