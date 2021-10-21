@@ -74,8 +74,9 @@ def many_many(curr: sqlite3.Cursor, *columns: str) -> List[List[Any]]:
     return results
 
 
-def select_one_where(conn: ConnectionPlus, table: str, column: str,
-                     where_column: str, where_value: Any) -> Any:
+def select_one_where(
+    conn: ConnectionPlus, table: str, column: str, where_column: str, where_value: Any
+) -> VALUE:
     query = f"""
     SELECT {column}
     FROM
@@ -88,8 +89,9 @@ def select_one_where(conn: ConnectionPlus, table: str, column: str,
     return res
 
 
-def select_many_where(conn: ConnectionPlus, table: str, *columns: str,
-                      where_column: str, where_value: Any) -> Any:
+def select_many_where(
+    conn: ConnectionPlus, table: str, *columns: str, where_column: str, where_value: Any
+) -> VALUES:
     _columns = ",".join(columns)
     query = f"""
     SELECT {_columns}
