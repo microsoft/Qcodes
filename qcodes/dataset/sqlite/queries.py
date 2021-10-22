@@ -1837,12 +1837,13 @@ def get_experiment_name_from_experiment_id(conn: ConnectionPlus, exp_id: int) ->
     return exp_name
 
 
-def get_sample_name_from_experiment_id(
-    conn: ConnectionPlus, exp_id: int
-) -> Optional[str]:
+def get_sample_name_from_experiment_id(conn: ConnectionPlus, exp_id: int) -> str:
     sample_name = select_one_where(conn, "experiments", "sample_name", "exp_id", exp_id)
     assert isinstance(sample_name, (str, type(None)))
-    return sample_name
+    # there may be a few cases for very old db where None is returned as a sample name
+    # however, these probably do not exist in relaity outside that test so here we
+    # cast to str. See test_experiments_with_NULL_sample_name
+    return cast(str, sample_name)
 
 
 def get_run_timestamp_from_run_id(conn: ConnectionPlus,

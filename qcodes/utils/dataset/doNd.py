@@ -951,7 +951,7 @@ def plot(
     axes, cbs = plot_dataset(data)
     mainfolder = config.user.mainfolder
     experiment_name = data.exp_name
-    sample_name = data.sample_name or "unknown_sample"
+    sample_name = data.sample_name
     storage_dir = os.path.join(mainfolder, experiment_name, sample_name)
     os.makedirs(storage_dir, exist_ok=True)
     png_dir = os.path.join(storage_dir, "png")

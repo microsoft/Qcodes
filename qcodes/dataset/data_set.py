@@ -464,7 +464,7 @@ class DataSet(Sized):
         return get_experiment_name_from_experiment_id(self.conn, self.exp_id)
 
     @property
-    def sample_name(self) -> Optional[str]:
+    def sample_name(self) -> str:
         return get_sample_name_from_experiment_id(self.conn, self.exp_id)
 
     @property
