@@ -1634,6 +1634,7 @@ class DataSet(Sized):
         self._set_export_info(export_info)
 
     @property
+    @deprecate(alternative="export_info")
     def export_path(self) -> Optional[str]:
         return self._export_path
 
