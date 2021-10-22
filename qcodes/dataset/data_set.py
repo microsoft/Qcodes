@@ -82,7 +82,7 @@ from qcodes.dataset.sqlite.query_helpers import (
     select_one_where,
 )
 from qcodes.instrument.parameter import _BaseParameter
-from qcodes.utils.deprecate import deprecate
+from qcodes.utils.deprecate import deprecate, issue_deprecation_warning
 from qcodes.utils.helpers import NumpyJSONEncoder
 
 from .data_set_cache import DataSetCacheWithDBBackend
@@ -1635,6 +1635,7 @@ class DataSet(Sized):
 
     @property
     def export_path(self) -> Optional[str]:
+        issue_deprecation_warning("method export_path", alternative="export_info")
         return self._export_path
 
     @property
