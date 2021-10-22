@@ -108,3 +108,12 @@ def test_timestamps(experiment):
 
     assert ds.completed_timestamp() is not None
     assert ds.completed_timestamp_raw is not None
+
+
+def test_mark_pristine_completed_raises(experiment):
+    ds = DataSetInMem.create_new_run(name="foo")
+
+    with pytest.raises(
+        RuntimeError, match="Can not mark DataSet as complete before it"
+    ):
+        ds.mark_completed()
