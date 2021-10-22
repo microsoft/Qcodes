@@ -98,8 +98,8 @@ def two_empty_temp_db_connections(tmp_path):
         gc.collect()
 
 
-@pytest.fixture(scope='function')
-def experiment(empty_temp_db):
+@pytest.fixture(scope="function", name="experiment")
+def _make_experiment(empty_temp_db):
     e = new_experiment("test-experiment", sample_name="test-sample")
     try:
         yield e
