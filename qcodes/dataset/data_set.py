@@ -351,8 +351,11 @@ class DataSet(Sized):
 
     @property
     def captured_run_id(self) -> int:
-        return select_one_where(self.conn, "runs",
-                                "captured_run_id", "run_id", self.run_id)
+        run_id = select_one_where(
+            self.conn, "runs", "captured_run_id", "run_id", self.run_id
+        )
+        assert isinstance(run_id, int)
+        return run_id
 
     @property
     def path_to_db(self) -> str:
@@ -360,13 +363,17 @@ class DataSet(Sized):
 
     @property
     def name(self) -> str:
-        return select_one_where(self.conn, "runs",
-                                "name", "run_id", self.run_id)
+        name = select_one_where(self.conn, "runs", "name", "run_id", self.run_id)
+        assert isinstance(name, str)
+        return name
 
     @property
     def table_name(self) -> str:
-        return select_one_where(self.conn, "runs",
-                                "result_table_name", "run_id", self.run_id)
+        table_name = select_one_where(
+            self.conn, "runs", "result_table_name", "run_id", self.run_id
+        )
+        assert isinstance(table_name, str)
+        return table_name
 
     @property
     def guid(self) -> str:
@@ -386,8 +393,11 @@ class DataSet(Sized):
     @property
     def _snapshot_raw(self) -> Optional[str]:
         """Snapshot of the run as a JSON-formatted string (or None)"""
-        return select_one_where(self.conn, "runs", "snapshot",
-                                "run_id", self.run_id)
+        snapshot_raw = select_one_where(
+            self.conn, "runs", "snapshot", "run_id", self.run_id
+        )
+        assert isinstance(snapshot_raw, (str, type(None)))
+        return snapshot_raw
 
     @property
     def snapshot_raw(self) -> Optional[str]:
@@ -402,13 +412,19 @@ class DataSet(Sized):
 
     @property
     def counter(self) -> int:
-        return select_one_where(self.conn, "runs",
-                                "result_counter", "run_id", self.run_id)
+        counter = select_one_where(
+            self.conn, "runs", "result_counter", "run_id", self.run_id
+        )
+        assert isinstance(counter, int)
+        return counter
 
     @property
     def captured_counter(self) -> int:
-        return select_one_where(self.conn, "runs",
-                                "captured_counter", "run_id", self.run_id)
+        captured_counter = select_one_where(
+            self.conn, "runs", "captured_counter", "run_id", self.run_id
+        )
+        assert isinstance(captured_counter, int)
+        return captured_counter
 
     @property
     def parameters(self) -> Optional[str]:
@@ -419,8 +435,11 @@ class DataSet(Sized):
             else:
                 return None
         else:
-            return select_one_where(self.conn, "runs",
-                                    "parameters", "run_id", self.run_id)
+            parameters = select_one_where(
+                self.conn, "runs", "parameters", "run_id", self.run_id
+            )
+            assert isinstance(parameters, (str, type(None)))
+            return parameters
 
     @property
     def paramspecs(self) -> Dict[str, ParamSpec]:
@@ -436,8 +455,9 @@ class DataSet(Sized):
 
     @property
     def exp_id(self) -> int:
-        return select_one_where(self.conn, "runs",
-                                "exp_id", "run_id", self.run_id)
+        exp_id = select_one_where(self.conn, "runs", "exp_id", "run_id", self.run_id)
+        assert isinstance(exp_id, int)
+        return exp_id
 
     @property
     def exp_name(self) -> str:

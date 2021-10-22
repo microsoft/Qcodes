@@ -827,7 +827,8 @@ def completed(conn: ConnectionPlus, run_id: int) -> bool:
 
 
 def get_completed_timestamp_from_run_id(
-        conn: ConnectionPlus, run_id: int) -> float:
+    conn: ConnectionPlus, run_id: int
+) -> Optional[float]:
     """
     Retrieve the timestamp when the given measurement run was completed
 
@@ -841,8 +842,9 @@ def get_completed_timestamp_from_run_id(
     Returns:
         timestamp in seconds since the Epoch, or None
     """
-    return select_one_where(conn, "runs", "completed_timestamp",
-                            "run_id", run_id)
+    ts = select_one_where(conn, "runs", "completed_timestamp", "run_id", run_id)
+    assert isinstance(ts, (float, type(None)))
+    return ts
 
 
 def get_guid_from_run_id(conn: ConnectionPlus, run_id: int) -> Optional[str]:
@@ -860,6 +862,7 @@ def get_guid_from_run_id(conn: ConnectionPlus, run_id: int) -> Optional[str]:
         guid = select_one_where(conn, "runs", "guid", "run_id", run_id)
     except RuntimeError:
         return None
+    assert isinstance(guid, str)
     return guid
 
 
@@ -912,11 +915,15 @@ def get_run_counter(conn: ConnectionPlus, exp_id: int) -> int:
 
     Returns:
         the experiment run counter
+    Raises:
+        RuntimeError if the experiment is not found.
 
     """
-    return select_one_where(conn, "experiments", "run_counter",
-                            where_column="exp_id",
-                            where_value=exp_id)
+    counter = select_one_where(
+        conn, "experiments", "run_counter", where_column="exp_id", where_value=exp_id
+    )
+    assert isinstance(counter, int)
+    return counter
 
 
 def get_experiments(conn: ConnectionPlus) -> List[sqlite3.Row]:
@@ -1135,6 +1142,8 @@ def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
                                                    "format_string",
                                                    where_column="exp_id",
                                                    where_value=exp_id)
+    assert isinstance(run_counter, int)
+    assert isinstance(format_string, str)
     run_counter += 1
     if captured_counter is None:
         with atomic(conn) as conn:
@@ -1647,8 +1656,9 @@ def get_run_description(conn: ConnectionPlus, run_id: int) -> str:
     """
     Return the (JSON string) run description of the specified run
     """
-    return select_one_where(conn, "runs", "run_description",
-                            "run_id", run_id)
+    rds = select_one_where(conn, "runs", "run_description", "run_id", run_id)
+    assert isinstance(rds, str)
+    return rds
 
 
 def get_parent_dataset_links(conn: ConnectionPlus, run_id: int) -> str:
@@ -1666,8 +1676,11 @@ def get_parent_dataset_links(conn: ConnectionPlus, run_id: int) -> str:
     if not is_column_in_table(conn, 'runs', 'parent_datasets'):
         maybe_link_str = None
     else:
-        maybe_link_str = select_one_where(conn, "runs", "parent_datasets",
-                                           "run_id", run_id)
+        maybe_mayby_link_str = select_one_where(
+            conn, "runs", "parent_datasets", "run_id", run_id
+        )
+        assert isinstance(maybe_mayby_link_str, (str, type(None)))
+        maybe_link_str = maybe_mayby_link_str
 
     if maybe_link_str is None:
         link_str = "[]"
@@ -1818,21 +1831,26 @@ def add_data_to_dynamic_columns(
             raise e
 
 
-def get_experiment_name_from_experiment_id(
-        conn: ConnectionPlus, exp_id: int) -> str:
-    return select_one_where(
-        conn, "experiments", "name", "exp_id", exp_id)
+def get_experiment_name_from_experiment_id(conn: ConnectionPlus, exp_id: int) -> str:
+    exp_name = select_one_where(conn, "experiments", "name", "exp_id", exp_id)
+    assert isinstance(exp_name, str)
+    return exp_name
 
 
-def get_sample_name_from_experiment_id(
-        conn: ConnectionPlus, exp_id: int) -> str:
-    return select_one_where(
-        conn, "experiments", "sample_name", "exp_id", exp_id)
+def get_sample_name_from_experiment_id(conn: ConnectionPlus, exp_id: int) -> str:
+    sample_name = select_one_where(conn, "experiments", "sample_name", "exp_id", exp_id)
+    assert isinstance(sample_name, (str, type(None)))
+    # there may be a few cases for very old db where None is returned as a sample name
+    # however, these probably do not exist in relaity outside that test so here we
+    # cast to str. See test_experiments_with_NULL_sample_name
+    return cast(str, sample_name)
 
 
 def get_run_timestamp_from_run_id(conn: ConnectionPlus,
                                   run_id: int) -> Optional[float]:
-    return select_one_where(conn, "runs", "run_timestamp", "run_id", run_id)
+    time_stamp = select_one_where(conn, "runs", "run_timestamp", "run_id", run_id)
+    assert isinstance(time_stamp, (float, type(None)))
+    return time_stamp
 
 
 def update_GUIDs(conn: ConnectionPlus) -> None:
@@ -1998,16 +2016,15 @@ def get_experiment_attributes_by_exp_id(
     )
 
     temp_exp_attrs = dict(zip(exp_attr_names, exp_attr_vals))
-    end_time = (
-        float(temp_exp_attrs["end_time"])
-        if temp_exp_attrs["end_time"] is not None
-        else None
-    )
+    start_time = temp_exp_attrs["start_time"]
+    assert isinstance(start_time, float)
+    end_time = temp_exp_attrs["end_time"]
+    assert isinstance(end_time, (float, type(None)))
 
     exp_attrs: ExperimentAttributeDict = {
         "name": str(temp_exp_attrs["name"]),
         "sample_name": str(temp_exp_attrs["sample_name"]),
-        "start_time": float(temp_exp_attrs["start_time"]),
+        "start_time": start_time,
         "end_time": end_time,
         "format_string": str(temp_exp_attrs["format_string"]),
         "exp_id": exp_id,
@@ -2083,7 +2100,7 @@ class RawRunAttributesDict(TypedDict):
     metadata: Dict[str, Any]
     parent_dataset_links: str
     run_description: str
-    snapshot: str
+    snapshot: Optional[str]
 
 
 def get_raw_run_attributes(
@@ -2098,23 +2115,32 @@ def get_raw_run_attributes(
     exp_id = get_exp_ids_from_run_ids(conn, [run_id])[0]
     experiment = get_experiment_attributes_by_exp_id(conn, exp_id)
 
+    counter = select_one_where(conn, "runs", "result_counter", "guid", guid)
+    assert isinstance(counter, int)
+    captured_run_id = select_one_where(conn, "runs", "captured_run_id", "guid", guid)
+    assert isinstance(captured_run_id, int)
+
+    captured_counter = select_one_where(conn, "runs", "captured_counter", "guid", guid)
+    assert isinstance(captured_counter, int)
+
+    name = select_one_where(conn, "runs", "name", "guid", guid)
+    assert isinstance(name, str)
+
+    rawsnapshot = select_one_where(conn, "runs", "snapshot", "guid", guid)
+    assert isinstance(rawsnapshot, (str, type(None)))
     output: RawRunAttributesDict = {
         "run_id": run_id,
         "experiment": experiment,
-        "counter": select_one_where(conn, "runs", "result_counter", "guid", guid),
-        "captured_run_id": select_one_where(
-            conn, "runs", "captured_run_id", "guid", guid
-        ),
-        "captured_counter": select_one_where(
-            conn, "runs", "captured_counter", "guid", guid
-        ),
-        "name": select_one_where(conn, "runs", "name", "guid", guid),
+        "counter": counter,
+        "captured_run_id": captured_run_id,
+        "captured_counter": captured_counter,
+        "name": name,
         "run_timestamp": get_run_timestamp_from_run_id(conn, run_id),
         "completed_timestamp": get_completed_timestamp_from_run_id(conn, run_id),
         "metadata": get_metadata_from_run_id(conn, run_id),
         "parent_dataset_links": get_parent_dataset_links(conn, run_id),
         "run_description": get_run_description(conn, run_id),
-        "snapshot": select_one_where(conn, "runs", "snapshot", "guid", guid),
+        "snapshot": rawsnapshot,
     }
 
     return output
