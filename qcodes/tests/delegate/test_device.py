@@ -4,7 +4,6 @@ import numpy as np
 import pytest
 
 from qcodes import Measurement
-from qcodes.tests.dataset.conftest import empty_temp_db, experiment
 from qcodes.tests.instrument_mocks import DummyChannel, MockCustomChannel
 
 

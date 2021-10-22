@@ -8,12 +8,10 @@ from typing import Iterator
 import numpy as np
 import pytest
 
-import qcodes as qc
-from qcodes import new_data_set, new_experiment
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 from qcodes.dataset.measurements import Measurement
-from qcodes.dataset.sqlite.database import connect, initialise_database
+from qcodes.dataset.sqlite.database import connect
 from qcodes.instrument.parameter import (
     ArrayParameter,
     Parameter,
@@ -28,31 +26,6 @@ from qcodes.tests.instrument_mocks import (
     setpoint_generator,
 )
 from qcodes.utils.validators import Arrays, ComplexNumbers, Numbers
-
-n_experiments = 0
-
-
-@pytest.fixture(scope="function")
-def empty_temp_db(tmp_path):
-    global n_experiments
-    n_experiments = 0
-    # create a temp database for testing
-    try:
-        qc.config["core"]["db_location"] = \
-            str(tmp_path / 'temp.db')
-        if os.environ.get('QCODES_SQL_DEBUG'):
-            qc.config["core"]["db_debug"] = True
-        else:
-            qc.config["core"]["db_debug"] = False
-        initialise_database()
-        yield
-    finally:
-        # there is a very real chance that the tests will leave open
-        # connections to the database. These will have gone out of scope at
-        # this stage but a gc collection may not have run. The gc
-        # collection ensures that all connections belonging to now out of
-        # scope objects will be closed
-        gc.collect()
 
 
 @pytest.fixture(scope='function')
@@ -96,25 +69,6 @@ def two_empty_temp_db_connections(tmp_path):
         # collection ensures that all connections belonging to now out of
         # scope objects will be closed
         gc.collect()
-
-
-@pytest.fixture(scope="function", name="experiment")
-def _make_experiment(empty_temp_db):
-    e = new_experiment("test-experiment", sample_name="test-sample")
-    try:
-        yield e
-    finally:
-        e.conn.close()
-
-
-@pytest.fixture(scope='function')
-def dataset(experiment):
-    dataset = new_data_set("test-dataset")
-    try:
-        yield dataset
-    finally:
-        dataset.unsubscribe_all()
-        dataset.conn.close()
 
 
 @contextmanager
@@ -356,37 +310,6 @@ def array_in_str_dataset(experiment, request):
         yield datasaver.dataset
     finally:
         datasaver.dataset.conn.close()
-
-
-@pytest.fixture
-def standalone_parameters_dataset(dataset):
-    n_params = 3
-    n_rows = 10**3
-    params_indep = [ParamSpecBase(f'param_{i}',
-                                  'numeric',
-                                  label=f'param_{i}',
-                                  unit='V')
-                    for i in range(n_params)]
-
-    param_dep = ParamSpecBase(f'param_{n_params}',
-                              'numeric',
-                              label=f'param_{n_params}',
-                              unit='Ohm')
-
-    params_all = params_indep + [param_dep]
-
-    idps = InterDependencies_(
-        dependencies={param_dep: tuple(params_indep[0:1])},
-        standalones=tuple(params_indep[1:]))
-
-    dataset.set_interdependencies(idps)
-
-    dataset.mark_started()
-    dataset.add_results([{p.name: int(n_rows*10*pn+i)
-                          for pn, p in enumerate(params_all)}
-                         for i in range(n_rows)])
-    dataset.mark_completed()
-    yield dataset
 
 
 @pytest.fixture
