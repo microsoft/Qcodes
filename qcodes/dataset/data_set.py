@@ -1611,23 +1611,25 @@ class DataSet(Sized):
         Raises:
             ValueError: If the export data type is not specified, raise an error
         """
-        export_type = get_data_export_type(export_type)
+        parsed_export_type = get_data_export_type(export_type)
 
-        if export_type is None:
+        if parsed_export_type is None and export_type is None:
             raise ValueError(
                 "No data export type specified. Please set the export data type "
                 "by using ``qcodes.dataset.export_config.set_data_export_type`` or "
                 "give an explicit export_type when calling ``dataset.export`` manually."
             )
+        elif parsed_export_type is None:
+            raise ValueError(
+                f"Export type {export_type} is unknown. Export type should be a member of the `DataExportType` enum"
+            )
 
         self._export_path = self._export_data(
-            export_type=export_type,
-            path=path,
-            prefix=prefix
+            export_type=parsed_export_type, path=path, prefix=prefix
         )
         export_info = self.export_info
         if self._export_path is not None:
-            export_info.export_paths[export_type.value] = os.path.abspath(
+            export_info.export_paths[parsed_export_type.value] = os.path.abspath(
                 self._export_path
             )
 
