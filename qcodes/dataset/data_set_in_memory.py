@@ -948,14 +948,6 @@ class DataSetInMem(DataSetProtocol, Sized):
             return None
 
     @property
-    def export_path(self) -> Optional[str]:
-        known_export_paths = list(self.export_info.export_paths.values())
-        if len(known_export_paths) > 0:
-            return known_export_paths[-1]
-        else:
-            return None
-
-    @property
     def _parameters(self) -> Optional[str]:
         psnames = [ps.name for ps in self.description.interdeps.paramspecs]
         if len(psnames) > 0:
