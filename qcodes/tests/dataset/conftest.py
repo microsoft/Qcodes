@@ -29,10 +29,8 @@ from qcodes.tests.instrument_mocks import (
 from qcodes.utils.validators import Arrays, ComplexNumbers, Numbers
 
 
-@pytest.fixture(scope="function")
-def non_created_db(tmp_path):
-    global n_experiments
-    n_experiments = 0
+@pytest.fixture(scope="function", name="non_created_db")
+def _make_non_created_db(tmp_path):
     # set db location to a non existing file
     try:
         qc.config["core"]["db_location"] = str(tmp_path / "temp.db")
@@ -615,8 +613,8 @@ def meas_with_registered_param(experiment, DAC, DMM):
     yield meas
 
 
-@pytest.fixture
-def meas_with_registered_param_complex(experiment, DAC, complex_num_instrument):
+@pytest.fixture(name="meas_with_registered_param_complex")
+def _make_meas_with_registered_param_complex(experiment, DAC, complex_num_instrument):
     meas = Measurement()
     meas.register_parameter(DAC.ch1)
     meas.register_parameter(complex_num_instrument.complex_num, setpoints=[DAC.ch1])
