@@ -201,7 +201,6 @@ def test_load_from_netcdf_and_write_metadata_to_db(empty_temp_db):
     compare_datasets(ds, loaded_ds)
 
 
-
 def test_load_from_netcdf_no_db_file(non_created_db):
     netcdf_file_path = (
         Path(__file__).parent / "fixtures" / "db_files" / "version8" / "qcodes_2.nc"

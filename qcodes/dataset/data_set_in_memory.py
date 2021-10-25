@@ -144,6 +144,7 @@ class DataSetInMem(DataSetProtocol, Sized):
         self, path_to_db: Optional[Union[str, Path]] = None
     ) -> None:
         from .experiment_container import load_or_create_experiment
+
         if path_to_db is not None:
             self._path_to_db = str(path_to_db)
         if self._dataset_is_in_runs_table():
@@ -298,6 +299,7 @@ class DataSetInMem(DataSetProtocol, Sized):
     @classmethod
     def load_from_db(cls, conn: ConnectionPlus, guid: str) -> DataSetInMem:
         import xarray as xr
+
         run_attributes = get_raw_run_attributes(conn, guid)
         if run_attributes is None:
             raise RuntimeError(
