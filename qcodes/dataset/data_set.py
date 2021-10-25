@@ -1591,13 +1591,13 @@ class DataSet(DataSetProtocol, Sized):
             )
 
         export_path = self._export_data(
-            export_type=export_type,
-            path=path,
-            prefix=prefix
+            export_type=parsed_export_type, path=path, prefix=prefix
         )
         export_info = self.export_info
         if export_path is not None:
-            export_info.export_paths[export_type.value] = os.path.abspath(export_path)
+            export_info.export_paths[parsed_export_type.value] = os.path.abspath(
+                export_path
+            )
 
         self._set_export_info(export_info)
 
