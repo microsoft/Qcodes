@@ -17,10 +17,10 @@ jobs:
       with:
         python-version: '3.7'
     - name: Install build deps
-      run: pip install --upgrade pip setuptools wheel
+      run: pip install --upgrade pip setuptools wheel build
     - name: Build
       run: |
-        python setup.py sdist bdist_wheel
+        python -m build
     - name: Install Twine
       run: pip install twine
     - name: Publish
