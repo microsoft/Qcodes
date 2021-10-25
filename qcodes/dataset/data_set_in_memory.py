@@ -186,7 +186,7 @@ class DataSetInMem(DataSetProtocol, Sized):
             exp_name = get_experiment_name_from_experiment_id(conn, exp_id)
             guid = generate_guid()
 
-            run_counter, run_id, __ = create_run(
+            run_counter, run_id, _ = create_run(
                 conn, exp_id, name, guid=guid, parameters=None, create_run_table=False
             )
 
