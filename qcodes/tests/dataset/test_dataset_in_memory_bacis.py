@@ -109,6 +109,8 @@ def test_timestamps(experiment):
     assert ds.completed_timestamp() is not None
     assert ds.completed_timestamp_raw is not None
 
+    ds.mark_completed()
+
 
 def test_mark_pristine_completed_raises(experiment):
     ds = DataSetInMem.create_new_run(name="foo")
