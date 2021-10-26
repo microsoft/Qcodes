@@ -237,8 +237,8 @@ def test_export_no_or_nonexistent_type_specified(tmp_path_factory, mock_dataset)
 def test_export_from_config(tmp_path_factory, mock_dataset, mocker):
     tmp_path = tmp_path_factory.mktemp("export_from_config")
     path = str(tmp_path)
-    mock_type = mocker.patch("qcodes.dataset.data_set.get_data_export_type")
-    mock_path = mocker.patch("qcodes.dataset.data_set.get_data_export_path")
+    mock_type = mocker.patch("qcodes.dataset.data_set_protocol.get_data_export_type")
+    mock_path = mocker.patch("qcodes.dataset.data_set_protocol.get_data_export_path")
     mock_type.return_value = DataExportType.CSV
     mock_path.return_value = path
     mock_dataset.export()

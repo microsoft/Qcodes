@@ -4,28 +4,32 @@ import os
 import re
 import traceback
 from time import sleep
+from unittest.mock import patch
 
 import hypothesis.strategies as hst
 import numpy as np
 import pytest
 from hypothesis import HealthCheck, given, settings
 from numpy.testing import assert_allclose, assert_array_equal
-from unittest.mock import patch
 
 import qcodes as qc
 from qcodes.dataset.data_set import load_by_id
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.experiment_container import new_experiment
+from qcodes.dataset.export_config import DataExportType
 from qcodes.dataset.legacy_import import import_dat_file
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.sqlite.connection import atomic_transaction
-from qcodes.instrument.parameter import (ArrayParameter, Parameter,
-                                         expand_setpoints_helper)
-from qcodes.tests.common import retry_until_does_not_throw, reset_config_on_exit
+from qcodes.instrument.parameter import (
+    ArrayParameter,
+    Parameter,
+    expand_setpoints_helper,
+)
+from qcodes.tests.common import reset_config_on_exit, retry_until_does_not_throw
+
 # pylint: disable=unused-import
 from qcodes.tests.test_station import set_default_station_to_none
 from qcodes.utils.validators import Arrays
-from qcodes.dataset.export_config import DataExportType
 
 
 def test_log_messages(caplog, meas_with_registered_param):
@@ -1650,9 +1654,13 @@ def test_datasaver_export(experiment, bg_writing, tmp_path_factory,
     tmp_path = tmp_path_factory.mktemp("export_from_config")
     path = str(tmp_path)
 
-    with patch("qcodes.dataset.data_set.get_data_export_type") as mock_type, \
-    patch("qcodes.dataset.data_set.get_data_export_path") as mock_path, \
-    patch("qcodes.dataset.measurements.get_data_export_automatic") as mock_automatic:
+    with patch(
+        "qcodes.dataset.data_set_protocol.get_data_export_type"
+    ) as mock_type, patch(
+        "qcodes.dataset.data_set_protocol.get_data_export_path"
+    ) as mock_path, patch(
+        "qcodes.dataset.measurements.get_data_export_automatic"
+    ) as mock_automatic:
         mock_type.return_value = DataExportType.CSV
         mock_path.return_value = path
         mock_automatic.return_value = export
