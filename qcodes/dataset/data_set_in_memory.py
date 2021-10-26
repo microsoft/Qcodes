@@ -303,7 +303,7 @@ class DataSetInMem(DataSetProtocol, Sized):
         run_attributes = get_raw_run_attributes(conn, guid)
         if run_attributes is None:
             raise RuntimeError(
-                f"Could not find the requested run with {guid} in the db"
+                f"Could not find the requested run with GUID: {guid} in the db"
             )
 
         metadata = run_attributes["metadata"]
