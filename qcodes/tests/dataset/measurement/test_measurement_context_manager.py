@@ -1627,8 +1627,7 @@ def test_datasaver_multidim_array(experiment, bg_writing):  # noqa: F811
 
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("export", [True, False])
-def test_datasaver_export(experiment, bg_writing, tmp_path_factory,
-                          export):
+def test_datasaver_export(experiment, bg_writing, tmp_path_factory, export, mocker):
     """
     Test export data to csv after measurement ends
     """
@@ -1654,21 +1653,22 @@ def test_datasaver_export(experiment, bg_writing, tmp_path_factory,
     tmp_path = tmp_path_factory.mktemp("export_from_config")
     path = str(tmp_path)
 
-    with patch(
-        "qcodes.dataset.data_set_protocol.get_data_export_type"
-    ) as mock_type, patch(
-        "qcodes.dataset.data_set_protocol.get_data_export_path"
-    ) as mock_path, patch(
+    mock_type = mocker.patch("qcodes.dataset.data_set_protocol.get_data_export_type")
+    mock_path = mocker.patch("qcodes.dataset.data_set_protocol.get_data_export_path")
+    mock_automatic = mocker.patch(
         "qcodes.dataset.measurements.get_data_export_automatic"
-    ) as mock_automatic:
-        mock_type.return_value = DataExportType.CSV
-        mock_path.return_value = path
-        mock_automatic.return_value = export
-        with meas.run(write_in_background=bg_writing) as datasaver:
-            datasaver.add_result((str(x1), expected['x1']),
-                                 (str(x2), expected['x2']),
-                                 (str(y1), expected['y1']),
-                                 (str(y2), expected['y2']))
+    )
+
+    mock_type.return_value = DataExportType.CSV
+    mock_path.return_value = path
+    mock_automatic.return_value = export
+    with meas.run(write_in_background=bg_writing) as datasaver:
+        datasaver.add_result(
+            (str(x1), expected["x1"]),
+            (str(x2), expected["x2"]),
+            (str(y1), expected["y1"]),
+            (str(y2), expected["y2"]),
+        )
     if export:
         assert os.listdir(path) == [f"qcodes_{datasaver.dataset.run_id}.csv"]
     else:
