@@ -22,18 +22,13 @@ from typing import (
 
 import numpy as np
 
-from qcodes.dataset.data_set_protocol import SPECS, CompletedError, DataSetProtocol
+from qcodes.dataset.data_set_protocol import SPECS, BaseDataSet, CompletedError
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning.converters import new_to_old
 from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
-from qcodes.dataset.export_config import (
-    DataExportType,
-    get_data_export_path,
-    get_data_export_prefix,
-    get_data_export_type,
-)
+from qcodes.dataset.export_config import DataExportType, get_data_export_type
 from qcodes.dataset.guids import generate_guid
 from qcodes.dataset.linked_datasets.links import Link, links_to_str
 from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic
@@ -61,16 +56,16 @@ from .dataset_helpers import _add_run_to_runs_table
 from .descriptions.versioning import serialization as serial
 from .experiment_settings import get_default_experiment_id
 from .exporters.export_info import ExportInfo
-from .exporters.export_to_csv import dataframe_to_csv
 from .linked_datasets.links import str_to_links
 
 if TYPE_CHECKING:
+    import pandas as pd
     import xarray as xr
 
 log = logging.getLogger(__name__)
 
 
-class DataSetInMem(DataSetProtocol, Sized):
+class DataSetInMem(BaseDataSet, Sized):
     def __init__(
         self,
         run_id: int,
@@ -162,10 +157,6 @@ class DataSetInMem(DataSetProtocol, Sized):
                     load_last_duplicate=True,
                 )
                 _add_run_to_runs_table(self, aconn, exp.exp_id, create_run_table=False)
-
-    def get_parameters(self) -> SPECS:
-        old_interdeps = new_to_old(self.description.interdeps)
-        return list(old_interdeps.paramspecs)
 
     @classmethod
     def create_new_run(
@@ -646,9 +637,6 @@ class DataSetInMem(DataSetProtocol, Sized):
     def export_info(self) -> ExportInfo:
         return self._export_info
 
-    def _set_export_info(self, export_info: ExportInfo) -> None:
-        self.add_metadata("export_info", export_info.to_str())
-        self._export_info = export_info
 
     def _enqueue_results(self, result_dict: Mapping[ParamSpecBase, np.ndarray]) -> None:
         """
@@ -862,82 +850,6 @@ class DataSetInMem(DataSetProtocol, Sized):
             new_data = param_data.ravel()
         return new_data
 
-    def _export_file_name(self, prefix: str, export_type: DataExportType) -> str:
-        """Get export file name."""
-        extension = export_type.value
-        return f"{prefix}{self.run_id}.{extension}"
-
-    def _export_as_netcdf(self, path: str, file_name: str) -> str:
-        """Export data as netcdf to a given path with file prefix"""
-        file_path = os.path.join(path, file_name)
-        xarr_dataset = self.cache.to_xarray_dataset()
-        data_var_kinds = [
-            xarr_dataset.data_vars[data_var].dtype.kind
-            for data_var in xarr_dataset.data_vars
-        ]
-        coord_kinds = [
-            xarr_dataset.coords[coord].dtype.kind for coord in xarr_dataset.coords
-        ]
-        if "c" in data_var_kinds or "c" in coord_kinds:
-            # see http://xarray.pydata.org/en/stable/howdoi.html
-            # for how to export complex numbers
-            xarr_dataset.to_netcdf(
-                path=file_path, engine="h5netcdf", invalid_netcdf=True
-            )
-        else:
-            xarr_dataset.to_netcdf(path=file_path, engine="h5netcdf")
-        return file_path
-
-    def _export_as_csv(self, path: str, file_name: str) -> str:
-        """Export data as csv to a given path with file prefix."""
-        dfdict = self.cache.to_pandas_dataframe_dict()
-        dataframe_to_csv(
-            dfdict=dfdict,
-            path=path,
-            single_file=True,
-            single_file_name=file_name,
-        )
-        return os.path.join(path, file_name)
-
-    def _export_data(
-        self,
-        export_type: DataExportType,
-        path: Optional[str] = None,
-        prefix: Optional[str] = None,
-    ) -> Optional[str]:
-        """Export data to disk with file name {prefix}{run_id}.{ext}.
-
-        Values for the export type, path and prefix can also be set in the qcodes
-        "dataset" config.
-
-        Args:
-            export_type: Data export type, e.g. DataExportType.NETCDF
-            path: Export path, defaults to value set in config
-            prefix: File prefix, e.g. "qcodes_", defaults to value set in config.
-
-        Returns:
-            str: Path file was saved to, returns None if no file was saved.
-        """
-        # Set defaults to values in config if the value was not set
-        # (defaults to None)
-        path = path if path is not None else get_data_export_path()
-        prefix = prefix if prefix is not None else get_data_export_prefix()
-
-        if DataExportType.NETCDF == export_type:
-            file_name = self._export_file_name(
-                prefix=prefix, export_type=DataExportType.NETCDF
-            )
-            return self._export_as_netcdf(path=path, file_name=file_name)
-
-        elif DataExportType.CSV == export_type:
-            file_name = self._export_file_name(
-                prefix=prefix, export_type=DataExportType.CSV
-            )
-            return self._export_as_csv(path=path, file_name=file_name)
-
-        else:
-            return None
-
     @property
     def _parameters(self) -> Optional[str]:
         psnames = [ps.name for ps in self.description.interdeps.paramspecs]
@@ -945,3 +857,9 @@ class DataSetInMem(DataSetProtocol, Sized):
             return ",".join(psnames)
         else:
             return None
+
+    def _get_data_as_pd_dict_for_export(self) -> Dict[str, pd.DataFrame]:
+        return self.cache.to_pandas_dataframe_dict()
+
+    def _get_data_as_xr_ds_for_export(self) -> xr.Dataset:
+        return self.cache.to_xarray_dataset()

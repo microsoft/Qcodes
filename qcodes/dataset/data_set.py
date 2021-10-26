@@ -1,7 +1,6 @@
 import importlib
 import json
 import logging
-import os
 import time
 import uuid
 from dataclasses import dataclass
@@ -17,7 +16,6 @@ from typing import (
     Optional,
     Sequence,
     Set,
-    Sized,
     Tuple,
     Union,
 )
@@ -28,6 +26,7 @@ import pandas as pd
 import qcodes
 from qcodes.dataset.data_set_protocol import (
     SPECS,
+    BaseDataSet,
     CompletedError,
     DataSetProtocol,
     ParameterData,
@@ -41,12 +40,6 @@ from qcodes.dataset.descriptions.versioning.converters import new_to_old, old_to
 from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
 from qcodes.dataset.experiment_settings import get_default_experiment_id
-from qcodes.dataset.export_config import (
-    DataExportType,
-    get_data_export_path,
-    get_data_export_prefix,
-    get_data_export_type,
-)
 from qcodes.dataset.guids import filter_guids_by_parts, generate_guid, parse_guid
 from qcodes.dataset.linked_datasets.links import Link, links_to_str, str_to_links
 from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic, atomic_transaction
@@ -188,7 +181,7 @@ class _WriterStatus:
 _WRITERS: Dict[str, _WriterStatus] = {}
 
 
-class DataSet(DataSetProtocol, Sized):
+class DataSet(BaseDataSet):
 
     # the "persistent traits" are the attributes/properties of the DataSet
     # that are NOT tied to the representation of the DataSet in any particular
@@ -588,10 +581,6 @@ class DataSet(DataSetProtocol, Sized):
                     'been started.')
             raise RuntimeError(mssg)
         self._rundescriber = RunDescriber(interdeps, shapes=shapes)
-
-    def get_parameters(self) -> SPECS:
-        old_interdeps = new_to_old(self.description.interdeps)
-        return list(old_interdeps.paramspecs)
 
     def add_metadata(self, tag: str, metadata: Any) -> None:
         """
@@ -1494,113 +1483,6 @@ class DataSet(DataSetProtocol, Sized):
             log.debug(f"Waiting for write queue to empty.")
             writer_status.data_write_queue.join()
 
-    def _export_file_name(self, prefix: str, export_type: DataExportType) -> str:
-        """Get export file name"""
-        extension = export_type.value
-        return f"{prefix}{self.run_id}.{extension}"
-
-    def _export_as_netcdf(self, path: str, file_name: str) -> str:
-        """Export data as netcdf to a given path with file prefix"""
-        file_path = os.path.join(path, file_name)
-        xarr_dataset = self.to_xarray_dataset()
-        data_var_kinds = [
-            xarr_dataset.data_vars[data_var].dtype.kind
-            for data_var in xarr_dataset.data_vars
-        ]
-        coord_kinds = [
-            xarr_dataset.coords[coord].dtype.kind for coord in xarr_dataset.coords
-        ]
-        if "c" in data_var_kinds or "c" in coord_kinds:
-            # see http://xarray.pydata.org/en/stable/howdoi.html
-            # for how to export complex numbers
-            xarr_dataset.to_netcdf(
-                path=file_path, engine="h5netcdf", invalid_netcdf=True
-            )
-        else:
-            xarr_dataset.to_netcdf(path=file_path, engine="h5netcdf")
-        return file_path
-
-    def _export_as_csv(self, path: str, file_name: str) -> str:
-        """Export data as csv to a given path with file prefix"""
-        self.write_data_to_text_file(path=path, single_file=True, single_file_name=file_name)
-        return os.path.join(path, file_name)
-
-    def _export_data(self,
-                     export_type: DataExportType,
-                     path: Optional[str] = None,
-                     prefix: Optional[str] = None
-                     ) -> Optional[str]:
-        """Export data to disk with file name {prefix}{run_id}.{ext}.
-        Values for the export type, path and prefix can also be set in the qcodes
-        "dataset" config.
-
-        Args:
-            export_type: Data export type, e.g. DataExportType.NETCDF
-            path: Export path, defaults to value set in config
-            prefix: File prefix, e.g. "qcodes_", defaults to value set in config.
-
-        Returns:
-            str: Path file was saved to, returns None if no file was saved.
-        """
-        # Set defaults to values in config if the value was not set
-        # (defaults to None)
-        path = path if path is not None else get_data_export_path()
-        prefix = prefix if prefix is not None else get_data_export_prefix()
-
-        if DataExportType.NETCDF == export_type:
-            file_name = self._export_file_name(
-                prefix=prefix, export_type=DataExportType.NETCDF)
-            return self._export_as_netcdf(path=path, file_name=file_name)
-
-        elif DataExportType.CSV == export_type:
-            file_name = self._export_file_name(
-                prefix=prefix, export_type=DataExportType.CSV)
-            return self._export_as_csv(path=path, file_name=file_name)
-
-        else:
-            return None
-
-    def export(self,
-               export_type: Optional[Union[DataExportType, str]] = None,
-               path: Optional[str] = None,
-               prefix: Optional[str] = None) -> None:
-        """Export data to disk with file name {prefix}{run_id}.{ext}.
-        Values for the export type, path and prefix can also be set in the "dataset"
-        section of qcodes config.
-
-        Args:
-            export_type: Data export type, e.g. "netcdf" or ``DataExportType.NETCDF``,
-                defaults to a value set in qcodes config
-            path: Export path, defaults to value set in config
-            prefix: File prefix, e.g. ``qcodes_``, defaults to value set in config.
-
-        Raises:
-            ValueError: If the export data type is not specified or unknown, raise an error
-        """
-        parsed_export_type = get_data_export_type(export_type)
-
-        if parsed_export_type is None and export_type is None:
-            raise ValueError(
-                "No data export type specified. Please set the export data type "
-                "by using ``qcodes.dataset.export_config.set_data_export_type`` or "
-                "give an explicit export_type when calling ``dataset.export`` manually."
-            )
-        elif parsed_export_type is None:
-            raise ValueError(
-                f"Export type {export_type} is unknown. Export type should be a member of the `DataExportType` enum"
-            )
-
-        export_path = self._export_data(
-            export_type=parsed_export_type, path=path, prefix=prefix
-        )
-        export_info = self.export_info
-        if export_path is not None:
-            export_info.export_paths[parsed_export_type.value] = os.path.abspath(
-                export_path
-            )
-
-        self._set_export_info(export_info)
-
     @property
     def export_path(self) -> Optional[str]:
         issue_deprecation_warning("method export_path", alternative="export_info")
@@ -1614,10 +1496,11 @@ class DataSet(DataSetProtocol, Sized):
     def export_info(self) -> ExportInfo:
         return self._export_info
 
-    def _set_export_info(self, export_info: ExportInfo) -> None:
-        self.add_metadata("export_info", export_info.to_str())
-        self._export_info = export_info
+    def _get_data_as_pd_dict_for_export(self) -> Dict[str, pd.DataFrame]:
+        return self.to_pandas_dataframe_dict()
 
+    def _get_data_as_xr_ds_for_export(self) -> "xr.Dataset":
+        return self.to_xarray_dataset()
 
 # public api
 def load_by_id(run_id: int, conn: Optional[ConnectionPlus] = None) -> DataSetProtocol:
