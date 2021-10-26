@@ -48,6 +48,7 @@ from qcodes.dataset.sqlite.queries import (
     get_runid_from_guid,
     get_sample_name_from_experiment_id,
     mark_run_complete,
+    raw_time_to_str_time,
     set_run_timestamp,
     update_parent_datasets,
     update_run_description,
@@ -491,10 +492,7 @@ class DataSetInMem(DataSetProtocol, Sized):
 
         Consult with :func:`time.strftime` for information about the format.
         """
-        if self.run_timestamp_raw is None:
-            return None
-        else:
-            return time.strftime(fmt, time.localtime(self.run_timestamp_raw))
+        return raw_time_to_str_time(self.run_timestamp_raw, fmt)
 
     @property
     def run_timestamp_raw(self) -> Optional[float]:
@@ -515,16 +513,7 @@ class DataSetInMem(DataSetProtocol, Sized):
 
         Consult with ``time.strftime`` for information about the format.
         """
-        completed_timestamp_raw = self.completed_timestamp_raw
-
-        if completed_timestamp_raw:
-            completed_timestamp: Optional[str] = time.strftime(
-                fmt, time.localtime(completed_timestamp_raw)
-            )
-        else:
-            completed_timestamp = None
-
-        return completed_timestamp
+        return raw_time_to_str_time(self.completed_timestamp_raw, fmt)
 
     @property
     def completed_timestamp_raw(self) -> Optional[float]:
