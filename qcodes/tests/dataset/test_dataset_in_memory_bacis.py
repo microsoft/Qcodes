@@ -117,3 +117,11 @@ def test_mark_pristine_completed_raises(experiment):
         RuntimeError, match="Can not mark DataSet as complete before it"
     ):
         ds.mark_completed()
+
+
+def test_load_from_non_existing_guid(experiment):
+    guid = "This is not a guid"
+    with pytest.raises(
+        RuntimeError, match="Could not find the requested run with GUID"
+    ):
+        _ = DataSetInMem.load_from_db(conn=experiment.conn, guid=guid)
