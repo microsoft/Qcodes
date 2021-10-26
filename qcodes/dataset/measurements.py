@@ -766,8 +766,8 @@ class Measurement:
         return tuple(depends_on), tuple(inf_from)
 
     def register_parent(
-            self: T, parent: DataSet, link_type: str,
-            description: str = "") -> T:
+        self: T, parent: DataSetProtocol, link_type: str, description: str = ""
+    ) -> T:
         """
         Register a parent for the outcome of this measurement
 
