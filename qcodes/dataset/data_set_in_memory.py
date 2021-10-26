@@ -28,7 +28,6 @@ from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning.converters import new_to_old
 from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
-from qcodes.dataset.export_config import DataExportType, get_data_export_type
 from qcodes.dataset.guids import generate_guid
 from qcodes.dataset.linked_datasets.links import Link, links_to_str
 from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic
@@ -590,45 +589,6 @@ class DataSetInMem(BaseDataSet, Sized):
         """
         return self._parent_dataset_links
 
-    def export(
-        self,
-        export_type: Optional[Union[DataExportType, str]] = None,
-        path: Optional[str] = None,
-        prefix: Optional[str] = None,
-    ) -> None:
-        """
-        Export data to disk with file name {prefix}{run_id}.{ext}.
-
-        Values for the export type, path and prefix can also be set in the "dataset"
-        section of qcodes config.
-
-        Args:
-            export_type: Data export type, e.g. "netcdf" or ``DataExportType.NETCDF``,
-                defaults to a value set in qcodes config
-            path: Export path, defaults to value set in config
-            prefix: File prefix, e.g. ``qcodes_``, defaults to value set in config.
-
-        Raises:
-            ValueError: If the export data type is not specified, raise an error
-        """
-        export_type = get_data_export_type(export_type)
-
-        if export_type is None:
-            raise ValueError(
-                "No data export type specified. Please set the export data type "
-                "by using ``qcodes.dataset.export_config.set_data_export_type`` or "
-                "give an explicit export_type when calling ``dataset.export`` manually."
-            )
-
-        _export_path = self._export_data(
-            export_type=export_type, path=path, prefix=prefix
-        )
-        export_info = self.export_info
-        if _export_path is not None:
-            export_info.export_paths[export_type.value] = os.path.abspath(_export_path)
-
-        self._set_export_info(export_info)
-
     @property
     def cache(self) -> DataSetCacheInMem:
         return self._cache
@@ -636,7 +596,6 @@ class DataSetInMem(BaseDataSet, Sized):
     @property
     def export_info(self) -> ExportInfo:
         return self._export_info
-
 
     def _enqueue_results(self, result_dict: Mapping[ParamSpecBase, np.ndarray]) -> None:
         """
