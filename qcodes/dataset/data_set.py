@@ -333,7 +333,6 @@ class DataSet(BaseDataSet):
     def run_id(self) -> int:
         return self._run_id
 
-
     @property
     def captured_run_id(self) -> int:
         run_id = select_one_where(
@@ -782,30 +781,6 @@ class DataSet(BaseDataSet):
             if writer_status.bg_writer is not None:
                 writer_status.bg_writer.shutdown()
                 writer_status.bg_writer = None
-
-    @staticmethod
-    def _validate_parameters(*params: Union[str, ParamSpec, _BaseParameter]
-                             ) -> List[str]:
-        """
-        Validate that the provided parameters have a name and return those
-        names as a list.
-        The Parameters may be a mix of strings, ParamSpecs or ordinary
-        QCoDeS parameters.
-        """
-
-        valid_param_names = []
-        for maybeParam in params:
-            if isinstance(maybeParam, str):
-                valid_param_names.append(maybeParam)
-                continue
-            else:
-                try:
-                    maybeParam = maybeParam.name
-                except Exception as e:
-                    raise ValueError(
-                        "This parameter does not have  a name") from e
-                valid_param_names.append(maybeParam)
-        return valid_param_names
 
     def get_parameter_data(
             self,
@@ -1316,28 +1291,6 @@ class DataSet(BaseDataSet):
 
         if self._in_memory_cache:
             self.cache.add_data(new_results)
-
-    @staticmethod
-    def _reshape_array_for_cache(
-            param: ParamSpecBase,
-            param_data: numpy.ndarray
-    ) -> numpy.ndarray:
-        """
-        Shape cache data so it matches data read from database.
-        This means:
-
-        - Add an extra singleton dim to array data
-        - flatten non array data into a linear array.
-        """
-        param_data = numpy.atleast_1d(param_data)
-        if param.type == "array":
-            new_data = numpy.reshape(
-                param_data,
-                (1,) + param_data.shape
-            )
-        else:
-            new_data = param_data.ravel()
-        return new_data
 
     @staticmethod
     def _finalize_res_dict_array(
