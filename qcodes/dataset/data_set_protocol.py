@@ -409,3 +409,44 @@ class BaseDataSet(DataSetProtocol):
         loaded from the db depending on the implementation.
         """
         raise NotImplementedError()
+
+    @staticmethod
+    def _validate_parameters(
+        *params: Union[str, ParamSpec, _BaseParameter]
+    ) -> List[str]:
+        """
+        Validate that the provided parameters have a name and return those
+        names as a list.
+        The Parameters may be a mix of strings, ParamSpecs or ordinary
+        QCoDeS parameters.
+        """
+
+        valid_param_names = []
+        for maybe_param in params:
+            if isinstance(maybe_param, str):
+                valid_param_names.append(maybe_param)
+            else:
+                try:
+                    maybe_param_name = maybe_param.name
+                except Exception as e:
+                    raise ValueError("This parameter does not have  a name") from e
+                valid_param_names.append(maybe_param_name)
+        return valid_param_names
+
+    @staticmethod
+    def _reshape_array_for_cache(
+        param: ParamSpecBase, param_data: np.ndarray
+    ) -> np.ndarray:
+        """
+        Shape cache data so it matches data read from database.
+        This means:
+
+        - Add an extra singleton dim to array data
+        - flatten non array data into a linear array.
+        """
+        param_data = np.atleast_1d(param_data)
+        if param.type == "array":
+            new_data = np.reshape(param_data, (1,) + param_data.shape)
+        else:
+            new_data = param_data.ravel()
+        return new_data
