@@ -286,7 +286,7 @@ class DataSetInMem(BaseDataSet):
             snapshot=loaded_data.snapshot,
         )
         ds._cache = DataSetCacheInMem(ds)
-        ds._cache._data = cls._from_xarray_dataset_to_qcodes(loaded_data)
+        ds._cache._data = cls._from_xarray_dataset_to_qcodes_raw_data(loaded_data)
 
         return ds
 
@@ -330,7 +330,9 @@ class DataSetInMem(BaseDataSet):
             try:
                 loaded_data = xr.load_dataset(xr_path, engine="h5netcdf")
                 ds._cache = DataSetCacheInMem(ds)
-                ds._cache._data = cls._from_xarray_dataset_to_qcodes(loaded_data)
+                ds._cache._data = cls._from_xarray_dataset_to_qcodes_raw_data(
+                    loaded_data
+                )
             except (
                 FileNotFoundError,
                 OSError,
@@ -344,7 +346,7 @@ class DataSetInMem(BaseDataSet):
         return ds
 
     @staticmethod
-    def _from_xarray_dataset_to_qcodes(
+    def _from_xarray_dataset_to_qcodes_raw_data(
         xr_data: xr.Dataset,
     ) -> Dict[str, Dict[str, np.ndarray]]:
         output: Dict[str, Dict[str, np.ndarray]] = {}
