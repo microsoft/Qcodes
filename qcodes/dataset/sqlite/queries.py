@@ -1453,10 +1453,10 @@ def set_run_timestamp(
 
 
 def add_parameter(
+    *parameter: ParamSpec,
     conn: ConnectionPlus,
     run_id: int,
     insert_into_results_table: bool,
-    *parameter: ParamSpec,
 ) -> None:
     """
     Add parameters to the dataset
