@@ -237,16 +237,15 @@ class DataSetInMem(BaseDataSet):
         with contextlib.closing(
             conn_from_dbpath_or_conn(conn=None, path_to_db=path_to_db)
         ) as conn:
-            run_data = (
-                cast(
-                    Dict[str, int], get_raw_run_attributes(conn, guid=loaded_data.guid)
-                )
-                or {}
-            )
+            run_data = get_raw_run_attributes(conn, guid=loaded_data.guid)
             path_to_db = conn.path_to_dbfile
 
-        run_id = run_data.get("run_id") or loaded_data.captured_run_id
-        counter = run_data.get("counter") or loaded_data.captured_counter
+        if run_data is not None:
+            run_id = run_data["run_id"]
+            counter = run_data["counter"]
+        else:
+            run_id = loaded_data.captured_run_id
+            counter = loaded_data.captured_counter
 
         path = str(path)
         path = os.path.abspath(path)
