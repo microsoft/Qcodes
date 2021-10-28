@@ -724,7 +724,7 @@ class DataSetInMem(BaseDataSet):
             values.extend(subvals)
 
         if len(values):
-            return max(values)
+            return sum(values)
         else:
             return 0
 
