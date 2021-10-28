@@ -149,7 +149,7 @@ class DataSetInMem(BaseDataSet):
             return
 
         with contextlib.closing(
-            conn_from_dbpath_or_conn(conn=None, path_to_db=self._path_to_db)
+            conn_from_dbpath_or_conn(conn=None, path_to_db=path_to_db)
         ) as conn:
             with atomic(conn) as aconn:
                 exp = load_or_create_experiment(
