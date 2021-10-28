@@ -231,8 +231,6 @@ class DataSetInMem(BaseDataSet):
         )
         if path_to_db is not None:
             path_to_db = str(path_to_db)
-        else:
-            path_to_db = get_DB_location()
 
         with contextlib.closing(
             conn_from_dbpath_or_conn(conn=None, path_to_db=path_to_db)
@@ -243,6 +241,7 @@ class DataSetInMem(BaseDataSet):
                 )
                 or {}
             )
+            path_to_db = conn.path_to_dbfile
 
         run_id = run_data.get("run_id") or loaded_data.captured_run_id
         counter = run_data.get("counter") or loaded_data.captured_counter
