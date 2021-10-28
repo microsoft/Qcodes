@@ -124,13 +124,18 @@ class DataSetInMem(BaseDataSet):
         self._metadata["export_info"] = self._export_info.to_str()
         self._snapshot_raw_data = snapshot
 
-    def _dataset_is_in_runs_table(self) -> bool:
+    def _dataset_is_in_runs_table(
+        self, path_to_db: Optional[Union[str, Path]] = None
+    ) -> bool:
         """
         Does this run exist in the given db
 
         """
+        if isinstance(path_to_db, Path):
+            path_to_db = str(path_to_db)
+
         with contextlib.closing(
-            conn_from_dbpath_or_conn(conn=None, path_to_db=self._path_to_db)
+            conn_from_dbpath_or_conn(conn=None, path_to_db=path_to_db)
         ) as conn:
             run_id = get_runid_from_guid(conn, self.guid)
         return run_id is not None
@@ -140,9 +145,7 @@ class DataSetInMem(BaseDataSet):
     ) -> None:
         from .experiment_container import load_or_create_experiment
 
-        if path_to_db is not None:
-            self._path_to_db = str(path_to_db)
-        if self._dataset_is_in_runs_table():
+        if self._dataset_is_in_runs_table(path_to_db=path_to_db):
             return
 
         with contextlib.closing(
@@ -156,6 +159,7 @@ class DataSetInMem(BaseDataSet):
                     load_last_duplicate=True,
                 )
                 _add_run_to_runs_table(self, aconn, exp.exp_id, create_run_table=False)
+            self._path_to_db = conn.path_to_dbfile
 
     @classmethod
     def create_new_run(
