@@ -20,7 +20,7 @@ from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.guids import generate_guid
 from qcodes.dataset.linked_datasets.links import Link, links_to_str
 from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic
-from qcodes.dataset.sqlite.database import conn_from_dbpath_or_conn, get_DB_location
+from qcodes.dataset.sqlite.database import conn_from_dbpath_or_conn
 from qcodes.dataset.sqlite.queries import (
     RUNS_TABLE_COLUMNS,
     add_data_to_dynamic_columns,
@@ -31,7 +31,6 @@ from qcodes.dataset.sqlite.queries import (
     get_runid_from_guid,
     get_sample_name_from_experiment_id,
     mark_run_complete,
-    raw_time_to_str_time,
     set_run_timestamp,
     update_parent_datasets,
     update_run_description,
@@ -466,18 +465,6 @@ class DataSetInMem(BaseDataSet):
     def path_to_db(self) -> Optional[str]:
         return self._path_to_db
 
-    def run_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S") -> Optional[str]:
-        """
-        Returns run timestamp in a human-readable format
-
-        The run timestamp is the moment when the measurement for this run
-        started. If the run has not yet been started, this function returns
-        None.
-
-        Consult with :func:`time.strftime` for information about the format.
-        """
-        return raw_time_to_str_time(self.run_timestamp_raw, fmt)
-
     @property
     def run_timestamp_raw(self) -> Optional[float]:
         """
@@ -487,17 +474,6 @@ class DataSetInMem(BaseDataSet):
         started.
         """
         return self._run_timestamp_raw
-
-    def completed_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S") -> Optional[str]:
-        """
-        Returns timestamp when measurement run was completed
-        in a human-readable format
-
-        If the run (or the dataset) is not completed, then returns None.
-
-        Consult with ``time.strftime`` for information about the format.
-        """
-        return raw_time_to_str_time(self.completed_timestamp_raw, fmt)
 
     @property
     def completed_timestamp_raw(self) -> Optional[float]:

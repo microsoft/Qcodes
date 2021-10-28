@@ -69,7 +69,6 @@ from qcodes.dataset.sqlite.queries import (
     get_runid_from_guid,
     get_sample_name_from_experiment_id,
     mark_run_complete,
-    raw_time_to_str_time,
     remove_trigger,
     run_exists,
     set_run_timestamp,
@@ -510,18 +509,6 @@ class DataSet(BaseDataSet):
         assert self.path_to_db is not None
         return _WRITERS[self.path_to_db]
 
-    def run_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S") -> Optional[str]:
-        """
-        Returns run timestamp in a human-readable format
-
-        The run timestamp is the moment when the measurement for this run
-        started. If the run has not yet been started, this function returns
-        None.
-
-        Consult with :func:`time.strftime` for information about the format.
-        """
-        return raw_time_to_str_time(self.run_timestamp_raw, fmt)
-
     @property
     def completed_timestamp_raw(self) -> Optional[float]:
         """
@@ -531,18 +518,6 @@ class DataSet(BaseDataSet):
         If the run (or the dataset) is not completed, then returns None.
         """
         return get_completed_timestamp_from_run_id(self.conn, self.run_id)
-
-    def completed_timestamp(self,
-                            fmt: str = "%Y-%m-%d %H:%M:%S") -> Optional[str]:
-        """
-        Returns timestamp when measurement run was completed
-        in a human-readable format
-
-        If the run (or the dataset) is not completed, then returns None.
-
-        Consult with ``time.strftime`` for information about the format.
-        """
-        return raw_time_to_str_time(self.run_timestamp_raw, fmt)
 
     def _get_run_description_from_db(self) -> RunDescriber:
         """
