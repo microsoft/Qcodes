@@ -674,7 +674,9 @@ class DataSet(BaseDataSet):
         paramspecs = new_to_old(self._rundescriber.interdeps).paramspecs
 
         for spec in paramspecs:
-            add_parameter(self.conn, self.run_id, insert_into_results_table=True, spec=spec)
+            add_parameter(
+                spec, conn=self.conn, run_id=self.run_id, insert_into_results_table=True
+            )
 
         desc_str = serial.to_json_for_storage(self.description)
 
