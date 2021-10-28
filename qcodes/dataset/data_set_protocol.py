@@ -33,6 +33,7 @@ from qcodes.instrument.parameter import _BaseParameter
 from .descriptions.versioning.converters import new_to_old
 from .exporters.export_info import ExportInfo
 from .exporters.export_to_csv import dataframe_to_csv
+from .sqlite.queries import raw_time_to_str_time
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -450,3 +451,26 @@ class BaseDataSet(DataSetProtocol):
         else:
             new_data = param_data.ravel()
         return new_data
+
+    def run_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S") -> Optional[str]:
+        """
+        Returns run timestamp in a human-readable format
+
+        The run timestamp is the moment when the measurement for this run
+        started. If the run has not yet been started, this function returns
+        None.
+
+        Consult with :func:`time.strftime` for information about the format.
+        """
+        return raw_time_to_str_time(self.run_timestamp_raw, fmt)
+
+    def completed_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S") -> Optional[str]:
+        """
+        Returns timestamp when measurement run was completed
+        in a human-readable format
+
+        If the run (or the dataset) is not completed, then returns None.
+
+        Consult with ``time.strftime`` for information about the format.
+        """
+        return raw_time_to_str_time(self.completed_timestamp_raw, fmt)
