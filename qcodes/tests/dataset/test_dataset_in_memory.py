@@ -83,7 +83,7 @@ def test_dataset_in_memory_reload_from_netcdf_complex(
     ds.export(export_type="netcdf", path=str(tmp_path))
 
     assert isinstance(ds, DataSetInMem)
-    loaded_ds = DataSetInMem.load_from_netcdf(tmp_path / "qcodes_1.nc")
+    loaded_ds = DataSetInMem._load_from_netcdf(tmp_path / "qcodes_1.nc")
     assert isinstance(loaded_ds, DataSetInMem)
     compare_datasets(ds, loaded_ds)
 
@@ -152,7 +152,7 @@ def test_dataset_in_reload_from_netcdf(meas_with_registered_param, DMM, DAC, tmp
     assert isinstance(ds, DataSetInMem)
 
     ds.export(export_type="netcdf", path=str(tmp_path))
-    loaded_ds = DataSetInMem.load_from_netcdf(tmp_path / "qcodes_1.nc")
+    loaded_ds = DataSetInMem._load_from_netcdf(tmp_path / "qcodes_1.nc")
     assert isinstance(loaded_ds, DataSetInMem)
     compare_datasets(ds, loaded_ds)
 
@@ -184,7 +184,7 @@ def test_dataset_load_from_netcdf_and_db(
     assert isinstance(ds, DataSetInMem)
 
     ds.export(export_type="netcdf", path=str(tmp_path))
-    loaded_ds = DataSetInMem.load_from_netcdf(
+    loaded_ds = DataSetInMem._load_from_netcdf(
         tmp_path / "qcodes_2.nc", path_to_db=path_to_db
     )
     assert isinstance(loaded_ds, DataSetInMem)
@@ -223,7 +223,7 @@ def test_load_from_netcdf_and_write_metadata_to_db(empty_temp_db):
     if not os.path.exists(str(netcdf_file_path)):
         pytest.skip("No netcdf fixtures found.")
 
-    ds = DataSetInMem.load_from_netcdf(netcdf_file_path)
+    ds = DataSetInMem._load_from_netcdf(netcdf_file_path)
     ds.write_metadata_to_db()
 
     loaded_ds = load_by_run_spec(captured_run_id=ds.captured_run_id)
@@ -256,7 +256,7 @@ def test_load_from_netcdf_no_db_file(non_created_db):
     if not os.path.exists(str(netcdf_file_path)):
         pytest.skip("No netcdf fixtures found.")
 
-    ds = DataSetInMem.load_from_netcdf(netcdf_file_path)
+    ds = DataSetInMem._load_from_netcdf(netcdf_file_path)
     ds.write_metadata_to_db()
     loaded_ds = load_by_run_spec(captured_run_id=ds.captured_run_id)
     assert isinstance(loaded_ds, DataSetInMem)

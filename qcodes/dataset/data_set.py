@@ -1467,7 +1467,7 @@ def load_by_id(run_id: int, conn: Optional[ConnectionPlus] = None) -> DataSetPro
     if _check_if_table_found(conn, result_table_name):
         d: DataSetProtocol = DataSet(conn=conn, run_id=run_id)
     else:
-        d = DataSetInMem.load_from_db(conn=conn, guid=guid)
+        d = DataSetInMem._load_from_db(conn=conn, guid=guid)
     return d
 
 
@@ -1566,7 +1566,7 @@ def load_by_guid(guid: str, conn: Optional[ConnectionPlus] = None) -> DataSetPro
     if _check_if_table_found(conn, result_table_name):
         d: DataSetProtocol = DataSet(conn=conn, run_id=run_id)
     else:
-        d = DataSetInMem.load_from_db(conn=conn, guid=guid)
+        d = DataSetInMem._load_from_db(conn=conn, guid=guid)
 
     return d
 
@@ -1606,7 +1606,7 @@ def load_by_counter(
     if _check_if_table_found(conn, result_table_name):
         d: DataSetProtocol = DataSet(conn=conn, run_id=run_id)
     else:
-        d = DataSetInMem.load_from_db(conn=conn, guid=guid)
+        d = DataSetInMem._load_from_db(conn=conn, guid=guid)
     return d
 
 

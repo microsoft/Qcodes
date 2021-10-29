@@ -574,7 +574,7 @@ class Runner:
                 in_memory_cache=self._in_memory_cache,
             )
         elif self._dataset_class is DataSetTypes.DataSetInMem:
-            self.ds = DataSetInMem.create_new_run(
+            self.ds = DataSetInMem._create_new_run(
                 name=self.name,
                 exp_id=exp_id,
                 path_to_db=path_to_db,

@@ -75,7 +75,8 @@ class DataSetInMem(BaseDataSet):
         """Note that the constructor is considered private.
 
         A ``DataSetInMem``
-        should be constructed either using ``create_new_run`` or ``load_from_netcdf``
+        should be constructed either using one of the load functions (``load_by_run_spec``, ``load_from_netcdf`` ...)
+        or using the measurement context manager.
         """
 
         self._run_id = run_id
@@ -151,7 +152,7 @@ class DataSetInMem(BaseDataSet):
             self._path_to_db = conn.path_to_dbfile
 
     @classmethod
-    def create_new_run(
+    def _create_new_run(
         cls,
         name: str,
         path_to_db: Optional[Union[Path, str]] = None,
@@ -193,7 +194,7 @@ class DataSetInMem(BaseDataSet):
         return ds
 
     @classmethod
-    def load_from_netcdf(
+    def _load_from_netcdf(
         cls, path: Union[Path, str], path_to_db: Optional[Union[Path, str]] = None
     ) -> DataSetInMem:
         """
@@ -279,7 +280,7 @@ class DataSetInMem(BaseDataSet):
         return ds
 
     @classmethod
-    def load_from_db(cls, conn: ConnectionPlus, guid: str) -> DataSetInMem:
+    def _load_from_db(cls, conn: ConnectionPlus, guid: str) -> DataSetInMem:
 
         run_attributes = get_raw_run_attributes(conn, guid)
         if run_attributes is None:
@@ -802,4 +803,4 @@ def load_from_netcdf(
     Returns:
         The loaded dataset.
     """
-    return DataSetInMem.load_from_netcdf(path=path, path_to_db=path_to_db)
+    return DataSetInMem._load_from_netcdf(path=path, path_to_db=path_to_db)
