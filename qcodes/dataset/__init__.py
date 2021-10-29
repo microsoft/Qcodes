@@ -10,6 +10,7 @@ from .data_set import (
     new_data_set,
 )
 from .data_set_in_memory import load_from_netcdf
+from .data_set_protocol import DataSetProtocol, DataSetTypes
 from .descriptions.param_spec import ParamSpec
 from .experiment_container import (
     experiments,

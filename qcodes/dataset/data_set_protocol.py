@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from enum import Enum
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -474,3 +475,9 @@ class BaseDataSet(DataSetProtocol):
         Consult with ``time.strftime`` for information about the format.
         """
         return raw_time_to_str_time(self.completed_timestamp_raw, fmt)
+
+
+class DataSetTypes(str, Enum):
+
+    DataSet = "DataSet"
+    DataSetInMem = "DataSetInMem"
