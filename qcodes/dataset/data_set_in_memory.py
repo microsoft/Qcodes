@@ -280,7 +280,6 @@ class DataSetInMem(BaseDataSet):
 
     @classmethod
     def load_from_db(cls, conn: ConnectionPlus, guid: str) -> DataSetInMem:
-        import xarray as xr
 
         run_attributes = get_raw_run_attributes(conn, guid)
         if run_attributes is None:
@@ -314,6 +313,14 @@ class DataSetInMem(BaseDataSet):
         )
         xr_path = export_info.export_paths.get("nc")
 
+        cls._set_cache_from_netcdf(ds, xr_path)
+        return ds
+
+    @classmethod
+    def _set_cache_from_netcdf(cls, ds: DataSetInMem, xr_path: Optional[str]) -> bool:
+        import xarray as xr
+
+        success = True
         if xr_path is not None:
             try:
                 loaded_data = xr.load_dataset(xr_path, engine="h5netcdf")
@@ -325,13 +332,35 @@ class DataSetInMem(BaseDataSet):
                 FileNotFoundError,
                 OSError,
             ):  # older versions of h5py may throw a OSError here
+                success = False
                 warnings.warn(
                     "Could not load raw data for dataset with guid :"
-                    f"{guid} from location {xr_path}"
+                    f"{ds.guid} from location {xr_path}"
                 )
         else:
-            warnings.warn(f"No raw data stored for dataset with guid : {guid}")
-        return ds
+            warnings.warn(f"No raw data stored for dataset with guid : {ds.guid}")
+            success = False
+        return success
+
+    def set_netcdf_location(self, path: Union[str, Path]) -> None:
+        """
+        Change the location that a DataSetInMem refers to and
+        load the raw data into the cache from this location.
+
+        This may be useful if loading the dataset from a database raises a warning
+        since the location of the raw data has moved. If this is the case you may
+        be able to use this method to update the metadata in the database to refer to
+        the new location.
+        """
+        if isinstance(path, Path):
+            path = str(path)
+        data_loaded = self._set_cache_from_netcdf(self, path)
+        if data_loaded:
+            export_info = self.export_info
+            export_info.export_paths["nc"] = path
+            self._set_export_info(export_info)
+        else:
+            raise FileNotFoundError(f"Could not load a netcdf file from {path}")
 
     @staticmethod
     def _from_xarray_dataset_to_qcodes_raw_data(

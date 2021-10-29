@@ -1,4 +1,5 @@
 import os
+import shutil
 import sqlite3
 from pathlib import Path
 
@@ -282,8 +283,6 @@ def test_load_from_db(meas_with_registered_param, DMM, DAC, tmp_path):
     assert loaded_ds.metadata == ds.metadata
 
     assert "foo" in loaded_ds.metadata.keys()
-    # todo do we want this. e.g. should metadata contain
-    # export info even if this is accessible in other way
     assert "export_info" in loaded_ds.metadata.keys()
 
     compare_datasets(ds, loaded_ds)
@@ -301,3 +300,41 @@ def compare_datasets(ds, loaded_ds):
     loaded_xds = loaded_ds.cache.to_xarray_dataset()
     assert xds.sizes == loaded_xds.sizes
     assert all(xds == loaded_xds)
+
+
+def test_load_from_db_dataset_moved(meas_with_registered_param, DMM, DAC, tmp_path):
+    Station(DAC, DMM)
+    with meas_with_registered_param.run(
+        dataset_class=DataSetTypes.DataSetInMem
+    ) as datasaver:
+        for set_v in np.linspace(0, 25, 10):
+            DAC.ch1.set(set_v)
+            get_v = DMM.v1()
+            datasaver.add_result((DAC.ch1, set_v), (DMM.v1, get_v))
+
+    ds = datasaver.dataset
+    ds.add_metadata("foo", "bar")
+    ds.export(export_type="netcdf", path=tmp_path)
+
+    export_path = ds.export_info.export_paths["nc"]
+    new_path = str(Path(export_path).parent / "someotherfilename.nc")
+
+    shutil.move(export_path, new_path)
+
+    with pytest.warns(
+        UserWarning, match="Could not load raw data for dataset with guid"
+    ):
+        loaded_ds = load_by_id(ds.run_id)
+
+    assert isinstance(loaded_ds, DataSetInMem)
+    assert loaded_ds.snapshot == ds.snapshot
+    assert loaded_ds.export_info == ds.export_info
+    assert loaded_ds.metadata == ds.metadata
+
+    assert "foo" in loaded_ds.metadata.keys()
+    assert "export_info" in loaded_ds.metadata.keys()
+    assert loaded_ds.cache.data() == {}
+
+    loaded_ds.set_netcdf_location(new_path)
+
+    assert loaded_ds.cache.data().keys() == ds.cache.data().keys()
