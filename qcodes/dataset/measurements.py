@@ -40,6 +40,7 @@ from qcodes.dataset.data_set import VALUE, DataSet, load_by_guid
 from qcodes.dataset.data_set_in_memory import DataSetInMem
 from qcodes.dataset.data_set_protocol import (
     DataSetProtocol,
+    DataSetTypes,
     res_type,
     setpoints_type,
     values_type,
@@ -503,7 +504,7 @@ class Runner:
         write_in_background: bool = False,
         shapes: Optional[Shapes] = None,
         in_memory_cache: bool = True,
-        dataset_class: Type[DataSetProtocol] = DataSet,
+        dataset_class: DataSetTypes = DataSetTypes.DataSet,
     ) -> None:
 
         self._dataset_class = dataset_class
@@ -565,17 +566,15 @@ class Runner:
             path_to_db = None
             conn = None
 
-        if self._dataset_class is DataSet:
-            dataset_class = cast(Type[DataSet], self._dataset_class)
-            self.ds = dataset_class(
+        if self._dataset_class is DataSetTypes.DataSet:
+            self.ds = DataSet(
                 name=self.name,
                 exp_id=exp_id,
                 conn=conn,
                 in_memory_cache=self._in_memory_cache,
             )
-        elif self._dataset_class is DataSetInMem:
-            dataset_class = cast(Type[DataSetInMem], self._dataset_class)
-            self.ds = dataset_class.create_new_run(
+        elif self._dataset_class is DataSetTypes.DataSetInMem:
+            self.ds = DataSetInMem.create_new_run(
                 name=self.name,
                 exp_id=exp_id,
                 path_to_db=path_to_db,
@@ -1200,7 +1199,7 @@ class Measurement:
         self,
         write_in_background: Optional[bool] = None,
         in_memory_cache: bool = True,
-        dataset_class: Type[DataSetProtocol] = DataSet,
+        dataset_class: DataSetTypes = DataSetTypes.DataSet,
     ) -> Runner:
         """
         Returns the context manager for the experimental run
@@ -1214,8 +1213,8 @@ class Measurement:
                 read from the ``qcodesrc.json`` config file.
             in_memory_cache: Should measured data be keep in memory
                 and available as part of the `dataset.cache` object.
-            dataset_class: Class implementing the dataset protocol interface
-                used to store the data.
+            dataset_class: Enum representing the Class used to store data
+                with.
         """
         if write_in_background is None:
             write_in_background = qc.config.dataset.write_in_background
