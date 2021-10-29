@@ -50,6 +50,7 @@ def test_write_metadata_to_explicit_db(empty_temp_db):
     ds = DataSetInMem._create_new_run(name="foo")
     assert ds._parameters is None
     assert ds.path_to_db == default_db_location
+    ds.export("netcdf")
     ds.write_metadata_to_db(path_to_db=extra_db_location)
     loaded_ds = load_by_guid(ds.guid, conn=connect(extra_db_location))
 
