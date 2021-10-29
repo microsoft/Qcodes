@@ -753,3 +753,24 @@ class DataSetInMem(BaseDataSet):
 
     def _get_data_as_xr_ds_for_export(self) -> xr.Dataset:
         return self.cache.to_xarray_dataset()
+
+
+def load_from_netcdf(
+    path: Union[Path, str], path_to_db: Optional[Union[Path, str]]
+) -> DataSetInMem:
+    """
+    Create a in memory dataset from a netcdf file.
+    The netcdf file is expected to contain a QCoDeS dataset that
+    has been exported using the QCoDeS netcdf export functions.
+
+
+    Args:
+        path: Path to the netcdf file to import.
+        path_to_db: Optional path to a database where this dataset may be
+         exported to. If not supplied the path can be given at export time
+         or the dataset exported to the default db as set in the QCoDeS config.
+
+    Returns:
+        The loaded dataset.
+    """
+    return DataSetInMem.load_from_netcdf(path=path, path_to_db=path_to_db)
