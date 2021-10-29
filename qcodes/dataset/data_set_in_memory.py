@@ -756,7 +756,7 @@ class DataSetInMem(BaseDataSet):
 
 
 def load_from_netcdf(
-    path: Union[Path, str], path_to_db: Optional[Union[Path, str]]
+    path: Union[Path, str], path_to_db: Optional[Union[Path, str]] = None
 ) -> DataSetInMem:
     """
     Create a in memory dataset from a netcdf file.
