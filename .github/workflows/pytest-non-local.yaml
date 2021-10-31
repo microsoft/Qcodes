@@ -12,7 +12,7 @@ on:
   pull_request:
 
 jobs:
-  build:
+  pytestnonlocal:
 
     runs-on: ubuntu-latest
     strategy:

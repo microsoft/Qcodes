@@ -12,7 +12,7 @@ on:
   pull_request:
 
 jobs:
-  build:
+  pytestconda:
 
     runs-on: ${{ matrix.os }}
     strategy:
