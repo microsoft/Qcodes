@@ -17,7 +17,7 @@ mypy==0.910
 mypy-extensions==0.4.3
 numpy==1.21.3
 ordered-set==4.0.2
-packaging==21.0
+packaging==21.2
 pluggy==1.0.0
 py==1.10.0
 pyparsing==3.0.3
