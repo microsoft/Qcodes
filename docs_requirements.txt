@@ -23,7 +23,7 @@ ipywidgets==7.6.5
 jedi==0.18.0
 Jinja2==3.0.2
 jsonpointer==2.1
-jsonschema==4.1.0
+jsonschema==4.1.2
 jupyter==1.0.0
 jupyter-client==7.0.6
 jupyter-console==6.4.0
@@ -44,7 +44,7 @@ pandocfilters==1.5.0
 parso==0.8.2
 pickleshare==0.7.5
 prometheus-client==0.11.0
-prompt-toolkit==3.0.20
+prompt-toolkit==3.0.21
 pycparser==2.20
 Pygments==2.10.0
 pyparsing==2.4.7
