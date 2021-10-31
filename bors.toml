@@ -1,3 +1,13 @@
 status = [
-  "pytestnonlocal", "pytestconda", "builddocs", "pytestmypy", "pytestmin"
+  "pytestnonlocal (3.7)", 
+  "pytestconda (ubuntu-latest)",
+  "pytestconda (windows-latest)",
+  "builddocs (ubuntu-latest, 3.7)",
+  "builddocs (ubuntu-latest, 3.8)",
+  "builddocs (ubuntu-latest, 3.9)",
+  "builddocs (windows-latest, 3.7)",
+  "pytestmypy (ubuntu-latest, 3.7)", 
+  "pytestmypy (ubuntu-latest, 3.8)", 
+  "pytestmypy (ubuntu-latest, 3.9)", 
+  "pytestmin (ubuntu-latest, 3.7)"
 ]
