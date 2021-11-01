@@ -10,7 +10,7 @@ on:
   pull_request:
 
 jobs:
-  build:
+  pytestmin:
 
     runs-on: ${{ matrix.os }}
     strategy:
