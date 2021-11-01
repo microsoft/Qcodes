@@ -222,6 +222,40 @@ class DataSetProtocol(Protocol, Sized):
         # used by plottr
         pass
 
+    # exporters to other in memory formats
+
+    def to_xarray_dataarray_dict(
+        self,
+        *params: Union[str, ParamSpec, _BaseParameter],
+        start: Optional[int] = None,
+        end: Optional[int] = None,
+    ) -> Dict[str, xr.DataArray]:
+        pass
+
+    def to_xarray_dataset(
+        self,
+        *params: Union[str, ParamSpec, _BaseParameter],
+        start: Optional[int] = None,
+        end: Optional[int] = None,
+    ) -> xr.Dataset:
+        pass
+
+    def to_pandas_dataframe_dict(
+        self,
+        *params: Union[str, ParamSpec, _BaseParameter],
+        start: Optional[int] = None,
+        end: Optional[int] = None,
+    ) -> Dict[str, pd.DataFrame]:
+        pass
+
+    def to_pandas_dataframe(
+        self,
+        *params: Union[str, ParamSpec, _BaseParameter],
+        start: Optional[int] = None,
+        end: Optional[int] = None,
+    ) -> pd.DataFrame:
+        pass
+
     # private members called by various other parts or the api
 
     def _enqueue_results(self, result_dict: Mapping[ParamSpecBase, np.ndarray]) -> None:

@@ -37,6 +37,7 @@ from qcodes.dataset.sqlite.queries import (
 )
 from qcodes.utils.helpers import NumpyJSONEncoder
 
+from ..instrument.parameter import _BaseParameter
 from .data_set_cache import DataSetCacheInMem
 from .dataset_helpers import _add_run_to_runs_table
 from .descriptions.versioning import serialization as serial
@@ -777,6 +778,55 @@ class DataSetInMem(BaseDataSet):
             return ",".join(psnames)
         else:
             return None
+
+    def to_xarray_dataarray_dict(
+        self,
+        *params: Union[str, ParamSpec, _BaseParameter],
+        start: Optional[int] = None,
+        end: Optional[int] = None,
+    ) -> Dict[str, xr.DataArray]:
+        self._warn_if_set(*params, start=start, end=end)
+        return self.cache.to_xarray_dataarray_dict()
+
+    def to_xarray_dataset(
+        self,
+        *params: Union[str, ParamSpec, _BaseParameter],
+        start: Optional[int] = None,
+        end: Optional[int] = None,
+    ) -> xr.Dataset:
+        self._warn_if_set(*params, start=start, end=end)
+        return self.cache.to_xarray_dataset()
+
+    def to_pandas_dataframe_dict(
+        self,
+        *params: Union[str, ParamSpec, _BaseParameter],
+        start: Optional[int] = None,
+        end: Optional[int] = None,
+    ) -> Dict[str, pd.DataFrame]:
+        self._warn_if_set(*params, start=start, end=end)
+        return self.cache.to_pandas_dataframe_dict()
+
+    def to_pandas_dataframe(
+        self,
+        *params: Union[str, ParamSpec, _BaseParameter],
+        start: Optional[int] = None,
+        end: Optional[int] = None,
+    ) -> pd.DataFrame:
+        self._warn_if_set(*params, start=start, end=end)
+        return self.cache.to_pandas_dataframe()
+
+    @staticmethod
+    def _warn_if_set(
+        *params: Union[str, ParamSpec, _BaseParameter],
+        start: Optional[int] = None,
+        end: Optional[int],
+    ) -> None:
+        if len(params) > 0 or start is not None or end is not None:
+            warnings.warn(
+                "Passing params, start or stop to to_xarray_... and "
+                "to_pandas_... methods has no effect for DataSetInMem. "
+                "This will be an error in the future."
+            )
 
     def _get_data_as_pd_dict_for_export(self) -> Dict[str, pd.DataFrame]:
         return self.cache.to_pandas_dataframe_dict()
