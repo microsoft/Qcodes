@@ -84,7 +84,11 @@ from qcodes.dataset.sqlite.query_helpers import (
     select_one_where,
 )
 from qcodes.instrument.parameter import _BaseParameter
-from qcodes.utils.deprecate import deprecate, issue_deprecation_warning
+from qcodes.utils.deprecate import (
+    QCoDeSDeprecationWarning,
+    deprecate,
+    issue_deprecation_warning,
+)
 from qcodes.utils.helpers import NumpyJSONEncoder
 
 from .data_set_cache import DataSetCacheWithDBBackend
@@ -859,6 +863,7 @@ class DataSet(BaseDataSet):
             a column and a indexed by a :py:class:`pandas.MultiIndex` formed
             by the dependencies.
         """
+        self._warn_if_set(*params, start=start, end=end)
         datadict = self.get_parameter_data(*params,
                                            start=start,
                                            end=end)
@@ -956,6 +961,7 @@ class DataSet(BaseDataSet):
             Return a pandas DataFrame with
                 df = ds.to_pandas_dataframe()
         """
+        self._warn_if_set(*params, start=start, end=end)
         datadict = self.get_parameter_data(*params,
                                            start=start,
                                            end=end)
@@ -1008,6 +1014,7 @@ class DataSet(BaseDataSet):
 
                 dataarray_dict = ds.to_xarray_dataarray_dict()
         """
+        self._warn_if_set(*params, start=start, end=end)
         data = self.get_parameter_data(*params,
                                        start=start,
                                        end=end)
@@ -1057,6 +1064,7 @@ class DataSet(BaseDataSet):
 
                 xds = ds.to_xarray_dataset()
         """
+        self._warn_if_set(*params, start=start, end=end)
         data = self.get_parameter_data(*params,
                                        start=start,
                                        end=end)
@@ -1425,6 +1433,20 @@ class DataSet(BaseDataSet):
     @property
     def export_info(self) -> ExportInfo:
         return self._export_info
+
+    @staticmethod
+    def _warn_if_set(
+        *params: Union[str, ParamSpec, _BaseParameter],
+        start: Optional[int] = None,
+        end: Optional[int],
+    ) -> None:
+        if len(params) > 0 or start is not None or end is not None:
+            QCoDeSDeprecationWarning(
+                "Passing params, start or stop to to_xarray_... and "
+                "to_pandas_... methods is deprecated "
+                "This will be an error in the future. "
+                "If you need to sub-select use `dataset.get_parameter_data`"
+            )
 
 
 # public api
