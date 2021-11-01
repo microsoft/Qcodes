@@ -828,12 +828,6 @@ class DataSetInMem(BaseDataSet):
                 "This will be an error in the future."
             )
 
-    def _get_data_as_pd_dict_for_export(self) -> Dict[str, pd.DataFrame]:
-        return self.cache.to_pandas_dataframe_dict()
-
-    def _get_data_as_xr_ds_for_export(self) -> xr.Dataset:
-        return self.cache.to_xarray_dataset()
-
 
 def load_from_netcdf(
     path: Union[Path, str], path_to_db: Optional[Union[Path, str]] = None

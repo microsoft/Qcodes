@@ -1426,11 +1426,6 @@ class DataSet(BaseDataSet):
     def export_info(self) -> ExportInfo:
         return self._export_info
 
-    def _get_data_as_pd_dict_for_export(self) -> Dict[str, pd.DataFrame]:
-        return self.to_pandas_dataframe_dict()
-
-    def _get_data_as_xr_ds_for_export(self) -> "xr.Dataset":
-        return self.to_xarray_dataset()
 
 # public api
 def load_by_id(run_id: int, conn: Optional[ConnectionPlus] = None) -> DataSetProtocol:

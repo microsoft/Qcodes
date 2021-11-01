@@ -403,7 +403,7 @@ class BaseDataSet(DataSetProtocol):
     def _export_as_netcdf(self, path: str, file_name: str) -> str:
         """Export data as netcdf to a given path with file prefix"""
         file_path = os.path.join(path, file_name)
-        xarr_dataset = self._get_data_as_xr_ds_for_export()
+        xarr_dataset = self.to_xarray_dataset()
         data_var_kinds = [
             xarr_dataset.data_vars[data_var].dtype.kind
             for data_var in xarr_dataset.data_vars
@@ -423,7 +423,7 @@ class BaseDataSet(DataSetProtocol):
 
     def _export_as_csv(self, path: str, file_name: str) -> str:
         """Export data as csv to a given path with file prefix."""
-        dfdict = self._get_data_as_pd_dict_for_export()
+        dfdict = self.to_pandas_dataframe_dict()
         dataframe_to_csv(
             dfdict=dfdict,
             path=path,
@@ -431,20 +431,6 @@ class BaseDataSet(DataSetProtocol):
             single_file_name=file_name,
         )
         return os.path.join(path, file_name)
-
-    def _get_data_as_pd_dict_for_export(self) -> Dict[str, pd.DataFrame]:
-        """
-        Abstract over the fact that preferred source of data may be cache or
-        loaded from the db depending on the implementation
-        """
-        raise NotImplementedError()
-
-    def _get_data_as_xr_ds_for_export(self) -> xr.Dataset:
-        """
-        Abstract over the fact that preferred source of data may be cache or
-        loaded from the db depending on the implementation.
-        """
-        raise NotImplementedError()
 
     @staticmethod
     def _validate_parameters(
