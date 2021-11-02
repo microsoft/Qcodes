@@ -22,6 +22,7 @@ from typing import (
 )
 
 import numpy as np
+from typing_extensions import TypedDict
 
 import qcodes as qc
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
@@ -38,6 +39,7 @@ from qcodes.dataset.sqlite.connection import (
     transaction,
 )
 from qcodes.dataset.sqlite.query_helpers import (
+    VALUE,
     VALUES,
     insert_column,
     insert_values,
@@ -61,7 +63,7 @@ _unicode_categories = ('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nd', 'Pc', 'Pd', 'Zs')
 
 # in the current version, these are the standard columns of the "runs" table
 # Everything else is metadata
-RUNS_TABLE_COLUMNS = [
+RUNS_TABLE_COLUMNS = (
     "run_id",
     "exp_id",
     "name",
@@ -77,7 +79,7 @@ RUNS_TABLE_COLUMNS = [
     "parent_datasets",
     "captured_run_id",
     "captured_counter",
-]
+)
 
 
 def is_run_id_in_database(conn: ConnectionPlus,
@@ -573,7 +575,7 @@ def get_runid_from_expid_and_counter(conn: ConnectionPlus, exp_id: int,
     return run_id
 
 
-def get_runid_from_guid(conn: ConnectionPlus, guid: str) -> Union[int, None]:
+def get_runid_from_guid(conn: ConnectionPlus, guid: str) -> Optional[int]:
     """
     Get the run_id of a run based on the guid
 
@@ -582,10 +584,10 @@ def get_runid_from_guid(conn: ConnectionPlus, guid: str) -> Union[int, None]:
         guid: the guid to look up
 
     Returns:
-        The run_id if found, else -1.
+        The run_id if found, else None
 
     Raises:
-        RuntimeError if more than one run with the given    GUID exists
+        RuntimeError if more than one run with the given GUID exists
     """
     query = """
             SELECT run_id
@@ -596,7 +598,7 @@ def get_runid_from_guid(conn: ConnectionPlus, guid: str) -> Union[int, None]:
     cursor.execute(query, (guid,))
     rows = cursor.fetchall()
     if len(rows) == 0:
-        run_id = -1
+        run_id = None
     elif len(rows) > 1:
         errormssg = ('Critical consistency error: multiple runs with'
                      f' the same GUID found! {len(rows)} runs have GUID '
@@ -825,7 +827,8 @@ def completed(conn: ConnectionPlus, run_id: int) -> bool:
 
 
 def get_completed_timestamp_from_run_id(
-        conn: ConnectionPlus, run_id: int) -> float:
+    conn: ConnectionPlus, run_id: int
+) -> Optional[float]:
     """
     Retrieve the timestamp when the given measurement run was completed
 
@@ -839,13 +842,14 @@ def get_completed_timestamp_from_run_id(
     Returns:
         timestamp in seconds since the Epoch, or None
     """
-    return select_one_where(conn, "runs", "completed_timestamp",
-                            "run_id", run_id)
+    ts = select_one_where(conn, "runs", "completed_timestamp", "run_id", run_id)
+    assert isinstance(ts, (float, type(None)))
+    return ts
 
 
-def get_guid_from_run_id(conn: ConnectionPlus, run_id: int) -> str:
+def get_guid_from_run_id(conn: ConnectionPlus, run_id: int) -> Optional[str]:
     """
-    Get the guid of the given run
+    Get the guid of the given run. Returns None if the run is not found
 
     Args:
         conn: database connection
@@ -854,7 +858,12 @@ def get_guid_from_run_id(conn: ConnectionPlus, run_id: int) -> str:
     Returns:
         The guid of the run_id.
     """
-    return select_one_where(conn, "runs", "guid", "run_id", run_id)
+    try:
+        guid = select_one_where(conn, "runs", "guid", "run_id", run_id)
+    except RuntimeError:
+        return None
+    assert isinstance(guid, str)
+    return guid
 
 
 def get_guids_from_multiple_run_ids(
@@ -875,8 +884,8 @@ def get_guids_from_multiple_run_ids(
     guids: List[str] = []
 
     for run_id in run_ids:
-        if run_exists(conn=conn, run_id=run_id):
-            run_id_guid = get_guid_from_run_id(conn=conn, run_id=run_id)
+        run_id_guid = get_guid_from_run_id(conn=conn, run_id=run_id)
+        if run_id_guid is not None:
             guids.append(run_id_guid)
         else:
             raise RuntimeError(f"run id {run_id} does not exist in the database")
@@ -906,11 +915,15 @@ def get_run_counter(conn: ConnectionPlus, exp_id: int) -> int:
 
     Returns:
         the experiment run counter
+    Raises:
+        RuntimeError if the experiment is not found.
 
     """
-    return select_one_where(conn, "experiments", "run_counter",
-                            where_column="exp_id",
-                            where_value=exp_id)
+    counter = select_one_where(
+        conn, "experiments", "run_counter", where_column="exp_id", where_value=exp_id
+    )
+    assert isinstance(counter, int)
+    return counter
 
 
 def get_experiments(conn: ConnectionPlus) -> List[sqlite3.Row]:
@@ -1129,6 +1142,8 @@ def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
                                                    "format_string",
                                                    where_column="exp_id",
                                                    where_value=exp_id)
+    assert isinstance(run_counter, int)
+    assert isinstance(format_string, str)
     run_counter += 1
     if captured_counter is None:
         with atomic(conn) as conn:
@@ -1630,7 +1645,7 @@ def create_run(conn: ConnectionPlus, exp_id: int, name: str,
                                                           captured_counter,
                                                           parent_dataset_links)
         if metadata:
-            add_meta_data(conn, run_id, metadata)
+            add_data_to_dynamic_columns(conn, run_id, metadata)
         _update_experiment_run_counter(conn, exp_id, run_counter)
         _create_run_table(conn, formatted_name, parameters, values)
 
@@ -1641,8 +1656,9 @@ def get_run_description(conn: ConnectionPlus, run_id: int) -> str:
     """
     Return the (JSON string) run description of the specified run
     """
-    return select_one_where(conn, "runs", "run_description",
-                            "run_id", run_id)
+    rds = select_one_where(conn, "runs", "run_description", "run_id", run_id)
+    assert isinstance(rds, str)
+    return rds
 
 
 def get_parent_dataset_links(conn: ConnectionPlus, run_id: int) -> str:
@@ -1660,8 +1676,11 @@ def get_parent_dataset_links(conn: ConnectionPlus, run_id: int) -> str:
     if not is_column_in_table(conn, 'runs', 'parent_datasets'):
         maybe_link_str = None
     else:
-        maybe_link_str = select_one_where(conn, "runs", "parent_datasets",
-                                           "run_id", run_id)
+        maybe_mayby_link_str = select_one_where(
+            conn, "runs", "parent_datasets", "run_id", run_id
+        )
+        assert isinstance(maybe_mayby_link_str, (str, type(None)))
+        maybe_link_str = maybe_mayby_link_str
 
     if maybe_link_str is None:
         link_str = "[]"
@@ -1671,11 +1690,26 @@ def get_parent_dataset_links(conn: ConnectionPlus, run_id: int) -> str:
     return link_str
 
 
-def get_metadata(conn: ConnectionPlus, tag: str, table_name: str) -> str:
-    """ Get metadata under the tag from table
+def get_data_by_tag_and_table_name(
+    conn: ConnectionPlus, tag: str, table_name: str
+) -> Optional[VALUE]:
     """
-    return select_one_where(conn, "runs", tag,
-                            "result_table_name", table_name)
+    Get data from the "tag" column for the row in "runs" table where
+    "result_table_name" matches "table_name".
+    Returns None if the "tag" column is missing in "runs" table.
+    """
+    try:
+        data = select_one_where(conn, "runs", tag, "result_table_name", table_name)
+    except RuntimeError as e:
+        # all errors trigger an runtime error here since select_one_where is wrapped
+        # in an atomic that will do a rollback
+        # this probably just means that the column is not there
+        # and therefore it contains no data
+        if str(e.__cause__).startswith("no such column"):
+            data = None
+        else:
+            raise e
+    return data
 
 
 def get_metadata_from_run_id(
@@ -1712,100 +1746,111 @@ def get_metadata_from_run_id(
     return metadata
 
 
-def validate_meta_data(metadata: Mapping[str, Any]) -> None:
+def validate_dynamic_column_data(data: Mapping[str, Any]) -> None:
     """
-    Validate metadata tags and values. Note that None is not a valid
-    metadata value, and keys should be valid SQLite column names
+    Validate the given dicts tags and values. Note that None is not a valid
+    value, and keys should be valid SQLite column names
     (i.e. contain only alphanumeric characters and underscores).
 
     Args:
-        metadata: the metadata mapping (tags to values)
+        data: the metadata mapping (tags to values)
     """
-    for tag, val in metadata.items():
+    for tag, val in data.items():
         if not tag.isidentifier():
-            raise KeyError(f'Tag {tag} is not a valid tag. '
-                            'Use only alphanumeric characters and underscores!')
+            raise KeyError(
+                f"Tag {tag} is not a valid tag. "
+                "Use only alphanumeric characters and underscores!"
+            )
         if val is None:
-            raise ValueError(f'Tag {tag} has value None. '
-                              'That is not a valid metadata value!')
+            raise ValueError(
+                f"Tag {tag} has value None. That is not a valid metadata value!"
+            )
 
 
-def insert_meta_data(conn: ConnectionPlus, row_id: int, table_name: str,
-                     metadata: Mapping[str, Any]) -> None:
+def insert_data_in_dynamic_columns(
+    conn: ConnectionPlus, row_id: int, table_name: str, data: Mapping[str, Any]
+) -> None:
     """
-    Insert new metadata column and add values. Note that None is not a valid
-    metadata value, and keys should be valid SQLite column names
+    Insert new data column and add values. Note that None is not a valid
+    value, and keys should be valid SQLite column names
     (i.e. contain only alphanumeric characters and underscores).
 
     Args:
         - conn: the connection to the sqlite database
         - row_id: the row to add the metadata at
         - table_name: the table to add to, defaults to runs
-        - metadata: the metadata to add
+        - data: A mapping from columns to data to add
     """
-    validate_meta_data(metadata)
-    for key in metadata.keys():
+    validate_dynamic_column_data(data)
+    for key in data.keys():
         insert_column(conn, table_name, key)
-    update_meta_data(conn, row_id, table_name, metadata)
+    update_columns(conn, row_id, table_name, data)
 
 
-def update_meta_data(conn: ConnectionPlus, row_id: int, table_name: str,
-                     metadata: Mapping[str, Any]) -> None:
+def update_columns(
+    conn: ConnectionPlus, row_id: int, table_name: str, data: Mapping[str, Any]
+) -> None:
     """
-    Updates metadata (they must exist already)
+    Updates data in columns matching the given keys (they must exist already)
 
     Args:
         - conn: the connection to the sqlite database
         - row_id: the row to add the metadata at
         - table_name: the table to add to, defaults to runs
-        - metadata: the metadata to add
+        - data: the data to add
     """
-    validate_meta_data(metadata)
-    update_where(conn, table_name, 'rowid', row_id, **metadata)
+    validate_dynamic_column_data(data)
+    update_where(conn, table_name, "rowid", row_id, **data)
 
 
-def add_meta_data(conn: ConnectionPlus,
-                  row_id: int,
-                  metadata: Mapping[str, Any],
-                  table_name: str = "runs") -> None:
+def add_data_to_dynamic_columns(
+    conn: ConnectionPlus, row_id: int, data: Mapping[str, Any], table_name: str = "runs"
+) -> None:
     """
-    Add metadata data (updates if exists, create otherwise).
-    Note that None is not a valid metadata value, and keys
+    Add columns from keys and insert values.
+    (updates if exists, creates otherwise)
+
+    Note that None is not a valid value, and keys
     should be valid SQLite column names (i.e. contain only
     alphanumeric characters and underscores).
 
     Args:
         - conn: the connection to the sqlite database
         - row_id: the row to add the metadata at
-        - metadata: the metadata to add
+        - data: the data to add
         - table_name: the table to add to, defaults to runs
     """
     try:
-        insert_meta_data(conn, row_id, table_name, metadata)
+        insert_data_in_dynamic_columns(conn, row_id, table_name, data)
     except sqlite3.OperationalError as e:
         # this means that the column already exists
         # so just insert the new value
         if str(e).startswith("duplicate"):
-            update_meta_data(conn, row_id, table_name, metadata)
+            update_columns(conn, row_id, table_name, data)
         else:
             raise e
 
 
-def get_experiment_name_from_experiment_id(
-        conn: ConnectionPlus, exp_id: int) -> str:
-    return select_one_where(
-        conn, "experiments", "name", "exp_id", exp_id)
+def get_experiment_name_from_experiment_id(conn: ConnectionPlus, exp_id: int) -> str:
+    exp_name = select_one_where(conn, "experiments", "name", "exp_id", exp_id)
+    assert isinstance(exp_name, str)
+    return exp_name
 
 
-def get_sample_name_from_experiment_id(
-        conn: ConnectionPlus, exp_id: int) -> str:
-    return select_one_where(
-        conn, "experiments", "sample_name", "exp_id", exp_id)
+def get_sample_name_from_experiment_id(conn: ConnectionPlus, exp_id: int) -> str:
+    sample_name = select_one_where(conn, "experiments", "sample_name", "exp_id", exp_id)
+    assert isinstance(sample_name, (str, type(None)))
+    # there may be a few cases for very old db where None is returned as a sample name
+    # however, these probably do not exist in relaity outside that test so here we
+    # cast to str. See test_experiments_with_NULL_sample_name
+    return cast(str, sample_name)
 
 
 def get_run_timestamp_from_run_id(conn: ConnectionPlus,
                                   run_id: int) -> Optional[float]:
-    return select_one_where(conn, "runs", "run_timestamp", "run_id", run_id)
+    time_stamp = select_one_where(conn, "runs", "run_timestamp", "run_id", run_id)
+    assert isinstance(time_stamp, (float, type(None)))
+    return time_stamp
 
 
 def update_GUIDs(conn: ConnectionPlus) -> None:
@@ -1878,6 +1923,7 @@ def update_GUIDs(conn: ConnectionPlus) -> None:
 
     for run_id in range(1, no_of_runs+1):
         guid_str = get_guid_from_run_id(conn, run_id)
+        assert guid_str is not None
         guid_comps = parse_guid(guid_str)
         loc = guid_comps['location']
         ws = guid_comps['work_station']
@@ -1939,3 +1985,171 @@ def load_new_data_for_rundescriber(
         new_data_dict[meas_parameter] = new_data
         updated_read_status[meas_parameter] = start + n_rows_read - 1
     return new_data_dict, updated_read_status
+
+
+class ExperimentAttributeDict(TypedDict):
+    exp_id: int
+    name: str
+    sample_name: str
+    start_time: float
+    end_time: Optional[float]
+    format_string: str
+
+
+def get_experiment_attributes_by_exp_id(
+    conn: ConnectionPlus, exp_id: int
+) -> ExperimentAttributeDict:
+    """
+    Return a dict of all attributes describing an experiment from the exp_id.
+
+    Args:
+        conn: The connection to the sqlite database
+        exp_id: the id of the experiment
+
+    Returns:
+        A dictionary of the experiment attributes.
+    """
+    exp_attr_names = ["name", "sample_name", "start_time", "end_time", "format_string"]
+
+    exp_attr_vals = select_many_where(
+        conn, "experiments", *exp_attr_names, where_column="exp_id", where_value=exp_id
+    )
+
+    temp_exp_attrs = dict(zip(exp_attr_names, exp_attr_vals))
+    start_time = temp_exp_attrs["start_time"]
+    assert isinstance(start_time, float)
+    end_time = temp_exp_attrs["end_time"]
+    assert isinstance(end_time, (float, type(None)))
+
+    exp_attrs: ExperimentAttributeDict = {
+        "name": str(temp_exp_attrs["name"]),
+        "sample_name": str(temp_exp_attrs["sample_name"]),
+        "start_time": start_time,
+        "end_time": end_time,
+        "format_string": str(temp_exp_attrs["format_string"]),
+        "exp_id": exp_id,
+    }
+
+    return exp_attrs
+
+
+def _populate_results_table(
+    source_conn: ConnectionPlus,
+    target_conn: ConnectionPlus,
+    source_table_name: str,
+    target_table_name: str,
+) -> None:
+    """
+    Copy over all the entries of the results table
+    """
+    get_data_query = f"""
+                     SELECT *
+                     FROM "{source_table_name}"
+                     """
+
+    source_cursor = source_conn.cursor()
+    target_cursor = target_conn.cursor()
+
+    for row in source_cursor.execute(get_data_query):
+        column_names = ",".join(row.keys()[1:])  # the first key is "id"
+        values = tuple(val for val in row[1:])
+        value_placeholders = sql_placeholder_string(len(values))
+        insert_data_query = f"""
+                             INSERT INTO "{target_table_name}"
+                             ({column_names})
+                             values {value_placeholders}
+                             """
+        target_cursor.execute(insert_data_query, values)
+
+
+def _rewrite_timestamps(
+    target_conn: ConnectionPlus,
+    target_run_id: int,
+    correct_run_timestamp: Optional[float],
+    correct_completed_timestamp: Optional[float],
+) -> None:
+    """
+    Update the timestamp to match the original one
+    """
+    query = """
+            UPDATE runs
+            SET run_timestamp = ?
+            WHERE run_id = ?
+            """
+    cursor = target_conn.cursor()
+    cursor.execute(query, (correct_run_timestamp, target_run_id))
+
+    query = """
+            UPDATE runs
+            SET completed_timestamp = ?
+            WHERE run_id = ?
+            """
+    cursor = target_conn.cursor()
+    cursor.execute(query, (correct_completed_timestamp, target_run_id))
+
+
+class RawRunAttributesDict(TypedDict):
+    run_id: int
+    counter: int
+    captured_run_id: int
+    captured_counter: int
+    experiment: ExperimentAttributeDict
+    name: str
+    run_timestamp: Optional[float]
+    completed_timestamp: Optional[float]
+    metadata: Dict[str, Any]
+    parent_dataset_links: str
+    run_description: str
+    snapshot: Optional[str]
+
+
+def get_raw_run_attributes(
+    conn: ConnectionPlus, guid: str
+) -> Optional[RawRunAttributesDict]:
+
+    run_id = get_runid_from_guid(conn, guid)
+
+    if run_id is None:
+        return None
+
+    exp_id = get_exp_ids_from_run_ids(conn, [run_id])[0]
+    experiment = get_experiment_attributes_by_exp_id(conn, exp_id)
+
+    counter = select_one_where(conn, "runs", "result_counter", "guid", guid)
+    assert isinstance(counter, int)
+    captured_run_id = select_one_where(conn, "runs", "captured_run_id", "guid", guid)
+    assert isinstance(captured_run_id, int)
+
+    captured_counter = select_one_where(conn, "runs", "captured_counter", "guid", guid)
+    assert isinstance(captured_counter, int)
+
+    name = select_one_where(conn, "runs", "name", "guid", guid)
+    assert isinstance(name, str)
+
+    rawsnapshot = select_one_where(conn, "runs", "snapshot", "guid", guid)
+    assert isinstance(rawsnapshot, (str, type(None)))
+    output: RawRunAttributesDict = {
+        "run_id": run_id,
+        "experiment": experiment,
+        "counter": counter,
+        "captured_run_id": captured_run_id,
+        "captured_counter": captured_counter,
+        "name": name,
+        "run_timestamp": get_run_timestamp_from_run_id(conn, run_id),
+        "completed_timestamp": get_completed_timestamp_from_run_id(conn, run_id),
+        "metadata": get_metadata_from_run_id(conn, run_id),
+        "parent_dataset_links": get_parent_dataset_links(conn, run_id),
+        "run_description": get_run_description(conn, run_id),
+        "snapshot": rawsnapshot,
+    }
+
+    return output
+
+
+def raw_time_to_str_time(
+    raw_timestamp: Optional[float], fmt: str = "%Y-%m-%d %H:%M:%S"
+) -> Optional[str]:
+    if raw_timestamp is None:
+        return None
+    else:
+        return time.strftime(fmt, time.localtime(raw_timestamp))

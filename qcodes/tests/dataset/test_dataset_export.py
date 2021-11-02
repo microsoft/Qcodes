@@ -228,10 +228,10 @@ def test_export_netcdf_complex_data(tmp_path_factory, mock_dataset_complex):
 
 @pytest.mark.usefixtures('experiment')
 def test_export_no_or_nonexistent_type_specified(tmp_path_factory, mock_dataset):
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="No data export type specified"):
         mock_dataset.export()
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Export type foo is unknown."):
         mock_dataset.export(export_type="foo")
 
 

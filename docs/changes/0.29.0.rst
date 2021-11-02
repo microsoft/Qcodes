@@ -1,0 +1,48 @@
+Changelog for QCoDeS 0.29.0
+===========================
+
+The September 2021 release of QCoDeS.
+
+
+----
+New:
+----
+
+- Simultaneous ramping feature that enables you to sweep an AMI 3D magnet to (x,y,z) in
+  time T or at vector ramp rate R, ramping all 3 axes together (in parallel) and
+  making a linear/vector trajectory from current field to the setpoint
+  in 3D magnetic field space. Please see updates to the AMI magnet driver example
+  documentation. (#3233)
+- Galil DMC-41x3 stepper motor controller that can be used with Janis probes for
+  moving the measurement arm. (#2626)
+
+
+---------
+Improved:
+---------
+
+- Documentation: clarified contribution guides and contacts (#3375, #3370)
+- Raise ``ValueError`` if given more than one result for the same parameter name
+  in ``DataSaver.add_result``. (#3265)
+
+
+-----------------
+Improved drivers:
+-----------------
+
+- Keithley 2600 SMU support to return both voltage and current compliance limit errors. (#3339, #3362)
+- Make ``SR86xBufferReadout`` parameter take kwargs and pass them to base class. (#3341)
+
+
+---------------
+Under the hood:
+---------------
+
+- Logging update to explicitly set encoding for file handler thus
+  preventing issues on systems with less widespread encodings. (#3327)
+- Add type packages discovered by mypy --install-types. (#3379)
+- Resolved uncertainties package issues. (#3334)
+- ISSUE_TEMPLATE.md updates for reporting a bug. (#3345)
+- Make it possible to manually trigger codeql, using codeql-analysis.yml
+  recommended by github. (#3314, #3329)
+- Remove redundant filters from test runner. (#3295)

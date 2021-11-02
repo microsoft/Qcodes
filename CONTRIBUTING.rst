@@ -6,12 +6,14 @@ from developers of all skill levels.
 
 Jens H. Nielsen, William H.P Nielsen, Mikhail Astafev and Trevor Morgan
 are the current maintainers of QCoDeS (aka core developers), along with a
-group of talented and smart volunteers. Please don't hesitate to reach out at
-qcodes-support@microsoft.com if you have any questions, or just need a
-little help getting started.
+group of talented and smart volunteers.
 
-Join us on Slack, where informal discussion is more than welcome.
-(Please email us to be invited!)
+Need help?
+What we recommend to be used for any kind of help and support is to open
+a thread in a relevant Discussions page in `QCoDeS GitHub
+<https://github.com/QCoDeS/Qcodes/discussions>`__.
+You can also join us on Slack,
+(Please send an email to qcodes-support@microsoft.com to be invited!).
 
 .. contents::
 
@@ -32,29 +34,30 @@ Bugs reports and feature requests
 ---------------------------------
 
 We use github's `issues <https://github.com/QCoDeS/Qcodes/issues>`__.
-Search for existing and closed issues. If your problem or idea is not yet
+Search for existing and closed issues. If your problem is not yet
 addressed, `please open a new issue
-<https://github.com/QCoDeS/Qcodes/issues/new>`__
+<https://github.com/QCoDeS/Qcodes/issues/new>`__.
 
-The github GUI will show you a template both for bugs and features.
+The github GUI will show you a template for bugs.
 Delete the wrong part and try to follow the template. Writing a good
 issue helps you in the first place. Bug reports must be accompanied by a
 reproducible example.
 
 Have an idea about future directions to go with Qcodes? Visions of
 data-utopia that would take more than a few weeks to add or might change
-some core ideas in the package? We can use issues for this too. We will pick the
-``long-term`` or ``discussion`` labels.
+some core ideas in the package? Please use "Ideas" section in
+`Github Discussions <https://github.com/QCoDeS/Qcodes/discussions>`__.
+We will pick the ``long-term`` or ``discussion`` labels.
 
- If somebody is assigned to an issue it means that somebody is working on it.
+If somebody is assigned to an issue it means that somebody is working on it.
 
 Clever usage
 ------------
 
 Figured out a new way to use QCoDeS? Found a package that makes your
 life better and easier? Got realtime analysis working after struggling
-with it for days? Write it on Slack so we can keep github more
-organized.
+with it for days? Write it on the "General" section of GitHub Discussions
+so we can keep our github more organized.
 
 Development
 -----------
@@ -118,7 +121,7 @@ New code and testing
    -  never use your username If you can't figure out a name for your
       branch, re-think about what you would be doing. It's always a good
       exercise to model the problem before you try to solve it. Also,
-      ping on slack. We <3 you in the first place.
+      use GitHub Discussions for getting help. We <3 you in the first place.
 
 
 A note on committing and pushing (if you are not really familiar with git).
@@ -179,7 +182,7 @@ born familiar with git, and everybody makes mistakes.
       For some tests we use `pyvisa-sim <https://github.com/pyvisa/pyvisa-sim>`__
       but it's flexibility is limited. Another interesting candidate is
       `pyvisa-mock <https://github.com/microsoft/pyvisa-mock>`__.
-      So, stay tuned, or post any ideas you have as GitHub issues!
+      So, stay tuned, or post any ideas you have as "Ideas" in GitHub Discussions!
 
 Coding Style
 ~~~~~~~~~~~~
@@ -250,9 +253,6 @@ Pull requests
    PRs are much easier to review, and easier for others to work around,
    than large ones that touch the whole code base.
 
--  tag AT LEAST ONE person in the description of the PR (a tag is
-   ``@username``) who you would like to have look at your work. Of
-   course everyone is welcome and encouraged to chime in.
 
 -  It's OK (in fact encouraged) to open a pull request when you still
    have some work to do. Just make a checklist
@@ -264,6 +264,16 @@ Pull requests
    Then on your own computer, after you merge and pull the merged master
    down, you can call ``git branch --merged`` to list branches that can
    be safely deleted, then ``git branch -d <branch-name>`` to delete it.
+
+-  Document your changes so everyone can see that they are part of the next release:
+   We are using `TownCrier <https://pypi.org/project/towncrier/>`__ to automatically
+   generate a changelog from a set of individual files with one file per pull request.
+   Please create a file in the format ``number.categoryofcontribution`` in ``docs\changes\newsfragments``.
+   Here the number should either be the number of the pull request. To get the number of the pull request one must
+   first the pull request and then subsequently update the number. The category of contribution should be
+   one of ``breaking``, ``new``, ``improved``, ``new_driver`` ``improved_driver``, ``underthehood``.
+   The file should contain a small description of what is changed. If you have contributed documentation or an example
+   the file can also contain a link to this.
 
 Automatic Testing (CI)
 ~~~~~~~~~~~~~~~~~~~~~~

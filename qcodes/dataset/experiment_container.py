@@ -1,6 +1,7 @@
 import logging
 from collections.abc import Sized
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
+from warnings import warn
 
 from qcodes.dataset.data_set import SPECS, DataSet, load_by_id, new_data_set
 from qcodes.dataset.experiment_settings import _set_default_experiment_id
@@ -103,19 +104,28 @@ class Experiment(Sized):
         return get_run_counter(self.conn, self.exp_id)
 
     @property
-    def started_at(self) -> int:
-        return select_one_where(self.conn, "experiments", "start_time",
-                                "exp_id", self.exp_id)
+    def started_at(self) -> float:
+        start_time = select_one_where(
+            self.conn, "experiments", "start_time", "exp_id", self.exp_id
+        )
+        assert isinstance(start_time, float)
+        return start_time
 
     @property
-    def finished_at(self) -> int:
-        return select_one_where(self.conn, "experiments", "end_time",
-                                "exp_id", self.exp_id)
+    def finished_at(self) -> Optional[float]:
+        finish_time = select_one_where(
+            self.conn, "experiments", "end_time", "exp_id", self.exp_id
+        )
+        assert isinstance(finish_time, (float, type(None)))
+        return finish_time
 
     @property
     def format_string(self) -> str:
-        return select_one_where(self.conn, "experiments", "format_string",
-                                "exp_id", self.exp_id)
+        format_str = select_one_where(
+            self.conn, "experiments", "format_string", "exp_id", self.exp_id
+        )
+        assert isinstance(format_str, str)
+        return format_str
 
     def new_data_set(self, name: str,
                      specs: Optional[SPECS] = None,
@@ -368,3 +378,48 @@ def load_or_create_experiment(
         else:
             raise exception
     return experiment
+
+
+def _create_exp_if_needed(
+    target_conn: ConnectionPlus,
+    exp_name: str,
+    sample_name: str,
+    fmt_str: str,
+    start_time: float,
+    end_time: Union[float, None],
+) -> int:
+    """
+    Look up in the database whether an experiment already exists and create
+    it if it doesn't. Note that experiments do not have GUIDs, so this method
+    is not guaranteed to work. Matching names and times is the best we can do.
+    """
+
+    matching_exp_ids = get_matching_exp_ids(
+        target_conn,
+        name=exp_name,
+        sample_name=sample_name,
+        format_string=fmt_str,
+        start_time=start_time,
+        end_time=end_time,
+    )
+
+    if len(matching_exp_ids) > 1:
+        exp_id = matching_exp_ids[0]
+        warn(
+            f"{len(matching_exp_ids)} experiments found in target DB that "
+            "match name, sample_name, fmt_str, start_time, and end_time. "
+            f"Inserting into the experiment with exp_id={exp_id}."
+        )
+        return exp_id
+    if len(matching_exp_ids) == 1:
+        return matching_exp_ids[0]
+    else:
+        lastrowid = ne(
+            target_conn,
+            name=exp_name,
+            sample_name=sample_name,
+            format_string=fmt_str,
+            start_time=start_time,
+            end_time=end_time,
+        )
+        return lastrowid
