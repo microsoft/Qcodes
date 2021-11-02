@@ -1,0 +1,2 @@
+dond avoids setting setpoint parameters with values that are already set. This significantly improves 
+the performance of the dond function in multi-dimensional measurements.
