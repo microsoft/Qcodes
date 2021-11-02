@@ -41,36 +41,32 @@ from qcodes.dataset.export_config import (
 )
 from qcodes.dataset.guids import filter_guids_by_parts, generate_guid, parse_guid
 from qcodes.dataset.linked_datasets.links import Link, links_to_str, str_to_links
-from qcodes.dataset.sqlite.connection import (
-    ConnectionPlus,
-    atomic,
-    atomic_transaction,
-    transaction,
-)
+from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic, atomic_transaction
 from qcodes.dataset.sqlite.database import (
     conn_from_dbpath_or_conn,
     connect,
     get_DB_location,
 )
 from qcodes.dataset.sqlite.queries import (
-    add_meta_data,
+    add_data_to_dynamic_columns,
     add_parameter,
     completed,
     create_run,
     get_completed_timestamp_from_run_id,
+    get_data_by_tag_and_table_name,
     get_experiment_name_from_experiment_id,
     get_guid_from_run_id,
     get_guids_from_run_spec,
-    get_last_experiment,
-    get_metadata,
     get_metadata_from_run_id,
     get_parameter_data,
     get_parent_dataset_links,
     get_run_description,
     get_run_timestamp_from_run_id,
+    get_runid_from_expid_and_counter,
     get_runid_from_guid,
     get_sample_name_from_experiment_id,
     mark_run_complete,
+    raw_time_to_str_time,
     remove_trigger,
     run_exists,
     set_run_timestamp,
@@ -86,7 +82,7 @@ from qcodes.dataset.sqlite.query_helpers import (
     select_one_where,
 )
 from qcodes.instrument.parameter import _BaseParameter
-from qcodes.utils.deprecate import deprecate
+from qcodes.utils.deprecate import deprecate, issue_deprecation_warning
 from qcodes.utils.helpers import NumpyJSONEncoder
 
 from .data_set_cache import DataSetCacheWithDBBackend
@@ -355,8 +351,11 @@ class DataSet(Sized):
 
     @property
     def captured_run_id(self) -> int:
-        return select_one_where(self.conn, "runs",
-                                "captured_run_id", "run_id", self.run_id)
+        run_id = select_one_where(
+            self.conn, "runs", "captured_run_id", "run_id", self.run_id
+        )
+        assert isinstance(run_id, int)
+        return run_id
 
     @property
     def path_to_db(self) -> str:
@@ -364,17 +363,23 @@ class DataSet(Sized):
 
     @property
     def name(self) -> str:
-        return select_one_where(self.conn, "runs",
-                                "name", "run_id", self.run_id)
+        name = select_one_where(self.conn, "runs", "name", "run_id", self.run_id)
+        assert isinstance(name, str)
+        return name
 
     @property
     def table_name(self) -> str:
-        return select_one_where(self.conn, "runs",
-                                "result_table_name", "run_id", self.run_id)
+        table_name = select_one_where(
+            self.conn, "runs", "result_table_name", "run_id", self.run_id
+        )
+        assert isinstance(table_name, str)
+        return table_name
 
     @property
     def guid(self) -> str:
-        return get_guid_from_run_id(self.conn, self.run_id)
+        guid = get_guid_from_run_id(self.conn, self.run_id)
+        assert guid is not None
+        return guid
 
     @property
     def snapshot(self) -> Optional[Dict[str, Any]]:
@@ -388,8 +393,11 @@ class DataSet(Sized):
     @property
     def _snapshot_raw(self) -> Optional[str]:
         """Snapshot of the run as a JSON-formatted string (or None)"""
-        return select_one_where(self.conn, "runs", "snapshot",
-                                "run_id", self.run_id)
+        snapshot_raw = select_one_where(
+            self.conn, "runs", "snapshot", "run_id", self.run_id
+        )
+        assert isinstance(snapshot_raw, (str, type(None)))
+        return snapshot_raw
 
     @property
     def snapshot_raw(self) -> Optional[str]:
@@ -404,22 +412,34 @@ class DataSet(Sized):
 
     @property
     def counter(self) -> int:
-        return select_one_where(self.conn, "runs",
-                                "result_counter", "run_id", self.run_id)
+        counter = select_one_where(
+            self.conn, "runs", "result_counter", "run_id", self.run_id
+        )
+        assert isinstance(counter, int)
+        return counter
 
     @property
     def captured_counter(self) -> int:
-        return select_one_where(self.conn, "runs",
-                                "captured_counter", "run_id", self.run_id)
+        captured_counter = select_one_where(
+            self.conn, "runs", "captured_counter", "run_id", self.run_id
+        )
+        assert isinstance(captured_counter, int)
+        return captured_counter
 
     @property
-    def parameters(self) -> str:
+    def parameters(self) -> Optional[str]:
         if self.pristine:
             psnames = [ps.name for ps in self.description.interdeps.paramspecs]
-            return ','.join(psnames)
+            if len(psnames) > 0:
+                return ",".join(psnames)
+            else:
+                return None
         else:
-            return select_one_where(self.conn, "runs",
-                                    "parameters", "run_id", self.run_id)
+            parameters = select_one_where(
+                self.conn, "runs", "parameters", "run_id", self.run_id
+            )
+            assert isinstance(parameters, (str, type(None)))
+            return parameters
 
     @property
     def paramspecs(self) -> Dict[str, ParamSpec]:
@@ -435,8 +455,9 @@ class DataSet(Sized):
 
     @property
     def exp_id(self) -> int:
-        return select_one_where(self.conn, "runs",
-                                "exp_id", "run_id", self.run_id)
+        exp_id = select_one_where(self.conn, "runs", "exp_id", "run_id", self.run_id)
+        assert isinstance(exp_id, int)
+        return exp_id
 
     @property
     def exp_name(self) -> str:
@@ -542,10 +563,8 @@ class DataSet(Sized):
 
         Consult with :func:`time.strftime` for information about the format.
         """
-        if self.run_timestamp_raw is None:
-            return None
-        else:
-            return time.strftime(fmt, time.localtime(self.run_timestamp_raw))
+        return raw_time_to_str_time(self.run_timestamp_raw, fmt)
+
 
     @property
     def completed_timestamp_raw(self) -> Optional[float]:
@@ -567,15 +586,7 @@ class DataSet(Sized):
 
         Consult with ``time.strftime`` for information about the format.
         """
-        completed_timestamp_raw = self.completed_timestamp_raw
-
-        if completed_timestamp_raw:
-            completed_timestamp: Optional[str] = time.strftime(
-                fmt, time.localtime(completed_timestamp_raw))
-        else:
-            completed_timestamp = None
-
-        return completed_timestamp
+        return raw_time_to_str_time(self.run_timestamp_raw, fmt)
 
     def _get_run_description_from_db(self) -> RunDescriber:
         """
@@ -629,9 +640,9 @@ class DataSet(Sized):
         """
 
         self._metadata[tag] = metadata
-        # `add_meta_data` is not atomic by itself, hence using `atomic`
+        # `add_data_to_dynamic_columns` is not atomic by itself, hence using `atomic`
         with atomic(self.conn) as conn:
-            add_meta_data(conn, self.run_id, {tag: metadata})
+            add_data_to_dynamic_columns(conn, self.run_id, {tag: metadata})
 
     def add_snapshot(self, snapshot: str, overwrite: bool = False) -> None:
         """
@@ -643,7 +654,7 @@ class DataSet(Sized):
         """
         if self.snapshot is None or overwrite:
             with atomic(self.conn) as conn:
-                add_meta_data(conn, self.run_id, {"snapshot": snapshot})
+                add_data_to_dynamic_columns(conn, self.run_id, {"snapshot": snapshot})
         elif self.snapshot is not None and not overwrite:
             log.warning('This dataset already has a snapshot. Use overwrite'
                         '=True to overwrite that')
@@ -1262,8 +1273,9 @@ class DataSet(Sized):
                 sub.join()
             self.subscribers.clear()
 
-    def get_metadata(self, tag: str) -> str:
-        return get_metadata(self.conn, tag, self.table_name)
+    def get_metadata(self, tag: str) -> Optional[VALUE]:
+        """Get metadata by tag. Returns None if no metadata is stored under that tag"""
+        return get_data_by_tag_and_table_name(self.conn, tag, self.table_name)
 
     def __len__(self) -> int:
         return length(self.conn, self.table_name)
@@ -1597,30 +1609,35 @@ class DataSet(Sized):
             prefix: File prefix, e.g. ``qcodes_``, defaults to value set in config.
 
         Raises:
-            ValueError: If the export data type is not specified, raise an error
+            ValueError: If the export data type is not specified or unknown, raise an error
         """
-        export_type = get_data_export_type(export_type)
+        parsed_export_type = get_data_export_type(export_type)
 
-        if export_type is None:
+        if parsed_export_type is None and export_type is None:
             raise ValueError(
                 "No data export type specified. Please set the export data type "
                 "by using ``qcodes.dataset.export_config.set_data_export_type`` or "
                 "give an explicit export_type when calling ``dataset.export`` manually."
             )
+        elif parsed_export_type is None:
+            raise ValueError(
+                f"Export type {export_type} is unknown. Export type should be a member of the `DataExportType` enum"
+            )
 
         self._export_path = self._export_data(
-            export_type=export_type,
-            path=path,
-            prefix=prefix
+            export_type=parsed_export_type, path=path, prefix=prefix
         )
         export_info = self.export_info
         if self._export_path is not None:
-            export_info.export_paths[export_type.value] = self._export_path
+            export_info.export_paths[parsed_export_type.value] = os.path.abspath(
+                self._export_path
+            )
 
         self._set_export_info(export_info)
 
     @property
     def export_path(self) -> Optional[str]:
+        issue_deprecation_warning("method export_path", alternative="export_info")
         return self._export_path
 
     @property
@@ -1741,7 +1758,7 @@ def load_by_guid(guid: str, conn: Optional[ConnectionPlus] = None) -> DataSet:
     # this function raises a RuntimeError if more than one run matches the GUID
     run_id = get_runid_from_guid(conn, guid)
 
-    if run_id == -1:
+    if run_id is None:
         raise NameError(f'No run with GUID: {guid} found in database.')
 
     return DataSet(run_id=run_id, conn=conn)
@@ -1768,16 +1785,7 @@ def load_by_counter(counter: int, exp_id: int,
         :class:`.DataSet` of the given counter in the given experiment
     """
     conn = conn or connect(get_DB_location())
-    sql = """
-    SELECT run_id
-    FROM
-      runs
-    WHERE
-      result_counter= ? AND
-      exp_id = ?
-    """
-    c = transaction(conn, sql, counter, exp_id)
-    run_id = one(c, 'run_id')
+    run_id = get_runid_from_expid_and_counter(conn, exp_id, counter)
 
     d = DataSet(conn=conn, run_id=run_id)
     return d

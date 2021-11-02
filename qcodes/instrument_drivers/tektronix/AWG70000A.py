@@ -50,17 +50,27 @@ _fg_path_val_map = {'5208': {'DC High BW': "DCHB",
                                'AC': 'AC'},
                     '70002A': {'direct': 'DIR',
                                'DCamplified': 'DCAM',
+                               'AC': 'AC'},
+                    '70001B': {'direct': 'DIR',
+                               'DCamplified': 'DCAM',
+                               'AC': 'AC'},
+                    '70002B': {'direct': 'DIR',
+                               'DCamplified': 'DCAM',
                                'AC': 'AC'}}
 
 # number of markers per channel
 _num_of_markers_map = {'5208': 4,
                        '70001A': 2,
-                       '70002A': 2}
+                       '70002A': 2,
+                       '70001B': 2,
+                       '70002B': 2}
 
 # channel resolution
 _chan_resolutions = {'5208': [12, 13, 14, 15, 16],
                      '70001A': [8, 9, 10],
-                     '70002A': [8, 9, 10]}
+                     '70002A': [8, 9, 10],
+                     '70001B': [8, 9, 10],
+                     '70002B': [8, 9, 10]}
 
 # channel resolution docstrings
 _chan_resolution_docstrings = {'5208': "12 bit resolution allows for four "
@@ -74,19 +84,33 @@ _chan_resolution_docstrings = {'5208': "12 bit resolution allows for four "
                                '70002A': "8 bit resolution allows for two "
                                          "markers, 9 bit resolution "
                                          "allows for one, and 10 bit "
+                                         "does NOT allow for markers ",
+                               '70001B': "8 bit resolution allows for two "
+                                         "markers, 9 bit resolution "
+                                         "allows for one, and 10 bit "
+                                         "does NOT allow for markers ",
+                               '70002B': "8 bit resolution allows for two "
+                                         "markers, 9 bit resolution "
+                                         "allows for one, and 10 bit "
                                          "does NOT allow for markers "}
 
 # channel amplitudes
 _chan_amps = {'70001A': 0.5,
               '70002A': 0.5,
+              '70001B': 0.5,
+              '70002B': 0.5,
               '5208': 1.5}
 
 # marker ranges
 _marker_high = {'70001A': (-1.4, 1.4),
                 '70002A': (-1.4, 1.4),
+                '70001B': (-1.4, 1.4),
+                '70002B': (-1.4, 1.4),
                 '5208': (-0.5, 1.75)}
 _marker_low = {'70001A': (-1.4, 1.4),
                '70002A': (-1.4, 1.4),
+               '70001B': (-1.4, 1.4),
+               '70002B': (-1.4, 1.4),
                '5208': (-0.3, 1.55)}
 
 
@@ -102,10 +126,10 @@ class SRValidator(Validator[float]):
                 rate validation depends on many clock settings
         """
         self.awg = awg
-        if self.awg.model == '70001A':
+        if self.awg.model in ['70001A', '70001B']:
             self._internal_validator = vals.Numbers(1.49e3, 50e9)
             self._freq_multiplier = 4
-        elif self.awg.model == '70002A':
+        elif self.awg.model in ['70002A', '70002B']:
             self._internal_validator = vals.Numbers(1.49e3, 25e9)
             self._freq_multiplier = 2
         elif self.awg.model == '5208':
@@ -367,8 +391,8 @@ class AWG70000A(VisaInstrument):
     """
     The QCoDeS driver for Tektronix AWG70000A series AWG's.
 
-    The drivers for AWG70001A and AWG70002A should be subclasses of this
-    general class.
+    The drivers for AWG70001A/AWG70001B and AWG70002A/AWG70002B should be
+    subclasses of this general class.
     """
 
     def __init__(self, name: str, address: str, num_channels: int,
@@ -389,7 +413,7 @@ class AWG70000A(VisaInstrument):
         # The 'model' value begins with 'AWG'
         self.model = self.IDN()['model'][3:]
 
-        if self.model not in ['70001A', '70002A', '5208']:
+        if self.model not in ['70001A', '70002A', '70001B', '70002B', '5208']:
             raise ValueError('Unknown model type: {}. Are you using '
                              'the right driver for your instrument?'
                              ''.format(self.model))
@@ -1071,7 +1095,9 @@ class AWG70000A(VisaInstrument):
                      go_to: Sequence[int],
                      wfms: Sequence[Sequence[np.ndarray]],
                      amplitudes: Sequence[float],
-                     seqname: str) -> bytes:
+                     seqname: str,
+                     flags: Optional[Sequence[Sequence[Sequence[int]]]] = None
+                     ) -> bytes:
         """
         Make a full .seqx file (bundle)
         A .seqx file can presumably hold several sequences, but for now
@@ -1110,6 +1136,11 @@ class AWG70000A(VisaInstrument):
                 a list [ch1_amp, ch2_amp].
             seqname: The name of the sequence. This name will appear in the
                 sequence list. Note that all spaces are converted to '_'
+            flags: Flags for the auxiliary outputs. 0 for 'No change', 1 for
+                'High', 2 for 'Low', 3 for 'Toggle', or 4 for 'Pulse'. 4 flags
+                [A, B, C, D] for every channel in every element, packed like:
+                [[ch1pos1, ch1pos2, ...], [ch2pos1, ...], ...]
+                If omitted, no flags will be set.
 
         Returns:
             The binary .seqx file, ready to be sent to the instrument.
@@ -1136,7 +1167,7 @@ class AWG70000A(VisaInstrument):
                                           event_jumps, event_jump_to,
                                           go_to, wfm_names,
                                           seqname,
-                                          chans)
+                                          chans, flags=flags)
 
         user_file = b''
         setup_file = AWG70000A._makeSetupFile(seqname)
@@ -1199,7 +1230,9 @@ class AWG70000A(VisaInstrument):
                      elem_names: Sequence[Sequence[str]],
                      seqname: str,
                      chans: int,
-                     subseq_positions: Sequence[int] = ()) -> str:
+                     subseq_positions: Sequence[int] = (),
+                     flags: Optional[Sequence[Sequence[Sequence[int]]]] = None
+                     ) -> str:
         """
         Make an xml file describing a sequence.
 
@@ -1226,6 +1259,11 @@ class AWG70000A(VisaInstrument):
                 up front.
             subseq_positions: The positions (step numbers) occupied by
                 subsequences
+            flags: Flags for the auxiliary outputs. 0 for 'No change', 1 for
+                'High', 2 for 'Low', 3 for 'Toggle', or 4 for 'Pulse'. 4 flags
+                [A, B, C, D] for every channel in every element, packed like:
+                [[ch1pos1, ch1pos2, ...], [ch2pos1, ...], ...]
+                If omitted, no flags will be set.
 
         Returns:
             A str containing the file contents, to be saved as an .sml file
@@ -1235,6 +1273,7 @@ class AWG70000A(VisaInstrument):
 
         waitinputs = {0: 'None', 1: 'TrigA', 2: 'TrigB', 3: 'Internal'}
         eventinputs = {0: 'None', 1: 'TrigA', 2: 'TrigB', 3: 'Internal'}
+        flaginputs = {0:'NoChange', 1:'High', 2:'Low', 3:'Toggle', 4:'Pulse'}
 
         inputlsts = [trig_waits, nreps, event_jump_to, go_to]
         lstlens = [len(lst) for lst in inputlsts]
@@ -1345,13 +1384,18 @@ class AWG70000A(VisaInstrument):
                 else:
                     temp_elem.text = 'Waveform'
 
-            flags = ET.SubElement(step, 'Flags')
-            for _ in range(chans):
-                flagset = ET.SubElement(flags, 'FlagSet')
-                for flg in ['A', 'B', 'C', 'D']:
+            # convert flag settings to strings
+            flags_list = ET.SubElement(step, 'Flags')
+            for chan in range(chans):
+                flagset = ET.SubElement(flags_list, 'FlagSet')
+                for flgind, flg in enumerate(['A', 'B', 'C', 'D']):
                     temp_elem = ET.SubElement(flagset, 'Flag')
                     temp_elem.set('name', flg)
-                    temp_elem.text = 'NoChange'
+                    if flags is None:
+                        # no flags were passed to the function
+                        temp_elem.text = 'NoChange'
+                    else:
+                        temp_elem.text = flaginputs[flags[chan][n-1][flgind]]
 
         temp_elem = ET.SubElement(datasets, 'ProductSpecific')
         temp_elem.set('name', '')

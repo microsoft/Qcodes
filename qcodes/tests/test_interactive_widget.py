@@ -9,17 +9,6 @@ from ipywidgets import HTML, Button, GridspecLayout, Tab, Textarea
 matplotlib.use("Agg")
 from qcodes import interactive_widget
 
-# we only need `experiment` here, but pytest does not discover the dependencies
-# by itself so we also need to import all the fixtures this one is dependent
-# on
-# pylint: disable=unused-import
-from qcodes.tests.dataset.conftest import (
-    dataset,
-    empty_temp_db,
-    experiment,
-    standalone_parameters_dataset,
-)
-
 
 @pytest.fixture(name="tab", scope="function")
 def _create_tab():

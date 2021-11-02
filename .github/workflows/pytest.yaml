@@ -5,12 +5,14 @@ on:
     branches:
       - 'master'
       - 'release/*'
+      - 'staging'
+      - 'trying'
     tags:
       - 'v*'
   pull_request:
 
 jobs:
-  build:
+  pytestmypy:
 
     runs-on: ${{ matrix.os }}
     strategy:
