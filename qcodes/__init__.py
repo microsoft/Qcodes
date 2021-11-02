@@ -76,6 +76,7 @@ from qcodes.dataset.experiment_container import (
     new_experiment,
 )
 from qcodes.dataset.measurements import Measurement
+from qcodes.dataset.plotting import plot_by_id, plot_dataset
 from qcodes.dataset.sqlite.database import (
     initialise_database,
     initialise_or_create_database_at,
