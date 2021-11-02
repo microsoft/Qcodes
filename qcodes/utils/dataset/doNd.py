@@ -759,7 +759,6 @@ def dond(
                 param_value_action = zip(params_set, setpoints, active_actions)
                 for setpoint_param, setpoint, action in param_value_action:
                     _conditional_parameter_set(setpoint_param, setpoint)
-                    print(setpoint_param())
                     param_set_list.append((setpoint_param, setpoint))
                     for act in action:
                         act()
