@@ -288,8 +288,23 @@ def test_load_from_db(meas_with_registered_param, DMM, DAC, tmp_path):
     compare_datasets(ds, loaded_ds)
 
 
-# add a test to import from 0.26 data (missing parent dataset links)
-# test if counter/run_id do not match captured (with a copy)
+def test_load_from_netcdf_legacy_version(non_created_db):
+    # Qcodes 0.26 exported netcdf files did not contain
+    # the parent dataset links and used a different engine to write data
+    # check that it still loads correctly
+
+    netcdf_file_path = (
+        Path(__file__).parent / "fixtures" / "db_files" / "netcdf" / "qcodes_v26.nc"
+    )
+
+    if not os.path.exists(str(netcdf_file_path)):
+        pytest.skip("No netcdf fixtures found.")
+
+    ds = DataSetInMem._load_from_netcdf(netcdf_file_path)
+    ds.write_metadata_to_db()
+    loaded_ds = load_by_run_spec(captured_run_id=ds.captured_run_id)
+    assert isinstance(loaded_ds, DataSetInMem)
+    compare_datasets(ds, loaded_ds)
 
 
 def compare_datasets(ds, loaded_ds):

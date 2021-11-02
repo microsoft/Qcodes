@@ -213,6 +213,10 @@ class DataSetInMem(BaseDataSet):
         Returns:
             The loaded dataset.
         """
+        # in the code below flots and ints loaded from attributes are explicitly casted
+        # this is due to some older versions of qcodes writing them with a different backend
+        # reading them back results in a numpy array of one element
+
         import xarray as xr
 
         loaded_data = xr.load_dataset(path, engine="h5netcdf")
@@ -233,8 +237,8 @@ class DataSetInMem(BaseDataSet):
             run_id = run_data["run_id"]
             counter = run_data["counter"]
         else:
-            run_id = loaded_data.captured_run_id
-            counter = loaded_data.captured_counter
+            run_id = int(loaded_data.captured_run_id)
+            counter = int(loaded_data.captured_counter)
 
         path = str(path)
         path = os.path.abspath(path)
@@ -254,21 +258,26 @@ class DataSetInMem(BaseDataSet):
         metadata_keys = (
             set(loaded_data.attrs.keys()) - set(RUNS_TABLE_COLUMNS) - non_metadata
         )
-        metadata = {key: loaded_data.attrs[key] for key in metadata_keys}
+        metadata = {}
+        for key in metadata_keys:
+            data = loaded_data.attrs[key]
+            if isinstance(data, np.ndarray) and data.size == 1:
+                data = data[0]
+            metadata = {key: data}
 
         ds = cls(
             run_id=run_id,
-            captured_run_id=loaded_data.captured_run_id,
+            captured_run_id=int(loaded_data.captured_run_id),
             counter=counter,
-            captured_counter=loaded_data.captured_counter,
+            captured_counter=int(loaded_data.captured_counter),
             name=loaded_data.ds_name,
             exp_id=0,
             exp_name=loaded_data.exp_name,
             sample_name=loaded_data.sample_name,
             guid=loaded_data.guid,
             path_to_db=path_to_db,
-            run_timestamp_raw=loaded_data.run_timestamp_raw,
-            completed_timestamp_raw=loaded_data.completed_timestamp_raw,
+            run_timestamp_raw=float(loaded_data.run_timestamp_raw),
+            completed_timestamp_raw=float(loaded_data.completed_timestamp_raw),
             metadata=metadata,
             rundescriber=serial.from_json_to_current(loaded_data.run_description),
             parent_dataset_links=parent_dataset_links,
