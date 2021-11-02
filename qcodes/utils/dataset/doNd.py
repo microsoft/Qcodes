@@ -758,7 +758,8 @@ def dond(
                 param_set_list = []
                 param_value_action = zip(params_set, setpoints, active_actions)
                 for setpoint_param, setpoint, action in param_value_action:
-                    setpoint_param(setpoint)
+                    _conditional_parameter_set(setpoint_param, setpoint)
+                    print(setpoint_param())
                     param_set_list.append((setpoint_param, setpoint))
                     for act in action:
                         act()
@@ -809,6 +810,17 @@ def _parse_dond_arguments(
             else:
                 params_meas.append(par)
         return sweep_instances, params_meas
+
+
+def _conditional_parameter_set(
+    parameter: _BaseParameter, value: Union[float, complex],
+    ) -> None:
+    """
+    Reads the cache value of the given parameter and set the parameter to
+    the given value if the value is different from the cache value.
+    """
+    if value != parameter.cache.get():
+        parameter.set(value)
 
 
 def _make_nested_setpoints(sweeps: List[AbstractSweep]) -> np.ndarray:
