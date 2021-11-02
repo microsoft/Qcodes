@@ -1,4 +1,7 @@
 from unittest.mock import patch
+
+from numpy.testing import assert_almost_equal
+
 from qcodes.tests.instrument_mocks import MockField
 
 
@@ -22,7 +25,7 @@ def test_mock_field_delegate(station, field_x, chip_config):
         # Test group delegate parameters
         field_x.set_field(0.001)
         ramp = field.ramp_X()
-        assert ramp.field == 0.001
+        assert_almost_equal(ramp.field, 0.001)
         assert ramp.ramp_rate == 0.02
 
         field.ramp_X(dict(field=0.0, ramp_rate=10.0))
