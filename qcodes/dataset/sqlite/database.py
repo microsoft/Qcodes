@@ -190,6 +190,7 @@ def get_db_version_and_newest_available_version(path_to_db: str) -> Tuple[int,
     """
     conn = connect(path_to_db, version=0)
     db_version = get_user_version(conn)
+    conn.close()
 
     return db_version, _latest_available_version()
 
