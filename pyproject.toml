@@ -1,0 +1,40 @@
+[build-system]
+requires = [
+    "setuptools >= 48",
+    "wheel >= 0.29.0",
+]
+build-backend = 'setuptools.build_meta'
+[tool.isort]
+profile = "black"
+[tool.darker]
+isort = true
+[tool.towncrier]
+package = "qcodes"
+name = "QCoDeS"
+directory = "docs/changes/newsfragments"
+single_file = true
+filename = "docs/changes/{version}.rst"
+[[tool.towncrier.type]]
+directory = "breaking"
+name = "Breaking Changes:"
+showcontent = true
+[[tool.towncrier.type]]
+directory = "new"
+name = "New:"
+showcontent = true
+[[tool.towncrier.type]]
+directory = "improved"
+name = "Improved:"
+showcontent = true
+[[tool.towncrier.type]]
+directory = "new_driver"
+name = "New Drivers:"
+showcontent = true
+[[tool.towncrier.type]]
+directory = "improved_driver"
+name = "Improved Drivers:"
+showcontent = true
+[[tool.towncrier.type]]
+directory = "underthehood"
+name = "Under the hood:"
+showcontent = true

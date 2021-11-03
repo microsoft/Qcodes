@@ -436,8 +436,8 @@ class KeysightB1500(VisaInstrument):
 
 class IVSweepMeasurement(MultiParameter, StatusMixin):
     """
-    IV sweep measurement outputs a list of primary and secondary
-    parameter.
+    IV sweep measurement outputs a list of measured current parameters
+    as a result of voltage sweep.
 
     Args:
         name: Name of the Parameter.
@@ -465,14 +465,137 @@ class IVSweepMeasurement(MultiParameter, StatusMixin):
         self.source_voltage = _FMTResponse(None, None, None, None)
         self._fudge: float = 1.5
 
-    def get_raw(self) -> Tuple[Tuple[float, ...], Tuple[float, ...]]:
-        measurement_mode = self.instrument.get_measurement_mode()
-        if len(measurement_mode['channels']) != 2:
-            raise ValueError('Two measurement channels are needed, one for '
-                             'gate current and other for source drain '
-                             'current.')
+    def set_names_labels_and_units(self,
+                                   names: Optional[Sequence[str]] = None,
+                                   labels: Optional[Sequence[str]] = None,
+                                   units: Optional[Sequence[str]] = None
+                                   ) -> None:
+        """
+        Set names, labels, and units of the measured parts of the MultiParameter.
 
-        smu = self.instrument.by_channel[measurement_mode['channels'][0]]
+        If units are not provided, "A" will be used because this parameter
+        measures currents.
+
+        If labels are not provided, names will be used.
+
+        If names are not provided, ``param#`` will be used as names; the number
+        of those names will be the same as the number of measured channels
+        that ``B1500.get_measurement_mode`` method returns. Note that it is
+        possible to not provide names and provide labels at the same time.
+        In case, neither names nor labels are provided, the labels will be
+        generated as ``Param# Current``.
+
+        The number of provided names, labels, and units must be the same.
+        Moreover, that number has to be equal to the number of channels
+        that ``B1500.get_measurement_mode`` method returns. It is
+        recommended to set measurement mode and number of channels first,
+        and only then call this method to provide names/labels/units.
+
+        The name/label/unit of the setpoint of this parameter will also be
+        updated to defaults dictated by the
+        ``set_setpoint_name_label_and_unit`` method.
+
+        Note that ``.shapes`` of this parameter will also be updated to
+        be in sync with the number of names.
+        """
+        measurement_mode = self.instrument.get_measurement_mode()
+        channels = measurement_mode['channels']
+
+        if names is None:
+            names = [f"param{n+1}" for n in range(len(channels))]
+            if labels is None:
+                labels = [f"Param{n + 1} Current" for n in range(len(channels))]
+
+        if labels is None:
+            labels = tuple(names)
+
+        if units is None:
+            units = ['A'] * len(names)
+
+        if len(labels) != len(names) or len(units) != len(names):
+            raise ValueError(
+                f"If provided, the number of names, labels, and units must be "
+                f"the same, instead got {len(names)} names, {len(labels)} "
+                f"labels, {len(units)} units."
+            )
+
+        if len(names) != len(channels):
+            raise ValueError(
+                f"The number of names ({len(names)}) does not match the number "
+                f"of channels expected for the IV sweep measurement, "
+                f"which is {len(channels)}. Please, when providing names, "
+                f"provide them for every channel."
+            )
+
+        self.names = tuple(names)
+        self.labels = tuple(labels)
+        self.units = tuple(units)
+
+        for n in range(len(channels)):
+            setattr(self, f"param{n+1}", _FMTResponse(None, None, None, None))
+
+        self.shapes = ((1,),) * len(self.names)
+
+        self.set_setpoint_name_label_and_unit()
+
+    def set_setpoint_name_label_and_unit(
+            self,
+            name: Optional[str] = None,
+            label: Optional[str] = None,
+            unit: Optional[str] = None
+    ) -> None:
+        """
+        Set name, label, and unit of the setpoint of the MultiParameter.
+
+        If unit is not provided, "V" will be used because this parameter
+        sweeps voltage.
+
+        If label is not provided, "Voltage" will be used.
+
+        If name are not provided, ``voltage`` will be used.
+
+        The attributes describing the setpoints of this MultiParameter
+        will be updated to match the number of measured parameters of
+        this MultiParameter, as dictated by ``.names``.
+        """
+        # number of measured parameters of this MultiParameter
+        n_names = len(self.names)
+
+        name = name if name is not None else "voltage"
+        label = label if label is not None else "Voltage"
+        unit = unit if unit is not None else "V"
+
+        self.setpoint_names = ((name,),) * n_names
+        self.setpoint_labels = ((label,),) * n_names
+        self.setpoint_units = ((unit,),) * n_names
+
+    def get_raw(self) -> Tuple[Tuple[float, ...], ...]:
+        measurement_mode = self.instrument.get_measurement_mode()
+        channels = measurement_mode['channels']
+        n_channels = len(channels)
+
+        if n_channels < 1:
+            raise ValueError('At least one measurement channel is needed for '
+                             'an IV sweep.')
+
+        if (
+                len(self.names) != n_channels
+                or len(self.units) != n_channels
+                or len(self.labels) != n_channels
+                or len(self.shapes) != n_channels
+        ):
+            raise ValueError(
+                f"The number of `.names` ({len(self.names)}), "
+                f"`.units` ({len(self.units)}), `.labels` ("
+                f"{len(self.labels)}), or `.shapes` ({len(self.shapes)}) "
+                f"of the {self.full_name} parameter "
+                f"does not match the number of channels expected for the IV "
+                f"sweep measurement, which is {n_channels}. One must set "
+                f"enough names, units, and labels for all the channels that "
+                f"are to be measured."
+            )
+
+        smu = self.instrument.by_channel[channels[0]]
 
         if not smu.setup_fnc_already_run:
             raise Exception(f'Sweep setup has not yet been run successfully '
@@ -481,13 +604,13 @@ class IVSweepMeasurement(MultiParameter, StatusMixin):
         delay_time = smu.iv_sweep.step_delay()
         if smu._average_coefficient < 0:
             # negative coefficient means nplc and positive means just
-            # averaging
+            # averaging, see B1517A.set_average_samples_for_high_speed_adc
+            # for more info
             nplc = 128 * abs(smu._average_coefficient)
             power_line_time_period = 1 / smu.power_line_frequency
             calculated_time = 2 * nplc * power_line_time_period
         else:
-            calculated_time = smu._average_coefficient * \
-                              delay_time
+            calculated_time = smu._average_coefficient * delay_time
         num_steps = smu.iv_sweep.sweep_steps()
         estimated_timeout = max(delay_time, calculated_time) * num_steps
         new_timeout = estimated_timeout * self._fudge
@@ -499,22 +622,45 @@ class IVSweepMeasurement(MultiParameter, StatusMixin):
             self.root_instrument.write(MessageBuilder().fmt(1, 1).message)
             with self.root_instrument.timeout.set_to(new_timeout):
                 raw_data = self.instrument.ask(MessageBuilder().xe().message)
-                parsed_data = fmt_response_base_parser(raw_data)
         finally:
             self.root_instrument.write(MessageBuilder().fmt(fmt_format,
                                                             fmt_mode).message)
 
-        self.param1 = _FMTResponse(
-            *[parsed_data[i][::3] for i in range(0, 4)])
-        self.param2 = _FMTResponse(
-            *[parsed_data[i][1::3] for i in range(0, 4)])
-        self.source_voltage = _FMTResponse(
-            *[parsed_data[i][2::3] for i in range(0, 4)])
+        parsed_data = fmt_response_base_parser(raw_data)
 
-        self.shapes = ((len(self.source_voltage.value),),) * 2
-        self.setpoints = ((self.source_voltage.value,),) * 2
+        # The `4` comes from the len(_FMTResponse(None, None, None, None)),
+        # the _FMTResponse tuple declares these items that the instrument
+        # gives for each data point
+        n_items_per_data_point = 4
 
-        convert_dummy_val_to_nan(self.param1)
-        convert_dummy_val_to_nan(self.param2)
+        # sourced voltage values are also returned, hence the `+1`
+        n_all_data_channels = n_channels + 1
 
-        return self.param1.value, self.param2.value
+        for channel_index in range(n_channels):
+            parsed_data_items = [
+                parsed_data[i][channel_index::n_all_data_channels]
+                for i in range(0, n_items_per_data_point)
+            ]
+            single_channel_data = _FMTResponse(*parsed_data_items)
+            convert_dummy_val_to_nan(single_channel_data)
+
+            # Store the results to `.param#` attributes for convenient access
+            # to all the data, e.g. status of each value in the arrays
+            setattr(self, f"param{channel_index+1}", single_channel_data)
+
+        channel_values_to_return = tuple(
+            getattr(self, f"param{n + 1}").value
+            for n in range(n_channels)
+        )
+
+        source_voltage_index = n_channels
+        parsed_source_voltage_items = [
+            parsed_data[i][source_voltage_index::n_all_data_channels]
+            for i in range(0, n_items_per_data_point)
+        ]
+        self.source_voltage = _FMTResponse(*parsed_source_voltage_items)
+
+        self.shapes = ((len(self.source_voltage.value),),) * n_channels
+        self.setpoints = ((self.source_voltage.value,),) * n_channels
+
+        return channel_values_to_return

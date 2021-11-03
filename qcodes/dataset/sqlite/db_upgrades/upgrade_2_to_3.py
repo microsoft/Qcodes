@@ -1,17 +1,20 @@
 import json
 import logging
-from collections import defaultdict
-from typing import Dict, DefaultDict, List, Sequence, Tuple
 import sys
+from collections import defaultdict
+from typing import DefaultDict, Dict, List, Mapping, Sequence, Tuple
 
 from tqdm import tqdm
 
-from qcodes.dataset.sqlite.connection import ConnectionPlus, transaction, \
-    atomic, atomic_transaction
-from qcodes.dataset.sqlite.query_helpers import one
 from qcodes.dataset.descriptions.param_spec import ParamSpec
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
-
+from qcodes.dataset.sqlite.connection import (
+    ConnectionPlus,
+    atomic,
+    atomic_transaction,
+    transaction,
+)
+from qcodes.dataset.sqlite.query_helpers import one
 
 log = logging.getLogger(__name__)
 
@@ -134,13 +137,15 @@ def _2to3_get_layouts(conn: ConnectionPlus) -> Dict[int,
     return results
 
 
-def _2to3_get_paramspecs(conn: ConnectionPlus,
-                         layout_ids: List[int],
-                         layouts: Dict[int, Tuple[str, str, str, str]],
-                         dependencies: Dict[int, List[int]],
-                         deps: Sequence[int],
-                         indeps: Sequence[int],
-                         result_table_name: str) -> Dict[int, ParamSpec]:
+def _2to3_get_paramspecs(
+    conn: ConnectionPlus,
+    layout_ids: List[int],
+    layouts: Mapping[int, Tuple[str, str, str, str]],
+    dependencies: Mapping[int, Sequence[int]],
+    deps: Sequence[int],
+    indeps: Sequence[int],
+    result_table_name: str,
+) -> Dict[int, ParamSpec]:
 
     paramspecs: Dict[int, ParamSpec] = {}
 

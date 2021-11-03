@@ -1,8 +1,8 @@
-from time import time
 from functools import partial
+from time import time
 from typing import Union, cast
 
-from qcodes import VisaInstrument, InstrumentChannel, ChannelList
+from qcodes import ChannelList, InstrumentChannel, VisaInstrument
 from qcodes.utils import validators as vals
 
 number = Union[float, int]
@@ -200,13 +200,16 @@ class DacChannel(InstrumentChannel, DacReader):
         # Note we will use the older addresses to read the value from the dac
         # rather than the newer 'd' command for backwards compatibility
         self._volt_val = vals.Numbers(self.min_val, self.max_val)
-        self.add_parameter("volt", get_cmd=partial(self._query_address,
-                                                   self._base_addr+9, 1),
-                           get_parser=self._dac_code_to_v,
-                           set_cmd=self._set_dac,
-                           set_parser=self._dac_v_to_code, vals=self._volt_val,
-                           label="channel {}".format(channel+self._slot*4),
-                           unit="V")
+        self.add_parameter(
+            "volt",
+            get_cmd=partial(self._query_address, self._base_addr + 9, 1),
+            get_parser=self._dac_code_to_v,
+            set_cmd=self._set_dac,
+            set_parser=self._dac_v_to_code,
+            vals=self._volt_val,
+            label=f"channel {channel+self._slot*4}",
+            unit="V",
+        )
         # The limit commands are used to sweep dac voltages. They are not
         # safety features.
         self.add_parameter("lower_ramp_limit",
@@ -532,7 +535,7 @@ class Decadac(VisaInstrument, DacReader):
 
     def __repr__(self):
         """Simplified repr giving just the class and name."""
-        return '<{}: {}>'.format(type(self).__name__, self.name)
+        return f"<{type(self).__name__}: {self.name}>"
 
     def _feature_detect(self):
         """

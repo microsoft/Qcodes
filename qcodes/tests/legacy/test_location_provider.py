@@ -1,5 +1,5 @@
-from unittest import TestCase
 from datetime import datetime
+from unittest import TestCase
 
 from qcodes.data.location import FormatLocation, SafeFormatter
 
@@ -43,8 +43,10 @@ class TestFormatLocation(TestCase):
 
         # counter starts at +1  using MatchIo undocumented magic argument
         start_magic_value = 5
-        self.assertEqual(lp(MatchIO(['', f'{start_magic_value:03d}']), {'name':name}),
-                         _default(datetime.now(), lp, '{:03d}'.format(start_magic_value+1), name))
+        self.assertEqual(
+            lp(MatchIO(["", f"{start_magic_value:03d}"]), {"name": name}),
+            _default(datetime.now(), lp, f"{start_magic_value+1:03d}", name),
+        )
 
     def test_fmt_subparts(self):
         lp = FormatLocation(fmt='{date}/{time}', fmt_date='%d-%b-%Y', fmt_time='%I-%M%p',

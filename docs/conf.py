@@ -18,13 +18,16 @@
 #
 import os
 import sys
-import sphinx_rtd_theme
-import qcodes
-from packaging.version import parse
+
 # Import matplotlib and set the backend
 # before qcodes imports pyplot and automatically
 # sets the backend
 import matplotlib
+import sphinx_rtd_theme
+from packaging.version import parse
+
+import qcodes
+
 matplotlib.use('Agg')
 
 sys.path.insert(0, os.path.abspath('..'))
@@ -38,12 +41,23 @@ sys.path.insert(0, os.path.abspath('..'))
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['nbsphinx', 'sphinx.ext.autodoc', 'sphinx.ext.autosummary',
-              'sphinx.ext.napoleon', 'sphinx-jsonschema', 'sphinx.ext.doctest',
-              'sphinx.ext.intersphinx', 'sphinx.ext.todo',
-              'sphinx.ext.coverage', 'sphinx.ext.mathjax',
-              'sphinx.ext.viewcode', 'sphinx.ext.githubpages',
-              'sphinx.ext.todo']
+extensions = [
+    "nbsphinx",
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
+    "sphinx.ext.napoleon",
+    "sphinx-jsonschema",
+    "sphinx.ext.doctest",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.todo",
+    "sphinx.ext.coverage",
+    "sphinx.ext.mathjax",
+    "sphinx.ext.viewcode",
+    "sphinx.ext.githubpages",
+    "sphinx.ext.todo",
+    "qcodes.sphinx_extensions.parse_parameter_attr",
+    "sphinxcontrib.towncrier",
+]
 
 # include special __xxx__ that DO have a docstring
 # it probably means something important
@@ -176,7 +190,7 @@ html_theme = "sphinx_rtd_theme"
 # html_theme_options = {}
 
 # Add any paths that contain custom themes here, relative to this directory.
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+# html_theme_path = []
 
 # The name for this set of Sphinx documents.
 # "<project> v<release> documentation" by default.
@@ -374,13 +388,14 @@ texinfo_show_urls = 'footnote'
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
-    'pandas': ('https://pandas.pydata.org/pandas-docs/stable/', None),
-    'matplotlib': ('https://matplotlib.org/', None),
-    'python': ('https://docs.python.org/3.7/', None),
-    'numpy': ('https://numpy.org/doc/stable/', None),
-    'py': ('https://pylib.readthedocs.io/en/stable/', None),
-    'pyvisa': ('https://pyvisa.readthedocs.io/en/master/', None),
-    'IPython': ('https://ipython.readthedocs.io/en/stable/', None)}
+    "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
+    "matplotlib": ("https://matplotlib.org/", None),
+    "python": ("https://docs.python.org/3.7/", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "py": ("https://pylib.readthedocs.io/en/stable/", None),
+    "pyvisa": ("https://pyvisa.readthedocs.io/en/stable/", None),
+    "IPython": ("https://ipython.readthedocs.io/en/stable/", None),
+}
 
 autoclass_content = "both"
 # classes should include both the
@@ -392,9 +407,21 @@ autodoc_default_options = {'members': True, 'undoc-members': True,
 
 # we mock modules that for one reason or another is not
 # there when generating the docs
-autodoc_mock_imports = ['pyspcm', 'zhinst', 'zhinst.utils', 'keysightSD1',
-                        'cffi', 'spirack', 'clr', 'win32com',
-                        'win32com.client', 'pythoncom', 'slacker', 'hickle']
+autodoc_mock_imports = [
+    "pyspcm",
+    "zhinst",
+    "zhinst.utils",
+    "keysightSD1",
+    "cffi",
+    "spirack",
+    "clr",
+    "win32com",
+    "win32com.client",
+    "pythoncom",
+    "slack-sdk",
+    "hickle",
+    "gclib",
+]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -405,43 +432,13 @@ suppress_warnings = ['image.nonlocal_uri']
 
 nitpicky = False
 
-# we allow most types from the typing modules to be used in
-# docstrings even if they don't resolve
-nitpick_ignore = [('py:class', 'Optional'), ('py:class', 'Union'),
-                  ('py:class', 'Any'), ('py:class', 'Tuple'),
-                  ('py:class', 'List'), ('py:class', 'Sequence'),
-                  ('py:class', 'Iterable'), ('py:class', 'Type'),
-                  # These are some types currently in use
-                  # in docstrings not actually defined anywhere
-                  ('py:class', 'io_manager'), ('py:class', 'chan_type'),
-                  ('py:class', 'SD_Wave'), ('py:class', 'array'),
-                  # private types that are not currently documented so links
-                  # will not resolve
-                  ('py:class', 'qcodes.instrument_drivers.Keysight.'
-                               'private.Keysight_344xxA._Keysight_344xxA'),
-                  ('py:class', 'qcodes.instrument_drivers.Keysight.private.'
-                               'Keysight_344xxA_submodules._Keysight_344xxA'),
-                  ('py:class', 'qcodes.instrument.ip.IPInstrument'),
-                  ('py:class', 'qcodes.instrument_drivers.rigol.private.'
-                               'DP8xx._RigolDP8xx'),
-                  ('py:class', 'qcodes.instrument_drivers.rohde_schwarz.'
-                               'private.HMC804x._RohdeSchwarzHMC804x'),
-                  ('py:class', 'qcodes.instrument.parameter._BaseParameter'),
-                  ('py:class', 'SweepFixedValues'),
-                  # We don't generate the docs for function since its deprecated
-                  ('py:class', 'Function'),
-                  # External types that for some reason or the other
-                  # don't resolve.
-                  ('py:class', 'json.encoder.JSONEncoder'),
-                  ('py:attr', 'broadbean.sequence.fs_schmema'),
-                  ('py:class', 'SPI_rack'),
-                  ('py:class', 'unittest.case.TestCase'),
-                  ('py:class', 'builtins.AssertionError'),
-                  ('py:exc', 'visa.VisaIOError')]
-
 numfig = True
 
 # Use this kernel instead of the one stored in the notebook metadata:
 nbsphinx_kernel_name = 'python3'
 # always execute notebooks.
 nbsphinx_execute = 'always'
+
+towncrier_draft_autoversion_mode = "draft"
+towncrier_draft_include_empty = True
+towncrier_draft_working_directory = ".."

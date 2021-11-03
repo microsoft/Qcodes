@@ -1,29 +1,25 @@
-import struct
+import array as arr
 import logging
-import warnings
 import re
-from collections import namedtuple
-from collections import defaultdict
-from collections import abc
-
-from typing import Tuple, Any, Union, Dict, Optional, Sequence, List, NamedTuple, cast
-from typing_extensions import Literal
+import struct
+import warnings
+from collections import abc, defaultdict, namedtuple
+from functools import WRAPPER_ASSIGNMENTS, wraps
+from io import BytesIO
+from time import localtime, sleep
+from typing import Any, Dict, List, NamedTuple, Optional, Sequence, Tuple, Union, cast
 
 import numpy as np
-import array as arr
-
-from time import sleep, localtime
-from io import BytesIO
-from functools import wraps, WRAPPER_ASSIGNMENTS
-
-
-from qcodes import VisaInstrument, validators as vals
-from qcodes.utils.deprecate import deprecate
 from pyvisa.errors import VisaIOError
+from typing_extensions import Literal
+
+from qcodes import VisaInstrument
+from qcodes import validators as vals
+from qcodes.utils.deprecate import deprecate
 
 # conditionally import lomentum for support of lomentum type sequences
 try:
-    from lomentum.tools import is_subsequence, get_element_channel_ids
+    from lomentum.tools import get_element_channel_ids, is_subsequence
     USE_LOMENTUM = True
 except ImportError:
     USE_LOMENTUM = False
@@ -368,7 +364,7 @@ class Tektronix_AWG5014(VisaInstrument):
                                get_cmd=filter_cmd + '?',
                                set_cmd=filter_cmd + ' {}',
                                vals=vals.Enum(20e6, 100e6,
-                                              np.float('inf'),
+                                              float('inf'),
                                               'INF', 'INFinity'),
                                get_parser=self._tek_outofrange_get_parser)
             self.add_parameter(f'ch{i}_DC_out',
@@ -430,7 +426,7 @@ class Tektronix_AWG5014(VisaInstrument):
         # note that 9.9e37 is used as a generic out of range value
         # in tektronix instruments
         if val >= 9.9e37:
-            val = np.float('INF')
+            val = float('INF')
         return val
 
     # Functions
@@ -876,7 +872,12 @@ class Tektronix_AWG5014(VisaInstrument):
                 record_data = value.encode('ASCII')
             else:
                 assert isinstance(value, (abc.Sequence, np.ndarray))
-                record_data = struct.pack('<' + dtype, *value)
+                if dtype[-1] == 'H' and isinstance(value, np.ndarray):
+                    # numpy conversion is fast
+                    record_data = value.astype('<u2').tobytes()
+                else:
+                    # argument unpacking is slow
+                    record_data = struct.pack('<' + dtype, *value)
 
         # the zero byte at the end the record name is the "(Include NULL.)"
         record_name = name.encode('ASCII') + b'\x00'
@@ -1460,9 +1461,9 @@ class Tektronix_AWG5014(VisaInstrument):
             namelist = []
             for jj in range(len(waveforms_int[ii])):
                 if channels is None:
-                    thisname = 'wfm{:03d}ch{}'.format(jj + 1, ii + 1)
+                    thisname = f"wfm{jj + 1:03d}ch{ii + 1}"
                 else:
-                    thisname = 'wfm{:03d}ch{}'.format(jj + 1, channels[ii])
+                    thisname = f"wfm{jj + 1:03d}ch{channels[ii]}"
                 namelist.append(thisname)
 
                 package = self._pack_waveform(waveforms_int[ii][jj],
@@ -1683,11 +1684,11 @@ class Tektronix_AWG5014(VisaInstrument):
             raise TypeError('Marker 2 contains invalid values.' +
                             ' Only 0 and 1 are allowed')
 
-        wflen = len(wf)
-        packed_wf = np.zeros(wflen, dtype=np.uint16)
-        packed_wf += np.uint16(np.round(wf * 8191) + 8191 +
-                               np.round(16384 * m1) +
-                               np.round(32768 * m2))
+        # Note: we use np.trunc here rather than np.round
+        # as it is an order of magnitude faster
+        packed_wf = np.trunc(16384 * m1 + 32768 * m2
+                             + wf * 8191 + 8191.5).astype(np.uint16)
+
         if len(np.where(packed_wf == -1)[0]) > 0:
             print(np.where(packed_wf == -1))
         return packed_wf

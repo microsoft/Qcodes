@@ -28,19 +28,7 @@
                     "min_count": 1,
                     "callback_kwargs": {}
                 }
-            },
-            "Plottr":{
-                "factory": "plottr.qcodes_dataset.QcodesDatasetSubscriber",
-                "factory_kwargs":{
-                    "log": false
-                },
-                "subscription_kwargs":{
-                    "min_wait": 0,
-                    "min_count": 1,
-                    "callback_kwargs": {}
-                }
             }
-
         },
         "default_subscribers": []
     },
@@ -74,6 +62,17 @@
         "location": 0,
         "work_station": 0,
         "sample": 0
+    },
+    "dataset": {
+        "write_in_background": false,
+        "write_period": 5.0,
+        "use_threads": false,
+        "dond_plot": false,
+        "dond_show_progress": false,
+        "export_automatic": false,
+        "export_type": null,
+        "export_prefix": "qcodes_",
+        "export_path": "~"
     },
     "telemetry":
     {

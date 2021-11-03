@@ -196,3 +196,20 @@ def default_config(user_config: Optional[str] = None):
             Config.schema_cwd_file_name = schema_cwd_file_name
 
             qcodes.config.current_config = default_config_obj
+
+
+@contextmanager
+def reset_config_on_exit():
+    """
+    Context manager to clean any modefication of the in memory config on exit
+
+    """
+
+    default_config_obj: Optional[DotDict] = copy.deepcopy(
+        qcodes.config.current_config
+    )
+
+    try:
+        yield
+    finally:
+        qcodes.config.current_config = default_config_obj

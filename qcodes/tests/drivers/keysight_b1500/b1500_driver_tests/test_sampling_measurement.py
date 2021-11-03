@@ -4,10 +4,10 @@ import numpy as np
 import pytest
 
 from qcodes.instrument_drivers.Keysight.keysightb1500 import constants
-from qcodes.instrument_drivers.Keysight.keysightb1500.\
-    KeysightB1500_sampling_measurement import MeasurementNotTaken
-from qcodes.tests.drivers.keysight_b1500.b1500_driver_tests.test_b1500 \
-    import b1500
+from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_sampling_measurement import (
+    MeasurementNotTaken,
+)
+from qcodes.tests.drivers.keysight_b1500.b1500_driver_tests.test_b1500 import b1500
 
 
 @pytest.fixture
@@ -26,12 +26,11 @@ def smu_output():
 @pytest.fixture
 def smu_sampling_measurement(smu, smu_output):
     _, data_to_return = smu_output
-    status = 'N'
-    channel = 'A'
-    type_ = 'I'
-    prefix = f'{status}{channel}{type_}'
-    visa_data_response = ','.join([prefix + f'{d:+012.3E}'
-                                   for d in data_to_return])
+    status = "N"
+    channel = "A"
+    type_ = "I"
+    prefix = f"{status}{channel}{type_}"
+    visa_data_response = ",".join(prefix + f"{d:+012.3E}" for d in data_to_return)
     smu_sm = smu
     original_ask = smu_sm.root_instrument.ask
 

@@ -368,4 +368,4 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
             # otherwise
             disable_mask = ~np.uint32(1 << 26)
             new_value = current_value & disable_mask
-        self._write_register(58, new_value)
+        self._write_register(58, int(new_value))

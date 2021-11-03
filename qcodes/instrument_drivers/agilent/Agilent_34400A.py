@@ -1,7 +1,7 @@
 from typing import Any
 
+from qcodes import Parameter, VisaInstrument
 from qcodes.utils.validators import Enum, Strings
-from qcodes import VisaInstrument
 
 
 class Agilent_34400A(VisaInstrument):
@@ -9,7 +9,6 @@ class Agilent_34400A(VisaInstrument):
     This is the QCoDeS driver for the Agilent_34400A DMM Series,
     tested with Agilent_34401A, Agilent_34410A, and Agilent_34411A.
     """
-
     def __init__(self, name: str, address: str, **kwargs: Any) -> None:
         super().__init__(name, address, terminator='\n', **kwargs)
 
@@ -30,12 +29,15 @@ class Agilent_34400A(VisaInstrument):
                                               1e-07, 3e-08]
                                    }[self.model]
 
-        self.add_parameter('resolution',
-                           get_cmd='VOLT:DC:RES?',
-                           get_parser=float,
-                           set_cmd=self._set_resolution,
-                           label='Resolution',
-                           unit='V')
+        self.resolution = Parameter(
+            "resolution",
+            get_cmd="VOLT:DC:RES?",
+            get_parser=float,
+            set_cmd=self._set_resolution,
+            label="Resolution",
+            unit="V",
+        )
+        """Resolution """
 
         self.add_parameter('volt',
                            get_cmd='READ?',
@@ -107,9 +109,8 @@ class Agilent_34400A(VisaInstrument):
         # convert both value*range and the resolution factors
         # to strings with few digits, so we avoid floating point
         # rounding errors.
-        res_fac_strs = ['{:.1e}'.format(v * rang)
-                        for v in self._resolution_factor]
-        if f'{value:.1e}' not in res_fac_strs:
+        res_fac_strs = [f"{v * rang:.1e}" for v in self._resolution_factor]
+        if f"{value:.1e}" not in res_fac_strs:
             raise ValueError(
                 'Resolution setting {:.1e} ({} at range {}) '
                 'does not exist. '

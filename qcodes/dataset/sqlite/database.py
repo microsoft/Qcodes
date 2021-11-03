@@ -8,21 +8,30 @@ import sqlite3
 import sys
 from contextlib import contextmanager
 from os.path import expanduser, normpath
-from typing import Union, Iterator, Tuple, Optional
+from pathlib import Path
+from typing import Iterator, Optional, Tuple, Union
 
 import numpy as np
-from numpy import ndarray
 
-from qcodes.dataset.sqlite.connection import ConnectionPlus
-from qcodes.dataset.sqlite.db_upgrades import _latest_available_version, \
-    get_user_version, perform_db_upgrade
-from qcodes.dataset.sqlite.initial_schema import init_db
 import qcodes
-from qcodes.utils.types import complex_types, complex_type_union
+from qcodes.dataset.experiment_settings import reset_default_experiment_id
+from qcodes.dataset.sqlite.connection import ConnectionPlus
+from qcodes.dataset.sqlite.db_upgrades import (
+    _latest_available_version,
+    get_user_version,
+    perform_db_upgrade,
+)
+from qcodes.dataset.sqlite.initial_schema import init_db
+from qcodes.utils.types import (
+    complex_type_union,
+    complex_types,
+    numpy_floats,
+    numpy_ints,
+)
 
 
 # utility function to allow sqlite/numpy type
-def _adapt_array(arr: ndarray) -> sqlite3.Binary:
+def _adapt_array(arr: np.ndarray) -> sqlite3.Binary:
     """
     See this:
     https://stackoverflow.com/questions/3425320/sqlite3-programmingerror-you-must-not-use-8-bit-bytestrings-unless-you-use-a-te
@@ -33,7 +42,7 @@ def _adapt_array(arr: ndarray) -> sqlite3.Binary:
     return sqlite3.Binary(out.read())
 
 
-def _convert_array(text: bytes) -> ndarray:
+def _convert_array(text: bytes) -> np.ndarray:
     out = io.BytesIO(text)
     out.seek(0)
     return np.load(out)
@@ -107,7 +116,7 @@ def _adapt_complex(value: complex_type_union) -> sqlite3.Binary:
     return sqlite3.Binary(out.read())
 
 
-def connect(name: str, debug: bool = False,
+def connect(name: Union[str, Path], debug: bool = False,
             version: int = -1) -> ConnectionPlus:
     """
     Connect or create  database. If debug the queries will be echoed back.
@@ -126,11 +135,8 @@ def connect(name: str, debug: bool = False,
 
     """
     # register numpy->binary(TEXT) adapter
-    # the typing here is ignored due to what we think is a flaw in typeshed
-    # see https://github.com/python/typeshed/issues/2429
     sqlite3.register_adapter(np.ndarray, _adapt_array)
     # register binary(TEXT) -> numpy converter
-    # for some reasons mypy complains about this
     sqlite3.register_converter("array", _convert_array)
 
     sqlite3_conn = sqlite3.connect(name, detect_types=sqlite3.PARSE_DECLTYPES,
@@ -149,15 +155,12 @@ def connect(name: str, debug: bool = False,
     conn.row_factory = sqlite3.Row
 
     # Make sure numpy ints and floats types are inserted properly
-    for numpy_int in [
-        np.int, np.int8, np.int16, np.int32, np.int64,
-        np.uint, np.uint8, np.uint16, np.uint32, np.uint64
-    ]:
+    for numpy_int in numpy_ints:
         sqlite3.register_adapter(numpy_int, int)
 
     sqlite3.register_converter("numeric", _convert_numeric)
 
-    for numpy_float in [np.float, np.float16, np.float32, np.float64]:
+    for numpy_float in (float,) + numpy_floats:
         sqlite3.register_adapter(numpy_float, _adapt_float)
 
     for complex_type in complex_types:
@@ -187,6 +190,7 @@ def get_db_version_and_newest_available_version(path_to_db: str) -> Tuple[int,
     """
     conn = connect(path_to_db, version=0)
     db_version = get_user_version(conn)
+    conn.close()
 
     return db_version, _latest_available_version()
 
@@ -215,6 +219,7 @@ def initialise_database(journal_mode: Optional[str] = 'WAL') -> None:
     # calling connect performs all the needed actions to create and upgrade
     # the db to the latest version.
     conn = connect(get_DB_location(), get_DB_debug())
+    reset_default_experiment_id(conn)
     if journal_mode is not None:
         set_journal_mode(conn, journal_mode)
     conn.close()

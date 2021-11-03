@@ -5,16 +5,19 @@ are useful for building more database-specific queries out of them.
 import itertools
 import sqlite3
 from distutils.version import LooseVersion
-
-from typing import List, Any, Union, Dict, Tuple, Optional, Sequence
+from typing import Any, List, Mapping, Optional, Sequence, Tuple, Union
 
 import numpy as np
 from numpy import ndarray
 
-from qcodes.dataset.sqlite.connection import ConnectionPlus, \
-    atomic_transaction, transaction, atomic
+from qcodes.dataset.sqlite.connection import (
+    ConnectionPlus,
+    atomic,
+    atomic_transaction,
+    transaction,
+)
 from qcodes.dataset.sqlite.settings import SQLiteSettings
-
+from qcodes.utils.deprecate import deprecate
 
 # represent the type of  data we can/want map to sqlite column
 VALUE = Union[str, complex, List, ndarray, bool, None]
@@ -71,8 +74,26 @@ def many_many(curr: sqlite3.Cursor, *columns: str) -> List[List[Any]]:
     return results
 
 
-def select_one_where(conn: ConnectionPlus, table: str, column: str,
-                     where_column: str, where_value: Any) -> Any:
+def select_one_where(
+    conn: ConnectionPlus, table: str, column: str, where_column: str, where_value: VALUE
+) -> VALUE:
+    """
+    Select a value from a given column given a match of a value in a
+    different column. If the given matched row/column intersect is empty
+    None will be returned.
+
+    Args:
+        conn: Connection to the db
+        table: Table to look for values in
+        column: Column to return value from
+        where_column: Column to match on
+        where_value: Value to match in where_column
+
+    Returns:
+        Value found
+    raises:
+        RuntimeError if not exactly match is found.
+    """
     query = f"""
     SELECT {column}
     FROM
@@ -85,8 +106,13 @@ def select_one_where(conn: ConnectionPlus, table: str, column: str,
     return res
 
 
-def select_many_where(conn: ConnectionPlus, table: str, *columns: str,
-                      where_column: str, where_value: Any) -> Any:
+def select_many_where(
+    conn: ConnectionPlus,
+    table: str,
+    *columns: str,
+    where_column: str,
+    where_value: VALUE,
+) -> VALUES:
     _columns = ",".join(columns)
     query = f"""
     SELECT {_columns}
@@ -100,7 +126,7 @@ def select_many_where(conn: ConnectionPlus, table: str, *columns: str,
     return res
 
 
-def _massage_dict(metadata: Dict[str, Any]) -> Tuple[str, List[Any]]:
+def _massage_dict(metadata: Mapping[str, Any]) -> Tuple[str, List[Any]]:
     """
     {key:value, key2:value} -> ["key=?, key2=?", [value, value]]
     """
@@ -222,6 +248,7 @@ def insert_many_values(conn: ConnectionPlus,
     return return_value
 
 
+@deprecate('Unused private method to be removed in a future version')
 def modify_values(conn: ConnectionPlus,
                   formatted_name: str,
                   index: int,
@@ -249,6 +276,7 @@ def modify_values(conn: ConnectionPlus,
     return c.rowcount
 
 
+@deprecate('Unused private method to be removed in a future version')
 def modify_many_values(conn: ConnectionPlus,
                        formatted_name: str,
                        start_index: int,
@@ -279,14 +307,14 @@ def length(conn: ConnectionPlus,
            formatted_name: str
            ) -> int:
     """
-    Return the lenght of the table
+    Return the length of the table
 
     Args:
         conn: the connection to the sqlite database
         formatted_name: name of the table
 
     Returns:
-        the lenght of the table
+        the length of the table
     """
     query = f"select MAX(id) from '{formatted_name}'"
     c = atomic_transaction(conn, query)

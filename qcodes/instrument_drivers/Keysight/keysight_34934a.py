@@ -1,7 +1,9 @@
 import logging
 import re
-from qcodes import VisaInstrument, InstrumentChannel, validators
-from typing import Union, List, Tuple, Optional, Callable
+from typing import Callable, List, Optional, Tuple, Union
+
+from qcodes import InstrumentChannel, VisaInstrument, validators
+
 from .keysight_34980a_submodules import KeysightSwitchMatrixSubModule
 
 
@@ -42,14 +44,14 @@ class Keysight34934A(KeysightSwitchMatrixSubModule):
         layout = self.ask(f'SYSTEM:MODule:TERMinal:TYPE? {self.slot}')
         self._is_locked = (layout == 'NONE')
         if self._is_locked:
-            logging.warning(f'For slot {slot}, no configuration module'
-                            f'connected, or safety interlock jumper removed. '
-                            "Making any connection is not allowed")
-            config = self.ask(f'SYST:CTYP? {slot}').strip('"').split(',')[1]
-            layout = config.split('-')[1]
-        self.row, self.column = [
-            int(num) for num in re.findall(r'\d+', layout)
-        ]
+            logging.warning(
+                f"For slot {slot}, no configuration module"
+                f"connected, or safety interlock jumper removed. "
+                "Making any connection is not allowed"
+            )
+            config = self.ask(f"SYST:CTYP? {slot}").strip('"').split(",")[1]
+            layout = config.split("-")[1]
+        self.row, self.column = (int(num) for num in re.findall(r"\d+", layout))
 
     def write(self, cmd: str) -> None:
         """

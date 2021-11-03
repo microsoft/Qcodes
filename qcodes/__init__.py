@@ -4,10 +4,14 @@
 
 # config
 from typing import Any
+
 import qcodes.configuration as qcconfig
 from qcodes.logger.logger import conditionally_start_all_logging
 from qcodes.utils.helpers import add_to_spyder_UMR_excludelist
-from .version import __version__
+
+from . import _version
+
+__version__ = _version.get_versions()["version"]
 
 config: qcconfig.Config = qcconfig.Config()
 
@@ -45,8 +49,8 @@ if config.core.import_legacy_api:
     from qcodes.data.hdf5_format import HDF5Format
     from qcodes.data.io import DiskIO
 
-
 from qcodes.station import Station
+
 haswebsockets = True
 try:
     import websockets
@@ -55,38 +59,47 @@ except ImportError:
 if haswebsockets:
     from qcodes.monitor.monitor import Monitor
 
-
-
-
+from qcodes.dataset.data_set import (
+    load_by_counter,
+    load_by_guid,
+    load_by_id,
+    load_by_run_spec,
+    new_data_set,
+)
+from qcodes.dataset.descriptions.param_spec import ParamSpec
+from qcodes.dataset.experiment_container import (
+    experiments,
+    load_experiment,
+    load_experiment_by_name,
+    load_last_experiment,
+    load_or_create_experiment,
+    new_experiment,
+)
+from qcodes.dataset.measurements import Measurement
+from qcodes.dataset.sqlite.database import (
+    initialise_database,
+    initialise_or_create_database_at,
+)
+from qcodes.dataset.sqlite.settings import SQLiteSettings
 from qcodes.instrument.base import Instrument, find_or_create_instrument
-from qcodes.instrument.ip import IPInstrument
-from qcodes.instrument.visa import VisaInstrument
-from qcodes.instrument.channel import InstrumentChannel, ChannelList
+from qcodes.instrument.channel import ChannelList, InstrumentChannel
 from qcodes.instrument.function import Function
+from qcodes.instrument.ip import IPInstrument
 from qcodes.instrument.parameter import (
-    Parameter,
     ArrayParameter,
-    MultiParameter,
-    ParameterWithSetpoints,
+    CombinedParameter,
     DelegateParameter,
     ManualParameter,
+    MultiParameter,
+    Parameter,
+    ParameterWithSetpoints,
     ScaledParameter,
     combine,
-    CombinedParameter)
+)
 from qcodes.instrument.sweep_values import SweepFixedValues, SweepValues
-
+from qcodes.instrument.visa import VisaInstrument
+from qcodes.instrument_drivers.test import test_instrument, test_instruments
 from qcodes.utils import validators
-
-from qcodes.instrument_drivers.test import test_instruments, test_instrument
-
-from qcodes.dataset.measurements import Measurement
-from qcodes.dataset.data_set import new_data_set, load_by_counter, load_by_id, load_by_run_spec, load_by_guid
-from qcodes.dataset.experiment_container import new_experiment, load_experiment, load_experiment_by_name, \
-    load_last_experiment, experiments, load_or_create_experiment
-from qcodes.dataset.sqlite.settings import SQLiteSettings
-from qcodes.dataset.descriptions.param_spec import ParamSpec
-from qcodes.dataset.sqlite.database import initialise_database, \
-    initialise_or_create_database_at
 
 try:
     # Check if we are in iPython
@@ -100,10 +113,10 @@ except NameError:
 except RuntimeError as e:
     print(e)
 
-import logging
-
 # ensure to close all instruments when interpreter is closed
 import atexit
+import logging
+
 atexit.register(Instrument.close_all)
 
 

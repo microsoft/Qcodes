@@ -1,22 +1,34 @@
 import collections
 import logging
-import time
-from functools import partial
-from typing import Union, Iterable, Callable, Any, Optional, Tuple, List, Sequence, TypeVar
 import numbers
+import time
 import warnings
+from collections import defaultdict
+from functools import partial
+from typing import (
+    Any,
+    Callable,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    TypeVar,
+    Union,
+    cast,
+)
 
 import numpy as np
 
-from qcodes import Instrument, IPInstrument, InstrumentChannel
+from qcodes import Instrument, InstrumentChannel, IPInstrument, Parameter
 from qcodes.math_utils.field_vector import FieldVector
-from qcodes.utils.validators import Bool, Numbers, Ints, Anything
 from qcodes.utils.deprecate import QCoDeSDeprecationWarning
+from qcodes.utils.validators import Anything, Bool, Enum, Ints, Numbers
 
 log = logging.getLogger(__name__)
 
 CartesianFieldLimitFunction = \
-    Callable[[numbers.Real, numbers.Real, numbers.Real], bool]
+    Callable[[float, float, float], bool]
 
 T = TypeVar('T')
 
@@ -237,6 +249,11 @@ class AMI430(IPInstrument):
                                'heating switch': 9,
                                'cooling switch': 10,
                            })
+        self.add_parameter('ramping_state_check_interval',
+                           initial_value=0.05,
+                           unit="s",
+                           vals=Numbers(0, 10),
+                           set_cmd=None)
 
         # Add persistent switch
         switch_heater = AMI430SwitchHeater(self)
@@ -319,7 +336,8 @@ class AMI430(IPInstrument):
 
         # Check we can ramp
         if not self._can_start_ramping():
-            raise AMI430Exception("Cannot ramp in current state")
+            raise AMI430Exception(f"Cannot ramp in current state: "
+                                  f"state is {self.ramping_state()}")
 
         # Then, do the actual ramp
         self.pause()
@@ -338,15 +356,19 @@ class AMI430(IPInstrument):
 
         # Otherwise, wait until no longer ramping
         self.log.debug(f'Starting blocking ramp of {self.name} to {value}')
-        while self.ramping_state() == 'ramping':
-            self._sleep(0.3)
-        self._sleep(2.0)
-        state = self.ramping_state()
+        exit_state = self.wait_while_ramping()
         self.log.debug(f'Finished blocking ramp')
         # If we are now holding, it was successful
-        if state != 'holding':
+        if exit_state != 'holding':
             msg = '_set_field({}) failed with state: {}'
-            raise AMI430Exception(msg.format(value, state))
+            raise AMI430Exception(msg.format(value, exit_state))
+
+    def wait_while_ramping(self) -> str:
+
+        while self.ramping_state() == 'ramping':
+            self._sleep(self.ramping_state_check_interval())
+
+        return self.ramping_state()
 
     def _get_ramp_rate(self) -> float:
         """ Return the ramp rate of the first segment in Tesla per second """
@@ -411,19 +433,17 @@ class AMI430(IPInstrument):
         return new_coil_constant
 
     def _update_units(
-            self,
-            ramp_rate_units: Optional[str] = None,
-            field_units: Optional[str] = None
+        self, ramp_rate_units: Optional[int] = None, field_units: Optional[int] = None
     ) -> None:
         # Get or set units on device
         if ramp_rate_units is None:
-            ramp_rate_units_int = self.ramp_rate_units()
+            ramp_rate_units_int: str = self.ramp_rate_units()
         else:
             self.write(f"CONF:RAMP:RATE:UNITS {ramp_rate_units}")
             ramp_rate_units_int = self.ramp_rate_units.\
                 inverse_val_mapping[ramp_rate_units]
         if field_units is None:
-            field_units_int = self.field_units()
+            field_units_int: str = self.field_units()
         else:
             self.write(f"CONF:FIELD:UNITS {field_units}")
             field_units_int = self.field_units.inverse_val_mapping[field_units]
@@ -461,27 +481,67 @@ class AMI430(IPInstrument):
 class AMI430_3D(Instrument):
     def __init__(self,
                  name: str,
-                 instrument_x: AMI430,
-                 instrument_y: AMI430,
-                 instrument_z: AMI430,
+                 instrument_x: Union[AMI430, str],
+                 instrument_y: Union[AMI430, str],
+                 instrument_z: Union[AMI430, str],
                  field_limit: Union[numbers.Real,
                                     Iterable[CartesianFieldLimitFunction]],
                  **kwargs: Any):
+        """
+        Driver for controlling three American Magnetics Model 430 magnet power
+        supplies simultaneously for setting magnetic field vectors.
+
+        The individual magnet power supplies can be passed in as either
+        instances of AMI430 driver or as names of existing AMI430 instances.
+        In the latter case, the instances will be found via the passed names.
+
+        Args:
+            name: a name for the instrument
+            instrument_x: AMI430 instance or a names of existing AMI430
+                instance for controlling the X axis of magnetic field
+            instrument_y: AMI430 instance or a names of existing AMI430
+                instance for controlling the Y axis of magnetic field
+            instrument_z: AMI430 instance or a names of existing AMI430
+                instance for controlling the Z axis of magnetic field
+            field_limit: a number for maximum allows magnetic field or an
+                iterable of callable field limit functions that define
+                region(s) of allowed values in 3D magnetic field space
+        """
         super().__init__(name, **kwargs)
 
         if not isinstance(name, str):
             raise ValueError("Name should be a string")
 
-        instruments = [instrument_x, instrument_y, instrument_z]
+        for instrument, arg_name in zip(
+                (instrument_x, instrument_y, instrument_z),
+                ("instrument_x", "instrument_y", "instrument_z"),
+        ):
+            if not isinstance(instrument, (AMI430, str)):
+                raise ValueError(
+                    f"Instruments need to be instances of the class AMI430 "
+                    f"or be valid names of already instantiated instances "
+                    f"of AMI430 class; {arg_name} argument is "
+                    f"neither of those"
+                )
 
-        if not all([isinstance(instrument, AMI430)
-                    for instrument in instruments]):
-            raise ValueError("Instruments need to be instances "
-                             "of the class AMI430")
+        def find_ami430_with_name(ami430_name: str) -> AMI430:
+            found_ami430 = AMI430.find_instrument(
+                name=ami430_name, instrument_class=AMI430
+            )
+            return cast(AMI430, found_ami430)
 
-        self._instrument_x = instrument_x
-        self._instrument_y = instrument_y
-        self._instrument_z = instrument_z
+        self._instrument_x = (
+            instrument_x if isinstance(instrument_x, AMI430)
+            else find_ami430_with_name(instrument_x)
+        )
+        self._instrument_y = (
+            instrument_y if isinstance(instrument_y, AMI430)
+            else find_ami430_with_name(instrument_y)
+        )
+        self._instrument_z = (
+            instrument_z if isinstance(instrument_z, AMI430)
+            else find_ami430_with_name(instrument_z)
+        )
 
         self._field_limit: Union[float, Iterable[CartesianFieldLimitFunction]]
         if isinstance(field_limit, collections.abc.Iterable):
@@ -663,11 +723,170 @@ class AMI430_3D(Instrument):
             vals=Bool()
         )
 
+        self.ramp_mode = Parameter(
+            name="ramp_mode",
+            instrument=self,
+            get_cmd=None,
+            set_cmd=None,
+            vals=Enum("default", "simultaneous"),
+            initial_value="default",
+        )
+
+        self.ramping_state_check_interval = Parameter(
+            name="ramping_state_check_interval",
+            instrument=self,
+            initial_value=0.05,
+            unit="s",
+            vals=Numbers(0, 10),
+            set_cmd=None,
+            get_cmd=None,
+        )
+
+        self.vector_ramp_rate = Parameter(
+            name="vector_ramp_rate",
+            instrument=self,
+            unit="T/s",
+            vals=Numbers(min_value=0.0),
+            set_cmd=None,
+            get_cmd=None,
+            set_parser=self._set_vector_ramp_rate_units,
+            docstring="Ramp rate along a line (vector) in 3D space. Only active"
+                      " if `ramp_mode='simultaneous'`."
+        )
+        """Ramp rate along a line (vector) in 3D field space"""
+
+    def _set_vector_ramp_rate_units(self, val: float) -> float:
+        _, common_ramp_rate_units = self._raise_if_not_same_field_and_ramp_rate_units()
+        self.vector_ramp_rate.unit = common_ramp_rate_units
+        return val
+
+    def ramp_simultaneously(self, setpoint: FieldVector, duration: float) -> None:
+        """
+        Ramp all axes simultaneously to the given setpoint and in the given time
+
+        The method calculates and sets the required ramp rates per magnet
+        axis, and then initiates a ramp simultaneously on all the axes. The
+        trajectory of the tip of the magnetic field vector is thus linear in
+        3D space, from the current field value to the setpoint.
+
+        If ``block_during_ramp`` parameter is ``True``, the method will block
+        until all axes finished ramping.
+
+        It is required for all axis instruments to have the same units for
+        ramp rate and field, otherwise an exception is raised. The given
+        setpoint and time are assumed to be in those common units.
+
+        Args:
+            setpoint: ``FieldVector`` setpoint
+            duration: time in which the setpoint field has to be reached on all axes
+
+        """
+        (
+            common_field_units,
+            common_ramp_rate_units,
+        ) = self._raise_if_not_same_field_and_ramp_rate_units()
+
+        self.log.debug(
+            f"Simultaneous ramp: setpoint {setpoint.repr_cartesian()} "
+            f"{common_field_units} in {duration} {common_ramp_rate_units}"
+        )
+
+        # Get starting field value
+
+        start_field = self._get_measured_field_vector()
+        self.log.debug(
+            f"Simultaneous ramp: start {start_field.repr_cartesian()} "
+            f"{common_field_units}"
+        )
+        self.log.debug(
+            f"Simultaneous ramp: delta {(setpoint - start_field).repr_cartesian()} "
+            f"{common_field_units}"
+        )
+
+        # Calculate new vector ramp rate based on time and setpoint
+
+        vector_ramp_rate = self.calculate_vector_ramp_rate_from_duration(
+            start=start_field, setpoint=setpoint, duration=duration
+        )
+        self.vector_ramp_rate(vector_ramp_rate)
+        self.log.debug(
+            f"Simultaneous ramp: new vector ramp rate for {self.full_name} "
+            f"is {vector_ramp_rate} {common_ramp_rate_units}"
+        )
+
+        # Launch the simultaneous ramp
+
+        self.ramp_mode("simultaneous")
+        self.cartesian(setpoint.get_components("x", "y", "z"))
+
+    @staticmethod
+    def calculate_axes_ramp_rates_for(
+        start: FieldVector, setpoint: FieldVector, duration: float
+    ) -> Tuple[float, float, float]:
+        """
+        Given starting and setpoint fields and expected ramp time calculates
+        required ramp rates for x, y, z axes (in this order) where axes are
+        ramped simultaneously.
+        """
+        vector_ramp_rate = AMI430_3D.calculate_vector_ramp_rate_from_duration(
+            start, setpoint, duration
+        )
+        return AMI430_3D.calculate_axes_ramp_rates_from_vector_ramp_rate(
+            start, setpoint, vector_ramp_rate
+        )
+
+    @staticmethod
+    def calculate_vector_ramp_rate_from_duration(
+        start: FieldVector, setpoint: FieldVector, duration: float
+    ) -> float:
+        return setpoint.distance(start) / duration
+
+    @staticmethod
+    def calculate_axes_ramp_rates_from_vector_ramp_rate(
+        start: FieldVector, setpoint: FieldVector, vector_ramp_rate: float
+    ) -> Tuple[float, float, float]:
+        delta_field = setpoint - start
+        ramp_rate_3d = delta_field / delta_field.norm() * vector_ramp_rate
+        return abs(ramp_rate_3d["x"]), abs(ramp_rate_3d["y"]), abs(ramp_rate_3d["z"])
+
+    def _raise_if_not_same_field_and_ramp_rate_units(self) -> Tuple[str, str]:
+        instruments = (self._instrument_x, self._instrument_y, self._instrument_z)
+
+        field_units_of_instruments = defaultdict(set)
+        ramp_rate_units_of_instruments = defaultdict(set)
+
+        for instrument in instruments:
+            ramp_rate_units_of_instruments[instrument.ramp_rate_units.cache.get()].add(
+                instrument.full_name
+            )
+            field_units_of_instruments[instrument.field_units.cache.get()].add(
+                instrument.full_name
+            )
+
+        if len(field_units_of_instruments) != 1:
+            raise ValueError(
+                f"Magnet axes instruments should have the same "
+                f"`field_units`, instead they have: "
+                f"{field_units_of_instruments}"
+            )
+
+        if len(ramp_rate_units_of_instruments) != 1:
+            raise ValueError(
+                f"Magnet axes instruments should have the same "
+                f"`ramp_rate_units`, instead they have: "
+                f"{ramp_rate_units_of_instruments}"
+            )
+
+        common_field_units = tuple(field_units_of_instruments.keys())[0]
+        common_ramp_rate_units = tuple(ramp_rate_units_of_instruments.keys())[0]
+
+        return common_field_units, common_ramp_rate_units
+
     def _verify_safe_setpoint(
             self,
-            setpoint_values: Tuple[numbers.Real, numbers.Real, numbers.Real]
+            setpoint_values: Tuple[float, float, float]
     ) -> bool:
-        if isinstance(self._field_limit, float):
+        if isinstance(self._field_limit, (int, float)):
             return np.linalg.norm(setpoint_values) < self._field_limit
 
         answer = any([limit_function(*setpoint_values) for
@@ -677,7 +896,7 @@ class AMI430_3D(Instrument):
 
     def _adjust_child_instruments(
             self,
-            values: Tuple[numbers.Real, numbers.Real, numbers.Real]
+            values: Tuple[float, float, float]
     ) -> None:
         """
         Set the fields of the x/y/z magnets. This function is called
@@ -704,7 +923,67 @@ class AMI430_3D(Instrument):
         # Now that we know we can proceed, call the individual instruments
 
         self.log.debug("Field values OK, proceeding")
-        for operator in [np.less, np.greater]:
+
+        if self.ramp_mode() == "simultaneous":
+            self._perform_simultaneous_ramp(values)
+        else:
+            self._perform_default_ramp(values)
+
+    def _update_individual_axes_ramp_rates(
+        self, values: Tuple[float, float, float]
+    ) -> None:
+        if self.vector_ramp_rate() is None or self.vector_ramp_rate() == 0:
+            raise ValueError('The value of the `vector_ramp_rate` Parameter is '
+                             'currently None or 0. Set it to an appropriate '
+                             'value to use the simultaneous ramping feature.')
+
+        new_axes_ramp_rates = self.calculate_axes_ramp_rates_from_vector_ramp_rate(
+            start=self._get_measured_field_vector(),
+            setpoint=FieldVector(x=values[0], y=values[1], z=values[2]),
+            vector_ramp_rate=self.vector_ramp_rate.get(),
+        )
+        instruments = (self._instrument_x, self._instrument_y, self._instrument_z)
+        for instrument, new_axis_ramp_rate in zip(instruments, new_axes_ramp_rates):
+            instrument.ramp_rate.set(new_axis_ramp_rate)
+            self.log.debug(
+                f"Simultaneous ramp: new rate for {instrument.full_name} "
+                f"is {new_axis_ramp_rate} {instrument.ramp_rate.unit}"
+            )
+
+    def _perform_simultaneous_ramp(self, values: Tuple[float, float, float]) -> None:
+        self._update_individual_axes_ramp_rates(values)
+
+        axes = (self._instrument_x, self._instrument_y, self._instrument_z)
+
+        for axis_instrument, value in zip(axes, values):
+            current_actual = axis_instrument.field()
+
+            # If the new set point is practically equal to the
+            # current one then do nothing
+            if np.isclose(value, current_actual, rtol=0, atol=1e-8):
+                self.log.debug(
+                    f"Simultaneous ramp: {axis_instrument.short_name} is "
+                    f"already at target field {value} "
+                    f"{axis_instrument.field.unit} "
+                    f"({current_actual} exactly)"
+                )
+                continue
+
+            self.log.debug(
+                f"Simultaneous ramp: setting {axis_instrument.short_name} "
+                f"target field to {value} {axis_instrument.field.unit}"
+            )
+            axis_instrument.set_field(value, perform_safety_check=False, block=False)
+
+        if self.block_during_ramp() is True:
+            self.log.debug(f"Simultaneous ramp: blocking until ramp is finished")
+            self.wait_while_all_axes_ramping()
+
+        self.log.debug(f"Simultaneous ramp: returning from the ramp call")
+
+    def _perform_default_ramp(self, values: Tuple[float, float, float]) -> None:
+        operators: Tuple[Callable[[Any, Any], bool], ...] = (np.less, np.greater)
+        for operator in operators:
             # First ramp the coils that are decreasing in field strength.
             # This will ensure that we are always in a safe region as
             # far as the quenching of the magnets is concerned
@@ -725,6 +1004,30 @@ class AMI430_3D(Instrument):
                 instrument.set_field(value, perform_safety_check=False,
                                      block=self.block_during_ramp.get())
 
+    def wait_while_all_axes_ramping(self) -> None:
+        """ Wait and blocks as long as any magnet axis is ramping. """
+        while self.any_axis_is_ramping():
+            self._instrument_x._sleep(self.ramping_state_check_interval.get())
+
+    def any_axis_is_ramping(self) -> bool:
+        """
+        Returns True if any of the magnet axes are currently ramping, or False
+        if none of the axes are ramping.
+        """
+        return any(
+            axis_instrument.ramping_state() == "ramping"
+            for axis_instrument in (
+                self._instrument_x,
+                self._instrument_y,
+                self._instrument_z,
+            )
+        )
+
+    def pause(self) -> None:
+        """ Pause all magnet axes. """
+        for axis_instrument in (self._instrument_x, self._instrument_y, self._instrument_z):
+            axis_instrument.pause()
+
     def _request_field_change(self, instrument: AMI430,
                               value: numbers.Real) -> None:
         """
@@ -742,15 +1045,20 @@ class AMI430_3D(Instrument):
             msg = 'This magnet doesnt belong to its specified parent {}'
             raise NameError(msg.format(self))
 
+    def _get_measured_field_vector(self) -> FieldVector:
+        return FieldVector(
+            x=self._instrument_x.field(),
+            y=self._instrument_y.field(),
+            z=self._instrument_z.field(),
+        )
+
     def _get_measured(
             self,
             *names: str
     ) -> Union[numbers.Real, List[numbers.Real]]:
+        measured_field_vector = self._get_measured_field_vector()
 
-        x = self._instrument_x.field()
-        y = self._instrument_y.field()
-        z = self._instrument_z.field()
-        measured_values = FieldVector(x=x, y=y, z=z).get_components(*names)
+        measured_values = measured_field_vector.get_components(*names)
 
         # Convert angles from radians to degrees
         d = dict(zip(names, measured_values))
@@ -787,7 +1095,7 @@ class AMI430_3D(Instrument):
     def _set_setpoints(
             self,
             names: Sequence[str],
-            values: Sequence[numbers.Real]
+            values: Sequence[float]
     ) -> None:
 
         kwargs = dict(zip(names, np.atleast_1d(values)))

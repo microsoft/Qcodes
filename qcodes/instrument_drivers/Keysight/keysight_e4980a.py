@@ -1,9 +1,17 @@
-from typing import Tuple, Sequence, cast, Any
+from distutils.version import LooseVersion
+from typing import Any, Sequence, Tuple, Union, cast
 
-from qcodes import VisaInstrument, InstrumentChannel
-from qcodes.instrument.parameter import MultiParameter, ParamRawDataType
+from pyvisa.errors import VisaIOError
+
+from qcodes import InstrumentChannel, VisaInstrument
+from qcodes.instrument.group_parameter import Group, GroupParameter
+from qcodes.instrument.parameter import (
+    ManualParameter,
+    MultiParameter,
+    ParamRawDataType,
+)
 from qcodes.utils.helpers import create_on_off_val_mapping
-from qcodes.utils.validators import Enum, Numbers
+from qcodes.utils.validators import Bool, Enum, Ints, Numbers
 
 
 class MeasurementPair(MultiParameter):
@@ -184,6 +192,27 @@ class KeysightE4980A(VisaInstrument):
         """
         super().__init__(name, address, terminator=terminator, **kwargs)
 
+        idn = self.IDN.get()
+
+        self.has_firmware_a_02_10_or_above = (
+                LooseVersion(idn["firmware"]) >= LooseVersion("A.02.10")
+        )
+
+        self.has_option_001 = '001' in self._options()
+        self._dc_bias_v_level_range: Union[Numbers, Enum]
+        if self.has_option_001:
+            self._v_level_range = Numbers(0, 20)
+            self._i_level_range = Numbers(0, 0.1)
+            self._imp_range = Enum(0.1, 1, 10, 100, 300, 1000, 3000, 10000,
+                                   30000, 100000)
+            self._dc_bias_v_level_range = Numbers(-40, 40)
+        else:
+            self._v_level_range = Numbers(0, 2)
+            self._i_level_range = Numbers(0, 0.02)
+            self._imp_range = Enum(1, 10, 100, 300, 1000, 3000, 10000, 30000,
+                                   100000)
+            self._dc_bias_v_level_range = Enum(0, 1.5, 2)
+
         self._measurement_pair = MeasurementPair(
             "CPD",
             ("capacitance", "dissipation_factor"),
@@ -202,22 +231,21 @@ class KeysightE4980A(VisaInstrument):
 
         self.add_parameter(
             "current_level",
-            get_cmd=":CURRent:LEVel?",
-            set_cmd=":CURRent:LEVel {}",
-            get_parser=float,
+            get_cmd=self._get_current_level,
+            set_cmd=self._set_current_level,
             unit="A",
-            vals=Numbers(0, 0.1),
+            vals=self._i_level_range,
             docstring="Gets and sets the current level for measurement signal."
         )
 
         self.add_parameter(
             "voltage_level",
-            get_cmd=":VOLTage:LEVel?",
-            set_cmd=":VOLTage:LEVel {}",
-            get_parser=float,
+            get_cmd=self._get_voltage_level,
+            set_cmd=self._set_voltage_level,
             unit="V",
-            vals=Numbers(0, 20),
-            docstring="Gets and sets the voltage level for measurement signal."
+            vals=self._v_level_range,
+            docstring="Gets and sets the AC bias voltage level for measurement "
+                      "signal."
         )
 
         self.add_parameter(
@@ -229,18 +257,92 @@ class KeysightE4980A(VisaInstrument):
         self.add_parameter(
             "range",
             get_cmd=":FUNCtion:IMPedance:RANGe?",
-            set_cmd=":FUNCtion:IMPedance:RANGe {}",
+            set_cmd=self._set_range,
             unit='Ohm',
-            vals=Enum(0.1, 1, 10, 100, 300, 1000, 3000, 10000, 30000, 100000),
+            vals=self._imp_range,
             docstring="Selects the impedance measurement range, also turns "
                       "the auto range function OFF."
+        )
+
+        self.add_parameter(
+            "imp_autorange_enabled",
+            get_cmd=":FUNCtion:IMPedance:RANGe:AUTO?",
+            set_cmd=":FUNCtion:IMPedance:RANGe:AUTO {}",
+            val_mapping=create_on_off_val_mapping(on_val="1",
+                                                  off_val="0"),
+            docstring="Enables the auto-range for impedance measurement."
+        )
+
+        self.add_parameter(
+            "dc_bias_enabled",
+            get_cmd=":BIAS:STATe?",
+            set_cmd=":BIAS:STATe {}",
+            vals=Bool(),
+            val_mapping=create_on_off_val_mapping(on_val="1",
+                                                  off_val="0"),
+            docstring="Enables DC bias. DC bias is automatically turned "
+                      "off after recalling the state from memory."
+        )
+
+        self.add_parameter(
+            "dc_bias_voltage_level",
+            get_cmd=":BIAS:VOLTage:LEVel?",
+            set_cmd=":BIAS:VOLTage:LEVel {}",
+            get_parser=float,
+            unit="V",
+            vals=self._dc_bias_v_level_range,
+            docstring="Sets the DC bias voltage. Setting does not "
+                      "implicitly turn the DC bias ON."
+        )
+
+        self.add_parameter(
+            "meas_time_mode",
+            val_mapping={"short": "SHOR", "medium": "MED", "long": "LONG"},
+            parameter_class=GroupParameter
+        )
+
+        self.add_parameter(
+            "averaging_rate",
+            vals=Ints(1, 256),
+            parameter_class=GroupParameter,
+            get_parser=int,
+            docstring="Averaging rate for the measurement."
+        )
+
+        self._aperture_group = Group(
+            [self.meas_time_mode,
+             self.averaging_rate],
+            set_cmd=":APERture {meas_time_mode},{averaging_rate}",
+            get_cmd=":APERture?"
+        )
+
+        if self.has_firmware_a_02_10_or_above:
+            self.add_parameter(
+                "dc_bias_autorange_enabled",
+                get_cmd=":BIAS:RANGe:AUTO?",
+                set_cmd=":BIAS:RANGe:AUTO {}",
+                vals=Bool(),
+                val_mapping=create_on_off_val_mapping(on_val="1",
+                                                      off_val="0"),
+                docstring="Enables DC Bias range AUTO setting. When DC bias "
+                          "range is fixed (not AUTO), '#' is displayed in "
+                          "the BIAS field of the display."
+            )
+
+        self.add_parameter(
+            "signal_mode",
+            initial_value=None,
+            vals=Enum("Voltage", "Current", None),
+            parameter_class=ManualParameter,
+            docstring="This parameter tracks the signal mode which is being "
+                      "set."
         )
 
         self.add_submodule(
             "_correction",
             Correction4980A(self, "correction")
         )
-
+        self._set_signal_mode_on_driver_initialization()
         self.connect_message()
 
     @property
@@ -256,13 +358,17 @@ class KeysightE4980A(VisaInstrument):
     def measurement(self) -> MeasurementPair:
         return self._measurement()
 
+    def _set_range(self, val: str) -> None:
+        self.write(f":FUNCtion:IMPedance:RANGe {val}")
+        self.imp_autorange_enabled.get()
+
     def _get_complex_impedance(self) -> MeasurementPair:
         """
         Returns the impedance in the format of (R, X), where R is the
         resistance, and X is the reactance.
         """
         measurement = self.ask(":FETCH:IMPedance:CORRected?")
-        r, x = [float(n) for n in measurement.split(",")]
+        r, x = (float(n) for n in measurement.split(","))
         measurement_pair = MeasurementPair(
             name="RX",
             names=("resistance", "reactance"),
@@ -276,7 +382,7 @@ class KeysightE4980A(VisaInstrument):
         Returns a measurement result with the selected measurement function.
         """
         measurement = self.ask(":FETCH:IMPedance:FORMatted?")
-        val1, val2, _ = [float(n) for n in measurement.split(",")]
+        val1, val2, _ = (float(n) for n in measurement.split(","))
         measurement_pair = MeasurementPair(
             name=self._measurement_pair.name,
             names=self._measurement_pair.names,
@@ -292,6 +398,86 @@ class KeysightE4980A(VisaInstrument):
         """
         self._measurement_pair = measurement_pair
         self.write(f":FUNCtion:IMPedance {measurement_pair.name}")
+
+    def _get_voltage_level(self) -> float:
+        """
+        Gets voltage level if signal is set with voltage level parameter
+        otherwise raises an error.
+        """
+        if self.signal_mode() == "Current":
+            raise RuntimeError("Cannot get voltage level as signal is set "
+                               "with current level parameter.")
+
+        v_level = self.ask(":VOLTage:LEVel?")
+
+        return float(v_level)
+
+    def _set_voltage_level(self, val: str) -> None:
+        """
+        Sets voltage level
+        """
+        self.signal_mode("Voltage")
+        self.voltage_level.snapshot_exclude = False
+        self.current_level.snapshot_exclude = True
+
+        self.write(f":VOLTage:LEVel {val}")
+
+    def _set_current_level(self, val: str) -> None:
+        """
+        Sets current level
+        """
+        self.signal_mode("Current")
+        self.voltage_level.snapshot_exclude = True
+        self.current_level.snapshot_exclude = False
+
+        self.write(f":CURRent:LEVel {val}")
+
+    def _get_current_level(self) -> float:
+        """
+        Gets current level if signal is set with current level parameter
+        otherwise raises an error.
+        """
+        if self.signal_mode() == "Voltage":
+            raise RuntimeError("Cannot get current level as signal is set "
+                               "with voltage level parameter.")
+
+        i_level = self.ask(":CURRent:LEVel?")
+
+        return float(i_level)
+
+    def _is_signal_mode_voltage_on_driver_initialization(self) -> bool:
+        """
+        Checks if signal is set with voltage_level param at instrument driver
+        initialization
+        """
+        assert self.signal_mode() is None
+        try:
+            self.voltage_level()
+            return True
+        except VisaIOError:
+            return False
+
+    def _set_signal_mode_on_driver_initialization(self) -> None:
+        """
+        Sets signal mode on driver initialization
+        """
+        if self._is_signal_mode_voltage_on_driver_initialization():
+            self.signal_mode("Voltage")
+            self.voltage_level.snapshot_exclude = False
+            self.current_level.snapshot_exclude = True
+        else:
+            self.signal_mode("Current")
+            self.voltage_level.snapshot_exclude = True
+            self.current_level.snapshot_exclude = False
+
+    def _options(self) -> Tuple[str, ...]:
+        """
+        Returns installed options numbers. Combinations of different installed
+        options are possible. Two of the possible options are Power/DC Bias
+        Enhance (option 001) and Bias Current Interface (option 002).
+        """
+        options_raw = self.ask('*OPT?')
+        return tuple(options_raw.split(','))
 
     def system_errors(self) -> str:
         """

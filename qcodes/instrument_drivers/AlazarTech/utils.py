@@ -5,10 +5,9 @@ improve the code structure (which is more the purpose of the
 :mod:`.AlazarTech.helpers` module).
 """
 
-from typing import Any, TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 
-from qcodes.instrument.parameter import ParamRawDataType
-from qcodes.instrument.parameter import Parameter
+from qcodes.instrument.parameter import Parameter, ParamRawDataType
 
 if TYPE_CHECKING:
     from .ATS import AlazarTech_ATS
@@ -38,6 +37,6 @@ class TraceParameter(Parameter):
         return self._synced_to_card
 
     def set_raw(self, value: ParamRawDataType) -> None:
-        instrument = cast("AlazarTech_ATS", self._instrument)
+        instrument = cast("AlazarTech_ATS", self.instrument)
         instrument._parameters_synced = False
         self._synced_to_card = False

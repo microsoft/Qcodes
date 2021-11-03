@@ -115,7 +115,7 @@ class FixedFrequencyPointIQ(MultiParameter):
         """
         assert isinstance(self.instrument, ZNBChannel)
         i, q = self.instrument._get_cw_data()
-        return np.mean(i), np.mean(q)
+        return float(np.mean(i)), float(np.mean(q))
 
 
 class FixedFrequencyPointMagPhase(MultiParameter):
@@ -654,8 +654,10 @@ class ZNBChannel(InstrumentChannel):
     def _set_npts(self, val: int) -> None:
         channel = self._instrument_channel
         self.write(f"SENS{channel}:SWE:POIN {val:.7f}")
-        self.update_lin_traces()
-        self.update_cw_traces()
+        if self.sweep_type().startswith("CW"):
+            self.update_cw_traces()
+        else:
+            self.update_lin_traces()
 
     def _set_bandwidth(self, val: int) -> None:
         channel = self._instrument_channel
