@@ -52,6 +52,8 @@ Go to the directory ``docs`` and
 This generate a webpage, index.html, in ``docs/_build/html`` with the
 rendered html.
 
+This is a random change to the readme.
+
 Code of Conduct
 ===============
 
