@@ -12,7 +12,7 @@ status = [
   "pytestmypy (ubuntu-latest, 3.9)",
   "pytestmin (ubuntu-latest, 3.7)"
 ]
-# these are the checks that must pass before a branch can be merged to stating using bors r+
+# these are the checks that must pass before a branch can be merged to staging using bors r+
 pr_status = [
   "pytestnonlocal (3.7)",
   "pytestconda (ubuntu-latest)",
