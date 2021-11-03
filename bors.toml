@@ -1,13 +1,30 @@
+# these are the checks that must pass before staging is merged to master
 status = [
-  "pytestnonlocal (3.7)", 
+  "pytestnonlocal (3.7)",
   "pytestconda (ubuntu-latest)",
   "pytestconda (windows-latest)",
   "builddocs (ubuntu-latest, 3.7)",
   "builddocs (ubuntu-latest, 3.8)",
   "builddocs (ubuntu-latest, 3.9)",
   "builddocs (windows-latest, 3.7)",
-  "pytestmypy (ubuntu-latest, 3.7)", 
-  "pytestmypy (ubuntu-latest, 3.8)", 
-  "pytestmypy (ubuntu-latest, 3.9)", 
+  "pytestmypy (ubuntu-latest, 3.7)",
+  "pytestmypy (ubuntu-latest, 3.8)",
+  "pytestmypy (ubuntu-latest, 3.9)",
   "pytestmin (ubuntu-latest, 3.7)"
 ]
+# these are the checks that must pass before a branch can be merged to stating using bors r+
+pr_status = [
+  "pytestnonlocal (3.7)",
+  "pytestconda (ubuntu-latest)",
+  "pytestconda (windows-latest)",
+  "builddocs (ubuntu-latest, 3.7)",
+  "builddocs (ubuntu-latest, 3.8)",
+  "builddocs (ubuntu-latest, 3.9)",
+  "builddocs (windows-latest, 3.7)",
+  "pytestmypy (ubuntu-latest, 3.7)",
+  "pytestmypy (ubuntu-latest, 3.8)",
+  "pytestmypy (ubuntu-latest, 3.9)",
+  "pytestmin (ubuntu-latest, 3.7)"
+]
+delete_merged_branches = true
+required_approvals = 1
