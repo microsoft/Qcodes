@@ -10,7 +10,7 @@ class N51x1(VisaInstrument):
     It has been tested with N5171B, N5181A, N5173B, N5183B
     """
 
-    def __init__(self, name: str, address: str, min_power=-144, max_power=19, **kwargs: Any):
+    def __init__(self, name: str, address: str, min_power: int = -144, max_power: int = 19, **kwargs: Any):
         super().__init__(name, address, terminator='\n', **kwargs)
 
         self.add_parameter('power',
