@@ -19,7 +19,7 @@ numpy==1.21.3
 ordered-set==4.0.2
 packaging==21.2
 pluggy==1.0.0
-py==1.10.0
+py==1.11.0
 pyparsing==2.4.7
 pytest==6.2.5
 pytest-cov==3.0.0
