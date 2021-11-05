@@ -1,0 +1,5 @@
+Improved the drivers for Keysight N51x1 and N51x3 signal generators by:
+
+- Adding explicit support for N5173B
+- Fixing the power range of N5183B
+- Fixing the frequency range options for N51x1
