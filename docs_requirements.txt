@@ -85,5 +85,5 @@ wcwidth==0.2.5
 webencodings==0.5.1
 widgetsnbextension==3.5.2
 wincertstore==0.2
-xarray==0.20.0
+xarray==0.20.1
 zipp==3.6.0
