@@ -262,7 +262,7 @@ class DataSetInMem(BaseDataSet):
             data = loaded_data.attrs[key]
             if isinstance(data, np.ndarray) and data.size == 1:
                 data = data[0]
-            metadata = {key: data}
+            metadata[key] = data
 
         ds = cls(
             run_id=run_id,
