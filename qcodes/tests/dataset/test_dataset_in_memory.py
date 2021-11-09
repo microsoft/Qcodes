@@ -80,6 +80,7 @@ def test_dataset_in_memory_reload_from_netcdf_complex(
 
     ds = datasaver.dataset
     ds.add_metadata("mymetadatatag", 42)
+    ds.add_metadata("someothermetadatatag", 42)
     ds.export(export_type="netcdf", path=str(tmp_path))
 
     assert isinstance(ds, DataSetInMem)
