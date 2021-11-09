@@ -1514,7 +1514,7 @@ def load_by_run_spec(
                 "identify a dataset"
             )
         else:
-            raise NameError(f"No run matching the supplied information " f"found.")
+            raise NameError(f"No run matching the supplied information found.")
     finally:
         if not conn and not isinstance(d, DataSet):
             internal_conn.close()

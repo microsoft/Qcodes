@@ -203,17 +203,16 @@ class DataSetInMem(BaseDataSet):
         The netcdf file is expected to contain a QCoDeS dataset that
         has been exported using the QCoDeS netcdf export functions.
 
-
         Args:
             path: Path to the netcdf file to import.
             path_to_db: Optional path to a database where this dataset may be
-             exported to. If not supplied the path can be given at export time
-             or the dataset exported to the default db as set in the QCoDeS config.
+                exported to. If not supplied the path can be given at export time
+                or the dataset exported to the default db as set in the QCoDeS config.
 
         Returns:
             The loaded dataset.
         """
-        # in the code below flots and ints loaded from attributes are explicitly casted
+        # in the code below floats and ints loaded from attributes are explicitly casted
         # this is due to some older versions of qcodes writing them with a different backend
         # reading them back results in a numpy array of one element
 
@@ -416,9 +415,9 @@ class DataSetInMem(BaseDataSet):
 
     @property
     def pristine(self) -> bool:
-        """Is this :class:`.DataSet` pristine?
+        """Is this :class:`.DataSetInMem` pristine?
 
-        A pristine :class:`.DataSet` has not yet been started,
+        A pristine :class:`.DataSetInMem` has not yet been started,
         meaning that parameters can still be added and removed, but results
         can not be added.
         """
@@ -427,9 +426,9 @@ class DataSetInMem(BaseDataSet):
     @property
     def running(self) -> bool:
         """
-        Is this :class:`.DataSet` currently running?
+        Is this :class:`.DataSetInMem` currently running?
 
-        A running :class:`.DataSet` has been started,
+        A running :class:`.DataSetInMem` has been started,
         but not yet completed.
         """
         return (
@@ -440,22 +439,22 @@ class DataSetInMem(BaseDataSet):
     @property
     def completed(self) -> bool:
         """
-        Is this :class:`.DataSet` completed?
+        Is this :class:`.DataSetInMem` completed?
 
-        A completed :class:`.DataSet` may not be modified in
+        A completed :class:`.DataSetInMem` may not be modified in
         any way.
         """
         return self._completed_timestamp_raw is not None
 
     def mark_completed(self) -> None:
         """
-        Mark :class:`.DataSet` as complete and thus read only and notify the subscribers
+        Mark :class:`.DataSetInMem` as complete and thus read only and notify the subscribers
         """
         if self.completed:
             return
         if self.pristine:
             raise RuntimeError(
-                "Can not mark DataSet as complete before it "
+                "Can not mark a dataset as complete before it "
                 "has been marked as started."
             )
 
@@ -609,7 +608,7 @@ class DataSetInMem(BaseDataSet):
 
     def _enqueue_results(self, result_dict: Mapping[ParamSpecBase, np.ndarray]) -> None:
         """
-        Enqueue the results into self._results
+        Enqueue the results, for this dataset directly into cache
 
         Before we can enqueue the results, all values of the results dict
         must have the same length. We enqueue each parameter tree separately,
@@ -756,7 +755,8 @@ class DataSetInMem(BaseDataSet):
     def __len__(self) -> int:
         """
         The in memory dataset does not have a concept of sqlite rows
-        so the length is represented by the maximum number of datapoints in any dataset.
+        so the length is represented by the number of all datapoints,
+        summing across parameter trees.
         """
         values: List[int] = []
         for sub_dataset in self.cache.data().values():
@@ -846,12 +846,11 @@ def load_from_netcdf(
     The netcdf file is expected to contain a QCoDeS dataset that
     has been exported using the QCoDeS netcdf export functions.
 
-
     Args:
         path: Path to the netcdf file to import.
         path_to_db: Optional path to a database where this dataset may be
-         exported to. If not supplied the path can be given at export time
-         or the dataset exported to the default db as set in the QCoDeS config.
+            exported to. If not supplied the path can be given at export time
+            or the dataset exported to the default db as set in the QCoDeS config.
 
     Returns:
         The loaded dataset.
