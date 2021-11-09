@@ -40,7 +40,7 @@ from qcodes.dataset.data_set import VALUE, DataSet, load_by_guid
 from qcodes.dataset.data_set_in_memory import DataSetInMem
 from qcodes.dataset.data_set_protocol import (
     DataSetProtocol,
-    DataSetTypes,
+    DataSetType,
     res_type,
     setpoints_type,
     values_type,
@@ -504,7 +504,7 @@ class Runner:
         write_in_background: bool = False,
         shapes: Optional[Shapes] = None,
         in_memory_cache: bool = True,
-        dataset_class: DataSetTypes = DataSetTypes.DataSet,
+        dataset_class: DataSetType = DataSetType.DataSet,
     ) -> None:
 
         self._dataset_class = dataset_class
@@ -566,14 +566,14 @@ class Runner:
             path_to_db = None
             conn = None
 
-        if self._dataset_class is DataSetTypes.DataSet:
+        if self._dataset_class is DataSetType.DataSet:
             self.ds = DataSet(
                 name=self.name,
                 exp_id=exp_id,
                 conn=conn,
                 in_memory_cache=self._in_memory_cache,
             )
-        elif self._dataset_class is DataSetTypes.DataSetInMem:
+        elif self._dataset_class is DataSetType.DataSetInMem:
             self.ds = DataSetInMem._create_new_run(
                 name=self.name,
                 exp_id=exp_id,
@@ -1199,7 +1199,7 @@ class Measurement:
         self,
         write_in_background: Optional[bool] = None,
         in_memory_cache: bool = True,
-        dataset_class: DataSetTypes = DataSetTypes.DataSet,
+        dataset_class: DataSetType = DataSetType.DataSet,
     ) -> Runner:
         """
         Returns the context manager for the experimental run

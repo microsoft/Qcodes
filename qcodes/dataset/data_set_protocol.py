@@ -497,7 +497,7 @@ class BaseDataSet(DataSetProtocol):
         return raw_time_to_str_time(self.completed_timestamp_raw, fmt)
 
 
-class DataSetTypes(str, Enum):
+class DataSetType(str, Enum):
 
     DataSet = "DataSet"
     DataSetInMem = "DataSetInMem"

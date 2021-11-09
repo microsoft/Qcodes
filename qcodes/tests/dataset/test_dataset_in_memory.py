@@ -9,7 +9,7 @@ import pytest
 from qcodes import load_by_id
 from qcodes.dataset import load_by_run_spec
 from qcodes.dataset.data_set_in_memory import DataSetInMem
-from qcodes.dataset.data_set_protocol import DataSetTypes
+from qcodes.dataset.data_set_protocol import DataSetType
 from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic_transaction
 from qcodes.station import Station
 
@@ -18,7 +18,7 @@ def test_dataset_in_memory_reload_from_db(
     meas_with_registered_param, DMM, DAC, tmp_path
 ):
     with meas_with_registered_param.run(
-        dataset_class=DataSetTypes.DataSetInMem
+        dataset_class=DataSetType.DataSetInMem
     ) as datasaver:
         for set_v in np.linspace(0, 25, 10):
             DAC.ch1.set(set_v)
@@ -45,7 +45,7 @@ def test_dataset_in_memory_reload_from_db_complex(
     meas_with_registered_param_complex, DAC, complex_num_instrument, tmp_path
 ):
     with meas_with_registered_param_complex.run(
-        dataset_class=DataSetTypes.DataSetInMem
+        dataset_class=DataSetType.DataSetInMem
     ) as datasaver:
         for set_v in np.linspace(0, 25, 10):
             DAC.ch1.set(set_v)
@@ -69,7 +69,7 @@ def test_dataset_in_memory_reload_from_netcdf_complex(
     meas_with_registered_param_complex, DAC, complex_num_instrument, tmp_path
 ):
     with meas_with_registered_param_complex.run(
-        dataset_class=DataSetTypes.DataSetInMem
+        dataset_class=DataSetType.DataSetInMem
     ) as datasaver:
         for set_v in np.linspace(0, 25, 10):
             DAC.ch1.set(set_v)
@@ -92,7 +92,7 @@ def test_dataset_in_memory_no_export_warns(
     meas_with_registered_param, DMM, DAC, tmp_path
 ):
     with meas_with_registered_param.run(
-        dataset_class=DataSetTypes.DataSetInMem
+        dataset_class=DataSetType.DataSetInMem
     ) as datasaver:
         for set_v in np.linspace(0, 25, 10):
             DAC.ch1.set(set_v)
@@ -119,7 +119,7 @@ def test_dataset_in_memory_missing_file_warns(
     meas_with_registered_param, DMM, DAC, tmp_path
 ):
     with meas_with_registered_param.run(
-        dataset_class=DataSetTypes.DataSetInMem
+        dataset_class=DataSetType.DataSetInMem
     ) as datasaver:
         for set_v in np.linspace(0, 25, 10):
             DAC.ch1.set(set_v)
@@ -140,7 +140,7 @@ def test_dataset_in_memory_missing_file_warns(
 
 def test_dataset_in_reload_from_netcdf(meas_with_registered_param, DMM, DAC, tmp_path):
     with meas_with_registered_param.run(
-        dataset_class=DataSetTypes.DataSetInMem
+        dataset_class=DataSetType.DataSetInMem
     ) as datasaver:
         for set_v in np.linspace(0, 25, 10):
             DAC.ch1.set(set_v)
@@ -161,7 +161,7 @@ def test_dataset_load_from_netcdf_and_db(
     meas_with_registered_param, DMM, DAC, tmp_path
 ):
     with meas_with_registered_param.run(
-        dataset_class=DataSetTypes.DataSetInMem
+        dataset_class=DataSetType.DataSetInMem
     ) as datasaver:
         for set_v in np.linspace(0, 25, 10):
             DAC.ch1.set(set_v)
@@ -169,7 +169,7 @@ def test_dataset_load_from_netcdf_and_db(
             datasaver.add_result((DAC.ch1, set_v), (DMM.v1, get_v))
 
     with meas_with_registered_param.run(
-        dataset_class=DataSetTypes.DataSetInMem
+        dataset_class=DataSetType.DataSetInMem
     ) as datasaver:
         for set_v in np.linspace(0, 25, 10):
             DAC.ch1.set(set_v)
@@ -196,7 +196,7 @@ def test_dataset_in_memory_does_not_create_runs_table(
     meas_with_registered_param, DMM, DAC, tmp_path
 ):
     with meas_with_registered_param.run(
-        dataset_class=DataSetTypes.DataSetInMem
+        dataset_class=DataSetType.DataSetInMem
     ) as datasaver:
         for set_v in np.linspace(0, 25, 10):
             DAC.ch1.set(set_v)
@@ -266,7 +266,7 @@ def test_load_from_netcdf_no_db_file(non_created_db):
 def test_load_from_db(meas_with_registered_param, DMM, DAC, tmp_path):
     Station(DAC, DMM)
     with meas_with_registered_param.run(
-        dataset_class=DataSetTypes.DataSetInMem
+        dataset_class=DataSetType.DataSetInMem
     ) as datasaver:
         for set_v in np.linspace(0, 25, 10):
             DAC.ch1.set(set_v)
@@ -320,7 +320,7 @@ def compare_datasets(ds, loaded_ds):
 def test_load_from_db_dataset_moved(meas_with_registered_param, DMM, DAC, tmp_path):
     Station(DAC, DMM)
     with meas_with_registered_param.run(
-        dataset_class=DataSetTypes.DataSetInMem
+        dataset_class=DataSetType.DataSetInMem
     ) as datasaver:
         for set_v in np.linspace(0, 25, 10):
             DAC.ch1.set(set_v)
