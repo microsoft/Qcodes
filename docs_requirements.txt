@@ -15,7 +15,7 @@ docutils==0.17.1
 entrypoints==0.3
 idna==3.3
 imagesize==1.2.0
-importlib-metadata==4.6.3; python_version<'3.8'
+importlib-metadata==4.8.1; python_version<'3.8'
 ipykernel==6.5.0
 ipython==7.29.0
 ipython-genutils==0.2.0
