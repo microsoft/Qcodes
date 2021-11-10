@@ -8,8 +8,7 @@ import operator
 import traceback
 from datetime import datetime
 from functools import partial, reduce
-from typing import (Any, Callable, Dict, Optional, Sequence, Iterable,
-    TYPE_CHECKING, Union, List)
+from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, Optional, Sequence
 
 import matplotlib.pyplot as plt
 from IPython.core.display import display
@@ -32,7 +31,7 @@ from typing_extensions import Literal
 
 import qcodes
 from qcodes.dataset import initialise_or_create_database_at
-from qcodes.dataset.data_set import DataSet
+from qcodes.dataset.data_set_protocol import DataSetProtocol
 from qcodes.dataset.plotting import plot_dataset
 
 if TYPE_CHECKING:
@@ -217,13 +216,14 @@ def nested_dict_browser(
     return box
 
 
-def _plot_ds(ds: DataSet) -> None:
+def _plot_ds(ds: DataSetProtocol) -> None:
     plot_dataset(ds)  # might fail
     plt.show()
 
 
-def _do_in_tab(tab: Tab, ds: DataSet, which: Literal["plot", "snapshot"]
-               ) -> Callable[[Button], None]:
+def _do_in_tab(
+    tab: Tab, ds: DataSetProtocol, which: Literal["plot", "snapshot"]
+) -> Callable[[Button], None]:
     """Performs an operation inside of a subtab of a `ipywidgets.Tab`.
 
     Args
@@ -296,7 +296,7 @@ def create_tab(do_display: bool = True) -> Tab:
     return tab
 
 
-def editable_metadata(ds: DataSet) -> Box:
+def editable_metadata(ds: DataSetProtocol) -> Box:
     def _button_to_input(text: str, box: Box) -> Callable[[Button], None]:
         def on_click(_: Button) -> None:
             text_input = Textarea(
@@ -325,7 +325,7 @@ def editable_metadata(ds: DataSet) -> Box:
         return on_click
 
     def _save_button(
-        box: Box, ds: DataSet, do_save: bool = True
+        box: Box, ds: DataSetProtocol, do_save: bool = True
     ) -> Callable[[Button], None]:
         def on_click(_: Button) -> None:
             text = box.children[0].value
@@ -355,7 +355,7 @@ def _yaml_dump(dct: Dict[str, Any]) -> str:
         return f.getvalue()
 
 
-def _get_parameters(ds: DataSet) -> Dict[str, Dict[str, Any]]:
+def _get_parameters(ds: DataSetProtocol) -> Dict[str, Dict[str, Any]]:
     independent = {}
     dependent = {}
 
@@ -375,7 +375,7 @@ def _get_parameters(ds: DataSet) -> Dict[str, Dict[str, Any]]:
     return {"independent": independent, "dependent": dependent}
 
 
-def _get_experiment_button(ds: DataSet) -> Box:
+def _get_experiment_button(ds: DataSetProtocol) -> Box:
     title = f"{ds.exp_name}, {ds.sample_name}"
     body = _yaml_dump(
         {
@@ -389,7 +389,7 @@ def _get_experiment_button(ds: DataSet) -> Box:
     return button_to_text(title, body)
 
 
-def _get_timestamp_button(ds: DataSet) -> Box:
+def _get_timestamp_button(ds: DataSetProtocol) -> Box:
     try:
         total_time = str(
             datetime.fromtimestamp(ds.run_timestamp_raw)  # type: ignore
@@ -408,7 +408,7 @@ def _get_timestamp_button(ds: DataSet) -> Box:
     return button_to_text(start or "", body)
 
 
-def _get_run_id_button(ds: DataSet) -> Box:
+def _get_run_id_button(ds: DataSetProtocol) -> Box:
     title = str(ds.run_id)
     body = _yaml_dump(
         {
@@ -420,13 +420,13 @@ def _get_run_id_button(ds: DataSet) -> Box:
     return button_to_text(title, body)
 
 
-def _get_parameters_button(ds: DataSet) -> VBox:
+def _get_parameters_button(ds: DataSetProtocol) -> VBox:
     parameters = _get_parameters(ds)
-    title = ds.parameters or ""
+    title = ds._parameters or ""
     return button_to_text(title, _yaml_dump(parameters))
 
 
-def _get_snapshot_button(ds: DataSet, tab: Tab) -> Button:
+def _get_snapshot_button(ds: DataSetProtocol, tab: Tab) -> Button:
     return button(
         "",
         "warning",
@@ -436,7 +436,7 @@ def _get_snapshot_button(ds: DataSet, tab: Tab) -> Button:
     )
 
 
-def _get_plot_button(ds: DataSet, tab: Tab) -> Button:
+def _get_plot_button(ds: DataSetProtocol, tab: Tab) -> Button:
     return button(
         "",
         "warning",
@@ -446,8 +446,9 @@ def _get_plot_button(ds: DataSet, tab: Tab) -> Button:
     )
 
 
-def _experiment_widget(data_sets: Iterable[DataSet], tab: Tab
-                       ) -> GridspecLayout:
+def _experiment_widget(
+    data_sets: Iterable[DataSetProtocol], tab: Tab
+) -> GridspecLayout:
     """Show a `ipywidgets.GridspecLayout` with information about the
     loaded experiment. The clickable buttons can perform an action in ``tab``.
     """
@@ -490,7 +491,7 @@ def _experiment_widget(data_sets: Iterable[DataSet], tab: Tab
 
 def experiments_widget(
     db: Optional[str] = None,
-    data_sets: Optional[Sequence[DataSet]] = None,
+    data_sets: Optional[Sequence[DataSetProtocol]] = None,
     *,
     sort_by: Optional[Literal["timestamp", "run_id"]] = "run_id",
 ) -> VBox:

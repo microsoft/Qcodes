@@ -3,7 +3,8 @@ from collections.abc import Sized
 from typing import Any, List, Optional, Union
 from warnings import warn
 
-from qcodes.dataset.data_set import SPECS, DataSet, load_by_id, new_data_set
+from qcodes.dataset.data_set import DataSet, load_by_id, new_data_set
+from qcodes.dataset.data_set_protocol import SPECS, DataSetProtocol
 from qcodes.dataset.experiment_settings import _set_default_experiment_id
 from qcodes.dataset.sqlite.connection import ConnectionPlus, path_to_dbfile
 from qcodes.dataset.sqlite.database import (
@@ -158,12 +159,12 @@ class Experiment(Sized):
                                                   counter)
         return DataSet(run_id=run_id, conn=self.conn)
 
-    def data_sets(self) -> List[DataSet]:
+    def data_sets(self) -> List[DataSetProtocol]:
         """Get all the datasets of this experiment"""
         runs = get_runs(self.conn, self.exp_id)
         return [load_by_id(run['run_id'], conn=self.conn) for run in runs]
 
-    def last_data_set(self) -> DataSet:
+    def last_data_set(self) -> DataSetProtocol:
         """Get the last dataset of this experiment"""
         run_id = get_last_run(self.conn, self.exp_id)
         if run_id is None:
@@ -186,7 +187,7 @@ class Experiment(Sized):
         ]
         out.append("-" * len(out[0]))
         out += [
-            f"{d.run_id}-{d.name}-{d.counter}-{d.parameters}-{len(d)}"
+            f"{d.run_id}-{d.name}-{d.counter}-{d._parameters}-{len(d)}"
             for d in self.data_sets()
         ]
         return "\n".join(out)

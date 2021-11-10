@@ -10,22 +10,25 @@ import numpy as np
 import pytest
 from hypothesis import HealthCheck, given, settings
 from numpy.testing import assert_allclose, assert_array_equal
-from unittest.mock import patch
 
 import qcodes as qc
-from qcodes.dataset.data_set import load_by_id
+from qcodes.dataset.data_set import DataSet, load_by_id
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.experiment_container import new_experiment
+from qcodes.dataset.export_config import DataExportType
 from qcodes.dataset.legacy_import import import_dat_file
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.sqlite.connection import atomic_transaction
-from qcodes.instrument.parameter import (ArrayParameter, Parameter,
-                                         expand_setpoints_helper)
-from qcodes.tests.common import retry_until_does_not_throw, reset_config_on_exit
+from qcodes.instrument.parameter import (
+    ArrayParameter,
+    Parameter,
+    expand_setpoints_helper,
+)
+from qcodes.tests.common import reset_config_on_exit, retry_until_does_not_throw
+
 # pylint: disable=unused-import
 from qcodes.tests.test_station import set_default_station_to_none
 from qcodes.utils.validators import Arrays
-from qcodes.dataset.export_config import DataExportType
 
 
 def test_log_messages(caplog, meas_with_registered_param):
@@ -245,8 +248,10 @@ def test_measurement_name_default(experiment, DAC, DMM):
     with meas.run() as datasaver:
         run_id = datasaver.run_id
         expected_name = fmt.format(default_name, exp_id, run_id)
-        assert datasaver.dataset.table_name == expected_name
-        assert datasaver.dataset.name == default_name
+        ds = datasaver.dataset
+        assert isinstance(ds, DataSet)
+        assert ds.table_name == expected_name
+        assert ds.name == default_name
 
 
 def test_measurement_name_changed_via_attribute(experiment, DAC, DMM):
@@ -264,8 +269,10 @@ def test_measurement_name_changed_via_attribute(experiment, DAC, DMM):
     with meas.run() as datasaver:
         run_id = datasaver.run_id
         expected_name = fmt.format('results', exp_id, run_id)
-        assert datasaver.dataset.table_name == expected_name
-        assert datasaver.dataset.name == name
+        ds = datasaver.dataset
+        assert isinstance(ds, DataSet)
+        assert ds.table_name == expected_name
+        assert ds.name == name
 
 
 def test_measurement_name_set_as_argument(experiment, DAC, DMM):
@@ -282,8 +289,10 @@ def test_measurement_name_set_as_argument(experiment, DAC, DMM):
     with meas.run() as datasaver:
         run_id = datasaver.run_id
         expected_name = fmt.format('results', exp_id, run_id)
-        assert datasaver.dataset.table_name == expected_name
-        assert datasaver.dataset.name == name
+        ds = datasaver.dataset
+        assert isinstance(ds, DataSet)
+        assert ds.table_name == expected_name
+        assert ds.name == name
 
 
 @settings(deadline=None)
@@ -340,7 +349,9 @@ def test_setting_write_in_background_from_config(write_in_background):
         meas = Measurement()
         meas.register_custom_parameter(name='dummy')
         with meas.run() as datasaver:
-            assert datasaver.dataset._writer_status.write_in_background is write_in_background
+            ds = datasaver.dataset
+            assert isinstance(ds, DataSet)
+            assert ds._writer_status.write_in_background is write_in_background
 
 
 @pytest.mark.usefixtures("experiment")
@@ -445,7 +456,9 @@ def test_subscriptions(experiment, DAC, DMM):
 
         # Assert that the measurement, runner, and datasaver
         # have added subscribers to the dataset
-        assert len(datasaver._dataset.subscribers) == 2
+        ds = datasaver.dataset
+        assert isinstance(ds, DataSet)
+        assert len(ds.subscribers) == 2
 
         assert all_results_dict == {}
         assert values_larger_than_7 == []
@@ -491,13 +504,12 @@ def test_subscriptions(experiment, DAC, DMM):
 
     # Ensure that after exiting the "run()" context,
     # all subscribers get unsubscribed from the dataset
-    assert len(datasaver._dataset.subscribers) == 0
+    assert len(ds.subscribers) == 0
 
     # Ensure that the triggers for each subscriber
     # have been removed from the database
     get_triggers_sql = "SELECT * FROM sqlite_master WHERE TYPE = 'trigger';"
-    triggers = atomic_transaction(
-        datasaver._dataset.conn, get_triggers_sql).fetchall()
+    triggers = atomic_transaction(ds.conn, get_triggers_sql).fetchall()
     assert len(triggers) == 0
 
 
@@ -531,7 +543,9 @@ def test_subscribers_called_at_exiting_context_if_queue_is_not_empty(experiment,
         # the total number of values being added to the dataset;
         # this way the subscriber callback is not called before
         # we exit the "run()" context.
-        subscriber = list(datasaver.dataset.subscribers.values())[0]
+        ds = datasaver.dataset
+        assert isinstance(ds, DataSet)
+        subscriber = list(ds.subscribers.values())[0]
         subscriber.min_queue_length = int(len(given_x_vals) + 1)
 
         for x in given_x_vals:
@@ -695,7 +709,9 @@ def test_datasaver_arrays_lists_tuples(bg_writing, N):
         datasaver.add_result(('freqax', freqax), ('signal', signal))
 
     assert datasaver.points_written == N
-    assert not(datasaver.dataset.conn.atomic_in_progress)
+    ds = datasaver.dataset
+    assert isinstance(ds, DataSet)
+    assert not ds.conn.atomic_in_progress
 
     with meas.run(write_in_background=bg_writing) as datasaver:
         freqax = np.linspace(1e6, 2e6, N)
@@ -723,7 +739,9 @@ def test_datasaver_arrays_lists_tuples(bg_writing, N):
                              ('gate_voltage', 0))
 
     assert datasaver.points_written == N
-    assert not(datasaver.dataset.conn.atomic_in_progress)
+    ds = datasaver.dataset
+    assert isinstance(ds, DataSet)
+    assert not ds.conn.atomic_in_progress
 
     # save lists
     with meas.run(write_in_background=bg_writing) as datasaver:
@@ -777,11 +795,11 @@ def test_datasaver_numeric_and_array_paramtype(bg_writing, N):
         datasaver.add_result(('numeric_1', 3.75), ('array_1', signal))
 
     assert datasaver.points_written == 1
-
-    data = datasaver.dataset.get_parameter_data(
-        *datasaver.dataset.parameters.split(','))
-    assert (data['numeric_1']['numeric_1'] == np.array([3.75])).all()
-    assert np.allclose(data['array_1']['array_1'], signal)
+    ds = datasaver.dataset
+    assert isinstance(ds, DataSet)
+    data = ds.get_parameter_data(*ds.parameters.split(","))
+    assert (data["numeric_1"]["numeric_1"] == np.array([3.75])).all()
+    assert np.allclose(data["array_1"]["array_1"], signal)
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
@@ -812,11 +830,11 @@ def test_datasaver_numeric_after_array_paramtype(bg_writing):
         datasaver.add_result(('array_1', signal), ('numeric_1', 3.75))
 
     assert datasaver.points_written == 1
-
-    data = datasaver.dataset.get_parameter_data(
-        *datasaver.dataset.parameters.split(','))
-    assert (data['numeric_1']['numeric_1'] == np.array([3.75])).all()
-    assert np.allclose(data['array_1']['array_1'], signal)
+    ds = datasaver.dataset
+    assert isinstance(ds, DataSet)
+    data = ds.get_parameter_data(*ds.parameters.split(","))
+    assert (data["numeric_1"]["numeric_1"] == np.array([3.75])).all()
+    assert np.allclose(data["array_1"]["array_1"], signal)
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
@@ -870,7 +888,9 @@ def test_datasaver_unsized_arrays(N, storage_type, bg_writing):
             datasaver.add_result(('freqax', myfreq), ('signal', mysignal))
 
     assert datasaver.points_written == N
-    loaded_data = datasaver.dataset.get_parameter_data()['signal']
+    ds = datasaver.dataset
+    assert isinstance(ds, DataSet)
+    loaded_data = ds.get_parameter_data()["signal"]
 
     np.random.seed(0)
     expected_signal = np.random.randn(N)
@@ -958,7 +978,9 @@ def test_datasaver_arrayparams(SpectrumAnalyzer, DAC, N, M,
         expected_freq_axis = expected_freq_axis.reshape(N, M)
         expected_output = expected_output.reshape(N, M)
 
-    data = datasaver.dataset.get_parameter_data()[spectrum_name]
+    ds = datasaver.dataset
+    assert isinstance(ds, DataSet)
+    data = ds.get_parameter_data()[spectrum_name]
 
     assert_allclose(data['dummy_dac_ch1'], expected_dac_data)
     assert_allclose(data['dummy_SA_Frequency'], expected_freq_axis)
@@ -1014,6 +1036,7 @@ def test_datasaver_array_parameters_channel(channel_array_instrument,
                        dependency_name,
                        'dummy_channel_inst_ChanA_dummy_array_parameter')
     ds = load_by_id(datasaver.run_id)
+    assert isinstance(ds, DataSet)
     loaded_data = ds.get_parameter_data()['dummy_channel_inst_ChanA_dummy_array_parameter']
     for param in expected_params:
         if storage_type == 'array':
@@ -1067,6 +1090,7 @@ def test_datasaver_parameter_with_setpoints(channel_array_instrument,
     expected_params = (dependency_name,
                        'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints')
     ds = load_by_id(datasaver.run_id)
+    assert isinstance(ds, DataSet)
     loaded_data = ds.get_parameter_data()
     for param in expected_params:
         data = loaded_data['dummy_channel_inst_ChanA_dummy_parameter_with_setpoints'][param]
@@ -1139,6 +1163,7 @@ def test_datasaver_parameter_with_setpoints_explicitly_expanded(channel_array_in
     expected_params = (dependency_name,
                        'dummy_channel_inst_ChanA_dummy_parameter_with_setpoints')
     ds = load_by_id(datasaver.run_id)
+    assert isinstance(ds, DataSet)
     loaded_data = ds.get_parameter_data()
     for param in expected_params:
         data = loaded_data['dummy_channel_inst_ChanA_dummy_parameter_with_setpoints'][param]
@@ -1239,6 +1264,7 @@ def test_datasaver_parameter_with_setpoints_complex(channel_array_instrument,
     assert datasaver.points_written == 1
 
     ds = load_by_id(datasaver.run_id)
+    assert isinstance(ds, DataSet)
     datadict = ds.get_parameter_data()
     assert len(datadict) == 1
     subdata = datadict[
@@ -1292,6 +1318,7 @@ def test_datasaver_parameter_with_setpoints_complex_explicitly_expanded(channel_
     assert datasaver.points_written == 1
 
     ds = load_by_id(datasaver.run_id)
+    assert isinstance(ds, DataSet)
     datadict = ds.get_parameter_data()
     assert len(datadict) == 1
     subdata = datadict[
@@ -1482,6 +1509,7 @@ def test_datasaver_array_parameters_array(channel_array_instrument, DAC, N,
 
     assert datasaver.points_written == expected_npoints
     ds = load_by_id(datasaver.run_id)
+    assert isinstance(ds, DataSet)
     loaded_data = ds.get_parameter_data()['dummy_channel_inst_ChanA_dummy_array_parameter']
 
     data_num = loaded_data['dummy_dac_ch1']
@@ -1561,6 +1589,7 @@ def test_datasaver_complex_array_parameters_array(channel_array_instrument,
                                  (array_param, array_param.get()))
     assert datasaver.points_written == N
     ds = load_by_id(datasaver.run_id)
+    assert isinstance(ds, DataSet)
     loaded_data = ds.get_parameter_data()["dummy_channel_inst_ChanA_dummy_complex_array_parameter"]
     data_num = loaded_data['dummy_dac_ch1']
     assert data_num.shape == (N, M)
@@ -1613,6 +1642,7 @@ def test_datasaver_multidim_array(experiment, bg_writing):  # noqa: F811
     # parameter.
     assert datasaver.points_written == 2
     dataset = load_by_id(datasaver.run_id)
+    assert isinstance(dataset, DataSet)
     loaded_data = dataset.get_parameter_data()
     for outerid in ('y1', 'y2'):
         for innerid in ('x1', 'x2', outerid):
@@ -1623,8 +1653,7 @@ def test_datasaver_multidim_array(experiment, bg_writing):  # noqa: F811
 
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("export", [True, False])
-def test_datasaver_export(experiment, bg_writing, tmp_path_factory,
-                          export):
+def test_datasaver_export(experiment, bg_writing, tmp_path_factory, export, mocker):
     """
     Test export data to csv after measurement ends
     """
@@ -1650,17 +1679,22 @@ def test_datasaver_export(experiment, bg_writing, tmp_path_factory,
     tmp_path = tmp_path_factory.mktemp("export_from_config")
     path = str(tmp_path)
 
-    with patch("qcodes.dataset.data_set.get_data_export_type") as mock_type, \
-    patch("qcodes.dataset.data_set.get_data_export_path") as mock_path, \
-    patch("qcodes.dataset.measurements.get_data_export_automatic") as mock_automatic:
-        mock_type.return_value = DataExportType.CSV
-        mock_path.return_value = path
-        mock_automatic.return_value = export
-        with meas.run(write_in_background=bg_writing) as datasaver:
-            datasaver.add_result((str(x1), expected['x1']),
-                                 (str(x2), expected['x2']),
-                                 (str(y1), expected['y1']),
-                                 (str(y2), expected['y2']))
+    mock_type = mocker.patch("qcodes.dataset.data_set_protocol.get_data_export_type")
+    mock_path = mocker.patch("qcodes.dataset.data_set_protocol.get_data_export_path")
+    mock_automatic = mocker.patch(
+        "qcodes.dataset.measurements.get_data_export_automatic"
+    )
+
+    mock_type.return_value = DataExportType.CSV
+    mock_path.return_value = path
+    mock_automatic.return_value = export
+    with meas.run(write_in_background=bg_writing) as datasaver:
+        datasaver.add_result(
+            (str(x1), expected["x1"]),
+            (str(x2), expected["x2"]),
+            (str(y1), expected["y1"]),
+            (str(y2), expected["y2"]),
+        )
     if export:
         assert os.listdir(path) == [f"qcodes_{datasaver.dataset.run_id}.csv"]
     else:
@@ -1696,6 +1730,7 @@ def test_datasaver_multidim_numeric(experiment, bg_writing):
     # The factor of 2 is due to there being 2 top-level params
     assert datasaver.points_written == 2 * (size1 * size2)
     dataset = load_by_id(datasaver.run_id)
+    assert isinstance(dataset, DataSet)
     all_data = dataset.get_parameter_data()
     for outer in ('y1', 'y2'):
         for inner in ('x1', 'x2', outer):
@@ -1721,6 +1756,7 @@ def test_datasaver_multidimarrayparameter_as_array(SpectrumAnalyzer,
 
     assert datasaver.points_written == 1
     ds = load_by_id(datasaver.run_id)
+    assert isinstance(ds, DataSet)
     expected_shape = (1, 100, 50, 20)
     loaded_data = ds.get_parameter_data()
     for i in range(3):
@@ -1767,6 +1803,7 @@ def test_datasaver_multidimarrayparameter_as_numeric(SpectrumAnalyzer,
 
     assert datasaver.points_written == points_expected
     ds = load_by_id(datasaver.run_id)
+    assert isinstance(ds, DataSet)
     # check setpoints
 
     expected_setpoints_vectors = (np.linspace(array_param.start,
@@ -1807,6 +1844,7 @@ def test_datasaver_multi_parameters_scalar(channel_array_instrument,
 
     assert datasaver.points_written == 2
     ds = load_by_id(datasaver.run_id)
+    assert isinstance(ds, DataSet)
     assert ds.get_parameter_data()['dummy_channel_inst_ChanA_thisparam']['dummy_channel_inst_ChanA_thisparam'] == np.array([[0]])
     assert ds.get_parameter_data()['dummy_channel_inst_ChanA_thatparam']['dummy_channel_inst_ChanA_thatparam'] == np.array([[1]])
 
@@ -1836,6 +1874,7 @@ def test_datasaver_multi_parameters_array(channel_array_instrument,
         datasaver.add_result((param, param()))
     assert datasaver.points_written == 2 * 5
     ds = load_by_id(datasaver.run_id)
+    assert isinstance(ds, DataSet)
     setpts = np.arange(5, 10)
 
     np.testing.assert_array_equal(ds.get_parameter_data()[param_names[1]][param_names[0]], setpts)
@@ -1888,6 +1927,7 @@ def test_datasaver_2d_multi_parameters_array(channel_array_instrument,
     this_sp_val = np.array(reduce(list.__add__, [[n]*3 for n in range(5, 10)], []))
     that_sp_val = np.array(reduce(list.__add__, [[n] for n in range(9, 12)], []) * 5)
 
+    assert isinstance(ds, DataSet)
     np.testing.assert_array_equal(
         ds.get_parameter_data()[p_name_1][sp_name_1],
         this_sp_val
@@ -1939,16 +1979,19 @@ def test_datasaver_arrays_of_different_length(storage_type, Ns, bg_writing):
                                        setpoints=(f'freqs{n}', 'temperature'))
 
     with meas.run(write_in_background=bg_writing) as datasaver:
-        result_t = ('temperature', 70)
-        result_freqs = list((f'freqs{n}', np.linspace(0, 1, Ns[n]))
-                              for n in range(no_of_signals))
-        result_sigs = list((f'signal{n}', np.random.randn(Ns[n]))
-                             for n in range(no_of_signals))
+        result_t = ("temperature", 70)
+        result_freqs = list(
+            (f"freqs{n}", np.linspace(0, 1, Ns[n])) for n in range(no_of_signals)
+        )
+        result_sigs = list(
+            (f"signal{n}", np.random.randn(Ns[n])) for n in range(no_of_signals)
+        )
         full_result = tuple(result_freqs + result_sigs + [result_t])
         datasaver.add_result(*full_result)
 
     ds = load_by_id(datasaver.run_id)
 
+    assert isinstance(ds, DataSet)
     data = ds.get_parameter_data()
 
     assert list(data.keys()) == [f'signal{n}' for n in range(no_of_signals)]
@@ -1991,7 +2034,9 @@ def test_save_complex_num(complex_num_instrument, bg_writing):
                                  (some_complex_array_setpoints, some_complex_array_setpoints.get()),
                                  (complexarrayparam, complexarrayparam.get()))
 
-    data = datasaver.dataset.get_parameter_data()
+    ds = datasaver.dataset
+    assert isinstance(ds, DataSet)
+    data = ds.get_parameter_data()
 
     # scalar complex parameter
     setpoints_num = data['dummy_channel_inst_complex_num'][
@@ -2049,7 +2094,9 @@ def test_save_and_reload_complex_standalone(complex_num_instrument,
     pval = param.get()
     with meas.run(write_in_background=bg_writing) as datasaver:
         datasaver.add_result((param, pval))
-    data = datasaver.dataset.get_parameter_data()
+    ds = datasaver.dataset
+    assert isinstance(ds, DataSet)
+    data = ds.get_parameter_data()
     data_num = data['dummy_channel_inst_complex_num'][
         'dummy_channel_inst_complex_num']
     assert_allclose(data_num, 1 + 1j)
@@ -2072,7 +2119,9 @@ def test_save_complex_num_setpoints(complex_num_instrument, bg_writing):
             setparam.set(i+1j*i)
             datasaver.add_result((setparam, setparam()),
                                  (param, param()))
-    data = datasaver.dataset.get_parameter_data()
+    ds = datasaver.dataset
+    assert isinstance(ds, DataSet)
+    data = ds.get_parameter_data()
     setpoints_num = data['dummy_channel_inst_real_part'][
         'dummy_channel_inst_complex_setpoint']
     data_num = data['dummy_channel_inst_real_part'][
@@ -2101,7 +2150,9 @@ def test_save_complex_num_setpoints_array(complex_num_instrument, bg_writing):
             setparam.set(i+1j*i)
             datasaver.add_result((setparam, setparam()),
                                  *expand_setpoints_helper(param))
-    data = datasaver.dataset.get_parameter_data()
+    ds = datasaver.dataset
+    assert isinstance(ds, DataSet)
+    data = ds.get_parameter_data()
     setpoints1 = data['dummy_channel_inst_some_array'][
         'dummy_channel_inst_complex_setpoint']
     setpoints2 = data['dummy_channel_inst_some_array'][
@@ -2188,11 +2239,12 @@ def test_parameter_inference(channel_array_instrument):
 @pytest.mark.usefixtures("experiment")
 def test_load_legacy_files_2D():
     location = '../fixtures/2018-01-17/#002_2D_test_15-43-14'
-    dir = os.path.dirname(__file__)
-    full_location = os.path.join(dir, location)
+    directory = os.path.dirname(__file__)
+    full_location = os.path.join(directory, location)
     run_ids = import_dat_file(full_location)
     run_id = run_ids[0]
     data = load_by_id(run_id)
+    assert isinstance(data, DataSet)
     assert data.parameters == 'dac_ch1_set,dac_ch2_set,dmm_voltage'
     assert data.number_of_results == 36
     expected_names = ['dac_ch1_set', 'dac_ch2_set', 'dmm_voltage']
@@ -2219,6 +2271,7 @@ def test_load_legacy_files_1D():
     run_ids = import_dat_file(full_location)
     run_id = run_ids[0]
     data = load_by_id(run_id)
+    assert isinstance(data, DataSet)
     assert data.parameters == 'dac_ch1_set,dmm_voltage'
     assert data.number_of_results == 201
     expected_names = ['dac_ch1_set', 'dmm_voltage']

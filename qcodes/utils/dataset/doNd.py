@@ -11,8 +11,7 @@ from tqdm.auto import tqdm
 from typing_extensions import TypedDict
 
 from qcodes import config
-from qcodes.dataset.data_set import res_type
-from qcodes.dataset.data_set_protocol import DataSetProtocol
+from qcodes.dataset.data_set_protocol import DataSetProtocol, res_type
 from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
 from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.experiment_container import Experiment
