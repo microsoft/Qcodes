@@ -76,7 +76,8 @@ class DataSetInMem(BaseDataSet):
         """Note that the constructor is considered private.
 
         A ``DataSetInMem``
-        should be constructed either using one of the load functions (``load_by_run_spec``, ``load_from_netcdf`` ...)
+        should be constructed either using one of the load functions
+        (``load_by_run_spec``, ``load_from_netcdf`` ...)
         or using the measurement context manager.
         """
 

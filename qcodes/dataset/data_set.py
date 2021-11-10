@@ -1489,7 +1489,8 @@ def load_by_run_spec(
          exists in the database
 
     Returns:
-        :class:`.DataSet` or :class:`.DataSetInMemory` matching the provided specification.
+        :class:`.DataSet` or :class:`.DataSetInMemory` matching the provided
+            specification.
     """
     internal_conn = conn or connect(get_DB_location())
     d: Optional[DataSetProtocol] = None
@@ -1514,7 +1515,7 @@ def load_by_run_spec(
                 "identify a dataset"
             )
         else:
-            raise NameError(f"No run matching the supplied information found.")
+            raise NameError("No run matching the supplied information found.")
     finally:
         if not conn and not isinstance(d, DataSet):
             internal_conn.close()
@@ -1618,7 +1619,8 @@ def load_by_counter(
           connection to the DB file specified in the config is made
 
     Returns:
-        :class:`.DataSet` or :class:`.DataSetInMemory` of the given counter in the given experiment
+        :class:`.DataSet` or :class:`.DataSetInMemory` of the given counter in
+            the given experiment
     """
     internal_conn = conn or connect(get_DB_location())
     d: Optional[DataSetProtocol] = None

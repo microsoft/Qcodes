@@ -326,7 +326,8 @@ class BaseDataSet(DataSetProtocol):
             prefix: File prefix, e.g. ``qcodes_``, defaults to value set in config.
 
         Raises:
-            ValueError: If the export data type is not specified or unknown, raise an error
+            ValueError: If the export data type is not specified or unknown,
+                raise an error
         """
         parsed_export_type = get_data_export_type(export_type)
 
@@ -338,7 +339,8 @@ class BaseDataSet(DataSetProtocol):
             )
         elif parsed_export_type is None:
             raise ValueError(
-                f"Export type {export_type} is unknown. Export type should be a member of the `DataExportType` enum"
+                f"Export type {export_type} is unknown. Export type "
+                f"should be a member of the `DataExportType` enum"
             )
 
         export_path = self._export_data(
