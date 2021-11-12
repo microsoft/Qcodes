@@ -9,7 +9,7 @@ import matplotlib
 import numpy as np
 from tqdm.auto import tqdm
 from typing_extensions import TypedDict
-from time import sleep
+import time
 
 from qcodes import config
 from qcodes.dataset.data_set_protocol import DataSetProtocol, res_type
@@ -282,10 +282,13 @@ def do1d(
 
         for set_point in tqdm(setpoints, disable=not show_progress):
             param_set.set(set_point)
+            t0 = time.time()
             datasaver.add_result(
                 (param_set, set_point), *call_param_meas(), *additional_setpoints_data
             )
-            sleep(delay)
+            datasaver_time = abs(time.time() - t0)
+            if delay > datasaver_time:
+                time.sleep(abs(delay - datasaver_time))
 
     return _handle_plotting(dataset, do_plot, interrupted())
 
