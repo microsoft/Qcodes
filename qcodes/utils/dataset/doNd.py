@@ -9,6 +9,7 @@ import matplotlib
 import numpy as np
 from tqdm.auto import tqdm
 from typing_extensions import TypedDict
+from time import sleep
 
 from qcodes import config
 from qcodes.dataset.data_set_protocol import DataSetProtocol, res_type
@@ -256,8 +257,6 @@ def do1d(
     _set_write_period(meas, write_period)
     _register_actions(meas, enter_actions, exit_actions)
 
-    original_delay = param_set.post_delay
-    param_set.post_delay = delay
 
     if use_threads is None:
         use_threads = config.dataset.use_threads
@@ -286,8 +285,7 @@ def do1d(
             datasaver.add_result(
                 (param_set, set_point), *call_param_meas(), *additional_setpoints_data
             )
-
-    param_set.post_delay = original_delay
+            sleep(delay)
 
     return _handle_plotting(dataset, do_plot, interrupted())
 
