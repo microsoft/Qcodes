@@ -282,11 +282,12 @@ def do1d(
 
         for set_point in tqdm(setpoints, disable=not show_progress):
             param_set.set(set_point)
-            t0 = time.time()
+            t0 = time.perf_counter()
             datasaver.add_result(
                 (param_set, set_point), *call_param_meas(), *additional_setpoints_data
             )
-            datasaver_time = abs(time.time() - t0)
+            datasaver_time = abs(time.perf_counter() - t0)
+            print(datasaver_time)
             if delay > datasaver_time:
                 time.sleep(abs(delay - datasaver_time))
 
