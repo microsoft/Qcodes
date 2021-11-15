@@ -116,6 +116,6 @@ def get_data_export_prefix() -> str:
     return config[DATASET_CONFIG_SECTION][EXPORT_PREFIX]
 
 
-def get_data_export_elements() -> List[str]:
+def get_data_export_name_elements() -> List[str]:
     """Get the elements to include in the export name."""
     return config[DATASET_CONFIG_SECTION][EXPORT_NAME_ELEMENTS]
