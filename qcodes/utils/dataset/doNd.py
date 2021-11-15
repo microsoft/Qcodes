@@ -287,7 +287,6 @@ def do1d(
                 (param_set, set_point), *call_param_meas(), *additional_setpoints_data
             )
             datasaver_time = abs(time.perf_counter() - t0)
-            print(datasaver_time)
             if delay > datasaver_time:
                 time.sleep(abs(delay - datasaver_time))
 
