@@ -403,12 +403,6 @@ def do2d(
     _set_write_period(meas, write_period)
     _register_actions(meas, enter_actions, exit_actions)
 
-    original_delay1 = param_set1.post_delay
-    original_delay2 = param_set2.post_delay
-
-    param_set1.post_delay = delay1
-    param_set2.post_delay = delay2
-
     if use_threads is None:
         use_threads = config.dataset.use_threads
 
@@ -431,6 +425,8 @@ def do2d(
             for action in before_inner_actions:
                 action()
 
+            time.sleep(delay1)
+
             setpoints2 = np.linspace(start2, stop2, num_points2)
 
             # flush to prevent unflushed print's to visually interrupt tqdm bar
@@ -443,6 +439,7 @@ def do2d(
                     pass
                 else:
                     param_set2.set(set_point2)
+                    time.sleep(delay2)
 
                 datasaver.add_result(
                     (param_set1, set_point1),
@@ -455,9 +452,6 @@ def do2d(
                 action()
             if flush_columns:
                 datasaver.flush_data_to_database()
-
-    param_set1.post_delay = original_delay1
-    param_set2.post_delay = original_delay2
 
     return _handle_plotting(dataset, do_plot, interrupted())
 
