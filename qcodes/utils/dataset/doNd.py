@@ -286,9 +286,9 @@ def do1d(
             datasaver.add_result(
                 (param_set, set_point), *call_param_meas(), *additional_setpoints_data
             )
-            datasaver_time = abs(time.perf_counter() - t0)
-            if delay > datasaver_time:
-                time.sleep(abs(delay - datasaver_time))
+            datasaver_time = time.perf_counter() - t0
+            actual_delay = max((delay-datasaver_time), 0)
+            time.sleep(actual_delay)
 
     return _handle_plotting(dataset, do_plot, interrupted())
 
