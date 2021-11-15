@@ -342,6 +342,15 @@
                     "type": "string",
                     "default": "qcodes_",
                     "description": "Prefix to add to filename for exporting datasets to disk after a measurement finishes. Only activated if export_type is set"
+                },
+                "export_name_elements": {
+                    "description": "elements to use in export name. Names will be formated like '{export_prefix}_{export_name_elements[0]}_{...}.file_extension}",
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": ["captured_run_id", "guid"]
+                    },
+                    "default": ["captured_run_id"]
                 }
             },
             "description": "Settings related to the DataSet and Measurement Context manager",
