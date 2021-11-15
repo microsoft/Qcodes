@@ -101,7 +101,9 @@ def test_dataset_in_memory_reload_from_netcdf_complex(
     ds.export(export_type="netcdf", path=str(tmp_path))
 
     assert isinstance(ds, DataSetInMem)
-    loaded_ds = DataSetInMem._load_from_netcdf(tmp_path / "qcodes_1.nc")
+    loaded_ds = DataSetInMem._load_from_netcdf(
+        tmp_path / f"qcodes_{ds.captured_run_id}_{ds.guid}.nc"
+    )
     assert isinstance(loaded_ds, DataSetInMem)
     compare_datasets(ds, loaded_ds)
 
@@ -170,7 +172,9 @@ def test_dataset_in_reload_from_netcdf(meas_with_registered_param, DMM, DAC, tmp
     assert isinstance(ds, DataSetInMem)
 
     ds.export(export_type="netcdf", path=str(tmp_path))
-    loaded_ds = DataSetInMem._load_from_netcdf(tmp_path / "qcodes_1.nc")
+    loaded_ds = DataSetInMem._load_from_netcdf(
+        tmp_path / f"qcodes_{ds.captured_run_id}_{ds.guid}.nc"
+    )
     assert isinstance(loaded_ds, DataSetInMem)
     compare_datasets(ds, loaded_ds)
 
@@ -203,7 +207,7 @@ def test_dataset_load_from_netcdf_and_db(
 
     ds.export(export_type="netcdf", path=str(tmp_path))
     loaded_ds = DataSetInMem._load_from_netcdf(
-        tmp_path / "qcodes_2.nc", path_to_db=path_to_db
+        tmp_path / f"qcodes_{ds.captured_run_id}_{ds.guid}.nc", path_to_db=path_to_db
     )
     assert isinstance(loaded_ds, DataSetInMem)
     assert loaded_ds.run_id == ds.run_id

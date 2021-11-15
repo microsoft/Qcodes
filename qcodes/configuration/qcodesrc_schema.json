@@ -350,7 +350,7 @@
                         "type": "string",
                         "enum": ["captured_run_id", "guid", "exp_name", "sample_name", "name"]
                     },
-                    "default": ["captured_run_id"]
+                    "default": ["captured_run_id", "guid"]
                 }
             },
             "description": "Settings related to the DataSet and Measurement Context manager",
