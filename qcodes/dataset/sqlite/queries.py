@@ -575,6 +575,29 @@ def get_runid_from_expid_and_counter(conn: ConnectionPlus, exp_id: int,
     return run_id
 
 
+def get_guid_from_expid_and_counter(
+    conn: ConnectionPlus, exp_id: int, counter: int
+) -> str:
+    """
+    Get the guid of a run in the specified experiment with the specified
+    counter
+
+    Args:
+        conn: connection to the database
+        exp_id: the exp_id of the experiment containing the run
+        counter: the intra-experiment run counter of that run
+    """
+    sql = """
+          SELECT guid
+          FROM runs
+          WHERE result_counter= ? AND
+          exp_id = ?
+          """
+    c = transaction(conn, sql, counter, exp_id)
+    run_id = one(c, "guid")
+    return run_id
+
+
 def get_runid_from_guid(conn: ConnectionPlus, guid: str) -> Optional[int]:
     """
     Get the run_id of a run based on the guid
@@ -1127,13 +1150,16 @@ def format_table_name(fmt_str: str, name: str, exp_id: int,
     return table_name
 
 
-def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
-                guid: str,
-                parameters: Optional[List[ParamSpec]] = None,
-                captured_run_id: Optional[int] = None,
-                captured_counter: Optional[int] = None,
-                parent_dataset_links: str = "[]"
-                ) -> Tuple[int, str, int]:
+def _insert_run(
+    conn: ConnectionPlus,
+    exp_id: int,
+    name: str,
+    guid: str,
+    parameters: Optional[Sequence[ParamSpec]] = None,
+    captured_run_id: Optional[int] = None,
+    captured_counter: Optional[int] = None,
+    parent_dataset_links: str = "[]",
+) -> Tuple[int, str, int]:
 
     # get run counter and formatter from experiments
     run_counter, format_string = select_many_where(conn,
@@ -1160,8 +1186,7 @@ def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
                 captured_counter = existing_captured_counter + 1
             else:
                 captured_counter = run_counter
-    formatted_name = format_table_name(format_string, 'results', exp_id,
-                                       run_counter)
+    formatted_name = format_table_name(format_string, "results", exp_id, run_counter)
     table = "runs"
 
     parameters = parameters or []
@@ -1219,9 +1244,8 @@ def _insert_run(conn: ConnectionPlus, exp_id: int, name: str,
                 captured_counter,
                 parent_dataset_links,
             )
-
-            _add_parameters_to_layout_and_deps(conn, formatted_name,
-                                               *parameters)
+            run_id = curr.lastrowid
+            _add_parameters_to_layout_and_deps(conn, run_id, *parameters)
 
         else:
             query = f"""
@@ -1451,9 +1475,12 @@ def set_run_timestamp(
             log.info(f"Set the run_timestamp of run_id {run_id} to " f"{timestamp}")
 
 
-def add_parameter(conn: ConnectionPlus,
-                  formatted_name: str,
-                  *parameter: ParamSpec) -> None:
+def add_parameter(
+    *parameter: ParamSpec,
+    conn: ConnectionPlus,
+    run_id: int,
+    insert_into_results_table: bool,
+) -> None:
     """
     Add parameters to the dataset
 
@@ -1463,45 +1490,45 @@ def add_parameter(conn: ConnectionPlus,
 
     Args:
         conn: the connection to the sqlite database
-        formatted_name: name of the table
+        run_id: id ot the run to add parameters to
+        insert_into_results_table: Should the parameters be added as columns to the
+           results table?
         parameter: the list of ParamSpecs for parameters to add
     """
     with atomic(conn) as conn:
+
+        sql = "SELECT result_table_name FROM runs WHERE run_id=?"
+        formatted_name = one(transaction(conn, sql, run_id), "result_table_name")
+
         p_names = []
         for p in parameter:
-            insert_column(conn, formatted_name, p.name, p.type)
+            if insert_into_results_table:
+                insert_column(conn, formatted_name, p.name, p.type)
             p_names.append(p.name)
         # get old parameters column from run table
         sql = f"""
         SELECT parameters FROM runs
-        WHERE result_table_name=?
+        WHERE run_id=?
         """
         with atomic(conn) as conn:
-            c = transaction(conn, sql, formatted_name)
+            c = transaction(conn, sql, run_id)
         old_parameters = one(c, 'parameters')
         if old_parameters:
             new_parameters = ",".join([old_parameters] + p_names)
         else:
             new_parameters = ",".join(p_names)
-        sql = "UPDATE runs SET parameters=? WHERE result_table_name=?"
+        sql = "UPDATE runs SET parameters=? WHERE run_id=?"
         with atomic(conn) as conn:
-            transaction(conn, sql, new_parameters, formatted_name)
+            transaction(conn, sql, new_parameters, run_id)
 
         # Update the layouts table
-        c = _add_parameters_to_layout_and_deps(conn, formatted_name,
-                                               *parameter)
+        c = _add_parameters_to_layout_and_deps(conn, run_id, *parameter)
 
 
-def _add_parameters_to_layout_and_deps(conn: ConnectionPlus,
-                                       formatted_name: str,
-                                       *parameter: ParamSpec
-                                       ) -> sqlite3.Cursor:
-    # get the run_id
-    sql = f"""
-    SELECT run_id FROM runs WHERE result_table_name="{formatted_name}";
-    """
-    run_id = one(transaction(conn, sql), 'run_id')
-    layout_args = []
+def _add_parameters_to_layout_and_deps(
+    conn: ConnectionPlus, run_id: int, *parameter: ParamSpec
+) -> sqlite3.Cursor:
+    layout_args: List[Union[int, str]] = []
     for p in parameter:
         layout_args.append(run_id)
         layout_args.append(p.name)
@@ -1554,11 +1581,12 @@ def _validate_table_name(table_name: str) -> bool:
     return valid
 
 
-def _create_run_table(conn: ConnectionPlus,
-                      formatted_name: str,
-                      parameters: Optional[List[ParamSpec]] = None,
-                      values: Optional[VALUES] = None
-                      ) -> None:
+def _create_run_table(
+    conn: ConnectionPlus,
+    formatted_name: str,
+    parameters: Optional[Sequence[ParamSpec]] = None,
+    values: Optional[VALUES] = None,
+) -> None:
     """Create run table with formatted_name as name
 
     Args:
@@ -1599,16 +1627,21 @@ def _create_run_table(conn: ConnectionPlus,
             transaction(conn, query)
 
 
-def create_run(conn: ConnectionPlus, exp_id: int, name: str,
-               guid: str,
-               parameters: Optional[List[ParamSpec]] = None,
-               values:  Optional[List[Any]] = None,
-               metadata: Optional[Mapping[str, Any]] = None,
-               captured_run_id: Optional[int] = None,
-               captured_counter: Optional[int] = None,
-               parent_dataset_links: str = "[]"
-               ) -> Tuple[int, int, str]:
-    """ Create a single run for the experiment.
+def create_run(
+    conn: ConnectionPlus,
+    exp_id: int,
+    name: str,
+    guid: str,
+    parameters: Optional[Sequence[ParamSpec]] = None,
+    values: Optional[Sequence[Any]] = None,
+    metadata: Optional[Mapping[str, Any]] = None,
+    captured_run_id: Optional[int] = None,
+    captured_counter: Optional[int] = None,
+    parent_dataset_links: str = "[]",
+    create_run_table: bool = True,
+    snapshot_raw: Optional[str] = None,
+) -> Tuple[int, int, Optional[str]]:
+    """Create a single run for the experiment.
 
 
     This will register the run in the runs table, the counter in the
@@ -1628,13 +1661,15 @@ def create_run(conn: ConnectionPlus, exp_id: int, name: str,
         - captured_counter: The counter this data was originally captured with.
             Should only be supplied when inserting an already completed run
             from another database into this database. Otherwise leave as None.
+        - create_run_table: Should we create a table to insert the run into.
+        - snapshot_raw: Raw string of the snapshot to add to the run.
 
     Returns:
         - run_counter: the id of the newly created run (not unique)
         - run_id: the row id of the newly created run
         - formatted_name: the name of the newly created table
     """
-
+    formatted_name: Optional[str]
     with atomic(conn):
         run_counter, formatted_name, run_id = _insert_run(conn,
                                                           exp_id,
@@ -1646,9 +1681,13 @@ def create_run(conn: ConnectionPlus, exp_id: int, name: str,
                                                           parent_dataset_links)
         if metadata:
             add_data_to_dynamic_columns(conn, run_id, metadata)
+        if snapshot_raw:
+            add_data_to_dynamic_columns(conn, run_id, {"snapshot": snapshot_raw})
         _update_experiment_run_counter(conn, exp_id, run_counter)
-        _create_run_table(conn, formatted_name, parameters, values)
-
+        if create_run_table:
+            _create_run_table(conn, formatted_name, parameters, values)
+        else:
+            formatted_name = None
     return run_counter, run_id, formatted_name
 
 
@@ -2153,3 +2192,15 @@ def raw_time_to_str_time(
         return None
     else:
         return time.strftime(fmt, time.localtime(raw_timestamp))
+
+
+def _check_if_table_found(conn: ConnectionPlus, table_name: str) -> bool:
+    query = "SELECT name FROM sqlite_master WHERE type='table' AND name=?"
+    cursor = conn.cursor()
+    return not many_many(cursor.execute(query, (table_name,)), "name") == []
+
+
+def _get_result_table_name_by_guid(conn: ConnectionPlus, guid: str) -> str:
+    sql = "SELECT result_table_name FROM runs WHERE guid=?"
+    formatted_name = one(transaction(conn, sql, guid), "result_table_name")
+    return formatted_name

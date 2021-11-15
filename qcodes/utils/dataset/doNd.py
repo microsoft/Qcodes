@@ -11,8 +11,7 @@ from tqdm.auto import tqdm
 from typing_extensions import TypedDict
 
 from qcodes import config
-from qcodes.dataset.data_set import res_type
-from qcodes.dataset.data_set_protocol import DataSetProtocol
+from qcodes.dataset.data_set_protocol import DataSetProtocol, res_type
 from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
 from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.experiment_container import Experiment
@@ -758,7 +757,7 @@ def dond(
                 param_set_list = []
                 param_value_action = zip(params_set, setpoints, active_actions)
                 for setpoint_param, setpoint, action in param_value_action:
-                    setpoint_param(setpoint)
+                    _conditional_parameter_set(setpoint_param, setpoint)
                     param_set_list.append((setpoint_param, setpoint))
                     for act in action:
                         act()
@@ -809,6 +808,17 @@ def _parse_dond_arguments(
             else:
                 params_meas.append(par)
         return sweep_instances, params_meas
+
+
+def _conditional_parameter_set(
+    parameter: _BaseParameter, value: Union[float, complex],
+    ) -> None:
+    """
+    Reads the cache value of the given parameter and set the parameter to
+    the given value if the value is different from the cache value.
+    """
+    if value != parameter.cache.get():
+        parameter.set(value)
 
 
 def _make_nested_setpoints(sweeps: List[AbstractSweep]) -> np.ndarray:

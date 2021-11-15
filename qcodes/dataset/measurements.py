@@ -36,15 +36,15 @@ import numpy as np
 
 import qcodes as qc
 import qcodes.utils.validators as vals
-from qcodes.dataset.data_set import (
-    VALUE,
-    DataSet,
-    load_by_guid,
+from qcodes.dataset.data_set import VALUE, DataSet, load_by_guid
+from qcodes.dataset.data_set_in_memory import DataSetInMem
+from qcodes.dataset.data_set_protocol import (
+    DataSetProtocol,
+    DataSetType,
     res_type,
     setpoints_type,
     values_type,
 )
-from qcodes.dataset.data_set_protocol import DataSetProtocol
 from qcodes.dataset.descriptions.dependencies import (
     DependencyError,
     InferenceError,
@@ -128,7 +128,7 @@ class DataSaver:
         self._results: List[Dict[str, VALUE]] = []
         self._last_save_time = perf_counter()
         self._known_dependencies: Dict[str, List[str]] = {}
-        self.parent_datasets: List[DataSet] = []
+        self.parent_datasets: List[DataSetProtocol] = []
 
         for link in self._dataset.parent_dataset_links:
             self.parent_datasets.append(load_by_guid(link.tail))
@@ -504,7 +504,7 @@ class Runner:
         write_in_background: bool = False,
         shapes: Optional[Shapes] = None,
         in_memory_cache: bool = True,
-        dataset_class: Type[DataSetProtocol] = DataSet,
+        dataset_class: DataSetType = DataSetType.DataSet,
     ) -> None:
 
         self._dataset_class = dataset_class
@@ -559,21 +559,34 @@ class Runner:
         # next set up the "datasaver"
         if self.experiment is not None:
             exp_id: Optional[int] = self.experiment.exp_id
+            path_to_db: Optional[str] = self.experiment.path_to_db
             conn: Optional["ConnectionPlus"] = self.experiment.conn
         else:
             exp_id = None
+            path_to_db = None
             conn = None
 
-        if self._dataset_class is DataSet:
-            dataset_class = cast(Type[DataSet], self._dataset_class)
-            self.ds = dataset_class(
+        if self._dataset_class is DataSetType.DataSet:
+            self.ds = DataSet(
                 name=self.name,
                 exp_id=exp_id,
                 conn=conn,
                 in_memory_cache=self._in_memory_cache,
             )
+        elif self._dataset_class is DataSetType.DataSetInMem:
+            if self._in_memory_cache is False:
+                raise RuntimeError(
+                    "Cannot disable the in memory cache for a "
+                    "dataset that is only in memory."
+                )
+            self.ds = DataSetInMem._create_new_run(
+                name=self.name,
+                exp_id=exp_id,
+                path_to_db=path_to_db,
+            )
         else:
             raise RuntimeError("Does not support any other dataset classes")
+
         # .. and give the dataset a snapshot as metadata
         if self.station is None:
             station = qc.Station.default
@@ -757,8 +770,8 @@ class Measurement:
         return tuple(depends_on), tuple(inf_from)
 
     def register_parent(
-            self: T, parent: DataSet, link_type: str,
-            description: str = "") -> T:
+        self: T, parent: DataSetProtocol, link_type: str, description: str = ""
+    ) -> T:
         """
         Register a parent for the outcome of this measurement
 
@@ -1191,7 +1204,7 @@ class Measurement:
         self,
         write_in_background: Optional[bool] = None,
         in_memory_cache: bool = True,
-        dataset_class: Type[DataSetProtocol] = DataSet,
+        dataset_class: DataSetType = DataSetType.DataSet,
     ) -> Runner:
         """
         Returns the context manager for the experimental run
@@ -1205,8 +1218,8 @@ class Measurement:
                 read from the ``qcodesrc.json`` config file.
             in_memory_cache: Should measured data be keep in memory
                 and available as part of the `dataset.cache` object.
-            dataset_class: Class implementing the dataset protocol interface
-                used to store the data.
+            dataset_class: Enum representing the Class used to store data
+                with.
         """
         if write_in_background is None:
             write_in_background = qc.config.dataset.write_in_background

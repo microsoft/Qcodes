@@ -24,6 +24,7 @@ if TYPE_CHECKING:
     import xarray as xr
 
     from .data_set import DataSet, ParameterData
+    from .data_set_in_memory import DataSetInMem
     from .data_set_protocol import DataSetProtocol
 
 DatasetType = TypeVar("DatasetType", bound="DataSetProtocol", covariant=True)
@@ -432,6 +433,10 @@ def _expand_single_param_dict(
             )
 
     return expanded_param_dict
+
+
+class DataSetCacheInMem(DataSetCache["DataSetInMem"]):
+    pass
 
 
 class DataSetCacheWithDBBackend(DataSetCache["DataSet"]):
