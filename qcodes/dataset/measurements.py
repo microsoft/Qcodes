@@ -574,6 +574,11 @@ class Runner:
                 in_memory_cache=self._in_memory_cache,
             )
         elif self._dataset_class is DataSetType.DataSetInMem:
+            if self._in_memory_cache is False:
+                raise RuntimeError(
+                    "Cannot disable the in memory cache for a "
+                    "dataset that is only in memory."
+                )
             self.ds = DataSetInMem._create_new_run(
                 name=self.name,
                 exp_id=exp_id,
