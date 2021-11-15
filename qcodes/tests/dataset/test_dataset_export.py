@@ -164,8 +164,10 @@ def test_export_csv(tmp_path_factory, mock_dataset):
     path = str(tmp_path)
     mock_dataset.export(export_type="csv", path=path, prefix="qcodes_")
 
-    expected_path = f"qcodes_{mock_dataset.run_id}.csv"
-    expected_full_path = os.path.join(path, f"qcodes_{mock_dataset.run_id}.csv")
+    expected_path = f"qcodes_{mock_dataset.captured_run_id}.csv"
+    expected_full_path = os.path.join(
+        path, f"qcodes_{mock_dataset.captured_run_id}.csv"
+    )
     assert mock_dataset.export_info.export_paths["csv"] == expected_full_path
     assert os.listdir(path) == [expected_path]
     with open(expected_full_path) as f:
@@ -177,8 +179,8 @@ def test_export_netcdf(tmp_path_factory, mock_dataset):
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
     path = str(tmp_path)
     mock_dataset.export(export_type="netcdf", path=path, prefix="qcodes_")
-    assert os.listdir(path) == [f"qcodes_{mock_dataset.run_id}.nc"]
-    file_path = os.path.join(path, f"qcodes_{mock_dataset.run_id}.nc")
+    assert os.listdir(path) == [f"qcodes_{mock_dataset.captured_run_id}.nc"]
+    file_path = os.path.join(path, f"qcodes_{mock_dataset.captured_run_id}.nc")
     ds = xr.open_dataset(file_path)
     df = ds.to_dataframe()
     assert df.index.name == "x"
@@ -193,8 +195,8 @@ def test_export_netcdf(tmp_path_factory, mock_dataset):
 def test_export_netcdf_csv(tmp_path_factory, mock_dataset):
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
     path = str(tmp_path)
-    csv_path = os.path.join(path, f"qcodes_{mock_dataset.run_id}.csv")
-    nc_path = os.path.join(path, f"qcodes_{mock_dataset.run_id}.nc")
+    csv_path = os.path.join(path, f"qcodes_{mock_dataset.captured_run_id}.csv")
+    nc_path = os.path.join(path, f"qcodes_{mock_dataset.captured_run_id}.nc")
 
     mock_dataset.export(export_type="netcdf", path=path, prefix="qcodes_")
     mock_dataset.export(export_type="csv", path=path, prefix="qcodes_")
@@ -203,7 +205,7 @@ def test_export_netcdf_csv(tmp_path_factory, mock_dataset):
     assert mock_dataset.export_info.export_paths["csv"] == csv_path
 
     mock_dataset.export(export_type="netcdf", path=path, prefix="foobar_")
-    nc_path = os.path.join(path, f"foobar_{mock_dataset.run_id}.nc")
+    nc_path = os.path.join(path, f"foobar_{mock_dataset.captured_run_id}.nc")
 
     assert mock_dataset.export_info.export_paths["nc"] == nc_path
     assert mock_dataset.export_info.export_paths["csv"] == csv_path
@@ -214,8 +216,8 @@ def test_export_netcdf_complex_data(tmp_path_factory, mock_dataset_complex):
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
     path = str(tmp_path)
     mock_dataset_complex.export(export_type="netcdf", path=path, prefix="qcodes_")
-    assert os.listdir(path) == [f"qcodes_{mock_dataset_complex.run_id}.nc"]
-    file_path = os.path.join(path, f"qcodes_{mock_dataset_complex.run_id}.nc")
+    assert os.listdir(path) == [f"qcodes_{mock_dataset_complex.captured_run_id}.nc"]
+    file_path = os.path.join(path, f"qcodes_{mock_dataset_complex.captured_run_id}.nc")
     # need to explicitly use h5netcdf when reading or complex data vars will be empty
     ds = xr.open_dataset(file_path, engine="h5netcdf")
     df = ds.to_dataframe()
@@ -242,7 +244,7 @@ def test_export_from_config(tmp_path_factory, mock_dataset, mocker):
     mock_type.return_value = DataExportType.CSV
     mock_path.return_value = path
     mock_dataset.export()
-    assert os.listdir(path) == [f"qcodes_{mock_dataset.run_id}.csv"]
+    assert os.listdir(path) == [f"qcodes_{mock_dataset.captured_run_id}.csv"]
 
 
 def test_same_setpoint_warning_for_df_and_xarray(different_setpoint_dataset):
@@ -321,7 +323,8 @@ def test_export_to_xarray_extra_metadate_can_be_stored(mock_dataset, tmp_path):
     data_as_xarray = mock_dataset.to_xarray_dataset()
 
     loaded_data = xr.load_dataset(
-        tmp_path/f"{qcodes.config.dataset.export_prefix}{mock_dataset.run_id}.nc"
+        tmp_path
+        / f"{qcodes.config.dataset.export_prefix}{mock_dataset.captured_run_id}.nc"
     )
 
     # check that the metadata in the qcodes dataset is roundtripped to the loaded
