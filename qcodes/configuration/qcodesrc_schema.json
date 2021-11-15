@@ -344,7 +344,7 @@
                     "description": "Prefix to add to filename for exporting datasets to disk after a measurement finishes. Only activated if export_type is set"
                 },
                 "export_name_elements": {
-                    "description": "elements to use in export name. Names will be formated like '{export_prefix}_{export_name_elements[0]}_{...}.file_extension}",
+                    "description": "Elements to use in export file name, elements are dataset properties. Names will be formatted like '{export_prefix}_{export_name_elements[0]}_{...}.file_extension}' respecting the order of the elements",
                     "type": "array",
                     "items": {
                         "type": "string",
