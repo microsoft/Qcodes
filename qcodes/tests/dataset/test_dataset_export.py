@@ -247,6 +247,22 @@ def test_export_from_config(tmp_path_factory, mock_dataset, mocker):
     assert os.listdir(path) == [f"qcodes_{mock_dataset.captured_run_id}.csv"]
 
 
+@pytest.mark.usefixtures("experiment")
+def test_export_from_config_set_name_elements(tmp_path_factory, mock_dataset, mocker):
+    tmp_path = tmp_path_factory.mktemp("export_from_config")
+    path = str(tmp_path)
+    mock_type = mocker.patch("qcodes.dataset.data_set_protocol.get_data_export_type")
+    mock_path = mocker.patch("qcodes.dataset.data_set_protocol.get_data_export_path")
+    mock_name_elements = mocker.patch(
+        "qcodes.dataset.data_set_protocol.get_data_export_name_elements"
+    )
+    mock_type.return_value = DataExportType.CSV
+    mock_path.return_value = path
+    mock_name_elements.return_value = ["guid"]
+    mock_dataset.export()
+    assert os.listdir(path) == [f"qcodes_{mock_dataset.guid}.csv"]
+
+
 def test_same_setpoint_warning_for_df_and_xarray(different_setpoint_dataset):
 
     warning_message = (
