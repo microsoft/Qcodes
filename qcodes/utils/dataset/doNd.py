@@ -713,12 +713,11 @@ def dond(
         log_info,
     )
 
-    original_delays: Dict[_BaseParameter, float] = {}
+    post_delays: List[float] = []
     params_set: List[_BaseParameter] = []
     post_actions: List[ActionsT] = []
     for sweep in sweep_instances:
-        original_delays[sweep.param] = sweep.param.post_delay
-        sweep.param.post_delay = sweep.delay
+        post_delays.append(sweep.delay)
         params_set.append(sweep.param)
         post_actions.append(sweep.post_actions)
 
@@ -741,18 +740,19 @@ def dond(
             previous_setpoints = np.empty(len(sweep_instances))
             for setpoints in tqdm(nested_setpoints, disable=not show_progress):
 
-                active_actions = _select_active_actions(
-                    post_actions, setpoints, previous_setpoints
+                active_actions, delays = _select_active_actions_delays(
+                    post_actions, post_delays, setpoints, previous_setpoints,
                 )
                 previous_setpoints = setpoints
 
                 param_set_list = []
-                param_value_action = zip(params_set, setpoints, active_actions)
-                for setpoint_param, setpoint, action in param_value_action:
+                param_value_action_delay = zip(params_set, setpoints, active_actions, delays)
+                for setpoint_param, setpoint, action, delay in param_value_action_delay:
                     _conditional_parameter_set(setpoint_param, setpoint)
                     param_set_list.append((setpoint_param, setpoint))
                     for act in action:
                         act()
+                    time.sleep(delay)
 
                 meas_value_pair = call_params_meas()
                 for group in grouped_parameters.values():
@@ -768,8 +768,6 @@ def dond(
                     )
 
     finally:
-        for parameter, original_delay in original_delays.items():
-            parameter.post_delay = original_delay
 
         for datasaver in datasavers:
             ds, plot_axis, plot_color = _handle_plotting(
@@ -823,20 +821,27 @@ def _make_nested_setpoints(sweeps: List[AbstractSweep]) -> np.ndarray:
         return np.vstack(flat_setpoint_grids).T
 
 
-def _select_active_actions(
-    actions: Sequence[ActionsT], setpoints: np.ndarray, previous_setpoints: np.ndarray
-) -> List[ActionsT]:
+def _select_active_actions_delays(
+    actions: Sequence[ActionsT],
+    delays: Sequence[float],
+    setpoints: np.ndarray,
+    previous_setpoints: np.ndarray,
+) -> Tuple[List[ActionsT], List[float]]:
     """
-    Select ActionT (Sequence[Callable]) from a Sequence of ActionsT if
-    the corresponding setpoint has changed. Otherwise select an empty Sequence.
+    Select ActionT (Sequence[Callable]) and delays(Sequence[float]) from
+    a Sequence of ActionsT and delays, respectively, if the corresponding
+    setpoint has changed. Otherwise, select an empty Sequence for actions
+    and zero for delays.
     """
     actions_list: List[ActionsT] = [()] * len(setpoints)
+    setpoints_delay: List[float] = [0] * len(setpoints)
     for ind, (new_setpoint, old_setpoint) in enumerate(
         zip(setpoints, previous_setpoints)
     ):
         if new_setpoint != old_setpoint:
             actions_list[ind] = actions[ind]
-    return actions_list
+            setpoints_delay[ind] = delays[ind]
+    return (actions_list, setpoints_delay)
 
 
 def _create_measurements(
