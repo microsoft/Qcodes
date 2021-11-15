@@ -348,7 +348,7 @@
                     "type": "array",
                     "items": {
                         "type": "string",
-                        "enum": ["captured_run_id", "guid"]
+                        "enum": ["captured_run_id", "guid", "exp_name", "sample_name", "name"]
                     },
                     "default": ["captured_run_id"]
                 }

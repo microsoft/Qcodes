@@ -258,9 +258,17 @@ def test_export_from_config_set_name_elements(tmp_path_factory, mock_dataset, mo
     )
     mock_type.return_value = DataExportType.CSV
     mock_path.return_value = path
-    mock_name_elements.return_value = ["guid"]
+    mock_name_elements.return_value = [
+        "captured_run_id",
+        "guid",
+        "exp_name",
+        "sample_name",
+        "name",
+    ]
     mock_dataset.export()
-    assert os.listdir(path) == [f"qcodes_{mock_dataset.guid}.csv"]
+    assert os.listdir(path) == [
+        f"qcodes_{mock_dataset.captured_run_id}_{mock_dataset.guid}_{mock_dataset.exp_name}_{mock_dataset.sample_name}_{mock_dataset.name}.csv"
+    ]
 
 
 def test_same_setpoint_warning_for_df_and_xarray(different_setpoint_dataset):
