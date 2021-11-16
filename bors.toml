@@ -24,7 +24,8 @@ pr_status = [
   "pytestmypy (ubuntu-latest, 3.7)",
   "pytestmypy (ubuntu-latest, 3.8)",
   "pytestmypy (ubuntu-latest, 3.9)",
-  "pytestmin (ubuntu-latest, 3.7)"
+  "pytestmin (ubuntu-latest, 3.7)",
+  "pre-commit.ci - pr"
 ]
 delete_merged_branches = true
 required_approvals = 1
