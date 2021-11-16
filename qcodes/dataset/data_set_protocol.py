@@ -24,6 +24,7 @@ from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.export_config import (
     DataExportType,
+    get_data_export_name_elements,
     get_data_export_path,
     get_data_export_prefix,
     get_data_export_type,
@@ -400,7 +401,9 @@ class BaseDataSet(DataSetProtocol):
     def _export_file_name(self, prefix: str, export_type: DataExportType) -> str:
         """Get export file name"""
         extension = export_type.value
-        return f"{prefix}{self.run_id}.{extension}"
+        name_elements = get_data_export_name_elements()
+        post_fix = "_".join([str(getattr(self, name)) for name in name_elements])
+        return f"{prefix}{post_fix}.{extension}"
 
     def _export_as_netcdf(self, path: str, file_name: str) -> str:
         """Export data as netcdf to a given path with file prefix"""

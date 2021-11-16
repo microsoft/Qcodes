@@ -1,0 +1,2 @@
+It is now possible to configure the name of an exported files to include elements such as guid, sample_name and
+experiment_name. The default format has changed to include the captured_run_id and guid.
