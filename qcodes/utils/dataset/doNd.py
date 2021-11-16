@@ -746,7 +746,12 @@ def dond(
                 previous_setpoints = setpoints
 
                 param_set_list = []
-                param_value_action_delay = zip(params_set, setpoints, active_actions, delays)
+                param_value_action_delay = zip(
+                    params_set,
+                    setpoints,
+                    active_actions,
+                    delays,
+                )
                 for setpoint_param, setpoint, action, delay in param_value_action_delay:
                     _conditional_parameter_set(setpoint_param, setpoint)
                     param_set_list.append((setpoint_param, setpoint))
