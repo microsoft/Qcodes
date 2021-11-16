@@ -9,6 +9,7 @@ import matplotlib
 import numpy as np
 from tqdm.auto import tqdm
 from typing_extensions import TypedDict
+import time
 
 from qcodes import config
 from qcodes.dataset.data_set_protocol import DataSetProtocol, res_type
@@ -256,8 +257,6 @@ def do1d(
     _set_write_period(meas, write_period)
     _register_actions(meas, enter_actions, exit_actions)
 
-    original_delay = param_set.post_delay
-    param_set.post_delay = delay
 
     if use_threads is None:
         use_threads = config.dataset.use_threads
@@ -283,11 +282,10 @@ def do1d(
 
         for set_point in tqdm(setpoints, disable=not show_progress):
             param_set.set(set_point)
+            time.sleep(delay)
             datasaver.add_result(
                 (param_set, set_point), *call_param_meas(), *additional_setpoints_data
             )
-
-    param_set.post_delay = original_delay
 
     return _handle_plotting(dataset, do_plot, interrupted())
 
@@ -405,12 +403,6 @@ def do2d(
     _set_write_period(meas, write_period)
     _register_actions(meas, enter_actions, exit_actions)
 
-    original_delay1 = param_set1.post_delay
-    original_delay2 = param_set2.post_delay
-
-    param_set1.post_delay = delay1
-    param_set2.post_delay = delay2
-
     if use_threads is None:
         use_threads = config.dataset.use_threads
 
@@ -433,6 +425,8 @@ def do2d(
             for action in before_inner_actions:
                 action()
 
+            time.sleep(delay1)
+
             setpoints2 = np.linspace(start2, stop2, num_points2)
 
             # flush to prevent unflushed print's to visually interrupt tqdm bar
@@ -445,6 +439,7 @@ def do2d(
                     pass
                 else:
                     param_set2.set(set_point2)
+                    time.sleep(delay2)
 
                 datasaver.add_result(
                     (param_set1, set_point1),
@@ -457,9 +452,6 @@ def do2d(
                 action()
             if flush_columns:
                 datasaver.flush_data_to_database()
-
-    param_set1.post_delay = original_delay1
-    param_set2.post_delay = original_delay2
 
     return _handle_plotting(dataset, do_plot, interrupted())
 
@@ -721,12 +713,11 @@ def dond(
         log_info,
     )
 
-    original_delays: Dict[_BaseParameter, float] = {}
+    post_delays: List[float] = []
     params_set: List[_BaseParameter] = []
     post_actions: List[ActionsT] = []
     for sweep in sweep_instances:
-        original_delays[sweep.param] = sweep.param.post_delay
-        sweep.param.post_delay = sweep.delay
+        post_delays.append(sweep.delay)
         params_set.append(sweep.param)
         post_actions.append(sweep.post_actions)
 
@@ -749,18 +740,24 @@ def dond(
             previous_setpoints = np.empty(len(sweep_instances))
             for setpoints in tqdm(nested_setpoints, disable=not show_progress):
 
-                active_actions = _select_active_actions(
-                    post_actions, setpoints, previous_setpoints
+                active_actions, delays = _select_active_actions_delays(
+                    post_actions, post_delays, setpoints, previous_setpoints,
                 )
                 previous_setpoints = setpoints
 
                 param_set_list = []
-                param_value_action = zip(params_set, setpoints, active_actions)
-                for setpoint_param, setpoint, action in param_value_action:
+                param_value_action_delay = zip(
+                    params_set,
+                    setpoints,
+                    active_actions,
+                    delays,
+                )
+                for setpoint_param, setpoint, action, delay in param_value_action_delay:
                     _conditional_parameter_set(setpoint_param, setpoint)
                     param_set_list.append((setpoint_param, setpoint))
                     for act in action:
                         act()
+                    time.sleep(delay)
 
                 meas_value_pair = call_params_meas()
                 for group in grouped_parameters.values():
@@ -776,8 +773,6 @@ def dond(
                     )
 
     finally:
-        for parameter, original_delay in original_delays.items():
-            parameter.post_delay = original_delay
 
         for datasaver in datasavers:
             ds, plot_axis, plot_color = _handle_plotting(
@@ -831,20 +826,27 @@ def _make_nested_setpoints(sweeps: List[AbstractSweep]) -> np.ndarray:
         return np.vstack(flat_setpoint_grids).T
 
 
-def _select_active_actions(
-    actions: Sequence[ActionsT], setpoints: np.ndarray, previous_setpoints: np.ndarray
-) -> List[ActionsT]:
+def _select_active_actions_delays(
+    actions: Sequence[ActionsT],
+    delays: Sequence[float],
+    setpoints: np.ndarray,
+    previous_setpoints: np.ndarray,
+) -> Tuple[List[ActionsT], List[float]]:
     """
-    Select ActionT (Sequence[Callable]) from a Sequence of ActionsT if
-    the corresponding setpoint has changed. Otherwise select an empty Sequence.
+    Select ActionT (Sequence[Callable]) and delays(Sequence[float]) from
+    a Sequence of ActionsT and delays, respectively, if the corresponding
+    setpoint has changed. Otherwise, select an empty Sequence for actions
+    and zero for delays.
     """
     actions_list: List[ActionsT] = [()] * len(setpoints)
+    setpoints_delay: List[float] = [0] * len(setpoints)
     for ind, (new_setpoint, old_setpoint) in enumerate(
         zip(setpoints, previous_setpoints)
     ):
         if new_setpoint != old_setpoint:
             actions_list[ind] = actions[ind]
-    return actions_list
+            setpoints_delay[ind] = delays[ind]
+    return (actions_list, setpoints_delay)
 
 
 def _create_measurements(
