@@ -6,10 +6,12 @@ status = [
   "builddocs (ubuntu-latest, 3.7)",
   "builddocs (ubuntu-latest, 3.8)",
   "builddocs (ubuntu-latest, 3.9)",
+  "builddocs (ubuntu-latest, 3.10)",
   "builddocs (windows-latest, 3.7)",
   "pytestmypy (ubuntu-latest, 3.7)",
   "pytestmypy (ubuntu-latest, 3.8)",
   "pytestmypy (ubuntu-latest, 3.9)",
+  "pytestmypy (ubuntu-latest, 3.10)",
   "pytestmin (ubuntu-latest, 3.7)"
 ]
 # these are the checks that must pass before a branch can be merged to staging using bors r+
@@ -20,10 +22,12 @@ pr_status = [
   "builddocs (ubuntu-latest, 3.7)",
   "builddocs (ubuntu-latest, 3.8)",
   "builddocs (ubuntu-latest, 3.9)",
+  "builddocs (ubuntu-latest, 3.10)",
   "builddocs (windows-latest, 3.7)",
   "pytestmypy (ubuntu-latest, 3.7)",
   "pytestmypy (ubuntu-latest, 3.8)",
   "pytestmypy (ubuntu-latest, 3.9)",
+  "pytestmypy (ubuntu-latest, 3.10)",
   "pytestmin (ubuntu-latest, 3.7)",
   "pre-commit.ci - pr"
 ]
