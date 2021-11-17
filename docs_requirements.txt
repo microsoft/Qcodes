@@ -63,7 +63,7 @@ requests==2.26.0
 scipy==1.7.2
 Send2Trash==1.8.0
 six==1.16.0
-snowballstemmer==2.1.0
+snowballstemmer==2.2.0
 Sphinx==4.3.0
 sphinx-jsonschema==1.17.1
 sphinx-rtd-theme==1.0.0
