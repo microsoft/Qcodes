@@ -30,7 +30,7 @@ def test_mock_field_delegate(station, field_x, chip_config):
 
         field.ramp_X(dict(field=0.0, ramp_rate=10.0))
         assert field.ramp_rate() == 10.0
-        assert field.X() == 0.0
+        assert_almost_equal(field.X(), 0.0)
         assert field.ramp_X_ramp_rate() == 10.0
         assert field.ramp_X_field() == 0.0
 
