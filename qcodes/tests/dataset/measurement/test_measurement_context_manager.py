@@ -1696,7 +1696,9 @@ def test_datasaver_export(experiment, bg_writing, tmp_path_factory, export, mock
             (str(y2), expected["y2"]),
         )
     if export:
-        assert os.listdir(path) == [f"qcodes_{datasaver.dataset.run_id}.csv"]
+        assert os.listdir(path) == [
+            f"qcodes_{datasaver.dataset.captured_run_id}_{datasaver.dataset.guid}.csv"
+        ]
     else:
         assert os.listdir(path) == []
 

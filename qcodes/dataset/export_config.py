@@ -1,8 +1,7 @@
 import enum
 import logging
-
-from os.path import normpath, expanduser, exists
-from typing import Union, Optional
+from os.path import exists, expanduser, normpath
+from typing import List, Optional, Union
 
 from qcodes import config
 
@@ -14,6 +13,7 @@ EXPORT_AUTOMATIC = "export_automatic"
 EXPORT_TYPE = "export_type"
 EXPORT_PATH = "export_path"
 EXPORT_PREFIX = "export_prefix"
+EXPORT_NAME_ELEMENTS = "export_name_elements"
 
 
 class DataExportType(enum.Enum):
@@ -38,8 +38,9 @@ def set_data_export_type(export_type: str) -> None:
 
     else:
         _log.warning(
-            "Could not set export type to '%s' because it is not supported." \
-            % export_type)
+            "Could not set export type to '%s' because it is not supported."
+            % export_type
+        )
 
 
 def set_data_export_path(export_path: str) -> None:
@@ -52,8 +53,9 @@ def set_data_export_path(export_path: str) -> None:
         ValueError: If the path does not exist, this raises an error
     """
     if not exists(export_path):
-        raise ValueError(f"Cannot set export path to '{export_path}' \
-        because it does not exist.")
+        raise ValueError(
+            f"Cannot set export path to '{export_path}' because it does not exist."
+        )
     config[DATASET_CONFIG_SECTION][EXPORT_AUTOMATIC] = export_path
 
 
@@ -112,3 +114,8 @@ def get_data_export_prefix() -> str:
         Prefix, e.g. "qcodes_"
     """
     return config[DATASET_CONFIG_SECTION][EXPORT_PREFIX]
+
+
+def get_data_export_name_elements() -> List[str]:
+    """Get the elements to include in the export name."""
+    return config[DATASET_CONFIG_SECTION][EXPORT_NAME_ELEMENTS]

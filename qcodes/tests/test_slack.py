@@ -303,9 +303,8 @@ def test_slack_inst_should_handle_messages_w_parameter(mock_webclient, slack):
 def test_slack_inst_should_handle_messages_w_exception(mock_webclient, slack):
     messages = {'dummyuser': [{'user': 'DU123', 'text': 'help toomany'}]}
     slack.handle_messages(messages)
-    text = 'TypeError: help_message() takes 1 positional argument ' \
-           'but 2 were given\n'
-    expected_output = {'channel': 'CH234', 'text': AnyStringWith(text)}
+    text = "help_message() takes 1 positional argument but 2 were given\n"
+    expected_output = {"channel": "CH234", "text": AnyStringWith(text)}
     mock_webclient.chat_postMessage.assert_called_with(**expected_output)
 
 
