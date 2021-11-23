@@ -46,7 +46,7 @@ types-ipaddress==1.0.1
 types-pyOpenSSL==21.0.0
 types-pytz==2021.3.0
 types-requests==2.26.0
-types-setuptools==57.4.2
+types-setuptools==57.4.3
 types-six==1.16.2
 types-tabulate==0.8.3
 types-toml==0.10.1
