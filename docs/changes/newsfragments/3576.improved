@@ -1,4 +1,0 @@
-doNd functions now manually wait the delay between setpoints instead of using parameters
-post_delay attribute. This change prevents unintentional slow downs in measurements when
-the step delay of a setpoint parameter is considerably lower than the delay between
-measurement step points that passed into doNd functions.

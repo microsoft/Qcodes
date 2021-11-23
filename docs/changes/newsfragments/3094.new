@@ -1,1 +1,0 @@
-A new ``DataSet`` type ``DataSetInMem`` has been added. This allows users to meassure without writing raw data to an sqlite database as well as to load netcdf files into a QCoDeS dataset. See `here <../examples/DataSet/InMemoryDataSet.ipynb>`__ and `here <../examples/DataSet/Exporting-data-to-other-file-formats.ipynb>`__.
