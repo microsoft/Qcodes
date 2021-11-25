@@ -219,8 +219,20 @@ class DataSetProtocol(Protocol, Sized):
     def cache(self) -> DataSetCache[DataSetProtocol]:
         pass
 
+    def get_parameter_data(
+        self,
+        *params: Union[str, ParamSpec, _BaseParameter],
+        start: Optional[int] = None,
+        end: Optional[int] = None,
+    ) -> ParameterData:
+        pass
+
     def get_parameters(self) -> SPECS:
         # used by plottr
+        pass
+
+    @property
+    def dependent_parameters(self) -> Tuple[ParamSpecBase, ...]:
         pass
 
     # exporters to other in memory formats
@@ -500,6 +512,13 @@ class BaseDataSet(DataSetProtocol):
         Consult with ``time.strftime`` for information about the format.
         """
         return raw_time_to_str_time(self.completed_timestamp_raw, fmt)
+
+    @property
+    def dependent_parameters(self) -> Tuple[ParamSpecBase, ...]:
+        """
+        Return all the parameters that explicitly depend on other parameters
+        """
+        return tuple(self.description.interdeps.dependencies.keys())
 
 
 class DataSetType(str, Enum):
