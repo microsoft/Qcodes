@@ -1,0 +1,43 @@
+QCoDeS 0.30.0 (2021-11-23)
+==========================
+
+New:
+----
+
+- A new ``DataSet`` type ``DataSetInMem`` has been added. This allows users to meassure without writing raw data to an sqlite database as well as to load netcdf files into a QCoDeS dataset. See `here <../examples/DataSet/InMemoryDataSet.ipynb>`__ and `here <../examples/DataSet/Exporting-data-to-other-file-formats.ipynb>`__. (#3094)
+- Added function ``get_channel_by_name`` to ``ChannelList`` class to get or or more channels in a ChannelList by name. (#3431)
+- The changelog for upcoming changes in the next release is now automatically build from fragments as part of the
+  documentation. (#3451)
+
+
+Improved:
+---------
+
+- The QcoDeS monitor can now be launched directly from a console using by running `qcodes-monitor(.exe)` (#3475)
+- dond avoids setting setpoint parameters with values that are already set. This significantly improves
+  the performance of the dond function in multi-dimensional measurements. (#3534)
+- doNd functions now manually wait the delay between setpoints instead of using parameters
+  post_delay attribute. This change prevents unintentional slow downs in measurements when
+  the step delay of a setpoint parameter is considerably lower than the delay between
+  measurement step points that passed into doNd functions. (#3576)
+- It is now possible to configure the name of an exported files to include elements such as guid, sample_name and
+  experiment_name. The default format has changed to include the captured_run_id and guid. (#3586)
+
+
+Improved Drivers:
+-----------------
+
+- Tektronix AWG70000 add support for 70001B and 70002B models. (#3438)
+- Added support for flags (auxiliary outputs) for Tektronix AWG70000 sequences (#3450)
+- The Galil documentation is now correctly included in the QCoDeS docs (#3452)
+- Improved the drivers for Keysight N51x1 and N51x3 signal generators by:
+
+  - Adding explicit support for N5173B
+  - Fixing the power range of N5183B
+  - Fixing the frequency range options for N51x1 (#3555)
+
+
+Under the hood:
+---------------
+
+- The QCoDeS changelog is now being build using towncrier. (#3397)
