@@ -223,6 +223,10 @@ class DataSetProtocol(Protocol, Sized):
         # used by plottr
         pass
 
+    @property
+    def dependent_parameters(self) -> Tuple[ParamSpecBase, ...]:
+        pass
+
     # exporters to other in memory formats
 
     def to_xarray_dataarray_dict(
@@ -500,6 +504,13 @@ class BaseDataSet(DataSetProtocol):
         Consult with ``time.strftime`` for information about the format.
         """
         return raw_time_to_str_time(self.completed_timestamp_raw, fmt)
+
+    @property
+    def dependent_parameters(self) -> Tuple[ParamSpecBase, ...]:
+        """
+        Return all the parameters that explicitly depend on other parameters
+        """
+        return tuple(self.description.interdeps.dependencies.keys())
 
 
 class DataSetType(str, Enum):
