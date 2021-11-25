@@ -11,7 +11,12 @@ from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Sequence, 
 
 import numpy as np
 
-from qcodes.dataset.data_set_protocol import SPECS, BaseDataSet, CompletedError
+from qcodes.dataset.data_set_protocol import (
+    SPECS,
+    BaseDataSet,
+    CompletedError,
+    ParameterData,
+)
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
@@ -824,6 +829,15 @@ class DataSetInMem(BaseDataSet):
     ) -> pd.DataFrame:
         self._warn_if_set(*params, start=start, end=end)
         return self.cache.to_pandas_dataframe()
+
+    def get_parameter_data(
+        self,
+        *params: Union[str, ParamSpec, _BaseParameter],
+        start: Optional[int] = None,
+        end: Optional[int] = None,
+    ) -> ParameterData:
+        self._warn_if_set(*params, start=start, end=end)
+        return self.cache.data()
 
     @staticmethod
     def _warn_if_set(
