@@ -38,7 +38,6 @@ Documentation
 
    start/index
    help
-   user/index
    community/index
    dataset/index
    api/index
