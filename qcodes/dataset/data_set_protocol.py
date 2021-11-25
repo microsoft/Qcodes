@@ -219,6 +219,14 @@ class DataSetProtocol(Protocol, Sized):
     def cache(self) -> DataSetCache[DataSetProtocol]:
         pass
 
+    def get_parameter_data(
+        self,
+        *params: Union[str, ParamSpec, _BaseParameter],
+        start: Optional[int] = None,
+        end: Optional[int] = None,
+    ) -> ParameterData:
+        pass
+
     def get_parameters(self) -> SPECS:
         # used by plottr
         pass
