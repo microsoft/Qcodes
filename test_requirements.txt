@@ -8,7 +8,7 @@ colorama==0.4.4
 coverage==6.1.2
 deepdiff==5.6.0
 execnet==1.9.0
-hypothesis==6.27.1
+hypothesis==6.27.2
 idna==3.3
 importlib-metadata==4.8.1; python_version<'3.8'
 iniconfig==1.1.1
@@ -45,7 +45,7 @@ types-docutils==0.17.1
 types-ipaddress==1.0.1
 types-pyOpenSSL==21.0.1
 types-pytz==2021.3.1
-types-requests==2.26.0
+types-requests==2.26.1
 types-setuptools==57.4.3
 types-six==1.16.2
 types-tabulate==0.8.3
