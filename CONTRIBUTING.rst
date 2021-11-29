@@ -6,13 +6,13 @@ from developers of any skill level.
 
 Who are we?
 Jens H. Nielsen, William H.P Nielsen, Mikhail Astafev and Trevor Morgan
-are the current maintainers, or core developers, of QCoDeS. 
+are the current maintainers, or core developers, of QCoDeS.
 This team is further supported by the smart and talented volunteers who contribute code to this open source project.
 
 Need help?
 While we strive for perfect documentation, we reccomend any help requests be put through our `GitHub Discussion Page
-<https://github.com/QCoDeS/Qcodes/discussions>`__. We strongly encourage you to open a new thread detailing your problem 
-so that the team and community can provide a solution.  
+<https://github.com/QCoDeS/Qcodes/discussions>`__. We strongly encourage you to open a new thread detailing your problem
+so that the team and community can provide a solution.
 
 .. contents::
 
@@ -36,9 +36,9 @@ We use github's `issues <https://github.com/QCoDeS/Qcodes/issues>`__.
 If your problem is not yet addressed in the current issues, `please open a new issue
 <https://github.com/QCoDeS/Qcodes/issues/new>`__.
 
-The github GUI will show you a template for bug reports. 
-Please fill in the relevant sections of the template and delete the 
-sections  that do not apply to your bug. please include a reproducible 
+The github GUI will show you a template for bug reports.
+Please fill in the relevant sections of the template and delete the
+sections  that do not apply to your bug. please include a reproducible
 example of this bug with your report so we can investigate it.
 By writing a good report, we are better able to help you and everyone
 in the QCoDeS community.
