@@ -1,19 +1,18 @@
 Contributing
 ============
 
-Hi, thanks for your interest in the project! We welcome pull requests
-from developers of all skill levels.
+Hi, thanks for your interest in the project! We, the development team, welcome all pull requests
+from developers of any skill level.
 
+Who are we?
 Jens H. Nielsen, William H.P Nielsen, Mikhail Astafev and Trevor Morgan
-are the current maintainers of QCoDeS (aka core developers), along with a
-group of talented and smart volunteers.
+are the current maintainers, or core developers, of QCoDeS. 
+This team is further supported by the smart and talented volunteers who contribute code to this open source project.
 
 Need help?
-What we recommend to be used for any kind of help and support is to open
-a thread in a relevant Discussions page in `QCoDeS GitHub
-<https://github.com/QCoDeS/Qcodes/discussions>`__.
-You can also join us on Slack,
-(Please send an email to qcodes-support@microsoft.com to be invited!).
+While we strive for perfect documentation, we reccomend any help requests be put through our `GitHub Discussion Page
+<https://github.com/QCoDeS/Qcodes/discussions>`__. We strongly encourage you to open a new thread detailing your problem 
+so that the team and community can provide a solution.  
 
 .. contents::
 
@@ -30,21 +29,24 @@ These drivers are supported on a best effort basis by the developers of the indi
 Note that, any pull request to the main QCoDeS repository concerning unsupported
 drivers will not be reviewed and/or merged with the QCoDeS core.
 
-Bugs reports and feature requests
----------------------------------
+Bugs reports
+------------
 
 We use github's `issues <https://github.com/QCoDeS/Qcodes/issues>`__.
-Search for existing and closed issues. If your problem is not yet
-addressed, `please open a new issue
+If your problem is not yet addressed in the current issues, `please open a new issue
 <https://github.com/QCoDeS/Qcodes/issues/new>`__.
 
-The github GUI will show you a template for bugs.
-Delete the wrong part and try to follow the template. Writing a good
-issue helps you in the first place. Bug reports must be accompanied by a
-reproducible example.
+The github GUI will show you a template for bug reports. 
+Please fill in the relevant sections of the template and delete the 
+sections  that do not apply to your bug. please include a reproducible 
+example of this bug with your report so we can investigate it.
+By writing a good report, we are better able to help you and everyone
+in the QCoDeS community.
 
+Feature requests
+----------------
 Have an idea about future directions to go with Qcodes? Visions of
-data-utopia that would take more than a few weeks to add or might change
+a data-utopia that would take more than a few weeks to add or might change
 some core ideas in the package? Please use "Ideas" section in
 `Github Discussions <https://github.com/QCoDeS/Qcodes/discussions>`__.
 We will pick the ``long-term`` or ``discussion`` labels.
@@ -56,8 +58,8 @@ Clever usage
 
 Figured out a new way to use QCoDeS? Found a package that makes your
 life better and easier? Got realtime analysis working after struggling
-with it for days? Write it on the "General" section of GitHub Discussions
-so we can keep our github more organized.
+with it for days? Write about this on the "General" section of `GitHub Discussions
+<https://github.com/QCoDeS/Qcodes/discussions>`__ so we can all learn from your examples.
 
 Development
 -----------
