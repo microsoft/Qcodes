@@ -51,7 +51,7 @@ jobs:
         args: install pandoc
       if: runner.os == 'Windows'
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2.3.0
+      uses: actions/setup-python@v2.3.1
       with:
         python-version: ${{ matrix.python-version }}
     - name: prepare pip cache
