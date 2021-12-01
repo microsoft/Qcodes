@@ -225,7 +225,7 @@ class DataSetInMem(BaseDataSet):
         import xarray as xr
 
         loaded_data = xr.load_dataset(path, engine="h5netcdf")
-        
+
         return cls._load_from_xarray_dataset(xarray_dataset=loaded_data, path_to_db=path_to_db)
 
     @classmethod
