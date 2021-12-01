@@ -225,9 +225,33 @@ class DataSetInMem(BaseDataSet):
         import xarray as xr
 
         loaded_data = xr.load_dataset(path, engine="h5netcdf")
+        
+        return cls._load_from_xarray_dataset(xarray_dataset=loaded_data, path_to_db=path_to_db)
+
+    @classmethod
+    def _load_from_xarray_dataset(
+        cls, xarray_dataset: xr.DataSet, path_to_db: Optional[Union[Path, str]] = None
+    ) -> DataSetInMem:
+        """
+        Create a in memory dataset from an xarray DataSet.
+        The xarray DataSet is expected to contain a QCoDeS dataset that
+        has been exported using the QCoDeS netcdf export functions.
+
+        Args:
+            xarray_dataset: an xarray DataSet.
+            path_to_db: Optional path to a database where this dataset may be
+                exported to. If not supplied the path can be given at export time
+                or the dataset exported to the default db as set in the QCoDeS config.
+
+        Returns:
+            The loaded dataset.
+        """
+        # in the code below floats and ints loaded from attributes are explicitly casted
+        # this is due to some older versions of qcodes writing them with a different backend
+        # reading them back results in a numpy array of one element
 
         parent_dataset_links = str_to_links(
-            loaded_data.attrs.get("parent_dataset_links", "[]")
+            xarray_dataset.attrs.get("parent_dataset_links", "[]")
         )
         if path_to_db is not None:
             path_to_db = str(path_to_db)
@@ -242,13 +266,13 @@ class DataSetInMem(BaseDataSet):
             run_id = run_data["run_id"]
             counter = run_data["counter"]
         else:
-            run_id = int(loaded_data.captured_run_id)
-            counter = int(loaded_data.captured_counter)
+            run_id = int(xarray_dataset.captured_run_id)
+            counter = int(xarray_dataset.captured_counter)
 
         path = str(path)
         path = os.path.abspath(path)
 
-        export_info = ExportInfo.from_str(loaded_data.attrs.get("export_info", ""))
+        export_info = ExportInfo.from_str(xarray_dataset.attrs.get("export_info", ""))
         export_info.export_paths["nc"] = path
         non_metadata = {
             "run_timestamp_raw",
@@ -261,36 +285,36 @@ class DataSetInMem(BaseDataSet):
         }
 
         metadata_keys = (
-            set(loaded_data.attrs.keys()) - set(RUNS_TABLE_COLUMNS) - non_metadata
+            set(xarray_dataset.attrs.keys()) - set(RUNS_TABLE_COLUMNS) - non_metadata
         )
         metadata = {}
         for key in metadata_keys:
-            data = loaded_data.attrs[key]
+            data = xarray_dataset.attrs[key]
             if isinstance(data, np.ndarray) and data.size == 1:
                 data = data[0]
             metadata[key] = data
 
         ds = cls(
             run_id=run_id,
-            captured_run_id=int(loaded_data.captured_run_id),
+            captured_run_id=int(xarray_dataset.captured_run_id),
             counter=counter,
-            captured_counter=int(loaded_data.captured_counter),
-            name=loaded_data.ds_name,
+            captured_counter=int(xarray_dataset.captured_counter),
+            name=xarray_dataset.ds_name,
             exp_id=0,
-            exp_name=loaded_data.exp_name,
-            sample_name=loaded_data.sample_name,
-            guid=loaded_data.guid,
+            exp_name=xarray_dataset.exp_name,
+            sample_name=xarray_dataset.sample_name,
+            guid=xarray_dataset.guid,
             path_to_db=path_to_db,
-            run_timestamp_raw=float(loaded_data.run_timestamp_raw),
-            completed_timestamp_raw=float(loaded_data.completed_timestamp_raw),
+            run_timestamp_raw=float(xarray_dataset.run_timestamp_raw),
+            completed_timestamp_raw=float(xarray_dataset.completed_timestamp_raw),
             metadata=metadata,
-            rundescriber=serial.from_json_to_current(loaded_data.run_description),
+            rundescriber=serial.from_json_to_current(xarray_dataset.run_description),
             parent_dataset_links=parent_dataset_links,
             export_info=export_info,
-            snapshot=loaded_data.snapshot,
+            snapshot=xarray_dataset.snapshot,
         )
         ds._cache = DataSetCacheInMem(ds)
-        ds._cache._data = cls._from_xarray_dataset_to_qcodes_raw_data(loaded_data)
+        ds._cache._data = cls._from_xarray_dataset_to_qcodes_raw_data(xarray_dataset)
 
         return ds
 
