@@ -23,7 +23,7 @@ from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.guids import parse_guid
 from qcodes.dataset.sqlite.connection import path_to_dbfile
 from qcodes.dataset.sqlite.database import get_DB_location
-from qcodes.dataset.sqlite.queries import _unicode_categories
+from qcodes.dataset.sqlite.queries import _unicode_categories, _rewrite_timestamps
 from qcodes.tests.common import error_caused_by
 from qcodes.tests.dataset.helper_functions import verify_data_dict
 from qcodes.tests.dataset.test_links import generate_some_links
@@ -196,6 +196,21 @@ def test_timestamps_are_none():
 
     assert isinstance(ds.run_timestamp_raw, float)
     assert isinstance(ds.run_timestamp(), str)
+
+
+@pytest.mark.usefixtures('experiment')
+def test_integer_timestamps_in_database_are_supported():
+    ds = DataSet()
+
+    ds.mark_started()
+    ds.mark_completed()
+
+    _rewrite_timestamps(ds.conn, ds.run_id, 42, 69)
+
+    assert isinstance(ds.run_timestamp_raw, float)
+    assert isinstance(ds.completed_timestamp_raw, float)
+    assert isinstance(ds.run_timestamp(), str)
+    assert isinstance(ds.completed_timestamp(), str)
 
 
 def test_dataset_read_only_properties(dataset):
