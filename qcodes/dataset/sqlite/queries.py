@@ -867,7 +867,9 @@ def get_completed_timestamp_from_run_id(
     """
     ts = select_one_where(conn, "runs", "completed_timestamp", "run_id", run_id)
     # sometimes it happens that the timestamp is written to DB as an int
-    assert isinstance(ts, (float, int, type(None)))
+    if isinstance(ts, int):
+        ts = float(ts)
+    assert isinstance(ts, (float, type(None)))
     return ts
 
 
@@ -1890,7 +1892,9 @@ def get_run_timestamp_from_run_id(conn: ConnectionPlus,
                                   run_id: int) -> Optional[float]:
     time_stamp = select_one_where(conn, "runs", "run_timestamp", "run_id", run_id)
     # sometimes it happens that the timestamp is saved as an integer in the database
-    assert isinstance(time_stamp, (float, int, type(None)))
+    if isinstance(ts, int):
+        ts = float(ts)
+    assert isinstance(ts, (float, type(None)))
     return time_stamp
 
 
