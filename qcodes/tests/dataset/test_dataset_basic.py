@@ -21,7 +21,7 @@ from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.guids import parse_guid
-from qcodes.dataset.sqlite.connection import path_to_dbfile
+from qcodes.dataset.sqlite.connection import path_to_dbfile, atomic
 from qcodes.dataset.sqlite.database import get_DB_location
 from qcodes.dataset.sqlite.queries import _unicode_categories, _rewrite_timestamps
 from qcodes.tests.common import error_caused_by
@@ -205,7 +205,8 @@ def test_integer_timestamps_in_database_are_supported():
     ds.mark_started()
     ds.mark_completed()
 
-    _rewrite_timestamps(ds.conn, ds.run_id, 42, 69)
+    with atomic(ds.conn) as conn:
+        _rewrite_timestamps(conn, ds.run_id, 42, 69)
 
     assert isinstance(ds.run_timestamp_raw, float)
     assert isinstance(ds.completed_timestamp_raw, float)
