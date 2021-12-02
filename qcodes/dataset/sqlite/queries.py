@@ -1892,9 +1892,9 @@ def get_run_timestamp_from_run_id(conn: ConnectionPlus,
                                   run_id: int) -> Optional[float]:
     time_stamp = select_one_where(conn, "runs", "run_timestamp", "run_id", run_id)
     # sometimes it happens that the timestamp is saved as an integer in the database
-    if isinstance(ts, int):
-        ts = float(ts)
-    assert isinstance(ts, (float, type(None)))
+    if isinstance(time_stamp, int):
+        time_stamp = float(time_stamp)
+    assert isinstance(time_stamp, (float, type(None)))
     return time_stamp
 
 
