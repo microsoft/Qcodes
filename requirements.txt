@@ -71,7 +71,7 @@ requirements-parser~=0.2.0
 rsa~=4.8
 ruamel.yaml==0.17.17
 ruamel.yaml.clib~=0.2.6
-schema~=0.7.4
+schema~=0.7.5
 Send2Trash~=1.8.0
 six~=1.16.0
 slack-sdk~=3.12.0
