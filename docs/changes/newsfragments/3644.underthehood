@@ -1,2 +1,0 @@
-Relax type assertions for DataSet timestamps so that if in the database they
-are written as integers, as opposed to floats, a DataSet can still be loaded
