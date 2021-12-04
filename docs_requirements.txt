@@ -58,7 +58,7 @@ pywinpty==1.1.6; sys_platform == 'win32'
 PyYAML==6.0
 pyzmq==22.3.0
 qtconsole==5.2.1
-QtPy==1.11.2
+QtPy==1.11.3
 requests==2.26.0
 scipy==1.7.3
 Send2Trash==1.8.0
