@@ -438,13 +438,6 @@ class DataSet(BaseDataSet):
                 for ps in self.get_parameters()}
 
     @property
-    def dependent_parameters(self) -> Tuple[ParamSpecBase, ...]:
-        """
-        Return all the parameters that explicitly depend on other parameters
-        """
-        return tuple(self._rundescriber.interdeps.dependencies.keys())
-
-    @property
     def exp_id(self) -> int:
         exp_id = select_one_where(self.conn, "runs", "exp_id", "run_id", self.run_id)
         assert isinstance(exp_id, int)

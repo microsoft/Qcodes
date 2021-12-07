@@ -1,1 +1,0 @@
-Added function ``get_channel_by_name`` to ``ChannelList`` class to get or or more channels in a ChannelList by name.
