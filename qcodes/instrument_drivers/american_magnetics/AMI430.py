@@ -124,7 +124,7 @@ class AMI430SwitchHeater(InstrumentChannel):
 
     @_Decorators.check_enabled
     def check_state(self) -> bool:
-        return bool(ast.literal_eval(self.ask("PS?").strip()) )
+        return bool(int(self.ask("PS?").strip()))
 
 
 class AMI430(IPInstrument):
