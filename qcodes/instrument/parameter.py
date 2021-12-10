@@ -579,7 +579,7 @@ class _BaseParameter(Metadatable):
             value = raw_value
 
         # apply offset first (native scale)
-        if self.offset is not None:
+        if self.offset is not None and value is not None:
             # offset values
             try:
                 value = value - self.offset
@@ -595,7 +595,7 @@ class _BaseParameter(Metadatable):
                     raise
 
         # scale second
-        if self.scale is not None:
+        if self.scale is not None and value is not None:
             # Scale values
             try:
                 value = value / self.scale
