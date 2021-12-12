@@ -486,16 +486,12 @@ def test_ramp_rate_exception(current_driver):
     Test that an exception is raised if we try to set the ramp rate
     to a higher value than is allowed
     """
-    max_ramp_rate = AMI430_VISA._DEFAULT_CURRENT_RAMP_LIMIT
-    target_ramp_rate = max_ramp_rate + 0.01
     ix = current_driver._instrument_x
+    max_ramp_rate = ix.field_ramp_limit()
+    target_ramp_rate = max_ramp_rate + 0.01
 
-    with pytest.raises(Exception) as excinfo:
+    with pytest.raises(ValueError, match="is above the ramp rate limit of"):
         ix.ramp_rate(target_ramp_rate)
-
-        errmsg = f"must be between 0 and {max_ramp_rate} inclusive"
-
-        assert errmsg in excinfo.value.args[0]
 
 
 def test_reducing_field_ramp_limit_reduces_a_higher_ramp_rate(ami430):
