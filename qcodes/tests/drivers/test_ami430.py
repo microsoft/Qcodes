@@ -74,8 +74,8 @@ def current_driver(magnet_axes_instances):
     driver.close()
 
 
-@pytest.fixture(scope='function')
-def ami430():
+@pytest.fixture(scope="function", name="ami430")
+def _make_ami430():
     mag = AMI430_VISA('ami430', address='GPIB::1::INSTR', visalib=visalib,
                       terminator='\n', port=1)
     yield mag
