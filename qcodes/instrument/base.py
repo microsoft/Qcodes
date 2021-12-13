@@ -819,7 +819,7 @@ class Instrument(InstrumentBase, AbstractInstrument):
                 type(self).__name__))
 
 
-T = TypeVar(name="T", bound=Instrument)
+T = TypeVar("T", bound=Instrument)
 
 
 def find_or_create_instrument(
