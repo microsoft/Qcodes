@@ -733,7 +733,8 @@ def test_current_and_field_params_interlink__change_field_ramp_limit(
 
 
 def test_current_and_field_params_interlink__change_coil_constant(
-        ami430, factor=3):
+    ami430, factor: float = 3
+):
     """
     Test that after changing ``change_coil_constant``, the values of the
     ``current_*`` parameters remain the same while the values of the
