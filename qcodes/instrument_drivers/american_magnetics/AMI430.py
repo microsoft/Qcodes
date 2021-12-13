@@ -528,7 +528,7 @@ class AMI430_3D(Instrument):
             found_ami430 = AMI430.find_instrument(
                 name=ami430_name, instrument_class=AMI430
             )
-            return cast(AMI430, found_ami430)
+            return found_ami430
 
         self._instrument_x = (
             instrument_x if isinstance(instrument_x, AMI430)
