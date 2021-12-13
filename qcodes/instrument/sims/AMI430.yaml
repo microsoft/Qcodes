@@ -54,7 +54,7 @@ devices:
           q: 'CONF:RAMP:RATE:SEG {}'
 
       ramp rate field first segment:
-        default: '25, 25, 25'
+        default: '0.11, 0.11, 0.11'
         getter:
           q: 'RAMP:RATE:FIELD:1?'
           r: '{}'

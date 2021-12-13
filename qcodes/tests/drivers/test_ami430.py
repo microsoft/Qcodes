@@ -74,8 +74,8 @@ def current_driver(magnet_axes_instances):
     driver.close()
 
 
-@pytest.fixture(scope='function')
-def ami430():
+@pytest.fixture(scope="function", name="ami430")
+def _make_ami430():
     mag = AMI430_VISA('ami430', address='GPIB::1::INSTR', visalib=visalib,
                       terminator='\n', port=1)
     yield mag
@@ -486,16 +486,12 @@ def test_ramp_rate_exception(current_driver):
     Test that an exception is raised if we try to set the ramp rate
     to a higher value than is allowed
     """
-    max_ramp_rate = AMI430_VISA._DEFAULT_CURRENT_RAMP_LIMIT
-    target_ramp_rate = max_ramp_rate + 0.01
     ix = current_driver._instrument_x
+    max_ramp_rate = ix.field_ramp_limit()
+    target_ramp_rate = max_ramp_rate + 0.01
 
-    with pytest.raises(Exception) as excinfo:
+    with pytest.raises(ValueError, match="is above the ramp rate limit of"):
         ix.ramp_rate(target_ramp_rate)
-
-        errmsg = f"must be between 0 and {max_ramp_rate} inclusive"
-
-        assert errmsg in excinfo.value.args[0]
 
 
 def test_reducing_field_ramp_limit_reduces_a_higher_ramp_rate(ami430):
@@ -737,7 +733,8 @@ def test_current_and_field_params_interlink__change_field_ramp_limit(
 
 
 def test_current_and_field_params_interlink__change_coil_constant(
-        ami430, factor=3):
+    ami430, factor: float = 3
+):
     """
     Test that after changing ``change_coil_constant``, the values of the
     ``current_*`` parameters remain the same while the values of the
