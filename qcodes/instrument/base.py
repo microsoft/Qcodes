@@ -443,6 +443,9 @@ class AbstractInstrument(ABC):
         pass
 
 
+T = TypeVar("T", bound="Instrument")
+
+
 class Instrument(InstrumentBase, AbstractInstrument):
 
     """
@@ -580,7 +583,7 @@ class Instrument(InstrumentBase, AbstractInstrument):
         log.info("Closing all registered instruments")
         for inststr in list(cls._all_instruments):
             try:
-                inst = cls.find_instrument(inststr)
+                inst: Instrument = cls.find_instrument(inststr)
                 log.info(f"Closing {inststr}")
                 inst.close()
             except:
@@ -655,8 +658,9 @@ class Instrument(InstrumentBase, AbstractInstrument):
                 del all_ins[name]
 
     @classmethod
-    def find_instrument(cls, name: str,
-                        instrument_class: Optional[type] = None) -> 'Instrument':
+    def find_instrument(
+        cls, name: str, instrument_class: Optional[Type[T]] = None
+    ) -> T:
         """
         Find an existing instrument by name.
 
@@ -673,20 +677,21 @@ class Instrument(InstrumentBase, AbstractInstrument):
             TypeError: If a specific class was requested but a different
                 type was found.
         """
+        internal_instrument_class = instrument_class or Instrument
+
         if name not in cls._all_instruments:
             raise KeyError(f"Instrument with name {name} does not exist")
-        ins = cls._all_instruments[name]()
+        ins = cast(T, cls._all_instruments[name]())
 
         if ins is None:
             del cls._all_instruments[name]
             raise KeyError(f'Instrument {name} has been removed')
-        if instrument_class is not None:
-            if not isinstance(ins, instrument_class):
-                raise TypeError(
-                    'Instrument {} is {} but {} was requested'.format(
-                        name, type(ins), instrument_class))
 
-        return cast('Instrument', ins)
+        if not isinstance(ins, internal_instrument_class):
+            raise TypeError(
+                f"Instrument {name} is {type(ins)} but {instrument_class} was requested"
+            )
+        return ins
 
     @staticmethod
     def exist(name: str, instrument_class: Optional[type] = None) -> bool:
@@ -817,9 +822,6 @@ class Instrument(InstrumentBase, AbstractInstrument):
         raise NotImplementedError(
             'Instrument {} has not defined an ask method'.format(
                 type(self).__name__))
-
-
-T = TypeVar("T", bound=Instrument)
 
 
 def find_or_create_instrument(
