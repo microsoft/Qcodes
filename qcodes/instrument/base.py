@@ -14,6 +14,7 @@ from typing import (
     Optional,
     Sequence,
     Type,
+    TypeVar,
     Union,
     cast,
 )
@@ -818,12 +819,16 @@ class Instrument(InstrumentBase, AbstractInstrument):
                 type(self).__name__))
 
 
-def find_or_create_instrument(instrument_class: Type[Instrument],
-                              name: str,
-                              *args: Any,
-                              recreate: bool = False,
-                              **kwargs: Any
-                              ) -> Instrument:
+T = TypeVar(name="T", bound=Instrument)
+
+
+def find_or_create_instrument(
+    instrument_class: Type[T],
+    name: str,
+    *args: Any,
+    recreate: bool = False,
+    **kwargs: Any,
+) -> T:
     """
     Find an instrument with the given name of a given class, or create one if
     it is not found. In case the instrument was found, and `recreate` is True,
