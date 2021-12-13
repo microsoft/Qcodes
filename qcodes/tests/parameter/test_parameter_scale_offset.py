@@ -205,25 +205,3 @@ def test_setting_numpy_array_valued_param_if_scale_and_offset_are_not_none():
     param(values)
 
     assert isinstance(param.raw_value, np.ndarray)
-
-
-def test_getting_uninitialized_delegate_parameter_with_offset_returns_none():
-    param = Parameter(name='test_param',
-                      set_cmd=None,
-                      get_cmd=None)
-
-    d_with_offset = DelegateParameter(name='deleg_param_with_offset',
-                                      source=param, offset=2)
-
-    assert d_with_offset.get() is None
-
-
-def test_getting_uninitialized_delegate_parameter_with_scale_returns_none():
-    param = Parameter(name='test_param',
-                      set_cmd=None,
-                      get_cmd=None)
-
-    d_with_scale = DelegateParameter(name='deleg_param_with_scale',
-                                     source=param, scale=2)
-
-    assert d_with_scale.get() is None
