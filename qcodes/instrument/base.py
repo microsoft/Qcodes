@@ -241,10 +241,10 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                           for name, func in self.functions.items()},
             "submodules": {name: subm.snapshot(update=update)
                            for name, subm in self.submodules.items()},
+            "parameters": {},
             "__class__": full_class(self)
         }
 
-        snap['parameters'] = {}
         for name, param in self.parameters.items():
             if param.snapshot_exclude:
                 continue
