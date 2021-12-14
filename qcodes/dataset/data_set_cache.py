@@ -378,6 +378,9 @@ def _insert_into_data_dict(
         write_status: Optional[int],
         shape: Optional[Tuple[int, ...]]
 ) -> Tuple[np.ndarray, Optional[int]]:
+    if new_values.size == 0:
+        return existing_values, write_status
+
     if shape is None or write_status is None:
         try:
             data = np.append(existing_values, new_values, axis=0)
