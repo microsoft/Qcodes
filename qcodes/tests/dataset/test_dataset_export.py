@@ -13,6 +13,21 @@ from qcodes.dataset.export_config import DataExportType
 from qcodes.dataset.linked_datasets.links import links_to_str
 
 
+@pytest.mark.usefixtures("experiment")
+@pytest.fixture(name="mock_empty_dataset")
+def _make_mock_empty_dataset():
+    dataset = new_data_set("dataset")
+    xparam = ParamSpecBase("x", "numeric")
+    yparam = ParamSpecBase("y", "numeric")
+    zparam = ParamSpecBase("z", "numeric")
+    idps = InterDependencies_(dependencies={yparam: (xparam,), zparam: (xparam,)})
+    dataset.set_interdependencies(idps)
+
+    dataset.mark_started()
+    dataset.mark_completed()
+    return dataset
+
+
 @pytest.mark.usefixtures('experiment')
 @pytest.fixture(name="mock_dataset")
 def _make_mock_dataset():
@@ -299,6 +314,14 @@ def test_same_setpoint_warning_for_df_and_xarray(different_setpoint_dataset):
 
     with pytest.warns(UserWarning, match=warning_message):
         different_setpoint_dataset.cache.to_xarray_dataset()
+
+
+def test_export_to_xarray_dataset_empty_ds(mock_empty_dataset):
+    ds = mock_empty_dataset.to_xarray_dataset()
+
+
+def test_export_to_xarray_dataarray_empty_ds(mock_empty_dataset):
+    ds = mock_empty_dataset.to_xarray_dataarray_dict()
 
 
 def test_export_to_xarray(mock_dataset):
