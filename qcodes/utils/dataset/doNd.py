@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+import time
 from abc import ABC, abstractmethod
 from contextlib import ExitStack, contextmanager
 from typing import Callable, Dict, Iterator, List, Optional, Sequence, Tuple, Union
@@ -9,7 +10,6 @@ import matplotlib
 import numpy as np
 from tqdm.auto import tqdm
 from typing_extensions import TypedDict
-import time
 
 from qcodes import config
 from qcodes.dataset.data_set_protocol import DataSetProtocol, res_type
@@ -26,6 +26,7 @@ from qcodes.utils.threading import (
 )
 
 ActionsT = Sequence[Callable[[], None]]
+BreakConditionT = Callable[[], bool]
 
 ParamMeasT = Union[_BaseParameter, Callable[[], None]]
 
@@ -54,6 +55,10 @@ class ParameterGroup(TypedDict):
 
 
 class UnsafeThreadingException(Exception):
+    pass
+
+
+class BreakConditionInterrupt(Exception):
     pass
 
 
@@ -87,17 +92,17 @@ def _set_write_period(meas: Measurement, write_period: Optional[float] = None) -
 
 
 @contextmanager
-def _catch_keyboard_interrupts() -> Iterator[Callable[[], bool]]:
-    interrupted = False
+def _catch_interrupts() -> Iterator[Callable[[], Union[KeyboardInterrupt, BreakConditionInterrupt, None]]]:
+    interrupt_exception = None
 
-    def has_been_interrupted() -> bool:
-        nonlocal interrupted
-        return interrupted
+    def get_interrupt_exception() -> Union[KeyboardInterrupt, BreakConditionInterrupt, None]:
+        nonlocal interrupt_exception
+        return interrupt_exception
 
     try:
-        yield has_been_interrupted
-    except KeyboardInterrupt:
-        interrupted = True
+        yield get_interrupt_exception
+    except (KeyboardInterrupt, BreakConditionInterrupt) as e:
+        interrupt_exception = e
 
 
 def do0d(
@@ -185,6 +190,7 @@ def do1d(
     additional_setpoints: Sequence[ParamMeasT] = tuple(),
     show_progress: Optional[None] = None,
     log_info: Optional[str] = None,
+    break_condition: Optional[BreakConditionT] = None,
 ) -> AxesTupleListWithDataSet:
     """
     Perform a 1D scan of ``param_set`` from ``start`` to ``stop`` in
@@ -222,6 +228,8 @@ def do1d(
             measurement. If None the setting will be read from ``qcodesrc.json`
         log_info: Message that is logged during the measurement. If None a default
             message is used.
+        break_condition: Callable that takes no arguments. If returned True,
+            measurement is interrupted.
 
     Returns:
         The QCoDeS dataset.
@@ -270,7 +278,7 @@ def do1d(
     # do1D enforces a simple relationship between measured parameters
     # and set parameters. For anything more complicated this should be
     # reimplemented from scratch
-    with _catch_keyboard_interrupts() as interrupted, meas.run() as datasaver, param_meas_caller as call_param_meas:
+    with _catch_interrupts() as interrupted, meas.run() as datasaver, param_meas_caller as call_param_meas:
         dataset = datasaver.dataset
         additional_setpoints_data = process_params_meas(additional_setpoints)
         setpoints = np.linspace(start, stop, num_points)
@@ -286,6 +294,10 @@ def do1d(
             datasaver.add_result(
                 (param_set, set_point), *call_param_meas(), *additional_setpoints_data
             )
+
+            if callable(break_condition):
+                if break_condition():
+                    raise BreakConditionInterrupt("Break condition was met.")
 
     return _handle_plotting(dataset, do_plot, interrupted())
 
@@ -316,6 +328,7 @@ def do2d(
     additional_setpoints: Sequence[ParamMeasT] = tuple(),
     show_progress: Optional[None] = None,
     log_info: Optional[str] = None,
+    break_condition: Optional[BreakConditionT] = None,
 ) -> AxesTupleListWithDataSet:
     """
     Perform a 1D scan of ``param_set1`` from ``start1`` to ``stop1`` in
@@ -364,6 +377,8 @@ def do2d(
             measurement. If None the setting will be read from ``qcodesrc.json`
         log_info: Message that is logged during the measurement. If None a default
             message is used.
+        break_condition: Callable that takes no arguments. If returned True,
+            measurement is interrupted.
 
     Returns:
         The QCoDeS dataset.
@@ -412,7 +427,7 @@ def do2d(
         else SequentialParamsCaller(*param_meas)
     )
 
-    with _catch_keyboard_interrupts() as interrupted, meas.run() as datasaver, param_meas_caller as call_param_meas:
+    with _catch_interrupts() as interrupted, meas.run() as datasaver, param_meas_caller as call_param_meas:
         dataset = datasaver.dataset
         additional_setpoints_data = process_params_meas(additional_setpoints)
         setpoints1 = np.linspace(start1, stop1, num_points1)
@@ -447,6 +462,10 @@ def do2d(
                     *call_param_meas(),
                     *additional_setpoints_data,
                 )
+
+                if callable(break_condition):
+                    if break_condition():
+                        raise BreakConditionInterrupt("Break condition was met.")
 
             for action in after_inner_actions:
                 action()
@@ -617,6 +636,7 @@ def dond(
     use_threads: Optional[bool] = None,
     additional_setpoints: Sequence[ParamMeasT] = tuple(),
     log_info: Optional[str] = None,
+    break_condition: Optional[BreakConditionT] = None,
 ) -> Union[AxesTupleListWithDataSet, MultiAxesTupleListWithDataSet]:
     """
     Perform n-dimentional scan from slowest (first) to the fastest (last), to
@@ -664,6 +684,8 @@ def dond(
             the measurement but not scanned/swept-over.
         log_info: Message that is logged during the measurement. If None a default
             message is used.
+        break_condition: Callable that takes no arguments. If returned True,
+            measurement is interrupted.
 
         Returns:
             A tuple of QCoDeS DataSet, Matplotlib axis, Matplotlib colorbar. If
@@ -734,7 +756,7 @@ def dond(
     )
 
     try:
-        with _catch_keyboard_interrupts() as interrupted, ExitStack() as stack, params_meas_caller as call_params_meas:
+        with _catch_interrupts() as interrupted, ExitStack() as stack, params_meas_caller as call_params_meas:
             datasavers = [stack.enter_context(measure.run()) for measure in meas_list]
             additional_setpoints_data = process_params_meas(additional_setpoints)
             previous_setpoints = np.empty(len(sweep_instances))
@@ -772,6 +794,9 @@ def dond(
                         *additional_setpoints_data,
                     )
 
+                if callable(break_condition):
+                    if break_condition():
+                        raise BreakConditionInterrupt("Break condition was met.")
     finally:
 
         for datasaver in datasavers:
@@ -921,7 +946,9 @@ def _extract_paramters_by_type_and_group(
 
 
 def _handle_plotting(
-    data: DataSetProtocol, do_plot: bool = True, interrupted: bool = False
+    data: DataSetProtocol,
+    do_plot: bool = True,
+    interrupted: Union[KeyboardInterrupt, BreakConditionInterrupt, None] = None,
 ) -> AxesTupleListWithDataSet:
     """
     Save the plots created by datasaver as pdf and png
@@ -938,7 +965,7 @@ def _handle_plotting(
         res = data, [None], [None]
 
     if interrupted:
-        raise KeyboardInterrupt
+        raise interrupted
 
     return res
 
