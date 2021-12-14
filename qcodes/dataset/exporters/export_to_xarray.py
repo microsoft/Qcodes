@@ -35,9 +35,9 @@ def _load_to_xarray_dataarray_dict_no_metadata(
                 data_xrdarray_dict[_name] = _data_to_dataframe(
                     subdict, index).reset_index().to_xarray()[_name]
         else:
-            xrdarray: xr.DataArray = _data_to_dataframe(
-                subdict, index).to_xarray()
-            xrdarray.assign({name: index})
+            xrdarray: xr.DataArray = (
+                _data_to_dataframe(subdict, index).to_xarray().get(name, xr.DataArray())
+            )
             data_xrdarray_dict[name] = xrdarray
 
     return data_xrdarray_dict
