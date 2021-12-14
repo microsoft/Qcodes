@@ -1261,7 +1261,6 @@ def limit_data_to_start_end(start, end, input_names, expected_names,
             end = expected_shapes[input_names[0]][0][0]
         if end < start:
             for name in input_names:
-                expected_names[name] = []
                 expected_shapes[name] = ()
                 expected_values[name] = {}
         else:
