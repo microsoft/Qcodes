@@ -5,23 +5,27 @@ on:
     branches:
       - 'master'
       - 'release/*'
+      - 'staging'
+      - 'trying'
     tags:
       - 'v*'
   pull_request:
 
 jobs:
-  build:
+  builddocs:
 
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python-version: [3.7, 3.8, 3.9]
+        python-version: [3.7, 3.8, 3.9, "3.10"]
         exclude:
           - os: windows-latest
             python-version: 3.8
           - os: windows-latest
             python-version: 3.9
+          - os: windows-latest
+            python-version: 3.10
     env:
       DISPLAY: ':99.0'
       OS: ${{ matrix.os }}
@@ -42,19 +46,19 @@ jobs:
       run: sudo apt install pandoc
       if: runner.os == 'Linux'
     - name: Install pandoc on windows
-      uses: crazy-max/ghaction-chocolatey@v1.5.0
+      uses: crazy-max/ghaction-chocolatey@v1.6.0
       with:
         args: install pandoc
       if: runner.os == 'Windows'
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2.2.2
+      uses: actions/setup-python@v2.3.1
       with:
         python-version: ${{ matrix.python-version }}
     - name: prepare pip cache
       id: prepare-cache-pip
       uses: ./.github/actions/prepare-cache-pip
     - name: pip cache
-      uses: actions/cache@v2.1.5
+      uses: actions/cache@v2.1.7
       with:
         path: ${{ steps.prepare-cache-pip.outputs.cache-dir }}
         key: ${{ runner.os }}-${{ matrix.python-version }}-pip-${{ hashFiles('**/requirements.txt') }}-${{ hashFiles('**/docs_requirements.txt') }}-${{ hashFiles('**/setup.cfg') }}
@@ -82,16 +86,17 @@ jobs:
         ./make.bat html
       if: runner.os == 'Windows'
     - name: Upload build docs
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v2.2.4
       with:
         name: docs_${{ matrix.python-version }}_${{ matrix.os }}
         path: ${{ github.workspace }}/docs/_build/html
     - name: Deploy to gh pages
-      uses: JamesIves/github-pages-deploy-action@4.1.3
+      uses: JamesIves/github-pages-deploy-action@4.1.7
       with:
         branch: gh-pages
         folder: ${{ github.workspace }}/docs/_build/html
         clean: true
+        single-commit: true
         git-config-email: "bot"
         git-config-name: "Documentation Bot"
       if: ${{ fromJSON(env.UPLOAD_TO_GHPAGES) }}

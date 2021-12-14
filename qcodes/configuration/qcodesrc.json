@@ -66,12 +66,14 @@
     "dataset": {
         "write_in_background": false,
         "write_period": 5.0,
+        "use_threads": false,
         "dond_plot": false,
         "dond_show_progress": false,
         "export_automatic": false,
         "export_type": null,
         "export_prefix": "qcodes_",
-        "export_path": "~"
+        "export_path": "~",
+        "export_name_elements": ["captured_run_id", "guid"]
     },
     "telemetry":
     {

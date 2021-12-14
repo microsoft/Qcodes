@@ -1,6 +1,7 @@
 """Instrument base class."""
 import logging
 import time
+import warnings
 import weakref
 from abc import ABC, abstractmethod
 from typing import (
@@ -13,6 +14,7 @@ from typing import (
     Optional,
     Sequence,
     Type,
+    TypeVar,
     Union,
     cast,
 )
@@ -30,6 +32,8 @@ from .parameter import Parameter, _BaseParameter
 if TYPE_CHECKING:
     from qcodes.instrument.channel import ChannelList
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
+
+from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 log = logging.getLogger(__name__)
 
@@ -84,8 +88,9 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         """Short name of the instrument"""
         return self._short_name
 
-    def add_parameter(self, name: str,
-                      parameter_class: type = Parameter, **kwargs: Any) -> None:
+    def add_parameter(
+        self, name: str, parameter_class: type = Parameter, **kwargs: Any
+    ) -> None:
         """
         Bind one Parameter to this instrument.
 
@@ -107,12 +112,39 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
         Raises:
             KeyError: If this instrument already has a parameter with this
-                name.
+                name and the parameter being replaced is not an abstract
+                parameter.
+
+            ValueError: If there is an existing abstract parameter and the
+                unit of the new parameter is inconsistent with the existing
+                one.
         """
-        if name in self.parameters:
-            raise KeyError(f'Duplicate parameter name {name}')
-        param = parameter_class(name=name, instrument=self, **kwargs)
-        self.parameters[name] = param
+        if "bind_to_instrument" not in kwargs.keys():
+            kwargs["bind_to_instrument"] = True
+
+        try:
+            param = parameter_class(name=name, instrument=self, **kwargs)
+        except TypeError:
+            kwargs.pop("bind_to_instrument")
+            warnings.warn(
+                f"Parameter {name} on instrument {self.name} does "
+                f"not correctly pass kwargs to its baseclass. A "
+                f"Parameter class must take `**kwargs` and forward "
+                f"them to its baseclass.",
+                QCoDeSDeprecationWarning,
+            )
+            param = parameter_class(name=name, instrument=self, **kwargs)
+
+        existing_parameter = self.parameters.get(name, None)
+        if not existing_parameter:
+            warnings.warn(
+                f"Parameter {name} did not correctly register itself on instrument"
+                f" {self.name}. Please check that `instrument` argument is passed "
+                f"from {parameter_class!r} all the way to `_BaseParameter`. "
+                "This will be an error in the future.",
+                QCoDeSDeprecationWarning,
+            )
+            self.parameters[name] = param
 
     def add_function(self, name: str, **kwargs: Any) -> None:
         """
@@ -209,10 +241,10 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                           for name, func in self.functions.items()},
             "submodules": {name: subm.snapshot(update=update)
                            for name, subm in self.submodules.items()},
+            "parameters": {},
             "__class__": full_class(self)
         }
 
-        snap['parameters'] = {}
         for name, param in self.parameters.items():
             if param.snapshot_exclude:
                 continue
@@ -411,6 +443,9 @@ class AbstractInstrument(ABC):
         pass
 
 
+T = TypeVar("T", bound="Instrument")
+
+
 class Instrument(InstrumentBase, AbstractInstrument):
 
     """
@@ -430,14 +465,18 @@ class Instrument(InstrumentBase, AbstractInstrument):
     _type = None
     _instances: "List[weakref.ref[Instrument]]" = []
 
-    def __init__(self, name: str, metadata: Optional[Mapping[Any, Any]] = None) -> None:
+    def __init__(
+            self,
+            name: str,
+            metadata: Optional[Mapping[Any, Any]] = None
+    ) -> None:
+
         self._t0 = time.time()
 
         super().__init__(name, metadata)
 
         self.add_parameter('IDN', get_cmd=self.get_idn,
                            vals=Anything())
-
         self.record_instance(self)
 
     def get_idn(self) -> Dict[str, Optional[str]]:
@@ -544,7 +583,7 @@ class Instrument(InstrumentBase, AbstractInstrument):
         log.info("Closing all registered instruments")
         for inststr in list(cls._all_instruments):
             try:
-                inst = cls.find_instrument(inststr)
+                inst: Instrument = cls.find_instrument(inststr)
                 log.info(f"Closing {inststr}")
                 inst.close()
             except:
@@ -619,8 +658,9 @@ class Instrument(InstrumentBase, AbstractInstrument):
                 del all_ins[name]
 
     @classmethod
-    def find_instrument(cls, name: str,
-                        instrument_class: Optional[type] = None) -> 'Instrument':
+    def find_instrument(
+        cls, name: str, instrument_class: Optional[Type[T]] = None
+    ) -> T:
         """
         Find an existing instrument by name.
 
@@ -637,20 +677,23 @@ class Instrument(InstrumentBase, AbstractInstrument):
             TypeError: If a specific class was requested but a different
                 type was found.
         """
+        internal_instrument_class = instrument_class or Instrument
+
         if name not in cls._all_instruments:
             raise KeyError(f"Instrument with name {name} does not exist")
         ins = cls._all_instruments[name]()
-
         if ins is None:
             del cls._all_instruments[name]
             raise KeyError(f'Instrument {name} has been removed')
-        if instrument_class is not None:
-            if not isinstance(ins, instrument_class):
-                raise TypeError(
-                    'Instrument {} is {} but {} was requested'.format(
-                        name, type(ins), instrument_class))
 
-        return cast('Instrument', ins)
+        if not isinstance(ins, internal_instrument_class):
+            raise TypeError(
+                f"Instrument {name} is {type(ins)} but {internal_instrument_class} was requested"
+            )
+        # at this stage we have checked that the instrument is either of type instrument_class
+        # or Instrument if that is None. It is therefor safe to cast here.
+        ins = cast(T, ins)
+        return ins
 
     @staticmethod
     def exist(name: str, instrument_class: Optional[type] = None) -> bool:
@@ -783,12 +826,13 @@ class Instrument(InstrumentBase, AbstractInstrument):
                 type(self).__name__))
 
 
-def find_or_create_instrument(instrument_class: Type[Instrument],
-                              name: str,
-                              *args: Any,
-                              recreate: bool = False,
-                              **kwargs: Any
-                              ) -> Instrument:
+def find_or_create_instrument(
+    instrument_class: Type[T],
+    name: str,
+    *args: Any,
+    recreate: bool = False,
+    **kwargs: Any,
+) -> T:
     """
     Find an instrument with the given name of a given class, or create one if
     it is not found. In case the instrument was found, and `recreate` is True,

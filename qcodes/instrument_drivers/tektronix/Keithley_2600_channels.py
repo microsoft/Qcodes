@@ -1,17 +1,21 @@
 import logging
 import struct
 import warnings
-from typing import Any, Dict, List, Optional
+from enum import Enum
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
-import qcodes as qc
 import qcodes.utils.validators as vals
 from qcodes import VisaInstrument
 from qcodes.data.data_set import DataSet
 from qcodes.instrument.base import Instrument, Parameter
 from qcodes.instrument.channel import InstrumentChannel
-from qcodes.instrument.parameter import ArrayParameter, ParameterWithSetpoints
+from qcodes.instrument.parameter import (
+    ArrayParameter,
+    ParameterWithSetpoints,
+    ParamRawDataType,
+)
 from qcodes.measure import Measure
 from qcodes.utils.helpers import create_on_off_val_mapping
 
@@ -24,12 +28,15 @@ class LuaSweepParameter(ArrayParameter):
     deployed Lua script sweep.
     """
 
-    def __init__(self, name: str, instrument: Instrument) -> None:
+    def __init__(self, name: str, instrument: Instrument, **kwargs: Any) -> None:
 
-        super().__init__(name=name,
-                         shape=(1,),
-                         docstring='Holds a sweep',
-                         instrument=instrument)
+        super().__init__(
+            name=name,
+            shape=(1,),
+            docstring="Holds a sweep",
+            instrument=instrument,
+            **kwargs,
+        )
 
     def prepareSweep(self, start: float, stop: float, steps: int,
                      mode: str) -> None:
@@ -80,11 +87,10 @@ class LuaSweepParameter(ArrayParameter):
 
     def get_raw(self) -> np.ndarray:
 
-        if self._instrument is not None:
-            data = self._instrument._fast_sweep(self.start,
-                                                self.stop,
-                                                self.steps,
-                                                self.mode)
+        if self.instrument is not None:
+            data = self.instrument._fast_sweep(
+                self.start, self.stop, self.steps, self.mode
+            )
         else:
             raise RuntimeError("No instrument attached to Parameter.")
 
@@ -190,6 +196,122 @@ class TimeAxis(Parameter):
         return np.linspace(0, dt*npts, npts, endpoint=False)
 
 
+class StrEnum(str, Enum):
+    pass
+
+
+class MeasurementStatus(StrEnum):
+    """
+    Keeps track of measurement status.
+    """
+    CURRENT_COMPLIANCE_ERROR = 'Reached current compliance limit.'
+    VOLTAGE_COMPLIANCE_ERROR = 'Reached voltage compliance limit.'
+    VOLTAGE_AND_CURRENT_COMPLIANCE_ERROR = 'Reached both voltage and current compliance limits.'
+    NORMAL = 'No error occured.'
+    COMPLIANCE_ERROR = 'Reached compliance limit.'  # deprecated, dont use it. It exists only for backwards compatibility
+
+
+_from_bits_tuple_to_status = {
+    (0, 0): MeasurementStatus.NORMAL,
+    (1, 0): MeasurementStatus.VOLTAGE_COMPLIANCE_ERROR,
+    (0, 1): MeasurementStatus.CURRENT_COMPLIANCE_ERROR,
+    (1, 1): MeasurementStatus.VOLTAGE_AND_CURRENT_COMPLIANCE_ERROR,
+}
+
+
+class _ParameterWithStatus(Parameter):
+    def __init__(self, *args: Any, **kwargs: Any):
+        super().__init__(*args, **kwargs)
+
+        self._measurement_status: Optional[MeasurementStatus] = None
+
+    @property
+    def measurement_status(self) -> Optional[MeasurementStatus]:
+        return self._measurement_status
+
+    @staticmethod
+    def _parse_response(data: str) -> Tuple[float, MeasurementStatus]:
+        value, meas_status = data.split('\t')
+
+        status_bits = [int(i) for i in bin(
+            int(float(meas_status))
+        ).replace('0b', '').zfill(16)[::-1]]
+
+        status = _from_bits_tuple_to_status[(status_bits[0], status_bits[1])]
+
+        return float(value), status
+
+    def snapshot_base(self, update: Optional[bool] = True,
+                      params_to_skip_update: Optional[Sequence[str]] = None
+                      ) -> Dict[Any, Any]:
+        snapshot = super().snapshot_base(
+            update=update, params_to_skip_update=params_to_skip_update
+        )
+
+        if self._snapshot_value:
+            snapshot["measurement_status"] = self.measurement_status
+
+        return snapshot
+
+
+class _MeasurementCurrentParameter(_ParameterWithStatus):
+
+    def set_raw(self, value: ParamRawDataType) -> None:
+        assert isinstance(self.instrument, KeithleyChannel)
+        assert isinstance(self.root_instrument, Keithley_2600)
+
+        smu_chan = self.instrument
+        channel = smu_chan.channel
+
+        smu_chan.write(f'{channel}.source.leveli={value:.12f}')
+
+        smu_chan._reset_measurement_statuses_of_parameters()
+
+    def get_raw(self) -> ParamRawDataType:
+        assert isinstance(self.instrument, KeithleyChannel)
+        assert isinstance(self.root_instrument, Keithley_2600)
+
+        smu = self.instrument
+        channel = self.instrument.channel
+
+        data = smu.ask(f'{channel}.measure.i(), '
+                       f'status.measurement.instrument.{channel}.condition')
+        value, status = self._parse_response(data)
+
+        self._measurement_status = status
+
+        return value
+
+
+class _MeasurementVoltageParameter(_ParameterWithStatus):
+
+    def set_raw(self, value: ParamRawDataType) -> None:
+        assert isinstance(self.instrument, KeithleyChannel)
+        assert isinstance(self.root_instrument, Keithley_2600)
+
+        smu_chan = self.instrument
+        channel = smu_chan.channel
+
+        smu_chan.write(f'{channel}.source.levelv={value:.12f}')
+
+        smu_chan._reset_measurement_statuses_of_parameters()
+
+    def get_raw(self) -> ParamRawDataType:
+        assert isinstance(self.instrument, KeithleyChannel)
+        assert isinstance(self.root_instrument, Keithley_2600)
+
+        smu = self.instrument
+        channel = self.instrument.channel
+
+        data = smu.ask(f'{channel}.measure.v(), '
+                       f'status.measurement.instrument.{channel}.condition')
+        value, status = self._parse_response(data)
+
+        self._measurement_status = status
+
+        return value
+
+
 class KeithleyChannel(InstrumentChannel):
     """
     Class to hold the two Keithley channels, i.e.
@@ -220,18 +342,16 @@ class KeithleyChannel(InstrumentChannel):
         ilimit_minmax = self.parent._ilimit_minmax
 
         self.add_parameter('volt',
-                           get_cmd=f'{channel}.measure.v()',
-                           get_parser=float,
-                           set_cmd=f'{channel}.source.levelv={{:.12f}}',
+                           parameter_class=_MeasurementVoltageParameter,
                            label='Voltage',
-                           unit='V')
+                           unit='V',
+                           snapshot_get=False)
 
         self.add_parameter('curr',
-                           get_cmd=f'{channel}.measure.i()',
-                           get_parser=float,
-                           set_cmd=f'{channel}.source.leveli={{:.12f}}',
+                           parameter_class=_MeasurementCurrentParameter,
                            label='Current',
-                           unit='A')
+                           unit='A',
+                           snapshot_get=False)
 
         self.add_parameter('res',
                            get_cmd=f'{channel}.measure.r()',
@@ -416,6 +536,12 @@ class KeithleyChannel(InstrumentChannel):
                            vals=vals.Enum('current', 'voltage'))
 
         self.channel = channel
+
+    def _reset_measurement_statuses_of_parameters(self) -> None:
+        assert isinstance(self.volt, _ParameterWithStatus)
+        self.volt._measurement_status = None
+        assert isinstance(self.curr, _ParameterWithStatus)
+        self.curr._measurement_status = None
 
     def reset(self) -> None:
         """

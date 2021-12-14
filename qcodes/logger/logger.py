@@ -6,26 +6,27 @@ the default configuration.
 """
 
 import io
-import platform
-from datetime import datetime
+import json
 import logging
+
 # logging.handlers is not imported by logging. This extra import is necessary
 import logging.handlers
-
 import os
+import platform
+import sys
 from collections import OrderedDict
 from contextlib import contextmanager
 from copy import copy
-
-from typing import Optional, Union, Sequence, TYPE_CHECKING, Iterator, Type
+from datetime import datetime
 from types import TracebackType
-from opencensus.ext.azure.log_exporter import AzureLogHandler
+from typing import Dict, Iterator, Optional, Sequence, Type, Union
+
 from opencensus.ext.azure.common.protocol import Envelope
+from opencensus.ext.azure.log_exporter import AzureLogHandler
 
 import qcodes as qc
 import qcodes.utils.installation_info as ii
 from qcodes.utils.helpers import get_qcodes_user_path
-
 
 log: logging.Logger = logging.getLogger(__name__)
 
@@ -184,6 +185,63 @@ def flush_telemetry_traces() -> None:
         telemetry_handler.flush()
 
 
+def _create_telemetry_handler() -> AzureLogHandler:
+    """
+    Configure, create, and return the telemetry handler
+    """
+    global telemetry_handler
+
+    # The default_custom_dimensions will appear in the "customDimensions"
+    # field in Azure log analytics for every log message alongside any
+    # custom dimensions that message may have. All messages additionally come
+    # with custom dimensions fileName, level, lineNumber, module, and process
+    default_custom_dimensions = {"pythonExecutable": sys.executable}
+
+    class CustomDimensionsFilter(logging.Filter):
+        """
+        Add application-wide properties to the customDimension field of
+        AzureLogHandler records
+        """
+
+        def __init__(self, custom_dimensions: Dict[str, str]):
+            super().__init__()
+            self.custom_dimensions = custom_dimensions
+
+        def filter(self, record: logging.LogRecord) -> bool:
+            """
+            Add the default custom_dimensions into the current log record
+            """
+            cdim = self.custom_dimensions.copy()
+            cdim.update(getattr(record, "custom_dimensions", {}))
+            record.custom_dimensions = cdim  # type: ignore[attr-defined]
+
+            return True
+
+    # Transport module of opencensus-ext-azure logs info 'transmission
+    # succeeded' which is also exported to azure if AzureLogHandler is
+    # in root_logger. The following lines stops that.
+    logging.getLogger("opencensus.ext.azure.common.transport").setLevel(logging.WARNING)
+
+    loc = qc.config.GUID_components.location
+    stat = qc.config.GUID_components.work_station
+
+    def callback_function(envelope: Envelope) -> bool:
+        envelope.tags["ai.user.accountId"] = platform.node()
+        envelope.tags["ai.user.id"] = f"{loc:02x}-{stat:06x}"
+        return True
+
+    telemetry_handler = AzureLogHandler(
+        connection_string=f"InstrumentationKey="
+        f"{qc.config.telemetry.instrumentation_key}"
+    )
+    telemetry_handler.add_telemetry_processor(callback_function)
+    telemetry_handler.setLevel(logging.INFO)
+    telemetry_handler.addFilter(CustomDimensionsFilter(default_custom_dimensions))
+    telemetry_handler.setFormatter(get_formatter_for_telemetry())
+
+    return telemetry_handler
+
+
 def start_logger() -> None:
     """
     Start logging of messages passed through the python logging module.
@@ -225,8 +283,9 @@ def start_logger() -> None:
     filename = get_log_file_name()
     os.makedirs(os.path.dirname(filename), exist_ok=True)
 
-    file_handler = logging.handlers.TimedRotatingFileHandler(filename,
-                                                             when='midnight')
+    file_handler = logging.handlers.TimedRotatingFileHandler(
+        filename, when="midnight", encoding="utf-8"
+    )
 
     file_handler.setLevel(qc.config.logger.file_level)
     file_handler.setFormatter(get_formatter())
@@ -236,27 +295,7 @@ def start_logger() -> None:
     logging.captureWarnings(capture=True)
 
     if qc.config.telemetry.enabled:
-        # Transport module of opencensus-ext-azure logs info 'transmission
-        # succeeded' which is also exported to azure if AzureLogHandler is
-        # in root_logger. The following lines stops that.
-        logging.getLogger('opencensus.ext.azure.common.transport').setLevel(
-            logging.WARNING)
-
-        loc = qc.config.GUID_components.location
-        stat = qc.config.GUID_components.work_station
-
-        def callback_function(envelope: Envelope) -> bool:
-            envelope.tags['ai.user.accountId'] = platform.node()
-            envelope.tags['ai.user.id'] = f'{loc:02x}-{stat:06x}'
-            return True
-
-        telemetry_handler = AzureLogHandler(
-            connection_string=f'InstrumentationKey='
-                              f'{qc.config.telemetry.instrumentation_key}')
-        telemetry_handler.add_telemetry_processor(callback_function)
-        telemetry_handler.setLevel(logging.INFO)
-        telemetry_handler.setFormatter(get_formatter_for_telemetry())
-        root_logger.addHandler(telemetry_handler)
+        root_logger.addHandler(_create_telemetry_handler())
 
     log.info("QCoDes logger setup completed")
 
@@ -295,16 +334,19 @@ def log_qcodes_versions(logger: logging.Logger) -> None:
     """
     Log the version information relevant to QCoDeS. This function logs
     the currently installed qcodes version, whether QCoDeS is installed in
-    editable mode, and the installed versions of QCoDeS' requirements.
+    editable mode, the installed versions of QCoDeS' requirements, and the
+    versions of all installed packages.
     """
 
     qc_version = ii.get_qcodes_version()
     qc_e_inst = ii.is_qcodes_installed_editably()
     qc_req_vs = ii.get_qcodes_requirements_versions()
+    ipvs = ii.get_all_installed_package_versions()
 
-    logger.info(f'QCoDeS version: {qc_version}')
-    logger.info(f'QCoDeS installed in editable mode: {qc_e_inst}')
-    logger.info(f'QCoDeS requirements versions: {qc_req_vs}')
+    logger.info(f"QCoDeS version: {qc_version}")
+    logger.info(f"QCoDeS installed in editable mode: {qc_e_inst}")
+    logger.info(f"QCoDeS requirements versions: {qc_req_vs}")
+    logger.info(f"All installed package versions: {json.dumps(ipvs)}")
 
 
 def start_all_logging() -> None:

@@ -19,21 +19,29 @@ list of parameters to monitor:
 """
 
 
-import sys
+import asyncio
+import json
 import logging
 import os
-import time
-import json
-from contextlib import suppress
-from typing import Dict, Union, Any, Optional, Sequence, Callable, Awaitable, TYPE_CHECKING
-from collections import defaultdict
-
-import asyncio
-from asyncio import CancelledError
-from threading import Thread, Event
-
 import socketserver
+import sys
+import time
 import webbrowser
+from asyncio import CancelledError
+from collections import defaultdict
+from contextlib import suppress
+from threading import Event, Thread
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    Optional,
+    Sequence,
+    Union,
+)
+
 import websockets
 
 try:
@@ -47,7 +55,6 @@ if TYPE_CHECKING:
     from websockets.legacy.server import WebSocketServerProtocol, WebSocketServer
 
 from qcodes.instrument.parameter import Parameter
-
 
 WEBSOCKET_PORT = 5678
 SERVER_PORT = 3000
@@ -264,18 +271,23 @@ class Monitor(Thread):
         webbrowser.open(f"http://localhost:{SERVER_PORT}")
 
 
-if __name__ == "__main__":
+def main() -> None:
     import http.server
+
     # If this file is run, create a simple webserver that serves a simple
     # website that can be used to view monitored parameters.
-    STATIC_DIR = os.path.join(os.path.dirname(__file__), 'dist')
-    os.chdir(STATIC_DIR)
+    static_dir = os.path.join(os.path.dirname(__file__), "dist")
+    os.chdir(static_dir)
     try:
         log.info("Starting HTTP Server at http://localhost:%i", SERVER_PORT)
         with socketserver.TCPServer(("", SERVER_PORT),
                                     http.server.SimpleHTTPRequestHandler) as httpd:
-            log.debug("serving directory %s", STATIC_DIR)
+            log.debug("serving directory %s", static_dir)
             webbrowser.open(f"http://localhost:{SERVER_PORT}")
             httpd.serve_forever()
     except KeyboardInterrupt:
         log.info("Shutting Down HTTP Server")
+
+
+if __name__ == "__main__":
+    main()

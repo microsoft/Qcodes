@@ -1,14 +1,15 @@
-from typing import Dict
 from math import ceil
+from string import ascii_uppercase
+from typing import Dict
+
 import hypothesis.strategies as hst
 import numpy as np
 import pytest
 from hypothesis import HealthCheck, given, settings
-from string import ascii_uppercase
 
+from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
 from qcodes.dataset.measurements import Measurement
 from qcodes.instrument.parameter import expand_setpoints_helper
-from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
@@ -106,9 +107,7 @@ def test_cache_1d(experiment, DAC, DMM, n_points, bg_writing,
             for i, v in enumerate(setpoints_values):
                 setpoints_param.set(v)
 
-                meas_vals1 = [(param, param.get()) for param in meas_parameters1]#[:-2]]
-                meas_vals1 += expand_setpoints_helper(meas_parameters1[-2])
-                meas_vals1 += expand_setpoints_helper(meas_parameters1[-1])
+                meas_vals1 = [(param, param.get()) for param in meas_parameters1]
 
                 datasaver1.add_result((setpoints_param, v),
                                       *meas_vals1)
@@ -237,9 +236,7 @@ def test_cache_2d(experiment, DAC, DMM, n_points_outer,
             for v2 in np.linspace(-1, 1, n_points_inner):
                 DAC.ch1.set(v1)
                 DAC.ch2.set(v2)
-                meas_vals = [(param, param.get()) for param in meas_parameters[:-2]]
-                meas_vals += expand_setpoints_helper(meas_parameters[-2])
-                meas_vals += expand_setpoints_helper(meas_parameters[-1])
+                meas_vals = [(param, param.get()) for param in meas_parameters]
 
                 datasaver.add_result((DAC.ch1, v1),
                                      (DAC.ch2, v2),
@@ -485,9 +482,7 @@ def test_cache_1d_shape(experiment, DAC, DMM, n_points, bg_writing,
             n_points_measured += 1
             setpoints_param.set(v)
 
-            meas_vals = [(param, param.get()) for param in meas_parameters[:-2]]
-            meas_vals += expand_setpoints_helper(meas_parameters[-2])
-            meas_vals += expand_setpoints_helper(meas_parameters[-1])
+            meas_vals = [(param, param.get()) for param in meas_parameters]
 
             datasaver.add_result((setpoints_param, v),
                                  *meas_vals)

@@ -261,6 +261,16 @@ class _BaseParameter(Metadatable):
 
         metadata: extra information to include with the
             JSON snapshot of the parameter
+
+        abstract: Specifies if this parameter is abstract or not. Default
+            is False. If the parameter is 'abstract', it *must* be overridden
+            by a non-abstract parameter before the instrument containing
+            this parameter can be instantiated. We override a parameter by
+            adding one with the same name and unit. An abstract parameter
+            can be added in a base class and overridden in a subclass.
+
+        bind_to_instrument: Should the parameter be registered as a delegate attribute
+            on the instrument passed via the instrument argument.
     """
 
     def __init__(
@@ -281,6 +291,8 @@ class _BaseParameter(Metadatable):
         snapshot_exclude: bool = False,
         max_val_age: Optional[float] = None,
         vals: Optional[Validator[Any]] = None,
+        abstract: Optional[bool] = False,
+        bind_to_instrument: bool = True,
     ) -> None:
         super().__init__(metadata)
         if not str(name).isidentifier():
@@ -368,6 +380,19 @@ class _BaseParameter(Metadatable):
         # intended to be changed in a subclass if you want the subclass
         # to perform a validation on get
         self._validate_on_get = False
+        self._abstract = abstract
+
+        if instrument is not None and bind_to_instrument:
+            existing_parameter = instrument.parameters.get(name, None)
+
+            if existing_parameter:
+
+                if not existing_parameter.abstract:
+                    raise KeyError(
+                        f"Duplicate parameter name {name} on instrument {instrument}"
+                    )
+
+            instrument.parameters[name] = self
 
     @property
     def raw_value(self) -> ParamRawDataType:
@@ -554,7 +579,7 @@ class _BaseParameter(Metadatable):
             value = raw_value
 
         # apply offset first (native scale)
-        if self.offset is not None:
+        if self.offset is not None and value is not None:
             # offset values
             try:
                 value = value - self.offset
@@ -570,7 +595,7 @@ class _BaseParameter(Metadatable):
                     raise
 
         # scale second
-        if self.scale is not None:
+        if self.scale is not None and value is not None:
             # Scale values
             try:
                 value = value / self.scale
@@ -603,6 +628,10 @@ class _BaseParameter(Metadatable):
             if not self.gettable:
                 raise TypeError("Trying to get a parameter"
                                 " that is not gettable.")
+            if self.abstract:
+                raise NotImplementedError(
+                    f"Trying to get an abstract parameter: {self.full_name}"
+                )
             try:
                 # There might be cases where a .get also has args/kwargs
                 raw_value = get_function(*args, **kwargs)
@@ -630,7 +659,10 @@ class _BaseParameter(Metadatable):
                 if not self.settable:
                     raise TypeError("Trying to set a parameter"
                                     " that is not settable.")
-
+                if self.abstract:
+                    raise NotImplementedError(
+                        f"Trying to set an abstract parameter: {self.full_name}"
+                    )
                 self.validate(value)
 
                 # In some cases intermediate sweep values must be used.
@@ -960,6 +992,31 @@ class _BaseParameter(Metadatable):
         """
         return self._settable
 
+    @property
+    def underlying_instrument(self) -> Optional['InstrumentBase']:
+        """
+        Returns an instance of the underlying hardware instrument that this
+        parameter communicates with, per this parameter's implementation.
+
+        This is useful in the case where a parameter does not belongs to
+        an instrument instance that represents a real hardware instrument
+        but actually uses a real hardware instrument in its implementation
+        (e.g. via calls to one or more parameters of that real hardware
+        instrument). This is also useful when a parameter does belong to
+        an instrument instance but that instance does not represent the
+        real hardware instrument that the parameter interacts with: hence
+        ``root_instrument`` of the parameter cannot be the
+        ``hardware_instrument``, however ``underlying_instrument`` can be
+        implemented to return the ``hardware_instrument``.
+
+        By default it returns the ``root_instrument`` of the parameter.
+        """
+        return self.root_instrument
+
+    @property
+    def abstract(self) -> Optional[bool]:
+        return self._abstract
+
 
 class Parameter(_BaseParameter):
     """
@@ -1093,23 +1150,66 @@ class Parameter(_BaseParameter):
 
         metadata: Extra information to include with the
             JSON snapshot of the parameter.
+
+        abstract: Specifies if this parameter is abstract or not. Default
+            is False. If the parameter is 'abstract', it *must* be overridden
+            by a non-abstract parameter before the instrument containing
+            this parameter can be instantiated. We override a parameter by
+            adding one with the same name and unit. An abstract parameter
+            can be added in a base class and overridden in a subclass.
+
+        bind_to_instrument: Should the parameter be registered as a delegate attribute
+            on the instrument passed via the instrument argument.
     """
 
     def __init__(
-            self, name: str,
-            instrument: Optional['InstrumentBase'] = None,
-            label: Optional[str] = None,
-            unit: Optional[str] = None,
-            get_cmd: Optional[Union[str, Callable[..., Any], bool]] = None,
-            set_cmd:  Optional[Union[str, Callable[..., Any], bool]] = False,
-            initial_value: Optional[Union[float, str]] = None,
-            max_val_age: Optional[float] = None,
-            vals: Optional[Validator[Any]] = None,
-            docstring: Optional[str] = None,
-            initial_cache_value: Optional[Union[float, str]] = None,
-            **kwargs: Any) -> None:
-        super().__init__(name=name, instrument=instrument, vals=vals,
-                         max_val_age=max_val_age, **kwargs)
+        self,
+        name: str,
+        instrument: Optional["InstrumentBase"] = None,
+        label: Optional[str] = None,
+        unit: Optional[str] = None,
+        get_cmd: Optional[Union[str, Callable[..., Any], bool]] = None,
+        set_cmd: Optional[Union[str, Callable[..., Any], bool]] = False,
+        initial_value: Optional[Union[float, str]] = None,
+        max_val_age: Optional[float] = None,
+        vals: Optional[Validator[Any]] = None,
+        docstring: Optional[str] = None,
+        initial_cache_value: Optional[Union[float, str]] = None,
+        bind_to_instrument: bool = True,
+        **kwargs: Any,
+    ) -> None:
+        if instrument is not None and bind_to_instrument:
+            existing_parameter = instrument.parameters.get(name, None)
+
+            if existing_parameter:
+
+                # this check is redundant since its also in the baseclass
+                # but if we do not put it here it would be an api break
+                # as parameter duplication check won't be done first,
+                # hence for parameters that are duplicates and have
+                # wrong units, users will be getting ValueError where
+                # they used to have KeyError before.
+                if not existing_parameter.abstract:
+                    raise KeyError(
+                        f"Duplicate parameter name {name} on instrument {instrument}"
+                    )
+
+                existing_unit = getattr(existing_parameter, "unit", None)
+                if existing_unit != unit:
+                    raise ValueError(
+                        f"The unit of the parameter '{name}' is '{unit}'. "
+                        f"This is inconsistent with the unit defined in the "
+                        f"base class"
+                    )
+
+        super().__init__(
+            name=name,
+            instrument=instrument,
+            vals=vals,
+            max_val_age=max_val_age,
+            bind_to_instrument=bind_to_instrument,
+            **kwargs,
+        )
 
         no_instrument_get = not self.gettable and \
             (get_cmd is None or get_cmd is False)
@@ -1381,6 +1481,10 @@ class DelegateParameter(Parameter):
         (e.g. a bijection). It is therefor not allowed to create a
         :class:`.DelegateParameter` that performs non invertible
         transforms in its ``get_raw`` method.
+
+        A DelegateParameter is not registered on the instrument by default.
+        You should pass ``bind_to_instrument=True`` if you want this to
+        be the case.
     """
 
     class _DelegateCache:
@@ -1469,8 +1573,15 @@ class DelegateParameter(Parameter):
         def __call__(self) -> ParamDataType:
             return self.get(get_if_invalid=True)
 
-    def __init__(self, name: str, source: Optional[Parameter], *args: Any,
-                 **kwargs: Any):
+    def __init__(
+        self,
+        name: str,
+        source: Optional[Parameter],
+        *args: Any,
+        **kwargs: Any,
+    ):
+        if "bind_to_instrument" not in kwargs.keys():
+            kwargs["bind_to_instrument"] = False
 
         self._attr_inherit = {"label": {"fixed": False,
                                         "value_when_without_source": name},
@@ -1671,6 +1782,7 @@ class ArrayParameter(_BaseParameter):
         snapshot_value: bool = False,
         snapshot_exclude: bool = False,
         metadata: Optional[Mapping[Any, Any]] = None,
+        **kwargs: Any,
     ) -> None:
         super().__init__(
             name,
@@ -1679,6 +1791,7 @@ class ArrayParameter(_BaseParameter):
             metadata,
             snapshot_value=snapshot_value,
             snapshot_exclude=snapshot_exclude,
+            **kwargs,
         )
 
         if self.settable:
@@ -1885,6 +1998,7 @@ class MultiParameter(_BaseParameter):
         snapshot_value: bool = False,
         snapshot_exclude: bool = False,
         metadata: Optional[Mapping[Any, Any]] = None,
+        **kwargs: Any,
     ) -> None:
         super().__init__(
             name,
@@ -1893,6 +2007,7 @@ class MultiParameter(_BaseParameter):
             metadata,
             snapshot_value=snapshot_value,
             snapshot_exclude=snapshot_exclude,
+            **kwargs,
         )
 
         self._meta_attrs.extend(['setpoint_names', 'setpoint_labels',

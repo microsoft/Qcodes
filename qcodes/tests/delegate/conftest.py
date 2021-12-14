@@ -1,10 +1,10 @@
-import pytest
 import os
 import pathlib
 
-import qcodes as qc
-from qcodes.tests.instrument_mocks import MockField, MockLockin, MockDAC
+import pytest
 
+import qcodes as qc
+from qcodes.tests.instrument_mocks import MockDAC, MockField, MockLockin
 
 PARENT_DIR = pathlib.Path(__file__).parent.absolute()
 
@@ -49,3 +49,8 @@ def chip(station, chip_config):
     station.load_config_file(chip_config)
     _chip = station.load_MockChip_123(station=station)
     return _chip
+
+
+@pytest.fixture()
+def chip_config_typo():
+    return os.path.join(PARENT_DIR, "data/chip_typo.yml")

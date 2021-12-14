@@ -13,14 +13,14 @@ jobs:
     steps:
     - uses: actions/checkout@v2.3.4
     - name: Set up Python
-      uses: actions/setup-python@v2.2.2
+      uses: actions/setup-python@v2.3.1
       with:
         python-version: '3.7'
     - name: Install build deps
-      run: pip install --upgrade pip setuptools wheel
+      run: pip install --upgrade pip setuptools wheel build
     - name: Build
       run: |
-        python setup.py sdist bdist_wheel
+        python -m build
     - name: Install Twine
       run: pip install twine
     - name: Publish

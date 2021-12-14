@@ -1,7 +1,10 @@
 import os
+
 import numpy as np
+import pytest
 
 from qcodes import Measurement
+from qcodes.tests.instrument_mocks import DummyChannel, MockCustomChannel
 
 
 def test_device(station, chip_config, dac, lockin):
@@ -22,12 +25,14 @@ def test_device(station, chip_config, dac, lockin):
     )
 
 
+@pytest.mark.usefixtures("experiment")
 def test_device_meas(station, chip):
     meas = Measurement(station=station)
     device = chip.device1
     meas.register_parameter(device.gate)
     meas.register_parameter(device.drain, setpoints=(device.gate,))
-
+    device.gate.inter_delay = 0
+    device.gate.step = 1
     with meas.run() as datasaver:
         for set_v in np.linspace(0, 1.5, 10):
             device.gate.set(set_v)
@@ -36,3 +41,41 @@ def test_device_meas(station, chip):
             datasaver.flush_data_to_database()
         assert len(
             datasaver.dataset.to_pandas_dataframe_dict()["device1_drain"]) == 10
+
+
+def test_device_with_channels(chip, station):
+    device = chip.channel_device
+
+    assert device.gate_1 == station.dac.ch01
+    assert device.gate_1.voltage.post_delay == 0.01
+    assert device.readout.source_parameters == (station.lockin.phase,)
+    assert device.readout() == 1e-5
+
+    station.dac.ch01.voltage(-0.134)
+    assert device.gate_1.voltage() == -0.134
+    device.gate_1.voltage(-0.01)
+    assert station.dac.ch01.voltage() == -0.01
+
+    device.readout.source_parameters[0](0.5)
+    assert station.lockin.phase() == 0.5
+    station.lockin.phase(30)
+    assert device.readout.source_parameters[0]() == 30
+    assert device.readout() == 30
+
+
+def test_device_with_custom_channels(chip, station):
+    device = chip.channel_device_custom
+
+    assert device.gate_1._dac_channel == station.dac.ch01
+    assert device.gate_1.current_valid_range() == [-0.5, 0]
+    assert device.gate_1.parent == station.dac
+    assert isinstance(device.gate_1, MockCustomChannel)
+
+    assert device.fast_gate._channel == 'dac.ch02'
+    assert isinstance(device.fast_gate, DummyChannel)
+
+
+def test_chip_definition(chip_config_typo, station):
+    station.load_config_file(chip_config_typo)
+    with pytest.raises(KeyError):
+        _ = station.load_MockChip_123(station=station)

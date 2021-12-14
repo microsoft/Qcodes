@@ -6,6 +6,7 @@ import math
 import numbers
 import os
 import time
+import warnings
 from asyncio import iscoroutinefunction
 from collections import OrderedDict, abc
 from contextlib import contextmanager
@@ -34,7 +35,6 @@ from typing import (
 )
 
 import numpy as np
-import uncertainties
 
 if TYPE_CHECKING:
     from PyQt5.QtWidgets import QMainWindow
@@ -80,6 +80,12 @@ class NumpyJSONEncoder(json.JSONEncoder):
         * Other objects which cannot be serialized get converted to their
           string representation (using the ``str`` function).
         """
+        with warnings.catch_warnings():
+            # this context manager can be removed when uncertainties
+            # no longer triggers deprecation warnings
+            warnings.simplefilter("ignore", category=DeprecationWarning)
+            import uncertainties
+
         if isinstance(obj, np.generic) \
                 and not isinstance(obj, np.complexfloating):
             # for numpy scalars

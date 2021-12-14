@@ -13,13 +13,18 @@ from hypothesis.strategies import floats, tuples
 import qcodes.instrument.sims as sims
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.ip_to_visa import AMI430_VISA
-from qcodes.instrument_drivers.american_magnetics.AMI430 import (AMI430,
-                                                                 AMI430_3D,
-                                                                 AMI430Warning)
+from qcodes.instrument_drivers.american_magnetics.AMI430 import (
+    AMI430,
+    AMI430_3D,
+    AMI430Warning,
+)
 from qcodes.math_utils.field_vector import FieldVector
-from qcodes.utils.types import (numpy_concrete_floats, numpy_concrete_ints,
-                                numpy_non_concrete_floats_instantiable,
-                                numpy_non_concrete_ints_instantiable)
+from qcodes.utils.types import (
+    numpy_concrete_floats,
+    numpy_concrete_ints,
+    numpy_non_concrete_floats_instantiable,
+    numpy_non_concrete_ints_instantiable,
+)
 
 _time_resolution = time.get_clock_info('time').resolution
 
@@ -69,8 +74,8 @@ def current_driver(magnet_axes_instances):
     driver.close()
 
 
-@pytest.fixture(scope='function')
-def ami430():
+@pytest.fixture(scope="function", name="ami430")
+def _make_ami430():
     mag = AMI430_VISA('ami430', address='GPIB::1::INSTR', visalib=visalib,
                       terminator='\n', port=1)
     yield mag
@@ -422,7 +427,7 @@ def test_field_limit_exception(current_driver):
     x = np.linspace(-3, 3, 11)
     y = np.copy(x)
     z = np.copy(x)
-    set_points = zip(*[i.flatten() for i in np.meshgrid(x, y, z)])
+    set_points = zip(*(i.flatten() for i in np.meshgrid(x, y, z)))
 
     for set_point in set_points:
         should_not_raise = any([is_safe(*set_point)
@@ -481,16 +486,12 @@ def test_ramp_rate_exception(current_driver):
     Test that an exception is raised if we try to set the ramp rate
     to a higher value than is allowed
     """
-    max_ramp_rate = AMI430_VISA._DEFAULT_CURRENT_RAMP_LIMIT
-    target_ramp_rate = max_ramp_rate + 0.01
     ix = current_driver._instrument_x
+    max_ramp_rate = ix.field_ramp_limit()
+    target_ramp_rate = max_ramp_rate + 0.01
 
-    with pytest.raises(Exception) as excinfo:
+    with pytest.raises(ValueError, match="is above the ramp rate limit of"):
         ix.ramp_rate(target_ramp_rate)
-
-        errmsg = f"must be between 0 and {max_ramp_rate} inclusive"
-
-        assert errmsg in excinfo.value.args[0]
 
 
 def test_reducing_field_ramp_limit_reduces_a_higher_ramp_rate(ami430):
@@ -732,7 +733,8 @@ def test_current_and_field_params_interlink__change_field_ramp_limit(
 
 
 def test_current_and_field_params_interlink__change_coil_constant(
-        ami430, factor=3):
+    ami430, factor: float = 3
+):
     """
     Test that after changing ``change_coil_constant``, the values of the
     ``current_*`` parameters remain the same while the values of the

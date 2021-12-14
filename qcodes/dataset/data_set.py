@@ -1,66 +1,110 @@
 import importlib
 import json
 import logging
-import os
 import time
 import uuid
-
 from dataclasses import dataclass
 from queue import Queue
 from threading import Thread
-from typing import (TYPE_CHECKING, Any, Callable, Dict,
-                    List, Mapping, Optional, Sequence, Set,
-                    Sized, Tuple, Union)
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+)
 
 import numpy
 import pandas as pd
 
 import qcodes
+from qcodes.dataset.data_set_protocol import (
+    SPECS,
+    BaseDataSet,
+    CompletedError,
+    DataSetProtocol,
+    ParameterData,
+    SpecsOrInterDeps,
+    values_type,
+)
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
-from qcodes.dataset.descriptions.versioning.converters import (new_to_old,
-                                                               old_to_new)
+from qcodes.dataset.descriptions.versioning.converters import new_to_old, old_to_new
 from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
-from qcodes.dataset.guids import (filter_guids_by_parts, generate_guid,
-                                  parse_guid)
-from qcodes.dataset.linked_datasets.links import (Link, links_to_str,
-                                                  str_to_links)
-from qcodes.dataset.sqlite.connection import (ConnectionPlus, atomic,
-                                              atomic_transaction, transaction)
-from qcodes.dataset.sqlite.database import (conn_from_dbpath_or_conn, connect,
-                                            get_DB_location)
+from qcodes.dataset.experiment_settings import get_default_experiment_id
+from qcodes.dataset.guids import filter_guids_by_parts, generate_guid, parse_guid
+from qcodes.dataset.linked_datasets.links import Link, links_to_str, str_to_links
+from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic, atomic_transaction
+from qcodes.dataset.sqlite.database import (
+    conn_from_dbpath_or_conn,
+    connect,
+    get_DB_location,
+)
 from qcodes.dataset.sqlite.queries import (
-    add_meta_data, add_parameter, completed, create_run,
+    _check_if_table_found,
+    _get_result_table_name_by_guid,
+    add_data_to_dynamic_columns,
+    add_parameter,
+    completed,
+    create_run,
     get_completed_timestamp_from_run_id,
-    get_experiment_name_from_experiment_id, get_guid_from_run_id,
-    get_guids_from_run_spec, get_last_experiment, get_metadata,
-    get_metadata_from_run_id, get_parameter_data, get_parent_dataset_links,
-    get_run_description, get_run_timestamp_from_run_id, get_runid_from_guid,
-    get_sample_name_from_experiment_id, mark_run_complete,
-    remove_trigger, run_exists, set_run_timestamp, update_parent_datasets,
-    update_run_description)
-from qcodes.dataset.sqlite.query_helpers import (VALUE, VALUES,
-                                                 insert_many_values,
-                                                 length, one,
-                                                 select_one_where)
+    get_data_by_tag_and_table_name,
+    get_experiment_name_from_experiment_id,
+    get_guid_from_expid_and_counter,
+    get_guid_from_run_id,
+    get_guids_from_run_spec,
+    get_metadata_from_run_id,
+    get_parameter_data,
+    get_parent_dataset_links,
+    get_run_description,
+    get_run_timestamp_from_run_id,
+    get_runid_from_guid,
+    get_sample_name_from_experiment_id,
+    mark_run_complete,
+    remove_trigger,
+    run_exists,
+    set_run_timestamp,
+    update_parent_datasets,
+    update_run_description,
+)
+from qcodes.dataset.sqlite.query_helpers import (
+    VALUE,
+    VALUES,
+    insert_many_values,
+    length,
+    one,
+    select_one_where,
+)
 from qcodes.instrument.parameter import _BaseParameter
-from qcodes.utils.deprecate import deprecate
-from qcodes.dataset.export_config import DataExportType, get_data_export_type, get_data_export_path, get_data_export_prefix, get_data_export_automatic
-from .data_set_cache import DataSetCache
-from .descriptions.versioning import serialization as serial
-from .subscriber import _Subscriber
+from qcodes.utils.deprecate import (
+    QCoDeSDeprecationWarning,
+    deprecate,
+    issue_deprecation_warning,
+)
+from qcodes.utils.helpers import NumpyJSONEncoder
 
+from .data_set_cache import DataSetCacheWithDBBackend
+from .data_set_in_memory import DataSetInMem
+from .descriptions.versioning import serialization as serial
+from .exporters.export_info import ExportInfo
+from .exporters.export_to_csv import dataframe_to_csv
 from .exporters.export_to_pandas import (
+    load_to_concatenated_dataframe,
     load_to_dataframe_dict,
-    load_to_concatenated_dataframe
 )
 from .exporters.export_to_xarray import (
+    load_to_xarray_dataarray_dict,
     load_to_xarray_dataset,
-    load_to_xarray_dataarray_dict
 )
-
+from .subscriber import _Subscriber
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -81,33 +125,6 @@ log = logging.getLogger(__name__)
 # TODO: fixix  a subset of metadata that we define well known (and create them)
 # i.e. no dynamic creation of metadata columns, but add stuff to
 # a json inside a 'metadata' column
-
-array_like_types = (tuple, list, numpy.ndarray)
-scalar_res_types = Union[str, complex,
-                         numpy.integer, numpy.floating, numpy.complexfloating]
-values_type = Union[scalar_res_types, numpy.ndarray,
-                    Sequence[scalar_res_types]]
-res_type = Tuple[Union[_BaseParameter, str],
-                 values_type]
-setpoints_type = Sequence[Union[str, _BaseParameter]]
-SPECS = List[ParamSpec]
-# Transition period type: SpecsOrInterDeps. We will allow both as input to
-# the DataSet constructor for a while, then deprecate SPECS and finally remove
-# the ParamSpec class
-SpecsOrInterDeps = Union[SPECS, InterDependencies_]
-ParameterData = Dict[str, Dict[str, numpy.ndarray]]
-
-
-class CompletedError(RuntimeError):
-    pass
-
-
-class DataLengthException(Exception):
-    pass
-
-
-class DataPathException(Exception):
-    pass
 
 
 class _BackgroundWriter(Thread):
@@ -167,7 +184,7 @@ class _WriterStatus:
 _WRITERS: Dict[str, _WriterStatus] = {}
 
 
-class DataSet(Sized):
+class DataSet(BaseDataSet):
 
     # the "persistent traits" are the attributes/properties of the DataSet
     # that are NOT tied to the representation of the DataSet in any particular
@@ -229,10 +246,9 @@ class DataSet(Sized):
         self.subscribers: Dict[str, _Subscriber] = {}
         self._parent_dataset_links: List[Link]
         #: In memory representation of the data in the dataset.
-        self.cache: DataSetCache = DataSetCache(self)
+        self._cache: DataSetCacheWithDBBackend = DataSetCacheWithDBBackend(self)
         self._results: List[Dict[str, VALUE]] = []
         self._in_memory_cache = in_memory_cache
-        self._export_path: Optional[str] = None
 
         if run_id is not None:
             if not run_exists(self.conn, run_id):
@@ -245,18 +261,18 @@ class DataSet(Sized):
             self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
             self._started = self.run_timestamp_raw is not None
             self._parent_dataset_links = str_to_links(
-                get_parent_dataset_links(self.conn, self.run_id))
+                get_parent_dataset_links(self.conn, self.run_id)
+            )
+            self._export_info = ExportInfo.from_str(
+                self.metadata.get("export_info", "")
+            )
         else:
             # Actually perform all the side effects needed for the creation
             # of a new dataset. Note that a dataset is created (in the DB)
             # with no parameters; they are written to disk when the dataset
             # is marked as started
             if exp_id is None:
-                exp_id = get_last_experiment(self.conn)
-                if exp_id is None:  # if it's still None, then...
-                    raise ValueError("No experiments found."
-                                     "You can start a new one with:"
-                                     " new_experiment(name, sample_name)")
+                exp_id = get_default_experiment_id(self.conn)
             name = name or "dataset"
             _, run_id, __ = create_run(self.conn, exp_id, name,
                                        generate_guid(),
@@ -281,7 +297,8 @@ class DataSet(Sized):
 
             self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
             self._parent_dataset_links = []
-
+            self._export_info = ExportInfo({})
+        assert self.path_to_db is not None
         if _WRITERS.get(self.path_to_db) is None:
             queue: "Queue[Any]" = Queue()
             ws: _WriterStatus = _WriterStatus(
@@ -291,32 +308,65 @@ class DataSet(Sized):
                 active_datasets=set())
             _WRITERS[self.path_to_db] = ws
 
+    def prepare(
+        self,
+        *,
+        snapshot: Mapping[Any, Any],
+        interdeps: InterDependencies_,
+        shapes: Shapes = None,
+        parent_datasets: Sequence[Mapping[Any, Any]] = (),
+        write_in_background: bool = False,
+    ) -> None:
+
+        self.add_snapshot(json.dumps({"station": snapshot}, cls=NumpyJSONEncoder))
+
+        if interdeps == InterDependencies_():
+            raise RuntimeError("No parameters supplied")
+
+        self.set_interdependencies(interdeps, shapes)
+        links = [Link(head=self.guid, **pdict) for pdict in parent_datasets]
+        self.parent_dataset_links = links
+        self.mark_started(start_bg_writer=write_in_background)
+
+    @property
+    def cache(self) -> DataSetCacheWithDBBackend:
+        return self._cache
+
     @property
     def run_id(self) -> int:
         return self._run_id
 
     @property
     def captured_run_id(self) -> int:
-        return select_one_where(self.conn, "runs",
-                                "captured_run_id", "run_id", self.run_id)
+        run_id = select_one_where(
+            self.conn, "runs", "captured_run_id", "run_id", self.run_id
+        )
+        assert isinstance(run_id, int)
+        return run_id
 
     @property
-    def path_to_db(self) -> str:
+    def path_to_db(self) -> Optional[str]:
         return self.conn.path_to_dbfile
 
     @property
     def name(self) -> str:
-        return select_one_where(self.conn, "runs",
-                                "name", "run_id", self.run_id)
+        name = select_one_where(self.conn, "runs", "name", "run_id", self.run_id)
+        assert isinstance(name, str)
+        return name
 
     @property
     def table_name(self) -> str:
-        return select_one_where(self.conn, "runs",
-                                "result_table_name", "run_id", self.run_id)
+        table_name = select_one_where(
+            self.conn, "runs", "result_table_name", "run_id", self.run_id
+        )
+        assert isinstance(table_name, str)
+        return table_name
 
     @property
     def guid(self) -> str:
-        return get_guid_from_run_id(self.conn, self.run_id)
+        guid = get_guid_from_run_id(self.conn, self.run_id)
+        assert guid is not None
+        return guid
 
     @property
     def snapshot(self) -> Optional[Dict[str, Any]]:
@@ -328,10 +378,18 @@ class DataSet(Sized):
             return None
 
     @property
+    def _snapshot_raw(self) -> Optional[str]:
+        """Snapshot of the run as a JSON-formatted string (or None)"""
+        snapshot_raw = select_one_where(
+            self.conn, "runs", "snapshot", "run_id", self.run_id
+        )
+        assert isinstance(snapshot_raw, (str, type(None)))
+        return snapshot_raw
+
+    @property
     def snapshot_raw(self) -> Optional[str]:
         """Snapshot of the run as a JSON-formatted string (or None)"""
-        return select_one_where(self.conn, "runs", "snapshot",
-                                "run_id", self.run_id)
+        return self._snapshot_raw
 
     @property
     def number_of_results(self) -> int:
@@ -341,22 +399,38 @@ class DataSet(Sized):
 
     @property
     def counter(self) -> int:
-        return select_one_where(self.conn, "runs",
-                                "result_counter", "run_id", self.run_id)
+        counter = select_one_where(
+            self.conn, "runs", "result_counter", "run_id", self.run_id
+        )
+        assert isinstance(counter, int)
+        return counter
 
     @property
     def captured_counter(self) -> int:
-        return select_one_where(self.conn, "runs",
-                                "captured_counter", "run_id", self.run_id)
+        captured_counter = select_one_where(
+            self.conn, "runs", "captured_counter", "run_id", self.run_id
+        )
+        assert isinstance(captured_counter, int)
+        return captured_counter
 
     @property
-    def parameters(self) -> str:
+    def _parameters(self) -> Optional[str]:
         if self.pristine:
             psnames = [ps.name for ps in self.description.interdeps.paramspecs]
-            return ','.join(psnames)
+            if len(psnames) > 0:
+                return ",".join(psnames)
+            else:
+                return None
         else:
-            return select_one_where(self.conn, "runs",
-                                    "parameters", "run_id", self.run_id)
+            parameters = select_one_where(
+                self.conn, "runs", "parameters", "run_id", self.run_id
+            )
+            assert isinstance(parameters, (str, type(None)))
+            return parameters
+
+    @property
+    def parameters(self) -> Optional[str]:
+        return self._parameters
 
     @property
     def paramspecs(self) -> Dict[str, ParamSpec]:
@@ -364,16 +438,10 @@ class DataSet(Sized):
                 for ps in self.get_parameters()}
 
     @property
-    def dependent_parameters(self) -> Tuple[ParamSpecBase, ...]:
-        """
-        Return all the parameters that explicitly depend on other parameters
-        """
-        return tuple(self._rundescriber.interdeps.dependencies.keys())
-
-    @property
     def exp_id(self) -> int:
-        return select_one_where(self.conn, "runs",
-                                "exp_id", "run_id", self.run_id)
+        exp_id = select_one_where(self.conn, "runs", "exp_id", "run_id", self.run_id)
+        assert isinstance(exp_id, int)
+        return exp_id
 
     @property
     def exp_name(self) -> str:
@@ -435,54 +503,8 @@ class DataSet(Sized):
 
     @property
     def _writer_status(self) -> _WriterStatus:
+        assert self.path_to_db is not None
         return _WRITERS[self.path_to_db]
-
-    def the_same_dataset_as(self, other: 'DataSet') -> bool:
-        """
-        Check if two datasets correspond to the same run by comparing
-        all their persistent traits. Note that this method
-        does not compare the data itself.
-
-        This function raises if the GUIDs match but anything else doesn't
-
-        Args:
-            other: the dataset to compare self to
-        """
-
-        if not isinstance(other, DataSet):
-            return False
-
-        guids_match = self.guid == other.guid
-
-        # note that the guid is in itself a persistent trait of the DataSet.
-        # We therefore do not need to handle the case of guids not equal
-        # but all persistent traits equal, as this is not possible.
-        # Thus, if all persistent traits are the same we can safely return True
-        for attr in DataSet.persistent_traits:
-            if getattr(self, attr) != getattr(other, attr):
-                if guids_match:
-                    raise RuntimeError('Critical inconsistency detected! '
-                                       'The two datasets have the same GUID, '
-                                       f'but their "{attr}" differ.')
-                else:
-                    return False
-
-        return True
-
-    def run_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S") -> Optional[str]:
-        """
-        Returns run timestamp in a human-readable format
-
-        The run timestamp is the moment when the measurement for this run
-        started. If the run has not yet been started, this function returns
-        None.
-
-        Consult with :func:`time.strftime` for information about the format.
-        """
-        if self.run_timestamp_raw is None:
-            return None
-        else:
-            return time.strftime(fmt, time.localtime(self.run_timestamp_raw))
 
     @property
     def completed_timestamp_raw(self) -> Optional[float]:
@@ -493,26 +515,6 @@ class DataSet(Sized):
         If the run (or the dataset) is not completed, then returns None.
         """
         return get_completed_timestamp_from_run_id(self.conn, self.run_id)
-
-    def completed_timestamp(self,
-                            fmt: str = "%Y-%m-%d %H:%M:%S") -> Optional[str]:
-        """
-        Returns timestamp when measurement run was completed
-        in a human-readable format
-
-        If the run (or the dataset) is not completed, then returns None.
-
-        Consult with ``time.strftime`` for information about the format.
-        """
-        completed_timestamp_raw = self.completed_timestamp_raw
-
-        if completed_timestamp_raw:
-            completed_timestamp: Optional[str] = time.strftime(
-                fmt, time.localtime(completed_timestamp_raw))
-        else:
-            completed_timestamp = None
-
-        return completed_timestamp
 
     def _get_run_description_from_db(self) -> RunDescriber:
         """
@@ -526,9 +528,11 @@ class DataSet(Sized):
         Toggle debug mode, if debug mode is on all the queries made are
         echoed back.
         """
+        path_to_db = self.path_to_db
+        assert path_to_db is not None
         self._debug = not self._debug
         self.conn.close()
-        self.conn = connect(self.path_to_db, self._debug)
+        self.conn = connect(path_to_db, self._debug)
 
     def set_interdependencies(self,
                               interdeps: InterDependencies_,
@@ -549,14 +553,12 @@ class DataSet(Sized):
             raise RuntimeError(mssg)
         self._rundescriber = RunDescriber(interdeps, shapes=shapes)
 
-    def get_parameters(self) -> SPECS:
-        old_interdeps = new_to_old(self.description.interdeps)
-        return list(old_interdeps.paramspecs)
-
     def add_metadata(self, tag: str, metadata: Any) -> None:
         """
         Adds metadata to the :class:`.DataSet`. The metadata is stored under the
-        provided tag. Note that None is not allowed as a metadata value.
+        provided tag. Note that None is not allowed as a metadata value, and the
+        tag has to be a valid python identified (e.g. containing alphanumeric
+        characters and underscores).
 
         Args:
             tag: represents the key in the metadata dictionary
@@ -564,9 +566,9 @@ class DataSet(Sized):
         """
 
         self._metadata[tag] = metadata
-        # `add_meta_data` is not atomic by itself, hence using `atomic`
+        # `add_data_to_dynamic_columns` is not atomic by itself, hence using `atomic`
         with atomic(self.conn) as conn:
-            add_meta_data(conn, self.run_id, {tag: metadata})
+            add_data_to_dynamic_columns(conn, self.run_id, {tag: metadata})
 
     def add_snapshot(self, snapshot: str, overwrite: bool = False) -> None:
         """
@@ -577,7 +579,8 @@ class DataSet(Sized):
             overwrite: force overwrite an existing snapshot
         """
         if self.snapshot is None or overwrite:
-            add_meta_data(self.conn, self.run_id, {'snapshot': snapshot})
+            with atomic(self.conn) as conn:
+                add_data_to_dynamic_columns(conn, self.run_id, {"snapshot": snapshot})
         elif self.snapshot is not None and not overwrite:
             log.warning('This dataset already has a snapshot. Use overwrite'
                         '=True to overwrite that')
@@ -643,7 +646,9 @@ class DataSet(Sized):
         paramspecs = new_to_old(self._rundescriber.interdeps).paramspecs
 
         for spec in paramspecs:
-            add_parameter(self.conn, self.table_name, spec)
+            add_parameter(
+                spec, conn=self.conn, run_id=self.run_id, insert_into_results_table=True
+            )
 
         desc_str = serial.to_json_for_storage(self.description)
 
@@ -712,7 +717,7 @@ class DataSet(Sized):
 
         self._raise_if_not_writable()
 
-        expected_keys = frozenset.union(*[frozenset(d) for d in results])
+        expected_keys = frozenset.union(*(frozenset(d) for d in results))
         values = [[d.get(k, None) for k in expected_keys] for d in results]
 
         writer_status = self._writer_status
@@ -750,30 +755,6 @@ class DataSet(Sized):
             if writer_status.bg_writer is not None:
                 writer_status.bg_writer.shutdown()
                 writer_status.bg_writer = None
-
-    @staticmethod
-    def _validate_parameters(*params: Union[str, ParamSpec, _BaseParameter]
-                             ) -> List[str]:
-        """
-        Validate that the provided parameters have a name and return those
-        names as a list.
-        The Parameters may be a mix of strings, ParamSpecs or ordinary
-        QCoDeS parameters.
-        """
-
-        valid_param_names = []
-        for maybeParam in params:
-            if isinstance(maybeParam, str):
-                valid_param_names.append(maybeParam)
-                continue
-            else:
-                try:
-                    maybeParam = maybeParam.name
-                except Exception as e:
-                    raise ValueError(
-                        "This parameter does not have  a name") from e
-                valid_param_names.append(maybeParam)
-        return valid_param_names
 
     def get_parameter_data(
             self,
@@ -875,6 +856,7 @@ class DataSet(Sized):
             a column and a indexed by a :py:class:`pandas.MultiIndex` formed
             by the dependencies.
         """
+        self._warn_if_set(*params, start=start, end=end)
         datadict = self.get_parameter_data(*params,
                                            start=start,
                                            end=end)
@@ -972,6 +954,7 @@ class DataSet(Sized):
             Return a pandas DataFrame with
                 df = ds.to_pandas_dataframe()
         """
+        self._warn_if_set(*params, start=start, end=end)
         datadict = self.get_parameter_data(*params,
                                            start=start,
                                            end=end)
@@ -1024,6 +1007,7 @@ class DataSet(Sized):
 
                 dataarray_dict = ds.to_xarray_dataarray_dict()
         """
+        self._warn_if_set(*params, start=start, end=end)
         data = self.get_parameter_data(*params,
                                        start=start,
                                        end=end)
@@ -1073,6 +1057,7 @@ class DataSet(Sized):
 
                 xds = ds.to_xarray_dataset()
         """
+        self._warn_if_set(*params, start=start, end=end)
         data = self.get_parameter_data(*params,
                                        start=start,
                                        end=end)
@@ -1117,30 +1102,13 @@ class DataSet(Sized):
             DataPathException: If the data of multiple parameters are wanted to be merged
                                in a single file but no filename provided.
         """
-        import pandas as pd
         dfdict = self.to_pandas_dataframe_dict()
-        dfs_to_save = list()
-        for parametername, df in dfdict.items():
-            if not single_file:
-                dst = os.path.join(path, f'{parametername}.dat')
-                df.to_csv(path_or_buf=dst, header=False, sep='\t')
-            else:
-                dfs_to_save.append(df)
-        if single_file:
-            df_length = len(dfs_to_save[0])
-            if any(len(df) != df_length for df in dfs_to_save):
-                raise DataLengthException("You cannot concatenate data " +
-                                          "with different length to a " +
-                                          "single file.")
-            if single_file_name is None:
-                raise DataPathException("Please provide the desired file name " +
-                                        "for the concatenated data.")
-            else:
-                if not single_file_name.lower().endswith(('.dat', '.csv', '.txt')):
-                    single_file_name = f'{single_file_name}.dat'
-                dst = os.path.join(path, single_file_name)
-                df_to_save = pd.concat(dfs_to_save, axis=1)
-                df_to_save.to_csv(path_or_buf=dst, header=False, sep='\t')
+        dataframe_to_csv(
+            dfdict=dfdict,
+            path=path,
+            single_file=single_file,
+            single_file_name=single_file_name,
+        )
 
     def subscribe(self,
                   callback: Callable[[Any, int, Optional[Any]], None],
@@ -1213,8 +1181,9 @@ class DataSet(Sized):
                 sub.join()
             self.subscribers.clear()
 
-    def get_metadata(self, tag: str) -> str:
-        return get_metadata(self.conn, tag, self.table_name)
+    def get_metadata(self, tag: str) -> Optional[VALUE]:
+        """Get metadata by tag. Returns None if no metadata is stored under that tag"""
+        return get_data_by_tag_and_table_name(self.conn, tag, self.table_name)
 
     def __len__(self) -> int:
         return length(self.conn, self.table_name)
@@ -1300,28 +1269,6 @@ class DataSet(Sized):
 
         if self._in_memory_cache:
             self.cache.add_data(new_results)
-
-    @staticmethod
-    def _reshape_array_for_cache(
-            param: ParamSpecBase,
-            param_data: numpy.ndarray
-    ) -> numpy.ndarray:
-        """
-        Shape cache data so it matches data read from database.
-        This means:
-
-        - Add an extra singleton dim to array data
-        - flatten non array data into a linear array.
-        """
-        param_data = numpy.atleast_1d(param_data)
-        if param.type == "array":
-            new_data = numpy.reshape(
-                param_data,
-                (1,) + param_data.shape
-            )
-        else:
-            new_data = param_data.ravel()
-        return new_data
 
     @staticmethod
     def _finalize_res_dict_array(
@@ -1467,138 +1414,55 @@ class DataSet(Sized):
             log.debug(f"Waiting for write queue to empty.")
             writer_status.data_write_queue.join()
 
-    def _export_file_name(self, prefix: str, export_type: DataExportType) -> str:
-        """Get export file name"""
-        extension = export_type.value
-        return f"{prefix}{self.run_id}.{extension}"
-
-    def _export_as_netcdf(self, path: str, file_name: str) -> str:
-        """Export data as netcdf to a given path with file prefix"""
-        file_path = os.path.join(path, file_name)
-        xarr_dataset = self.to_xarray_dataset()
-        xarr_dataset.to_netcdf(path=file_path)
-        return path
-
-    def _export_as_csv(self, path: str, file_name: str) -> str:
-        """Export data as csv to a given path with file prefix"""
-        self.write_data_to_text_file(path=path, single_file=True, single_file_name=file_name)
-        return os.path.join(path, file_name)
-
-    def _export_data(self,
-                     export_type: DataExportType,
-                     path: Optional[str] = None,
-                     prefix: Optional[str] = None
-                     ) -> Optional[str]:
-        """Export data to disk with file name {prefix}{run_id}.{ext}.
-        Values for the export type, path and prefix can also be set in the qcodes
-        "dataset" config.
-
-        Args:
-            export_type: Data export type, e.g. DataExportType.NETCDF
-            path: Export path, defaults to value set in config
-            prefix: File prefix, e.g. "qcodes_", defaults to value set in config.
-
-        Returns:
-            str: Path file was saved to, returns None if no file was saved.
-        """
-        # Set defaults to values in config if the value was not set
-        # (defaults to None)
-        path = path if path is not None else get_data_export_path()
-        prefix = prefix if prefix is not None else get_data_export_prefix()
-
-        if DataExportType.NETCDF == export_type:
-            file_name = self._export_file_name(
-                prefix=prefix, export_type=DataExportType.NETCDF)
-            return self._export_as_netcdf(path=path, file_name=file_name)
-
-        elif DataExportType.CSV == export_type:
-            file_name = self._export_file_name(
-                prefix=prefix, export_type=DataExportType.CSV)
-            return self._export_as_csv(path=path, file_name=file_name)
-
+    @property
+    def export_path(self) -> Optional[str]:
+        issue_deprecation_warning("method export_path", alternative="export_info")
+        known_export_paths = list(self.export_info.export_paths.values())
+        if len(known_export_paths) > 0:
+            return known_export_paths[-1]
         else:
             return None
 
-    def export(self,
-               export_type: Optional[Union[DataExportType, str]] = None,
-               path: Optional[str] = None,
-               prefix: Optional[str] = None) -> None:
-        """Export data to disk with file name {prefix}{run_id}.{ext}.
-        Values for the export type, path and prefix can also be set in the "dataset"
-        section of qcodes config.
-
-        Args:
-            export_type: Data export type, e.g. "netcdf" or ``DataExportType.NETCDF``,
-                defaults to a value set in qcodes config
-            path: Export path, defaults to value set in config
-            prefix: File prefix, e.g. ``qcodes_``, defaults to value set in config.
-
-        Raises:
-            ValueError: If the export data type is not specified, raise an error
-        """
-        export_type = get_data_export_type(export_type)
-
-        if export_type is None:
-            raise ValueError(
-                "No data export type specified. Please set the export data type "
-                "by using ``qcodes.dataset.export_config.set_data_export_type`` or "
-                "give an explicit export_type when calling ``dataset.export`` manually."
-            )
-
-        self._export_path = self._export_data(
-            export_type=export_type,
-            path=path,
-            prefix=prefix
-        )
-
     @property
-    def export_path(self) -> Optional[str]:
-        return self._export_path
+    def export_info(self) -> ExportInfo:
+        return self._export_info
+
+    @staticmethod
+    def _warn_if_set(
+        *params: Union[str, ParamSpec, _BaseParameter],
+        start: Optional[int] = None,
+        end: Optional[int],
+    ) -> None:
+        if len(params) > 0 or start is not None or end is not None:
+            QCoDeSDeprecationWarning(
+                "Passing params, start or stop to to_xarray_... and "
+                "to_pandas_... methods is deprecated "
+                "This will be an error in the future. "
+                "If you need to sub-select use `dataset.get_parameter_data`"
+            )
 
 
 # public api
-def load_by_id(run_id: int, conn: Optional[ConnectionPlus] = None) -> DataSet:
-    """
-    Load a dataset by run id
-
-    If no connection is provided, lookup is performed in the database file that
-    is specified in the config.
-
-    Note that the ``run_id`` used in this function in not preserved when copying
-    data to another db file. We recommend using :func:`.load_by_run_spec` which
-    does not have this issue and is significantly more flexible.
-
-    Args:
-        run_id: run id of the dataset
-        conn: connection to the database to load from
-
-    Returns:
-        :class:`.DataSet` with the given run id
-    """
-    if run_id is None:
-        raise ValueError('run_id has to be a positive integer, not None.')
-
-    conn = conn or connect(get_DB_location())
-
-    d = DataSet(conn=conn, run_id=run_id)
-    return d
-
-
-def load_by_run_spec(*,
-                     captured_run_id: Optional[int] = None,
-                     captured_counter: Optional[int] = None,
-                     experiment_name: Optional[str] = None,
-                     sample_name: Optional[str] = None,
-                     # guid parts
-                     sample_id: Optional[int] = None,
-                     location: Optional[int] = None,
-                     work_station: Optional[int] = None,
-                     conn: Optional[ConnectionPlus] = None) -> DataSet:
+def load_by_run_spec(
+    *,
+    captured_run_id: Optional[int] = None,
+    captured_counter: Optional[int] = None,
+    experiment_name: Optional[str] = None,
+    sample_name: Optional[str] = None,
+    # guid parts
+    sample_id: Optional[int] = None,
+    location: Optional[int] = None,
+    work_station: Optional[int] = None,
+    conn: Optional[ConnectionPlus] = None,
+) -> DataSetProtocol:
     """
     Load a run from one or more pieces of runs specification. All
     fields are optional but the function will raise an error if more than one
     run matching the supplied specification is found. Along with the error
     specs of the runs found will be printed.
+
+    If the raw data is in the database this will be loaded as a :class:`.DataSet`
+    otherwise it will be loaded as a :class:`.DataSetInMemory`
 
     Args:
         captured_run_id: The ``run_id`` that was originally assigned to this
@@ -1618,61 +1482,117 @@ def load_by_run_spec(*,
          exists in the database
 
     Returns:
-        :class:`.DataSet` matching the provided specification.
+        :class:`.DataSet` or :class:`.DataSetInMemory` matching the provided
+            specification.
     """
-    conn = conn or connect(get_DB_location())
-    guids = get_guids_from_run_spec(conn,
-                                    captured_run_id=captured_run_id,
-                                    captured_counter=captured_counter,
-                                    experiment_name=experiment_name,
-                                    sample_name=sample_name)
+    internal_conn = conn or connect(get_DB_location())
+    d: Optional[DataSetProtocol] = None
+    try:
+        guids = get_guids_from_run_spec(
+            internal_conn,
+            captured_run_id=captured_run_id,
+            captured_counter=captured_counter,
+            experiment_name=experiment_name,
+            sample_name=sample_name,
+        )
 
-    matched_guids = filter_guids_by_parts(guids, location, sample_id,
-                                          work_station)
+        matched_guids = filter_guids_by_parts(guids, location, sample_id, work_station)
 
-    if len(matched_guids) == 1:
-        return load_by_guid(matched_guids[0], conn)
-    elif len(matched_guids) > 1:
-        print(generate_dataset_table(matched_guids, conn=conn))
-        raise NameError("More than one matching dataset found. "
-                        "Please supply more information to uniquely"
-                        "identify a dataset")
-    else:
-        raise NameError(f'No run matching the supplied information '
-                        f'found.')
+        if len(matched_guids) == 1:
+            d = load_by_guid(matched_guids[0], internal_conn)
+        elif len(matched_guids) > 1:
+            print(generate_dataset_table(matched_guids, conn=internal_conn))
+            raise NameError(
+                "More than one matching dataset found. "
+                "Please supply more information to uniquely"
+                "identify a dataset"
+            )
+        else:
+            raise NameError("No run matching the supplied information found.")
+    finally:
+        if not conn and not isinstance(d, DataSet):
+            internal_conn.close()
+    assert d is not None
+    return d
 
 
-def load_by_guid(guid: str, conn: Optional[ConnectionPlus] = None) -> DataSet:
+def load_by_id(run_id: int, conn: Optional[ConnectionPlus] = None) -> DataSetProtocol:
+    """
+    Load a dataset by run id
+
+    If no connection is provided, lookup is performed in the database file that
+    is specified in the config.
+
+    Note that the ``run_id`` used in this function in not preserved when copying
+    data to another db file. We recommend using :func:`.load_by_run_spec` which
+    does not have this issue and is significantly more flexible.
+
+    If the raw data is in the database this will be loaded as a :class:`.DataSet`
+    otherwise it will be loaded as a :class:`.DataSetInMemory`
+
+    Args:
+        run_id: run id of the dataset
+        conn: connection to the database to load from
+
+    Returns:
+        :class:`.DataSet` or :class:`.DataSetInMemory` with the given run id
+    """
+    if run_id is None:
+        raise ValueError("run_id has to be a positive integer, not None.")
+    internal_conn = conn or connect(get_DB_location())
+    d: Optional[DataSetProtocol] = None
+
+    try:
+        guid = get_guid_from_run_id(internal_conn, run_id)
+        if guid is None:
+            raise ValueError(f"Run with run_id {run_id} does not exist in the database")
+        d = _get_datasetprotocol_from_guid(guid, internal_conn)
+    finally:
+        # dataset takes ownership of the connection but DataSetInMem does not
+        if not conn and not isinstance(d, DataSet):
+            internal_conn.close()
+    assert d is not None
+    return d
+
+
+def load_by_guid(guid: str, conn: Optional[ConnectionPlus] = None) -> DataSetProtocol:
     """
     Load a dataset by its GUID
 
     If no connection is provided, lookup is performed in the database file that
     is specified in the config.
 
+    If the raw data is in the database this will be loaded as a :class:`.DataSet`
+    otherwise it will be loaded as a :class:`.DataSetInMemory`
+
     Args:
         guid: guid of the dataset
         conn: connection to the database to load from
 
     Returns:
-        :class:`.DataSet` with the given guid
+        :class:`.DataSet` or :class:`.DataSetInMemory` with the given guid
 
     Raises:
         NameError: if no run with the given GUID exists in the database
         RuntimeError: if several runs with the given GUID are found
     """
-    conn = conn or connect(get_DB_location())
+    internal_conn = conn or connect(get_DB_location())
+    d: Optional[DataSetProtocol] = None
 
     # this function raises a RuntimeError if more than one run matches the GUID
-    run_id = get_runid_from_guid(conn, guid)
+    try:
+        d = _get_datasetprotocol_from_guid(guid, internal_conn)
+    finally:
+        # dataset takes ownership of the connection but DataSetInMem does not
+        if not conn and not isinstance(d, DataSet):
+            internal_conn.close()
+    assert d is not None
+    return d
 
-    if run_id == -1:
-        raise NameError(f'No run with GUID: {guid} found in database.')
 
-    return DataSet(run_id=run_id, conn=conn)
-
-
-def load_by_counter(counter: int, exp_id: int,
-                    conn: Optional[ConnectionPlus] = None) -> DataSet:
+def load_by_counter(
+    counter: int, exp_id: int, conn: Optional[ConnectionPlus] = None
+) -> DataSetProtocol:
     """
     Load a dataset given its counter in a given experiment
 
@@ -1682,6 +1602,9 @@ def load_by_counter(counter: int, exp_id: int,
     data to another db file. We recommend using :func:`.load_by_run_spec` which
     does not have this issue and is significantly more flexible.
 
+    If the raw data is in the database this will be loaded as a :class:`.DataSet`
+    otherwise it will be loaded as a :class:`.DataSetInMemory`
+
     Args:
         counter: counter of the dataset within the given experiment
         exp_id: id of the experiment where to look for the dataset
@@ -1689,21 +1612,33 @@ def load_by_counter(counter: int, exp_id: int,
           connection to the DB file specified in the config is made
 
     Returns:
-        :class:`.DataSet` of the given counter in the given experiment
+        :class:`.DataSet` or :class:`.DataSetInMemory` of the given counter in
+            the given experiment
     """
-    conn = conn or connect(get_DB_location())
-    sql = """
-    SELECT run_id
-    FROM
-      runs
-    WHERE
-      result_counter= ? AND
-      exp_id = ?
-    """
-    c = transaction(conn, sql, counter, exp_id)
-    run_id = one(c, 'run_id')
+    internal_conn = conn or connect(get_DB_location())
+    d: Optional[DataSetProtocol] = None
 
-    d = DataSet(conn=conn, run_id=run_id)
+    # this function raises a RuntimeError if more than one run matches the GUID
+    try:
+        guid = get_guid_from_expid_and_counter(internal_conn, exp_id, counter)
+        d = _get_datasetprotocol_from_guid(guid, internal_conn)
+    finally:
+        # dataset takes ownership of the connection but DataSetInMem does not
+        if not conn and not isinstance(d, DataSet):
+            internal_conn.close()
+    assert d is not None
+    return d
+
+
+def _get_datasetprotocol_from_guid(guid: str, conn: ConnectionPlus) -> DataSetProtocol:
+    run_id = get_runid_from_guid(conn, guid)
+    if run_id is None:
+        raise NameError(f"No run with GUID: {guid} found in database.")
+    result_table_name = _get_result_table_name_by_guid(conn, guid)
+    if _check_if_table_found(conn, result_table_name):
+        d: DataSetProtocol = DataSet(conn=conn, run_id=run_id)
+    else:
+        d = DataSetInMem._load_from_db(conn=conn, guid=guid)
     return d
 
 
