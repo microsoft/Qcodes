@@ -4,7 +4,7 @@ import hypothesis.strategies as hst
 from hypothesis import given, event, settings
 import numpy as np
 
-from qcodes.instrument.parameter import Parameter, DelegateParameter
+from qcodes.instrument.parameter import Parameter
 
 
 def test_scale_raw_value():
