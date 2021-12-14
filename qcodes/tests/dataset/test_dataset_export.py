@@ -319,15 +319,18 @@ def test_same_setpoint_warning_for_df_and_xarray(different_setpoint_dataset):
 def test_export_to_xarray_dataset_empty_ds(mock_empty_dataset):
     ds = mock_empty_dataset.to_xarray_dataset()
     assert len(ds) == 2
-    assert len(ds.coords) == 0
+    assert len(ds.coords) == 1
+    assert "x" in ds.coords
     _assert_xarray_metadata_is_as_expected(ds, mock_empty_dataset)
 
 
 def test_export_to_xarray_dataarray_empty_ds(mock_empty_dataset):
     dad = mock_empty_dataset.to_xarray_dataarray_dict()
     assert len(dad) == 2
-    assert len(dad["y"].coords) == 0
-    assert len(dad["z"].coords) == 0
+    assert len(dad["y"].coords) == 1
+    assert "x" in dad["y"].coords
+    assert len(dad["z"].coords) == 1
+    assert "x" in dad["z"].coords
 
 
 def test_export_to_xarray(mock_dataset):
