@@ -681,16 +681,18 @@ class Instrument(InstrumentBase, AbstractInstrument):
 
         if name not in cls._all_instruments:
             raise KeyError(f"Instrument with name {name} does not exist")
-        ins = cast(T, cls._all_instruments[name]())
-
+        ins = cls._all_instruments[name]()
         if ins is None:
             del cls._all_instruments[name]
             raise KeyError(f'Instrument {name} has been removed')
 
         if not isinstance(ins, internal_instrument_class):
             raise TypeError(
-                f"Instrument {name} is {type(ins)} but {instrument_class} was requested"
+                f"Instrument {name} is {type(ins)} but {internal_instrument_class} was requested"
             )
+        # at this stage we have checked that the instrument is either of type instrument_class
+        # or Instrument if that is None. It is therefor safe to cast here.
+        ins = cast(T, ins)
         return ins
 
     @staticmethod
