@@ -21,9 +21,9 @@ from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.guids import parse_guid
-from qcodes.dataset.sqlite.connection import path_to_dbfile, atomic
+from qcodes.dataset.sqlite.connection import atomic, path_to_dbfile
 from qcodes.dataset.sqlite.database import get_DB_location
-from qcodes.dataset.sqlite.queries import _unicode_categories, _rewrite_timestamps
+from qcodes.dataset.sqlite.queries import _rewrite_timestamps, _unicode_categories
 from qcodes.tests.common import error_caused_by
 from qcodes.tests.dataset.helper_functions import verify_data_dict
 from qcodes.tests.dataset.test_links import generate_some_links
@@ -828,15 +828,10 @@ class TestGetData:
             (2, 4, xdata[(2-1):4]),
         ],
     )
-    def test_get_data_with_start_and_end_args(self, ds_with_vals,
-                                              start, end, expected):
-        data = ds_with_vals.get_parameter_data(
-            self.x, start=start, end=end)['x']
-        if len(expected) == 0:
-            assert data == {}
-        else:
-            data = data['x']
-            np.testing.assert_array_equal(data, expected)
+    def test_get_data_with_start_and_end_args(self, ds_with_vals, start, end, expected):
+        data = ds_with_vals.get_parameter_data(self.x, start=start, end=end)["x"]
+        data = data["x"]
+        np.testing.assert_array_equal(data, expected)
 
 
 @settings(deadline=600, suppress_health_check=(HealthCheck.function_scoped_fixture,))
