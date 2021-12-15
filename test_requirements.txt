@@ -44,7 +44,7 @@ types-cryptography==3.3.9
 types-docutils==0.17.1
 types-ipaddress==1.0.1
 types-pyOpenSSL==21.0.1
-types-pytz==2021.3.2
+types-pytz==2021.3.3
 types-requests==2.26.1
 types-setuptools==57.4.4
 types-six==1.16.3
