@@ -4,7 +4,7 @@ import time
 from typing import Any, Sequence, Union
 
 import numpy as np
-from pyvisa import VisaIOError, errors
+from pyvisa import errors
 
 from qcodes import ArrayParameter, ChannelList, InstrumentChannel, VisaInstrument
 from qcodes.utils.validators import Bool, Enum, Ints, Numbers
@@ -58,15 +58,16 @@ class FormattedSweep(PNASweep):
                  sweep_format: str,
                  label: str,
                  unit: str,
-                 memory: bool = False) -> None:
+                 memory: bool = False,
+                 **kwargs) -> None:
         super().__init__(name,
                          instrument=instrument,
                          label=label,
                          unit=unit,
                          setpoint_names=('frequency',),
                          setpoint_labels=('Frequency',),
-                         setpoint_units=('Hz',)
-                         )
+                         setpoint_units=('Hz',),
+                         **kwargs)
         self.sweep_format = sweep_format
         self.memory = memory
 
@@ -101,8 +102,9 @@ class PNAPort(InstrumentChannel):
                  name: str,
                  port: int,
                  min_power: Union[int, float],
-                 max_power: Union[int, float]) -> None:
-        super().__init__(parent, name)
+                 max_power: Union[int, float],
+                 **kwargs) -> None:
+        super().__init__(parent, name, **kwargs)
 
         self.port = int(port)
         if self.port < 1 or self.port > 4:
@@ -137,8 +139,9 @@ class PNATrace(InstrumentChannel):
                  parent: 'PNABase',
                  name: str,
                  trace_name: str,
-                 trace_num: int) -> None:
-        super().__init__(parent, name)
+                 trace_num: int,
+                 **kwargs) -> None:
+        super().__init__(parent, name, **kwargs)
         self.trace_name = trace_name
         self.trace_num = trace_num
 
@@ -479,7 +482,7 @@ class PNABase(VisaInstrument):
         # if no traces were selected.
         try:
             active_trace = self.active_trace()
-        except VisaIOError as e:
+        except errors.VisaIOError as e:
             if e.error_code == errors.StatusCode.error_timeout:
                 active_trace = None
             else:
