@@ -62,6 +62,9 @@ class BreakConditionInterrupt(Exception):
     pass
 
 
+MeasInterruptT = Union[KeyboardInterrupt, BreakConditionInterrupt, None]
+
+
 def _register_parameters(
     meas: Measurement,
     param_meas: Sequence[ParamMeasT],
@@ -92,10 +95,10 @@ def _set_write_period(meas: Measurement, write_period: Optional[float] = None) -
 
 
 @contextmanager
-def _catch_interrupts() -> Iterator[Callable[[], Union[KeyboardInterrupt, BreakConditionInterrupt, None]]]:
+def _catch_interrupts() -> Iterator[Callable[[], MeasInterruptT]]:
     interrupt_exception = None
 
-    def get_interrupt_exception() -> Union[KeyboardInterrupt, BreakConditionInterrupt, None]:
+    def get_interrupt_exception() -> MeasInterruptT:
         nonlocal interrupt_exception
         return interrupt_exception
 
@@ -948,7 +951,7 @@ def _extract_paramters_by_type_and_group(
 def _handle_plotting(
     data: DataSetProtocol,
     do_plot: bool = True,
-    interrupted: Union[KeyboardInterrupt, BreakConditionInterrupt, None] = None,
+    interrupted: MeasInterruptT = None,
 ) -> AxesTupleListWithDataSet:
     """
     Save the plots created by datasaver as pdf and png
