@@ -5,10 +5,45 @@ import re
 import numpy as np
 from pyvisa import errors
 
-from qcodes import ArrayParameter, ChannelList, InstrumentChannel, VisaInstrument
-from qcodes.utils.validators import Bool, Enum, Ints, Numbers
+from qcodes import ParameterWithSetpoints, ChannelList, InstrumentChannel, VisaInstrument, Parameter
+from qcodes.utils.validators import Arrays, Bool, Enum, Ints, Numbers
 
-class PNASweep(ArrayParameter):
+class PNAAxisParameter(Parameter):
+    def __init__(self,
+                 startparam: Parameter,
+                 stopparam: Parameter,
+                 pointsparam: Parameter,
+                 **kwargs):
+        """
+        Axis parameter for traces from the PNA
+        """
+        super().__init__(**kwargs)
+
+        self._startparam = startparam
+        self._stopparam = stopparam
+        self._pointsparam = pointsparam
+
+    def get_raw(self):
+        """
+        Return the axis values, with values retrieved from the parent instrument
+        """
+        return np.linspace(self._startparam(), self._stopparam(), self._pointsparam())
+
+class PNALogAxisParamter(PNAAxisParameter):
+    def get_raw(self):
+        """
+        Return the axis values on a log scale, with values retrieved from the parent instrument
+        """
+        return np.geomspace(self._startparam(), self._stopparam(), self._pointsparam())
+
+class PNATimeAxisParameter(PNAAxisParameter):
+    def get_raw(self):
+        """
+        Return the axis values on a time scale, with values retrieved from the parent instrument
+        """
+        return np.linspace(0, self._stopparam(), self._pointsparam())
+
+class PNASweep(ParameterWithSetpoints):
     def __init__(self,
                  name: str,
                  instrument: 'PNABase',
@@ -16,32 +51,25 @@ class PNASweep(ArrayParameter):
 
         super().__init__(name,
                          instrument=instrument,
-                         shape=(0,),
-                         setpoints=((0,),),
                          **kwargs)
 
-    @property  # type: ignore[override]
-    def shape(self) -> Sequence[int]:  # type: ignore[override]
-        if self.instrument is None:
-            return (0,)
-        return (self.instrument.root_instrument.points(),)
-
-    @shape.setter
-    def shape(self, val: Sequence[int]) -> None:
-        pass
-
-    @property  # type: ignore[override]
-    def setpoints(self) -> Sequence[np.ndarray]:  # type: ignore[override]
+    @property
+    def setpoints(self) -> Sequence[np.ndarray]:
+        """
+        Overwrite setpoint parameter to ask the PNA what type of sweep
+        """
         if self.instrument is None:
             raise RuntimeError("Cannot return setpoints if not attached "
                                "to instrument")
-        start = self.instrument.root_instrument.start()
-        stop = self.instrument.root_instrument.stop()
-        return (np.linspace(start, stop, self.shape[0]),)
-
-    @setpoints.setter
-    def setpoints(self, val: Sequence[int]) -> None:
-        pass
+        sweep_type = self.instrument.sweep_type()
+        if sweep_type == "LIN":
+            return (self.instrument.frequency_axis,)
+        elif sweep_type == "LOG":
+            return (self.instrument.frequency_log_axis,)
+        elif sweep_type == "CW":
+            return (self.instrument.time_axis,)
+        else:
+            raise NotImplementedError(f"Axis for type {sweep_type} not implemented yet")
 
 
 class FormattedSweep(PNASweep):
@@ -61,9 +89,6 @@ class FormattedSweep(PNASweep):
                          instrument=instrument,
                          label=label,
                          unit=unit,
-                         setpoint_names=('frequency',),
-                         setpoint_labels=('Frequency',),
-                         setpoint_units=('Hz',),
                          **kwargs)
         self.sweep_format = sweep_format
         self.memory = memory
@@ -163,37 +188,44 @@ class PNATrace(InstrumentChannel):
                            sweep_format='MLOG',
                            label='Magnitude',
                            unit='dB',
-                           parameter_class=FormattedSweep)
+                           parameter_class=FormattedSweep,
+                           vals=Arrays(shape=(self.points,)))
         self.add_parameter('linear_magnitude',
                            sweep_format='MLIN',
                            label='Magnitude',
                            unit='ratio',
-                           parameter_class=FormattedSweep)
+                           parameter_class=FormattedSweep,
+                           vals=Arrays(shape=(self.points,)))
         self.add_parameter('phase',
                            sweep_format='PHAS',
                            label='Phase',
                            unit='deg',
-                           parameter_class=FormattedSweep)
+                           parameter_class=FormattedSweep,
+                           vals=Arrays(shape=(self.points,)))
         self.add_parameter('unwrapped_phase',
                            sweep_format='UPH',
                            label='Phase',
                            unit='deg',
-                           parameter_class=FormattedSweep)
+                           parameter_class=FormattedSweep,
+                           vals=Arrays(shape=(self.points,)))
         self.add_parameter("group_delay",
                            sweep_format='GDEL',
                            label='Group Delay',
                            unit='s',
-                           parameter_class=FormattedSweep)
+                           parameter_class=FormattedSweep,
+                           vals=Arrays(shape=(self.points,)))
         self.add_parameter('real',
                            sweep_format='REAL',
                            label='Real',
                            unit='LinMag',
-                           parameter_class=FormattedSweep)
+                           parameter_class=FormattedSweep,
+                           vals=Arrays(shape=(self.points,)))
         self.add_parameter('imaginary',
                            sweep_format='IMAG',
                            label='Imaginary',
                            unit='LinMag',
-                           parameter_class=FormattedSweep)
+                           parameter_class=FormattedSweep,
+                           vals=Arrays(shape=(self.points,)))
 
     def run_sweep(self) -> str:
         """
@@ -430,6 +462,32 @@ class PNABase(VisaInstrument):
                            get_cmd="TRIG:SOUR?",
                            set_cmd="TRIG:SOUR {}",
                            vals=Enum("EXT", "IMM", "MAN"))
+
+        # Axis Parameters
+        self.add_parameter('frequency_axis',
+                           unit='Hz',
+                           label="Frequency",
+                           parameter_class=PNAAxisParameter,
+                           startparam=self.start,
+                           stopparam=self.stop,
+                           pointsparam=self.points,
+                           vals=Arrays(shape=(self.points,)))
+        self.add_parameter('frequency_log_axis',
+                           unit='Hz',
+                           label="Frequency",
+                           parameter_class=PNALogAxisParamter,
+                           startparam=self.start,
+                           stopparam=self.stop,
+                           pointsparam=self.points,
+                           vals=Arrays(shape=(self.points,)))
+        self.add_parameter('time_axis',
+                           unit='s',
+                           label="Time",
+                           parameter_class=PNATimeAxisParameter,
+                           startparam=None,
+                           stopparam=self.sweep_time,
+                           pointsparam=self.points,
+                           vals=Arrays(shape=(self.points,)))
 
         # Traces
         self.add_parameter('active_trace',
