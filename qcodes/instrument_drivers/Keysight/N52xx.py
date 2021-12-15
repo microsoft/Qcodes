@@ -369,6 +369,14 @@ class PNABase(VisaInstrument):
                            unit='Hz',
                            vals=Numbers(min_value=min_freq,
                                         max_value=max_freq))
+        self.add_parameter('cw',
+                           label='CW Frequency',
+                           get_cmd='SENS:FREQ:CW?',
+                           get_parser=float,
+                           set_cmd='SENS:FREQ:CW {}',
+                           unit='Hz',
+                           vals=Numbers(min_value=min_freq,
+                                        max_value=max_freq))
 
         # Number of points in a sweep
         self.add_parameter('points',
@@ -401,6 +409,13 @@ class PNABase(VisaInstrument):
                            get_cmd='SENS:SWE:MODE?',
                            set_cmd='SENS:SWE:MODE {}',
                            vals=Enum("HOLD", "CONT", "GRO", "SING"))
+        # Sweep Type
+        self.add_parameter('sweep_type',
+                           label='Type',
+                           get_cmd='SENS:SWE:TYPE?',
+                           set_cmd='SENS:SWE:TYPE {}',
+                           vals=Enum('LIN', 'LOG', 'POW', 'CW', 'SEGM', 'PHAS'))
+
         # Group trigger count
         self.add_parameter('group_trigger_count',
                            get_cmd="SENS:SWE:GRO:COUN?",
