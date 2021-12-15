@@ -61,15 +61,23 @@ class PNASweep(ParameterWithSetpoints):
         if self.instrument is None:
             raise RuntimeError("Cannot return setpoints if not attached "
                                "to instrument")
-        sweep_type = self.instrument.sweep_type()
+        sweep_type = self.root_instrument.sweep_type()
         if sweep_type == "LIN":
-            return (self.instrument.frequency_axis,)
+            return (self.root_instrument.frequency_axis,)
         elif sweep_type == "LOG":
-            return (self.instrument.frequency_log_axis,)
+            return (self.root_instrument.frequency_log_axis,)
         elif sweep_type == "CW":
-            return (self.instrument.time_axis,)
+            return (self.root_instrument.time_axis,)
         else:
             raise NotImplementedError(f"Axis for type {sweep_type} not implemented yet")
+
+    @setpoints.setter
+    def setpoints(self, val: Any) -> None:
+        """
+        Stub to allow initialization. Ignore any set attempts on setpoint as we
+        figure it out on the fly.
+        """
+        pass
 
 
 class FormattedSweep(PNASweep):
@@ -189,43 +197,43 @@ class PNATrace(InstrumentChannel):
                            label='Magnitude',
                            unit='dB',
                            parameter_class=FormattedSweep,
-                           vals=Arrays(shape=(self.points,)))
+                           vals=Arrays(shape=(self.parent.points,)))
         self.add_parameter('linear_magnitude',
                            sweep_format='MLIN',
                            label='Magnitude',
                            unit='ratio',
                            parameter_class=FormattedSweep,
-                           vals=Arrays(shape=(self.points,)))
+                           vals=Arrays(shape=(self.parent.points,)))
         self.add_parameter('phase',
                            sweep_format='PHAS',
                            label='Phase',
                            unit='deg',
                            parameter_class=FormattedSweep,
-                           vals=Arrays(shape=(self.points,)))
+                           vals=Arrays(shape=(self.parent.points,)))
         self.add_parameter('unwrapped_phase',
                            sweep_format='UPH',
                            label='Phase',
                            unit='deg',
                            parameter_class=FormattedSweep,
-                           vals=Arrays(shape=(self.points,)))
+                           vals=Arrays(shape=(self.parent.points,)))
         self.add_parameter("group_delay",
                            sweep_format='GDEL',
                            label='Group Delay',
                            unit='s',
                            parameter_class=FormattedSweep,
-                           vals=Arrays(shape=(self.points,)))
+                           vals=Arrays(shape=(self.parent.points,)))
         self.add_parameter('real',
                            sweep_format='REAL',
                            label='Real',
                            unit='LinMag',
                            parameter_class=FormattedSweep,
-                           vals=Arrays(shape=(self.points,)))
+                           vals=Arrays(shape=(self.parent.points,)))
         self.add_parameter('imaginary',
                            sweep_format='IMAG',
                            label='Imaginary',
                            unit='LinMag',
                            parameter_class=FormattedSweep,
-                           vals=Arrays(shape=(self.points,)))
+                           vals=Arrays(shape=(self.parent.points,)))
 
     def run_sweep(self) -> str:
         """
