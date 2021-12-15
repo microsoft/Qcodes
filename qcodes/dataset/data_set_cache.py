@@ -465,7 +465,11 @@ class DataSetCacheWithDBBackend(DataSetCache["DataSet"]):
         if self._dataset.completed:
             self._loaded_from_completed_ds = True
 
-        (write_status, read_status, data,) = load_new_data_from_db_and_append(
+        (
+            self._write_status,
+            self._read_status,
+            self._data,
+        ) = load_new_data_from_db_and_append(
             self._dataset.conn,
             self._dataset.table_name,
             self.rundescriber,
@@ -474,11 +478,7 @@ class DataSetCacheWithDBBackend(DataSetCache["DataSet"]):
             self._data,
         )
         data_not_read = all(
-            status is None or status == 0 for status in write_status.values()
+            status is None or status == 0 for status in self._write_status.values()
         )
-
         if not data_not_read:
-            self._write_status = write_status
-            self._read_status = read_status
-            self._data = data
             self._live = False
