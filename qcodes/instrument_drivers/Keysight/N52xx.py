@@ -1,15 +1,12 @@
-import logging
-import re
+from typing import Sequence, Union, Any
 import time
-from typing import Any, Sequence, Union
+import re
 
 import numpy as np
 from pyvisa import errors
 
 from qcodes import ArrayParameter, ChannelList, InstrumentChannel, VisaInstrument
 from qcodes.utils.validators import Bool, Enum, Ints, Numbers
-
-logger = logging.getLogger()
 
 class PNASweep(ArrayParameter):
     def __init__(self,
@@ -232,7 +229,7 @@ class PNATrace(InstrumentChannel):
             elif source == "EXT":
                 msg += "The trigger source is external. Is the trigger " \
                        "source functional?"
-            logger.warning(msg)
+            self.log.warning(msg)
 
         # Return previous mode, incase we want to restore this
         return prev_mode
@@ -295,6 +292,9 @@ class PNABase(VisaInstrument):
         super().__init__(name, address, terminator='\n', **kwargs)
         self.min_freq = min_freq
         self.max_freq = max_freq
+
+        self.log.info("Initializing %s with power range %r-%r, freq range %r-%r.",
+                      name, min_power, max_power, min_freq, max_freq)
 
         #Ports
         ports = ChannelList(self, "PNAPorts", PNAPort)
@@ -483,7 +483,9 @@ class PNABase(VisaInstrument):
         try:
             active_trace = self.active_trace()
         except errors.VisaIOError as e:
+            self.log.debug("Exception on querying active trace: %r", e)
             if e.error_code == errors.StatusCode.error_timeout:
+                self.log.info("No active trace on PNA")
                 active_trace = None
             else:
                 raise
