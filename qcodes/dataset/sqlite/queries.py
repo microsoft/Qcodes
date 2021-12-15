@@ -306,7 +306,7 @@ def get_parameter_data_for_one_paramtree(
     # faster than transposing the data using np.array.transpose
     res_t = map(list, zip(*data))
 
-    for paramspec, column_data in zip_longest(paramspecs, res_t, fillvalue=[]):
+    for paramspec, column_data in zip_longest(paramspecs, res_t, fillvalue=tuple()):
         if paramspec.type == "numeric":
             # there is no reliable way to
             # tell the difference between a float and and int loaded
