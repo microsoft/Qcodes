@@ -1,10 +1,7 @@
-import itertools
-import os
 import random
 import re
 from copy import copy
 from typing import Dict, List, Optional, Sequence, Tuple
-from unittest.mock import patch
 
 import hypothesis.strategies as hst
 import numpy as np
@@ -12,22 +9,25 @@ import pytest
 from hypothesis import HealthCheck, given, settings
 
 import qcodes as qc
-from qcodes import (experiments, load_by_counter, load_by_id, new_data_set,
-                    new_experiment)
+from qcodes import (
+    experiments,
+    load_by_counter,
+    load_by_id,
+    new_data_set,
+    new_experiment,
+)
 from qcodes.dataset.data_set import CompletedError, DataSet
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.guids import parse_guid
-from qcodes.dataset.sqlite.connection import path_to_dbfile
+from qcodes.dataset.sqlite.connection import path_to_dbfile, atomic
 from qcodes.dataset.sqlite.database import get_DB_location
-from qcodes.dataset.sqlite.queries import _unicode_categories
+from qcodes.dataset.sqlite.queries import _unicode_categories, _rewrite_timestamps
 from qcodes.tests.common import error_caused_by
-from qcodes.tests.dataset.test_links import generate_some_links
-from qcodes.utils.deprecate import QCoDeSDeprecationWarning
-from qcodes.utils.types import numpy_ints, numpy_floats
-
 from qcodes.tests.dataset.helper_functions import verify_data_dict
+from qcodes.tests.dataset.test_links import generate_some_links
+from qcodes.utils.types import numpy_floats, numpy_ints
 
 n_experiments = 0
 
@@ -198,6 +198,22 @@ def test_timestamps_are_none():
     assert isinstance(ds.run_timestamp(), str)
 
 
+@pytest.mark.usefixtures('experiment')
+def test_integer_timestamps_in_database_are_supported():
+    ds = DataSet()
+
+    ds.mark_started()
+    ds.mark_completed()
+
+    with atomic(ds.conn) as conn:
+        _rewrite_timestamps(conn, ds.run_id, 42, 69)
+
+    assert isinstance(ds.run_timestamp_raw, float)
+    assert isinstance(ds.completed_timestamp_raw, float)
+    assert isinstance(ds.run_timestamp(), str)
+    assert isinstance(ds.completed_timestamp(), str)
+
+
 def test_dataset_read_only_properties(dataset):
     read_only_props = ['run_id', 'path_to_db', 'name', 'table_name', 'guid',
                        'number_of_results', 'counter', 'parameters',
@@ -275,7 +291,7 @@ def test_add_experiments(experiment_name,
     expected_ds_counter = 1
     assert loaded_dataset.name == dataset_name
     assert loaded_dataset.counter == expected_ds_counter
-    assert loaded_dataset.table_name == "{}-{}-{}".format(dataset_name,
+    assert loaded_dataset.table_name == "{}-{}-{}".format("results",
                                                           exp.exp_id,
                                                           loaded_dataset.counter)
     expected_ds_counter += 1
@@ -284,7 +300,7 @@ def test_add_experiments(experiment_name,
     loaded_dataset = load_by_id(dsid)
     assert loaded_dataset.name == dataset_name
     assert loaded_dataset.counter == expected_ds_counter
-    assert loaded_dataset.table_name == "{}-{}-{}".format(dataset_name,
+    assert loaded_dataset.table_name == "{}-{}-{}".format("results",
                                                           exp.exp_id,
                                                           loaded_dataset.counter)
 
@@ -667,18 +683,25 @@ def test_metadata(experiment, request):
     request.addfinalizer(loaded_ds2.conn.close)
     assert loaded_ds2.metadata == metadata2
 
-    badtag = 'lex luthor'
-    sorry_metadata = {'superman': 1, badtag: None, 'spiderman': 'two'}
-
-    bad_tag_msg = (f'Tag {badtag} has value None. '
-                   ' That is not a valid metadata value!')
-
+    bad_tag = "lex luthor"
+    bad_tag_msg = (
+      f"Tag {bad_tag} is not a valid tag. "
+      "Use only alphanumeric characters and underscores!"
+    )
     with pytest.raises(RuntimeError,
-                       match='Rolling back due to unhandled exception') as e:
-        for tag, value in sorry_metadata.items():
-            ds1.add_metadata(tag, value)
+                       match="Rolling back due to unhandled exception") as e1:
+        ds1.add_metadata(bad_tag, "value")
+    assert error_caused_by(e1, bad_tag_msg)
 
-    assert error_caused_by(e, bad_tag_msg)
+    good_tag = "tag"
+    none_value_msg = (
+      f"Tag {good_tag} has value None. "
+      "That is not a valid metadata value!"
+    )
+    with pytest.raises(RuntimeError,
+                       match="Rolling back due to unhandled exception") as e2:
+        ds1.add_metadata(good_tag, None)
+    assert error_caused_by(e2, none_value_msg)
 
 
 def test_the_same_dataset_as(some_interdeps, experiment):
@@ -1260,134 +1283,12 @@ def limit_data_to_start_end(start, end, input_names, expected_names,
     return start, end
 
 
-@pytest.mark.usefixtures('experiment')
-def test_write_data_to_text_file_save(tmp_path_factory):
-    dataset = new_data_set("dataset")
-    xparam = ParamSpecBase("x", 'numeric')
-    yparam = ParamSpecBase("y", 'numeric')
-    idps = InterDependencies_(dependencies={yparam: (xparam,)})
-    dataset.set_interdependencies(idps)
+@pytest.mark.usefixtures("experiment")
+def test_empty_ds_parameters():
 
-    dataset.mark_started()
-    results = [{'x': 0, 'y': 1}]
-    dataset.add_results(results)
-    dataset.mark_completed()
-
-    path = str(tmp_path_factory.mktemp("write_data_to_text_file_save"))
-    dataset.write_data_to_text_file(path=path)
-    assert os.listdir(path) == ['y.dat']
-    with open(os.path.join(path, "y.dat")) as f:
-        assert f.readlines() == ['0.0\t1.0\n']
-
-
-@pytest.mark.usefixtures('experiment')
-def test_write_data_to_text_file_save_multi_keys(tmp_path_factory):
-    dataset = new_data_set("dataset")
-    xparam = ParamSpecBase("x", 'numeric')
-    yparam = ParamSpecBase("y", 'numeric')
-    zparam = ParamSpecBase("z", 'numeric')
-    idps = InterDependencies_(
-        dependencies={yparam: (xparam,), zparam: (xparam,)})
-    dataset.set_interdependencies(idps)
-
-    dataset.mark_started()
-    results = [{'x': 0, 'y': 1, 'z': 2}]
-    dataset.add_results(results)
-    dataset.mark_completed()
-    tmp_path = tmp_path_factory.mktemp("data_to_text_file_save_multi_keys")
-    path = str(tmp_path)
-    dataset.write_data_to_text_file(path=path)
-    assert sorted(os.listdir(path)) == ['y.dat', 'z.dat']
-    with open(os.path.join(path, "y.dat")) as f:
-        assert f.readlines() == ['0.0\t1.0\n']
-    with open(os.path.join(path, "z.dat")) as f:
-        assert f.readlines() == ['0.0\t2.0\n']
-
-
-@pytest.mark.usefixtures('experiment')
-def test_write_data_to_text_file_save_single_file(tmp_path_factory):
-    dataset = new_data_set("dataset")
-    xparam = ParamSpecBase("x", 'numeric')
-    yparam = ParamSpecBase("y", 'numeric')
-    zparam = ParamSpecBase("z", 'numeric')
-    idps = InterDependencies_(
-        dependencies={yparam: (xparam,), zparam: (xparam,)})
-    dataset.set_interdependencies(idps)
-
-    dataset.mark_started()
-    results = [{'x': 0, 'y': 1, 'z': 2}]
-    dataset.add_results(results)
-    dataset.mark_completed()
-    tmp_path = tmp_path_factory.mktemp("to_text_file_save_single_file")
-    path = str(tmp_path)
-    dataset.write_data_to_text_file(path=path, single_file=True,
-                                    single_file_name='yz')
-    assert os.listdir(path) == ['yz.dat']
-    with open(os.path.join(path, "yz.dat")) as f:
-        assert f.readlines() == ['0.0\t1.0\t2.0\n']
-
-
-@pytest.mark.usefixtures('experiment')
-def test_write_data_to_text_file_length_exception(tmp_path):
-    dataset = new_data_set("dataset")
-    xparam = ParamSpecBase("x", 'numeric')
-    yparam = ParamSpecBase("y", 'numeric')
-    zparam = ParamSpecBase("z", 'numeric')
-    idps = InterDependencies_(
-        dependencies={yparam: (xparam,), zparam: (xparam,)})
-    dataset.set_interdependencies(idps)
-
-    dataset.mark_started()
-    results1 = [{'x': 0, 'y': 1}]
-    results2 = [{'x': 0, 'z': 2}]
-    results3 = [{'x': 1, 'z': 3}]
-    dataset.add_results(results1)
-    dataset.add_results(results2)
-    dataset.add_results(results3)
-    dataset.mark_completed()
-
-    temp_dir = str(tmp_path)
-    with pytest.raises(Exception, match='different length'):
-        dataset.write_data_to_text_file(path=temp_dir, single_file=True,
-                                        single_file_name='yz')
-
-
-@pytest.mark.usefixtures('experiment')
-def test_write_data_to_text_file_name_exception(tmp_path):
-    dataset = new_data_set("dataset")
-    xparam = ParamSpecBase("x", 'numeric')
-    yparam = ParamSpecBase("y", 'numeric')
-    zparam = ParamSpecBase("z", 'numeric')
-    idps = InterDependencies_(
-        dependencies={yparam: (xparam,), zparam: (xparam,)})
-    dataset.set_interdependencies(idps)
-
-    dataset.mark_started()
-    results = [{'x': 0, 'y': 1, 'z': 2}]
-    dataset.add_results(results)
-    dataset.mark_completed()
-
-    temp_dir = str(tmp_path)
-    with pytest.raises(Exception, match='desired file name'):
-        dataset.write_data_to_text_file(path=temp_dir, single_file=True,
-                                        single_file_name=None)
-
-
-def test_same_setpoint_warning_for_df_and_xarray(different_setpoint_dataset):
-
-    warning_message = (
-        "Independent parameter setpoints are not equal. "
-        "Check concatenated output carefully."
-    )
-
-    with pytest.warns(UserWarning, match=warning_message):
-        different_setpoint_dataset.to_pandas_dataframe()
-
-    with pytest.warns(UserWarning, match=warning_message):
-        different_setpoint_dataset.to_xarray_dataset()
-
-    with pytest.warns(UserWarning, match=warning_message):
-        different_setpoint_dataset.cache.to_pandas_dataframe()
-
-    with pytest.warns(UserWarning, match=warning_message):
-        different_setpoint_dataset.cache.to_xarray_dataset()
+    ds = new_data_set("mydataset")
+    assert ds.parameters is None
+    ds.mark_started()
+    assert ds.parameters is None
+    ds.mark_completed()
+    assert ds.parameters is None

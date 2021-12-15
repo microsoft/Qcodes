@@ -19,29 +19,42 @@ list of parameters to monitor:
 """
 
 
-import sys
+import asyncio
+import json
 import logging
 import os
-import time
-import json
-from contextlib import suppress
-from typing import Dict, Union, Any, Optional, Sequence, Callable, Awaitable
-from collections import defaultdict
-
-import asyncio
-from asyncio import CancelledError
-from threading import Thread, Event
-
 import socketserver
+import sys
+import time
 import webbrowser
+from asyncio import CancelledError
+from collections import defaultdict
+from contextlib import suppress
+from threading import Event, Thread
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    Optional,
+    Sequence,
+    Union,
+)
+
 import websockets
 
-from qcodes.instrument.parameter import Parameter
+try:
+    from websockets.legacy.server import serve
+except ImportError:
+    # fallback for websockets < 9
+    # for the same reason we only support typechecking with websockets 9
+    from websockets import serve  # type:ignore[attr-defined,no-redef]
 
-if sys.version_info < (3, 7):
-    all_tasks = asyncio.Task.all_tasks
-else:
-    all_tasks = asyncio.all_tasks
+if TYPE_CHECKING:
+    from websockets.legacy.server import WebSocketServerProtocol, WebSocketServer
+
+from qcodes.instrument.parameter import Parameter
 
 WEBSOCKET_PORT = 5678
 SERVER_PORT = 3000
@@ -88,11 +101,11 @@ def _get_metadata(*parameters: Parameter) -> Dict[str, Any]:
 
 
 def _handler(parameters: Sequence[Parameter], interval: float) \
-        -> Callable[[websockets.WebSocketServerProtocol, str], Awaitable[None]]:
+        -> Callable[["WebSocketServerProtocol", str], Awaitable[None]]:
     """
     Return the websockets server handler.
     """
-    async def server_func(websocket: websockets.WebSocketServerProtocol, _: str) -> None:
+    async def server_func(websocket: "WebSocketServerProtocol", _: str) -> None:
         """
         Create a websockets handler that sends parameter values to a listener
         every "interval" seconds.
@@ -141,7 +154,7 @@ class Monitor(Thread):
                                 f"Parameters, not {type(parameter)}")
 
         self.loop: Optional[asyncio.AbstractEventLoop] = None
-        self.server: Optional[websockets.WebSocketServer] = None
+        self.server: Optional["WebSocketServer"] = None
         self._parameters = parameters
         self.loop_is_closed = Event()
         self.server_is_started = Event()
@@ -168,7 +181,7 @@ class Monitor(Thread):
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
         try:
-            server_start = websockets.serve(self.handler, '127.0.0.1',
+            server_start = serve(self.handler, '127.0.0.1',
                                             WEBSOCKET_PORT, close_timeout=1)
             self.server = self.loop.run_until_complete(server_start)
             self.server_is_started.set()
@@ -180,7 +193,7 @@ class Monitor(Thread):
         finally:
             log.debug("loop stopped")
             log.debug("Pending tasks at close: %r",
-                      all_tasks(self.loop))
+                      asyncio.all_tasks(self.loop))
             self.loop.close()
             log.debug("loop closed")
             self.loop_is_closed.set()
@@ -212,7 +225,7 @@ class Monitor(Thread):
         log.debug("stopping loop")
         if self.loop is not None:
             log.debug("Pending tasks at stop: %r",
-                      all_tasks(self.loop))
+                      asyncio.all_tasks(self.loop))
             self.loop.stop()
 
     def join(self, timeout: Optional[float] = None) -> None:
@@ -258,18 +271,23 @@ class Monitor(Thread):
         webbrowser.open(f"http://localhost:{SERVER_PORT}")
 
 
-if __name__ == "__main__":
+def main() -> None:
     import http.server
+
     # If this file is run, create a simple webserver that serves a simple
     # website that can be used to view monitored parameters.
-    STATIC_DIR = os.path.join(os.path.dirname(__file__), 'dist')
-    os.chdir(STATIC_DIR)
+    static_dir = os.path.join(os.path.dirname(__file__), "dist")
+    os.chdir(static_dir)
     try:
         log.info("Starting HTTP Server at http://localhost:%i", SERVER_PORT)
         with socketserver.TCPServer(("", SERVER_PORT),
                                     http.server.SimpleHTTPRequestHandler) as httpd:
-            log.debug("serving directory %s", STATIC_DIR)
+            log.debug("serving directory %s", static_dir)
             webbrowser.open(f"http://localhost:{SERVER_PORT}")
             httpd.serve_forever()
     except KeyboardInterrupt:
         log.info("Shutting Down HTTP Server")
+
+
+if __name__ == "__main__":
+    main()

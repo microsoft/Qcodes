@@ -3,20 +3,22 @@ This module contains helper functions that provide information about how
 QCoDeS is installed and about what other packages are installed along with
 QCoDeS
 """
-import sys
-from typing import Dict, List, Optional
-import subprocess
 import json
 import logging
+import subprocess
+import sys
+from typing import Dict, List, Optional
+
+import pkg_resources
 import requirements
 
 if sys.version_info >= (3, 8):
-    from importlib.metadata import distribution, version, PackageNotFoundError
+    from importlib.metadata import PackageNotFoundError, distribution, version
 else:
     # 3.7 and earlier
     from importlib_metadata import distribution, version, PackageNotFoundError
-import qcodes
 
+import qcodes
 
 log = logging.getLogger(__name__)
 
@@ -48,7 +50,7 @@ def get_qcodes_version() -> str:
     """
     Get the version of the currently installed QCoDeS
     """
-    return qcodes.version.__version__
+    return qcodes.__version__
 
 
 def get_qcodes_requirements() -> List[str]:
@@ -81,3 +83,11 @@ def get_qcodes_requirements_versions() -> Dict[str, str]:
             req_versions[req] = "Not installed"
 
     return req_versions
+
+
+def get_all_installed_package_versions() -> Dict[str, str]:
+    """
+    Return a dictionary of the currently installed packages and their versions.
+    """
+    packages = pkg_resources.working_set
+    return {i.key: i.version for i in packages}

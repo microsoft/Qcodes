@@ -1,9 +1,15 @@
 import pytest
 
-from qcodes.instrument.parameter import Parameter, _BaseParameter
 import qcodes.utils.validators as vals
 from qcodes.instrument.function import Function
-from .conftest import GettableParam, blank_instruments, named_instrument
+from qcodes.instrument.parameter import Parameter, _BaseParameter
+
+from .conftest import (
+    GettableParam,
+    VirtualParameter,
+    blank_instruments,
+    named_instrument
+)
 
 
 def test_no_name():
@@ -175,3 +181,11 @@ def test_unknown_args_to_baseparameter_raises():
         _ = _BaseParameter(name='Foo',
                            instrument=None,
                            snapshotable=False)
+
+
+def test_underlying_instrument_for_virtual_parameter():
+    p = GettableParam('base_param', vals=vals.Numbers())
+    p._instrument = named_instrument
+    vp = VirtualParameter('test_param', param=p)
+
+    assert vp.underlying_instrument is named_instrument

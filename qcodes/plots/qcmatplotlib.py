@@ -2,20 +2,20 @@
 Live plotting in Jupyter notebooks
 using the nbagg backend and matplotlib
 """
-from collections.abc import Mapping
-from collections.abc import Sequence
-from functools import partial
+from collections.abc import Mapping, Sequence
 from copy import deepcopy
+from functools import partial
 
 import matplotlib.pyplot as plt
-from matplotlib import ticker
 import numpy as np
+from matplotlib import ticker
 from matplotlib.transforms import Bbox
-from numpy.ma import masked_invalid, getmask
+from numpy.ma import getmask, masked_invalid
 
-from .base import BasePlot
 import qcodes
 from qcodes.data.data_array import DataArray
+
+from .base import BasePlot
 
 
 class MatPlot(BasePlot):
@@ -452,7 +452,7 @@ class MatPlot(BasePlot):
         to avoid prefixes on combined or non standard units
         """
         def scale_formatter(i, pos, scale):
-            return "{:g}".format(i * scale)
+            return f"{i * scale:g}"
 
         for i, subplot in enumerate(self.subplots):
             traces = [trace for trace in self.traces if trace['config'].get('subplot', None) == i+1]

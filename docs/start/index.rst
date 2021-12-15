@@ -10,9 +10,9 @@ Getting Started
 Requirements
 ------------
 
-You need a working python 3.x installation to be able to use QCoDeS. We highly
-recommend installing Miniconda, which takes care of installing Python and
-managing packages. In the following it will be assumed that you use Miniconda.
+You need a working python 3.7 installation, as the minimum Python version, to be able to
+use QCoDeS. We highly recommend installing Miniconda, which takes care of installing Python
+and managing packages. In the following it will be assumed that you use Miniconda.
 Download and install it from `here <https://docs.conda.io/en/latest/miniconda.html>`_. Make
 sure to download the latest version with python 3.7 or newer.
 
@@ -41,12 +41,12 @@ Here type in the prompt:
 
 .. code:: bash
 
-    conda create -n qcodes python=3.8
+    conda create -n qcodes python=3.9
     conda activate qcodes
     pip install qcodes
 
 The first line creates a new conda environment that is called *qcodes*
-with python 3.8 (QCoDeS also supports 3.7 and 3.9). The second line activates
+with python 3.9 (QCoDeS also supports 3.7 and 3.8). The second line activates
 this freshly created environment, so that the command in the third line will
 install qcodes for this environment.
 
@@ -80,7 +80,7 @@ Clone the QCoDeS repository from GitHub from https://github.com/QCoDeS/Qcodes
 
 .. code:: bash
 
-    conda create qcodesdev python=3.8
+    conda create qcodesdev python=3.9
     conda activate qcodesdev
 
 Finally install QCoDeS add the repository via
@@ -102,10 +102,16 @@ dependencies. This can be done by installing QCoDeS using the `test` extra targe
 Other dependencies
 ~~~~~~~~~~~~~~~~~~
 
-You probably also wants to install National Instruments VISA from
-`here <https://www.ni.com/visa/>`__. To download it
-you will need to create an account on the National Instruments homepage but
-the download is free of charge.
+To connect to many instruments (All instruments that are subclasses of
+``VisaInstrument`` ) you need a working VISA implementation installed. There
+are several of these available from instrument vendors and other sources.
+
+We recommend you to install the Keysight IO Libraries Suite from `here
+<https://www.keysight.com/find/iosuite>`__. To download it, you will need to
+provide your e-mail id, name and location but the download is free of charge.
+
+See the `PyVISA documentation <https://pyvisa.readthedocs
+.io/en/latest/advanced/backends.html>`_ for more information.
 
 Updating QCoDeS
 ~~~~~~~~~~~~~~~
@@ -185,24 +191,55 @@ are two widely  used options:
  - **Jupyter**, a browser based notebook
  - **Spyder**, an integrated development environment
 
-Both can be installed using conda or pip.
-
-To start either of them you can use the shortcuts in the start menu under
-*Anaconda3* with a trailing *(qcodes)*.
-
-For other options you can launch a terminal either via the *Anaconda Navigator*
-by selecting *qcodes* in the *Environments tab* and left-clicking on the *play*
-button or by entering
+Both can be installed using ``conda`` or ``pip`` in the created ``conda`` environment
+for QCoDeS. Then installation can be simply done by activating the QCoDeS environment
+in the terminal and running the following:
 
 .. code:: bash
 
-    conda activate qcodes
+    pip install spyder
+    pip install jupyter
 
-in the *Anaconda prompt*
+If you prefer *jupyterlab* over classic *jupyter notebook*, you should install it
+separately:
 
-From the terminal you can then start any other application, such as *IPython* or
+.. code:: bash
+
+    pip install jupyterlab
+
+If you installed QCoDeS using conda-forge, you may want to install above using
+``conda install`` rather than ``pip install``. After installation, they could be easily
+called in your QCoDeS-activated ``conda`` terminal.
+
+For running spyder:
+
+.. code:: bash
+
+    spyder
+
+or for jupyter notebook:
+
+.. code:: bash
+
+    jupyter notebook
+
+or jupyter lab:
+
+.. code:: bash
+
+    jupyter lab
+
+For other options from the terminal you can activate the QCoDeS in that terminal
+then start any other application, such as *IPython* or
 just plain old *Python*.
 
+It is also possible to install *Anaconda* for managing ``conda`` environments, however,
+you should be mindful about using it as *Anaconda* installs a wide verity of packages in
+the ``root`` environment upon installation. It comes with a *GUI* called *Anaconda Navigator*
+to work with. If you rather to use this *GUI* over the ``conda`` terminal, make sure to select
+the QCoDeS environment in the program, then you could be able to run the packages installed
+in that environment. The reason is because by default, *Anaconda Navigator* starts with the
+``base(root)`` environment.
 
 Getting started
 ---------------

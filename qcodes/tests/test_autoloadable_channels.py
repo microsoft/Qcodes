@@ -5,13 +5,16 @@ instrument. Please note that `channel` in this context does not necessarily
 mean a physical instrument channel, but rather an instrument sub-module.
 """
 
-from typing import List, Union, Any, Dict, Callable, Optional
-import pytest
 import re
+from typing import Any, Callable, Dict, List, Optional, Union
+
+import pytest
 
 from qcodes import Instrument
 from qcodes.instrument.channel import (
-    AutoLoadableInstrumentChannel, AutoLoadableChannelList, InstrumentChannel
+    AutoLoadableChannelList,
+    AutoLoadableInstrumentChannel,
+    InstrumentChannel,
 )
 
 
@@ -76,9 +79,8 @@ class MockBackend(MockBackendBase):
                 lambda chn: self._greetings[chn] + " from channel " + str(chn),
             r":INST:CHN:ADD (\d), (.+)": self._add_channel,
             r":INST:CHN:DEL (\d)": self._channel_catalog.remove,
-            r":INST:CHN:CAT": lambda: ",".join([
-                str(i) for i in self._channel_catalog]),
-            r":INST:CHN(\d):GRT":  self._greetings.get
+            r":INST:CHN:CAT": lambda: ",".join(str(i) for i in self._channel_catalog),
+            r":INST:CHN(\d):GRT": self._greetings.get,
         }
 
     def _add_channel(self, chn: int, greeting: str)->None:

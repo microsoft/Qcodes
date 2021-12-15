@@ -1,15 +1,17 @@
 """ Base class for the channel of an instrument """
-from typing import (
-    List, Union, Optional, Dict, Sequence,
-    cast, Any, Tuple, Callable,
-)
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union, cast
 
-from .base import InstrumentBase, Instrument
-from .parameter import (MultiParameter, ArrayParameter, Parameter,
-    ParamRawDataType, Iterator)
-from ..utils.validators import Validator
-from ..utils.metadata import Metadatable
 from ..utils.helpers import full_class
+from ..utils.metadata import Metadatable
+from ..utils.validators import Validator
+from .base import Instrument, InstrumentBase
+from .parameter import (
+    ArrayParameter,
+    Iterator,
+    MultiParameter,
+    Parameter,
+    ParamRawDataType,
+)
 
 
 class InstrumentChannel(InstrumentBase):
@@ -39,7 +41,7 @@ class InstrumentChannel(InstrumentBase):
         # (see https://github.com/QCoDeS/Qcodes/issues/1140 for a nice table)
         # this has been a confusion about names. don't use name but
         # full_name, or short_name.
-        self._name = "{}_{}".format(parent.name, str(name))
+        self._name = f"{parent.name}_{str(name)}"
 
     def __repr__(self) -> str:
         """Custom repr to give parent information"""
@@ -361,6 +363,29 @@ class ChannelList(Metadatable):
         self._channels = cast(List[InstrumentChannel], self._channels)
         self._channels.insert(index, obj)
 
+    def get_channel_by_name(
+        self, *names: str
+    ) -> Union[InstrumentChannel, "ChannelList"]:
+        """
+        Get a channel by name, or a ChannelList if multiple names are given.
+
+        Args:
+            *names: channel names
+        """
+        if len(names) == 0:
+            raise Exception("one or more names must be given")
+        if len(names) == 1:
+            return self._channel_mapping[names[0]]
+        selected_channels = tuple(self._channel_mapping[name] for name in names)
+        return ChannelList(
+            self._parent,
+            self._name,
+            self._chan_type,
+            selected_channels,
+            self._snapshotable,
+            self._paramclass,
+        )
+
     def get_validator(self) -> 'ChannelListValidator':
         """
         Returns a validator that checks that the returned object is a channel
@@ -469,18 +494,21 @@ class ChannelList(Metadatable):
             else:
                 shapes = tuple(() for _ in self._channels)
 
-            param = self._paramclass(self._channels,
-                                     param_name=name,
-                                     name=f"Multi_{name}",
-                                     names=names,
-                                     shapes=shapes,
-                                     instrument=self._parent,
-                                     labels=labels,
-                                     units=units,
-                                     setpoints=setpoints,
-                                     setpoint_names=setpoint_names,
-                                     setpoint_units=setpoint_units,
-                                     setpoint_labels=setpoint_labels)
+            param = self._paramclass(
+                self._channels,
+                param_name=name,
+                name=f"Multi_{name}",
+                names=names,
+                shapes=shapes,
+                instrument=self._parent,
+                labels=labels,
+                units=units,
+                setpoints=setpoints,
+                setpoint_names=setpoint_names,
+                setpoint_units=setpoint_units,
+                setpoint_labels=setpoint_labels,
+                bind_to_instrument=False,
+            )
             return param
 
         # Check if this is a valid function

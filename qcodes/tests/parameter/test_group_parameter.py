@@ -4,8 +4,8 @@ from typing import Optional
 
 import pytest
 
-from qcodes.instrument.group_parameter import GroupParameter, Group
 from qcodes import Instrument
+from qcodes.instrument.group_parameter import Group, GroupParameter
 
 
 @pytest.fixture(autouse=True)
@@ -58,11 +58,11 @@ class Dummy(Instrument):
     def write(self, cmd: str) -> None:
         result = re.search("CMD (.*), (.*)", cmd)
         assert result is not None
-        self._a, self._b = [int(i) for i in result.groups()]
+        self._a, self._b = (int(i) for i in result.groups())
 
     def ask(self, cmd: str) -> str:
         assert cmd == self._get_cmd
-        return ",".join([str(i) for i in [self._a, self._b]])
+        return ",".join(str(i) for i in [self._a, self._b])
 
 
 def test_sanity():

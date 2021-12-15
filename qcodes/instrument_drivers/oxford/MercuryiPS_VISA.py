@@ -1,8 +1,8 @@
-import time
-from functools import partial
-from typing import Dict, Union, Optional, Callable, List, cast, Any
 import logging
+import time
 from distutils.version import LooseVersion
+from functools import partial
+from typing import Any, Callable, Dict, List, Optional, Union, cast
 
 import numpy as np
 
@@ -39,9 +39,9 @@ def _signal_parser(our_scaling: float, response: str) -> float:
     numchars = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '-']
 
     response = _response_preparser(response)
-    digits = ''.join([d for d in response if d in numchars])
-    scale_and_unit = response[len(digits):]
-    if scale_and_unit == '':
+    digits = "".join(d for d in response if d in numchars)
+    scale_and_unit = response[len(digits) :]
+    if scale_and_unit == "":
         their_scaling: float = 1
     elif scale_and_unit[0] in scale_to_factor.keys():
         their_scaling = scale_to_factor[scale_and_unit[0]]
