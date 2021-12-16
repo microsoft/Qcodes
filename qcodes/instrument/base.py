@@ -257,9 +257,8 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             except:
                 # really log this twice. Once verbose for the UI and once
                 # at lower level with more info for file based loggers
-                self.log.warning(f"Snapshot: Could not update "
-                                 f"parameter: {name}")
-                self.log.info(f"Details for Snapshot:", exc_info=True)
+                self.log.warning("Snapshot: Could not update parameter: %s", name)
+                self.log.info("Details for Snapshot:", exc_info=True)
                 snap['parameters'][name] = param.snapshot(update=False)
 
         for attr in set(self._meta_attrs):
@@ -443,9 +442,11 @@ class AbstractInstrumentMeta(ABCMeta):
     instance is returned to the caller.
 
     Instead we use the fact that `__new__` and `__init__` are called inside
-    `type.__call__` (https://github.com/python/cpython/blob/main/Objects/typeobject.c#L1077)
+    `type.__call__`
+    (https://github.com/python/cpython/blob/main/Objects/typeobject.c#L1077)
     which we will overload to insert our own custom code AFTER `__init__` is
-    complete.
+    complete. Note this is part of the spec and will work in alternate python
+    implementations like pypy too.
 
     Note: Because we want AbstractInstrument to subclass ABC, we subclass
     `ABCMeta` instead of `type`.
@@ -609,12 +610,11 @@ class Instrument(InstrumentBase, AbstractInstrument):
         log.info("Closing all registered instruments")
         for inststr in list(cls._all_instruments):
             try:
-                inst: Instrument = cls.find_instrument(inststr)
-                log.info(f"Closing {inststr}")
+                inst: "Instrument" = cls.find_instrument(inststr)
+                log.info("Closing %s", inststr)
                 inst.close()
             except:
-                log.exception(f"Failed to close {inststr}, ignored")
-                pass
+                log.exception("Failed to close %s, ignored", inststr)
 
     @classmethod
     def record_instance(cls, instance: 'Instrument') -> None:
@@ -716,10 +716,12 @@ class Instrument(InstrumentBase, AbstractInstrument):
 
         if not isinstance(ins, internal_instrument_class):
             raise TypeError(
-                f"Instrument {name} is {type(ins)} but {internal_instrument_class} was requested"
+                f"Instrument {name} is {type(ins)} but "
+                f"{internal_instrument_class} was requested"
             )
-        # at this stage we have checked that the instrument is either of type instrument_class
-        # or Instrument if that is None. It is therefor safe to cast here.
+        # at this stage we have checked that the instrument is either of
+        # type instrument_class or Instrument if that is None. It is
+        # therefore safe to cast here.
         ins = cast(T, ins)
         return ins
 
@@ -807,8 +809,8 @@ class Instrument(InstrumentBase, AbstractInstrument):
             cmd: The string to send to the instrument.
         """
         raise NotImplementedError(
-            'Instrument {} has not defined a write method'.format(
-                type(self).__name__))
+            f"Instrument {type(self).__name__} has not defined a write method"
+        )
 
     def ask(self, cmd: str) -> str:
         """
@@ -850,8 +852,8 @@ class Instrument(InstrumentBase, AbstractInstrument):
             cmd: The string to send to the instrument.
         """
         raise NotImplementedError(
-            'Instrument {} has not defined an ask method'.format(
-                type(self).__name__))
+            f"Instrument {type(self).__name__} has not defined an ask method"
+        )
 
 
 def find_or_create_instrument(
