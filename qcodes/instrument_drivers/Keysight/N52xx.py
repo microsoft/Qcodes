@@ -37,21 +37,24 @@ class PNAAxisParameter(Parameter):
         """
         Return the axis values, with values retrieved from the parent instrument
         """
-        return np.linspace(self._startparam(), self._stopparam(), self._pointsparam())
+        return np.linspace(self._startparam(), self._stopparam(), self._pointsparam())  # type: ignore
+
 
 class PNALogAxisParamter(PNAAxisParameter):
     def get_raw(self) -> np.ndarray:
         """
         Return the axis values on a log scale, with values retrieved from the parent instrument
         """
-        return np.geomspace(self._startparam(), self._stopparam(), self._pointsparam())
+        return np.geomspace(self._startparam(), self._stopparam(), self._pointsparam())  # type: ignore
+
 
 class PNATimeAxisParameter(PNAAxisParameter):
     def get_raw(self) -> np.ndarray:
         """
         Return the axis values on a time scale, with values retrieved from the parent instrument
         """
-        return np.linspace(0, self._stopparam(), self._pointsparam())
+        return np.linspace(0, self._stopparam(), self._pointsparam())  # type: ignore
+
 
 class PNASweep(ParameterWithSetpoints):
     def __init__(self,
