@@ -46,6 +46,7 @@ class DelayedKeyboardInterrupt:
         # The typing of signals seems to be inconsistent
         # since handlers must be types to take an optional frame
         # but default_int_handler does not take None.
+        # see https://github.com/python/typeshed/pull/6599
         frame = cast(FrameType, frame)
         signal.default_int_handler(sig, frame)
 
