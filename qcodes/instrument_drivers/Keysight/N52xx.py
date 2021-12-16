@@ -43,7 +43,8 @@ class PNAAxisParameter(Parameter):
 class PNALogAxisParamter(PNAAxisParameter):
     def get_raw(self) -> np.ndarray:
         """
-        Return the axis values on a log scale, with values retrieved from the parent instrument
+        Return the axis values on a log scale, with values retrieved from
+        the parent instrument
         """
         return np.geomspace(self._startparam(), self._stopparam(), self._pointsparam())  # type: ignore
 
@@ -51,20 +52,31 @@ class PNALogAxisParamter(PNAAxisParameter):
 class PNATimeAxisParameter(PNAAxisParameter):
     def get_raw(self) -> np.ndarray:
         """
-        Return the axis values on a time scale, with values retrieved from the parent instrument
+        Return the axis values on a time scale, with values retrieved from
+        the parent instrument
         """
         return np.linspace(0, self._stopparam(), self._pointsparam())  # type: ignore
 
 
-class PNASweep(ParameterWithSetpoints):
-    def __init__(self,
-                 name: str,
-                 instrument: 'PNABase',
-                 **kwargs: Any) -> None:
+class FormattedSweep(ParameterWithSetpoints):
+    """
+    Mag will run a sweep, including averaging, before returning data.
+    As such, wait time in a loop is not needed.
+    """
 
-        super().__init__(name,
-                         instrument=instrument,
-                         **kwargs)
+    def __init__(
+        self,
+        name: str,
+        instrument: "PNABase",
+        sweep_format: str,
+        label: str,
+        unit: str,
+        memory: bool = False,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(name, instrument=instrument, label=label, unit=unit, **kwargs)
+        self.sweep_format = sweep_format
+        self.memory = memory
 
     @property
     def setpoints(self) -> Sequence[_BaseParameter]:
@@ -93,27 +105,6 @@ class PNASweep(ParameterWithSetpoints):
         figure it out on the fly.
         """
         pass
-
-
-class FormattedSweep(PNASweep):
-    """
-    Mag will run a sweep, including averaging, before returning data.
-    As such, wait time in a loop is not needed.
-    """
-
-    def __init__(
-        self,
-        name: str,
-        instrument: "PNABase",
-        sweep_format: str,
-        label: str,
-        unit: str,
-        memory: bool = False,
-        **kwargs: Any,
-    ) -> None:
-        super().__init__(name, instrument=instrument, label=label, unit=unit, **kwargs)
-        self.sweep_format = sweep_format
-        self.memory = memory
 
     def get_raw(self) -> Sequence[float]:
         if self.instrument is None:
