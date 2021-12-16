@@ -12,7 +12,12 @@ from qcodes.instrument.base import Instrument, InstrumentBase, find_or_create_in
 from qcodes.instrument.function import Function
 from qcodes.instrument.parameter import Parameter
 
-from .instrument_mocks import DummyInstrument, MockMetaParabola, MockParabola
+from .instrument_mocks import (
+    DummyFailingInstrument,
+    DummyInstrument,
+    MockMetaParabola,
+    MockParabola,
+)
 
 
 @pytest.fixture(name='testdummy', scope='function')
@@ -59,6 +64,15 @@ def test_check_instances(testdummy):
     assert Instrument.instances() == []
     assert DummyInstrument.instances() == [testdummy]
     assert testdummy.instances() == [testdummy]
+
+
+def test_instrument_fail(close_before_and_after):
+    with pytest.raises(RuntimeError):
+        instr = DummyFailingInstrument(name="failinginstrument")
+
+    assert Instrument.instances() == []
+    assert DummyFailingInstrument.instances() == []
+    assert Instrument._all_instruments == {}
 
 
 def test_attr_access(testdummy):

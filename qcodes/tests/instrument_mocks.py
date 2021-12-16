@@ -136,6 +136,23 @@ class DummyInstrument(Instrument):
             )
 
 
+class DummyFailingInstrument(Instrument):
+    def __init__(self, name: str = "dummy", **kwargs):
+
+        """
+        Create a dummy instrument that fails on initialization
+        that can be used for testing
+
+        Args:
+            name: name for the instrument
+            gates: list of names that is used to create parameters for
+                            the instrument
+        """
+        super().__init__(name, **kwargs)
+
+        raise RuntimeError("Failed to create instrument")
+
+
 class DummyAttrInstrument(Instrument):
     def __init__(self, name: str = "dummy", **kwargs: Any):
 
