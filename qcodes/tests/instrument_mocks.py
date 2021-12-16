@@ -137,7 +137,7 @@ class DummyInstrument(Instrument):
 
 
 class DummyFailingInstrument(Instrument):
-    def __init__(self, name: str = "dummy", **kwargs):
+    def __init__(self, name: str = "dummy", fail: bool = True, **kwargs):
 
         """
         Create a dummy instrument that fails on initialization
@@ -150,7 +150,8 @@ class DummyFailingInstrument(Instrument):
         """
         super().__init__(name, **kwargs)
 
-        raise RuntimeError("Failed to create instrument")
+        if fail:
+            raise RuntimeError("Failed to create instrument")
 
 
 class DummyAttrInstrument(Instrument):
