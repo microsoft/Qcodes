@@ -3,7 +3,7 @@ import logging
 import time
 import warnings
 import weakref
-from abc import ABC, abstractmethod
+from abc import ABC, ABCMeta, abstractmethod
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -434,7 +434,34 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 p.validate(value)
 
 
-class AbstractInstrument(ABC):
+class AbstractInstrumentMeta(ABCMeta):
+    """
+    Metaclass used to customize Instrument creation. We want to register the
+    instance iff __init__ successfully runs, however we can only do this if
+    we customize the instance initialization process, otherwise there is no
+    way to run `register_instance` after `__init__` but before the created
+    instance is returned to the caller.
+
+    Instead we use the fact that `__new__` and `__init__` are called inside
+    `type.__call__` (https://github.com/python/cpython/blob/main/Objects/typeobject.c#L1077)
+    which we will overload to insert our own custom code AFTER `__init__` is
+    complete.
+
+    Note: Because we want AbstractInstrument to subclass ABC, we subclass
+    `ABCMeta` instead of `type`.
+    """
+
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
+        """
+        Overloads `type.__call__` to add code that runs only if __init__ completes
+        successfully.
+        """
+        new_inst = super().__call__(*args, **kwargs)
+        new_inst.record_instance(new_inst)
+        return new_inst
+
+
+class AbstractInstrument(ABC, metaclass=AbstractInstrumentMeta):
     """ABC that is useful for defining mixin classes for Instrument class"""
     log: 'InstrumentLoggerAdapter'  # instrument logging
 
@@ -477,7 +504,6 @@ class Instrument(InstrumentBase, AbstractInstrument):
 
         self.add_parameter('IDN', get_cmd=self.get_idn,
                            vals=Anything())
-        self.record_instance(self)
 
     def get_idn(self) -> Dict[str, Optional[str]]:
         """
@@ -597,6 +623,8 @@ class Instrument(InstrumentBase, AbstractInstrument):
 
         Also records the instance in list of *all* instruments, and verifies
         that there are no other instruments with the same name.
+
+        This method is called after initialization of the instrument is completed.
 
         Args:
             instance: Instance to record.
