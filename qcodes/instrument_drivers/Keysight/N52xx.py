@@ -1,19 +1,29 @@
-from typing import Sequence, Union, Any
-import time
 import re
+import time
+from typing import Any, Sequence, Union
 
 import numpy as np
 from pyvisa import errors
 
-from qcodes import ParameterWithSetpoints, ChannelList, InstrumentChannel, VisaInstrument, Parameter
+from qcodes import (
+    ChannelList,
+    InstrumentChannel,
+    Parameter,
+    ParameterWithSetpoints,
+    VisaInstrument,
+)
+from qcodes.instrument.base import _BaseParameter
 from qcodes.utils.validators import Arrays, Bool, Enum, Ints, Numbers
 
+
 class PNAAxisParameter(Parameter):
-    def __init__(self,
-                 startparam: Parameter,
-                 stopparam: Parameter,
-                 pointsparam: Parameter,
-                 **kwargs):
+    def __init__(
+        self,
+        startparam: Parameter,
+        stopparam: Parameter,
+        pointsparam: Parameter,
+        **kwargs: Any,
+    ):
         """
         Axis parameter for traces from the PNA
         """
@@ -23,21 +33,21 @@ class PNAAxisParameter(Parameter):
         self._stopparam = stopparam
         self._pointsparam = pointsparam
 
-    def get_raw(self):
+    def get_raw(self) -> np.ndarray:
         """
         Return the axis values, with values retrieved from the parent instrument
         """
         return np.linspace(self._startparam(), self._stopparam(), self._pointsparam())
 
 class PNALogAxisParamter(PNAAxisParameter):
-    def get_raw(self):
+    def get_raw(self) -> np.ndarray:
         """
         Return the axis values on a log scale, with values retrieved from the parent instrument
         """
         return np.geomspace(self._startparam(), self._stopparam(), self._pointsparam())
 
 class PNATimeAxisParameter(PNAAxisParameter):
-    def get_raw(self):
+    def get_raw(self) -> np.ndarray:
         """
         Return the axis values on a time scale, with values retrieved from the parent instrument
         """
@@ -54,20 +64,22 @@ class PNASweep(ParameterWithSetpoints):
                          **kwargs)
 
     @property
-    def setpoints(self) -> Sequence[np.ndarray]:
+    def setpoints(self) -> Sequence[_BaseParameter]:
         """
         Overwrite setpoint parameter to ask the PNA what type of sweep
         """
         if self.instrument is None:
-            raise RuntimeError("Cannot return setpoints if not attached "
-                               "to instrument")
-        sweep_type = self.root_instrument.sweep_type()
+            raise RuntimeError(
+                "Cannot return setpoints if not attached " "to instrument"
+            )
+        root_instrument: "PNABase" = self.root_instrument  # type: ignore
+        sweep_type = root_instrument.sweep_type()
         if sweep_type == "LIN":
-            return (self.root_instrument.frequency_axis,)
+            return (root_instrument.frequency_axis,)
         elif sweep_type == "LOG":
-            return (self.root_instrument.frequency_log_axis,)
+            return (root_instrument.frequency_log_axis,)
         elif sweep_type == "CW":
-            return (self.root_instrument.time_axis,)
+            return (root_instrument.time_axis,)
         else:
             raise NotImplementedError(f"Axis for type {sweep_type} not implemented yet")
 
@@ -85,19 +97,18 @@ class FormattedSweep(PNASweep):
     Mag will run a sweep, including averaging, before returning data.
     As such, wait time in a loop is not needed.
     """
-    def __init__(self,
-                 name: str,
-                 instrument: 'PNABase',
-                 sweep_format: str,
-                 label: str,
-                 unit: str,
-                 memory: bool = False,
-                 **kwargs) -> None:
-        super().__init__(name,
-                         instrument=instrument,
-                         label=label,
-                         unit=unit,
-                         **kwargs)
+
+    def __init__(
+        self,
+        name: str,
+        instrument: "PNABase",
+        sweep_format: str,
+        label: str,
+        unit: str,
+        memory: bool = False,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(name, instrument=instrument, label=label, unit=unit, **kwargs)
         self.sweep_format = sweep_format
         self.memory = memory
 
@@ -127,13 +138,15 @@ class PNAPort(InstrumentChannel):
     Note: This can be expanded to include a large number of extra parameters...
     """
 
-    def __init__(self,
-                 parent: 'PNABase',
-                 name: str,
-                 port: int,
-                 min_power: Union[int, float],
-                 max_power: Union[int, float],
-                 **kwargs) -> None:
+    def __init__(
+        self,
+        parent: "PNABase",
+        name: str,
+        port: int,
+        min_power: Union[int, float],
+        max_power: Union[int, float],
+        **kwargs: Any,
+    ) -> None:
         super().__init__(parent, name, **kwargs)
 
         self.port = int(port)
@@ -165,12 +178,14 @@ class PNATrace(InstrumentChannel):
     Allow operations on individual PNA traces.
     """
 
-    def __init__(self,
-                 parent: 'PNABase',
-                 name: str,
-                 trace_name: str,
-                 trace_num: int,
-                 **kwargs) -> None:
+    def __init__(
+        self,
+        parent: "PNABase",
+        name: str,
+        trace_name: str,
+        trace_num: int,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(parent, name, **kwargs)
         self.trace_name = trace_name
         self.trace_num = trace_num
