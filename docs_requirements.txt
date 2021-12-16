@@ -23,7 +23,7 @@ ipywidgets==7.6.5
 jedi==0.18.1
 Jinja2==3.0.3
 jsonpointer==2.2
-jsonschema==4.2.1
+jsonschema==4.3.0
 jupyter==1.0.0
 jupyter-client==7.1.0
 jupyter-console==6.4.0
