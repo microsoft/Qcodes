@@ -5,12 +5,22 @@ specific
 instruments.
 """
 
-from contextlib import contextmanager
-import logging
-from typing import Optional, Sequence, Union, TYPE_CHECKING, Any, Tuple, \
-    MutableMapping, Iterator
 import collections.abc
-from .logger import get_console_handler, LevelType, handler_level
+import logging
+from contextlib import contextmanager
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Iterator,
+    MutableMapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
+
+from .logger import LevelType, get_console_handler, handler_level
+
 if TYPE_CHECKING:
     import qcodes.instrument.InstrumentBase as InstrumentBase  # noqa: F401 pylint: disable=unused-import
 
@@ -37,6 +47,7 @@ class InstrumentLoggerAdapter(logging.LoggerAdapter):
         Returns the message and the kwargs for the handlers.
         """
         kwargs['extra'] = self.extra
+        assert self.extra is not None
         inst = self.extra['instrument']
         return f"[{inst.full_name}({type(inst).__name__})] {msg}", kwargs
 

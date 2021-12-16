@@ -1,13 +1,17 @@
-from typing import Tuple, Sequence, cast, Any, Union
 from distutils.version import LooseVersion
+from typing import Any, Sequence, Tuple, Union, cast
+
 from pyvisa.errors import VisaIOError
 
-from qcodes import VisaInstrument, InstrumentChannel
-from qcodes.instrument.parameter import (MultiParameter, ParamRawDataType,
-                                         ManualParameter)
+from qcodes import InstrumentChannel, VisaInstrument
+from qcodes.instrument.group_parameter import Group, GroupParameter
+from qcodes.instrument.parameter import (
+    ManualParameter,
+    MultiParameter,
+    ParamRawDataType,
+)
 from qcodes.utils.helpers import create_on_off_val_mapping
-from qcodes.utils.validators import Enum, Numbers, Bool, Ints
-from qcodes.instrument.group_parameter import GroupParameter, Group
+from qcodes.utils.validators import Bool, Enum, Ints, Numbers
 
 
 class MeasurementPair(MultiParameter):
@@ -364,7 +368,7 @@ class KeysightE4980A(VisaInstrument):
         resistance, and X is the reactance.
         """
         measurement = self.ask(":FETCH:IMPedance:CORRected?")
-        r, x = [float(n) for n in measurement.split(",")]
+        r, x = (float(n) for n in measurement.split(","))
         measurement_pair = MeasurementPair(
             name="RX",
             names=("resistance", "reactance"),
@@ -378,7 +382,7 @@ class KeysightE4980A(VisaInstrument):
         Returns a measurement result with the selected measurement function.
         """
         measurement = self.ask(":FETCH:IMPedance:FORMatted?")
-        val1, val2, _ = [float(n) for n in measurement.split(",")]
+        val1, val2, _ = (float(n) for n in measurement.split(","))
         measurement_pair = MeasurementPair(
             name=self._measurement_pair.name,
             names=self._measurement_pair.names,

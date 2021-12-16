@@ -87,6 +87,8 @@ docs/examples/data/*
 .idea/
 .vscode/
 
+/venv/
+
 # Mac files
 .DS_Store
 

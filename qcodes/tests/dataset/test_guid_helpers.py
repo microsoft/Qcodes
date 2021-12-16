@@ -1,16 +1,20 @@
-from typing import cast
 from collections import defaultdict
 from pathlib import Path
+from typing import List, Tuple, cast
 
 import numpy as np
+import pytest
 
-from qcodes.dataset.experiment_container import new_experiment
-from qcodes.dataset.measurements import Measurement
-from qcodes.dataset.sqlite.database import initialised_database_at
-from qcodes.instrument.parameter import Parameter
-
-
+from qcodes.dataset.experiment_container import (
+    load_or_create_experiment,
+    new_experiment,
+)
 from qcodes.dataset.guid_helpers import guids_from_dir, guids_from_list_str
+from qcodes.dataset.measurements import Measurement
+from qcodes.dataset.sqlite.connection import ConnectionPlus
+from qcodes.dataset.sqlite.database import initialised_database_at
+from qcodes.dataset.sqlite.queries import get_guids_from_multiple_run_ids
+from qcodes.instrument.parameter import Parameter
 
 
 def test_guids_from_dir(tmp_path: Path) -> None:
@@ -77,3 +81,39 @@ def test_many_guids_from_list_str() -> None:
         'aaaaaaaa-0d00-000d-0000-017662b2a878',
         'aaaaaaaa-0d00-000d-0000-01766827cfaf']
     assert guids_from_list_str(str(guids)) == tuple(guids)
+
+
+def test_get_guids_from_multiple_run_ids(tmp_path: Path) -> None:
+    def generate_local_exp(dbpath: Path) -> Tuple[List[str], ConnectionPlus]:
+        with initialised_database_at(str(dbpath)):
+            guids = []
+            exp = load_or_create_experiment(experiment_name="test_guid")
+            conn = exp.conn
+
+            p1 = Parameter('Voltage', set_cmd=None)
+            p2 = Parameter('Current', get_cmd=np.random.randn)
+
+            meas = Measurement(exp=exp)
+            meas.register_parameter(p1).register_parameter(p2, setpoints=[p1])
+
+            # Meaure for 2 times to get 2 run ids and 2 guids
+            for run in range(2):
+                with meas.run() as datasaver:
+                    for v in np.linspace(0*run, 2*run, 50):
+                        p1(v)
+                        datasaver.add_result((p1, cast(float, p1())),
+                                             (p2, cast(float, p2())))
+                guid = datasaver.dataset.guid
+                guids.append(guid)
+        return guids, conn
+
+    path = tmp_path/'dbfile2.db'
+    guids, conn = generate_local_exp(path)
+
+    assert get_guids_from_multiple_run_ids(conn=conn, run_ids=[1, 2]) == guids
+
+    assert len(guids) == 2
+
+    with pytest.raises(RuntimeError, match="run id 3 does not"
+                       " exist in the database"):
+        get_guids_from_multiple_run_ids(conn=conn, run_ids=[1, 2, 3])

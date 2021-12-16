@@ -37,8 +37,8 @@ def remove_root_handlers():
 @pytest.fixture
 def awg5208():
 
-    from qcodes.instrument_drivers.tektronix.AWG5208 import AWG5208
     import qcodes.instrument.sims as sims
+    from qcodes.instrument_drivers.tektronix.AWG5208 import AWG5208
     visalib = sims.__file__.replace('__init__.py',
                                     'Tektronix_AWG5208.yaml@sim')
 
@@ -78,10 +78,11 @@ def model372():
 
 @pytest.fixture()
 def AMI430_3D():
+    import numpy as np
+
+    import qcodes.instrument.sims as sims
     from qcodes.instrument.ip_to_visa import AMI430_VISA
     from qcodes.instrument_drivers.american_magnetics.AMI430 import AMI430_3D
-    import qcodes.instrument.sims as sims
-    import numpy as np
     visalib = sims.__file__.replace('__init__.py', 'AMI430.yaml@sim')
     mag_x = AMI430_VISA('x', address='GPIB::1::INSTR', visalib=visalib,
                         terminator='\n', port=1)
@@ -282,7 +283,7 @@ def test_instrument_connect_message():
     code, but it is more conveniently written here
     """
 
-    with open(logger.get_log_file_name()) as f:
+    with open(logger.get_log_file_name(), encoding="utf-8") as f:
         lines = f.readlines()
 
     con_mssg_log_line = lines[-1]
@@ -308,6 +309,7 @@ def test_installation_info_logging():
     with open(logger.get_log_file_name()) as f:
         lines = f.readlines()
 
-    assert 'QCoDeS version:' in lines[-3]
-    assert 'QCoDeS installed in editable mode:' in lines[-2]
-    assert 'QCoDeS requirements versions:' in lines[-1]
+    assert "QCoDeS version:" in lines[-4]
+    assert "QCoDeS installed in editable mode:" in lines[-3]
+    assert "QCoDeS requirements versions:" in lines[-2]
+    assert "All installed package versions:" in lines[-1]

@@ -86,7 +86,7 @@ class Trigger(InstrumentChannel):
                            get_cmd='TRIGger:SLOPe?',
                            vals=vals.Enum('POS', 'NEG'))
 
-        if self.parent.is_34465A_34470A and self.parent.has_DIG:
+        if self.parent.has_DIG or (self.parent.model == '34411A'):
             self.add_parameter('level',
                                label='Trigger Level',
                                unit='V',
@@ -122,7 +122,7 @@ class Trigger(InstrumentChannel):
                 it buffers one trigger.""")
         _trigger_source_vals = vals.Enum('IMM', 'EXT', 'BUS')
 
-        if self.parent.has_DIG:
+        if self.parent.has_DIG or (self.parent.model == '34411A'):
             _trigger_source_vals = vals.Enum('IMM', 'EXT', 'BUS', 'INT')
             # extra empty lines are needed for readability of the docstring
             _trigger_source_docstring += textwrap.dedent("""\
@@ -170,12 +170,18 @@ class Sample(InstrumentChannel):
             Specifies the number of measurements (samples) the instrument
             takes per trigger.
 
-            MAX selects 1 billion readings. However, when pretrigger is
-            selected, the maximum is 50,000 readings (without the MEM
-            option) or 2,000,000 readings (with the MEM option)"""))
+            For the models 34460A and above, MAX selects 1 billion readings.
+            However, when pretrigger is selected, the maximum is 50,000
+            readings (without the MEM option) or 2,000,000 readings (with the
+            MEM option).
+            For the model 34410A the maximum is 50,000 readings, and for the
+            model 34411A the maximum is 1,000,000 readings. The latter does
+            not depend on the pretrigger count."""))
 
-        if self.parent.has_DIG:
-            if self.parent.has_MEM:
+        if self.parent.has_DIG or (self.parent.model == '34411A'):
+            if self.parent.model == '34411A':
+                _max_pretrig_count = int(1e6) - 1
+            elif self.parent.has_MEM:
                 _max_pretrig_count = int(2e6) - 1
             else:
                 _max_pretrig_count = int(5e4) - 1
@@ -199,7 +205,7 @@ class Sample(InstrumentChannel):
                 ``sample.count`` parameter for information on the maximum
                 number of sample counts."""))
 
-        if self.parent.is_34465A_34470A:
+        if self.parent.is_34465A_34470A or self.parent.is_34410A_34411A:
             self.add_parameter('source',
                                label='Sample Timing Source',
                                set_cmd='SAMPle:SOURce {}',
@@ -418,8 +424,8 @@ class TimeAxis(Parameter): # pylint: disable=abstract-method
 
 class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
     """
-    Instrument class for Keysight 34460A, 34461A, 34465A and 34470A
-    multimeters.
+    Instrument class for Keysight 34410A, 34411A, 34460A, 34461A, 34465A and
+    34470A multimeters.
 
     The driver currently only supports using the instrument as a voltmeter
     for DC measurements.
@@ -451,6 +457,7 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         self.model = idn['model']
 
         self.is_34465A_34470A = self.model in ['34465A', '34470A']
+        self.is_34410A_34411A = self.model in ['34410A', '34411A']
 
         ####################################
         # Instrument specifications
@@ -466,6 +473,7 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         self.has_MEM = self.is_34465A_34470A and 'MEM' in options
 
         PLCs = {'34410A': [0.006, 0.02, 0.06, 0.2, 1, 2, 10, 100],
+                '34411A': [0.001, 0.002, 0.006, 0.02, 0.06, 0.2, 1, 2, 10, 100],
                 '34460A': [0.02, 0.2, 1, 10, 100],
                 '34461A': [0.02, 0.2, 1, 10, 100],
                 '34465A': [0.02, 0.06, 0.2, 1, 10, 100],
@@ -475,15 +483,10 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
             PLCs['34465A'] = [0.001, 0.002, 0.006] + PLCs['34465A']
             PLCs['34470A'] = [0.001, 0.002, 0.006] + PLCs['34470A']
 
-        ranges = {'34410A': [10**n for n in range(3, 10)],  # 100 to 1 G
-                  '34460A': [10**n for n in range(-3, 9)],  # 1 m to 100 M
-                  '34461A': [10**n for n in range(-3, 9)],  # 1 m to 100 M
-                  '34465A': [10**n for n in range(-3, 10)],  # 1 m to 1 G
-                  '34470A': [10**n for n in range(-3, 10)],  # 1 m to 1 G
-                  }
-
         # The resolution factor order matches the order of PLCs
-        res_factors = {'34410A': [30e-6, 15e-5, 6e-6, 3e-6, 1.5e-6, 0.7e-6,
+        res_factors = {'34410A': [6e-6, 3e-6, 1.5e-6, 0.7e-6,
+                                  0.3e-6, 0.2e-6, 0.1e-6, 0.03e-6],
+                       '34411A': [30e-6, 15e-5, 6e-6, 3e-6, 1.5e-6, 0.7e-6,
                                   0.3e-6, 0.2e-6, 0.1e-6, 0.03e-6],
                        '34460A': [300e-6, 100e-6, 30e-6, 10e-6, 3e-6],
                        '34461A': [100e-6, 10e-6, 3e-6, 1e-6, 0.3e-6],
@@ -497,7 +500,7 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
             res_factors['34470A'] = [30e-6, 10e-6, 3e-6] + res_factors['34470A']
 
         self._resolution_factors = res_factors[self.model]
-        self.ranges = ranges[self.model]
+        self.ranges = [10**n for n in range(-1, 4)] # 100 m to 1 k
         self.NPLC_list = PLCs[self.model]
 
         ####################################
@@ -616,14 +619,21 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         ####################################
         # Aperture parameters
 
-        if self.is_34465A_34470A:
-            # Define the extreme aperture time values for the 34465A and 34470A
+        if self.is_34465A_34470A or self.is_34410A_34411A:
+            # Define the extreme aperture time values for the 34410A, 34411A,
+            # 34465A and 34470A. The upper limits for 34410A and 34411A in the
+            # case of a 60Hz line frequency are just calculated by multiplying
+            # the respective limit with 50/60.
             utility_freq = self.line_frequency()
             if utility_freq == 50:
-                apt_times = {'34465A': [0.3e-3, 2],
+                apt_times = {'34410A': [100e-6, 1],
+                            '34411A': [20e-6, 1],
+                            '34465A': [0.3e-3, 2],
                             '34470A': [0.3e-3, 2]}
             elif utility_freq == 60:
-                apt_times = {'34465A': [0.3e-3, 1.67],
+                apt_times = {'34410A': [100e-6, 0.83],
+                            '34411A': [20e-6, 0.83],
+                            '34465A': [0.3e-3, 1.67],
                             '34470A': [0.3e-3, 1.67]}
             if self.has_DIG:
                 apt_times['34465A'][0] = 20e-6
@@ -781,10 +791,11 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
 
     def _licenses(self) -> Sequence[str]:
         """
-        Return extra licenses purchased with the DMM. The 34410A does not have
-        optional modules, hence always returns an empty tuple.
+        Return extra licenses purchased with the DMM. The 34410A and 34411A
+        models do not have optional modules, hence always returns an empty
+        tuple.
         """
-        if self.model != '34410A':
+        if not self.is_34410A_34411A:
             licenses_raw = self.ask('SYST:LIC:CAT?')
             licenses_list = [x.strip('"') for x in licenses_raw.split(',')]
             return licenses_list
@@ -793,14 +804,14 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
     def _options(self) -> Tuple[str, ...]:
         """
         Return enabled options of the DMM returned by ``*OPT?`` command.
-        The 34410A model does not have options, hence always returns
+        The 34410A and 34411A models do not have options, hence always returns
         an empty tuple.
 
         Note that for firmware version 3.0, output of ```*OPT?`` will contain
         the ``DIG`` option only if it has been purchased before, although
         the option itself is enabled by default in the firmware version 3.0.
         """
-        if self.model != '34410A':
+        if not self.is_34410A_34411A:
             options_raw = self.ask('*OPT?')
             options_list = [opt for opt in options_raw.split(',') if opt != '0']
             return tuple(options_list)

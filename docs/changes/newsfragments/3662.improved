@@ -1,0 +1,3 @@
+Do not apply offset or scale when getting a DelegateParameter and source is
+uninitialized (its value is None) to prevent a TypeError being raised. Closes
+#3653

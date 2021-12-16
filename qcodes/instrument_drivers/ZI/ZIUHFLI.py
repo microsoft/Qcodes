@@ -1,11 +1,11 @@
+import logging
 import math
 import time
-import logging
-import numpy as np
 from functools import partial
 from math import sqrt
+from typing import Any, Callable, Dict, List, Optional, Sequence, Union, cast
 
-from typing import Any, Callable, List, Union, cast, Optional, Sequence, Dict
+import numpy as np
 
 from qcodes.utils.helpers import create_on_off_val_mapping
 
@@ -17,11 +17,10 @@ except ImportError:
                          download and installation instructions.
                       ''')
 
-from qcodes.instrument.parameter import MultiParameter
 from qcodes.instrument.base import Instrument
-from qcodes.instrument.channel import InstrumentChannel, ChannelList
+from qcodes.instrument.channel import ChannelList, InstrumentChannel
+from qcodes.instrument.parameter import MultiParameter
 from qcodes.utils import validators as vals
-
 from qcodes.utils.deprecate import deprecate
 
 log = logging.getLogger(__name__)
@@ -134,8 +133,9 @@ class Sweep(MultiParameter):
         # The __init__ requires that we supply names and shapes,
         # but there is no way to know what they could be known at this time.
         # They are updated via build_sweep.
-        super().__init__(name, names=('',), shapes=((1,),), **kwargs)
-        self._instrument = instrument
+        super().__init__(
+            name, names=("",), shapes=((1,),), instrument=instrument, **kwargs
+        )
 
     def build_sweep(self):
         """
@@ -156,8 +156,8 @@ class Sweep(MultiParameter):
 
         """
 
-        signals = self._instrument._sweeper_signals
-        sweepdict = self._instrument._sweepdict
+        signals = self.instrument._sweeper_signals
+        sweepdict = self.instrument._sweepdict
 
         log.info('Built a sweep')
 
@@ -216,9 +216,9 @@ class Sweep(MultiParameter):
         # Now actually send  the settings to the instrument
         for (setting, value) in sweepdict.items():
             setting = 'sweep/' + setting
-            self._instrument.sweeper.set(setting, value)
+            self.instrument.sweeper.set(setting, value)
 
-        self._instrument.sweep_correctly_built = True
+        self.instrument.sweep_correctly_built = True
 
     def get_raw(self):
         """
@@ -235,14 +235,14 @@ class Sweep(MultiParameter):
             ValueError: If a sweep setting has been modified since
               the last sweep, but Sweep.build_sweep has not been run
         """
-        daq = self._instrument.daq
-        signals = self._instrument._sweeper_signals
-        sweeper = self._instrument.sweeper
+        daq = self.instrument.daq
+        signals = self.instrument._sweeper_signals
+        sweeper = self.instrument.sweeper
 
         if signals == []:
             raise ValueError('No signals selected! Can not perform sweep.')
 
-        if self._instrument.sweep_correctly_built is False:
+        if self.instrument.sweep_correctly_built is False:
             raise ValueError('The sweep has not been correctly built.' +
                              ' Please run Sweep.build_sweep.')
 
@@ -269,7 +269,7 @@ class Sweep(MultiParameter):
             sweeper.subscribe(path)
 
         sweeper.execute()
-        timeout = self._instrument.sweeper_timeout.get()
+        timeout = self.instrument.sweeper_timeout.get()
         start = time.time()
         while not sweeper.finished():  # Wait until the sweep is done/timeout
             time.sleep(0.2)  # Check every 200 ms whether the sweep is done
@@ -309,7 +309,7 @@ class Sweep(MultiParameter):
                  'Xrms': 'xpwr', 'Yrms': 'ypwr', 'Rrms': 'rpwr'}
         returndata = []
 
-        for signal in self._instrument._sweeper_signals:
+        for signal in self.instrument._sweeper_signals:
             path = '/'.join(signal.split('/')[:-1])
             attr = signal.split('/')[-1]
             data = sweepresult[path][0][0][trans[attr]]
@@ -341,8 +341,9 @@ class Scope(MultiParameter):
         # The __init__ requires that we supply names and shapes,
         # but there is no way to know what they could be known at this time.
         # They are updated via build_scope.
-        super().__init__(name, names=('',), shapes=((1,),), **kwargs)
-        self._instrument = instrument
+        super().__init__(
+            name, names=("",), shapes=((1,),), instrument=instrument, **kwargs
+        )
         self._scopeactions = []  # list of callables
 
     def add_post_trigger_action(self, action: Callable[..., Any]) -> None:
@@ -367,7 +368,7 @@ class Scope(MultiParameter):
         log.info('Preparing the scope')
 
         # A convenient reference
-        params = self._instrument.parameters
+        params = self.instrument.parameters
 
         # First figure out what the user has asked for
         chans = {1: (True, False), 2: (False, True), 3: (True, True)}
@@ -489,10 +490,10 @@ class Scope(MultiParameter):
 
         setpointlist = tuple(np.linspace(starttime, stoptime, npts))  # x-axis
         spname = 'Time'
-        namestr = "scope_channel{}_input".format(1)
+        namestr = f"scope_channel{1}_input"
         name1 = inputnames[params[namestr].get()]
         unit1 = inputunits[params[namestr].get()]
-        namestr = "scope_channel{}_input".format(2)
+        namestr = f"scope_channel{2}_input"
         name2 = inputnames[params[namestr].get()]
         unit2 = inputunits[params[namestr].get()]
 
@@ -504,8 +505,8 @@ class Scope(MultiParameter):
         self.labels = ('Scope channel 1', 'Scope channel 2')
         self.shapes = ((segs, npts), (segs, npts))
 
-        self._instrument.daq.sync()
-        self._instrument.scope_correctly_built = True
+        self.instrument.daq.sync()
+        self.instrument.scope_correctly_built = True
 
     def get_raw(self):
         """
@@ -522,12 +523,12 @@ class Scope(MultiParameter):
         t_start = time.monotonic()
         log.info('Scope get method called')
 
-        if not self._instrument.scope_correctly_built:
+        if not self.instrument.scope_correctly_built:
             raise ValueError('Scope not properly prepared. Please run '
                              'prepare_scope before measuring.')
 
         # A convenient reference
-        params = self._instrument.parameters
+        params = self.instrument.parameters
         #
         chans = {1: (True, False), 2: (False, True), 3: (True, True)}
         channels = chans[params['scope_channels'].get()]
@@ -541,7 +542,7 @@ class Scope(MultiParameter):
         # The following steps SEEM to give the correct result
 
         # Make sure all settings have taken effect
-        self._instrument.daq.sync()
+        self.instrument.daq.sync()
 
         # Calculate the time needed for the measurement. We often have failed
         # measurements, so a timeout is needed.
@@ -565,17 +566,18 @@ class Scope(MultiParameter):
                 # we wrap this in try finally to ensure that
                 # scope.finish is always called even if the
                 # measurement is interrupted
-                self._instrument.daq.setInt(f'/{self._instrument.device}/scopes/0/single', 1)
+                self.instrument.daq.setInt(
+                    f"/{self.instrument.device}/scopes/0/single", 1
+                )
 
-
-                scope = self._instrument.scope
+                scope = self.instrument.scope
                 scope.set('scopeModule/clearhistory', 1)
 
                 # Start the scope triggering/acquiring
                 # set /dev/scopes/0/enable to 1
                 params['scope_runstop'].set('run')
 
-                self._instrument.daq.sync()
+                self.instrument.daq.sync()
 
                 log.debug('Starting ZI scope acquisition.')
                 # Start something... hauling data from the scopeModule?
@@ -605,10 +607,11 @@ class Scope(MultiParameter):
                 if not (timedout or zi_error):
                     log.info('[+] ZI scope acquisition completed OK')
                     rawdata = scope.read()
-                    if 'error' in rawdata:
-                        zi_error = bool(rawdata['error'][0])
-                    data = self._scopedataparser(rawdata, self._instrument.device,
-                                                 npts, segs, channels)
+                    if "error" in rawdata:
+                        zi_error = bool(rawdata["error"][0])
+                    data = self._scopedataparser(
+                        rawdata, self.instrument.device, npts, segs, channels
+                    )
                 else:
                     log.warning('[-] ZI scope acquisition attempt {} '
                                 'failed, Timeout: {}, Error: {}, '
@@ -1390,14 +1393,16 @@ class ZIUHFLI(Instrument):
                             vals=vals.Enum(*list(self._samplingrate_codes.keys()))
                             )
 
-        self.add_parameter('scope_samplingrate_float',
-                           label="Scope's sampling rate as float",
-                           set_cmd=self._set_samplingrate_as_float,
-                           unit='Hz',
-                           get_cmd=self._get_samplingrate_as_float,
-                           vals=vals.Enum(*[1.8e9 / 2 ** v for v in
-                                            self._samplingrate_codes.values()]),
-                           docstring=""" A numeric representation of the scope's
+        self.add_parameter(
+            "scope_samplingrate_float",
+            label="Scope's sampling rate as float",
+            set_cmd=self._set_samplingrate_as_float,
+            unit="Hz",
+            get_cmd=self._get_samplingrate_as_float,
+            vals=vals.Enum(
+                *(1.8e9 / 2 ** v for v in self._samplingrate_codes.values())
+            ),
+            docstring=""" A numeric representation of the scope's
                              samplingrate parameter. Sets and gets the sampling
                              rate by using the scope_samplingrate parameter."""
                            )
@@ -1450,19 +1455,23 @@ class ZIUHFLI(Instrument):
             inputselect[f'Demod {demod} R'] = 47+demod
             inputselect[f'Demod {demod} Phase'] = 63+demod
 
-        for channel in range(1,3):
-            self.add_parameter(f'scope_channel{channel}_input',
-                            label=(f"Scope's channel {channel}" +
-                                   " input source"),
-                            set_cmd=partial(self._scope_setter, 0, 0,
-                                            ('channels/{}/'.format(channel-1) +
-                                             'inputselect')),
-                            get_cmd=partial(self._getter, 'scopes', 0, 0,
-                                            ('channels/{}/'.format(channel-1) +
-                                             'inputselect')),
-                            val_mapping=inputselect,
-                            vals=vals.Enum(*list(inputselect.keys()))
-                            )
+        for channel in range(1, 3):
+            self.add_parameter(
+                f"scope_channel{channel}_input",
+                label=(f"Scope's channel {channel}" + " input source"),
+                set_cmd=partial(
+                    self._scope_setter, 0, 0, (f"channels/{channel-1}/" + "inputselect")
+                ),
+                get_cmd=partial(
+                    self._getter,
+                    "scopes",
+                    0,
+                    0,
+                    (f"channels/{channel-1}/" + "inputselect"),
+                ),
+                val_mapping=inputselect,
+                vals=vals.Enum(*list(inputselect.keys())),
+            )
 
         self.add_parameter('scope_average_weight',
                             label="Scope Averages",
@@ -1764,16 +1773,16 @@ class ZIUHFLI(Instrument):
                         }
 
         def amp_valid(number, value):
-            ampdef_val = params['signal_output{}_ampdef'.format(number+1)].get()
-            autorange_val = params['signal_output{}_autorange'.format(number+1)].get()
+            ampdef_val = params[f"signal_output{number+1}_ampdef"].get()
+            autorange_val = params[f"signal_output{number+1}_autorange"].get()
 
-            if autorange_val == 'ON':
-                imp50_val = params['signal_output{}_imp50'.format(number + 1)].get()
-                imp50_dic = {'OFF': 1.5, 'ON': 0.75}
+            if autorange_val == "ON":
+                imp50_val = params[f"signal_output{number + 1}_imp50"].get()
+                imp50_dic = {"OFF": 1.5, "ON": 0.75}
                 range_val = imp50_dic[imp50_val]
 
             else:
-                so_range = params['signal_output{}_range'.format(number+1)].get()
+                so_range = params[f"signal_output{number+1}_range"].get()
                 range_val = round(so_range, 3)
 
             converter = amp_val_dict[ampdef_val]
@@ -1790,20 +1799,20 @@ class ZIUHFLI(Instrument):
                     raise ValueError('Signal Output: Offset too high for '
                                      'chosen range.')
 
-            range_val = params['signal_output{}_range'.format(number+1)].get()
+            range_val = params[f"signal_output{number+1}_range"].get()
             range_val = round(range_val, 3)
             if 'MF' in self.props['options']:
                 for i in range(1, 9):
-                    amp_val = params['signal_output{}_amplitude{}'.format(number + 1, i)].get()
+                    amp_val = params[f"signal_output{number + 1}_amplitude{i}"].get()
                     validate_against_individual(value, amp_val, range_val)
             else:
-                amp_val = params['signal_output{}_amplitude'.format(number + 1)].get()
+                amp_val = params[f"signal_output{number + 1}_amplitude"].get()
                 validate_against_individual(value, amp_val, range_val)
 
         def range_valid(number, value):
-            autorange_val = params['signal_output{}_autorange'.format(number + 1)].get()
-            imp50_val = params['signal_output{}_imp50'.format(number+1)].get()
-            imp50_dic = {'OFF': [1.5, 0.15], 'ON': [0.75, 0.075]}
+            autorange_val = params[f"signal_output{number + 1}_autorange"].get()
+            imp50_val = params[f"signal_output{number+1}_imp50"].get()
+            imp50_dic = {"OFF": [1.5, 0.15], "ON": [0.75, 0.075]}
 
             if autorange_val == "ON":
                 raise ValueError('Signal Output :'
@@ -1817,9 +1826,8 @@ class ZIUHFLI(Instrument):
         def ampdef_valid(number, value):
             # check which amplitude definition you can use.
             # dBm is only possible with 50 Ohm imp ON
-            imp50_val = params['signal_output{}_imp50'.format(number+1)].get()
-            imp50_ampdef_dict = {'ON': ['Vpk','Vrms', 'dBm'],
-                                 'OFF': ['Vpk','Vrms']}
+            imp50_val = params[f"signal_output{number+1}_imp50"].get()
+            imp50_ampdef_dict = {"ON": ["Vpk", "Vrms", "dBm"], "OFF": ["Vpk", "Vrms"]}
             if value not in imp50_ampdef_dict[imp50_val]:
                 raise ValueError("Signal Output: Choose a valid amplitude "
                                  "definition; ['Vpk','Vrms', 'dBm'] if imp50 is"
@@ -1831,11 +1839,13 @@ class ZIUHFLI(Instrument):
                               'offset': offset_valid}
 
         def update_range_offset_amp():
-            range_val = params['signal_output{}_range'.format(number+1)].get()
-            offset_val = params['signal_output{}_offset'.format(number+1)].get()
-            if 'MF' in self.props['options']:
-                amps_val = [params['signal_output{}_amplitude{}'.format(
-                    number + 1, output)].get() for output in range(1, 9)]
+            range_val = params[f"signal_output{number+1}_range"].get()
+            offset_val = params[f"signal_output{number+1}_offset"].get()
+            if "MF" in self.props["options"]:
+                amps_val = [
+                    params[f"signal_output{number + 1}_amplitude{output}"].get()
+                    for output in range(1, 9)
+                ]
             else:
                 amps_val = [params['signal_output{}_amplitude'.format(
                     number + 1)].get()]
@@ -1846,17 +1856,17 @@ class ZIUHFLI(Instrument):
                                      'offset out of range.')
 
         def update_offset():
-            self.parameters['signal_output{}_offset'.format(number+1)].get()
+            self.parameters[f"signal_output{number+1}_offset"].get()
 
         def update_amp():
-            if 'MF' in self.props['options']:
-                for i in range(1,9):
-                    self.parameters['signal_output{}_amplitude{}'.format(number+1,i)].get()
+            if "MF" in self.props["options"]:
+                for i in range(1, 9):
+                    self.parameters[f"signal_output{number+1}_amplitude{i}"].get()
             else:
-                self.parameters['signal_output{}_amplitude'.format(number + 1)].get()
+                self.parameters[f"signal_output{number + 1}_amplitude"].get()
 
         def update_range():
-            self.parameters['signal_output{}_autorange'.format(number+1)].get()
+            self.parameters[f"signal_output{number+1}_autorange"].get()
 
         # parameters which will potentially change other parameters
         changing_param = {'imp50': [update_range_offset_amp, update_range],
@@ -2154,10 +2164,10 @@ class ZIUHFLI(Instrument):
         demods = set(demods)
         for dm in demods:
             for feat in features:
-                parameter = self.parameters['demod{:d}_{}'.format(dm+1, feat)]
-                fmt = (dm+1, parameter.label, parameter.get(), parameter.unit)
-                print('    Demodulator {}: {}: {:.6f} ({})'.format(*fmt))
-        print('META')
+                parameter = self.parameters[f"demod{dm+1:d}_{feat}"]
+                fmt = (dm + 1, parameter.label, parameter.get(), parameter.unit)
+                print("    Demodulator {}: {}: {:.6f} ({})".format(*fmt))
+        print("META")
         swptime = self.sweeper_sweeptime()
         if swptime is not None:
             print(f'    Expected sweep time: {swptime:.1f} (s)')
