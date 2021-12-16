@@ -37,6 +37,7 @@ class PNAAxisParameter(Parameter):
         """
         Return the axis values, with values retrieved from the parent instrument
         """
+        # pylint: disable=line-too-long
         return np.linspace(self._startparam(), self._stopparam(), self._pointsparam())  # type: ignore
 
 
@@ -46,6 +47,7 @@ class PNALogAxisParamter(PNAAxisParameter):
         Return the axis values on a log scale, with values retrieved from
         the parent instrument
         """
+        # pylint: disable=line-too-long
         return np.geomspace(self._startparam(), self._stopparam(), self._pointsparam())  # type: ignore
 
 
@@ -104,7 +106,7 @@ class FormattedSweep(ParameterWithSetpoints):
         Stub to allow initialization. Ignore any set attempts on setpoint as we
         figure it out on the fly.
         """
-        pass
+        return
 
     def get_raw(self) -> Sequence[float]:
         if self.instrument is None:
