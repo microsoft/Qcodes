@@ -1,15 +1,16 @@
-import pytest
-from typing import Dict, Callable, Any
 import logging
-from functools import wraps
-from contextlib import suppress
 import time
+from contextlib import suppress
+from functools import wraps
+from typing import Any, Callable, Dict
 
-from qcodes.instrument.base import InstrumentBase
-from qcodes.logger.instrument_logger import get_instrument_logger
-from qcodes.instrument_drivers.Lakeshore.Model_372 import Model_372
+import pytest
+
 import qcodes.instrument.sims as sims
+from qcodes.instrument.base import InstrumentBase
 from qcodes.instrument_drivers.Lakeshore.lakeshore_base import BaseSensorChannel
+from qcodes.instrument_drivers.Lakeshore.Model_372 import Model_372
+from qcodes.logger.instrument_logger import get_instrument_logger
 
 log = logging.getLogger(__name__)
 
@@ -22,10 +23,7 @@ class MockVisaInstrument:
     instrument.
     """
     def __init__(self, *args, **kwargs) -> None:
-        # ignore this line in mypy: Mypy does not support mixins yet
-        # and seen by itself with this class definition it does not make sense
-        # to call __init__ on the super()
-        super().__init__(*args, **kwargs)  # type: ignore[call-arg]
+        super().__init__(*args, **kwargs)
         self.visa_log = get_instrument_logger(self, VISA_LOGGER)
 
         # This base class mixin holds two dictionaries associated with the
