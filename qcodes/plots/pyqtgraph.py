@@ -106,7 +106,7 @@ class QtPlot(BasePlot):
         self._orig_fig_size = figsize
 
         self.set_relative_window_position(fig_x_position, fig_y_position)
-        self.subplots = [self.add_subplot()]  # type: List[Union[PlotItem, ObjectProxy]]
+        self.subplots: List[Union[PlotItem, ObjectProxy]] = [self.add_subplot()]
 
         if args or kwargs:
             self.add(*args, **kwargs)
