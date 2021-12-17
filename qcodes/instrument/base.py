@@ -635,12 +635,11 @@ class Instrument(InstrumentBase, AbstractInstrument):
         Raises:
             KeyError: If another instance with the same name is already present.
         """
-        wr = weakref.ref(instance)
         name = instance.name
         # First insert this instrument in the record of *all* instruments
         # making sure its name is unique
-        existing_wr = cls._all_instruments.get(name)
-        if existing_wr:
+        existing_instr = cls._all_instruments.get(name)
+        if existing_instr:
             raise KeyError(f'Another instrument has the name: {name}')
 
         cls._all_instruments[name] = instance
