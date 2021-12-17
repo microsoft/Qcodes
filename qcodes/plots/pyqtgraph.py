@@ -1,28 +1,28 @@
 """
 Live plotting using pyqtgraph
 """
-from typing import Optional, Dict, Union, Deque, List, cast
+import logging
+import warnings
+from collections import deque, namedtuple
+from typing import Deque, Dict, List, Optional, Union, cast
+
 import numpy as np
 import pyqtgraph as pg
 import pyqtgraph.multiprocess as pgmp
-
-from pyqtgraph.multiprocess.remoteproxy import ClosedError, ObjectProxy
-from pyqtgraph.graphicsItems.PlotItem.PlotItem import PlotItem
 from pyqtgraph import QtGui
+from pyqtgraph.graphicsItems.PlotItem.PlotItem import PlotItem
+from pyqtgraph.multiprocess.remoteproxy import ClosedError, ObjectProxy
 
+import qcodes
 import qcodes.utils.helpers
-
-import warnings
-import logging
-from collections import namedtuple, deque
 
 from .base import BasePlot
 from .colors import color_cycle, colorscales
-import qcodes
 
 TransformState = namedtuple('TransformState', 'translate scale revisit')
 
 log = logging.getLogger(__name__)
+
 
 class QtPlot(BasePlot):
     """
@@ -88,7 +88,8 @@ class QtPlot(BasePlot):
             self.rpg = pg
             self.qc_helpers = qcodes.utils.helpers
         try:
-            self.win = self.rpg.GraphicsWindow(title=window_title)
+            self.win = self.rpg.GraphicsLayoutWidget(title=window_title)
+            self.win.show()
         except (ClosedError, ConnectionResetError) as err:
             # the remote process may have crashed. In that case try restarting
             # it
@@ -96,7 +97,8 @@ class QtPlot(BasePlot):
                 log.warning("Remote plot responded with {} \n"
                             "Restarting remote plot".format(err))
                 self._init_qt()
-                self.win = self.rpg.GraphicsWindow(title=window_title)
+                self.win = self.rpg.GraphicsLayoutWidget(title=window_title)
+                self.win.show()
             else:
                 raise err
         self.win.setBackground(theme[1])
@@ -104,7 +106,7 @@ class QtPlot(BasePlot):
         self._orig_fig_size = figsize
 
         self.set_relative_window_position(fig_x_position, fig_y_position)
-        self.subplots = [self.add_subplot()] # type: List[Union[PlotItem, ObjectProxy]]
+        self.subplots = [self.add_subplot()]  # type: List[Union[PlotItem, ObjectProxy]]
 
         if args or kwargs:
             self.add(*args, **kwargs)
