@@ -161,7 +161,6 @@ def test_unit_value_error():
         VoltageSourceBadUnit("abstract_instrument_driver_4")
 
 
-@pytest.mark.xfail()
 def test_unit_value_error_does_not_register_instrument():
     """
     Units should match between subclasses and base classes
@@ -171,7 +170,6 @@ def test_unit_value_error_does_not_register_instrument():
     assert not VoltageSourceBadUnit.instances()
 
 
-@pytest.mark.skip("tests unimplemented feature")
 def test_exception_in_init():
     """
     In previous versions of QCoDeS, if an error occurred in

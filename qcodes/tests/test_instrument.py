@@ -83,7 +83,9 @@ def test_instrument_retry_with_same_name(close_before_and_after):
     # Check that the instrument is successfully registered after failing first
     assert Instrument.instances() == []
     assert DummyFailingInstrument.instances() == [instr]
-    assert Instrument._all_instruments == {"failinginstrument": weakref.ref(instr)}
+    expected_dict = weakref.WeakValueDictionary()
+    expected_dict["failinginstrument"] = instr
+    assert Instrument._all_instruments == expected_dict
 
 
 def test_attr_access(testdummy):
@@ -269,7 +271,6 @@ def test_recreate(close_before_and_after, request):
     instr = DummyInstrument(
         name='instr', gates=['dac1', 'dac2', 'dac3'])
     request.addfinalizer(instr.close)
-    instr_ref = weakref.ref(instr)
 
     assert ['instr'] == list(Instrument._all_instruments.keys())
 
@@ -278,12 +279,11 @@ def test_recreate(close_before_and_after, request):
         recreate=True
     )
     request.addfinalizer(instr_2.close)
-    instr_2_ref = weakref.ref(instr_2)
 
     assert ['instr'] == list(Instrument._all_instruments.keys())
 
-    assert instr_2_ref in Instrument._all_instruments.values()
-    assert instr_ref not in Instrument._all_instruments.values()
+    assert instr_2 in Instrument._all_instruments.values()
+    assert instr not in Instrument._all_instruments.values()
 
 
 def test_instrument_metadata(request):
