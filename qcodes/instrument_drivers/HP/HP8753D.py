@@ -1,13 +1,12 @@
-from typing import Union, Any
-from functools import partial
 import logging
+from functools import partial
+from typing import Any, Union
 
 import numpy as np
 
-from qcodes.instrument.visa import VisaInstrument
-from qcodes.instrument.parameter import ArrayParameter
-from qcodes.instrument.parameter import ParamRawDataType
 import qcodes.utils.validators as vals
+from qcodes.instrument.parameter import ArrayParameter, ParamRawDataType
+from qcodes.instrument.visa import VisaInstrument
 
 log = logging.getLogger(__name__)
 
@@ -67,26 +66,26 @@ class HP8753DTrace(ArrayParameter):
 
         # we don't trust users to keep their fingers off the front panel,
         # so we query the instrument for all values
-        assert isinstance(self._instrument, HP8753D)
-        fstart = self._instrument.start_freq()
-        fstop = self._instrument.stop_freq()
-        npts = self._instrument.trace_points()
+        assert isinstance(self.instrument, HP8753D)
+        fstart = self.instrument.start_freq()
+        fstop = self.instrument.stop_freq()
+        npts = self.instrument.trace_points()
 
         sps = np.linspace(fstart, fstop, npts)
         self.setpoints = (tuple(sps),)
         self.shape = (len(sps),)
 
-        self.label = self._instrument.s_parameter()
-        self.unit = _unit_map[self._instrument.display_format()]
+        self.label = self.instrument.s_parameter()
+        self.unit = _unit_map[self.instrument.display_format()]
 
-        self._instrument._traceready = True
+        self.instrument._traceready = True
 
     def get_raw(self) -> ParamRawDataType:
         """
         Return the trace
         """
 
-        inst = self._instrument
+        inst = self.instrument
         assert isinstance(inst, HP8753D)
         if not inst._traceready:
             raise TraceNotReady('Trace not ready. Please run prepare_trace.')

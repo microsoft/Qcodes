@@ -1,19 +1,20 @@
-from datetime import datetime
-import time
-from unittest import TestCase
-import numpy as np
-from unittest.mock import patch
 import os
+import time
+from datetime import datetime
+from unittest import TestCase
+from unittest.mock import patch
 
-from qcodes.loops import Loop
-from qcodes.actions import Task, Wait, BreakIf, _QcodesBreak
-from qcodes.station import Station
+import numpy as np
+
+from qcodes.actions import BreakIf, Task, Wait, _QcodesBreak
 from qcodes.data.data_array import DataArray
-from qcodes.instrument.parameter import Parameter, MultiParameter
-from qcodes.utils.validators import Numbers
+from qcodes.instrument.parameter import MultiParameter, Parameter
 from qcodes.logger.logger import LogCapture
+from qcodes.loops import Loop
+from qcodes.station import Station
+from qcodes.utils.validators import Numbers
 
-from ..instrument_mocks import MultiGetter, DummyInstrument
+from ..instrument_mocks import DummyInstrument, MultiGetter
 
 
 class NanReturningParameter(MultiParameter):
@@ -115,7 +116,7 @@ class TestLoop(TestCase):
     def test_measurement_with_many_nans(self):
         loop = Loop(self.p1.sweep(0, 1, num=10),
                     delay=0.05).each(self.p4_crazy)
-        ds = loop.get_data_set()
+        ds = loop.get_data_set(name="test_measurement_with_many_nans")
         loop.run()
 
         # assert that both the snapshot and the datafile are there
@@ -164,18 +165,6 @@ class TestLoop(TestCase):
 
             with self.assertRaises(err):
                 Wait(val)
-
-    def test_bare_wait(self):
-        # Wait gets transformed to a Task, but is also callable on its own
-        t0 = time.perf_counter()
-        Wait(0.05)()
-        delay = time.perf_counter() - t0
-        # TODO: On Mac delay is always at least the time you waited, but on
-        # Windows it is sometimes less? need to investigate the precision here.
-        self.assertGreaterEqual(delay, 0.04)
-        # On slow CI machines, there can be a significant additional delay.
-        # So what are we even testing here..?
-        self.assertLessEqual(delay, 0.07)
 
     def test_composite_params(self):
         # this one has names and shapes

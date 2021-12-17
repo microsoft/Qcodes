@@ -1,19 +1,31 @@
 import ctypes
 import logging
+import sys
 import time
 import warnings
-import sys
-from typing import List, Dict, Union, Sequence, Optional, Any, Iterator, cast, TypeVar, Type, Generic
 from contextlib import contextmanager
+from typing import (
+    Any,
+    Dict,
+    Generic,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 
 import numpy as np
 
 from qcodes.instrument.base import Instrument
-from .ats_api import AlazarATSAPI
-from .utils import TraceParameter
-from .helpers import CapabilityHelper
-from .constants import NUMBER_OF_CHANNELS_FROM_BYTE_REPR, max_buffer_size
 
+from .ats_api import AlazarATSAPI
+from .constants import NUMBER_OF_CHANNELS_FROM_BYTE_REPR, max_buffer_size
+from .helpers import CapabilityHelper
+from .utils import TraceParameter
 
 logger = logging.getLogger(__name__)
 
@@ -385,6 +397,10 @@ class AlazarTech_ATS(Instrument):
             ctypes.c_uint16 if whole_bytes_per_sample > 1 else ctypes.c_uint8)
         internal_buffer_size_requested = (bits_per_sample * samples_per_record *
                                           records_per_buffer) // 8
+
+        if mode == 'TS':
+            transfer_buffer_size //= buffers_per_acquisition
+            internal_buffer_size_requested //= buffers_per_acquisition
 
         if internal_buffer_size_requested > max_buffer_size:
             raise RuntimeError(f"Requested a buffer of size: "
@@ -865,11 +881,8 @@ class AcquisitionController(Instrument, AcquisitionInterface[Any], Generic[Outpu
             alazar_name: The name of the alazar instrument.
         """
         super().__init__(name, **kwargs)
-        self._alazar: AlazarTech_ATS = cast(
-            AlazarTech_ATS,
-            self.find_instrument(
-                alazar_name,
-                instrument_class=AlazarTech_ATS)
+        self._alazar: AlazarTech_ATS = self.find_instrument(
+            alazar_name, instrument_class=AlazarTech_ATS
         )
 
     def _get_alazar(self) -> AlazarTech_ATS:

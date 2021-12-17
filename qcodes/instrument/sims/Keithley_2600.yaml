@@ -18,8 +18,8 @@ devices:
           volt:
             default: 0.0
             getter:
-              q: "print({ch_id}.measure.v())"
-              r: "{}"
+              q: "print({ch_id}.measure.v(), status.measurement.instrument.{ch_id}.condition)"
+              r: "{}\t0"
             setter:
               q: "{ch_id}.source.levelv={}"
             specs:
@@ -28,8 +28,8 @@ devices:
           curr:
             default: 0.0
             getter:
-              q: "print({ch_id}.measure.i())"
-              r: "{}"
+              q: "print({ch_id}.measure.i(), status.measurement.instrument.{ch_id}.condition)"
+              r: "{}\t0"
             setter:
               q: "{ch_id}.source.leveli={}"
             specs:

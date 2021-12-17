@@ -1,13 +1,12 @@
 import re
 
-import pytest
 import numpy as np
-from hypothesis import given, strategies as hst
+import pytest
 
 import qcodes as qc
-from qcodes.dataset.measurements import DataSaver
-from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
+from qcodes.dataset.descriptions.param_spec import ParamSpecBase
+from qcodes.dataset.measurements import DataSaver
 
 CALLBACK_COUNT = 0
 CALLBACK_RUN_ID = None
@@ -125,6 +124,32 @@ def test_saving_numeric_values_as_text(numeric_type, bg_writing):
                         f'type {gottype} ({value}).')
         with pytest.raises(ValueError, match=msg):
             data_saver.add_result((p.name, value))
+    finally:
+        data_saver.dataset.mark_completed()
+        data_saver.dataset.conn.close()
+
+
+@pytest.mark.usefixtures("experiment")
+def test_duplicated_parameter_raises():
+    """
+    Test that passing same parameter multiple times to ``add_result`` raises an exception
+    """
+    p = ParamSpecBase("p", "text")
+
+    test_set = qc.new_data_set("test-dataset")
+    test_set.set_interdependencies(InterDependencies_(standalones=(p,)))
+    test_set.mark_started()
+
+    idps = InterDependencies_(standalones=(p,))
+
+    data_saver = DataSaver(dataset=test_set, write_period=0, interdeps=idps)
+
+    try:
+        msg = re.escape(
+            "Not all parameter names are unique. Got multiple values for ['p']"
+        )
+        with pytest.raises(ValueError, match=msg):
+            data_saver.add_result((p.name, 1), (p.name, 1))
     finally:
         data_saver.dataset.mark_completed()
         data_saver.dataset.conn.close()
