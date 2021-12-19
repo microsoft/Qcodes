@@ -145,8 +145,7 @@ class DummyFailingInstrument(Instrument):
 
         Args:
             name: name for the instrument
-            gates: list of names that is used to create parameters for
-                            the instrument
+            fail: if true, instrument will throw a runtime error on creation.
         """
         super().__init__(name, **kwargs)
 
