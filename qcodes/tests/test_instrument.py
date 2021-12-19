@@ -67,8 +67,8 @@ def test_check_instances(testdummy):
 
 
 def test_instrument_fail(close_before_and_after):
-    with pytest.raises(RuntimeError):
-        instr = DummyFailingInstrument(name="failinginstrument")
+    with pytest.raises(RuntimeError, match="Failed to create instrument"):
+        DummyFailingInstrument(name="failinginstrument")
 
     assert Instrument.instances() == []
     assert DummyFailingInstrument.instances() == []
@@ -76,8 +76,8 @@ def test_instrument_fail(close_before_and_after):
 
 
 def test_instrument_retry_with_same_name(close_before_and_after):
-    with pytest.raises(RuntimeError):
-        instr = DummyFailingInstrument(name="failinginstrument")
+    with pytest.raises(RuntimeError, match="Failed to create instrument"):
+        DummyFailingInstrument(name="failinginstrument")
     instr = DummyFailingInstrument(name="failinginstrument", fail=False)
 
     # Check that the instrument is successfully registered after failing first
