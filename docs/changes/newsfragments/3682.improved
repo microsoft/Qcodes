@@ -1,4 +1,0 @@
-get_parameter_data for an empty dataset now correctly
-returns a dict of dicts of empty numpy arrays consistent
-with how data is normally returned. Previously, this returned an
-empty dict.

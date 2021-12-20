@@ -1,0 +1,31 @@
+QCoDeS 0.31.0 (2021-12-20)
+==========================
+
+Improved:
+---------
+
+- Do not apply offset or scale when getting a DelegateParameter and source is
+  uninitialized (its value is None) to prevent a TypeError being raised. Closes
+  #3653 (#3662)
+- get_parameter_data for an empty dataset now correctly
+  returns a dict of dicts of empty numpy arrays consistent
+  with how data is normally returned. Previously, this returned an
+  empty dict. (#3682)
+
+
+New Drivers:
+------------
+
+- Adds a driver for the PNA N5222B (#3683)
+
+
+Improved Drivers:
+-----------------
+
+- AMI430 magnet power supply: fix switch heater parameters that return 0 or 1 as a string (#3650)
+- Adds CW mode to PNA 52xx (#3683)
+- Update N52xx driver to fix warnings on initialization
+  related to not passing ``**kwargs`` in trace parameters (closes #3687).
+  PNA traces updated to use ParameterWithSetpoints as base instead of
+  ArrayParameter. (#3688)
+- Add example notebook for R&S SGS100A RF source. (#3680)
