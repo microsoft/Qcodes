@@ -32,7 +32,7 @@ def test_mock_field_delegate(station, field_x, chip_config):
         assert field.ramp_rate() == 10.0
         assert_almost_equal(field.X(), 0.0)
         assert field.ramp_X_ramp_rate() == 10.0
-        assert field.ramp_X_field() == 0.0
+        assert_almost_equal(field.ramp_X_field(), 0.0)
 
 
 def test_delegate_channel_instrument(station, chip_config):

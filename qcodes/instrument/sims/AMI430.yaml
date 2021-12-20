@@ -54,7 +54,7 @@ devices:
           q: 'CONF:RAMP:RATE:SEG {}'
 
       ramp rate field first segment:
-        default: '25, 25, 25'
+        default: '0.11, 0.11, 0.11'
         getter:
           q: 'RAMP:RATE:FIELD:1?'
           r: '{}'
@@ -128,6 +128,14 @@ devices:
           r: "{}"
         setter:
           q: "CONF:CURR:RATING {}"
+
+      switch_heater_enabled:
+        default: "0"
+        getter:
+          q: "PS:INST?"
+          r: "{}"
+        setter:
+          q: "CONF:PS {}"
 
 
 # we always need three power supplies, one for each axis.

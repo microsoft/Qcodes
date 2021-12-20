@@ -331,13 +331,11 @@ def _merge_data_single_param(
         shape: Optional[Tuple[int, ...]],
         single_tree_write_status: Optional[int]) -> Tuple[Optional[np.ndarray], Optional[int]]:
     merged_data: Optional[np.ndarray]
-    if existing_values is not None and new_values is not None:
-        (merged_data,
-         new_write_status) = _insert_into_data_dict(
-            existing_values,
-            new_values,
-            single_tree_write_status,
-            shape=shape
+    if (
+        existing_values is not None and existing_values.size != 0
+    ) and new_values is not None:
+        (merged_data, new_write_status) = _insert_into_data_dict(
+            existing_values, new_values, single_tree_write_status, shape=shape
         )
     elif new_values is not None:
         (merged_data,
@@ -359,7 +357,7 @@ def _create_new_data_dict(new_values: np.ndarray,
                           ) -> Tuple[np.ndarray, int]:
     if shape is None:
         return new_values, new_values.size
-    else:
+    elif new_values.size > 0:
         n_values = new_values.size
         data = np.zeros(shape, dtype=new_values.dtype)
 
@@ -370,6 +368,8 @@ def _create_new_data_dict(new_values: np.ndarray,
 
         data.ravel()[0:n_values] = new_values.ravel()
         return data, n_values
+    else:
+        return new_values, new_values.size
 
 
 def _insert_into_data_dict(
@@ -378,6 +378,9 @@ def _insert_into_data_dict(
         write_status: Optional[int],
         shape: Optional[Tuple[int, ...]]
 ) -> Tuple[np.ndarray, Optional[int]]:
+    if new_values.size == 0:
+        return existing_values, write_status
+
     if shape is None or write_status is None:
         try:
             data = np.append(existing_values, new_values, axis=0)
@@ -474,5 +477,8 @@ class DataSetCacheWithDBBackend(DataSetCache["DataSet"]):
             self._read_status,
             self._data,
         )
-        if not all(status is None for status in self._write_status.values()):
+        data_not_read = all(
+            status is None or status == 0 for status in self._write_status.values()
+        )
+        if not data_not_read:
             self._live = False
