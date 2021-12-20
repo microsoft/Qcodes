@@ -129,6 +129,7 @@ def test_parameter(request, inst_and_monitor):
         # Check parameter values
         old_timestamps = {}
         for local_param, mon in zip(monitor_parameters, metadata["parameters"]):
+            assert isinstance(local_param, Parameter)
             assert str(local_param.get_latest()) == mon["value"]
             assert local_param.label == mon["name"]
             old_timestamps[local_param.label] = float(mon["ts"])
@@ -141,6 +142,7 @@ def test_parameter(request, inst_and_monitor):
         metadata = data["parameters"][0]
         for local_param, mon in zip(monitor_parameters, metadata["parameters"]):
             assert str(local_param.get_latest()) == mon["value"]
+            assert isinstance(local_param, Parameter)
             assert local_param.label == mon["name"]
             assert float(mon["ts"]) > old_timestamps[local_param.label]
 
