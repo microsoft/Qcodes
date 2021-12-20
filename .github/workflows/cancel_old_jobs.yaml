@@ -1,0 +1,14 @@
+name: Cancel old jobs
+on:
+  workflow_run:
+    workflows: ["build docs", "Run mypy and pytest", "Run pytest with minimum requirements", "run qcodes.pytest()", "Install all deps from conda-forge and run pytest"]
+    types:
+      - requested
+jobs:
+  cancel:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: styfle/cancel-workflow-action@0.9.1
+      with:
+        all_but_latest: true
+        workflow_id: ${{ github.event.workflow.id }}

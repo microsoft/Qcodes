@@ -18,18 +18,18 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python-version: [3.7, 3.8, 3.9, "3.10"]
+        python-version: [3.7, 3.9, "3.10"]
         exclude:
-          - os: windows-latest
-            python-version: 3.8
           - os: windows-latest
             python-version: 3.9
           - os: windows-latest
             python-version: 3.10
+          - os: ubuntu-latest
+            python-version: 3.7
     env:
       DISPLAY: ':99.0'
       OS: ${{ matrix.os }}
-      UPLOAD_TO_GHPAGES: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == '3.7' && github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+      UPLOAD_TO_GHPAGES: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == '3.9' && github.event_name == 'push' && github.ref == 'refs/heads/master' }}
     steps:
     - uses: actions/checkout@v2.3.4
       with:
@@ -86,12 +86,12 @@ jobs:
         ./make.bat html
       if: runner.os == 'Windows'
     - name: Upload build docs
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v2.3.1
       with:
         name: docs_${{ matrix.python-version }}_${{ matrix.os }}
         path: ${{ github.workspace }}/docs/_build/html
     - name: Deploy to gh pages
-      uses: JamesIves/github-pages-deploy-action@4.1.7
+      uses: JamesIves/github-pages-deploy-action@4.1.8
       with:
         branch: gh-pages
         folder: ${{ github.workspace }}/docs/_build/html

@@ -1,4 +1,4 @@
-name: Run pytest with minium requirements
+name: Run pytest with minimum requirements
 
 on:
   push:

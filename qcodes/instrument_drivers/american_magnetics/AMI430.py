@@ -107,7 +107,7 @@ class AMI430SwitchHeater(InstrumentChannel):
         self._enabled = True
 
     def check_enabled(self) -> bool:
-        return bool(self.ask('PS:INST?').strip())
+        return bool(int(self.ask('PS:INST?').strip()))
 
     @_Decorators.check_enabled
     def on(self) -> None:
@@ -123,7 +123,7 @@ class AMI430SwitchHeater(InstrumentChannel):
 
     @_Decorators.check_enabled
     def check_state(self) -> bool:
-        return bool(self.ask("PS?").strip())
+        return bool(int(self.ask("PS?").strip()))
 
 
 class AMI430(IPInstrument):
@@ -528,7 +528,7 @@ class AMI430_3D(Instrument):
             found_ami430 = AMI430.find_instrument(
                 name=ami430_name, instrument_class=AMI430
             )
-            return cast(AMI430, found_ami430)
+            return found_ami430
 
         self._instrument_x = (
             instrument_x if isinstance(instrument_x, AMI430)
