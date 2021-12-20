@@ -24,7 +24,6 @@ import json
 import logging
 import os
 import socketserver
-import sys
 import time
 import webbrowser
 from asyncio import CancelledError
