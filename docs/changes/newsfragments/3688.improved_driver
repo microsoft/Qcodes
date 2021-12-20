@@ -1,4 +1,0 @@
-Update N52xx driver to fix warnings on initialization
-related to not passing ``**kwargs`` in trace parameters (closes #3687).
-PNA traces updated to use ParameterWithSetpoints as base instead of
-ArrayParameter.
