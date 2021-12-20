@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+import time
 from abc import ABC, abstractmethod
 from contextlib import ExitStack, contextmanager
 from typing import Callable, Dict, Iterator, List, Optional, Sequence, Tuple, Union
@@ -9,7 +10,6 @@ import matplotlib
 import numpy as np
 from tqdm.auto import tqdm
 from typing_extensions import TypedDict
-import time
 
 from qcodes import config
 from qcodes.dataset.data_set_protocol import DataSetProtocol, res_type
@@ -182,7 +182,7 @@ def do1d(
     exp: Optional[Experiment] = None,
     do_plot: Optional[bool] = None,
     use_threads: Optional[bool] = None,
-    additional_setpoints: Sequence[ParamMeasT] = tuple(),
+    additional_setpoints: Sequence[_BaseParameter] = tuple(),
     show_progress: Optional[None] = None,
     log_info: Optional[str] = None,
 ) -> AxesTupleListWithDataSet:
@@ -313,7 +313,7 @@ def do2d(
     flush_columns: bool = False,
     do_plot: Optional[bool] = None,
     use_threads: Optional[bool] = None,
-    additional_setpoints: Sequence[ParamMeasT] = tuple(),
+    additional_setpoints: Sequence[_BaseParameter] = tuple(),
     show_progress: Optional[None] = None,
     log_info: Optional[str] = None,
 ) -> AxesTupleListWithDataSet:
@@ -615,7 +615,7 @@ def dond(
     do_plot: Optional[bool] = None,
     show_progress: Optional[bool] = None,
     use_threads: Optional[bool] = None,
-    additional_setpoints: Sequence[ParamMeasT] = tuple(),
+    additional_setpoints: Sequence[_BaseParameter] = tuple(),
     log_info: Optional[str] = None,
 ) -> Union[AxesTupleListWithDataSet, MultiAxesTupleListWithDataSet]:
     """

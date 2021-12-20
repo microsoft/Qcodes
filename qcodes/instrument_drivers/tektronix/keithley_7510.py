@@ -1,12 +1,18 @@
-import numpy as np
-from typing import cast, Optional, List, Union, Sequence, Any, Tuple, Dict, Type, Set
 from types import TracebackType
+from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Type, Union, cast
 
-from qcodes import VisaInstrument, InstrumentChannel
-from qcodes.instrument.parameter import invert_val_mapping, Parameter, \
-    DelegateParameter, MultiParameter, ParamRawDataType
-from qcodes.utils.validators import Enum, Numbers, Ints, Lists, Arrays
+import numpy as np
+
+from qcodes import InstrumentChannel, VisaInstrument
+from qcodes.instrument.parameter import (
+    DelegateParameter,
+    MultiParameter,
+    Parameter,
+    ParamRawDataType,
+    invert_val_mapping,
+)
 from qcodes.utils.helpers import create_on_off_val_mapping
+from qcodes.utils.validators import Arrays, Enum, Ints, Lists, Numbers
 
 
 class DataArray7510(MultiParameter):
@@ -353,10 +359,10 @@ class Buffer7510(InstrumentChannel):
             setpoint_names=((self.setpoints.label,),) * n_elements
         )
         data._data = tuple(
-            tuple(processed_data[element]) for element in elements
+            tuple(processed_data[element]) for element in elements  # type: ignore[arg-type]
         )
         for i in range(len(data.names)):
-            setattr(data, data.names[i], tuple(processed_data[data.names[i]]))
+            setattr(data, data.names[i], tuple(processed_data[data.names[i]]))  # type: ignore[arg-type]
         return data
 
     def clear_buffer(self) -> None:

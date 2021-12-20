@@ -250,21 +250,24 @@ def test_delegate_get_updates_cache(make_observable_parameter, numeric_val):
     assert t.get_instr_val() == initial_value
 
 
-def test_delegate_parameter_get_and_snapshot_raises_with_none():
+def test_delegate_parameter_get_and_snapshot_with_none_source():
     """
-    Test that a delegate parameter raises on get and snapshot if
-    the source has a value of None and a scale is used.
-    But works correctly if the source is remapped to a real parameter.
-
+    Test that a delegate parameter returns None on get and snapshot if
+    the source has a value of None and an offset or scale is used.
+    And returns a value if the source is remapped to a real parameter.
     """
     none_param = Parameter("None")
     source_param = Parameter('source', get_cmd=None, set_cmd=None, initial_value=2)
     delegate_param = DelegateParameter(name='delegate', source=none_param)
+    delegate_param.offset = 4
+    assert delegate_param.get() is None
+    assert delegate_param.snapshot()['value'] is None
+
+    delegate_param.offset = None
     delegate_param.scale = 2
-    with pytest.raises(TypeError):
-        delegate_param.get()
-    with pytest.raises(TypeError):
-        delegate_param.snapshot()
+    assert delegate_param.get() is None
+    assert delegate_param.snapshot()['value'] is None
+
     assert delegate_param.cache._parameter.source.cache is none_param.cache
     delegate_param.source = source_param
     assert delegate_param.get() == 1
