@@ -14,6 +14,7 @@ from typing import (
     Optional,
     Sequence,
     Type,
+    TypeVar,
     Union,
     cast,
 )
@@ -240,10 +241,10 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                           for name, func in self.functions.items()},
             "submodules": {name: subm.snapshot(update=update)
                            for name, subm in self.submodules.items()},
+            "parameters": {},
             "__class__": full_class(self)
         }
 
-        snap['parameters'] = {}
         for name, param in self.parameters.items():
             if param.snapshot_exclude:
                 continue
@@ -442,6 +443,9 @@ class AbstractInstrument(ABC):
         pass
 
 
+T = TypeVar("T", bound="Instrument")
+
+
 class Instrument(InstrumentBase, AbstractInstrument):
 
     """
@@ -579,7 +583,7 @@ class Instrument(InstrumentBase, AbstractInstrument):
         log.info("Closing all registered instruments")
         for inststr in list(cls._all_instruments):
             try:
-                inst = cls.find_instrument(inststr)
+                inst: Instrument = cls.find_instrument(inststr)
                 log.info(f"Closing {inststr}")
                 inst.close()
             except:
@@ -654,8 +658,9 @@ class Instrument(InstrumentBase, AbstractInstrument):
                 del all_ins[name]
 
     @classmethod
-    def find_instrument(cls, name: str,
-                        instrument_class: Optional[type] = None) -> 'Instrument':
+    def find_instrument(
+        cls, name: str, instrument_class: Optional[Type[T]] = None
+    ) -> T:
         """
         Find an existing instrument by name.
 
@@ -672,20 +677,23 @@ class Instrument(InstrumentBase, AbstractInstrument):
             TypeError: If a specific class was requested but a different
                 type was found.
         """
+        internal_instrument_class = instrument_class or Instrument
+
         if name not in cls._all_instruments:
             raise KeyError(f"Instrument with name {name} does not exist")
         ins = cls._all_instruments[name]()
-
         if ins is None:
             del cls._all_instruments[name]
             raise KeyError(f'Instrument {name} has been removed')
-        if instrument_class is not None:
-            if not isinstance(ins, instrument_class):
-                raise TypeError(
-                    'Instrument {} is {} but {} was requested'.format(
-                        name, type(ins), instrument_class))
 
-        return cast('Instrument', ins)
+        if not isinstance(ins, internal_instrument_class):
+            raise TypeError(
+                f"Instrument {name} is {type(ins)} but {internal_instrument_class} was requested"
+            )
+        # at this stage we have checked that the instrument is either of type instrument_class
+        # or Instrument if that is None. It is therefor safe to cast here.
+        ins = cast(T, ins)
+        return ins
 
     @staticmethod
     def exist(name: str, instrument_class: Optional[type] = None) -> bool:
@@ -818,12 +826,13 @@ class Instrument(InstrumentBase, AbstractInstrument):
                 type(self).__name__))
 
 
-def find_or_create_instrument(instrument_class: Type[Instrument],
-                              name: str,
-                              *args: Any,
-                              recreate: bool = False,
-                              **kwargs: Any
-                              ) -> Instrument:
+def find_or_create_instrument(
+    instrument_class: Type[T],
+    name: str,
+    *args: Any,
+    recreate: bool = False,
+    **kwargs: Any,
+) -> T:
     """
     Find an instrument with the given name of a given class, or create one if
     it is not found. In case the instrument was found, and `recreate` is True,

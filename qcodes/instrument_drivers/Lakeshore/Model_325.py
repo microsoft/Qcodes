@@ -1,10 +1,10 @@
 from enum import IntFlag
-from typing import Dict, cast, List, Tuple, Iterable, TextIO, Any, Optional
 from itertools import takewhile
+from typing import Any, Dict, Iterable, List, Optional, TextIO, Tuple, cast
 
-from qcodes import VisaInstrument, InstrumentChannel, ChannelList
+from qcodes import ChannelList, InstrumentChannel, VisaInstrument
+from qcodes.instrument.group_parameter import Group, GroupParameter
 from qcodes.utils.validators import Enum, Numbers
-from qcodes.instrument.group_parameter import GroupParameter, Group
 
 
 def read_curve_file(curve_file: TextIO) -> Dict[Any, Any]:
@@ -281,9 +281,12 @@ class Model_325_Sensor(InstrumentChannel):
     def decode_sensor_status(sum_of_codes: int) -> str:
         total_status = Status(sum_of_codes)
         if sum_of_codes == 0:
-            return 'OK'
-        status_messages = [st.name.replace('_', ' ') for st in Status
-                           if st in total_status]
+            return "OK"
+        status_messages = [
+            st.name.replace("_", " ")
+            for st in Status
+            if st in total_status and st.name is not None
+        ]
         return ", ".join(status_messages)
 
     @property

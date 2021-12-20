@@ -1,8 +1,8 @@
-from typing import Optional, Type
-from types import TracebackType, FrameType
-import signal
 import logging
+import signal
 import threading
+from types import FrameType, TracebackType
+from typing import Optional, Type, cast
 
 log = logging.getLogger(__name__)
 
@@ -28,7 +28,7 @@ class DelayedKeyboardInterrupt:
         elif is_default_sig_handler:
             log.debug("Not on main thread cannot intercept interrupts")
 
-    def handler(self, sig: signal.Signals, frame: FrameType) -> None:
+    def handler(self, sig: int, frame: Optional[FrameType]) -> None:
         self.signal_received = (sig, frame)
         print("Received SIGINT, Will interrupt at first suitable time. "
               "Send second SIGINT to interrupt immediately.")
@@ -38,11 +38,16 @@ class DelayedKeyboardInterrupt:
         log.info('SIGINT received. Delaying KeyboardInterrupt.')
 
     @staticmethod
-    def forceful_handler(sig: signal.Signals, frame: FrameType) -> None:
+    def forceful_handler(sig: int, frame: Optional[FrameType]) -> None:
         print("Second SIGINT received. Triggering "
               "KeyboardInterrupt immediately.")
         log.info('Second SIGINT received. Triggering '
                  'KeyboardInterrupt immediately.')
+        # The typing of signals seems to be inconsistent
+        # since handlers must be types to take an optional frame
+        # but default_int_handler does not take None.
+        # see https://github.com/python/typeshed/pull/6599
+        frame = cast(FrameType, frame)
         signal.default_int_handler(sig, frame)
 
     def __exit__(self, exception_type: Optional[Type[BaseException]],

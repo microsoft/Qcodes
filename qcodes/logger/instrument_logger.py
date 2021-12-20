@@ -49,7 +49,8 @@ class InstrumentLoggerAdapter(logging.LoggerAdapter):
         kwargs['extra'] = self.extra
         assert self.extra is not None
         inst = self.extra['instrument']
-        return f"[{inst.full_name}({type(inst).__name__})] {msg}", kwargs
+        full_name = getattr(inst, "full_name", None)
+        return f"[{full_name}({type(inst).__name__})] {msg}", kwargs
 
 
 class InstrumentFilter(logging.Filter):
@@ -76,8 +77,8 @@ class InstrumentFilter(logging.Filter):
         self.instrument_set = set(instrument_seq)
 
     def filter(self, record: logging.LogRecord) -> bool:
-        inst = getattr(record, 'instrument', False)
-        if inst is False:
+        inst: Optional["InstrumentBase"] = getattr(record, "instrument", None)
+        if inst is None:
             return False
         return not self.instrument_set.isdisjoint(inst.ancestors)
 
