@@ -1,7 +1,7 @@
 name: Cancel old jobs
 on:
   workflow_run:
-    workflows: ["build docs", "Run mypy and pytest", "Run pytest with minimum requirements"]
+    workflows: ["build docs", "Run mypy and pytest", "Run pytest with minimum requirements", "run qcodes.pytest()"]
     types:
       - requested
 jobs:
