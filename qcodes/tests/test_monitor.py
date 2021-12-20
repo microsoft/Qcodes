@@ -91,9 +91,7 @@ def test_connection(request):
     asyncio.set_event_loop(loop)
 
     async def async_test_connection():
-        async with websockets.connect(
-            f"ws://localhost:{monitor.WEBSOCKET_PORT}"
-        ) as websocket:
+        async with websockets.connect(f"ws://localhost:{monitor.WEBSOCKET_PORT}"):
             pass
     loop.run_until_complete(async_test_connection())
 
