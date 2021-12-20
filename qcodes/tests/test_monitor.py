@@ -4,11 +4,12 @@ Test suite for monitor
 import asyncio
 import json
 import random
-import websockets
 
 import pytest
-from qcodes.monitor import monitor
+import websockets
+
 from qcodes.instrument.base import Parameter
+from qcodes.monitor import monitor
 from qcodes.tests.instrument_mocks import DummyInstrument
 
 monitor.WEBSOCKET_PORT = random.randint(50000, 60000)
@@ -90,8 +91,10 @@ def test_connection(request):
     asyncio.set_event_loop(loop)
 
     async def async_test_connection():
-        websocket = await websockets.connect(f"ws://localhost:{monitor.WEBSOCKET_PORT}")
-        await websocket.close()
+        async with websockets.connect(
+            f"ws://localhost:{monitor.WEBSOCKET_PORT}"
+        ) as websocket:
+            pass
     loop.run_until_complete(async_test_connection())
 
     m.stop()
@@ -112,43 +115,45 @@ def test_parameter(request, inst_and_monitor):
     instr, my_monitor, monitor_parameters, param = inst_and_monitor
 
     async def async_test_monitor():
-        websocket = await websockets.connect(f"ws://localhost:{monitor.WEBSOCKET_PORT}")
+        async with websockets.connect(
+            f"ws://localhost:{monitor.WEBSOCKET_PORT}"
+        ) as websocket:
 
-        # Recieve data from monitor
-        data = await websocket.recv()
-        data = json.loads(data)
-        # Check fields
-        assert "ts" in data
-        assert "parameters" in data
-        # Check one instrument and "No Instrument" is being sent
-        assert len(data["parameters"]) == 2
-        assert data["parameters"][1]["instrument"] == "Unbound Parameter"
-        metadata = data["parameters"][0]
-        assert metadata["instrument"] == str(instr)
+            # Recieve data from monitor
+            data = await websocket.recv()
+            data = json.loads(data)
+            # Check fields
+            assert "ts" in data
+            assert "parameters" in data
+            # Check one instrument and "No Instrument" is being sent
+            assert len(data["parameters"]) == 2
+            assert data["parameters"][1]["instrument"] == "Unbound Parameter"
+            metadata = data["parameters"][0]
+            assert metadata["instrument"] == str(instr)
 
-        # Check parameter values
-        old_timestamps = {}
-        for local_param, mon in zip(monitor_parameters, metadata["parameters"]):
-            assert isinstance(local_param, Parameter)
-            assert str(local_param.get_latest()) == mon["value"]
-            assert local_param.label == mon["name"]
-            old_timestamps[local_param.label] = float(mon["ts"])
-            local_param(random.random())
+            # Check parameter values
+            old_timestamps = {}
+            for local_param, mon in zip(monitor_parameters, metadata["parameters"]):
+                assert isinstance(local_param, Parameter)
+                assert str(local_param.get_latest()) == mon["value"]
+                assert local_param.label == mon["name"]
+                old_timestamps[local_param.label] = float(mon["ts"])
+                local_param(random.random())
 
-        # Check parameter updates
-        data_str = await websocket.recv()
-        data_str = await websocket.recv()
-        data = json.loads(data_str)
-        metadata = data["parameters"][0]
-        for local_param, mon in zip(monitor_parameters, metadata["parameters"]):
-            assert str(local_param.get_latest()) == mon["value"]
-            assert isinstance(local_param, Parameter)
-            assert local_param.label == mon["name"]
-            assert float(mon["ts"]) > old_timestamps[local_param.label]
+            # Check parameter updates
+            data_str = await websocket.recv()
+            data_str = await websocket.recv()
+            data = json.loads(data_str)
+            metadata = data["parameters"][0]
+            for local_param, mon in zip(monitor_parameters, metadata["parameters"]):
+                assert str(local_param.get_latest()) == mon["value"]
+                assert isinstance(local_param, Parameter)
+                assert local_param.label == mon["name"]
+                assert float(mon["ts"]) > old_timestamps[local_param.label]
 
-        # Check unbound parameter
-        metadata = data["parameters"][1]["parameters"]
-        assert len(metadata) == 1
-        assert param.label == metadata[0]["name"]
+            # Check unbound parameter
+            metadata = data["parameters"][1]["parameters"]
+            assert len(metadata) == 1
+            assert param.label == metadata[0]["name"]
 
     loop.run_until_complete(async_test_monitor())
