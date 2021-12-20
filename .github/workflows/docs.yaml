@@ -26,6 +26,8 @@ jobs:
             python-version: 3.9
           - os: windows-latest
             python-version: 3.10
+          - os: ubuntu-latest
+            python-version: 3.7
     env:
       DISPLAY: ':99.0'
       OS: ${{ matrix.os }}
