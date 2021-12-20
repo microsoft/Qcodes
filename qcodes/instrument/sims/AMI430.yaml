@@ -129,6 +129,14 @@ devices:
         setter:
           q: "CONF:CURR:RATING {}"
 
+      switch_heater_enabled:
+        default: "0"
+        getter:
+          q: "PS:INST?"
+          r: "{}"
+        setter:
+          q: "CONF:PS {}"
+
 
 # we always need three power supplies, one for each axis.
 # For the testing we add a few more.

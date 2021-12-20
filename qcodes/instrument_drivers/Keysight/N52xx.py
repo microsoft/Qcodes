@@ -1,74 +1,112 @@
-import logging
 import re
 import time
 from typing import Any, Sequence, Union
 
 import numpy as np
-from pyvisa import VisaIOError, errors
+from pyvisa import errors
 
-from qcodes import ArrayParameter, ChannelList, InstrumentChannel, VisaInstrument
-from qcodes.utils.validators import Bool, Enum, Ints, Numbers
-
-logger = logging.getLogger()
-
-class PNASweep(ArrayParameter):
-    def __init__(self,
-                 name: str,
-                 instrument: 'PNABase',
-                 **kwargs: Any) -> None:
-
-        super().__init__(name,
-                         instrument=instrument,
-                         shape=(0,),
-                         setpoints=((0,),),
-                         **kwargs)
-
-    @property  # type: ignore[override]
-    def shape(self) -> Sequence[int]:  # type: ignore[override]
-        if self.instrument is None:
-            return (0,)
-        return (self.instrument.root_instrument.points(),)
-
-    @shape.setter
-    def shape(self, val: Sequence[int]) -> None:
-        pass
-
-    @property  # type: ignore[override]
-    def setpoints(self) -> Sequence[np.ndarray]:  # type: ignore[override]
-        if self.instrument is None:
-            raise RuntimeError("Cannot return setpoints if not attached "
-                               "to instrument")
-        start = self.instrument.root_instrument.start()
-        stop = self.instrument.root_instrument.stop()
-        return (np.linspace(start, stop, self.shape[0]),)
-
-    @setpoints.setter
-    def setpoints(self, val: Sequence[int]) -> None:
-        pass
+from qcodes import (
+    ChannelList,
+    InstrumentChannel,
+    Parameter,
+    ParameterWithSetpoints,
+    VisaInstrument,
+)
+from qcodes.instrument.base import _BaseParameter
+from qcodes.utils.validators import Arrays, Bool, Enum, Ints, Numbers
 
 
-class FormattedSweep(PNASweep):
+class PNAAxisParameter(Parameter):
+    def __init__(
+        self,
+        startparam: Parameter,
+        stopparam: Parameter,
+        pointsparam: Parameter,
+        **kwargs: Any,
+    ):
+        """
+        Axis parameter for traces from the PNA
+        """
+        super().__init__(**kwargs)
+
+        self._startparam = startparam
+        self._stopparam = stopparam
+        self._pointsparam = pointsparam
+
+    def get_raw(self) -> np.ndarray:
+        """
+        Return the axis values, with values retrieved from the parent instrument
+        """
+        # pylint: disable=line-too-long
+        return np.linspace(self._startparam(), self._stopparam(), self._pointsparam())  # type: ignore
+
+
+class PNALogAxisParamter(PNAAxisParameter):
+    def get_raw(self) -> np.ndarray:
+        """
+        Return the axis values on a log scale, with values retrieved from
+        the parent instrument
+        """
+        # pylint: disable=line-too-long
+        return np.geomspace(self._startparam(), self._stopparam(), self._pointsparam())  # type: ignore
+
+
+class PNATimeAxisParameter(PNAAxisParameter):
+    def get_raw(self) -> np.ndarray:
+        """
+        Return the axis values on a time scale, with values retrieved from
+        the parent instrument
+        """
+        return np.linspace(0, self._stopparam(), self._pointsparam())  # type: ignore
+
+
+class FormattedSweep(ParameterWithSetpoints):
     """
     Mag will run a sweep, including averaging, before returning data.
     As such, wait time in a loop is not needed.
     """
-    def __init__(self,
-                 name: str,
-                 instrument: 'PNABase',
-                 sweep_format: str,
-                 label: str,
-                 unit: str,
-                 memory: bool = False) -> None:
-        super().__init__(name,
-                         instrument=instrument,
-                         label=label,
-                         unit=unit,
-                         setpoint_names=('frequency',),
-                         setpoint_labels=('Frequency',),
-                         setpoint_units=('Hz',)
-                         )
+
+    def __init__(
+        self,
+        name: str,
+        instrument: "PNABase",
+        sweep_format: str,
+        label: str,
+        unit: str,
+        memory: bool = False,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(name, instrument=instrument, label=label, unit=unit, **kwargs)
         self.sweep_format = sweep_format
         self.memory = memory
+
+    @property
+    def setpoints(self) -> Sequence[_BaseParameter]:
+        """
+        Overwrite setpoint parameter to ask the PNA what type of sweep
+        """
+        if self.instrument is None:
+            raise RuntimeError(
+                "Cannot return setpoints if not attached " "to instrument"
+            )
+        root_instrument: "PNABase" = self.root_instrument  # type: ignore
+        sweep_type = root_instrument.sweep_type()
+        if sweep_type == "LIN":
+            return (root_instrument.frequency_axis,)
+        elif sweep_type == "LOG":
+            return (root_instrument.frequency_log_axis,)
+        elif sweep_type == "CW":
+            return (root_instrument.time_axis,)
+        else:
+            raise NotImplementedError(f"Axis for type {sweep_type} not implemented yet")
+
+    @setpoints.setter
+    def setpoints(self, val: Any) -> None:
+        """
+        Stub to allow initialization. Ignore any set attempts on setpoint as we
+        figure it out on the fly.
+        """
+        return
 
     def get_raw(self) -> Sequence[float]:
         if self.instrument is None:
@@ -96,13 +134,16 @@ class PNAPort(InstrumentChannel):
     Note: This can be expanded to include a large number of extra parameters...
     """
 
-    def __init__(self,
-                 parent: 'PNABase',
-                 name: str,
-                 port: int,
-                 min_power: Union[int, float],
-                 max_power: Union[int, float]) -> None:
-        super().__init__(parent, name)
+    def __init__(
+        self,
+        parent: "PNABase",
+        name: str,
+        port: int,
+        min_power: Union[int, float],
+        max_power: Union[int, float],
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(parent, name, **kwargs)
 
         self.port = int(port)
         if self.port < 1 or self.port > 4:
@@ -133,12 +174,15 @@ class PNATrace(InstrumentChannel):
     Allow operations on individual PNA traces.
     """
 
-    def __init__(self,
-                 parent: 'PNABase',
-                 name: str,
-                 trace_name: str,
-                 trace_num: int) -> None:
-        super().__init__(parent, name)
+    def __init__(
+        self,
+        parent: "PNABase",
+        name: str,
+        trace_name: str,
+        trace_num: int,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(parent, name, **kwargs)
         self.trace_name = trace_name
         self.trace_num = trace_num
 
@@ -163,37 +207,44 @@ class PNATrace(InstrumentChannel):
                            sweep_format='MLOG',
                            label='Magnitude',
                            unit='dB',
-                           parameter_class=FormattedSweep)
+                           parameter_class=FormattedSweep,
+                           vals=Arrays(shape=(self.parent.points,)))
         self.add_parameter('linear_magnitude',
                            sweep_format='MLIN',
                            label='Magnitude',
                            unit='ratio',
-                           parameter_class=FormattedSweep)
+                           parameter_class=FormattedSweep,
+                           vals=Arrays(shape=(self.parent.points,)))
         self.add_parameter('phase',
                            sweep_format='PHAS',
                            label='Phase',
                            unit='deg',
-                           parameter_class=FormattedSweep)
+                           parameter_class=FormattedSweep,
+                           vals=Arrays(shape=(self.parent.points,)))
         self.add_parameter('unwrapped_phase',
                            sweep_format='UPH',
                            label='Phase',
                            unit='deg',
-                           parameter_class=FormattedSweep)
+                           parameter_class=FormattedSweep,
+                           vals=Arrays(shape=(self.parent.points,)))
         self.add_parameter("group_delay",
                            sweep_format='GDEL',
                            label='Group Delay',
                            unit='s',
-                           parameter_class=FormattedSweep)
+                           parameter_class=FormattedSweep,
+                           vals=Arrays(shape=(self.parent.points,)))
         self.add_parameter('real',
                            sweep_format='REAL',
                            label='Real',
                            unit='LinMag',
-                           parameter_class=FormattedSweep)
+                           parameter_class=FormattedSweep,
+                           vals=Arrays(shape=(self.parent.points,)))
         self.add_parameter('imaginary',
                            sweep_format='IMAG',
                            label='Imaginary',
                            unit='LinMag',
-                           parameter_class=FormattedSweep)
+                           parameter_class=FormattedSweep,
+                           vals=Arrays(shape=(self.parent.points,)))
 
     def run_sweep(self) -> str:
         """
@@ -229,7 +280,7 @@ class PNATrace(InstrumentChannel):
             elif source == "EXT":
                 msg += "The trigger source is external. Is the trigger " \
                        "source functional?"
-            logger.warning(msg)
+            self.log.warning(msg)
 
         # Return previous mode, incase we want to restore this
         return prev_mode
@@ -292,6 +343,9 @@ class PNABase(VisaInstrument):
         super().__init__(name, address, terminator='\n', **kwargs)
         self.min_freq = min_freq
         self.max_freq = max_freq
+
+        self.log.info("Initializing %s with power range %r-%r, freq range %r-%r.",
+                      name, min_power, max_power, min_freq, max_freq)
 
         #Ports
         ports = ChannelList(self, "PNAPorts", PNAPort)
@@ -428,6 +482,32 @@ class PNABase(VisaInstrument):
                            set_cmd="TRIG:SOUR {}",
                            vals=Enum("EXT", "IMM", "MAN"))
 
+        # Axis Parameters
+        self.add_parameter('frequency_axis',
+                           unit='Hz',
+                           label="Frequency",
+                           parameter_class=PNAAxisParameter,
+                           startparam=self.start,
+                           stopparam=self.stop,
+                           pointsparam=self.points,
+                           vals=Arrays(shape=(self.points,)))
+        self.add_parameter('frequency_log_axis',
+                           unit='Hz',
+                           label="Frequency",
+                           parameter_class=PNALogAxisParamter,
+                           startparam=self.start,
+                           stopparam=self.stop,
+                           pointsparam=self.points,
+                           vals=Arrays(shape=(self.points,)))
+        self.add_parameter('time_axis',
+                           unit='s',
+                           label="Time",
+                           parameter_class=PNATimeAxisParameter,
+                           startparam=None,
+                           stopparam=self.sweep_time,
+                           pointsparam=self.points,
+                           vals=Arrays(shape=(self.points,)))
+
         # Traces
         self.add_parameter('active_trace',
                            label='Active Trace',
@@ -479,8 +559,10 @@ class PNABase(VisaInstrument):
         # if no traces were selected.
         try:
             active_trace = self.active_trace()
-        except VisaIOError as e:
+        except errors.VisaIOError as e:
+            self.log.debug("Exception on querying active trace: %r", e)
             if e.error_code == errors.StatusCode.error_timeout:
+                self.log.info("No active trace on PNA")
                 active_trace = None
             else:
                 raise

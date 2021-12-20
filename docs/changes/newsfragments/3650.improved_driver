@@ -1,0 +1,1 @@
+AMI430 magnet power supply: fix switch heater parameters that return 0 or 1 as a string
