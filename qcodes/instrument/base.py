@@ -356,6 +356,35 @@ class InstrumentBase(Metadatable, DelegateAttributes):
     @property
     def full_name(self) -> str:
         return "_".join(self.name_parts)
+
+    def _raise_if_abstract(self) -> None:
+        """
+        This method is run after the initialization of a subclass of
+        `InstrumentBase`. If we have a chain of base classes like so:
+        InstrumentBase -> Instrument -> VisaInstrument -> Driver
+        This method is run after the instantiation of the class `Driver`.
+        Please see the docstring of `InstrumentBase.__init_subclass__`
+        for details about the mechanism which makes this possible.
+        """
+        abstract_parameters = [
+            parameter.name
+            for parameter in self.parameters.values()
+            if parameter.abstract
+        ]
+
+        if any(abstract_parameters):
+            cls_name = type(self).__name__
+
+            raise NotImplementedError(
+                f"Class '{cls_name}' has un-implemented Abstract Parameter(s): "
+                f"" + ", ".join([f"'{name}'" for name in abstract_parameters])
+            )
+        for submodule in self.submodules.values():
+            # channellists do not implement raise_if_abstract
+            raise_if_abstract = getattr(submodule, "_raise_if_abstract", None)
+            if raise_if_abstract is not None:
+                raise_if_abstract()
+
     #
     # shortcuts to parameters & setters & getters                           #
     #
@@ -459,6 +488,7 @@ class AbstractInstrumentMeta(ABCMeta):
         successfully.
         """
         new_inst = super().__call__(*args, **kwargs)
+        new_inst._raise_if_abstract()
         new_inst.record_instance(new_inst)
         return new_inst
 
