@@ -203,7 +203,7 @@ def insert_many_values(conn: ConnectionPlus,
     # Version check cf.
     # "https://stackoverflow.com/questions/9527851/sqlite-error-
     #  too-many-terms-in-compound-select"
-    version_str = SQLiteSettings.settings['VERSION']
+    version_str = SQLiteSettings.settings["VERSION"]
 
     # According to the SQLite changelog, the version number
     # to check against below

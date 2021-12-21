@@ -300,9 +300,7 @@ class DS4000(VisaInstrument):
         idn = self.get_idn()
         verstr = idn["firmware"]
         if verstr is None:
-            raise RuntimeError(
-                "Could not determine firmware version of DS4000."
-            )
+            raise RuntimeError("Could not determine firmware version of DS4000.")
         ver = version.parse(verstr)
         if ver < version.parse("00.02.03"):
             warnings.warn(

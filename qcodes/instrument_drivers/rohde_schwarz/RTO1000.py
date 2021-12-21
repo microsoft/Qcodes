@@ -467,11 +467,9 @@ class RTO1000(VisaInstrument):
         # model number can NOT be queried from the instrument
         # (at least fails with RTO1024, fw 2.52.1.1), so in that case
         # the user must provide the model manually.
-        firmware_version_str = self.get_idn()['firmware']
+        firmware_version_str = self.get_idn()["firmware"]
         if firmware_version_str is None:
-            raise RuntimeError(
-                "Could not determine firmware version of RTO1000."
-            )
+            raise RuntimeError("Could not determine firmware version of RTO1000.")
         firmware_version = version.parse(firmware_version_str)
 
         if firmware_version < version.parse("3"):
