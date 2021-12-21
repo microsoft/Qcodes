@@ -453,7 +453,7 @@ class AbstractInstrumentMeta(ABCMeta):
     `ABCMeta` instead of `type`.
     """
 
-    def __call__(self, *args: Any, **kwargs: Any) -> Any:
+    def __call__(cls, *args: Any, **kwargs: Any) -> Any:
         """
         Overloads `type.__call__` to add code that runs only if __init__ completes
         successfully.
