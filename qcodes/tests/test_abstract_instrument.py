@@ -108,7 +108,7 @@ class VoltageChannel(VoltageChannelBase):
 
 @pytest.fixture(name="driver", scope="module")
 def _driver():
-    drvr = VoltageSource("driver")
+    drvr = VoltageSource("abstract_instrument_driver")
     yield drvr
     drvr.close()
 
@@ -131,17 +131,17 @@ def test_not_implemented_error():
     with pytest.raises(
         NotImplementedError, match="has un-implemented Abstract Parameter"
     ):
-        VoltageSourceNotImplemented("driver2")
+        VoltageSourceNotImplemented("abstract_instrument_driver_2")
     assert not VoltageSourceNotImplemented.instances()
 
 
-def test_get_set_raises():
+def test_get_set_raises(request):
     """
     If not all abstract parameters are implemented, we should see
     an exception
     """
-    vs = VoltageSourceNotImplemented("driver2")
-
+    vs = VoltageSourceNotImplemented("abstract_instrument_driver_3")
+    request.addfinalizer(vs.close)
     with pytest.raises(
         NotImplementedError, match="Trying to get an abstract parameter"
     ):
@@ -158,7 +158,7 @@ def test_unit_value_error():
     Units should match between subclasses and base classes
     """
     with pytest.raises(ValueError, match="This is inconsistent with the unit defined"):
-        VoltageSourceBadUnit("driver3")
+        VoltageSourceBadUnit("abstract_instrument_driver_4")
 
 
 @pytest.mark.xfail()
@@ -167,7 +167,7 @@ def test_unit_value_error_does_not_register_instrument():
     Units should match between subclasses and base classes
     """
     with pytest.raises(ValueError, match="This is inconsistent with the unit defined"):
-        VoltageSourceBadUnit("driver3a")
+        VoltageSourceBadUnit("abstract_instrument_driver_5")
     assert not VoltageSourceBadUnit.instances()
 
 
@@ -182,7 +182,7 @@ def test_exception_in_init():
     the instance is recorded in the __post_init__ method,
     which should eliminate this problem
     """
-    name = "driver4"
+    name = "abstract_instrument_driver_6"
     try:
         VoltageSourceInitException(name)
     except AssertionError:
@@ -200,7 +200,7 @@ def test_subsub():
     for sub-sub classes. This should work for arbitrary levels
     of subclassing.
     """
-    instance = VoltageSourceSubSub("driver5")
+    instance = VoltageSourceSubSub("abstract_instrument_driver_7")
     assert instance.call_count == 1
 
 
@@ -209,7 +209,7 @@ def test_channel(driver):
     """
     This should work without exceptions
     """
-    VoltageChannel(driver, "driver6")
+    VoltageChannel(driver, "abstract_instrument_driver_8")
 
     with pytest.raises(
         NotImplementedError, match="has un-implemented Abstract Parameter"
