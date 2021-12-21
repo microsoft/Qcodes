@@ -14,6 +14,7 @@ from qcodes.instrument.parameter import Parameter, ParameterWithSetpoints
 from qcodes.instrument_drivers.Keysight.private.error_handling import (
     KeysightErrorQueueMixin,
 )
+from qcodes.utils.installation_info import convert_legacy_version_to_supported_version
 
 
 class Trigger(InstrumentChannel):
@@ -465,7 +466,11 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
 
         options = self._options()
         self.has_DIG = self.is_34465A_34470A and (
-            "DIG" in options or version.parse("A.03") <= version.parse(idn["firmware"])
+            "DIG" in options
+            or version.parse(convert_legacy_version_to_supported_version("A.03"))
+            <= version.parse(
+                convert_legacy_version_to_supported_version(idn["firmware"])
+            )
         )
         # Note that the firmware version check is still needed because
         # ``_options`` (the ``*OPT?`` command) returns 'DIG' option for
