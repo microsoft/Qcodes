@@ -91,3 +91,20 @@ def get_all_installed_package_versions() -> Dict[str, str]:
     """
     packages = pkg_resources.working_set
     return {i.key: i.version for i in packages}
+
+
+def convert_legacy_version_to_supported_version(ver: str) -> str:
+    """
+    Convert a legacy version str containing single chars rather than
+    numbers to a regular version string. This is done by replacing a char
+    by its ASCII code (using ``ord``). This assumes that the version number
+    only uses at most a single char per level and only ASCII chars.
+    """
+
+    temp_list = []
+    for v in ver:
+        if v.isalpha():
+            temp_list.append(str(ord(v.upper())))
+        else:
+            temp_list.append(v)
+    return "".join(temp_list)

@@ -1,7 +1,7 @@
-from distutils.version import LooseVersion
 from typing import Any
 
 import numpy as np
+from packaging import version
 
 from qcodes.instrument_drivers.AlazarTech.ATS import AlazarTech_ATS
 from qcodes.instrument_drivers.AlazarTech.utils import TraceParameter
@@ -340,9 +340,10 @@ class AlazarTech_ATS9373(AlazarTech_ATS):
                             f" found '{str(model)}' instead.")
 
     def _get_trigger_holdoff(self) -> bool:
-        fwversion = self.get_idn()['firmware']
-        if not isinstance(fwversion, str) or LooseVersion(fwversion) < \
-                LooseVersion(self._trigger_holdoff_min_fw_version):
+        fwversion = self.get_idn()["firmware"]
+        if not isinstance(fwversion, str) or version.parse(fwversion) < version.parse(
+            self._trigger_holdoff_min_fw_version
+        ):
             return False
 
         # we want to check if the 26h bit (zero indexed) is high or not
@@ -359,13 +360,16 @@ class AlazarTech_ATS9373(AlazarTech_ATS):
         return bool(bin(output)[-27])
 
     def _set_trigger_holdoff(self, value: bool) -> None:
-        fwversion = self.get_idn()['firmware']
-        if not isinstance(fwversion, str) or LooseVersion(fwversion) < \
-                LooseVersion(self._trigger_holdoff_min_fw_version):
-            raise RuntimeError(f"Alazar 9373 requires at least firmware "
-                               f"version {self._trigger_holdoff_min_fw_version}"
-                               f" for trigger holdoff support. "
-                               f"You have version {fwversion}")
+        fwversion = self.get_idn()["firmware"]
+        if not isinstance(fwversion, str) or version.parse(fwversion) < version.parse(
+            self._trigger_holdoff_min_fw_version
+        ):
+            raise RuntimeError(
+                f"Alazar 9373 requires at least firmware "
+                f"version {self._trigger_holdoff_min_fw_version}"
+                f" for trigger holdoff support. "
+                f"You have version {fwversion}"
+            )
         current_value = self._read_register(58)
 
         if value is True:

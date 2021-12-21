@@ -4,11 +4,11 @@ are useful for building more database-specific queries out of them.
 """
 import itertools
 import sqlite3
-from distutils.version import LooseVersion
 from typing import Any, List, Mapping, Optional, Sequence, Tuple, Union
 
 import numpy as np
 from numpy import ndarray
+from packaging import version
 
 from qcodes.dataset.sqlite.connection import (
     ConnectionPlus,
@@ -203,13 +203,13 @@ def insert_many_values(conn: ConnectionPlus,
     # Version check cf.
     # "https://stackoverflow.com/questions/9527851/sqlite-error-
     #  too-many-terms-in-compound-select"
-    version = SQLiteSettings.settings['VERSION']
+    version_str = SQLiteSettings.settings["VERSION"]
 
     # According to the SQLite changelog, the version number
     # to check against below
     # ought to be 3.7.11, but that fails on Travis
-    if LooseVersion(str(version)) <= LooseVersion('3.8.2'):
-        max_var = SQLiteSettings.limits['MAX_COMPOUND_SELECT']
+    if version.parse(str(version_str)) <= version.parse("3.8.2"):
+        max_var = SQLiteSettings.limits["MAX_COMPOUND_SELECT"]
     else:
         max_var = SQLiteSettings.limits['MAX_VARIABLE_NUMBER']
     rows_per_transaction = int(int(max_var)/no_of_columns)
