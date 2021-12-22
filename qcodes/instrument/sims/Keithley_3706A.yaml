@@ -221,4 +221,3 @@ resources:
     device: Keithley
   GPIB::6::INSTR:
     device: Keithley_6_slots
-
