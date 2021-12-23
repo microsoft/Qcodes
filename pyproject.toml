@@ -22,9 +22,6 @@ warn_unused_configs = true
 warn_redundant_casts = true
 no_implicit_optional = true
 plugins = "numpy.typing.mypy_plugin"
-
-[[tool.mypy.overrides]]
-module = "qcodes.*"
 disallow_untyped_defs = true
 
 [[tool.mypy.overrides]]
