@@ -8,6 +8,21 @@ build-backend = 'setuptools.build_meta'
 profile = "black"
 [tool.darker]
 isort = true
+[tool.pytest.ini_options]
+minversion = "6.0"
+junit_family = "legacy"
+
+addopts = "-n auto --dist=loadfile"
+
+markers = "serial"
+
+# warnings triggered by xarray and hdf5netcdf using deprecated apis
+filterwarnings = [
+    "ignore:The distutils package is deprecated and slated for removal in Python 3.12:DeprecationWarning",
+    "ignore:distutils Version classes are deprecated:DeprecationWarning",
+    "ignore:SelectableGroups dict interface is deprecated:DeprecationWarning"
+]
+
 [tool.towncrier]
 package = "qcodes"
 name = "QCoDeS"
