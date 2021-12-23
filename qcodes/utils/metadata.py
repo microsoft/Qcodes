@@ -1,6 +1,7 @@
 from typing import (
     Any,
     Dict,
+    Mapping,
     NamedTuple,
     NewType,
     Optional,
@@ -34,11 +35,11 @@ RunId = NewType('RunId', int)
 
 
 class Metadatable:
-    def __init__(self, metadata=None):
-        self.metadata = {}
+    def __init__(self, metadata: Optional[Mapping[str, Any]] = None):
+        self.metadata: Dict[str, Any] = {}
         self.load_metadata(metadata or {})
 
-    def load_metadata(self, metadata: Dict[Any, Any]) -> None:
+    def load_metadata(self, metadata: Mapping[str, Any]) -> None:
         """
         Load metadata into this classes metadata dictionary.
 
@@ -70,7 +71,7 @@ class Metadatable:
     def snapshot_base(
             self, update: Optional[bool] = False,
             params_to_skip_update: Optional[Sequence[str]] = None
-    ) -> Dict[Any, Any]:
+    ) -> Dict[str, Any]:
         """
         Override this with the primary information for a subclass.
         """

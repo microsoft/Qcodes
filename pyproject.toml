@@ -51,7 +51,6 @@ module = [
     "qcodes.tests.*",
     "qcodes.utils.command",
     "qcodes.utils.magic",
-    "qcodes.utils.metadata",
     "qcodes.utils.slack",
 
 ]
