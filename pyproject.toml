@@ -5,6 +5,15 @@ requires = [
 ]
 build-backend = 'setuptools.build_meta'
 
+[tool.coverage.run]
+omit = [
+    "qcodes/__init__.py",
+    "*/__init__.py",
+    "qcodes/_version.py",
+    "qcodes/tests/*",
+    "qcodes/instrument_drivers/test.py"
+]
+
 [tool.darker]
 isort = true
 
