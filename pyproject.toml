@@ -4,10 +4,12 @@ requires = [
     "wheel >= 0.29.0",
 ]
 build-backend = 'setuptools.build_meta'
-[tool.isort]
-profile = "black"
+
 [tool.darker]
 isort = true
+
+[tool.isort]
+profile = "black"
 
 [tool.mypy]
 strict_optional = true
