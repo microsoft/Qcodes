@@ -8,6 +8,47 @@ build-backend = 'setuptools.build_meta'
 profile = "black"
 [tool.darker]
 isort = true
+
+[tool.mypy]
+strict_optional = true
+disallow_untyped_decorators = true
+disallow_any_generics = false
+ignore_missing_imports = true
+show_column_numbers = true
+warn_unused_ignores = true
+warn_unused_configs = true
+warn_redundant_casts = true
+no_implicit_optional = true
+plugins = "numpy.typing.mypy_plugin"
+
+[[tool.mypy.overrides]]
+module = "qcodes.*"
+disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = [
+    "qcodes._version",
+    "qcodes.actions.*",
+    "qcodes.data.*",
+    "qcodes.instrument.mockers.ami430",
+    "qcodes.instrument_drivers.Harvard.*",
+    "qcodes.instrument_drivers.Keysight.keysightb1500.message_builder.*",
+    "qcodes.instrument_drivers.oxford.mercuryiPS",
+    "qcodes.instrument_drivers.test",
+    "qcodes.instrument_drivers.ZI.*",
+    "qcodes.loops",
+    "qcodes.math_utils.*",
+    "qcodes.measure",
+    "qcodes.plots.*",
+    "qcodes.tests.*",
+    "qcodes.utils.command",
+    "qcodes.utils.magic",
+    "qcodes.utils.metadata",
+    "qcodes.utils.slack",
+
+]
+disallow_untyped_defs = false
+
 [tool.towncrier]
 package = "qcodes"
 name = "QCoDeS"
