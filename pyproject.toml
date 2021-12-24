@@ -107,6 +107,7 @@ name = "Under the hood:"
 showcontent = true
 
 [tool.versioningit]
+default-version = "0.0"
 
 [tool.versioningit.format]
 distance = "{version}+{distance}.{vcs}{rev}"
