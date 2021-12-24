@@ -2,6 +2,7 @@
 requires = [
     "setuptools >= 48",
     "wheel >= 0.29.0",
+    "versioningit ~= 0.3.0",
 ]
 build-backend = 'setuptools.build_meta'
 
@@ -106,3 +107,9 @@ showcontent = true
 directory = "underthehood"
 name = "Under the hood:"
 showcontent = true
+
+[tool.versioningit]
+
+[tool.versioningit.vcs]
+method = "git"
+match = ["v*"]
