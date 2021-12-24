@@ -110,6 +110,11 @@ showcontent = true
 
 [tool.versioningit]
 
+[tool.versioningit.format]
+distance = "{version}+{distance}.{vcs}{rev}"
+dirty = "{version}+{distance}.{vcs}{rev}.dirty"
+distance-dirty = "{version}+{distance}.{vcs}{rev}.dirty"
+
 [tool.versioningit.vcs]
 method = "git"
 match = ["v*"]
