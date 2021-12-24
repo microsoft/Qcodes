@@ -52,9 +52,7 @@ def get_qcodes_version() -> str:
     Get the version of the currently installed QCoDeS
     """
     if is_qcodes_installed_editably():
-        # if installed editable
         pyprojectpath = Path(os.path.abspath(__file__)).parent.parent.parent
-        print(pyprojectpath)
         __version__ = versioningit.get_version(project_dir=pyprojectpath)
     else:
         __version__ = version("qcodes")
