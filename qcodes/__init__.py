@@ -10,6 +10,13 @@ import qcodes.configuration as qcconfig
 from qcodes.logger.logger import conditionally_start_all_logging
 from qcodes.utils.helpers import add_to_spyder_UMR_excludelist
 
+try:
+    from importlib.metadata import version
+except ImportError:
+    from importlib_metadata import version
+
+__version__ = version("qcodes")
+
 config: qcconfig.Config = qcconfig.Config()
 
 conditionally_start_all_logging()
