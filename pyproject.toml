@@ -10,7 +10,6 @@ build-backend = 'setuptools.build_meta'
 omit = [
     "qcodes/__init__.py",
     "*/__init__.py",
-    "qcodes/_version.py",
     "qcodes/tests/*",
     "qcodes/instrument_drivers/test.py"
 ]
@@ -41,7 +40,6 @@ disallow_untyped_defs = true
 
 [[tool.mypy.overrides]]
 module = [
-    "qcodes._version",
     "qcodes.actions.*",
     "qcodes.data.*",
     "qcodes.instrument.mockers.ami430",
