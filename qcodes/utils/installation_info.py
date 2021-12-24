@@ -5,9 +5,13 @@ QCoDeS
 """
 import json
 import logging
+import os
 import subprocess
 import sys
+from pathlib import Path
 from typing import Dict, List, Optional
+
+import versioningit
 
 if sys.version_info >= (3, 8):
     from importlib.metadata import PackageNotFoundError, distribution, version
@@ -47,7 +51,14 @@ def get_qcodes_version() -> str:
     """
     Get the version of the currently installed QCoDeS
     """
-    return qcodes.__version__
+    if is_qcodes_installed_editably():
+        # if installed editable
+        pyprojectpath = Path(os.path.abspath(__file__)).parent.parent.parent
+        print(pyprojectpath)
+        __version__ = versioningit.get_version(project_dir=pyprojectpath)
+    else:
+        __version__ = version("qcodes")
+    return __version__
 
 
 def get_qcodes_requirements() -> List[str]:
