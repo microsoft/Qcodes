@@ -39,7 +39,7 @@ def is_package_installed_editably(package: str) -> Optional[bool]:
                                  check=True,
                                  stdout=subprocess.PIPE)
         e_pkgs = json.loads(pipproc.stdout.decode('utf-8'))
-        answer = any([d["name"] == package for d in e_pkgs])
+        answer = any(d["name"] == package for d in e_pkgs)
     except Exception as e:  # we actually do want a catch-all here
         log.warning(f'{type(e)}: {str(e)}')
         answer = None
