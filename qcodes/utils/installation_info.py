@@ -15,9 +15,7 @@ if sys.version_info >= (3, 8):
     from importlib.metadata import PackageNotFoundError, distribution, version
 else:
     # 3.7 and earlier
-    from importlib_metadata import distribution, version, PackageNotFoundError
-
-import qcodes
+    from importlib_metadata import PackageNotFoundError, distribution, version
 
 log = logging.getLogger(__name__)
 
@@ -51,6 +49,7 @@ def get_qcodes_version() -> str:
     """
     if is_qcodes_installed_editably():
         import versioningit
+
         pyprojectpath = Path(os.path.abspath(__file__)).parent.parent.parent
         __version__ = versioningit.get_version(project_dir=pyprojectpath)
     else:
