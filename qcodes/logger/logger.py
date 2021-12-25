@@ -19,10 +19,11 @@ from contextlib import contextmanager
 from copy import copy
 from datetime import datetime
 from types import TracebackType
-from typing import Dict, Iterator, Optional, Sequence, Type, Union
+from typing import TYPE_CHECKING, Dict, Iterator, Optional, Sequence, Type, Union
 
-from opencensus.ext.azure.common.protocol import Envelope
-from opencensus.ext.azure.log_exporter import AzureLogHandler
+if TYPE_CHECKING:
+    from opencensus.ext.azure.common.protocol import Envelope
+    from opencensus.ext.azure.log_exporter import AzureLogHandler
 
 import qcodes as qc
 import qcodes.utils.installation_info as ii
@@ -57,7 +58,7 @@ FORMAT_STRING_DICT = OrderedDict([
 # console hander.
 console_handler: Optional[logging.Handler] = None
 file_handler: Optional[logging.Handler] = None
-telemetry_handler: Optional[AzureLogHandler] = None
+telemetry_handler: Optional["AzureLogHandler"] = None
 
 
 _opencensus_filter = logging.Filter(name="opencensus")
@@ -185,10 +186,11 @@ def flush_telemetry_traces() -> None:
         telemetry_handler.flush()
 
 
-def _create_telemetry_handler() -> AzureLogHandler:
+def _create_telemetry_handler() -> "AzureLogHandler":
     """
     Configure, create, and return the telemetry handler
     """
+    from opencensus.ext.azure.log_exporter import AzureLogHandler
     global telemetry_handler
 
     # The default_custom_dimensions will appear in the "customDimensions"
@@ -225,7 +227,7 @@ def _create_telemetry_handler() -> AzureLogHandler:
     loc = qc.config.GUID_components.location
     stat = qc.config.GUID_components.work_station
 
-    def callback_function(envelope: Envelope) -> bool:
+    def callback_function(envelope: "Envelope") -> bool:
         envelope.tags["ai.user.accountId"] = platform.node()
         envelope.tags["ai.user.id"] = f"{loc:02x}-{stat:06x}"
         return True
