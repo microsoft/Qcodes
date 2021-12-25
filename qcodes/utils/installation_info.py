@@ -7,6 +7,7 @@ import json
 import logging
 import subprocess
 import sys
+from functools import lru_cache
 from typing import Dict, List, Optional
 
 import pkg_resources
@@ -16,20 +17,20 @@ if sys.version_info >= (3, 8):
     from importlib.metadata import PackageNotFoundError, distribution, version
 else:
     # 3.7 and earlier
-    from importlib_metadata import distribution, version, PackageNotFoundError
+    from importlib_metadata import PackageNotFoundError, distribution, version
 
 import qcodes
 
 log = logging.getLogger(__name__)
 
 
-def is_qcodes_installed_editably() -> Optional[bool]:
+@lru_cache(maxsize=None)
+def is_package_installed_editably(package: str) -> Optional[bool]:
     """
-    Try to ask pip whether QCoDeS is installed in editable mode and return
-    the answer a boolean. Returns None if pip somehow did not respond as
+    Try to ask pip whether package is installed in editable mode and return
+    the answer as a boolean. Returns None if pip somehow did not respond as
     expected.
     """
-
     answer: Optional[bool]
 
     try:
@@ -38,12 +39,21 @@ def is_qcodes_installed_editably() -> Optional[bool]:
                                  check=True,
                                  stdout=subprocess.PIPE)
         e_pkgs = json.loads(pipproc.stdout.decode('utf-8'))
-        answer = any([d["name"] == 'qcodes' for d in e_pkgs])
+        answer = any([d["name"] == package for d in e_pkgs])
     except Exception as e:  # we actually do want a catch-all here
         log.warning(f'{type(e)}: {str(e)}')
         answer = None
 
     return answer
+
+
+def is_qcodes_installed_editably() -> Optional[bool]:
+    """
+    Try to ask pip whether QCoDeS is installed in editable mode and return
+    the answer as a boolean. Returns None if pip somehow did not respond as
+    expected.
+    """
+    return is_package_installed_editably("qcodes")
 
 
 def get_qcodes_version() -> str:
