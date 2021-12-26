@@ -69,7 +69,7 @@ pyzmq~=22.3.0
 requests~=2.26.0
 requirements-parser~=0.3.1
 rsa~=4.8
-ruamel.yaml==0.17.17
+ruamel.yaml==0.17.19
 ruamel.yaml.clib~=0.2.6
 schema~=0.7.5
 Send2Trash~=1.8.0
