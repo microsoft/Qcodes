@@ -9,7 +9,6 @@ import subprocess
 import sys
 from typing import Dict, List, Optional
 
-import pkg_resources
 import requirements
 
 if sys.version_info >= (3, 8):
@@ -89,6 +88,7 @@ def get_all_installed_package_versions() -> Dict[str, str]:
     """
     Return a dictionary of the currently installed packages and their versions.
     """
+    import pkg_resources
     packages = pkg_resources.working_set
     return {i.key: i.version for i in packages}
 
