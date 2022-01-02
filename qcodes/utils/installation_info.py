@@ -3,6 +3,7 @@ This module contains helper functions that provide information about how
 QCoDeS is installed and about what other packages are installed along with
 QCoDeS
 """
+import glob
 import json
 import logging
 import os
@@ -43,11 +44,31 @@ def is_qcodes_installed_editably() -> Optional[bool]:
     return answer
 
 
+def is_qcodes_installed_editable_fast() -> bool:
+    package_name = "qcodes"
+    # classical setuptools editable install
+    egg_link_found = any(
+        os.path.isfile(os.path.join(path, f"{package_name}.egg-link"))
+        for path in sys.path
+    )
+    # pep 660 based install
+    dist_dirs = []
+    for path in sys.path:
+        dist_dirs.extend(glob.glob(f"{os.path.join(path, package_name)}*.dist-info"))
+    direct_urls = [
+        os.path.join(path, "direct_url.json")
+        for path in dist_dirs
+        if os.path.isfile(os.path.join(path, "direct_url.json"))
+    ]
+    # now check for dir_info value must be {'editable': true}.
+    return egg_link_found
+
+
 def get_qcodes_version() -> str:
     """
     Get the version of the currently installed QCoDeS
     """
-    if is_qcodes_installed_editably():
+    if is_qcodes_installed_editable_fast():
         import versioningit
 
         pyprojectpath = Path(os.path.abspath(__file__)).parent.parent.parent
