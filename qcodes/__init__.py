@@ -102,11 +102,11 @@ from qcodes.instrument_drivers.test import test_instrument, test_instruments
 from qcodes.utils import validators
 
 try:
-    # Check if we are in iPython
-    get_ipython()  # type: ignore[name-defined]
-    from qcodes.utils.magic import register_magic_class
     _register_magic = config.core.get('register_magic', False)
     if _register_magic is not False:
+        # Check if we are in iPython
+        get_ipython()  # type: ignore[name-defined]
+        from qcodes.utils.magic import register_magic_class
         register_magic_class(magic_commands=_register_magic)
 except NameError:
     pass
