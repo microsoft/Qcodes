@@ -1,4 +1,5 @@
-from IPython.core.magic import Magics, magics_class, line_cell_magic
+from IPython.core.magic import Magics, line_cell_magic, magics_class
+
 
 @magics_class
 class QCoDeSMagic(Magics):
@@ -153,7 +154,7 @@ def register_magic_class(cls=QCoDeSMagic, magic_commands=True):
 
     ip = get_ipython()
     if ip is None:
-        raise RuntimeError('No iPython shell found')
+        raise RuntimeError("No IPython shell found")
     else:
         if magic_commands is not True:
             # filter out any magic commands that are not in magic_commands
