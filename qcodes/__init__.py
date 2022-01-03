@@ -104,11 +104,15 @@ from qcodes.utils import validators
 try:
     _register_magic = config.core.get('register_magic', False)
     if _register_magic is not False:
-        # Check if we are in iPython
-        get_ipython()  # type: ignore[name-defined]
-        from qcodes.utils.magic import register_magic_class
-        register_magic_class(magic_commands=_register_magic)
-except NameError:
+        from IPython import get_ipython
+
+        # Check if we are in IPython
+        ip = get_ipython()
+        if ip is not None:
+            from qcodes.utils.magic import register_magic_class
+
+            register_magic_class(magic_commands=_register_magic)
+except ImportError:
     pass
 except RuntimeError as e:
     print(e)
