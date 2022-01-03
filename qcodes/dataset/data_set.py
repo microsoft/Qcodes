@@ -16,12 +16,10 @@ from typing import (
     Optional,
     Sequence,
     Set,
-    Tuple,
     Union,
 )
 
 import numpy
-import pandas as pd
 
 import qcodes
 from qcodes.dataset.data_set_protocol import (
