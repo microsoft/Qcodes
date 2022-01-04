@@ -1,0 +1,2 @@
+The ``qcodes.version`` module deprecated and no longer imported by default e.g. if you want to use it you will need
+to explicitly import ``qcodes.version``. It is recommended to use ``qcodes.__version__`` as an alternative.

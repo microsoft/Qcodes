@@ -6,7 +6,7 @@ import qcodes.utils.installation_info as ii
 
 
 def test_get_qcodes_version():
-    assert ii.get_qcodes_version() == qc.version.__version__
+    assert ii.get_qcodes_version() == qc.__version__
 
 
 def test_get_qcodes_requirements():
