@@ -9,9 +9,6 @@ import subprocess
 import sys
 from typing import Dict, List, Optional
 
-import pkg_resources
-import requirements
-
 if sys.version_info >= (3, 8):
     from importlib.metadata import PackageNotFoundError, distribution, version
 else:
@@ -57,6 +54,7 @@ def get_qcodes_requirements() -> List[str]:
     """
     Return a list of the names of the packages that QCoDeS requires
     """
+    import requirements
     qc_pkg = distribution('qcodes').requires
     if qc_pkg is None:
         return []
@@ -89,6 +87,7 @@ def get_all_installed_package_versions() -> Dict[str, str]:
     """
     Return a dictionary of the currently installed packages and their versions.
     """
+    import pkg_resources
     packages = pkg_resources.working_set
     return {i.key: i.version for i in packages}
 
