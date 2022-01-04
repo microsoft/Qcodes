@@ -490,9 +490,11 @@ class Instrument(InstrumentBase, AbstractInstrument):
 
     shared_kwargs = ()
 
-    _all_instruments: "Dict[str, weakref.ref[Instrument]]" = {}
+    _all_instruments: "weakref.WeakValueDictionary[str, Instrument]" = (
+        weakref.WeakValueDictionary()
+    )
     _type = None
-    _instances: "List[weakref.ref[Instrument]]" = []
+    _instances: "weakref.WeakSet[Instrument]" = weakref.WeakSet()
 
     def __init__(
             self,
@@ -633,22 +635,21 @@ class Instrument(InstrumentBase, AbstractInstrument):
         Raises:
             KeyError: If another instance with the same name is already present.
         """
-        wr = weakref.ref(instance)
         name = instance.name
         # First insert this instrument in the record of *all* instruments
         # making sure its name is unique
-        existing_wr = cls._all_instruments.get(name)
-        if existing_wr and existing_wr():
+        existing_instr = cls._all_instruments.get(name)
+        if existing_instr:
             raise KeyError(f'Another instrument has the name: {name}')
 
-        cls._all_instruments[name] = wr
+        cls._all_instruments[name] = instance
 
         # Then add it to the record for this specific subclass, using ``_type``
         # to make sure we're not recording it in a base class instance list
         if getattr(cls, '_type', None) is not cls:
             cls._type = cls
-            cls._instances = []
-        cls._instances.append(wr)
+            cls._instances = weakref.WeakSet()
+        cls._instances.add(instance)
 
     @classmethod
     def instances(cls) -> List['Instrument']:
@@ -665,7 +666,7 @@ class Instrument(InstrumentBase, AbstractInstrument):
             # only instances of a superclass - we want instances of this
             # exact class only
             return []
-        return [wr() for wr in getattr(cls, '_instances', []) if wr()]
+        return list(getattr(cls, "_instances", weakref.WeakSet()))
 
     @classmethod
     def remove_instance(cls, instance: 'Instrument') -> None:
@@ -675,15 +676,14 @@ class Instrument(InstrumentBase, AbstractInstrument):
         Args:
             instance: The instance to remove
         """
-        wr = weakref.ref(instance)
-        if wr in getattr(cls, "_instances", []):
-            cls._instances.remove(wr)
+        if instance in getattr(cls, "_instances", weakref.WeakSet()):
+            cls._instances.remove(instance)
 
         # remove from all_instruments too, but don't depend on the
         # name to do it, in case name has changed or been deleted
         all_ins = cls._all_instruments
         for name, ref in list(all_ins.items()):
-            if ref is wr:
+            if ref is instance:
                 del all_ins[name]
 
     @classmethod
@@ -710,7 +710,7 @@ class Instrument(InstrumentBase, AbstractInstrument):
 
         if name not in cls._all_instruments:
             raise KeyError(f"Instrument with name {name} does not exist")
-        ins = cls._all_instruments[name]()
+        ins = cls._all_instruments[name]
         if ins is None:
             del cls._all_instruments[name]
             raise KeyError(f'Instrument {name} has been removed')
