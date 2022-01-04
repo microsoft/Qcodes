@@ -359,12 +359,10 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
     def _raise_if_abstract(self) -> None:
         """
-        This method is run after the initialization of a subclass of
-        `InstrumentBase`. If we have a chain of base classes like so:
-        InstrumentBase -> Instrument -> VisaInstrument -> Driver
-        This method is run after the instantiation of the class `Driver`.
-        Please see the docstring of `InstrumentBase.__init_subclass__`
-        for details about the mechanism which makes this possible.
+        This method is run after the initialization of an instrument but
+        before the instrument is registered. It recursively checks that there are
+        no abstract parameters defined on the instrument or any instrument channels.
+        If a non overwritten abstract parameter is found it raises a ``NotImplementedError``
         """
         abstract_parameters = [
             parameter.name
