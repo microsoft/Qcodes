@@ -154,7 +154,7 @@ class QtPlot(BasePlot):
         for side in ('left', 'bottom'):
             ax = subplot_object.getAxis(side)
             ax.setPen(self.theme[0])
-            ax._qcodes_label = ''
+            ax._qcodes_label = ""
 
         return subplot_object
 
@@ -432,21 +432,21 @@ class QtPlot(BasePlot):
             # danger: 🍝
             # find if any kwarg from plot.add in the base class
             # matches xlabel or ylabel, signaling a custom label
-            if axletter+'label' in config and not ax._qcodes_label:
-                label = config[axletter+'label']
+            if axletter + "label" in config and not getattr(ax, "_qcodes_label", None):
+                label = config[axletter + "label"]
             else:
                 label = None
 
             # find if any kwarg from plot.add in the base class
             # matches xunit or yunit, signaling a custom unit
-            if axletter+'unit' in config and not ax._qcodes_label:
-                unit = config[axletter+'unit']
+            if axletter + "unit" in config and getattr(ax, "_qcodes_label", None):
+                unit = config[axletter + "unit"]
             else:
                 unit = None
 
             #  find ( more hope to) unit and label from
             # the data array inside the config
-            if axletter in config and not ax._qcodes_label:
+            if axletter in config and not getattr(ax, "_qcodes_label", None):
                 # now if we did not have any kwark gor label or unit
                 # fallback to the data_array
                 if unit is  None:
