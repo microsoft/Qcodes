@@ -377,7 +377,7 @@ class SR86xBuffer(InstrumentChannel):
                              f"is larger than current capture length of the "
                              f"buffer ({current_capture_length}kB).")
 
-        values = np.array([])
+        values: np.ndarray = np.array([])
         data_size_to_read_in_kb = size_in_kb
         n_readings = 0
 
