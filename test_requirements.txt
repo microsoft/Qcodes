@@ -7,7 +7,7 @@ colorama==0.4.4
 coverage[toml]==6.2
 deepdiff==5.7.0
 execnet==1.9.0
-hypothesis==6.34.1
+hypothesis==6.34.2
 idna==3.3
 importlib-metadata==4.8.1; python_version<'3.8'
 iniconfig==1.1.1
