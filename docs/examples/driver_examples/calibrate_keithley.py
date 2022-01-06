@@ -179,6 +179,7 @@ smu.smub.volt(0)
 #%% calibrate single channel in specific range
 
 setup_dmm(dmm)
+dmm.range(1.0)
 calibrate_keithley_smu_v_single(smu, "smua", dmm.volt, "200e-3")
 
 # smu.smua.volt(0)
