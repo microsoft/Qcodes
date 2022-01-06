@@ -23,7 +23,6 @@ conditionally_start_all_logging()
 add_to_spyder_UMR_excludelist('qcodes')
 
 
-# ensure to close all instruments when interpreter is closed
 import atexit
 
 from qcodes.dataset.data_set import (
@@ -70,6 +69,7 @@ from qcodes.monitor.monitor import Monitor
 from qcodes.station import Station
 from qcodes.utils import validators
 
+# ensure to close all instruments when interpreter is closed
 atexit.register(Instrument.close_all)
 
 if config.core.import_legacy_api:
