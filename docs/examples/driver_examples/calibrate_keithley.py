@@ -8,6 +8,11 @@ src_FS_map = {"200e-3": 180e-3, "2": 1.8, "20": 18, "200": 180}
 channels = ["smua", "smub"]
 
 
+def save_calibration(smu: Instrument) -> None:
+    for channel in channels:
+        smu.write(f"{channel}.cal.save()")
+
+
 def calibrate_keithley_smu_v(
     smu: Instrument,
     dmm_param: Parameter,
@@ -24,8 +29,8 @@ def calibrate_keithley_smu_v(
             calibrate_keithley_smu_v_single(
                 smu, channel, dmm_param.volt, smu_range, src_Z, time_delay
             )
-        if save_calibrations:
-            smu.write(f"{channel}.cal.save()")
+    if save_calibrations:
+        save_calibration(smu)
 
 
 def calibrate_keithley_smu_v_single(
@@ -206,7 +211,5 @@ do1d(
 
 smun.volt(0)
 smun.output("off")
-# %%
-# save calibrations
-smu.write(f"smua.cal.save()")
-smu.write(f"smub.cal.save()")
+#%% save calibrations
+save_calibration(smu)
