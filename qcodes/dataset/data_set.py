@@ -81,7 +81,6 @@ from qcodes.dataset.sqlite.query_helpers import (
     one,
     select_one_where,
 )
-from qcodes.instrument.parameter import _BaseParameter
 from qcodes.utils.deprecate import (
     QCoDeSDeprecationWarning,
     deprecate,
@@ -107,6 +106,8 @@ from .subscriber import _Subscriber
 if TYPE_CHECKING:
     import pandas as pd
     import xarray as xr
+
+    from qcodes.instrument.parameter import _BaseParameter
 
 
 log = logging.getLogger(__name__)
@@ -755,10 +756,11 @@ class DataSet(BaseDataSet):
                 writer_status.bg_writer = None
 
     def get_parameter_data(
-            self,
-            *params: Union[str, ParamSpec, _BaseParameter],
-            start: Optional[int] = None,
-            end: Optional[int] = None) -> ParameterData:
+        self,
+        *params: Union[str, ParamSpec, "_BaseParameter"],
+        start: Optional[int] = None,
+        end: Optional[int] = None,
+    ) -> ParameterData:
         """
         Returns the values stored in the :class:`.DataSet` for the specified parameters
         and their dependencies. If no parameters are supplied the values will
@@ -811,13 +813,12 @@ class DataSet(BaseDataSet):
         return get_parameter_data(self.conn, self.table_name,
                                   valid_param_names, start, end)
 
-    def to_pandas_dataframe_dict(self,
-                                 *params: Union[str,
-                                                ParamSpec,
-                                                _BaseParameter],
-                                 start: Optional[int] = None,
-                                 end: Optional[int] = None) ->\
-            Dict[str, "pd.DataFrame"]:
+    def to_pandas_dataframe_dict(
+        self,
+        *params: Union[str, ParamSpec, "_BaseParameter"],
+        start: Optional[int] = None,
+        end: Optional[int] = None,
+    ) -> Dict[str, "pd.DataFrame"]:
         """
         Returns the values stored in the :class:`.DataSet` for the specified parameters
         and their dependencies as a dict of :py:class:`pandas.DataFrame` s
@@ -861,16 +862,17 @@ class DataSet(BaseDataSet):
         dfs_dict = load_to_dataframe_dict(datadict)
         return dfs_dict
 
-    @deprecate(reason='This method will be removed due to inconcise naming, please '
-               'use the renamed method to_pandas_dataframe_dict',
-               alternative='to_pandas_dataframe_dict')
-    def get_data_as_pandas_dataframe(self,
-                                     *params: Union[str,
-                                                    ParamSpec,
-                                                    _BaseParameter],
-                                     start: Optional[int] = None,
-                                     end: Optional[int] = None) -> \
-            Dict[str, "pd.DataFrame"]:
+    @deprecate(
+        reason="This method will be removed due to inconcise naming, please "
+        "use the renamed method to_pandas_dataframe_dict",
+        alternative="to_pandas_dataframe_dict",
+    )
+    def get_data_as_pandas_dataframe(
+        self,
+        *params: Union[str, ParamSpec, "_BaseParameter"],
+        start: Optional[int] = None,
+        end: Optional[int] = None,
+    ) -> Dict[str, "pd.DataFrame"]:
         """
         Returns the values stored in the :class:`.DataSet` for the specified parameters
         and their dependencies as a dict of :py:class:`pandas.DataFrame` s
@@ -909,12 +911,12 @@ class DataSet(BaseDataSet):
         """
         return self.to_pandas_dataframe_dict(*params, start=start, end=end)
 
-    def to_pandas_dataframe(self,
-                            *params: Union[str,
-                                           ParamSpec,
-                                           _BaseParameter],
-                            start: Optional[int] = None,
-                            end: Optional[int] = None) -> "pd.DataFrame":
+    def to_pandas_dataframe(
+        self,
+        *params: Union[str, ParamSpec, "_BaseParameter"],
+        start: Optional[int] = None,
+        end: Optional[int] = None,
+    ) -> "pd.DataFrame":
         """
         Returns the values stored in the :class:`.DataSet` for the specified parameters
         and their dependencies as a concatenated :py:class:`pandas.DataFrame` s
@@ -958,13 +960,12 @@ class DataSet(BaseDataSet):
                                            end=end)
         return load_to_concatenated_dataframe(datadict)
 
-    def to_xarray_dataarray_dict(self,
-                                 *params: Union[str,
-                                                ParamSpec,
-                                                _BaseParameter],
-                                 start: Optional[int] = None,
-                                 end: Optional[int] = None) -> \
-            Dict[str, "xr.DataArray"]:
+    def to_xarray_dataarray_dict(
+        self,
+        *params: Union[str, ParamSpec, "_BaseParameter"],
+        start: Optional[int] = None,
+        end: Optional[int] = None,
+    ) -> Dict[str, "xr.DataArray"]:
         """
         Returns the values stored in the :class:`.DataSet` for the specified parameters
         and their dependencies as a dict of :py:class:`xr.DataArray` s
@@ -1013,11 +1014,12 @@ class DataSet(BaseDataSet):
 
         return datadict
 
-    def to_xarray_dataset(self, *params: Union[str,
-                                               ParamSpec,
-                                               _BaseParameter],
-                          start: Optional[int] = None,
-                          end: Optional[int] = None) -> "xr.Dataset":
+    def to_xarray_dataset(
+        self,
+        *params: Union[str, ParamSpec, "_BaseParameter"],
+        start: Optional[int] = None,
+        end: Optional[int] = None,
+    ) -> "xr.Dataset":
         """
         Returns the values stored in the :class:`.DataSet` for the specified parameters
         and their dependencies as a :py:class:`xr.Dataset` object.
@@ -1427,7 +1429,7 @@ class DataSet(BaseDataSet):
 
     @staticmethod
     def _warn_if_set(
-        *params: Union[str, ParamSpec, _BaseParameter],
+        *params: Union[str, ParamSpec, "_BaseParameter"],
         start: Optional[int] = None,
         end: Optional[int],
     ) -> None:
