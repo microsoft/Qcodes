@@ -589,7 +589,7 @@ class Runner:
 
         # .. and give the dataset a snapshot as metadata
         if self.station is None:
-            station = qc.Station.default
+            station = Station.default
         else:
             station = self.station
 
@@ -692,9 +692,12 @@ class Measurement:
             'results' is used for the dataset.
     """
 
-    def __init__(self, exp: Optional[Experiment] = None,
-                 station: Optional[qc.Station] = None,
-                 name: str = '') -> None:
+    def __init__(
+        self,
+        exp: Optional[Experiment] = None,
+        station: Optional[Station] = None,
+        name: str = "",
+    ) -> None:
         self.exitactions: List[ActionType] = []
         self.enteractions: List[ActionType] = []
         self.subscribers: List[SubscriberType] = []
