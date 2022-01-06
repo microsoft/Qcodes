@@ -46,6 +46,8 @@ __all__ = [
     "load_or_create_experiment",
     "new_experiment",
     "Measurement",
+    "plot_by_id",
+    "plot_dataset",
     "initialise_database",
     "initialise_or_create_database_at",
     "initialised_database_at",
