@@ -8,6 +8,12 @@ src_FS_map = {"200e-3": 180e-3, "2": 1.8, "20": 18, "200": 180}
 channels = ["smua", "smub"]
 
 
+def setup_dmm(dmm: Instrument) -> None:
+    dmm.aperture_time(1.0)
+    dmm.autozero("OFF")
+    dmm.autorange("OFF")
+
+
 def save_calibration(smu: Instrument) -> None:
     for channel in channels:
         smu.write(f"{channel}.cal.save()")
@@ -22,6 +28,7 @@ def calibrate_keithley_smu_v(
 ) -> None:
     smu_ranges = ["200e-3", "2", "20"]
     dmm_ranges = [1, 10, 100]
+    setup_dmm(dmm)
     for channel in channels:
         input(f"Please connect channel {channel} to V input on calibrated DMM.")
         for smu_range, dmm_range in zip(smu_ranges, dmm_ranges):
@@ -164,23 +171,14 @@ load_or_create_experiment(
 )
 
 # %% calibrate both channels
-dmm.aperture_time(1.0)
-dmm.range(1)
-dmm.autozero("OFF")
-dmm.autorange("OFF")
 
 calibrate_keithley_smu_v(smu, dmm)
-
 smu.smua.volt(0)
 smu.smub.volt(0)
 
 #%% calibrate single channel in specific range
 
-dmm.aperture_time(1.0)
-dmm.range(1)
-dmm.autozero("OFF")
-dmm.autorange("OFF")
-
+setup_dmm(dmm)
 calibrate_keithley_smu_v_single(smu, "smua", dmm.volt, "200e-3")
 
 # smu.smua.volt(0)
