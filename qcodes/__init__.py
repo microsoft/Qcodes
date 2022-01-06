@@ -23,17 +23,6 @@ conditionally_start_all_logging()
 add_to_spyder_UMR_excludelist('qcodes')
 
 
-from qcodes.station import Station
-
-haswebsockets = True
-try:
-    import websockets
-except ImportError:
-    haswebsockets = False
-if haswebsockets:
-    from qcodes.monitor.monitor import Monitor
-
-# ensure to close all instruments when interpreter is closed
 import atexit
 
 from qcodes.dataset.data_set import (
@@ -76,8 +65,11 @@ from qcodes.instrument.parameter import (
 from qcodes.instrument.sweep_values import SweepFixedValues, SweepValues
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.instrument_drivers.test import test_instrument, test_instruments
+from qcodes.monitor.monitor import Monitor
+from qcodes.station import Station
 from qcodes.utils import validators
 
+# ensure to close all instruments when interpreter is closed
 atexit.register(Instrument.close_all)
 
 if config.core.import_legacy_api:
