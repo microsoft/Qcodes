@@ -3,6 +3,7 @@
 # flake8: noqa (we don't need the "<...> imported but unused" error)
 
 # config
+import warnings
 from typing import Any
 
 import qcodes.configuration as qcconfig
@@ -80,6 +81,13 @@ from qcodes.utils import validators
 atexit.register(Instrument.close_all)
 
 if config.core.import_legacy_api:
+    from qcodes.utils.deprecate import QCoDeSDeprecationWarning
+
+    warnings.warn(
+        "import_legacy_api config option is deprecated and will be removed in a future release "
+        "please update your imports to import these modules directly."
+    )
+
     plotlib = config.gui.plotlib
     if plotlib in {"QT", "all"}:
         try:
