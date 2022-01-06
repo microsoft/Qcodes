@@ -16,7 +16,7 @@ from typing import (
 )
 
 import numpy as np
-from typing_extensions import Protocol, runtime_checkable
+from typing_extensions import Protocol, TypeAlias, runtime_checkable
 
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
@@ -45,16 +45,18 @@ if TYPE_CHECKING:
     from .data_set_cache import DataSetCache
 
 array_like_types = (tuple, list, np.ndarray)
-scalar_res_types = Union[str, complex, np.integer, np.floating, np.complexfloating]
-values_type = Union[scalar_res_types, np.ndarray, Sequence[scalar_res_types]]
-res_type = Tuple[Union["_BaseParameter", str], values_type]
-setpoints_type = Sequence[Union[str, "_BaseParameter"]]
-SPECS = List[ParamSpec]
+scalar_res_types: TypeAlias = Union[
+    str, complex, np.integer, np.floating, np.complexfloating
+]
+values_type: TypeAlias = Union[scalar_res_types, np.ndarray, Sequence[scalar_res_types]]
+res_type: TypeAlias = Tuple[Union["_BaseParameter", str], values_type]
+setpoints_type: TypeAlias = Sequence[Union[str, "_BaseParameter"]]
+SPECS: TypeAlias = List[ParamSpec]
 # Transition period type: SpecsOrInterDeps. We will allow both as input to
 # the DataSet constructor for a while, then deprecate SPECS and finally remove
 # the ParamSpec class
-SpecsOrInterDeps = Union[SPECS, InterDependencies_]
-ParameterData = Dict[str, Dict[str, np.ndarray]]
+SpecsOrInterDeps: TypeAlias = Union[SPECS, InterDependencies_]
+ParameterData: TypeAlias = Dict[str, Dict[str, np.ndarray]]
 
 
 class CompletedError(RuntimeError):
