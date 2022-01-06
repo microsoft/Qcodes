@@ -21,6 +21,7 @@ from .experiment_container import (
     new_experiment,
 )
 from .measurements import Measurement
+from .plotting import plot_by_id, plot_dataset
 from .sqlite.database import (
     initialise_database,
     initialise_or_create_database_at,
