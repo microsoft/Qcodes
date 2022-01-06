@@ -84,8 +84,10 @@ if config.core.import_legacy_api:
     from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
     warnings.warn(
-        "import_legacy_api config option is deprecated and will be removed in a future release "
-        "please update your imports to import these modules directly."
+        "import_legacy_api config option is deprecated and will be removed "
+        "in a future release please update your imports to import these "
+        "modules directly.",
+        QCoDeSDeprecationWarning,
     )
 
     plotlib = config.gui.plotlib
