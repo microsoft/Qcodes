@@ -21,33 +21,6 @@ conditionally_start_all_logging()
 # instrument list and running monitor
 add_to_spyder_UMR_excludelist('qcodes')
 
-if config.core.import_legacy_api:
-    plotlib = config.gui.plotlib
-    if plotlib in {'QT', 'all'}:
-        try:
-            from qcodes.plots.pyqtgraph import QtPlot
-        except Exception:
-            print('pyqtgraph plotting not supported, '
-                  'try "from qcodes.plots.pyqtgraph import QtPlot" '
-                  'to see the full error')
-
-    if plotlib in {'matplotlib', 'all'}:
-        try:
-            from qcodes.plots.qcmatplotlib import MatPlot
-        except Exception:
-            print('matplotlib plotting not supported, '
-                  'try "from qcodes.plots.qcmatplotlib import MatPlot" '
-                  'to see the full error')
-    from qcodes.loops import Loop, active_loop, active_data_set
-    from qcodes.measure import Measure
-    from qcodes.data.data_set import DataSet, new_data, load_data
-    from qcodes.actions import Task, Wait, BreakIf
-    from qcodes.data.location import FormatLocation
-    from qcodes.data.data_array import DataArray
-    from qcodes.data.format import Formatter
-    from qcodes.data.gnuplot_format import GNUPlotFormat
-    from qcodes.data.hdf5_format import HDF5Format
-    from qcodes.data.io import DiskIO
 
 from qcodes.station import Station
 
@@ -58,6 +31,9 @@ except ImportError:
     haswebsockets = False
 if haswebsockets:
     from qcodes.monitor.monitor import Monitor
+
+# ensure to close all instruments when interpreter is closed
+import atexit
 
 from qcodes.dataset.data_set import (
     load_by_counter,
@@ -101,6 +77,41 @@ from qcodes.instrument.visa import VisaInstrument
 from qcodes.instrument_drivers.test import test_instrument, test_instruments
 from qcodes.utils import validators
 
+atexit.register(Instrument.close_all)
+
+if config.core.import_legacy_api:
+    plotlib = config.gui.plotlib
+    if plotlib in {"QT", "all"}:
+        try:
+            from qcodes.plots.pyqtgraph import QtPlot
+        except Exception:
+            print(
+                "pyqtgraph plotting not supported, "
+                'try "from qcodes.plots.pyqtgraph import QtPlot" '
+                "to see the full error"
+            )
+
+    if plotlib in {"matplotlib", "all"}:
+        try:
+            from qcodes.plots.qcmatplotlib import MatPlot
+        except Exception:
+            print(
+                "matplotlib plotting not supported, "
+                'try "from qcodes.plots.qcmatplotlib import MatPlot" '
+                "to see the full error"
+            )
+    from qcodes.actions import BreakIf, Task, Wait
+    from qcodes.data.data_array import DataArray
+    from qcodes.data.data_set import DataSet, load_data, new_data
+    from qcodes.data.format import Formatter
+    from qcodes.data.gnuplot_format import GNUPlotFormat
+    from qcodes.data.hdf5_format import HDF5Format
+    from qcodes.data.io import DiskIO
+    from qcodes.data.location import FormatLocation
+    from qcodes.loops import Loop, active_data_set, active_loop
+    from qcodes.measure import Measure
+
+
 try:
     _register_magic = config.core.get('register_magic', False)
     if _register_magic is not False:
@@ -116,12 +127,6 @@ except ImportError:
     pass
 except RuntimeError as e:
     print(e)
-
-# ensure to close all instruments when interpreter is closed
-import atexit
-import logging
-
-atexit.register(Instrument.close_all)
 
 
 def test(**kwargs: Any) -> int:
