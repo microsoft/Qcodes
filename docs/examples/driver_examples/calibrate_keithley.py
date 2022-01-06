@@ -15,7 +15,7 @@ def save_calibration(smu: Instrument) -> None:
 
 def calibrate_keithley_smu_v(
     smu: Instrument,
-    dmm_param: Parameter,
+    dmm: Instrument,
     src_Z: float = 1e-30,
     time_delay: float = 3.0,
     save_calibrations: bool = False,
@@ -25,9 +25,9 @@ def calibrate_keithley_smu_v(
     for channel in channels:
         input(f"Please connect channel {channel} to V input on calibrated DMM.")
         for smu_range, dmm_range in zip(smu_ranges, dmm_ranges):
-            dmm_param.range(dmm_range)
+            dmm.range(dmm_range)
             calibrate_keithley_smu_v_single(
-                smu, channel, dmm_param.volt, smu_range, src_Z, time_delay
+                smu, channel, dmm.volt, smu_range, src_Z, time_delay
             )
     if save_calibrations:
         save_calibration(smu)
