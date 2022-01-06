@@ -13,6 +13,11 @@ omit = [
     "qcodes/tests/*",
     "qcodes/instrument_drivers/test.py"
 ]
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+]
 
 [tool.darker]
 isort = true
