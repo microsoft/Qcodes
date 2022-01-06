@@ -1,7 +1,7 @@
 import time
+
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.parameter import Parameter
-
 
 src_FS_map = {"200e-3": 180e-3, "2": 1.8, "20": 18, "200": 180}
 channels = ["smua", "smub"]
@@ -132,4 +132,3 @@ def calibrate_keithley_smu_v_single(
 
         # Reset the smu to default state
         smu.write(f"{channel}.source.levelv = {src_Z}")
-
