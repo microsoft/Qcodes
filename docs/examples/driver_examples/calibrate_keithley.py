@@ -74,7 +74,7 @@ def calibrate_keithley_smu_v_single(
         DMM_Z_rdg = dmm_param_volt()
 
         smu.write(f"{channel}.source.output = {channel}.OUTPUT_OFF")
-        smu.write(f"{channel}.source.levelv = {src_FS}")
+        smu.write(f"{channel}.source.levelv = {src_FS:.8e}")
         smu.write(f"{channel}.source.output = {channel}.OUTPUT_ON")
 
         # Measure positive full scale voltage with SMU and DMM:
@@ -86,21 +86,21 @@ def calibrate_keithley_smu_v_single(
         smu.write(f"{channel}.source.output = {channel}.OUTPUT_OFF")
         time.sleep(time_delay)
         smu.write(
-            f"{channel}.source.calibratev({v_range}, {src_Z}, {DMM_Z_rdg}, {src_FS}, {DMM_FS_rdg})"
+            f"{channel}.source.calibratev({v_range}, {src_Z}, {DMM_Z_rdg:.8e}, {src_FS:.8e}, {DMM_FS_rdg:.8e})"
         )
         if sense_mode != "SENSE_CALA":
             time.sleep(time_delay)
             smu.write(
-                f"{channel}.measure.calibratev({v_range}, Z_rdg, {DMM_Z_rdg}, FS_rdg, {DMM_FS_rdg})"
+                f"{channel}.measure.calibratev({v_range}, Z_rdg, {DMM_Z_rdg:.8e}, FS_rdg, {DMM_FS_rdg:.8e})"
             )
         time.sleep(time_delay)
 
         # Debug output
         print(
-            f"{channel}.source.calibratev({v_range}, {src_Z}, {DMM_Z_rdg:.6e}, {src_FS:.6f}, {DMM_FS_rdg:.6f})"
+            f"{channel}.source.calibratev({v_range}, {src_Z}, {DMM_Z_rdg:.8e}, {src_FS:.8e}, {DMM_FS_rdg:.8e})"
         )
         print(
-            f"{channel}.measure.calibratev({v_range}, Z_rdg, {DMM_Z_rdg:.6e}, FS_rdg, {DMM_FS_rdg:.6f})"
+            f"{channel}.measure.calibratev({v_range}, Z_rdg, {DMM_Z_rdg:.8e}, FS_rdg, {DMM_FS_rdg:.8e})"
         )
 
         # Start negative calibration:
@@ -114,7 +114,7 @@ def calibrate_keithley_smu_v_single(
         DMM_Z_rdg = dmm_param_volt()
 
         smu.write(f"{channel}.source.output = {channel}.OUTPUT_OFF")
-        smu.write(f"{channel}.source.levelv = -{src_FS}")
+        smu.write(f"{channel}.source.levelv = -{src_FS:.8e}")
         smu.write(f"{channel}.source.output = {channel}.OUTPUT_ON")
 
         # Measure negative full scale voltage with DMM:
@@ -126,21 +126,21 @@ def calibrate_keithley_smu_v_single(
         smu.write(f"{channel}.source.output = {channel}.OUTPUT_OFF")
         time.sleep(time_delay)
         smu.write(
-            f"{channel}.source.calibratev(-{v_range}, -{src_Z}, {DMM_Z_rdg}, -{src_FS}, {DMM_FS_rdg})"
+            f"{channel}.source.calibratev(-{v_range}, -{src_Z}, {DMM_Z_rdg:.8e}, -{src_FS:.8e}, {DMM_FS_rdg:.8e})"
         )
         if sense_mode != "SENSE_CALA":
             time.sleep(time_delay)
             smu.write(
-                f"{channel}.measure.calibratev(-{v_range}, Z_rdg, {DMM_Z_rdg}, FS_rdg, {DMM_FS_rdg})"
+                f"{channel}.measure.calibratev(-{v_range}, Z_rdg, {DMM_Z_rdg:.8e}, FS_rdg, {DMM_FS_rdg:.8e})"
             )
         time.sleep(time_delay)
 
         # Debug output
         print(
-            f"{channel}.source.calibratev(-{v_range}, -{src_Z}, {DMM_Z_rdg:.6e}, -{src_FS:.6f}, {DMM_FS_rdg:.6f})"
+            f"{channel}.source.calibratev(-{v_range}, -{src_Z}, {DMM_Z_rdg:.8e}, -{src_FS:.8e}, {DMM_FS_rdg:.8e})"
         )
         print(
-            f"{channel}.measure.calibratev(-{v_range}, Z_rdg, {DMM_Z_rdg:.6e}, FS_rdg, {DMM_FS_rdg:.6f})"
+            f"{channel}.measure.calibratev(-{v_range}, Z_rdg, {DMM_Z_rdg:.8e}, FS_rdg, {DMM_FS_rdg:.8e})"
         )
 
         time.sleep(time_delay)
