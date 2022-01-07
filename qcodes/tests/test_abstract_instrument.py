@@ -192,7 +192,8 @@ def test_abstract_channel_raises(driver):
 
 def test_non_abstract_channel_does_not_raises(request, driver):
     """
-    Creating an instrument with a channel that implements concrete interface should not raise
+    Creating an instrument with a channel that implements concrete
+    interface should not raise
     """
     source = VoltageChannelSource("abstract_instrument_driver_8")
     request.addfinalizer(source.close)
