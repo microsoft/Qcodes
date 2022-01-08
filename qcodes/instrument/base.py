@@ -356,6 +356,30 @@ class InstrumentBase(Metadatable, DelegateAttributes):
     @property
     def full_name(self) -> str:
         return "_".join(self.name_parts)
+
+    def _is_abstract(self) -> bool:
+        """
+        This method is run after the initialization of an instrument but
+        before the instrument is registered. It recursively checks that there are
+        no abstract parameters defined on the instrument or any instrument channels.
+        """
+        is_abstract = False
+        abstract_parameters = [
+            parameter.name
+            for parameter in self.parameters.values()
+            if parameter.abstract
+        ]
+
+        if any(abstract_parameters):
+            is_abstract = True
+        for submodule in self.submodules.values():
+            # channellists do not implement raise_if_abstract
+            submodule_is_abstract = getattr(submodule, "_is_abstract", None)
+            if submodule_is_abstract is not None:
+                if submodule_is_abstract():
+                    is_abstract = True
+        return is_abstract
+
     #
     # shortcuts to parameters & setters & getters                           #
     #
@@ -459,6 +483,14 @@ class AbstractInstrumentMeta(ABCMeta):
         successfully.
         """
         new_inst = super().__call__(*args, **kwargs)
+        is_abstract = new_inst._is_abstract()
+        if is_abstract:
+            new_inst.close()
+            raise NotImplementedError(
+                f"{new_inst} has un-implemented Abstract Parameter "
+                f"and cannot be initialized"
+            )
+
         new_inst.record_instance(new_inst)
         return new_inst
 

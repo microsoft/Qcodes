@@ -67,23 +67,6 @@ class VoltageSourceInitException(Instrument):
             assert False
 
 
-class VoltageSourceSubSub(VoltageSource):
-    """
-    This is a sub-sub class of the example base voltage
-    source. The post init function should be called
-    only once
-    """
-
-    call_count = 0
-
-    def __init__(self, name: str):
-        super().__init__(name)
-
-    def __post_init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__post_init__()  # type: ignore[misc]
-        self.call_count += 1
-
-
 class VoltageChannelBase(InstrumentChannel):
     """
     Create a channel with an abstract parameter
@@ -106,6 +89,37 @@ class VoltageChannel(VoltageChannelBase):
         self.add_parameter("voltage", unit="V", get_cmd=None, set_cmd=None)
 
 
+class VoltageAbstractChannelSource(Instrument):
+    """
+    A channel instrument with an abstract parameter on the channel.
+    This should raise.
+    """
+
+    def __init__(
+        self,
+        name: str,
+    ):
+        super().__init__(name)
+        channel = VoltageChannelBase(self, "voltage")
+        self.add_submodule("voltage", channel)
+
+
+class VoltageChannelSource(Instrument):
+    """
+    A channel instrument with an implementation of the
+    abstract parameter on the channel.
+    This should not raise.
+    """
+
+    def __init__(
+        self,
+        name: str,
+    ):
+        super().__init__(name)
+        channel = VoltageChannel(self, "voltage")
+        self.add_submodule("voltage", channel)
+
+
 @pytest.fixture(name="driver", scope="module")
 def _driver():
     drvr = VoltageSource("abstract_instrument_driver")
@@ -122,7 +136,6 @@ def test_sanity(driver):
     assert driver.voltage() == 0.1
 
 
-@pytest.mark.skip("tests unimplemented feature")
 def test_not_implemented_error():
     """
     If not all abstract parameters are implemented, we should see
@@ -135,30 +148,12 @@ def test_not_implemented_error():
     assert not VoltageSourceNotImplemented.instances()
 
 
-def test_get_set_raises(request):
-    """
-    If not all abstract parameters are implemented, we should see
-    an exception
-    """
-    vs = VoltageSourceNotImplemented("abstract_instrument_driver_3")
-    request.addfinalizer(vs.close)
-    with pytest.raises(
-        NotImplementedError, match="Trying to get an abstract parameter"
-    ):
-        vs.voltage.get()
-
-    with pytest.raises(
-        NotImplementedError, match="Trying to set an abstract parameter"
-    ):
-        vs.voltage.set(0)
-
-
 def test_unit_value_error():
     """
     Units should match between subclasses and base classes
     """
     with pytest.raises(ValueError, match="This is inconsistent with the unit defined"):
-        VoltageSourceBadUnit("abstract_instrument_driver_4")
+        VoltageSourceBadUnit("abstract_instrument_driver_3")
 
 
 def test_unit_value_error_does_not_register_instrument():
@@ -166,19 +161,13 @@ def test_unit_value_error_does_not_register_instrument():
     Units should match between subclasses and base classes
     """
     with pytest.raises(ValueError, match="This is inconsistent with the unit defined"):
-        VoltageSourceBadUnit("abstract_instrument_driver_5")
+        VoltageSourceBadUnit("abstract_instrument_driver_4")
     assert not VoltageSourceBadUnit.instances()
 
 
 def test_exception_in_init():
     """
-    In previous versions of QCoDeS, if an error occurred in
-    the instrument init method, we could not attempt to retry
-    the instantiation with the same instrument name. This is
-    because the driver instance was recorded at the end of
-    the init method in the base class. In current versions
-    the instance is recorded in the __post_init__ method,
-    which should eliminate this problem
+    Verify that if the instrument raises in init it is not registered as an instance
     """
     name = "abstract_instrument_driver_6"
     try:
@@ -191,25 +180,20 @@ def test_exception_in_init():
     instance.close()
 
 
-@pytest.mark.skip("tests unimplemented feature")
-def test_subsub():
+def test_abstract_channel_raises(driver):
     """
-    Verify that the post init method is only called once, even
-    for sub-sub classes. This should work for arbitrary levels
-    of subclassing.
+    Creating an instrument with a channel with abstract parameters should raise
     """
-    instance = VoltageSourceSubSub("abstract_instrument_driver_7")
-    assert instance.call_count == 1
-
-
-@pytest.mark.skip("tests unimplemented feature")
-def test_channel(driver):
-    """
-    This should work without exceptions
-    """
-    VoltageChannel(driver, "abstract_instrument_driver_8")
-
     with pytest.raises(
         NotImplementedError, match="has un-implemented Abstract Parameter"
     ):
-        VoltageChannelBase(driver, "driver6")
+        VoltageAbstractChannelSource("abstract_instrument_driver_7")
+
+
+def test_non_abstract_channel_does_not_raises(request, driver):
+    """
+    Creating an instrument with a channel that implements concrete
+    interface should not raise
+    """
+    source = VoltageChannelSource("abstract_instrument_driver_8")
+    request.addfinalizer(source.close)
