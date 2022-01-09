@@ -50,7 +50,7 @@ types-six==1.16.7
 types-tabulate==0.8.4
 types-toml==0.10.1
 types-typed-ast==1.5.1
-urllib3==1.26.7
+urllib3==1.26.8
 wincertstore==0.2
 wrapt==1.13.3
 zipp==3.7.0
