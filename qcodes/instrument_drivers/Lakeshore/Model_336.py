@@ -173,3 +173,5 @@ class Model_336(LakeshoreBase):
         self.output_2 = Output_336_CurrentSource(self, 'output_2', 2)
         #self.output_3 = Output_336_VoltageSource(self, 'output_3', 3)
         #self.output_4 = Output_336_VoltageSource(self, 'output_4', 4)
+        #test01
+        
