@@ -1,6 +1,6 @@
 [build-system]
 requires = [
-    "setuptools >= 48",
+    "setuptools >= 56.0",
     "wheel >= 0.29.0",
     "versioningit ~= 0.3.0",
 ]
