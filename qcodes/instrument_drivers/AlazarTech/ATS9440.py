@@ -238,7 +238,7 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
                                         'AD': 8,
                                         'BD': 9,
                                         'CD': 10,
-                                        'ABCD': 11})
+                                        'ABCD': 15})
         self.add_parameter(name='transfer_offset',
                            label='Transfer Offset',
                            unit='Samples',
