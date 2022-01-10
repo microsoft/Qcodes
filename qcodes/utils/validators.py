@@ -756,7 +756,7 @@ class Arrays(Validator[np.ndarray]):
         if self.shape is None:
             return (np.array([self._min_value], dtype=valid_type),)
         else:
-            val_arr = np.empty(self.shape, dtype=valid_type)
+            val_arr: np.ndarray = np.empty(self.shape, dtype=valid_type)
             val_arr.fill(self._min_value)
             return (val_arr,)
 

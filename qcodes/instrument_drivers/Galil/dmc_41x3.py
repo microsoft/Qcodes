@@ -714,15 +714,15 @@ class Arm:
         a = np.asarray(self._right_top_position) - np.asarray(
             self._left_bottom_position
         )
-        self.norm_a = np.linalg.norm(a)
+        self.norm_a = float(np.linalg.norm(a))
         self._a = a / self.norm_a
 
         b = np.asarray(self._left_top_position) - np.asarray(self._left_bottom_position)
-        self.norm_b = np.linalg.norm(b)
+        self.norm_b = float(np.linalg.norm(b))
         self._b = b / self.norm_b
 
         c = np.asarray(self._right_top_position) - np.asarray(self._left_top_position)
-        self.norm_c = np.linalg.norm(c)
+        self.norm_c = float(np.linalg.norm(c))
         self._c = c / self.norm_c
 
         n = np.cross(self._a, self._b)
@@ -958,7 +958,7 @@ class Arm:
             raise RuntimeError("Cannot move further")
 
         motion_vec = -1 * self._b * self.norm_b + self._c * self.inter_pad_distance
-        norm = np.linalg.norm(motion_vec)
+        norm = float(np.linalg.norm(motion_vec))
         motion_vec_cap = motion_vec / norm
 
         self._pick_up()
