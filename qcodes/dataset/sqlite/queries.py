@@ -97,7 +97,7 @@ def is_run_id_in_database(conn: ConnectionPlus,
         a dict with the run_ids as keys and bools as values. True means that
         the run_id DOES exist in the database
     """
-    run_ids = np.unique(run_ids)
+    run_ids = tuple(np.unique(run_ids))
     placeholders = sql_placeholder_string(len(run_ids))
 
     query = f"""

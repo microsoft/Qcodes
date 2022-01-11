@@ -103,7 +103,7 @@ class HP8753DTrace(ArrayParameter):
             first_points += raw_resp[4:][2*n*4:(2*n+1)*4]
 
         dt = np.dtype('>f')
-        trace1 = np.fromstring(first_points, dtype=dt)
+        trace1 = np.frombuffer(first_points, dtype=dt)
 
         return trace1
 

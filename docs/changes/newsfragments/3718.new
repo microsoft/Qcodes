@@ -1,0 +1,5 @@
+An abstract instrument (An instrument with one or more abstract parameters) will now raise at
+instrument creation time preventing such an instrument from being created.
+This makes it easier to define interfaces that multiple instruments must implement.
+See `here <../examples/writing_drivers/abstract_instruments.ipynb>`__ for examples of how to use
+this.

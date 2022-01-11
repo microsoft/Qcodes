@@ -1,0 +1,1 @@
+Changed the value mapping of channel_selection on the Alazartech ATS9440 driver to fix all the combinations where channel D is involved.

@@ -1,7 +1,8 @@
 [build-system]
 requires = [
-    "setuptools >= 48",
+    "setuptools >= 56.0",
     "wheel >= 0.29.0",
+    "versioningit ~= 0.3.0",
 ]
 build-backend = 'setuptools.build_meta'
 
@@ -9,9 +10,13 @@ build-backend = 'setuptools.build_meta'
 omit = [
     "qcodes/__init__.py",
     "*/__init__.py",
-    "qcodes/_version.py",
     "qcodes/tests/*",
     "qcodes/instrument_drivers/test.py"
+]
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
 ]
 
 [tool.darker]
@@ -35,7 +40,6 @@ disallow_untyped_defs = true
 
 [[tool.mypy.overrides]]
 module = [
-    "qcodes._version",
     "qcodes.actions.*",
     "qcodes.data.*",
     "qcodes.instrument.mockers.ami430",
@@ -101,3 +105,15 @@ showcontent = true
 directory = "underthehood"
 name = "Under the hood:"
 showcontent = true
+
+[tool.versioningit]
+default-version = "0.0"
+
+[tool.versioningit.format]
+distance = "{version}+{distance}.{vcs}{rev}"
+dirty = "{version}+{distance}.{vcs}{rev}.dirty"
+distance-dirty = "{version}+{distance}.{vcs}{rev}.dirty"
+
+[tool.versioningit.vcs]
+method = "git"
+match = ["v*"]

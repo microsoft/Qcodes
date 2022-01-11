@@ -7,15 +7,14 @@ import json
 import logging
 import subprocess
 import sys
+from pathlib import Path
 from typing import Dict, List, Optional
 
 if sys.version_info >= (3, 8):
     from importlib.metadata import PackageNotFoundError, distribution, version
 else:
     # 3.7 and earlier
-    from importlib_metadata import distribution, version, PackageNotFoundError
-
-import qcodes
+    from importlib_metadata import PackageNotFoundError, distribution, version
 
 log = logging.getLogger(__name__)
 
@@ -47,7 +46,22 @@ def get_qcodes_version() -> str:
     """
     Get the version of the currently installed QCoDeS
     """
-    return qcodes.__version__
+    import qcodes
+    package_name = "qcodes"
+
+    qcodes_path = Path(qcodes.__file__).parent
+    if _has_pyproject_toml_and_is_git_repo(qcodes_path.parent):
+        log.info(
+            f"QCoDeS seems to be installed editably trying to look up version "
+            f"from git repo in {qcodes_path}"
+        )
+
+        import versioningit
+
+        __version__ = versioningit.get_version(project_dir=qcodes_path.parent)
+    else:
+        __version__ = version(package_name)
+    return __version__
 
 
 def get_qcodes_requirements() -> List[str]:
@@ -107,3 +121,9 @@ def convert_legacy_version_to_supported_version(ver: str) -> str:
         else:
             temp_list.append(v)
     return "".join(temp_list)
+
+
+def _has_pyproject_toml_and_is_git_repo(path: Path) -> bool:
+    has_pyproject_toml = (path / "pyproject.toml").exists()
+    is_git_repo = (path / ".git").exists()
+    return has_pyproject_toml and is_git_repo
