@@ -10,7 +10,10 @@ if TYPE_CHECKING:
     from qcodes.instrument_drivers.tektronix.Keithley_2600_channels import Keithley_2600
 
 
-src_FS_map = {"200e-3": 180e-3, "2": 1.8, "20": 18, "200": 180}
+src_FS_map = {
+    "200e-3": 180e-3, "2": 1.8, "20": 18, "200": 180,
+    "100e-3": 80e-3, "1": 0.8, "6": 5.6, "40": 38,
+}
 
 
 def setup_dmm(dmm: Instrument) -> None:
