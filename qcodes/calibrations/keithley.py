@@ -1,7 +1,14 @@
+from __future__ import annotations
+
 import time
+from typing import TYPE_CHECKING
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.parameter import Parameter
+
+if TYPE_CHECKING:
+    from qcodes.instrument_drivers.tektronix.Keithley_2600_channels import Keithley_2600
+
 
 src_FS_map = {"200e-3": 180e-3, "2": 1.8, "20": 18, "200": 180}
 
@@ -12,13 +19,13 @@ def setup_dmm(dmm: Instrument) -> None:
     dmm.autorange("OFF")
 
 
-def save_calibration(smu: Instrument) -> None:
+def save_calibration(smu: Keithley_2600) -> None:
     for smu_channel in smu.channels:
         smu.write(f"{smu_channel.channel}.cal.save()")
 
 
 def calibrate_keithley_smu_v(
-    smu: Instrument,
+    smu: Keithley_2600,
     dmm: Instrument,
     src_Z: float = 1e-30,
     time_delay: float = 3.0,
@@ -39,7 +46,7 @@ def calibrate_keithley_smu_v(
 
 
 def calibrate_keithley_smu_v_single(
-    smu: Instrument,
+    smu: Keithley_2600,
     channel: str,
     dmm_param_volt: Parameter,
     v_range: str,
