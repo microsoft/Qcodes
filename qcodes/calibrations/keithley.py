@@ -4,7 +4,6 @@ from qcodes.instrument.base import Instrument
 from qcodes.instrument.parameter import Parameter
 
 src_FS_map = {"200e-3": 180e-3, "2": 1.8, "20": 18, "200": 180}
-channels = ["smua", "smub"]
 
 
 def setup_dmm(dmm: Instrument) -> None:
@@ -14,8 +13,8 @@ def setup_dmm(dmm: Instrument) -> None:
 
 
 def save_calibration(smu: Instrument) -> None:
-    for channel in channels:
-        smu.write(f"{channel}.cal.save()")
+    for smu_channel in smu.channels:
+        smu.write(f"{smu_channel.channel}.cal.save()")
 
 
 def calibrate_keithley_smu_v(
@@ -28,12 +27,12 @@ def calibrate_keithley_smu_v(
     smu_ranges = ["200e-3", "2", "20"]
     dmm_ranges = [1, 10, 100]
     setup_dmm(dmm)
-    for channel in channels:
-        input(f"Please connect channel {channel} to V input on calibrated DMM.")
+    for smu_channel in smu.channels:
+        input(f"Please connect channel {smu_channel.channel} to V input on calibrated DMM.")
         for smu_range, dmm_range in zip(smu_ranges, dmm_ranges):
             dmm.range(dmm_range)
             calibrate_keithley_smu_v_single(
-                smu, channel, dmm.volt, smu_range, src_Z, time_delay
+                smu, smu_channel.channel, dmm.volt, smu_range, src_Z, time_delay
             )
     if save_calibrations:
         save_calibration(smu)
@@ -47,7 +46,7 @@ def calibrate_keithley_smu_v_single(
     src_Z: float = 1e-30,
     time_delay: float = 3.0,
 ) -> None:
-    assert channel in channels
+    assert channel in set(smu_channel.channel for smu_channel in smu.channels)
     assert v_range in src_FS_map.keys()
     src_FS = src_FS_map[v_range]
 
