@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, Dict
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.parameter import Parameter
