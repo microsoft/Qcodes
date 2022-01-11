@@ -80,12 +80,12 @@ def test_slot_names(driver):
 
 
 def test_get_interlock_state(driver):
-    dict_list = []
-    for i in ['1', '2', '3']:
-        dictionary = {'slot_no': i,
-                      'state': 'Interlock is disengaged'}
-        dict_list.append(dictionary)
-    assert tuple(dict_list) == driver.get_interlock_state()
+    dict_list = (
+        {'slot_no': '1', 'state': 'Interlock is disengaged'},
+        {'slot_no': '2', 'state': 'Interlock is disengaged'},
+        {'slot_no': '3', 'state': 'Interlock is engaged'},
+    )
+    assert dict_list == driver.get_interlock_state()
 
 
 def test_get_number_of_rows(driver):
