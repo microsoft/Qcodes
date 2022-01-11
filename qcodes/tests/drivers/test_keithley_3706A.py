@@ -80,7 +80,7 @@ def test_slot_names(driver):
 
 
 def test_get_interlock_state(driver):
-    dict_list = tuple(
+    dict_list = (
         {'slot_no': 1, 'state': 'Interlock is disengaged'},
         {'slot_no': 2, 'state': 'Interlock is disengaged'},
         {'slot_no': 3, 'state': 'Interlock is engaged'},
