@@ -33,17 +33,32 @@ def calibrate_keithley_smu_v(
     src_Z: float = 1e-30,
     time_delay: float = 3.0,
     save_calibrations: bool = False,
+    dmm_range_per_smu_range_mapping: Optional[Dict[str, float]] = None
 ) -> None:
-    smu_ranges = ["200e-3", "2", "20"]
-    dmm_ranges = [1, 10, 100]
+    if dmm_range_per_smu_range_mapping is None:
+        dmm_range_per_smu_range_mapping = {
+            "200e-3": 1,
+            "2": 10,
+            "20": 100,
+        }
+    else:
+        wrong_smu_range_keys = set(dmm_range_per_smu_range_mapping.keys()) - set(src_FS_map.keys())
+        if len(wrong_smu_range_keys) > 0:
+            raise ValueError(
+                f"dmm_range_per_smu_range_mapping contains unknown keys {wrong_smu_range_keys}, "
+                f"the possible keys are {set(src_FS_map.keys())}"
+            )
+
     setup_dmm(dmm)
+
     for smu_channel in smu.channels:
         input(f"Please connect channel {smu_channel.channel} to V input on calibrated DMM.")
-        for smu_range, dmm_range in zip(smu_ranges, dmm_ranges):
+        for smu_range, dmm_range in dmm_range_per_smu_range_mapping.items():
             dmm.range(dmm_range)
             calibrate_keithley_smu_v_single(
                 smu, smu_channel.channel, dmm.volt, smu_range, src_Z, time_delay
             )
+
     if save_calibrations:
         save_calibration(smu)
 
