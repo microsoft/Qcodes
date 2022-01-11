@@ -122,10 +122,9 @@ class ScopeTrace(ArrayParameter):
         dataformat = instr.dataformat.get_latest()
 
         if dataformat == 'INT,8':
-            int_vals = np.fromstring(raw_vals, dtype=np.int8, count=no_points)
+            int_vals = np.frombuffer(raw_vals, dtype=np.int8, count=no_points)
         else:
-            int_vals = np.fromstring(raw_vals, dtype=np.int16,
-                                     count=no_points//2)
+            int_vals = np.frombuffer(raw_vals, dtype=np.int16, count=no_points // 2)
 
         # now the integer values must be converted to physical
         # values

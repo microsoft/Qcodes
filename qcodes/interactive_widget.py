@@ -11,8 +11,7 @@ from functools import partial, reduce
 from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, Optional, Sequence
 
 import matplotlib.pyplot as plt
-from IPython.core.display import display
-from IPython.display import clear_output
+from IPython.display import clear_output, display
 from ipywidgets import (
     HTML,
     Box,

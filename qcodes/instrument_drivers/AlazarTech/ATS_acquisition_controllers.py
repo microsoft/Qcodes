@@ -1,8 +1,9 @@
-from typing import Any, Optional, Dict, Tuple
+import math
+from typing import Any, Dict, Optional, Tuple
+
+import numpy as np
 
 from .ATS import AcquisitionController, OutputType
-import math
-import numpy as np
 
 
 # DFT AcquisitionController
@@ -37,8 +38,8 @@ class Demodulation_AcquisitionController(AcquisitionController[float]):
         self.records_per_buffer = 0
         self.buffers_per_acquisition = 0
         self.number_of_channels = 2
-        self.cos_list = None
-        self.sin_list = None
+        self.cos_list: Optional[np.ndarray] = None
+        self.sin_list: Optional[np.ndarray] = None
         self.buffer: Optional[np.ndarray] = None
         # make a call to the parent class and by extension, create the parameter
         # structure of this class
@@ -146,6 +147,8 @@ class Demodulation_AcquisitionController(AcquisitionController[float]):
         :return: return amplitude and phase of the resulted transform
         """
         # Discrete Fourier Transform
+        assert self.cos_list is not None
+        assert self.sin_list is not None
         RePart = np.dot(buf - 127.5, self.cos_list) / self.samples_per_record
         ImPart = np.dot(buf - 127.5, self.sin_list) / self.samples_per_record
 

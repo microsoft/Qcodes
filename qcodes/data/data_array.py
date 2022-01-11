@@ -1,8 +1,10 @@
 import collections
-from typing import Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 import numpy as np
-import xarray as xr
+
+if TYPE_CHECKING:
+    import xarray as xr
 
 from qcodes.utils.helpers import DelegateAttributes, full_class, warn_units
 
@@ -533,19 +535,22 @@ class DataArray(DelegateAttributes):
         warn_units('DataArray', self)
         return self.unit
 
-    def to_xarray(self) -> xr.DataArray:
+    def to_xarray(self) -> "xr.DataArray":
         """ Return this DataArray as an xarray dataarray
 
         Returns:
             DataArray in xarray format
         """
+        import xarray as xr
         xarray_dictionary = data_array_to_xarray_dictionary(self)
         xarray_dataarray = xr.DataArray.from_dict(xarray_dictionary)
         return xarray_dataarray
 
     @classmethod
-    def from_xarray(cls, xarray_dataarray: xr.DataArray, array_id: Optional[str] = None) -> 'DataArray':
-        """ Create a DataArray from an xarray DataArray
+    def from_xarray(
+        cls, xarray_dataarray: "xr.DataArray", array_id: Optional[str] = None
+    ) -> "DataArray":
+        """Create a DataArray from an xarray DataArray
 
         Args:
             array_id: Array id for the new DataArray. If None, then use the first data variable from the argument

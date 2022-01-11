@@ -69,8 +69,8 @@ class ChannelTrace(ParameterWithSetpoints):
         rawdata = self.root_instrument.visa_handle.read_raw()
 
         # parse it
-        realdata = np.fromstring(rawdata, dtype='<i2')
-        numbers = realdata[::2]*2.0**(realdata[1::2]-124)
+        realdata = np.frombuffer(rawdata, dtype="<i2")
+        numbers = realdata[::2] * 2.0 ** (realdata[1::2] - 124)
 
         return numbers
 
@@ -178,8 +178,8 @@ class ChannelBuffer(ArrayParameter):
         rawdata = self.instrument.visa_handle.read_raw()
 
         # parse it
-        realdata = np.fromstring(rawdata, dtype='<i2')
-        numbers = realdata[::2]*2.0**(realdata[1::2]-124)
+        realdata = np.frombuffer(rawdata, dtype="<i2")
+        numbers = realdata[::2] * 2.0 ** (realdata[1::2] - 124)
         if self.shape[0] != N:
             raise RuntimeError(
                 f"SR830 got {N} points in buffer expected {self.shape[0]}"

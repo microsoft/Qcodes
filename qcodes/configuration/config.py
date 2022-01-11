@@ -3,11 +3,11 @@ import copy
 import json
 import logging
 import os
-import pkg_resources as pkgr
 from os.path import expanduser
 from pathlib import Path
+from typing import Any, Dict, Mapping, Optional, Tuple, Union
+
 import jsonschema
-from typing import Dict, Tuple, Optional, Any, Mapping, Union
 
 logger = logging.getLogger(__name__)
 
@@ -39,15 +39,14 @@ class Config:
     schema_file_name = "qcodesrc_schema.json"
     """Name of schema file"""
     # get abs path of packge config file
-    default_file_name = pkgr.resource_filename(__name__, config_file_name)
+    default_file_name = str(Path(__file__).parent / config_file_name)
     """Filename of default config"""
     current_config_path = default_file_name
     """Path of the last loaded config file"""
     _loaded_config_files = [default_file_name]
 
     # get abs path of schema  file
-    schema_default_file_name = pkgr.resource_filename(__name__,
-                                                      schema_file_name)
+    schema_default_file_name = str(Path(__file__).parent / schema_file_name)
     """Filename of default schema"""
 
     # home dir, os independent
