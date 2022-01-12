@@ -42,7 +42,6 @@ from qcodes.dataset.sqlite.queries import (
 )
 from qcodes.utils.helpers import NumpyJSONEncoder
 
-from ..instrument.parameter import _BaseParameter
 from .data_set_cache import DataSetCacheInMem
 from .dataset_helpers import _add_run_to_runs_table
 from .descriptions.versioning import serialization as serial
@@ -53,6 +52,8 @@ from .linked_datasets.links import str_to_links
 if TYPE_CHECKING:
     import pandas as pd
     import xarray as xr
+
+    from ..instrument.parameter import _BaseParameter
 
 log = logging.getLogger(__name__)
 

@@ -43,7 +43,7 @@
                         {"type": "boolean"},
                         {"type": "array"}
                     ],
-                    "default": true
+                    "default": false
                 },
                 "import_legacy_api" : {
                     "description": "Import the legacy api in main qcodes namespace",

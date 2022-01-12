@@ -6,7 +6,8 @@ from typing import TYPE_CHECKING
 import h5py
 import numpy as np
 
-from ..version import __version__ as _qcodes_version
+import qcodes as qc
+
 from .data_array import DataArray
 from .format import Formatter
 
@@ -165,8 +166,8 @@ class HDF5Format(Formatter):
         # name. This is useful for saving e.g. images in the same folder
         # I think this is a sane default (MAR).
         data_set._h5_base_group = self._create_file(filepath)
-        data_set._h5_base_group.attrs['__qcodes_version'] = _qcodes_version
-        data_set._h5_base_group.attrs['__format_tag'] = self._format_tag
+        data_set._h5_base_group.attrs["__qcodes_version"] = qc.__version__
+        data_set._h5_base_group.attrs["__format_tag"] = self._format_tag
 
         return data_set._h5_base_group
 

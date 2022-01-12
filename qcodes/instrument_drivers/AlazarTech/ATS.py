@@ -735,14 +735,6 @@ class Buffer:
         self.size_bytes = size_bytes
         self.buffer: np.ndarray
 
-        npSampleType = {
-            ctypes.c_uint8: np.uint8,
-            ctypes.c_uint16: np.uint16,
-            ctypes.c_uint32: np.uint32,
-            ctypes.c_int32: np.int32,
-            ctypes.c_float: np.float32
-        }.get(c_sample_type, 0)
-
         bytes_per_sample = {
             ctypes.c_uint8:  1,
             ctypes.c_uint16: 2,
@@ -765,7 +757,7 @@ class Buffer:
 
         ctypes_array = (c_sample_type *
                         (size_bytes // bytes_per_sample)).from_address(self.addr)
-        self.buffer = np.frombuffer(ctypes_array, dtype=npSampleType)
+        self.buffer = np.ctypeslib.as_array(ctypes_array)
         self.ctypes_buffer = ctypes_array
 
     def free_mem(self) -> None:

@@ -1,6 +1,6 @@
-from distutils.version import LooseVersion
 from typing import Any, Sequence, Tuple, Union, cast
 
+from packaging import version
 from pyvisa.errors import VisaIOError
 
 from qcodes import InstrumentChannel, VisaInstrument
@@ -11,6 +11,7 @@ from qcodes.instrument.parameter import (
     ParamRawDataType,
 )
 from qcodes.utils.helpers import create_on_off_val_mapping
+from qcodes.utils.installation_info import convert_legacy_version_to_supported_version
 from qcodes.utils.validators import Bool, Enum, Ints, Numbers
 
 
@@ -194,9 +195,9 @@ class KeysightE4980A(VisaInstrument):
 
         idn = self.IDN.get()
 
-        self.has_firmware_a_02_10_or_above = (
-                LooseVersion(idn["firmware"]) >= LooseVersion("A.02.10")
-        )
+        self.has_firmware_a_02_10_or_above = version.parse(
+            convert_legacy_version_to_supported_version(idn["firmware"])
+        ) >= version.parse(convert_legacy_version_to_supported_version("A.02.10"))
 
         self.has_option_001 = '001' in self._options()
         self._dc_bias_v_level_range: Union[Numbers, Enum]

@@ -1,7 +1,7 @@
 {
     "core":{
         "default_fmt": "data/{date}/#{counter}_{name}_{time}",
-        "register_magic": true,
+        "register_magic": false,
         "import_legacy_api": false,
         "db_location": "~/experiments.db",
         "db_debug": false,

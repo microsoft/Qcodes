@@ -1,9 +1,10 @@
 # pylint: disable=redefined-outer-name
-import pytest
-from hypothesis import given
 import hypothesis.strategies as st
-from qcodes.instrument_drivers.tektronix.keithley_7510 import Keithley7510
+import pytest
+from hypothesis import given, settings
+
 import qcodes.instrument.sims as sims
+from qcodes.instrument_drivers.tektronix.keithley_7510 import Keithley7510
 
 VISALIB = sims.__file__.replace('__init__.py', 'keithley_7510.yaml@sim')
 
@@ -44,6 +45,7 @@ def test_change_sense_function(dmm_7510_driver):
     assert dmm_7510_driver.sense.function() == 'current'
 
 
+@settings(deadline=None)
 @given(
     st.sampled_from((0.1, 1, 10, 100, 1000)),
     st.floats(0.01, 10)

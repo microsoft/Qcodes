@@ -1,23 +1,42 @@
 import re
 import textwrap
-from typing import Optional, Dict, Any, Union, TYPE_CHECKING, List, Tuple, \
-    cast, Sequence
-from typing_extensions import TypedDict, Literal, overload
-import numpy as np
-import qcodes.utils.validators as vals
-from qcodes.instrument.parameter import Parameter, ParamRawDataType
-from qcodes.instrument.channel import InstrumentChannel
-from qcodes.instrument.group_parameter import GroupParameter, Group
-from qcodes.utils.validators import Arrays
-from qcodes.utils.deprecate import deprecate
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    cast,
+)
 
-from .KeysightB1500_sampling_measurement import SamplingMeasurement
-from .KeysightB1500_module import B1500Module, \
-    parse_spot_measurement_response
-from .message_builder import MessageBuilder
+import numpy as np
+from typing_extensions import Literal, TypedDict, overload
+
+import qcodes.utils.validators as vals
+from qcodes.instrument.channel import InstrumentChannel
+from qcodes.instrument.group_parameter import Group, GroupParameter
+from qcodes.instrument.parameter import Parameter, ParamRawDataType
+from qcodes.utils.deprecate import deprecate
+from qcodes.utils.validators import Arrays
+
 from . import constants
-from .constants import ModuleKind, ChNr, AAD, MM, MeasurementStatus, \
-    VMeasRange, IMeasRange, VOutputRange, IOutputRange
+from .constants import (
+    AAD,
+    MM,
+    ChNr,
+    IMeasRange,
+    IOutputRange,
+    MeasurementStatus,
+    ModuleKind,
+    VMeasRange,
+    VOutputRange,
+)
+from .KeysightB1500_module import B1500Module, parse_spot_measurement_response
+from .KeysightB1500_sampling_measurement import SamplingMeasurement
+from .message_builder import MessageBuilder
 
 if TYPE_CHECKING:
     from .KeysightB1500_base import KeysightB1500
@@ -796,7 +815,7 @@ class B1517A(B1500Module):
     def _get_time_axis(self) -> np.ndarray:
         sample_rate = self._timing_parameters['interval']
         total_time = self._total_measurement_time()
-        time_xaxis = np.arange(0, total_time, sample_rate)
+        time_xaxis: np.ndarray = np.arange(0, total_time, sample_rate)
         return time_xaxis
 
     def _total_measurement_time(self) -> float:

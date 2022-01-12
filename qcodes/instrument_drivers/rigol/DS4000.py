@@ -3,10 +3,10 @@ import re
 import time
 import warnings
 from collections import namedtuple
-from distutils.version import LooseVersion
 from typing import Any
 
 import numpy as np
+from packaging import version
 
 from qcodes import VisaInstrument
 from qcodes import validators as vals
@@ -298,7 +298,12 @@ class DS4000(VisaInstrument):
         #Require version 00.02.03
 
         idn = self.get_idn()
-        ver = LooseVersion(idn['firmware'])
-        if ver < LooseVersion('00.02.03'):
-            warnings.warn('Firmware version should be at least 00.02.03,'
-                          'data transfer may not work correctly')
+        verstr = idn["firmware"]
+        if verstr is None:
+            raise RuntimeError("Could not determine firmware version of DS4000.")
+        ver = version.parse(verstr)
+        if ver < version.parse("00.02.03"):
+            warnings.warn(
+                "Firmware version should be at least 00.02.03,"
+                "data transfer may not work correctly"
+            )
