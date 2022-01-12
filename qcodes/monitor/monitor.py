@@ -119,7 +119,7 @@ def _handler(parameters: Sequence[Parameter], interval: float,
                 # Update the parameter values
                 try:
                     meta = _get_metadata(*parameters,
-                            root_instrument = use_root_instrument)
+                            use_root_instrument = use_root_instrument)
                 except ValueError:
                     log.exception("Error getting parameters")
                     break
