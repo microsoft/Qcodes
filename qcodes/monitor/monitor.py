@@ -150,7 +150,7 @@ class Monitor(Thread):
         Args:
             *parameters: Parameters to monitor.
             interval: How often one wants to refresh the values.
-            use_root_instrument: Defines if parameters are grouped according to 
+            use_root_instrument: Defines if parameters are grouped according to
                                 parameter.root_instrument or parameter.instrument
         """
         super().__init__()
