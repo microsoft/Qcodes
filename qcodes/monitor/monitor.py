@@ -61,8 +61,9 @@ SERVER_PORT = 3000
 log = logging.getLogger(__name__)
 
 
-def _get_metadata(*parameters: Parameter, use_root_instrument: bool = True) \
-                -> Dict[str, Any]:
+def _get_metadata(
+    *parameters: Parameter, use_root_instrument: bool = True
+) -> Dict[str, Any]:
     """
     Return a dictionary that contains the parameter metadata grouped by the
     instrument it belongs to.
@@ -103,9 +104,9 @@ def _get_metadata(*parameters: Parameter, use_root_instrument: bool = True) \
     return state
 
 
-def _handler(parameters: Sequence[Parameter], interval: float,
-        use_root_instrument: bool = True) \
-        -> Callable[["WebSocketServerProtocol", str], Awaitable[None]]:
+def _handler(
+    parameters: Sequence[Parameter], interval: float, use_root_instrument: bool = True
+) -> Callable[["WebSocketServerProtocol", str], Awaitable[None]]:
     """
     Return the websockets server handler.
     """
@@ -118,8 +119,9 @@ def _handler(parameters: Sequence[Parameter], interval: float,
             try:
                 # Update the parameter values
                 try:
-                    meta = _get_metadata(*parameters,
-                            use_root_instrument = use_root_instrument)
+                    meta = _get_metadata(
+                        *parameters, use_root_instrument=use_root_instrument
+                    )
                 except ValueError:
                     log.exception("Error getting parameters")
                     break
@@ -142,8 +144,12 @@ class Monitor(Thread):
     """
     running = None
 
-    def __init__(self, *parameters: Parameter, interval: float = 1,
-                use_root_instrument: bool = True):
+    def __init__(
+        self,
+        *parameters: Parameter,
+        interval: float = 1,
+        use_root_instrument: bool = True,
+    ):
         """
         Monitor qcodes parameters.
 
@@ -166,8 +172,9 @@ class Monitor(Thread):
         self._parameters = parameters
         self.loop_is_closed = Event()
         self.server_is_started = Event()
-        self.handler = _handler(parameters, interval=interval,
-                        use_root_instrument=use_root_instrument)
+        self.handler = _handler(
+            parameters, interval=interval, use_root_instrument=use_root_instrument
+        )
 
         log.debug("Start monitoring thread")
         if Monitor.running:
