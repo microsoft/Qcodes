@@ -16,7 +16,6 @@ repos:
     hooks:
     - id: pyupgrade
       args: ['--py37-plus', '--keep-runtime-typing']
-      exclude: _version.py|versioneer.py
   - repo: https://github.com/akaihola/darker
     rev: github-action-v1.3.2-2
     hooks:
