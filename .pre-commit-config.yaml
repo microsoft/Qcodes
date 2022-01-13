@@ -20,5 +20,5 @@ repos:
     rev: github-action-v1.3.2-2
     hooks:
       -   id: darker
-          args: [-i]
+          args: [-i, "-r master"]
           additional_dependencies: [isort]
