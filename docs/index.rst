@@ -40,7 +40,6 @@ Documentation
    examples/15_minutes_to_QCoDeS
    examples/index
    community/index
-   user/index
    dataset/index
    api/index
    api/generated/qcodes.instrument_drivers
