@@ -1,4 +1,5 @@
 import collections
+import collections.abc
 import logging
 import numbers
 import time
@@ -15,12 +16,11 @@ from typing import (
     Tuple,
     TypeVar,
     Union,
-    cast,
 )
 
 import numpy as np
 
-from qcodes import Instrument, InstrumentChannel, IPInstrument, Parameter
+from qcodes.instrument import Instrument, InstrumentChannel, Parameter, VisaInstrument
 from qcodes.math_utils.field_vector import FieldVector
 from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 from qcodes.utils.validators import Anything, Bool, Enum, Ints, Numbers
@@ -137,7 +137,7 @@ class AMI430SwitchHeater(InstrumentChannel):
         return bool(int(self.ask("PS?").strip()))
 
 
-class AMI430(IPInstrument):
+class AMI430(VisaInstrument):
     """
     Driver for the American Magnetics Model 430 magnet power supply programmer.
 
