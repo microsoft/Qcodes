@@ -159,7 +159,6 @@ class AMI430(VisaInstrument):
         self,
         name: str,
         address: str,
-        port: Optional[int] = None,
         reset: bool = False,
         terminator: str = "\r\n",
         current_ramp_limit: Optional[float] = None,
@@ -176,9 +175,7 @@ class AMI430(VisaInstrument):
         super().__init__(
             name,
             address,
-            port,
             terminator=terminator,
-            write_confirmation=False,
             **kwargs,
         )
         self._parent_instrument = None
