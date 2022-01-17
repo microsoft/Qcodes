@@ -927,6 +927,8 @@ def test_change_ramp_rate_units_parameter(ami430, new_value, unit_string, scale)
     # Assert `coil_constant` value has been updated
     assert ami430.coil_constant.get_latest.get_timestamp() > coil_constant_timestamp
 
+    ami430.ramp_rate_units("seconds")
+
 
 @pytest.mark.parametrize(
     ("new_value", "unit_string"),
@@ -965,8 +967,12 @@ def test_change_field_units_parameter(ami430, new_value, unit_string):
     # Assert `coil_constant` value has been updated
     assert ami430.coil_constant.get_latest.get_timestamp() > coil_constant_timestamp
 
+    ami430.field_units("tesla")
+
 
 def test_switch_heater_enabled(ami430):
     assert ami430.switch_heater.enabled() is False
     ami430.switch_heater.enabled(True)
     assert ami430.switch_heater.enabled() is True
+    ami430.switch_heater.enabled(False)
+    assert ami430.switch_heater.enabled() is False
