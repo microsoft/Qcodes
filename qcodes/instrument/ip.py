@@ -1,7 +1,8 @@
 """Ethernet instrument driver class based on sockets."""
 import socket
 import logging
-from typing import Dict, Sequence, Optional
+from typing import Dict, Sequence, Optional, Any, Type
+from types import TracebackType
 
 from .base import Instrument
 
@@ -9,49 +10,54 @@ log = logging.getLogger(__name__)
 
 
 class IPInstrument(Instrument):
-
     r"""
-    Bare socket ethernet instrument implementation.
+    Bare socket ethernet instrument implementation. Use of `VisaInstrument`
+    is promoted instead of this.
 
     Before using the IPInstrument you should strongly consider if you can
     use Visa over raw sockets connecting to an address in the form:
     `TCPIP[board]::host address::port::SOCKET`
 
     Args:
-        name (str): What this instrument is called locally.
+        name: What this instrument is called locally.
 
-        address (Optional[str]): The IP address or name. If not given on
+        address: The IP address or name. If not given on
             construction, must be provided before any communication.
 
-        port (Optional[int]): The IP port. If not given on construction, must
+        port: The IP port. If not given on construction, must
             be provided before any communication.
 
-        timeout (number): Seconds to allow for responses. Default 5.
+        timeout: Seconds to allow for responses. Default 5.
 
-        terminator (str): Character(s) to terminate each send. Default '\n'.
+        terminator: Character(s) to terminate each send. Default '\n'.
 
         read_terminator: Character(s) to look for at the end of each read.
             Defaults to None in which case only one recv is done
             Otherwise keeps reading until it gets the termination
             char(s).
 
-        persistent (bool): Whether to leave the socket open between calls.
+        persistent: Whether to leave the socket open between calls.
             Default True.
 
-        write_confirmation (bool): Whether the instrument acknowledges writes
+        write_confirmation: Whether the instrument acknowledges writes
             with some response we should read. Default True.
 
-        metadata (Optional[Dict]): additional static metadata to add to this
+        kwargs: additional static metadata to add to this
             instrument's JSON snapshot.
 
     See help for ``qcodes.Instrument`` for additional information on writing
     instrument subclasses.
     """
 
-    def __init__(self, name, address=None, port=None, timeout=5,
-                 terminator='\n', persistent=True, write_confirmation=True,
+    def __init__(self, name: str,
+                 address: Optional[str] = None,
+                 port: Optional[int] = None,
+                 timeout: float = 5,
+                 terminator: str = '\n',
+                 persistent: bool = True,
+                 write_confirmation: bool = True,
                  read_terminator=None,
-                 **kwargs):
+                 **kwargs: Any):
         super().__init__(name, **kwargs)
 
         self._address = address
@@ -65,7 +71,7 @@ class IPInstrument(Instrument):
         self._ensure_connection = EnsureConnection(self)
         self._buffer_size = 1400
 
-        self._socket = None
+        self._socket: Optional[socket.socket] = None
 
         self.set_persistent(persistent)
 
@@ -85,13 +91,14 @@ class IPInstrument(Instrument):
     def read_terminator(self, value):
         self._read_terminator = value
 
-    def set_address(self, address=None, port=None):
+    def set_address(self, address: Optional[str] = None,
+                    port: Optional[int] = None) -> None:
         """
         Change the IP address and/or port of this instrument.
 
         Args:
-            address (Optional[str]): The IP address or name.
-            port (Optional[int, float]): The IP port.
+            address: The IP address or name.
+            port: The IP port.
         """
         if address is not None:
             self._address = address
@@ -107,12 +114,12 @@ class IPInstrument(Instrument):
         self._disconnect()
         self.set_persistent(self._persistent)
 
-    def set_persistent(self, persistent):
+    def set_persistent(self, persistent: bool) -> None:
         """
         Change whether this instrument keeps its socket open between calls.
 
         Args:
-            persistent (bool): Set True to keep the socket open all the time.
+            persistent: Set True to keep the socket open all the time.
         """
         self._persistent = persistent
         if persistent:
@@ -120,11 +127,10 @@ class IPInstrument(Instrument):
         else:
             self._disconnect()
 
-    def flush_connection(self):
+    def flush_connection(self) -> None:
         self._recv()
 
-    def _connect(self):
-
+    def _connect(self) -> None:
         if self._socket is not None:
             self._disconnect()
 
@@ -137,11 +143,13 @@ class IPInstrument(Instrument):
             self.set_timeout(self._timeout)
         except ConnectionRefusedError:
             log.warning("Socket connection failed")
-            self._socket.close()
+            if self._socket is not None:
+                self._socket.close()
             self._socket = None
+            raise
 
-    def _disconnect(self):
-        if getattr(self, '_socket', None) is None:
+    def _disconnect(self) -> None:
+        if self._socket is None:
             return
         log.info("Socket shutdown")
         self._socket.shutdown(socket.SHUT_RDWR)
@@ -150,34 +158,36 @@ class IPInstrument(Instrument):
         log.info("Socket closed")
         self._socket = None
 
-    def set_timeout(self, timeout=None):
+    def set_timeout(self, timeout: float) -> None:
         """
         Change the read timeout for the socket.
 
         Args:
-            timeout (int, float): Seconds to allow for responses.
+            timeout: Seconds to allow for responses.
         """
         self._timeout = timeout
 
         if self._socket is not None:
             self._socket.settimeout(float(self._timeout))
 
-    def set_terminator(self, terminator):
+    def set_terminator(self, terminator: str) -> None:
         r"""
         Change the write terminator to use.
 
         Args:
-            terminator (str): Character(s) to terminate each send.
+            terminator: Character(s) to terminate each send.
                 Default '\n'.
         """
         self._terminator = terminator
 
-    def _send(self, cmd):
+    def _send(self, cmd: str) -> None:
+        if self._socket is None:
+            raise RuntimeError(f'IPInstrument {self.name} is not connected')
         data = cmd + self._terminator
         log.debug(f"Writing {data} to instrument {self.name}")
         self._socket.sendall(data.encode())
 
-    def _recv(self):
+    def _recv(self) -> str:
         result = b''
         while True:
             partresult = self._socket.recv(self._buffer_size)
@@ -199,17 +209,17 @@ class IPInstrument(Instrument):
                 break
         return result.decode()
 
-    def close(self):
+    def close(self) -> None:
         """Disconnect and irreversibly tear down the instrument."""
         self._disconnect()
         super().close()
 
-    def write_raw(self, cmd):
+    def write_raw(self, cmd: str) -> None:
         """
         Low-level interface to send a command that gets no response.
 
         Args:
-            cmd (str): The command to send to the instrument.
+            cmd: The command to send to the instrument.
         """
 
         with self._ensure_connection:
@@ -217,38 +227,41 @@ class IPInstrument(Instrument):
             if self._confirmation:
                 self._recv()
 
-    def ask_raw(self, cmd):
+    def ask_raw(self, cmd: str) -> str:
         """
         Low-level interface to send a command an read a response.
 
         Args:
-            cmd (str): The command to send to the instrument.
+            cmd: The command to send to the instrument.
 
         Returns:
-            str: The instrument's response.
+            The instrument's string response.
         """
         with self._ensure_connection:
             self._send(cmd)
             return self._recv()
 
-    def __del__(self):
-        self.close()
-
-    def snapshot_base(self, update=False, params_to_skip_update: Optional[Sequence[str]] = None) -> Dict:
+    def snapshot_base(self, update: Optional[bool] = False,
+                      params_to_skip_update: Optional[Sequence[str]] = None
+                      ) -> Dict[Any, Any]:
         """
         State of the instrument as a JSON-compatible dict (everything that
-        the custom JSON encoder class :class:'qcodes.utils.helpers.NumpyJSONEncoder'
+        the custom JSON encoder class
+        :class:`qcodes.utils.helpers.NumpyJSONEncoder`
         supports).
 
         Args:
-            update (bool): If True, update the state by querying the
-                instrument. If False, just use the latest values in memory.
-            params_to_skip_update: List of parameter names that will be skipped
-                in update even if update is True. This is useful if you have
-                parameters that are slow to update but can be updated in a
-                different way (as in the qdac). If you want to skip the
-                update of certain parameters in all snapshots, use the
-                `snapshot_get`  attribute of those parameters: instead.
+            update: If True, update the state by querying the
+                instrument. If None only update if the state is known to be
+                invalid. If False, just use the latest values in memory and
+                never update.
+            params_to_skip_update: List of parameter names that will be
+                skipped in update even if update is True. This is useful
+                if you have parameters that are slow to update but can
+                be updated in a different way (as in the qdac). If you
+                want to skip the update of certain parameters in all
+                snapshots, use the `snapshot_get`  attribute of those
+                parameters: instead.
 
         Returns:
             dict: base snapshot
@@ -276,18 +289,21 @@ class EnsureConnection:
     the connection immediately on completion.
 
     Args:
-        instrument (IPInstrument): the instance to connect.
+        instrument: the instance to connect.
     """
 
-    def __init__(self, instrument):
+    def __init__(self, instrument: IPInstrument):
         self.instrument = instrument
 
-    def __enter__(self):
+    def __enter__(self) -> None:
         """Make sure we connect when entering the context."""
         if not self.instrument._persistent or self.instrument._socket is None:
             self.instrument._connect()
 
-    def __exit__(self, type, value, tb):
+    def __exit__(self,
+                 exc_type: Optional[Type[BaseException]],
+                 exc_value: Optional[BaseException],
+                 traceback: Optional[TracebackType]) -> None:
         """Possibly disconnect on exiting the context."""
         if not self.instrument._persistent:
             self.instrument._disconnect()

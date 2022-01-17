@@ -1,0 +1,59 @@
+instruments:
+  some_instrument:
+    type: qcodes.instrument_drivers.AlazarTech.ATS9360.AlazarTech_ATS9360
+
+  qdac:
+    type: qcodes.instrument_drivers.QDev.QDac.QDac.QDac
+    address: ASRL4::INSTR
+    port: 800
+    enable_forced_reconnect: true
+    init:
+      terminator: \n
+      update_currents: false
+    add_parameters:
+      Bx:
+        source: ch02.v
+        label: Magnetic Field X-Component
+        unit: T
+        scale: 2
+        step: 0.0001
+        inter_delay: 0.1
+        limits: [-0.1, 0.1]
+        initial_value: 0.01
+        monitor: true
+    parameters:
+      ch01.v:
+        alias: mygate
+      ch03.v: {alias: Q1lplg1, label: my label}
+      ch04.v: {monitor: true}
+  dmm1:
+    type: qcodes.instrument_drivers.agilent.Agilent_34400A.Agilent_34400A
+    enable_forced_reconnect: true
+    address: GPIB::1::65535::INSTR
+    init:
+      visalib: 'Agilent_34400A.yaml@sim'
+    parameters:
+      volt: {monitor: true}
+  lakeshore:
+    type: qcodes.instrument_drivers.Lakeshore.Model_336.Model_336
+    enable_forced_reconnect: true
+    address: GPIB::2::65535::INSTR
+    init:
+      visalib: 'Lakeshore_model336.yaml@sim'
+  decadac:
+    type: qdev_wrappers.customised_instruments.Decadac_ext.Decadac_ext
+    address: ASRL4::INSTR
+    init:
+      terminator: \n
+    add_parameters:
+      Bx: {source: ch01.fine_volt, label: Bx, unit: T, scale: 28, limits: [-1, 1], monitor: true}
+  mock_dac:
+    type: qcodes.tests.instrument_mocks.DummyInstrument
+    enable_forced_reconnect: true
+    init:
+      gates: {"ch1", "ch2"}
+    add_parameters:
+      Bx: {source: ch1, label: Bx, unit: T, scale: 28, limits: [-1, 1], monitor: true}
+  mock_dac2:
+    type: qcodes.tests.instrument_mocks.DummyInstrument
+    enable_forced_reconnect: true

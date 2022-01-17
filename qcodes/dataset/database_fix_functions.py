@@ -4,19 +4,24 @@ This module contains functions to remedy known issues.
 """
 import json
 import logging
-from typing import Dict, Sequence, Any
+from typing import Any, Dict, Sequence, cast
 
 from tqdm import tqdm
 
-import qcodes.dataset.descriptions.versioning.v0 as v0
 import qcodes.dataset.descriptions.versioning.serialization as serial
-from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic, \
-    atomic_transaction
+import qcodes.dataset.descriptions.versioning.v0 as v0
+from qcodes.dataset.descriptions.rundescriber import RunDescriber
+from qcodes.dataset.descriptions.versioning.converters import old_to_new
+from qcodes.dataset.descriptions.versioning.rundescribertypes import \
+    RunDescriberV1Dict
+from qcodes.dataset.sqlite.connection import (ConnectionPlus, atomic,
+                                              atomic_transaction)
 from qcodes.dataset.sqlite.db_upgrades import get_user_version
-from qcodes.dataset.sqlite.queries import _get_parameters, \
-    get_run_description, update_run_description, _update_run_description
+from qcodes.dataset.sqlite.queries import (_get_parameters,
+                                           _update_run_description,
+                                           get_run_description,
+                                           update_run_description)
 from qcodes.dataset.sqlite.query_helpers import one, select_one_where
-
 
 log = logging.getLogger(__name__)
 
@@ -84,7 +89,7 @@ def fix_version_4a_run_description_bug(conn: ConnectionPlus) -> Dict[str, int]:
 
 
 def _convert_run_describer_v1_like_dict_to_v0_like_dict(
-        new_desc_dict: Dict[str, Any]) -> Dict[str, Any]:
+        new_desc_dict: RunDescriberV1Dict) -> Dict[str, Any]:
     """
     This function takes the given dict which is expected to be
     representation of `RunDescriber` with `InterDependencies_` (underscore!)
@@ -104,7 +109,7 @@ def _convert_run_describer_v1_like_dict_to_v0_like_dict(
     # The RunDescriber of the current version gets converted to a dictionary
     # that represents a RunDescriber object of version 0 - this is the one
     # that has InterDependencies object in it (not the InterDependencies_ one).
-    old_desc_dict = serial.to_dict_as_version(new_desc, 0)
+    old_desc_dict = cast(Dict[str, Any], serial.to_dict_as_version(new_desc, 0))
     # Lastly, the "version" field is removed.
     old_desc_dict.pop('version')
     return old_desc_dict
@@ -135,8 +140,9 @@ def fix_wrong_run_descriptions(conn: ConnectionPlus,
     log.info('[*] Fixing run descriptions...')
     for run_id in run_ids:
         trusted_paramspecs = _get_parameters(conn, run_id)
-        trusted_desc = v0.RunDescriber(
-            v0.InterDependencies(*trusted_paramspecs))
+        interdeps = v0.InterDependencies(*trusted_paramspecs)
+        interdeps_ = old_to_new(interdeps)
+        trusted_desc = RunDescriber(interdeps_)
 
         actual_desc_str = select_one_where(conn, "runs",
                                            "run_description",

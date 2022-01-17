@@ -1,10 +1,13 @@
-from .ATS import AcquisitionController
 import math
+from typing import Any, Dict, Optional, Tuple
+
 import numpy as np
+
+from .ATS import AcquisitionController, OutputType
 
 
 # DFT AcquisitionController
-class Demodulation_AcquisitionController(AcquisitionController):
+class Demodulation_AcquisitionController(AcquisitionController[float]):
     """
     This class represents an example acquisition controller. End users will
     probably want to use something more sophisticated. It will average all
@@ -23,23 +26,27 @@ class Demodulation_AcquisitionController(AcquisitionController):
         **kwargs: kwargs are forwarded to the Instrument base class
 
     """
-    def __init__(self, name, alazar_name, demodulation_frequency, **kwargs):
+    def __init__(
+            self,
+            name: str,
+            alazar_name: str,
+            demodulation_frequency: float,
+            **kwargs: Any):
         self.demodulation_frequency = demodulation_frequency
-        self.acquisitionkwargs = {}
-        self.samples_per_record = None
-        self.records_per_buffer = None
-        self.buffers_per_acquisition = None
-        # TODO(damazter) (S) this is not very general:
+        self.acquisitionkwargs: Dict[str, Any] = {}
+        self.samples_per_record = 0
+        self.records_per_buffer = 0
+        self.buffers_per_acquisition = 0
         self.number_of_channels = 2
-        self.cos_list = None
-        self.sin_list = None
-        self.buffer = None
+        self.cos_list: Optional[np.ndarray] = None
+        self.sin_list: Optional[np.ndarray] = None
+        self.buffer: Optional[np.ndarray] = None
         # make a call to the parent class and by extension, create the parameter
         # structure of this class
         super().__init__(name, alazar_name, **kwargs)
         self.add_parameter("acquisition", get_cmd=self.do_acquisition)
 
-    def update_acquisitionkwargs(self, **kwargs):
+    def update_acquisitionkwargs(self, **kwargs: Any) -> None:
         """
         This method must be used to update the kwargs used for the acquisition
         with the alazar_driver.acquire
@@ -48,20 +55,19 @@ class Demodulation_AcquisitionController(AcquisitionController):
         """
         self.acquisitionkwargs.update(**kwargs)
 
-    def do_acquisition(self):
+    def do_acquisition(self) -> float:
         """
         this method performs an acquisition, which is the get_cmd for the
         acquisiion parameter of this instrument
         :return:
         """
-        value = self._get_alazar().acquire(acquisition_controller=self,
+        value: float = self._get_alazar().acquire(acquisition_controller=self,
                                            **self.acquisitionkwargs)
         return value
 
-    def pre_start_capture(self):
+    def pre_start_capture(self) -> None:
         """
         See AcquisitionController
-        :return:
         """
         alazar = self._get_alazar()
         self.samples_per_record = alazar.samples_per_record.get()
@@ -78,7 +84,7 @@ class Demodulation_AcquisitionController(AcquisitionController):
                                self.records_per_buffer *
                                self.number_of_channels)
 
-    def pre_acquire(self):
+    def pre_acquire(self) -> None:
         """
         See AcquisitionController
         :return:
@@ -88,18 +94,24 @@ class Demodulation_AcquisitionController(AcquisitionController):
         # Alazar card starts listening for a trigger pulse
         pass
 
-    def handle_buffer(self, data, buffer_number=None):
+    def handle_buffer(
+            self,
+            data: np.ndarray,
+            buffer_number: Optional[int] = None
+    ) -> None:
         """
         See AcquisitionController
         :return:
         """
+        assert self.buffer is not None
         self.buffer += data
 
-    def post_acquire(self):
+    def post_acquire(self) -> float:
         """
         See AcquisitionController
         :return:
         """
+        assert self.buffer is not None
         alazar = self._get_alazar()
         # average all records in a buffer
         records_per_acquisition = (1. * self.buffers_per_acquisition *
@@ -123,18 +135,20 @@ class Demodulation_AcquisitionController(AcquisitionController):
             #return [alazar.signal_to_volt(1, res1[0] + 127.5),
             #        alazar.signal_to_volt(2, res2[0] + 127.5),
             #        res1[1], res2[1],
-            #        (res1[1] - res2[1]) % 360]
+            #        (r es1[1] - res2[1]) % 360]
             return alazar.signal_to_volt(1, res1[0] + 127.5)
         else:
             raise Exception("Could not find CHANNEL_B during data extraction")
 
-    def fit(self, buf):
+    def fit(self, buf: np.ndarray) -> Tuple[float, float]:
         """
         the DFT is implemented in this method
         :param buf: buffer to perform the transform on
         :return: return amplitude and phase of the resulted transform
         """
         # Discrete Fourier Transform
+        assert self.cos_list is not None
+        assert self.sin_list is not None
         RePart = np.dot(buf - 127.5, self.cos_list) / self.samples_per_record
         ImPart = np.dot(buf - 127.5, self.sin_list) / self.samples_per_record
 
@@ -143,4 +157,4 @@ class Demodulation_AcquisitionController(AcquisitionController):
         ampl = 2 * np.sqrt(RePart ** 2 + ImPart ** 2)
 
         # see manual page 52!!! (using unsigned data)
-        return [ampl, math.atan2(ImPart, RePart) * 360 / (2 * math.pi)]
+        return ampl, math.atan2(ImPart, RePart) * 360 / (2 * math.pi)

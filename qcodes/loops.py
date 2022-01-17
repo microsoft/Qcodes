@@ -7,17 +7,11 @@ The general scheme is:
 delays
 
 2. activate the loop (which changes it to an ActiveLoop object),
-or omit this step to use the default measurement as given by the
-Loop.set_measurement class method.
 
 3. run it with the .run method, which creates a DataSet to hold the data,
 and defines how and where to save the data.
 
 Some examples:
-
-- set default measurements for later Loop's to use
-
->>> Loop.set_measurement(param1, param2, param3)
 
 - 1D sweep, using the default measurement set
 
@@ -32,34 +26,41 @@ Some examples:
 
 >>> Loop(sv, delay).each(param4, param5).run()
 
-- Multidimensional sweep: 1D measurement of param6 on the outer loop, and the
-  default measurements in a 2D loop
+- Multidimensional sweep: 1D measurement of param6 on the outer loop, and another
+  measurement in an inner loop.
 
->>> Loop(sv1, delay).each(param6, Loop(sv2, delay)).run()
+>>> Loop(sv1, delay).each(param6, Loop(sv2, delay).each(sv3, delay)).run()
 
-Supported commands to .set_measurement or .each are:
+Supported commands to .each are:
 
     - Parameter: anything with a .get method and .name or .names see
       parameter.py for options
-    - ActiveLoop (or Loop, will be activated with default measurement)
+    - ActiveLoop
     - Task: any callable that does not generate data
     - Wait: a delay
 """
-
-from datetime import datetime
 import logging
 import time
+from datetime import datetime
+from typing import Optional, Sequence
+
 import numpy as np
 
-from qcodes.station import Station
-from qcodes.data.data_set import new_data
 from qcodes.data.data_array import DataArray
-from qcodes.utils.helpers import wait_secs, full_class, tprint
+from qcodes.data.data_set import new_data
+from qcodes.station import Station
+from qcodes.utils.helpers import full_class, tprint, wait_secs
 from qcodes.utils.metadata import Metadatable
 
-from .actions import (_actions_snapshot, Task, Wait, _Measure, _Nest,
-                      BreakIf, _QcodesBreak)
-
+from .actions import (
+    BreakIf,
+    Task,
+    Wait,
+    _actions_snapshot,
+    _Measure,
+    _Nest,
+    _QcodesBreak,
+)
 
 log = logging.getLogger(__name__)
 
@@ -93,11 +94,6 @@ class Loop(Metadatable):
     After creating a Loop, you attach one or more ``actions`` to it, making an
     ``ActiveLoop``
 
-    TODO:
-        how? Maybe obvious but not specified! that you can ``.run()``,
-        or you can ``.run()`` a ``Loop`` directly, in which
-        case it takes the default ``actions`` from the default ``Station``
-
     ``actions`` is a sequence of things to do at each ``Loop`` step: that can be
     a ``Parameter`` to measure, a ``Task`` to do (any callable that does not
     yield data), ``Wait`` times, or another ``ActiveLoop`` or ``Loop`` to nest
@@ -107,7 +103,7 @@ class Loop(Metadatable):
                  progress_interval=None):
         super().__init__()
         if delay < 0:
-            raise ValueError('delay must be > 0, not {}'.format(repr(delay)))
+            raise ValueError(f"delay must be > 0, not {repr(delay)}")
 
         self.sweep_values = sweep_values
         self.delay = delay
@@ -184,12 +180,6 @@ class Loop(Metadatable):
         """
         actions = list(actions)
 
-        # check for nested Loops, and activate them with default measurement
-        for i, action in enumerate(actions):
-            if isinstance(action, Loop):
-                default = Station.default.default_measurement
-                actions[i] = action.each(*default)
-
         self.validate_actions(*actions)
 
         if self.nested_loop:
@@ -242,20 +232,6 @@ class Loop(Metadatable):
                             'objects. `Loop` objects are OK too, except in '
                             'Station default measurements.')
 
-    def run(self, *args, **kwargs):
-        """
-        shortcut to run a loop with the default measurement set
-        stored by Station.set_measurement
-        """
-        default = Station.default.default_measurement
-        return self.each(*default).run(*args, **kwargs)
-
-    def run_temp(self, *args, **kwargs):
-        """
-        shortcut to run a loop in the foreground as a temporary dataset
-        using the default measurement set
-        """
-        return self.run(*args, quiet=True, location=False, **kwargs)
 
     def then(self, *actions, overwrite=False):
         """
@@ -285,16 +261,19 @@ class Loop(Metadatable):
         """
         return _attach_then_actions(self._copy(), actions, overwrite)
 
-    def snapshot_base(self, update=False):
+    def snapshot_base(self, update: Optional[bool] = False,
+                      params_to_skip_update: Optional[Sequence[str]] = None):
         """
         State of the loop as a JSON-compatible dict (everything that
         the custom JSON encoder class :class:'qcodes.utils.helpers.NumpyJSONEncoder'
         supports).
 
         Args:
-            update (bool): If True, update the state by querying the underlying
-                sweep_values and actions. If False, just use the latest values
+            update: If True, update the state by querying the underlying
+                sweep_values and actions. If None only update state if known
+                to be invalid. If False, just use the latest values
                 in memory.
+            params_to_skip_update: Unused in this implementation.
 
         Returns:
             dict: base snapshot
@@ -424,7 +403,8 @@ class ActiveLoop(Metadatable):
         """
         return _attach_bg_task(self, task, bg_final_task, min_delay)
 
-    def snapshot_base(self, update=False):
+    def snapshot_base(self, update=False,
+                      params_to_skip_update: Optional[Sequence[str]] = None):
         """Snapshot of this ActiveLoop's definition."""
         return {
             '__class__': full_class(self),
@@ -590,7 +570,7 @@ class ActiveLoop(Metadatable):
                              'the first n dimensions of shape.')
 
         if name is None:
-            name = 'index{}'.format(i)
+            name = f'index{i}'
 
         return DataArray(name=name, label=label, set_arrays=prev_setpoints,
                          shape=shape, preset_data=vals, unit=unit, is_setpoint=True)

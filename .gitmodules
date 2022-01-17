@@ -1,0 +1,4 @@
+[submodule "qcodes/tests/dataset/fixtures/db_files"]
+	path = qcodes/tests/dataset/fixtures/db_files
+	url = https://github.com/QCoDeS/qcodes_db_fixtures.git
+	branch = main

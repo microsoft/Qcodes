@@ -1,7 +1,8 @@
 from typing import List, Optional
 import json
 
-from qcodes.dataset.measurements import Measurement
+from qcodes.data.data_array import DataArray
+from qcodes.dataset.measurements import Measurement, DataSaver
 from qcodes.data.data_set import load_data
 from qcodes.dataset.experiment_container import Experiment
 from qcodes.data.data_set import DataSet as OldDataSet
@@ -36,14 +37,14 @@ def setup_measurement(dataset: OldDataSet,
     return meas
 
 
-def store_array_to_database(datasaver, array):
+def store_array_to_database(datasaver: DataSaver, array: DataArray) -> int:
     dims = len(array.shape)
     if dims == 2:
         for index1, i in enumerate(array.set_arrays[0]):
             for index2, j in enumerate(array.set_arrays[1][index1]):
                 datasaver.add_result((array.set_arrays[0].array_id, i),
                                      (array.set_arrays[1].array_id, j),
-                                     (array.array_id, array[index1,index2]))
+                                     (array.array_id, array[index1, index2]))
     elif dims == 1:
         for index, i in enumerate(array.set_arrays[0]):
             datasaver.add_result((array.set_arrays[0].array_id, i),
@@ -53,7 +54,7 @@ def store_array_to_database(datasaver, array):
     return datasaver.run_id
 
 
-def store_array_to_database_alt(meas, array):
+def store_array_to_database_alt(meas: Measurement, array: DataArray) -> int:
     dims = len(array.shape)
     if dims == 2:
         outer_data = np.empty(array.shape[1])
@@ -61,8 +62,8 @@ def store_array_to_database_alt(meas, array):
             for index1, i in enumerate(array.set_arrays[0]):
                 outer_data[:] = i
                 datasaver.add_result((array.set_arrays[0].array_id, outer_data),
-                                     (array.set_arrays[1].array_id, array.set_arrays[1][index1,:]),
-                                     (array.array_id, array[index1,:]))
+                                     (array.set_arrays[1].array_id, array.set_arrays[1][index1, :]),
+                                     (array.array_id, array[index1, :]))
     elif dims == 1:
         with meas.run() as datasaver:
             for index, i in enumerate(array.set_arrays[0]):

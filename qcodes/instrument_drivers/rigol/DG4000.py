@@ -1,10 +1,12 @@
-from qcodes import VisaInstrument
-from qcodes.utils.validators import Numbers, Ints, Enum, MultiType, Anything
-
 from functools import partial
+from typing import Any, List, Sequence, Union
+
+import numpy as np
+from qcodes import VisaInstrument
+from qcodes.utils.validators import Anything, Enum, Ints, MultiType, Numbers
 
 
-def is_number(s):
+def is_number(s: str) -> bool:
     """ Test whether a given string can be parsed as a float """
     try:
         float(s)
@@ -13,7 +15,7 @@ def is_number(s):
         return False
 
 
-def clean_string(s):
+def clean_string(s: str) -> str:
     """ Clean string outputs of a VISA instrument for further parsing """
     # Remove surrounding whitespace and newline characters
     s = s.strip()
@@ -27,7 +29,7 @@ def clean_string(s):
     return s
 
 
-def parse_string_output(s):
+def parse_string_output(s: str) -> Union[float, str]:
     """ Parse an output of the VISA instrument into either text of a number """
     s = clean_string(s)
 
@@ -42,14 +44,14 @@ def parse_string_output(s):
     return s
 
 
-def parse_single_output(i, s):
+def parse_single_output(i: int, s: str) -> Union[float, str]:
     """ Used as a partial function to parse output i in string s """
     parts = clean_string(s).split(',')
 
     return parse_string_output(parts[i])
 
 
-def parse_multiple_outputs(s):
+def parse_multiple_outputs(s: str) -> List[Union[float, str]]:
     """ Parse an output such as 'sin,1.5,0,2' and return a parsed array """
     parts = clean_string(s).split(',')
 
@@ -62,7 +64,12 @@ class Rigol_DG4000(VisaInstrument):
 
     This driver works for all four models (DG4202, DG4162, DG4102, DG4062).
     """
-    def __init__(self, name, address, reset=False, **kwargs):
+    def __init__(
+            self,
+            name: str,
+            address: str,
+            reset: bool = False,
+            **kwargs: Any):
         super().__init__(name, address, terminator='\n', **kwargs)
 
         model = self.get_idn()['model']
@@ -78,6 +85,8 @@ class Rigol_DG4000(VisaInstrument):
             pulse_freq = [50e6, 40e6, 25e6, 15e6][i]
             harmonic_freq = [100e6, 80e6, 50e6, 30e6][i]
             arb_freq = [50e6, 40e6, 25e6, 15e6][i]
+        elif model is None:
+            raise KeyError('Could not determine model')
         else:
             raise KeyError('Model code ' + model + ' is not recognized')
 
@@ -138,7 +147,7 @@ class Rigol_DG4000(VisaInstrument):
 
         # TODO: Check units of outputs
         for i, param in enumerate(measure_params):
-            self.add_parameter('counter_{}'.format(param),
+            self.add_parameter(f'counter_{param}',
                                get_cmd='COUN:MEAS?',
                                get_parser=partial(parse_single_output, i))
 
@@ -151,9 +160,9 @@ class Rigol_DG4000(VisaInstrument):
 
         # Output and Source parameters for both channel 1 and 2
         for i in [1, 2]:
-            ch = 'ch{}_'.format(i)
-            output = 'OUTP{}:'.format(i)
-            source = 'SOUR{}:'.format(i)
+            ch = f'ch{i}_'
+            output = f'OUTP{i}:'
+            source = f'SOUR{i}:'
 
             self.add_parameter(ch + 'output_impedance',
                                get_cmd=output + 'IMP?',
@@ -575,7 +584,7 @@ class Rigol_DG4000(VisaInstrument):
 
         self.connect_message()
 
-    def _upload_data(self, data):
+    def _upload_data(self, data: Union[Sequence[float], np.ndarray]) -> None:
         """
         Upload data to the AWG memory.
 

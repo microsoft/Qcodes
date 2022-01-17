@@ -1,5 +1,8 @@
 import re
 
+import hypothesis.strategies as hst
+from hypothesis import HealthCheck, given, settings
+import hypothesis.extra.numpy as hypnumpy
 import pytest
 import numpy as np
 
@@ -8,8 +11,6 @@ from qcodes.dataset.measurements import DataSaver, Measurement
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.data_export import load_by_id
-# pylint: disable=unused-import
-from qcodes.tests.dataset.temporary_databases import empty_temp_db, experiment
 
 
 def test_string_via_dataset(experiment):
@@ -23,11 +24,11 @@ def test_string_via_dataset(experiment):
     test_set.set_interdependencies(idps)
     test_set.mark_started()
 
-    test_set.add_result({"p": "some text"})
+    test_set.add_results([{"p": "some text"}])
 
     test_set.mark_completed()
 
-    assert test_set.get_data("p") == [["some text"]]
+    assert test_set.get_parameter_data()["p"]["p"] == [["some text"]]
 
 
 def test_string_via_datasaver(experiment):
@@ -49,7 +50,7 @@ def test_string_via_datasaver(experiment):
     data_saver.add_result(("p", "some text"))
     data_saver.flush_data_to_database()
 
-    assert test_set.get_data("p") == [["some text"]]
+    assert test_set.get_parameter_data()["p"]["p"] == np.array(["some text"])
 
 
 def test_string(experiment):
@@ -67,7 +68,7 @@ def test_string(experiment):
 
     test_set = load_by_id(datasaver.run_id)
 
-    assert test_set.get_data("p") == [["some text"]]
+    assert test_set.get_parameter_data()["p"]["p"] == np.array(["some text"])
 
 
 def test_string_with_wrong_paramtype(experiment):
@@ -129,12 +130,12 @@ def test_string_saved_and_loaded_as_numeric_via_dataset(experiment):
     test_set.set_interdependencies(idps)
     test_set.mark_started()
 
-    test_set.add_result({"p": 'some text'})
+    test_set.add_results([{"p": 'some text'}])
 
     test_set.mark_completed()
 
     try:
-        assert [['some text']] == test_set.get_data("p")
+        assert np.array(['some text']) == test_set.get_parameter_data()["p"]["p"]
     finally:
         test_set.conn.close()
 
@@ -156,10 +157,39 @@ def test_list_of_strings(experiment):
         datasaver.add_result((p, list_of_strings))
 
     test_set = load_by_id(datasaver.run_id)
-    expec_data = [[item] for item in list_of_strings]
-    actual_data = test_set.get_data("p")
+    expec_data = np.array([item for item in list_of_strings])
+    actual_data = test_set.get_parameter_data()["p"]["p"]
 
     try:
-        assert  actual_data == expec_data
+        np.testing.assert_array_equal(actual_data, expec_data)
     finally:
         test_set.conn.close()
+
+
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,),
+          deadline=None)
+@given(
+    p_values=hypnumpy.arrays(
+        dtype=hst.sampled_from(
+            (hypnumpy.unicode_string_dtypes(),
+             hypnumpy.byte_string_dtypes(),
+             hypnumpy.timedelta64_dtypes(),
+             hypnumpy.datetime64_dtypes())
+        ),
+        shape=hypnumpy.array_shapes()
+    )
+)
+def test_string_and_date_data_in_array(experiment, p_values):
+    p = qc.Parameter('p', label='String parameter', unit='', get_cmd=None,
+                     set_cmd=None, initial_value=p_values)
+
+    meas = Measurement(experiment)
+    meas.register_parameter(p, paramtype='array')
+
+    with meas.run() as datasaver:
+        datasaver.add_result((p, p.get()))
+    actual_data = datasaver.dataset.get_parameter_data()["p"]["p"]
+    np.testing.assert_array_equal(
+        actual_data,
+        p_values.reshape((1, *p_values.shape))
+    )

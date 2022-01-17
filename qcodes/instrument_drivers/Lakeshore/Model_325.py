@@ -1,13 +1,13 @@
-import numpy as np
-from typing import cast, List, Tuple, Iterable, TextIO
+from enum import IntFlag
 from itertools import takewhile
+from typing import Any, Dict, Iterable, List, Optional, TextIO, Tuple, cast
 
-from qcodes import VisaInstrument, InstrumentChannel, ChannelList
+from qcodes import ChannelList, InstrumentChannel, VisaInstrument
+from qcodes.instrument.group_parameter import Group, GroupParameter
 from qcodes.utils.validators import Enum, Numbers
-from qcodes.instrument.group_parameter import GroupParameter, Group
 
 
-def read_curve_file(curve_file: TextIO) -> dict:
+def read_curve_file(curve_file: TextIO) -> Dict[Any, Any]:
     """
     Read a curve file with extension .330
     The file format of this file is shown in test_lakeshore_file_parser.py
@@ -19,28 +19,27 @@ def read_curve_file(curve_file: TextIO) -> dict:
     curve data.
     """
 
-    def split_data_line(line: str, parser: type = str) -> List[str]:
+    def split_data_line(line: str, parser: type = str) -> List[Any]:
         return [parser(i) for i in line.split("  ") if i != ""]
 
-    def strip(strings: Iterable[str]) -> Tuple:
+    def strip(strings: Iterable[str]) -> Tuple[str, ...]:
         return tuple(s.strip() for s in strings)
 
     lines = iter(curve_file.readlines())
     # Meta data lines contain a colon
     metadata_lines = takewhile(lambda s: ":" in s, lines)
     # Data from the file is collected in the following dict
-    file_data = dict()
+    file_data: Dict[str, Dict[str, Any]] = dict()
     # Capture meta data
     parsed_lines = [strip(line.split(":")) for line in metadata_lines]
     file_data["metadata"] = {key: value for key, value in parsed_lines}
     # After meta data we have a data header
     header_items = strip(split_data_line(next(lines)))
     # After that we have the curve data
-    data = [
+    data: List[List[float]] = [
         split_data_line(line, parser=float)
         for line in lines if line.strip() != ""
     ]
-
     file_data["data"] = dict(
         zip(header_items, zip(*data))
     )
@@ -48,7 +47,7 @@ def read_curve_file(curve_file: TextIO) -> dict:
     return file_data
 
 
-def get_sanitize_data(file_data: dict) -> dict:
+def get_sanitize_data(file_data: Dict[Any, Any]) -> Dict[Any, Any]:
     """
     Data as found in the curve files are slightly different then
     the dictionary as expected by the 'upload_curve' method of the
@@ -68,6 +67,14 @@ def get_sanitize_data(file_data: dict) -> dict:
     del data_dict["Units"]
 
     return data_dict
+
+
+class Status(IntFlag):
+    sensor_units_overrang = 128
+    sensor_units_zero = 64
+    temp_overrange = 32
+    temp_underrange = 16
+    invalid_reading = 1
 
 
 class Model_325_Curve(InstrumentChannel):
@@ -124,7 +131,7 @@ class Model_325_Curve(InstrumentChannel):
             get_cmd=f"CRVHDR? {self._index}"
         )
 
-    def get_data(self) -> dict:
+    def get_data(self) -> Dict[Any, Any]:
         curve = [
             float(a) for point_index in range(1, 200)
             for a in self.ask(f"CRVPT? {self._index}, {point_index}").split(",")
@@ -137,7 +144,7 @@ class Model_325_Curve(InstrumentChannel):
         return d
 
     @classmethod
-    def validate_datadict(cls, data_dict: dict) -> str:
+    def validate_datadict(cls, data_dict: Dict[Any, Any]) -> str:
         """
         A data dict has two keys, one of which is 'Temperature (K)'. The other
         contains the units in which the curve is defined and must be one of:
@@ -174,7 +181,8 @@ class Model_325_Curve(InstrumentChannel):
 
         return sensor_unit
 
-    def set_data(self, data_dict: dict, sensor_unit: str = None) -> None:
+    def set_data(self, data_dict: Dict[Any, Any],
+                 sensor_unit: Optional[str] = None) -> None:
         """
         Set the curve data according to the values found the the dictionary.
 
@@ -209,15 +217,6 @@ class Model_325_Sensor(InstrumentChannel):
         inp (str): Either "A" or "B"
     """
 
-    sensor_status_codes = {
-        0:  "OK",
-        1:  "invalid reading",
-        16:  "temp underrange",
-        32:  "temp overrange",
-        64:  "sensor units zero",
-        128: "sensor units overrang"
-    }
-
     def __init__(self, parent: 'Model_325', name: str, inp: str) -> None:
 
         if inp not in ["A", "B"]:
@@ -228,7 +227,7 @@ class Model_325_Sensor(InstrumentChannel):
 
         self.add_parameter(
             'temperature',
-            get_cmd='KRDG? {}'.format(self._input),
+            get_cmd=f'KRDG? {self._input}',
             get_parser=float,
             label='Temperature',
             unit='K'
@@ -236,8 +235,8 @@ class Model_325_Sensor(InstrumentChannel):
 
         self.add_parameter(
             'status',
-            get_cmd='RDGST? {}'.format(self._input),
-            get_parser=self.decode_sensor_status,
+            get_cmd=f'RDGST? {self._input}',
+            get_parser=lambda status: self.decode_sensor_status(int(status)),
             label='Sensor_Status'
         )
 
@@ -272,47 +271,23 @@ class Model_325_Sensor(InstrumentChannel):
 
         self.add_parameter(
             "curve_index",
-            set_cmd=f"INCRV {self._input} {{}}",
+            set_cmd=f"INCRV {self._input}, {{}}",
             get_cmd=f"INCRV? {self._input}",
             get_parser=int,
             vals=Numbers(min_value=1, max_value=35)
         )
 
-    def decode_sensor_status(self, sum_of_codes: int) -> str:
-        """
-        The sensor status is one of the status codes, or a sum thereof. Multiple
-        status are possible as they are not necessarily mutually exclusive.
-
-        args:
-            sum_of_codes (int)
-        """
-        components = list(self.sensor_status_codes.keys())
-        codes = self._get_sum_terms(components, int(sum_of_codes))
-        return ", ".join([self.sensor_status_codes[k] for k in codes])
-
     @staticmethod
-    def _get_sum_terms(components: list, number: int):
-        """
-        Example:
-        >>> components = [0, 1, 16, 32, 64, 128]
-        >>> _get_sum_terms(components, 96)
-        >>> ...[64, 32]  # This is correct because 96=64+32
-        """
-        if number in components:
-            terms = [number]
-        else:
-            terms = []
-            comp = np.sort(components)[::-1]
-            comp = comp[comp <= number]
-
-            while len(comp):
-                c = comp[0]
-                number -= c
-                terms.append(c)
-
-                comp = comp[comp <= number]
-
-        return terms
+    def decode_sensor_status(sum_of_codes: int) -> str:
+        total_status = Status(sum_of_codes)
+        if sum_of_codes == 0:
+            return "OK"
+        status_messages = [
+            st.name.replace("_", " ")
+            for st in Status
+            if st in total_status and st.name is not None
+        ]
+        return ", ".join(status_messages)
 
     @property
     def curve(self) -> Model_325_Curve:
@@ -471,7 +446,7 @@ class Model_325_Heater(InstrumentChannel):
         self.add_parameter(
             "resistance",
             get_cmd=f"HTRRES? {self._loop}",
-            set_cmd=f"HTRRES {self._loop} {{}}",
+            set_cmd=f"HTRRES {self._loop}, {{}}",
             val_mapping={
                 25: 1,
                 50: 2,
@@ -494,16 +469,16 @@ class Model_325(VisaInstrument):
     Lakeshore Model 325 Temperature Controller Driver
     """
 
-    def __init__(self, name: str, address: str, **kwargs) -> None:
+    def __init__(self, name: str, address: str, **kwargs: Any) -> None:
         super().__init__(name, address, terminator="\r\n", **kwargs)
 
         sensors = ChannelList(
             self, "sensor", Model_325_Sensor, snapshotable=False)
 
         for inp in ['A', 'B']:
-            sensor = Model_325_Sensor(self, 'sensor_{}'.format(inp), inp)
+            sensor = Model_325_Sensor(self, f'sensor_{inp}', inp)
             sensors.append(sensor)
-            self.add_submodule('sensor_{}'.format(inp), sensor)
+            self.add_submodule(f'sensor_{inp}', sensor)
 
         sensors.lock()
         self.add_submodule("sensor", sensors)
@@ -512,9 +487,9 @@ class Model_325(VisaInstrument):
             self, "heater", Model_325_Heater, snapshotable=False)
 
         for loop in [1, 2]:
-            heater = Model_325_Heater(self, 'heater_{}'.format(loop), loop)
+            heater = Model_325_Heater(self, f'heater_{loop}', loop)
             heaters.append(heater)
-            self.add_submodule('heater_{}'.format(loop), heater)
+            self.add_submodule(f'heater_{loop}', heater)
 
         heaters.lock()
         self.add_submodule("heater", heaters)
@@ -532,17 +507,18 @@ class Model_325(VisaInstrument):
         self.connect_message()
 
     def upload_curve(
-            self, index: int, name: str, serial_number: str, data_dict: dict
+            self, index: int, name: str,
+            serial_number: str, data_dict: Dict[Any, Any]
     ) -> None:
         """
         Upload a curve to the given index
 
         Args:
-             index (int): The index to upload the curve to. We can only use
+             index: The index to upload the curve to. We can only use
                             indices reserved for user defined curves, 21-35
-             name (str)
-             serial_number (str)
-             data_dict (dict): A dictionary containing the curve data
+             name
+             serial_number
+             data_dict: A dictionary containing the curve data
         """
         if index not in range(21, 36):
             raise ValueError("index value should be between 21 and 35")
@@ -563,7 +539,7 @@ class Model_325(VisaInstrument):
         if not file_path.endswith(".330"):
             raise ValueError("Only curve files with extension .330 are supported")
 
-        with open(file_path, "r") as curve_file:
+        with open(file_path) as curve_file:
             file_data = read_curve_file(curve_file)
 
         data_dict = get_sanitize_data(file_data)

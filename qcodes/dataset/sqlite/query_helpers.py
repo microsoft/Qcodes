@@ -4,21 +4,24 @@ are useful for building more database-specific queries out of them.
 """
 import itertools
 import sqlite3
-from distutils.version import LooseVersion
-from numbers import Number
-from typing import List, Any, Union, Dict, Tuple, Optional
+from typing import Any, List, Mapping, Optional, Sequence, Tuple, Union
 
 import numpy as np
 from numpy import ndarray
+from packaging import version
 
-from qcodes.dataset.sqlite.connection import ConnectionPlus, \
-    atomic_transaction, transaction, atomic
+from qcodes.dataset.sqlite.connection import (
+    ConnectionPlus,
+    atomic,
+    atomic_transaction,
+    transaction,
+)
 from qcodes.dataset.sqlite.settings import SQLiteSettings
-
+from qcodes.utils.deprecate import deprecate
 
 # represent the type of  data we can/want map to sqlite column
-VALUE = Union[str, Number, List, ndarray, bool]
-VALUES = List[VALUE]
+VALUE = Union[str, complex, List, ndarray, bool, None]
+VALUES = Sequence[VALUE]
 
 
 def one(curr: sqlite3.Cursor, column: Union[int, str]) -> Any:
@@ -71,8 +74,26 @@ def many_many(curr: sqlite3.Cursor, *columns: str) -> List[List[Any]]:
     return results
 
 
-def select_one_where(conn: ConnectionPlus, table: str, column: str,
-                     where_column: str, where_value: Any) -> Any:
+def select_one_where(
+    conn: ConnectionPlus, table: str, column: str, where_column: str, where_value: VALUE
+) -> VALUE:
+    """
+    Select a value from a given column given a match of a value in a
+    different column. If the given matched row/column intersect is empty
+    None will be returned.
+
+    Args:
+        conn: Connection to the db
+        table: Table to look for values in
+        column: Column to return value from
+        where_column: Column to match on
+        where_value: Value to match in where_column
+
+    Returns:
+        Value found
+    raises:
+        RuntimeError if not exactly match is found.
+    """
     query = f"""
     SELECT {column}
     FROM
@@ -85,8 +106,13 @@ def select_one_where(conn: ConnectionPlus, table: str, column: str,
     return res
 
 
-def select_many_where(conn: ConnectionPlus, table: str, *columns: str,
-                      where_column: str, where_value: Any) -> Any:
+def select_many_where(
+    conn: ConnectionPlus,
+    table: str,
+    *columns: str,
+    where_column: str,
+    where_value: VALUE,
+) -> VALUES:
     _columns = ",".join(columns)
     query = f"""
     SELECT {_columns}
@@ -100,7 +126,7 @@ def select_many_where(conn: ConnectionPlus, table: str, *columns: str,
     return res
 
 
-def _massage_dict(metadata: Dict[str, Any]) -> Tuple[str, List[Any]]:
+def _massage_dict(metadata: Mapping[str, Any]) -> Tuple[str, List[Any]]:
     """
     {key:value, key2:value} -> ["key=?, key2=?", [value, value]]
     """
@@ -113,7 +139,7 @@ def _massage_dict(metadata: Dict[str, Any]) -> Tuple[str, List[Any]]:
 
 
 def update_where(conn: ConnectionPlus, table: str,
-                 where_column: str, where_value: Any, **updates) -> None:
+                 where_column: str, where_value: Any, **updates: Any) -> None:
     _updates, values = _massage_dict(updates)
     query = f"""
     UPDATE
@@ -150,8 +176,8 @@ def insert_values(conn: ConnectionPlus,
 
 def insert_many_values(conn: ConnectionPlus,
                        formatted_name: str,
-                       columns: List[str],
-                       values: List[VALUES],
+                       columns: Sequence[str],
+                       values: Sequence[VALUES],
                        ) -> int:
     """
     Inserts many values for the specified columns.
@@ -177,13 +203,13 @@ def insert_many_values(conn: ConnectionPlus,
     # Version check cf.
     # "https://stackoverflow.com/questions/9527851/sqlite-error-
     #  too-many-terms-in-compound-select"
-    version = SQLiteSettings.settings['VERSION']
+    version_str = SQLiteSettings.settings["VERSION"]
 
     # According to the SQLite changelog, the version number
     # to check against below
     # ought to be 3.7.11, but that fails on Travis
-    if LooseVersion(str(version)) <= LooseVersion('3.8.2'):
-        max_var = SQLiteSettings.limits['MAX_COMPOUND_SELECT']
+    if version.parse(str(version_str)) <= version.parse("3.8.2"):
+        max_var = SQLiteSettings.limits["MAX_COMPOUND_SELECT"]
     else:
         max_var = SQLiteSettings.limits['MAX_VARIABLE_NUMBER']
     rows_per_transaction = int(int(max_var)/no_of_columns)
@@ -222,6 +248,7 @@ def insert_many_values(conn: ConnectionPlus,
     return return_value
 
 
+@deprecate('Unused private method to be removed in a future version')
 def modify_values(conn: ConnectionPlus,
                   formatted_name: str,
                   index: int,
@@ -249,6 +276,7 @@ def modify_values(conn: ConnectionPlus,
     return c.rowcount
 
 
+@deprecate('Unused private method to be removed in a future version')
 def modify_many_values(conn: ConnectionPlus,
                        formatted_name: str,
                        start_index: int,
@@ -279,14 +307,14 @@ def length(conn: ConnectionPlus,
            formatted_name: str
            ) -> int:
     """
-    Return the lenght of the table
+    Return the length of the table
 
     Args:
         conn: the connection to the sqlite database
         formatted_name: name of the table
 
     Returns:
-        the lenght of the table
+        the length of the table
     """
     query = f"select MAX(id) from '{formatted_name}'"
     c = atomic_transaction(conn, query)

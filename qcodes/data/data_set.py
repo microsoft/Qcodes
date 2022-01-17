@@ -1,16 +1,25 @@
 """DataSet class and factory functions."""
 
-import time
 import logging
-from traceback import format_exc
-from copy import deepcopy
+import time
 from collections import OrderedDict
-from typing import Dict, Callable
+from copy import deepcopy
+from traceback import format_exc
+from typing import Any, Callable, Dict, List, Optional
+
+import numpy as np
+import xarray as xr
+
+from qcodes.data.data_array import (
+    DataArray,
+    data_array_to_xarray_dictionary,
+    xarray_data_array_dictionary_to_data_array,
+)
+from qcodes.utils.helpers import DelegateAttributes, deep_update, full_class
 
 from .gnuplot_format import GNUPlotFormat
 from .io import DiskIO
 from .location import FormatLocation
-from qcodes.utils.helpers import DelegateAttributes, full_class, deep_update
 
 log = logging.getLogger(__name__)
 
@@ -147,19 +156,6 @@ class DataSet(DelegateAttributes):
             between saves to disk. If not ``LOCAL``, the ``DataServer`` handles
             this and generally writes more often. Use None to disable writing
             from calls to ``self.store``. Default 5.
-
-    Attributes:
-        background_functions (collections.OrderedDict[Callable]): Class
-            attribute, ``{key: fn}``: ``fn`` is a callable accepting no
-            arguments, and ``key`` is a name to identify the function and help
-            you attach and remove it.
-
-            In ``DataSet.complete`` we call each of these periodically, in the
-            order that they were attached.
-
-            Note that because this is a class attribute, the functions will
-            apply to every DataSet. If you want specific functions for one
-            DataSet you can override this with an instance attribute.
     """
 
     # ie data_set.arrays['vsd'] === data_set.vsd
@@ -169,7 +165,19 @@ class DataSet(DelegateAttributes):
     default_formatter = GNUPlotFormat()
     location_provider = FormatLocation()
 
-    background_functions: Dict[str, Callable] = OrderedDict()
+    background_functions: Dict[str, Callable[..., Any]] = OrderedDict()
+    """
+    The value ``fn`` is a callable accepting no
+    arguments, and ``key`` is a name to identify the function and help
+    you attach and remove it.
+
+    In ``DataSet.complete`` we call each of these periodically, in the
+    order that they were attached.
+
+    Note that because this is a class attribute, the functions will
+    apply to every DataSet. If you want specific functions for one
+    DataSet you can override this with an instance attribute.
+    """
 
     def __init__(self, location=None, arrays=None, formatter=None, io=None,
                  write_period=5):
@@ -250,7 +258,7 @@ class DataSet(DelegateAttributes):
             delay (float): seconds between iterations. Default 1.5
         """
         log.info(
-            'waiting for DataSet <{}> to complete'.format(self.location))
+            f'waiting for DataSet <{self.location}> to complete')
 
         failing = {key: False for key in self.background_functions}
 
@@ -267,7 +275,7 @@ class DataSet(DelegateAttributes):
             # because we want things like live plotting to get the final data
             for key, fn in list(self.background_functions.items()):
                 try:
-                    log.debug('calling {}: {}'.format(key, repr(fn)))
+                    log.debug(f"calling {key}: {repr(fn)}")
                     fn()
                     failing[key] = False
                 except Exception:
@@ -285,7 +293,7 @@ class DataSet(DelegateAttributes):
             # but only sleep if we're not already finished
             time.sleep(delay)
 
-        log.info('DataSet <{}> is complete'.format(self.location))
+        log.info(f'DataSet <{self.location}> is complete')
 
     def get_changes(self, synced_indices):
         """
@@ -366,7 +374,7 @@ class DataSet(DelegateAttributes):
                 name += '_set'
 
             array.array_id = name
-        array_ids = set([array.array_id for array in arrays])
+        array_ids = {array.array_id for array in arrays}
         for name in array_ids:
             param_arrays = [array for array in arrays
                             if array.array_id == name]
@@ -381,7 +389,7 @@ class DataSet(DelegateAttributes):
         # and append the rest to the back of the name with underscores
         param_action_indices = [list(array.action_indices) for array in arrays]
         while all(len(ai) for ai in param_action_indices):
-            if len(set(ai[0] for ai in param_action_indices)) == 1:
+            if len({ai[0] for ai in param_action_indices}) == 1:
                 for ai in param_action_indices:
                     ai[:1] = []
             else:
@@ -415,20 +423,19 @@ class DataSet(DelegateAttributes):
         # else:
         #     log.debug('.store method: This is not the right time to write')
 
-    def default_parameter_name(self, paramname='amplitude'):
-        """ Return name of default parameter for plotting
+    def default_parameter_name(self, paramname: Optional[str] = None) -> Optional[str]:
+        """Return name of default parameter for plotting
 
         The default parameter is determined by looking into
         metdata['default_parameter_name'].  If this variable is not present,
         then the closest match to the argument paramname is tried.
 
         Args:
-            paramname (str): Name to match to parameter name
+            paramname: Name to match to parameter name
 
         Returns:
-            (Optional[str]): name of the default parameter
+            Name of the default parameter, or None if no parameter is found
         """
-
         arraynames = self.arrays.keys()
 
         # overrule parameter name from the metadata
@@ -440,12 +447,13 @@ class DataSet(DelegateAttributes):
             return paramname
 
         # try find something similar
-        vv = [v for v in arraynames if v.endswith(paramname)]
-        if (len(vv) > 0):
-            return vv[0]
-        vv = [v for v in arraynames if v.startswith(paramname)]
-        if (len(vv) > 0):
-            return vv[0]
+        if paramname is not None:
+            vv = [v for v in arraynames if v.endswith(paramname)]
+            if len(vv) > 0:
+                return vv[0]
+            vv = [v for v in arraynames if v.startswith(paramname)]
+            if len(vv) > 0:
+                return vv[0]
 
         # try to get the first non-setpoint array
         vv = [v for v in arraynames if not self.arrays[v].is_setpoint]
@@ -454,7 +462,7 @@ class DataSet(DelegateAttributes):
 
         # fallback: any array found
         try:
-            name = sorted((list(arraynames)))[0]
+            name = sorted(list(arraynames))[0]
             return name
         except IndexError:
             pass
@@ -681,18 +689,127 @@ class DataSet(DelegateAttributes):
 
         return out
 
+    def to_xarray(self) -> xr.Dataset:
+        """ Convert the dataset to an xarray Dataset """
+        return qcodes_dataset_to_xarray_dataset(self)
 
-class _PrettyPrintDict(dict):
+    @classmethod
+    def from_xarray(cls, xarray_dataset: xr.Dataset) -> 'DataSet':
+        """ Convert the dataset to an xarray DataSet """
+        return xarray_dataset_to_qcodes_dataset(xarray_dataset)
+
+
+class _PrettyPrintDict(Dict[Any, Any]):
     """
     simple wrapper for a dict to repr its items on separate lines
     with a bit of indentation
     """
 
     def __repr__(self):
-        body = '\n  '.join([repr(k) + ': ' + self._indent(repr(v))
-                            for k, v in self.items()])
-        return '{\n  ' + body + '\n}'
+        body = "\n  ".join(
+            repr(k) + ": " + self._indent(repr(v)) for k, v in self.items()
+        )
+        return "{\n  " + body + "\n}"
 
     def _indent(self, s):
         lines = s.split('\n')
         return '\n    '.join(lines)
+
+
+def dataset_to_xarray_dictionary(
+    data_set: DataSet, include_metadata: bool = True
+) -> Dict[str, Any]:
+    """Convert QcodesDataSet to dictionary.
+
+    Args:
+        data_set: The data to convert.
+        include_data: If True then include the ndarray field.
+        include_metadata: If True then include the metadata.
+
+    Returns:
+        Dictionary containing the serialized data.
+    """
+    data_dictionary: Dict[str, Any] = {
+        "dims": {},
+        "attrs": {},
+        "coords": {},
+        "data_vars": {},
+    }
+
+    pa = data_set.default_parameter_array()
+    dimensions = [(a.array_id, a.size) for a in pa.set_arrays]
+    data_dictionary["dims"] = dict(dimensions)
+
+    for array_id in [item[0] for item in dimensions]:
+        data_array = data_set.arrays[array_id]
+        data_dictionary["coords"][array_id] = data_array_to_xarray_dictionary(
+            data_array
+        )
+
+    for array_id, data_array in data_set.arrays.items():
+        if not data_array.is_setpoint:
+            data_dictionary["data_vars"][array_id] = data_array_to_xarray_dictionary(
+                data_array
+            )
+
+    if include_metadata:
+        data_dictionary["attrs"]["metadata"] = data_set.metadata
+        data_dictionary["attrs"]["qcodes_location"] = data_set.location
+
+    return data_dictionary
+
+
+def qcodes_dataset_to_xarray_dataset(
+    data_set: DataSet,
+) -> xr.Dataset:
+    """ Convert QCoDeS gridded dataset to xarray dataset """
+    xarray_dictionary = dataset_to_xarray_dictionary(data_set)
+    xarray_dataset = xr.Dataset.from_dict(xarray_dictionary)
+    return xarray_dataset
+
+
+def xarray_dictionary_to_dataset(
+    xarray_dictionary: Dict[str, Any],
+) -> DataSet:
+    """Convert xarray dictionary to Qcodes DataSet.
+
+    Args:
+        xarray_dictionary: data to convert
+
+    Returns:
+        QCoDeS dataSet with converted data.
+    """
+    dataset = new_data()
+    dataset.metadata.update(xarray_dictionary["attrs"])
+
+    grid_coords: List[Any] = []
+    set_array_names = []
+    for array_key, coord_dictionary in xarray_dictionary["coords"].items():
+        preset_data = np.array(coord_dictionary["data"])
+
+        tiled_preset_data = np.tile(preset_data, [g.size for g in grid_coords] + [1])
+        grid_coords.append(preset_data)
+
+        data_array = xarray_data_array_dictionary_to_data_array(
+            array_key, coord_dictionary, True, preset_data=tiled_preset_data
+        )
+        dataset.add_array(data_array)
+        set_array_names.append(array_key)
+    for array_key, datavar_dictionary in xarray_dictionary["data_vars"].items():
+        set_arrays = tuple(dataset.arrays[name] for name in set_array_names)
+
+        data_array = xarray_data_array_dictionary_to_data_array(
+            array_key, datavar_dictionary, False
+        )
+        data_array.set_arrays = set_arrays
+        dataset.add_array(data_array)
+
+    return dataset
+
+
+def xarray_dataset_to_qcodes_dataset(xarray_data_set: xr.Dataset) -> DataSet:
+    """ Convert QCoDeS gridded dataset to xarray dataset """
+    xarray_dictionary = xarray_data_set.to_dict()
+    qcodes_dataset = xarray_dictionary_to_dataset(xarray_dictionary)
+
+    return qcodes_dataset

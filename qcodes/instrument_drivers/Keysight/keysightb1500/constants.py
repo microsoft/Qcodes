@@ -1,5 +1,5 @@
 from enum import Enum, IntEnum, IntFlag
-from typing import List, Union
+from typing import Union, Sequence
 
 
 class StrEnum(str, Enum):
@@ -19,14 +19,14 @@ class ChannelName(StrEnum):
     Z = 'XDATA'
 
 
-class ComplianceError(IntEnum):
+class MeasurementError(IntEnum):
     """
     The list below enumerates all possible compliance errors and assigns
     integer 0 or 1 to them. Assigning integer 1 means the data is compliant
     and assigning 0 means it not compliant. As seen from the list, all cases
     except when the output is N are non-compliant. To know the reason for
     Non compliance in the individual case one may refer to
-    :class:`.ComplianceStatus`
+    :class:`.MeasurementStatus`
     """
     C = 0
     N = 1
@@ -38,7 +38,8 @@ class ComplianceError(IntEnum):
     G = 0
     S = 0
 
-class ComplianceStatus(StrEnum):
+
+class MeasurementStatus(StrEnum):
     """
     Contains the meanings of possible compliance errors. One may look at
     this list to figure out the reason for the non-compliant data.
@@ -120,7 +121,7 @@ class ChNr(IntEnum):
     SLOT_10_CH2 = 1002
 
 
-ChannelList = List[Union[ChNr, int]]
+ChannelList = Sequence[Union[ChNr, int]]
 
 
 class Abort(IntEnum):
@@ -257,6 +258,9 @@ class IMeasRange(IntEnum):
     MIN_20A = 22
     MIN_40A = 23
 
+    MIN_500A = 26
+    MIN_2000A = 28
+
     FIX_1pA = -8
     FIX_10pA = -9
     FIX_100pA = -10
@@ -345,6 +349,11 @@ class ADJQuery:
     class Mode(IntEnum):
         USE_LAST = 0
         MEASURE = 1
+    class Response(IntEnum):
+        PASSED = 0
+        FAILED = 1
+        ABORTED = 2
+        NOT_PERFORMED = 3
 
 
 class AIT:
@@ -391,6 +400,34 @@ class BSVM:
     class DataOutputMode(IntEnum):
         SEARCH = 0
         SEARCH_AND_SENSE = 1
+
+
+class CALResponse(IntFlag):
+    PASSED = 0
+    SLOT_1_FAILED = 1
+    SLOT_2_FAILED = 2
+    SLOT_3_FAILED = 4
+    SLOT_4_FAILED = 8
+    SLOT_5_FAILED = 16
+    SLOT_6_FAILED = 32
+    SLOT_7_FAILED = 64
+    SLOT_8_FAILED = 128
+    SLOT_9_FAILED = 256
+    SLOT_10_FAILED = 512
+    MAINFRAME_FAILED = 1024
+
+
+class CORR:
+    class Response(IntEnum):
+        SUCCESSFUL = 0
+        FAILED = 1
+        ABORTED = 2
+
+
+class CORRST:
+    class Response(IntEnum):
+        OFF = 0
+        ON = 1
 
 
 class CLCORR:
@@ -581,6 +618,42 @@ class IMP:
         Ls_Rs = 400
         Ls_D = 401
         Ls_Q = 402
+
+    class Name(StrEnum):
+        R = 'Resistance'
+        G = 'Conductance'
+        Z = 'Impedance'
+        Y = 'Admittance'
+        Cp = 'Parallel Capacitance'
+        Cs = 'Series Capacitance'
+        Lp = 'Parallel Inductance'
+        Ls = 'Series Inductance'
+        X = 'Reactance'
+        B = 'Susceptance'
+        THETA_RAD = 'Phase'
+        THETA_DEG = 'Phase'
+        D = 'Dissipation Factor'
+        Q = 'Quality Factor'
+        Rp = 'Parallel Resistance'
+        Rs = 'Series Resistance'
+
+    class Unit(StrEnum):
+        R = 'ohms'
+        G = 'S'
+        Z = 'ohms'
+        Y = 'S'
+        Cp = 'F'
+        Cs = 'F'
+        Lp = 'H'
+        Ls = 'H'
+        X = 'ohms'
+        B = 'S'
+        THETA_RAD = 'radian'
+        THETA_DEG = 'degree'
+        D = ''
+        Q = ''
+        Rp = 'ohms'
+        Rs = 'ohms'
 
 
 class LIM:

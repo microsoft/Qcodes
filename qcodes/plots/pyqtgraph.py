@@ -1,28 +1,28 @@
 """
 Live plotting using pyqtgraph
 """
-from typing import Optional, Dict, Union, Deque, List, cast
+import logging
+import warnings
+from collections import deque, namedtuple
+from typing import Deque, Dict, List, Optional, Union, cast
+
 import numpy as np
 import pyqtgraph as pg
 import pyqtgraph.multiprocess as pgmp
-
-from pyqtgraph.multiprocess.remoteproxy import ClosedError, ObjectProxy
-from pyqtgraph.graphicsItems.PlotItem.PlotItem import PlotItem
 from pyqtgraph import QtGui
+from pyqtgraph.graphicsItems.PlotItem.PlotItem import PlotItem
+from pyqtgraph.multiprocess.remoteproxy import ClosedError, ObjectProxy
 
+import qcodes
 import qcodes.utils.helpers
-
-import warnings
-import logging
-from collections import namedtuple, deque
 
 from .base import BasePlot
 from .colors import color_cycle, colorscales
-import qcodes.config
 
 TransformState = namedtuple('TransformState', 'translate scale revisit')
 
 log = logging.getLogger(__name__)
+
 
 class QtPlot(BasePlot):
     """
@@ -62,12 +62,9 @@ class QtPlot(BasePlot):
     # close event on win but this is difficult with remote proxy process
     # as the list of plots lives in the main process and the plot locally
     # in a remote process
-    max_len = qcodes.config['gui']['pyqtmaxplots'] # type: ignore
-    # qcodes.__init__.py imports the Config class from the qcodes.config
-    # module and overwrites qcodes.config with an instance of this class.
-    # That confuses mypy so ignore the type above.
+    max_len = qcodes.config['gui']['pyqtmaxplots']
     max_len = cast(int, max_len)
-    plots = deque(maxlen=max_len) # type: Deque['QtPlot']
+    plots: Deque['QtPlot'] = deque(maxlen=max_len)
 
     def __init__(self, *args, figsize=(1000, 600), interval=0.25,
                  window_title='', theme=((60, 60, 60), 'w'), show_window=True,
@@ -91,7 +88,8 @@ class QtPlot(BasePlot):
             self.rpg = pg
             self.qc_helpers = qcodes.utils.helpers
         try:
-            self.win = self.rpg.GraphicsWindow(title=window_title)
+            self.win = self.rpg.GraphicsLayoutWidget(title=window_title)
+            self.win.show()
         except (ClosedError, ConnectionResetError) as err:
             # the remote process may have crashed. In that case try restarting
             # it
@@ -99,7 +97,8 @@ class QtPlot(BasePlot):
                 log.warning("Remote plot responded with {} \n"
                             "Restarting remote plot".format(err))
                 self._init_qt()
-                self.win = self.rpg.GraphicsWindow(title=window_title)
+                self.win = self.rpg.GraphicsLayoutWidget(title=window_title)
+                self.win.show()
             else:
                 raise err
         self.win.setBackground(theme[1])
@@ -107,7 +106,7 @@ class QtPlot(BasePlot):
         self._orig_fig_size = figsize
 
         self.set_relative_window_position(fig_x_position, fig_y_position)
-        self.subplots = [self.add_subplot()] # type: List[Union[PlotItem, ObjectProxy]]
+        self.subplots: List[Union[PlotItem, ObjectProxy]] = [self.add_subplot()]
 
         if args or kwargs:
             self.add(*args, **kwargs)
@@ -155,7 +154,7 @@ class QtPlot(BasePlot):
         for side in ('left', 'bottom'):
             ax = subplot_object.getAxis(side)
             ax.setPen(self.theme[0])
-            ax._qcodes_label = ''
+            ax._qcodes_label = ""
 
         return subplot_object
 
@@ -433,21 +432,21 @@ class QtPlot(BasePlot):
             # danger: 🍝
             # find if any kwarg from plot.add in the base class
             # matches xlabel or ylabel, signaling a custom label
-            if axletter+'label' in config and not ax._qcodes_label:
-                label = config[axletter+'label']
+            if axletter + "label" in config and not getattr(ax, "_qcodes_label", None):
+                label = config[axletter + "label"]
             else:
                 label = None
 
             # find if any kwarg from plot.add in the base class
             # matches xunit or yunit, signaling a custom unit
-            if axletter+'unit' in config and not ax._qcodes_label:
-                unit = config[axletter+'unit']
+            if axletter + "unit" in config and getattr(ax, "_qcodes_label", None):
+                unit = config[axletter + "unit"]
             else:
                 unit = None
 
             #  find ( more hope to) unit and label from
             # the data array inside the config
-            if axletter in config and not ax._qcodes_label:
+            if axletter in config and not getattr(ax, "_qcodes_label", None):
                 # now if we did not have any kwark gor label or unit
                 # fallback to the data_array
                 if unit is  None:
@@ -516,7 +515,7 @@ class QtPlot(BasePlot):
         Args:
             filename (Optional[str]): Location of the file
         """
-        default = "{}.png".format(self.get_default_title())
+        default = f"{self.get_default_title()}.png"
         filename = filename or default
         image = self.win.grab()
         image.save(filename, "PNG", 0)
@@ -624,4 +623,3 @@ class QtPlot(BasePlot):
                         and arrmin is not None
                         and arrmax is not None):
                         rangesetter(arrmin, arrmax)
-

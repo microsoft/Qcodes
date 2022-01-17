@@ -1,0 +1,8 @@
+QCoDeS 0.30.1 (2021-12-03)
+==========================
+
+Under the hood:
+---------------
+
+- Relax type assertions for DataSet timestamps so that if in the database they
+  are written as integers, as opposed to floats, a DataSet can still be loaded (#3644)

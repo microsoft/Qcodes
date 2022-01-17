@@ -26,15 +26,20 @@ more specialized ones:
 
 - :class:`.ParameterWithSetpoints` is intended for array-values parameters.
     This Parameter class is intended for anything where a call to the instrument
-    returns an array of values.
-    `This notebook <../examples/writing_drivers/Simple-Example-of-ParameterWithSetpoints.ipynb>`_.
-    gives more detailed examples of how this parameter can be used.
+    returns an array of values. `This notebook
+    <../../examples/Parameters/Simple-Example-of-ParameterWithSetpoints
+    .ipynb>`_ gives more detailed examples of how this parameter
+    can be used `and this notebook
+    <../../examples/writing_drivers/A-ParameterWithSetpoints
+    -Example-with-Dual-Setpoints.ipynb>`_ explains writing driver
+    using :class:`.ParameterWithSetpoints`.
+
     :class:`.ParameterWithSetpoints` is supported in a
-    :class:`qcodes.dataset.measurements.Measurement` but is not supported by the
-    legacy :class:`qcodes.loops.Loop` and :class:`qcodes.measure.Measure`
+    :class:`qcodes.dataset.measurements.Measurement` but is not supported by
+    the legacy :class:`qcodes.loops.Loop` and :class:`qcodes.measure.Measure`
     measurement types.
 
-- :class:`.DelegateParameter` is intended proxy-ing other parameters.
+- :class:`.DelegateParameter` is intended for proxy-ing other parameters.
     It forwards its ``get`` and ``set`` to the underlying source parameter,
     while allowing to specify label/unit/etc that is different from the
     source parameter.
@@ -67,36 +72,61 @@ more specialized ones:
 # create an ABC for Parameter and MultiParameter - or just remove this statement
 # if everyone is happy to use these classes.
 
-from datetime import datetime, timedelta
-from copy import copy
-from operator import xor
-import time
+import collections
+import enum
 import logging
 import os
-import collections
+import time
 import warnings
-import enum
-from typing import Optional, Sequence, TYPE_CHECKING, Union, Callable, List, \
-    Dict, Any, Sized, Iterable, cast, Type, Tuple
-from functools import partial, wraps
-import numpy
-from qcodes.utils.helpers import abstractmethod
+from copy import copy
+from datetime import datetime, timedelta
+from functools import wraps
+from operator import xor
+from types import TracebackType
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Sized,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
 
-from qcodes.utils.helpers import (permissive_range, is_sequence_of,
-                                  DelegateAttributes, full_class, named_repr,
-                                  warn_units)
-from qcodes.utils.metadata import Metadatable
-from qcodes.utils.command import Command
-from qcodes.utils.validators import Validator, Ints, Strings, Enum, Arrays
-from qcodes.instrument.sweep_values import SweepFixedValues
+import numpy
+from typing_extensions import Protocol
+
 from qcodes.data.data_array import DataArray
+from qcodes.instrument.sweep_values import SweepFixedValues
+from qcodes.utils.command import Command
+from qcodes.utils.deprecate import deprecate, issue_deprecation_warning
+from qcodes.utils.helpers import (
+    DelegateAttributes,
+    abstractmethod,
+    full_class,
+    is_sequence_of,
+    named_repr,
+    permissive_range,
+    warn_units,
+)
+from qcodes.utils.metadata import Metadatable
+from qcodes.utils.validators import Arrays, Enum, Ints, Strings, Validator
 
 if TYPE_CHECKING:
     from .base import Instrument, InstrumentBase
 
-Number = Union[float, int]
+
 # for now the type the parameter may contain is not restricted at all
 ParamDataType = Any
+ParamRawDataType = Any
 
 
 log = logging.getLogger(__name__)
@@ -104,7 +134,7 @@ log = logging.getLogger(__name__)
 
 class _SetParamContext:
     """
-    This class is returned by the ``set_to`` method of parameters
+    This class is returned by the ``set_to`` method of parameter
 
     Example usage:
 
@@ -115,18 +145,38 @@ class _SetParamContext:
     >>> assert abs(dac.voltage() - v) <= tolerance
 
     """
-    def __init__(self, parameter):
+    def __init__(self, parameter: "_BaseParameter", value: ParamDataType,
+                 allow_changes: bool = False):
         self._parameter = parameter
-        self._original_value = self._parameter._latest["value"]
+        self._value = value
+        self._allow_changes = allow_changes
+        self._original_value = None
+        self._original_settable: Optional[bool] = None
 
-    def __enter__(self):
-        pass
+    def __enter__(self) -> None:
+        self._original_value = self._parameter.cache()
 
-    def __exit__(self, typ, value, traceback):
-        self._parameter.set(self._original_value)
+        if self._original_value != self._value:
+            self._parameter.set(self._value)
+
+        if not self._allow_changes:
+            self._original_settable = self._parameter.settable
+            self._parameter._settable = False  # type: ignore[has-type]
+
+    def __exit__(self,
+                 typ: Optional[Type[BaseException]],
+                 value: Optional[BaseException],
+                 traceback: Optional[TracebackType]) -> None:
+        if not self._allow_changes:
+            self._parameter._settable = (  # type: ignore[has-type]
+                self._original_settable
+            )
+
+        if self._parameter.cache() != self._original_value:
+            self._parameter.set(self._original_value)
 
 
-def invert_val_mapping(val_mapping: Dict) -> Dict:
+def invert_val_mapping(val_mapping: Mapping[Any, Any]) -> Dict[Any, Any]:
     """Inverts the value mapping dictionary for allowed parameter values"""
     return {v: k for k, v in val_mapping.items()}
 
@@ -153,21 +203,21 @@ class _BaseParameter(Metadatable):
             ``update=True``, for example if it takes too long to update.
             Default True.
 
-        snapshot_value (Optional[bool]): False prevents parameter value to be
+        snapshot_value: False prevents parameter value to be
             stored in the snapshot. Useful if the value is large.
 
-        snapshot_exclude (Optional[bool]): True prevents parameter to be
+        snapshot_exclude: True prevents parameter to be
             included in the snapshot. Useful if there are many of the same
             parameter which are clogging up the snapshot.
             Default False
 
-        step (Optional[Union[int, float]]): max increment of parameter value.
+        step: max increment of parameter value.
             Larger changes are broken into multiple steps this size.
             When combined with delays, this acts as a ramp.
 
-        scale (Optional[float]): Scale to multiply value with before
+        scale: Scale to multiply value with before
             performing set. the internally multiplied value is stored in
-            `raw_value`. Can account for a voltage divider.
+            ``cache.raw_value``. Can account for a voltage divider.
 
         offset: Compensate for a parameter specific offset. (just as scale)
             get value = raw value - offset.
@@ -175,18 +225,17 @@ class _BaseParameter(Metadatable):
             If offset and scale are used in combination, when getting a value,
             first an offset is added, then the scale is applied.
 
-        inter_delay (Optional[Union[int, float]]): Minimum time (in seconds)
-            between successive sets. If the previous set was less than this,
-            it will wait until the condition is met.
-            Can be set to 0 to go maximum speed with no errors.
+        inter_delay: Minimum time (in seconds) between successive sets.
+            If the previous set was less than this, it will wait until the
+            condition is met. Can be set to 0 to go maximum speed with
+            no errors.
 
-        post_delay (Optional[Union[int, float]]): time (in seconds) to wait
-            after the *start* of each set, whether part of a sweep or not.
-            Can be set to 0 to go maximum speed with no errors.
+        post_delay: time (in seconds) to wait after the *start* of each set,
+            whether part of a sweep or not. Can be set to 0 to go maximum
+            speed with no errors.
 
-        val_mapping (Optional[dict]): a bidirectional map data/readable values
-            to instrument codes, expressed as a dict:
-            ``{data_val: instrument_code}``
+        val_mapping: A bidirectional map data/readable values to instrument
+            codes, expressed as a dict: ``{data_val: instrument_code}``
             For example, if the instrument uses '0' to mean 1V and '1' to mean
             10V, set val_mapping={1: '0', 10: '1'} and on the user side you
             only see 1 and 10, never the coded '0' and '1'
@@ -197,49 +246,61 @@ class _BaseParameter(Metadatable):
             ``get_parser`` acts on the return value from the instrument first,
             then ``val_mapping`` is applied (in reverse).
 
-        get_parser ( Optional[Callable]): function to transform the response
-            from get to the final output value. See also val_mapping
+        get_parser: Function to transform the response from get to the final
+            output value. See also val_mapping
 
-        set_parser (Optional[Callable]): function to transform the input set
-            value to an encoded value sent to the instrument.
-            See also val_mapping.
+        set_parser: Function to transform the input set value to an encoded
+            value sent to the instrument. See also val_mapping.
 
-        vals (Optional[Validator]): a Validator object for this parameter
+        vals: a Validator object for this parameter
 
-        max_val_age (Optional[float]): The max time (in seconds) to trust a
-            saved value obtained from get_latest(). If this parameter has not
+        max_val_age: The max time (in seconds) to trust a saved value obtained
+            from ``cache.get`` (or ``get_latest``). If this parameter has not
             been set or measured more recently than this, perform an
             additional measurement.
 
-        metadata (Optional[dict]): extra information to include with the
+        metadata: extra information to include with the
             JSON snapshot of the parameter
+
+        abstract: Specifies if this parameter is abstract or not. Default
+            is False. If the parameter is 'abstract', it *must* be overridden
+            by a non-abstract parameter before the instrument containing
+            this parameter can be instantiated. We override a parameter by
+            adding one with the same name and unit. An abstract parameter
+            can be added in a base class and overridden in a subclass.
+
+        bind_to_instrument: Should the parameter be registered as a delegate attribute
+            on the instrument passed via the instrument argument.
     """
 
-    def __init__(self, name: str,
-                 instrument: Optional['Instrument'],
-                 snapshot_get: bool=True,
-                 metadata: Optional[dict]=None,
-                 step: Optional[Number]=None,
-                 scale: Optional[Union[Number, Iterable[Number]]]=None,
-                 offset: Optional[Union[Number, Iterable[Number]]]=None,
-                 inter_delay: Number=0,
-                 post_delay: Number=0,
-                 val_mapping: Optional[dict]=None,
-                 get_parser: Optional[Callable]=None,
-                 set_parser: Optional[Callable]=None,
-                 snapshot_value: bool=True,
-                 snapshot_exclude: bool=False,
-                 max_val_age: Optional[float]=None,
-                 vals: Optional[Validator]=None,
-                 **kwargs) -> None:
+    def __init__(
+        self,
+        name: str,
+        instrument: Optional["InstrumentBase"],
+        snapshot_get: bool = True,
+        metadata: Optional[Mapping[Any, Any]] = None,
+        step: Optional[float] = None,
+        scale: Optional[Union[float, Iterable[float]]] = None,
+        offset: Optional[Union[float, Iterable[float]]] = None,
+        inter_delay: float = 0,
+        post_delay: float = 0,
+        val_mapping: Optional[Mapping[Any, Any]] = None,
+        get_parser: Optional[Callable[..., Any]] = None,
+        set_parser: Optional[Callable[..., Any]] = None,
+        snapshot_value: bool = True,
+        snapshot_exclude: bool = False,
+        max_val_age: Optional[float] = None,
+        vals: Optional[Validator[Any]] = None,
+        abstract: Optional[bool] = False,
+        bind_to_instrument: bool = True,
+    ) -> None:
         super().__init__(metadata)
         if not str(name).isidentifier():
             raise ValueError(f"Parameter name must be a valid identifier "
                              f"got {name} which is not. Parameter names "
                              f"cannot start with a number and "
                              f"must not contain spaces or special characters")
-        self.name = str(name)
-        self.short_name = str(name)
+        self._short_name = str(name)
         self._instrument = instrument
         self._snapshot_get = snapshot_get
         self._snapshot_value = snapshot_value
@@ -254,7 +315,6 @@ class _BaseParameter(Metadatable):
         self.step = step
         self.scale = scale
         self.offset = offset
-        self.raw_value = None
 
         self.inter_delay = inter_delay
         self.post_delay = post_delay
@@ -268,31 +328,45 @@ class _BaseParameter(Metadatable):
         self.get_parser = get_parser
         self.set_parser = set_parser
 
-        # record of latest value and when it was set or measured
-        # what exactly this means is different for different subclasses
-        # but they all use the same attributes so snapshot is consistent.
-        self._latest: Dict[str, Optional[Union[ParamDataType, datetime]]] = \
-            {'value': None, 'ts': None, 'raw_value': None}
-        self.get_latest = GetLatest(self, max_val_age=max_val_age)
+        # ``_Cache`` stores "latest" value (and raw value) and timestamp
+        # when it was set or measured
+        self.cache: _CacheProtocol = _Cache(self, max_val_age=max_val_age)
+        # ``GetLatest`` is left from previous versions where it would
+        # implement a subset of features which ``_Cache`` has.
+        # It is left for now for backwards compatibility reasons and shall
+        # be deprecated and removed in the future versions.
+        self.get_latest: GetLatest
+        self.get_latest = GetLatest(self)
 
-        if hasattr(self, 'get_raw') and not getattr(self.get_raw, '__qcodes_is_abstract_method__', False):
+        self.get: Callable[..., ParamDataType]
+        implements_get_raw = (
+            hasattr(self, 'get_raw')
+            and not getattr(self.get_raw,
+                            '__qcodes_is_abstract_method__', False)
+        )
+        self._gettable = False
+        if implements_get_raw:
             self.get = self._wrap_get(self.get_raw)
+            self._gettable = True
         elif hasattr(self, 'get'):
-            warnings.warn(f'Wrapping get method of parameter: {self.full_name},'
-                          f' original get method will not '
-                          f'be directly accessible. It is recommended to '
-                          f'define get_raw in your subclass instead. '
-                          f'Overwriting get will be an error in the future.')
-            self.get = self._wrap_get(self.get)
-        if hasattr(self, 'set_raw') and not getattr(self.set_raw, '__qcodes_is_abstract_method__', False):
+            raise RuntimeError(f'Overwriting get in a subclass of '
+                               f'_BaseParameter: '
+                               f'{self.full_name} is not allowed.')
+
+        self.set: Callable[..., None]
+        implements_set_raw = (
+            hasattr(self, 'set_raw')
+            and not getattr(self.set_raw,
+                            '__qcodes_is_abstract_method__', False)
+        )
+        self._settable = False
+        if implements_set_raw:
             self.set = self._wrap_set(self.set_raw)
+            self._settable = True
         elif hasattr(self, 'set'):
-            warnings.warn(f'Wrapping set method of parameter: {self.full_name}, '
-                          f'original set method will not '
-                          f'be directly accessible. It is recommended to '
-                          f'define set_raw in your subclass instead. '
-                          f'Overwriting set will be an error in the future.')
-            self.set = self._wrap_set(self.set)
+            raise RuntimeError(f'Overwriting set in a subclass of '
+                               f'_BaseParameter: '
+                               f'{self.full_name} is not allowed.')
 
         # subclasses should extend this list with extra attributes they
         # want automatically included in the snapshot
@@ -306,29 +380,52 @@ class _BaseParameter(Metadatable):
         # intended to be changed in a subclass if you want the subclass
         # to perform a validation on get
         self._validate_on_get = False
+        self._abstract = abstract
+
+        if instrument is not None and bind_to_instrument:
+            existing_parameter = instrument.parameters.get(name, None)
+
+            if existing_parameter:
+
+                if not existing_parameter.abstract:
+                    raise KeyError(
+                        f"Duplicate parameter name {name} on instrument {instrument}"
+                    )
+
+            instrument.parameters[name] = self
+
+    @property
+    def raw_value(self) -> ParamRawDataType:
+        """
+        Note that this property will be deprecated soon. Use
+        ``cache.raw_value`` instead.
+
+        Represents the cached raw value of the parameter.
+
+        :getter: Returns the cached raw value of the parameter.
+        """
+        return self.cache.raw_value
 
     @abstractmethod
-    def get_raw(self):
+    def get_raw(self) -> ParamRawDataType:
         """
         ``get_raw`` is called to perform the actual data acquisition from the
         instrument. This method should either be overwritten to perform the
         desired operation or alternatively for :class:`.Parameter` a
         suitable method is automatically generated if ``get_cmd`` is supplied
-        to the parameter constructor.
-        The method is automatically wrapped to
+        to the parameter constructor. The method is automatically wrapped to
         provide a ``get`` method on the parameter instance.
         """
         raise NotImplementedError
 
     @abstractmethod
-    def set_raw(self, value):
+    def set_raw(self, value: ParamRawDataType) -> None:
         """
         ``set_raw`` is called to perform the actual setting of a parameter on
         the instrument. This method should either be overwritten to perform the
         desired operation or alternatively for :class:`.Parameter` a
         suitable method is automatically generated if ``set_cmd`` is supplied
-        to the parameter constructor.
-        The method is automatically wrapped to
+        to the parameter constructor. The method is automatically wrapped to
         provide a ``set`` method on the parameter instance.
         """
         raise NotImplementedError
@@ -337,63 +434,78 @@ class _BaseParameter(Metadatable):
         """Include the instrument name with the Parameter name if possible."""
         inst_name = getattr(self._instrument, 'name', '')
         if inst_name:
-            return '{}_{}'.format(inst_name, self.name)
+            return f'{inst_name}_{self.name}'
         else:
             return self.name
 
     def __repr__(self) -> str:
         return named_repr(self)
 
-    def __call__(self, *args, **kwargs):
-        if len(args) == 0:
-            if hasattr(self, 'get'):
+    def __call__(self, *args: Any, **kwargs: Any) -> Optional[ParamDataType]:
+        if len(args) == 0 and len(kwargs) == 0:
+            if self.gettable:
                 return self.get()
             else:
                 raise NotImplementedError('no get cmd found in' +
-                                          ' Parameter {}'.format(self.name))
+                                          f' Parameter {self.name}')
         else:
-            if hasattr(self, 'set'):
+            if self.settable:
                 self.set(*args, **kwargs)
+                return None
             else:
                 raise NotImplementedError('no set cmd found in' +
-                                          ' Parameter {}'.format(self.name))
+                                          f' Parameter {self.name}')
 
-    def snapshot_base(self, update: bool = True,
+    def snapshot_base(self, update: Optional[bool] = True,
                       params_to_skip_update: Optional[Sequence[str]] = None
-                      ) -> Dict:
+                      ) -> Dict[Any, Any]:
         """
         State of the parameter as a JSON-compatible dict (everything that
-        the custom JSON encoder class :class:'qcodes.utils.helpers.NumpyJSONEncoder'
-        supports).
+        the custom JSON encoder class
+        :class:`qcodes.utils.helpers.NumpyJSONEncoder` supports).
+
+        If the parameter has been initiated with ``snapshot_value=False``,
+        the snapshot will NOT include the ``value`` and ``raw_value`` of the
+        parameter.
 
         Args:
-            update (bool): If True, update the state by calling
-                parameter.get().
-                If False, just use the latest values in memory.
-            params_to_skip_update: No effect but may be passed from super Class:
+            update: If True, update the state by calling ``parameter.get()``
+                unless ``snapshot_get`` of the parameter is ``False``.
+                If ``update`` is ``None``, use the current value from the
+                ``cache`` unless the cache is invalid. If ``False``, never call
+                ``parameter.get()``.
+            params_to_skip_update: No effect but may be passed from superclass
 
         Returns:
-            dict: base snapshot
+            base snapshot
         """
         if self.snapshot_exclude:
             warnings.warn(
                 f"Parameter ({self.name}) is used in the snapshot while it "
                 f"should be excluded from the snapshot")
 
-        if hasattr(self, 'get') and self._snapshot_get \
-                and self._snapshot_value and update:
-            self.get()
+        state: Dict[str, Any] = {'__class__': full_class(self),
+                                 'full_name': str(self)}
 
-        state = copy(self._latest) # type: Dict[str, Any]
-        state['__class__'] = full_class(self)
-        state['full_name'] = str(self)
+        if self._snapshot_value:
+            has_get = self.gettable
+            allowed_to_call_get_when_snapshotting = (self._snapshot_get
+                                                     and update is not False)
+            can_call_get_when_snapshotting = (
+                    allowed_to_call_get_when_snapshotting and has_get)
 
-        if not self._snapshot_value:
-            state.pop('value')
-            state.pop('raw_value', None)
+            if can_call_get_when_snapshotting and update:
+                state['value'] = self.get()
+            else:
+                state['value'] = self.cache.get(
+                    get_if_invalid=can_call_get_when_snapshotting)
+
+            state['raw_value'] = self.cache.raw_value
+
+        state['ts'] = self.cache.timestamp
 
         if isinstance(state['ts'], datetime):
-            dttime = state['ts'] # type: datetime
+            dttime: datetime = state['ts']
             state['ts'] = dttime.strftime('%Y-%m-%d %H:%M:%S')
 
         for attr in set(self._meta_attrs):
@@ -413,71 +525,128 @@ class _BaseParameter(Metadatable):
 
         return state
 
-    def _save_val(self, value: ParamDataType, validate: bool = False) -> None:
+    @property
+    def snapshot_value(self) -> bool:
         """
-        Update latest
+        If True the value of the parameter will be included in the snapshot.
         """
-        if validate:
-            self.validate(value)
-        if (self.get_parser is None and
-                self.set_parser is None and
-                self.val_mapping is None and
-                self.scale is None and
-                self.offset is None):
-            self.raw_value = value
-        self._latest = {'value': value, 'ts': datetime.now(),
-                        'raw_value': self.raw_value}
+        return self._snapshot_value
+
+    def _from_value_to_raw_value(self, value: ParamDataType
+                                 ) -> ParamRawDataType:
+        raw_value: ParamRawDataType
+
+        if self.val_mapping is not None:
+            # Convert set values using val_mapping dictionary
+            raw_value = self.val_mapping[value]
+        else:
+            raw_value = value
+
+        # transverse transformation in reverse order as compared to
+        # getter: apply scale first
+        if self.scale is not None:
+            if isinstance(self.scale, collections.abc.Iterable):
+                # Scale contains multiple elements, one for each value
+                raw_value = tuple(val * scale for val, scale
+                                  in zip(raw_value, self.scale))
+            else:
+                # Use single scale for all values
+                raw_value = raw_value * self.scale
+
+        # apply offset next
+        if self.offset is not None:
+            if isinstance(self.offset, collections.abc.Iterable):
+                # offset contains multiple elements, one for each value
+                raw_value = tuple(val + offset for val, offset
+                                  in zip(raw_value, self.offset))
+            else:
+                # Use single offset for all values
+                raw_value = raw_value + self.offset
+
+        # parser last
+        if self.set_parser is not None:
+            raw_value = self.set_parser(raw_value)
+
+        return raw_value
+
+    def _from_raw_value_to_value(self, raw_value: ParamRawDataType
+                                 ) -> ParamDataType:
+        value: ParamDataType
+
+        if self.get_parser is not None:
+            value = self.get_parser(raw_value)
+        else:
+            value = raw_value
+
+        # apply offset first (native scale)
+        if self.offset is not None and value is not None:
+            # offset values
+            try:
+                value = value - self.offset
+            except TypeError:
+                if isinstance(self.offset, collections.abc.Iterable):
+                    # offset contains multiple elements, one for each value
+                    value = tuple(val - offset for val, offset
+                                  in zip(value, self.offset))
+                elif isinstance(value, collections.abc.Iterable):
+                    # Use single offset for all values
+                    value = tuple(val - self.offset for val in value)
+                else:
+                    raise
+
+        # scale second
+        if self.scale is not None and value is not None:
+            # Scale values
+            try:
+                value = value / self.scale
+            except TypeError:
+                if isinstance(self.scale, collections.abc.Iterable):
+                    # Scale contains multiple elements, one for each value
+                    value = tuple(val / scale for val, scale in zip(value,
+                                                                    self.scale))
+                elif isinstance(value, collections.abc.Iterable):
+                    # Use single scale for all values
+                    value = tuple(val / self.scale for val in value)
+                else:
+                    raise
+
+        if self.inverse_val_mapping is not None:
+            if value in self.inverse_val_mapping:
+                value = self.inverse_val_mapping[value]
+            else:
+                try:
+                    value = self.inverse_val_mapping[int(value)]
+                except (ValueError, KeyError):
+                    raise KeyError(f"'{value}' not in val_mapping")
+
+        return value
 
     def _wrap_get(self, get_function: Callable[..., ParamDataType]) ->\
             Callable[..., ParamDataType]:
         @wraps(get_function)
         def get_wrapper(*args: Any, **kwargs: Any) -> ParamDataType:
+            if not self.gettable:
+                raise TypeError("Trying to get a parameter"
+                                " that is not gettable.")
+            if self.abstract:
+                raise NotImplementedError(
+                    f"Trying to get an abstract parameter: {self.full_name}"
+                )
             try:
                 # There might be cases where a .get also has args/kwargs
-                value = get_function(*args, **kwargs)
-                self.raw_value = value
+                raw_value = get_function(*args, **kwargs)
 
-                if self.get_parser is not None:
-                    value = self.get_parser(value)
+                value = self._from_raw_value_to_value(raw_value)
 
-                # apply offset first (native scale)
-                if self.offset is not None:
-                    # offset values
-                    if isinstance(self.offset, collections.abc.Iterable):
-                        # offset contains multiple elements, one for each value
-                        value = tuple(val - offset for val, offset
-                                      in zip(value, self.offset))
-                    elif isinstance(value, collections.abc.Iterable):
-                        # Use single offset for all values
-                        value = tuple(val - self.offset for val in value)
-                    else:
-                        value -= self.offset
+                if self._validate_on_get:
+                    self.validate(value)
 
-                # scale second
-                if self.scale is not None:
-                    # Scale values
-                    if isinstance(self.scale, collections.abc.Iterable):
-                        # Scale contains multiple elements, one for each value
-                        value = tuple(val / scale for val, scale
-                                      in zip(value, self.scale))
-                    elif isinstance(value, collections.abc.Iterable):
-                        # Use single scale for all values
-                        value = tuple(val / self.scale for val in value)
-                    else:
-                        value /= self.scale
+                self.cache._update_with(value=value, raw_value=raw_value)
 
-                if self.inverse_val_mapping is not None:
-                    if value in self.inverse_val_mapping:
-                        value = self.inverse_val_mapping[value]
-                    else:
-                        try:
-                            value = self.inverse_val_mapping[int(value)]
-                        except (ValueError, KeyError):
-                            raise KeyError("'{}' not in val_mapping".format(value))
-                self._save_val(value, validate=self._validate_on_get)
                 return value
+
             except Exception as e:
-                e.args = e.args + ('getting {}'.format(self),)
+                e.args = e.args + (f'getting {self}',)
                 raise e
 
         return get_wrapper
@@ -487,6 +656,13 @@ class _BaseParameter(Metadatable):
         @wraps(set_function)
         def set_wrapper(value: ParamDataType, **kwargs: Any) -> None:
             try:
+                if not self.settable:
+                    raise TypeError("Trying to set a parameter"
+                                    " that is not settable.")
+                if self.abstract:
+                    raise NotImplementedError(
+                        f"Trying to set an abstract parameter: {self.full_name}"
+                    )
                 self.validate(value)
 
                 # In some cases intermediate sweep values must be used.
@@ -498,37 +674,8 @@ class _BaseParameter(Metadatable):
                     # even if the final value is valid we may be generating
                     # steps that are not so validate them too
                     self.validate(val_step)
-                    if self.val_mapping is not None:
-                        # Convert set values using val_mapping dictionary
-                        raw_value = self.val_mapping[val_step]
-                    else:
-                        raw_value = val_step
 
-                    # transverse transformation in reverse order as compared to
-                    # getter:
-                    # apply scale first
-                    if self.scale is not None:
-                        if isinstance(self.scale, collections.abc.Iterable):
-                            # Scale contains multiple elements, one for each value
-                            raw_value = tuple(val * scale for val, scale
-                                              in zip(raw_value, self.scale))
-                        else:
-                            # Use single scale for all values
-                            raw_value *= self.scale
-
-                    # apply offset next
-                    if self.offset is not None:
-                        if isinstance(self.offset, collections.abc.Iterable):
-                            # offset contains multiple elements, one for each value
-                            raw_value = tuple(val + offset for val, offset
-                                              in zip(raw_value, self.offset))
-                        else:
-                            # Use single offset for all values
-                            raw_value += self.offset
-
-                    # parser last
-                    if self.set_parser is not None:
-                        raw_value = self.set_parser(raw_value)
+                    raw_val_step = self._from_value_to_raw_value(val_step)
 
                     # Check if delay between set operations is required
                     t_elapsed = time.perf_counter() - self._t_last_set
@@ -540,10 +687,7 @@ class _BaseParameter(Metadatable):
                     # Start timer to measure execution time of set_function
                     t0 = time.perf_counter()
 
-                    set_function(raw_value, **kwargs)
-                    self.raw_value = raw_value
-                    self._save_val(val_step,
-                                   validate=False)
+                    set_function(raw_val_step, **kwargs)
 
                     # Update last set time (used for calculating delays)
                     self._t_last_set = time.perf_counter()
@@ -554,16 +698,18 @@ class _BaseParameter(Metadatable):
                         # Sleep until total time is larger than self.post_delay
                         time.sleep(self.post_delay - t_elapsed)
 
+                    self.cache._update_with(value=val_step,
+                                            raw_value=raw_val_step)
+
             except Exception as e:
-                e.args = e.args + ('setting {} to {}'.format(self, value),)
+                e.args = e.args + (f'setting {self} to {value}',)
                 raise e
 
         return set_wrapper
 
-    def get_ramp_values(self, value: Union[float, int, Sized],
-                        step: Number = None) -> List[Union[float,
-                                                           int,
-                                                           Sized]]:
+    def get_ramp_values(self, value: Union[float, Sized],
+                        step: Optional[float] = None
+                        ) -> Sequence[Union[float, Sized]]:
         """
         Return values to sweep from current value to target value.
         This method can be overridden to have a custom sweep behaviour.
@@ -585,17 +731,15 @@ class _BaseParameter(Metadatable):
             if self.get_latest() is None:
                 self.get()
             start_value = self.get_latest()
-
             if not (isinstance(start_value, (int, float)) and
                     isinstance(value, (int, float))):
-                # something weird... parameter is numeric but one of the ends
-                # isn't, even though it's valid.
-                # probably MultiType with a mix of numeric and non-numeric types
-                # just set the endpoint and move on
-                log.warning(
-                    'cannot sweep %s from %r to %r - jumping.',
-                                self.name, start_value, value)
-                return []
+                # parameter is numeric but either one of the endpoints
+                # is not or the starting point is unknown. The later
+                # can happen for a non gettable parameter in the initial set
+                # operation.
+                log.warning(f'cannot sweep {self.name} from {start_value!r} '
+                            f'to {value!r} - jumping.')
+                return [value]
 
             # drop the initial value, we're already there
             return permissive_range(start_value, value, step)[1:] + [value]
@@ -621,13 +765,14 @@ class _BaseParameter(Metadatable):
             self.vals.validate(value, 'Parameter: ' + context)
 
     @property
-    def step(self) -> Optional[Number]:
+    def step(self) -> Optional[float]:
         """
         Stepsize that this Parameter uses during set operation.
         Stepsize must be a positive number or None.
         If step is a positive number, this is the maximum value change
         allowed in one hardware call, so a single set can result in many
         calls to the hardware if the starting value is far from the target.
+        All but the final change will attempt to change by +/- step exactly.
         If step is None stepping will not be used.
 
         :getter: Returns the current stepsize.
@@ -636,33 +781,16 @@ class _BaseParameter(Metadatable):
         Raises:
             TypeError: if step is set to not numeric or None
             ValueError: if step is set to negative
-            TypeError:  if step is set to not integer or None for an integer parameter
+            TypeError:  if step is set to not integer or None for an
+                integer parameter
             TypeError: if step is set to not a number on None
         """
         return self._step
 
     @step.setter
-    def step(self, step: Optional[Number]):
-        """
-        Configure whether this Parameter uses steps during set operations.
-        If step is a positive number, this is the maximum value change
-        allowed in one hardware call, so a single set can result in many
-        calls to the hardware if the starting value is far from the target.
-        If step is None stepping will not be used.
-
-        Args:
-            step: A positive number or None, the largest change
-                allowed in one call. All but the final change will attempt to
-                change by +/- step exactly
-
-        Raises:
-            TypeError: if step is not numeric or None
-            ValueError: if step is negative
-            TypeError:  if step is not integer or None for an integer parameter
-            TypeError: if step is not a number on None
-        """
+    def step(self, step: Optional[float]) -> None:
         if step is None:
-            self._step: Optional[Number] = step
+            self._step: Optional[float] = step
         elif not getattr(self.vals, 'is_numeric', True):
             raise TypeError('you can only step numeric parameters')
         elif not isinstance(step, (int, float)):
@@ -677,15 +805,11 @@ class _BaseParameter(Metadatable):
             self._step = step
 
     @property
-    def post_delay(self) -> Number:
-        """Delay time after *start* of set operation, for each set"""
-        return self._post_delay
-
-    @post_delay.setter
-    def post_delay(self, post_delay: Number) -> None:
+    def post_delay(self) -> float:
         """
-        Configure this parameter with a delay after the *start* of every set
-        operation.
+        Delay time after *start* of set operation, for each set.
+        The actual time will not be shorter than this, but may be longer
+        if the underlying set call takes longer.
 
         Typically used in conjunction with `step` to create an effective
         ramp rate, but can also be used without a `step` to enforce a delay
@@ -694,53 +818,66 @@ class _BaseParameter(Metadatable):
         instrument that needs extra time after setting a parameter although
         the command for setting the parameter returns quickly.
 
-        Args:
-            post_delay(Union[int, float]): the target time after the *start*
-                of a set operation. The actual time will not be shorter than
-                this, but may be longer if the underlying set call takes longer.
+        :getter: Returns the current post_delay.
+        :setter: Sets the value of the post_delay.
 
         Raises:
             TypeError: If delay is not int nor float
             ValueError: If delay is negative
         """
+        return self._post_delay
+
+    @post_delay.setter
+    def post_delay(self, post_delay: float) -> None:
         if not isinstance(post_delay, (int, float)):
             raise TypeError(
-                'post_delay ({}) must be a number'.format(post_delay))
+                f'post_delay ({post_delay}) must be a number')
         if post_delay < 0:
             raise ValueError(
-                'post_delay ({}) must not be negative'.format(post_delay))
+                f'post_delay ({post_delay}) must not be negative')
         self._post_delay = post_delay
 
     @property
-    def inter_delay(self) -> Number:
-        """Delay time between consecutive set operations"""
-        return self._inter_delay
-
-    @inter_delay.setter
-    def inter_delay(self, inter_delay: Number) -> None:
+    def inter_delay(self) -> float:
         """
-        Configure this parameter with a delay between set operations.
+        Delay time between consecutive set operations.
+        The actual time will not be shorter than this, but may be longer
+        if the underlying set call takes longer.
 
         Typically used in conjunction with `step` to create an effective
         ramp rate, but can also be used without a `step` to enforce a delay
         *between* sets.
 
-        Args:
-            inter_delay(Union[int, float]): the minimum time between set calls.
-                The actual time will not be shorter than this, but may be longer
-                if the underlying set call takes longer.
+        :getter: Returns the current inter_delay.
+        :setter: Sets the value of the inter_delay.
 
         Raises:
             TypeError: If delay is not int nor float
             ValueError: If delay is negative
         """
+        return self._inter_delay
+
+    @inter_delay.setter
+    def inter_delay(self, inter_delay: float) -> None:
         if not isinstance(inter_delay, (int, float)):
             raise TypeError(
-                'inter_delay ({}) must be a number'.format(inter_delay))
+                f'inter_delay ({inter_delay}) must be a number')
         if inter_delay < 0:
             raise ValueError(
-                'inter_delay ({}) must not be negative'.format(inter_delay))
+                f'inter_delay ({inter_delay}) must not be negative')
         self._inter_delay = inter_delay
+
+    @property
+    def name(self) -> str:
+        """Name of the parameter. This is identical to :meth:`short_name`."""
+        return self._short_name
+
+    @property
+    def short_name(self) -> str:
+        """Short name of the parameter. This is without the name of the
+        instrument or submodule that the parameter may be bound to. For
+        full name refer to :meth:`full_name`."""
+        return self._short_name
 
     @property
     def full_name(self) -> str:
@@ -750,23 +887,6 @@ class _BaseParameter(Metadatable):
         by underscores, like this: ``instrument_submodule_parameter``.
         """
         return "_".join(self.name_parts)
-
-    def set_validator(self, vals):
-        """
-        (Deprecated) Set a validator `vals` for this parameter.
-
-        Deprecated - reassign the `vals` attribute directly instead.
-
-        Args:
-            vals (Validator):  validator to set
-
-        """
-        warnings.warn(
-            "set_validator is deprected use `inst.vals = MyValidator` instead")
-        if isinstance(vals, Validator):
-            self.vals = vals
-        else:
-            raise TypeError('vals must be a Validator')
 
     @property
     def instrument(self) -> Optional['InstrumentBase']:
@@ -791,20 +911,52 @@ class _BaseParameter(Metadatable):
         else:
             return None
 
-    def set_to(self, value):
+    def set_to(self, value: ParamDataType,
+               allow_changes: bool = False) -> _SetParamContext:
         """
-        Use a context manager to temporarily set the value of a parameter to
-        a value. Example:
+        Use a context manager to temporarily set a parameter to a value. By
+        default, the parameter value cannot be changed inside the context.
+        This may be overridden with ``allow_changes=True``.
 
-        >>> from qcodes import Parameter
-        >>> p = Parameter("p", set_cmd=None, get_cmd=None)
-        >>> with p.set_to(3):
-        ...    print(f"p value in with block {p.get()}")
-        >>> print(f"p value outside with block {p.get()}")
+        Examples:
+
+            >>> from qcodes import Parameter
+            >>> p = Parameter("p", set_cmd=None, get_cmd=None)
+            >>> p.set(2)
+            >>> with p.set_to(3):
+            ...     print(f"p value in with block {p.get()}")  # prints 3
+            ...     p.set(5)  # raises an exception
+            >>> print(f"p value outside with block {p.get()}")  # prints 2
+            >>> with p.set_to(3, allow_changes=True):
+            ...     p.set(5)  # now this works
+            >>> print(f"value after second block: {p.get()}")  # still prints 2
         """
-        context_manager = _SetParamContext(self)
-        self.set(value)
+        context_manager = _SetParamContext(self, value,
+                                           allow_changes=allow_changes)
         return context_manager
+
+    def restore_at_exit(self, allow_changes: bool = True) -> _SetParamContext:
+        """
+        Use a context manager to restore the value of a parameter after a
+        ``with`` block.
+
+        By default, the parameter value may be changed inside the block, but
+        this can be prevented with ``allow_changes=False``. This can be
+        useful, for example, for debugging a complex measurement that
+        unintentionally modifies a parameter.
+
+        Example:
+
+            >>> p = Parameter("p", set_cmd=None, get_cmd=None)
+            >>> p.set(2)
+            >>> with p.restore_at_exit():
+            ...     p.set(3)
+            ...     print(f"value inside with block: {p.get()}")  # prints 3
+            >>> print(f"value after with block: {p.get()}")  # prints 2
+            >>> with p.restore_at_exit(allow_changes=False):
+            ...     p.set(5)  # raises an exception
+        """
+        return self.set_to(self.cache(), allow_changes=allow_changes)
 
     @property
     def name_parts(self) -> List[str]:
@@ -826,6 +978,45 @@ class _BaseParameter(Metadatable):
         name_parts.append(self.short_name)
         return name_parts
 
+    @property
+    def gettable(self) -> bool:
+        """
+        Is it allowed to call get on this parameter?
+        """
+        return self._gettable
+
+    @property
+    def settable(self) -> bool:
+        """
+        Is it allowed to call set on this parameter?
+        """
+        return self._settable
+
+    @property
+    def underlying_instrument(self) -> Optional['InstrumentBase']:
+        """
+        Returns an instance of the underlying hardware instrument that this
+        parameter communicates with, per this parameter's implementation.
+
+        This is useful in the case where a parameter does not belongs to
+        an instrument instance that represents a real hardware instrument
+        but actually uses a real hardware instrument in its implementation
+        (e.g. via calls to one or more parameters of that real hardware
+        instrument). This is also useful when a parameter does belong to
+        an instrument instance but that instance does not represent the
+        real hardware instrument that the parameter interacts with: hence
+        ``root_instrument`` of the parameter cannot be the
+        ``hardware_instrument``, however ``underlying_instrument`` can be
+        implemented to return the ``hardware_instrument``.
+
+        By default it returns the ``root_instrument`` of the parameter.
+        """
+        return self.root_instrument
+
+    @property
+    def abstract(self) -> Optional[bool]:
+        return self._abstract
+
 
 class Parameter(_BaseParameter):
     """
@@ -845,16 +1036,28 @@ class Parameter(_BaseParameter):
           and stores a value for ``set_cmd``
        d. False, in which case trying to get/set will raise an error.
 
-    2. Creating a subclass with an explicit :meth:`get_raw`/:meth:`set_raw` method.
+    2. Creating a subclass with an explicit :meth:`get_raw`/:meth:`set_raw`
+       method.
 
        This enables more advanced functionality. The :meth:`get_raw` and
        :meth:`set_raw` methods are automatically wrapped to provide ``get`` and
        ``set``.
 
-    Parameters have a ``.get_latest`` method that simply returns the most
-    recent set or measured value. This can be called ( ``param.get_latest()`` )
+    It is an error to do both 1 and 2. E.g supply a ``get_cmd``/``set_cmd``
+    and implement ``get_raw``/``set_raw``
 
 
+    To detect if a parameter is gettable or settable check the attributes
+    :py:attr:`~gettable` and :py:attr:`~settable` on the parameter.
+
+    Parameters have a ``cache`` object that stores internally the current
+    ``value`` and ``raw_value`` of the parameter. Calling ``cache.get()``
+    (or ``cache()``) simply returns the most recent set or measured value of
+    the parameter.
+
+    Parameter also has a ``.get_latest`` method that duplicates the behavior
+    of ``cache()`` call, as in, it also simply returns the most recent set
+    or measured value.
 
     Args:
         name: The local name of the parameter. Should be a valid
@@ -873,8 +1076,9 @@ class Parameter(_BaseParameter):
 
         snapshot_get: ``False`` prevents any update to the
             parameter during a snapshot, even if the snapshot was called with
-            ``update=True``, for example, if it takes too long to update.
-            Default True.
+            ``update=True``, for example, if it takes too long to update,
+            or if the parameter is only meant for measurements hence calling
+            get on it during snapshot may be an error. Default True.
 
         snapshot_value: ``False`` prevents parameter value to be
             stored in the snapshot. Useful if the value is large.
@@ -890,7 +1094,7 @@ class Parameter(_BaseParameter):
 
         scale: Scale to multiply value with before
             performing set. the internally multiplied value is stored in
-            `raw_value`. Can account for a voltage divider.
+            ``cache.raw_value``. Can account for a voltage divider.
 
         inter_delay: Minimum time (in seconds)
             between successive sets. If the previous set was less than this,
@@ -925,9 +1129,20 @@ class Parameter(_BaseParameter):
             Only relevant if settable. Defaults to ``Numbers()``.
 
         max_val_age: The max time (in seconds) to trust a
-            saved value obtained from ``get_latest()``. If this  parameter
-            has not been set or measured more recently than this, perform an
-            additional measurement.
+            saved value obtained from ``cache()`` (or ``cache.get()``, or
+            ``get_latest()``. If this parameter has not been set or measured
+            more recently than this, perform an additional measurement.
+
+        initial_value: Value to set the parameter to at the end of its
+            initialization (this is equivalent to calling
+            ``parameter.set(initial_value)`` after parameter initialization).
+            Cannot be passed together with ``initial_cache_value`` argument.
+
+        initial_cache_value: Value to set the cache of the parameter to
+            at the end of its initialization (this is equivalent to calling
+            ``parameter.cache.set(initial_cache_value)`` after parameter
+            initialization). Cannot be passed together with ``initial_value``
+            argument.
 
         docstring: Documentation string for the ``__doc__``
             field of the object. The ``__doc__``  field of the instance is
@@ -936,53 +1151,131 @@ class Parameter(_BaseParameter):
         metadata: Extra information to include with the
             JSON snapshot of the parameter.
 
+        abstract: Specifies if this parameter is abstract or not. Default
+            is False. If the parameter is 'abstract', it *must* be overridden
+            by a non-abstract parameter before the instrument containing
+            this parameter can be instantiated. We override a parameter by
+            adding one with the same name and unit. An abstract parameter
+            can be added in a base class and overridden in a subclass.
+
+        bind_to_instrument: Should the parameter be registered as a delegate attribute
+            on the instrument passed via the instrument argument.
     """
 
-    def __init__(self, name: str,
-                 instrument: Optional['Instrument']=None,
-                 label: Optional[str]=None,
-                 unit: Optional[str]=None,
-                 get_cmd: Optional[Union[str, Callable, bool]]=None,
-                 set_cmd:  Optional[Union[str, Callable, bool]]=False,
-                 initial_value: Optional[Union[float, int, str]]=None,
-                 max_val_age: Optional[float]=None,
-                 vals: Optional[Validator]=None,
-                 docstring: Optional[str]=None,
-                 **kwargs) -> None:
-        super().__init__(name=name, instrument=instrument, vals=vals, **kwargs)
+    def __init__(
+        self,
+        name: str,
+        instrument: Optional["InstrumentBase"] = None,
+        label: Optional[str] = None,
+        unit: Optional[str] = None,
+        get_cmd: Optional[Union[str, Callable[..., Any], bool]] = None,
+        set_cmd: Optional[Union[str, Callable[..., Any], bool]] = False,
+        initial_value: Optional[Union[float, str]] = None,
+        max_val_age: Optional[float] = None,
+        vals: Optional[Validator[Any]] = None,
+        docstring: Optional[str] = None,
+        initial_cache_value: Optional[Union[float, str]] = None,
+        bind_to_instrument: bool = True,
+        **kwargs: Any,
+    ) -> None:
+        if instrument is not None and bind_to_instrument:
+            existing_parameter = instrument.parameters.get(name, None)
+
+            if existing_parameter:
+
+                # this check is redundant since its also in the baseclass
+                # but if we do not put it here it would be an api break
+                # as parameter duplication check won't be done first,
+                # hence for parameters that are duplicates and have
+                # wrong units, users will be getting ValueError where
+                # they used to have KeyError before.
+                if not existing_parameter.abstract:
+                    raise KeyError(
+                        f"Duplicate parameter name {name} on instrument {instrument}"
+                    )
+
+                existing_unit = getattr(existing_parameter, "unit", None)
+                if existing_unit != unit:
+                    raise ValueError(
+                        f"The unit of the parameter '{name}' is '{unit}'. "
+                        f"This is inconsistent with the unit defined in the "
+                        f"base class"
+                    )
+
+        super().__init__(
+            name=name,
+            instrument=instrument,
+            vals=vals,
+            max_val_age=max_val_age,
+            bind_to_instrument=bind_to_instrument,
+            **kwargs,
+        )
+
+        no_instrument_get = not self.gettable and \
+            (get_cmd is None or get_cmd is False)
+        # TODO: a matching check should be in _BaseParameter but
+        #   due to the current limited design the _BaseParameter cannot
+        #   know if this subclass will supply a get_cmd
+        #   To work around this a RunTime check is put into get of GetLatest
+        #   and into get of _Cache
+        if max_val_age is not None and no_instrument_get:
+            raise SyntaxError('Must have get method or specify get_cmd '
+                              'when max_val_age is set')
 
         # Enable set/get methods from get_cmd/set_cmd if given and
         # no `get`/`set` or `get_raw`/`set_raw` methods have been defined
         # in the scope of this class.
-        # (previous call to `super().__init__` wraps existing get_raw/set_raw to
-        # get/set methods)
-        if not hasattr(self, 'get') and get_cmd is not False:
+        # (previous call to `super().__init__` wraps existing
+        # get_raw/set_raw into get/set methods)
+        if self.gettable and get_cmd not in (None, False):
+            raise TypeError("Supplying a not None or False `get_cmd` to a Parameter"
+                            " that already implements"
+                            " get_raw is an error.")
+        elif not self.gettable and get_cmd is not False:
             if get_cmd is None:
-                if max_val_age is not None:
-                    raise SyntaxError('Must have get method or specify get_cmd '
-                                      'when max_val_age is set')
-                self.get_raw = lambda: self._latest['raw_value']
+                self.get_raw = (  # type: ignore[assignment]
+                    lambda: self.cache.raw_value)
             else:
-                exec_str_ask = getattr(instrument, "ask", None) if instrument else None
-                self.get_raw = Command(arg_count=0, cmd=get_cmd, exec_str=exec_str_ask)
+                exec_str_ask = getattr(instrument, "ask", None) \
+                    if instrument else None
+                self.get_raw = Command(arg_count=0,  # type: ignore[assignment]
+                                       cmd=get_cmd,
+                                       exec_str=exec_str_ask)
+            self._gettable = True
             self.get = self._wrap_get(self.get_raw)
 
-        if not hasattr(self, 'set') and set_cmd is not False:
+        if self.settable and set_cmd not in (None, False):
+            raise TypeError("Supplying a not None or False `set_cmd` to a Parameter"
+                            " that already implements"
+                            " set_raw is an error.")
+        elif not self.settable and set_cmd is not False:
             if set_cmd is None:
-                self.set_raw: Callable = partial(self._save_val, validate=False)
+                self.set_raw: Callable[..., Any] = lambda x: x
             else:
-                exec_str_write = getattr(instrument, "write", None) if instrument else None
+                exec_str_write = getattr(instrument, "write", None) \
+                    if instrument else None
                 self.set_raw = Command(arg_count=1, cmd=set_cmd,
                                        exec_str=exec_str_write)
+            self._settable = True
             self.set = self._wrap_set(self.set_raw)
 
         self._meta_attrs.extend(['label', 'unit', 'vals'])
 
-        self.label = name if label is None else label
+        #: Label of the data used for plots etc.
+        self.label: str = name if label is None else label
+        #: The unit of measure. Use ``''`` for unitless.
         self.unit = unit if unit is not None else ''
+
+        if initial_value is not None and initial_cache_value is not None:
+            raise SyntaxError('It is not possible to specify both of the '
+                              '`initial_value` and `initial_cache_value` '
+                              'keyword arguments.')
 
         if initial_value is not None:
             self.set(initial_value)
+
+        if initial_cache_value is not None:
+            self.cache.set(initial_cache_value)
 
         # generate default docstring
         self.__doc__ = os.linesep.join((
@@ -999,32 +1292,34 @@ class Parameter(_BaseParameter):
                 '',
                 self.__doc__))
 
-    def __getitem__(self, keys):
+    def __getitem__(self, keys: Any) -> 'SweepFixedValues':
         """
         Slice a Parameter to get a SweepValues object
         to iterate over during a sweep
         """
         return SweepFixedValues(self, keys)
 
-    def increment(self, value):
+    def increment(self, value: ParamDataType) -> None:
         """ Increment the parameter with a value
 
         Args:
-            value (float): Value to be added to the parameter.
+            value: Value to be added to the parameter.
         """
         self.set(self.get() + value)
 
-    def sweep(self, start, stop, step=None, num=None):
+    def sweep(self, start: float, stop: float,
+              step: Optional[float] = None,
+              num: Optional[int] = None) -> SweepFixedValues:
         """
         Create a collection of parameter values to be iterated over.
         Requires `start` and `stop` and (`step` or `num`)
         The sign of `step` is not relevant.
 
         Args:
-            start (Union[int, float]): The starting value of the sequence.
-            stop (Union[int, float]): The end value of the sequence.
-            step (Optional[Union[int, float]]):  Spacing between values.
-            num (Optional[int]): Number of values to generate.
+            start: The starting value of the sequence.
+            stop: The end value of the sequence.
+            step:  Spacing between values.
+            num: Number of values to generate.
 
         Returns:
             SweepFixedValues: Collection of parameter values to be
@@ -1058,11 +1353,11 @@ class ParameterWithSetpoints(Parameter):
     """
 
     def __init__(self, name: str, *,
-                 vals: Validator = None,
+                 vals: Optional[Validator[Any]] = None,
                  setpoints: Optional[Sequence[_BaseParameter]] = None,
                  snapshot_get: bool = False,
                  snapshot_value: bool = False,
-                 **kwargs) -> None:
+                 **kwargs: Any) -> None:
 
         if not isinstance(vals, Arrays):
             raise ValueError(f"A ParameterWithSetpoints must have an Arrays "
@@ -1093,7 +1388,7 @@ class ParameterWithSetpoints(Parameter):
         return self._setpoints
 
     @setpoints.setter
-    def setpoints(self, setpoints: Sequence[_BaseParameter]):
+    def setpoints(self, setpoints: Sequence[_BaseParameter]) -> None:
         for setpointarray in setpoints:
             if not isinstance(setpointarray, Parameter):
                 raise TypeError(f"Setpoints is of type {type(setpointarray)}"
@@ -1157,7 +1452,7 @@ class ParameterWithSetpoints(Parameter):
 
 class DelegateParameter(Parameter):
     """
-    The :class:`.DelegateParameter` wraps a given `source`-parameter.
+    The :class:`.DelegateParameter` wraps a given `source` :class:`Parameter`.
     Setting/getting it results in a set/get of the source parameter with
     the provided arguments.
 
@@ -1165,44 +1460,223 @@ class DelegateParameter(Parameter):
     source parameter is to provide all the functionality of the Parameter
     base class without overwriting properties of the source: for example to
     set a different scaling factor and unit on the :class:`.DelegateParameter`
-    without changing those in the source parameter
+    without changing those in the source parameter.
+
+    The :class:`DelegateParameter` supports changing the `source`
+    :class:`Parameter`. :py:attr:`~gettable`, :py:attr:`~settable` and
+    :py:attr:`snapshot_value` properties automatically follow the source
+    parameter. If source is set to ``None`` :py:attr:`~gettable` and
+    :py:attr:`~settable` will always be ``False``. It is therefore an error
+    to call get and set on a :class:`DelegateParameter` without a `source`.
+    Note that a parameter without a source can be snapshotted correctly.
+
+    :py:attr:`.unit` and :py:attr:`.label` can either be set when constructing
+    a :class:`DelegateParameter` or inherited from the source
+    :class:`Parameter`. If inherited they will automatically change when
+    changing the source. Otherwise they will remain fixed.
+
+    Note:
+        DelegateParameter only supports mappings between the
+        :class:`.DelegateParameter` and :class:`.Parameter` that are invertible
+        (e.g. a bijection). It is therefor not allowed to create a
+        :class:`.DelegateParameter` that performs non invertible
+        transforms in its ``get_raw`` method.
+
+        A DelegateParameter is not registered on the instrument by default.
+        You should pass ``bind_to_instrument=True`` if you want this to
+        be the case.
     """
 
-    def __init__(self, name: str, source: Parameter, *args, **kwargs):
-        self.source = source
+    class _DelegateCache:
+        def __init__(self,
+                     parameter: 'DelegateParameter'):
+            self._parameter = parameter
+            self._marked_valid: bool = False
 
-        for ka, param in zip(('unit', 'label', 'snapshot_value'),
-                             ('unit', 'label', '_snapshot_value')):
-            kwargs[ka] = kwargs.get(ka, getattr(self.source, param))
+        @property
+        def raw_value(self) -> ParamRawDataType:
+            """
+            raw_value is an attribute that surfaces the raw value from the
+            cache. In the case of a :class:`DelegateParameter` it reflects
+            the value of the cache of the source.
+
+            Strictly speaking it should represent that value independent of
+            its validity according to the `max_val_age` but in fact it does
+            lose its validity when the maximum value age has been reached.
+            This bug will not be fixed since the `raw_value` property will be
+            removed soon.
+            """
+            if self._parameter.source is None:
+                raise TypeError("Cannot get the raw value of a "
+                                "DelegateParameter that delegates to None")
+            return self._parameter.source.cache.get(get_if_invalid=False)
+
+        @property
+        def max_val_age(self) -> Optional[float]:
+            if self._parameter.source is None:
+                return None
+            return self._parameter.source.cache.max_val_age
+
+        @property
+        def timestamp(self) -> Optional[datetime]:
+            if self._parameter.source is None:
+                return None
+            return self._parameter.source.cache.timestamp
+
+        @property
+        def valid(self) -> bool:
+            if self._parameter.source is None:
+                return False
+            source_cache = self._parameter.source.cache
+            return source_cache.valid
+
+        def invalidate(self) -> None:
+            if self._parameter.source is not None:
+                self._parameter.source.cache.invalidate()
+
+        def get(self, get_if_invalid: bool = True) -> ParamDataType:
+            if self._parameter.source is None:
+                raise TypeError("Cannot get the cache of a "
+                                "DelegateParameter that delegates to None")
+            return self._parameter._from_raw_value_to_value(
+                self._parameter.source.cache.get(get_if_invalid=get_if_invalid))
+
+        def set(self, value: ParamDataType) -> None:
+            if self._parameter.source is None:
+                raise TypeError("Cannot set the cache of a DelegateParameter "
+                                "that delegates to None")
+            self._parameter.validate(value)
+            self._parameter.source.cache.set(
+                self._parameter._from_value_to_raw_value(value))
+
+        def _set_from_raw_value(self, value: ParamRawDataType) -> None:
+            if self._parameter.source is None:
+                raise TypeError("Cannot set the cache of a DelegateParameter "
+                                "that delegates to None")
+            self._parameter.source.cache.set(value)
+
+        def _update_with(self, *,
+                         value: ParamDataType,
+                         raw_value: ParamRawDataType,
+                         timestamp: Optional[datetime] = None
+                         ) -> None:
+            """
+            This method is needed for interface consistency with ``._Cache``
+            because it is used by ``_BaseParameter`` in
+            ``_wrap_get``/``_wrap_set``. Due to the fact that the source
+            parameter already maintains it's own cache and the cache of the
+            delegate parameter mirrors the cache of the source parameter by
+            design, this method is just a noop.
+            """
+            pass
+
+        def __call__(self) -> ParamDataType:
+            return self.get(get_if_invalid=True)
+
+    def __init__(
+        self,
+        name: str,
+        source: Optional[Parameter],
+        *args: Any,
+        **kwargs: Any,
+    ):
+        if "bind_to_instrument" not in kwargs.keys():
+            kwargs["bind_to_instrument"] = False
+
+        self._attr_inherit = {"label": {"fixed": False,
+                                        "value_when_without_source": name},
+                              "unit": {"fixed": False,
+                                       "value_when_without_source": ""}}
+
+        for attr, attr_props in self._attr_inherit.items():
+            if attr in kwargs:
+                attr_props["fixed"] = True
+            else:
+                attr_props["fixed"] = False
+            source_attr = getattr(source, attr,
+                                  attr_props["value_when_without_source"])
+            kwargs[attr] = kwargs.get(attr, source_attr)
 
         for cmd in ('set_cmd', 'get_cmd'):
             if cmd in kwargs:
                 raise KeyError(f'It is not allowed to set "{cmd}" of a '
                                f'DelegateParameter because the one of the '
                                f'source parameter is supposed to be used.')
+        if source is None and ("initial_cache_value" in kwargs
+                               or "initial_value" in kwargs):
+            raise KeyError("It is not allowed to supply 'initial_value'"
+                           " or 'initial_cache_value' "
+                           "without a source.")
 
+        initial_cache_value = kwargs.pop("initial_cache_value", None)
+        self.source = source
         super().__init__(name, *args, **kwargs)
+        # explicitly set the source properties as
+        # init will overwrite the ones set when assigning source
+        self._set_properties_from_source(source)
 
-    # Disable the warnings until MultiParameter has been
-    # replaced and name/label/unit can live in _BaseParameter
+        self.cache = self._DelegateCache(self)
+        if initial_cache_value is not None:
+            self.cache.set(initial_cache_value)
+
+    @property
+    def source(self) -> Optional[Parameter]:
+        """
+        The source parameter that this :class:`DelegateParameter` is bound to
+        or ``None`` if this  :class:`DelegateParameter` is unbound.
+
+        :getter: Returns the current source.
+        :setter: Sets the source.
+        """
+        return self._source
+
+    @source.setter
+    def source(self, source: Optional[Parameter]) -> None:
+        self._set_properties_from_source(source)
+        self._source: Optional[Parameter] = source
+
+    def _set_properties_from_source(self, source: Optional[Parameter]) -> None:
+        if source is None:
+            self._gettable = False
+            self._settable = False
+            self._snapshot_value = False
+        else:
+            self._gettable = source.gettable
+            self._settable = source.settable
+            self._snapshot_value = source._snapshot_value
+
+        for attr, attr_props in self._attr_inherit.items():
+            if not attr_props["fixed"]:
+                attr_val = getattr(source,
+                                   attr,
+                                   attr_props["value_when_without_source"])
+                setattr(self, attr, attr_val)
+
     # pylint: disable=method-hidden
-    def get_raw(self):
+    def get_raw(self) -> Any:
+        if self.source is None:
+            raise TypeError("Cannot get the value of a DelegateParameter "
+                            "that delegates to a None source.")
         return self.source.get()
 
-    # same as for `get_raw`
     # pylint: disable=method-hidden
-    def set_raw(self, value):
+    def set_raw(self, value: Any) -> None:
+        if self.source is None:
+            raise TypeError("Cannot set the value of a DelegateParameter "
+                            "that delegates to a None source.")
         self.source(value)
 
-    def snapshot_base(self, update: bool = True,
+    def snapshot_base(self, update: Optional[bool] = True,
                       params_to_skip_update: Optional[Sequence[str]] = None
-                      ) -> Dict:
+                      ) -> Dict[Any, Any]:
         snapshot = super().snapshot_base(
             update=update,
             params_to_skip_update=params_to_skip_update
         )
+        source_parameter_snapshot = None if self.source is None \
+            else self.source.snapshot(update=update)
         snapshot.update(
-            {'source_parameter': self.source.snapshot(update=update)}
+            {'source_parameter': source_parameter_snapshot}
         )
         return snapshot
 
@@ -1292,26 +1766,35 @@ class ArrayParameter(_BaseParameter):
             JSON snapshot of the parameter.
     """
 
-    def __init__(self,
-                 name: str,
-                 shape: Sequence[int],
-                 instrument: Optional['Instrument']=None,
-                 label: Optional[str]=None,
-                 unit: Optional[str]=None,
-                 setpoints: Optional[Sequence]=None,
-                 setpoint_names: Optional[Sequence[str]]=None,
-                 setpoint_labels: Optional[Sequence[str]]=None,
-                 setpoint_units: Optional[Sequence[str]]=None,
-                 docstring: Optional[str]=None,
-                 snapshot_get: bool=True,
-                 snapshot_value: bool=False,
-                 snapshot_exclude: bool=False,
-                 metadata: Optional[dict]=None) -> None:
-        super().__init__(name, instrument, snapshot_get, metadata,
-                         snapshot_value=snapshot_value,
-                         snapshot_exclude=snapshot_exclude)
+    def __init__(
+        self,
+        name: str,
+        shape: Sequence[int],
+        instrument: Optional["InstrumentBase"] = None,
+        label: Optional[str] = None,
+        unit: Optional[str] = None,
+        setpoints: Optional[Sequence[Any]] = None,
+        setpoint_names: Optional[Sequence[str]] = None,
+        setpoint_labels: Optional[Sequence[str]] = None,
+        setpoint_units: Optional[Sequence[str]] = None,
+        docstring: Optional[str] = None,
+        snapshot_get: bool = True,
+        snapshot_value: bool = False,
+        snapshot_exclude: bool = False,
+        metadata: Optional[Mapping[Any, Any]] = None,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(
+            name,
+            instrument,
+            snapshot_get,
+            metadata,
+            snapshot_value=snapshot_value,
+            snapshot_exclude=snapshot_exclude,
+            **kwargs,
+        )
 
-        if hasattr(self, 'set'):
+        if self.settable:
             # TODO (alexcjohnson): can we support, ala Combine?
             raise AttributeError('ArrayParameters do not support set '
                                  'at this time.')
@@ -1368,11 +1851,11 @@ class ArrayParameter(_BaseParameter):
                 '',
                 self.__doc__))
 
-        if not hasattr(self, 'get') and not hasattr(self, 'set'):
+        if not self.gettable and not self.settable:
             raise AttributeError('ArrayParameter must have a get, set or both')
 
     @property
-    def setpoint_full_names(self):
+    def setpoint_full_names(self) -> Optional[Sequence[str]]:
         """
         Full names of setpoints including instrument names if available
         """
@@ -1393,7 +1876,12 @@ class ArrayParameter(_BaseParameter):
             return self.setpoint_names
 
 
-def _is_nested_sequence_or_none(obj, types, shapes):
+def _is_nested_sequence_or_none(obj: Any,
+                                types: Optional[Union[
+                                    Type[object],
+                                    Tuple[Type[object], ...]]],
+                                shapes: Sequence[Sequence[Optional[int]]]
+                                ) -> bool:
     """Validator for MultiParameter setpoints/names/labels"""
     if obj is None:
         return True
@@ -1411,8 +1899,7 @@ def _is_nested_sequence_or_none(obj, types, shapes):
 class MultiParameter(_BaseParameter):
     """
     A gettable parameter that returns multiple values with separate names,
-    each of arbitrary shape.
-    Not necessarily part of an instrument.
+    each of arbitrary shape. Not necessarily part of an instrument.
 
     Subclasses should define a ``.get_raw`` method, which returns a sequence of
     values. This method is automatically wrapped to provide a ``.get`` method.
@@ -1494,25 +1981,34 @@ class MultiParameter(_BaseParameter):
             JSON snapshot of the parameter.
     """
 
-    def __init__(self,
-                 name: str,
-                 names: Sequence[str],
-                 shapes: Sequence[Sequence[Optional[int]]],
-                 instrument: Optional['Instrument']=None,
-                 labels: Optional[Sequence[str]]=None,
-                 units: Optional[Sequence[str]]=None,
-                 setpoints: Optional[Sequence[Sequence]]=None,
-                 setpoint_names: Optional[Sequence[Sequence[str]]]=None,
-                 setpoint_labels: Optional[Sequence[Sequence[str]]]=None,
-                 setpoint_units: Optional[Sequence[Sequence[str]]]=None,
-                 docstring: str=None,
-                 snapshot_get: bool=True,
-                 snapshot_value: bool=False,
-                 snapshot_exclude: bool=False,
-                 metadata: Optional[dict]=None) -> None:
-        super().__init__(name, instrument, snapshot_get, metadata,
-                         snapshot_value=snapshot_value,
-                         snapshot_exclude=snapshot_exclude)
+    def __init__(
+        self,
+        name: str,
+        names: Sequence[str],
+        shapes: Sequence[Sequence[int]],
+        instrument: Optional["InstrumentBase"] = None,
+        labels: Optional[Sequence[str]] = None,
+        units: Optional[Sequence[str]] = None,
+        setpoints: Optional[Sequence[Sequence[Any]]] = None,
+        setpoint_names: Optional[Sequence[Sequence[str]]] = None,
+        setpoint_labels: Optional[Sequence[Sequence[str]]] = None,
+        setpoint_units: Optional[Sequence[Sequence[str]]] = None,
+        docstring: Optional[str] = None,
+        snapshot_get: bool = True,
+        snapshot_value: bool = False,
+        snapshot_exclude: bool = False,
+        metadata: Optional[Mapping[Any, Any]] = None,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(
+            name,
+            instrument,
+            snapshot_get,
+            metadata,
+            snapshot_value=snapshot_value,
+            snapshot_exclude=snapshot_exclude,
+            **kwargs,
+        )
 
         self._meta_attrs.extend(['setpoint_names', 'setpoint_labels',
                                  'setpoint_units', 'names', 'labels', 'units'])
@@ -1521,7 +2017,7 @@ class MultiParameter(_BaseParameter):
             raise ValueError('names must be a tuple of strings, not ' +
                              repr(names))
 
-        self.names = names
+        self.names = tuple(names)
         self.labels = labels if labels is not None else names
         self.units = units if units is not None else [''] * len(names)
 
@@ -1569,11 +2065,11 @@ class MultiParameter(_BaseParameter):
                 '',
                 self.__doc__))
 
-        if not hasattr(self, 'get') and not hasattr(self, 'set'):
+        if not self.gettable and not self.settable:
             raise AttributeError('MultiParameter must have a get, set or both')
 
     @property
-    def short_names(self):
+    def short_names(self) -> Tuple[str, ...]:
         """
         short_names is identical to names i.e. the names of the parameter
         parts but does not add the instrument name.
@@ -1584,20 +2080,20 @@ class MultiParameter(_BaseParameter):
         return self.names
 
     @property
-    def full_names(self):
+    def full_names(self) -> Tuple[str, ...]:
         """
         Names of the parameter components including the name of the instrument
         and submodule that the parameter may be bound to. The name parts are
-        separated by underscores, like this: ``instrument_submodule_parameter``.
+        separated by underscores, like this: ``instrument_submodule_parameter``
         """
         inst_name = "_".join(self.name_parts[:-1])
-        if inst_name != '':
-            return [inst_name + '_' + name for name in self.names]
+        if inst_name != "":
+            return tuple(inst_name + "_" + name for name in self.names)
         else:
             return self.names
 
     @property
-    def setpoint_full_names(self):
+    def setpoint_full_names(self) -> Optional[Sequence[Sequence[str]]]:
         """
         Full names of setpoints including instrument names, if available
         """
@@ -1612,7 +2108,8 @@ class MultiParameter(_BaseParameter):
                 full_sp_names_subgroupd = []
                 for spname in sp_group:
                     if spname is not None:
-                        full_sp_names_subgroupd.append(inst_name + '_' + spname)
+                        full_sp_names_subgroupd.append(
+                            inst_name + '_' + spname)
                     else:
                         full_sp_names_subgroupd.append(None)
                 full_sp_names.append(tuple(full_sp_names_subgroupd))
@@ -1622,10 +2119,264 @@ class MultiParameter(_BaseParameter):
             return self.setpoint_names
 
 
+class _CacheProtocol(Protocol):
+    """
+    This protocol defines the interface that a Parameter Cache implementation
+    must implement. This is currently used for 2 implementations, one in
+    _BaseParameter and a specialized one in DelegateParameter.
+    """
+    @property
+    def raw_value(self) -> ParamRawDataType:
+        ...
+
+    @property
+    def timestamp(self) -> Optional[datetime]:
+        ...
+
+    @property
+    def max_val_age(self) -> Optional[float]:
+        ...
+
+    @property
+    def valid(self) -> bool:
+        ...
+
+    def invalidate(self) -> None:
+        ...
+
+    def set(self, value: ParamDataType) -> None:
+        ...
+
+    def _set_from_raw_value(self, raw_value: ParamRawDataType) -> None:
+        ...
+
+    def get(self, get_if_invalid: bool = True) -> ParamDataType:
+        ...
+
+    def _update_with(self, *,
+                     value: ParamDataType,
+                     raw_value: ParamRawDataType,
+                     timestamp: Optional[datetime] = None
+                     ) -> None:
+        ...
+
+    def __call__(self) -> ParamDataType:
+        ...
+
+
+class _Cache:
+    """
+    Cache object for parameter to hold its value and raw value
+
+    It also implements ``set`` method for setting parameter's value without
+    invoking its ``set_cmd``, and ``get`` method that allows to retrieve the
+    cached value of the parameter without calling ``get_cmd`` might be called
+    unless the cache is invalid.
+
+    Args:
+         parameter: instance of the parameter that this cache belongs to.
+         max_val_age: Max time (in seconds) to trust a value stored in cache.
+            If the parameter has not been set or measured more recently than
+            this, an additional measurement will be performed in order to
+            update the cached value. If it is ``None``, this behavior is
+            disabled. ``max_val_age`` should not be used for a parameter
+            that does not have a get function.
+    """
+    def __init__(self,
+                 parameter: '_BaseParameter',
+                 max_val_age: Optional[float] = None):
+        self._parameter = parameter
+        self._value: ParamDataType = None
+        self._raw_value: ParamRawDataType = None
+        self._timestamp: Optional[datetime] = None
+        self._max_val_age = max_val_age
+        self._marked_valid: bool = False
+
+    @property
+    def raw_value(self) -> ParamRawDataType:
+        """Raw value of the parameter"""
+        return self._raw_value
+
+    @property
+    def timestamp(self) -> Optional[datetime]:
+        """
+        Timestamp of the moment when cache was last updated
+
+        If ``None``, the cache hasn't been updated yet and shall be seen as
+        "invalid".
+        """
+        return self._timestamp
+
+    @property
+    def max_val_age(self) -> Optional[float]:
+        """
+        Max time (in seconds) to trust a value stored in cache. If the
+        parameter has not been set or measured more recently than this,
+        perform an additional measurement.
+
+        If it is ``None``, this behavior is disabled.
+        """
+        return self._max_val_age
+
+    @property
+    def valid(self) -> bool:
+        """
+        Returns True if the cache is expected be be valid.
+        """
+        return not self._timestamp_expired() and self._marked_valid
+
+    def invalidate(self) -> None:
+        """
+        Call this method to mark the cache invalid.
+        If the cache is invalid the next call to `cache.get()` attempt
+        to get the value from the instrument.
+        """
+        self._marked_valid = False
+
+    def set(self, value: ParamDataType) -> None:
+        """
+        Set the cached value of the parameter without invoking the
+        ``set_cmd`` of the parameter (if it has one). For example, in case of
+        an instrument parameter, calling :meth:`cache.set` as opposed to
+        calling ``set`` will only change the internally-stored value of
+        the parameter (that is available when calling ``cache.get()`` or
+        ``get_latest()``), and will NOT pass that value to the instrument.
+
+        Note that this method also respects all the validation, parsing,
+        offsetting, etc that the parameter's ``set`` method respects. However,
+        if the parameter has :attr:`step` defined, unlike the ``set`` method,
+        this method does not perform setting the parameter step-by-step.
+
+        Args:
+            value: new value for the parameter
+        """
+        self._parameter.validate(value)
+        raw_value = self._parameter._from_value_to_raw_value(value)
+        self._update_with(value=value, raw_value=raw_value)
+
+    def _set_from_raw_value(self, raw_value: ParamRawDataType) -> None:
+        value = self._parameter._from_raw_value_to_value(raw_value)
+        if self._parameter._validate_on_get:
+            self._parameter.validate(value)
+        self._update_with(value=value, raw_value=raw_value)
+
+    def _update_with(self, *,
+                     value: ParamDataType,
+                     raw_value: ParamRawDataType,
+                     timestamp: Optional[datetime] = None
+                     ) -> None:
+        """
+        Simply overwrites the value, raw value, and timestamp in this cache
+        with new ones.
+
+        Args:
+            value: new value of the parameter
+            raw_value: new raw value of the parameter
+            timestamp: new timestamp of the parameter; if ``None``,
+                then timestamp of "now" is used
+        """
+        self._value = value
+        self._raw_value = raw_value
+        if timestamp is None:
+            self._timestamp = datetime.now()
+        else:
+            self._timestamp = timestamp
+        self._marked_valid = True
+
+    def _timestamp_expired(self) -> bool:
+        if self._timestamp is None:
+            # parameter has never been captured
+            return True
+        if self._max_val_age is None:
+            # parameter cannot expire
+            return False
+        oldest_accepted_timestamp = (
+                datetime.now() - timedelta(seconds=self._max_val_age))
+        if self._timestamp < oldest_accepted_timestamp:
+            # Time of last get exceeds max_val_age seconds, need to
+            # perform new .get()
+            return True
+        else:
+            # parameter is still valid
+            return False
+
+    def get(self, get_if_invalid: bool = True) -> ParamDataType:
+        """
+        Return cached value if time since get was less than ``max_val_age``,
+        or the parameter was explicitly marked invalid.
+        Otherwise perform ``get()`` on the parameter and return result. A
+        ``get()`` will also be performed if the parameter has never been
+        captured but only if ``get_if_invalid`` argument is ``True``.
+
+        Args:
+            get_if_invalid: if set to ``True``, ``get()`` on a parameter
+                will be performed in case the cached value is invalid (for
+                example, due to ``max_val_age``, because the parameter has
+                never been captured, or because the parameter was marked
+                invalid)
+        """
+
+        gettable = self._parameter.gettable
+        cache_valid = self.valid
+
+        if cache_valid:
+            return self._value
+        else:
+            if get_if_invalid:
+                if gettable:
+                    return self._parameter.get()
+                else:
+                    error_msg = self._construct_error_msg()
+                    raise RuntimeError(error_msg)
+            else:
+                return self._value
+
+    def _construct_error_msg(self) -> str:
+        if self._timestamp is None:
+            error_msg = (f"Value of parameter "
+                         f"{self._parameter.full_name} "
+                         f"is unknown and the Parameter "
+                         f"does not have a get command. "
+                         f"Please set the value before "
+                         f"attempting to get it.")
+        elif self._max_val_age is not None:
+            # TODO: this check should really be at the time
+            #  of setting max_val_age unfortunately this
+            #  happens in init before get wrapping is performed.
+            error_msg = ("`max_val_age` is not supported "
+                         "for a parameter without get "
+                         "command.")
+        else:
+            # max_val_age is None and TS is not None but cache is
+            # invalid with the current logic that should never
+            # happen
+            error_msg = ("Cannot return cache of a parameter "
+                         "that does not have a get command "
+                         "and has an invalid cache")
+        return error_msg
+
+    def __call__(self) -> ParamDataType:
+        """
+        Same as :meth:`get` but always call ``get`` on parameter if the
+        cache is not valid
+        """
+        return self.get(get_if_invalid=True)
+
+
 class GetLatest(DelegateAttributes):
     """
     Wrapper for a class:`.Parameter` that just returns the last set or measured
-    value stored in the class:`.Parameter` itself.
+    value stored in the class:`.Parameter` itself. If get has never been called
+    on the parameter or the time since get was called is larger than
+    ``max_val_age``, get will be called on the parameter. If the parameter
+    does not implement get, set should be called (or the initial_value set)
+    before calling get on this wrapper. It is an error to set
+    ``max_val_age`` for a parameter that does not have a get function.
+
+    The functionality of this class is subsumed and improved in
+    parameter's cache that is accessible via ``.cache`` attribute of the
+    :class:`.Parameter`. Use of ``parameter.cache`` is recommended over use of
+    ``parameter.get_latest``.
 
     Examples:
         >>> # Can be called:
@@ -1634,76 +2385,83 @@ class GetLatest(DelegateAttributes):
         >>> Loop(...).each(param.get_latest)
 
     Args:
-        parameter (Parameter): Parameter to be wrapped.
-
-        max_val_age (Optional[int]): The max time (in seconds) to trust a
-            saved value obtained from get_latest(). If this parameter has not
-            been set or measured more recently than this, perform an
-            additional measurement.
+        parameter: Parameter to be wrapped.
     """
-    def __init__(self, parameter, max_val_age=None):
+    def __init__(self, parameter: _BaseParameter):
         self.parameter = parameter
-        self.max_val_age = max_val_age
 
     delegate_attr_objects = ['parameter']
     omit_delegate_attrs = ['set']
 
-    def get(self):
-        """Return latest value if time since get was less than
-        `max_val_age`, otherwise perform `get()` and
-        return result
+    def get(self) -> ParamDataType:
         """
-        state = self.parameter._latest
-        if self.max_val_age is None:
-            # Return last value since max_val_age is not specified
-            return state['value']
-        else:
-            oldest_ok_val = datetime.now() - timedelta(seconds=self.max_val_age)
-            if state['ts'] is None or state['ts'] < oldest_ok_val:
-                # Time of last get exceeds max_val_age seconds, need to
-                # perform new .get()
-                return self.parameter.get()
-            else:
-                return state['value']
+        Return latest value if time since get was less than
+        `max_val_age`, otherwise perform `get()` and
+        return result. A `get()` will also be performed if the
+        parameter never has been captured.
 
-    def get_timestamp(self) -> datetime:
+        It is recommended to use ``parameter.cache.get()`` instead.
+        """
+        return self.parameter.cache.get()
+
+    def get_timestamp(self) -> Optional[datetime]:
         """
         Return the age of the latest parameter value.
+
+        It is recommended to use ``parameter.cache.timestamp`` instead.
         """
-        state = self.parameter._latest
-        return state["ts"]
+        return self.cache.timestamp
 
-    def __call__(self):
-        return self.get()
+    def get_raw_value(self) -> Optional[ParamRawDataType]:
+        """
+        Return latest raw value of the parameter.
+
+        It is recommended to use ``parameter.cache.raw_value`` instead.
+        """
+        return self.cache._raw_value
+
+    def __call__(self) -> ParamDataType:
+        """
+        Same as ``get()``
+
+        It is recommended to use ``parameter.cache()`` instead.
+        """
+        return self.cache()
 
 
-def combine(*parameters, name, label=None, unit=None, units=None,
-            aggregator=None):
+def combine(*parameters: 'Parameter',
+            name: str,
+            label: Optional[str] = None,
+            unit: Optional[str] = None,
+            units: Optional[str] = None,
+            aggregator: Optional[Callable[[Sequence[Any]], Any]] = None
+            ) -> 'CombinedParameter':
     """
     Combine parameters into one sweepable parameter
 
-    Args:
-        *parameters (qcodes.instrument.parameter.Parameter): The parameters to
-            combine.
-        name (str): The name of the paramter.
-        label (Optional[str]): The label of the combined parameter.
-        unit (Optional[str]): the unit of the combined parameter.
-        aggregator (Optional[Callable[list[Any]]]): a function to aggregate
-            the set values into one.
+    A combined parameter sets all the combined parameters at every point
+    of the sweep. The sets are called in the same order the parameters are,
+    and sequentially.
 
-    A combined parameter sets all the combined parameters at every point of the
-    sweep.
-    The sets are called in the same order the parameters are, and
-    sequentially.
+    Args:
+        *parameters: The parameters to combine.
+        name: The name of the paramter.
+        label: The label of the combined parameter.
+        unit: the unit of the combined parameter.
+        aggregator: a function to aggregate
+            the set values into one.
     """
-    parameters = list(parameters)
-    multi_par = CombinedParameter(parameters, name, label, unit, units,
+    my_parameters = list(parameters)
+    multi_par = CombinedParameter(my_parameters, name, label, unit, units,
                                   aggregator)
     return multi_par
 
 
 class CombinedParameter(Metadatable):
-    """ A combined parameter
+    """
+    A combined parameter. It sets all the combined parameters at every
+    point of the sweep. The sets are called in the same order
+    the parameters are, and sequentially.
 
     Args:
         *parameters: The parameters to combine.
@@ -1711,16 +2469,14 @@ class CombinedParameter(Metadatable):
         label: The label of the combined parameter
         unit: The unit of the combined parameter
         aggregator: A function to aggregate the set values into one
-
-    A combined parameter sets all the combined parameters at every point of the
-    sweep.
-    The sets are called in the same order the parameters are, and
-    sequentially.
     """
 
-    def __init__(self, parameters: Sequence[Parameter], name: str,
-                 label: str = None, unit: str=None, units: str=None,
-                 aggregator: Callable=None) -> None:
+    def __init__(self, parameters: Sequence[Parameter],
+                 name: str,
+                 label: Optional[str] = None,
+                 unit: Optional[str] = None,
+                 units: Optional[str] = None,
+                 aggregator: Optional[Callable[..., Any]] = None) -> None:
         super().__init__()
         # TODO(giulioungaretti)temporary hack
         # starthack
@@ -1735,15 +2491,15 @@ class CombinedParameter(Metadatable):
         self.parameter = lambda: None
         # mypy will complain that a callable does not have these attributes
         # but you can still create them here.
-        self.parameter.full_name = name  # type: ignore
-        self.parameter.name = name  # type: ignore
-        self.parameter.label = label  # type: ignore
+        self.parameter.full_name = name  # type: ignore[attr-defined]
+        self.parameter.name = name  # type: ignore[attr-defined]
+        self.parameter.label = label  # type: ignore[attr-defined]
 
         if units is not None:
             warn_units('CombinedParameter', self)
             if unit is None:
                 unit = units
-        self.parameter.unit = unit  # type: ignore
+        self.parameter.unit = unit  # type: ignore[attr-defined]
         self.setpoints: List[Any] = []
         # endhack
         self.parameters = parameters
@@ -1754,15 +2510,15 @@ class CombinedParameter(Metadatable):
             self.f = aggregator
             setattr(self, 'aggregate', self._aggregate)
 
-    def set(self, index: int):
+    def set(self, index: int) -> List[Any]:
         """
         Set multiple parameters.
 
         Args:
-            index (int): the index of the setpoints one wants to set
+            index: the index of the setpoints one wants to set
 
         Returns:
-            list: values that where actually set
+            list of values that where actually set
         """
         values = self.setpoints[index]
         for setFunction, value in zip(self.sets, values):
@@ -1774,7 +2530,7 @@ class CombinedParameter(Metadatable):
         Creates a new combined parameter to be iterated over.
         One can sweep over either:
 
-         - n array of lenght m
+         - n array of length m
          - one nxm array
 
         where n is the number of combined parameters
@@ -1788,7 +2544,7 @@ class CombinedParameter(Metadatable):
         """
         # if it's a list of arrays, convert to one array
         if len(array) > 1:
-            dim = set([len(a) for a in array])
+            dim = {len(a) for a in array}
             if len(dim) != 1:
                 raise ValueError('Arrays have different number of setpoints')
             nparray = numpy.array(array).transpose()
@@ -1813,69 +2569,89 @@ class CombinedParameter(Metadatable):
         new.setpoints = nparray.tolist()
         return new
 
-    def _aggregate(self, *vals):
+    def _aggregate(self, *vals: Any) -> Any:
         # check f args
         return self.f(*vals)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[int]:
         return iter(range(len(self.setpoints)))
 
-    def __len__(self):
+    def __len__(self) -> int:
         # dimension of the sweep_values
         # i.e. how many setpoint
         return numpy.shape(self.setpoints)[0]
 
-    def snapshot_base(self, update=False):
+    def snapshot_base(self, update: Optional[bool] = False,
+                      params_to_skip_update: Optional[Sequence[str]] = None
+                      ) -> Dict[Any, Any]:
         """
-        State of the combined parameter as a JSON-compatible dict (everything that
-        the custom JSON encoder class :class:`qcodes.utils.helpers.NumpyJSONEncoder`
-        supports).
+        State of the combined parameter as a JSON-compatible dict (everything
+        that the custom JSON encoder class
+        :class:`qcodes.utils.helpers.NumpyJSONEncoder` supports).
 
         Args:
             update: ``True`` or ``False``.
+            params_to_skip_update: Unused in this subclass.
 
         Returns:
             dict: Base snapshot.
         """
-        meta_data = collections.OrderedDict()
+        meta_data: Dict[str, Any] = collections.OrderedDict()
         meta_data['__class__'] = full_class(self)
-        meta_data['unit'] = self.parameter.unit
-        meta_data['label'] = self.parameter.label
-        meta_data['full_name'] = self.parameter.full_name
+        param = self.parameter
+        meta_data['unit'] = param.unit  # type: ignore[attr-defined]
+        meta_data['label'] = param.label  # type: ignore[attr-defined]
+        meta_data['full_name'] = param.full_name  # type: ignore[attr-defined]
         meta_data['aggregator'] = repr(getattr(self, 'f', None))
-        for param in self.parameters:
-            meta_data[str(param)] = param.snapshot()
+        for parameter in self.parameters:
+            meta_data[str(parameter)] = parameter.snapshot()
 
         return meta_data
 
 
 class InstrumentRefParameter(Parameter):
     """
-    An InstrumentRefParameter
-
-    Args:
-        name (str): The name of the parameter that one wants to add.
-
-        instrument (Optional[Instrument]): The "parent" instrument this
-            parameter is attached to, if any.
-
-        initial_value (Optional[str]): Starting value, may be None even if
-            None does not pass the validator. None is only allowed as an
-            initial value and cannot be set after initiation.
-
-        **kwargs: Passed to InstrumentRefParameter parent class
+    An instrument reference parameter.
 
     This parameter is useful when one needs a reference to another instrument
     from within an instrument, e.g., when creating a meta instrument that
     sets parameters on instruments it contains.
+
+    Args:
+        name: The name of the parameter that one wants to add.
+
+        instrument: The "parent" instrument this
+            parameter is attached to, if any.
+
+        initial_value: Starting value, may be None even if None does not
+            pass the validator. None is only allowed as an initial value
+            and cannot be set after initiation.
+
+        **kwargs: Passed to InstrumentRefParameter parent class
     """
 
-    def __init__(self, *args, **kwargs):
-        kwargs['vals'] = kwargs.get('vals', Strings())
-        super().__init__(set_cmd=None, *args, **kwargs)
+    def __init__(self, name: str,
+                 instrument: Optional['InstrumentBase'] = None,
+                 label: Optional[str] = None,
+                 unit: Optional[str] = None,
+                 get_cmd: Optional[Union[str, Callable[..., Any], bool]] = None,
+                 set_cmd: Optional[Union[str, Callable[..., Any], bool]] = None,
+                 initial_value: Optional[Union[float, str]] = None,
+                 max_val_age: Optional[float] = None,
+                 vals: Optional[Validator[Any]] = None,
+                 docstring: Optional[str] = None,
+                 **kwargs: Any) -> None:
+        if vals is None:
+            vals = Strings()
+        if set_cmd is not None:
+            raise RuntimeError("InstrumentRefParameter does not support "
+                               "set_cmd.")
+        super().__init__(name, instrument, label, unit, get_cmd, set_cmd,
+                         initial_value, max_val_age, vals, docstring,
+                         **kwargs)
 
     # TODO(nulinspiratie) check class works now it's subclassed from Parameter
-    def get_instr(self):
+    def get_instr(self) -> 'InstrumentBase':
         """
         Returns the instance of the instrument with the name equal to the
         value of this parameter.
@@ -1884,27 +2660,17 @@ class InstrumentRefParameter(Parameter):
         # note that _instrument refers to the instrument this parameter belongs
         # to, while the ref_instrument_name is the instrument that is the value
         # of this parameter.
+        if self._instrument is None:
+            raise RuntimeError("InstrumentRefParameter is not bound to "
+                               "an instrument.")
         return self._instrument.find_instrument(ref_instrument_name)
 
 
-# Deprecated parameters
-class StandardParameter(Parameter):
-    def __init__(self, name, instrument=None,
-                 get_cmd=False, get_parser=None,
-                 set_cmd=False, set_parser=None,
-                 delay=0, max_delay=None, step=None, max_val_age=3600,
-                 vals=None, val_mapping=None, **kwargs):
-        super().__init__(name, instrument=instrument,
-                         get_cmd=get_cmd, get_parser=get_parser,
-                         set_cmd=set_cmd, set_parser=set_parser,
-                         post_delay=delay, step=step, max_val_age=max_val_age,
-                         vals=vals, val_mapping=val_mapping, **kwargs)
-        warnings.warn('`StandardParameter` is deprecated, '
-                        'use `Parameter` instead. {}'.format(self))
-
-
 class ManualParameter(Parameter):
-    def __init__(self, name, instrument=None, initial_value=None, **kwargs):
+    def __init__(self, name: str,
+                 instrument: Optional['InstrumentBase'] = None,
+                 initial_value: Any = None,
+                 **kwargs: Any):
         """
         A simple alias for a parameter that does not have a set or
         a get function. Useful for parameters that do not have a direct
@@ -1938,7 +2704,8 @@ class ScaledParameter(Parameter):
         >>> vb = ScaledParameter(dac.chan0, gain = 30, name = 'Vb')
 
         Transimpedance amplifier
-        >>> Id = ScaledParameter(multimeter.amplitude, division = 1e6, name = 'Id', unit = 'A')
+        >>> Id = ScaledParameter(multimeter.amplitude,
+        ...                      division = 1e6, name = 'Id', unit = 'A')
 
     Args:
         output: Physical Parameter that need conversion.
@@ -1959,16 +2726,11 @@ class ScaledParameter(Parameter):
 
     def __init__(self,
                  output: Parameter,
-                 division: Union[int, float, Parameter] = None,
-                 gain: Union[int, float, Parameter] = None,
-                 name: str=None,
-                 label: str=None,
-                 unit: str=None) -> None:
-        # Set the name
-        if name:
-            self.name = name
-        else:
-            self.name = "{}_scaled".format(output.name)
+                 division: Optional[Union[float, Parameter]] = None,
+                 gain: Optional[Union[float, Parameter]] = None,
+                 name: Optional[str] = None,
+                 label: Optional[str] = None,
+                 unit: Optional[str] = None) -> None:
 
         # Set label
         if label:
@@ -1976,7 +2738,11 @@ class ScaledParameter(Parameter):
         elif name:
             self.label = name
         else:
-            self.label = "{}_scaled".format(output.label)
+            self.label = f"{output.label}_scaled"
+
+        # Set the name
+        if not name:
+            name = f"{output.name}_scaled"
 
         # Set the unit
         if unit:
@@ -1985,7 +2751,7 @@ class ScaledParameter(Parameter):
             self.unit = output.unit
 
         super().__init__(
-            name=self.name,
+            name=name,
             label=self.label,
             unit=self.unit
             )
@@ -2001,12 +2767,17 @@ class ScaledParameter(Parameter):
         if not xor(is_divider, is_amplifier):
             raise ValueError('Provide only division OR gain')
 
-        if is_divider:
+        if division is not None:
             self.role = ScaledParameter.Role.DIVISION
-            self._multiplier = division
-        elif is_amplifier:
+            # Unfortunately mypy does not support
+            # properties where the setter has different types than
+            # the actual property. We use that here to cast different inputs
+            # to the same type.
+            # https://github.com/python/mypy/issues/3004
+            self._multiplier = division  # type: ignore[assignment]
+        elif gain is not None:
             self.role = ScaledParameter.Role.GAIN
-            self._multiplier = gain
+            self._multiplier = gain  # type: ignore[assignment]
 
         # extend metadata
         self._meta_attrs.extend(["division"])
@@ -2014,19 +2785,24 @@ class ScaledParameter(Parameter):
         self._meta_attrs.extend(["role"])
         self.metadata['wrapped_parameter'] = self._wrapped_parameter.name
         if self._wrapped_instrument:
-            self.metadata['wrapped_instrument'] = getattr(self._wrapped_instrument, "name", None)
+            wrapped_instr_name = getattr(self._wrapped_instrument, "name", None)
+            self.metadata['wrapped_instrument'] = wrapped_instr_name
 
     # Internal handling of the multiplier
     # can be either a Parameter or a scalar
     @property
-    def _multiplier(self):
+    def _multiplier(self) -> Parameter:
+        if self._multiplier_parameter is None:
+            raise RuntimeError("Cannot get multiplier when multiplier "
+                               "parameter in unknown.")
         return self._multiplier_parameter
 
     @_multiplier.setter
-    def _multiplier(self, multiplier: Union[int, float, Parameter]):
+    def _multiplier(self, multiplier: Union[float, Parameter]) -> None:
         if isinstance(multiplier, Parameter):
             self._multiplier_parameter = multiplier
-            self.metadata['variable_multiplier'] = self._multiplier_parameter.name
+            multiplier_name = self._multiplier_parameter.name
+            self.metadata['variable_multiplier'] = multiplier_name
         else:
             self._multiplier_parameter = ManualParameter(
                 'multiplier', initial_value=multiplier)
@@ -2034,42 +2810,49 @@ class ScaledParameter(Parameter):
 
     # Division of the scaler
     @property
-    def division(self):
+    def division(self) -> float:  # type: ignore[return]
+        value = cast(float, self._multiplier())
         if self.role == ScaledParameter.Role.DIVISION:
-            return self._multiplier()
+            return value
         elif self.role == ScaledParameter.Role.GAIN:
-            return 1 / self._multiplier()
+            return 1 / value
 
     @division.setter
-    def division(self, division: Union[int, float, Parameter]):
+    def division(self, division: Union[float, Parameter]) -> None:
         self.role = ScaledParameter.Role.DIVISION
-        self._multiplier = division
+        self._multiplier = division  # type: ignore[assignment]
 
     # Gain of the scaler
     @property
-    def gain(self):
+    def gain(self) -> float:   # type: ignore[return]
+        value = cast(float, self._multiplier())
         if self.role == ScaledParameter.Role.GAIN:
-            return self._multiplier()
+            return value
         elif self.role == ScaledParameter.Role.DIVISION:
-            return 1 / self._multiplier()
+            return 1 / value
 
     @gain.setter
-    def gain(self, gain: Union[int, float, Parameter]):
+    def gain(self, gain: Union[float, Parameter]) -> None:
         self.role = ScaledParameter.Role.GAIN
-        self._multiplier = gain
+        self._multiplier = gain  # type: ignore[assignment]
 
     # Getter and setter for the real value
-    def get_raw(self) -> Union[int, float]:
+    def get_raw(self) -> float:
         """
         Returns:
             value at which was set at the sample
         """
-        if self.role == ScaledParameter.Role.GAIN:
-            value = self._wrapped_parameter() * self._multiplier()
-        elif self.role == ScaledParameter.Role.DIVISION:
-            value = self._wrapped_parameter() / self._multiplier()
+        wrapped_value = cast(float, self._wrapped_parameter())
+        multiplier = cast(float, self._multiplier())
 
-        self._save_val(value)
+        if self.role == ScaledParameter.Role.GAIN:
+            value = wrapped_value * multiplier
+        elif self.role == ScaledParameter.Role.DIVISION:
+            value = wrapped_value / multiplier
+        else:
+            raise RuntimeError(f"ScaledParameter must be either a"
+                               f"Multiplier or Divisor; got {self.role}")
+
         return value
 
     @property
@@ -2079,7 +2862,7 @@ class ScaledParameter(Parameter):
         """
         return self._wrapped_parameter
 
-    def get_wrapped_parameter_value(self) -> Union[int, float]:
+    def get_wrapped_parameter_value(self) -> float:
         """
         Returns:
             value at which the attached parameter is (i.e. does
@@ -2087,24 +2870,25 @@ class ScaledParameter(Parameter):
         """
         return self._wrapped_parameter.get()
 
-    def set_raw(self, value: Union[int, float]) -> None:
+    def set_raw(self, value: float) -> None:
         """
         Set the value on the wrapped parameter, accounting for the scaling
         """
+        multiplier_value = cast(float, self._multiplier())
         if self.role == ScaledParameter.Role.GAIN:
-            instrument_value = value / self._multiplier()
+            instrument_value = value / multiplier_value
         elif self.role == ScaledParameter.Role.DIVISION:
-            instrument_value = value * self._multiplier()
+            instrument_value = value * multiplier_value
+        else:
+            raise RuntimeError(f"ScaledParameter must be either a"
+                               f"Multiplier or Divisor; got {self.role}")
 
-        # don't leak unknow type
-        instrument_value = cast(Union[int, float], instrument_value)
-
-        self._save_val(value)
         self._wrapped_parameter.set(instrument_value)
 
 
-def expand_setpoints_helper(parameter: ParameterWithSetpoints) -> List[
-        Tuple[_BaseParameter, numpy.ndarray]]:
+def expand_setpoints_helper(parameter: ParameterWithSetpoints,
+                            results: Optional[ParamDataType] = None) -> List[
+        Tuple[_BaseParameter, ParamDataType]]:
     """
     A helper function that takes a :class:`.ParameterWithSetpoints` and
     acquires the parameter along with it's setpoints. The data is returned
@@ -2112,7 +2896,9 @@ def expand_setpoints_helper(parameter: ParameterWithSetpoints) -> List[
 
     Args:
         parameter: A :class:`.ParameterWithSetpoints` to be acquired and
-        expanded
+            expanded
+        results: The data for the given parameter. Typically the output of
+            `parameter.get()`. If None this function will call `parameter.get`
 
     Returns:
         A list of tuples of parameters and values for the specified parameter
@@ -2132,5 +2918,9 @@ def expand_setpoints_helper(parameter: ParameterWithSetpoints) -> List[
     output_grids = numpy.meshgrid(*setpoint_data, indexing='ij')
     for param, grid in zip(setpoint_params, output_grids):
         res.append((param, grid))
-    res.append((parameter, parameter.get()))
+    if results is None:
+        data = parameter.get()
+    else:
+        data = results
+    res.append((parameter, data))
     return res

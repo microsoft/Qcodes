@@ -1,8 +1,5 @@
 import pytest
 
-# pylint: disable=unused-import
-from qcodes.tests.dataset.temporary_databases import dataset, experiment, \
-    empty_temp_db
 from qcodes.tests.common import error_caused_by
 
 
@@ -13,6 +10,6 @@ def test_get_metadata_from_dataset(dataset):
 
 
 def test_get_nonexisting_metadata(dataset):
-    with pytest.raises(RuntimeError) as excinfo:
-        _ = dataset.get_metadata('something')
-    assert error_caused_by(excinfo, "no such column: something")
+
+    data = dataset.get_metadata("something")
+    assert data is None

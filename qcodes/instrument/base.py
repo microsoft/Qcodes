@@ -1,23 +1,39 @@
 """Instrument base class."""
+import logging
 import time
 import warnings
 import weakref
-import logging
-from abc import ABC
-from typing import Sequence, Optional, Dict, Union, Callable, Any, List, \
-    TYPE_CHECKING, cast, Type
-
+from abc import ABC, ABCMeta, abstractmethod
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 
 import numpy as np
+
+from qcodes.logger.instrument_logger import get_instrument_logger
+from qcodes.utils.helpers import DelegateAttributes, full_class, strip_attrs
+from qcodes.utils.metadata import Metadatable
+from qcodes.utils.validators import Anything
+
+from .function import Function
+from .parameter import Parameter, _BaseParameter
+
 if TYPE_CHECKING:
     from qcodes.instrument.channel import ChannelList
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
-from qcodes.utils.helpers import DelegateAttributes, strip_attrs, full_class
-from qcodes.utils.metadata import Metadatable
-from qcodes.utils.validators import Anything
-from qcodes.logger.instrument_logger import get_instrument_logger
-from .parameter import Parameter, _BaseParameter
-from .function import Function
+
+from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 log = logging.getLogger(__name__)
 
@@ -31,40 +47,50 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             attaching it to a Station.
         metadata: additional static metadata to add to this
             instrument's JSON snapshot.
-
-
-    Attributes:
-        name (str): An identifier for this instrument, particularly for
-            attaching it to a Station.
-
-        parameters (Dict[Parameter]): All the parameters supported by this
-            instrument. Usually populated via ``add_parameter``.
-
-        functions (Dict[Function]): All the functions supported by this
-            instrument. Usually populated via ``add_function``.
-        submodules (Dict[Metadatable]): All the submodules of this instrument
-            such as channel lists or logical groupings of parameters.
-            Usually populated via ``add_submodule``.
     """
 
-    def __init__(self, name: str,
-                 metadata: Optional[Dict]=None, **kwargs) -> None:
-        self.name = str(name)
-        self.short_name = str(name)
+    def __init__(self, name: str, metadata: Optional[Mapping[Any, Any]] = None) -> None:
+        self._name = str(name)
+        self._short_name = str(name)
 
         self.parameters: Dict[str, _BaseParameter] = {}
+        """
+        All the parameters supported by this instrument.
+        Usually populated via :py:meth:`add_parameter`.
+        """
         self.functions: Dict[str, Function] = {}
+        """
+        All the functions supported by this
+        instrument. Usually populated via :py:meth:`add_function`.
+        """
         self.submodules: Dict[str, Union['InstrumentBase',
                                          'ChannelList']] = {}
-        super().__init__(**kwargs)
+        """
+        All the submodules of this instrument
+        such as channel lists or logical groupings of parameters.
+        Usually populated via :py:meth:`add_submodule`.
+        """
+
+        super().__init__(metadata)
 
         # This is needed for snapshot method to work
         self._meta_attrs = ['name']
 
         self.log = get_instrument_logger(self, __name__)
 
-    def add_parameter(self, name: str,
-                      parameter_class: type=Parameter, **kwargs) -> None:
+    @property
+    def name(self) -> str:
+        """Name of the instrument"""
+        return self._name
+
+    @property
+    def short_name(self) -> str:
+        """Short name of the instrument"""
+        return self._short_name
+
+    def add_parameter(
+        self, name: str, parameter_class: type = Parameter, **kwargs: Any
+    ) -> None:
         """
         Bind one Parameter to this instrument.
 
@@ -80,20 +106,47 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 shortcut methods: ``instrument.set(param_name, value)`` etc.
 
             parameter_class: You can construct the parameter
-                out of any class. Default ``StandardParameter``.
+                out of any class. Default :class:`.parameter.Parameter`.
 
             **kwargs: Constructor arguments for ``parameter_class``.
 
         Raises:
             KeyError: If this instrument already has a parameter with this
-                name.
-        """
-        if name in self.parameters:
-            raise KeyError('Duplicate parameter name {}'.format(name))
-        param = parameter_class(name=name, instrument=self, **kwargs)
-        self.parameters[name] = param
+                name and the parameter being replaced is not an abstract
+                parameter.
 
-    def add_function(self, name: str, **kwargs) -> None:
+            ValueError: If there is an existing abstract parameter and the
+                unit of the new parameter is inconsistent with the existing
+                one.
+        """
+        if "bind_to_instrument" not in kwargs.keys():
+            kwargs["bind_to_instrument"] = True
+
+        try:
+            param = parameter_class(name=name, instrument=self, **kwargs)
+        except TypeError:
+            kwargs.pop("bind_to_instrument")
+            warnings.warn(
+                f"Parameter {name} on instrument {self.name} does "
+                f"not correctly pass kwargs to its baseclass. A "
+                f"Parameter class must take `**kwargs` and forward "
+                f"them to its baseclass.",
+                QCoDeSDeprecationWarning,
+            )
+            param = parameter_class(name=name, instrument=self, **kwargs)
+
+        existing_parameter = self.parameters.get(name, None)
+        if not existing_parameter:
+            warnings.warn(
+                f"Parameter {name} did not correctly register itself on instrument"
+                f" {self.name}. Please check that `instrument` argument is passed "
+                f"from {parameter_class!r} all the way to `_BaseParameter`. "
+                "This will be an error in the future.",
+                QCoDeSDeprecationWarning,
+            )
+            self.parameters[name] = param
+
+    def add_function(self, name: str, **kwargs: Any) -> None:
         """
         Bind one ``Function`` to this instrument.
 
@@ -117,7 +170,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 name.
         """
         if name in self.functions:
-            raise KeyError('Duplicate function name {}'.format(name))
+            raise KeyError(f'Duplicate function name {name}')
         func = Function(name=name, instrument=self, **kwargs)
         self.functions[name] = func
 
@@ -150,14 +203,14 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 not an instance of an ``Metadatable`` object.
         """
         if name in self.submodules:
-            raise KeyError('Duplicate submodule name {}'.format(name))
+            raise KeyError(f'Duplicate submodule name {name}')
         if not isinstance(submodule, Metadatable):
             raise TypeError('Submodules must be metadatable.')
         self.submodules[name] = submodule
 
-    def snapshot_base(self, update: bool=False,
+    def snapshot_base(self, update: Optional[bool] = False,
                       params_to_skip_update: Optional[Sequence[str]] = None
-                      ) -> Dict:
+                      ) -> Dict[Any, Any]:
         """
         State of the instrument as a JSON-compatible dict (everything that
         the custom JSON encoder class
@@ -166,7 +219,9 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
         Args:
             update: If ``True``, update the state by querying the
-                instrument. If ``False``, just use the latest values in memory.
+                instrument. If None update the state if known to be invalid.
+                If ``False``, just use the latest values in memory and never
+                update state.
             params_to_skip_update: List of parameter names that will be skipped
                 in update even if update is True. This is useful if you have
                 parameters that are slow to update but can be updated in a
@@ -181,31 +236,29 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         if params_to_skip_update is None:
             params_to_skip_update = []
 
-        snap = {
+        snap: Dict[str, Any] = {
             "functions": {name: func.snapshot(update=update)
                           for name, func in self.functions.items()},
             "submodules": {name: subm.snapshot(update=update)
                            for name, subm in self.submodules.items()},
+            "parameters": {},
             "__class__": full_class(self)
         }
 
-        snap['parameters'] = {}
         for name, param in self.parameters.items():
             if param.snapshot_exclude:
                 continue
             if params_to_skip_update and name in params_to_skip_update:
-                update_par = False
+                update_par: Optional[bool] = False
             else:
                 update_par = update
-
             try:
                 snap['parameters'][name] = param.snapshot(update=update_par)
             except:
                 # really log this twice. Once verbose for the UI and once
                 # at lower level with more info for file based loggers
-                self.log.warning(f"Snapshot: Could not update "
-                                 f"parameter: {name}")
-                self.log.info(f"Details for Snapshot:", exc_info=True)
+                self.log.warning("Snapshot: Could not update parameter: %s", name)
+                self.log.info("Details for Snapshot:", exc_info=True)
                 snap['parameters'][name] = param.snapshot(update=False)
 
         for attr in set(self._meta_attrs):
@@ -213,8 +266,8 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 snap[attr] = getattr(self, attr)
         return snap
 
-    def print_readable_snapshot(self, update: bool=False,
-                                max_chars: int=80) -> None:
+    def print_readable_snapshot(self, update: bool = False,
+                                max_chars: int = 80) -> None:
         """
         Prints a readable version of the snapshot.
         The readable snapshot includes the name, value and unit of each
@@ -256,27 +309,23 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 # this may be a multi parameter
                 unit = snapshot['parameters'][par].get('units', None)
             if isinstance(val, floating_types):
-                msg += '\t{:.5g} '.format(val)
+                msg += f'\t{val:.5g} '
+                # numpy float and int types format like builtins
             else:
-                msg += '\t{} '.format(val)
-            if unit is not '':  # corresponds to no unit
-                msg += '({})'.format(unit)
+                msg += f'\t{val} '
+            if unit != '':  # corresponds to no unit
+                msg += f'({unit})'
             # Truncate the message if it is longer than max length
             if len(msg) > max_chars and not max_chars == -1:
                 msg = msg[0:max_chars-3] + '...'
             print(msg)
 
         for submodule in self.submodules.values():
-            if hasattr(submodule, '_channels'):
-                submodule = cast('ChannelList', submodule)
-                if submodule._snapshotable:
-                    for channel in submodule._channels:
-                        channel.print_readable_snapshot()
-            else:
-                submodule.print_readable_snapshot(update, max_chars)
+            submodule.print_readable_snapshot(update=update,
+                                              max_chars=max_chars)
 
     @property
-    def parent(self):
+    def parent(self) -> Optional['InstrumentBase']:
         """
         Returns the parent instrument. By default this is ``None``.
         Any SubInstrument should subclass this to return the parent instrument.
@@ -284,7 +333,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         return None
 
     @property
-    def ancestors(self) -> Optional[List['InstrumentBase']]:
+    def ancestors(self) -> List['InstrumentBase']:
         """
         Returns a list of instruments, starting from the current instrument
         and following to the parent instrument and the parents parent
@@ -305,8 +354,32 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         return name_parts
 
     @property
-    def full_name(self):
+    def full_name(self) -> str:
         return "_".join(self.name_parts)
+
+    def _is_abstract(self) -> bool:
+        """
+        This method is run after the initialization of an instrument but
+        before the instrument is registered. It recursively checks that there are
+        no abstract parameters defined on the instrument or any instrument channels.
+        """
+        is_abstract = False
+        abstract_parameters = [
+            parameter.name
+            for parameter in self.parameters.values()
+            if parameter.abstract
+        ]
+
+        if any(abstract_parameters):
+            is_abstract = True
+        for submodule in self.submodules.values():
+            # channellists do not implement raise_if_abstract
+            submodule_is_abstract = getattr(submodule, "_is_abstract", None)
+            if submodule_is_abstract is not None:
+                if submodule_is_abstract():
+                    is_abstract = True
+        return is_abstract
+
     #
     # shortcuts to parameters & setters & getters                           #
     #
@@ -317,7 +390,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
     #
     delegate_attr_dicts = ['parameters', 'functions', 'submodules']
 
-    def __getitem__(self, key: str) -> Union[Callable, Parameter]:
+    def __getitem__(self, key: str) -> Union[Callable[..., Any], Parameter]:
         """Delegate instrument['name'] to parameter or function 'name'."""
         try:
             return self.parameters[key]
@@ -346,7 +419,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         """
         return self.parameters[param_name].get()
 
-    def call(self, func_name: str, *args) -> Any:
+    def call(self, func_name: str, *args: Any) -> Any:
         """
         Shortcut for calling a function from its name.
 
@@ -359,16 +432,13 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         """
         return self.functions[func_name].call(*args)
 
-    def __getstate__(self):
+    def __getstate__(self) -> None:
         """Prevent pickling instruments, and give a nice error message."""
         raise RuntimeError(
-            'Pickling {}. qcodes Instruments should not.'.format(self.name) +
-            ' be pickled. Likely this means you '
-            'were trying to use a local instrument (defined with '
-            'server_name=None) in a background Loop. Local instruments can '
-            'only be used in Loops with background=False.')
+            f'Error when pickling instrument {self.name}. '
+            f'QCoDeS instruments can not be pickled.')
 
-    def validate_status(self, verbose: bool=False) -> None:
+    def validate_status(self, verbose: bool = False) -> None:
         """ Validate the values of all gettable parameters
 
         The validation is done for all parameters that have both a get and
@@ -380,19 +450,61 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
         """
         for k, p in self.parameters.items():
-            if hasattr(p, 'get') and hasattr(p, 'set'):
+            if p.gettable and p.settable:
                 value = p.get()
                 if verbose:
-                    print('validate_status: param %s: %s' % (k, value))
+                    print(f'validate_status: param {k}: {value}')
                 p.validate(value)
 
 
-class AbstractInstrument(ABC):
+class AbstractInstrumentMeta(ABCMeta):
+    """
+    Metaclass used to customize Instrument creation. We want to register the
+    instance iff __init__ successfully runs, however we can only do this if
+    we customize the instance initialization process, otherwise there is no
+    way to run `register_instance` after `__init__` but before the created
+    instance is returned to the caller.
+
+    Instead we use the fact that `__new__` and `__init__` are called inside
+    `type.__call__`
+    (https://github.com/python/cpython/blob/main/Objects/typeobject.c#L1077,
+    https://github.com/python/typeshed/blob/master/stdlib/builtins.pyi#L156)
+    which we will overload to insert our own custom code AFTER `__init__` is
+    complete. Note this is part of the spec and will work in alternate python
+    implementations like pypy too.
+
+    Note: Because we want AbstractInstrument to subclass ABC, we subclass
+    `ABCMeta` instead of `type`.
+    """
+
+    def __call__(cls, *args: Any, **kwargs: Any) -> Any:
+        """
+        Overloads `type.__call__` to add code that runs only if __init__ completes
+        successfully.
+        """
+        new_inst = super().__call__(*args, **kwargs)
+        is_abstract = new_inst._is_abstract()
+        if is_abstract:
+            new_inst.close()
+            raise NotImplementedError(
+                f"{new_inst} has un-implemented Abstract Parameter "
+                f"and cannot be initialized"
+            )
+
+        new_inst.record_instance(new_inst)
+        return new_inst
+
+
+class AbstractInstrument(ABC, metaclass=AbstractInstrumentMeta):
     """ABC that is useful for defining mixin classes for Instrument class"""
     log: 'InstrumentLoggerAdapter'  # instrument logging
 
+    @abstractmethod
     def ask(self, cmd: str) -> str:
         pass
+
+
+T = TypeVar("T", bound="Instrument")
 
 
 class Instrument(InstrumentBase, AbstractInstrument):
@@ -406,40 +518,28 @@ class Instrument(InstrumentBase, AbstractInstrument):
         metadata: additional static metadata to add to this
             instrument's JSON snapshot.
 
-
-    Attributes:
-        name (str): an identifier for this instrument, particularly for
-            attaching it to a Station.
-
-        parameters (Dict[Parameter]): All the parameters supported by this
-            instrument. Usually populated via ``add_parameter``
-
-        functions (Dict[Function]): All the functions supported by this
-            instrument. Usually populated via ``add_function``
-
-        submodules (Dict[Metadatable]): All the submodules of this instrument
-            such as channel lists or logical groupings of parameters.
-            Usually populated via ``add_submodule``
     """
 
     shared_kwargs = ()
 
-    _all_instruments: Dict[str, weakref.ref] = {}
+    _all_instruments: "weakref.WeakValueDictionary[str, Instrument]" = (
+        weakref.WeakValueDictionary()
+    )
     _type = None
-    _instances: List[weakref.ref] = []
+    _instances: "weakref.WeakSet[Instrument]" = weakref.WeakSet()
 
-    def __init__(self, name: str,
-                 metadata: Optional[Dict]=None, **kwargs) -> None:
+    def __init__(
+            self,
+            name: str,
+            metadata: Optional[Mapping[Any, Any]] = None
+    ) -> None:
+
         self._t0 = time.time()
-        if kwargs.pop('server_name', False):
-            warnings.warn("server_name argument not supported any more",
-                          stacklevel=0)
-        super().__init__(name, **kwargs)
+
+        super().__init__(name, metadata)
 
         self.add_parameter('IDN', get_cmd=self.get_idn,
                            vals=Anything())
-
-        self.record_instance(self)
 
     def get_idn(self) -> Dict[str, Optional[str]]:
         """
@@ -458,12 +558,12 @@ class Instrument(InstrumentBase, AbstractInstrument):
         Returns:
             A dict containing vendor, model, serial, and firmware.
         """
+        idstr = ''  # in case self.ask fails
         try:
-            idstr = ''  # in case self.ask fails
             idstr = self.ask('*IDN?')
             # form is supposed to be comma-separated, but we've seen
             # other separators occasionally
-            idparts: List[Optional[str]] = []
+            idparts: List[Optional[str]]
             for separator in ',;:':
                 # split into no more than 4 parts, so we don't lose info
                 idparts = [p.strip() for p in idstr.split(separator, 3)]
@@ -474,7 +574,7 @@ class Instrument(InstrumentBase, AbstractInstrument):
                 idparts += [None] * (4 - len(idparts))
         except:
             self.log.debug('Error getting or interpreting *IDN?: '
-                      + repr(idstr))
+                           + repr(idstr))
             idparts = [None, self.name, None, None]
 
         # some strings include the word 'model' at the front of model
@@ -483,8 +583,8 @@ class Instrument(InstrumentBase, AbstractInstrument):
 
         return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
 
-    def connect_message(self, idn_param: str='IDN',
-                        begin_time: float=None) -> None:
+    def connect_message(self, idn_param: str = 'IDN',
+                        begin_time: Optional[float] = None) -> None:
         """
         Print a standard message on initial connection to an instrument.
 
@@ -507,18 +607,15 @@ class Instrument(InstrumentBase, AbstractInstrument):
         print(con_msg)
         self.log.info(f"Connected to instrument: {idn}")
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Simplified repr giving just the class and name."""
-        return '<{}: {}>'.format(type(self).__name__, self.name)
+        return f"<{type(self).__name__}: {self.name}>"
 
-    def __del__(self):
+    def __del__(self) -> None:
         """Close the instrument and remove its instance record."""
         try:
-            wr = weakref.ref(self)
-            if wr in getattr(self, '_instances', []):
-                self._instances.remove(wr)
             self.close()
-        except:
+        except BaseException:
             pass
 
     def close(self) -> None:
@@ -531,7 +628,7 @@ class Instrument(InstrumentBase, AbstractInstrument):
         if hasattr(self, 'connection') and hasattr(self.connection, 'close'):
             self.connection.close()
 
-        strip_attrs(self, whitelist=['name'])
+        strip_attrs(self, whitelist=['_name'])
         self.remove_instance(self)
 
     @classmethod
@@ -548,12 +645,11 @@ class Instrument(InstrumentBase, AbstractInstrument):
         log.info("Closing all registered instruments")
         for inststr in list(cls._all_instruments):
             try:
-                inst = cls.find_instrument(inststr)
-                log.info(f"Closing {inststr}")
+                inst: "Instrument" = cls.find_instrument(inststr)
+                log.info("Closing %s", inststr)
                 inst.close()
             except:
-                log.exception(f"Failed to close {inststr}, ignored")
-                pass
+                log.exception("Failed to close %s, ignored", inststr)
 
     @classmethod
     def record_instance(cls, instance: 'Instrument') -> None:
@@ -563,28 +659,29 @@ class Instrument(InstrumentBase, AbstractInstrument):
         Also records the instance in list of *all* instruments, and verifies
         that there are no other instruments with the same name.
 
+        This method is called after initialization of the instrument is completed.
+
         Args:
             instance: Instance to record.
 
         Raises:
             KeyError: If another instance with the same name is already present.
         """
-        wr = weakref.ref(instance)
         name = instance.name
         # First insert this instrument in the record of *all* instruments
         # making sure its name is unique
-        existing_wr = cls._all_instruments.get(name)
-        if existing_wr and existing_wr():
-            raise KeyError('Another instrument has the name: {}'.format(name))
+        existing_instr = cls._all_instruments.get(name)
+        if existing_instr:
+            raise KeyError(f'Another instrument has the name: {name}')
 
-        cls._all_instruments[name] = wr
+        cls._all_instruments[name] = instance
 
         # Then add it to the record for this specific subclass, using ``_type``
         # to make sure we're not recording it in a base class instance list
         if getattr(cls, '_type', None) is not cls:
             cls._type = cls
-            cls._instances = []
-        cls._instances.append(wr)
+            cls._instances = weakref.WeakSet()
+        cls._instances.add(instance)
 
     @classmethod
     def instances(cls) -> List['Instrument']:
@@ -601,7 +698,7 @@ class Instrument(InstrumentBase, AbstractInstrument):
             # only instances of a superclass - we want instances of this
             # exact class only
             return []
-        return [wr() for wr in getattr(cls, '_instances', []) if wr()]
+        return list(getattr(cls, "_instances", weakref.WeakSet()))
 
     @classmethod
     def remove_instance(cls, instance: 'Instrument') -> None:
@@ -611,20 +708,20 @@ class Instrument(InstrumentBase, AbstractInstrument):
         Args:
             instance: The instance to remove
         """
-        wr = weakref.ref(instance)
-        if wr in getattr(cls, "_instances", []):
-            cls._instances.remove(wr)
+        if instance in getattr(cls, "_instances", weakref.WeakSet()):
+            cls._instances.remove(instance)
 
         # remove from all_instruments too, but don't depend on the
         # name to do it, in case name has changed or been deleted
         all_ins = cls._all_instruments
         for name, ref in list(all_ins.items()):
-            if ref is wr:
+            if ref is instance:
                 del all_ins[name]
 
     @classmethod
-    def find_instrument(cls, name: str,
-                        instrument_class: Optional[type]=None) -> 'Instrument':
+    def find_instrument(
+        cls, name: str, instrument_class: Optional[Type[T]] = None
+    ) -> T:
         """
         Find an existing instrument by name.
 
@@ -633,7 +730,7 @@ class Instrument(InstrumentBase, AbstractInstrument):
             instrument_class: The type of instrument you are looking for.
 
         Returns:
-            Union[Instrument]
+            The instrument found.
 
         Raises:
             KeyError: If no instrument of that name was found, or if its
@@ -641,21 +738,28 @@ class Instrument(InstrumentBase, AbstractInstrument):
             TypeError: If a specific class was requested but a different
                 type was found.
         """
-        ins = cls._all_instruments[name]()
+        internal_instrument_class = instrument_class or Instrument
 
+        if name not in cls._all_instruments:
+            raise KeyError(f"Instrument with name {name} does not exist")
+        ins = cls._all_instruments[name]
         if ins is None:
             del cls._all_instruments[name]
-            raise KeyError('Instrument {} has been removed'.format(name))
-        if instrument_class is not None:
-            if not isinstance(ins, instrument_class):
-                raise TypeError(
-                    'Instrument {} is {} but {} was requested'.format(
-                        name, type(ins), instrument_class))
+            raise KeyError(f'Instrument {name} has been removed')
 
-        return cast('Instrument', ins)
+        if not isinstance(ins, internal_instrument_class):
+            raise TypeError(
+                f"Instrument {name} is {type(ins)} but "
+                f"{internal_instrument_class} was requested"
+            )
+        # at this stage we have checked that the instrument is either of
+        # type instrument_class or Instrument if that is None. It is
+        # therefore safe to cast here.
+        ins = cast(T, ins)
+        return ins
 
     @staticmethod
-    def exist(name: str, instrument_class: Optional[type]=None) -> bool:
+    def exist(name: str, instrument_class: Optional[type] = None) -> bool:
         """
         Check if an instrument with a given names exists (i.e. is already
         instantiated).
@@ -738,8 +842,8 @@ class Instrument(InstrumentBase, AbstractInstrument):
             cmd: The string to send to the instrument.
         """
         raise NotImplementedError(
-            'Instrument {} has not defined a write method'.format(
-                type(self).__name__))
+            f"Instrument {type(self).__name__} has not defined a write method"
+        )
 
     def ask(self, cmd: str) -> str:
         """
@@ -781,16 +885,17 @@ class Instrument(InstrumentBase, AbstractInstrument):
             cmd: The string to send to the instrument.
         """
         raise NotImplementedError(
-            'Instrument {} has not defined an ask method'.format(
-                type(self).__name__))
+            f"Instrument {type(self).__name__} has not defined an ask method"
+        )
 
 
-def find_or_create_instrument(instrument_class: Type[Instrument],
-                              name: str,
-                              *args,
-                              recreate: bool=False,
-                              **kwargs
-                              ) -> Instrument:
+def find_or_create_instrument(
+    instrument_class: Type[T],
+    name: str,
+    *args: Any,
+    recreate: bool = False,
+    **kwargs: Any,
+) -> T:
     """
     Find an instrument with the given name of a given class, or create one if
     it is not found. In case the instrument was found, and `recreate` is True,

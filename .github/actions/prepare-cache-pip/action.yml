@@ -1,0 +1,17 @@
+name: "prepare-cache-pip"
+description: "Prepare setup cache of pip wheels"
+outputs:
+  cache-dir:
+    description: "Pip cache dir"
+    value: ${{ steps.get-pip-cache-dir.outputs.dir }}
+runs:
+  using: "composite"
+  steps:
+    - name: upgrade pip setuptools wheel
+      run: python -m pip install --upgrade pip setuptools wheel
+      shell: bash
+    - name: Get pip cache dir
+      id: get-pip-cache-dir
+      run: |
+        echo "::set-output name=dir::$(pip cache dir)"
+      shell: bash

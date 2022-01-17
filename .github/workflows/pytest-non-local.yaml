@@ -1,0 +1,59 @@
+name: run qcodes.pytest()
+
+on:
+  push:
+    branches:
+      - 'master'
+      - 'release/*'
+      - 'staging'
+      - 'trying'
+    tags:
+      - 'v*'
+  pull_request:
+
+jobs:
+  pytestnonlocal:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.7]
+    env:
+      DISPLAY: ':99.0'
+
+    steps:
+    - uses: actions/checkout@v2.3.4
+      with:
+        submodules: true
+    - name: setup ubuntu-latest xvfb
+      uses: ./.github/actions/setup-ubuntu-latest-xvfb
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2.3.1
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: prepare pip cache
+      id: prepare-cache-pip
+      uses: ./.github/actions/prepare-cache-pip
+    - name: pip cache
+      uses: actions/cache@v2.1.7
+      with:
+        path: ${{ steps.prepare-cache-pip.outputs.cache-dir }}
+        key: ${{ runner.os }}-${{ matrix.python-version }}-pip-${{ hashFiles('**/requirements.txt') }}-${{ hashFiles('**/test_requirements.txt') }}-${{ hashFiles('**/setup.cfg') }}
+        restore-keys: |
+          ${{ runner.os }}-${{ matrix.python-version }}-pip-
+    - name: install requirements.txt
+      run: |
+        pip install -r requirements.txt
+    - name: install test_requirements.txt
+      run: |
+        pip install -r test_requirements.txt
+    - name: install qcodes
+      run: |
+        pip install .
+    - name: Test with pytest
+      run: |
+        cd ..
+        mkdir empty
+        cd empty
+        cp ../Qcodes/pyproject.toml .
+        python -c "import sys; import qcodes; ec = qcodes.test(); sys.exit(ec)"

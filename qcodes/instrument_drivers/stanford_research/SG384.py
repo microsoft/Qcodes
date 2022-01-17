@@ -1,3 +1,5 @@
+from typing import Any
+
 from qcodes import VisaInstrument, validators as vals
 
 
@@ -7,7 +9,8 @@ class SRS_SG384(VisaInstrument):
     Status: beta version
     Includes the essential commands from the manual
     """
-    def __init__(self, name, address, reset=False, **kwargs):
+    def __init__(self, name: str, address: str,
+                 reset: bool = False, **kwargs: Any):
         super().__init__(name, address, terminator='\n', **kwargs)
     # signal synthesis commands
         self.add_parameter(name='frequency',

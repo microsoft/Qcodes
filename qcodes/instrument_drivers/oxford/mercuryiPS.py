@@ -1,15 +1,18 @@
-from functools import partial
+import logging
 import re
 import time
+from functools import partial
+
 import numpy as np
 
 from qcodes import IPInstrument, MultiParameter
-from qcodes.utils.validators import Enum, Bool
-
-import logging
+from qcodes.utils.deprecate import deprecate
+from qcodes.utils.validators import Bool, Enum
 
 log = logging.getLogger(__name__)
 
+
+@deprecate(alternative="MercuryiPS_VISA.MercuryiPS")
 class MercuryiPSArray(MultiParameter):
     """
     This parameter holds the MercuryiPS's 3 dimensional parameters
@@ -17,25 +20,26 @@ class MercuryiPSArray(MultiParameter):
     """
     def __init__(self, name, instrument, names, units, get_cmd, set_cmd, **kwargs):
         shapes = tuple(() for i in names)
-        super().__init__(name, names, shapes, snapshot_value=True, **kwargs)
+        super().__init__(
+            name, names, shapes, snapshot_value=True, instrument=instrument, **kwargs
+        )
         self._get = get_cmd
         self._set = set_cmd
-        self._instrument = instrument
         self.units = units
 
     def get_raw(self):
         try:
             value = self._get()
-            self._save_val(value)
             return value
         except Exception as e:
-            e.args = e.args + ('getting {}'.format(self.full_name),)
+            e.args = e.args + (f'getting {self.full_name}',)
             raise e
 
     def set_raw(self, setpoint):
         return self._set(setpoint)
 
 
+@deprecate(alternative="MercuryiPS_VISA.MercuryiPS")
 class MercuryiPS(IPInstrument):
     """
     This is the qcodes driver for the Oxford MercuryiPS magnet power supply.
@@ -327,7 +331,7 @@ class MercuryiPS(IPInstrument):
         # This has a unit A/T
         self._ATOB = []
         for ax in self.axes:
-            r = self._get_cmd('READ:DEV:GRP{}:PSU:ATOB?'.format(ax), float)
+            r = self._get_cmd(f'READ:DEV:GRP{ax}:PSU:ATOB?', float)
             self._ATOB.append(r)
 
     def _read_cmd(self, cmd, axes, parser=None, fmt=None):
@@ -337,10 +341,10 @@ class MercuryiPS(IPInstrument):
         for axis in axes:
             msglist.append(fmt.format(axis, cmd))
         msg = '\n'.join(msglist)
-        log.info("Writing '{}' to Mercury".format(msg))
+        log.info(f"Writing '{msg}' to Mercury")
         self._send(msg)
         rep = self._recv()
-        log.info("Read '{}' from Mercury".format(rep))
+        log.info(f"Read '{rep}' from Mercury")
         data = [None] * len(axes)
         for i in range(20):
             for ln in rep.split('\n'):
@@ -349,7 +353,7 @@ class MercuryiPS(IPInstrument):
                         val = ln.split(':')[-1]
                         if parser is float:
                             try:
-                                matches = re.findall("[-+]?\d*\.\d+|\d+", val)
+                                matches = re.findall(r"[-+]?\d*\.\d+|\d+", val)
                                 val = float(matches[0])
                             except:
                                 continue
@@ -357,7 +361,7 @@ class MercuryiPS(IPInstrument):
                     if not (None in data):
                         return data
             rep = self._recv()
-            log.info("Read '{}' from Mercury".format(rep))
+            log.info(f"Read '{rep}' from Mercury")
         return data
 
     def _write_cmd(self, cmd, axes, setpoint, fmt=None, parser=None):
@@ -369,10 +373,10 @@ class MercuryiPS(IPInstrument):
         for ix, axis in enumerate(axes):
             msglist.append(fmt.format(axis, cmd, setpoint[ix]))
         msg = '\n'.join(msglist)
-        log.info("Writing '{}' to Mercury".format(msg))
+        log.info(f"Writing '{msg}' to Mercury")
         self._send(msg)
         rep = self._recv()
-        log.info("Read '{}' from Mercury".format(rep))
+        log.info(f"Read '{rep}' from Mercury")
         data = [None] * len(axes)
         for i in range(20):
             for ln in rep.split('\n'):
@@ -381,7 +385,7 @@ class MercuryiPS(IPInstrument):
                         val = ln.split(':')[-1]
                         if parser is float:
                             try:
-                                matches = re.findall("[-+]?\d*\.\d+|\d+", val)
+                                matches = re.findall(r"[-+]?\d*\.\d+|\d+", val)
                                 val = float(matches[0])
                             except:
                                 continue
@@ -389,12 +393,12 @@ class MercuryiPS(IPInstrument):
                     if not (None in data):
                         return data
             rep = self._recv()
-            log.info("Read '{}' from Mercury".format(rep))
+            log.info(f"Read '{rep}' from Mercury")
 
     def _get_cmd(self, question, parser=None):
-        log.info("Writing '{}' to Mercury".format(question))
+        log.info(f"Writing '{question}' to Mercury")
         rep = self.ask(question)
-        log.info("Read '{}' from Mercury".format(rep))
+        log.info(f"Read '{rep}' from Mercury")
         self._latest_response = rep
         msg = rep[len(question):]
         # How would one match this without specifying the units?
@@ -403,15 +407,15 @@ class MercuryiPS(IPInstrument):
         # m.groups()[0]
         if parser is float:
             try:
-                return(float(re.findall("[-+]?\d*\.\d+|\d+", msg)[0]))
+                return(float(re.findall(r"[-+]?\d*\.\d+|\d+", msg)[0]))
             except:
                 return None
         return msg.strip()
 
     def write(self, msg):
-        log.info("Writing '{}' to Mercury".format(msg))
+        log.info(f"Writing '{msg}' to Mercury")
         rep = self.ask(msg)
-        log.info("Read '{}' from Mercury".format(rep))
+        log.info(f"Read '{rep}' from Mercury")
         self._latest_response = rep
         if 'INVALID' in rep:
             print('warning', msg, rep)

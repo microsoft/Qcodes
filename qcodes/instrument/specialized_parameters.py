@@ -5,6 +5,7 @@ provides useful/convenient specializations of such generic parameters.
 """
 
 from time import perf_counter
+from typing import Any
 
 from qcodes.instrument.parameter import Parameter
 
@@ -20,7 +21,7 @@ class ElapsedTimeParameter(Parameter):
             :class:`qcodes.instrument.parameter.Parameter` for more details.
     """
 
-    def __init__(self, name: str, label: str = 'Elapsed time', **kwargs):
+    def __init__(self, name: str, label: str = 'Elapsed time', **kwargs: Any):
 
         hardcoded_kwargs = ['unit', 'get_cmd', 'set_cmd']
 

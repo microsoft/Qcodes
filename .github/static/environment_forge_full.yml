@@ -1,0 +1,50 @@
+name: qcodesforge
+channels:
+ - conda-forge
+dependencies:
+ - python=3.7.9
+ # recommended to be explicitly specified by conda-incubator/setup-miniconda@v2
+ - pip
+ # dependencies for setup.cfg
+ - numpy>=1.17
+ - pyvisa>=1.11.0, <1.12.0
+ - h5py>=2.8.0
+ - websockets>=7.0
+ - jsonschema>=3.0.0
+ - ruamel.yaml>=0.16.0,!=0.16.6
+ - wrapt>=1.10.4
+ - pandas>=1.0.0
+ - xarray>=0.18.0
+ - h5netcdf>=0.8.0
+ - tabulate>=0.8.0
+ - tqdm>=4.20.0
+ - opencensus>=0.7.10, <0.9.0
+ - opencensus-ext-azure>=1.0.4, <2.0.0
+ - matplotlib>=2.2.3
+ - requirements-parser>=0.2.0
+ - importlib-metadata>=1.0.0,<4.0.0
+ - typing_extensions>=3.7.4
+ - packaging>=20.0
+ - ipywidgets>=7.5.0
+ - broadbean>=0.9.1
+ - uncertainties>=3.0.2
+ # test requirements from setup.cfg
+ - deepdiff>=5.0.2
+ - hypothesis>=5.49.0
+ - pytest>=6.0.0
+ - pytest-rerunfailures>=5.0.0
+ - pytest-xdist>=2.0.0
+ - pytest-mock>=3.0.0
+ - lxml>=4.3.0
+ - sphinx
+ # extra relevant requirements from setup.cfg
+ - pyqtgraph>=0.11.0
+ # for running mypy type checking
+ - mypy
+ - mypy_extensions
+ - pip:
+   - pyvisa-sim>=0.4.0  # required for testing
+   - versioningit>=0.3.0
+   - types-pkg_resources
+   - types_requests
+   - types-tabulate

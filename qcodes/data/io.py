@@ -41,10 +41,10 @@ IO managers should also implement:
   or files.
 """
 
-from contextlib import contextmanager
 import os
 import re
 import shutil
+from contextlib import contextmanager
 from fnmatch import fnmatch
 
 ALLOWED_OPEN_MODES = ('r', 'w', 'a')
@@ -88,7 +88,7 @@ class DiskIO:
             context manager yielding the open file
         """
         if mode not in ALLOWED_OPEN_MODES:
-            raise ValueError('mode {} not allowed in IO managers'.format(mode))
+            raise ValueError(f'mode {mode} not allowed in IO managers')
 
         filepath = self.to_path(filename)
 
@@ -147,7 +147,7 @@ class DiskIO:
 
     def __repr__(self):
         """Show the base location in the repr."""
-        return '<DiskIO, base_location={}>'.format(repr(self.base_location))
+        return f"<DiskIO, base_location={repr(self.base_location)}>"
 
     def join(self, *args):
         """Context-dependent os.path.join for this io manager."""

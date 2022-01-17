@@ -41,7 +41,7 @@ class Link:
                 f'The guid given for {node} is not a valid guid. Received '
                 f'{node_guid}.')
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.validate_node(self.head, "head")
         self.validate_node(self.tail, "tail")
 

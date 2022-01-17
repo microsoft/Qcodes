@@ -1,0 +1,57 @@
+name: Install all deps from conda-forge and run pytest
+
+on:
+  push:
+    branches:
+      - 'master'
+      - 'release/*'
+      - 'staging'
+      - 'trying'
+    tags:
+      - 'v*'
+  pull_request:
+
+jobs:
+  pytestconda:
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    env:
+      DISPLAY: ':99.0'
+      OS: ${{ matrix.os }}
+
+    steps:
+    - name: checkout source code
+      uses: actions/checkout@v2.3.4
+      with:
+        submodules: true
+    - name: setup ubuntu-latest xvfb
+      uses: ./.github/actions/setup-ubuntu-latest-xvfb
+      if: runner.os == 'Linux'
+    - name: install dependencies
+      uses: conda-incubator/setup-miniconda@v2.1.1
+      with:
+        activate-environment: qcodesforge
+        environment-file: .github/static/environment_forge_full.yml
+        auto-activate-base: false
+    - name: conda info
+      shell: bash -l {0}
+      run: |
+        conda info
+    - name: install qcodes
+      shell: bash -l {0}
+      run: |
+        pip install . --no-deps
+    - name: Run Mypy
+      shell: bash -l {0}
+      run: mypy qcodes
+    - name: run parallel tests
+      shell: bash -l {0}
+      run: |
+         pytest -m "not serial" --hypothesis-profile ci qcodes
+    - name: run serial tests
+      shell: bash -l {0}
+      run: |
+         pytest -m "serial"  -n 0 --dist no --hypothesis-profile ci qcodes

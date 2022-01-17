@@ -1,0 +1,70 @@
+Changelog for QCoDeS 0.27.0
+===========================
+
+The July 2021 release of QCoDeS.
+
+-----------------
+Breaking Changes:
+-----------------
+
+- DelegateInstrument takes `parameters` as an optional, keyworded input argument. Any arguments passed as positional arguments after this one will break with this change. (#3089)
+
+----
+New:
+----
+
+- A generalized N-dimensional ``dond`` function has been created to work with sweep objects and measurement parameters. Currently available
+  sweep objects are ``LinSweep`` and ``LogSweep`` that can be used for `dond` measurements. (#2990)
+- The default value for `default_parameter_name` in the Loop QCoDeS dataset changed from ``amplitude`` to ``None``.
+  The ``amplitude`` value interferes with datasets where one of the setpoint arrays is called `amplitude`. (#3095)
+- Abstract parameters has been added which allow one to create abstract instrument types that have parameters which can be overwritten in a subclass allowing the creation of instruments
+  subclasses with a well-defined api. (#3125, #3217, #3197)
+- ``DataSetProtocol`` created to define the protocol that datasets must implement to be able to act as a storage device for the measurement class. (#3075, #3092)
+- Enable exporting complex numbers to netcdf. (#3126)
+
+
+---------
+Improved:
+---------
+
+- DelegateInstrument can now support instrument channels. (#3089)
+- Decouple measurement name from dataset results table name to allow special characters in the measurement name. (#3185)
+- Update the get started document with installing and using spyder and jupyter. (#3179)
+- Add ``underlying_instrument`` property to ``_BaseParameter`` and use it in ``call_params_threaded`` instead of ``root_instrument``. (3127)
+- Ensure that the per array metadata is also exported to dataarrays and not just datasets. (#3116)
+- Use threaded setting from config in doNd functions, and make ``process_params_meas`` public. (#3096)
+- Don't allow metadata tags that are not valid python identifiers (#3192)
+- Pulled out ``dataframe_to_csv`` into it's own submodule ``export_to_csv`` from the ``data_set`` submodule for easier reuse. (#3061)
+
+
+-----------------
+Improved drivers:
+-----------------
+
+- Fix to Rohde & Schwarz ZNB driver for setting npts in CW mode. (#3168)
+- Update Keithley 2600 SMU current parameter to be aware of if current compliance is hit during measurement. (#3160)
+- Alazar ATS drivers: Fix buffer size for mode='TS' and buffers_per_acquisition > 1. (#3118)
+- New parameter ``complex_voltage`` has been added to the SR830 lockin amplifier. (#3078)
+
+
+---------------
+Under the hood:
+---------------
+
+- Add logging to measurement runs in doNd functions (#3206)
+- Fix to speed up and properly set experiment in delegate device test (#3199)
+- Remove bare wait test due to random failures (#3198)
+- Revert checking of abstract parameters in post init due to unintended side effects (#3197)
+- Use public interface for instrument in parameters (#3187)
+- Fix numpy deprecation for ragged arrays (#3184)
+- Add documentation to explain automatic CI (#3169)
+- Give threads time to start in tests (#3167)
+- Minimum changes to allow type checking to pass with numpy 1.21 (#3150)
+- Add customDimensionsFilter to inject custom dim, and inject pythonExecutable (#3143)
+- Add export info metadata to dataset (#3135)
+- Pin typing packages the same way as other test dependancies do (#3123)
+- Do not preserve gh pages branch history significantly reducing the size of the full clone of the QCoDeS repository (#3122)
+- Add typing packages to conda CI (#3115)
+- Fix link to pyvisa intersphinx (#3106)
+- Compare shapes in ``RunDescriber`` equality method (#3105)
+- Fix invalid array syntax in json schema (#3097)

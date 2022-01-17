@@ -8,6 +8,7 @@ qcodes.instrument (Instruments)
     qcodes.instrument
     qcodes.instrument.visa
     qcodes.instrument.channel
+    qcodes.instrument.delegate
     qcodes.instrument.base
 
 
@@ -20,4 +21,5 @@ qcodes.instrument (Instruments)
 
    visa
    channel
+   delegate
    base

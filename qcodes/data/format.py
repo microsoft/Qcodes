@@ -1,7 +1,7 @@
-from collections import namedtuple
-from traceback import format_exc
-from operator import attrgetter
 import logging
+from collections import namedtuple
+from operator import attrgetter
+from traceback import format_exc
 from typing import TYPE_CHECKING, Set
 
 if TYPE_CHECKING:
@@ -9,6 +9,8 @@ if TYPE_CHECKING:
 
 
 log = logging.getLogger(__name__)
+ArrayGroup = namedtuple("ArrayGroup", "shape set_arrays data name")
+
 
 class Formatter:
     """
@@ -51,7 +53,8 @@ class Formatter:
       last_saved_index and modified_range, as well as whether or not
       it found the specified file, to determine how much to write.
     """
-    ArrayGroup = namedtuple('ArrayGroup', 'shape set_arrays data name')
+
+    ArrayGroup = ArrayGroup
 
     def write(self, data_set: 'DataSet', io_manager, location, write_metadata=True,
               force_write=False, only_complete=True):
@@ -96,7 +99,7 @@ class Formatter:
 
         data_files = io_manager.list(location)
         if not data_files:
-            raise IOError('no data found at ' + location)
+            raise OSError('no data found at ' + location)
 
         # in case the DataArrays exist but haven't been initialized
         for array in data_set.arrays.values():
@@ -302,8 +305,8 @@ class Formatter:
               the setpoint array ids.
         """
 
-        set_array_sets = tuple(set(array.set_arrays
-                                   for array in arrays.values()))
+        set_array_sets = tuple({array.set_arrays
+                                   for array in arrays.values()})
         all_set_arrays = set()
         for set_array_set in set_array_sets:
             all_set_arrays.update(set_array_set)

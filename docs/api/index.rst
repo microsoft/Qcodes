@@ -16,12 +16,12 @@ QCoDeS API
    :maxdepth: 4
    :includehidden:
 
-   config/index
+   configuration/index
    dataset/index
    instrument/index
    parameters/index
    logger/index
-   math/index
+   math_utils/index
    monitor/index
    station
    utils/index

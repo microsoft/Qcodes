@@ -13,7 +13,7 @@ to use. Normal text shows the container includes and uses of this object.
 -  Station
 -  Instrument: IPInstrument, VisaInstrument, MockInstrument
 
-   -  **Parameter**: StandardParameter
+   -  **Parameter**
    -  Validator: Anything, Strings, Numbers, Ints, Enum, MultiType
    -  **SweepValues**: SweepFixedValues, AdaptiveSweep
    -  Function
@@ -68,9 +68,9 @@ Parameter
 
 A representation of one particular state variable.
 
-Most ``Parameter``\ s are part of an ``Instrument``, using the subclass
-``StandardParameter`` which links it to specific commands sent to a
-specific instrument. But you can also create ``Parameter``\ s that
+Most ``Parameter``\ s are part of an ``Instrument``, and parameter is
+linked to specific commands that are sent to a specific instrument.
+But you can also create ``Parameter``\ s that
 execute arbitrary functions, for example to combine several gate
 voltages in a diagonal sweep. Parameters can have setters and/or getters
 (they must define at least a setter OR a getter but do not need to

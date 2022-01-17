@@ -1,10 +1,11 @@
-from qcodes import VisaInstrument
-from qcodes.utils.validators import Numbers, Ints, Enum, MultiType, Bool
-
 from functools import partial
+from typing import Any, Callable, Union
+
+from qcodes import VisaInstrument
+from qcodes.utils.validators import Bool, Enum, Ints, MultiType, Numbers
 
 
-def parse_output_string(s):
+def parse_output_string(s: str) -> str:
     """ Parses and cleans string outputs of the Keithley """
     # Remove surrounding whitespace and newline characters
     s = s.strip()
@@ -27,7 +28,7 @@ def parse_output_string(s):
     return s
 
 
-def parse_output_bool(value):
+def parse_output_bool(value: str) -> bool:
     return True if int(value) == 1 else False
 
 
@@ -35,7 +36,12 @@ class Keithley_2000(VisaInstrument):
     """
     Driver for the Keithley 2000 multimeter.
     """
-    def __init__(self, name, address, reset=False, **kwargs):
+    def __init__(
+            self,
+            name: str,
+            address: str,
+            reset: bool = False,
+            **kwargs: Any):
         super().__init__(name, address, terminator='\n', **kwargs)
 
         self._trigger_sent = False
@@ -167,12 +173,12 @@ class Keithley_2000(VisaInstrument):
 
         self.connect_message()
 
-    def trigger(self):
+    def trigger(self) -> None:
         if not self.trigger_continuous():
             self.write('INIT')
             self._trigger_sent = True
 
-    def _read_next_value(self):
+    def _read_next_value(self) -> float:
         # Prevent a timeout when no trigger has been sent
         if not self.trigger_continuous() and not self._trigger_sent:
             return 0.0
@@ -181,19 +187,23 @@ class Keithley_2000(VisaInstrument):
 
         return float(self.ask('SENSE:DATA:FRESH?'))
 
-    def _get_mode_param(self, parameter, parser):
+    def _get_mode_param(
+            self,
+            parameter: str,
+            parser: Callable[[str], Any]
+    ) -> Union[float, str, bool]:
         """ Read the current Keithley mode and ask for a parameter """
         mode = parse_output_string(self._mode_map[self.mode()])
-        cmd = '{}:{}?'.format(mode, parameter)
+        cmd = f'{mode}:{parameter}?'
 
         return parser(self.ask(cmd))
 
-    def _set_mode_param(self, parameter, value):
+    def _set_mode_param(self, parameter: str, value: Union[float, str, bool]) -> None:
         """ Read the current Keithley mode and set a parameter """
         if isinstance(value, bool):
             value = int(value)
 
         mode = parse_output_string(self._mode_map[self.mode()])
-        cmd = '{}:{} {}'.format(mode, parameter, value)
+        cmd = f'{mode}:{parameter} {value}'
 
         self.write(cmd)

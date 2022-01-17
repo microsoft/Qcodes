@@ -1,0 +1,3 @@
+Only register an Instrument in the list of connected instruments if the connection
+was successful. This change allows connections to be retried with the same name
+if the first attempt fails.

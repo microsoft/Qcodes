@@ -1,0 +1,3 @@
+IPython measurement magic (Special command staring with % for use in IPython) using the legacy
+loop is no longer enabled by default.
+To enable it set the corresponding config value (`core.register_magic`) in your ``qcodesrc.json`` config file to true.

@@ -1,5 +1,15 @@
-from typing import (Any, Dict, NamedTuple, NewType, Sequence, Tuple, TypeVar,
-                    Union, Optional)
+from typing import (
+    Any,
+    Dict,
+    Mapping,
+    NamedTuple,
+    NewType,
+    Optional,
+    Sequence,
+    Tuple,
+    TypeVar,
+    Union,
+)
 
 from .helpers import deep_update
 
@@ -25,20 +35,20 @@ RunId = NewType('RunId', int)
 
 
 class Metadatable:
-    def __init__(self, metadata=None):
-        self.metadata = {}
+    def __init__(self, metadata: Optional[Mapping[str, Any]] = None):
+        self.metadata: Dict[str, Any] = {}
         self.load_metadata(metadata or {})
 
-    def load_metadata(self, metadata):
+    def load_metadata(self, metadata: Mapping[str, Any]) -> None:
         """
         Load metadata into this classes metadata dictionary.
 
         Args:
-            metadata (dict): Metadata to load.
+            metadata: Metadata to load.
         """
         deep_update(self.metadata, metadata)
 
-    def snapshot(self, update: bool=False):
+    def snapshot(self, update: Optional[bool] = False) -> Dict[Any, Any]:
         """
         Decorate a snapshot dictionary with metadata.
         DO NOT override this method if you want metadata in the snapshot
@@ -48,7 +58,7 @@ class Metadatable:
             update: Passed to snapshot_base.
 
         Returns:
-            dict: Base snapshot.
+            Base snapshot.
         """
 
         snap = self.snapshot_base(update=update)
@@ -58,8 +68,10 @@ class Metadatable:
 
         return snap
 
-    def snapshot_base(self, update: bool = False,
-                      params_to_skip_update: Optional[Sequence[str]] = None):
+    def snapshot_base(
+            self, update: Optional[bool] = False,
+            params_to_skip_update: Optional[Sequence[str]] = None
+    ) -> Dict[str, Any]:
         """
         Override this with the primary information for a subclass.
         """
@@ -69,9 +81,9 @@ class Metadatable:
 class ParameterDiff(NamedTuple):
     # Cannot be generic in Python < 3.7:
     # https://stackoverflow.com/questions/50530959/generic-namedtuple-in-python-3-6
-    left_only : ParameterDict[Any]
-    right_only : ParameterDict[Any]
-    changed : ParameterDict[Tuple[Any, Any]]
+    left_only: ParameterDict[Any]
+    right_only: ParameterDict[Any]
+    changed: ParameterDict[Tuple[Any, Any]]
 
 ## FUNCTIONS ##
 
@@ -81,14 +93,17 @@ def extract_param_values(snapshot: Snapshot) -> Dict[ParameterKey, Any]:
     instrument and parameter names onto parameter values.
     """
     parameters = {}
-    for param_name, param in snapshot['station']['parameters'].items():
+    snapshot = snapshot.get('station', snapshot)
+    for param_name, param in snapshot['parameters'].items():
         parameters[param_name] = param['value']
-    for instrument_name, instrument in snapshot['station']['instruments'].items():
-        for param_name, param in instrument['parameters'].items():
-            if 'value' in param:
-                parameters[instrument_name, param_name] = param['value']
+    if 'instruments' in snapshot:
+        for instrument_name, instrument in snapshot['instruments'].items():
+            for param_name, param in instrument['parameters'].items():
+                if 'value' in param:
+                    parameters[instrument_name, param_name] = param['value']
 
     return parameters
+
 
 
 def diff_param_values(left_snapshot: Snapshot,
@@ -98,8 +113,12 @@ def diff_param_values(left_snapshot: Snapshot,
     Given two snapshots, returns the differences between parameter values
     in each.
     """
-    left_params, right_params = map(extract_param_values, (left_snapshot, right_snapshot))
-    left_keys, right_keys = [set(params.keys()) for params in (left_params, right_params)]
+    left_params, right_params = map(
+        extract_param_values, (left_snapshot, right_snapshot)
+    )
+    left_keys, right_keys = (
+        set(params.keys()) for params in (left_params, right_params)
+    )
     common_keys = left_keys.intersection(right_keys)
 
     return ParameterDiff(

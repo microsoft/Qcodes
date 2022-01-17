@@ -1,27 +1,48 @@
+import collections
 import io
 import json
 import logging
 import math
 import numbers
-import time
 import os
-from collections.abc import Iterator, Sequence, Mapping
-from copy import deepcopy
-from typing import Dict, Any, TypeVar, Type, List, Tuple, Union, Optional, cast, \
-                    Callable, SupportsAbs
-from contextlib import contextmanager
+import time
+import warnings
 from asyncio import iscoroutinefunction
-from inspect import signature
+from collections import OrderedDict, abc
+from contextlib import contextmanager
+from copy import deepcopy
 from functools import partial
-from collections import OrderedDict
+from inspect import signature
+from pathlib import Path
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Hashable,
+    Iterator,
+    List,
+    Mapping,
+    MutableMapping,
+    Optional,
+    Sequence,
+    SupportsAbs,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 
 import numpy as np
 
-import qcodes
-from qcodes.utils.deprecate import deprecate
+if TYPE_CHECKING:
+    from PyQt5.QtWidgets import QMainWindow
+
+QCODES_USER_PATH_ENV = 'QCODES_USER_PATH'
 
 
-_tprint_times= {} # type: Dict[str, float]
+_tprint_times: Dict[str, float] = {}
 
 
 log = logging.getLogger(__name__)
@@ -34,26 +55,37 @@ class NumpyJSONEncoder(json.JSONEncoder):
     ``default`` method for the description of all conversions.
     """
 
-    def default(self, obj):
+    def default(self, obj: Any) -> Any:
         """
         List of conversions that this encoder performs:
+
         * ``numpy.generic`` (all integer, floating, and other types) gets
-        converted to its python equivalent using its ``item`` method (see
-        ``numpy`` docs for more information,
-        https://docs.scipy.org/doc/numpy/reference/arrays.scalars.html).
+          converted to its python equivalent using its ``item`` method (see
+          ``numpy`` docs for more information,
+          https://docs.scipy.org/doc/numpy/reference/arrays.scalars.html).
         * ``numpy.ndarray`` gets converted to python list using its ``tolist``
-        method.
+          method.
         * Complex number (a number that conforms to ``numbers.Complex`` ABC) gets
-        converted to a dictionary with fields ``re`` and ``im`` containing floating
-        numbers for the real and imaginary parts respectively, and a field
-        ``__dtype__`` containing value ``complex``.
+          converted to a dictionary with fields ``re`` and ``im`` containing floating
+          numbers for the real and imaginary parts respectively, and a field
+          ``__dtype__`` containing value ``complex``.
+        * Numbers with uncertainties  (numbers that conforms to ``uncertainties.UFloat``) get
+          converted to a dictionary with fields ``nominal_value`` and ``std_dev`` containing floating
+          numbers for the nominal and uncertainty parts respectively, and a field
+          ``__dtype__`` containing value ``UFloat``.
         * Object with a ``_JSONEncoder`` method get converted the return value of
-        that method.
+          that method.
         * Objects which support the pickle protocol get converted using the
-        data provided by that protocol.
+          data provided by that protocol.
         * Other objects which cannot be serialized get converted to their
-        string representation (suing the ``str`` function).
+          string representation (using the ``str`` function).
         """
+        with warnings.catch_warnings():
+            # this context manager can be removed when uncertainties
+            # no longer triggers deprecation warnings
+            warnings.simplefilter("ignore", category=DeprecationWarning)
+            import uncertainties
+
         if isinstance(obj, np.generic) \
                 and not isinstance(obj, np.complexfloating):
             # for numpy scalars
@@ -68,19 +100,31 @@ class NumpyJSONEncoder(json.JSONEncoder):
                 're': float(obj.real),
                 'im': float(obj.imag)
             }
+        elif isinstance(obj, uncertainties.UFloat):
+            return {
+                '__dtype__': 'UFloat',
+                'nominal_value': float(obj.nominal_value),
+                'std_dev': float(obj.std_dev)
+            }
         elif hasattr(obj, '_JSONEncoder'):
             # Use object's custom JSON encoder
-            return obj._JSONEncoder()
+            jsosencode = getattr(obj, "_JSONEncoder")
+            return jsosencode()
         else:
             try:
-                s = super(NumpyJSONEncoder, self).default(obj)
+                s = super().default(obj)
             except TypeError:
+                # json does not support dumping UserDict but
+                # we can dump the dict stored internally in the
+                # UserDict
+                if isinstance(obj, collections.UserDict):
+                    return obj.data
                 # See if the object supports the pickle protocol.
                 # If so, we should be able to use that to serialize.
                 if hasattr(obj, '__getnewargs__'):
                     return {
                         '__class__': type(obj).__name__,
-                        '__args__': obj.__getnewargs__()
+                        '__args__': getattr(obj, "__getnewargs__")()
                     }
                 else:
                     # we cannot convert the object to JSON, just take a string
@@ -88,7 +132,7 @@ class NumpyJSONEncoder(json.JSONEncoder):
             return s
 
 
-def tprint(string, dt=1, tag='default'):
+def tprint(string: str, dt: int = 1, tag: str = 'default') -> None:
     """Print progress of a loop every ``dt`` seconds."""
     ptime = _tprint_times.get(tag, 0)
     if (time.time() - ptime) > dt:
@@ -96,14 +140,14 @@ def tprint(string, dt=1, tag='default'):
         _tprint_times[tag] = time.time()
 
 
-def is_sequence(obj):
+def is_sequence(obj: Any) -> bool:
     """
     Test if an object is a sequence.
 
     We do not consider strings or unordered collections like sets to be
     sequences, but we do accept iterators (such as generators).
     """
-    return (isinstance(obj, (Iterator, Sequence, np.ndarray)) and
+    return (isinstance(obj, (abc.Iterator, abc.Sequence, np.ndarray)) and
             not isinstance(obj, (str, bytes, io.IOBase)))
 
 
@@ -111,7 +155,7 @@ def is_sequence_of(obj: Any,
                    types: Optional[Union[Type[object],
                                          Tuple[Type[object], ...]]] = None,
                    depth: Optional[int] = None,
-                   shape: Optional[Tuple[int]] = None
+                   shape: Optional[Sequence[int]] = None
                    ) -> bool:
     """
     Test if object is a sequence of entirely certain class(es).
@@ -156,7 +200,8 @@ def is_sequence_of(obj: Any,
     return True
 
 
-def is_function(f: Callable, arg_count: int, coroutine: bool=False) -> bool:
+def is_function(f: Callable[..., Any],
+                arg_count: int, coroutine: bool = False) -> bool:
     """
     Check and require a function that can accept the specified number of
     positional arguments, which either is or is not a coroutine
@@ -198,12 +243,12 @@ def is_function(f: Callable, arg_count: int, coroutine: bool=False) -> bool:
         return False
 
 
-def full_class(obj):
+def full_class(obj: object) -> str:
     """The full importable path to an object's class."""
     return type(obj).__module__ + '.' + type(obj).__name__
 
 
-def named_repr(obj):
+def named_repr(obj: Any) -> str:
     """Enhance the standard repr() with the object's name attribute."""
     s = '<{}.{}: {} at {}>'.format(
         obj.__module__,
@@ -213,7 +258,14 @@ def named_repr(obj):
     return s
 
 
-def deep_update(dest, update):
+K = TypeVar('K', bound=Hashable)
+L = TypeVar('L', bound=Hashable)
+
+
+def deep_update(
+        dest: MutableMapping[K, Any],
+        update: Mapping[L, Any]
+) -> MutableMapping[Union[K, L], Any]:
     """
     Recursively update one JSON structure with another.
 
@@ -221,20 +273,21 @@ def deep_update(dest, update):
     If the original value is a dictionary and the new value is not, or vice versa,
     we also replace the value completely.
     """
+    dest_int = cast(MutableMapping[Union[K, L], Any], dest)
     for k, v_update in update.items():
-        v_dest = dest.get(k)
-        if isinstance(v_update, Mapping) and isinstance(v_dest, Mapping):
+        v_dest = dest_int.get(k)
+        if isinstance(v_update, abc.Mapping) and isinstance(v_dest, abc.MutableMapping):
             deep_update(v_dest, v_update)
         else:
-            dest[k] = deepcopy(v_update)
-    return dest
+            dest_int[k] = deepcopy(v_update)
+    return dest_int
 
 
 # could use numpy.arange here, but
 # a) we don't want to require that as a dep so low level
 # b) I'd like to be more flexible with the sign of step
-def permissive_range(start: Union[int, float], stop: Union[int, float],
-                     step: SupportsAbs[float]) -> np.ndarray:
+def permissive_range(start: float, stop: float, step: SupportsAbs[float]
+                     ) -> List[float]:
     """
     Returns a range (as a list of values) with floating point steps.
     Always starts at start and moves toward stop, regardless of the
@@ -258,9 +311,11 @@ def permissive_range(start: Union[int, float], stop: Union[int, float],
 # numpy is a dependency anyways.
 # Furthermore the sweep allows to take a number of points and generates
 # an array with endpoints included, which is more intuitive to use in a sweep.
-def make_sweep(start: Union[int, float], stop: Union[int, float],
-               step: Optional[Union[int, float]]=None, num: Optional[int]=None
-               ) -> np.ndarray:
+def make_sweep(start: float,
+               stop: float,
+               step: Optional[float] = None,
+               num: Optional[int] = None
+               ) -> List[float]:
     """
     Generate numbers over a specified interval.
     Requires ``start`` and ``stop`` and (``step`` or ``num``).
@@ -300,12 +355,15 @@ def make_sweep(start: Union[int, float], stop: Union[int, float],
                 'the the given `start`, `stop`, and `step` '
                 'values. \nNumber of points is {:d} or {:d}.'
                 .format(steps_lo + 1, steps_hi + 1))
-        num = steps_lo + 1
+        num_steps = steps_lo + 1
+    elif num is not None:
+        num_steps = num
 
-    return np.linspace(start, stop, num=num).tolist()
+    output_list = np.linspace(start, stop, num=num_steps).tolist()
+    return cast(List[float], output_list)
 
 
-def wait_secs(finish_clock):
+def wait_secs(finish_clock: float) -> float:
     """
     Calculate the number of seconds until a given clock time.
     The clock time should be the result of ``time.perf_counter()``.
@@ -313,66 +371,9 @@ def wait_secs(finish_clock):
     """
     delay = finish_clock - time.perf_counter()
     if delay < 0:
-        logging.warning('negative delay {:.6f} sec'.format(delay))
+        logging.warning(f'negative delay {delay:.6f} sec')
         return 0
     return delay
-
-
-class LogCapture():
-
-    """
-    Context manager to grab all log messages, optionally
-    from a specific logger.
-
-    usage::
-
-        with LogCapture() as logs:
-            code_that_makes_logs(...)
-        log_str = logs.value
-
-    """
-
-    @deprecate(reason="The logging infrastructure has moved to `qcodes.utils.logger`",
-               alternative="`qcodes.utils.logger.LogCapture`")
-    def __init__(self, logger=logging.getLogger()):
-        self.logger = logger
-
-        self.stashed_handlers = self.logger.handlers[:]
-        for handler in self.stashed_handlers:
-            self.logger.removeHandler(handler)
-
-    def __enter__(self):
-        self.log_capture = io.StringIO()
-        self.string_handler = logging.StreamHandler(self.log_capture)
-        self.string_handler.setLevel(logging.DEBUG)
-        self.logger.addHandler(self.string_handler)
-        return self
-
-    def __exit__(self, type, value, tb):
-        self.logger.removeHandler(self.string_handler)
-        self.value = self.log_capture.getvalue()
-        self.log_capture.close()
-
-        for handler in self.stashed_handlers:
-            self.logger.addHandler(handler)
-
-
-@deprecate(
-    reason="This method is no longer being used in QCoDeS.")
-def make_unique(s, existing):
-    """
-    Make string ``s`` unique, able to be added to a sequence ``existing`` of
-    existing names without duplication, by ``appending _<int>`` to it if needed.
-    """
-    n = 1
-    s_out = s
-    existing = set(existing)
-
-    while s_out in existing:
-        n += 1
-        s_out = '{}_{}'.format(s, n)
-
-    return s_out
 
 
 class DelegateAttributes:
@@ -383,29 +384,30 @@ class DelegateAttributes:
     Also fixes ``__dir__`` so the delegated attributes will show up
     in ``dir()`` and ``autocomplete``.
 
-
-    Attributes:
-        delegate_attr_dicts (list): A list of names (strings) of dictionaries
-            which are (or will be) attributes of ``self``, whose keys should
-            be treated as attributes of ``self``.
-        delegate_attr_objects (list): A list of names (strings) of objects
-            which are (or will be) attributes of ``self``, whose attributes
-            should be passed through to ``self``.
-        omit_delegate_attrs (list): A list of attribute names (strings)
-            to *not* delegate to any other dictionary or object.
-
-    Any ``None`` entry is ignored.
-
     Attribute resolution order:
         1. Real attributes of this object.
         2. Keys of each dictionary in ``delegate_attr_dicts`` (in order).
         3. Attributes of each object in ``delegate_attr_objects`` (in order).
     """
     delegate_attr_dicts: List[str] = []
+    """
+    A list of names (strings) of dictionaries
+    which are (or will be) attributes of ``self``, whose keys should
+    be treated as attributes of ``self``.
+    """
     delegate_attr_objects: List[str] = []
+    """
+    A list of names (strings) of objects
+    which are (or will be) attributes of ``self``, whose attributes
+    should be passed through to ``self``.
+    """
     omit_delegate_attrs: List[str] = []
+    """
+    A list of attribute names (strings)
+    to *not* delegate to any other dictionary or object.
+    """
 
-    def __getattr__(self, key):
+    def __getattr__(self, key: str) -> Any:
         if key in self.omit_delegate_attrs:
             raise AttributeError("'{}' does not delegate attribute {}".format(
                 self.__class__.__name__, key))
@@ -439,8 +441,8 @@ class DelegateAttributes:
             "'{}' object and its delegates have no attribute '{}'".format(
                 self.__class__.__name__, key))
 
-    def __dir__(self):
-        names = super().__dir__()
+    def __dir__(self) -> List[str]:
+        names = list(super().__dir__())
         for name in self.delegate_attr_dicts:
             d = getattr(self, name, None)
             if d is not None:
@@ -456,14 +458,14 @@ class DelegateAttributes:
         return sorted(set(names))
 
 
-def strip_attrs(obj, whitelist=()):
+def strip_attrs(obj: object, whitelist: Sequence[str] = ()) -> None:
     """
     Irreversibly remove all direct instance attributes of object, to help with
     disposal, breaking circular references.
 
     Args:
         obj: Object to be stripped.
-        whitelist (list): List of names that are not stripped from the object.
+        whitelist: List of names that are not stripped from the object.
     """
     try:
         lst = set(list(obj.__dict__.keys())) - set(whitelist)
@@ -478,10 +480,11 @@ def strip_attrs(obj, whitelist=()):
         pass
 
 
-def compare_dictionaries(dict_1: Dict, dict_2: Dict,
-                         dict_1_name: Optional[str]='d1',
-                         dict_2_name: Optional[str]='d2',
-                         path: str="") -> Tuple[bool, str]:
+def compare_dictionaries(dict_1: Dict[Hashable, Any],
+                         dict_2: Dict[Hashable, Any],
+                         dict_1_name: Optional[str] = 'd1',
+                         dict_2_name: Optional[str] = 'd2',
+                         path: str = "") -> Tuple[bool, str]:
     """
     Compare two dictionaries recursively to find non matching elements.
 
@@ -531,7 +534,7 @@ def compare_dictionaries(dict_1: Dict, dict_2: Dict,
                         dict_2_name, path, dict_2[k], type(dict_2[k]))
 
     for k in dict_2.keys():
-        path = old_path + "[{}]".format(k)
+        path = old_path + f"[{k}]"
         if k not in dict_1.keys():
             key_err += "Key {}{} not in {}\n".format(
                 dict_2_name, path, dict_1_name)
@@ -544,12 +547,12 @@ def compare_dictionaries(dict_1: Dict, dict_2: Dict,
     return dicts_equal, dict_differences
 
 
-def warn_units(class_name, instance):
+def warn_units(class_name: str, instance: object) -> None:
     logging.warning('`units` is deprecated for the `' + class_name +
                     '` class, use `unit` instead. ' + repr(instance))
 
 
-def foreground_qt_window(window):
+def foreground_qt_window(window: "QMainWindow") -> None:
     """
     Try as hard as possible to bring a qt window to the front. This
     will use pywin32 if installed and running on windows as this
@@ -564,8 +567,9 @@ def foreground_qt_window(window):
         >>> Qtplot.qt_helpers.foreground_qt_window(plot.win)
     """
     try:
-        from win32gui import SetWindowPos
         import win32con
+        from win32gui import SetWindowPos
+
         # use the idea from
         # https://stackoverflow.com/questions/12118939/how-to-make-a-pyqt4-window-jump-to-the-front
         SetWindowPos(window.winId(),
@@ -583,7 +587,7 @@ def foreground_qt_window(window):
     window.activateWindow()
 
 
-def add_to_spyder_UMR_excludelist(modulename: str):
+def add_to_spyder_UMR_excludelist(modulename: str) -> None:
     """
     Spyder tries to reload any user module. This does not work well for
     qcodes because it overwrites Class variables. QCoDeS uses these to
@@ -611,7 +615,6 @@ def add_to_spyder_UMR_excludelist(modulename: str):
             except ImportError:
                 pass
             else:
-                print("found kernels site")
                 sitecustomize_found = True
 
         if sitecustomize_found is False:
@@ -620,14 +623,16 @@ def add_to_spyder_UMR_excludelist(modulename: str):
         excludednamelist = os.environ.get('SPY_UMR_NAMELIST',
                                           '').split(',')
         if modulename not in excludednamelist:
-            log.info("adding {} to excluded modules".format(modulename))
+            log.info(f"adding {modulename} to excluded modules")
             excludednamelist.append(modulename)
             sitecustomize.__umr__ = sitecustomize.UserModuleReloader(namelist=excludednamelist)
             os.environ['SPY_UMR_NAMELIST'] = ','.join(excludednamelist)
 
 
 @contextmanager
-def attribute_set_to(object_: Any, attribute_name: str, new_value: Any):
+def attribute_set_to(object_: object,
+                     attribute_name: str,
+                     new_value: Any) -> Iterator[None]:
     """
     This context manager allows to change a given attribute of a given object
     to a new value, and the original value is reverted upon exit of the context
@@ -647,7 +652,9 @@ def attribute_set_to(object_: Any, attribute_name: str, new_value: Any):
         setattr(object_, attribute_name, old_value)
 
 
-def partial_with_docstring(func: Callable, docstring: str, **kwargs):
+def partial_with_docstring(func: Callable[..., Any],
+                           docstring: str,
+                           **kwargs: Any) -> Callable[..., Any]:
     """
     We want to have a partial function which will allow us access the docstring
     through the python built-in help function. This is particularly important
@@ -668,7 +675,7 @@ def partial_with_docstring(func: Callable, docstring: str, **kwargs):
     """
     ex = partial(func, **kwargs)
 
-    def inner(**inner_kwargs):
+    def inner(**inner_kwargs: Any) -> None:
         ex(**inner_kwargs)
 
     inner.__doc__ = docstring
@@ -677,7 +684,7 @@ def partial_with_docstring(func: Callable, docstring: str, **kwargs):
 
 
 def create_on_off_val_mapping(on_val: Any = True, off_val: Any = False
-                              ) -> Dict:
+                              ) -> Dict[Union[str, bool], Any]:
     """
     Returns a value mapping which maps inputs which reasonably mean "on"/"off"
     to the specified ``on_val``/``off_val`` which are to be sent to the
@@ -687,21 +694,16 @@ def create_on_off_val_mapping(on_val: Any = True, off_val: Any = False
     # Here are the lists of inputs which "reasonably" mean the same as
     # "on"/"off" (note that True/False values will be added below, and they
     # will always be added)
-    ons_: Tuple[Union[str, bool, int], ...] = ('On',  'ON',  'on',  '1')
-    offs_: Tuple[Union[str, bool, int], ...] = ('Off', 'OFF', 'off', '0')
+    ons_: Tuple[Union[str, bool], ...] = ('On',  'ON',  'on',  '1')
+    offs_: Tuple[Union[str, bool], ...] = ('Off', 'OFF', 'off', '0')
 
-    # Due to the fact that `hash(True) == hash(1)`/`hash(False) == hash(0)`
-    # (hashes are equal), in the case of `on_val is True`/`off_val is False`,
-    # the resulting dictionary will not contain keys `True`/`False`
-    # which is exactly what we don't want. So, in order to support the case of
-    # `on_val is True`/`off_val is False`, we only add `1`/`0` values to the
-    # list of `ons`/`offs` only if `on_val is not True`/`off_val is not False`.
-    ons_ += tuple((1,)) if on_val is not True else tuple()
-    offs_ += tuple((0,)) if off_val is not False else tuple()
-
-    # This ensures that True/False values are always added and are added at
-    # the end of on/off inputs, so that after inversion True/False will be
-    # the remaining keys in the inverted value mapping dictionary
+    # The True/False values are added at the end of on/off inputs,
+    # so that after inversion True/False will be the only remaining
+    # keys in the inverted value mapping dictionary.
+    # NOTE that using 1/0 integer values will also work implicitly
+    # due to `hash(True) == hash(1)`/`hash(False) == hash(0)`,
+    # hence there is no need for adding 1/0 values explicitly to
+    # the list of `ons` and `offs` values.
     ons = ons_ + (True,)
     offs = offs_ + (False,)
 
@@ -709,7 +711,7 @@ def create_on_off_val_mapping(on_val: Any = True, off_val: Any = False
                        + [(off, off_val) for off in offs])
 
 
-def abstractmethod(funcobj):
+def abstractmethod(funcobj: Callable[..., Any]) -> Callable[..., Any]:
     """
     A decorator indicating abstract methods.
 
@@ -719,11 +721,11 @@ def abstractmethod(funcobj):
     instantiated and we will use this property to detect if the
     method is abstract and should be overwritten.
     """
-    funcobj.__qcodes_is_abstract_method__ = True
+    funcobj.__qcodes_is_abstract_method__ = True  # type: ignore[attr-defined]
     return funcobj
 
 
-def _ruamel_importer():
+def _ruamel_importer() -> type:
     try:
         from ruamel_yaml import YAML
     except ImportError:
@@ -734,27 +736,43 @@ def _ruamel_importer():
                               'either ruamel.yaml or ruamel_yaml.')
     return YAML
 
+
 # YAML module to be imported. Resovles naming issues of YAML from pypi and
 # anaconda
 YAML = _ruamel_importer()
 
 
-def get_qcodes_path(*subfolder) -> str:
+def get_qcodes_path(*subfolder: str) -> str:
     """
     Return full file path of the QCoDeS module. Additional arguments will be
     appended as subfolder.
 
     """
+    import qcodes
     path = os.sep.join(qcodes.__file__.split(os.sep)[:-1])
     return os.path.join(path, *subfolder) + os.sep
 
 
-X = TypeVar('X')
+def get_qcodes_user_path(*file_parts: str) -> str:
+    """
+    Get ``~/.qcodes`` path or if defined the path defined in the
+    ``QCODES_USER_PATH`` environment variable.
+
+    Returns:
+        path to the user qcodes directory
+
+    """
+    path = os.environ.get(QCODES_USER_PATH_ENV,
+                          os.path.join(Path.home(), '.qcodes'))
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    return os.path.join(path, *file_parts)
 
 
-def checked_getattr(instance: Any,
-                    attribute: str,
-                    expected_type: Type[X]) -> X:
+def checked_getattr(
+    instance: Any,
+    attribute: str,
+    expected_type: Union[type, Tuple[type, ...]]
+) -> Any:
     """
     Like ``getattr`` but raises type error if not of expected type.
     """

@@ -1,0 +1,67 @@
+Changelog for QCoDeS 0.22.0
+===========================
+
+The January 2021 release of QCoDeS.
+
+-----------------
+Breaking Changes:
+-----------------
+
+- Removed deprecated SD_common modules from Keysight (#2544)
+- Removed deprecated ``add_parameter`` method from ``DataSet`` (#2582)
+
+-------------
+Deprecations:
+-------------
+
+- Unused semi private functions ``modify_values`` and ``modify_many_values``
+  are deprecated (#2582)
+
+----
+New:
+----
+
+- Add native and convenient XArray data export methods to ``DataSet`` supporting
+  concatenation, also improve the Pandas DataFrames export methods (#2507)
+- Possibility to measure parameters in a separate thread per instrument
+  inside ``doNd`` functions (#2616)
+- guid_helpers: Extracting guids from database files and list of strings (#2541)
+
+---------
+Improved:
+---------
+
+- Ravel data before inserting into DataSet cache (#2664)
+- Removed duplicated attributes in channel.py (#2560)
+- Fix header levels and section structure in Measurement example notebook (#2624)
+- ``doNd`` notebook update: the notebook compares ``doNd`` with ``Measurement``
+  context manager (#2512)
+- Allow passing ``ParamSpecBase`` objects to ``DataSet``'s ``get_parameter_data``
+  and related methods(#2655)
+
+------------
+New drivers:
+------------
+
+- Keysight N9030B Spectrum Analyzer (#2553)
+
+-----------------
+Improved drivers:
+-----------------
+
+- Keysight B1500: support measuring any number of channels during IV sweep (#2649)
+- Add checks for signal current level and voltage level queries in Keysight E4980A (#2561)
+- Set signal mode and snapshot_exclude in Keysight E4980A (#2612)
+- Add input offset voltage parameter to Basel SP983C (#2648)
+- Add test to ensure that AWG70000A driver throws a warning when waveform is clipped (#2585)
+
+---------------
+Under the hood:
+---------------
+
+- Add support for type checking with Numpy 1.20 (#2499)
+- Minor typing improvements (#2546)
+- Improved minimum requirements in qcodes setup (#2569)
+- Improved tests (#2581)
+- Filter google rcp related warnings (#2598)
+- Removed unneeded html theme path (#2608)

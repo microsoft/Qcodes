@@ -4,10 +4,10 @@ import numpy as np
 import pytest
 
 from qcodes.instrument_drivers.Keysight.keysightb1500 import constants
-from qcodes.instrument_drivers.Keysight.keysightb1500.\
-    KeysightB1500_sampling_measurement import MeasurementNotTaken
-from qcodes.tests.drivers.keysight_b1500.b1500_driver_tests.test_b1500 \
-    import b1500
+from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_sampling_measurement import (
+    MeasurementNotTaken,
+)
+from qcodes.tests.drivers.keysight_b1500.b1500_driver_tests.test_b1500 import b1500
 
 
 @pytest.fixture
@@ -26,12 +26,11 @@ def smu_output():
 @pytest.fixture
 def smu_sampling_measurement(smu, smu_output):
     _, data_to_return = smu_output
-    status = 'N'
-    channel = 'A'
-    type_ = 'I'
-    prefix = f'{status}{channel}{type_}'
-    visa_data_response = ','.join([prefix + f'{d:+012.3E}'
-                                   for d in data_to_return])
+    status = "N"
+    channel = "A"
+    type_ = "I"
+    prefix = f"{status}{channel}{type_}"
+    visa_data_response = ",".join(prefix + f"{d:+012.3E}" for d in data_to_return)
     smu_sm = smu
     original_ask = smu_sm.root_instrument.ask
 
@@ -61,15 +60,14 @@ def test_measurement_requires_timing_parameters_to_be_set(smu):
 def test_sampling_measurement(smu_sampling_measurement,
                               smu_output):
     smu_sampling_measurement, _, _, _ = smu_sampling_measurement
-    n_samples, _ = smu_output
-    data_to_return = smu_output[1]
+    n_samples, data_to_return = smu_output
     smu_sampling_measurement.timing_parameters(h_bias=0,
                                                interval=0.1,
                                                number=n_samples)
     actual_data = smu_sampling_measurement.sampling_measurement_trace.get()
 
     np.testing.assert_allclose(actual_data, data_to_return, atol=1e-3)
-    smu_sampling_measurement.root_instrument.ask.assert_called_once_with('XE')
+    smu_sampling_measurement.root_instrument.ask.assert_called_with('XE')
 
 
 def test_compliance_needs_data_from_sampling_measurement(smu):
@@ -88,7 +86,7 @@ def test_compliance(smu_sampling_measurement,
                                                number=n_samples)
     smu_sampling_measurement.sampling_measurement_trace.get()
     compliance_list_string = [status]*n_samples
-    compliance_list = [constants.ComplianceError[i[0]].value
+    compliance_list = [constants.MeasurementError[i[0]].value
                        for i in compliance_list_string]
     smu_compliance = smu_sampling_measurement.sampling_measurement_trace\
         .compliance()

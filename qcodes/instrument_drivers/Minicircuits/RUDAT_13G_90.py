@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Dict, Optional, Any
 
 from .USBHIDMixin import MiniCircuitsHIDMixin
 from qcodes.instrument.base import Instrument
@@ -10,7 +10,7 @@ class RUDAT_13G_90(Instrument):
         name (str)
     """
 
-    def __init__(self, name: str, **kwargs) ->None:
+    def __init__(self, name: str, **kwargs: Any) -> None:
 
         super().__init__(name, **kwargs)
 

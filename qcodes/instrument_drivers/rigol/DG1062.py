@@ -1,9 +1,9 @@
 import logging
 from functools import partial
-from typing import Dict, cast
+from typing import Any, Dict, List, Union, cast
 
-from qcodes import VisaInstrument, validators as vals
-from qcodes import InstrumentChannel, ChannelList
+from qcodes import ChannelList, InstrumentChannel, VisaInstrument
+from qcodes import validators as vals
 from qcodes.utils.helpers import partial_with_docstring
 
 log = logging.getLogger(__name__)
@@ -15,7 +15,7 @@ class DG1062Burst(InstrumentChannel):
     group burst commands together.
     """
 
-    def __init__(self, parent: 'DG1062', name: str, channel: int) ->None:
+    def __init__(self, parent: 'DG1062', name: str, channel: int):
         super().__init__(parent, name)
         self.channel = channel
 
@@ -47,7 +47,7 @@ class DG1062Burst(InstrumentChannel):
             "mode",
             get_cmd=f":SOUR{channel}:BURS:MODE?",
             set_cmd=f":SOUR{channel}:BURS:MODE {{}}",
-            vals=vals.Enum("TRIG","INF", "GAT")
+            vals=vals.Enum("TRIG", "INF", "GAT")
         )
 
         self.add_parameter(
@@ -95,12 +95,13 @@ class DG1062Burst(InstrumentChannel):
             )
         )
 
-    def trigger(self) ->None:
+    def trigger(self) -> None:
         """
         Send a software trigger to the instrument. This only works if the
         trigger source is set to manual.
         """
         self.parent.write_raw(f":SOUR{self.channel}:BURS:TRIG")
+
 
 class DG1062Channel(InstrumentChannel):
 
@@ -123,10 +124,10 @@ class DG1062Channel(InstrumentChannel):
                           "RAMP": "RAMP", "SIN": "SIN",
                           "SQU": "SQU",   "TRI": "TRI",
                           "USER": "USER", "PULSE": "PULS"}
-    
+
     waveforms = list(waveform_params.keys())
 
-    def __init__(self, parent: 'DG1062', name: str, channel: int) ->None:
+    def __init__(self, parent: 'DG1062', name: str, channel: int):
         """
         Args:
             parent: The instrument this channel belongs to
@@ -194,7 +195,7 @@ class DG1062Channel(InstrumentChannel):
             get_cmd=f"OUTPUT{channel}:STATE?",
             set_cmd=f"OUTPUT{channel}:STATE {{}}",
         )
-        
+
         self.add_parameter(
             "duty_cycle",
             get_cmd=self._get_duty_cycle,
@@ -202,10 +203,10 @@ class DG1062Channel(InstrumentChannel):
             unit="%",
             vals=vals.Numbers(min_value=1, max_value=99),
             docstring=('This functions reads/sets the duty '
-                        'cycle for a square and pulse wave '
-                        'since these inheret a duty cycle.\n'
-                        'For other waveforms it will give '
-                        'the user an error')
+                       'cycle for a square and pulse wave '
+                       'since these inherit a duty cycle.\n'
+                       'For other waveforms it will give '
+                       'the user an error')
         )
 
         burst = DG1062Burst(cast(DG1062, self.parent), "burst", self.channel)
@@ -222,11 +223,11 @@ class DG1062Channel(InstrumentChannel):
                 waveform=waveform
             )
             setattr(self, waveform.lower(), f)
-            
-        # Retreive current waveform from device
+
+        # Retrieve current waveform from device
         self.waveform()
 
-    def apply(self, **kwargs: Dict) ->None:
+    def apply(self, **kwargs: Any) -> None:
         """
         Public interface to apply a waveform on the channel
         Example:
@@ -242,11 +243,11 @@ class DG1062Channel(InstrumentChannel):
         """
         self._set_waveform_params(**kwargs)
 
-    def current_waveform(self) ->Dict:
+    def current_waveform(self) -> Dict[Any, Any]:
         """Public interface to get the current waveform"""
         return self._get_waveform_params()
 
-    def _get_waveform_param(self, param: str) ->float:
+    def _get_waveform_param(self, param: str) -> float:
         """
         Get a parameter of the current waveform. Valid param names are
         dependent on the waveform type (e.g. "DC" does not have a "phase")
@@ -254,11 +255,11 @@ class DG1062Channel(InstrumentChannel):
         params_dict = self._get_waveform_params()
         return params_dict.get(param, None)
 
-    def _get_waveform_params(self) ->Dict:
+    def _get_waveform_params(self) -> Dict[Any, Any]:
         """
         Get all the parameters of the current waveform and
         """
-        def to_float(string):
+        def to_float(string: str) -> Union[float, str]:
             try:
                 return float(string)
             except ValueError:
@@ -268,13 +269,14 @@ class DG1062Channel(InstrumentChannel):
         parts = waveform_str.strip("\"").split(",")
 
         current_waveform = self.waveform_translate[parts[0]]
-        param_vals = [current_waveform] + [to_float(i) for i in parts[1:]]
+        param_vals: List[Union[str, float]] = [current_waveform]
+        param_vals += [to_float(i) for i in parts[1:]]
         param_names = ["waveform"] + self.waveform_params[current_waveform]
         params_dict = dict(zip(param_names, param_vals))
 
         return params_dict
 
-    def _set_waveform_param(self, param: str, value: float) ->None:
+    def _set_waveform_param(self, param: str, value: float) -> None:
         """
         Set a particular waveform param to the given value.
         """
@@ -289,7 +291,8 @@ class DG1062Channel(InstrumentChannel):
 
         return self._set_waveform_params(**params_dict)
 
-    def _set_waveform_params(self, **params_dict: Dict) ->None:
+    def _set_waveform_params(self,
+                             **params_dict: Union[int, float]) -> None:
         """
         Apply a waveform with values given in a dictionary.
         """
@@ -308,8 +311,8 @@ class DG1062Channel(InstrumentChannel):
                              f"{param_names}")
 
         string = f":SOUR{self.channel}:APPL:{waveform} "
-        string += ",".join(
-            ["{:7e}".format(params_dict[param]) for param in param_names])
+        values = [f"{params_dict[param]:7e}" for param in param_names]
+        string += ",".join(values)
         self.parent.write_raw(string)
 
     def _get_duty_cycle(self) -> float:
@@ -325,7 +328,7 @@ class DG1062Channel(InstrumentChannel):
 
         return duty_cycle
 
-    def _set_duty_cycle(self,duty_cycle):
+    def _set_duty_cycle(self, duty_cycle: float) -> None:
         """
         Sets the duty cycle after checking waveform
         """
@@ -334,7 +337,9 @@ class DG1062Channel(InstrumentChannel):
         if wf in ['PULS', 'SQU']:
             self.parent.write_raw(f":SOUR{self.channel}:FUNC:{wf}:DCYC {duty_cycle}")
         else:
-            raise ValueError(f"Current function does not have duty cycle hence can not set. Current function: {wf}")
+            raise ValueError(f"Current function does not have duty cycle"
+                             f" hence can not set. Current function: {wf}")
+
 
 class DG1062(VisaInstrument):
     """
@@ -344,7 +349,7 @@ class DG1062(VisaInstrument):
     waveforms = DG1062Channel.waveforms
 
     def __init__(self, name: str, address: str,
-                 **kwargs: Dict) ->None:
+                 **kwargs: Any):
 
         super().__init__(name, address, terminator="\n", **kwargs)
 
@@ -352,7 +357,7 @@ class DG1062(VisaInstrument):
                                snapshotable=False)
 
         for ch_num in [1, 2]:
-            ch_name = "ch{}".format(ch_num)
+            ch_name = f"ch{ch_num}"
             channel = DG1062Channel(self, ch_name, ch_num)
             channels.append(channel)
             self.add_submodule(ch_name, channel)

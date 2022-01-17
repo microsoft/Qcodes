@@ -3,27 +3,18 @@ This module contains helper functions that provide information about how
 QCoDeS is installed and about what other packages are installed along with
 QCoDeS
 """
-from typing import Dict, List, Optional
-import subprocess
-import pkg_resources
-import importlib
 import json
 import logging
+import subprocess
+import sys
+from pathlib import Path
+from typing import Dict, List, Optional
 
-import qcodes
-
-
-# sometimes a package is imported as something else than its package name
-# _IMPORT_NAMES maps package name to import name
-_IMPORT_NAMES = {'pyzmq': 'zmq'}
-_PACKAGE_NAMES = {v: k for k, v in _IMPORT_NAMES.items()}
-
-# sometimes we import non-versioned packages backported from the standard
-# library (e.g. dataclasses for python 3.6). Those should be excluded from
-# any version listing
-# sometimes a package simply doesn't have a version, for no apparent reason
-_VERSIONLESS_PACKAGES = ['dataclasses', 'applicationinsights']
-
+if sys.version_info >= (3, 8):
+    from importlib.metadata import PackageNotFoundError, distribution, version
+else:
+    # 3.7 and earlier
+    from importlib_metadata import PackageNotFoundError, distribution, version
 
 log = logging.getLogger(__name__)
 
@@ -38,12 +29,14 @@ def is_qcodes_installed_editably() -> Optional[bool]:
     answer: Optional[bool]
 
     try:
-        pipproc = subprocess.run(['pip', 'list', '-e', '--format=json'],
-                                  stdout=subprocess.PIPE)
+        pipproc = subprocess.run(['python', '-m', 'pip', 'list', '-e', '--no-index',
+                                  '--format=json'],
+                                 check=True,
+                                 stdout=subprocess.PIPE)
         e_pkgs = json.loads(pipproc.stdout.decode('utf-8'))
         answer = any([d["name"] == 'qcodes' for d in e_pkgs])
     except Exception as e:  # we actually do want a catch-all here
-        log.warning('f{type(e)}: {str(e)}')
+        log.warning(f'{type(e)}: {str(e)}')
         answer = None
 
     return answer
@@ -53,18 +46,33 @@ def get_qcodes_version() -> str:
     """
     Get the version of the currently installed QCoDeS
     """
-    return qcodes.version.__version__
+    import qcodes
+    package_name = "qcodes"
+
+    qcodes_path = Path(qcodes.__file__).parent
+    if _has_pyproject_toml_and_is_git_repo(qcodes_path.parent):
+        log.info(
+            f"QCoDeS seems to be installed editably trying to look up version "
+            f"from git repo in {qcodes_path}"
+        )
+
+        import versioningit
+
+        __version__ = versioningit.get_version(project_dir=qcodes_path.parent)
+    else:
+        __version__ = version(package_name)
+    return __version__
 
 
 def get_qcodes_requirements() -> List[str]:
     """
     Return a list of the names of the packages that QCoDeS requires
     """
-    qc_pkg = pkg_resources.working_set.by_key['qcodes']  # type: ignore
-
-    requirements = [str(r) for r in qc_pkg.requires()]
-
-    package_names = [n.split('>')[0].split('=')[0] for n in requirements]
+    import requirements
+    qc_pkg = distribution('qcodes').requires
+    if qc_pkg is None:
+        return []
+    package_names = [list(requirements.parse(req))[0].name for req in qc_pkg]
 
     return package_names
 
@@ -73,32 +81,49 @@ def get_qcodes_requirements_versions() -> Dict[str, str]:
     """
     Return a dictionary of the currently installed versions of the packages
     that QCoDeS requires. The dict maps package name to version string.
+    If an (optional) dependency is not installed the name maps to "Not installed".
     """
 
     req_names = get_qcodes_requirements()
 
-    req_modules = []
-
-    for req_name in req_names:
-        # the requirement might have a pep 496
-        # env marker. Filter that out before
-        # checking the version
-        req_name = req_name.split(';')[0]
-        if req_name in _VERSIONLESS_PACKAGES:
-            pass
-        elif req_name in _IMPORT_NAMES:
-            req_modules.append(_IMPORT_NAMES[req_name])
-        else:
-            req_modules.append(req_name)
-
     req_versions = {}
 
-    for req_module in req_modules:
-        mod = importlib.import_module(req_module)
-        if req_module in _PACKAGE_NAMES:
-            req_pkg = _PACKAGE_NAMES[req_module]
-        else:
-            req_pkg = req_module
-        req_versions.update({req_pkg: mod.__version__})  # type: ignore
+    for req in req_names:
+        try:
+            req_versions[req] = version(req)
+        except PackageNotFoundError:
+            req_versions[req] = "Not installed"
 
     return req_versions
+
+
+def get_all_installed_package_versions() -> Dict[str, str]:
+    """
+    Return a dictionary of the currently installed packages and their versions.
+    """
+    import pkg_resources
+    packages = pkg_resources.working_set
+    return {i.key: i.version for i in packages}
+
+
+def convert_legacy_version_to_supported_version(ver: str) -> str:
+    """
+    Convert a legacy version str containing single chars rather than
+    numbers to a regular version string. This is done by replacing a char
+    by its ASCII code (using ``ord``). This assumes that the version number
+    only uses at most a single char per level and only ASCII chars.
+    """
+
+    temp_list = []
+    for v in ver:
+        if v.isalpha():
+            temp_list.append(str(ord(v.upper())))
+        else:
+            temp_list.append(v)
+    return "".join(temp_list)
+
+
+def _has_pyproject_toml_and_is_git_repo(path: Path) -> bool:
+    has_pyproject_toml = (path / "pyproject.toml").exists()
+    is_git_repo = (path / ".git").exists()
+    return has_pyproject_toml and is_git_repo

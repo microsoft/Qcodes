@@ -9,7 +9,7 @@ import uuid
 import pytest
 import numpy as np
 
-from qcodes.config import Config
+import qcodes as qc
 import qcodes.tests.dataset
 from qcodes.dataset.experiment_container import Experiment,\
     load_experiment_by_name
@@ -20,11 +20,6 @@ from qcodes.dataset.sqlite.database import get_db_version_and_newest_available_v
 from qcodes.dataset.sqlite.connection import path_to_dbfile
 from qcodes.dataset.database_extract_runs import extract_runs_into_db
 from qcodes.dataset.sqlite.queries import get_experiments
-from qcodes.tests.dataset.temporary_databases import (  # pylint: disable=unused-import
-    two_empty_temp_db_connections,
-    empty_temp_db_connection)
-from qcodes.tests.dataset.test_descriptions import some_paramspecs
-from qcodes.tests.dataset.test_dependencies import some_interdeps
 from qcodes.tests.common import error_caused_by
 from qcodes.dataset.measurements import Measurement
 from qcodes import Station
@@ -54,7 +49,7 @@ def inst():
     and removed from the global register of instruments, which, if not done,
     make break other tests
     """
-    inst = DummyInstrument('inst', gates=['back', 'plunger', 'cutter'])
+    inst = DummyInstrument('extract_run_inst', gates=['back', 'plunger', 'cutter'])
     yield inst
     inst.close()
 
@@ -80,8 +75,8 @@ def test_missing_runs_raises(two_empty_temp_db_connections, some_interdeps):
         source_dataset.mark_started()
 
         for val in range(10):
-            source_dataset.add_result({name: val
-                                       for name in some_interdeps[1].names})
+            source_dataset.add_results([{name: val
+                                         for name in some_interdeps[1].names}])
         source_dataset.mark_completed()
 
     source_path = path_to_dbfile(source_conn)
@@ -131,7 +126,7 @@ def test_basic_extraction(two_empty_temp_db_connections, some_interdeps):
     for value in range(10):
         result = {ps.name: type_casters[ps.type](value)
                   for ps in some_interdeps[0].paramspecs}
-        source_dataset.add_result(result)
+        source_dataset.add_results([result])
 
     source_dataset.add_metadata('goodness', 'fair')
     source_dataset.add_metadata('test', True)
@@ -161,10 +156,12 @@ def test_basic_extraction(two_empty_temp_db_connections, some_interdeps):
 
     assert source_dataset.the_same_dataset_as(target_dataset)
 
-    source_data = source_dataset.get_data(*source_dataset.parameters.split(','))
-    target_data = target_dataset.get_data(*target_dataset.parameters.split(','))
+    source_data = source_dataset.get_parameter_data(*source_dataset.parameters.split(','))
+    target_data = target_dataset.get_parameter_data(*target_dataset.parameters.split(','))
 
-    assert source_data == target_data
+    for outkey, outval in source_data.items():
+        for inkey, inval in outval.items():
+            np.testing.assert_array_equal(inval, target_data[outkey][inkey])
 
     exp_attrs = ['name', 'sample_name', 'format_string', 'started_at',
                  'finished_at']
@@ -200,8 +197,8 @@ def test_correct_experiment_routing(two_empty_temp_db_connections,
         source_dataset.mark_started()
 
         for val in range(10):
-            source_dataset.add_result({name: val
-                                       for name in some_interdeps[1].names})
+            source_dataset.add_results([{name: val
+                                         for name in some_interdeps[1].names}])
         source_dataset.mark_completed()
 
     # make a new experiment with 1 run
@@ -215,7 +212,7 @@ def test_correct_experiment_routing(two_empty_temp_db_connections,
     ds.mark_started()
 
     for val in range(10):
-        ds.add_result({name: val for name in some_interdeps[1].names})
+        ds.add_results([{name: val for name in some_interdeps[1].names}])
 
     ds.mark_completed()
 
@@ -265,10 +262,12 @@ def test_correct_experiment_routing(two_empty_temp_db_connections,
 
         assert source_ds.the_same_dataset_as(target_ds)
 
-        source_data = source_ds.get_data(*source_ds.parameters.split(','))
-        target_data = target_ds.get_data(*target_ds.parameters.split(','))
+        source_data = source_ds.get_parameter_data(*source_ds.parameters.split(','))
+        target_data = target_ds.get_parameter_data(*target_ds.parameters.split(','))
 
-        assert source_data == target_data
+        for outkey, outval in source_data.items():
+            for inkey, inval in outval.items():
+                np.testing.assert_array_equal(inval, target_data[outkey][inkey])
 
 
 def test_runs_from_different_experiments_raises(two_empty_temp_db_connections,
@@ -297,8 +296,8 @@ def test_runs_from_different_experiments_raises(two_empty_temp_db_connections,
         source_dataset.mark_started()
 
         for val in range(10):
-            source_dataset.add_result({name: val
-                                       for name in some_interdeps[1].names})
+            source_dataset.add_results([{name: val
+                                         for name in some_interdeps[1].names}])
         source_dataset.mark_completed()
 
     # make 5 runs in second experiment
@@ -315,8 +314,8 @@ def test_runs_from_different_experiments_raises(two_empty_temp_db_connections,
         source_dataset.mark_started()
 
         for val in range(10):
-            source_dataset.add_result({name: val
-                                       for name in some_interdeps[1].names})
+            source_dataset.add_results([{name: val
+                                         for name in some_interdeps[1].names}])
         source_dataset.mark_completed()
 
     run_ids = exp_1_run_ids + exp_2_run_ids
@@ -367,16 +366,16 @@ def test_result_table_naming_and_run_id(two_empty_temp_db_connections,
     source_ds_1_1.set_interdependencies(some_interdeps[1])
 
     source_ds_1_1.mark_started()
-    source_ds_1_1.add_result({name: 0.0
-                              for name in some_interdeps[1].names})
+    source_ds_1_1.add_results([{name: 0.0
+                                for name in some_interdeps[1].names}])
     source_ds_1_1.mark_completed()
 
     source_exp2 = Experiment(conn=source_conn)
     source_ds_2_1 = DataSet(conn=source_conn, exp_id=source_exp2.exp_id)
     source_ds_2_1.set_interdependencies(some_interdeps[1])
     source_ds_2_1.mark_started()
-    source_ds_2_1.add_result({name: 0.0
-                              for name in some_interdeps[1].names})
+    source_ds_2_1.add_results([{name: 0.0
+                                for name in some_interdeps[1].names}])
     source_ds_2_1.mark_completed()
     source_ds_2_2 = DataSet(conn=source_conn,
                             exp_id=source_exp2.exp_id,
@@ -384,17 +383,18 @@ def test_result_table_naming_and_run_id(two_empty_temp_db_connections,
 
     source_ds_2_2.set_interdependencies(some_interdeps[1])
     source_ds_2_2.mark_started()
-    source_ds_2_2.add_result({name: 0.0
-                              for name in some_interdeps[1].names})
+    source_ds_2_2.add_results([{name: 0.0
+                                for name in some_interdeps[1].names}])
     source_ds_2_2.mark_completed()
 
     extract_runs_into_db(source_path, target_path, source_ds_2_2.run_id)
 
-    # The target ds ought to have a runs table "customname-1-1"
+    # The target ds ought to have a runs table "results-1-1"
     # and ought to be the same dataset as its "ancestor"
     target_ds = DataSet(conn=target_conn, run_id=1)
 
-    assert target_ds.table_name == "customname-1-1"
+    assert target_ds.name == "customname"
+    assert target_ds.table_name == "results-1-1"
     assert target_ds.the_same_dataset_as(source_ds_2_2)
 
 
@@ -421,7 +421,7 @@ def test_load_by_X_functions(two_empty_temp_db_connections,
     for ds in (source_ds_1_1, source_ds_2_1, source_ds_2_2):
         ds.set_interdependencies(some_interdeps[1])
         ds.mark_started()
-        ds.add_result({name: 0.0 for name in some_interdeps[1].names})
+        ds.add_results([{name: 0.0 for name in some_interdeps[1].names}])
         ds.mark_completed()
 
     extract_runs_into_db(source_path, target_path, source_ds_2_2.run_id)
@@ -481,7 +481,7 @@ def test_combine_runs(two_empty_temp_db_connections,
     for ds in source_all_datasets:
         ds.set_interdependencies(some_interdeps[1])
         ds.mark_started()
-        ds.add_result({name: 0.0 for name in some_interdeps[1].names})
+        ds.add_results([{name: 0.0 for name in some_interdeps[1].names}])
         ds.mark_completed()
 
     # now let's insert all datasets in random order
@@ -511,7 +511,7 @@ def test_combine_runs(two_empty_temp_db_connections,
     lines = table.split('\n')
     headers = re.split(r'\s+', lines[0].strip())
 
-    cfg = Config()
+    cfg = qc.config
     guid_comp = cfg['GUID_components']
 
     # borrowed fallback logic from generate_guid
@@ -555,7 +555,7 @@ def test_copy_datasets_and_add_new(two_empty_temp_db_connections,
     for ds in source_datasets:
         ds.set_interdependencies(some_interdeps[1])
         ds.mark_started()
-        ds.add_result({name: 0.0 for name in some_interdeps[1].names})
+        ds.add_results([{name: 0.0 for name in some_interdeps[1].names}])
         ds.mark_completed()
 
     # now let's insert only some of the datasets
@@ -591,7 +591,7 @@ def test_copy_datasets_and_add_new(two_empty_temp_db_connections,
     for ds in new_datasets:
         ds.set_interdependencies(some_interdeps[1])
         ds.mark_started()
-        ds.add_result({name: 0.0 for name in some_interdeps[1].names})
+        ds.add_results([{name: 0.0 for name in some_interdeps[1].names}])
         ds.mark_completed()
 
     expected_run_ids = [4, 5, 6]
@@ -649,8 +649,8 @@ def test_old_versions_not_touched(two_empty_temp_db_connections,
     source_ds.set_interdependencies(some_interdeps[1])
 
     source_ds.mark_started()
-    source_ds.add_result({name: 0.0
-                          for name in some_interdeps[1].names})
+    source_ds.add_results([{name: 0.0
+                            for name in some_interdeps[1].names}])
     source_ds.mark_completed()
 
     with raise_if_file_changed(fixturepath):
@@ -691,8 +691,8 @@ def test_experiments_with_NULL_sample_name(two_empty_temp_db_connections,
         source_dataset.mark_started()
 
         for val in range(10):
-            source_dataset.add_result({name: val
-                                       for name in some_interdeps[1].names})
+            source_dataset.add_results([{name: val
+                                         for name in some_interdeps[1].names}])
         source_dataset.mark_completed()
 
     sql = """
@@ -772,8 +772,8 @@ def test_atomicity(two_empty_temp_db_connections, some_interdeps):
     for ds in (source_ds_1, source_ds_2):
         ds.set_interdependencies(some_interdeps[1])
         ds.mark_started()
-        ds.add_result({name: 2.1
-                       for name in some_interdeps[1].names})
+        ds.add_results([{name: 2.1
+                         for name in some_interdeps[1].names}])
 
     # importantly, source_ds_2 is NOT marked as completed
     source_ds_1.mark_completed()
@@ -819,8 +819,8 @@ def test_column_mismatch(two_empty_temp_db_connections, some_interdeps, inst):
     source_ds.set_interdependencies(some_interdeps[1])
 
     source_ds.mark_started()
-    source_ds.add_result({name: 2.1
-                          for name in some_interdeps[1].names})
+    source_ds.add_results([{name: 2.1
+                            for name in some_interdeps[1].names}])
     source_ds.mark_completed()
 
     extract_runs_into_db(source_path, target_path, 1)

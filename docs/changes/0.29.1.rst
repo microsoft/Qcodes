@@ -1,0 +1,9 @@
+Changelog for QCoDeS 0.29.1
+===========================
+
+Patch:
+______
+
+This is a patch release to support the latest version of OpenCensus
+to help resolve issues where pip is unable to pick the correct set
+of dependencies. (#3426)

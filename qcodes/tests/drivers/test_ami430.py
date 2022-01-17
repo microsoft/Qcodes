@@ -1,24 +1,30 @@
 import io
-import numpy as np
+import logging
 import re
 import time
-import pytest
-from hypothesis import given, settings
-from hypothesis.strategies import floats
-from hypothesis.strategies import tuples
-import logging
 import warnings
 from typing import List
 
-import qcodes.instrument.sims as sims
-from qcodes.instrument_drivers.american_magnetics.AMI430 import AMI430_3D, \
-    AMI430Warning
-from qcodes.instrument.ip_to_visa import AMI430_VISA
-from qcodes.math.field_vector import FieldVector
-from qcodes.utils.types import numpy_concrete_ints, numpy_concrete_floats, \
-    numpy_non_concrete_ints_instantiable, \
-    numpy_non_concrete_floats_instantiable
+import numpy as np
+import pytest
+from hypothesis import HealthCheck, given, settings
+from hypothesis.strategies import floats, tuples
 
+import qcodes.instrument.sims as sims
+from qcodes.instrument.base import Instrument
+from qcodes.instrument.ip_to_visa import AMI430_VISA
+from qcodes.instrument_drivers.american_magnetics.AMI430 import (
+    AMI430,
+    AMI430_3D,
+    AMI430Warning,
+)
+from qcodes.math_utils.field_vector import FieldVector
+from qcodes.utils.types import (
+    numpy_concrete_floats,
+    numpy_concrete_ints,
+    numpy_non_concrete_floats_instantiable,
+    numpy_non_concrete_ints_instantiable,
+)
 
 _time_resolution = time.get_clock_info('time').resolution
 
@@ -68,12 +74,10 @@ def current_driver(magnet_axes_instances):
     driver.close()
 
 
-@pytest.fixture(scope='function',
-                params=(True, False))
-def ami430(request):
+@pytest.fixture(scope="function", name="ami430")
+def _make_ami430():
     mag = AMI430_VISA('ami430', address='GPIB::1::INSTR', visalib=visalib,
-                      terminator='\n', port=1,
-                      has_current_rating=request.param)
+                      terminator='\n', port=1)
     yield mag
     mag.close()
 
@@ -110,8 +114,85 @@ random_coordinates = {
 }
 
 
+def test_instantiation_from_names(magnet_axes_instances, request):
+    """
+    Instantiate AMI430_3D instrument from the three mock instruments
+    representing current drivers for the x, y, and z directions by their
+    names as opposed from their instances.
+    """
+    mag_x, mag_y, mag_z = magnet_axes_instances
+    request.addfinalizer(AMI430_3D.close_all)
+
+    driver = AMI430_3D("AMI430-3D", mag_x.name, mag_y.name, mag_z.name,
+                       field_limit)
+
+    assert driver._instrument_x is mag_x
+    assert driver._instrument_y is mag_y
+    assert driver._instrument_z is mag_z
+
+
+def test_instantiation_from_name_of_nonexistent_ami_instrument(
+        magnet_axes_instances, request
+):
+    mag_x, mag_y, mag_z = magnet_axes_instances
+    request.addfinalizer(AMI430_3D.close_all)
+
+    non_existent_instrument = mag_y.name + "foo"
+
+    with pytest.raises(
+            KeyError,
+            match=f"with name {non_existent_instrument} does not exist"
+    ):
+        AMI430_3D(
+            "AMI430-3D",
+            mag_x.name, non_existent_instrument, mag_z.name,
+            field_limit
+        )
+
+
+def test_instantiation_from_name_of_existing_non_ami_instrument(
+        magnet_axes_instances, request
+):
+    mag_x, mag_y, mag_z = magnet_axes_instances
+    request.addfinalizer(AMI430_3D.close_all)
+
+    non_ami_existing_instrument = Instrument("foo")
+
+    with pytest.raises(
+            TypeError,
+            match=re.escape(
+                f"Instrument {non_ami_existing_instrument.name} is "
+                f"{type(non_ami_existing_instrument)} but {AMI430} "
+                f"was requested"
+            )
+    ):
+        AMI430_3D(
+            "AMI430-3D",
+            mag_x.name, non_ami_existing_instrument.name, mag_z.name,
+            field_limit
+        )
+
+
+def test_instantiation_from_badly_typed_argument(
+        magnet_axes_instances, request
+):
+    mag_x, mag_y, mag_z = magnet_axes_instances
+    request.addfinalizer(AMI430_3D.close_all)
+
+    badly_typed_instrument_z_argument = 123
+
+    with pytest.raises(
+            ValueError, match="instrument_z argument is neither of those"
+    ):
+        AMI430_3D(
+            "AMI430-3D",
+            mag_x.name, mag_y, badly_typed_instrument_z_argument,
+            field_limit
+        )
+
+
 @given(set_target=random_coordinates["cartesian"])
-@settings(max_examples=10)
+@settings(max_examples=10, suppress_health_check=(HealthCheck.function_scoped_fixture,))
 def test_cartesian_sanity(current_driver, set_target):
     """
     A sanity check to see if the driver remember vectors in any random
@@ -130,7 +211,7 @@ def test_cartesian_sanity(current_driver, set_target):
 
 
 @given(set_target=random_coordinates["spherical"])
-@settings(max_examples=10)
+@settings(max_examples=10, suppress_health_check=(HealthCheck.function_scoped_fixture,))
 def test_spherical_sanity(current_driver, set_target):
     """
     A sanity check to see if the driver remember vectors in any random
@@ -149,7 +230,7 @@ def test_spherical_sanity(current_driver, set_target):
 
 
 @given(set_target=random_coordinates["cylindrical"])
-@settings(max_examples=10)
+@settings(max_examples=10, suppress_health_check=(HealthCheck.function_scoped_fixture,))
 def test_cylindrical_sanity(current_driver, set_target):
     """
     A sanity check to see if the driver remember vectors in any random
@@ -168,7 +249,7 @@ def test_cylindrical_sanity(current_driver, set_target):
 
 
 @given(set_target=random_coordinates["cartesian"])
-@settings(max_examples=10)
+@settings(max_examples=10, suppress_health_check=(HealthCheck.function_scoped_fixture,))
 def test_cartesian_setpoints(current_driver, set_target):
     """
     Check that the individual x, y, z instruments are getting the set
@@ -189,7 +270,7 @@ def test_cartesian_setpoints(current_driver, set_target):
 
 
 @given(set_target=random_coordinates["spherical"])
-@settings(max_examples=10)
+@settings(max_examples=10, suppress_health_check=(HealthCheck.function_scoped_fixture,))
 def test_spherical_setpoints(current_driver, set_target):
     """
     Check that the individual x, y, z instruments are getting the set
@@ -211,7 +292,8 @@ def test_spherical_setpoints(current_driver, set_target):
 
 
 @given(set_target=random_coordinates["cylindrical"])
-@settings(max_examples=10, deadline=500)
+@settings(max_examples=10, deadline=500,
+          suppress_health_check=(HealthCheck.function_scoped_fixture,))
 def test_cylindrical_setpoints(current_driver, set_target):
     """
     Check that the individual x, y, z instruments are getting the set
@@ -233,7 +315,8 @@ def test_cylindrical_setpoints(current_driver, set_target):
 
 
 @given(set_target=random_coordinates["cartesian"])
-@settings(max_examples=10, deadline=500)
+@settings(max_examples=10, deadline=500,
+          suppress_health_check=(HealthCheck.function_scoped_fixture,))
 def test_measured(current_driver, set_target):
     """
     Simply call the measurement methods and verify that no exceptions
@@ -344,7 +427,7 @@ def test_field_limit_exception(current_driver):
     x = np.linspace(-3, 3, 11)
     y = np.copy(x)
     z = np.copy(x)
-    set_points = zip(*[i.flatten() for i in np.meshgrid(x, y, z)])
+    set_points = zip(*(i.flatten() for i in np.meshgrid(x, y, z)))
 
     for set_point in set_points:
         should_not_raise = any([is_safe(*set_point)
@@ -398,41 +481,17 @@ def test_spherical_poles(current_driver):
     assert np.allclose([field_m, theta_m, phi_m], [field, theta, phi])
 
 
-def test_warning_increased_max_ramp_rate():
-    """
-    Test that a warning is raised if we increase the maximum current
-    ramp rate. We want the user to be really sure what he or she is
-    doing, as this could risk quenching the magnet
-    """
-    max_ramp_rate = AMI430_VISA._DEFAULT_CURRENT_RAMP_LIMIT
-    # Increasing the maximum ramp rate should raise a warning
-    target_ramp_rate = max_ramp_rate + 0.01
-
-    with pytest.warns(AMI430Warning,
-                      match="Increasing maximum ramp rate") as excinfo:
-        inst = AMI430_VISA("testing_increased_max_ramp_rate",
-                           address='GPIB::4::INSTR', visalib=visalib,
-                           terminator='\n', port=1,
-                           current_ramp_limit=target_ramp_rate)
-        assert len(excinfo) >= 1  # Check we at least one warning.
-        inst.close()
-
-
 def test_ramp_rate_exception(current_driver):
     """
     Test that an exception is raised if we try to set the ramp rate
     to a higher value than is allowed
     """
-    max_ramp_rate = AMI430_VISA._DEFAULT_CURRENT_RAMP_LIMIT
-    target_ramp_rate = max_ramp_rate + 0.01
     ix = current_driver._instrument_x
+    max_ramp_rate = ix.field_ramp_limit()
+    target_ramp_rate = max_ramp_rate + 0.01
 
-    with pytest.raises(Exception) as excinfo:
+    with pytest.raises(ValueError, match="is above the ramp rate limit of"):
         ix.ramp_rate(target_ramp_rate)
-
-        errmsg = "must be between 0 and {} inclusive".format(max_ramp_rate)
-
-        assert errmsg in excinfo.value.args[0]
 
 
 def test_reducing_field_ramp_limit_reduces_a_higher_ramp_rate(ami430):
@@ -674,7 +733,8 @@ def test_current_and_field_params_interlink__change_field_ramp_limit(
 
 
 def test_current_and_field_params_interlink__change_coil_constant(
-        ami430, factor=3):
+    ami430, factor: float = 3
+):
     """
     Test that after changing ``change_coil_constant``, the values of the
     ``current_*`` parameters remain the same while the values of the
@@ -916,3 +976,9 @@ def test_change_field_units_parameter(ami430, new_value, unit_string):
     # Assert `coil_constant` value has been updated
     assert ami430.coil_constant.get_latest.get_timestamp() \
            > coil_constant_timestamp
+
+
+def test_switch_heater_enabled(ami430):
+    assert ami430.switch_heater.enabled() is False
+    ami430.switch_heater.enabled(True)
+    assert ami430.switch_heater.enabled() is True

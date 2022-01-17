@@ -15,10 +15,9 @@ qcodes.utils
     qcodes.utils.plotting
     qcodes.utils.threading
     qcodes.utils.validators
-    qcodes.utils.zmq_helpers
 
 .. automodule:: qcodes.utils
-
+    :no-inherited-members:
 
 .. toctree::
    :maxdepth: 4
@@ -33,4 +32,3 @@ qcodes.utils
    slack
    threading
    validators
-   zmq_helpers

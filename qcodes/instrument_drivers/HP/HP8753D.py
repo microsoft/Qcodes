@@ -1,23 +1,23 @@
-from typing import Union
-from functools import partial
 import logging
+from functools import partial
+from typing import Any, Union
 
 import numpy as np
 
-from qcodes.instrument.visa import VisaInstrument
-from qcodes.instrument.parameter import ArrayParameter
 import qcodes.utils.validators as vals
+from qcodes.instrument.parameter import ArrayParameter, ParamRawDataType
+from qcodes.instrument.visa import VisaInstrument
 
 log = logging.getLogger(__name__)
 
 _unit_map = {'Log mag': 'dB',
              'Phase': 'degree',
-             'Delay': None,
+             'Delay': "",
              'Smith chart': 'dim. less',
              'Polar': 'dim. less',
              'Lin mag': 'dim. less',
-             'Real': None,
-             'Imaginary': None,
+             'Real': "",
+             'Imaginary': "",
              'SWR': 'dim. less'}
 
 
@@ -43,7 +43,11 @@ class HP8753DTrace(ArrayParameter):
     class only returns the first value
     """
 
-    def __init__(self, name, instrument):
+    def __init__(
+            self,
+            name: str,
+            instrument: "HP8753D"
+    ):
         super().__init__(name=name,
                          shape=(1,),  # is overwritten by prepare_trace
                          label='',  # is overwritten by prepare_trace
@@ -51,39 +55,38 @@ class HP8753DTrace(ArrayParameter):
                          setpoint_names=('Frequency',),
                          setpoint_labels=('Frequency',),
                          setpoint_units=('Hz',),
-                         snapshot_get=False
+                         snapshot_get=False,
+                         instrument=instrument
                          )
 
-        self._instrument = instrument
-
-    def prepare_trace(self):
+    def prepare_trace(self) -> None:
         """
         Update setpoints, units and labels
         """
 
         # we don't trust users to keep their fingers off the front panel,
         # so we query the instrument for all values
-
-        fstart = self._instrument.start_freq()
-        fstop = self._instrument.stop_freq()
-        npts = self._instrument.trace_points()
+        assert isinstance(self.instrument, HP8753D)
+        fstart = self.instrument.start_freq()
+        fstop = self.instrument.stop_freq()
+        npts = self.instrument.trace_points()
 
         sps = np.linspace(fstart, fstop, npts)
         self.setpoints = (tuple(sps),)
         self.shape = (len(sps),)
 
-        self.label = self._instrument.s_parameter()
-        self.unit = _unit_map[self._instrument.display_format()]
+        self.label = self.instrument.s_parameter()
+        self.unit = _unit_map[self.instrument.display_format()]
 
-        self._instrument._traceready = True
+        self.instrument._traceready = True
 
-    def get_raw(self):
+    def get_raw(self) -> ParamRawDataType:
         """
         Return the trace
         """
 
-        inst = self._instrument
-
+        inst = self.instrument
+        assert isinstance(inst, HP8753D)
         if not inst._traceready:
             raise TraceNotReady('Trace not ready. Please run prepare_trace.')
 
@@ -100,7 +103,7 @@ class HP8753DTrace(ArrayParameter):
             first_points += raw_resp[4:][2*n*4:(2*n+1)*4]
 
         dt = np.dtype('>f')
-        trace1 = np.fromstring(first_points, dtype=dt)
+        trace1 = np.frombuffer(first_points, dtype=dt)
 
         return trace1
 
@@ -110,7 +113,7 @@ class HP8753D(VisaInstrument):
     This is the QCoDeS driver for the Hewlett Packard 8753D Network Analyzer
     """
 
-    def __init__(self, name: str, address: str, **kwargs) -> None:
+    def __init__(self, name: str, address: str, **kwargs: Any) -> None:
         super().__init__(name, address, terminator='\n', **kwargs)
 
         self.add_parameter(
@@ -233,22 +236,19 @@ class HP8753D(VisaInstrument):
         """
 
         st = self.sweep_time.get_latest()
-        old_timeout = self.visa_handle.timeout
 
         if N not in range(1, 1000):
-            raise ValueError('Can not run {} times.'.format(N) +
+            raise ValueError(f'Can not run {N} times.' +
                              ' please select a number from 1-999.')
 
         # set a longer timeout, to not timeout during the sweep
-        new_timeout = 1000*st*N + 1000
-        self.visa_handle.timeout = new_timeout
+        new_timeout = st*N + 2
 
-        log.debug('Making {} blocking sweeps.'.format(N) +
-                  ' Setting VISA timeout to {} s.'.format(new_timeout/1000))
+        with self.timeout.set_to(new_timeout):
+            log.debug(f'Making {N} blocking sweeps.' +
+                      f' Setting VISA timeout to {new_timeout} s.')
 
-        self.ask('OPC?;NUMG{}'.format(N))
-
-        self.visa_handle.timeout = old_timeout
+            self.ask(f'OPC?;NUMG{N}')
 
     def invalidate_trace(self, cmd: str,
                          value: Union[float, int, str]) -> None:
@@ -300,7 +300,7 @@ class HP8753D(VisaInstrument):
                        'SWR': 'SWR'}
 
         if fmt not in val_mapping.keys():
-            raise ValueError('Cannot set display_format to {}.'.format(fmt))
+            raise ValueError(f'Cannot set display_format to {fmt}.')
 
         self._traceready = False
         self.display_reference.unit = _unit_map[fmt]
@@ -324,7 +324,7 @@ class HP8753D(VisaInstrument):
 
         # keep asking until we find the currently used format
         for cmd in val_mapping.keys():
-            resp = self.ask('{}?'.format(cmd))
+            resp = self.ask(f'{cmd}?')
             if resp in ['1', '1\n']:
                 break
 

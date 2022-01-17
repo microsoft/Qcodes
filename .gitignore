@@ -87,6 +87,8 @@ docs/examples/data/*
 .idea/
 .vscode/
 
+/venv/
+
 # Mac files
 .DS_Store
 
@@ -103,3 +105,5 @@ benchmarking/results/
 
 # Ignore .db files that are generated for some tests
 qcodes/tests/dataset/fixtures/db_files/*
+qcodes/tests/output
+qcodes/tests/*.db

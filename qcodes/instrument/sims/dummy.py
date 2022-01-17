@@ -2,6 +2,7 @@
 #
 # dummy = Dummy('dummy', 'GPIB::8::INSTR', visalib='dummy.yaml@sim',
 #               terminator='\n', device_clear=False)
+from typing import Any
 
 from qcodes.instrument.visa import VisaInstrument
 import qcodes.utils.validators as vals
@@ -9,7 +10,7 @@ import qcodes.utils.validators as vals
 
 class Dummy(VisaInstrument):
 
-    def __init__(self, name, address, **kwargs):
+    def __init__(self, name: str, address: str, **kwargs: Any):
         super().__init__(name, address, **kwargs)
 
         self.connect_message()

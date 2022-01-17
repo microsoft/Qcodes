@@ -8,7 +8,7 @@ from hypothesis import given, settings
 from hypothesis.strategies import floats
 from hypothesis.strategies import tuples
 
-from qcodes.math.field_vector import FieldVector
+from qcodes.math_utils.field_vector import FieldVector
 from qcodes.utils.helpers import NumpyJSONEncoder
 
 random_coordinates = {

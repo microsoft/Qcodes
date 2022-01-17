@@ -8,11 +8,12 @@ from qcodes.dataset.database_fix_functions import (
 import qcodes.tests.dataset
 from qcodes.dataset.sqlite.db_upgrades import get_user_version
 from qcodes.dataset.sqlite.queries import get_run_description
-from qcodes.tests.dataset.temporary_databases import temporarily_copied_DB
 from qcodes.dataset.descriptions.param_spec import ParamSpec
 import qcodes.dataset.descriptions.versioning.v0 as v0
 import qcodes.dataset.descriptions.versioning.serialization as serial
-
+from qcodes.dataset.descriptions.versioning.converters import old_to_new
+from qcodes.dataset.descriptions.rundescriber import RunDescriber
+from qcodes.tests.dataset.conftest import temporarily_copied_DB
 
 fixturepath = os.sep.join(qcodes.tests.dataset.__file__.split(os.sep)[:-1])
 fixturepath = os.path.join(fixturepath, 'fixtures')
@@ -74,8 +75,8 @@ def test_fix_wrong_run_descriptions():
             " using the scripts in the legacy_DB_generation folder")
 
     def make_ps(n):
-        ps =  ParamSpec(f'p{n}', label=f'Parameter {n}',
-                        unit=f'unit {n}', paramtype='numeric')
+        ps = ParamSpec(f'p{n}', label=f'Parameter {n}',
+                       unit=f'unit {n}', paramtype='numeric')
         return ps
 
     paramspecs = [make_ps(n) for n in range(6)]
@@ -88,20 +89,20 @@ def test_fix_wrong_run_descriptions():
 
         assert get_user_version(conn) == 3
 
-        expected_description = v0.RunDescriber(
-            v0.InterDependencies(*paramspecs))
+        expected_description = RunDescriber(
+            old_to_new(v0.InterDependencies(*paramspecs)))
 
-        empty_description = v0.RunDescriber(v0.InterDependencies())
+        empty_description = RunDescriber(old_to_new(v0.InterDependencies()))
 
         fix_wrong_run_descriptions(conn, [1, 2, 3, 4])
 
         for run_id in [1, 2, 3]:
             desc_str = get_run_description(conn, run_id)
-            desc = serial.from_json_to_native(desc_str)
+            desc = serial.from_json_to_current(desc_str)
             assert desc == expected_description
 
         desc_str = get_run_description(conn, run_id=4)
-        desc = serial.from_json_to_native(desc_str)
+        desc = serial.from_json_to_current(desc_str)
         assert desc == empty_description
 
 

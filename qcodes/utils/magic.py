@@ -1,8 +1,5 @@
-import sys
-from IPython.core.magic import Magics, magics_class, line_cell_magic
-
-if sys.version_info < (3, 6):
-    raise RuntimeError('Magic only supported for Python version 3.6 and up')
+from IPython import get_ipython
+from IPython.core.magic import Magics, line_cell_magic, magics_class
 
 
 @magics_class
@@ -10,8 +7,11 @@ class QCoDeSMagic(Magics):
     """Magics related to code management (loading, saving, editing, ...)."""
 
     def __init__(self, *args, **kwargs):
+        """
+        Setup Magic. All args and kwargs are passed to super class.
+        """
         self._knowntemps = set()
-        super(QCoDeSMagic, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     @line_cell_magic
     def measurement(self, line, cell=None):
@@ -86,7 +86,7 @@ class QCoDeSMagic(Magics):
         lines = cell.splitlines()
         assert lines[0][:3] == 'for', "Measurement must start with for loop"
 
-        contents = 'import qcodes\n{} = '.format(loop_name)
+        contents = f'import qcodes\n{loop_name} = '
         previous_level = 0
         for k, line in enumerate(lines):
             line, level = line.lstrip(), int((len(line)-len(line.lstrip())) / 4)
@@ -118,7 +118,7 @@ class QCoDeSMagic(Magics):
                                                 ''.format(for_code))
                 else:
                     # Action in current loop
-                    line_representation += '{},\n'.format(line)
+                    line_representation += f'{line},\n'
                 contents += line_representation
 
                 # Remember level for next iteration (might exit inner loop)
@@ -155,7 +155,7 @@ def register_magic_class(cls=QCoDeSMagic, magic_commands=True):
 
     ip = get_ipython()
     if ip is None:
-        raise RuntimeError('No iPython shell found')
+        raise RuntimeError("No IPython shell found")
     else:
         if magic_commands is not True:
             # filter out any magic commands that are not in magic_commands

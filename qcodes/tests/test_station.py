@@ -1,26 +1,36 @@
 import pytest
+from contextlib import contextmanager
 import tempfile
-import json
+import warnings
 from pathlib import Path
+import os
 from typing import Optional
+import json
+from io import StringIO
 
 import qcodes
 import qcodes.utils.validators as validators
 from qcodes.utils.helpers import get_qcodes_path
+from qcodes.utils.deprecate import assert_deprecated, deprecation_message
 from qcodes.instrument.parameter import DelegateParameter
 from qcodes import Instrument
-from qcodes.station import Station
+from qcodes.station import (
+    Station, ValidationWarning, update_config_schema, SCHEMA_PATH)
 from qcodes.instrument.parameter import Parameter
 from qcodes.monitor.monitor import Monitor
 from qcodes.tests.instrument_mocks import (
     DummyInstrument)
-from qcodes.tests.test_combined_par import DumyPar
-from qcodes.tests.test_config import default_config
+from qcodes.tests.common import default_config
+from qcodes.utils.helpers import NumpyJSONEncoder
+from qcodes.utils.helpers import YAML
+from .common import DumyPar
+
 
 @pytest.fixture(autouse=True)
 def use_default_config():
     with default_config():
         yield
+
 
 @pytest.fixture(autouse=True)
 def set_default_station_to_none():
@@ -36,6 +46,13 @@ def close_all_instruments():
     Instrument.close_all()
     yield
     Instrument.close_all()
+
+
+@pytest.fixture(autouse=True)
+def treat_validation_warning_as_error():
+    warnings.simplefilter("error", ValidationWarning)
+    yield
+    warnings.simplefilter("default", ValidationWarning)
 
 
 def test_station():
@@ -133,6 +150,17 @@ def test_remove_component():
         _ = station.remove_component('bobby')
 
 
+def test_close_all_registered_instruments():
+    names = [f'some_name_{i}' for i in range(10)]
+    instrs = [Instrument(name=name) for name in names]
+    st = Station(*instrs)
+    for name in names:
+        assert name in Instrument._all_instruments
+    st.close_all_registered_instruments()
+    for name in names:
+        assert name not in Instrument._all_instruments
+
+
 def test_snapshot():
     station = Station()
 
@@ -140,7 +168,7 @@ def test_snapshot():
     assert {'instruments': {},
             'parameters': {},
             'components': {},
-            'default_measurement': []
+            'config': None,
             } == empty_snapshot
 
     instrument = DummyInstrument('instrument', gates=['one'])
@@ -150,6 +178,9 @@ def test_snapshot():
     parameter = Parameter('parameter', label='Label', unit='m')
     station.add_component(parameter)
     parameter_snapshot = parameter.snapshot()
+
+    excluded_parameter = Parameter('excluded_parameter', snapshot_exclude=True)
+    station.add_component(excluded_parameter)
 
     component = DumyPar('component')
     component.metadata['smth'] = 'in the way she moves'
@@ -162,19 +193,18 @@ def test_snapshot():
     assert ['instruments',
             'parameters',
             'components',
-            'default_measurement'
+            'config',
             ] == list(snapshot.keys())
 
     assert ['instrument'] == list(snapshot['instruments'].keys())
     assert instrument_snapshot == snapshot['instruments']['instrument']
 
+    # the list should not contain the excluded parameter
     assert ['parameter'] == list(snapshot['parameters'].keys())
     assert parameter_snapshot == snapshot['parameters']['parameter']
 
     assert ['component'] == list(snapshot['components'].keys())
     assert component_snapshot == snapshot['components']['component']
-
-    assert [] == snapshot['default_measurement']
 
 
 def test_station_after_instrument_is_closed():
@@ -205,7 +235,7 @@ def test_station_after_instrument_is_closed():
     assert {'instruments': {},
             'parameters': {},
             'components': {},
-            'default_measurement': []
+            'config': None,
             } == snapshot
 
     # check that 'bob' has been removed from the station
@@ -217,8 +247,37 @@ def test_station_after_instrument_is_closed():
                                        'station'):
         station.remove_component('bob')
 
-@pytest.fixture
-def example_station_config():
+
+def test_update_config_schema():
+    update_config_schema()
+    with open(SCHEMA_PATH) as f:
+        schema = json.load(f)
+    assert len(schema['definitions']['instruments']['enum']) > 1
+
+
+@contextmanager
+def config_file_context(file_content):
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        filename = Path(tmpdirname, 'station_config.yaml')
+        with filename.open('w') as f:
+            f.write(file_content)
+        yield str(filename)
+
+
+@contextmanager
+def config_files_context(file_content1, file_content2):
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        filename1 = Path(tmpdirname, 'station_config1.yaml')
+        with filename1.open('w') as f:
+            f.write(file_content1)
+        filename2 = Path(tmpdirname, 'station_config2.yaml')
+        with filename2.open('w') as f:
+            f.write(file_content2)
+        yield [str(filename1), str(filename2)]
+
+
+@pytest.fixture(name="example_station_config")
+def _make_example_station_config():
     """
     Returns path to temp yaml file with station config.
     """
@@ -226,15 +285,13 @@ def example_station_config():
     test_config = f"""
 instruments:
   lakeshore:
-    driver: qcodes.instrument_drivers.Lakeshore.Model_336
-    type: Model_336
+    type: qcodes.instrument_drivers.Lakeshore.Model_336.Model_336
     enable_forced_reconnect: true
-    address: GPIB::2::65535::INSTR
+    address: GPIB::2::INSTR
     init:
       visalib: '{sims_path}lakeshore_model336.yaml@sim'
   mock_dac:
-    driver: qcodes.tests.instrument_mocks
-    type: DummyInstrument
+    type: qcodes.tests.instrument_mocks.DummyInstrument
     enable_forced_reconnect: true
     init:
       gates: {{"ch1", "ch2"}}
@@ -242,21 +299,17 @@ instruments:
       ch1:
         monitor: true
   mock_dac2:
-    driver: qcodes.tests.instrument_mocks
-    type: DummyInstrument
+    type: qcodes.tests.instrument_mocks.DummyInstrument
     """
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        filename = Path(tmpdirname, 'station_config.yaml')
-        with filename.open('w') as f:
-            f.write(test_config)
-        yield str(filename)
+    with config_file_context(test_config) as filename:
+        yield filename
 
 
 def test_dynamic_reload_of_file(example_station_config):
     st = Station(config_file=example_station_config)
     mock_dac = st.load_instrument('mock_dac')
     assert 'ch1' in mock_dac.parameters
-    with open(example_station_config, 'r') as f:
+    with open(example_station_config) as f:
         filedata = f.read().replace('ch1', 'gate1')
     with open(example_station_config, 'w') as f:
         f.write(filedata)
@@ -272,11 +325,11 @@ def station_from_config_str(config: str) -> Station:
 
 
 def station_config_has_been_loaded(st: Station) -> bool:
-    return "config" in st.components.keys()
+    return st.config is not None
 
 
-@pytest.fixture
-def example_station(example_station_config):
+@pytest.fixture(name="example_station")
+def _make_example_station(example_station_config):
     return Station(config_file=example_station_config)
 
 
@@ -340,24 +393,43 @@ def test_station_config_path_resolution(example_station_config):
 def test_station_configuration_is_a_component_of_station(example_station):
     assert station_config_has_been_loaded(example_station)
 
+
+def test_station_config_can_be_loaded_from_snapshot(example_station):
+    assert station_config_has_been_loaded(example_station)
+    # ensure that we can correctly dump config which is a subclass of UserDict
+    configdump = json.dumps(example_station.config, cls=NumpyJSONEncoder)
+    # as this is now a regular dict we can load it back
+    loaded_config = json.loads(configdump)
+    # now lets ensure that we can recreate the
+    # station from the loaded config
+    # first we need to get a yaml repr of the data
+    yaml = YAML()
+    with StringIO() as output:
+        yaml.dump(loaded_config, output)
+        yaml_repr = output.getvalue()
+    # which we can then reload into the station
+    new_station = Station(default=False)
+    new_station.load_config(yaml_repr)
+    assert example_station.config == new_station.config
+
+
 @pytest.fixture
 def simple_mock_station():
     yield station_from_config_str(
         """
 instruments:
   mock:
-    driver: qcodes.tests.instrument_mocks
-    type: DummyInstrument
+    type: qcodes.tests.instrument_mocks.DummyInstrument
         """)
+
 
 def test_simple_mock_config(simple_mock_station):
     st = simple_mock_station
     assert station_config_has_been_loaded(st)
     assert hasattr(st, 'load_mock')
-    mock_snapshot = st.snapshot()['components']['config']\
-        ['instruments']['mock']
-    assert mock_snapshot['driver'] == "qcodes.tests.instrument_mocks"
-    assert mock_snapshot['type'] == "DummyInstrument"
+    mock_snapshot = st.snapshot()['config']['instruments']['mock']
+    assert (mock_snapshot['type'] ==
+            "qcodes.tests.instrument_mocks.DummyInstrument")
     assert 'mock' in st.config['instruments']
 
 
@@ -382,8 +454,7 @@ def test_enable_force_reconnect() -> None:
         return f"""
 instruments:
   mock:
-    driver: qcodes.tests.instrument_mocks
-    type: DummyInstrument
+    type: qcodes.tests.instrument_mocks.DummyInstrument
     {f'enable_forced_reconnect: {enable_forced_reconnect}'
         if enable_forced_reconnect is not None else ''}
     init:
@@ -430,8 +501,7 @@ def test_revive_instance():
     st = station_from_config_str("""
 instruments:
   mock:
-    driver: qcodes.tests.instrument_mocks
-    type: DummyInstrument
+    type: qcodes.tests.instrument_mocks.DummyInstrument
     enable_forced_reconnect: true
     init:
       gates: {"ch1"}
@@ -448,15 +518,16 @@ instruments:
 
 
 def test_init_parameters():
-    st = station_from_config_str("""
+    st = station_from_config_str(
+        """
 instruments:
   mock:
-    driver: qcodes.tests.instrument_mocks
-    type: DummyInstrument
+    type: qcodes.tests.instrument_mocks.DummyInstrument
     enable_forced_reconnect: true
     init:
       gates: {"ch1", "ch2"}
-    """)
+    """
+    )
     mock = st.load_instrument('mock')
     for ch in ["ch1", "ch2"]:
         assert ch in mock.parameters.keys()
@@ -467,14 +538,12 @@ instruments:
     assert "TestGate" in mock.parameters.keys()
     assert len(mock.parameters) == 2  # there is also IDN
 
-
     # test address
     sims_path = get_qcodes_path('instrument', 'sims')
     st = station_from_config_str(f"""
 instruments:
   lakeshore:
-    driver: qcodes.instrument_drivers.Lakeshore.Model_336
-    type: Model_336
+    type: qcodes.instrument_drivers.Lakeshore.Model_336.Model_336
     enable_forced_reconnect: true
     address: GPIB::2::INSTR
     init:
@@ -491,12 +560,47 @@ def test_name_init_kwarg(simple_mock_station):
     assert st.components['test'] is mock
 
 
+def test_name_specified_in_init_in_yaml_is_used():
+    st = station_from_config_str(
+        """
+instruments:
+  mock:
+    type: qcodes.tests.instrument_mocks.DummyInstrument
+    init:
+      name: dummy
+        """)
+
+    mock = st.load_instrument('mock')
+    assert isinstance(mock, DummyInstrument)
+    assert mock.name == 'dummy'
+    assert st.components['dummy'] is mock
+
+
+class InstrumentWithNameAsNotFirstArgument(Instrument):
+    def __init__(self, first_arg, name):
+        super().__init__(name)
+        self._first_arg = first_arg
+
+
+def test_able_to_load_instrument_with_name_argument_not_being_the_first():
+    st = station_from_config_str(
+        """
+instruments:
+  name_goes_second:
+    type: qcodes.tests.test_station.InstrumentWithNameAsNotFirstArgument
+        """)
+
+    instr = st.load_instrument('name_goes_second', first_arg=42)
+    assert isinstance(instr, InstrumentWithNameAsNotFirstArgument)
+    assert instr.name == 'name_goes_second'
+    assert st.components['name_goes_second'] is instr
+
+
 def test_setup_alias_parameters():
     st = station_from_config_str("""
 instruments:
   mock:
-    driver: qcodes.tests.instrument_mocks
-    type: DummyInstrument
+    type: qcodes.tests.instrument_mocks.DummyInstrument
     enable_forced_reconnect: true
     init:
       gates: {"ch1"}
@@ -506,7 +610,7 @@ instruments:
         label: main gate
         scale: 2
         offset: 1
-        limits: -10, 10
+        limits: [-10, 10]
         alias: gate_a
         initial_value: 9
 
@@ -519,7 +623,7 @@ instruments:
     assert p.scale == 2
     assert p.offset == 1
     assert isinstance(p.vals, validators.Numbers)
-    assert str(p.vals) == '<Numbers -10.0<=v<=10.0>'
+    assert str(p.vals) == '<Numbers -10<=v<=10>'
     assert p() == 9
     mock.ch1(1)
     assert p() == 1
@@ -528,12 +632,12 @@ instruments:
     assert p.raw_value == 7
     assert mock.ch1.raw_value == 7
 
+
 def test_setup_delegate_parameters():
     st = station_from_config_str("""
 instruments:
   mock:
-    driver: qcodes.tests.instrument_mocks
-    type: DummyInstrument
+    type: qcodes.tests.instrument_mocks.DummyInstrument
     enable_forced_reconnect: true
     init:
       gates: {"ch1"}
@@ -543,7 +647,7 @@ instruments:
         label: ch1
         scale: 1
         offset: 0
-        limits: -10, 10
+        limits: [-10, 10]
     add_parameters:
       gate_a:
         source: ch1
@@ -551,7 +655,7 @@ instruments:
         label: main gate
         scale: 2
         offset: 1
-        limits: -6, 6
+        limits: [-6.0 , 6.]
         initial_value: 2
 
     """)
@@ -570,7 +674,7 @@ instruments:
     assert mock.ch1.scale == 1
     assert mock.ch1.offset == 0
     assert isinstance(p.vals, validators.Numbers)
-    assert str(mock.ch1.vals) == '<Numbers -10.0<=v<=10.0>'
+    assert str(mock.ch1.vals) == '<Numbers -10<=v<=10>'
     assert mock.ch1() == 5
     mock.ch1(7)
     assert p() == 3
@@ -585,8 +689,7 @@ def test_channel_instrument():
     st = station_from_config_str("""
 instruments:
   mock:
-    driver: qcodes.tests.instrument_mocks
-    type: DummyChannelInstrument
+    type: qcodes.tests.instrument_mocks.DummyChannelInstrument
     enable_forced_reconnect: true
     parameters:
       A.temperature:
@@ -594,10 +697,26 @@ instruments:
     add_parameters:
       T:
         source: A.temperature
+      A.voltage:
+        source: A.temperature
     """)
     mock = st.load_instrument('mock')
     assert mock.A.temperature.unit == 'mK'
     assert mock.T.unit == 'mK'
+    assert mock.A.voltage.source is mock.A.temperature
+
+
+def test_setting_channel_parameter():
+    st = station_from_config_str("""
+instruments:
+  mock:
+    type: qcodes.tests.instrument_mocks.DummyChannelInstrument
+    parameters:
+      channels.temperature:
+          initial_value: 10
+    """)
+    mock = st.load_instrument('mock')
+    assert mock.channels.temperature() == (10,) * 6
 
 
 def test_monitor_not_loaded_by_default(example_station_config):
@@ -631,5 +750,164 @@ def test_monitor_not_loaded_if_specified(example_station_config):
     assert Monitor.running is None
 
 
+def test_deprecated_driver_keyword():
+    st = station_from_config_str("""
+instruments:
+  mock:
+    driver: qcodes.tests.instrument_mocks
+    type: DummyChannelInstrument
+    """)
+    with assert_deprecated(
+        deprecation_message(
+            'use of the "driver"-keyword in the station configuration file',
+            alternative='the "type"-keyword instead, prepending the driver value'
+                        ' to it')):
+        st.load_instrument('mock')
 
 
+def test_deprecated_limits_keyword_as_string():
+    st = station_from_config_str("""
+instruments:
+  mock:
+    type: qcodes.tests.instrument_mocks.DummyInstrument
+    init:
+      gates: {"ch1"}
+    parameters:
+      ch1:
+        limits: -10, 10
+    """)
+    with assert_deprecated(
+        deprecation_message(
+            'use of a comma separated string for the limits keyword',
+            alternative='an array like "[lower_lim, upper_lim]"')
+    ):
+        st.load_instrument('mock')
+
+
+def test_config_validation_failure():
+    with pytest.raises(ValidationWarning):
+        station_from_config_str("""
+instruments:
+  mock:
+    driver: qcodes.tests.instrument_mocks.DummyInstrument
+invalid_keyword:
+  more_errors: 42
+        """)
+
+
+def test_config_validation_failure_on_file():
+    with pytest.raises(ValidationWarning):
+        test_config = """
+instruments:
+  mock:
+    driver: qcodes.tests.instrument_mocks.DummyInstrument
+invalid_keyword:
+  more_errors: 42
+    """
+        with config_file_context(test_config) as filename:
+            Station(config_file=filename)
+
+
+def test_config_validation_comprehensive_config():
+    Station(config_file=os.path.join(
+        get_qcodes_path(), 'dist', 'tests', 'station', 'example.station.yaml')
+    )
+
+
+def test_load_all_instruments_raises_on_both_only_names_and_only_types_passed(
+        example_station
+):
+    with pytest.raises(
+        ValueError,
+        match="It is an error to supply both ``only_names`` "
+              "and ``only_types`` arguments.",
+    ):
+        example_station.load_all_instruments(only_names=(), only_types=())
+
+
+def test_load_all_instruments_no_args(example_station):
+    all_instruments_in_config = {"lakeshore", "mock_dac", "mock_dac2"}
+
+    loaded_instruments = example_station.load_all_instruments()
+
+    assert set(loaded_instruments) == all_instruments_in_config
+
+    for instrument in all_instruments_in_config:
+        assert instrument in example_station.components
+        assert Instrument.exist(instrument)
+
+
+def test_load_all_instruments_only_types(example_station):
+    all_dummy_instruments = {"mock_dac", "mock_dac2"}
+
+    loaded_instruments = example_station.load_all_instruments(
+        only_types=("DummyInstrument",)
+    )
+
+    assert set(loaded_instruments) == all_dummy_instruments
+
+    for instrument in all_dummy_instruments:
+        assert instrument in example_station.components
+        assert Instrument.exist(instrument)
+
+    other_instruments = (
+            set(example_station.config["instruments"].keys())
+            - all_dummy_instruments
+    )
+
+    for instrument in other_instruments:
+        assert instrument not in example_station.components
+        assert not Instrument.exist(instrument)
+
+
+def test_load_all_instruments_only_names(example_station):
+    instruments_to_load = {"lakeshore", "mock_dac"}
+
+    loaded_instruments = example_station.load_all_instruments(
+        only_names=instruments_to_load
+    )
+
+    assert set(loaded_instruments) == instruments_to_load
+
+    for instrument in loaded_instruments:
+        assert instrument in example_station.components
+        assert Instrument.exist(instrument)
+
+    other_instruments = (
+            set(example_station.config["instruments"].keys())
+            - instruments_to_load
+    )
+
+    for instrument in other_instruments:
+        assert instrument not in example_station.components
+        assert not Instrument.exist(instrument)
+
+
+def test_load_all_instruments_without_config_raises():
+    station = Station()
+    with pytest.raises(ValueError, match="Station has no config"):
+        station.load_all_instruments()
+
+
+def test_station_config_created_with_multiple_config_files():
+
+    test_config1 = f"""
+        instruments:
+          mock_dac1:
+            type: qcodes.tests.instrument_mocks.DummyInstrument
+            enable_forced_reconnect: true
+            init:
+              gates: {{"ch1", "ch2"}}
+            parameters:
+              ch1:
+                monitor: true
+    """
+    test_config2 = f"""
+        instruments:
+          mock_dac2:
+            type: qcodes.tests.instrument_mocks.DummyInstrument
+    """
+    with config_files_context(
+            test_config1, test_config2
+    ) as file_list:
+        assert station_config_has_been_loaded(Station(config_file=file_list))

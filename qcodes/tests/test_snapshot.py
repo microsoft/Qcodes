@@ -23,7 +23,7 @@ def test_snapshot_skip_params_update(request, params, params_to_skip):
     calls :meth:`snapshot`
     """
 
-    inst = SnapShotTestInstrument('inst',
+    inst = SnapShotTestInstrument('snapshot_inst_1',
                                   params=params,
                                   params_to_skip=params_to_skip)
     request.addfinalizer(inst.close)
@@ -61,12 +61,13 @@ def test_snapshot_exclude_params(request, params, params_to_exclude):
     calls :meth:`snapshot`
     """
 
-    inst = SnapShotTestInstrument('inst',
+    inst = SnapShotTestInstrument('snapshot_inst_2',
                                   params=params,
                                   params_to_skip=[])
+    request.addfinalizer(inst.close)
 
     params.insert(0, "IDN")  # Is added by default to a instrument
-    request.addfinalizer(inst.close)
+
     for param_exl in params_to_exclude:
         inst.parameters[param_exl].snapshot_exclude = True
 
@@ -78,8 +79,5 @@ def test_snapshot_exclude_params(request, params, params_to_exclude):
         f"Parameter(s) is not excluded from the snapshot. expected: " \
         f"{params}, actual: {snap_params}"\
 
-
     assert snap_params == params, f"Snapshot does not contain the expected " \
         f"parameters expected: {params}, actual: {snap_params}"
-
-

@@ -5,13 +5,16 @@ instrument. Please note that `channel` in this context does not necessarily
 mean a physical instrument channel, but rather an instrument sub-module.
 """
 
-from typing import List, Union, Any, Dict, Callable
-import pytest
 import re
+from typing import Any, Callable, Dict, List, Optional, Union
+
+import pytest
 
 from qcodes import Instrument
 from qcodes.instrument.channel import (
-    AutoLoadableInstrumentChannel, AutoLoadableChannelList, InstrumentChannel
+    AutoLoadableChannelList,
+    AutoLoadableInstrumentChannel,
+    InstrumentChannel,
 )
 
 
@@ -21,10 +24,10 @@ class MockBackendBase:
     callable values. The keys are matched to input commands with regular
     expressions and on match the corresponding callable is called.
     """
-    def __init__(self)->None:
-        self._command_dict: Dict[str, Callable] = {}
+    def __init__(self) -> None:
+        self._command_dict: Dict[str, Callable[..., Any]] = {}
 
-    def send(self, cmd: str)->Any:
+    def send(self, cmd: str) -> Any:
         """
         Instead of sending a string to the Visa backend, we use this function
         as a mock
@@ -65,7 +68,7 @@ class MockBackend(MockBackendBase):
     INST:CHN<n>:GRT
     Return the greeting of this channel
     """
-    def __init__(self)->None:
+    def __init__(self) -> None:
         super().__init__()
         self._channel_catalog: List[str] = ["1", "2", "4", "5"]  # Pre-existing
         # channels
@@ -76,9 +79,8 @@ class MockBackend(MockBackendBase):
                 lambda chn: self._greetings[chn] + " from channel " + str(chn),
             r":INST:CHN:ADD (\d), (.+)": self._add_channel,
             r":INST:CHN:DEL (\d)": self._channel_catalog.remove,
-            r":INST:CHN:CAT": lambda: ",".join([
-                str(i) for i in self._channel_catalog]),
-            r":INST:CHN(\d):GRT":  self._greetings.get
+            r":INST:CHN:CAT": lambda: ",".join(str(i) for i in self._channel_catalog),
+            r":INST:CHN(\d):GRT": self._greetings.get,
         }
 
     def _add_channel(self, chn: int, greeting: str)->None:
@@ -96,7 +98,7 @@ class SimpleTestChannel(AutoLoadableInstrumentChannel):
 
     @classmethod
     def _discover_from_instrument(
-            cls, parent: Instrument, **kwargs) -> List[dict]:
+            cls, parent: Instrument, **kwargs) -> List[Dict[Any, Any]]:
         """
         New channels need `name` and `channel` keyword arguments.
         """
@@ -124,7 +126,8 @@ class SimpleTestChannel(AutoLoadableInstrumentChannel):
 
     @classmethod
     def _get_new_instance_kwargs(
-            cls, parent: Instrument=None, **kwargs) -> dict:
+            cls, parent: Optional[Instrument] = None, **kwargs
+    ) -> Dict[Any, Any]:
         """
         Find the smallest channel number not yet occupied. An optional keyword
         `greeting` is extracted from the kwargs. The default is "Hello"
@@ -153,7 +156,7 @@ class SimpleTestChannel(AutoLoadableInstrumentChannel):
             channel: int,
             greeting: str,
             existence: bool = False,
-            channel_list: AutoLoadableChannelList = None,
+            channel_list: Optional[AutoLoadableChannelList] = None,
     ) -> None:
 
         super().__init__(parent, name, existence, channel_list)
@@ -165,12 +168,12 @@ class SimpleTestChannel(AutoLoadableInstrumentChannel):
             get_cmd=f":INST:CHN{self._channel}:HLO"
         )
 
-    def _create(self)->None:
+    def _create(self) -> None:
         """Create the channel on the instrument"""
         self.parent.root_instrument.write(
             f":INST:CHN:ADD {self._channel}, {self._greeting}")
 
-    def _remove(self)->None:
+    def _remove(self) -> None:
         """Remove the channel from the instrument"""
         self.write(f":INST:CHN:DEL {self._channel}")
 
@@ -195,10 +198,10 @@ class DummyInstrument(Instrument):
             self, "channels", SimpleTestChannel, channels_to_skip=["5"])
         self.add_submodule("channels", channels)
 
-    def write_raw(self, cmd: str)->None:
+    def write_raw(self, cmd: str) -> None:
         self._backend.send(cmd)
 
-    def ask_raw(self, cmd: str)->str:
+    def ask_raw(self, cmd: str) -> str:
         return self._backend.send(cmd)
 
 

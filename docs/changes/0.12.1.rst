@@ -1,0 +1,10 @@
+Changelog for QCoDeS 0.12.1
+===========================
+
+This release contains a feature that was announced in 0.12.0 but not correctly included.
+
+New Features:
+_____________
+
+New suite of sweep functions now in QCoDeS! The famous doNd functions
+from the Copenhagen labs are now part of the QCoDeS library (#1895).

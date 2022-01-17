@@ -1,12 +1,19 @@
+from typing import Any
+
 from qcodes import VisaInstrument
-from qcodes.utils.validators import Strings, Enum
+from qcodes.utils.helpers import create_on_off_val_mapping
+from qcodes.utils.validators import Enum, Strings
 
 
 class Keithley_2400(VisaInstrument):
     """
     QCoDeS driver for the Keithley 2400 voltage source.
     """
-    def __init__(self, name, address, **kwargs):
+    def __init__(
+            self,
+            name: str,
+            address: str,
+            **kwargs: Any):
         super().__init__(name, address, terminator='\n', **kwargs)
 
         self.add_parameter('rangev',
@@ -52,13 +59,12 @@ class Keithley_2400(VisaInstrument):
                            set_cmd=':SOUR:CURR:LEV {:.8f}',
                            label='Current',
                            unit='A',
-                           docstring = "Sets current in 'CURR' mode. "
-                                        "Get returns measured current if "
-                                        "sensing 'CURR' otherwise it returns "
-                                        "setpoint value. "
-                                        "Note that it is an error to read current with "
-                                        "output off")
-
+                           docstring="Sets current in 'CURR' mode. "
+                                     "Get returns measured current if "
+                                     "sensing 'CURR' otherwise it returns "
+                                     "setpoint value. "
+                                     "Note that it is an error to read current with "
+                                     "output off")
 
         self.add_parameter('mode',
                            vals=Enum('VOLT', 'CURR'),
@@ -72,10 +78,12 @@ class Keithley_2400(VisaInstrument):
                            set_cmd=':SENS:FUNC "{:s}"',
                            label='Sense mode')
 
-        self.add_parameter('output',
-                           get_parser=int,
-                           set_cmd=':OUTP:STAT {:d}',
-                           get_cmd=':OUTP:STAT?')
+        self.add_parameter(
+            'output',
+            set_cmd=':OUTP:STAT {}',
+            get_cmd=':OUTP:STAT?',
+            val_mapping=create_on_off_val_mapping(on_val="1", off_val="0")
+        )
 
         self.add_parameter('nplcv',
                            get_cmd='SENS:VOLT:NPLC?',
@@ -98,6 +106,21 @@ class Keithley_2400(VisaInstrument):
                                      "Note that it is an error to read current "
                                      "and voltage with output off")
 
+        self.write(':TRIG:COUN 1;:FORM:ELEM VOLT,CURR')
+        # This line sends 2 commands to the instrument:
+        # ":TRIG:COUN 1" sets the trigger count to 1 so that each READ? returns
+        # only 1 measurement result.
+        # ":FORM:ELEM VOLT,CURR" sets the output string formatting of the the
+        # Keithley 2400 to return "{voltage}, {current}".
+        # Default value on instrument reset is "VOLT, CURR, RES, TIME, STATUS";
+        # however, resistance, status, and time are unused in this driver and
+        # so are omitted.
+        # These commands do not reset the instrument but do the minimal amount
+        # to ensure that voltage and current parameters can be read from the
+        # instrument, in the event that output formatting of the instrument was
+        # previously changed to some other unknown state.
+        self.connect_message()
+
     def _get_read_output_protected(self) -> str:
         """
         This wrapper function around ":READ?" exists because calling
@@ -117,7 +140,7 @@ class Keithley_2400(VisaInstrument):
             raise RuntimeError("Cannot perform read with output off")
         return msg
 
-    def _set_mode_and_sense(self, msg):
+    def _set_mode_and_sense(self, msg: str) -> None:
         # This helps set the correct read out curr/volt
         if msg == 'VOLT':
             self.sense('CURR')
@@ -125,9 +148,9 @@ class Keithley_2400(VisaInstrument):
             self.sense('VOLT')
         else:
             raise AttributeError('Mode does not exist')
-        self.write(':SOUR:FUNC {:s}'.format(msg))
+        self.write(f':SOUR:FUNC {msg:s}')
 
-    def reset(self):
+    def reset(self) -> None:
         """
         Reset the instrument. When the instrument is reset, it performs the
         following actions.
@@ -140,15 +163,15 @@ class Keithley_2400(VisaInstrument):
         """
         self.write(':*RST')
 
-    def _volt_parser(self, msg):
+    def _volt_parser(self, msg: str) -> float:
         fields = [float(x) for x in msg.split(',')]
         return fields[0]
 
-    def _curr_parser(self, msg):
+    def _curr_parser(self, msg: str) -> float:
         fields = [float(x) for x in msg.split(',')]
         return fields[1]
 
-    def _resistance_parser(self, msg):
+    def _resistance_parser(self, msg: str) -> float:
         fields = [float(x) for x in msg.split(',')]
         res = fields[0] / fields[1]
         return res

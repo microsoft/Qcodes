@@ -61,4 +61,3 @@ _______________
 - Deploy docs using Azure rather than Travis (#1647)
 - Docsbuild: remove old files before checking in and use old style message (#1649)
 - Change HDF5FormatMetadata to not sort keys in the metadata (#1581)
-

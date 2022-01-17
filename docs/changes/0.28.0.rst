@@ -1,0 +1,46 @@
+Changelog for QCoDeS 0.28.0
+===========================
+
+The August 2021 release of QCoDeS.
+
+-----------------
+Breaking Changes:
+-----------------
+
+- get_guids_from_multiple_run_ids accepts connection over dbpath in the function. (#3222)
+
+----
+New:
+----
+- Use thread pool when acquiring parameters to save time on recreating threads, new ThreadPoolParamsCaller,
+  use it in do1d, do2d, dond. (#3170)
+- QCoDeS has not the ability to set a default experiment in a Python session, and now, creating/ loading an experiment
+  automatically sets that experiment as the default one. (#3214)
+- The dond function has gained the ability to produce multiple datasets when measuring multiple parameters. (#3186)
+- Make parameter registration on instrument part of parameter init. (#3191)
+- Add post sweep actions to doND sweeps. (#3283)
+- load experiment functions accept duplicated experiment name, and new_experiment warns if creates duplicated
+  experiment. (#3296)
+
+---------
+Improved:
+---------
+- Fix shapes of dond datasets with additional setpoints. (#3305)
+
+
+-----------------
+Improved drivers:
+-----------------
+
+- Update voltage parameter for Keithley2600 SMU to be aware of measurement status. (#3251)
+
+---------------
+Under the hood:
+---------------
+
+- Adding a Sphinx extension to document Parameter attributes. (#3224)
+- Work around legacy test issue with hf51.12.1 on conda forge. (#3278)
+- Make qcodes install mostly pep517/518 compliant. (#3288)
+- Log all installed packages. (#3289)
+- Remove pre-commit job from the repository in favor of pre-commit integration in the CI. (#3293, #3290)
+- Explicitly depend on setuptools. (#3294)

@@ -1,0 +1,39 @@
+# Simulated Keithley 7510 DMM instrument
+spec: "1.0"
+devices:
+  device 1:
+    eom:
+      GPIB INSTR:
+        q: "\n"
+        r: "\n"
+    error: ERROR
+    dialogues:
+      - q: "*IDN?"
+        r: "KEITHLEY INSTRUMENTS, DMM7510, 01234567, 1.2.3a"
+
+    properties:
+      sense_function:
+        default: "\"VOLT:DC\""
+        getter:
+          q: ":SENSe:FUNCtion?"
+          r: "{}"
+        setter:
+          q: ":SENSe:FUNCtion {}"
+
+      range_voltage:
+        getter:
+          q: ":SENSe:voltage:RANGe?"
+          r: "{}"
+        setter:
+          q: ":SENSe:voltage:RANGe {}"
+
+      nplc_voltage:
+        getter:
+          q: ":SENSe:voltage:NPLCycles?"
+          r: "{}"
+        setter:
+          q: ":SENSe:voltage:NPLCycles {}"
+
+resources:
+  "GPIB::1::INSTR":
+    device: device 1

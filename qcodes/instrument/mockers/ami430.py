@@ -138,12 +138,12 @@ class MockAMI430:
         # and the key match. We need to replace reserved regular
         # expression characters in the key. For instance replace
         # "*IDN" with "\*IDN".
-        reserved_re_characters = "\^${}[]().*+?|<>-&"
+        reserved_re_characters = r"\^${}[]().*+?|<>-&"
         for c in reserved_re_characters:
-            key = key.replace(c, "\{}".format(c))
+            key = key.replace(c, fr"\{c}")
 
         # Get and set messages use different regular expression
-        s = {"get": "(:[^:]*)?\?$", "set": "([^:]+)"}[gs]
+        s = {"get": r"(:[^:]*)?\?$", "set": "([^:]+)"}[gs]
         # patterns to determine a match
         search_string = "^" + key + s
         r = re.search(search_string, msg_str)
@@ -204,7 +204,7 @@ class MockAMI430:
             break
 
         if handler is None:
-            self._log("Command {} unknown".format(msg))
+            self._log(f"Command {msg} unknown")
 
         return rval
 
@@ -215,7 +215,7 @@ class MockAMI430:
         return self._state == MockAMI430.states["PAUSED"]
 
     def _do_ramp(self, _):
-        self._log("Ramping to {}".format(self._field_target))
+        self._log(f"Ramping to {self._field_target}")
         self._state = MockAMI430.states["RAMPING to target field/current"]
         time.sleep(0.1)  # Lets pretend to be ramping for a bit
         self._field_mag = self._field_target

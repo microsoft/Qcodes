@@ -1,31 +1,42 @@
-from collections.abc import Sized
-from typing import Optional, List
 import logging
+from collections.abc import Sized
+from typing import Any, List, Optional, Union
+from warnings import warn
 
-import qcodes
-from qcodes.dataset.data_set import (DataSet, load_by_id, load_by_counter,
-                                     new_data_set, SPECS)
-from qcodes.dataset.sqlite.connection import transaction, ConnectionPlus
-from qcodes.dataset.sqlite.queries import new_experiment as ne, \
-    finish_experiment, get_run_counter, get_runs, get_last_run, \
-    get_last_experiment, get_experiments, \
-    get_experiment_name_from_experiment_id, get_runid_from_expid_and_counter, \
-    get_sample_name_from_experiment_id
-from qcodes.dataset.sqlite.database import get_DB_location, get_DB_debug, \
-    connect, conn_from_dbpath_or_conn
-from qcodes.dataset.sqlite.query_helpers import select_one_where
-
+from qcodes.dataset.data_set import DataSet, load_by_id, new_data_set
+from qcodes.dataset.data_set_protocol import SPECS, DataSetProtocol
+from qcodes.dataset.experiment_settings import _set_default_experiment_id
+from qcodes.dataset.sqlite.connection import ConnectionPlus, path_to_dbfile
+from qcodes.dataset.sqlite.database import (
+    conn_from_dbpath_or_conn,
+    connect,
+    get_DB_location,
+)
+from qcodes.dataset.sqlite.queries import (
+    finish_experiment,
+    get_experiment_name_from_experiment_id,
+    get_experiments,
+    get_last_experiment,
+    get_last_run,
+    get_matching_exp_ids,
+    get_run_counter,
+    get_runid_from_expid_and_counter,
+    get_runs,
+    get_sample_name_from_experiment_id,
+)
+from qcodes.dataset.sqlite.queries import new_experiment as ne
+from qcodes.dataset.sqlite.query_helpers import VALUES, select_one_where
 
 log = logging.getLogger(__name__)
 
 
 class Experiment(Sized):
-    def __init__(self, path_to_db: Optional[str]=None,
-                 exp_id: Optional[int]=None,
-                 name: Optional[str]=None,
-                 sample_name: Optional[str]=None,
-                 format_string: str="{}-{}-{}",
-                 conn: Optional[ConnectionPlus]=None) -> None:
+    def __init__(self, path_to_db: Optional[str] = None,
+                 exp_id: Optional[int] = None,
+                 name: Optional[str] = None,
+                 sample_name: Optional[str] = None,
+                 format_string: str = "{}-{}-{}",
+                 conn: Optional[ConnectionPlus] = None) -> None:
         """
         Create or load an experiment. If exp_id is None, a new experiment is
         created. If exp_id is not None, an experiment is loaded.
@@ -67,7 +78,7 @@ class Experiment(Sized):
                 raise ValueError("Invalid format string. Can not format "
                                  "(name, exp_id, run_counter)") from e
 
-            log.info("creating new experiment in {}".format(self.path_to_db))
+            log.info(f"creating new experiment in {self.path_to_db}")
 
             name = name or f"experiment_{max_id+1}"
             sample_name = sample_name or "some_sample"
@@ -94,22 +105,33 @@ class Experiment(Sized):
         return get_run_counter(self.conn, self.exp_id)
 
     @property
-    def started_at(self) -> int:
-        return select_one_where(self.conn, "experiments", "start_time",
-                                "exp_id", self.exp_id)
+    def started_at(self) -> float:
+        start_time = select_one_where(
+            self.conn, "experiments", "start_time", "exp_id", self.exp_id
+        )
+        assert isinstance(start_time, float)
+        return start_time
 
     @property
-    def finished_at(self) -> int:
-        return select_one_where(self.conn, "experiments", "end_time",
-                                "exp_id", self.exp_id)
+    def finished_at(self) -> Optional[float]:
+        finish_time = select_one_where(
+            self.conn, "experiments", "end_time", "exp_id", self.exp_id
+        )
+        assert isinstance(finish_time, (float, type(None)))
+        return finish_time
 
     @property
     def format_string(self) -> str:
-        return select_one_where(self.conn, "experiments", "format_string",
-                                "exp_id", self.exp_id)
+        format_str = select_one_where(
+            self.conn, "experiments", "format_string", "exp_id", self.exp_id
+        )
+        assert isinstance(format_str, str)
+        return format_str
 
-    def new_data_set(self, name, specs: SPECS = None, values=None,
-                     metadata=None) -> DataSet:
+    def new_data_set(self, name: str,
+                     specs: Optional[SPECS] = None,
+                     values: Optional[VALUES] = None,
+                     metadata: Optional[Any] = None) -> DataSet:
         """
         Create a new dataset in this experiment
 
@@ -137,15 +159,12 @@ class Experiment(Sized):
                                                   counter)
         return DataSet(run_id=run_id, conn=self.conn)
 
-    def data_sets(self) -> List[DataSet]:
+    def data_sets(self) -> List[DataSetProtocol]:
         """Get all the datasets of this experiment"""
         runs = get_runs(self.conn, self.exp_id)
-        data_sets = []
-        for run in runs:
-            data_sets.append(load_by_id(run['run_id'], conn=self.conn))
-        return data_sets
+        return [load_by_id(run['run_id'], conn=self.conn) for run in runs]
 
-    def last_data_set(self) -> DataSet:
+    def last_data_set(self) -> DataSetProtocol:
         """Get the last dataset of this experiment"""
         run_id = get_last_run(self.conn, self.exp_id)
         if run_id is None:
@@ -163,41 +182,40 @@ class Experiment(Sized):
         return len(self.data_sets())
 
     def __repr__(self) -> str:
-        out = []
-        heading = (f"{self.name}#{self.sample_name}#{self.exp_id}"
-                   f"@{self.path_to_db}")
-        out.append(heading)
-        out.append("-" * len(heading))
-        ds = self.data_sets()
-        if len(ds) > 0:
-            for d in ds:
-                out.append(f"{d.run_id}-{d.name}-{d.counter}"
-                           f"-{d.parameters}-{len(d)}")
-
+        out = [
+            f"{self.name}#{self.sample_name}#{self.exp_id}@{self.path_to_db}"
+        ]
+        out.append("-" * len(out[0]))
+        out += [
+            f"{d.run_id}-{d.name}-{d.counter}-{d._parameters}-{len(d)}"
+            for d in self.data_sets()
+        ]
         return "\n".join(out)
 
 
 # public api
 
-def experiments()->List[Experiment]:
+def experiments(conn: Optional[ConnectionPlus] = None) -> List[Experiment]:
     """
     List all the experiments in the container (database file from config)
+
+    Args:
+        conn: connection to the database. If not supplied, a new connection
+          to the DB file specified in the config is made
 
     Returns:
         All the experiments in the container
     """
-    log.info("loading experiments from {}".format(get_DB_location()))
-    rows = get_experiments(connect(get_DB_location(), get_DB_debug()))
-    experiments = []
-    for row in rows:
-        experiments.append(load_experiment(row['exp_id']))
-    return experiments
+    conn = conn_from_dbpath_or_conn(conn=conn, path_to_db=None)
+    log.info(f"loading experiments from {conn.path_to_dbfile}")
+    rows = get_experiments(conn)
+    return [load_experiment(row['exp_id'], conn) for row in rows]
 
 
 def new_experiment(name: str,
                    sample_name: Optional[str],
                    format_string: str = "{}-{}-{}",
-                   conn: Optional[ConnectionPlus]=None) -> Experiment:
+                   conn: Optional[ConnectionPlus] = None) -> Experiment:
     """
     Create a new experiment (in the database file from config)
 
@@ -211,25 +229,40 @@ def new_experiment(name: str,
     Returns:
         the new experiment
     """
+    sample_name = sample_name or "some_sample"
     conn = conn or connect(get_DB_location())
-    return Experiment(name=name, sample_name=sample_name,
-                      format_string=format_string,
-                      conn=conn)
+    exp_ids = get_matching_exp_ids(conn, name=name, sample_name=sample_name)
+    if len(exp_ids) >= 1:
+        log.warning(
+            f"There is (are) already experiment(s) with the name of {name} "
+            f"and sample name of {sample_name} in the database."
+        )
+    experiment = Experiment(
+        name=name, sample_name=sample_name, format_string=format_string, conn=conn
+    )
+    _set_default_experiment_id(path_to_dbfile(conn), experiment.exp_id)
+    return experiment
 
 
-def load_experiment(exp_id: int) -> Experiment:
+def load_experiment(exp_id: int,
+                    conn: Optional[ConnectionPlus] = None) -> Experiment:
     """
     Load experiment with the specified id (from database file from config)
 
     Args:
         exp_id: experiment id
+        conn: connection to the database. If not supplied, a new connection
+          to the DB file specified in the config is made
 
     Returns:
         experiment with the specified id
     """
+    conn = conn_from_dbpath_or_conn(conn=conn, path_to_db=None)
     if not isinstance(exp_id, int):
         raise ValueError('Experiment ID must be an integer')
-    return Experiment(exp_id=exp_id)
+    experiment = Experiment(exp_id=exp_id, conn=conn)
+    _set_default_experiment_id(path_to_dbfile(conn), experiment.exp_id)
+    return experiment
 
 
 def load_last_experiment() -> Experiment:
@@ -239,93 +272,106 @@ def load_last_experiment() -> Experiment:
     Returns:
         last experiment
     """
-    last_exp_id = get_last_experiment(connect(get_DB_location()))
+    conn = connect(get_DB_location())
+    last_exp_id = get_last_experiment(conn)
     if last_exp_id is None:
         raise ValueError('There are no experiments in the database file')
-    return Experiment(exp_id=last_exp_id)
+    experiment = Experiment(exp_id=last_exp_id)
+    _set_default_experiment_id(get_DB_location(), experiment.exp_id)
+    return experiment
 
 
-def load_experiment_by_name(name: str,
-                            sample: Optional[str] = None,
-                            conn: Optional[ConnectionPlus]=None) -> Experiment:
+def load_experiment_by_name(
+    name: str,
+    sample: Optional[str] = None,
+    conn: Optional[ConnectionPlus] = None,
+    load_last_duplicate: bool = False,
+) -> Experiment:
     """
     Try to load experiment with the specified name.
 
     Nothing stops you from having many experiments with the same name and
-    sample_name. In that case this won't work. And warn you.
+    sample name. In that case this won't work unless load_last_duplicate
+    is set to True. Then, the last of duplicated experiments will be loaded.
 
     Args:
         name: the name of the experiment
         sample: the name of the sample
+        load_last_duplicate: If True, prevent raising error for having
+            multiple experiments with the same name and sample name, and
+            load the last duplicated experiment, instead.
         conn: connection to the database. If not supplied, a new connection
-          to the DB file specified in the config is made
+            to the DB file specified in the config is made
 
     Returns:
         the requested experiment
 
     Raises:
-        ValueError if the name is not unique and sample name is None.
+        ValueError either if the name and sample name are not unique, unless
+        load_last_duplicate is True, or if no experiment found for the
+        supplied name and sample.
+        .
     """
     conn = conn or connect(get_DB_location())
-
-    if sample:
-        sql = """
-        SELECT
-            *
-        FROM
-            experiments
-        WHERE
-            sample_name = ? AND
-            name = ?
-        """
-        c = transaction(conn, sql, sample, name)
+    if sample is not None:
+        args_to_find = {"name": name, "sample_name": sample}
     else:
-        sql = """
-        SELECT
-            *
-        FROM
-            experiments
-        WHERE
-            name = ?
-        """
-        c = transaction(conn, sql, name)
-    rows = c.fetchall()
-    if len(rows) == 0:
+        args_to_find = {"name": name}
+    exp_ids = get_matching_exp_ids(conn, **args_to_find)
+    if len(exp_ids) == 0:
         raise ValueError("Experiment not found")
-    elif len(rows) > 1:
+    elif len(exp_ids) > 1:
         _repr = []
-        for row in rows:
-            s = (f"exp_id:{row['exp_id']} ({row['name']}-{row['sample_name']})"
-                 f" started at ({row['start_time']})")
+        for exp_id in exp_ids:
+            exp = load_experiment(exp_id, conn=conn)
+            s = (
+                f"exp_id:{exp.exp_id} ({exp.name}-{exp.sample_name})"
+                f" started at ({exp.started_at})"
+            )
             _repr.append(s)
         _repr_str = "\n".join(_repr)
-        raise ValueError(f"Many experiments matching your request"
-                         f" found:\n{_repr_str}")
+        if load_last_duplicate:
+            e = exp
+        else:
+            raise ValueError(
+                f"Many experiments matching your request" f" found:\n{_repr_str}"
+            )
     else:
-        e = Experiment(exp_id=rows[0]['exp_id'], conn=conn)
+        e = Experiment(exp_id=exp_ids[0], conn=conn)
+    _set_default_experiment_id(path_to_dbfile(conn), e.exp_id)
     return e
 
 
-def load_or_create_experiment(experiment_name: str,
-                              sample_name: Optional[str] = None,
-                              conn: Optional[ConnectionPlus]=None)->Experiment:
+def load_or_create_experiment(
+    experiment_name: str,
+    sample_name: Optional[str] = None,
+    conn: Optional[ConnectionPlus] = None,
+    load_last_duplicate: bool = False,
+) -> Experiment:
     """
     Find and return an experiment with the given name and sample name,
     or create one if not found.
 
     Args:
-        experiment_name: Name of the experiment to find or create
-        sample_name: Name of the sample
+        experiment_name: Name of the experiment to find or create.
+        sample_name: Name of the sample.
+        load_last_duplicate: If True, prevent raising error for having
+            multiple experiments with the same name and sample name, and
+            load the last duplicated experiment, instead.
         conn: Connection to the database. If not supplied, a new connection
-          to the DB file specified in the config is made
+            to the DB file specified in the config is made.
 
     Returns:
         The found or created experiment
     """
     conn = conn or connect(get_DB_location())
     try:
-        experiment = load_experiment_by_name(experiment_name, sample_name,
-                                             conn=conn)
+        experiment = load_experiment_by_name(
+            experiment_name,
+            sample_name,
+            load_last_duplicate=load_last_duplicate,
+            conn=conn,
+        )
     except ValueError as exception:
         if "Experiment not found" in str(exception):
             experiment = new_experiment(experiment_name, sample_name,
@@ -333,3 +379,48 @@ def load_or_create_experiment(experiment_name: str,
         else:
             raise exception
     return experiment
+
+
+def _create_exp_if_needed(
+    target_conn: ConnectionPlus,
+    exp_name: str,
+    sample_name: str,
+    fmt_str: str,
+    start_time: float,
+    end_time: Union[float, None],
+) -> int:
+    """
+    Look up in the database whether an experiment already exists and create
+    it if it doesn't. Note that experiments do not have GUIDs, so this method
+    is not guaranteed to work. Matching names and times is the best we can do.
+    """
+
+    matching_exp_ids = get_matching_exp_ids(
+        target_conn,
+        name=exp_name,
+        sample_name=sample_name,
+        format_string=fmt_str,
+        start_time=start_time,
+        end_time=end_time,
+    )
+
+    if len(matching_exp_ids) > 1:
+        exp_id = matching_exp_ids[0]
+        warn(
+            f"{len(matching_exp_ids)} experiments found in target DB that "
+            "match name, sample_name, fmt_str, start_time, and end_time. "
+            f"Inserting into the experiment with exp_id={exp_id}."
+        )
+        return exp_id
+    if len(matching_exp_ids) == 1:
+        return matching_exp_ids[0]
+    else:
+        lastrowid = ne(
+            target_conn,
+            name=exp_name,
+            sample_name=sample_name,
+            format_string=fmt_str,
+            start_time=start_time,
+            end_time=end_time,
+        )
+        return lastrowid

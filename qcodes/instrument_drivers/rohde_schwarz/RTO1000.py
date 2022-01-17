@@ -2,68 +2,77 @@
 # for firmware 3.65, 2017
 
 import logging
-import warnings
 import time
+import warnings
+from typing import Any, Optional
 
 import numpy as np
-from distutils.version import LooseVersion
+from packaging import version
 
 from qcodes import Instrument
-from qcodes.instrument.visa import VisaInstrument
 from qcodes.instrument.channel import InstrumentChannel
-from qcodes.utils import validators as vals
 from qcodes.instrument.parameter import ArrayParameter
+from qcodes.instrument.visa import VisaInstrument
+from qcodes.utils import validators as vals
+from qcodes.utils.helpers import create_on_off_val_mapping
 
 log = logging.getLogger(__name__)
 
 
 class ScopeTrace(ArrayParameter):
-
-    def __init__(self, name: str, instrument: InstrumentChannel,
-                 channum: int) -> None:
+    def __init__(
+        self, name: str, instrument: InstrumentChannel, channum: int, **kwargs: Any
+    ) -> None:
         """
         The ScopeTrace parameter is attached to a channel of the oscilloscope.
 
         For now, we only support reading out the entire trace.
         """
-        super().__init__(name=name,
-                         shape=(1,),
-                         label='Voltage',  # TODO: Is this sometimes dbm?
-                         unit='V',
-                         setpoint_names=('Time',),
-                         setpoint_labels=('Time',),
-                         setpoint_units=('s',),
-                         docstring='Holds scope trace')
+        super().__init__(
+            name=name,
+            shape=(1,),
+            label="Voltage",  # TODO: Is this sometimes dbm?
+            unit="V",
+            setpoint_names=("Time",),
+            setpoint_labels=("Time",),
+            setpoint_units=("s",),
+            docstring="Holds scope trace",
+            snapshot_value=False,
+            instrument=instrument,
+            **kwargs,
+        )
 
         self.channel = instrument
         self.channum = channum
+        self._trace_ready = False
 
     def prepare_trace(self) -> None:
         """
         Prepare the scope for returning data, calculate the setpoints
         """
+        assert self.root_instrument is not None
+
         # We always use 16 bit integers for the data format
-        self.channel._parent.dataformat('INT,16')
+        self.root_instrument.dataformat("INT,16")
         # ensure little-endianess
-        self.channel._parent.write('FORMat:BORder LSBFirst')
+        self.root_instrument.write("FORMat:BORder LSBFirst")
         # only export y-values
-        self.channel._parent.write('EXPort:WAVeform:INCXvalues OFF')
+        self.root_instrument.write("EXPort:WAVeform:INCXvalues OFF")
         # only export one channel
-        self.channel._parent.write('EXPort:WAVeform:MULTichannel OFF')
+        self.root_instrument.write("EXPort:WAVeform:MULTichannel OFF")
 
         # now get setpoints
 
-        hdr = self.channel._parent.ask('CHANnel{}:'.format(self.channum) +
-                                       'DATA:HEADER?')
-        hdr_vals = list(map(float, hdr.split(',')))
+        hdr = self.root_instrument.ask(f"CHANnel{self.channum}:" "DATA:HEADER?")
+        hdr_vals = list(map(float, hdr.split(",")))
         t_start = hdr_vals[0]
         t_stop = hdr_vals[1]
         no_samples = int(hdr_vals[2])
         values_per_sample = hdr_vals[3]
 
         # NOTE (WilliamHPNielsen):
-        # if samples are multi-valued, we need a MultiParameter
-        # instead of an arrayparameter
+        # If samples are multi-valued, we need a `MultiParameter`
+        # instead of an `ArrayParameter`.
         if values_per_sample > 1:
             raise NotImplementedError('There are several values per sample '
                                       'in this trace (are you using envelope'
@@ -75,31 +84,33 @@ class ScopeTrace(ArrayParameter):
 
         self._trace_ready = True
         # we must ensure that all this took effect before proceeding
-        self.channel._parent.ask('*OPC?')
+        self.root_instrument.ask("*OPC?")
 
-    def get_raw(self):
+    def get_raw(self) -> np.ndarray:
         """
         Returns a trace
         """
 
-        instr = self.channel._parent
+        instr = self.root_instrument
+        assert instr is not None
 
         if not self._trace_ready:
             raise ValueError('Trace not ready! Please call '
                              'prepare_trace().')
 
         if instr.run_mode() == 'RUN Nx SINGLE':
-            N = instr.num_acquisitions()
-            M = instr.completed_acquisitions()
-            log.info('Acquiring {} traces.'.format(N))
-            while M < N:
-                log.info('Acquired {}:{} traces.'.format(M, N))
+            total_acquisitions = instr.num_acquisitions()
+            completed_acquisitions = instr.completed_acquisitions()
+            log.info(f'Acquiring {total_acquisitions} traces.')
+            while completed_acquisitions < total_acquisitions:
+                log.info(f'Acquired {completed_acquisitions}:'
+                         f'{total_acquisitions}')
                 time.sleep(0.25)
-                M = instr.completed_acquisitions()
+                completed_acquisitions = instr.completed_acquisitions()
 
         log.info('Acquisition completed. Polling trace from instrument.')
         vh = instr.visa_handle
-        vh.write('CHANnel{}:DATA?'.format(self.channum))
+        vh.write(f'CHANnel{self.channum}:DATA?')
         raw_vals = vh.read_raw()
 
         num_length = int(raw_vals[1:2])
@@ -111,10 +122,9 @@ class ScopeTrace(ArrayParameter):
         dataformat = instr.dataformat.get_latest()
 
         if dataformat == 'INT,8':
-            int_vals = np.fromstring(raw_vals, dtype=np.int8, count=no_points)
+            int_vals = np.frombuffer(raw_vals, dtype=np.int8, count=no_points)
         else:
-            int_vals = np.fromstring(raw_vals, dtype=np.int16,
-                                     count=no_points//2)
+            int_vals = np.frombuffer(raw_vals, dtype=np.int16, count=no_points // 2)
 
         # now the integer values must be converted to physical
         # values
@@ -129,12 +139,13 @@ class ScopeTrace(ArrayParameter):
 
         return output
 
+
 class ScopeMeasurement(InstrumentChannel):
     """
-    Class to hold a measurement of the scope
+    Class to hold a measurement of the scope.
     """
 
-    def __init__(self, parent: Instrument, name: str, meas_nr: int):
+    def __init__(self, parent: Instrument, name: str, meas_nr: int) -> None:
         """
         Args:
             parent: The instrument to which the channel is attached
@@ -149,133 +160,145 @@ class ScopeMeasurement(InstrumentChannel):
         self.meas_nr = meas_nr
         super().__init__(parent, name)
 
-        self.sources = vals.Enum('C1W1',     'C1W2',     'C1W3',
-                        'C2W1',     'C2W2',     'C2W3',
-                        'C3W1',     'C3W2',     'C3W3',
-                        'C4W1',     'C4W2',     'C4W3',
-                        'M1',       'M2',       'M3',       'M4',
-                        'R1',       'R2',       'R3',       'R4',
-                        'SBUS1',    'SBUS2',    'SBUS3',    'SBUS4',
-                        'D0',       'D1',       'D2',       'D3',
-                        'D4',       'D5',       'D6',       'D7',
-                        'D8',       'D9',       'D10',       'D11',
-                        'D12',      'D13',      'D14',      'D15',
-                        'TRK1',     'TRK2',     'TRK3',     'TRK4',
-                        'TRK5',     'TRK6',     'TRK7',     'TRK8',
-                        'SG1TL1',   'SG1TL2',
-                        'SG2TL1',   'SG2TL2',
-                        'SG3TL1',   'SG3TL2',
-                        'SG4TL1',   'SG4TL2',
-                        'Z1V1',     'Z1V2',     'Z1V3',     'Z1V4',
-                        'Z1I1',     'Z1I2',     'Z1I3',     'Z1I4',
-                        'Z2V1',     'Z2V2',     'Z2V3',     'Z2V4',
-                        'Z2I1',     'Z2I2',     'Z2I3',     'Z2I4')
+        self.sources = vals.Enum('C1W1', 'C1W2', 'C1W3',
+                                 'C2W1', 'C2W2', 'C2W3',
+                                 'C3W1', 'C3W2', 'C3W3',
+                                 'C4W1', 'C4W2', 'C4W3',
+                                 'M1', 'M2', 'M3', 'M4',
+                                 'R1', 'R2', 'R3',  'R4',
+                                 'SBUS1', 'SBUS2', 'SBUS3', 'SBUS4',
+                                 'D0', 'D1', 'D2', 'D3',
+                                 'D4', 'D5', 'D6', 'D7',
+                                 'D8', 'D9', 'D10', 'D11',
+                                 'D12', 'D13', 'D14', 'D15',
+                                 'TRK1', 'TRK2', 'TRK3', 'TRK4',
+                                 'TRK5', 'TRK6', 'TRK7', 'TRK8',
+                                 'SG1TL1', 'SG1TL2',
+                                 'SG2TL1', 'SG2TL2',
+                                 'SG3TL1', 'SG3TL2',
+                                 'SG4TL1', 'SG4TL2',
+                                 'Z1V1', 'Z1V2', 'Z1V3', 'Z1V4',
+                                 'Z1I1', 'Z1I2', 'Z1I3', 'Z1I4',
+                                 'Z2V1', 'Z2V2', 'Z2V3',  'Z2V4',
+                                 'Z2I1', 'Z2I2', 'Z2I3', 'Z2I4')
 
-        self.categories = vals.Enum('AMPTime',   'JITTer', 'EYEJitter', 'SPECtrum',
-                                    'HISTogram', 'PROTocol')
+        self.categories = vals.Enum('AMPTime', 'JITTer', 'EYEJitter',
+                                    'SPECtrum', 'HISTogram', 'PROTocol')
 
         self.meas_type = vals.Enum(
                         # Amplitude/time measurements
-                        'HIGH',        'LOW',          'AMPLitude',    'MAXimum',
-                        'MINimum',     'PDELta',       'MEAN',         'RMS',
-                        'STDDev',      'POVershoot',   'NOVershoot',   'AREA',
-                        'RTIMe',       'FTIMe',        'PPULse',       'NPULse',
-                        'PERiod',      'FREQuency',    'PDCYcle',      'NDCYcle',
-                        'CYCarea',     'CYCMean',      'CYCRms',       'CYCStddev',
-                        'PULCnt',      'DELay',        'PHASe',        'BWIDth',
-                        'PSWitching',  'NSWitching',   'PULSetrain',   'EDGecount',
-                        'SHT',         'SHR',          'DTOTrigger',   'PROBemeter',
-                        'SLERising',   'SLEFalling'
+                        'HIGH', 'LOW', 'AMPLitude',
+                        'MAXimum', 'MINimum', 'PDELta',
+                        'MEAN', 'RMS', 'STDDev',
+                        'POVershoot', 'NOVershoot', 'AREA',
+                        'RTIMe', 'FTIMe', 'PPULse',
+                        'NPULse', 'PERiod', 'FREQuency',
+                        'PDCYcle', 'NDCYcle', 'CYCarea',
+                        'CYCMean', 'CYCRms', 'CYCStddev',
+                        'PULCnt', 'DELay', 'PHASe',
+                        'BWIDth', 'PSWitching', 'NSWitching',
+                        'PULSetrain', 'EDGecount', 'SHT',
+                        'SHR', 'DTOTrigger', 'PROBemeter',
+                        'SLERising', 'SLEFalling',
                         # Jitter measurements
-                        'CCJitter',     'NCJitter',    'CCWidth',      'CCDutycycle',
-                        'TIE',          'UINTerval',   'DRATe',        'SKWDelay',
-                        'SKWPhase',
+                        'CCJitter', 'NCJitter', 'CCWidth',
+                        'CCDutycycle', 'TIE', 'UINTerval',
+                        'DRATe', 'SKWDelay', 'SKWPhase',
                         # Eye diagram measurements
-                        'ERPercent',    'ERDB',         'EHEight',      'EWIDth',
-                        'ETOP',         'EBASe',        'QFACtor',      'RMSNoise',
-                        'SNRatio',      'DCDistortion', 'ERTime',       'EFTime',
-                        'EBRate',       'EAMPlitude',   'PPJitter',     'STDJitter',
-                        'RMSJitter',
+                        'ERPercent', 'ERDB', 'EHEight',
+                        'EWIDth', 'ETOP', 'EBASe',
+                        'QFACtor', 'RMSNoise', 'SNRatio',
+                        'DCDistortion', 'ERTime', 'EFTime',
+                        'EBRate', 'EAMPlitude', 'PPJitter',
+                        'STDJitter', 'RMSJitter',
                         # Spectrum measurements
-                        'CPOWer',       'OBWidth',      'SBWidth',      'THD',
-                        'THDPCT',       'THDA',         'THDU',         'THDR',
-                        'HAR',          'PLISt',
+                        'CPOWer', 'OBWidth', 'SBWidth',
+                        'THD', 'THDPCT', 'THDA',
+                        'THDU', 'THDR', 'HAR',
+                        'PLISt',
                         # Histogram measurements
-                        'WCOunt',       'WSAMples',     'HSAMples',     'HPEak',
-                        'PEAK',         'UPEakvalue',   'LPEakvalue',   'HMAXimum',
-                        'HMINimum',     'MEDian',       'MAXMin',       'HMEan',
-                        'HSTDdev',      'M1STddev',     'M2STddev',     'M3STddev',
-                        'MKPositive',   'MKNegative'
+                        'WCOunt', 'WSAMples', 'HSAMples',
+                        'HPEak', 'PEAK', 'UPEakvalue',
+                        'LPEakvalue', 'HMAXimum', 'HMINimum',
+                        'MEDian', 'MAXMin', 'HMEan',
+                        'HSTDdev', 'M1STddev', 'M2STddev',
+                        'M3STddev', 'MKPositive', 'MKNegative'
                         )
 
         self.add_parameter('enable',
                            label=f'Measurement {meas_nr} enable',
                            set_cmd=f'MEASurement{meas_nr}:ENABle {{}}',
                            vals=vals.Enum('ON', 'OFF'),
-                           docstring='Switches the measurement on or off')
+                           docstring='Switches the measurement on or off.')
 
         self.add_parameter('source',
                            label=f'Measurement {meas_nr} source',
                            set_cmd=f'MEASurement{meas_nr}:SOURce {{}}',
                            vals=self.sources,
-                           docstring='Set the source of a measurement if the ' \
-                                     'measurement only needs one source')
+                           docstring='Set the source of a measurement if the '
+                                     'measurement only needs one source.')
 
         self.add_parameter('source_first',
                            label=f'Measurement {meas_nr} first source',
                            set_cmd=f'MEASurement{meas_nr}:FSRC {{}}',
                            vals=self.sources,
-                           docstring='Set the first source of a measurement if the ' \
-                                     'measurement only needs mutliple sources')
+                           docstring='Set the first source of a measurement'
+                                     ' if the measurement only needs multiple'
+                                     ' sources.')
 
         self.add_parameter('source_second',
                            label=f'Measurement {meas_nr} second source',
                            set_cmd=f'MEASurement{meas_nr}:SSRC {{}}',
                            vals=self.sources,
-                           docstring='Set the second source of a measurement if the ' \
-                                     'measurement only needs multiple sources')
+                           docstring='Set the second source of a measurement'
+                                     ' if the measurement only needs multiple'
+                                     ' sources.')
 
         self.add_parameter('category',
                            label=f'Measurement {meas_nr} category',
                            set_cmd=f'MEASurement{meas_nr}:CATegory {{}}',
                            vals=self.categories,
-                           docstring='Set the category of a measurement')
+                           docstring='Set the category of a measurement.')
 
         self.add_parameter('main',
                            label=f'Measurement {meas_nr} main',
                            set_cmd=f'MEASurement{meas_nr}:MAIN {{}}',
                            vals=self.meas_type,
-                           docstring='Set the main of a measurement')
+                           docstring='Set the main of a measurement.')
 
         self.add_parameter('statistics_enable',
                            label=f'Measurement {meas_nr} enable statistics',
-                           set_cmd=f'MEASurement{meas_nr}:STATistics:ENABle {{}}',
+                           set_cmd=f'MEASurement{meas_nr}:STATistics:ENABle'
+                                   f' {{}}',
                            vals=vals.Enum('ON', 'OFF'),
-                           docstring='Switches the measurement on or off')
+                           docstring='Switches the measurement on or off.')
 
         self.add_parameter('clear',
                            label=f'Measurement {meas_nr} clear statistics',
                            set_cmd=f'MEASurement{meas_nr}:CLEar',
-                           docstring='Clears/reset measurement')
+                           docstring='Clears/reset measurement.')
 
         self.add_parameter('event_count',
                            label=f'Measurement {meas_nr} number of events',
                            get_cmd=f'MEASurement{meas_nr}:RESult:EVTCount?',
                            get_parser=int,
-                           docstring='Number of measurement results in the long-term measurement')
+                           docstring='Number of measurement results in the'
+                                     ' long-term measurement.')
 
         self.add_parameter('result_avg',
                            label=f'Measurement {meas_nr} averages',
                            get_cmd=f'MEASurement{meas_nr}:RESult:AVG?',
                            get_parser=float,
-                           docstring='Average of the long-term measurement results')
+                           docstring='Average of the long-term measurement'
+                                     ' results.')
+
 
 class ScopeChannel(InstrumentChannel):
     """
     Class to hold an input channel of the scope.
 
     Exposes: state, coupling, ground, scale, range, position, offset,
-    invert, bandwidth, impedance, overload
+    invert, bandwidth, impedance, overload.
     """
 
     def __init__(self, parent: Instrument, name: str, channum: int) -> None:
@@ -295,25 +318,25 @@ class ScopeChannel(InstrumentChannel):
         super().__init__(parent, name)
 
         self.add_parameter('state',
-                           label='Channel {} state'.format(channum),
-                           get_cmd='CHANnel{}:STATe?'.format(channum),
-                           set_cmd='CHANnel{}:STATE {{}}'.format(channum),
+                           label=f'Channel {channum} state',
+                           get_cmd=f'CHANnel{channum}:STATe?',
+                           set_cmd=f'CHANnel{channum}:STATE {{}}',
                            vals=vals.Enum('ON', 'OFF'),
                            docstring='Switches the channel on or off')
 
         self.add_parameter('coupling',
-                           label='Channel {} coupling'.format(channum),
-                           get_cmd='CHANnel{}:COUPling?'.format(channum),
-                           set_cmd='CHANnel{}:COUPling {{}}'.format(channum),
+                           label=f'Channel {channum} coupling',
+                           get_cmd=f'CHANnel{channum}:COUPling?',
+                           set_cmd=f'CHANnel{channum}:COUPling {{}}',
                            vals=vals.Enum('DC', 'DCLimit', 'AC'),
                            docstring=('Selects the connection of the channel'
                                       'signal. DC: 50 Ohm, DCLimit 1 MOhm, '
                                       'AC: Con. through DC capacitor'))
 
         self.add_parameter('ground',
-                           label='Channel {} ground'.format(channum),
-                           get_cmd='CHANnel{}:GND?'.format(channum),
-                           set_cmd='CHANnel{}:GND {{}}'.format(channum),
+                           label=f'Channel {channum} ground',
+                           get_cmd=f'CHANnel{channum}:GND?',
+                           set_cmd=f'CHANnel{channum}:GND {{}}',
                            vals=vals.Enum('ON', 'OFF'),
                            docstring=('Connects/disconnects the signal to/from'
                                       'the ground.'))
@@ -321,17 +344,17 @@ class ScopeChannel(InstrumentChannel):
         # NB (WilliamHPNielsen): This parameter depends on other parameters and
         # should be dynamically updated accordingly. Cf. p 1178 of the manual
         self.add_parameter('scale',
-                           label='Channel {} Y scale'.format(channum),
+                           label=f'Channel {channum} Y scale',
                            unit='V/div',
-                           get_cmd='CHANnel{}:SCALe?'.format(channum),
+                           get_cmd=f'CHANnel{channum}:SCALe?',
                            set_cmd=self._set_scale,
                            get_parser=float,
                            )
 
         self.add_parameter('range',
-                           label='Channel {} Y range'.format(channum),
+                           label=f'Channel {channum} Y range',
                            unit='V',
-                           get_cmd='CHANnel{}:RANGe?'.format(channum),
+                           get_cmd=f'CHANnel{channum}:RANGe?',
                            set_cmd=self._set_range,
                            get_parser=float
                            )
@@ -339,64 +362,60 @@ class ScopeChannel(InstrumentChannel):
         # TODO (WilliamHPNielsen): would it be better to recast this in terms
         # of Volts?
         self.add_parameter('position',
-                           label='Channel {} vert. pos.'.format(channum),
+                           label=f'Channel {channum} vert. pos.',
                            unit='div',
-                           get_cmd='CHANnel{}:POSition?'.format(channum),
-                           set_cmd='CHANnel{}:POSition {{}}'.format(channum),
+                           get_cmd=f'CHANnel{channum}:POSition?',
+                           set_cmd=f'CHANnel{channum}:POSition {{}}',
                            get_parser=float,
                            vals=vals.Numbers(-5, 5),
                            docstring=('Positive values move the waveform up,'
                                       ' negative values move it down.'))
 
         self.add_parameter('offset',
-                           label='Channel {} offset'.format(channum),
+                           label=f'Channel {channum} offset',
                            unit='V',
-                           get_cmd='CHANnel{}:OFFSet?'.format(channum),
-                           set_cmd='CHANnel{}:OFFSet {{}}'.format(channum),
+                           get_cmd=f'CHANnel{channum}:OFFSet?',
+                           set_cmd=f'CHANnel{channum}:OFFSet {{}}',
                            get_parser=float,
                            )
 
         self.add_parameter('invert',
-                           label='Channel {} inverted'.format(channum),
-                           get_cmd='CHANnel{}:INVert?'.format(channum),
-                           set_cmd='CHANnel{}:INVert {{}}'.format(channum),
+                           label=f'Channel {channum} inverted',
+                           get_cmd=f'CHANnel{channum}:INVert?',
+                           set_cmd=f'CHANnel{channum}:INVert {{}}',
                            vals=vals.Enum('ON', 'OFF'))
 
         # TODO (WilliamHPNielsen): This parameter should be dynamically
         # validated since 800 MHz BW is only available for 50 Ohm coupling
         self.add_parameter('bandwidth',
-                           label='Channel {} bandwidth'.format(channum),
-                           get_cmd='CHANnel{}:BANDwidth?'.format(channum),
-                           set_cmd='CHANnel{}:BANDwidth {{}}'.format(channum),
+                           label=f'Channel {channum} bandwidth',
+                           get_cmd=f'CHANnel{channum}:BANDwidth?',
+                           set_cmd=f'CHANnel{channum}:BANDwidth {{}}',
                            vals=vals.Enum('FULL', 'B800', 'B200', 'B20')
                            )
 
         self.add_parameter('impedance',
-                           label='Channel {} impedance'.format(channum),
+                           label=f'Channel {channum} impedance',
                            unit='Ohm',
-                           get_cmd='CHANnel{}:IMPedance?'.format(channum),
-                           set_cmd='CHANnel{}:IMPedance {{}}'.format(channum),
+                           get_cmd=f'CHANnel{channum}:IMPedance?',
+                           set_cmd=f'CHANnel{channum}:IMPedance {{}}',
                            vals=vals.Ints(1, 100000),
                            docstring=('Sets the impedance of the channel '
                                       'for power calculations and '
                                       'measurements.'))
 
         self.add_parameter('overload',
-                           label='Channel {} overload'.format(channum),
-                           get_cmd='CHANnel{}:OVERload?'.format(channum)
-                           )
+                           label=f'Channel {channum} overload',
+                           get_cmd=f'CHANnel{channum}:OVERload?')
 
         self.add_parameter('arithmetics',
-                           label='Channel {} arithmetics'.format(channum),
-                           set_cmd='CHANnel{}:ARIThmetics {{}}'.format(channum),
-                           get_cmd='CHANnel{}:ARIThmetics?'.format(channum),
+                           label=f'Channel {channum} arithmetics',
+                           set_cmd=f'CHANnel{channum}:ARIThmetics {{}}',
+                           get_cmd=f'CHANnel{channum}:ARIThmetics?',
                            val_mapping={'AVERAGE': 'AVER',
                                         'OFF': 'OFF',
                                         'ENVELOPE': 'ENV'}
                            )
-
-        #########################
-        # Trace
 
         self.add_parameter('trace',
                            channum=self.channum,
@@ -404,19 +423,16 @@ class ScopeChannel(InstrumentChannel):
 
         self._trace_ready = False
 
-    #########################
     # Specialised/interlinked set/getters
-    def _set_range(self, value):
-        self.scale._save_val(value/10)
+    def _set_range(self, value: float) -> None:
+        self.scale.cache.set(value/10)
 
-        self._parent.write('CHANnel{}:RANGe {}'.format(self.channum,
-                                                       value))
+        self._parent.write(f'CHANnel{self.channum}:RANGe {value}')
 
-    def _set_scale(self, value):
-        self.range._save_val(value*10)
+    def _set_scale(self, value: float) -> None:
+        self.range.cache.set(value*10)
 
-        self._parent.write('CHANnel{}:SCALe {}'.format(self.channum,
-                                                       value))
+        self._parent.write(f'CHANnel{self.channum}:SCALe {value}')
 
 
 class RTO1000(VisaInstrument):
@@ -427,10 +443,10 @@ class RTO1000(VisaInstrument):
     """
 
     def __init__(self, name: str, address: str,
-                 model: str=None, timeout: float=5.,
-                 HD: bool=True,
-                 terminator: str='\n',
-                 **kwargs) -> None:
+                 model: Optional[str] = None, timeout: float = 5.,
+                 HD: bool = True,
+                 terminator: str = '\n',
+                 **kwargs: Any) -> None:
         """
         Args:
             name: name of the instrument
@@ -446,26 +462,29 @@ class RTO1000(VisaInstrument):
         super().__init__(name=name, address=address, timeout=timeout,
                          terminator=terminator, **kwargs)
 
-
-
         # With firmware versions earlier than 3.65, it seems that the
         # model number can NOT be queried from the instrument
         # (at least fails with RTO1024, fw 2.52.1.1), so in that case
-        # the user must provide the model manually
-        firmware_version = self.get_idn()['firmware']
+        # the user must provide the model manually.
+        firmware_version_str = self.get_idn()["firmware"]
+        if firmware_version_str is None:
+            raise RuntimeError("Could not determine firmware version of RTO1000.")
+        firmware_version = version.parse(firmware_version_str)
 
-        if LooseVersion(firmware_version) < LooseVersion('3'):
-            log.warning('Old firmware version detected. This driver may '
-                        'not be compatible. Please upgrade your firmware.')
+        if firmware_version < version.parse("3"):
+            log.warning(
+                "Old firmware version detected. This driver may "
+                "not be compatible. Please upgrade your firmware."
+            )
 
-        if LooseVersion(firmware_version) >= LooseVersion('3.65'):
+        if firmware_version >= version.parse("3.65"):
             # strip just in case there is a newline character at the end
             self.model = self.ask('DIAGnostic:SERVice:WFAModel?').strip()
             if model is not None and model != self.model:
                 warnings.warn("The model number provided by the user "
                               "does not match the instrument's response."
                               " I am going to assume that this oscilloscope "
-                              "is a model {}".format(self.model))
+                              f"is a model {self.model}")
         else:
             if model is None:
                 raise ValueError('No model number provided. Please provide '
@@ -487,7 +506,6 @@ class RTO1000(VisaInstrument):
                            val_mapping={'remote': 0,
                                         'view': 1})
 
-        #########################
         # Triggering
 
         self.add_parameter('trigger_display',
@@ -515,9 +533,10 @@ class RTO1000(VisaInstrument):
                            set_cmd='TRIGger:MODE {}',
                            get_cmd='TRIGger1:SOURce?',
                            vals=vals.Enum('AUTO', 'NORMAL', 'FREERUN'),
-                           docstring='Sets the trigger mode which determines the ' \
-                           ' behaviour of the instrument if no trigger occurs.\n'    \
-                           'Options: AUTO, NORMAL, FREERUN.',
+                           docstring='Sets the trigger mode which determines'
+                                     ' the behaviour of the instrument if no'
+                                     ' trigger occurs.\n'
+                                     'Options: AUTO, NORMAL, FREERUN.',
                            unit='none')
 
         self.add_parameter('trigger_type',
@@ -554,7 +573,6 @@ class RTO1000(VisaInstrument):
                            get_cmd='TRIGger1:EDGE:SLOPe?',
                            vals=vals.Enum('POS', 'NEG', 'EITH'))
 
-        #########################
         # Horizontal settings
 
         self.add_parameter('timebase_scale',
@@ -581,14 +599,13 @@ class RTO1000(VisaInstrument):
                            unit='s',
                            vals=vals.Numbers(-100e24, 100e24))
 
-        #########################
         # Acquisition
 
         # I couldn't find a way to query the run mode, so we manually keep
         # track of it. It is very important when getting the trace to make
-        # sense of completed_acquisitions
+        # sense of completed_acquisitions.
         self.add_parameter('run_mode',
-                           label='Run/acqusition mode of the scope',
+                           label='Run/acquisition mode of the scope',
                            get_cmd=None,
                            set_cmd=None)
 
@@ -623,7 +640,6 @@ class RTO1000(VisaInstrument):
                            vals=vals.Numbers(2, 20e12),
                            get_parser=float)
 
-        #########################
         # Data
 
         self.add_parameter('dataformat',
@@ -633,7 +649,6 @@ class RTO1000(VisaInstrument):
                            vals=vals.Enum('ASC,0', 'REAL,32',
                                           'INT,8', 'INT,16'))
 
-        #########################
         # High definition mode (might not be available on all instruments)
 
         if HD:
@@ -641,12 +656,16 @@ class RTO1000(VisaInstrument):
                                label='High definition (16 bit) state',
                                set_cmd=self._set_hd_mode,
                                get_cmd='HDEFinition:STAte?',
-                               val_mapping={'ON': 1, 'OFF': 0},
-                               docstring='Sets the filter bandwidth for the high definition mode.\n' \
-                               'ON: high definition mode, up to 16 bit digital resolution\n' \
-                               'Options: ON, OFF\n\n' \
-                               'Warning/Bug: By opening the HD acquisition menu on the scope, ' \
-                               'this value will be set to "ON"')
+                               val_mapping=create_on_off_val_mapping(on_val=1,
+                                                                     off_val=0),
+                               docstring='Sets the filter bandwidth for the'
+                                         ' high definition mode.\n'
+                                         'ON: high definition mode, up to 16'
+                                         ' bit digital resolution\n'
+                                         'Options: ON, OFF\n\n'
+                                         'Warning/Bug: By opening the HD '
+                                         'acquisition menu on the scope, '
+                                         'this value will be set to "ON".')
 
             self.add_parameter('high_definition_bandwidth',
                                label='High definition mode bandwidth',
@@ -669,8 +688,8 @@ class RTO1000(VisaInstrument):
 
         # Add the channels to the instrument
         for ch in range(1, self.num_chans+1):
-            chan = ScopeChannel(self, 'channel{}'.format(ch), ch)
-            self.add_submodule('ch{}'.format(ch), chan)
+            chan = ScopeChannel(self, f'channel{ch}', ch)
+            self.add_submodule(f'ch{ch}', chan)
 
         for measId in range(1, self.num_meas+1):
             measCh = ScopeMeasurement(self, f'measurement{measId}', measId)
@@ -680,7 +699,9 @@ class RTO1000(VisaInstrument):
         self.add_function('reset', call_cmd='*RST')
         self.add_parameter('opc', get_cmd='*OPC?')
         self.add_parameter('stop_opc', get_cmd='STOP;*OPC?')
-        self.add_parameter('status_operation', get_cmd='STATus:OPERation:CONDition?', get_parser=int)
+        self.add_parameter('status_operation',
+                           get_cmd='STATus:OPERation:CONDition?',
+                           get_parser=int)
         self.add_function('run_continues', call_cmd='RUNContinous')
         # starts the shutdown of the system
         self.add_function('system_shutdown', call_cmd='SYSTem:EXIT')
@@ -702,79 +723,80 @@ class RTO1000(VisaInstrument):
         self.run_mode.set('RUN Nx SINGLE')
 
     def is_triggered(self) -> bool:
-        waitTriggerMask = 0b01000;
-        return bool(self.status_operation() & waitTriggerMask) == False
+        wait_trigger_mask = 0b01000
+        return bool(self.status_operation() & wait_trigger_mask) == False
 
     def is_running(self) -> bool:
-        measuringMask = 0b10000;
-        return bool(self.status_operation() & measuringMask)
+        measuring_mask = 0b10000
+        return bool(self.status_operation() & measuring_mask)
 
     def is_acquiring(self) -> bool:
         return self.is_triggered() & self.is_running()
 
-    #########################
     # Specialised set/get functions
 
-    def _set_hd_mode(self, value):
+    def _set_hd_mode(self, value: int) -> None:
         """
         Set/unset the high def mode
         """
         self._make_traces_not_ready()
-        self.write('HDEFinition:STAte {}'.format(value))
+        self.write(f'HDEFinition:STAte {value}')
 
-    def _set_timebase_range(self, value):
+    def _set_timebase_range(self, value: float) -> None:
         """
         Set the full range of the timebase
         """
         self._make_traces_not_ready()
-        self.timebase_scale._save_val(value/self._horisontal_divs)
+        self.timebase_scale.cache.set(value/self._horisontal_divs)
 
-        self.write('TIMebase:RANGe {}'.format(value))
+        self.write(f'TIMebase:RANGe {value}')
 
-    def _set_timebase_scale(self, value):
+    def _set_timebase_scale(self, value: float) -> None:
         """
-        Set the length of one horizontal division
-        """
-        self._make_traces_not_ready()
-        self.timebase_range._save_val(value*self._horisontal_divs)
-
-        self.write('TIMebase:SCALe {}'.format(value))
-
-    def _set_timebase_position(self, value):
-        """
-        Set the horizontal position
+        Set the length of one horizontal division.
         """
         self._make_traces_not_ready()
-        self.write('TIMEbase:HORizontal:POSition {}'.format(value))
+        self.timebase_range.cache.set(value*self._horisontal_divs)
 
-    def _make_traces_not_ready(self):
+        self.write(f'TIMebase:SCALe {value}')
+
+    def _set_timebase_position(self, value: float) -> None:
         """
-        Make the scope traces be not ready
+        Set the horizontal position.
+        """
+        self._make_traces_not_ready()
+        self.write(f'TIMEbase:HORizontal:POSition {value}')
+
+    def _make_traces_not_ready(self) -> None:
+        """
+        Make the scope traces be not ready.
         """
         self.ch1.trace._trace_ready = False
         self.ch2.trace._trace_ready = False
         self.ch3.trace._trace_ready = False
         self.ch4.trace._trace_ready = False
 
-    def _set_trigger_level(self, value):
+    def _set_trigger_level(self, value: float) -> None:
         """
         Set the trigger level on the currently used trigger source
-        channel
+        channel.
         """
         trans = {'CH1': 1, 'CH2': 2, 'CH3': 3, 'CH4': 4, 'EXT': 5}
-        # we use get and not get_latest because we don't trust users to
-        # not touch the front panel of an oscilloscope
+        # We use get and not get_latest because we don't trust users to
+        # not touch the front panel of an oscilloscope.
         source = trans[self.trigger_source.get()]
         if source != 5:
-            v_range = self.submodules['ch{}'.format(source)].range()
-            offset = self.submodules['ch{}'.format(source)].offset()
+            submodule = self.submodules[f'ch{source}']
+            assert isinstance(submodule, InstrumentChannel)
+            v_range = submodule.range()
+            offset = submodule.offset()
 
             if (value < -v_range/2 + offset) or (value > v_range/2 + offset):
                 raise ValueError('Trigger level outside channel range.')
 
-        self.write('TRIGger1:LEVel{} {}'.format(source, value))
+        self.write(f'TRIGger1:LEVel{source} {value}')
 
-    def _get_trigger_level(self):
+    def _get_trigger_level(self) -> float:
         """
         Get the trigger level from the currently used trigger source
         """
@@ -783,6 +805,6 @@ class RTO1000(VisaInstrument):
         # not touch the front panel of an oscilloscope
         source = trans[self.trigger_source.get()]
 
-        val = self.ask('TRIGger1:LEVel{}?'.format(source))
+        val = self.ask(f'TRIGger1:LEVel{source}?')
 
         return float(val.strip())

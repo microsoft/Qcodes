@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-import tempfile
 from contextlib import contextmanager
 from copy import deepcopy
 
@@ -11,35 +10,39 @@ import qcodes as qc
 import qcodes.dataset.descriptions.versioning.serialization as serial
 import qcodes.tests.dataset
 from qcodes import new_data_set, new_experiment
+from qcodes.dataset.data_set import load_by_counter, load_by_id, load_by_run_spec
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
 from qcodes.dataset.guids import parse_guid
-from qcodes.dataset.sqlite.connection import atomic_transaction, ConnectionPlus
+from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic_transaction
 from qcodes.dataset.sqlite.database import (
-    connect, get_db_version_and_newest_available_version, initialise_database,
-    initialise_or_create_database_at)
+    connect,
+    get_db_version_and_newest_available_version,
+    initialise_database,
+    initialise_or_create_database_at,
+)
+
 # pylint: disable=unused-import
-from qcodes.dataset.sqlite.db_upgrades import (_latest_available_version,
-                                               get_user_version,
-                                               perform_db_upgrade_0_to_1,
-                                               perform_db_upgrade_1_to_2,
-                                               perform_db_upgrade_2_to_3,
-                                               perform_db_upgrade_3_to_4,
-                                               perform_db_upgrade_4_to_5,
-                                               perform_db_upgrade_5_to_6,
-                                               perform_db_upgrade_6_to_7,
-                                               perform_db_upgrade_7_to_8,
-                                               perform_db_upgrade,
-                                               set_user_version)
+from qcodes.dataset.sqlite.db_upgrades import (
+    _latest_available_version,
+    get_user_version,
+    perform_db_upgrade,
+    perform_db_upgrade_0_to_1,
+    perform_db_upgrade_1_to_2,
+    perform_db_upgrade_2_to_3,
+    perform_db_upgrade_3_to_4,
+    perform_db_upgrade_4_to_5,
+    perform_db_upgrade_5_to_6,
+    perform_db_upgrade_6_to_7,
+    perform_db_upgrade_7_to_8,
+    perform_db_upgrade_8_to_9,
+    set_user_version,
+)
 from qcodes.dataset.sqlite.queries import get_run_description, update_GUIDs
 from qcodes.dataset.sqlite.query_helpers import is_column_in_table, one
 from qcodes.tests.common import error_caused_by
-from qcodes.tests.dataset.temporary_databases import (empty_temp_db,
-                                                      experiment,
-                                                      temporarily_copied_DB)
-from qcodes.dataset.data_set import (
-    load_by_counter, load_by_id, load_by_run_spec)
+from qcodes.tests.dataset.conftest import temporarily_copied_DB
 
 fixturepath = os.sep.join(qcodes.tests.dataset.__file__.split(os.sep)[:-1])
 fixturepath = os.path.join(fixturepath, 'fixtures')
@@ -47,19 +50,18 @@ fixturepath = os.path.join(fixturepath, 'fixtures')
 
 @contextmanager
 def location_and_station_set_to(location: int, work_station: int):
-    cfg = qc.Config()
-    old_cfg = deepcopy(cfg.current_config)
+    cfg = qc.config.current_config
+    if cfg is None:
+        raise RuntimeError("Expected config to be not None.")
+    old_cfg = deepcopy(cfg)
     cfg['GUID_components']['location'] = location
     cfg['GUID_components']['work_station'] = work_station
-    cfg.save_to_home()
 
     try:
         yield
 
     finally:
-        cfg.current_config = old_cfg
-        cfg.save_to_home()
-
+        qc.config.current_config = old_cfg
 
 LATEST_VERSION = _latest_available_version()
 VERSIONS = tuple(range(LATEST_VERSION + 1))
@@ -88,37 +90,35 @@ def test_tables_exist(empty_temp_db, version):
     conn.close()
 
 
-def test_initialise_database_at_for_nonexisting_db():
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        db_location = os.path.join(tmpdirname, 'temp.db')
-        assert not os.path.exists(db_location)
+def test_initialise_database_at_for_nonexisting_db(tmp_path):
+    db_location = str(tmp_path / 'temp.db')
+    assert not os.path.exists(db_location)
 
-        initialise_or_create_database_at(db_location)
+    initialise_or_create_database_at(db_location)
 
-        assert os.path.exists(db_location)
-        assert qc.config["core"]["db_location"] == db_location
+    assert os.path.exists(db_location)
+    assert qc.config["core"]["db_location"] == db_location
 
 
-def test_initialise_database_at_for_existing_db():
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        # Define DB location
-        db_location = os.path.join(tmpdirname, 'temp.db')
-        assert not os.path.exists(db_location)
+def test_initialise_database_at_for_existing_db(tmp_path):
+    # Define DB location
+    db_location = str(tmp_path / 'temp.db')
+    assert not os.path.exists(db_location)
 
-        # Create DB file
-        qc.config["core"]["db_location"] = db_location
-        initialise_database()
+    # Create DB file
+    qc.config["core"]["db_location"] = db_location
+    initialise_database()
 
-        # Check if it has been created correctly
-        assert os.path.exists(db_location)
-        assert qc.config["core"]["db_location"] == db_location
+    # Check if it has been created correctly
+    assert os.path.exists(db_location)
+    assert qc.config["core"]["db_location"] == db_location
 
-        # Call function under test
-        initialise_or_create_database_at(db_location)
+    # Call function under test
+    initialise_or_create_database_at(db_location)
 
-        # Check if the DB is still correct
-        assert os.path.exists(db_location)
-        assert qc.config["core"]["db_location"] == db_location
+    # Check if the DB is still correct
+    assert os.path.exists(db_location)
+    assert qc.config["core"]["db_location"] == db_location
 
 
 def test_perform_actual_upgrade_0_to_1():
@@ -568,38 +568,39 @@ def test_update_existing_guids(caplog):
         idps = InterDependencies_(standalones=(xparam,))
         ds1.set_interdependencies(idps)
         ds1.mark_started()
-        ds1.add_result({'x': 1})
+        ds1.add_results([{'x': 1}])
 
         ds2 = new_data_set('ds_two')
         ds2.set_interdependencies(idps)
         ds2.mark_started()
-        ds2.add_result({'x': 2})
+        ds2.add_results([{'x': 2}])
 
-        guid_comps_1 = parse_guid(ds1.guid)
-        assert guid_comps_1['location'] == 0
-        assert guid_comps_1['work_station'] == 0
-
-        guid_comps_2 = parse_guid(ds2.guid)
-        assert guid_comps_2['location'] == 0
-        assert guid_comps_2['work_station'] == 0
+        _assert_loc_station(ds1, 0, 0)
+        _assert_loc_station(ds2, 0, 0)
 
     with location_and_station_set_to(0, old_ws):
         ds3 = new_data_set('ds_three')
         ds3.set_interdependencies(idps)
         ds3.mark_started()
-        ds3.add_result({'x': 3})
+        ds3.add_results([{'x': 3}])
+
+        _assert_loc_station(ds3, 0, old_ws)
 
     with location_and_station_set_to(old_loc, 0):
         ds4 = new_data_set('ds_four')
         ds4.set_interdependencies(idps)
         ds4.mark_started()
-        ds4.add_result({'x': 4})
+        ds4.add_results([{'x': 4}])
+
+        _assert_loc_station(ds4, old_loc, 0)
 
     with location_and_station_set_to(old_loc, old_ws):
         ds5 = new_data_set('ds_five')
         ds5.set_interdependencies(idps)
         ds5.mark_started()
-        ds5.add_result({'x': 5})
+        ds5.add_results([{'x': 5}])
+
+        _assert_loc_station(ds5, old_loc, old_ws)
 
     with location_and_station_set_to(new_loc, new_ws):
 
@@ -615,27 +616,20 @@ def test_update_existing_guids(caplog):
             update_GUIDs(ds1.conn)
 
             for record, lvl in zip(caplog.records, expected_levels):
+                print(record)
                 assert record.levelname == lvl
 
-        guid_comps_1 = parse_guid(ds1.guid)
-        assert guid_comps_1['location'] == new_loc
-        assert guid_comps_1['work_station'] == new_ws
+        _assert_loc_station(ds1, new_loc, new_ws)
+        _assert_loc_station(ds2, new_loc, new_ws)
+        _assert_loc_station(ds3, 0, old_ws)
+        _assert_loc_station(ds4, old_loc, 0)
+        _assert_loc_station(ds5, old_loc, old_ws)
 
-        guid_comps_2 = parse_guid(ds2.guid)
-        assert guid_comps_2['location'] == new_loc
-        assert guid_comps_2['work_station'] == new_ws
 
-        guid_comps_3 = parse_guid(ds3.guid)
-        assert guid_comps_3['location'] == 0
-        assert guid_comps_3['work_station'] == old_ws
-
-        guid_comps_4 = parse_guid(ds4.guid)
-        assert guid_comps_4['location'] == old_loc
-        assert guid_comps_4['work_station'] == 0
-
-        guid_comps_5 = parse_guid(ds5.guid)
-        assert guid_comps_5['location'] == old_loc
-        assert guid_comps_5['work_station'] == old_ws
+def _assert_loc_station(ds, expected_loc, expected_station):
+    guid_dict = parse_guid(ds.guid)
+    assert guid_dict["location"] == expected_loc
+    assert guid_dict["work_station"] == expected_station
 
 
 @pytest.mark.parametrize('db_file',
@@ -701,7 +695,7 @@ def test_perform_actual_upgrade_5_to_6():
             assert deser['version'] == 0
 
             desc = serial.from_json_to_current(json_str)
-            assert desc._version == 1
+            assert desc._version == 3
 
 
 def test_perform_upgrade_6_7():
@@ -776,9 +770,10 @@ def test_perform_actual_upgrade_6_to_newest_add_new_data():
     Insert new runs on top of existing runs upgraded and verify that they
     get the correct captured_run_id and captured_counter
     """
+    import numpy as np
+
     from qcodes.dataset.measurements import Measurement
     from qcodes.instrument.parameter import Parameter
-    import numpy as np
 
     fixpath = os.path.join(fixturepath, 'db_files', 'version6')
 
@@ -903,7 +898,7 @@ def test_cannot_connect_to_newer_db():
 
 
 def test_latest_available_version():
-    assert _latest_available_version() == 8
+    assert _latest_available_version() == 9
 
 
 @pytest.mark.parametrize('version', VERSIONS)
@@ -922,3 +917,30 @@ def test_getting_db_version(version):
 
     assert db_v == version
     assert new_v == LATEST_VERSION
+
+
+@pytest.mark.parametrize('db_file',
+                         ['empty',
+                          'some_runs'])
+def test_perform_actual_upgrade_8_to_9(db_file):
+    v8fixpath = os.path.join(fixturepath, 'db_files', 'version8')
+
+    db_file += '.db'
+    dbname_old = os.path.join(v8fixpath, db_file)
+
+    if not os.path.exists(dbname_old):
+        pytest.skip("No db-file fixtures found. You can generate test db-files"
+                    " using the scripts in the "
+                    "https://github.com/QCoDeS/qcodes_generate_test_db/ repo")
+
+    with temporarily_copied_DB(dbname_old, debug=False, version=8) as conn:
+
+        index_query = "PRAGMA index_list(runs)"
+
+        c = atomic_transaction(conn, index_query)
+        assert len(c.fetchall()) == 2
+
+        perform_db_upgrade_8_to_9(conn)
+
+        c = atomic_transaction(conn, index_query)
+        assert len(c.fetchall()) == 3

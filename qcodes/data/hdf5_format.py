@@ -1,11 +1,13 @@
-import numpy as np
-import logging
-import h5py
-import os
 import json
+import logging
+import os
 from typing import TYPE_CHECKING
 
-from ..version import __version__ as _qcodes_version
+import h5py
+import numpy as np
+
+import qcodes as qc
+
 from .data_array import DataArray
 from .format import Formatter
 
@@ -67,9 +69,22 @@ class HDF5Format(Formatter):
                 and ``arrays`` (dict of ``{array_id: array}``, can be empty
                 or can already have some or all of the arrays present, they
                 expect to be overwritten)
-            location (None or str): Location to write the data. If no location 
+            location (None or str): Location to write the data. If no location
                 is provided will use the location specified in the dataset.
         """
+        def decode_bytes_if_needed(s):
+            """
+            h5py 2 stores strings encoded as bytestrings
+            h5py 3 fixes this and stores them as regular utf8 strings
+
+            This is a simple wrapper to always convert to regular strings
+            """
+            try:
+                s = s.decode()
+            except AttributeError:
+                pass
+            return s
+
         self._open_file(data_set, location)
 
         if '__format_tag' in data_set._h5_base_group.attrs:
@@ -85,19 +100,20 @@ class HDF5Format(Formatter):
             dat_arr = data_set._h5_base_group['Data Arrays'][array_id]
 
             # write ensures these attributes always exist
-            name = dat_arr.attrs['name'].decode()
-            label = dat_arr.attrs['label'].decode()
+            name = decode_bytes_if_needed(dat_arr.attrs['name'])
+            label = decode_bytes_if_needed(dat_arr.attrs['label'])
 
             # get unit from units if no unit field, for backward compatibility
             if 'unit' in dat_arr.attrs:
-                unit = dat_arr.attrs['unit'].decode()
+                unit = decode_bytes_if_needed(dat_arr.attrs['unit'])
             else:
-                unit = dat_arr.attrs['units'].decode()
+                unit = decode_bytes_if_needed(dat_arr.attrs['units'])
 
-            is_setpoint = str_to_bool(dat_arr.attrs['is_setpoint'].decode())
+            is_setpoint_str = decode_bytes_if_needed(dat_arr.attrs['is_setpoint'])
+            is_setpoint = str_to_bool(is_setpoint_str)
             # if not is_setpoint:
             set_arrays = dat_arr.attrs['set_arrays']
-            set_arrays = [s.decode() for s in set_arrays]
+            set_arrays = [decode_bytes_if_needed(s) for s in set_arrays]
             # else:
             #     set_arrays = ()
             vals = dat_arr[:, 0]
@@ -135,7 +151,7 @@ class HDF5Format(Formatter):
     def _filepath_from_location(self, location, io_manager):
         filename = os.path.split(location)[-1]
         filepath = io_manager.to_path(location +
-                                      '/{}.hdf5'.format(filename))
+                                      f'/{filename}.hdf5')
         return filepath
 
     def _create_data_object(self, data_set, io_manager=None,
@@ -150,8 +166,8 @@ class HDF5Format(Formatter):
         # name. This is useful for saving e.g. images in the same folder
         # I think this is a sane default (MAR).
         data_set._h5_base_group = self._create_file(filepath)
-        data_set._h5_base_group.attrs['__qcodes_version'] = _qcodes_version
-        data_set._h5_base_group.attrs['__format_tag'] = self._format_tag
+        data_set._h5_base_group.attrs["__qcodes_version"] = qc.__version__
+        data_set._h5_base_group.attrs["__format_tag"] = self._format_tag
 
         return data_set._h5_base_group
 
@@ -238,13 +254,13 @@ class HDF5Format(Formatter):
             data_set._h5_base_group.file.flush()
 
     def _create_dataarray_dset(self, array, group):
-        '''
+        """
         input arguments
         array:  Dataset data array
         group:  group in the hdf5 file where the dset will be created
 
         creates a hdf5 datasaset that represents the data array.
-        '''
+        """
         # Check for empty meta attributes, use array_id if name and/or label
         # is not specified
         if array.label is not None:
@@ -303,11 +319,11 @@ class HDF5Format(Formatter):
                                  h5_group=entry_point[list_type])
 
         if list_type == 'tuple':
-            item = tuple([d[k] for k in sorted(d.keys())])
+            item = tuple(d[k] for k in sorted(d.keys()))
         elif list_type == 'list':
             item = [d[k] for k in sorted(d.keys())]
         else:
-            raise Exception('type %s not supported' % type(item))
+            raise Exception('type %s not supported' % list_type)
 
         return item
 
@@ -317,7 +333,7 @@ class HDF5Format(Formatter):
         group_attrs['list_type'] = list_type
 
         if list_type == 'tuple' or list_type == 'list':
-            item = dict((str(v[0]), v[1]) for v in enumerate(item))
+            item = {str(v[0]): v[1] for v in enumerate(item)}
         else:
             raise Exception('type %s not supported' % type(item))
 
@@ -327,7 +343,7 @@ class HDF5Format(Formatter):
             entry_point=entry_point[key][list_type])
 
     def write_dict_to_hdf5(self, data_dict, entry_point):
-        """ Write a (nested) dictionary to HDF5 
+        """ Write a (nested) dictionary to HDF5
 
         Args:
             data_dict (dict): Dicionary to be written
@@ -420,7 +436,7 @@ class HDF5Format(Formatter):
         return data_set
 
     def read_dict_from_hdf5(self, data_dict, h5_group):
-        """ Read a dictionary from HDF5 
+        """ Read a dictionary from HDF5
 
         Args:
             data_dict (dict): Dataset to read from
@@ -487,10 +503,10 @@ def str_to_bool(s):
     elif s == 'False':
         return False
     else:
-        raise ValueError("Cannot covert {} to a bool".format(s))
+        raise ValueError(f"Cannot covert {s} to a bool")
 
 
-from qcodes.utils.helpers import deep_update, NumpyJSONEncoder
+from qcodes.utils.helpers import NumpyJSONEncoder, deep_update
 
 
 class HDF5FormatMetadata(HDF5Format):
@@ -545,5 +561,5 @@ class HDF5FormatMetadata(HDF5Format):
         fn = io_manager.join(location, self.metadata_file)
         if io_manager.list(fn):
             with io_manager.open(fn, 'r') as snap_file:
-                metadata = json.load(snap_file, encoding='utf8')
+                metadata = json.load(snap_file)
             data_set.metadata.update(metadata)

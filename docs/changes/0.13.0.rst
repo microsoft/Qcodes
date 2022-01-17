@@ -1,0 +1,73 @@
+Changelog for QCoDeS 0.13.0
+===========================
+
+The April 2020 release of QCoDeS
+
+Breaking Changes:
+_________________
+
+* The dictionary ``station.components['config']`` representing a Station
+  configuration loaded from a YAML file has been moved to ``station.config``.
+  The same change is reflected in the snapshot and the config can now
+  be accessed via ``station_snapshot['config']``. (#1913)
+
+* The ``QCoDeS`` configuration module has moved from ``qcodes.config`` to ``qcodes.configuration``
+  to disambiguate it from the current active config which is defined in ``qcodes.config`` as always (#1682)
+
+* It is now an error to overwrite get and set in a ``_BaseParameter`` subclass. Users have been warned against this
+  for a long time (#1946)
+
+* The legacy api such as Loop, active_loop, active_data_set, Measure, DataSet, new_data, load_data, Task, Wait, BreakIf,
+  FormatLocation, DataArray, Formatter, GNUPlotFormat, HDF5Format, DiskIO, are no more imported in ``QCoDeS`` namespace
+  by default. The core config now contains a new flag `import_legacy_api` that can be set to True if the legacy api
+  needs to be imported in the ``QCoDeS`` namespace. (#1962)
+
+* The Deprecated ``log_analysis`` module has been retired (#1950)
+
+Improved drivers:
+_________________
+
+* Types have been added to init functions of the concrete Keysight DMM drivers classes (#1969)
+
+Improved:
+_________
+
+* The public QCoDeS api imported from the toplevel qcodes namespace can also be imported from
+  their respective modules for ex ``qcodes.dataset``, ``qcodes.instrument`` etc. (#1962)
+* Complete types have been added to the qcodes station (#1913)
+* ``get_last_run`` has been improved to match the signature of ``get_runs`` (#1960)
+* The Snapshot of ``station.config`` (and other UserDicts) has been improved so that it can
+  be reloaded back into a dict (#1961)
+
+Documentation:
+______________
+
+* Improvements to several notebooks showing a better way of customizing parameters (#1973)
+* An option to execute Jupyter notebooks via Binder has been added (#1943, #1948)
+* A note that measurement context managers do not nest has been added (#1949)
+* A Typo in a Dynacool docstring has been corrected (#1952)
+* A note on limitations in delegate parameter has been added (#1953)
+* The attribute documentation for parameter has been improved (#1956)
+* B1500 documentation is included in the docs (#1971)
+
+Deprecations:
+_____________
+
+* ``get_data`` and ``get_values`` methods in dataset have been deprecated (#1941)
+
+Under the hood:
+_______________
+
+* Use pytest retry to re-execute known flaky test (#1940)
+* Update azure pipelines images (#1938)
+* Remove the debug log from data_set (#1942)
+* Code simplifications (#1944)
+
+Recommended dependencies:
+_________________________
+
+* Typechecking is performed with mypy 0.770 (#1935)
+* Documentation is build with latest sphinx patch release (2.4.4) (#1954)
+* Recommended version of h5py is 2.10 (#1955, #1958)
+* Hypothesis version installed for testing is limited to <5.6.0 (#1959)
+* Python version installed into conda env updated to 3.7.7 (#1963)

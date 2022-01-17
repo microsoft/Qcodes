@@ -8,7 +8,7 @@ specify their signatures in terms of :mod:`ctypes` types.
 
 import ctypes
 import logging
-from typing import Type, Dict, NamedTuple, Sequence, NewType, List, Any
+from typing import Type, Dict, NamedTuple, Sequence, NewType, List, Any, TypeVar, Callable, Tuple
 from threading import Lock
 import concurrent
 from functools import partial
@@ -27,17 +27,22 @@ RETURN_CODE = NewType('RETURN_CODE', ctypes.c_uint)
 
 
 # FUNCTIONS #
+T = TypeVar('T')
 
 
-def _api_call_task(lock, c_func, callback, *args):
+def _api_call_task(
+        lock: Lock,
+        c_func: Callable[..., int],
+        callback: Callable[[], None],
+        *args: Any) -> int:
     with lock:
         retval = c_func(*args)
     callback()
     return retval
 
 
-def _normalize_params(*args: Any) -> List[Any]:
-    args_out: List[Any] = []
+def _normalize_params(*args: T) -> List[T]:
+    args_out: List[T] = []
     for arg in args:
         if isinstance(arg, _BaseParameter):
             args_out.append(arg.raw_value)
@@ -46,14 +51,17 @@ def _normalize_params(*args: Any) -> List[Any]:
     return args_out
 
 
-def _mark_params_as_updated(*args) -> None:
+def _mark_params_as_updated(*args: Any) -> None:
     for arg in args:
         if isinstance(arg, TraceParameter):
             arg._set_updated()
 
 
-def _check_error_code(return_code: int, func, arguments
-                      ) -> None:
+def _check_error_code(
+        return_code: int,
+        func: Callable[..., Any],
+        arguments: Tuple[Any, ...]
+) -> Tuple[Any, ...]:
     if (return_code != API_SUCCESS) and (return_code != API_DMA_IN_PROGRESS):
         argrepr = repr(arguments)
         if len(argrepr) > 100:
@@ -76,7 +84,11 @@ def _check_error_code(return_code: int, func, arguments
     return arguments
 
 
-def _convert_bytes_to_str(output: bytes, func, arguments) -> str:
+def _convert_bytes_to_str(
+        output: bytes,
+        func: Callable[..., Any],
+        arguments: Tuple[Any, ...]
+) -> str:
     return output.decode()
 
 
@@ -84,15 +96,15 @@ def _convert_bytes_to_str(output: bytes, func, arguments) -> str:
 
 
 class Signature(NamedTuple):
-    return_type: Type = RETURN_CODE
-    argument_types: Sequence[Type] = ()
+    return_type: Type[Any] = RETURN_CODE
+    argument_types: Sequence[Type[Any]] = ()
 
 
 class DllWrapperMeta(type):
     """DLL-path-based 'singleton' metaclass for DLL wrapper classes"""
 
     # Only allow a single instance per DLL path.
-    _instances: WeakValueDictionary = WeakValueDictionary()  # of [str, Any]
+    _instances: "WeakValueDictionary[str, Any]" = WeakValueDictionary()
 
     # Note: without the 'type: ignore' for the ``__call__`` method below, mypy
     # generates 'Signature of "__call__" incompatible with supertype "type"'
@@ -100,8 +112,12 @@ class DllWrapperMeta(type):
     # should not change the method signatures, but we need it here in order to
     # use the ``dll_path`` argument which the ``type`` superclass obviously
     # does not have in its ``__call__`` method.
-    def __call__(  # type: ignore
-            cls, dll_path: str):
+    def __call__(  # type: ignore[override]
+            cls,
+            dll_path: str,
+            *args: Any,
+            **kwargs: Any
+    ) -> Any:
         api = cls._instances.get(dll_path, None)
         if api is not None:
             logger.debug(
@@ -110,7 +126,8 @@ class DllWrapperMeta(type):
         else:
             logger.debug(
                 f"Creating new instance for DLL path {dll_path}.")
-            new_api = super().__call__(dll_path)  # <- strong reference
+            # strong reference:
+            new_api = super().__call__(dll_path, *args, **kwargs)
             cls._instances[dll_path] = new_api
             return new_api
 
@@ -121,8 +138,8 @@ class WrappedDll(metaclass=DllWrapperMeta):
 
     Note that this class is still quite specific to Alazar ATS DLL library.
 
-    This class uses dictionary of the :attr:``signatures`` attribute in order
-    to assign ``argtypes`` and ``restype`` atttributes for functions of
+    This class uses dictionary of the :attr:`signatures` attribute in order
+    to assign ``argtypes`` and ``restype`` attributes for functions of
     a loaded DLL library (from the ``_dll`` attribute of the class).
     If ``restype`` is of type ``RETURN_CODE``, then an exception is
     raised in case the return code is an Alazar error code. For string-alike
@@ -136,16 +153,17 @@ class WrappedDll(metaclass=DllWrapperMeta):
     Method ``_sync_dll_call`` is supposed to be called when a subclass
     implements calls to functions of the loaded DLL.
 
-    Attributes:
-        signatures: :mod:`ctypes` signatures for loaded DLL functions;
-            it is to be filled with :class:`Signature` instances for the DLL
-            functions of interest in a subclass.
-
     Args:
         dll_path: Path to the DLL library to load and wrap
     """
 
     signatures: Dict[str, Signature] = {}
+    """
+    Signatures for loaded DLL functions;
+    It is to be filled with :class:`Signature` instances for the DLL
+    functions of interest in a subclass.
+    """
+
 
     # This is the DLL library instance.
     _dll: ctypes.CDLL
@@ -163,7 +181,7 @@ class WrappedDll(metaclass=DllWrapperMeta):
         self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
         self._lock = Lock()  # ATS API DLL is not guaranteed to be thread-safe
 
-    def __apply_signatures(self):
+    def __apply_signatures(self) -> None:
         """
         Apply :mod:`ctypes` signatures for all of the C library functions
         specified in :attr:`signatures` attribute.

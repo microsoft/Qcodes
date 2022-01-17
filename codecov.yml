@@ -2,7 +2,7 @@ codecov:
   token: c3b231db-2db3-4560-a477-6edcf4cf5ad1
   branch: master
   bot: qcodes-bot
-  
+
 coverage:
   precision: 2
   round: down
