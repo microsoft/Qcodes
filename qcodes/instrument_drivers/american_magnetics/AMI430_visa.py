@@ -199,6 +199,7 @@ class AMI430(VisaInstrument):
                 except VisaIOError:
                     pass
             else:
+                # read the hello part of the welcome message
                 self.visa_handle.read()
 
         self._parent_instrument = None
