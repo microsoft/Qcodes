@@ -414,15 +414,6 @@ class AMI430(VisaInstrument):
         self.write("CONF:RAMP:RATE:SEG 1")
         self.write(f"CONF:RAMP:RATE:FIELD 1,{rate},0")
 
-    def _connect(self) -> None:
-        """
-        Append the IPInstrument connect to flush the welcome message of the AMI
-        430 programmer
-        :return: None
-        """
-        super()._connect()
-        self.flush_connection()
-
     def _update_ramp_rate_limit(
         self, new_current_rate_limit: float, update: bool = True
     ) -> None:
