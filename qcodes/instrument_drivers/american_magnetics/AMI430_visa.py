@@ -148,7 +148,9 @@ class AMI430(VisaInstrument):
 
     Args:
         name: a name for the instrument
-        address: IP address of the power supply programmer
+        address: VISA formatted address of the power supply programmer.
+            Of the form ``TCPIP[board]::host address::port::SOCKET``
+            e.g. ``TCPIP0::192.168.0.1::7800::SOCKET``
         current_ramp_limit: A current ramp limit, in units of A/s
     """
 
