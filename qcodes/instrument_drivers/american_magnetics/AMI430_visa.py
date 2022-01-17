@@ -19,6 +19,7 @@ from typing import (
 )
 
 import numpy as np
+from pyvisa import VisaIOError
 
 from qcodes.instrument import Instrument, InstrumentChannel, Parameter, VisaInstrument
 from qcodes.math_utils.field_vector import FieldVector
@@ -180,6 +181,26 @@ class AMI430(VisaInstrument):
             terminator=terminator,
             **kwargs,
         )
+
+        simmode = getattr(self, "visabackend", False) == "sim"
+        # pyvisa-sim does not support connect messages
+        if not simmode:
+            # the AMI 430 sends a welcome message of
+            # 'American Magnetics Model 430 IP Interface'
+            # 'Hello'
+            # here we read that out before communicating with the instrument
+            # if that is not the first reply likely there is left over messages
+            # in the buffer so read until empty
+            message1 = self.visa_handle.read()
+            if "American Magnetics Model 430 IP Interface" not in message1:
+                try:
+                    while True:
+                        self.visa_handle.read()
+                except VisaIOError:
+                    pass
+            else:
+                self.visa_handle.read()
+
         self._parent_instrument = None
 
         # Add reset function
