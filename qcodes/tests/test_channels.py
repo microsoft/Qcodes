@@ -265,6 +265,24 @@ def test_channels_contain(dci):
         assert chan in chlist
 
 
+def test_channels_reverse(dci):
+    names = ("A", "B", "C", "D", "E", "F", "G", "H")
+    channels = tuple(DummyChannel(dci, name, name) for name in names)
+    chlist = ChannelList(dci, "channels", DummyChannel, channels)
+    reverse_names = reversed(names)
+    for name, chan in zip(reverse_names, reversed(chlist)):
+        assert chan.short_name == name
+
+
+def test_channels_count(dci):
+    names = ("A", "B", "C", "D", "E", "F", "G", "H")
+    channels = tuple(DummyChannel(dci, name, name) for name in names)
+    chlist = ChannelList(dci, "channels", DummyChannel, channels)
+
+    for channel in channels:
+        assert chlist.count(channel) == 1
+
+
 def test_names(dci):
     ex_inst_name = 'dci'
     for channel in dci.channels:

@@ -251,6 +251,9 @@ class ChannelList(Metadatable):
     def __iter__(self) -> Iterator['InstrumentChannel']:
         return iter(self._channels)
 
+    def __reversed__(self) -> Iterator["InstrumentChannel"]:
+        return reversed(self._channels)
+
     def __len__(self) -> int:
         return len(self._channels)
 
@@ -366,6 +369,14 @@ class ChannelList(Metadatable):
             obj: The object to find in the channel list.
         """
         return self._channels.index(obj)
+
+    def count(self, obj: object) -> int:
+        """Returns number of instances of the given object in the list
+
+        Args:
+            obj: The object to find in the channel list.
+        """
+        return self._channels.count(obj)
 
     def insert(self, index: int, obj: InstrumentChannel) -> None:
         """
