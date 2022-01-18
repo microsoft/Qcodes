@@ -157,6 +157,7 @@ class AMI430(VisaInstrument):
 
     _SHORT_UNITS = {"seconds": "s", "minutes": "min", "tesla": "T", "kilogauss": "kG"}
     _DEFAULT_CURRENT_RAMP_LIMIT = 0.06  # [A/s]
+    _RETRY_TIME = 5
 
     def __init__(
         self,
@@ -526,9 +527,9 @@ class AMI430(VisaInstrument):
         except VisaIOError:
             self.log.exception(
                 f"Got VisaIOError while writing {cmd} to instrument."
-                f"Will try to reconnect now."
+                f"Will retry in {self._RETRY_TIME} sec."
             )
-            self.set_address(self._address)
+            time.sleep(self._RETRY_TIME)
             self.device_clear()
             super().write_raw(cmd)
 
@@ -539,9 +540,9 @@ class AMI430(VisaInstrument):
         except VisaIOError:
             self.log.exception(
                 f"Got VisaIOError while asking the instrument: {cmd}"
-                "Will try to reconnect now."
+                f"Will retry in {self._RETRY_TIME} sec."
             )
-            self.set_address(self._address)
+            time.sleep(self._RETRY_TIME)
             self.device_clear()
             result = super().ask_raw(cmd)
         return result
