@@ -234,6 +234,9 @@ class ChannelList(Metadatable):
     def __len__(self) -> int:
         return len(self._channels)
 
+    def __contains__(self, item: object) -> bool:
+        return item in self._channels
+
     def __repr__(self) -> str:
         return "ChannelList({!r}, {}, {!r})".format(self._parent,
                                                     self._chan_type.__name__,
