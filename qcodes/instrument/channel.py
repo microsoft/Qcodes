@@ -1,5 +1,16 @@
 """ Base class for the channel of an instrument """
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    cast,
+    overload,
+)
 
 from ..utils.helpers import full_class
 from ..utils.metadata import Metadatable
@@ -208,8 +219,17 @@ class ChannelList(Metadatable):
                 raise TypeError("All items in this channel list must be of "
                                 "type {}.".format(chan_type.__name__))
 
-    def __getitem__(self, i: Union[int, slice, Tuple[int, ...]]) -> \
-            Union['InstrumentChannel', 'ChannelList']:
+    @overload
+    def __getitem__(self, i: int) -> "InstrumentChannel":
+        ...
+
+    @overload
+    def __getitem__(self, i: Union[slice, Tuple[int, ...]]) -> "ChannelList":
+        ...
+
+    def __getitem__(
+        self, i: Union[int, slice, Tuple[int, ...]]
+    ) -> Union["InstrumentChannel", "ChannelList"]:
         """
         Return either a single channel, or a new :class:`ChannelList`
         containing only the specified channels
