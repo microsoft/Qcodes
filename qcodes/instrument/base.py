@@ -4,6 +4,7 @@ import time
 import warnings
 import weakref
 from abc import ABC, ABCMeta, abstractmethod
+from collections.abc import Collection
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -69,6 +70,18 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         such as channel lists or logical groupings of parameters.
         Usually populated via :py:meth:`add_submodule`.
         """
+        self.channel_modules: Dict[str, "ChannelList"] = {}
+        """
+        All the channels of this instrument
+        Usually populated via :py:meth:`add_submodule`.
+        """
+
+        self.channel_list_modules: Dict[str, "ChannelList"] = {}
+        """
+        All the ChannelLists of this instrument
+        Usually populated via :py:meth:`add_submodule`.
+        """
+
 
         super().__init__(metadata)
 
@@ -206,6 +219,14 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         if not isinstance(submodule, Metadatable):
             raise TypeError('Submodules must be metadatable.')
         self.submodules[name] = submodule
+
+        if isinstance(submodule, Collection):
+            # this is channel_list like
+            # We cannot check against channels to avoid circular imports
+            self.channel_list_modules[name] = submodule  # type: ignore[assignment]
+        else:
+            self.channel_modules[name] = submodule  # type: ignore[assignment]
+
 
     def snapshot_base(self, update: Optional[bool] = False,
                       params_to_skip_update: Optional[Sequence[str]] = None
