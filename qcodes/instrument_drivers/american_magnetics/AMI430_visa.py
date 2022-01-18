@@ -519,6 +519,33 @@ class AMI430(VisaInstrument):
         # constant changes)
         self.coil_constant()
 
+    def write_raw(self, cmd: str) -> None:
+
+        try:
+            super().write_raw(cmd)
+        except VisaIOError:
+            self.log.exception(
+                f"Got VisaIOError while writing {cmd} to instrument."
+                f"Will try to reconnect now."
+            )
+            self.set_address(self._address)
+            self.device_clear()
+            super().write_raw(cmd)
+
+    def ask_raw(self, cmd: str) -> str:
+
+        try:
+            result = super().ask_raw(cmd)
+        except VisaIOError:
+            self.log.exception(
+                f"Got VisaIOError while asking the instrument: {cmd}"
+                "Will try to reconnect now."
+            )
+            self.set_address(self._address)
+            self.device_clear()
+            result = super().ask_raw(cmd)
+        return result
+
 
 class AMI430_3D(Instrument):
     def __init__(
