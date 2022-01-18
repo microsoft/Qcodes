@@ -359,12 +359,12 @@ class ChannelTuple(Metadatable, collections.abc.Sequence):
             self._paramclass,
         )
 
-    def get_validator(self) -> 'ChannelListValidator':
+    def get_validator(self) -> "ChannelTupleValidator":
         """
         Returns a validator that checks that the returned object is a channel
         in this channel list
         """
-        return ChannelListValidator(self)
+        return ChannelTupleValidator(self)
 
     def snapshot_base(self, update: Optional[bool] = True,
                       params_to_skip_update: Optional[Sequence[str]] = None
@@ -591,7 +591,7 @@ class ChannelList(ChannelTuple):
         self._channels.insert(index, obj)
         self._channel_mapping[obj.short_name] = obj
 
-    def get_validator(self) -> "ChannelListValidator":
+    def get_validator(self) -> "ChannelTupleValidator":
         """
         Returns a validator that checks that the returned object is a channel
         in this channel list
@@ -613,7 +613,8 @@ class ChannelList(ChannelTuple):
         self._channels = tuple(self._channels)
         self._locked = True
 
-class ChannelListValidator(Validator[InstrumentChannel]):
+
+class ChannelTupleValidator(Validator[InstrumentChannel]):
     """
     A validator that checks that the returned object is a member of the
     channel list with which the validator was constructed.
@@ -653,6 +654,10 @@ class ChannelListValidator(Validator[InstrumentChannel]):
             raise ValueError(
                 '{} is not part of the expected channel list; {}'.format(
                     repr(value), context))
+
+
+class ChannelListValidator(ChannelTupleValidator):
+    pass
 
 
 class AutoLoadableInstrumentChannel(InstrumentChannel):
