@@ -9,6 +9,7 @@ from typing import (
     Optional,
     Sequence,
     Tuple,
+    TypeVar,
     Union,
     cast,
     overload,
@@ -149,7 +150,10 @@ class MultiChannelInstrumentParameter(MultiParameter):
         return self.names
 
 
-class ChannelList(Metadatable, collections.abc.Sequence):
+T = TypeVar("T", bound="ChannelTuple")
+
+
+class ChannelTuple(Metadatable, collections.abc.Sequence):
     """
     Container for channelized parameters that allows for sweeps over
     all channels, as well as addressing of individual channels.
@@ -234,12 +238,12 @@ class ChannelList(Metadatable, collections.abc.Sequence):
         ...
 
     @overload
-    def __getitem__(self, i: Union[slice, Tuple[int, ...]]) -> "ChannelList":
+    def __getitem__(self: T, i: Union[slice, Tuple[int, ...]]) -> T:
         ...
 
     def __getitem__(
-        self, i: Union[int, slice, Tuple[int, ...]]
-    ) -> Union["InstrumentChannel", "ChannelList"]:
+        self: T, i: Union[int, slice, Tuple[int, ...]]
+    ) -> Union["InstrumentChannel", T]:
         """
         Return either a single channel, or a new :class:`ChannelList`
         containing only the specified channels
@@ -249,13 +253,21 @@ class ChannelList(Metadatable, collections.abc.Sequence):
               to get
         """
         if isinstance(i, slice):
-            return ChannelList(self._parent, self._name, self._chan_type,
-                               self._channels[i],
-                               multichan_paramclass=self._paramclass)
+            return type(self)(
+                self._parent,
+                self._name,
+                self._chan_type,
+                self._channels[i],
+                multichan_paramclass=self._paramclass,
+            )
         elif isinstance(i, tuple):
-            return ChannelList(self._parent, self._name, self._chan_type,
-                               [self._channels[j] for j in i],
-                               multichan_paramclass=self._paramclass)
+            return type(self)(
+                self._parent,
+                self._name,
+                self._chan_type,
+                [self._channels[j] for j in i],
+                multichan_paramclass=self._paramclass,
+            )
         return self._channels[i]
 
     def __iter__(self) -> Iterator['InstrumentChannel']:
@@ -300,76 +312,12 @@ class ChannelList(Metadatable, collections.abc.Sequence):
             raise ValueError("Can only add channels from the same parent "
                              "together.")
 
-        return ChannelList(self._parent, self._name, self._chan_type,
-                           list(self._channels) + list(other._channels))
-
-    def append(self, obj: InstrumentChannel) -> None:
-        """
-        Append a Channel to this list. Requires that the ChannelList is not
-        locked and that the channel is of the same type as the ones in the list.
-
-        Args:
-            obj: New channel to add to the list.
-        """
-        if isinstance(self._channels, tuple) or self._locked:
-            raise AttributeError("Cannot append to a locked channel list")
-        if not isinstance(obj, self._chan_type):
-            raise TypeError("All items in a channel list must be of the same "
-                            "type. Adding {} to a list of {}"
-                            ".".format(type(obj).__name__,
-                                       self._chan_type.__name__))
-        self._channel_mapping[obj.short_name] = obj
-        self._channels = cast(List[InstrumentChannel], self._channels)
-        self._channels.append(obj)
-
-    def clear(self) -> None:
-        """
-        Clear all items from the channel list.
-        """
-        if self._locked:
-            raise AttributeError("Cannot clear a locked channel list")
-        # when not locked the _channels seq is a list
-        channels = cast(List['InstrumentChannel'], self._channels)
-        channels.clear()
-        self._channel_mapping.clear()
-
-    def remove(self, obj: InstrumentChannel) -> None:
-        """
-        Removes obj from channellist if not locked.
-
-        Args:
-            obj: Channel to remove from the list.
-        """
-        if self._locked:
-            raise AttributeError("Cannot remove from a locked channel list")
-        else:
-            self._channels = cast(List[InstrumentChannel], self._channels)
-            self._channels.remove(obj)
-            self._channel_mapping.pop(obj.short_name)
-
-    def extend(self, objects: Union[Sequence[InstrumentChannel],
-                                    'ChannelList']) -> None:
-        """
-        Insert an iterable of objects into the list of channels.
-
-        Args:
-            objects: A list of objects to add into the
-              :class:`ChannelList`.
-        """
-        # objects may be a generator but we need to iterate over it twice
-        # below so copy it into a tuple just in case.
-        objects_tuple = tuple(objects)
-        if self._locked:
-            raise AttributeError("Cannot extend a locked channel list")
-        if not all(isinstance(obj, self._chan_type) for obj in objects_tuple):
-            raise TypeError("All items in a channel list must be of the same "
-                            "type.")
-        channels = cast(List[InstrumentChannel], self._channels)
-        channels.extend(objects_tuple)
-        self._channel_mapping.update({
-            obj.short_name: obj for obj in objects
-        })
-        self._channels = channels
+        return type(self)(
+            self._parent,
+            self._name,
+            self._chan_type,
+            list(self._channels) + list(other._channels),
+        )
 
     def index(self, obj: object, start: int = 0, stop: int = sys.maxsize) -> int:
         """
@@ -390,29 +338,7 @@ class ChannelList(Metadatable, collections.abc.Sequence):
         """
         return self._channels.count(obj)
 
-    def insert(self, index: int, obj: InstrumentChannel) -> None:
-        """
-        Insert an object into the channel list at a specific index.
-
-        Args:
-            index: Index to insert object.
-
-            obj: Object of type chan_type to insert.
-        """
-        if isinstance(self._channels, tuple) or self._locked:
-            raise AttributeError("Cannot insert into a locked channel list")
-        if not isinstance(obj, self._chan_type):
-            raise TypeError("All items in a channel list must be of the same "
-                            "type. Adding {} to a list of {}"
-                            ".".format(type(obj).__name__,
-                                       self._chan_type.__name__))
-        self._channels = cast(List[InstrumentChannel], self._channels)
-        self._channels.insert(index, obj)
-        self._channel_mapping[obj.short_name] = obj
-
-    def get_channel_by_name(
-        self, *names: str
-    ) -> Union[InstrumentChannel, "ChannelList"]:
+    def get_channel_by_name(self: T, *names: str) -> Union[InstrumentChannel, T]:
         """
         Get a channel by name, or a ChannelList if multiple names are given.
 
@@ -424,7 +350,7 @@ class ChannelList(Metadatable, collections.abc.Sequence):
         if len(names) == 1:
             return self._channel_mapping[names[0]]
         selected_channels = tuple(self._channel_mapping[name] for name in names)
-        return ChannelList(
+        return type(self)(
             self._parent,
             self._name,
             self._chan_type,
@@ -438,21 +364,7 @@ class ChannelList(Metadatable, collections.abc.Sequence):
         Returns a validator that checks that the returned object is a channel
         in this channel list
         """
-        if not self._locked:
-            raise AttributeError("Cannot create a validator for an unlocked "
-                                 "channel list")
         return ChannelListValidator(self)
-
-    def lock(self) -> None:
-        """
-        Lock the channel list. Once this is done, the channel list is
-        converted to a tuple and any future changes to the list are prevented.
-        """
-        if self._locked:
-            return
-
-        self._channels = tuple(self._channels)
-        self._locked = True
 
     def snapshot_base(self, update: Optional[bool] = True,
                       params_to_skip_update: Optional[Sequence[str]] = None
@@ -590,6 +502,116 @@ class ChannelList(Metadatable, collections.abc.Sequence):
                 channel.print_readable_snapshot(update=update,
                                                 max_chars=max_chars)
 
+class ChannelList(ChannelTuple):
+    def append(self, obj: InstrumentChannel) -> None:
+        """
+        Append a Channel to this list. Requires that the ChannelList is not
+        locked and that the channel is of the same type as the ones in the list.
+
+        Args:
+            obj: New channel to add to the list.
+        """
+        if isinstance(self._channels, tuple) or self._locked:
+            raise AttributeError("Cannot append to a locked channel list")
+        if not isinstance(obj, self._chan_type):
+            raise TypeError(
+                "All items in a channel list must be of the same "
+                "type. Adding {} to a list of {}"
+                ".".format(type(obj).__name__, self._chan_type.__name__)
+            )
+        self._channel_mapping[obj.short_name] = obj
+        self._channels = cast(List[InstrumentChannel], self._channels)
+        self._channels.append(obj)
+
+    def clear(self) -> None:
+        """
+        Clear all items from the channel list.
+        """
+        if self._locked:
+            raise AttributeError("Cannot clear a locked channel list")
+        # when not locked the _channels seq is a list
+        channels = cast(List["InstrumentChannel"], self._channels)
+        channels.clear()
+        self._channel_mapping.clear()
+
+    def remove(self, obj: InstrumentChannel) -> None:
+        """
+        Removes obj from channellist if not locked.
+
+        Args:
+            obj: Channel to remove from the list.
+        """
+        if self._locked:
+            raise AttributeError("Cannot remove from a locked channel list")
+        else:
+            self._channels = cast(List[InstrumentChannel], self._channels)
+            self._channels.remove(obj)
+            self._channel_mapping.pop(obj.short_name)
+
+    def extend(
+        self, objects: Union[Sequence[InstrumentChannel], "ChannelTuple"]
+    ) -> None:
+        """
+        Insert an iterable of objects into the list of channels.
+
+        Args:
+            objects: A list of objects to add into the
+              :class:`ChannelList`.
+        """
+        # objects may be a generator but we need to iterate over it twice
+        # below so copy it into a tuple just in case.
+        objects_tuple = tuple(objects)
+        if self._locked:
+            raise AttributeError("Cannot extend a locked channel list")
+        if not all(isinstance(obj, self._chan_type) for obj in objects_tuple):
+            raise TypeError("All items in a channel list must be of the same " "type.")
+        channels = cast(List[InstrumentChannel], self._channels)
+        channels.extend(objects_tuple)
+        self._channel_mapping.update({obj.short_name: obj for obj in objects})
+        self._channels = channels
+
+    def insert(self, index: int, obj: InstrumentChannel) -> None:
+        """
+        Insert an object into the channel list at a specific index.
+
+        Args:
+            index: Index to insert object.
+
+            obj: Object of type chan_type to insert.
+        """
+        if isinstance(self._channels, tuple) or self._locked:
+            raise AttributeError("Cannot insert into a locked channel list")
+        if not isinstance(obj, self._chan_type):
+            raise TypeError(
+                "All items in a channel list must be of the same "
+                "type. Adding {} to a list of {}"
+                ".".format(type(obj).__name__, self._chan_type.__name__)
+            )
+        self._channels = cast(List[InstrumentChannel], self._channels)
+        self._channels.insert(index, obj)
+        self._channel_mapping[obj.short_name] = obj
+
+    def get_validator(self) -> "ChannelListValidator":
+        """
+        Returns a validator that checks that the returned object is a channel
+        in this channel list
+        """
+        if not self._locked:
+            raise AttributeError(
+                "Cannot create a validator for an unlocked " "channel list"
+            )
+        return super().get_validator()
+
+    def lock(self) -> None:
+        """
+        Lock the channel list. Once this is done, the channel list is
+        converted to a tuple and any future changes to the list are prevented.
+        """
+        if self._locked:
+            return
+
+        self._channels = tuple(self._channels)
+        self._locked = True
 
 class ChannelListValidator(Validator[InstrumentChannel]):
     """
@@ -604,9 +626,10 @@ class ChannelListValidator(Validator[InstrumentChannel]):
             against. The channel list must be locked and populated before it
             can be used to construct a validator.
     """
-    def __init__(self, channel_list: ChannelList) -> None:
+
+    def __init__(self, channel_list: ChannelTuple) -> None:
         # Save the base parameter list
-        if not isinstance(channel_list, ChannelList):
+        if not isinstance(channel_list, ChannelTuple):
             raise ValueError("channel_list must be a ChannelList "
                              "object containing the "
                              "channels that should be validated")
