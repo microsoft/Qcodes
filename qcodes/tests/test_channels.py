@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Sequence
 
 import hypothesis.strategies as hst
 import numpy as np
@@ -281,6 +282,15 @@ def test_channels_count(dci):
 
     for channel in channels:
         assert chlist.count(channel) == 1
+
+
+def test_channels_is_sequence(dci):
+    names = ("A", "B", "C", "D", "E", "F", "G", "H")
+    channels = tuple(DummyChannel(dci, name, name) for name in names)
+    chlist = ChannelList(dci, "channels", DummyChannel, channels)
+
+    assert isinstance(chlist, Sequence)
+    assert issubclass(ChannelList, Sequence)
 
 
 def test_names(dci):

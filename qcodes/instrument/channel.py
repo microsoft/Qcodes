@@ -1,4 +1,5 @@
 """ Base class for the channel of an instrument """
+import collections.abc
 from typing import (
     Any,
     Callable,
@@ -577,6 +578,7 @@ class ChannelList(Metadatable):
                 channel.print_readable_snapshot(update=update,
                                                 max_chars=max_chars)
 
+collections.abc.Sequence.register(ChannelList)
 
 class ChannelListValidator(Validator[InstrumentChannel]):
     """
