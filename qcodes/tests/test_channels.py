@@ -257,6 +257,13 @@ def test_access_channels_by_name(dci, myindexs):
     for chan, chanindex in zip(mychans, myindexs):
         assert chan.name == f'dci_Chan{names[chanindex]}'
 
+def test_channels_contain(dci):
+    names = ("A", "B", "C", "D", "E", "F", "G", "H")
+    channels = tuple(DummyChannel(dci, "Chan" + name, name) for name in names)
+    chlist = ChannelList(dci, "channels", DummyChannel, channels)
+    for chan in channels:
+        assert chan in chlist
+
 
 def test_names(dci):
     ex_inst_name = 'dci'
