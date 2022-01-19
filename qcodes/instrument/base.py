@@ -80,6 +80,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         """
         All the ChannelLists of this instrument
         Usually populated via :py:meth:`add_submodule`.
+        This is private until the correct name has been decided.
         """
 
         super().__init__(metadata)
@@ -220,9 +221,9 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         self.submodules[name] = submodule
 
         if isinstance(submodule, collections.abc.Sequence):
-            # this is channel_list like
-            # We cannot check against channels to avoid circular imports
-            # This is private for now until we agree on the name
+            # this is channel_list like:
+            # We cannot check against ChannelsList itself since that
+            # would introduce a circular dependency.
             self._channel_lists[name] = submodule
         else:
             self.instrument_modules[name] = submodule
