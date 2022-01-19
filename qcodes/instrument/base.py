@@ -30,7 +30,7 @@ from .function import Function
 from .parameter import Parameter, _BaseParameter
 
 if TYPE_CHECKING:
-    from qcodes.instrument.channel import ChannelList
+    from qcodes.instrument.channel import ChannelList, InstrumentModule
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
 
 from qcodes.utils.deprecate import QCoDeSDeprecationWarning
@@ -63,8 +63,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         All the functions supported by this
         instrument. Usually populated via :py:meth:`add_function`.
         """
-        self.submodules: Dict[str, Union['InstrumentBase',
-                                         'ChannelList']] = {}
+        self.submodules: Dict[str, Union["InstrumentModule", "ChannelList"]] = {}
         """
         All the submodules of this instrument
         such as channel lists or logical groupings of parameters.
@@ -174,9 +173,9 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         func = Function(name=name, instrument=self, **kwargs)
         self.functions[name] = func
 
-    def add_submodule(self, name: str,
-                      submodule:  Union['InstrumentBase',
-                                        'ChannelList']) -> None:
+    def add_submodule(
+        self, name: str, submodule: Union["InstrumentModule", "ChannelList"]
+    ) -> None:
         """
         Bind one submodule to this instrument.
 
@@ -187,13 +186,13 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         the main instrument, and should at minimum be
         snapshottable. For example, they can be used to either store
         logical groupings of parameters, which may or may not be
-        repeated, or channel lists.
+        repeated, or channel lists. They should either be an instance
+        of an ``InstrumentModule`` or a ``ChannelList``.
 
         Args:
             name: How the submodule will be stored within
                 ``instrument.submodules`` and also how it can be
                 addressed.
-
             submodule: The submodule to be stored.
 
         Raises:
