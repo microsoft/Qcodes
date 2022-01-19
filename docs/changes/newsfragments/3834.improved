@@ -1,0 +1,3 @@
+Instances of ``InstrumentModule`` (and therfor their subclass ``InstrumentChannel``) are now accessible via
+the ``Instrument.instrument_modules`` dict on an instrument in addition to the ``Instrument.submodules`` dict
+which combines them with instances of ``ChannelList``.
