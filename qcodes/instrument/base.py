@@ -1,10 +1,10 @@
 """Instrument base class."""
+import collections.abc
 import logging
 import time
 import warnings
 import weakref
 from abc import ABC, ABCMeta, abstractmethod
-from collections.abc import Collection
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -220,13 +220,12 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             raise TypeError('Submodules must be metadatable.')
         self.submodules[name] = submodule
 
-        if isinstance(submodule, Collection):
+        if isinstance(submodule, collections.abc.Sequence):
             # this is channel_list like
             # We cannot check against channels to avoid circular imports
             self.channel_list_modules[name] = submodule  # type: ignore[assignment]
         else:
             self.channel_modules[name] = submodule  # type: ignore[assignment]
-
 
     def snapshot_base(self, update: Optional[bool] = False,
                       params_to_skip_update: Optional[Sequence[str]] = None
