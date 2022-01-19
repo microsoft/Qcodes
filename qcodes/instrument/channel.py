@@ -400,6 +400,7 @@ class ChannelList(Metadatable, collections.abc.Sequence):
                                        self._chan_type.__name__))
         self._channels = cast(List[InstrumentChannel], self._channels)
         self._channels.insert(index, obj)
+        self._channel_mapping[obj.short_name] = obj
 
     def get_channel_by_name(
         self, *names: str

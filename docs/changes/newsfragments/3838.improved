@@ -1,0 +1,2 @@
+Inserting into a ``ChannelList`` now correctly keeps the internal mapping up to date ensuring that
+``get_channel_by_name`` works correctly.

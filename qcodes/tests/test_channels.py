@@ -127,13 +127,16 @@ def test_extend_then_remove(dci):
 
 
 def test_insert_channel(dci):
-    n_channels = len(dci.channels)
+    n_channels_pre = len(dci.channels)
     name = 'foo'
     channel = DummyChannel(dci, 'Chan'+name, name)
     dci.channels.insert(1, channel)
     dci.add_submodule(name, channel)
 
-    assert len(dci.channels) == n_channels+1
+    n_channels_post = n_channels_pre + 1
+
+    assert dci.channels.get_channel_by_name(f"Chan{name}") is channel
+    assert len(dci.channels) == n_channels_post
     assert dci.channels[1] is channel
     dci.channels.lock()
     # after locking the channels it's not possible to add any more channels
@@ -141,7 +144,8 @@ def test_insert_channel(dci):
         name = 'bar'
         channel = DummyChannel(dci, 'Chan' + name, name)
         dci.channels.insert(2, channel)
-    assert len(dci.channels) == n_channels + 1
+    assert len(dci.channels) == n_channels_post
+    assert len(dci.channels._channel_mapping) == n_channels_post
 
 
 def test_clear_channels(dci):
