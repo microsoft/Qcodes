@@ -342,12 +342,10 @@ def log_qcodes_versions(logger: logging.Logger) -> None:
 
     qc_version = ii.get_qcodes_version()
     qc_e_inst = ii.is_qcodes_installed_editably()
-    qc_req_vs = ii.get_qcodes_requirements_versions()
     ipvs = ii.get_all_installed_package_versions()
 
     logger.info(f"QCoDeS version: {qc_version}")
     logger.info(f"QCoDeS installed in editable mode: {qc_e_inst}")
-    logger.info(f"QCoDeS requirements versions: {qc_req_vs}")
     logger.info(f"All installed package versions: {json.dumps(ipvs)}")
 
 
