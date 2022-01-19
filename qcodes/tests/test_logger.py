@@ -309,7 +309,6 @@ def test_installation_info_logging():
     with open(logger.get_log_file_name()) as f:
         lines = f.readlines()
 
-    assert "QCoDeS version:" in lines[-4]
-    assert "QCoDeS installed in editable mode:" in lines[-3]
-    assert "QCoDeS requirements versions:" in lines[-2]
+    assert "QCoDeS version:" in lines[-3]
+    assert "QCoDeS installed in editable mode:" in lines[-2]
     assert "All installed package versions:" in lines[-1]
