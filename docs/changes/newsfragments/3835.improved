@@ -1,0 +1,2 @@
+``ChannelList`` now implements the full ``collections.abc.Sequence`` interface.
+ This also means that ``isinstance(mychannelist, Sequence) is True``

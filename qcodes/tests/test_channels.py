@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Sequence
 
 import hypothesis.strategies as hst
 import numpy as np
@@ -256,6 +257,40 @@ def test_access_channels_by_name(dci, myindexs):
     mychans = chlist.get_channel_by_name(*channel_names)
     for chan, chanindex in zip(mychans, myindexs):
         assert chan.name == f'dci_Chan{names[chanindex]}'
+
+def test_channels_contain(dci):
+    names = ("A", "B", "C", "D", "E", "F", "G", "H")
+    channels = tuple(DummyChannel(dci, "Chan" + name, name) for name in names)
+    chlist = ChannelList(dci, "channels", DummyChannel, channels)
+    for chan in channels:
+        assert chan in chlist
+
+
+def test_channels_reverse(dci):
+    names = ("A", "B", "C", "D", "E", "F", "G", "H")
+    channels = tuple(DummyChannel(dci, name, name) for name in names)
+    chlist = ChannelList(dci, "channels", DummyChannel, channels)
+    reverse_names = reversed(names)
+    for name, chan in zip(reverse_names, reversed(chlist)):
+        assert chan.short_name == name
+
+
+def test_channels_count(dci):
+    names = ("A", "B", "C", "D", "E", "F", "G", "H")
+    channels = tuple(DummyChannel(dci, name, name) for name in names)
+    chlist = ChannelList(dci, "channels", DummyChannel, channels)
+
+    for channel in channels:
+        assert chlist.count(channel) == 1
+
+
+def test_channels_is_sequence(dci):
+    names = ("A", "B", "C", "D", "E", "F", "G", "H")
+    channels = tuple(DummyChannel(dci, name, name) for name in names)
+    chlist = ChannelList(dci, "channels", DummyChannel, channels)
+
+    assert isinstance(chlist, Sequence)
+    assert issubclass(ChannelList, Sequence)
 
 
 def test_names(dci):
