@@ -70,18 +70,17 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         such as channel lists or logical groupings of parameters.
         Usually populated via :py:meth:`add_submodule`.
         """
-        self.channel_modules: Dict[str, "ChannelList"] = {}
+        self.instrument_modules: Dict[str, "InstrumentModule"] = {}
         """
-        All the channels of this instrument
+        All the instrument_modules of this instrument
         Usually populated via :py:meth:`add_submodule`.
         """
 
-        self.channel_list_modules: Dict[str, "ChannelList"] = {}
+        self._channel_lists: Dict[str, "ChannelList"] = {}
         """
         All the ChannelLists of this instrument
         Usually populated via :py:meth:`add_submodule`.
         """
-
 
         super().__init__(metadata)
 
@@ -223,9 +222,10 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         if isinstance(submodule, collections.abc.Sequence):
             # this is channel_list like
             # We cannot check against channels to avoid circular imports
-            self.channel_list_modules[name] = submodule  # type: ignore[assignment]
+            # This is private for now until we agree on the name
+            self._channel_lists[name] = submodule
         else:
-            self.channel_modules[name] = submodule  # type: ignore[assignment]
+            self.instrument_modules[name] = submodule
 
     def snapshot_base(self, update: Optional[bool] = False,
                       params_to_skip_update: Optional[Sequence[str]] = None
