@@ -1,4 +1,5 @@
 """Instrument base class."""
+import collections.abc
 import logging
 import time
 import warnings
@@ -68,6 +69,18 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         All the submodules of this instrument
         such as channel lists or logical groupings of parameters.
         Usually populated via :py:meth:`add_submodule`.
+        """
+        self.instrument_modules: Dict[str, "InstrumentModule"] = {}
+        """
+        All the instrument_modules of this instrument
+        Usually populated via :py:meth:`add_submodule`.
+        """
+
+        self._channel_lists: Dict[str, "ChannelList"] = {}
+        """
+        All the ChannelLists of this instrument
+        Usually populated via :py:meth:`add_submodule`.
+        This is private until the correct name has been decided.
         """
 
         super().__init__(metadata)
@@ -206,6 +219,14 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         if not isinstance(submodule, Metadatable):
             raise TypeError('Submodules must be metadatable.')
         self.submodules[name] = submodule
+
+        if isinstance(submodule, collections.abc.Sequence):
+            # this is channel_list like:
+            # We cannot check against ChannelsList itself since that
+            # would introduce a circular dependency.
+            self._channel_lists[name] = submodule
+        else:
+            self.instrument_modules[name] = submodule
 
     def snapshot_base(self, update: Optional[bool] = False,
                       params_to_skip_update: Optional[Sequence[str]] = None
