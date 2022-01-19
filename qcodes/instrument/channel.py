@@ -1,5 +1,6 @@
 """ Base class for the channel of an instrument """
 import collections.abc
+import sys
 from typing import (
     Any,
     Callable,
@@ -140,7 +141,7 @@ class MultiChannelInstrumentParameter(MultiParameter):
         return self.names
 
 
-class ChannelList(Metadatable):
+class ChannelList(Metadatable, collections.abc.Sequence):
     """
     Container for channelized parameters that allows for sweeps over
     all channels, as well as addressing of individual channels.
@@ -362,14 +363,16 @@ class ChannelList(Metadatable):
         })
         self._channels = channels
 
-    def index(self, obj: InstrumentChannel) -> int:
+    def index(self, obj: object, start: int = 0, stop: int = sys.maxsize) -> int:
         """
         Return the index of the given object
 
         Args:
             obj: The object to find in the channel list.
+            start: Index to start searching from.
+            stop: Index to stop searching at.
         """
-        return self._channels.index(obj)
+        return self._channels.index(obj, start, stop)
 
     def count(self, obj: object) -> int:
         """Returns number of instances of the given object in the list
@@ -578,7 +581,6 @@ class ChannelList(Metadatable):
                 channel.print_readable_snapshot(update=update,
                                                 max_chars=max_chars)
 
-collections.abc.Sequence.register(ChannelList)
 
 class ChannelListValidator(Validator[InstrumentChannel]):
     """
