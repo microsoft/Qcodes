@@ -1,16 +1,17 @@
 from .base import Instrument, find_or_create_instrument
-from .ip import IPInstrument
-from .visa import VisaInstrument
-from .channel import InstrumentChannel, ChannelList
+from .channel import ChannelList, InstrumentChannel, InstrumentModule
 from .function import Function
+from .ip import IPInstrument
 from .parameter import (
-    Parameter,
     ArrayParameter,
-    MultiParameter,
-    ParameterWithSetpoints,
+    CombinedParameter,
     DelegateParameter,
     ManualParameter,
+    MultiParameter,
+    Parameter,
+    ParameterWithSetpoints,
     ScaledParameter,
     combine,
-    CombinedParameter)
+)
 from .sweep_values import SweepFixedValues, SweepValues
+from .visa import VisaInstrument

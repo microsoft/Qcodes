@@ -27,15 +27,19 @@ from .parameter import (
 )
 
 
-class InstrumentChannel(InstrumentBase):
+class InstrumentModule(InstrumentBase):
     """
-    Base class for a channel in an instrument
+    Base class for a module in an instrument.
+    This could be in the form of a channel (e.g. something that
+    the instrument has multiple instances of) or another logical grouping
+    of parameters that you wish to group together separate from the rest of the
+    instrument.
 
     Args:
-        parent: The instrument to which this channel should be
+        parent: The instrument to which this module should be
           attached.
 
-        name: The name of this channel.
+        name: The name of this module.
 
     """
 
@@ -89,6 +93,10 @@ class InstrumentChannel(InstrumentBase):
         name_parts = self._parent.name_parts
         name_parts.append(self.short_name)
         return name_parts
+
+
+class InstrumentChannel(InstrumentModule):
+    pass
 
 
 class MultiChannelInstrumentParameter(MultiParameter):
