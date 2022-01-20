@@ -1090,6 +1090,13 @@ def test_array_sweep_get_setpoints(_param):
         sweep.get_setpoints(), array
     )
 
+    array2 = [1, 2, 3, 4, 5, 5.2]
+    sweep2 = ArraySweep(_param, array2)
+
+    np.testing.assert_array_equal(
+        sweep2.get_setpoints(), np.array(array2)
+    )
+
 
 def test_array_sweep_properties(_param):
     array = np.linspace(0, 1, 5)
