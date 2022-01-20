@@ -19,7 +19,7 @@ from qcodes.tests.instrument_mocks import (
     MultiSetPointParam,
 )
 from qcodes.utils import validators
-from qcodes.utils.dataset.doNd import LinSweep, LogSweep, do0d, do1d, do2d, dond
+from qcodes.utils.dataset.doNd import ArraySweep, LinSweep, LogSweep, do0d, do1d, do2d, dond
 from qcodes.utils.validators import Arrays
 
 from .conftest import ArrayshapedParam
@@ -1078,6 +1078,51 @@ def test_log_sweep_parameter_class(_param, _param_complex):
 
     arrayparam = ArraySetPointParam(name="arrayparam")
     sweep_3 = LogSweep(arrayparam, start, stop, num_points)
+    assert isinstance(sweep_3.param, _BaseParameter)
+
+
+def test_array_sweep_get_setpoints(_param):
+    array = np.linspace(0, 1, 5)
+    delay = 1
+    sweep = ArraySweep(_param, array, delay)
+
+    np.testing.assert_array_equal(
+        sweep.get_setpoints(), array
+    )
+
+    array2 = [1, 2, 3, 4, 5, 5.2]
+    sweep2 = ArraySweep(_param, array2)
+
+    np.testing.assert_array_equal(
+        sweep2.get_setpoints(), np.array(array2)
+    )
+
+
+def test_array_sweep_properties(_param):
+    array = np.linspace(0, 1, 5)
+    delay = 1
+    sweep = ArraySweep(_param, array, delay)
+    assert isinstance(sweep.param, _BaseParameter)
+    assert sweep.delay == delay
+    assert sweep.param == _param
+    assert sweep.num_points == len(array)
+
+    # test default delay 0
+    sweep_2 = ArraySweep(_param, array)
+    assert sweep_2.delay == 0
+
+
+def test_array_sweep_parameter_class(_param, _param_complex):
+    array = np.linspace(0, 1, 5)
+
+    sweep = ArraySweep(_param, array)
+    assert isinstance(sweep.param, _BaseParameter)
+
+    sweep_2 = ArraySweep(_param_complex, array)
+    assert isinstance(sweep_2.param, _BaseParameter)
+
+    arrayparam = ArraySetPointParam(name="arrayparam")
+    sweep_3 = ArraySweep(arrayparam, array)
     assert isinstance(sweep_3.param, _BaseParameter)
 
 

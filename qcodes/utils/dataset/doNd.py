@@ -627,6 +627,49 @@ class LogSweep(AbstractSweep):
         return self._post_actions
 
 
+class ArraySweep(AbstractSweep):
+    """
+    Sweep the values of a given array.
+
+    Args:
+        param: Qcodes parameter for sweep.
+        array: array with values to sweep.
+        delay: Time in seconds between two consecutive sweep points.
+        post_actions: Actions to do after each sweep point.
+    """
+
+    def __init__(
+        self,
+        param: _BaseParameter,
+        array: Union[Sequence[float], np.ndarray],
+        delay: float = 0,
+        post_actions: ActionsT = (),
+    ):
+        self._param = param
+        self._array = np.array(array)
+        self._delay = delay
+        self._post_actions = post_actions
+
+    def get_setpoints(self) -> np.ndarray:
+        return self._array
+
+    @property
+    def param(self) -> _BaseParameter:
+        return self._param
+
+    @property
+    def delay(self) -> float:
+        return self._delay
+
+    @property
+    def num_points(self) -> int:
+        return len(self._array)
+
+    @property
+    def post_actions(self) -> ActionsT:
+        return self._post_actions
+
+
 def dond(
     *params: Union[AbstractSweep, Union[ParamMeasT, Sequence[ParamMeasT]]],
     write_period: Optional[float] = None,
