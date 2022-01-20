@@ -1,10 +1,10 @@
 import logging
 import time
-from distutils.version import LooseVersion
 from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Union, cast
 
 import numpy as np
+from packaging import version
 
 from qcodes.instrument.channel import InstrumentChannel
 from qcodes.instrument.visa import VisaInstrument
@@ -73,7 +73,7 @@ class MercuryWorkerPS(InstrumentChannel):
 
         # The firmware update from 2.5 -> 2.6 changed the command
         # syntax slightly
-        if LooseVersion(self.root_instrument.firmware) >= LooseVersion('2.6'):
+        if version.parse(self.root_instrument.firmware) >= version.parse("2.6"):
             self.psu_string = "SPSU"
         else:
             self.psu_string = "PSU"

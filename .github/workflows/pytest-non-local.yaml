@@ -55,5 +55,5 @@ jobs:
         cd ..
         mkdir empty
         cd empty
-        cp ../Qcodes/setup.cfg .
+        cp ../Qcodes/pyproject.toml .
         python -c "import sys; import qcodes; ec = qcodes.test(); sys.exit(ec)"

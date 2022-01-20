@@ -1,18 +1,20 @@
 import textwrap
+from bisect import bisect_left
 from contextlib import ExitStack
 from functools import partial
-from typing import Sequence, Tuple, Any, Optional
-from distutils.version import LooseVersion
-from bisect import bisect_left
+from typing import Any, Optional, Sequence, Tuple
 
 import numpy as np
+from packaging import version
 
 import qcodes.utils.validators as vals
-from qcodes import VisaInstrument, InstrumentChannel
-from qcodes.instrument_drivers.Keysight.private.error_handling import \
-    KeysightErrorQueueMixin
-from qcodes.instrument.parameter import Parameter, ParameterWithSetpoints
+from qcodes import InstrumentChannel, VisaInstrument
 from qcodes.instrument.base import Instrument
+from qcodes.instrument.parameter import Parameter, ParameterWithSetpoints
+from qcodes.instrument_drivers.Keysight.private.error_handling import (
+    KeysightErrorQueueMixin,
+)
+from qcodes.utils.installation_info import convert_legacy_version_to_supported_version
 
 
 class Trigger(InstrumentChannel):
@@ -464,8 +466,11 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
 
         options = self._options()
         self.has_DIG = self.is_34465A_34470A and (
-            'DIG' in options
-            or LooseVersion('A.03') <= LooseVersion(idn['firmware'])
+            "DIG" in options
+            or version.parse(convert_legacy_version_to_supported_version("A.03"))
+            <= version.parse(
+                convert_legacy_version_to_supported_version(idn["firmware"])
+            )
         )
         # Note that the firmware version check is still needed because
         # ``_options`` (the ``*OPT?`` command) returns 'DIG' option for

@@ -7,15 +7,17 @@ any functionality whatsoever.
 """
 
 
-from typing import Tuple, Callable, Optional, Dict, Any
-import numpy as np
 import ctypes
+from typing import Any, Callable, Dict, Optional, Tuple
 
-from qcodes.instrument_drivers.AlazarTech.dll_wrapper import (
-    _mark_params_as_updated, ReturnCode)
-from qcodes.instrument_drivers.AlazarTech.constants import (
-    Capability, API_SUCCESS)
+import numpy as np
+
 from qcodes.instrument_drivers.AlazarTech.ats_api import AlazarATSAPI
+from qcodes.instrument_drivers.AlazarTech.constants import API_SUCCESS, Capability
+from qcodes.instrument_drivers.AlazarTech.dll_wrapper import (
+    ReturnCode,
+    _mark_params_as_updated,
+)
 
 
 class SimulatedATS9360API(AlazarATSAPI):
@@ -29,7 +31,6 @@ class SimulatedATS9360API(AlazarATSAPI):
             self,
             dll_path: Optional[str] = None,  # Need this for meta super class
             buffer_generator: Optional[Callable[[np.ndarray], None]] = None,
-            dtype: type = np.uint16
     ):
         def _default_buffer_generator(buffer: np.ndarray) -> None:
             upper = buffer.size // 2
@@ -39,7 +40,6 @@ class SimulatedATS9360API(AlazarATSAPI):
         # alazar driver, when loading the dll
         self._buffer_generator = (
             buffer_generator or _default_buffer_generator)
-        self.dtype = dtype
         self.buffers: Dict[int, np.ndarray] = {}
 
     def _sync_dll_call(self, c_name: str, *args: Any) -> None:
@@ -96,8 +96,7 @@ class SimulatedATS9360API(AlazarATSAPI):
                 '`post_async_buffer` received buffer with invalid address.')
         ctypes_array = (ctypes.c_uint16 *
                         (buffer_length // 2)).from_address(buffer.value)
-        self.buffers[buffer.value] = np.frombuffer(
-            ctypes_array, dtype=self.dtype)
+        self.buffers[buffer.value] = np.ctypeslib.as_array(ctypes_array)
         self._sync_dll_call(
             'AlazarPostAsyncBuffer', handle, buffer, buffer_length)
         return API_SUCCESS

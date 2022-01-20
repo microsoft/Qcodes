@@ -887,7 +887,7 @@ class AMI430_3D(Instrument):
             setpoint_values: Tuple[float, float, float]
     ) -> bool:
         if isinstance(self._field_limit, (int, float)):
-            return np.linalg.norm(setpoint_values) < self._field_limit
+            return bool(np.linalg.norm(setpoint_values) < self._field_limit)
 
         answer = any([limit_function(*setpoint_values) for
                       limit_function in self._field_limit])

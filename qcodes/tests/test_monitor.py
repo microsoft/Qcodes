@@ -10,7 +10,7 @@ import websockets
 
 from qcodes.instrument.base import Parameter
 from qcodes.monitor import monitor
-from qcodes.tests.instrument_mocks import DummyInstrument
+from qcodes.tests.instrument_mocks import DummyChannelInstrument, DummyInstrument
 
 monitor.WEBSOCKET_PORT = random.randint(50000, 60000)
 
@@ -29,6 +29,15 @@ def _make_inst_and_monitor():
         yield instr, my_monitor, monitor_parameters, param
     finally:
         my_monitor.stop()
+        instr.close()
+
+
+@pytest.fixture(name="channel_instr")
+def _make_channel_instr():
+    instr = DummyChannelInstrument("MonitorDummy")
+    try:
+        yield instr
+    finally:
         instr.close()
 
 # Test cases for the qcodes monitor
@@ -97,7 +106,6 @@ def test_connection(request):
 
     m.stop()
 
-
 def test_parameter(request, inst_and_monitor):
     """
     Test instrument updates
@@ -155,3 +163,41 @@ def test_parameter(request, inst_and_monitor):
             assert param.label == metadata[0]["name"]
 
     loop.run_until_complete(async_test_monitor())
+
+
+@pytest.mark.parametrize("use_root_instrument", [True, False])
+def test_use_root_instrument(request, channel_instr, use_root_instrument):
+    """
+    Test instrument updates
+    """
+    loop = asyncio.new_event_loop()
+
+    def cleanup_loop():
+        loop.stop()
+        loop.close()
+
+    request.addfinalizer(cleanup_loop)
+
+    asyncio.set_event_loop(loop)
+
+    m = monitor.Monitor(
+        channel_instr.A.dummy_start,
+        channel_instr.B.dummy_start,
+        use_root_instrument=use_root_instrument,
+    )
+    request.addfinalizer(m.stop)
+
+    async def async_test_monitor(use_root_instrument):
+        async with websockets.connect(
+            f"ws://localhost:{monitor.WEBSOCKET_PORT}"
+        ) as websocket:
+
+            # Recieve data from monitor
+            data = await websocket.recv()
+            data = json.loads(data)
+            if use_root_instrument:
+                assert len(data["parameters"]) == 1
+            else:
+                assert len(data["parameters"]) == 2
+
+    loop.run_until_complete(async_test_monitor(use_root_instrument))

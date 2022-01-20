@@ -57,7 +57,7 @@ jobs:
       run: mypy qcodes
     - name: Run tests
       run: |
-        pytest --cov=qcodes --cov-report xml --cov-config=setup.cfg --hypothesis-profile ci qcodes
+        pytest --cov=qcodes --cov-report xml --hypothesis-profile ci qcodes
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v2.1.0
       with:

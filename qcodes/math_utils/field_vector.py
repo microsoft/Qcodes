@@ -7,9 +7,10 @@ coordinate systems.
 from typing import Any, List, Optional, Sequence, Type, TypeVar, Union
 
 import numpy as np
+from typing_extensions import Literal
 
-NormOrder = Union[str, float]
-T = TypeVar('T', bound='FieldVector')
+NormOrder = Union[None, float, Literal["fro"], Literal["nuc"]]
+T = TypeVar("T", bound="FieldVector")
 
 
 class FieldVector:
@@ -315,7 +316,11 @@ class FieldVector:
         Returns the norm of this field vector. See ``np.norm``
         for the definition of the ord keyword argument.
         """
-        return np.linalg.norm([self.x, self.y, self.z], ord=ord)
+        assert self.x is not None
+        assert self.y is not None
+        assert self.z is not None
+
+        return float(np.linalg.norm([self.x, self.y, self.z], ord=ord))
 
     def distance(self, other,
                  ord: NormOrder = 2  # pylint: disable=redefined-builtin

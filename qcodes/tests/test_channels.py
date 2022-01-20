@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Sequence
 
 import hypothesis.strategies as hst
 import numpy as np
@@ -126,13 +127,16 @@ def test_extend_then_remove(dci):
 
 
 def test_insert_channel(dci):
-    n_channels = len(dci.channels)
+    n_channels_pre = len(dci.channels)
     name = 'foo'
     channel = DummyChannel(dci, 'Chan'+name, name)
     dci.channels.insert(1, channel)
     dci.add_submodule(name, channel)
 
-    assert len(dci.channels) == n_channels+1
+    n_channels_post = n_channels_pre + 1
+
+    assert dci.channels.get_channel_by_name(f"Chan{name}") is channel
+    assert len(dci.channels) == n_channels_post
     assert dci.channels[1] is channel
     dci.channels.lock()
     # after locking the channels it's not possible to add any more channels
@@ -140,7 +144,8 @@ def test_insert_channel(dci):
         name = 'bar'
         channel = DummyChannel(dci, 'Chan' + name, name)
         dci.channels.insert(2, channel)
-    assert len(dci.channels) == n_channels + 1
+    assert len(dci.channels) == n_channels_post
+    assert len(dci.channels._channel_mapping) == n_channels_post
 
 
 def test_clear_channels(dci):
@@ -256,6 +261,40 @@ def test_access_channels_by_name(dci, myindexs):
     mychans = chlist.get_channel_by_name(*channel_names)
     for chan, chanindex in zip(mychans, myindexs):
         assert chan.name == f'dci_Chan{names[chanindex]}'
+
+def test_channels_contain(dci):
+    names = ("A", "B", "C", "D", "E", "F", "G", "H")
+    channels = tuple(DummyChannel(dci, "Chan" + name, name) for name in names)
+    chlist = ChannelList(dci, "channels", DummyChannel, channels)
+    for chan in channels:
+        assert chan in chlist
+
+
+def test_channels_reverse(dci):
+    names = ("A", "B", "C", "D", "E", "F", "G", "H")
+    channels = tuple(DummyChannel(dci, name, name) for name in names)
+    chlist = ChannelList(dci, "channels", DummyChannel, channels)
+    reverse_names = reversed(names)
+    for name, chan in zip(reverse_names, reversed(chlist)):
+        assert chan.short_name == name
+
+
+def test_channels_count(dci):
+    names = ("A", "B", "C", "D", "E", "F", "G", "H")
+    channels = tuple(DummyChannel(dci, name, name) for name in names)
+    chlist = ChannelList(dci, "channels", DummyChannel, channels)
+
+    for channel in channels:
+        assert chlist.count(channel) == 1
+
+
+def test_channels_is_sequence(dci):
+    names = ("A", "B", "C", "D", "E", "F", "G", "H")
+    channels = tuple(DummyChannel(dci, name, name) for name in names)
+    chlist = ChannelList(dci, "channels", DummyChannel, channels)
+
+    assert isinstance(chlist, Sequence)
+    assert issubclass(ChannelList, Sequence)
 
 
 def test_names(dci):

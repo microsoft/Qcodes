@@ -4,10 +4,10 @@
 import logging
 import time
 import warnings
-from distutils.version import LooseVersion
 from typing import Any, Optional
 
 import numpy as np
+from packaging import version
 
 from qcodes import Instrument
 from qcodes.instrument.channel import InstrumentChannel
@@ -122,10 +122,9 @@ class ScopeTrace(ArrayParameter):
         dataformat = instr.dataformat.get_latest()
 
         if dataformat == 'INT,8':
-            int_vals = np.fromstring(raw_vals, dtype=np.int8, count=no_points)
+            int_vals = np.frombuffer(raw_vals, dtype=np.int8, count=no_points)
         else:
-            int_vals = np.fromstring(raw_vals, dtype=np.int16,
-                                     count=no_points//2)
+            int_vals = np.frombuffer(raw_vals, dtype=np.int16, count=no_points // 2)
 
         # now the integer values must be converted to physical
         # values
@@ -467,13 +466,18 @@ class RTO1000(VisaInstrument):
         # model number can NOT be queried from the instrument
         # (at least fails with RTO1024, fw 2.52.1.1), so in that case
         # the user must provide the model manually.
-        firmware_version = self.get_idn()['firmware']
+        firmware_version_str = self.get_idn()["firmware"]
+        if firmware_version_str is None:
+            raise RuntimeError("Could not determine firmware version of RTO1000.")
+        firmware_version = version.parse(firmware_version_str)
 
-        if LooseVersion(firmware_version) < LooseVersion('3'):
-            log.warning('Old firmware version detected. This driver may '
-                        'not be compatible. Please upgrade your firmware.')
+        if firmware_version < version.parse("3"):
+            log.warning(
+                "Old firmware version detected. This driver may "
+                "not be compatible. Please upgrade your firmware."
+            )
 
-        if LooseVersion(firmware_version) >= LooseVersion('3.65'):
+        if firmware_version >= version.parse("3.65"):
             # strip just in case there is a newline character at the end
             self.model = self.ask('DIAGnostic:SERVice:WFAModel?').strip()
             if model is not None and model != self.model:

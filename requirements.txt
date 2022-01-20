@@ -1,6 +1,6 @@
 argon2-cffi~=21.3.0
 async-generator~=1.10
-attrs~=21.2.0
+attrs~=21.4.0
 backcall~=0.2.0
 bleach~=4.1.0
 broadbean~=0.10.0
@@ -11,65 +11,67 @@ chardet~=4.0.0
 colorama~=0.4.4
 contextlib2~=21.6.0
 cycler~=0.11.0
-decorator~=5.1.0
+decorator~=5.1.1
 defusedxml~=0.7.1
 entrypoints~=0.3
-google-api-core~=2.3.2
+google-api-core~=2.4.0
 google-auth~=2.3.3
 googleapis-common-protos~=1.54.0
-h5netcdf~=0.12.0
+h5netcdf~=0.13.0
 h5py~=3.6.0
 idna~=3.3
 importlib-metadata==4.8.1; python_version<'3.8'
-ipykernel~=6.6.0
-ipython~=7.30.1
+ipykernel~=6.7.0
+ipython~=8.0.1; python_version>='3.8'
+ipython~=7.31.0; python_version<'3.8'
 ipython-genutils~=0.2.0
 ipywidgets~=7.6.5
 jedi~=0.18.1
 Jinja2~=3.0.3
-jsonschema~=4.3.1
-jupyter-client~=7.1.0
+jsonschema~=4.4.0
+jupyter-client~=7.1.1
 jupyter-core~=4.9.1
 jupyterlab-pygments~=0.1.2
 kiwisolver~=1.3.2
 MarkupSafe~=2.0.1
 matplotlib~=3.5.1
 mistune~=0.8.4
-nbclient~=0.5.9
-nbconvert~=6.3.0
+nbclient~=0.5.10
+nbconvert~=6.4.0
 nbformat~=5.1.3
 nest-asyncio~=1.5.4
-notebook~=6.4.6
-numpy~=1.21.5
+notebook~=6.4.7
+numpy~=1.21.5; python_version<'3.8'
+numpy~=1.22.1; python_version>='3.8'
 opencensus~=0.8.0
 opencensus-context~=0.1.2
-opencensus-ext-azure~=1.1.0
+opencensus-ext-azure~=1.1.1
 packaging~=21.3
 pandas~=1.3.5
 pandocfilters~=1.5.0
 parso~=0.8.3
 pickleshare~=0.7.5
-Pillow~=8.4.0
+Pillow~=9.0.0
 prometheus-client~=0.12.0
 prompt-toolkit~=3.0.24
-protobuf~=3.19.1
-psutil~=5.8.0
+protobuf~=3.19.3
+psutil~=5.9.0
 pyasn1~=0.4.8
 pyasn1-modules~=0.2.8
 pycparser~=2.21
-Pygments~=2.10.0
+Pygments~=2.11.2
 pyparsing~=3.0.6
-pyrsistent~=0.18.0
+pyrsistent~=0.18.1
 python-dateutil~=2.8.2
 pytz~=2021.3
 PyVISA~=1.11.3
 pywin32==303; sys_platform == 'win32'
 pywinpty~=1.1.6; sys_platform == 'win32'
 pyzmq~=22.3.0
-requests~=2.26.0
+requests~=2.27.1
 requirements-parser~=0.3.1
 rsa~=4.8
-ruamel.yaml==0.17.17
+ruamel.yaml==0.17.20
 ruamel.yaml.clib~=0.2.6
 schema~=0.7.5
 Send2Trash~=1.8.0
@@ -83,7 +85,7 @@ tqdm~=4.62.3
 traitlets~=5.1.1
 typing-extensions~=4.0.1
 uncertainties~=3.1.6
-urllib3~=1.26.7
+urllib3~=1.26.8
 wcwidth~=0.2.5
 webencodings~=0.5.1
 websockets~=10.1
@@ -91,8 +93,8 @@ widgetsnbextension~=3.5.2
 wincertstore~=0.2
 wrapt~=1.13.3
 xarray~=0.20.2
-zipp~=3.6.0
+zipp~=3.7.0
 # not strict requirements but needed for the legacy pyqtgraph based plotting
 PyQt5<5.16
 pyqtgraph~=0.12.3
-QtPy==1.11.3
+QtPy==2.0.0

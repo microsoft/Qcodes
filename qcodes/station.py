@@ -703,9 +703,7 @@ def update_config_schema(
     """
 
     def instrument_names_from_module(module: ModuleType) -> Tuple[str, ...]:
-        submodules = list(pkgutil.walk_packages(
-            module.__path__,  # type: ignore[attr-defined]  # mypy issue #1422
-            module.__name__ + '.'))
+        submodules = list(pkgutil.walk_packages(module.__path__, module.__name__ + "."))
         res = set()
         for s in submodules:
             with suppress(Exception):
