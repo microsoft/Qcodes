@@ -1727,21 +1727,29 @@ class DelegateParameterWithSetpoints(ParameterWithSetpoints):
         name: str,
         *,
         source: ParameterWithSetpoints,
-        new_names_for_setpoints: Sequence[str],
+        new_setpoints: Optional[Sequence[DelegateParameter]] = None,
         **kwargs: Any,
     ) -> None:
         self._source = source
+
         super().__init__(name=name, vals=self._source.vals, **kwargs)
-        self._delegated_setpoints = tuple(
-            DelegateParameter(name=new_setpoint_name, source=cast(Parameter, setpoint))
-            for setpoint, new_setpoint_name in zip(
-                source.setpoints, new_names_for_setpoints
-            )
-        )
+
+        self._gettable = self._source.gettable
+        self._settable = self._source.settable
+        self._snapshot_value = self._source._snapshot_value
+
+        self._delegate_setpoints: Optional[Sequence[DelegateParameter]]
+        if new_setpoints is not None:
+            self._delegate_setpoints = tuple(new_setpoints)
+            for source_setpoint, delegate_setpoint in zip(self._source.setpoints, self._delegate_setpoints):
+                delegate_setpoint.source = cast(Parameter, source_setpoint)
+        else:
+            self._delegate_setpoints = None
+
         self._update_validators()
 
     @property
-    def source(self) -> Optional[Parameter]:
+    def source(self) -> ParameterWithSetpoints:
         """
         The source parameter that this :class:`DelegateParameterWithSetpoints`
         is bound to.
@@ -1752,14 +1760,20 @@ class DelegateParameterWithSetpoints(ParameterWithSetpoints):
 
     def _update_validators(self) -> None:
         self.vals = self._source.vals
-        for setpoint in self._delegated_setpoints:
-            assert setpoint.source is not None
-            setpoint.vals = setpoint.source.vals
+        if self._delegate_setpoints is not None:
+            for delegate_setpoint in self._delegate_setpoints:
+                assert delegate_setpoint.source is not None
+                delegate_setpoint.vals = delegate_setpoint.source.vals
 
     @property
     def setpoints(self) -> Sequence[_BaseParameter]:
         self._update_validators()
-        return self._delegated_setpoints
+        setpoints = (
+            self._delegate_setpoints
+            if self._delegate_setpoints is not None
+            else self._source.setpoints
+        )
+        return setpoints
 
     @setpoints.setter
     def setpoints(self, setpoints: Sequence[_BaseParameter]) -> None:
