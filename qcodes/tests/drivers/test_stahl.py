@@ -1,9 +1,9 @@
-import pytest
 import logging
-import io
 
-from qcodes.instrument_drivers.stahl import Stahl
+import pytest
+
 import qcodes.instrument.sims as sims
+from qcodes.instrument_drivers.stahl import Stahl
 
 
 @pytest.fixture(scope="function")
@@ -14,10 +14,6 @@ def stahl_instrument():
     )
 
     inst = Stahl('Stahl', 'ASRL3', visalib=visa_lib)
-    inst.log.setLevel(logging.DEBUG)
-    iostream = io.StringIO()
-    lh = logging.StreamHandler(iostream)
-    inst.log.logger.addHandler(lh)
 
     try:
         yield inst
@@ -60,27 +56,32 @@ def test_get_idn(stahl_instrument):
     assert stahl_instrument.output_type == "bipolar"
 
 
-def test_get_set_voltage(stahl_instrument):
+def test_get_set_voltage(stahl_instrument, caplog):
     """
     Test that we can correctly get/set voltages
     """
-    stahl_instrument.channel[0].voltage(1.2)
+    with caplog.at_level(logging.DEBUG, logger="qcodes.instrument.base"):
+        stahl_instrument.channel[0].voltage(1.2)
     assert stahl_instrument.channel[0].voltage() == -1.2
-    logger = stahl_instrument.log.logger
-    log_messages = logger.handlers[0].stream.getvalue()
-    assert "did not produce an acknowledge reply" not in log_messages
+    assert any("Querying" in rec.message for rec in caplog.records)
+    assert any("Response" in rec.message for rec in caplog.records)
+    assert all(
+        "did not produce an acknowledge reply" not in rec.message
+        for rec in caplog.records
+    )
 
 
-def test_get_set_voltage_assert_warning(stahl_instrument):
+def test_get_set_voltage_assert_warning(stahl_instrument, caplog):
     """
     On channel 2 we have deliberately introduced an error in the
     visa simulation; setting a voltage does not produce an acknowledge
     string. Test that a warning is correctly issued.
     """
-    stahl_instrument.channel[1].voltage(1.0)
-    logger = stahl_instrument.log.logger
-    log_messages = logger.handlers[0].stream.getvalue()
-    assert "did not produce an acknowledge reply" in log_messages
+    with caplog.at_level(logging.DEBUG, logger="qcodes.instrument.base"):
+        stahl_instrument.channel[1].voltage(1.0)
+    assert any(
+        "did not produce an acknowledge reply" in rec.message for rec in caplog.records
+    )
 
 
 def test_get_current(stahl_instrument):

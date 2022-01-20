@@ -27,7 +27,7 @@ def lockin():
     return _lockin
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def station(dac, lockin, field_x):
     _station = qc.Station()
     _station.add_component(dac)
