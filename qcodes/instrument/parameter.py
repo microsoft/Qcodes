@@ -1685,6 +1685,43 @@ class DelegateParameter(Parameter):
 
 
 class DelegateParameterWithSetpoints(ParameterWithSetpoints):
+    """
+    The :class:`.DelegateParameterWithSetpoints` wraps a given `source`
+    :class:`ParameterWithSetpoints`. Setting/getting it results in
+    a set/get of the source parameter with the provided arguments.
+
+    The reason for using a :class:`DelegateParameterWithSetpoints` instead
+    of the source parameter is to provide all the functionality of the
+    ParameterWithSetpoints class without overwriting properties of the source:
+    for example to set a different scaling factor and unit on the
+    :class:`.DelegateParameterWithSetpoints` or its setpoints without changing
+    those in the source parameter or the source parameter's setpoints.
+
+    Unlike :class:`DelegateParameter`, :class:`DelegateParameterWithSetpoints`
+    does not support changing the `source` :class:`ParameterWithSetpoints`.
+    :py:attr:`~gettable`, :py:attr:`~settable` and :py:attr:`snapshot_value`
+    properties automatically follow the source parameter.
+
+    :py:attr:`.unit` and :py:attr:`.label` can either be set when constructing
+    a :class:`DelegateParameterWithSetpoints` or inherited from the source
+    :class:`ParameterWithSetpoints`.
+
+    If new setpoints are not provided, then the setpoints of the `source`
+    :class:`ParameterWithSetpoints` will be used "as is".
+
+    Note:
+        DelegateParameterWithSetpoints only supports mappings between the
+        :class:`.DelegateParameterWithSetpoints` and
+        :class:`.ParameterWithSetpoints` that are invertible
+        (e.g. a bijection). It is therefor not allowed to create a
+        :class:`.DelegateParameterWithSetpoints` that performs non invertible
+        transforms in its ``get_raw`` method.
+
+        A DelegateParameterWithSetpoints is not registered on the instrument
+        by default. You should pass ``bind_to_instrument=True`` if you want this to
+        be the case.
+    """
+
     def __init__(
         self,
         name: str,
