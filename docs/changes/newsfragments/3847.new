@@ -1,0 +1,2 @@
+Add ``ArraySweep`` sweep class for use with ``dond`` function
+for sweeping parameters on arbitrary arrays of values
