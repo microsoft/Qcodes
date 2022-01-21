@@ -288,7 +288,7 @@ class ChannelTuple(Metadatable, collections.abc.Sequence):
                                                     self._chan_type.__name__,
                                                     self._channels)
 
-    def __add__(self: T, other: T) -> T:
+    def __add__(self: T, other: "ChannelTuple") -> T:
         """
         Return a new channel list containing the channels from both
         :class:`ChannelList` self and r.
