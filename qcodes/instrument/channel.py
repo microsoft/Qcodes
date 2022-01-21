@@ -5,6 +5,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Iterable,
     List,
     Optional,
     Sequence,
@@ -548,9 +549,7 @@ class ChannelList(ChannelTuple):
             self._channels.remove(obj)
             self._channel_mapping.pop(obj.short_name)
 
-    def extend(
-        self, objects: Union[Sequence[InstrumentChannel], "ChannelTuple"]
-    ) -> None:
+    def extend(self, objects: Iterable[InstrumentChannel]) -> None:
         """
         Insert an iterable of objects into the list of channels.
 
