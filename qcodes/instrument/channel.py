@@ -613,6 +613,16 @@ class ChannelList(ChannelTuple):
         self._channels = tuple(self._channels)
         self._locked = True
 
+    def to_channel_tuple(self) -> ChannelTuple:
+        return ChannelTuple(
+            self._parent,
+            self._name,
+            self._chan_type,
+            self._channels,
+            multichan_paramclass=self._paramclass,
+        )
+
+
 
 class ChannelTupleValidator(Validator[InstrumentChannel]):
     """
