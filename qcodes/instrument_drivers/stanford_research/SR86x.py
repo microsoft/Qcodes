@@ -956,8 +956,7 @@ class SR86x(VisaInstrument):
             data_channels.append(data_channel)
             self.add_submodule(ch_name, data_channel)
 
-        data_channels.lock()
-        self.add_submodule("data_channels", data_channels)
+        self.add_submodule("data_channels", data_channels.to_channel_tuple())
 
         # Interface
         self.add_function('reset', call_cmd='*RST')

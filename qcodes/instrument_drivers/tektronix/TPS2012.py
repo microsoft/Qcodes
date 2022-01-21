@@ -1,14 +1,14 @@
-import logging
 import binascii
-from typing import Any, Tuple, Union, Dict
-from typing_extensions import TypedDict
+import logging
+from functools import partial
+from typing import Any, Dict, Tuple, Union
 
 import numpy as np
 from pyvisa.errors import VisaIOError
-from functools import partial
+from typing_extensions import TypedDict
 
-from qcodes import VisaInstrument, validators as vals
-from qcodes import InstrumentChannel, ChannelList
+from qcodes import ChannelList, InstrumentChannel, VisaInstrument
+from qcodes import validators as vals
 from qcodes.instrument.parameter import ArrayParameter, ParamRawDataType
 
 log = logging.getLogger(__name__)
@@ -335,8 +335,7 @@ class TPS2012(VisaInstrument):
             channel = TPS2012Channel(self, ch_name, ch_num)
             channels.append(channel)
             self.add_submodule(ch_name, channel)
-        channels.lock()
-        self.add_submodule("channels", channels)
+        self.add_submodule("channels", channels.to_channel_tuple())
 
         # Necessary settings for parsing the binary curve data
         self.visa_handle.encoding = 'latin-1'

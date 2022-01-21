@@ -1,7 +1,7 @@
-from typing import Union, Any
+from typing import Any, Union
 
-from qcodes import VisaInstrument, validators as vals, Instrument
-from qcodes import InstrumentChannel, ChannelList
+from qcodes import ChannelList, Instrument, InstrumentChannel, VisaInstrument
+from qcodes import validators as vals
 
 
 class RohdeSchwarzHMC804xChannel(InstrumentChannel):
@@ -90,7 +90,6 @@ class _RohdeSchwarzHMC804x(VisaInstrument):
             channel = RohdeSchwarzHMC804xChannel(self, ch_name, ch_num)
             channels.append(channel)
             self.add_submodule(ch_name, channel)
-        channels.lock()
-        self.add_submodule("channels", channels)
+        self.add_submodule("channels", channels.to_channel_tuple())
 
         self.connect_message()

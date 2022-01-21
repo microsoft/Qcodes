@@ -1,8 +1,13 @@
 from typing import Any
 
 import numpy as np
-from qcodes import (ChannelList, InstrumentChannel, ParameterWithSetpoints,
-                    VisaInstrument)
+
+from qcodes import (
+    ChannelList,
+    InstrumentChannel,
+    ParameterWithSetpoints,
+    VisaInstrument,
+)
 from qcodes.utils.validators import Arrays, Enum, Numbers
 
 
@@ -191,8 +196,7 @@ class DS1074Z(VisaInstrument):
                                           )
             channels.append(channel)
 
-        channels.lock()
-        self.add_submodule('channels', channels)
+        self.add_submodule("channels", channels.to_channel_tuple())
 
         self.connect_message()
 

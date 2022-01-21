@@ -492,24 +492,28 @@ class Infiniium(VisaInstrument):
 
         # this parameter gets used internally for data aquisition. For now it
         # should not be used manually
-        self.add_parameter('data_source',
-                           label='Waveform Data source',
-                           get_cmd=':WAVeform:SOURce?',
-                           set_cmd=':WAVeform:SOURce {}',
-                           vals = Enum( *(\
-                                [f'CHANnel{i}' for i in range(1, 4+1)]+\
-                                [f'CHAN{i}' for i in range(1, 4+1)]+\
-                                [f'DIFF{i}' for i in range(1, 2+1)]+\
-                                [f'COMMonmode{i}' for i in range(3, 4+1)]+\
-                                [f'COMM{i}' for i in range(3, 4+1)]+\
-                                [f'FUNCtion{i}' for i in range(1, 16+1)]+\
-                                [f'FUNC{i}' for i in range(1, 16+1)]+\
-                                [f'WMEMory{i}' for i in range(1, 4+1)]+\
-                                [f'WMEM{i}' for i in range(1, 4+1)]+\
-                                [f'BUS{i}' for i in range(1, 4+1)]+\
-                                ['HISTogram', 'HIST', 'CLOCK']+\
-                                ['MTRend', 'MTR']))
-                           )
+        self.add_parameter(
+            "data_source",
+            label="Waveform Data source",
+            get_cmd=":WAVeform:SOURce?",
+            set_cmd=":WAVeform:SOURce {}",
+            vals=Enum(
+                *(
+                    [f"CHANnel{i}" for i in range(1, 4 + 1)]
+                    + [f"CHAN{i}" for i in range(1, 4 + 1)]
+                    + [f"DIFF{i}" for i in range(1, 2 + 1)]
+                    + [f"COMMonmode{i}" for i in range(3, 4 + 1)]
+                    + [f"COMM{i}" for i in range(3, 4 + 1)]
+                    + [f"FUNCtion{i}" for i in range(1, 16 + 1)]
+                    + [f"FUNC{i}" for i in range(1, 16 + 1)]
+                    + [f"WMEMory{i}" for i in range(1, 4 + 1)]
+                    + [f"WMEM{i}" for i in range(1, 4 + 1)]
+                    + [f"BUS{i}" for i in range(1, 4 + 1)]
+                    + ["HISTogram", "HIST", "CLOCK"]
+                    + ["MTRend", "MTR"]
+                )
+            ),
+        )
 
         # TODO: implement as array parameter to allow for setting the other filter
         # ratios
@@ -557,9 +561,8 @@ class Infiniium(VisaInstrument):
         for i in range(1,5):
             channel = InfiniiumChannel(self, f'chan{i}', i)
             channels.append(channel)
-            self.add_submodule(f'ch{i}', channel)
-        channels.lock()
-        self.add_submodule('channels', channels)
+            self.add_submodule(f"ch{i}", channel)
+        self.add_submodule("channels", channels.to_channel_tuple())
 
         # Submodules
         meassubsys = MeasurementSubsystem(self, 'measure')

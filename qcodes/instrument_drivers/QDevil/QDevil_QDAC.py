@@ -268,9 +268,8 @@ class QDac(VisaInstrument):
         for i in self._chan_range:
             channel = QDacChannel(self, f'chan{i:02}', i)
             channels.append(channel)
-            self.add_submodule(f'ch{i:02}', channel)
-        channels.lock()
-        self.add_submodule('channels', channels)
+            self.add_submodule(f"ch{i:02}", channel)
+        self.add_submodule("channels", channels.to_channel_tuple())
 
         # Updatechannel  sync port validator according to number of boards
         self._num_syns = max(num_boards-1, 1)
