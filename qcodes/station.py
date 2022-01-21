@@ -28,7 +28,7 @@ import ruamel.yaml
 import qcodes
 import qcodes.utils.validators as validators
 from qcodes.instrument.base import Instrument, InstrumentBase
-from qcodes.instrument.channel import ChannelList
+from qcodes.instrument.channel import ChannelTuple
 from qcodes.instrument.parameter import (
     DelegateParameter,
     ManualParameter,
@@ -74,7 +74,7 @@ def get_config_use_monitor() -> Optional[str]:
     return qcodes.config["station"]["use_monitor"]
 
 
-ChannelOrInstrumentBase = Union[InstrumentBase, ChannelList]
+ChannelOrInstrumentBase = Union[InstrumentBase, ChannelTuple]
 
 
 class ValidationWarning(Warning):
@@ -529,8 +529,8 @@ class Station(Metadatable, DelegateAttributes):
             try:
                 for level in identifier.split('.'):
                     instrument = checked_getattr(
-                        instrument, level,
-                        (InstrumentBase, ChannelList))
+                        instrument, level, (InstrumentBase, ChannelTuple)
+                    )
             except TypeError:
                 raise RuntimeError(
                     f'Cannot resolve `{level}` in {identifier} to an '
