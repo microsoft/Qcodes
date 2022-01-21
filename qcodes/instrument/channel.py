@@ -287,7 +287,7 @@ class ChannelTuple(Metadatable, collections.abc.Sequence):
                                                     self._chan_type.__name__,
                                                     self._channels)
 
-    def __add__(self, other: 'ChannelList') -> 'ChannelList':
+    def __add__(self: T, other: T) -> T:
         """
         Return a new channel list containing the channels from both
         :class:`ChannelList` self and r.
@@ -297,11 +297,11 @@ class ChannelTuple(Metadatable, collections.abc.Sequence):
         Args:
             other: Right argument to add.
         """
-        if not isinstance(self, ChannelList) or not isinstance(other,
-                                                               ChannelList):
-            raise TypeError("Can't add objects of type"
-                            " {} and {} together".format(type(self).__name__,
-                                                         type(other).__name__))
+        if not isinstance(self, ChannelTuple) or not isinstance(other, ChannelTuple):
+            raise TypeError(
+                "Can't add objects of type"
+                " {} and {} together".format(type(self).__name__, type(other).__name__)
+            )
         if self._chan_type != other._chan_type:
             raise TypeError("Both l and r arguments to add must contain "
                             "channels of the same type."
