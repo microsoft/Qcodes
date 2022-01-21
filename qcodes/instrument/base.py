@@ -31,7 +31,7 @@ from .function import Function
 from .parameter import Parameter, _BaseParameter
 
 if TYPE_CHECKING:
-    from qcodes.instrument.channel import ChannelList, InstrumentModule
+    from qcodes.instrument.channel import ChannelTuple, InstrumentModule
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
 
 from qcodes.utils.deprecate import QCoDeSDeprecationWarning
@@ -64,7 +64,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         All the functions supported by this
         instrument. Usually populated via :py:meth:`add_function`.
         """
-        self.submodules: Dict[str, Union["InstrumentModule", "ChannelList"]] = {}
+        self.submodules: Dict[str, Union["InstrumentModule", "ChannelTuple"]] = {}
         """
         All the submodules of this instrument
         such as channel lists or logical groupings of parameters.
@@ -76,9 +76,9 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         Usually populated via :py:meth:`add_submodule`.
         """
 
-        self._channel_lists: Dict[str, "ChannelList"] = {}
+        self._channel_lists: Dict[str, "ChannelTuple"] = {}
         """
-        All the ChannelLists of this instrument
+        All the ChannelTuples of this instrument
         Usually populated via :py:meth:`add_submodule`.
         This is private until the correct name has been decided.
         """
@@ -187,7 +187,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         self.functions[name] = func
 
     def add_submodule(
-        self, name: str, submodule: Union["InstrumentModule", "ChannelList"]
+        self, name: str, submodule: Union["InstrumentModule", "ChannelTuple"]
     ) -> None:
         """
         Bind one submodule to this instrument.
@@ -200,7 +200,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         snapshottable. For example, they can be used to either store
         logical groupings of parameters, which may or may not be
         repeated, or channel lists. They should either be an instance
-        of an ``InstrumentModule`` or a ``ChannelList``.
+        of an ``InstrumentModule`` or a ``ChannelTuple``.
 
         Args:
             name: How the submodule will be stored within
