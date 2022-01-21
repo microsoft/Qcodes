@@ -503,7 +503,37 @@ class ChannelTuple(Metadatable, collections.abc.Sequence):
                 channel.print_readable_snapshot(update=update,
                                                 max_chars=max_chars)
 
-class ChannelList(ChannelTuple):
+
+class ChannelList(ChannelTuple, collections.abc.MutableSequence):
+    @overload
+    def __delitem__(self, key: int) -> None:
+        ...
+
+    @overload
+    def __delitem__(self, key: slice) -> None:
+        ...
+
+    def __delitem__(self, key: Union[int, slice]) -> None:
+        self._channels = cast(List[InstrumentChannel], self._channels)
+        # update mapping
+        self._channels.__delitem__(key)
+
+    @overload
+    def __setitem__(self, key: int, value: InstrumentChannel) -> None:
+        ...
+
+    @overload
+    def __setitem__(self, key: slice, value: Iterable[InstrumentChannel]) -> None:
+        ...
+
+    def __setitem__(
+        self,
+        key: Union[int, slice],
+        value: Union[InstrumentChannel, Iterable[InstrumentChannel]],
+    ) -> None:
+        # update mapping
+        self._channels[key] = value
+
     def append(self, obj: InstrumentChannel) -> None:
         """
         Append a Channel to this list. Requires that the ChannelList is not
