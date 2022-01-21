@@ -1,5 +1,5 @@
 from .base import Instrument, find_or_create_instrument
-from .channel import ChannelList, InstrumentChannel, InstrumentModule
+from .channel import ChannelList, ChannelTuple, InstrumentChannel, InstrumentModule
 from .function import Function
 from .ip import IPInstrument
 from .parameter import (
