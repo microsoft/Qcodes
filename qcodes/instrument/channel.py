@@ -154,7 +154,7 @@ class MultiChannelInstrumentParameter(MultiParameter):
 T = TypeVar("T", bound="ChannelTuple")
 
 
-class ChannelTuple(Metadatable, collections.abc.Sequence):
+class ChannelTuple(Metadatable, Sequence[InstrumentChannel]):
     """
     Container for channelized parameters that allows for sweeps over
     all channels, as well as addressing of individual channels.
@@ -320,7 +320,9 @@ class ChannelTuple(Metadatable, collections.abc.Sequence):
             list(self._channels) + list(other._channels),
         )
 
-    def index(self, obj: object, start: int = 0, stop: int = sys.maxsize) -> int:
+    def index(
+        self, obj: InstrumentChannel, start: int = 0, stop: int = sys.maxsize
+    ) -> int:
         """
         Return the index of the given object
 
@@ -331,7 +333,7 @@ class ChannelTuple(Metadatable, collections.abc.Sequence):
         """
         return self._channels.index(obj, start, stop)
 
-    def count(self, obj: object) -> int:
+    def count(self, obj: InstrumentChannel) -> int:
         """Returns number of instances of the given object in the list
 
         Args:
