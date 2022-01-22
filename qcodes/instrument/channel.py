@@ -521,20 +521,27 @@ class ChannelList(ChannelTuple, collections.abc.MutableSequence):
         self._channels.__delitem__(key)
 
     @overload
-    def __setitem__(self, key: int, value: InstrumentChannel) -> None:
+    def __setitem__(self, index: int, value: InstrumentChannel) -> None:
         ...
 
     @overload
-    def __setitem__(self, key: slice, value: Iterable[InstrumentChannel]) -> None:
+    def __setitem__(self, index: slice, value: Iterable[InstrumentChannel]) -> None:
         ...
 
     def __setitem__(
         self,
-        key: Union[int, slice],
+        index: Union[int, slice],
         value: Union[InstrumentChannel, Iterable[InstrumentChannel]],
     ) -> None:
         # update mapping
-        self._channels[key] = value
+        self._channels = cast(List[InstrumentChannel], self._channels)
+        # asserts added to work around https://github.com/python/mypy/issues/7858
+        if isinstance(index, int):
+            assert isinstance(value, InstrumentChannel)
+            self._channels[index] = value
+        else:
+            assert not isinstance(value, InstrumentChannel)
+            self._channels[index] = value
 
     def append(self, obj: InstrumentChannel) -> None:
         """
