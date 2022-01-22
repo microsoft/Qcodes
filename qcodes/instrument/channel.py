@@ -7,6 +7,7 @@ from typing import (
     Dict,
     Iterable,
     List,
+    MutableSequence,
     Optional,
     Sequence,
     Tuple,
@@ -505,8 +506,11 @@ class ChannelTuple(Metadatable, Sequence[InstrumentChannel]):
                 channel.print_readable_snapshot(update=update,
                                                 max_chars=max_chars)
 
+# we ignore a mypy error here since the __getitem__ signature above
+# taking a tuple is not compatible with MutableSequence
+# for some reason this does not happen with Sequence
+class ChannelList(ChannelTuple, MutableSequence[InstrumentChannel]):  # type: ignore[misc]
 
-class ChannelList(ChannelTuple, collections.abc.MutableSequence):
     @overload
     def __delitem__(self, key: int) -> None:
         ...
