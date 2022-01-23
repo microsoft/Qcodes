@@ -229,6 +229,11 @@ def test_insert_channel(dci_with_list):
     assert len(dci_with_list.channels._channel_mapping) == n_channels_post
 
 
+def test_insert_channel_wrong_type_raises(dci_with_list):
+    with pytest.raises(TypeError, match="All items in a channel list"):
+        dci_with_list.channels.insert(1, EmptyChannel(parent=dci_with_list, name="foo"))
+
+
 def test_add_none_channel_tuple_to_channel_tuple_raises(dci):
 
     with pytest.raises(TypeError, match="Can't add objects of type"):
