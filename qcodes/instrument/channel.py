@@ -725,7 +725,7 @@ class ChannelTupleValidator(Validator[InstrumentChannel]):
                 "object containing the "
                 "channels that should be validated"
             )
-        if not channel_list._locked:
+        if isinstance(channel_list, ChannelList) and not channel_list._locked:
             raise AttributeError(
                 "channel_list must be locked before it can "
                 "be used to create a validator"

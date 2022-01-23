@@ -31,7 +31,7 @@ def _make_dci_with_list():
     for i in range(10):
         pass
 
-    dci = Instrument(name="dci")
+    dci = Instrument(name="dciwl")
     channels = ChannelList(dci, "ListElem", DummyChannel, snapshotable=False)
     for chan_name in ("A", "B", "C", "D", "E", "F"):
         channel = DummyChannel(dci, f"Chan{chan_name}", chan_name)
@@ -235,11 +235,54 @@ def test_add_none_channel_tuple_to_channel_tuple_raises(dci):
         _ = dci.channels + [1]
 
 
+def test_add_channel_tuples_of_different_types_raises(dci):
+
+    extra_channels = [EmptyChannel(dci, f"chan{i}") for i in range(10)]
+    extra_channel_list = ChannelList(
+        parent=dci,
+        name="extra_channels",
+        chan_type=EmptyChannel,
+        chan_list=extra_channels,
+    )
+    dci.add_submodule("extra_channels", extra_channel_list)
+
+    with pytest.raises(TypeError, match="Both l and r arguments to add must contain"):
+        _ = dci.channels + extra_channel_list
+
+
+def test_add_channel_tuples_from_different_parents(dci, dci_with_list):
+
+    with pytest.raises(ValueError, match="Can only add channels from the same"):
+        _ = dci.channels + dci_with_list.channels
+
+
+def test_char_tuple_repr(dci):
+
+    dci_repr = repr(dci.channels)
+    assert dci_repr.startswith("ChannelList")
+
+
+def test_channel_tuple_get_validator(dci):
+
+    validator = dci.channels.get_validator()
+    for chan in dci.channels:
+        validator.validate(chan)
+
 def test_channel_tuple_index(dci):
 
     for i, chan in enumerate(dci.channels):
         assert dci.channels.index(chan) == i
 
+
+def test_channel_tuple_dir(dci):
+
+    dir_list = dir(dci.channels)
+
+    for chan in dci.channels:
+        assert chan.short_name in dir_list
+
+    for param in dci.channels[0].parameters.values():
+        assert param.short_name in dir_list
 
 def test_clear_channels(dci_with_list):
     channels = dci_with_list.channels
