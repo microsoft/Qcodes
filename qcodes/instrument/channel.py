@@ -629,7 +629,7 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentChannel]):  # type: ig
         if self._locked:
             raise AttributeError("Cannot extend a locked channel list")
         if not all(isinstance(obj, self._chan_type) for obj in objects_tuple):
-            raise TypeError("All items in a channel list must be of the same " "type.")
+            raise TypeError("All items in a channel list must be of the same type.")
         channels = cast(List[InstrumentChannel], self._channels)
         channels.extend(objects_tuple)
         self._channel_mapping.update({obj.short_name: obj for obj in objects})
