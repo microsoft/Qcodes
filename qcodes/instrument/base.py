@@ -389,15 +389,18 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             for parameter in self.parameters.values()
             if parameter.abstract
         ]
-
         if any(abstract_parameters):
             is_abstract = True
-        for submodule in self.submodules.values():
-            # channellists do not implement raise_if_abstract
-            submodule_is_abstract = getattr(submodule, "_is_abstract", None)
-            if submodule_is_abstract is not None:
-                if submodule_is_abstract():
+
+        for submodule in self.instrument_modules.values():
+            if submodule._is_abstract():
+                is_abstract = True
+
+        for chanel_list in self._channel_lists.values():
+            for channel in chanel_list:
+                if channel._is_abstract():
                     is_abstract = True
+
         return is_abstract
 
     #
