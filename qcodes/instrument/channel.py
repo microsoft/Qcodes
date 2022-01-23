@@ -191,12 +191,15 @@ class ChannelTuple(Metadatable, Sequence[InstrumentChannel]):
 
     """
 
-    def __init__(self, parent: InstrumentBase,
-                 name: str,
-                 chan_type: type,
-                 chan_list: Optional[Sequence[InstrumentChannel]] = None,
-                 snapshotable: bool = True,
-                 multichan_paramclass: type = MultiChannelInstrumentParameter):
+    def __init__(
+        self,
+        parent: InstrumentBase,
+        name: str,
+        chan_type: type,
+        chan_list: Optional[Sequence[InstrumentChannel]] = None,
+        snapshotable: bool = True,
+        multichan_paramclass: type = MultiChannelInstrumentParameter,
+    ):
         super().__init__()
 
         self._parent = parent
@@ -699,6 +702,7 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentChannel]):  # type: ig
             self._chan_type,
             self._channels,
             multichan_paramclass=self._paramclass,
+            snapshotable=self._snapshotable,
         )
 
 
