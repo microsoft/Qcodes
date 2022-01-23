@@ -9,7 +9,7 @@ from numpy.testing import assert_allclose, assert_array_equal
 
 from qcodes import Instrument
 from qcodes.data.location import FormatLocation
-from qcodes.instrument.channel import ChannelList
+from qcodes.instrument.channel import ChannelList, InstrumentChannel
 from qcodes.instrument.parameter import Parameter
 from qcodes.loops import Loop
 from qcodes.tests.instrument_mocks import DummyChannel, DummyChannelInstrument
@@ -43,6 +43,10 @@ def _make_dci_with_list():
         yield dci
     finally:
         dci.close()
+
+
+class EmptyChannel(InstrumentChannel):
+    pass
 
 def test_channels_call_function(dci, caplog):
     """
@@ -114,7 +118,7 @@ def test_add_channel(dci_with_list):
     assert len(dci_with_list.channels) == n_channels_post
 
 
-def test_add_channels_from_generator(dci_with_list):
+def test_extend_channels_from_generator(dci_with_list):
     n_channels = len(dci_with_list.channels)
     names = ("foo", "bar", "foobar")
     channels = (DummyChannel(dci_with_list, "Chan" + name, name) for name in names)
@@ -123,13 +127,30 @@ def test_add_channels_from_generator(dci_with_list):
     assert len(dci_with_list.channels) == n_channels + len(names)
 
 
-def test_add_channels_from_tuple(dci_with_list):
+def test_extend_channels_from_tuple(dci_with_list):
     n_channels = len(dci_with_list.channels)
     names = ("foo", "bar", "foobar")
     channels = tuple(DummyChannel(dci_with_list, "Chan" + name, name) for name in names)
     dci_with_list.channels.extend(channels)
 
     assert len(dci_with_list.channels) == n_channels + len(names)
+
+
+def test_extend_wrong_type_raises(dci_with_list):
+    names = ("foo", "bar", "foobar")
+    channels = tuple(EmptyChannel(dci_with_list, "Chan" + name) for name in names)
+    with pytest.raises(
+        TypeError, match="All items in a channel list must be of the same type."
+    ):
+        dci_with_list.channels.extend(channels)
+
+
+def test_extend_locked_list_raises(dci_with_list):
+    dci_with_list.channels.lock()
+    names = ("foo", "bar", "foobar")
+    channels = tuple(EmptyChannel(dci_with_list, "Chan" + name) for name in names)
+    with pytest.raises(AttributeError, match="Cannot extend a locked channel list"):
+        dci_with_list.channels.extend(channels)
 
 
 def test_extend_then_remove(dci_with_list):
@@ -212,6 +233,12 @@ def test_remove_locked_channel(dci_with_list):
     with pytest.raises(AttributeError):
         channels.remove(chan_a)
 
+
+def test_channel_list_lock_twice(dci_with_list):
+    channels = dci_with_list.channels
+    channels.lock()
+    # locking twice should be a no op
+    channels.lock()
 
 def test_remove_tupled_channel(dci_with_list):
     channel_tuple = tuple(
