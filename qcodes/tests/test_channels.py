@@ -419,6 +419,44 @@ def test_delete_from_channel_list(dci_with_list):
         with pytest.raises(KeyError):
             dci_with_list.channels.get_channel_by_name(chan.short_name)
 
+    dci_with_list.channels.lock()
+    with pytest.raises(
+        AttributeError, match="Cannot delete from a locked channel list"
+    ):
+        del dci_with_list.channels[0]
+    assert len(dci_with_list.channels) == n_channels - 3
+
+
+def test_set_element_by_int(dci_with_list):
+
+    dci_with_list.channels[0] = dci_with_list.channels[1]
+    assert dci_with_list.channels[0] is dci_with_list.channels[1]
+
+
+def test_set_element_by_slice(dci_with_list):
+    foo = DummyChannel(dci_with_list, name="foo", channel="foo")
+    bar = DummyChannel(dci_with_list, name="bar", channel="bar")
+    dci_with_list.channels[0:2] = [foo, bar]
+    assert dci_with_list.channels[0] is foo
+    assert dci_with_list.channels[1] is bar
+
+    assert (
+        dci_with_list.channels.get_channel_by_name("foo") == dci_with_list.channels[0]
+    )
+    assert (
+        dci_with_list.channels.get_channel_by_name("bar") == dci_with_list.channels[1]
+    )
+
+
+def test_set_element_locked_raises(dci_with_list):
+
+    dci_with_list.channels.lock()
+
+    with pytest.raises(
+        AttributeError, match="Cannot set item in a locked channel list"
+    ):
+        dci_with_list.channels[0] = dci_with_list.channels[1]
+    assert dci_with_list.channels[0] is not dci_with_list.channels[1]
 
 @settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(myindexs=hst.lists(elements=hst.integers(0, 7), min_size=2))
