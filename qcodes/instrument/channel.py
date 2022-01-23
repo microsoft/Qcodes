@@ -265,6 +265,7 @@ class ChannelTuple(Metadatable, Sequence[InstrumentChannel]):
                 self._chan_type,
                 self._channels[i],
                 multichan_paramclass=self._paramclass,
+                snapshotable=self._snapshotable,
             )
         elif isinstance(i, tuple):
             return type(self)(
@@ -273,6 +274,7 @@ class ChannelTuple(Metadatable, Sequence[InstrumentChannel]):
                 self._chan_type,
                 [self._channels[j] for j in i],
                 multichan_paramclass=self._paramclass,
+                snapshotable=self._snapshotable,
             )
         return self._channels[i]
 
@@ -323,6 +325,7 @@ class ChannelTuple(Metadatable, Sequence[InstrumentChannel]):
             self._name,
             self._chan_type,
             list(self._channels) + list(other._channels),
+            snapshotable=self._snapshotable,
         )
 
     def index(
