@@ -232,7 +232,7 @@ class ChannelTuple(Metadatable, Sequence[InstrumentChannel]):
                                      for channel in self._channels}
             if not all(isinstance(chan, chan_type) for chan in self._channels):
                 raise TypeError(
-                    f"All items in this channel list must be of "
+                    f"All items in this ChannelTuple must be of "
                     f"type {chan_type.__name__}."
                 )
 

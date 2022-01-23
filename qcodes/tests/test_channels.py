@@ -45,6 +45,17 @@ def _make_dci_with_list():
         dci.close()
 
 
+@pytest.fixture(scope="function", name="empty_instrument")
+def _make_empty_instrument():
+
+    instr = Instrument(name="dci")
+
+    try:
+        yield instr
+    finally:
+        instr.close()
+
+
 class EmptyChannel(InstrumentChannel):
     pass
 
@@ -95,6 +106,36 @@ def test_channel_access_is_identical(dci, value, channel):
     assert dci.channels.temperature()[channel] == value
     # it's not possible to set via dci.channels.temperature
     # as this is a multi parameter that currently does not support set.
+
+
+def test_invalid_channel_type_raises(empty_instrument):
+
+    with pytest.raises(
+        ValueError,
+        match="ChannelTuple can only hold instances of type InstrumentChannel",
+    ):
+        ChannelList(parent=empty_instrument, name="empty", chan_type=int)
+
+
+def test_invalid_multichan_type_raises(empty_instrument):
+
+    with pytest.raises(ValueError, match="multichan_paramclass must be a"):
+        ChannelList(
+            parent=empty_instrument,
+            name="empty",
+            chan_type=DummyChannel,
+            multichan_paramclass=int,
+        )
+
+
+def test_wrong_chan_type_raises(empty_instrument):
+    with pytest.raises(TypeError, match="All items in this ChannelTuple must be of"):
+        ChannelList(
+            parent=empty_instrument,
+            name="empty",
+            chan_type=DummyChannel,
+            chan_list=[EmptyChannel(parent=empty_instrument, name="empty_channel")],
+        )
 
 
 def test_add_channel(dci_with_list):
