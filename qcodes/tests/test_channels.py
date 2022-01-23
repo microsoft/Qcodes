@@ -138,7 +138,7 @@ def test_wrong_chan_type_raises(empty_instrument):
         )
 
 
-def test_add_channel(dci_with_list):
+def test_append_channel(dci_with_list):
     n_channels_pre = len(dci_with_list.channels)
     n_channels_post = n_channels_pre + 1
     chan_num = 11
@@ -157,6 +157,16 @@ def test_add_channel(dci_with_list):
         channel = DummyChannel(dci_with_list, "Chan" + name, name)
         dci_with_list.channels.append(channel)
     assert len(dci_with_list.channels) == n_channels_post
+
+
+def test_append_channel_wrong_type_raises(dci_with_list):
+    n_channels = len(dci_with_list.channels)
+
+    channel = EmptyChannel(dci_with_list, "foo")
+    with pytest.raises(TypeError, match="All items in a channel list must"):
+        dci_with_list.channels.append(channel)
+
+    assert len(dci_with_list.channels) == n_channels
 
 
 def test_extend_channels_from_generator(dci_with_list):
