@@ -224,8 +224,6 @@ class ChannelTuple(Metadatable, Sequence[InstrumentChannel]):
             self._channels = ()
         else:
             self._channels = tuple(chan_list)
-            if self._channels is None:
-                raise RuntimeError("Empty channel list")
             self._channel_mapping = {channel.short_name: channel
                                      for channel in self._channels}
             if not all(isinstance(chan, chan_type) for chan in self._channels):
