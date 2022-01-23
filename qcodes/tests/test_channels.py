@@ -7,6 +7,7 @@ import pytest
 from hypothesis import HealthCheck, given, settings
 from numpy.testing import assert_allclose, assert_array_equal
 
+from qcodes import Instrument
 from qcodes.data.location import FormatLocation
 from qcodes.instrument.channel import ChannelList
 from qcodes.instrument.parameter import Parameter
@@ -24,6 +25,24 @@ def _make_dci():
     finally:
         dci.close()
 
+
+@pytest.fixture(scope="function", name="dci_with_list")
+def _make_dci_with_list():
+    for i in range(10):
+        pass
+
+    dci = Instrument(name="dci")
+    channels = ChannelList(dci, "ListElem", DummyChannel, snapshotable=False)
+    for chan_name in ("A", "B", "C", "D", "E", "F"):
+        channel = DummyChannel(dci, f"Chan{chan_name}", chan_name)
+        channels.append(channel)
+        dci.add_submodule(chan_name, channel)
+    dci.add_submodule("channels", channels)
+
+    try:
+        yield dci
+    finally:
+        dci.close()
 
 def test_channels_call_function(dci, caplog):
     """
