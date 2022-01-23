@@ -283,6 +283,32 @@ def test_access_channels_by_tuple(dci, myindexs):
         assert chan.name == f"dci_Chan{names[chanindex]}"
 
 
+def test_access_channels_by_name_empty_raises(dci):
+    # todo this should raise a less generic error type
+    with pytest.raises(Exception, match="one or more names must be given"):
+        dci.channels.get_channel_by_name()
+
+
+def test_delete_from_channel_list(dci_with_list):
+    n_channels = len(dci_with_list.channels)
+    chan0 = dci_with_list.channels[0]
+    del dci_with_list.channels[0]
+    assert chan0 not in dci_with_list.channels
+    assert len(dci_with_list.channels) == n_channels - 1
+
+    with pytest.raises(KeyError):
+        dci_with_list.channels.get_channel_by_name(chan0.short_name)
+
+    end_channels = dci_with_list.channels[-2:]
+    del dci_with_list.channels[-2:]
+    assert len(dci_with_list.channels) == n_channels - 3
+    assert all(chan not in dci_with_list.channels for chan in end_channels)
+
+    for chan in end_channels:
+        with pytest.raises(KeyError):
+            dci_with_list.channels.get_channel_by_name(chan.short_name)
+
+
 @settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(myindexs=hst.lists(elements=hst.integers(0, 7), min_size=2))
 def test_access_channels_by_name(dci, myindexs):
