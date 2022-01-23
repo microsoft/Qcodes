@@ -300,6 +300,26 @@ def test_channel_tuple_index(dci):
     for i, chan in enumerate(dci.channels):
         assert dci.channels.index(chan) == i
 
+def test_channel_tuple_snapshot(dci):
+    snapshot = dci.channels.snapshot()
+    assert snapshot["snapshotable"] is False
+    assert len(snapshot.keys()) == 2
+
+
+def test_channel_tuple_snapshot_enabled(empty_instrument):
+
+    channels = ChannelList(
+        empty_instrument, "ListElem", DummyChannel, snapshotable=True
+    )
+    for chan_name in ("A", "B", "C", "D", "E", "F"):
+        channel = DummyChannel(empty_instrument, f"Chan{chan_name}", chan_name)
+        channels.append(channel)
+    empty_instrument.add_submodule("channels", channels)
+
+    snapshot = empty_instrument.channels.snapshot()
+    assert snapshot["snapshotable"] is True
+    assert len(snapshot.keys()) == 3
+    assert "channels" in snapshot.keys()
 
 def test_channel_tuple_dir(dci):
 
