@@ -537,8 +537,10 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentChannel]):  # type: ig
         if isinstance(self._channels, tuple) or self._locked:
             raise AttributeError("Cannot delete from a locked channel list")
         self._channels = cast(List[InstrumentChannel], self._channels)
-        # update mapping
         self._channels.__delitem__(key)
+        self._channel_mapping = {
+            channel.short_name: channel for channel in self._channels
+        }
 
     @overload
     def __setitem__(self, index: int, value: InstrumentChannel) -> None:
@@ -564,6 +566,9 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentChannel]):  # type: ig
         else:
             assert not isinstance(value, InstrumentChannel)
             self._channels[index] = value
+        self._channel_mapping = {
+            channel.short_name: channel for channel in self._channels
+        }
 
     def append(self, obj: InstrumentChannel) -> None:
         """
