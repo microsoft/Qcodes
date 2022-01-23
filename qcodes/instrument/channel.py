@@ -534,6 +534,8 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentChannel]):  # type: ig
         ...
 
     def __delitem__(self, key: Union[int, slice]) -> None:
+        if isinstance(self._channels, tuple) or self._locked:
+            raise AttributeError("Cannot delete from a locked channel list")
         self._channels = cast(List[InstrumentChannel], self._channels)
         # update mapping
         self._channels.__delitem__(key)
@@ -551,6 +553,8 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentChannel]):  # type: ig
         index: Union[int, slice],
         value: Union[InstrumentChannel, Iterable[InstrumentChannel]],
     ) -> None:
+        if isinstance(self._channels, tuple) or self._locked:
+            raise AttributeError("Cannot set item in a locked channel list")
         # update mapping
         self._channels = cast(List[InstrumentChannel], self._channels)
         # asserts added to work around https://github.com/python/mypy/issues/7858
