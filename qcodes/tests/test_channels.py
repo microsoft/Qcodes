@@ -283,6 +283,18 @@ def test_channel_tuple_get_validator(dci):
     for chan in dci.channels:
         validator.validate(chan)
 
+
+def test_channel_list_get_validator(dci_with_list):
+    dci_with_list.channels.lock()
+    validator = dci_with_list.channels.get_validator()
+    for chan in dci_with_list.channels:
+        validator.validate(chan)
+
+
+def test_channel_list_get_validator_not_locked_raised(dci_with_list):
+    with pytest.raises(AttributeError, match="Cannot create a validator"):
+        dci_with_list.channels.get_validator()
+
 def test_channel_tuple_index(dci):
 
     for i, chan in enumerate(dci.channels):
