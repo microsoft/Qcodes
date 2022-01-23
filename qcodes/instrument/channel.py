@@ -221,10 +221,8 @@ class ChannelTuple(Metadatable, Sequence[InstrumentChannel]):
         # channels. This will eventually become a locked tuple.
         self._channels: Sequence[InstrumentChannel]
         if chan_list is None:
-            self._locked = False
-            self._channels = []
+            self._channels = ()
         else:
-            self._locked = True
             self._channels = tuple(chan_list)
             if self._channels is None:
                 raise RuntimeError("Empty channel list")
@@ -509,6 +507,23 @@ class ChannelTuple(Metadatable, Sequence[InstrumentChannel]):
 # taking a tuple is not compatible with MutableSequence
 # for some reason this does not happen with Sequence
 class ChannelList(ChannelTuple, MutableSequence[InstrumentChannel]):  # type: ignore[misc]
+    def __init__(
+        self,
+        parent: InstrumentBase,
+        name: str,
+        chan_type: type,
+        chan_list: Optional[Sequence[InstrumentChannel]] = None,
+        snapshotable: bool = True,
+        multichan_paramclass: type = MultiChannelInstrumentParameter,
+    ):
+        super().__init__(
+            parent, name, chan_type, chan_list, snapshotable, multichan_paramclass
+        )
+        if len(self._channels) > 0:
+            self._locked = True
+        else:
+            self._channels = list(self._channels)
+            self._locked = False
 
     @overload
     def __delitem__(self, key: int) -> None:
