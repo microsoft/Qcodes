@@ -160,26 +160,26 @@ class ChannelTuple(Metadatable, Sequence[InstrumentChannel]):
     all channels, as well as addressing of individual channels.
 
     Args:
-        parent: The instrument to which this channel
+        parent: The instrument to which this ChannelTuple
             should be attached.
 
-        name: The name of the channel list.
+        name: The name of the ChannelTuple.
 
         chan_type: The type of channel contained
             within this list.
 
         chan_list: An optional iterable of
             channels of type ``chan_type``.  This will create a list and
-            immediately lock the :class:`ChannelList`.
+            immediately lock it is this is a :class:`ChannelList`.
 
         snapshotable: Optionally disables taking of snapshots
-            for a given channel list.  This is used when objects
-            stored inside a channel list are accessible in multiple
+            for a given ChannelTuple.  This is used when objects
+            stored inside a ChannelTuple are accessible in multiple
             ways and should not be repeated in an instrument snapshot.
 
         multichan_paramclass: The class of
             the object to be returned by the ``__getattr__``
-            method of :class:`ChannelList`.
+            method of :class:`ChannelTuple`.
             Should be a subclass of :class:`MultiChannelInstrumentParameter`.
 
     Raises:
@@ -201,15 +201,19 @@ class ChannelTuple(Metadatable, Sequence[InstrumentChannel]):
 
         self._parent = parent
         self._name = name
-        if (not isinstance(chan_type, type) or
-                not issubclass(chan_type, InstrumentChannel)):
-            raise ValueError("Channel Lists can only hold instances of type"
-                             " InstrumentChannel")
-        if (not isinstance(multichan_paramclass, type) or
-                not issubclass(multichan_paramclass,
-                               MultiChannelInstrumentParameter)):
-            raise ValueError("multichan_paramclass must be a (subclass of) "
-                             "MultiChannelInstrumentParameter")
+        if not isinstance(chan_type, type) or not issubclass(
+            chan_type, InstrumentChannel
+        ):
+            raise ValueError(
+                "ChannelTuple can only hold instances of type InstrumentChannel"
+            )
+        if not isinstance(multichan_paramclass, type) or not issubclass(
+            multichan_paramclass, MultiChannelInstrumentParameter
+        ):
+            raise ValueError(
+                "multichan_paramclass must be a (subclass of) "
+                "MultiChannelInstrumentParameter"
+            )
 
         self._chan_type = chan_type
         self._snapshotable = snapshotable
@@ -227,8 +231,10 @@ class ChannelTuple(Metadatable, Sequence[InstrumentChannel]):
             self._channel_mapping = {channel.short_name: channel
                                      for channel in self._channels}
             if not all(isinstance(chan, chan_type) for chan in self._channels):
-                raise TypeError("All items in this channel list must be of "
-                                "type {}.".format(chan_type.__name__))
+                raise TypeError(
+                    f"All items in this channel list must be of "
+                    f"type {chan_type.__name__}."
+                )
 
     @overload
     def __getitem__(self, i: int) -> "InstrumentChannel":
@@ -242,7 +248,7 @@ class ChannelTuple(Metadatable, Sequence[InstrumentChannel]):
         self: T, i: Union[int, slice, Tuple[int, ...]]
     ) -> Union["InstrumentChannel", T]:
         """
-        Return either a single channel, or a new :class:`ChannelList`
+        Return either a single channel, or a new :class:`ChannelTuple`
         containing only the specified channels
 
         Args:
@@ -286,10 +292,10 @@ class ChannelTuple(Metadatable, Sequence[InstrumentChannel]):
 
     def __add__(self: T, other: "ChannelTuple") -> T:
         """
-        Return a new channel list containing the channels from both
-        :class:`ChannelList` self and r.
+        Return a new ChannelTuple containing the channels from both
+        :class:`ChannelTuple` self and r.
 
-        Both channel lists must hold the same type and have the same parent.
+        Both ChannelTuple must hold the same type and have the same parent.
 
         Args:
             other: Right argument to add.
@@ -333,13 +339,13 @@ class ChannelTuple(Metadatable, Sequence[InstrumentChannel]):
         """Returns number of instances of the given object in the list
 
         Args:
-            obj: The object to find in the channel list.
+            obj: The object to find in the ChannelTuple.
         """
         return self._channels.count(obj)
 
     def get_channel_by_name(self: T, *names: str) -> Union[InstrumentChannel, T]:
         """
-        Get a channel by name, or a ChannelList if multiple names are given.
+        Get a channel by name, or a ChannelTuple if multiple names are given.
 
         Args:
             *names: channel names
@@ -361,7 +367,7 @@ class ChannelTuple(Metadatable, Sequence[InstrumentChannel]):
     def get_validator(self) -> "ChannelTupleValidator":
         """
         Returns a validator that checks that the returned object is a channel
-        in this channel list
+        in this ChannelTuple
         """
         return ChannelTupleValidator(self)
 
@@ -505,6 +511,11 @@ class ChannelTuple(Metadatable, Sequence[InstrumentChannel]):
 # taking a tuple is not compatible with MutableSequence
 # for some reason this does not happen with Sequence
 class ChannelList(ChannelTuple, MutableSequence[InstrumentChannel]):  # type: ignore[misc]
+    """
+    A Subclass of ChannelTuple that allows modifying the content. This implementes
+    the MutableSequence abc and behaves like a regular python list.
+    """
+
     def __init__(
         self,
         parent: InstrumentBase,
@@ -590,10 +601,10 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentChannel]):  # type: ig
 
     def clear(self) -> None:
         """
-        Clear all items from the channel list.
+        Clear all items from the ChannelList.
         """
         if self._locked:
-            raise AttributeError("Cannot clear a locked channel list")
+            raise AttributeError("Cannot clear a locked ChannelList")
         # when not locked the _channels seq is a list
         channels = cast(List["InstrumentChannel"], self._channels)
         channels.clear()
@@ -601,7 +612,7 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentChannel]):  # type: ig
 
     def remove(self, obj: InstrumentChannel) -> None:
         """
-        Removes obj from channellist if not locked.
+        Removes obj from ChannelList if not locked.
 
         Args:
             obj: Channel to remove from the list.
@@ -635,11 +646,10 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentChannel]):  # type: ig
 
     def insert(self, index: int, obj: InstrumentChannel) -> None:
         """
-        Insert an object into the channel list at a specific index.
+        Insert an object into the ChannelList at a specific index.
 
         Args:
             index: Index to insert object.
-
             obj: Object of type chan_type to insert.
         """
         if isinstance(self._channels, tuple) or self._locked:
@@ -661,14 +671,16 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentChannel]):  # type: ig
         """
         if not self._locked:
             raise AttributeError(
-                "Cannot create a validator for an unlocked channel list"
+                "Cannot create a validator for an unlocked ChannelList"
             )
         return super().get_validator()
 
     def lock(self) -> None:
         """
-        Lock the channel list. Once this is done, the channel list is
-        converted to a tuple and any future changes to the list are prevented.
+        Lock the channel list. Once this is done, the ChannelList is
+        locked and any future changes to the list are prevented.
+        Note this is not recommended and may be deprecated in the future.
+        Use ``to_channel_tuple`` to convert this into a tuple instead.
         """
         if self._locked:
             return
@@ -677,6 +689,10 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentChannel]):  # type: ig
         self._locked = True
 
     def to_channel_tuple(self) -> ChannelTuple:
+        """
+        Returns a ChannelTuple build from this ChannelList containing the
+        same channels but without the ability to be modified.
+        """
         return ChannelTuple(
             self._parent,
             self._name,
@@ -690,13 +706,13 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentChannel]):  # type: ig
 class ChannelTupleValidator(Validator[InstrumentChannel]):
     """
     A validator that checks that the returned object is a member of the
-    channel list with which the validator was constructed.
+    ChannelTuple with which the validator was constructed.
 
     This class will not normally be created directly, but created from a channel
-    list using the ``ChannelList.get_validator`` method.
+    list using the ``ChannelTuple.get_validator`` method.
 
     Args:
-        channel_list (ChannelList): the channel list that should be checked
+        channel_list: the ChannelTuple that should be checked
             against. The channel list must be locked and populated before it
             can be used to construct a validator.
     """
@@ -704,17 +720,21 @@ class ChannelTupleValidator(Validator[InstrumentChannel]):
     def __init__(self, channel_list: ChannelTuple) -> None:
         # Save the base parameter list
         if not isinstance(channel_list, ChannelTuple):
-            raise ValueError("channel_list must be a ChannelList "
-                             "object containing the "
-                             "channels that should be validated")
+            raise ValueError(
+                "channel_list must be a ChannelTuple "
+                "object containing the "
+                "channels that should be validated"
+            )
         if not channel_list._locked:
-            raise AttributeError("Channel list must be locked before it can "
-                                 "be used to create a validator")
+            raise AttributeError(
+                "channel_list must be locked before it can "
+                "be used to create a validator"
+            )
         self._channel_list = channel_list
 
     def validate(self, value: InstrumentChannel, context: str = '') -> None:
         """
-        Checks to see that value is a member of the channel list referenced by
+        Checks to see that value is a member of the ChannelTuple referenced by
         this validator
 
         Args:
@@ -725,11 +745,12 @@ class ChannelTupleValidator(Validator[InstrumentChannel]):
         """
         if value not in self._channel_list:
             raise ValueError(
-                '{} is not part of the expected channel list; {}'.format(
-                    repr(value), context))
+                f"{repr(value)} is not part of the expected channel list; {context}"
+            )
 
 
 class ChannelListValidator(ChannelTupleValidator):
+    """Alias for backwards compatibility. Do not use"""
     pass
 
 
