@@ -1,5 +1,4 @@
 """ Base class for the channel of an instrument """
-import collections.abc
 import sys
 from typing import (
     Any,
