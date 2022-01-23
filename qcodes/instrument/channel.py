@@ -663,7 +663,7 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentChannel]):  # type: ig
         """
         if not self._locked:
             raise AttributeError(
-                "Cannot create a validator for an unlocked " "channel list"
+                "Cannot create a validator for an unlocked channel list"
             )
         return super().get_validator()
 
