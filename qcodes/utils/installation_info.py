@@ -62,41 +62,6 @@ def get_qcodes_version() -> str:
     return __version__
 
 
-@deprecate("Utility function unused within QCoDeS.")
-def get_qcodes_requirements() -> List[str]:
-    """
-    Return a list of the names of the packages that QCoDeS requires
-    """
-    import pkg_resources
-    qc_pkg = distribution('qcodes').requires
-    if qc_pkg is None:
-        return []
-    package_names = [pkg_resources.Requirement.parse(req).unsafe_name for req in qc_pkg]
-
-    return package_names
-
-
-@deprecate("Utility function unused within QCoDeS.")
-def get_qcodes_requirements_versions() -> Dict[str, str]:
-    """
-    Return a dictionary of the currently installed versions of the packages
-    that QCoDeS requires. The dict maps package name to version string.
-    If an (optional) dependency is not installed the name maps to "Not installed".
-    """
-
-    req_names = get_qcodes_requirements()
-
-    req_versions = {}
-
-    for req in req_names:
-        try:
-            req_versions[req] = version(req)
-        except PackageNotFoundError:
-            req_versions[req] = "Not installed"
-
-    return req_versions
-
-
 def get_all_installed_package_versions() -> Dict[str, str]:
     """
     Return a dictionary of the currently installed packages and their versions.
