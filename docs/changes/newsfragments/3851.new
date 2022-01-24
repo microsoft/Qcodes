@@ -1,0 +1,10 @@
+The instrument channel container ``ChannelList`` has been split into a immutable ``ChannelTuple``
+and a mutable ``ChannelList``. The ``ChannelList`` class has gained a ``to_channel_tuple`` method.
+The ``lock`` method which locks a ``ChannelList`` has been retained but we do expect to deprecate
+this in the future.
+
+All drivers in QCoDeS have been updated to either use a ``ChannelTuple`` or a unlocked
+``ChannelList`` as it makes sense.
+
+Furthermore, the ``ChannelList`` class now implements the full
+``collections.abc.MutableSequence`` interface behaving like a python list.
