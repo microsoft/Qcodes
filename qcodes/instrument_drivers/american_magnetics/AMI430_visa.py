@@ -528,10 +528,10 @@ class AMI430(VisaInstrument):
         except VisaIOError as err:
             # The ami communication has found to be unstable
             # so we retry the communication here
-            self.log.exception(
-                f"Got VisaIOError while writing {cmd} to instrument."
-                f"Will retry in {self._RETRY_TIME} sec."
-            )
+            msg = f"Got VisaIOError while writing {cmd} to instrument."
+            if self._RETRY_WRITE_ASK:
+                msg += f" Will retry in {self._RETRY_TIME} sec."
+            self.log.exception(msg)
             if self._RETRY_WRITE_ASK:
                 time.sleep(self._RETRY_TIME)
                 self.device_clear()
@@ -546,10 +546,10 @@ class AMI430(VisaInstrument):
         except VisaIOError as err:
             # The ami communication has found to be unstable
             # so we retry the communication here
-            self.log.exception(
-                f"Got VisaIOError while asking the instrument: {cmd}"
-                f"Will retry in {self._RETRY_TIME} sec."
-            )
+            msg = f"Got VisaIOError while asking the instrument: {cmd}"
+            if self._RETRY_WRITE_ASK:
+                msg += f" Will retry in {self._RETRY_TIME} sec."
+            self.log.exception(msg)
             if self._RETRY_WRITE_ASK:
                 time.sleep(self._RETRY_TIME)
                 self.device_clear()
