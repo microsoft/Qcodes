@@ -13,10 +13,20 @@ from typing import Dict, List, Optional
 from qcodes.utils.deprecate import deprecate
 
 if sys.version_info >= (3, 8):
-    from importlib.metadata import PackageNotFoundError, distribution, version
+    from importlib.metadata import (
+        PackageNotFoundError,
+        distribution,
+        distributions,
+        version,
+    )
 else:
     # 3.7 and earlier
-    from importlib_metadata import PackageNotFoundError, distribution, version
+    from importlib_metadata import (
+        PackageNotFoundError,
+        distribution,
+        distributions,
+        version,
+    )
 
 log = logging.getLogger(__name__)
 
@@ -91,9 +101,7 @@ def get_all_installed_package_versions() -> Dict[str, str]:
     """
     Return a dictionary of the currently installed packages and their versions.
     """
-    import pkg_resources
-    packages = pkg_resources.working_set
-    return {i.key: i.version for i in packages}
+    return {d.name: d.version for d in distributions()}
 
 
 def convert_legacy_version_to_supported_version(ver: str) -> str:
