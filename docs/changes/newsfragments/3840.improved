@@ -1,4 +1,0 @@
-``InstrumentChannel`` now subclasses a new class ``InstrumentModule`` to clarify that instrument modules may
-serve other purposes than being channels. At the moment ``InstrumentModule`` and ``InstrumentChannel`` are identical.
-The type hints have been updated to clarify that only subclasses of ``InstrumentModule`` and ``ChannelLists``
-are allowed submodules.
