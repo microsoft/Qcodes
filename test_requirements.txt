@@ -46,7 +46,6 @@ types-ipaddress
 types-pyOpenSSL
 types-pytz
 types-requests
-types-setuptools
 types-six
 types-tabulate
 types-toml
