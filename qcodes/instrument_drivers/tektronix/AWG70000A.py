@@ -478,8 +478,7 @@ class AWG70000A(VisaInstrument):
                 chanlist.append(channel)
 
         if self.num_channels > 2:
-            chanlist.lock()
-            self.add_submodule('channels', chanlist)
+            self.add_submodule("channels", chanlist.to_channel_tuple())
 
         # Folder on the AWG where to files are uplaoded by default
         self.wfmxFileFolder = "\\Users\\OEM\\Documents"

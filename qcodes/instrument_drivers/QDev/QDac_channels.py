@@ -234,9 +234,8 @@ class QDac(VisaInstrument):
             channel = QDacChannel(self, f'chan{i:02}', i)
             channels.append(channel)
             # Should raise valueerror if name is invalid (silently fails now)
-            self.add_submodule(f'ch{i:02}', channel)
-        channels.lock()
-        self.add_submodule('channels', channels)
+            self.add_submodule(f"ch{i:02}", channel)
+        self.add_submodule("channels", channels.to_channel_tuple())
 
         for board in range(6):
             for sensor in range(3):

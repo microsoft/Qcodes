@@ -480,8 +480,7 @@ class Model_325(VisaInstrument):
             sensors.append(sensor)
             self.add_submodule(f'sensor_{inp}', sensor)
 
-        sensors.lock()
-        self.add_submodule("sensor", sensors)
+        self.add_submodule("sensor", sensors.to_channel_tuple())
 
         heaters = ChannelList(
             self, "heater", Model_325_Heater, snapshotable=False)
@@ -491,8 +490,7 @@ class Model_325(VisaInstrument):
             heaters.append(heater)
             self.add_submodule(f'heater_{loop}', heater)
 
-        heaters.lock()
-        self.add_submodule("heater", heaters)
+        self.add_submodule("heater", heaters.to_channel_tuple())
 
         curves = ChannelList(
             self, "curve", Model_325_Curve, snapshotable=False

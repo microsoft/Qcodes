@@ -420,7 +420,7 @@ class DummyChannelInstrument(Instrument):
             channel = DummyChannel(self, f'Chan{chan_name}', chan_name)
             channels.append(channel)
             self.add_submodule(chan_name, channel)
-        self.add_submodule("channels", channels)
+        self.add_submodule("channels", channels.to_channel_tuple())
 
 
 class MultiGetter(MultiParameter):
@@ -997,7 +997,7 @@ class MockDAC(Instrument):
             channel = MockDACChannel(parent=self, name=chan_name, num=num)
             channels.append(channel)
             self.add_submodule(chan_name, channel)
-        self.add_submodule("channels", channels)
+        self.add_submodule("channels", channels.to_channel_tuple())
 
 
 class MockCustomChannel(InstrumentChannel):

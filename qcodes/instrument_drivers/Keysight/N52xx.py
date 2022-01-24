@@ -354,8 +354,7 @@ class PNABase(VisaInstrument):
                            min_power, max_power)
             ports.append(port)
             self.add_submodule(f"port{port_num}", port)
-        ports.lock()
-        self.add_submodule("ports", ports)
+        self.add_submodule("ports", ports.to_channel_tuple())
 
         # Drive power
         self.add_parameter('power',
@@ -639,11 +638,11 @@ class PNABase(VisaInstrument):
 
 class PNAxBase(PNABase):
     def _enable_fom(self) -> None:
-        '''
+        """
         PNA-x units with two sources have an enormous list of functions &
         configurations. In practice, most of this will be set up manually on
         the unit, with power and frequency varied in a sweep.
-        '''
+        """
         self.add_parameter('aux_frequency',
                            label='Aux Frequency',
                            get_cmd='SENS:FOM:RANG4:FREQ:CW?',

@@ -291,8 +291,7 @@ class DS4000(VisaInstrument):
             channel = RigolDS4000Channel(self, f"ch{channel_number}", channel_number)
             channels.append(channel)
 
-        channels.lock()
-        self.add_submodule('channels', channels)
+        self.add_submodule("channels", channels.to_channel_tuple())
 
     def _check_firmware_version(self) -> None:
         #Require version 00.02.03

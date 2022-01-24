@@ -7,8 +7,9 @@ import pytest
 from hypothesis import HealthCheck, given, settings
 from numpy.testing import assert_allclose, assert_array_equal
 
+from qcodes import Instrument
 from qcodes.data.location import FormatLocation
-from qcodes.instrument.channel import ChannelList
+from qcodes.instrument.channel import ChannelList, InstrumentChannel
 from qcodes.instrument.parameter import Parameter
 from qcodes.loops import Loop
 from qcodes.tests.instrument_mocks import DummyChannel, DummyChannelInstrument
@@ -24,6 +25,39 @@ def _make_dci():
     finally:
         dci.close()
 
+
+@pytest.fixture(scope="function", name="dci_with_list")
+def _make_dci_with_list():
+    for i in range(10):
+        pass
+
+    dci = Instrument(name="dciwl")
+    channels = ChannelList(dci, "ListElem", DummyChannel, snapshotable=False)
+    for chan_name in ("A", "B", "C", "D", "E", "F"):
+        channel = DummyChannel(dci, f"Chan{chan_name}", chan_name)
+        channels.append(channel)
+        dci.add_submodule(chan_name, channel)
+    dci.add_submodule("channels", channels)
+
+    try:
+        yield dci
+    finally:
+        dci.close()
+
+
+@pytest.fixture(scope="function", name="empty_instrument")
+def _make_empty_instrument():
+
+    instr = Instrument(name="dci")
+
+    try:
+        yield instr
+    finally:
+        instr.close()
+
+
+class EmptyChannel(InstrumentChannel):
+    pass
 
 def test_channels_call_function(dci, caplog):
     """
@@ -74,88 +108,237 @@ def test_channel_access_is_identical(dci, value, channel):
     # as this is a multi parameter that currently does not support set.
 
 
-def test_add_channel(dci):
-    n_channels = len(dci.channels)
-    name = 'foo'
-    channel = DummyChannel(dci, 'Chan'+name, name)
-    dci.channels.append(channel)
-    dci.add_submodule(name, channel)
+def test_invalid_channel_type_raises(empty_instrument):
 
-    assert len(dci.channels) == n_channels+1
+    with pytest.raises(
+        ValueError,
+        match="ChannelTuple can only hold instances of type InstrumentChannel",
+    ):
+        ChannelList(parent=empty_instrument, name="empty", chan_type=int)
 
-    dci.channels.lock()
+
+def test_invalid_multichan_type_raises(empty_instrument):
+
+    with pytest.raises(ValueError, match="multichan_paramclass must be a"):
+        ChannelList(
+            parent=empty_instrument,
+            name="empty",
+            chan_type=DummyChannel,
+            multichan_paramclass=int,
+        )
+
+
+def test_wrong_chan_type_raises(empty_instrument):
+    with pytest.raises(TypeError, match="All items in this ChannelTuple must be of"):
+        ChannelList(
+            parent=empty_instrument,
+            name="empty",
+            chan_type=DummyChannel,
+            chan_list=[EmptyChannel(parent=empty_instrument, name="empty_channel")],
+        )
+
+
+def test_append_channel(dci_with_list):
+    n_channels_pre = len(dci_with_list.channels)
+    n_channels_post = n_channels_pre + 1
+    chan_num = 11
+    name = f"Chan{chan_num}"
+
+    channel = DummyChannel(dci_with_list, name, chan_num)
+    dci_with_list.channels.append(channel)
+    dci_with_list.add_submodule(name, channel)
+
+    assert len(dci_with_list.channels) == n_channels_post
+
+    dci_with_list.channels.lock()
     # after locking the channels it's not possible to add any more channels
     with pytest.raises(AttributeError):
-        name = 'bar'
-        channel = DummyChannel(dci, 'Chan' + name, name)
-        dci.channels.append(channel)
-    assert len(dci.channels) == n_channels + 1
+        name = "bar"
+        channel = DummyChannel(dci_with_list, "Chan" + name, name)
+        dci_with_list.channels.append(channel)
+    assert len(dci_with_list.channels) == n_channels_post
 
 
-def test_add_channels_from_generator(dci):
-    n_channels = len(dci.channels)
-    names = ('foo', 'bar', 'foobar')
-    channels = (DummyChannel(dci, 'Chan'+name, name)
-                for name in names)
-    dci.channels.extend(channels)
+def test_append_channel_wrong_type_raises(dci_with_list):
+    n_channels = len(dci_with_list.channels)
 
-    assert len(dci.channels) == n_channels + len(names)
+    channel = EmptyChannel(dci_with_list, "foo")
+    with pytest.raises(TypeError, match="All items in a channel list must"):
+        dci_with_list.channels.append(channel)
 
-
-def test_add_channels_from_tuple(dci):
-    n_channels = len(dci.channels)
-    names = ('foo', 'bar', 'foobar')
-    channels = tuple(DummyChannel(dci, 'Chan'+name, name)
-                     for name in names)
-    dci.channels.extend(channels)
-
-    assert len(dci.channels) == n_channels + len(names)
+    assert len(dci_with_list.channels) == n_channels
 
 
-def test_extend_then_remove(dci):
-    n_channels = len(dci.channels)
-    names = ('foo', 'bar', 'foobar')
-    channels = [DummyChannel(dci, 'Chan' + name, name)
-                for name in names]
-    dci.channels.extend(channels)
+def test_extend_channels_from_generator(dci_with_list):
+    n_channels = len(dci_with_list.channels)
+    names = ("foo", "bar", "foobar")
+    channels = (DummyChannel(dci_with_list, "Chan" + name, name) for name in names)
+    dci_with_list.channels.extend(channels)
 
-    assert len(dci.channels) == n_channels + len(names)
-    last_channel = dci.channels[-1]
-    dci.channels.remove(last_channel)
-    assert last_channel not in dci.channels
-    assert len(dci.channels) == n_channels + len(names) - 1
+    assert len(dci_with_list.channels) == n_channels + len(names)
 
 
-def test_insert_channel(dci):
-    n_channels_pre = len(dci.channels)
-    name = 'foo'
-    channel = DummyChannel(dci, 'Chan'+name, name)
-    dci.channels.insert(1, channel)
-    dci.add_submodule(name, channel)
+def test_extend_channels_from_tuple(dci_with_list):
+    n_channels = len(dci_with_list.channels)
+    names = ("foo", "bar", "foobar")
+    channels = tuple(DummyChannel(dci_with_list, "Chan" + name, name) for name in names)
+    dci_with_list.channels.extend(channels)
+
+    assert len(dci_with_list.channels) == n_channels + len(names)
+
+
+def test_extend_wrong_type_raises(dci_with_list):
+    names = ("foo", "bar", "foobar")
+    channels = tuple(EmptyChannel(dci_with_list, "Chan" + name) for name in names)
+    with pytest.raises(
+        TypeError, match="All items in a channel list must be of the same type."
+    ):
+        dci_with_list.channels.extend(channels)
+
+
+def test_extend_locked_list_raises(dci_with_list):
+    dci_with_list.channels.lock()
+    names = ("foo", "bar", "foobar")
+    channels = tuple(EmptyChannel(dci_with_list, "Chan" + name) for name in names)
+    with pytest.raises(AttributeError, match="Cannot extend a locked channel list"):
+        dci_with_list.channels.extend(channels)
+
+
+def test_extend_then_remove(dci_with_list):
+    n_channels = len(dci_with_list.channels)
+    names = ("foo", "bar", "foobar")
+    channels = [DummyChannel(dci_with_list, "Chan" + name, name) for name in names]
+    dci_with_list.channels.extend(channels)
+
+    assert len(dci_with_list.channels) == n_channels + len(names)
+    last_channel = dci_with_list.channels[-1]
+    dci_with_list.channels.remove(last_channel)
+    assert last_channel not in dci_with_list.channels
+    assert len(dci_with_list.channels) == n_channels + len(names) - 1
+
+
+def test_insert_channel(dci_with_list):
+    n_channels_pre = len(dci_with_list.channels)
+    name = "foo"
+    channel = DummyChannel(dci_with_list, "Chan" + name, name)
+    dci_with_list.channels.insert(1, channel)
+    dci_with_list.add_submodule(name, channel)
 
     n_channels_post = n_channels_pre + 1
 
-    assert dci.channels.get_channel_by_name(f"Chan{name}") is channel
-    assert len(dci.channels) == n_channels_post
-    assert dci.channels[1] is channel
-    dci.channels.lock()
+    assert dci_with_list.channels.get_channel_by_name(f"Chan{name}") is channel
+    assert len(dci_with_list.channels) == n_channels_post
+    assert dci_with_list.channels[1] is channel
+    dci_with_list.channels.lock()
     # after locking the channels it's not possible to add any more channels
     with pytest.raises(AttributeError):
-        name = 'bar'
-        channel = DummyChannel(dci, 'Chan' + name, name)
-        dci.channels.insert(2, channel)
-    assert len(dci.channels) == n_channels_post
-    assert len(dci.channels._channel_mapping) == n_channels_post
+        name = "bar"
+        channel = DummyChannel(dci_with_list, "Chan" + name, name)
+        dci_with_list.channels.insert(2, channel)
+    assert len(dci_with_list.channels) == n_channels_post
+    assert len(dci_with_list.channels._channel_mapping) == n_channels_post
 
 
-def test_clear_channels(dci):
-    channels = dci.channels
+def test_insert_channel_wrong_type_raises(dci_with_list):
+    with pytest.raises(TypeError, match="All items in a channel list"):
+        dci_with_list.channels.insert(1, EmptyChannel(parent=dci_with_list, name="foo"))
+
+
+def test_add_none_channel_tuple_to_channel_tuple_raises(dci):
+
+    with pytest.raises(TypeError, match="Can't add objects of type"):
+        _ = dci.channels + [1]
+
+
+def test_add_channel_tuples_of_different_types_raises(dci):
+
+    extra_channels = [EmptyChannel(dci, f"chan{i}") for i in range(10)]
+    extra_channel_list = ChannelList(
+        parent=dci,
+        name="extra_channels",
+        chan_type=EmptyChannel,
+        chan_list=extra_channels,
+    )
+    dci.add_submodule("extra_channels", extra_channel_list)
+
+    with pytest.raises(TypeError, match="Both l and r arguments to add must contain"):
+        _ = dci.channels + extra_channel_list
+
+
+def test_add_channel_tuples_from_different_parents(dci, dci_with_list):
+
+    with pytest.raises(ValueError, match="Can only add channels from the same"):
+        _ = dci.channels + dci_with_list.channels
+
+
+def test_char_tuple_repr(dci):
+
+    dci_repr = repr(dci.channels)
+    assert dci_repr.startswith("ChannelList")
+
+
+def test_channel_tuple_get_validator(dci):
+
+    validator = dci.channels.get_validator()
+    for chan in dci.channels:
+        validator.validate(chan)
+
+
+def test_channel_list_get_validator(dci_with_list):
+    dci_with_list.channels.lock()
+    validator = dci_with_list.channels.get_validator()
+    for chan in dci_with_list.channels:
+        validator.validate(chan)
+
+
+def test_channel_list_get_validator_not_locked_raised(dci_with_list):
+    with pytest.raises(AttributeError, match="Cannot create a validator"):
+        dci_with_list.channels.get_validator()
+
+def test_channel_tuple_index(dci):
+
+    for i, chan in enumerate(dci.channels):
+        assert dci.channels.index(chan) == i
+
+def test_channel_tuple_snapshot(dci):
+    snapshot = dci.channels.snapshot()
+    assert snapshot["snapshotable"] is False
+    assert len(snapshot.keys()) == 2
+
+
+def test_channel_tuple_snapshot_enabled(empty_instrument):
+
+    channels = ChannelList(
+        empty_instrument, "ListElem", DummyChannel, snapshotable=True
+    )
+    for chan_name in ("A", "B", "C", "D", "E", "F"):
+        channel = DummyChannel(empty_instrument, f"Chan{chan_name}", chan_name)
+        channels.append(channel)
+    empty_instrument.add_submodule("channels", channels)
+
+    snapshot = empty_instrument.channels.snapshot()
+    assert snapshot["snapshotable"] is True
+    assert len(snapshot.keys()) == 3
+    assert "channels" in snapshot.keys()
+
+def test_channel_tuple_dir(dci):
+
+    dir_list = dir(dci.channels)
+
+    for chan in dci.channels:
+        assert chan.short_name in dir_list
+
+    for param in dci.channels[0].parameters.values():
+        assert param.short_name in dir_list
+
+def test_clear_channels(dci_with_list):
+    channels = dci_with_list.channels
     channels.clear()
     assert len(channels) == 0
 
 
-def test_clear_locked_channels(dci):
-    channels = dci.channels
+def test_clear_locked_channels(dci_with_list):
+    channels = dci_with_list.channels
     original_length = len(channels)
     channels.lock()
     with pytest.raises(AttributeError):
@@ -163,9 +346,9 @@ def test_clear_locked_channels(dci):
     assert len(channels) == original_length
 
 
-def test_remove_channel(dci):
-    channels = dci.channels
-    chan_a = dci.A
+def test_remove_channel(dci_with_list):
+    channels = dci_with_list.channels
+    chan_a = dci_with_list.A
     original_length = len(channels.temperature())
     channels.remove(chan_a)
     with pytest.raises(AttributeError):
@@ -174,24 +357,32 @@ def test_remove_channel(dci):
     assert len(channels.temperature()) == original_length-1
 
 
-def test_remove_locked_channel(dci):
-    channels = dci.channels
-    chan_a = dci.A
+def test_remove_locked_channel(dci_with_list):
+    channels = dci_with_list.channels
+    chan_a = dci_with_list.A
     channels.lock()
     with pytest.raises(AttributeError):
         channels.remove(chan_a)
 
 
-def test_remove_tupled_channel(dci):
+def test_channel_list_lock_twice(dci_with_list):
+    channels = dci_with_list.channels
+    channels.lock()
+    # locking twice should be a no op
+    channels.lock()
+
+def test_remove_tupled_channel(dci_with_list):
     channel_tuple = tuple(
-        DummyChannel(dci, f'Chan{C}', C)
-        for C in ('A', 'B', 'C', 'D', 'E', 'F')
+        DummyChannel(dci_with_list, f"Chan{C}", C)
+        for C in ("A", "B", "C", "D", "E", "F")
     )
-    channels = ChannelList(dci,
-                           "TempSensorsTuple",
-                           DummyChannel,
-                           channel_tuple,
-                           snapshotable=False)
+    channels = ChannelList(
+        dci_with_list,
+        "TempSensorsTuple",
+        DummyChannel,
+        channel_tuple,
+        snapshotable=False,
+    )
     chan_a = channels.ChanA
     with pytest.raises(AttributeError):
         channels.remove(chan_a)
@@ -249,6 +440,70 @@ def test_access_channels_by_tuple(dci, myindexs):
     for chan, chanindex in zip(mychans, mytuple):
         assert chan.name == f"dci_Chan{names[chanindex]}"
 
+
+def test_access_channels_by_name_empty_raises(dci):
+    # todo this should raise a less generic error type
+    with pytest.raises(Exception, match="one or more names must be given"):
+        dci.channels.get_channel_by_name()
+
+
+def test_delete_from_channel_list(dci_with_list):
+    n_channels = len(dci_with_list.channels)
+    chan0 = dci_with_list.channels[0]
+    del dci_with_list.channels[0]
+    assert chan0 not in dci_with_list.channels
+    assert len(dci_with_list.channels) == n_channels - 1
+
+    with pytest.raises(KeyError):
+        dci_with_list.channels.get_channel_by_name(chan0.short_name)
+
+    end_channels = dci_with_list.channels[-2:]
+    del dci_with_list.channels[-2:]
+    assert len(dci_with_list.channels) == n_channels - 3
+    assert all(chan not in dci_with_list.channels for chan in end_channels)
+
+    for chan in end_channels:
+        with pytest.raises(KeyError):
+            dci_with_list.channels.get_channel_by_name(chan.short_name)
+
+    dci_with_list.channels.lock()
+    with pytest.raises(
+        AttributeError, match="Cannot delete from a locked channel list"
+    ):
+        del dci_with_list.channels[0]
+    assert len(dci_with_list.channels) == n_channels - 3
+
+
+def test_set_element_by_int(dci_with_list):
+
+    dci_with_list.channels[0] = dci_with_list.channels[1]
+    assert dci_with_list.channels[0] is dci_with_list.channels[1]
+
+
+def test_set_element_by_slice(dci_with_list):
+    foo = DummyChannel(dci_with_list, name="foo", channel="foo")
+    bar = DummyChannel(dci_with_list, name="bar", channel="bar")
+    dci_with_list.channels[0:2] = [foo, bar]
+    assert dci_with_list.channels[0] is foo
+    assert dci_with_list.channels[1] is bar
+
+    assert (
+        dci_with_list.channels.get_channel_by_name("foo") == dci_with_list.channels[0]
+    )
+    assert (
+        dci_with_list.channels.get_channel_by_name("bar") == dci_with_list.channels[1]
+    )
+
+
+def test_set_element_locked_raises(dci_with_list):
+
+    dci_with_list.channels.lock()
+
+    with pytest.raises(
+        AttributeError, match="Cannot set item in a locked channel list"
+    ):
+        dci_with_list.channels[0] = dci_with_list.channels[1]
+    assert dci_with_list.channels[0] is not dci_with_list.channels[1]
 
 @settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(myindexs=hst.lists(elements=hst.integers(0, 7), min_size=2))

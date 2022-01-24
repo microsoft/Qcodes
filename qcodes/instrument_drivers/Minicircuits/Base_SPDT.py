@@ -1,7 +1,7 @@
 import logging
 import re
 import warnings
-from typing import Dict, Optional, Type, Hashable, Any
+from typing import Any, Dict, Hashable, Optional, Type
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.channel import ChannelList, InstrumentChannel
@@ -72,8 +72,7 @@ class SPDT_Base(Instrument):
             self.add_submodule(attribute_name, channel)
             self.add_submodule(c, channel)
             self._deprecated_attributes[attribute_name] = c
-        channels.lock()
-        self.add_submodule('channels', channels)
+        self.add_submodule("channels", channels.to_channel_tuple())
 
     def all(self, switch_to: int) -> None:
         for c in self.channels:

@@ -1,7 +1,7 @@
-from typing import Dict, Optional, Any
+from typing import Any, Dict, Optional
 
-from qcodes import VisaInstrument, validators as vals
-from qcodes import InstrumentChannel, ChannelList
+from qcodes import ChannelList, InstrumentChannel, VisaInstrument
+from qcodes import validators as vals
 from qcodes.instrument.base import Instrument
 from qcodes.utils.helpers import create_on_off_val_mapping
 
@@ -221,8 +221,7 @@ class AimTTi(VisaInstrument):
             channels.append(channel)
             self.add_submodule(f'ch{i}', channel)
 
-        channels.lock()
-        self.add_submodule('channels', channels)
+        self.add_submodule("channels", channels.to_channel_tuple())
         self.connect_message()
 
     # Interface Management

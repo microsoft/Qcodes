@@ -47,7 +47,7 @@ from qcodes.dataset.sqlite.database import (
 )
 from qcodes.dataset.sqlite.settings import SQLiteSettings
 from qcodes.instrument.base import Instrument, find_or_create_instrument
-from qcodes.instrument.channel import ChannelList, InstrumentChannel
+from qcodes.instrument.channel import ChannelList, ChannelTuple, InstrumentChannel
 from qcodes.instrument.function import Function
 from qcodes.instrument.ip import IPInstrument
 from qcodes.instrument.parameter import (

@@ -1051,8 +1051,7 @@ class ZIUHFLI(Instrument):
             auxchannel = AUXOutputChannel(self, name, auxchannum)
             auxoutputchannels.append(auxchannel)
             self.add_submodule(name, auxchannel)
-        auxoutputchannels.lock()
-        self.add_submodule('aux_out_channels', auxoutputchannels)
+        self.add_submodule("aux_out_channels", auxoutputchannels.to_channel_tuple())
         ########################################
         # SWEEPER PARAMETERS
 

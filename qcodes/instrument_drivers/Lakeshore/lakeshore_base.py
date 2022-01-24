@@ -504,7 +504,6 @@ class LakeshoreBase(VisaInstrument):
             channel = self.CHANNEL_CLASS(self, name, command)
             channels.append(channel)
             self.add_submodule(name, channel)
-        channels.lock()
-        self.add_submodule("channels", channels)
+        self.add_submodule("channels", channels.to_channel_tuple())
 
         self.connect_message()
