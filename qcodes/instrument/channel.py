@@ -249,7 +249,7 @@ class ChannelTuple(Metadatable, Sequence[InstrumentChannel]):
 
     def __getitem__(
         self: T, i: Union[int, slice, Tuple[int, ...]]
-    ) -> Union["InstrumentChannel", T]:
+    ) -> Union[InstrumentChannel, T]:
         """
         Return either a single channel, or a new :class:`ChannelTuple`
         containing only the specified channels
@@ -420,7 +420,7 @@ class ChannelTuple(Metadatable, Sequence[InstrumentChannel]):
         a function on the channel type contained in this container return a
         multi-channel function or parameter that we can use to get or
         set all items in a channel list simultaneously. If this is the
-        name of a channel return that channel.
+        name of a channel, return that channel.
 
         Params:
             name: The name of the parameter, function or channel that we want to
@@ -643,9 +643,9 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentChannel]):  # type: ig
         """
         # objects may be a generator but we need to iterate over it twice
         # below so copy it into a tuple just in case.
-        objects_tuple = tuple(objects)
         if self._locked:
             raise AttributeError("Cannot extend a locked channel list")
+        objects_tuple = tuple(objects)
         if not all(isinstance(obj, self._chan_type) for obj in objects_tuple):
             raise TypeError("All items in a channel list must be of the same type.")
         channels = cast(List[InstrumentChannel], self._channels)
