@@ -420,7 +420,7 @@ class ChannelTuple(Metadatable, Sequence[InstrumentChannel]):
         """
         Look up an attribute by name. If this is the name of a parameter or
         a function on the channel type contained in this container return a
-        multi-channel function or parameter that we can use to get or
+        multi-channel function or parameter that can be used to get or
         set all items in a channel list simultaneously. If this is the
         name of a channel, return that channel.
 
