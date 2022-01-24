@@ -68,11 +68,11 @@ def get_qcodes_requirements() -> List[str]:
     """
     Return a list of the names of the packages that QCoDeS requires
     """
-    import requirements
+    import pkg_resources
     qc_pkg = distribution('qcodes').requires
     if qc_pkg is None:
         return []
-    package_names = [list(requirements.parse(req))[0].name for req in qc_pkg]
+    package_names = [pkg_resources.Requirement.parse(req).unsafe_name for req in qc_pkg]
 
     return package_names
 
