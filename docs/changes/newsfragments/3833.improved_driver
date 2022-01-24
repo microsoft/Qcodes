@@ -1,0 +1,1 @@
+The VISA version of the AMI driver has been improved to more robustly handle flaky communication.
