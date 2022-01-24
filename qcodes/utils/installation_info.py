@@ -10,6 +10,8 @@ import sys
 from pathlib import Path
 from typing import Dict, List, Optional
 
+from qcodes.utils.deprecate import deprecate
+
 if sys.version_info >= (3, 8):
     from importlib.metadata import PackageNotFoundError, distribution, version
 else:
@@ -64,6 +66,7 @@ def get_qcodes_version() -> str:
     return __version__
 
 
+@deprecate("Utility function unused within QCoDeS.")
 def get_qcodes_requirements() -> List[str]:
     """
     Return a list of the names of the packages that QCoDeS requires
@@ -77,6 +80,7 @@ def get_qcodes_requirements() -> List[str]:
     return package_names
 
 
+@deprecate("Utility function unused within QCoDeS.")
 def get_qcodes_requirements_versions() -> Dict[str, str]:
     """
     Return a dictionary of the currently installed versions of the packages
