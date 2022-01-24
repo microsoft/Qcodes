@@ -9,7 +9,7 @@ from numpy.testing import assert_allclose, assert_array_equal
 
 from qcodes import Instrument
 from qcodes.data.location import FormatLocation
-from qcodes.instrument.channel import ChannelList, InstrumentChannel
+from qcodes.instrument.channel import ChannelList, ChannelTuple, InstrumentChannel
 from qcodes.instrument.parameter import Parameter
 from qcodes.loops import Loop
 from qcodes.tests.instrument_mocks import DummyChannel, DummyChannelInstrument
@@ -791,6 +791,16 @@ def test_root_instrument(dci):
         assert channel.root_instrument is dci
         for parameter in channel.parameters.values():
             assert parameter.root_instrument is dci
+
+
+def test_get_attr_on_empty_channellist_works_as_expected(empty_instrument):
+    channels = ChannelTuple(empty_instrument, "channels", chan_type=DummyChannel)
+    empty_instrument.add_submodule("channels", channels)
+
+    with pytest.raises(
+        AttributeError, match="'ChannelTuple' object has no attribute 'temperature'"
+    ):
+        _ = empty_instrument.channels.temperature
 
 
 def _verify_multiparam_data(data):
