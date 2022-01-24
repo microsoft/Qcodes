@@ -173,7 +173,7 @@ class ChannelTuple(Metadatable, Sequence[InstrumentChannel]):
             immediately lock it is this is a :class:`ChannelList`.
 
         snapshotable: Optionally disables taking of snapshots
-            for a given ChannelTuple.  This is used when objects
+            for a given ChannelTuple. This is used when objects
             stored inside a ChannelTuple are accessible in multiple
             ways and should not be repeated in an instrument snapshot.
 
@@ -416,11 +416,14 @@ class ChannelTuple(Metadatable, Sequence[InstrumentChannel]):
                                               Callable[..., None],
                                               InstrumentChannel]:
         """
-        Return a multi-channel function or parameter that we can use to get or
-        set all items in a channel list simultaneously.
+        Look up an attribute by name. If this is the name of a parameter or
+        a function on the channel type contained in this container return a
+        multi-channel function or parameter that we can use to get or
+        set all items in a channel list simultaneously. If this is the
+        name of a channel return that channel.
 
         Params:
-            name: The name of the parameter or function that we want to
+            name: The name of the parameter, function or channel that we want to
             operate on.
         """
         # Check if this is a valid parameter
@@ -518,7 +521,7 @@ class ChannelTuple(Metadatable, Sequence[InstrumentChannel]):
 # for some reason this does not happen with Sequence
 class ChannelList(ChannelTuple, MutableSequence[InstrumentChannel]):  # type: ignore[misc]
     """
-    A Subclass of ChannelTuple that allows modifying the content. This implementes
+    A Subclass of ChannelTuple that allows modifying the content. This implements
     the MutableSequence abc and behaves like a regular python list.
     """
 
@@ -673,7 +676,10 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentChannel]):  # type: ig
     def get_validator(self) -> "ChannelTupleValidator":
         """
         Returns a validator that checks that the returned object is a channel
-        in this channel list
+        in this ChannelList.
+
+        Raises:
+            AttributeError: If the ChannelList is not locked.
         """
         if not self._locked:
             raise AttributeError(
