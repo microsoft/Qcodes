@@ -159,6 +159,9 @@ class ChannelTuple(Metadatable, Sequence[InstrumentChannel]):
     Container for channelized parameters that allows for sweeps over
     all channels, as well as addressing of individual channels.
 
+    This behaves like a python tuple i.e. it implements the
+    ``collections.abc.Sequence`` interface.
+
     Args:
         parent: The instrument to which this ChannelTuple
             should be attached.
@@ -166,11 +169,10 @@ class ChannelTuple(Metadatable, Sequence[InstrumentChannel]):
         name: The name of the ChannelTuple.
 
         chan_type: The type of channel contained
-            within this list.
+            within this tuple.
 
         chan_list: An optional iterable of
-            channels of type ``chan_type``.  This will create a list and
-            immediately lock it is this is a :class:`ChannelList`.
+            channels of type ``chan_type``.
 
         snapshotable: Optionally disables taking of snapshots
             for a given ChannelTuple. This is used when objects
@@ -521,8 +523,47 @@ class ChannelTuple(Metadatable, Sequence[InstrumentChannel]):
 # for some reason this does not happen with Sequence
 class ChannelList(ChannelTuple, MutableSequence[InstrumentChannel]):  # type: ignore[misc]
     """
-    A Subclass of ChannelTuple that allows modifying the content. This implements
-    the MutableSequence abc and behaves like a regular python list.
+    Mutable Container for channelized parameters that allows for sweeps over
+    all channels, as well as addressing of individual channels.
+
+    This behaves like a python list i.e. it implements the
+    ``collections.abc.MutableSequence`` interface.
+
+    Note it may be useful to use the mutable ChannelList while construction it.
+    E.g. adding channels as they are created, but in most use cases it is recommended
+    to convert this to a ``ChannelTuple`` before adding it to an instrument.
+    This can be done using the ``to_channel_tuple`` method.
+
+    Args:
+        parent: The instrument to which this ChannelList
+            should be attached.
+
+        name: The name of the ChannelList.
+
+        chan_type: The type of channel contained
+            within this list.
+
+        chan_list: An optional iterable of
+            channels of type ``chan_type``.  This will create a list and
+            immediately lock the :class:`ChannelList`.
+
+        snapshotable: Optionally disables taking of snapshots
+            for a given ChannelList. This is used when objects
+            stored inside a ChannelList are accessible in multiple
+            ways and should not be repeated in an instrument snapshot.
+
+        multichan_paramclass: The class of
+            the object to be returned by the ``__getattr__``
+            method of :class:`ChannelList`.
+            Should be a subclass of :class:`MultiChannelInstrumentParameter`.
+
+    Raises:
+        ValueError: If ``chan_type`` is not a subclass of
+            :class:`InstrumentChannel`
+        ValueError: If ``multichan_paramclass`` is not a subclass of
+            :class:`MultiChannelInstrumentParameter` (note that a class is a
+            subclass of itself).
+
     """
 
     def __init__(
