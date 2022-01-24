@@ -1,3 +1,0 @@
-Added a VISA version of the AMI430 driver. This is expected to be more robust with communication issues than the
-IP version of the driver. This driver exists alongside the IP version as
-``qcodes.instrument_drivers.american_magnetics.AMI430_visa.py::AMI430``.

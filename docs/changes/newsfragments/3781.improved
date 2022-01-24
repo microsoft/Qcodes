@@ -1,1 +1,0 @@
-Fixed a bug with ``import_legacy_api`` config option which would trigger a circular import error.

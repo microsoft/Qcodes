@@ -1,0 +1,69 @@
+QCoDeS 0.32.0 (2022-01-24)
+==========================
+
+Breaking Changes:
+-----------------
+
+- The ``qcodes.version`` module deprecated and no longer imported by default e.g. if you want to use it you will need
+  to explicitly import ``qcodes.version``. It is recommended to use ``qcodes.__version__`` as an alternative. (#3762)
+- IPython measurement magic (Special command staring with % for use in IPython) using the legacy
+  loop is no longer enabled by default.
+  To enable it set the corresponding config value (`core.register_magic`) in your ``qcodesrc.json`` config file to true. (#3764)
+- The ``import_legacy_api`` config option has been deprecated and will be removed in a future release. (#3781)
+
+
+New:
+----
+
+- An abstract instrument (An instrument with one or more abstract parameters) will now raise at
+  instrument creation time preventing such an instrument from being created.
+  This makes it easier to define interfaces that multiple instruments must implement.
+  See `here <../examples/writing_drivers/abstract_instruments.ipynb>`__ for examples of how to use
+  this. (#3718)
+- Improve the Keithley 2600 SMU calibration routine and make it
+  a standalone executable function (#3783)
+- Add ``ArraySweep`` sweep class for use with ``dond`` function
+  for sweeping parameters on arbitrary arrays of values (#3847)
+- The instrument channel container ``ChannelList`` has been split into a immutable ``ChannelTuple``
+  and a mutable ``ChannelList``. The ``ChannelList`` class has gained a ``to_channel_tuple`` method.
+  The ``lock`` method which locks a ``ChannelList`` has been retained but we do expect to deprecate
+  this in the future.
+
+  All drivers in QCoDeS have been updated to either use a ``ChannelTuple`` or a unlocked
+  ``ChannelList`` as it makes sense.
+
+  Furthermore, the ``ChannelList`` class now implements the full
+  ``collections.abc.MutableSequence`` interface behaving like a python list. (#3851)
+
+
+Improved:
+---------
+
+- Only register an Instrument in the list of connected instruments if the connection
+  was successful. This change allows connections to be retried with the same name
+  if the first attempt fails. (#3696)
+- Fixed a bug with ``import_legacy_api`` config option which would trigger a circular import error. (#3781)
+- Instances of ``InstrumentModule`` (and therfor their subclass ``InstrumentChannel``) are now accessible via
+  the ``Instrument.instrument_modules`` dict on an instrument in addition to the ``Instrument.submodules`` dict
+  which combines them with instances of ``ChannelList``. (#3834)
+- ``ChannelList`` now implements the full ``collections.abc.Sequence`` interface.
+   This also means that ``isinstance(mychannelist, Sequence) is True`` (#3835)
+- Inserting into a ``ChannelList`` now correctly keeps the internal mapping up to date ensuring that
+  ``get_channel_by_name`` works correctly. (#3838)
+- ``InstrumentChannel`` now subclasses a new class ``InstrumentModule`` to clarify that instrument modules may
+  serve other purposes than being channels. At the moment ``InstrumentModule`` and ``InstrumentChannel`` are identical.
+  The type hints have been updated to clarify that only subclasses of ``InstrumentModule`` and ``ChannelLists``
+  are allowed submodules. (#3840)
+- Empty ChannelTuples/Lists now correctly raise an attribute error when trying
+  to get a non existing attribute. Previously they would raise an IndexError. (#3856)
+
+
+Improved Drivers:
+-----------------
+
+- Changed the value mapping of channel_selection on the AlazarTech ATS9440
+  driver to fix all the combinations where channel D is involved. (#3802)
+- The VISA version of the AMI driver has been improved to more robustly handle flaky communication. (#3833)
+- Added a VISA version of the AMI430 driver. This is expected to be more robust with communication issues than the
+  IP version of the driver. This driver exists alongside the IP version as
+  ``qcodes.instrument_drivers.american_magnetics.AMI430_visa.py::AMI430``. (#3842)
