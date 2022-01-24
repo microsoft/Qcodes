@@ -429,18 +429,20 @@ class ChannelTuple(Metadatable, Sequence[InstrumentChannel]):
             operate on.
         """
         # Check if this is a valid parameter
-        if name in self._channels[0].parameters:
-            param = self._construct_multiparam(name)
-            return param
+        if len(self) > 0:
+            if name in self._channels[0].parameters:
+                param = self._construct_multiparam(name)
+                return param
 
-        # Check if this is a valid function
-        if name in self._channels[0].functions:
-            # We want to return a reference to a function that would call the
-            # function for each of the channels in turn.
-            def multi_func(*args: Any) -> None:
-                for chan in self._channels:
-                    chan.functions[name](*args)
-            return multi_func
+            # Check if this is a valid function
+            if name in self._channels[0].functions:
+                # We want to return a reference to a function that would call the
+                # function for each of the channels in turn.
+                def multi_func(*args: Any) -> None:
+                    for chan in self._channels:
+                        chan.functions[name](*args)
+
+                return multi_func
 
         try:
             return self._channel_mapping[name]
