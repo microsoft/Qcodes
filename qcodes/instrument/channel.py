@@ -226,11 +226,11 @@ class ChannelTuple(Metadatable, Sequence[InstrumentChannel]):
         # provide lookup of channels by name
         # If a list of channels is not provided, define a list to store
         # channels. This will eventually become a locked tuple.
-        self._channels: Sequence[InstrumentChannel]
+        self._channels: List[InstrumentChannel]
         if chan_list is None:
-            self._channels = ()
+            self._channels = []
         else:
-            self._channels = tuple(chan_list)
+            self._channels = list(chan_list)
             self._channel_mapping = {channel.short_name: channel
                                      for channel in self._channels}
             if not all(isinstance(chan, chan_type) for chan in self._channels):
@@ -540,7 +540,6 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentChannel]):  # type: ig
         if len(self._channels) > 0:
             self._locked = True
         else:
-            self._channels = list(self._channels)
             self._locked = False
 
     @overload
@@ -552,9 +551,8 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentChannel]):  # type: ig
         ...
 
     def __delitem__(self, key: Union[int, slice]) -> None:
-        if isinstance(self._channels, tuple) or self._locked:
+        if self._locked:
             raise AttributeError("Cannot delete from a locked channel list")
-        self._channels = cast(List[InstrumentChannel], self._channels)
         self._channels.__delitem__(key)
         self._channel_mapping = {
             channel.short_name: channel for channel in self._channels
@@ -573,10 +571,9 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentChannel]):  # type: ig
         index: Union[int, slice],
         value: Union[InstrumentChannel, Iterable[InstrumentChannel]],
     ) -> None:
-        if isinstance(self._channels, tuple) or self._locked:
+        if self._locked:
             raise AttributeError("Cannot set item in a locked channel list")
         # update mapping
-        self._channels = cast(List[InstrumentChannel], self._channels)
         # asserts added to work around https://github.com/python/mypy/issues/7858
         if isinstance(index, int):
             assert isinstance(value, InstrumentChannel)
@@ -596,7 +593,7 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentChannel]):  # type: ig
         Args:
             obj: New channel to add to the list.
         """
-        if isinstance(self._channels, tuple) or self._locked:
+        if self._locked:
             raise AttributeError("Cannot append to a locked channel list")
         if not isinstance(obj, self._chan_type):
             raise TypeError(
@@ -605,7 +602,6 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentChannel]):  # type: ig
                 ".".format(type(obj).__name__, self._chan_type.__name__)
             )
         self._channel_mapping[obj.short_name] = obj
-        self._channels = cast(List[InstrumentChannel], self._channels)
         self._channels.append(obj)
 
     def clear(self) -> None:
@@ -615,8 +611,7 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentChannel]):  # type: ig
         if self._locked:
             raise AttributeError("Cannot clear a locked ChannelList")
         # when not locked the _channels seq is a list
-        channels = cast(List["InstrumentChannel"], self._channels)
-        channels.clear()
+        self._channels.clear()
         self._channel_mapping.clear()
 
     def remove(self, obj: InstrumentChannel) -> None:
@@ -629,7 +624,6 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentChannel]):  # type: ig
         if self._locked:
             raise AttributeError("Cannot remove from a locked channel list")
         else:
-            self._channels = cast(List[InstrumentChannel], self._channels)
             self._channels.remove(obj)
             self._channel_mapping.pop(obj.short_name)
 
@@ -648,10 +642,8 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentChannel]):  # type: ig
         objects_tuple = tuple(objects)
         if not all(isinstance(obj, self._chan_type) for obj in objects_tuple):
             raise TypeError("All items in a channel list must be of the same type.")
-        channels = cast(List[InstrumentChannel], self._channels)
-        channels.extend(objects_tuple)
+        self._channels.extend(objects_tuple)
         self._channel_mapping.update({obj.short_name: obj for obj in objects})
-        self._channels = channels
 
     def insert(self, index: int, obj: InstrumentChannel) -> None:
         """
@@ -661,7 +653,7 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentChannel]):  # type: ig
             index: Index to insert object.
             obj: Object of type chan_type to insert.
         """
-        if isinstance(self._channels, tuple) or self._locked:
+        if self._locked:
             raise AttributeError("Cannot insert into a locked channel list")
         if not isinstance(obj, self._chan_type):
             raise TypeError(
@@ -669,7 +661,6 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentChannel]):  # type: ig
                 "type. Adding {} to a list of {}"
                 ".".format(type(obj).__name__, self._chan_type.__name__)
             )
-        self._channels = cast(List[InstrumentChannel], self._channels)
         self._channels.insert(index, obj)
         self._channel_mapping[obj.short_name] = obj
 
@@ -696,8 +687,6 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentChannel]):  # type: ig
         """
         if self._locked:
             return
-
-        self._channels = tuple(self._channels)
         self._locked = True
 
     def to_channel_tuple(self) -> ChannelTuple:
