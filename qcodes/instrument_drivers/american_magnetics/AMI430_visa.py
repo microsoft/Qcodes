@@ -526,6 +526,8 @@ class AMI430(VisaInstrument):
         try:
             super().write_raw(cmd)
         except VisaIOError as err:
+            # The ami communication has found to be unstable
+            # so we retry the communication here
             self.log.exception(
                 f"Got VisaIOError while writing {cmd} to instrument."
                 f"Will retry in {self._RETRY_TIME} sec."
@@ -542,6 +544,8 @@ class AMI430(VisaInstrument):
         try:
             result = super().ask_raw(cmd)
         except VisaIOError as err:
+            # The ami communication has found to be unstable
+            # so we retry the communication here
             self.log.exception(
                 f"Got VisaIOError while asking the instrument: {cmd}"
                 f"Will retry in {self._RETRY_TIME} sec."
