@@ -2,7 +2,7 @@ from typing import Any
 
 import pytest
 
-from qcodes import Instrument, InstrumentChannel
+from qcodes import ChannelList, Instrument, InstrumentChannel
 from qcodes.instrument.base import InstrumentBase
 
 
@@ -120,6 +120,39 @@ class VoltageChannelSource(Instrument):
         self.add_submodule("voltage", channel)
 
 
+class VoltageAbstractChannelListSource(Instrument):
+    """
+    A channel instrument with an abstract parameter on the channellist.
+    This should raise.
+    """
+
+    def __init__(
+        self,
+        name: str,
+    ):
+        super().__init__(name)
+        channel = VoltageChannelBase(self, "voltage")
+        channellist = ChannelList(self, "cl", VoltageChannelBase, chan_list=[channel])
+        self.add_submodule("voltage", channellist)
+
+
+class VoltageChannelListSource(Instrument):
+    """
+    A channel instrument with an implementation of the
+    abstract parameter on the channellist.
+    This should not raise.
+    """
+
+    def __init__(
+        self,
+        name: str,
+    ):
+        super().__init__(name)
+        channel = VoltageChannel(self, "voltage")
+        channellist = ChannelList(self, "cl", VoltageChannel, chan_list=[channel])
+        self.add_submodule("voltage", channellist)
+
+
 @pytest.fixture(name="driver", scope="module")
 def _driver():
     drvr = VoltageSource("abstract_instrument_driver")
@@ -180,7 +213,7 @@ def test_exception_in_init():
     instance.close()
 
 
-def test_abstract_channel_raises(driver):
+def test_abstract_channel_raises():
     """
     Creating an instrument with a channel with abstract parameters should raise
     """
@@ -190,10 +223,30 @@ def test_abstract_channel_raises(driver):
         VoltageAbstractChannelSource("abstract_instrument_driver_7")
 
 
-def test_non_abstract_channel_does_not_raises(request, driver):
+def test_non_abstract_channel_does_not_raises(request):
     """
-    Creating an instrument with a channel that implements concrete
-    interface should not raise
+    Creating an instrument with a channel that implements the interface.
+    This should not raise
     """
     source = VoltageChannelSource("abstract_instrument_driver_8")
+    request.addfinalizer(source.close)
+
+
+def test_abstract_channellist_raises():
+    """
+    Creating an instrument with a channel (in a ChannelList)
+    with abstract parameters should raise
+    """
+    with pytest.raises(
+        NotImplementedError, match="has un-implemented Abstract Parameter"
+    ):
+        VoltageAbstractChannelListSource("abstract_instrument_driver_9")
+
+
+def test_non_abstract_channellist_does_not_raises(request):
+    """
+    Creating an instrument with a ChannelList that contains a
+    channel that implements the interface. This should not raise
+    """
+    source = VoltageChannelListSource("abstract_instrument_driver_10")
     request.addfinalizer(source.close)
