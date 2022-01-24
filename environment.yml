@@ -29,7 +29,6 @@ dependencies:
  - contextlib2 # for broadbean
  - conda-forge::websockets=8.1
  - conda-forge::schema
- - conda-forge::requirements-parser
  - pip:
     - pyvisa==1.11.1
     - broadbean>=0.9.1
