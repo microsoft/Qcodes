@@ -529,7 +529,7 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentChannel]):  # type: ig
     This behaves like a python list i.e. it implements the
     ``collections.abc.MutableSequence`` interface.
 
-    Note it may be useful to use the mutable ChannelList while construction it.
+    Note it may be useful to use the mutable ChannelList while constructing it.
     E.g. adding channels as they are created, but in most use cases it is recommended
     to convert this to a ``ChannelTuple`` before adding it to an instrument.
     This can be done using the ``to_channel_tuple`` method.
@@ -684,7 +684,7 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentChannel]):  # type: ig
         if not all(isinstance(obj, self._chan_type) for obj in objects_tuple):
             raise TypeError("All items in a channel list must be of the same type.")
         self._channels.extend(objects_tuple)
-        self._channel_mapping.update({obj.short_name: obj for obj in objects})
+        self._channel_mapping.update({obj.short_name: obj for obj in objects_tuple})
 
     def insert(self, index: int, obj: InstrumentChannel) -> None:
         """
