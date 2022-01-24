@@ -430,60 +430,7 @@ class ChannelTuple(Metadatable, Sequence[InstrumentChannel]):
         """
         # Check if this is a valid parameter
         if name in self._channels[0].parameters:
-            setpoints = None
-            setpoint_names = None
-            setpoint_labels = None
-            setpoint_units = None
-            # We need to construct a MultiParameter object to get each of the
-            # values our of each parameter in our list, we don't currently try
-            # to construct a multiparameter from a list of multi parameters
-            if isinstance(self._channels[0].parameters[name], MultiParameter):
-                raise NotImplementedError("Slicing is currently not "
-                                          "supported for MultiParameters")
-            parameters = cast(List[Union[Parameter, ArrayParameter]],
-                              [chan.parameters[name] for chan in self._channels])
-            names = tuple(f"{chan.name}_{name}"
-                          for chan in self._channels)
-            labels = tuple(parameter.label
-                           for parameter in parameters)
-            units = tuple(parameter.unit
-                          for parameter in parameters)
-
-            if isinstance(parameters[0], ArrayParameter):
-                arrayparameters = cast(List[ArrayParameter], parameters)
-                shapes = tuple(parameter.shape for
-                               parameter in arrayparameters)
-                if arrayparameters[0].setpoints:
-                    setpoints = tuple(parameter.setpoints for
-                                      parameter in arrayparameters)
-                if arrayparameters[0].setpoint_names:
-                    setpoint_names = tuple(parameter.setpoint_names for
-                                           parameter in arrayparameters)
-                if arrayparameters[0].setpoint_labels:
-                    setpoint_labels = tuple(
-                        parameter.setpoint_labels
-                        for parameter in arrayparameters)
-                if arrayparameters[0].setpoint_units:
-                    setpoint_units = tuple(parameter.setpoint_units
-                                           for parameter in arrayparameters)
-            else:
-                shapes = tuple(() for _ in self._channels)
-
-            param = self._paramclass(
-                self._channels,
-                param_name=name,
-                name=f"Multi_{name}",
-                names=names,
-                shapes=shapes,
-                instrument=self._parent,
-                labels=labels,
-                units=units,
-                setpoints=setpoints,
-                setpoint_names=setpoint_names,
-                setpoint_units=setpoint_units,
-                setpoint_labels=setpoint_labels,
-                bind_to_instrument=False,
-            )
+            param = self._construct_multiparam(name)
             return param
 
         # Check if this is a valid function
@@ -502,6 +449,61 @@ class ChannelTuple(Metadatable, Sequence[InstrumentChannel]):
 
         raise AttributeError('\'{}\' object has no attribute \'{}\''
                              ''.format(self.__class__.__name__, name))
+
+    def _construct_multiparam(self, name: str) -> MultiChannelInstrumentParameter:
+        setpoints = None
+        setpoint_names = None
+        setpoint_labels = None
+        setpoint_units = None
+        # We need to construct a MultiParameter object to get each of the
+        # values our of each parameter in our list, we don't currently try
+        # to construct a multiparameter from a list of multi parameters
+        if isinstance(self._channels[0].parameters[name], MultiParameter):
+            raise NotImplementedError(
+                "Slicing is currently not " "supported for MultiParameters"
+            )
+        parameters = cast(
+            List[Union[Parameter, ArrayParameter]],
+            [chan.parameters[name] for chan in self._channels],
+        )
+        names = tuple(f"{chan.name}_{name}" for chan in self._channels)
+        labels = tuple(parameter.label for parameter in parameters)
+        units = tuple(parameter.unit for parameter in parameters)
+        if isinstance(parameters[0], ArrayParameter):
+            arrayparameters = cast(List[ArrayParameter], parameters)
+            shapes = tuple(parameter.shape for parameter in arrayparameters)
+            if arrayparameters[0].setpoints:
+                setpoints = tuple(parameter.setpoints for parameter in arrayparameters)
+            if arrayparameters[0].setpoint_names:
+                setpoint_names = tuple(
+                    parameter.setpoint_names for parameter in arrayparameters
+                )
+            if arrayparameters[0].setpoint_labels:
+                setpoint_labels = tuple(
+                    parameter.setpoint_labels for parameter in arrayparameters
+                )
+            if arrayparameters[0].setpoint_units:
+                setpoint_units = tuple(
+                    parameter.setpoint_units for parameter in arrayparameters
+                )
+        else:
+            shapes = tuple(() for _ in self._channels)
+        param = self._paramclass(
+            self._channels,
+            param_name=name,
+            name=f"Multi_{name}",
+            names=names,
+            shapes=shapes,
+            instrument=self._parent,
+            labels=labels,
+            units=units,
+            setpoints=setpoints,
+            setpoint_names=setpoint_names,
+            setpoint_units=setpoint_units,
+            setpoint_labels=setpoint_labels,
+            bind_to_instrument=False,
+        )
+        return param
 
     def __dir__(self) -> List[Any]:
         names = list(super().__dir__())
