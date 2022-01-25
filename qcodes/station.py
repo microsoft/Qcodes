@@ -20,7 +20,18 @@ from pathlib import Path
 from types import ModuleType
 from typing import IO, Any, AnyStr
 from typing import Deque as Tdeque
-from typing import Dict, Iterable, List, Optional, Sequence, Tuple, Union, cast
+from typing import (
+    Dict,
+    Iterable,
+    List,
+    NoReturn,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    cast,
+    overload,
+)
 
 import jsonschema
 import ruamel.yaml
@@ -632,6 +643,38 @@ class Station(Metadatable, DelegateAttributes):
         self.add_component(instr)
         update_monitor()
         return instr
+
+    @overload
+    def load_all_instruments(
+        self,
+        only_names: None,
+        only_types: Iterable[str],
+    ) -> Tuple[str, ...]:
+        ...
+
+    @overload
+    def load_all_instruments(
+        self,
+        only_names: Iterable[str],
+        only_types: None,
+    ) -> Tuple[str, ...]:
+        ...
+
+    @overload
+    def load_all_instruments(
+        self,
+        only_names: None,
+        only_types: None,
+    ) -> Tuple[str, ...]:
+        ...
+
+    @overload
+    def load_all_instruments(
+        self,
+        only_names: Iterable[str],
+        only_types: Iterable[str],
+    ) -> NoReturn:
+        ...
 
     def load_all_instruments(self,
                              only_names: Optional[Iterable[str]] = None,
