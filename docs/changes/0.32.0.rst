@@ -56,6 +56,9 @@ Improved:
   are allowed submodules. (#3840)
 - Empty ChannelTuples/Lists now correctly raise an attribute error when trying
   to get a non existing attribute. Previously they would raise an IndexError. (#3856)
+- Add function argument for ``Monitor`` creation to allow grouping of parameters according to channels rather
+  than instrument. Specifically, group according to ``parameter.instrument`` instead of ``parameter.root_insturment``.
+  Default behavior is the current behavior with sorting by ``root_instrument``. (#3820)
 
 
 Improved Drivers:
