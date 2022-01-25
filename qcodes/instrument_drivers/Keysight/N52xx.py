@@ -281,6 +281,7 @@ class PNATrace(InstrumentChannel):
                 msg += "The trigger source is external. Is the trigger " \
                        "source functional?"
             self.log.warning(msg)
+            raise
 
         # Return previous mode, incase we want to restore this
         return prev_mode
