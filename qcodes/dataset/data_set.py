@@ -49,6 +49,7 @@ from qcodes.dataset.sqlite.database import (
 from qcodes.dataset.sqlite.queries import (
     _check_if_table_found,
     _get_result_table_name_by_guid,
+    _query_guids_from_run_spec,
     add_data_to_dynamic_columns,
     add_parameter,
     completed,
@@ -58,7 +59,6 @@ from qcodes.dataset.sqlite.queries import (
     get_experiment_name_from_experiment_id,
     get_guid_from_expid_and_counter,
     get_guid_from_run_id,
-    get_guids_from_run_spec,
     get_metadata_from_run_id,
     get_parameter_data,
     get_parent_dataset_links,
@@ -1552,7 +1552,7 @@ def get_guids_by_run_spec(
     """
     internal_conn = conn or connect(get_DB_location())
     try:
-        guids = get_guids_from_run_spec(
+        guids = _query_guids_from_run_spec(
             internal_conn,
             captured_run_id=captured_run_id,
             captured_counter=captured_counter,

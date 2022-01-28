@@ -5,6 +5,7 @@ import pytest
 
 from qcodes.dataset.data_set import (
     DataSet,
+    get_guids_by_run_spec,
     load_by_counter,
     load_by_guid,
     load_by_id,
@@ -16,7 +17,6 @@ from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.experiment_container import new_experiment
 from qcodes.dataset.sqlite.queries import (
     get_experiment_attributes_by_exp_id,
-    get_guids_from_run_spec,
     get_raw_run_attributes,
     raw_time_to_str_time,
 )
@@ -262,7 +262,7 @@ def test_load_by_run_spec(empty_temp_db, some_interdeps):
 
     conn = created_ds[0].conn
 
-    guids = get_guids_from_run_spec(conn=conn)
+    guids = get_guids_by_run_spec(conn=conn)
     assert len(guids) == 3
 
     # since we are not copying runs from multiple dbs we can always load by
@@ -275,24 +275,24 @@ def test_load_by_run_spec(empty_temp_db, some_interdeps):
 
     # All the datasets datasets have the same captured counter
     # so we cannot load by that alone
-    guids_cc1 = get_guids_from_run_spec(captured_counter=1, conn=conn)
+    guids_cc1 = get_guids_by_run_spec(captured_counter=1, conn=conn)
     assert len(guids_cc1) == 3
     with pytest.raises(NameError, match="More than one matching"):
         load_by_run_spec(captured_counter=1)
 
     # there are two different experiments with exp name "test-experiment1"
     # and thus 2 different datasets with counter=1 and that exp name
-    guids_cc1_te1 = get_guids_from_run_spec(captured_counter=1,
-                                            experiment_name='te1',
-                                            conn=conn)
+    guids_cc1_te1 = get_guids_by_run_spec(
+        captured_counter=1, experiment_name="te1", conn=conn
+    )
     assert len(guids_cc1_te1) == 2
     with pytest.raises(NameError, match="More than one matching"):
         load_by_run_spec(captured_counter=1, experiment_name="te1", conn=conn)
 
     # but for "test-experiment2" there is only one
-    guids_cc1_te2 = get_guids_from_run_spec(captured_counter=1,
-                                            experiment_name='te2',
-                                            conn=conn)
+    guids_cc1_te2 = get_guids_by_run_spec(
+        captured_counter=1, experiment_name="te2", conn=conn
+    )
     assert len(guids_cc1_te2) == 1
     loaded_ds = load_by_run_spec(captured_counter=1,
                                  experiment_name="te2",
@@ -302,9 +302,9 @@ def test_load_by_run_spec(empty_temp_db, some_interdeps):
 
     # there are two different experiments with sample name "test_sample2" but
     # different exp names so the counter is not unique
-    guids_cc1_ts2 = get_guids_from_run_spec(captured_counter=1,
-                                            sample_name='ts2',
-                                            conn=conn)
+    guids_cc1_ts2 = get_guids_by_run_spec(
+        captured_counter=1, sample_name="ts2", conn=conn
+    )
     assert len(guids_cc1_ts2) == 2
     with pytest.raises(NameError, match="More than one matching"):
         load_by_run_spec(captured_counter=1,
@@ -312,9 +312,9 @@ def test_load_by_run_spec(empty_temp_db, some_interdeps):
                          conn=conn)
 
     # but for  "test_sample1" there is only one
-    guids_cc1_ts1 = get_guids_from_run_spec(captured_counter=1,
-                                            sample_name='ts1',
-                                            conn=conn)
+    guids_cc1_ts1 = get_guids_by_run_spec(
+        captured_counter=1, sample_name="ts1", conn=conn
+    )
     assert len(guids_cc1_ts1) == 1
     loaded_ds = load_by_run_spec(captured_counter=1,
                                  sample_name="ts1",
@@ -335,6 +335,5 @@ def test_load_by_run_spec(empty_temp_db, some_interdeps):
     with pytest.raises(NameError, match="No run matching"):
         load_by_run_spec(captured_counter=10000, sample_name="ts2", conn=conn)
 
-    empty_guid_list = get_guids_from_run_spec(conn=conn,
-                                              experiment_name='nosuchexp')
+    empty_guid_list = get_guids_by_run_spec(conn=conn, experiment_name="nosuchexp")
     assert empty_guid_list == []
