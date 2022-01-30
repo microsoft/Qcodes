@@ -46,7 +46,7 @@ pandas==1.4.0; python_version>='3.8'
 pandocfilters==1.5.0
 parso==0.8.3
 pickleshare==0.7.5
-prometheus-client==0.13.0
+prometheus-client==0.13.1
 prompt-toolkit==3.0.26
 pycparser==2.21
 Pygments==2.11.2
