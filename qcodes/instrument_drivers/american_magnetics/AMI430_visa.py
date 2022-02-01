@@ -5,6 +5,7 @@ import numbers
 import time
 import warnings
 from collections import defaultdict
+from contextlib import ExitStack
 from functools import partial
 from typing import (
     Any,
@@ -1005,33 +1006,52 @@ class AMI430_3D(Instrument):
             )
 
     def _perform_simultaneous_ramp(self, values: Tuple[float, float, float]) -> None:
-        self._update_individual_axes_ramp_rates(values)
-
-        axes = (self._instrument_x, self._instrument_y, self._instrument_z)
-
-        for axis_instrument, value in zip(axes, values):
-            current_actual = axis_instrument.field()
-
-            # If the new set point is practically equal to the
-            # current one then do nothing
-            if np.isclose(value, current_actual, rtol=0, atol=1e-8):
-                self.log.debug(
-                    f"Simultaneous ramp: {axis_instrument.short_name} is "
-                    f"already at target field {value} "
-                    f"{axis_instrument.field.unit} "
-                    f"({current_actual} exactly)"
+        with ExitStack() as restore_ramp_rates_stack:
+            for instrument in (self._instrument_x, self._instrument_y, self._instrument_z):
+                restore_ramp_rates_stack.enter_context(
+                    instrument.ramp_rate.restore_at_exit()
                 )
-                continue
-
-            self.log.debug(
-                f"Simultaneous ramp: setting {axis_instrument.short_name} "
-                f"target field to {value} {axis_instrument.field.unit}"
+            restore_ramp_rates_stack.callback(
+                self.log.debug,
+                "Simultaneous ramp: restoring inidividual axes ramp rates"
             )
-            axis_instrument.set_field(value, perform_safety_check=False, block=False)
 
-        if self.block_during_ramp() is True:
-            self.log.debug(f"Simultaneous ramp: blocking until ramp is finished")
-            self.wait_while_all_axes_ramping()
+            self._update_individual_axes_ramp_rates(values)
+
+            axes = (self._instrument_x, self._instrument_y, self._instrument_z)
+
+            for axis_instrument, value in zip(axes, values):
+                current_actual = axis_instrument.field()
+
+                # If the new set point is practically equal to the
+                # current one then do nothing
+                if np.isclose(value, current_actual, rtol=0, atol=1e-8):
+                    self.log.debug(
+                        f"Simultaneous ramp: {axis_instrument.short_name} is "
+                        f"already at target field {value} "
+                        f"{axis_instrument.field.unit} "
+                        f"({current_actual} exactly)"
+                    )
+                    continue
+
+                self.log.debug(
+                    f"Simultaneous ramp: setting {axis_instrument.short_name} "
+                    f"target field to {value} {axis_instrument.field.unit}"
+                )
+                axis_instrument.set_field(value, perform_safety_check=False, block=False)
+
+            if self.block_during_ramp() is True:
+                self.log.debug(f"Simultaneous ramp: blocking until ramp is finished")
+                self.wait_while_all_axes_ramping()
+            else:
+                # Do not restore ramp rates of individual axes if we are not
+                # blocking until the ramp has finished
+                self.log.debug(
+                    "Simultaneous ramp: not going to restore "
+                    "inidividual axes ramp rates because not waiting until "
+                    "ramping is complete"
+                )
+                restore_ramp_rates_stack.pop_all()
 
         self.log.debug(f"Simultaneous ramp: returning from the ramp call")
 
