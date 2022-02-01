@@ -828,6 +828,10 @@ class AMI430_3D(Instrument):
         If ``block_during_ramp`` parameter is ``True``, the method will block
         until all axes finished ramping.
 
+        If ``block_during_ramp`` parameter is ``True``, the ramp rates of
+        individual magnet axes will be restored after the end of the
+        ramp to their original values before the call of this method.
+
         It is required for all axis instruments to have the same units for
         ramp rate and field, otherwise an exception is raised. The given
         setpoint and time are assumed to be in those common units.
