@@ -1013,7 +1013,7 @@ class AMI430_3D(Instrument):
                 )
             restore_ramp_rates_stack.callback(
                 self.log.debug,
-                "Simultaneous ramp: restoring inidividual axes ramp rates"
+                "Simultaneous ramp: restoring individual axes ramp rates",
             )
 
             self._update_individual_axes_ramp_rates(values)
@@ -1048,7 +1048,7 @@ class AMI430_3D(Instrument):
                 # blocking until the ramp has finished
                 self.log.debug(
                     "Simultaneous ramp: not going to restore "
-                    "inidividual axes ramp rates because not waiting until "
+                    "individual axes ramp rates because not waiting until "
                     "ramping is complete"
                 )
                 restore_ramp_rates_stack.pop_all()
