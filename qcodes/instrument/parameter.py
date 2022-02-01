@@ -481,8 +481,10 @@ class _BaseParameter(Metadatable):
         """
         if self.snapshot_exclude:
             warnings.warn(
-                f"Parameter ({self.name}) is used in the snapshot while it "
-                f"should be excluded from the snapshot")
+                f"Parameter ({self.full_name}) is used in the snapshot while it "
+                f"should be excluded from the snapshot",
+                stacklevel=2,
+            )
 
         state: Dict[str, Any] = {'__class__': full_class(self),
                                  'full_name': str(self)}
