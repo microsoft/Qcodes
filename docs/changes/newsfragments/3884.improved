@@ -1,0 +1,3 @@
+The warning triggered when a parameter is added to the snapshot incorrectly has been improved to include the
+name of the full instrument and two levels of stack information. This should make it easier to find the
+problematic parameter.
