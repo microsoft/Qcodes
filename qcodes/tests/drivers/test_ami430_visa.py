@@ -3,6 +3,7 @@ import logging
 import re
 import time
 import warnings
+from contextlib import ExitStack
 from typing import List
 
 import numpy as np
@@ -484,6 +485,144 @@ def test_ramp_rate_exception(current_driver):
 
     with pytest.raises(ValueError, match="is above the ramp rate limit of"):
         ix.ramp_rate(target_ramp_rate)
+
+
+def test_simultaneous_ramp_mode_does_not_reset_individual_axis_ramp_rates_if_nonblocking_ramp(
+    current_driver, caplog
+):
+    ami3d = current_driver
+
+    ami3d.cartesian((0.0, 0.0, 0.0))
+
+    with caplog.at_level(
+        logging.DEBUG, logger="qcodes.instrument.base"
+    ), ExitStack() as restore_parameters_stack:
+        restore_parameters_stack.callback(ami3d.cartesian, (0.0, 0.0, 0.0))
+
+        restore_parameters_stack.enter_context(
+            ami3d._instrument_x.ramp_rate.restore_at_exit()
+        )
+        restore_parameters_stack.enter_context(
+            ami3d._instrument_y.ramp_rate.restore_at_exit()
+        )
+        restore_parameters_stack.enter_context(
+            ami3d._instrument_z.ramp_rate.restore_at_exit()
+        )
+
+        restore_parameters_stack.enter_context(ami3d.ramp_mode.set_to("simultaneous"))
+
+        restore_parameters_stack.enter_context(ami3d.block_during_ramp.set_to(False))
+
+        # Set individual ramp rates to known values
+        ami3d._instrument_x.ramp_rate(0.09)
+        ami3d._instrument_y.ramp_rate(0.10)
+        ami3d._instrument_z.ramp_rate(0.11)
+
+        ami3d.vector_ramp_rate(0.05)
+
+        # Initiate the simultaneous ramp
+        ami3d.cartesian((0.5, 0.5, 0.5))
+
+        # Assert the individual axes ramp rates were changed and not reverted
+        # to the known values set earlier
+        assert ami3d._instrument_x.ramp_rate() != 0.09
+        assert ami3d._instrument_y.ramp_rate() != 0.10
+        assert ami3d._instrument_z.ramp_rate() != 0.11
+
+        # Assert the expected values of the ramp rates of the individual axes
+        # set by the simultaneous ramp based on the vector_ramp_rate and the
+        # setpoint magnetic field
+        expected_ramp_rate = pytest.approx(
+            0.5 / np.linalg.norm(ami3d.cartesian(), ord=2) * ami3d.vector_ramp_rate()
+        )
+        assert ami3d._instrument_x.ramp_rate() == expected_ramp_rate
+        assert ami3d._instrument_y.ramp_rate() == expected_ramp_rate
+        assert ami3d._instrument_z.ramp_rate() == expected_ramp_rate
+
+    messages = [record.message for record in caplog.records]
+
+    expected_log_fragment = (
+        "not going to restore individual axes ramp rates "
+        "because not waiting until ramping is complete"
+    )
+    messages_with_expected_fragment = tuple(
+        message for message in messages if expected_log_fragment in message
+    )
+    assert (
+        len(messages_with_expected_fragment) == 1
+    ), f"found: {messages_with_expected_fragment}"
+
+    unexpected_log_fragment = "restoring individual axes ramp rates"
+    messages_with_unexpected_fragment = tuple(
+        message for message in messages if unexpected_log_fragment in message
+    )
+    assert (
+        len(messages_with_unexpected_fragment) == 0
+    ), f"found: {messages_with_unexpected_fragment}"
+
+
+def test_simultaneous_ramp_mode_resets_individual_axis_ramp_rates_if_blocking_ramp(
+    current_driver, caplog
+):
+    ami3d = current_driver
+
+    ami3d.cartesian((0.0, 0.0, 0.0))
+
+    with caplog.at_level(
+        logging.DEBUG, logger="qcodes.instrument.base"
+    ), ExitStack() as restore_parameters_stack:
+        restore_parameters_stack.callback(ami3d.cartesian, (0.0, 0.0, 0.0))
+
+        restore_parameters_stack.enter_context(
+            ami3d._instrument_x.ramp_rate.restore_at_exit()
+        )
+        restore_parameters_stack.enter_context(
+            ami3d._instrument_y.ramp_rate.restore_at_exit()
+        )
+        restore_parameters_stack.enter_context(
+            ami3d._instrument_z.ramp_rate.restore_at_exit()
+        )
+
+        restore_parameters_stack.enter_context(ami3d.ramp_mode.set_to("simultaneous"))
+
+        restore_parameters_stack.enter_context(ami3d.block_during_ramp.set_to(True))
+
+        # Set individual ramp rates to known values
+        ami3d._instrument_x.ramp_rate(0.09)
+        ami3d._instrument_y.ramp_rate(0.10)
+        ami3d._instrument_z.ramp_rate(0.11)
+
+        ami3d.vector_ramp_rate(0.05)
+
+        # Initiate the simultaneous ramp
+        ami3d.cartesian((0.5, 0.5, 0.5))
+
+        # Assert the individual axes ramp rates were changed and not reverted
+        # to the known values set earlier
+        assert ami3d._instrument_x.ramp_rate() == 0.09
+        assert ami3d._instrument_y.ramp_rate() == 0.10
+        assert ami3d._instrument_z.ramp_rate() == 0.11
+
+    messages = [record.message for record in caplog.records]
+
+    expected_log_fragment = "restoring individual axes ramp rates"
+    messages_with_expected_fragment = tuple(
+        message for message in messages if expected_log_fragment in message
+    )
+    assert (
+        len(messages_with_expected_fragment) == 1
+    ), f"found: {messages_with_expected_fragment}"
+
+    unexpected_log_fragment = (
+        "not going to restore individual axes ramp "
+        "rates because not waiting until ramping is complete"
+    )
+    messages_with_unexpected_fragment = tuple(
+        message for message in messages if unexpected_log_fragment in message
+    )
+    assert (
+        len(messages_with_unexpected_fragment) == 0
+    ), f"found: {messages_with_unexpected_fragment}"
 
 
 def test_reducing_field_ramp_limit_reduces_a_higher_ramp_rate(ami430):
