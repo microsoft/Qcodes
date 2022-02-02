@@ -21,4 +21,4 @@ repos:
     hooks:
       -   id: darker
           args: [-i]
-          additional_dependencies: [isort]
+          additional_dependencies: [isort, black==21.12b0]
