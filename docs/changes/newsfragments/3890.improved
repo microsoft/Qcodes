@@ -1,0 +1,6 @@
+Development versions of QCoDeS are now formatted as
+``{version}.dev{distance}+{vcs}{rev}.dirty``
+e.g. ``0.32.0.dev14+gxxxxx(.dirty)``
+rather than "{version}+{distance}.{vcs}{rev}". This is
+done since pip in some cases considers the later equal to the released
+version.
