@@ -1,6 +1,10 @@
 Development versions of QCoDeS are now formatted as
-``{version}.dev{distance}+{vcs}{rev}.dirty``
-e.g. ``0.32.0.dev14+gxxxxx(.dirty)``
+``{version}.dev{distance}+{branch}{vcs}{rev}.dirty``
+e.g. ``0.32.0.dev14+name.of.branch.gxxxxx(.dirty)``
 rather than "{version}+{distance}.{vcs}{rev}". This is
 done since pip in some cases considers the later equal to the released
-version.
+version and include more info to let you easily identify the
+branch installed from. Note that due to limitations in characters
+in version numbers `/_-` are normalized to `.` e.g. a branch named
+``myname/my_branch-name`` becomes `myname.my.branch.name` in the
+version number.
