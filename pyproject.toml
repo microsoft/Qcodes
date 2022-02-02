@@ -111,9 +111,9 @@ showcontent = true
 default-version = "0.0"
 
 [tool.versioningit.format]
-distance = "{version}.dev{distance}+{vcs}{rev}"
-dirty = "{version}.dev{distance}+{vcs}{rev}.dirty"
-distance-dirty = "{version}.dev{distance}+{vcs}{rev}.dirty"
+distance = "{version}.dev{distance}+{branch}.{vcs}{rev}"
+dirty = "{version}.dev{distance}+{branch}.{vcs}{rev}.dirty"
+distance-dirty = "{version}.dev{distance}+{branch}.{vcs}{rev}.dirty"
 
 [tool.versioningit.vcs]
 method = "git"
