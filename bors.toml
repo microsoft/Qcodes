@@ -29,3 +29,4 @@ pr_status = [
 ]
 delete_merged_branches = true
 required_approvals = 1
+prerun_timeout_sec = 7200
