@@ -811,6 +811,8 @@ class AMI430_3D(Instrument):
         )
         """Ramp rate along a line (vector) in 3D field space"""
 
+        self._context_to_exit_after_ramp_finished: list = []
+
     def _set_vector_ramp_rate_units(self, val: float) -> float:
         _, common_ramp_rate_units = self._raise_if_not_same_field_and_ramp_rate_units()
         self.vector_ramp_rate.unit = common_ramp_rate_units
@@ -1010,52 +1012,49 @@ class AMI430_3D(Instrument):
             )
 
     def _perform_simultaneous_ramp(self, values: Tuple[float, float, float]) -> None:
-        with ExitStack() as restore_ramp_rates_stack:
-            for instrument in (self._instrument_x, self._instrument_y, self._instrument_z):
-                restore_ramp_rates_stack.enter_context(
-                    instrument.ramp_rate.restore_at_exit()
-                )
-            restore_ramp_rates_stack.callback(
-                self.log.debug,
-                "Simultaneous ramp: restoring individual axes ramp rates",
+        restore_ramp_rates_stack = ExitStack()
+        for instrument in (self._instrument_x, self._instrument_y, self._instrument_z):
+            restore_ramp_rates_stack.enter_context(
+                instrument.ramp_rate.restore_at_exit()
             )
+        restore_ramp_rates_stack.callback(
+            self.log.debug,
+            "Simultaneous ramp: restoring individual axes ramp rates",
+        )
 
-            self._update_individual_axes_ramp_rates(values)
+        self._update_individual_axes_ramp_rates(values)
 
-            axes = (self._instrument_x, self._instrument_y, self._instrument_z)
+        self._context_to_exit_after_ramp_finished = [restore_ramp_rates_stack]
 
-            for axis_instrument, value in zip(axes, values):
-                current_actual = axis_instrument.field()
+        axes = (self._instrument_x, self._instrument_y, self._instrument_z)
 
-                # If the new set point is practically equal to the
-                # current one then do nothing
-                if np.isclose(value, current_actual, rtol=0, atol=1e-8):
-                    self.log.debug(
-                        f"Simultaneous ramp: {axis_instrument.short_name} is "
-                        f"already at target field {value} "
-                        f"{axis_instrument.field.unit} "
-                        f"({current_actual} exactly)"
-                    )
-                    continue
+        for axis_instrument, value in zip(axes, values):
+            current_actual = axis_instrument.field()
 
+            # If the new set point is practically equal to the
+            # current one then do nothing
+            if np.isclose(value, current_actual, rtol=0, atol=1e-8):
                 self.log.debug(
-                    f"Simultaneous ramp: setting {axis_instrument.short_name} "
-                    f"target field to {value} {axis_instrument.field.unit}"
+                    f"Simultaneous ramp: {axis_instrument.short_name} is "
+                    f"already at target field {value} "
+                    f"{axis_instrument.field.unit} "
+                    f"({current_actual} exactly)"
                 )
-                axis_instrument.set_field(value, perform_safety_check=False, block=False)
+                continue
 
-            if self.block_during_ramp() is True:
-                self.log.debug(f"Simultaneous ramp: blocking until ramp is finished")
-                self.wait_while_all_axes_ramping()
-            else:
-                # Do not restore ramp rates of individual axes if we are not
-                # blocking until the ramp has finished
-                self.log.debug(
-                    "Simultaneous ramp: not going to restore "
-                    "individual axes ramp rates because not waiting until "
-                    "ramping is complete"
-                )
-                restore_ramp_rates_stack.pop_all()
+            self.log.debug(
+                f"Simultaneous ramp: setting {axis_instrument.short_name} "
+                f"target field to {value} {axis_instrument.field.unit}"
+            )
+            axis_instrument.set_field(value, perform_safety_check=False, block=False)
+
+        if self.block_during_ramp() is True:
+            self.log.debug(f"Simultaneous ramp: blocking until ramp is finished")
+            self.wait_while_all_axes_ramping()
+        else:
+            self.log.debug(
+                "Simultaneous ramp: not blocking until ramp is finished"
+            )
 
         self.log.debug(f"Simultaneous ramp: returning from the ramp call")
 
@@ -1089,6 +1088,9 @@ class AMI430_3D(Instrument):
         """Wait and blocks as long as any magnet axis is ramping."""
         while self.any_axis_is_ramping():
             self._instrument_x._sleep(self.ramping_state_check_interval.get())
+        for context_to_exit in self._context_to_exit_after_ramp_finished:
+            context_to_exit.__exit__(None, None, None)
+        self._context_to_exit_after_ramp_finished = []
 
     def any_axis_is_ramping(self) -> bool:
         """
