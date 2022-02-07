@@ -63,7 +63,8 @@ pyzmq==22.3.0
 qtconsole==5.2.2
 QtPy==2.0.1
 requests==2.27.1
-scipy==1.7.3
+scipy==1.7.3; python_version<'3.8'
+scipy==1.8.0; python_version>='3.8'
 Send2Trash==1.8.0
 six==1.16.0
 snowballstemmer==2.2.0
