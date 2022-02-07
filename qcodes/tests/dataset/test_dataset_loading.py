@@ -17,9 +17,11 @@ from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.experiment_container import new_experiment
 from qcodes.dataset.sqlite.queries import (
     get_experiment_attributes_by_exp_id,
+    get_guids_from_run_spec,
     get_raw_run_attributes,
     raw_time_to_str_time,
 )
+from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 
 @pytest.mark.usefixtures("experiment")
@@ -52,6 +54,21 @@ def test_load_by_id():
                                          f"{non_existing_run_id} does not "
                                          f"exist in the database"):
         _ = load_by_id(non_existing_run_id)
+
+
+@pytest.mark.usefixtures("experiment")
+def test_get_guids_from_run_spec_warns():
+    ds = new_data_set("test-dataset")
+    run_id = ds.run_id
+    ds.mark_started()
+    ds.mark_completed()
+    expected_guid = ds.guid
+    with pytest.warns(
+        expected_warning=QCoDeSDeprecationWarning, match="Unused part of private api"
+    ):
+        loaded_guids = get_guids_from_run_spec(captured_run_id=run_id, conn=ds.conn)
+    assert len(loaded_guids) == 1
+    assert loaded_guids[0] == expected_guid
 
 
 @pytest.mark.usefixtures("empty_temp_db")
