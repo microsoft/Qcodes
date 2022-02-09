@@ -11,6 +11,6 @@ jobs:
           fetch-depth: 0
       - uses: akaihola/darker@1.4.0
         with:
-          options: "--check --diff -r master -i"
+          options: "--check --diff -r origin/master -i"
           src: "./qcodes"
           version: "1.4.0"
