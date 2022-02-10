@@ -1,26 +1,23 @@
-from unittest.mock import MagicMock, call
-import re
 import math
+import re
+from unittest.mock import MagicMock, call
 
 import pytest
 
 from qcodes.instrument_drivers.Keysight.keysightb1500 import constants
-from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1517A import \
-    B1517A
-from qcodes.instrument_drivers.Keysight.keysightb1500.constants import \
-    VOutputRange, CompliancePolarityMode, IOutputRange, IMeasRange, \
-    VMeasRange, MM
-
-# pylint: disable=redefined-outer-name
-
-
-@pytest.fixture
-def mainframe():
-    yield MagicMock()
+from qcodes.instrument_drivers.Keysight.keysightb1500.constants import (
+    MM,
+    CompliancePolarityMode,
+    IMeasRange,
+    IOutputRange,
+    VMeasRange,
+    VOutputRange,
+)
+from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1517A import B1517A
 
 
-@pytest.fixture
-def smu(mainframe):
+@pytest.fixture(name="smu")
+def _make_smu(mainframe):
     slot_nr = 1
     smu = B1517A(parent=mainframe, name='B1517A', slot_nr=slot_nr)
     yield smu
@@ -28,6 +25,7 @@ def smu(mainframe):
 
 def test_snapshot():
     from qcodes.instrument.base import InstrumentBase
+
     # We need to use `InstrumentBase` (not a bare mock) in order for
     # `snapshot` methods call resolution to work out
     mainframe = InstrumentBase(name='mainframe')

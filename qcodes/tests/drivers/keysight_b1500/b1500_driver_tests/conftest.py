@@ -1,3 +1,5 @@
+from unittest.mock import MagicMock
+
 import pytest
 from pyvisa import VisaIOError
 
@@ -28,3 +30,8 @@ def _make_b1500(request):
     instance.reset()
 
     yield instance
+
+
+@pytest.fixture(name="mainframe")
+def _make_mainframe():
+    yield MagicMock()

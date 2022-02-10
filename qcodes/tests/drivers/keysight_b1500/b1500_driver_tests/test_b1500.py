@@ -18,8 +18,7 @@ from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1520A import B152
 from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1530A import B1530A
 
 
-def test_make_module_from_model_name():
-    mainframe = MagicMock()
+def test_make_module_from_model_name(mainframe):
 
     with pytest.raises(NotImplementedError):
         KeysightB1500.from_model_name(model='unsupported_module', slot_nr=0,

@@ -1,15 +1,21 @@
 import math
 from unittest.mock import MagicMock
 
-from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1517A import \
-    B1517A
-from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_module import \
-    parse_module_query_response, format_dcorr_response, _DCORRResponse, \
-    fixed_negative_float, get_name_label_unit_of_impedance_model, \
-    convert_dummy_val_to_nan, _FMTResponse, \
-    convert_dummy_val_to_nan
-from qcodes.instrument_drivers.Keysight.keysightb1500.constants import \
-    SlotNr, DCORR, IMP
+from qcodes.instrument_drivers.Keysight.keysightb1500.constants import (
+    DCORR,
+    IMP,
+    SlotNr,
+)
+from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_module import (
+    _DCORRResponse,
+    _FMTResponse,
+    convert_dummy_val_to_nan,
+    fixed_negative_float,
+    format_dcorr_response,
+    get_name_label_unit_of_impedance_model,
+    parse_module_query_response,
+)
+from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1517A import B1517A
 
 
 def test_is_enabled():
