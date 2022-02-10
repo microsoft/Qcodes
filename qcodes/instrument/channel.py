@@ -64,10 +64,7 @@ class InstrumentModule(InstrumentBase):
 
     def __repr__(self) -> str:
         """Custom repr to give parent information"""
-        return '<{}: {} of {}: {}>'.format(type(self).__name__,
-                                           self.name,
-                                           type(self._parent).__name__,
-                                           self._parent.name)
+        return f"<{type(self).__name__}: {self.name} of {type(self._parent).__name__}: {self._parent.name}>"
 
     # Pass any commands to read or write from the instrument up to the parent
     def write(self, cmd: str) -> None:
@@ -293,9 +290,7 @@ class ChannelTuple(Metadatable, Sequence[InstrumentChannel]):
         return item in self._channels
 
     def __repr__(self) -> str:
-        return "ChannelTuple({!r}, {}, {!r})".format(
-            self._parent, self._chan_type.__name__, self._channels
-        )
+        return f"ChannelTuple({self._parent!r}, {self._chan_type.__name__}, {self._channels!r})"
 
     def __add__(self: T, other: "ChannelTuple") -> T:
         """
@@ -309,15 +304,16 @@ class ChannelTuple(Metadatable, Sequence[InstrumentChannel]):
         """
         if not isinstance(self, ChannelTuple) or not isinstance(other, ChannelTuple):
             raise TypeError(
-                "Can't add objects of type"
-                " {} and {} together".format(type(self).__name__, type(other).__name__)
+                f"Can't add objects of type"
+                f" {type(self).__name__} and {type(other).__name__} together"
             )
         if self._chan_type != other._chan_type:
-            raise TypeError("Both l and r arguments to add must contain "
-                            "channels of the same type."
-                            " Adding channels of type "
-                            "{} and {}.".format(self._chan_type.__name__,
-                                                other._chan_type.__name__))
+            raise TypeError(
+                f"Both l and r arguments to add must contain "
+                f"channels of the same type."
+                f" Adding channels of type "
+                f"{self._chan_type.__name__} and {other._chan_type.__name__}."
+            )
         if self._parent != other._parent:
             raise ValueError("Can only add channels from the same parent "
                              "together.")
@@ -449,8 +445,9 @@ class ChannelTuple(Metadatable, Sequence[InstrumentChannel]):
         except KeyError:
             pass
 
-        raise AttributeError('\'{}\' object has no attribute \'{}\''
-                             ''.format(self.__class__.__name__, name))
+        raise AttributeError(
+            f"'{self.__class__.__name__}' object has no attribute '{name}'"
+        )
 
     def _construct_multiparam(self, name: str) -> MultiChannelInstrumentParameter:
         setpoints = None
@@ -642,9 +639,8 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentChannel]):  # type: ig
             raise AttributeError("Cannot append to a locked channel list")
         if not isinstance(obj, self._chan_type):
             raise TypeError(
-                "All items in a channel list must be of the same "
-                "type. Adding {} to a list of {}"
-                ".".format(type(obj).__name__, self._chan_type.__name__)
+                f"All items in a channel list must be of the same "
+                f"type. Adding {type(obj).__name__} to a list of {self._chan_type.__name__}"
             )
         self._channel_mapping[obj.short_name] = obj
         self._channels.append(obj)
@@ -702,9 +698,8 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentChannel]):  # type: ig
             raise AttributeError("Cannot insert into a locked channel list")
         if not isinstance(obj, self._chan_type):
             raise TypeError(
-                "All items in a channel list must be of the same "
-                "type. Adding {} to a list of {}"
-                ".".format(type(obj).__name__, self._chan_type.__name__)
+                f"All items in a channel list must be of the same "
+                f"type. Adding {type(obj).__name__} to a list of {self._chan_type.__name__}"
             )
         self._channels.insert(index, obj)
         self._channel_mapping[obj.short_name] = obj
@@ -749,9 +744,7 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentChannel]):  # type: ig
         )
 
     def __repr__(self) -> str:
-        return "ChannelList({!r}, {}, {!r})".format(
-            self._parent, self._chan_type.__name__, self._channels
-        )
+        return f"ChannelList({self._parent!r}, {self._chan_type.__name__}, {self._channels!r})"
 
 
 class ChannelTupleValidator(Validator[InstrumentChannel]):
