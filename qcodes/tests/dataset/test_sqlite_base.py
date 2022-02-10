@@ -212,7 +212,7 @@ def test_runs_table_columns(empty_temp_db):
 
 def test_get_data_no_columns(scalar_dataset):
     ds = scalar_dataset
-    with pytest.warns(None) as record:
+    with pytest.warns() as record:
         ref = mut_queries.get_data(ds.conn, ds.table_name, [])
 
     assert ref == [[]]
