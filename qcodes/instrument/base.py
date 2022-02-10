@@ -652,7 +652,7 @@ class Instrument(InstrumentBase, AbstractInstrument):
         if hasattr(self, 'connection') and hasattr(self.connection, 'close'):
             self.connection.close()
 
-        strip_attrs(self, whitelist=['_name'])
+        strip_attrs(self, whitelist=["_short_name"])
         self.remove_instance(self)
 
     @classmethod
