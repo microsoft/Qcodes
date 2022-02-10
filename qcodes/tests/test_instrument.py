@@ -145,6 +145,10 @@ def test_attr_access_channels(testdummychannelinstr):
     assert channel.name == "testdummy_ChanA"
     assert channel.full_name == "testdummy_ChanA"
     assert channel.short_name == "ChanA"
+    assert not hasattr(channel, "parameters")
+    assert not hasattr(channel, "submodules")
+    assert not hasattr(channel, "instrument_modules")
+    assert not hasattr(channel, "functions")
 
 
 def test_get_idn(testdummy):
