@@ -51,7 +51,6 @@ class InstrumentBase(Metadatable, DelegateAttributes):
     """
 
     def __init__(self, name: str, metadata: Optional[Mapping[Any, Any]] = None) -> None:
-        self._name = str(name)
         self._short_name = str(name)
 
         self.parameters: Dict[str, _BaseParameter] = {}
@@ -89,16 +88,6 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         self._meta_attrs = ['name']
 
         self.log = get_instrument_logger(self, __name__)
-
-    @property
-    def name(self) -> str:
-        """Name of the instrument"""
-        return self._name
-
-    @property
-    def short_name(self) -> str:
-        """Short name of the instrument"""
-        return self._short_name
 
     def add_parameter(
         self, name: str, parameter_class: type = Parameter, **kwargs: Any
@@ -376,6 +365,18 @@ class InstrumentBase(Metadatable, DelegateAttributes):
     @property
     def full_name(self) -> str:
         return "_".join(self.name_parts)
+
+    @property
+    def name(self) -> str:
+        """Name of the instrument
+        This is equivalent to full_name for backwards compatibility.
+        """
+        return self.full_name
+
+    @property
+    def short_name(self) -> str:
+        """Short name of the instrument"""
+        return self._short_name
 
     def _is_abstract(self) -> bool:
         """
