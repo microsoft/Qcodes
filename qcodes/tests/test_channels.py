@@ -271,9 +271,15 @@ def test_add_channel_tuples_from_different_parents(dci, dci_with_list):
         _ = dci.channels + dci_with_list.channels
 
 
-def test_char_tuple_repr(dci):
+def test_chan_tuple_repr(dci):
 
     dci_repr = repr(dci.channels)
+    assert dci_repr.startswith("ChannelTuple")
+
+
+def test_chan_list_repr(dci_with_list):
+
+    dci_repr = repr(dci_with_list.channels)
     assert dci_repr.startswith("ChannelList")
 
 
