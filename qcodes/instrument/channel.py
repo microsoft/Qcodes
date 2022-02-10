@@ -293,9 +293,9 @@ class ChannelTuple(Metadatable, Sequence[InstrumentChannel]):
         return item in self._channels
 
     def __repr__(self) -> str:
-        return "ChannelList({!r}, {}, {!r})".format(self._parent,
-                                                    self._chan_type.__name__,
-                                                    self._channels)
+        return "ChannelTuple({!r}, {}, {!r})".format(
+            self._parent, self._chan_type.__name__, self._channels
+        )
 
     def __add__(self: T, other: "ChannelTuple") -> T:
         """
@@ -748,6 +748,10 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentChannel]):  # type: ig
             snapshotable=self._snapshotable,
         )
 
+    def __repr__(self) -> str:
+        return "ChannelList({!r}, {}, {!r})".format(
+            self._parent, self._chan_type.__name__, self._channels
+        )
 
 
 class ChannelTupleValidator(Validator[InstrumentChannel]):
