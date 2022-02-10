@@ -13,6 +13,7 @@ from qcodes.instrument.function import Function
 from qcodes.instrument.parameter import Parameter
 
 from .instrument_mocks import (
+    DummyChannelInstrument,
     DummyFailingInstrument,
     DummyInstrument,
     MockMetaParabola,
@@ -20,17 +21,25 @@ from .instrument_mocks import (
 )
 
 
-@pytest.fixture(name='testdummy', scope='function')
+@pytest.fixture(name="testdummy", scope="function")
 def _dummy_dac():
-    instrument = DummyInstrument(
-        name='testdummy', gates=['dac1', 'dac2', 'dac3'])
+    instrument = DummyInstrument(name="testdummy", gates=["dac1", "dac2", "dac3"])
     try:
         yield instrument
     finally:
         instrument.close()
 
 
-@pytest.fixture(name='parabola', scope='function')
+@pytest.fixture(name="testdummychannelinstr", scope="function")
+def _dummy_channel_instr():
+    instrument = DummyChannelInstrument(name="testdummy")
+    try:
+        yield instrument
+    finally:
+        instrument.close()
+
+
+@pytest.fixture(name="parabola", scope="function")
 def _dummy_parabola():
     instrument = MockParabola("parabola")
     try:
@@ -103,16 +112,48 @@ def test_attr_access(testdummy):
     assert testdummy.name == 'testdummy'
 
     # make sure we can still print the instrument
-    assert 'testdummy' in testdummy.__repr__()
-    assert 'testdummy' in str(testdummy)
+    assert "testdummy" in testdummy.__repr__()
+    assert "testdummy" in str(testdummy)
 
     # make sure the gate is removed
-    assert not hasattr(testdummy, 'dac1')
+    assert not hasattr(testdummy, "dac1")
+
+
+def test_attr_access_channels(testdummychannelinstr):
+    instr = testdummychannelinstr
+
+    channel = instr.channels[0]
+    # close the instrument
+    instr.close()
+
+    # make sure the name property still exists
+    assert hasattr(instr, "name")
+    assert instr.name == "testdummy"
+    assert instr.full_name == "testdummy"
+    assert instr.short_name == "testdummy"
+
+    # make sure we can still print the instrument
+    assert "testdummy" in instr.__repr__()
+    assert "testdummy" in str(instr)
+
+    # make sure the submodules, parameters, and functions are removed
+    assert not hasattr(instr, "parameters")
+    assert not hasattr(instr, "submodules")
+    assert not hasattr(instr, "instrument_modules")
+    assert not hasattr(instr, "functions")
+
+    assert channel.name == "testdummy_ChanA"
+    assert channel.full_name == "testdummy_ChanA"
+    assert channel.short_name == "ChanA"
 
 
 def test_get_idn(testdummy):
-    idn = dict(zip(('vendor', 'model', 'serial', 'firmware'),
-                   [None, testdummy.name, None, None]))
+    idn = dict(
+        zip(
+            ("vendor", "model", "serial", "firmware"),
+            [None, testdummy.name, None, None],
+        )
+    )
     assert testdummy.get_idn() == idn
 
 

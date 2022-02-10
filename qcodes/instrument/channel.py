@@ -56,11 +56,6 @@ class InstrumentModule(InstrumentBase):
         # scope of `Base`
         self._parent = parent
         super().__init__(name=name, **kwargs)
-        # Naming insanity:
-        # (see https://github.com/QCoDeS/Qcodes/issues/1140 for a nice table)
-        # this has been a confusion about names. don't use name but
-        # full_name, or short_name.
-        self._name = f"{parent.name}_{str(name)}"
 
     def __repr__(self) -> str:
         """Custom repr to give parent information"""
