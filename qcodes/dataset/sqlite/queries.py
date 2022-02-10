@@ -635,11 +635,13 @@ def get_runid_from_guid(conn: ConnectionPlus, guid: str) -> Optional[int]:
     return run_id
 
 
-def get_guids_from_run_spec(conn: ConnectionPlus,
-                            captured_run_id: Optional[int] = None,
-                            captured_counter: Optional[int] = None,
-                            experiment_name: Optional[str] = None,
-                            sample_name: Optional[str] = None) -> List[str]:
+def _query_guids_from_run_spec(
+    conn: ConnectionPlus,
+    captured_run_id: Optional[int] = None,
+    captured_counter: Optional[int] = None,
+    experiment_name: Optional[str] = None,
+    sample_name: Optional[str] = None,
+) -> List[str]:
     """
     Get the GUIDs of runs matching the supplied run specifications.
 
@@ -705,6 +707,27 @@ def get_guids_from_run_spec(conn: ConnectionPlus,
     for r in rows:
         results.append(r['guid'])
     return results
+
+
+@deprecate(
+    "Unused part of private api.",
+    alternative="qcodes.dataset.data_set.get_guids_by_run_spec",
+)
+def get_guids_from_run_spec(
+    conn: ConnectionPlus,
+    captured_run_id: Optional[int] = None,
+    captured_counter: Optional[int] = None,
+    experiment_name: Optional[str] = None,
+    sample_name: Optional[str] = None,
+) -> List[str]:
+
+    return _query_guids_from_run_spec(
+        conn,
+        captured_run_id=captured_run_id,
+        captured_counter=captured_counter,
+        experiment_name=experiment_name,
+        sample_name=sample_name,
+    )
 
 
 def _get_layout_id(conn: ConnectionPlus,

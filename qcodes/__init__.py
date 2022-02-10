@@ -25,6 +25,7 @@ add_to_spyder_UMR_excludelist('qcodes')
 import atexit
 
 from qcodes.dataset.data_set import (
+    get_guids_by_run_spec,
     load_by_counter,
     load_by_guid,
     load_by_id,
