@@ -652,6 +652,17 @@ class Instrument(InstrumentBase, AbstractInstrument):
         if hasattr(self, 'connection') and hasattr(self.connection, 'close'):
             self.connection.close()
 
+        # check for the existense first since this may already
+        # have been striped e.g. if the instrument has been closed once before
+        if hasattr(self, "instrument_modules"):
+            for module in self.instrument_modules.values():
+                strip_attrs(module, whitelist=["_short_name", "_parent"])
+
+        if hasattr(self, "_channel_lists"):
+            for channellist in self._channel_lists.values():
+                for channel in channellist:
+                    strip_attrs(channel, whitelist=["_short_name", "_parent"])
+
         strip_attrs(self, whitelist=["_short_name"])
         self.remove_instance(self)
 
