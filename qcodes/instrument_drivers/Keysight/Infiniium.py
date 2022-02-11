@@ -20,8 +20,8 @@ class DSOTimeAxisParam(Parameter):
 
     def __init__(self, xorigin: float, xincrement: float, points: int, **kwargs: Any):
         """
-        Initialize time axis. If values are unknown, they can be initialized to zero and filled
-        in later.
+        Initialize time axis. If values are unknown, they can be initialized to zero and
+        filled in later.
         """
         super().__init__(**kwargs)
 
@@ -148,6 +148,11 @@ class AbstractMeasurementSubsystem(InstrumentModule):
     """
 
     def __init__(self, parent: InstrumentBase, name: str, **kwargs: Any) -> None:
+        """
+        Add parameters to measurement subsystem. Note: This should not be initialized
+        directly, rather initialize BoundMeasurementSubsystem
+        or UnboundMeasurementSubsystem.
+        """
         super().__init__(parent, name, **kwargs)
 
         ###################################
@@ -366,7 +371,7 @@ class UnboundMeasurement(AbstractMeasurementSubsystem):
         )
 
     def _validate_source(self, source: str) -> str:
-        """Validate and set the source"""
+        """Validate and set the source."""
         valid_channels = f"CHAN[1-{self.root_instrument.no_channels}]"
         if re.fullmatch(valid_channels, source):
             if not int(self.ask(f"CHAN{source[-1]}:DISP?")):
@@ -416,6 +421,9 @@ class UnboundMeasurement(AbstractMeasurementSubsystem):
 
 class InfiniiumChannel(InstrumentChannel):
     def __init__(self, parent: "Infiniium", name: str, channel: int, **kwargs: Any):
+        """
+        Initialize an infiniium channel.
+        """
         self._channel = channel
 
         super().__init__(parent, name, **kwargs)
@@ -802,12 +810,12 @@ class Infiniium(VisaInstrument):
                 self.log.info(f"Scope sample rate: {self.min_srat}-{self.max_srat}")
                 self._meta_attrs.extend(("min_srat", "max_srat"))
             else:
-                self.log.warn(
+                self.log.warning(
                     f"Unable to query sample rate (inv. format ({srat})). "
                     "Setting limits to default."
                 )
         except VisaIOError as e:
-            self.log.warn(
+            self.log.warning(
                 f"Unable to query sample rate ({e}). Setting limits to default."
             )
 
@@ -856,8 +864,8 @@ class Infiniium(VisaInstrument):
     def update_all_setpoints(self) -> None:
         """
         Update the setpoints for all enabled channels.
-        This method may be run at the beginning of a measurement rather than looping through
-        each channel manually.
+        This method may be run at the beginning of a measurement rather
+        than looping through each channel manually.
         """
         for channel in self.channels:
             if channel.display():
@@ -868,8 +876,9 @@ class Infiniium(VisaInstrument):
         Digitize a full waveform and block until the acquisition is complete.
 
         Warning: If using pyvisa_py as your visa library, this will not work with
-        acquisitions longer than a single timeout period. If you require long acquisitions
-        either use Keysight/NI Visa or set timeout to be longer than the expected acquisition time.
+        acquisitions longer than a single timeout period. If you require long
+        acquisitions either use Keysight/NI Visa or set timeout to be longer than
+        the expected acquisition time.
         """
         if timeout is not None:
             old_timeout = self.visa_handle.timeout
