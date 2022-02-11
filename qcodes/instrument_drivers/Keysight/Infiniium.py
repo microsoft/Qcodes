@@ -364,21 +364,20 @@ class UnboundMeasurement(AbstractMeasurementSubsystem):
             if not int(self.ask(f"CHAN{source[-1]}:DISP?")):
                 raise ValueError(f"Channel {source[-1]} not turned on.")
             return source
-        elif re.fullmatch("DIFF[1-2]", source):
+        if re.fullmatch("DIFF[1-2]", source):
             diff_chan = (int(source[-1]) - 1) * 2 + 1
             if int(self.ask(f"CHAN{diff_chan}:DIFF?")) != 1:
                 raise ValueError(f"Differential channel {source[-1]} not turned on.")
             return source
-        elif re.fullmatch("COMM[1-2]", source):
+        if re.fullmatch("COMM[1-2]", source):
             diff_chan = (int(source[-1]) - 1) * 2 + 1
             if int(self.ask(f"CHAN{diff_chan}:DIFF?")) != 1:
                 raise ValueError(f"Differential channel {source[-1]} not turned on.")
             return source
-        elif re.fullmatch("WMEM[1-4]", source):
+        if re.fullmatch("WMEM[1-4]", source):
             return source
-        elif re.fullmatch("FUNC([1-9]{1,2})", source):
-            match = re.fullmatch("FUNC([1-9]{1,2})", source)
-            assert match is not None
+        match = re.fullmatch("FUNC([1-9]{1,2})", source)
+        if match:
             func_chan = int(match.groups()[0])
             if not (1 <= func_chan <= 16):
                 raise ValueError(
@@ -387,11 +386,11 @@ class UnboundMeasurement(AbstractMeasurementSubsystem):
             if not int(self.ask(f"FUNC{func_chan}:DISP?")):
                 raise ValueError(f"Function {func_chan} is not enabled.")
             return f"FUNC{func_chan}"
-        else:
-            raise ValueError(
-                f"Invalid measurement source {source}. Valid values are: ("
-                "CHAN[1-4], DIFF[1-2], COMM[1-2], WMEM[1-4], FUNC[1-16])."
-            )
+
+        raise ValueError(
+            f"Invalid measurement source {source}. Valid values are: ("
+            "CHAN[1-4], DIFF[1-2], COMM[1-2], WMEM[1-4], FUNC[1-16])."
+        )
 
     def _set_source(self, source: str) -> None:
         source = self._validate_source(source)
