@@ -767,14 +767,18 @@ class Infiniium(VisaInstrument):
 
         # Sample Rate
         try:
+            # Set BW to auto in order to query this
+            bw_set = self.ask(":ACQ:BAND?")
+            self.write(":ACQ:BAND AUTO")
             self.min_srat, self.max_srat = 10, 99e9  # Set large limits
             srat = self.ask(":ACQ:SRAT:TESTLIMITS?")
+            self.write(f":ACQ:BAND {bw_set}")
             match = re.fullmatch(
                 r"1,<numeric>([0-9.]+E\+[0-9]+):([0-9.]+E\+[0-9]+)", srat
             )
             if match:
                 self.min_srat, self.max_srat = (float(f) for f in match.groups())
-                self.log.info(f"Scope BW: {self.min_srat}-{self.max_srat}")
+                self.log.info(f"Scope sample rate: {self.min_srat}-{self.max_srat}")
                 self._meta_attrs.extend(("min_srat", "max_srat"))
             else:
                 self.log.warn(
