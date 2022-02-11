@@ -825,6 +825,16 @@ class Infiniium(VisaInstrument):
         self.write(":SING")
         self.run_mode()
 
+    def update_all_setpoints(self):
+        """
+        Update the setpoints for all enabled channels.
+        This method may be run at the beginning of a measurement rather than looping through
+        each channel manually.
+        """
+        for channel in self.channels:
+            if channel.display():
+                channel.update_setpoints()
+
     def digitize(self, timeout=None):
         """
         Digitize a full waveform and block until the acquisition is complete.
