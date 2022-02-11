@@ -376,7 +376,8 @@ class UnboundMeasurement(AbstractMeasurementSubsystem):
             return source
         elif re.fullmatch("WMEM[1-4]", source):
             return source
-        elif match := re.fullmatch("FUNC([1-9]{1,2})", source):
+        elif re.fullmatch("FUNC([1-9]{1,2})", source):
+            match = re.fullmatch("FUNC([1-9]{1,2})", source)
             func_chan = int(match.groups()[0])
             if not (1 <= func_chan <= 16):
                 raise ValueError(
