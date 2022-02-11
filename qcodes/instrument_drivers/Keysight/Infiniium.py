@@ -378,6 +378,7 @@ class UnboundMeasurement(AbstractMeasurementSubsystem):
             return source
         elif re.fullmatch("FUNC([1-9]{1,2})", source):
             match = re.fullmatch("FUNC([1-9]{1,2})", source)
+            assert match is not None
             func_chan = int(match.groups()[0])
             if not (1 <= func_chan <= 16):
                 raise ValueError(
