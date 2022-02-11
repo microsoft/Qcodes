@@ -847,6 +847,7 @@ class Infiniium(VisaInstrument):
             old_timeout = self.visa_handle.timeout
             self.visa_handle.timeout = timeout  # 1 second timeout
         try:
+            prev_run_mode = self.run_mode()
             self.visa_handle.write(":DIGITIZE;*OPC?")
             ret = None
             # Wait until we receive the "complete" reply
@@ -878,3 +879,6 @@ class Infiniium(VisaInstrument):
             self.device_clear()
             if timeout is not None:
                 self.visa_handle.timeout = old_timeout
+            # Restore previous mode
+            if prev_run_mode == "RUN":
+                self.run()
