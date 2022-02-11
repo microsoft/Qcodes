@@ -42,7 +42,6 @@ def test_good():
     for v in [0, 0.001, 50000.1, 'Q', 'Qcode', None, -1, b'nice', [], {},
               a_func, AClass, AClass(), False]:
         with pytest.raises(ValueError):
-            ic(v)
             m.validate(v)
 
     assert repr(m) == '<MultiType: Numbers 0.002<=v<=50000.0, PermissiveMultiples, Multiples of 0.001 to within 1e-09>'
@@ -82,10 +81,5 @@ def test_valid_values():
     #      MultiType(Numbers(min_value=2e-3, max_value=5e4), PermissiveMultiples(divisor=1e-3), combiner='AND'),
     #      MultiType(Anything(), MultiType(Numbers(), Ints()))]
     #for m in ms:
-    #    ic(m)
     #    for val in m.valid_values:
-    #        ic(val)
     #        m.validate(val)
-
-if __name__ == '__main__':
-    import IPython; IPython.embed()

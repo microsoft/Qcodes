@@ -1,6 +1,5 @@
 import pytest
 from qcodes.utils.validators import Enum, MultiTypeAnd, Strings, Numbers, PermissiveMultiples
-from asserttool import ic
 
 from .conftest import AClass, a_func
 
@@ -15,7 +14,6 @@ def test_good():
     for v in [0, 0.001, 50000.1, 'Q', 'Qcode', None, -1, b'nice', [], {},
               a_func, AClass, AClass(), False]:
         with pytest.raises(ValueError):
-            ic(v)
             m.validate(v)
 
     assert repr(m) == '<MultiTypeAnd: Numbers 0.002<=v<=50000.0, PermissiveMultiples, Multiples of 0.001 to within 1e-09>'
@@ -36,7 +34,5 @@ def test_valid_values():
     #      MultiTypeAnd(Numbers(min_value=2e-3, max_value=5e4), PermissiveMultiples(divisor=1e-3)),
     #      MultiTypeAnd(Anything(), MultiTypeAnd(Numbers(), Ints()))]
     #for m in ms:
-    #    ic(m)
     #    for val in m.valid_values:
-    #        ic(val)
     #        m.validate(val)
