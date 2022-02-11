@@ -1,5 +1,15 @@
 import pytest
-from qcodes.utils.validators import Anything, Enum, Ints, Lists, MultiType, Strings, Numbers, PermissiveMultiples
+
+from qcodes.utils.validators import (
+    Anything,
+    Enum,
+    Ints,
+    Lists,
+    MultiType,
+    Numbers,
+    PermissiveMultiples,
+    Strings,
+)
 
 from .conftest import AClass, a_func
 
@@ -79,4 +89,3 @@ def test_valid_values():
 
 if __name__ == '__main__':
     import IPython; IPython.embed()
-
