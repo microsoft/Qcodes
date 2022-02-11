@@ -677,24 +677,6 @@ class MultiTypeOr(MultiType):
                  *validators: Validator[Any],
                  ) -> None:
         super().__init__(*validators, combiner='OR')
-        if not validators:
-            raise TypeError('MultiType needs at least one Validator')
-
-        for v in validators:
-            if not isinstance(v, Validator):
-                raise TypeError('each argument must be a Validator')
-
-            if v.is_numeric:
-                # if ANY of the contained validators is numeric,
-                # the MultiType is considered numeric too.
-                # this could cause problems if you want to sweep
-                # from a non-numeric to a numeric value, so we
-                # need to be careful about this in the sweep code
-                self.is_numeric = True
-
-        self._validators = tuple(validators)
-        self._valid_values = tuple(vval for v in self._validators
-                                   for vval in v._valid_values)
 
     def __repr__(self) -> str:
         parts = (repr(v)[1:-1] for v in self._validators)
@@ -722,24 +704,7 @@ class MultiTypeAnd(MultiType):
                  *validators: Validator[Any],
                  ) -> None:
         super().__init__(*validators, combiner='AND')
-        if not validators:
-            raise TypeError('MultiType needs at least one Validator')
-
-        for v in validators:
-            if not isinstance(v, Validator):
-                raise TypeError('each argument must be a Validator')
-
-            if v.is_numeric:
-                # if ANY of the contained validators is numeric,
-                # the MultiType is considered numeric too.
-                # this could cause problems if you want to sweep
-                # from a non-numeric to a numeric value, so we
-                # need to be careful about this in the sweep code
-                self.is_numeric = True
-
-        self._validators = tuple(validators)
-        self._valid_values = tuple(vval for v in self._validators
-                                   for vval in v._valid_values)
+        self._valid_values = ()
 
     def __repr__(self) -> str:
         parts = (repr(v)[1:-1] for v in self._validators)
