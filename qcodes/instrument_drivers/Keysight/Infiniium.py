@@ -1,648 +1,899 @@
-import logging
+import re
+from email import header
 from functools import partial
+from logging import root
 from typing import Any, Callable, Dict, Optional, Sequence
 
 import numpy as np
+from pyvisa import VisaIOError
+from pyvisa.constants import StatusCode
 
-from qcodes import (
-    ArrayParameter,
-    ChannelList,
-    Instrument,
-    InstrumentChannel,
-    VisaInstrument,
-)
 from qcodes import validators as vals
-from qcodes.instrument.parameter import ParamRawDataType
-from qcodes.utils.deprecate import deprecate
-from qcodes.utils.validators import Enum, Numbers
-
-log = logging.getLogger(__name__)
-
-
-class TraceNotReady(Exception):
-    pass
+from qcodes.instrument import Instrument, VisaInstrument
+from qcodes.instrument.channel import ChannelList, InstrumentChannel, InstrumentModule
+from qcodes.instrument.parameter import Parameter, ParameterWithSetpoints
+from qcodes.utils.helpers import create_on_off_val_mapping
 
 
-class TraceSetPointsChanged(Exception):
-    pass
-
-
-class RawTrace(ArrayParameter):
+class DSOTimeAxisParam(Parameter):
     """
-    raw_trace will return a trace from OSCIL
+    Time axis parameter for the Infiniium series DSO.
     """
 
-    def __init__(self, name: str, instrument: Instrument, channel: int):
-        super().__init__(name,
-                         shape=(1024,),
-                         label='Voltage',
-                         unit='V',
-                         setpoint_names=('Time',),
-                         setpoint_labels=(
-                             f'Channel {channel} time series',),
-                         setpoint_units=('s',),
-                         docstring='raw trace from the scope',
-                         instrument=instrument
-                         )
+    def __init__(self, xorigin: float, xincrement: float, points: int, **kwargs: Any):
+        super().__init__(**kwargs)
+
+        self.xorigin = xorigin
+        self.xincrement = xincrement
+        self.points = points
+
+    def get_raw(self):
+        """
+        Return the array corresponding to this time axis.
+        """
+        return np.linspace(
+            self.xorigin,
+            self.xorigin + self.points * self.xincrement,
+            self.points,
+            endpoint=False,
+        )
+
+
+class DSOTraceParam(ParameterWithSetpoints):
+    """
+    Trace parameter for the Infiniium series DSO
+    """
+
+    def __init__(
+        self, name: str, instrument: "InfiniiumChannel", channel: str, **kwargs
+    ):
+        """
+        Initialize DSOTraceParam bound to a specific channel.
+        """
+        super().__init__(name, instrument=instrument, **kwargs)
         self._channel = channel
+        # This parameter will be updated prior to being retrieved if
+        # self.root_instrument.auto_digitize is true.
+        self._setpoints = (instrument.time_axis,)
+        self._points = 0
+        self._yoffset = 0.0
+        self._yincrement = 0.0
+        self._ch_valid = False
 
-    def prepare_curvedata(self) -> None:
+    @property
+    def setpoints(self) -> Sequence[Parameter]:
         """
-        Prepare the scope for returning curve data
+        Overwrite setpoint parameter to update setpoints if auto_digitize is true
+        Args:
+            preamble: Sequence[str] - Cached preamble if available. Defaults to None in
+                which case value will be queried from instrument.
         """
-        # To calculate set points, we must have the full preamble
-        # For the instrument to return the full preamble, the channel
-        # in question must be displayed
+        root_instrument: "Infiniium" = self.root_instrument  # type: ignore
+        cache_setpoints = root_instrument.cache_setpoints()
+        if not cache_setpoints:
+            self.update_setpoints()
+        return self._setpoints
 
-        # shorthand
-        instr = self.instrument
-        assert isinstance(instr, InfiniiumChannel)
+    @setpoints.setter
+    def setpoints(self, val: Any) -> None:
+        """
+        Stub to allow initialization. Ignore any set attempts on setpoint as we
+        figure it out on the fly.
+        """
+        return
 
-        # number of set points
-        self.npts = int(instr.ask("WAV:POIN?"))
-        # first set point
-        self.xorigin = float(instr.ask(":WAVeform:XORigin?"))
-        # step size
-        self.xincrem = float(instr.ask(":WAVeform:XINCrement?"))
-        # calculate set points
-        xdata = np.linspace(self.xorigin,
-                            self.npts * self.xincrem + self.xorigin, self.npts)
+    def update_setpoints(self) -> None:
+        """
+        Update waveform parameters. Must be called before data
+        acquisition if instr.cache_setpoints is False
+        """
+        root_instrument: "Infiniium" = self.root_instrument  # type: ignore
+        root_instrument.write(f":WAV:SOUR {self._channel}")
+        preamble = root_instrument.ask(":WAV:PRE?").strip().split(",")
+        self._points = int(preamble[2])
+        self._yincrement = float(preamble[7])
+        self._yoffset = float(preamble[8])
+        self._setpoints[0].points = int(preamble[2])
+        self._setpoints[0].xorigin = float(preamble[5])
+        self._setpoints[0].xincrement = float(preamble[4])
+        self._ch_valid = True
 
-        # set setpoints
-        self.setpoints = (tuple(xdata), )
-        self.shape = (self.npts, )
+    def get_raw(self) -> np.ndarray:
+        """
+        Get waveform data from scope
+        """
+        if self.instrument is None:
+            raise RuntimeError("Cannot get data without instrument")
+        root_instr: "Infiniium" = self.root_instrument
+        # Check if we can use cached trace parameters
+        if not root_instr.cache_setpoints():
+            self.update_setpoints()
+        if not self._ch_valid:
+            raise RuntimeError(
+                "Trace parameters are unknown. If cache_setpoints is True, "
+                "you must manually call instr.chX.update_setpoints at least"
+                "once prior to measurement."
+            )
 
-        # set up the instrument
-        # ---------------------------------------------------------------------
-
-        # make this on a per channel basis?
-        root_instrument = instr.root_instrument
-        assert isinstance(root_instrument, Infiniium)
-        root_instrument.trace_ready = True
-
-    def get_raw(self) -> ParamRawDataType:
-        # when get is called the setpoints have to be known already
-        # (saving data issue). Therefor create additional prepare function that
-        # queries for the size.
-        # check if already prepared
-        instr = self.instrument
-        assert isinstance(instr, InfiniiumChannel)
-
-        if not instr.root_instrument.trace_ready:
-            raise TraceNotReady('Please run prepare_curvedata to prepare '
-                                'the scope for acquiring a trace.')
-
-        # shorthand
-
-        # set up the instrument
-        # ---------------------------------------------------------------------
-
-        # TODO: check number of points
-        # check if requested number of points is less than 500 million
-
-        # get intrument state
-        state = instr.ask(':RSTate?')
-
-        # acquire the data
-        # ---------------------------------------------------------------------
-
-        # digitize is the actual call for acquisition, blocks
-        instr.write(f':DIGitize CHANnel{self._channel}')
-
-        # transfer the data
-        # ---------------------------------------------------------------------
-
-        # select the channel from which to read
-        instr._parent.data_source(f'CHAN{self._channel}')
-        # specifiy the data format in which to read
-        instr.write(':WAVeform:FORMat WORD')
-        instr.write(":waveform:byteorder LSBFirst")
-        # streaming is only required for data > 1GB
-        instr.write(':WAVeform:STReaming OFF')
-
-        # request the actual transfer
-        data = instr._parent.visa_handle.query_binary_values(
-            'WAV:DATA?', datatype='h', is_big_endian=False,
-            expect_termination=False)
-        # the Infiniium does not include an extra termination char on binary
-        # messages so we set expect_termination to False
-
-        if len(data) != self.shape[0]:
-            raise TraceSetPointsChanged('{} points have been aquired and {} \
-            set points have been prepared in \
-            prepare_curvedata'.format(len(data), self.shape[0]))
-        # check x data scaling
-        xorigin = float(instr.ask(":WAVeform:XORigin?"))
-        # step size
-        xincrem = float(instr.ask(":WAVeform:XINCrement?"))
-        error = self.xorigin - xorigin
-        # this is a bad workaround
-        if error > xincrem:
-            raise TraceSetPointsChanged('{} is the prepared x origin and {} \
-            is the x origin after the measurement.'.format(self.xorigin,
-                                                           xorigin))
-        error = (self.xincrem - xincrem) / xincrem
-        if error > 1e-6:
-            raise TraceSetPointsChanged('{} is the prepared x increment and {} \
-            is the x increment after the measurement.'.format(self.xincrem,
-                                                              xincrem))
-        # y data scaling
-        yorigin = float(instr.ask(":WAVeform:YORigin?"))
-        yinc = float(instr.ask(":WAVeform:YINCrement?"))
-        channel_data = np.array(data)
-        channel_data = np.multiply(channel_data, yinc) + yorigin
-
-        # restore original state
-        # ---------------------------------------------------------------------
-
-        # switch display back on
-        instr.write(f':CHANnel{self._channel}:DISPlay ON')
-        # continue refresh
-        if state == 'RUN':
-            instr.write(':RUN')
-
-        return channel_data
+        # Check if we should run a new sweep
+        if root_instr.auto_digitize():
+            prev_mode = root_instr.digitize()
+        # Ask for waveform data
+        root_instr.write(f":WAV:SOUR {self._channel}")
+        root_instr.write(":WAV:DATA?")
+        # Ignore first two bytes, which should be "#0"
+        _ = root_instr.visa_handle.read_bytes(2)
+        data = root_instr.visa_handle.read_binary_values(
+            "h",
+            container=np.ndarray,
+            header_fmt="empty",
+            expect_termination=True,
+            data_points=self._points,
+        )
+        data = data.astype(np.float)
+        data = (data * self._yincrement) + self._yoffset
+        return data
 
 
-class MeasurementSubsystem(InstrumentChannel):
+class AbstractMeasurementSubsystem(InstrumentModule):
     """
     Submodule containing the measurement subsystem commands and associated
-    parameters
+    parameters.
+
+    Note: these commands are executed on the waveform in the scope buffer.
+    If you need to ensure a fresh value, run dso.digitize() prior to reading
+    the measurement value.
     """
-    # note: this is not really a channel, but InstrumentChannel does everything
-    # a 'Submodule' class should do
 
     def __init__(self, parent: Instrument, name: str, **kwargs: Any) -> None:
         super().__init__(parent, name, **kwargs)
 
-        self.add_parameter(name='source_1',
-                           label='Measurement primary source',
-                           set_cmd=partial(self._set_source, 1),
-                           get_cmd=partial(self._get_source, 1),
-                           val_mapping={i: f'CHAN{i}' for i in range(1, 5)},
-                           snapshot_value=False)
+        ###################################
+        # Voltage Parameters
+        self.add_parameter(
+            name="amplitude",
+            label="Voltage amplitude",
+            get_cmd=self._create_query("VAMP"),
+            get_parser=float,
+            unit="V",
+            snapshot_value=False,
+        )
+        self.add_parameter(
+            name="average",
+            label="Voltage average",
+            get_cmd=self._create_query("VAV"),
+            get_parser=float,
+            unit="V",
+            snapshot_value=False,
+        )
+        self.add_parameter(
+            name="base",
+            label="Statistical base",
+            get_cmd=self._create_query("VBAS"),
+            get_parser=float,
+            unit="V",
+            snapshot_value=False,
+        )
+        # Threshold Voltage Measurements - this measurement ignores overshoot in the data
+        self.add_parameter(
+            name="vlow",
+            label="Lower threshold voltage",
+            get_cmd=self._create_query("VLOW"),
+            get_parser=float,
+            unit="V",
+            snapshot_value=False,
+        )
+        self.add_parameter(
+            name="vmid",
+            label="Middle threshold voltage",
+            get_cmd=self._create_query("VMID"),
+            get_parser=float,
+            unit="V",
+            snapshot_value=False,
+        )
+        self.add_parameter(
+            name="vup",
+            label="Upper threshold voltage",
+            get_cmd=self._create_query("VUPP"),
+            get_parser=float,
+            unit="V",
+            snapshot_value=False,
+        )
+        # Limit values - the minimum/maximum shown on screen
+        self.add_parameter(
+            name="vmin",
+            label="Voltage minimum",
+            get_cmd=self._create_query("VMIN"),
+            get_parser=float,
+            unit="V",
+            snapshot_value=False,
+        )
+        self.add_parameter(
+            name="vmax",
+            label="Voltage maximum",
+            get_cmd=self._create_query("VMAX"),
+            get_parser=float,
+            unit="V",
+            snapshot_value=False,
+        )
+        # Waveform Parameters
+        self.add_parameter(
+            name="overshoot",
+            label="Voltage overshoot",
+            get_cmd=self._create_query("VOV"),
+            get_parser=float,
+            unit="V",
+            snapshot_value=False,
+        )
+        self.add_parameter(
+            name="vpp",
+            label="Voltage peak-to-peak",
+            get_cmd=self._create_query("VPP"),
+            get_parser=float,
+            unit="V",
+            snapshot_value=False,
+        )
+        self.add_parameter(
+            name="vrms",
+            label="Voltage RMS",
+            get_cmd=self._create_query("VRMS", "CYCL,AC"),
+            get_parser=float,
+            unit="V_rms",
+            snapshot_value=False,
+        )
+        self.add_parameter(
+            name="vrms_dc",
+            label="Voltage RMS with DC Component",
+            get_cmd=self._create_query("VRMS", "CYCL,DC"),
+            get_parser=float,
+            unit="V_rms",
+            snapshot_value=False,
+        )
 
-        self.add_parameter(name='source_2',
-                           label='Measurement secondary source',
-                           set_cmd=partial(self._set_source, 2),
-                           get_cmd=partial(self._get_source, 2),
-                           val_mapping={i: f'CHAN{i}' for i in range(1, 5)},
-                           snapshot_value=False)
-
-        self.add_parameter(name='amplitude',
-                           label='Voltage amplitude',
-                           get_cmd=self._make_meas_cmd('VAMPlitude'),
-                           get_parser=float,
-                           unit='V',
-                           snapshot_value=False)
-
-        self.add_parameter(name='average',
-                           label='Voltage average',
-                           get_cmd=self._make_meas_cmd('VAVerage'),
-                           get_parser=float,
-                           unit='V',
-                           snapshot_value=False)
-
-        self.add_parameter(name='base',
-                           label='Statistical base',
-                           get_cmd=self._make_meas_cmd('VBASe'),
-                           get_parser=float,
-                           unit='V',
-                           snapshot_value=False)
-
-        self.add_parameter(name='frequency',
-                           label='Signal frequency',
-                           get_cmd=self._make_meas_cmd('FREQuency'),
-                           get_parser=float,
-                           unit='Hz',
-                           docstring="""
+        ###################################
+        # Time Parameters
+        self.add_parameter(
+            name="rise_time",
+            label="Rise time",
+            get_cmd=self._create_query("RIS"),
+            get_parser=float,
+            unit="s",
+            snapshot_value=False,
+        )
+        self.add_parameter(
+            name="fall_time",
+            label="Fall time",
+            get_cmd=self._create_query("FALL"),
+            get_parser=float,
+            unit="s",
+            snapshot_value=False,
+        )
+        self.add_parameter(
+            name="duty_cycle",
+            label="Duty Cycle",
+            get_cmd=self._create_query("DUTY"),
+            get_parser=float,
+            unit="%",
+            snapshot_value=False,
+        )
+        self.add_parameter(
+            name="period",
+            label="Period",
+            get_cmd=self._create_query("PER"),
+            get_parser=float,
+            unit="s",
+            snapshot_value=False,
+        )
+        self.add_parameter(
+            name="frequency",
+            label="Signal frequency",
+            get_cmd=self._create_query("FREQ"),
+            get_parser=float,
+            unit="Hz",
+            docstring="""
                                      measure the frequency of the first
                                      complete cycle on the screen using
                                      the mid-threshold levels of the waveform
                                      """,
-                           snapshot_value=False)
+            snapshot_value=False,
+        )
+        self.add_parameter(
+            name="slew_rate",
+            label="Slew rate",
+            get_cmd=self._create_query("SLEW"),
+            get_parser=float,
+            unit="S",
+            snapshot_value=False,
+        )
 
-        self.add_parameter(name='lower',
-                           label='Voltage lower',
-                           get_cmd=self._make_meas_cmd('VLOWer'),
-                           get_parser=float,
-                           unit='V',
-                           snapshot_value=False)
+        ###################################
+        # Deprecated parameter aliases
+        self.rms = self.vrms_dc
+        self.rms_no_dc = self.vrms
+        self.min = self.vmin
+        self.middle = self.vmid
+        self.max = self.vmax
+        self.lower = self.vlow
 
-        self.add_parameter(name='max',
-                           label='Voltage maximum',
-                           get_cmd=self._make_meas_cmd('VMAX'),
-                           get_parser=float,
-                           unit='V',
-                           snapshot_value=False)
-
-        self.add_parameter(name='middle',
-                           label='Middle threshold voltage',
-                           get_cmd=self._make_meas_cmd('VMIDdle'),
-                           get_parser=float,
-                           unit='V',
-                           snapshot_value=False)
-
-        self.add_parameter(name='min',
-                           label='Voltage minimum',
-                           get_cmd=self._make_meas_cmd('VMIN'),
-                           get_parser=float,
-                           unit='V',
-                           snapshot_value=False)
-
-        self.add_parameter(name='overshoot',
-                           label='Voltage overshoot',
-                           get_cmd=self._make_meas_cmd('VOVershoot'),
-                           get_parser=float,
-                           unit='V',
-                           snapshot_value=False)
-
-        self.add_parameter(name='vpp',
-                           label='Voltage peak-to-peak',
-                           get_cmd=self._make_meas_cmd('VPP'),
-                           get_parser=float,
-                           unit='V',
-                           snapshot_value=False)
-
-        self.add_parameter(name='rms',
-                           label='Voltage RMS',
-                           get_cmd=self._make_meas_cmd('VRMS') + ' DISPlay, DC',
-                           get_parser=float,
-                           unit='V',
-                           snapshot_value=False)
-
-        self.add_parameter(name='rms_no_DC',
-                           label='Voltage RMS',
-                           get_cmd=self._make_meas_cmd('VRMS') + ' DISPlay, AC',
-                           get_parser=float,
-                           unit='V',
-                           snapshot_value=False)
-
-    @staticmethod
-    def _make_meas_cmd(cmd: str) -> str:
+    def _create_query(self, cmd: str, pre_cmd: str = "", post_cmd: str = "") -> str:
         """
-        Helper function to avoid typos
+        Create a query string with the correct source included
         """
-        return f':MEASure:{cmd}?'
-
-    def _set_source(self, rank: int, source: str) -> None:
-        """
-        Set the measurement source, either primary (rank==1) or secondary
-        (rank==2)
-        """
-        sources = self.ask(':MEASure:SOURCE?').split(',')
-        if rank == 1:
-            self.write(f':MEASure:SOURCE {source}, {sources[1]}')
+        chan_str = self._channel
+        if chan_str:
+            if pre_cmd:
+                chan_str = f",{chan_str}"
+            if post_cmd:
+                chan_str = f"{chan_str},"
         else:
-            self.write(f':MEASure:SOURCE {sources[0]}, {source}')
+            if pre_cmd and post_cmd:
+                pre_cmd = f"{pre_cmd},"
+        return f":MEAS:{cmd}? {pre_cmd}{chan_str}{post_cmd}".strip()
 
-    def _get_source(self, rank: int) -> str:
-        """
-        Get the measurement source, either primary (rank==1) or secondary
-        (rank==2)
-        """
-        sources = self.ask(':MEASure:SOURCE?').split(',')
 
-        return sources[rank-1]
+class BoundMeasurement(AbstractMeasurementSubsystem):
+    def __init__(self, parent: "InfiniiumChannel", name: str, **kwargs: Any):
+        # Bind the channel
+        self._channel = parent.channel_name
+
+        # Initialize measurement parameters
+        super().__init__(parent, name, **kwargs)
+
+
+class UnboundMeasurement(AbstractMeasurementSubsystem):
+    def __init__(self, parent: "Infiniium", name: str, **kwargs: Any):
+        # Blank channel
+        self._channel = ""
+
+        # Initialize measurement parameters
+        super().__init__(parent, name, **kwargs)
+
+        self.add_parameter(
+            name="source",
+            label="Primary measurement source",
+            set_cmd=self._set_source,
+            get_cmd=self._get_source,
+            snapshot_value=False,
+        )
+
+    def _validate_source(self, source: str) -> str:
+        "Validate and set the source"
+        valid_channels = f"CHAN[1-{self.root_instrument.no_channels}]"
+        if re.fullmatch(valid_channels, source):
+            if not int(self.ask(f"CHAN{source[-1]}:DISP?")):
+                raise ValueError(f"Channel {source[-1]} not turned on.")
+            return source
+        elif re.fullmatch("DIFF[1-2]", source):
+            diff_chan = (int(source[-1]) - 1) * 2 + 1
+            if int(self.ask(f"CHAN{diff_chan}:DIFF?")) != 1:
+                raise ValueError(f"Differential channel {source[-1]} not turned on.")
+            return source
+        elif re.fullmatch("COMM[1-2]", source):
+            diff_chan = (int(source[-1]) - 1) * 2 + 1
+            if int(self.ask(f"CHAN{diff_chan}:DIFF?")) != 1:
+                raise ValueError(f"Differential channel {source[-1]} not turned on.")
+            return source
+        elif re.fullmatch("WMEM[1-4]", source):
+            return source
+        elif match := re.fullmatch("FUNC([1-9]{1,2})", source):
+            func_chan = int(match.groups()[0])
+            if not (1 <= func_chan <= 16):
+                raise ValueError(
+                    f"Function number should be in the range 1-16. Got {func_chan}."
+                )
+            if not int(self.ask(f"FUNC{func_chan}:DISP?")):
+                raise ValueError(f"Function {func_chan} is not enabled.")
+            return f"FUNC{func_chan}"
+        else:
+            raise ValueError(
+                f"Invalid measurement source {source}. Valid values are: ("
+                "CHAN[1-4], DIFF[1-2], COMM[1-2], WMEM[1-4], FUNC[1-16])."
+            )
+
+    def _set_source(self, source: str) -> str:
+        source = self._validate_source(source)
+        self._channel = source
+
+        # Then set the measurement source
+        self.write(f":MEAS:SOUR {self._channel}")
+
+    def _get_source(self):
+        if self._channel == "":
+            source = self.ask(":MEAS:SOUR?")
+            self._channel = source.strip().split(",")[0]
+        return self._channel
 
 
 class InfiniiumChannel(InstrumentChannel):
+    def __init__(self, parent: "Infiniium", name: str, channel: int, **kwargs: Any):
+        self._channel = channel
 
-    def __init__(self, parent: "Infiniium", name: str, channel: int):
-        super().__init__(parent, name)
+        super().__init__(parent, name, **kwargs)
         # display
-        self.add_parameter(name='display',
-                           label=f'Channel {channel} display on/off',
-                           set_cmd=f'CHANnel{channel}:DISPlay {{}}',
-                           get_cmd=f'CHANnel{channel}:DISPlay?',
-                           val_mapping={True: 1, False: 0},
-                           )
-        # scaling
-        self.add_parameter(name='offset',
-                           label=f'Channel {channel} offset',
-                           set_cmd=f'CHAN{channel}:OFFS {{}}',
-                           unit='V',
-                           get_cmd=f'CHAN{channel}:OFFS?',
-                           get_parser=float
-                           )
-
-        # scale and range are interdependent, when setting one, invalidate the
-        # the other.
-        # Scale is commented out for this reason
-        # self.add_parameter(name='scale',
-        #                    label='Channel {} scale'.format(channel),
-        #                    unit='V/div',
-        #                    set_cmd='CHAN{}:SCAL {{}}'.format(channel),
-        #                    get_cmd='CHAN{}:SCAL?'.format(channel),
-        #                    get_parser=float,
-        #                    vals=vals.Numbers(0,100)  # TODO: upper limit?
-        #                    )
-
-        self.add_parameter(name='range',
-                           label=f'Channel {channel} range',
-                           unit='V',
-                           set_cmd=f'CHAN{channel}:RANG {{}}',
-                           get_cmd=f'CHAN{channel}:RANG?',
-                           get_parser=float,
-                           vals=vals.Numbers()
-                           )
-        # trigger
         self.add_parameter(
-            'trigger_level',
-            label=f'Tirgger level channel {channel}',
-            unit='V',
-            get_cmd=f':TRIGger:LEVel? CHANnel{channel}',
-            set_cmd=f':TRIGger:LEVel CHANnel{channel},{{}}',
-            get_parser=float,
-            vals=Numbers(),
+            name="display",
+            label=f"Channel {channel} display on/off",
+            set_cmd=f"CHANnel{channel}:DISPlay {{}}",
+            get_cmd=f"CHANnel{channel}:DISPlay?",
+            val_mapping=create_on_off_val_mapping(on_val=1, off_val=0),
         )
 
-        # Acquisition
-        self.add_parameter(name='trace',
-                           channel=channel,
-                           parameter_class=RawTrace
-                           )
+        # scaling
+        self.add_parameter(
+            name="offset",
+            label=f"Channel {channel} offset",
+            set_cmd=f"CHAN{channel}:OFFS {{}}",
+            unit="V",
+            get_cmd=f"CHAN{channel}:OFFS?",
+            get_parser=float,
+        )
+        self.add_parameter(
+            name="range",
+            label=f"Channel {channel} range",
+            unit="V",
+            set_cmd=f"CHAN{channel}:RANG {{}}",
+            get_cmd=f"CHAN{channel}:RANG?",
+            get_parser=float,
+            vals=vals.Numbers(),
+        )
+
+        # Trigger level
+        self.add_parameter(
+            name="trigger_level",
+            label=f"Channel {channel} trigger level",
+            unit="V",
+            set_cmd=f":TRIG:LEV CHAN{channel},{{}}",
+            get_cmd=f":TRIG:LEV? CHAN{channel}",
+            get_parser=float,
+            vals=vals.Numbers(),
+        )
+
+        # Trace data
+        self.add_parameter(
+            name="time_axis",
+            label="Time",
+            unit="s",
+            xorigin=0.0,
+            xincrement=0.0,
+            points=1,
+            vals=vals.Arrays(shape=(self.parent.acquire_points,)),
+            parameter_class=DSOTimeAxisParam,
+            snapshot_value=False,
+        )
+        self.add_parameter(
+            name="trace",
+            label=f"Channel {channel} trace",
+            unit="V",
+            channel=self.channel_name,
+            vals=vals.Arrays(shape=(self.parent.acquire_points,)),
+            parameter_class=DSOTraceParam,
+            snapshot_value=False,
+        )
+
+        # Measurement subsystem
+        self.add_submodule("measure", BoundMeasurement(self, "measure"))
+
+    @property
+    def channel(self):
+        return self._channel
+
+    @property
+    def channel_name(self):
+        return f"CHAN{self._channel}"
+
+    def update_setpoints(self):
+        """
+        Update time axis and offsets for this channel.
+        Calling this function is required when instr.cache_setpoints is True
+        whenever the scope parameters are changed.
+        """
+        self.trace.update_setpoints()
 
 
 class Infiniium(VisaInstrument):
     """
-    This is the QCoDeS driver for the Keysight Infiniium oscilloscopes from the
-     - tested for MSOS104A of the Infiniium S-series.
+    This is the QCoDeS driver for the Keysight Infiniium oscilloscopes
     """
 
-    @deprecate(
-        alternative="qcodes.instrument_drivers.Keysight.Infiniium_submodules.Infiniium"
-    )
-    def __init__(self, name: str, address: str, timeout: float = 20, **kwargs: Any):
+    def __init__(
+        self,
+        name: str,
+        address: str,
+        timeout: float = 20,
+        channels: int = 4,
+        silence_pyvisapy_warning=False,
+        **kwargs: Any,
+    ):
         """
         Initialises the oscilloscope.
 
         Args:
             name: Name of the instrument used by QCoDeS
             address: Instrument address as used by VISA
-            timeout: visa timeout, in secs.
+            timeout: Visa timeout, in secs.
+            channels: The number of channels on the scope.
+            silence_pyvisapy_warning: Don't warn about pyvisa-py at startup
         """
-
-        super().__init__(name, address, timeout=timeout,
-                         terminator='\n', **kwargs)
+        super().__init__(name, address, timeout=timeout, terminator="\n", **kwargs)
         self.connect_message()
 
-        # Scope trace boolean
-        self.trace_ready = False
+        # Check if we are using pyvisa-py as our visa lib and warn users that
+        # this may cause long digitize operations to fail
+        if (
+            self.visa_handle.visalib.library_path == "py"
+            and not silence_pyvisapy_warning
+        ):
+            self.log.warning(
+                "Timeout not handled correctly in pyvisa_py. This may cause"
+                " long acquisitions to fail. Either use ni/keysight visalib"
+                " or set timeout to longer than longest expected acquisition"
+                " time."
+            )
 
-        # switch the response header off,
-        # else none of our parameters will work
-        self.write(':SYSTem:HEADer OFF')
+        # switch the response header off else none of our parameters will work
+        self.write(":SYSTem:HEADer OFF")
 
-        # functions
+        # Then set up the data format used to retrieve waveforms
+        self.write(":WAVEFORM:FORMAT WORD")
+        self.write(":WAVEFORM:BYTEORDER LSBFirst")
+        self.write(":WAVEFORM:STREAMING ON")
 
-        # general parameters
+        # Query the oscilloscope parameters
+        # Set sample rate, bandwidth and memory depth limits
+        self._query_capabilities()
+        # Number of channels can't be queried on most older scopes. Use a parameter
+        # for now.
+        self.no_channels = channels
 
-        # the parameters are in the same order as the front panel.
-        # Beware, he list of implemented parameters is not complete. Refer to
-        # the manual (Infiniium prog guide) for an equally infiniium list.
-
-        # time base
-
-        # timebase_scale is commented out for same reason as channel scale
-        # use range instead
-        # self.add_parameter('timebase_scale',
-        #                    label='Scale of the one time devision',
-        #                    unit='s/Div',
-        #                    get_cmd=':TIMebase:SCALe?',
-        #                    set_cmd=':TIMebase:SCALe {}',
-        #                    vals=Numbers(),
-        #                    get_parser=float,
-        #                    )
-
-        self.add_parameter('timebase_range',
-                           label='Range of the time axis',
-                           unit='s',
-                           get_cmd=':TIMebase:RANGe?',
-                           set_cmd=':TIMebase:RANGe {}',
-                           vals=Numbers(5e-12, 20),
-                           get_parser=float,
-                           )
-        self.add_parameter('timebase_position',
-                           label='Offset of the time axis',
-                           unit='s',
-                           get_cmd=':TIMebase:POSition?',
-                           set_cmd=':TIMebase:POSition {}',
-                           vals=Numbers(),
-                           get_parser=float,
-                           )
-
-        self.add_parameter('timebase_roll_enabled',
-                           label='Is rolling mode enabled',
-                           get_cmd=':TIMebase:ROLL:ENABLE?',
-                           set_cmd=':TIMebase:ROLL:ENABLE {}',
-                           val_mapping={True: 1, False: 0}
-                           )
-
-        # trigger
-        self.add_parameter('trigger_enabled',
-                           label='Is trigger enabled',
-                           get_cmd=':TRIGger:AND:ENABLe?',
-                           set_cmd=':TRIGger:AND:ENABLe {}',
-                           val_mapping={True: 1, False: 0}
-                           )
-
-        self.add_parameter('trigger_edge_source',
-                           label='Source channel for the edge trigger',
-                           get_cmd=':TRIGger:EDGE:SOURce?',
-                           set_cmd=':TRIGger:EDGE:SOURce {}',
-                           vals=Enum(*(
-                               [f'CHANnel{i}' for i in range(1, 4 + 1)] +
-                               [f'CHAN{i}' for i in range(1, 4 + 1)] +
-                               [f'DIGital{i}' for i in range(16 + 1)] +
-                               [f'DIG{i}' for i in range(16 + 1)] +
-                               ['AUX', 'LINE']))
-                           )  # add enum for case insesitivity
-        self.add_parameter('trigger_edge_slope',
-                           label='slope of the edge trigger',
-                           get_cmd=':TRIGger:EDGE:SLOPe?',
-                           set_cmd=':TRIGger:EDGE:SLOPe {}',
-                           vals=Enum('positive', 'negative', 'neither')
-                           )
-        self.add_parameter('trigger_level_aux',
-                           label='Tirgger level AUX',
-                           unit='V',
-                           get_cmd=':TRIGger:LEVel? AUX',
-                           set_cmd=':TRIGger:LEVel AUX,{}',
-                           get_parser=float,
-                           vals=Numbers(),
-                           )
-        # Aquisition
-        # If sample points, rate and timebase_scale are set in an
-        # incomensurate way, the scope only displays part of the waveform
-        self.add_parameter('acquire_points',
-                           label='sample points',
-                           get_cmd='ACQ:POIN?',
-                           get_parser=int,
-                           set_cmd=self._cmd_and_invalidate('ACQ:POIN {}'),
-                           unit='pts',
-                           vals=vals.Numbers(min_value=1, max_value=100e6)
-                           )
-
-        self.add_parameter('acquire_sample_rate',
-                           label='sample rate',
-                           get_cmd='ACQ:SRAT?',
-                           set_cmd=self._cmd_and_invalidate('ACQ:SRAT {}'),
-                           unit='Sa/s',
-                           get_parser=float
-                           )
-
-        # this parameter gets used internally for data aquisition. For now it
-        # should not be used manually
+        # Run state
         self.add_parameter(
-            "data_source",
-            label="Waveform Data source",
-            get_cmd=":WAVeform:SOURce?",
-            set_cmd=":WAVeform:SOURce {}",
-            vals=Enum(
+            "run_mode",
+            label="run mode",
+            get_cmd=":RST?",
+            vals=vals.Enum("RUN", "STOP", "SING"),
+        )
+
+        # Timing Parameters
+        self.add_parameter(
+            "timebase_range",
+            label="Range of the time axis",
+            unit="s",
+            get_cmd=":TIM:RANG?",
+            set_cmd=":TIM:RANG {}",
+            vals=vals.Numbers(5e-12, 20),
+            get_parser=float,
+        )
+        self.add_parameter(
+            "timebase_position",
+            label="Offset of the time axis",
+            unit="s",
+            get_cmd=":TIM:POS?",
+            set_cmd=":TIM:POS {}",
+            vals=vals.Numbers(),
+            get_parser=float,
+        )
+        self.add_parameter(
+            "timebase_roll_enabled",
+            label="Is rolling mode enabled",
+            get_cmd=":TIM:ROLL:ENABLE?",
+            set_cmd=":TIM:ROLL:ENABLE {}",
+            val_mapping={True: 1, False: 0},
+        )
+
+        # Trigger
+        self.add_parameter("trigger_mode", label="Trigger mode", get_cmd=":TRIG:MODE?")
+        self.add_parameter(
+            "trigger_sweep",
+            label="Trigger sweep mode",
+            get_cmd=":TRIG:SWE?",
+            set_cmd=":TRIG:SWE {}",
+            vals=vals.Enum("AUTO", "TRIG"),
+        )
+        self.add_parameter(
+            "trigger_state",
+            label="Trigger state",
+            get_cmd=":AST?",
+            vals=vals.Enum("ARM", "TRIG", "ATRIG", "ADONE"),
+            snapshot_value=False,
+        )
+
+        # Edge trigger parameters
+        # Note that for now we only support parameterized edge triggers - this may
+        # be something worth expanding.
+        # To set trigger level, use the "trigger_level" parameter in each channel
+        self.add_parameter(
+            "trigger_edge_source",
+            label="Source channel for the edge trigger",
+            get_cmd=":TRIGger:EDGE:SOURce?",
+            set_cmd=":TRIGger:EDGE:SOURce {}",
+            vals=vals.Enum(
                 *(
-                    [f"CHANnel{i}" for i in range(1, 4 + 1)]
-                    + [f"CHAN{i}" for i in range(1, 4 + 1)]
-                    + [f"DIFF{i}" for i in range(1, 2 + 1)]
-                    + [f"COMMonmode{i}" for i in range(3, 4 + 1)]
-                    + [f"COMM{i}" for i in range(3, 4 + 1)]
-                    + [f"FUNCtion{i}" for i in range(1, 16 + 1)]
-                    + [f"FUNC{i}" for i in range(1, 16 + 1)]
-                    + [f"WMEMory{i}" for i in range(1, 4 + 1)]
-                    + [f"WMEM{i}" for i in range(1, 4 + 1)]
-                    + [f"BUS{i}" for i in range(1, 4 + 1)]
-                    + ["HISTogram", "HIST", "CLOCK"]
-                    + ["MTRend", "MTR"]
+                    [f"CHAN{i}" for i in range(1, 4 + 1)]
+                    + [f"DIG{i}" for i in range(16 + 1)]
+                    + ["AUX", "LINE"]
                 )
             ),
         )
+        self.add_parameter(
+            "trigger_edge_slope",
+            label="slope of the edge trigger",
+            get_cmd=":TRIGger:EDGE:SLOPe?",
+            set_cmd=":TRIGger:EDGE:SLOPe {}",
+            vals=vals.Enum("POS", "NEG", "EITH"),
+        )
+        self.add_parameter(
+            "trigger_level_aux",
+            label="Tirgger level AUX",
+            unit="V",
+            get_cmd=":TRIGger:LEVel? AUX",
+            set_cmd=":TRIGger:LEVel AUX,{}",
+            get_parser=float,
+            vals=vals.Numbers(),
+        )
 
-        # TODO: implement as array parameter to allow for setting the other filter
-        # ratios
-        self.add_parameter('acquire_interpolate',
-                            get_cmd=':ACQuire:INTerpolate?',
-                            set_cmd=self._cmd_and_invalidate(':ACQuire:INTerpolate {}'),
-                            val_mapping={True: 1, False: 0}
-                            )
+        # Aquisition
+        # If sample points, rate and timebase_scale are set in an
+        # incomensurate way, the scope only displays part of the waveform
+        self.add_parameter(
+            "acquire_points",
+            label="sample points",
+            get_cmd=":ACQ:POIN?",
+            set_cmd=":ACQ:POIN {}",
+            get_parser=int,
+            vals=vals.Numbers(min_value=self.min_pts, max_value=self.max_pts),
+        )
+        self.add_parameter(
+            "sample_rate",
+            label="sample rate",
+            get_cmd=":ACQ:SRAT?",
+            set_cmd=":ACQ:SRAT {}",
+            unit="Hz",
+            get_parser=float,
+            vals=vals.Numbers(min_value=self.min_srat, max_value=self.max_srat),
+        )
+        # Note: newer scopes allow a per-channel bandwidth. This is not implemented yet.
+        self.add_parameter(
+            "bandwidth",
+            label="bandwidth",
+            get_cmd=":ACQ:BAND?",
+            set_cmd=":ACQ:BAND {}",
+            unit="Hz",
+            get_parser=float,
+            vals=vals.Numbers(min_value=self.min_bw, max_value=self.max_bw),
+        )
+        self.add_parameter(
+            "acquire_interpolate",
+            get_cmd=":ACQ:INTerpolate?",
+            set_cmd=":ACQuire:INTerpolate {}",
+            vals=vals.Enum(0, 1, "INT1", "INT2", "INT4", "INT8", "INT16", "INT32"),
+        )
+        self.add_parameter(
+            "acquire_mode",
+            label="Acquisition mode",
+            get_cmd="ACQuire:MODE?",
+            set_cmd="ACQuire:MODE {}",
+            vals=vals.Enum(
+                "ETIMe",
+                "RTIMe",
+                "PDETect",
+                "HRESolution",
+                "SEGMented",
+                "SEGPdetect",
+                "SEGHres",
+            ),
+        )
+        self.add_parameter(
+            "average",
+            label="Averages",
+            get_cmd=self._get_avg,
+            set_cmd=self._set_avg,
+            vals=vals.Ints(min_value=1, max_value=10486575),
+        )
 
-        self.add_parameter('acquire_mode',
-                            label='Acquisition mode',
-                            get_cmd= 'ACQuire:MODE?',
-                            set_cmd='ACQuire:MODE {}',
-                            vals=Enum('ETIMe', 'RTIMe', 'PDETect',
-                                      'HRESolution', 'SEGMented',
-                                      'SEGPdetect', 'SEGHres')
-                            )
+        # Automatically digitize before acquiring a trace
+        self.add_parameter(
+            "auto_digitize",
+            label="Auto digitize",
+            set_cmd=None,
+            get_cmd=None,
+            vals=vals.Bool(),
+            docstring=(
+                "Digitize before each waveform download. "
+                "If you need to acquire from multiple channels simultaneously "
+                "or you wish to acquire with the scope running freely, "
+                "set this value to False."
+            ),
+            initial_value=True,
+        )
+        self.add_parameter(
+            "cache_setpoints",
+            label="Cache setpoints",
+            set_cmd=None,
+            get_cmd=None,
+            vals=vals.Bool(),
+            docstring=(
+                "Cache setpoints. If false, the preamble is queried before each"
+                " acquisition, which may add latency to measurements. If you"
+                " are taking repeated measurements, set this to True and update"
+                " setpoints manually by calling `instr.chX.update_setpoints()`."
+            ),
+            initial_value=False,
+        )
 
-        self.add_parameter('acquire_timespan',
-                            get_cmd=(lambda: self.acquire_points.get_latest() \
-                                            /self.acquire_sample_rate.get_latest()),
-                            unit='s',
-                            get_parser=float
-                            )
-
-        # time of the first point
-        self.add_parameter('waveform_xorigin',
-                            get_cmd='WAVeform:XORigin?',
-                            unit='s',
-                            get_parser=float
-                            )
-
-        self.add_parameter('data_format',
-                           set_cmd='SAV:WAV:FORM {}',
-                           val_mapping={'csv': 'CSV',
-                                        'binary': 'BIN',
-                                        'asciixy': 'ASC'},
-                           docstring=("Set the format for saving "
-                                      "files using save_data function")
-                           )
         # Channels
-        channels = ChannelList(self, "Channels", InfiniiumChannel,
-                               snapshotable=False)
-
-        for i in range(1,5):
-            channel = InfiniiumChannel(self, f'chan{i}', i)
+        channels = ChannelList(self, "Channels", InfiniiumChannel, snapshotable=False)
+        for i in range(1, self.no_channels + 1):
+            channel = InfiniiumChannel(self, f"chan{i}", i)
             channels.append(channel)
             self.add_submodule(f"ch{i}", channel)
         self.add_submodule("channels", channels.to_channel_tuple())
 
         # Submodules
-        meassubsys = MeasurementSubsystem(self, 'measure')
-        self.add_submodule('measure', meassubsys)
+        meassubsys = UnboundMeasurement(self, "measure")
+        self.add_submodule("measure", meassubsys)
 
-    def _cmd_and_invalidate(self, cmd: str) -> Callable[..., Any]:
-        return partial(Infiniium._cmd_and_invalidate_call, self, cmd)
-
-    def _cmd_and_invalidate_call(self, cmd: str, val: float) -> None:
+    def _query_capabilities(self):
         """
-        executes command and sets trace_ready status to false
-        any command that effects the number of setpoints should invalidate the trace
+        Query scope capabilities (sample rate, bandwidth, memory depth)
         """
-        self.trace_ready = False
-        self.write(cmd.format(val))
-
-    def save_data(self, filename: str) -> None:
-        """
-        Saves the channels currently shown on oscilloscope screen to a USB.
-        Must set data_format parameter prior to calling this
-        """
-        self.write(f'SAV:WAV "{filename}"')
-
-    def get_current_traces(
-            self,
-            channels: Optional[Sequence[int]] = None
-    ) -> Dict[Any, Any]:
-        """
-        Get the current traces of 'channels' on the oscillsocope.
-
-        Args:
-            channels: default [1, 2, 3, 4]
-                list of integers representing the channels.
-                gets the traces of these channels.
-                the only valid integers are 1,2,3,4
-                will turn any other channels off
-
-        Returns:
-            a dict with keys 'ch1', 'ch2', 'ch3', 'ch4', 'time',
-            and values are np.ndarrays, corresponding to the voltages
-            of the four channels and the common time axis
-        """
-        if channels is None:
-            channels = [1, 2, 3, 4]
-        # check that channels are valid
         try:
-            assert all([ch in [1, 2, 3, 4] for ch in channels])
-        except:
-            raise Exception("invalid channel in %s, integers"
-                            " must be 1,2,3 or 4" % channels)
+            # Bandwidth
+            self.min_bw, self.max_bw = 0, 99e9  # Set default limits
+            bw = self.ask(":ACQ:BAND:TESTLIMITS?")
+            match = re.fullmatch(
+                r"1,<numeric>([0-9.]+E\+[0-9]+):([0-9.]+E\+[0-9]+)", bw
+            )
+            if match:
+                self.min_bw, self.max_bw = (float(f) for f in match.groups())
+                self.log.info(f"Scope BW: {self.min_bw}-{self.max_bw}")
+                self._meta_attrs.extend(("min_bw", "max_bw"))
+            else:
+                self.log.warn(
+                    f"Unable to query bandwidth limits (inv. format ({bw})). Setting limits to default."
+                )
+        except VisaIOError as e:
+            self.log.warn(
+                f"Unable to query bandwidth limits ({e}). Setting limits to default."
+            )
 
-        self.write('DIGitize')
-        all_data = {}
-        self.write(':SYSTem:HEADer OFF')
+        # Memory depth
+        try:
+            self.min_pts, self.max_pts = 16, 1_000_000_000
+            mem = self.ask(":ACQ:POIN:TESTLIMITS?")
+            match = re.match("1,<numeric>([0-9]+):([0-9]+)", mem)
+            if match:
+                self.min_pts, self.max_pts = (int(p) for p in match.groups())
+                self.log.info(f"Scope memory: {self.min_pts}-{self.max_pts}")
+                self._meta_attrs.extend(("min_pts", "max_pts"))
+            else:
+                self.log.warn(
+                    f"Unable to query memory depth (inv. format ({mem})). Setting limits to default."
+                )
+        except VisaIOError as e:
+            self.log.warn(
+                f"Unable to query memory depth ({e}). Setting limits to default."
+            )
 
-        for i in channels:
-            self.data_source('CHAN%s' % i)
-            self.write(':WAVeform:FORMat WORD')
-            self.write(":waveform:byteorder LSBFirst")
-            self.write(':WAVeform:STReaming OFF')
+        # Sample Rate
+        try:
+            # Set BW to auto in order to query this
+            bw_set = self.ask(":ACQ:BAND?")
+            self.write(":ACQ:BAND AUTO")
+            self.min_srat, self.max_srat = 10, 99e9  # Set large limits
+            srat = self.ask(":ACQ:SRAT:TESTLIMITS?")
+            self.write(f":ACQ:BAND {bw_set}")
+            match = re.fullmatch(
+                r"1,<numeric>([0-9.]+E\+[0-9]+):([0-9.]+E\+[0-9]+)", srat
+            )
+            if match:
+                self.min_srat, self.max_srat = (float(f) for f in match.groups())
+                self.log.info(f"Scope sample rate: {self.min_srat}-{self.max_srat}")
+                self._meta_attrs.extend(("min_srat", "max_srat"))
+            else:
+                self.log.warn(
+                    f"Unable to query sample rate (inv. format ({srat})). Setting limits to default."
+                )
+        except VisaIOError as e:
+            self.log.warn(
+                f"Unable to query sample rate ({e}). Setting limits to default."
+            )
 
-            data = self.visa_handle.query_binary_values(
-                'WAV:DATA?', datatype='h', is_big_endian=False)
-            all_data['ch%d' % i] = np.array(data)
+    def _get_avg(self):
+        """
+        Return the number of averages, or 1 if averaging is disabled.
+        """
+        enabled = int(self.ask(":ACQ:AVER?"))
+        if not enabled:
+            return 1
+        else:
+            return int(self.ask(":ACQ:AVER:COUN?"))
 
-        x_incr = float(self.ask(":WAVeform:XINCrement?"))
-        y_incr = float(self.ask(":WAVeform:YINCrement?"))
-        y_origin = float(self.ask(":WAVeform:YORigin?"))
+    def _set_avg(self, count):
+        """
+        Set the number of averages, or disable if 1.
+        """
+        if count == 1:
+            self.write(":ACQ:AVER 0")
+        else:
+            self.write(f":ACQ:AVER:COUN {count}")
+            self.write(":ACQ:AVER 1")
 
-        for i in channels:
-            all_data['ch%d' % i] = all_data['ch%d' % i] * y_incr + y_origin
-            self.write(f':CHANnel{i}:DISPlay ON')
-        all_data['time'] = np.arange(0, len(all_data['ch%s' % channels[0]])) \
-            * x_incr
+    # Simple oscilloscope commands
+    def run(self):
+        """
+        Set the scope in run mode.
+        """
+        self.write(":RUN")
+        self.run_mode()
 
-        self.write(':RUN')
-        # turn the channels that were not requested off
-        for ch in [i for i in [1, 2, 3, 4] if i not in channels]:
-            self.write(f':CHANnel{ch}:DISPlay OFF')
+    def stop(self):
+        """
+        Set the scope in stop mode.
+        """
+        self.write(":STOP")
+        self.run_mode()
 
-        return all_data
+    def single(self):
+        """
+        Take a single acquisition
+        """
+        self.write(":SING")
+        self.run_mode()
+
+    def update_all_setpoints(self):
+        """
+        Update the setpoints for all enabled channels.
+        This method may be run at the beginning of a measurement rather than looping through
+        each channel manually.
+        """
+        for channel in self.channels:
+            if channel.display():
+                channel.update_setpoints()
+
+    def digitize(self, timeout=None):
+        """
+        Digitize a full waveform and block until the acquisition is complete.
+
+        Warning: If using pyvisa_py as your visa library, this will not work with
+        acquisitions longer than a single timeout period. If you require long acquisitions
+        either use Keysight/NI Visa or set timeout to be longer than the expected acquisition time.
+        """
+        if timeout is not None:
+            old_timeout = self.visa_handle.timeout
+            self.visa_handle.timeout = timeout  # 1 second timeout
+        try:
+            prev_run_mode = self.run_mode()
+            self.visa_handle.write(":DIGITIZE;*OPC?")
+            ret = None
+            # Wait until we receive the "complete" reply
+            while ret != "1":
+                try:
+                    ret = self.visa_handle.read()
+                except VisaIOError as e:
+                    # Ignore timeout errors - we could still be waiting for a trigger
+                    # or taking a long acquisition
+                    if e.error_code != StatusCode.error_timeout:
+                        self.log.exception(
+                            "Unexpected VisaError while waiting for acquisition."
+                        )
+                        raise  # Raise all other visa errors
+                except KeyboardInterrupt:
+                    raise  # Pass any keyboard interrupt upwards
+                except Exception as e:
+                    self.log.exception(
+                        "Unexpected exception while waiting for acquisition."
+                    )
+                    raise
+        except KeyboardInterrupt:
+            self.log.error(
+                "Keyboard interrupt while waiting to digitize. Check your trigger?"
+            )
+            raise  # Pass error upwards
+        finally:
+            # Clear the device to unblock any failed digitize
+            self.device_clear()
+            if timeout is not None:
+                self.visa_handle.timeout = old_timeout
+            # Restore previous mode
+            if prev_run_mode == "RUN":
+                self.run()
