@@ -9,7 +9,8 @@ from pyvisa import VisaIOError
 from pyvisa.constants import StatusCode
 
 from qcodes import validators as vals
-from qcodes.instrument import Instrument, VisaInstrument
+from qcodes.instrument import VisaInstrument
+from qcodes.instrument.base import InstrumentBase
 from qcodes.instrument.channel import ChannelList, InstrumentChannel, InstrumentModule
 from qcodes.instrument.parameter import Parameter, ParameterWithSetpoints
 from qcodes.utils.helpers import create_on_off_val_mapping
@@ -27,7 +28,7 @@ class DSOTimeAxisParam(Parameter):
         self.xincrement = xincrement
         self.points = points
 
-    def get_raw(self):
+    def get_raw(self) -> np.ndarray:
         """
         Return the array corresponding to this time axis.
         """
@@ -45,7 +46,7 @@ class DSOTraceParam(ParameterWithSetpoints):
     """
 
     def __init__(
-        self, name: str, instrument: "InfiniiumChannel", channel: str, **kwargs
+        self, name: str, instrument: "InfiniiumChannel", channel: str, **kwargs: Any
     ):
         """
         Initialize DSOTraceParam bound to a specific channel.
@@ -54,7 +55,7 @@ class DSOTraceParam(ParameterWithSetpoints):
         self._channel = channel
         # This parameter will be updated prior to being retrieved if
         # self.root_instrument.auto_digitize is true.
-        self._setpoints = (instrument.time_axis,)
+        self._setpoints: Sequence[DSOTimeAxisParam] = (instrument.time_axis,)
         self._points = 0
         self._yoffset = 0.0
         self._yincrement = 0.0
@@ -104,7 +105,7 @@ class DSOTraceParam(ParameterWithSetpoints):
         """
         if self.instrument is None:
             raise RuntimeError("Cannot get data without instrument")
-        root_instr: "Infiniium" = self.root_instrument
+        root_instr: "Infiniium" = self.root_instrument  # type: ignore
         # Check if we can use cached trace parameters
         if not root_instr.cache_setpoints():
             self.update_setpoints()
@@ -117,20 +118,20 @@ class DSOTraceParam(ParameterWithSetpoints):
 
         # Check if we should run a new sweep
         if root_instr.auto_digitize():
-            prev_mode = root_instr.digitize()
+            root_instr.digitize()
         # Ask for waveform data
         root_instr.write(f":WAV:SOUR {self._channel}")
         root_instr.write(":WAV:DATA?")
         # Ignore first two bytes, which should be "#0"
         _ = root_instr.visa_handle.read_bytes(2)
-        data = root_instr.visa_handle.read_binary_values(
+        data: np.ndarray = root_instr.visa_handle.read_binary_values(  # type: ignore
             "h",
             container=np.ndarray,
             header_fmt="empty",
             expect_termination=True,
             data_points=self._points,
         )
-        data = data.astype(np.float)
+        data = data.astype(np.float64)
         data = (data * self._yincrement) + self._yoffset
         return data
 
@@ -145,7 +146,7 @@ class AbstractMeasurementSubsystem(InstrumentModule):
     the measurement value.
     """
 
-    def __init__(self, parent: Instrument, name: str, **kwargs: Any) -> None:
+    def __init__(self, parent: InstrumentBase, name: str, **kwargs: Any) -> None:
         super().__init__(parent, name, **kwargs)
 
         ###################################
@@ -390,14 +391,14 @@ class UnboundMeasurement(AbstractMeasurementSubsystem):
                 "CHAN[1-4], DIFF[1-2], COMM[1-2], WMEM[1-4], FUNC[1-16])."
             )
 
-    def _set_source(self, source: str) -> str:
+    def _set_source(self, source: str) -> None:
         source = self._validate_source(source)
         self._channel = source
 
         # Then set the measurement source
         self.write(f":MEAS:SOUR {self._channel}")
 
-    def _get_source(self):
+    def _get_source(self) -> str:
         if self._channel == "":
             source = self.ask(":MEAS:SOUR?")
             self._channel = source.strip().split(",")[0]
@@ -474,14 +475,14 @@ class InfiniiumChannel(InstrumentChannel):
         self.add_submodule("measure", BoundMeasurement(self, "measure"))
 
     @property
-    def channel(self):
+    def channel(self) -> int:
         return self._channel
 
     @property
-    def channel_name(self):
+    def channel_name(self) -> str:
         return f"CHAN{self._channel}"
 
-    def update_setpoints(self):
+    def update_setpoints(self) -> None:
         """
         Update time axis and offsets for this channel.
         Calling this function is required when instr.cache_setpoints is True
@@ -501,7 +502,7 @@ class Infiniium(VisaInstrument):
         address: str,
         timeout: float = 20,
         channels: int = 4,
-        silence_pyvisapy_warning=False,
+        silence_pyvisapy_warning: bool = False,
         **kwargs: Any,
     ):
         """
@@ -721,24 +722,24 @@ class Infiniium(VisaInstrument):
         )
 
         # Channels
-        channels = ChannelList(self, "Channels", InfiniiumChannel, snapshotable=False)
+        _channels = ChannelList(self, "Channels", InfiniiumChannel, snapshotable=False)
         for i in range(1, self.no_channels + 1):
             channel = InfiniiumChannel(self, f"chan{i}", i)
-            channels.append(channel)
+            _channels.append(channel)
             self.add_submodule(f"ch{i}", channel)
-        self.add_submodule("channels", channels.to_channel_tuple())
+        self.add_submodule("channels", _channels.to_channel_tuple())
 
         # Submodules
         meassubsys = UnboundMeasurement(self, "measure")
         self.add_submodule("measure", meassubsys)
 
-    def _query_capabilities(self):
+    def _query_capabilities(self) -> None:
         """
         Query scope capabilities (sample rate, bandwidth, memory depth)
         """
         try:
             # Bandwidth
-            self.min_bw, self.max_bw = 0, 99e9  # Set default limits
+            self.min_bw, self.max_bw = 0.0, 99.0e9  # Set default limits
             bw = self.ask(":ACQ:BAND:TESTLIMITS?")
             match = re.fullmatch(
                 r"1,<numeric>([0-9.]+E\+[0-9]+):([0-9.]+E\+[0-9]+)", bw
@@ -779,7 +780,7 @@ class Infiniium(VisaInstrument):
             # Set BW to auto in order to query this
             bw_set = self.ask(":ACQ:BAND?")
             self.write(":ACQ:BAND AUTO")
-            self.min_srat, self.max_srat = 10, 99e9  # Set large limits
+            self.min_srat, self.max_srat = 10.0, 99.0e9  # Set large limits
             srat = self.ask(":ACQ:SRAT:TESTLIMITS?")
             self.write(f":ACQ:BAND {bw_set}")
             match = re.fullmatch(
@@ -798,7 +799,7 @@ class Infiniium(VisaInstrument):
                 f"Unable to query sample rate ({e}). Setting limits to default."
             )
 
-    def _get_avg(self):
+    def _get_avg(self) -> int:
         """
         Return the number of averages, or 1 if averaging is disabled.
         """
@@ -808,7 +809,7 @@ class Infiniium(VisaInstrument):
         else:
             return int(self.ask(":ACQ:AVER:COUN?"))
 
-    def _set_avg(self, count):
+    def _set_avg(self, count: int) -> None:
         """
         Set the number of averages, or disable if 1.
         """
@@ -819,28 +820,28 @@ class Infiniium(VisaInstrument):
             self.write(":ACQ:AVER 1")
 
     # Simple oscilloscope commands
-    def run(self):
+    def run(self) -> None:
         """
         Set the scope in run mode.
         """
         self.write(":RUN")
         self.run_mode()
 
-    def stop(self):
+    def stop(self) -> None:
         """
         Set the scope in stop mode.
         """
         self.write(":STOP")
         self.run_mode()
 
-    def single(self):
+    def single(self) -> None:
         """
         Take a single acquisition
         """
         self.write(":SING")
         self.run_mode()
 
-    def update_all_setpoints(self):
+    def update_all_setpoints(self) -> None:
         """
         Update the setpoints for all enabled channels.
         This method may be run at the beginning of a measurement rather than looping through
@@ -850,7 +851,7 @@ class Infiniium(VisaInstrument):
             if channel.display():
                 channel.update_setpoints()
 
-    def digitize(self, timeout=None):
+    def digitize(self, timeout: Optional[int] = None) -> None:
         """
         Digitize a full waveform and block until the acquisition is complete.
 
