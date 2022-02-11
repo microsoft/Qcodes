@@ -14,7 +14,7 @@ from qcodes.utils.validators import (
 from .conftest import AClass, a_func
 
 
-def test_good():
+def test_good_or():
     # combiner == 'OR'
     m = MultiType(Strings(2, 4), Ints(10, 1000))
 
@@ -27,11 +27,11 @@ def test_good():
             m.validate(v)
 
     assert repr(m) == '<MultiType: Strings 2<=len<=4, Ints 10<=v<=1000>'
-
     assert m.is_numeric
-
     assert not MultiType(Strings(), Enum(1, 2)).is_numeric
 
+
+def test_good_and():
     # combiner == 'AND'
     m = MultiType(Numbers(min_value=2e-3, max_value=5e4), PermissiveMultiples(divisor=1e-3), combiner='AND')
 
@@ -45,9 +45,7 @@ def test_good():
             m.validate(v)
 
     assert repr(m) == '<MultiType: Numbers 0.002<=v<=50000.0, PermissiveMultiples, Multiples of 0.001 to within 1e-09>'
-
     assert m.is_numeric
-
     assert not MultiType(Strings(), Enum(1, 2), combiner='AND').is_numeric
 
 
