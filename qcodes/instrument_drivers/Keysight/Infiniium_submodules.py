@@ -449,6 +449,7 @@ class InfiniiumChannel(InstrumentChannel):
             points=1,
             vals=vals.Arrays(shape=(self.parent.acquire_points,)),
             parameter_class=DSOTimeAxisParam,
+            snapshot_value=False,
         )
         self.add_parameter(
             name="trace",
@@ -457,6 +458,7 @@ class InfiniiumChannel(InstrumentChannel):
             channel=self.channel_name,
             vals=vals.Arrays(shape=(self.parent.acquire_points,)),
             parameter_class=DSOTraceParam,
+            snapshot_value=False,
         )
 
         # Measurement subsystem
