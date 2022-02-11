@@ -195,6 +195,5 @@ class Command:
     def __call__(self, *args: Any) -> Union[Output, ParsedOutput]:
         """Invoke the command."""
         if len(args) != self.arg_count:
-            raise TypeError(
-                f'command takes exactly {self.arg_count} args')
-        return self.exec_function(*args)
+            raise TypeError(f"command takes exactly {self.arg_count} args")
+        return self.exec_function(*args)  # type: ignore[operator]
