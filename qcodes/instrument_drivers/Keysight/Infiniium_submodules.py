@@ -454,7 +454,7 @@ class InfiniiumChannel(InstrumentChannel):
             name="trace",
             label=f"Channel {channel} trace",
             unit="V",
-            channel=channel,
+            channel=self.channel_name,
             vals=vals.Arrays(shape=(self.parent.acquire_points,)),
             parameter_class=DSOTraceParam,
         )
