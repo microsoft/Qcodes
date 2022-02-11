@@ -12,6 +12,7 @@ from typing import Callable as TCallable
 from typing import Dict as TDict
 from typing import Generic, Hashable
 from typing import List as TList
+from typing import Literal
 from typing import Optional
 from typing import Sequence as TSequence
 from typing import Tuple, TypeVar, Union, cast
@@ -589,18 +590,93 @@ class PermissiveMultiples(Validator[numbertypes]):
 
 class MultiType(Validator[Any]):
     """
-    Allow the union of several different validators.
-    For example, to allow numbers as well as "off":
-    MultiType(Numbers(), Enum("off"))
+    Allow the combination of several different validators.
+    By default, the resulting validator acts as a logical OR
+    between the different validators. Pass combiner='AND' to
+    require all validators to return True instead of atleast
+    one returning True.
+    Examples:
+        1. To allow numbers as well as "off":
+            MultiType(Numbers(), Enum("off"))
+            or:
+            MultiType(Numbers(), Enum("off"), combiner='OR')
+        2. To require values that are divisible by 0.001 while >=0.002 and <=50000.0
+            MultiType(PermissiveMultiples(divisor=1e-3),
+                      Numbers(min_value=2e-3, max_value=5e4),
+                      combiner='AND')
+
+    Raises:
+        TypeError: If no validators provided. Or if any of the provided
+            argument is not a valid validator. Or if combiner is not in
+            ['OR', 'AND'].
+    """
+
+    def __init__(self,
+                 *validators: Validator[Any],
+                 combiner: Literal['OR', 'AND'] = 'OR') -> None:
+        if not validators:
+            raise TypeError('MultiType needs at least one Validator')
+        if combiner not in ['OR', 'AND']:
+            raise TypeError("MultiType combiner argument must be one of ['OR', 'AND']")
+
+        for v in validators:
+            if not isinstance(v, Validator):
+                raise TypeError('each argument must be a Validator')
+
+            if v.is_numeric:
+                # if ANY of the contained validators is numeric,
+                # the MultiType is considered numeric too.
+                # this could cause problems if you want to sweep
+                # from a non-numeric to a numeric value, so we
+                # need to be careful about this in the sweep code
+                self.is_numeric = True
+
+        self._validators = tuple(validators)
+        self._combiner = combiner
+        self._valid_values = tuple(vval for v in self._validators
+                                   for vval in v._valid_values)
+
+    def validate(self, value: Any, context: str = '') -> None:
+        args: TList[str] = []
+        for v in self._validators:
+            try:
+                v.validate(value, context)
+                if self._combiner == 'OR':
+                    return
+            except Exception as e:
+                # collect the args from all validators so you can see why
+                # each one that was tested failed
+                args = args + list(e.args)
+                if self._combiner == 'AND':
+                    raise ValueError(*args)
+
+        if self._combiner == 'OR':
+            raise ValueError(*args)
+
+    def __repr__(self) -> str:
+        parts = (repr(v)[1:-1] for v in self._validators)
+        return '<MultiType: {}>'.format(', '.join(parts))
+
+
+class MultiTypeOr(MultiType):
+    """
+    Allow the combination of several different validators.
     The resulting validator acts as a logical OR between the
     different validators.
+
+    Example:
+        To allow numbers as well as "off":
+            MultiTypeOr(Numbers(), Enum("off"))
 
     Raises:
         TypeError: If no validators provided. Or if any of the provided
             argument is not a valid validator.
     """
 
-    def __init__(self, *validators: Validator[Any]) -> None:
+    def __init__(self,
+                 *validators: Validator[Any],
+                 ) -> None:
+        super().__init__(*validators, combiner='OR')
         if not validators:
             raise TypeError('MultiType needs at least one Validator')
 
@@ -620,22 +696,54 @@ class MultiType(Validator[Any]):
         self._valid_values = tuple(vval for v in self._validators
                                    for vval in v._valid_values)
 
-    def validate(self, value: Any, context: str = '') -> None:
-        args: TList[str] = []
-        for v in self._validators:
-            try:
-                v.validate(value, context)
-                return
-            except Exception as e:
-                # collect the args from all validators so you can see why
-                # each one failed
-                args = args + list(e.args)
+    def __repr__(self) -> str:
+        parts = (repr(v)[1:-1] for v in self._validators)
+        return '<MultiTypeOr: {}>'.format(', '.join(parts))
 
-        raise ValueError(*args)
+
+class MultiTypeAnd(MultiType):
+    """
+    Allow the combination of several different validators.
+    The resulting validator acts as a logical AND between the
+    different validators.
+
+    Example:
+        To require values that are divisible by 0.001 while >=0.002 and <=50000.0
+            MultiType(PermissiveMultiples(divisor=1e-3),
+                      Numbers(min_value=2e-3, max_value=5e4),
+                      combiner='AND')
+
+    Raises:
+        TypeError: If no validators provided. Or if any of the provided
+            argument is not a valid validator.
+    """
+
+    def __init__(self,
+                 *validators: Validator[Any],
+                 ) -> None:
+        super().__init__(*validators, combiner='AND')
+        if not validators:
+            raise TypeError('MultiType needs at least one Validator')
+
+        for v in validators:
+            if not isinstance(v, Validator):
+                raise TypeError('each argument must be a Validator')
+
+            if v.is_numeric:
+                # if ANY of the contained validators is numeric,
+                # the MultiType is considered numeric too.
+                # this could cause problems if you want to sweep
+                # from a non-numeric to a numeric value, so we
+                # need to be careful about this in the sweep code
+                self.is_numeric = True
+
+        self._validators = tuple(validators)
+        self._valid_values = tuple(vval for v in self._validators
+                                   for vval in v._valid_values)
 
     def __repr__(self) -> str:
         parts = (repr(v)[1:-1] for v in self._validators)
-        return '<MultiType: {}>'.format(', '.join(parts))
+        return '<MultiTypeAnd: {}>'.format(', '.join(parts))
 
 
 class Arrays(Validator[np.ndarray]):
@@ -733,7 +841,7 @@ class Arrays(Validator[np.ndarray]):
         if min_value is not None and max_value is not None:
             valuesok = max_value > min_value
             if not valuesok:
-                raise TypeError(f'max_value must be bigger than min_value')
+                raise TypeError('max_value must be bigger than min_value')
 
         if not isinstance(shape,
                           collections.abc.Sequence) and shape is not None:

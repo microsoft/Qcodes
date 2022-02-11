@@ -1,10 +1,11 @@
 import pytest
-from qcodes.utils.validators import Enum, Ints, Lists, MultiType, Strings
+from qcodes.utils.validators import Anything, Enum, Ints, Lists, MultiType, Strings, Numbers, PermissiveMultiples
 
 from .conftest import AClass, a_func
 
 
 def test_good():
+    # combiner == 'OR'
     m = MultiType(Strings(2, 4), Ints(10, 1000))
 
     for v in [10, 11, 123, 1000, 'aa', 'mop', 'FRED']:
@@ -21,17 +22,61 @@ def test_good():
 
     assert not MultiType(Strings(), Enum(1, 2)).is_numeric
 
+    # combiner == 'AND'
+    m = MultiType(Numbers(min_value=2e-3, max_value=5e4), PermissiveMultiples(divisor=1e-3), combiner='AND')
+
+    for v in [10, 11, 123, 1000, 49999.0, 49999.1, 49999.9, 50000.0, 0.1, 0.01, 0.002]:
+        m.validate(v)
+
+    # in py True == 1, so valid in this construction
+    for v in [0, 0.001, 50000.1, 'Q', 'Qcode', None, -1, b'nice', [], {},
+              a_func, AClass, AClass(), False]:
+        with pytest.raises(ValueError):
+            ic(v)
+            m.validate(v)
+
+    assert repr(m) == '<MultiType: Numbers 0.002<=v<=50000.0, PermissiveMultiples, Multiples of 0.001 to within 1e-09>'
+
+    assert m.is_numeric
+
+    assert not MultiType(Strings(), Enum(1, 2), combiner='AND').is_numeric
+
 
 def test_bad():
+    # combiner == 'OR'
     for args in [[], [1], [Strings(), True]]:
         with pytest.raises(TypeError):
             MultiType(*args)
+    # combiner == 'OR'
+    for args in [[], [1], [Strings(), True]]:
+        with pytest.raises(TypeError):
+            MultiType(*args, combiner='OR')
+    # combiner == 'AND'
+    for args in [[], [1], [Strings(), True]]:
+        with pytest.raises(TypeError):
+            MultiType(*args, combiner='AND')
 
 
 def test_valid_values():
+    # combiner == 'OR'
     ms = [MultiType(Strings(2, 4), Ints(10, 32)),
           MultiType(Ints(), Lists(Ints())),
           MultiType(Ints(), MultiType(Lists(Ints()), Ints()))]
     for m in ms:
         for val in m.valid_values:
             m.validate(val)
+
+    # combiner == 'AND'
+    # the concept of checking Validator.valid_values does not hold for the 'AND' case
+    #ms = [MultiType(Numbers(min_value=0, max_value=120), PermissiveMultiples(divisor=0.1), combiner='AND'),
+    #      MultiType(Numbers(min_value=2e-3, max_value=5e4), PermissiveMultiples(divisor=1e-3), combiner='AND'),
+    #      MultiType(Anything(), MultiType(Numbers(), Ints()))]
+    #for m in ms:
+    #    ic(m)
+    #    for val in m.valid_values:
+    #        ic(val)
+    #        m.validate(val)
+
+if __name__ == '__main__':
+    import IPython; IPython.embed()
+
