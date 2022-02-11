@@ -1,53 +1,24 @@
+import warnings
 from unittest.mock import MagicMock
 
 import pytest
-from pyvisa import VisaIOError
 
 from qcodes.instrument_drivers.Keysight.keysightb1500 import constants
-from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_base \
-    import KeysightB1500
-from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1511B import \
-    B1511B
-from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1517A import \
-    B1517A
-from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1520A import \
-    B1520A
-from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1530A import \
-    B1530A
-from qcodes.instrument_drivers.Keysight.keysightb1500.constants import \
-    SlotNr, ChNr, CALResponse
-
-# pylint: disable=redefined-outer-name
+from qcodes.instrument_drivers.Keysight.keysightb1500.constants import (
+    CALResponse,
+    ChNr,
+    SlotNr,
+)
+from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_base import (
+    KeysightB1500,
+)
+from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1511B import B1511B
+from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1517A import B1517A
+from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1520A import B1520A
+from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1530A import B1530A
 
 
-@pytest.fixture
-def b1500(request):
-    request.addfinalizer(KeysightB1500.close_all)
-
-    try:
-        resource_name = 'insert_Keysight_B2200_VISA_resource_name_here'
-        instance = KeysightB1500('SPA',
-                                 address=resource_name)
-    except (ValueError, VisaIOError):
-        # Either there is no VISA lib installed or there was no real
-        # instrument found at the specified address => use simulated instrument
-        import qcodes.instrument.sims as sims
-        path_to_yaml = sims.__file__.replace('__init__.py',
-                                             'keysight_b1500.yaml')
-
-        instance = KeysightB1500('SPA',
-                                 address='GPIB::1::INSTR',
-                                 visalib=path_to_yaml + '@sim'
-                                 )
-
-    instance.get_status()
-    instance.reset()
-
-    yield instance
-
-
-def test_make_module_from_model_name():
-    mainframe = MagicMock()
+def test_make_module_from_model_name(mainframe):
 
     with pytest.raises(NotImplementedError):
         KeysightB1500.from_model_name(model='unsupported_module', slot_nr=0,
@@ -82,9 +53,9 @@ def test_init(b1500):
 
 
 def test_snapshot_does_not_raise_warnings(b1500):
-    with pytest.warns(None) as warnings_record:
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
         b1500.snapshot(update=True)
-    assert len(warnings_record) == 0, warnings_record
 
 
 def test_submodule_access_by_class(b1500):
