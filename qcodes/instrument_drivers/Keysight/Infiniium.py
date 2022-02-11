@@ -1,8 +1,5 @@
 import re
-from email import header
-from functools import partial
-from logging import root
-from typing import Any, Callable, Dict, Optional, Sequence
+from typing import Any, Optional, Sequence
 
 import numpy as np
 from pyvisa import VisaIOError
@@ -22,6 +19,10 @@ class DSOTimeAxisParam(Parameter):
     """
 
     def __init__(self, xorigin: float, xincrement: float, points: int, **kwargs: Any):
+        """
+        Initialize time axis. If values are unknown, they can be initialized to zero and filled
+        in later.
+        """
         super().__init__(**kwargs)
 
         self.xorigin = xorigin
@@ -175,7 +176,8 @@ class AbstractMeasurementSubsystem(InstrumentModule):
             unit="V",
             snapshot_value=False,
         )
-        # Threshold Voltage Measurements - this measurement ignores overshoot in the data
+        # Threshold Voltage Measurements - this measurement ignores overshoot
+        # in the data
         self.add_parameter(
             name="vlow",
             label="Lower threshold voltage",
@@ -334,6 +336,9 @@ class AbstractMeasurementSubsystem(InstrumentModule):
 
 class BoundMeasurement(AbstractMeasurementSubsystem):
     def __init__(self, parent: "InfiniiumChannel", name: str, **kwargs: Any):
+        """
+        Initialize measurement subsystem bound to a specific channel
+        """
         # Bind the channel
         self._channel = parent.channel_name
 
@@ -343,6 +348,9 @@ class BoundMeasurement(AbstractMeasurementSubsystem):
 
 class UnboundMeasurement(AbstractMeasurementSubsystem):
     def __init__(self, parent: "Infiniium", name: str, **kwargs: Any):
+        """
+        Initialize measurement subsystem where target is set by the parameter `source`.
+        """
         # Blank channel
         self._channel = ""
 
@@ -358,7 +366,7 @@ class UnboundMeasurement(AbstractMeasurementSubsystem):
         )
 
     def _validate_source(self, source: str) -> str:
-        "Validate and set the source"
+        """Validate and set the source"""
         valid_channels = f"CHAN[1-{self.root_instrument.no_channels}]"
         if re.fullmatch(valid_channels, source):
             if not int(self.ask(f"CHAN{source[-1]}:DISP?")):
@@ -750,11 +758,12 @@ class Infiniium(VisaInstrument):
                 self.log.info(f"Scope BW: {self.min_bw}-{self.max_bw}")
                 self._meta_attrs.extend(("min_bw", "max_bw"))
             else:
-                self.log.warn(
-                    f"Unable to query bandwidth limits (inv. format ({bw})). Setting limits to default."
+                self.log.warning(
+                    f"Unable to query bandwidth limits (inv. format ({bw})). "
+                    f"Setting limits to default."
                 )
         except VisaIOError as e:
-            self.log.warn(
+            self.log.warning(
                 f"Unable to query bandwidth limits ({e}). Setting limits to default."
             )
 
@@ -768,11 +777,12 @@ class Infiniium(VisaInstrument):
                 self.log.info(f"Scope memory: {self.min_pts}-{self.max_pts}")
                 self._meta_attrs.extend(("min_pts", "max_pts"))
             else:
-                self.log.warn(
-                    f"Unable to query memory depth (inv. format ({mem})). Setting limits to default."
+                self.log.warning(
+                    f"Unable to query memory depth (inv. format ({mem})). "
+                    "Setting limits to default."
                 )
         except VisaIOError as e:
-            self.log.warn(
+            self.log.warning(
                 f"Unable to query memory depth ({e}). Setting limits to default."
             )
 
@@ -793,7 +803,8 @@ class Infiniium(VisaInstrument):
                 self._meta_attrs.extend(("min_srat", "max_srat"))
             else:
                 self.log.warn(
-                    f"Unable to query sample rate (inv. format ({srat})). Setting limits to default."
+                    f"Unable to query sample rate (inv. format ({srat})). "
+                    "Setting limits to default."
                 )
         except VisaIOError as e:
             self.log.warn(
@@ -879,13 +890,6 @@ class Infiniium(VisaInstrument):
                             "Unexpected VisaError while waiting for acquisition."
                         )
                         raise  # Raise all other visa errors
-                except KeyboardInterrupt:
-                    raise  # Pass any keyboard interrupt upwards
-                except Exception as e:
-                    self.log.exception(
-                        "Unexpected exception while waiting for acquisition."
-                    )
-                    raise
         except KeyboardInterrupt:
             self.log.error(
                 "Keyboard interrupt while waiting to digitize. Check your trigger?"
