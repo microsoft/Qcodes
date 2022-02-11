@@ -156,9 +156,7 @@ class MultiChannelInstrumentParameter(MultiParameter, Generic[InstrumentModuleTy
         return self.names
 
 
-class ChannelTuple(
-    Metadatable, Sequence[InstrumentModuleType], Generic[InstrumentModuleType]
-):
+class ChannelTuple(Metadatable, Sequence[InstrumentModuleType]):
     """
     Container for channelized parameters that allows for sweeps over
     all channels, as well as addressing of individual channels.
