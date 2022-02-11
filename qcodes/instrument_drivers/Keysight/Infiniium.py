@@ -13,6 +13,7 @@ from qcodes import (
 )
 from qcodes import validators as vals
 from qcodes.instrument.parameter import ParamRawDataType
+from qcodes.utils.deprecate import deprecate
 from qcodes.utils.validators import Enum, Numbers
 
 log = logging.getLogger(__name__)
@@ -369,9 +370,10 @@ class Infiniium(VisaInstrument):
      - tested for MSOS104A of the Infiniium S-series.
     """
 
-    def __init__(self, name: str, address: str,
-                 timeout: float = 20,
-                 **kwargs: Any):
+    @deprecate(
+        alternative="qcodes.instrument_drivers.Keysight.Infiniium_submodules.Infiniium"
+    )
+    def __init__(self, name: str, address: str, timeout: float = 20, **kwargs: Any):
         """
         Initialises the oscilloscope.
 
