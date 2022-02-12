@@ -1,0 +1,16 @@
+name: Lint with Darker
+
+on: [push, pull_request]
+
+jobs:
+  lint-with-darker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - uses: akaihola/darker@1.4.0
+        with:
+          options: "--check --diff -r origin/master -i"
+          src: "./qcodes"
+          version: "1.4.0"

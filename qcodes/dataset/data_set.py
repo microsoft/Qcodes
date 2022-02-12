@@ -49,6 +49,7 @@ from qcodes.dataset.sqlite.database import (
 from qcodes.dataset.sqlite.queries import (
     _check_if_table_found,
     _get_result_table_name_by_guid,
+    _query_guids_from_run_spec,
     add_data_to_dynamic_columns,
     add_parameter,
     completed,
@@ -58,7 +59,6 @@ from qcodes.dataset.sqlite.queries import (
     get_experiment_name_from_experiment_id,
     get_guid_from_expid_and_counter,
     get_guid_from_run_id,
-    get_guids_from_run_spec,
     get_metadata_from_run_id,
     get_parameter_data,
     get_parent_dataset_links,
@@ -1488,20 +1488,22 @@ def load_by_run_spec(
     internal_conn = conn or connect(get_DB_location())
     d: Optional[DataSetProtocol] = None
     try:
-        guids = get_guids_from_run_spec(
-            internal_conn,
+        guids = get_guids_by_run_spec(
             captured_run_id=captured_run_id,
             captured_counter=captured_counter,
             experiment_name=experiment_name,
             sample_name=sample_name,
+            # guid parts
+            sample_id=sample_id,
+            location=location,
+            work_station=work_station,
+            conn=internal_conn,
         )
 
-        matched_guids = filter_guids_by_parts(guids, location, sample_id, work_station)
-
-        if len(matched_guids) == 1:
-            d = load_by_guid(matched_guids[0], internal_conn)
-        elif len(matched_guids) > 1:
-            print(generate_dataset_table(matched_guids, conn=internal_conn))
+        if len(guids) == 1:
+            d = load_by_guid(guids[0], internal_conn)
+        elif len(guids) > 1:
+            print(generate_dataset_table(guids, conn=internal_conn))
             raise NameError(
                 "More than one matching dataset found. "
                 "Please supply more information to uniquely"
@@ -1514,6 +1516,57 @@ def load_by_run_spec(
             internal_conn.close()
     assert d is not None
     return d
+
+
+def get_guids_by_run_spec(
+    *,
+    captured_run_id: Optional[int] = None,
+    captured_counter: Optional[int] = None,
+    experiment_name: Optional[str] = None,
+    sample_name: Optional[str] = None,
+    # guid parts
+    sample_id: Optional[int] = None,
+    location: Optional[int] = None,
+    work_station: Optional[int] = None,
+    conn: Optional[ConnectionPlus] = None,
+) -> List[str]:
+    """
+    Get a list of matching guids from one or more pieces of runs specification. All
+    fields are optional.
+
+    Args:
+        captured_run_id: The ``run_id`` that was originally assigned to this
+          at the time of capture.
+        captured_counter: The counter that was originally assigned to this
+          at the time of capture.
+        experiment_name: name of the experiment that the run was captured
+        sample_name: The name of the sample given when creating the experiment.
+        sample_id: The sample_id assigned as part of the GUID.
+        location: The location code assigned as part of GUID.
+        work_station: The workstation assigned as part of the GUID.
+        conn: An optional connection to the database. If no connection is
+          supplied a connection to the default database will be opened.
+
+    Returns:
+        List of guids matching the run spec.
+    """
+    internal_conn = conn or connect(get_DB_location())
+    try:
+        guids = _query_guids_from_run_spec(
+            internal_conn,
+            captured_run_id=captured_run_id,
+            captured_counter=captured_counter,
+            experiment_name=experiment_name,
+            sample_name=sample_name,
+        )
+
+        matched_guids = filter_guids_by_parts(guids, location, sample_id, work_station)
+
+    finally:
+        if not conn:
+            internal_conn.close()
+
+    return matched_guids
 
 
 def load_by_id(run_id: int, conn: Optional[ConnectionPlus] = None) -> DataSetProtocol:

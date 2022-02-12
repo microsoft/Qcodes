@@ -2,7 +2,7 @@ name: qcodesforge
 channels:
  - conda-forge
 dependencies:
- - python=3.7.9
+ - python=3.9
  # recommended to be explicitly specified by conda-incubator/setup-miniconda@v2
  - pip
  # dependencies for setup.cfg
