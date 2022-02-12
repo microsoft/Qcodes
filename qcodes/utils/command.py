@@ -1,4 +1,4 @@
-from typing import Any, Callable, Optional, TypeVar, Union
+from typing import Any, Callable, Generic, Optional, TypeVar, Union
 
 from qcodes.utils.helpers import is_function
 
@@ -11,7 +11,7 @@ Output = TypeVar("Output")
 ParsedOutput = TypeVar("ParsedOutput")
 
 
-class Command:
+class Command(Generic[Output, ParsedOutput]):
     """
     Create a callable command from a string or function.
 
