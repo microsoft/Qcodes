@@ -66,6 +66,7 @@ class DSOTraceParam(ParameterWithSetpoints):
     def setpoints(self) -> Sequence[Parameter]:
         """
         Overwrite setpoint parameter to update setpoints if auto_digitize is true
+
         Args:
             preamble: Sequence[str] - Cached preamble if available. Defaults to None in
                 which case value will be queried from instrument.
