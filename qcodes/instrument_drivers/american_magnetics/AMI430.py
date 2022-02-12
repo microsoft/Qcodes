@@ -1,4 +1,4 @@
-import collections
+import collections.abc
 import logging
 import numbers
 import time
@@ -15,7 +15,6 @@ from typing import (
     Tuple,
     TypeVar,
     Union,
-    cast,
 )
 
 import numpy as np
