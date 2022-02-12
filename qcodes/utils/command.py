@@ -1,5 +1,7 @@
 from typing import Any, Callable, Generic, Optional, TypeVar, Union
 
+from typing_extensions import Literal
+
 from qcodes.utils.helpers import is_function
 
 
@@ -71,7 +73,7 @@ class Command(Generic[Output, ParsedOutput]):
             )
 
         if input_parser is None:
-            parse_input: Union[bool, str] = False
+            parse_input: Union[bool, Literal["multi"]] = False
         elif is_function(input_parser, arg_count):
             parse_input = True if arg_count == 1 else 'multi'
             self.input_parser = input_parser
