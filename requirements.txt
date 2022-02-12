@@ -54,7 +54,7 @@ parso~=0.8.3
 pickleshare~=0.7.5
 Pillow~=9.0.1
 prometheus-client~=0.13.1
-prompt-toolkit~=3.0.27
+prompt-toolkit~=3.0.28
 protobuf~=3.19.4
 psutil~=5.9.0
 pyasn1~=0.4.8
@@ -71,7 +71,7 @@ pywinpty~=2.0.2; sys_platform == 'win32'
 pyzmq~=22.3.0
 requests~=2.27.1
 rsa~=4.8
-ruamel.yaml==0.17.20
+ruamel.yaml==0.17.21
 ruamel.yaml.clib~=0.2.6
 schema~=0.7.5
 Send2Trash~=1.8.0
