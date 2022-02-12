@@ -67,7 +67,7 @@ class Command(Generic[Output, ParsedOutput]):
 
         if no_cmd_function is not None and not is_function(no_cmd_function, arg_count):
             raise TypeError(
-                f"no_cmd_function must be none or a function "
+                f"no_cmd_function must be None or a function "
                 f"taking the same args as the command, not "
                 f"{no_cmd_function}"
             )
@@ -79,7 +79,7 @@ class Command(Generic[Output, ParsedOutput]):
             self.input_parser = input_parser
         else:
             raise TypeError(
-                f"input_parser must be a function with one arg_count args,"
+                f"input_parser must be a function with arg_count = {arg_count} args or None,"
                 f" not {input_parser!r}"
             )
 
@@ -113,8 +113,7 @@ class Command(Generic[Output, ParsedOutput]):
 
             elif exec_str is not None:
                 raise TypeError(
-                    "exec_str must be a function with one arg,"
-                    + f" not {repr(exec_str)}"
+                    f"exec_str must be a function with one arg, not {exec_str!r}"
                 )
 
         elif is_function(cmd, arg_count):
@@ -136,8 +135,9 @@ class Command(Generic[Output, ParsedOutput]):
                 raise NoCommandError('no ``cmd`` provided')
 
         else:
-            raise TypeError('cmd must be a string or function with ' +
-                            f'{arg_count} args')
+            raise TypeError(
+                f"cmd must be a string or function with arg_count={arg_count} args"
+            )
 
     # Wrappers that may or may not be used in constructing call
     # these functions are not very DRY at all - this could be condensed
