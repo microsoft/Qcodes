@@ -97,7 +97,7 @@ class Command(Generic[Output, ParsedOutput]):
         if isinstance(cmd, str):
             self.cmd_str = cmd
             if exec_str is None:
-                raise TypeError("exec_str cannot be None if " "cmd is a str.")
+                raise TypeError("exec_str cannot be None if cmd is a str.")
 
             self.exec_str = exec_str
 
