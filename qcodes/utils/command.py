@@ -75,12 +75,12 @@ class Command(Generic[Output, ParsedOutput]):
         if input_parser is None:
             parse_input: Union[bool, Literal["multi"]] = False
         elif is_function(input_parser, arg_count):
-            parse_input = True if arg_count == 1 else 'multi'
+            parse_input = True if arg_count == 1 else "multi"
             self.input_parser = input_parser
         else:
             raise TypeError(
-                f"input_parser must be a function with arg_count = {arg_count} args or None,"
-                f" not {input_parser!r}"
+                f"input_parser must be a function with arg_count = "
+                f"{arg_count} args or None, not {input_parser!r}"
             )
 
         if output_parser is None:
@@ -90,8 +90,8 @@ class Command(Generic[Output, ParsedOutput]):
             self.output_parser = output_parser
         else:
             raise TypeError(
-                f"output_parser must be a function with one arg,"
-                f" not {output_parser!r}"
+                f"output_parser must be a function with one arg "
+                f"or None, not {output_parser!r}"
             )
 
         if isinstance(cmd, str):
@@ -107,8 +107,8 @@ class Command(Generic[Output, ParsedOutput]):
                     (False, True): self.call_by_str_parsed_out,
                     (True, False): self.call_by_str_parsed_in,
                     (True, True): self.call_by_str_parsed_in_out,
-                    ('multi', False): self.call_by_str_parsed_in2,
-                    ('multi', True): self.call_by_str_parsed_in2_out
+                    ("multi", False): self.call_by_str_parsed_in2,
+                    ("multi", True): self.call_by_str_parsed_in2_out,
                 }[(parse_input, parse_output)]
 
             elif exec_str is not None:
@@ -124,15 +124,15 @@ class Command(Generic[Output, ParsedOutput]):
                 (False, True): self.call_cmd_parsed_out,
                 (True, False): self.call_cmd_parsed_in,
                 (True, True): self.call_cmd_parsed_in_out,
-                ('multi', False): self.call_cmd_parsed_in2,
-                ('multi', True): self.call_cmd_parsed_in2_out
+                ("multi", False): self.call_cmd_parsed_in2,
+                ("multi", True): self.call_cmd_parsed_in2_out,
             }[(parse_input, parse_output)]
 
         elif cmd is None:
             if no_cmd_function is not None:
                 self.exec_function = no_cmd_function
             else:
-                raise NoCommandError('no ``cmd`` provided')
+                raise NoCommandError("no ``cmd`` provided")
 
         else:
             raise TypeError(
@@ -160,8 +160,9 @@ class Command(Generic[Output, ParsedOutput]):
 
     def call_by_str_parsed_in_out(self, arg: Any) -> ParsedOutput:
         """Execute a formatted string with 1-arg input and output parsing."""
-        return self.output_parser(self.exec_str(
-            self.cmd_str.format(self.input_parser(arg))))
+        return self.output_parser(
+            self.exec_str(self.cmd_str.format(self.input_parser(arg)))
+        )
 
     def call_by_str_parsed_in2(self, *args: Any) -> Output:
         """Execute a formatted string with multi-arg input parsing."""
@@ -169,8 +170,9 @@ class Command(Generic[Output, ParsedOutput]):
 
     def call_by_str_parsed_in2_out(self, *args: Any) -> ParsedOutput:
         """Execute a formatted string with multi-arg input & output parsing."""
-        return self.output_parser(self.exec_str(
-            self.cmd_str.format(*self.input_parser(*args))))
+        return self.output_parser(
+            self.exec_str(self.cmd_str.format(*self.input_parser(*args)))
+        )
 
     # And the same for parsing + command as a function
 
