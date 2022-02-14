@@ -715,7 +715,7 @@ class Infiniium(VisaInstrument):
             label="Auto digitize",
             set_cmd=None,
             get_cmd=None,
-            vals=vals.Bool(),
+            val_mapping=create_on_off_val_mapping(),
             docstring=(
                 "Digitize before each waveform download. "
                 "If you need to acquire from multiple channels simultaneously "
@@ -729,7 +729,7 @@ class Infiniium(VisaInstrument):
             label="Cache setpoints",
             set_cmd=None,
             get_cmd=None,
-            vals=vals.Bool(),
+            val_mapping=create_on_off_val_mapping(),
             docstring=(
                 "Cache setpoints. If false, the preamble is queried before each"
                 " acquisition, which may add latency to measurements. If you"
