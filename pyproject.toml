@@ -54,7 +54,6 @@ module = [
     "qcodes.measure",
     "qcodes.plots.*",
     "qcodes.tests.*",
-    "qcodes.utils.command",
     "qcodes.utils.magic",
     "qcodes.utils.slack",
 

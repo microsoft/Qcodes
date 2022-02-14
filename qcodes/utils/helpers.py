@@ -200,8 +200,7 @@ def is_sequence_of(obj: Any,
     return True
 
 
-def is_function(f: Callable[..., Any],
-                arg_count: int, coroutine: bool = False) -> bool:
+def is_function(f: object, arg_count: int, coroutine: bool = False) -> bool:
     """
     Check and require a function that can accept the specified number of
     positional arguments, which either is or is not a coroutine
