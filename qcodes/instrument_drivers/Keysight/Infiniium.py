@@ -1,5 +1,5 @@
 import re
-from typing import Any, Optional, Sequence
+from typing import Any, Optional, Sequence, Union
 
 import numpy as np
 from pyvisa import VisaIOError
@@ -8,7 +8,12 @@ from pyvisa.constants import StatusCode
 from qcodes import validators as vals
 from qcodes.instrument import VisaInstrument
 from qcodes.instrument.base import InstrumentBase
-from qcodes.instrument.channel import ChannelList, InstrumentChannel, InstrumentModule
+from qcodes.instrument.channel import (
+    ChannelList,
+    ChannelTuple,
+    InstrumentChannel,
+    InstrumentModule,
+)
 from qcodes.instrument.parameter import Parameter, ParameterWithSetpoints
 from qcodes.utils.helpers import create_on_off_val_mapping
 
@@ -341,7 +346,12 @@ class AbstractMeasurementSubsystem(InstrumentModule):
 
 
 class BoundMeasurement(AbstractMeasurementSubsystem):
-    def __init__(self, parent: "InfiniiumChannel", name: str, **kwargs: Any):
+    def __init__(
+        self,
+        parent: Union["InfiniiumChannel", "InfiniiumFunction"],
+        name: str,
+        **kwargs: Any,
+    ):
         """
         Initialize measurement subsystem bound to a specific channel
         """
@@ -420,6 +430,63 @@ class UnboundMeasurement(AbstractMeasurementSubsystem):
         return self._channel
 
 
+class InfiniiumFunction(InstrumentChannel):
+    def __init__(self, parent: "Infiniium", name: str, channel: int, **kwargs: Any):
+        """
+        Initialize an infiniium channel.
+        """
+        self._channel = channel
+        super().__init__(parent, name, **kwargs)
+
+        # display
+        self.add_parameter(
+            name="display",
+            label=f"Function {channel} display on/off",
+            set_cmd=f"FUNC{channel}:DISP {{}}",
+            get_cmd=f"FUNC{channel}:DISP?",
+            val_mapping=create_on_off_val_mapping(on_val=1, off_val=0),
+        )
+
+        # Retrieve basic settings of the function
+        self.add_parameter(
+            name="function",
+            label=f"Function {channel} function",
+            get_cmd=self._get_func,
+        )
+        self.add_parameter(
+            name="source",
+            label=f"Function {channel} source",
+            get_cmd=f"FUNC{channel}?",
+        )
+
+        # Measurement subsystem
+        self.add_submodule("measure", BoundMeasurement(self, "measure"))
+
+    @property
+    def channel(self) -> int:
+        return self._channel
+
+    @property
+    def channel_name(self) -> str:
+        return f"FUNC{self._channel}"
+
+    def _get_func(self) -> str:
+        """
+        Return the function applied to the sources for this function
+        """
+        try:
+            self.write(":SYST:HEAD ON")
+            func, _sour = self.ask(f":{self.channel_name}?").strip().split()
+            match = re.fullmatch(f":{self.channel_name}:([\\w]+)", func)
+            if match:
+                return match.groups()[0]
+            raise ValueError(
+                f"Couldn't extract function for {self.channel_name}. Got {func}"
+            )
+        finally:
+            self.write(":SYST:HEAD OFF")
+
+
 class InfiniiumChannel(InstrumentChannel):
     def __init__(self, parent: "Infiniium", name: str, channel: int, **kwargs: Any):
         """
@@ -432,8 +499,8 @@ class InfiniiumChannel(InstrumentChannel):
         self.add_parameter(
             name="display",
             label=f"Channel {channel} display on/off",
-            set_cmd=f"CHANnel{channel}:DISPlay {{}}",
-            get_cmd=f"CHANnel{channel}:DISPlay?",
+            set_cmd=f"CHAN{channel}:DISP {{}}",
+            get_cmd=f"CHAN{channel}:DISP?",
             val_mapping=create_on_off_val_mapping(on_val=1, off_val=0),
         )
 
@@ -740,12 +807,23 @@ class Infiniium(VisaInstrument):
         )
 
         # Channels
-        _channels = ChannelList(self, "Channels", InfiniiumChannel, snapshotable=False)
+        _channels = ChannelList(self, "channels", InfiniiumChannel, snapshotable=False)
         for i in range(1, self.no_channels + 1):
             channel = InfiniiumChannel(self, f"chan{i}", i)
             _channels.append(channel)
             self.add_submodule(f"ch{i}", channel)
         self.add_submodule("channels", _channels.to_channel_tuple())
+
+        # Functions
+        _functions = ChannelList(
+            self, "functions", InfiniiumFunction, snapshotable=False
+        )
+        for i in range(1, 16 + 1):
+            function = InfiniiumFunction(self, f"func{i}", i)
+            _functions.append(function)
+            self.add_submodule(f"func{i}", function)
+        # Have to call channel list "funcs" here as functions is a reserved name in Instrument.
+        self.add_submodule("funcs", _functions.to_channel_tuple())
 
         # Submodules
         meassubsys = UnboundMeasurement(self, "measure")
