@@ -75,6 +75,7 @@ class DSOTraceParam(ParameterWithSetpoints):
     """
 
     UNIT_MAP = {0: "UNKNOWN", 1: "V", 2: "s", 3: "''", 4: "A", 5: "dB"}
+
     def __init__(
         self, name: str, instrument: "InfiniiumChannel", channel: str, **kwargs: Any
     ):
