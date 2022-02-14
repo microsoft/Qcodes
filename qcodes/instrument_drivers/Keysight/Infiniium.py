@@ -798,10 +798,10 @@ class Infiniium(VisaInstrument):
         # Sample Rate
         try:
             # Set BW to auto in order to query this
-            bw_set = np.float(self.ask(":ACQ:BAND?"))
+            bw_set = float(self.ask(":ACQ:BAND?"))
             if np.isclose(bw_set, self.max_bw):
                 # Auto returns max bandwidth
-                bw_set = "AUTO"
+                bw_set = "AUTO"  # type: ignore
             self.write(":ACQ:BAND AUTO")
             self.min_srat, self.max_srat = 10.0, 99.0e9  # Set large limits
             srat = self.ask(":ACQ:SRAT:TESTLIMITS?")
