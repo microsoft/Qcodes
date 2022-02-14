@@ -798,7 +798,7 @@ class Infiniium(VisaInstrument):
         # Sample Rate
         try:
             # Set BW to auto in order to query this
-            bw_set = np.float(self.ask(":ACQ:BAND?"))
+            bw_set = float(self.ask(":ACQ:BAND?"))
             if np.isclose(bw_set, self.max_bw):
                 # Auto returns max bandwidth
                 bw_set = "AUTO"
