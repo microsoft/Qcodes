@@ -8,12 +8,7 @@ from pyvisa.constants import StatusCode
 from qcodes import validators as vals
 from qcodes.instrument import VisaInstrument
 from qcodes.instrument.base import InstrumentBase
-from qcodes.instrument.channel import (
-    ChannelList,
-    ChannelTuple,
-    InstrumentChannel,
-    InstrumentModule,
-)
+from qcodes.instrument.channel import ChannelList, InstrumentChannel, InstrumentModule
 from qcodes.instrument.parameter import Parameter, ParameterWithSetpoints
 from qcodes.utils.helpers import create_on_off_val_mapping
 
@@ -46,41 +41,76 @@ class DSOTimeAxisParam(Parameter):
         )
 
 
+class DSOFrequencyAxisParam(Parameter):
+    """
+    Time axis parameter for the Infiniium series DSO.
+    """
+
+    def __init__(self, xorigin: float, xincrement: float, points: int, **kwargs: Any):
+        """
+        Initialize time axis. If values are unknown, they can be initialized to zero and
+        filled in later.
+        """
+        super().__init__(**kwargs)
+
+        self.xorigin = xorigin
+        self.xincrement = xincrement
+        self.points = points
+
+    def get_raw(self) -> np.ndarray:
+        """
+        Return the array corresponding to this time axis.
+        """
+        return np.linspace(
+            self.xorigin,
+            self.xorigin + self.points * self.xincrement,
+            self.points,
+            endpoint=False,
+        )
+
+
 class DSOTraceParam(ParameterWithSetpoints):
     """
     Trace parameter for the Infiniium series DSO
     """
 
+    UNIT_MAP = {0: "UNKNOWN", 1: "V", 2: "s", 3: "''", 4: "A", 5: "dB"}
     def __init__(
         self, name: str, instrument: "InfiniiumChannel", channel: str, **kwargs: Any
     ):
         """
         Initialize DSOTraceParam bound to a specific channel.
         """
+        self._ch_valid = False
         super().__init__(name, instrument=instrument, **kwargs)
         self._channel = channel
         # This parameter will be updated prior to being retrieved if
         # self.root_instrument.auto_digitize is true.
-        self._setpoints: Sequence[DSOTimeAxisParam] = (instrument.time_axis,)
         self._points = 0
         self._yoffset = 0.0
         self._yincrement = 0.0
-        self._ch_valid = False
+        self._unit = 0
 
     @property
     def setpoints(self) -> Sequence[Parameter]:
         """
         Overwrite setpoint parameter to update setpoints if auto_digitize is true
-
-        Args:
-            preamble: Sequence[str] - Cached preamble if available. Defaults to None in
-                which case value will be queried from instrument.
         """
-        root_instrument: "Infiniium" = self.root_instrument  # type: ignore
-        cache_setpoints = root_instrument.cache_setpoints()
-        if not cache_setpoints:
-            self.update_setpoints()
-        return self._setpoints
+        instrument = self.instrument
+        if isinstance(instrument, InfiniiumChannel):
+            root_instrument: "Infiniium" = self.root_instrument  # type: ignore
+            cache_setpoints = root_instrument.cache_setpoints()
+            if not cache_setpoints:
+                self.update_setpoints()
+            return (instrument.time_axis,)
+        elif isinstance(instrument, InfiniiumFunction):
+            if instrument.function().startswith("FFT"):
+                self.update_fft_setpoints()
+                return (instrument.frequency_axis,)
+            else:
+                self.update_setpoints()
+                return (instrument.time_axis,)
+        raise RuntimeError("Invalid type for parent instrument.")
 
     @setpoints.setter
     def setpoints(self, val: Any) -> None:
@@ -90,21 +120,56 @@ class DSOTraceParam(ParameterWithSetpoints):
         """
         return
 
-    def update_setpoints(self) -> None:
+    @property  # type: ignore
+    def unit(self) -> str:  # type: ignore
+        """
+        Return the units for this measurement.
+        """
+        if self._ch_valid is False:
+            return "''"
+        elif self._unit != 0:
+            return self.UNIT_MAP[self._unit]
+        elif self.instrument is not None:
+            self.instrument.write(f":WAV:SOUR {self._channel}")
+            return self.instrument.ask(":WAV:YUN?")
+        return "''"
+
+    @unit.setter
+    def unit(self, val: Any) -> None:
+        """
+        Stub to allow initialization.
+        """
+        return
+
+    def update_setpoints(self, preamble: Optional[Sequence[str]] = None) -> None:
         """
         Update waveform parameters. Must be called before data
         acquisition if instr.cache_setpoints is False
         """
-        root_instrument: "Infiniium" = self.root_instrument  # type: ignore
-        root_instrument.write(f":WAV:SOUR {self._channel}")
-        preamble = root_instrument.ask(":WAV:PRE?").strip().split(",")
+        instrument: Union[InfiniiumChannel, InfiniiumFunction] = self.instrument  # type: ignore
+        if preamble is None:
+            instrument.write(f":WAV:SOUR {self._channel}")
+            preamble = instrument.ask(":WAV:PRE?").strip().split(",")
         self._points = int(preamble[2])
         self._yincrement = float(preamble[7])
         self._yoffset = float(preamble[8])
-        self._setpoints[0].points = int(preamble[2])
-        self._setpoints[0].xorigin = float(preamble[5])
-        self._setpoints[0].xincrement = float(preamble[4])
+        self._unit = int(preamble[21])
+        instrument.time_axis.points = int(preamble[2])
+        instrument.time_axis.xorigin = float(preamble[5])
+        instrument.time_axis.xincrement = float(preamble[4])
         self._ch_valid = True
+
+    def update_fft_setpoints(self) -> None:
+        """
+        Update waveform parameters for an FFT.
+        """
+        instrument: InfiniiumFunction = self.instrument  # type: ignore
+        instrument.write(f":WAV:SOUR {self._channel}")
+        preamble = instrument.ask(":WAV:PRE?").strip().split(",")
+        self.update_setpoints(preamble)
+        instrument.frequency_axis.points = int(preamble[2])
+        instrument.frequency_axis.xorigin = float(preamble[5])
+        instrument.frequency_axis.xincrement = float(preamble[4])
 
     def get_raw(self) -> np.ndarray:
         """
@@ -459,6 +524,41 @@ class InfiniiumFunction(InstrumentChannel):
             get_cmd=f"FUNC{channel}?",
         )
 
+        # Trace settings
+        self.add_parameter(
+            name="points", label=f"Function {channel} points", get_cmd=self._get_points
+        )
+        self.add_parameter(
+            name="frequency_axis",
+            label="Frequency",
+            unit="Hz",
+            xorigin=0.0,
+            xincrement=0.0,
+            points=1,
+            vals=vals.Arrays(shape=(self.points,)),
+            parameter_class=DSOFrequencyAxisParam,
+            snapshot_value=False,
+        )
+        self.add_parameter(
+            name="time_axis",
+            label="Time",
+            unit="s",
+            xorigin=0.0,
+            xincrement=0.0,
+            points=1,
+            vals=vals.Arrays(shape=(self.points,)),
+            parameter_class=DSOTimeAxisParam,
+            snapshot_value=False,
+        )
+        self.add_parameter(
+            name="trace",
+            label=f"Function {channel} trace",
+            channel=self.channel_name,
+            vals=vals.Arrays(shape=(self.points,)),
+            parameter_class=DSOTraceParam,
+            snapshot_value=False,
+        )
+
         # Measurement subsystem
         self.add_submodule("measure", BoundMeasurement(self, "measure"))
 
@@ -469,6 +569,15 @@ class InfiniiumFunction(InstrumentChannel):
     @property
     def channel_name(self) -> str:
         return f"FUNC{self._channel}"
+
+    def _get_points(self) -> int:
+        """
+        Return the number of points in the current function. This may be
+        different to the number of points in the source as often functions
+        modify the number of points.
+        """
+        self.write(f":WAV:SOUR {self.channel_name}")
+        return int(self.ask(f":WAV:POIN?"))
 
     def _get_func(self) -> str:
         """
