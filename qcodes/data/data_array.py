@@ -1,4 +1,4 @@
-import collections
+import collections.abc
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
 import numpy as np

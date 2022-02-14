@@ -73,6 +73,7 @@ more specialized ones:
 # if everyone is happy to use these classes.
 
 import collections
+import collections.abc
 import enum
 import logging
 import os
