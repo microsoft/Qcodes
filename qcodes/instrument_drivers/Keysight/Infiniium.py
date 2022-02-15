@@ -4,6 +4,7 @@ from typing import Any, Optional, Sequence, Union
 import numpy as np
 from pyvisa import VisaIOError
 from pyvisa.constants import StatusCode
+from typing_extensions import Literal
 
 from qcodes import validators as vals
 from qcodes.instrument import VisaInstrument
@@ -99,7 +100,7 @@ class DSOTraceParam(ParameterWithSetpoints):
         """
         instrument = self.instrument
         if isinstance(instrument, InfiniiumChannel):
-            root_instrument: "Infiniium" = self.root_instrument  # type: ignore
+            root_instrument: "Infiniium" = self.root_instrument  # type: ignore[assignment]
             cache_setpoints = root_instrument.cache_setpoints()
             if not cache_setpoints:
                 self.update_setpoints()
@@ -121,8 +122,8 @@ class DSOTraceParam(ParameterWithSetpoints):
         """
         return
 
-    @property  # type: ignore
-    def unit(self) -> str:  # type: ignore
+    @property  # type: ignore[override]
+    def unit(self) -> str:  # type: ignore[override]
         """
         Return the units for this measurement.
         """
@@ -147,7 +148,7 @@ class DSOTraceParam(ParameterWithSetpoints):
         Update waveform parameters. Must be called before data
         acquisition if instr.cache_setpoints is False
         """
-        instrument: Union[InfiniiumChannel, InfiniiumFunction] = self.instrument  # type: ignore
+        instrument: Union[InfiniiumChannel, InfiniiumFunction] = self.instrument  # type: ignore[assignment]
         if preamble is None:
             instrument.write(f":WAV:SOUR {self._channel}")
             preamble = instrument.ask(":WAV:PRE?").strip().split(",")
@@ -164,7 +165,7 @@ class DSOTraceParam(ParameterWithSetpoints):
         """
         Update waveform parameters for an FFT.
         """
-        instrument: InfiniiumFunction = self.instrument  # type: ignore
+        instrument: InfiniiumFunction = self.instrument  # type: ignore[assignment]
         instrument.write(f":WAV:SOUR {self._channel}")
         preamble = instrument.ask(":WAV:PRE?").strip().split(",")
         self.update_setpoints(preamble)
@@ -178,7 +179,7 @@ class DSOTraceParam(ParameterWithSetpoints):
         """
         if self.instrument is None:
             raise RuntimeError("Cannot get data without instrument")
-        root_instr: "Infiniium" = self.root_instrument  # type: ignore
+        root_instr: "Infiniium" = self.root_instrument  # type: ignore[assignment]
         # Check if we can use cached trace parameters
         if not root_instr.cache_setpoints():
             self.update_setpoints()
@@ -197,7 +198,7 @@ class DSOTraceParam(ParameterWithSetpoints):
         root_instr.write(":WAV:DATA?")
         # Ignore first two bytes, which should be "#0"
         _ = root_instr.visa_handle.read_bytes(2)
-        data: np.ndarray = root_instr.visa_handle.read_binary_values(  # type: ignore
+        data: np.ndarray = root_instr.visa_handle.read_binary_values(  # type: ignore[assignment]
             "h",
             container=np.ndarray,
             header_fmt="empty",
@@ -986,10 +987,10 @@ class Infiniium(VisaInstrument):
         # Sample Rate
         try:
             # Set BW to auto in order to query this
-            bw_set = float(self.ask(":ACQ:BAND?"))
+            bw_set: Union[float, Literal["AUTO"]] = float(self.ask(":ACQ:BAND?"))
             if np.isclose(bw_set, self.max_bw):
                 # Auto returns max bandwidth
-                bw_set = "AUTO"  # type: ignore
+                bw_set = "AUTO"
             self.write(":ACQ:BAND AUTO")
             self.min_srat, self.max_srat = 10.0, 99.0e9  # Set large limits
             srat = self.ask(":ACQ:SRAT:TESTLIMITS?")
