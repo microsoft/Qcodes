@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import warnings
+from pathlib import Path
 from typing import TYPE_CHECKING, Dict, Hashable, Mapping, Union, cast
 
 import numpy as np
@@ -138,3 +139,21 @@ def _paramspec_dict_with_extras(
     paramspec_dict["units"] = paramspec_dict.get("unit", "")
     paramspec_dict["long_name"] = paramspec_dict.get("label", "")
     return paramspec_dict
+
+
+def xarray_to_h5netcdf_with_complex_numbers(
+    xarray_dataset: xr.Dataset, file_path: Union[str, Path]
+) -> None:
+    data_var_kinds = [
+        xarray_dataset.data_vars[data_var].dtype.kind
+        for data_var in xarray_dataset.data_vars
+    ]
+    coord_kinds = [
+        xarray_dataset.coords[coord].dtype.kind for coord in xarray_dataset.coords
+    ]
+    if "c" in data_var_kinds or "c" in coord_kinds:
+        # see http://xarray.pydata.org/en/stable/howdoi.html
+        # for how to export complex numbers
+        xarray_dataset.to_netcdf(path=file_path, engine="h5netcdf", invalid_netcdf=True)
+    else:
+        xarray_dataset.to_netcdf(path=file_path, engine="h5netcdf")

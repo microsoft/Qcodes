@@ -34,6 +34,7 @@ from qcodes.dataset.linked_datasets.links import Link
 from .descriptions.versioning.converters import new_to_old
 from .exporters.export_info import ExportInfo
 from .exporters.export_to_csv import dataframe_to_csv
+from .exporters.export_to_xarray import xarray_to_h5netcdf_with_complex_numbers
 from .sqlite.queries import raw_time_to_str_time
 
 if TYPE_CHECKING:
@@ -424,21 +425,7 @@ class BaseDataSet(DataSetProtocol):
         """Export data as netcdf to a given path with file prefix"""
         file_path = os.path.join(path, file_name)
         xarr_dataset = self.to_xarray_dataset()
-        data_var_kinds = [
-            xarr_dataset.data_vars[data_var].dtype.kind
-            for data_var in xarr_dataset.data_vars
-        ]
-        coord_kinds = [
-            xarr_dataset.coords[coord].dtype.kind for coord in xarr_dataset.coords
-        ]
-        if "c" in data_var_kinds or "c" in coord_kinds:
-            # see http://xarray.pydata.org/en/stable/howdoi.html
-            # for how to export complex numbers
-            xarr_dataset.to_netcdf(
-                path=file_path, engine="h5netcdf", invalid_netcdf=True
-            )
-        else:
-            xarr_dataset.to_netcdf(path=file_path, engine="h5netcdf")
+        xarray_to_h5netcdf_with_complex_numbers(xarr_dataset, file_path)
         return file_path
 
     def _export_as_csv(self, path: str, file_name: str) -> str:
