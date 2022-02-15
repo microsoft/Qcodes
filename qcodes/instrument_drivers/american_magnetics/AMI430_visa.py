@@ -832,7 +832,10 @@ class AMI430_3D(Instrument):
 
         If ``block_during_ramp`` parameter is ``True``, the ramp rates of
         individual magnet axes will be restored after the end of the
-        ramp to their original values before the call of this method.
+        ramp to their original values before the call of this method. If
+        ``block_during_ramp`` parameter is ``False``, call the
+        ``wait_while_all_axes_ramping`` method when needed to restore the
+        ramp rates of the individual magnet axes.
 
         It is required for all axis instruments to have the same units for
         ramp rate and field, otherwise an exception is raised. The given
