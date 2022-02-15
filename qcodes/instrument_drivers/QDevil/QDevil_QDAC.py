@@ -237,7 +237,7 @@ class QDac(VisaInstrument):
 
         assert isinstance(handle, SerialInstrument)
         # Communication setup + firmware check
-        handle.baud_rate = 480600
+        handle.baud_rate = 460800
         handle.parity = visa.constants.Parity(0)
         handle.data_bits = 8
         self.set_terminator('\n')
