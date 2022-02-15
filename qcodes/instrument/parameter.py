@@ -1304,6 +1304,14 @@ class Parameter(_BaseParameter):
                 '',
                 self.__doc__))
 
+    @property
+    def unit(self) -> Optional[str]:
+        return self._unitval
+
+    @unit.setter
+    def unit(self, unit: Optional[str]) -> None:
+        self._unitval = unit
+
     def __getitem__(self, keys: Any) -> 'SweepFixedValues':
         """
         Slice a Parameter to get a SweepValues object
