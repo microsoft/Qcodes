@@ -570,7 +570,8 @@ class DataSet(BaseDataSet):
         with atomic(self.conn) as conn:
             add_data_to_dynamic_columns(conn, self.run_id, {tag: metadata})
 
-        self._add_metadata_to_netcdf_if_nc_exported(tag, metadata)
+        if tag != "export_info":
+            self._add_metadata_to_netcdf_if_nc_exported(tag, metadata)
 
     def add_snapshot(self, snapshot: str, overwrite: bool = False) -> None:
         """

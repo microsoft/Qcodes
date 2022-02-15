@@ -576,7 +576,8 @@ class DataSetInMem(BaseDataSet):
 
         self._metadata[tag] = metadata
         self._add_to_dyn_column_if_in_db(tag, metadata)
-        self._add_metadata_to_netcdf_if_nc_exported(tag, metadata)
+        if tag != "export_info":
+            self._add_metadata_to_netcdf_if_nc_exported(tag, metadata)
 
     def _add_to_dyn_column_if_in_db(self, tag: str, data: Any) -> None:
         if self._dataset_is_in_runs_table():
