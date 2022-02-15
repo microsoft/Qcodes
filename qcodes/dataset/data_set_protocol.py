@@ -448,11 +448,6 @@ class BaseDataSet(DataSetProtocol):
             with h5netcdf.File(nc_file, mode="r+") as h5nc_file:
                 h5nc_file.attrs[tag] = data
 
-            # xr_ds = xr.open_dataset(nc_file, engine="h5netcdf")
-            # xr_ds.attrs[tag] = data
-            # from .exporters.export_to_xarray import xarray_to_h5netcdf_with_complex_numbers
-            # xarray_to_h5netcdf_with_complex_numbers(xr_ds, nc_file)
-
     @staticmethod
     def _validate_parameters(
         *params: Union[str, ParamSpec, _BaseParameter]
