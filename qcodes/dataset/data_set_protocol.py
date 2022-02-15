@@ -439,6 +439,20 @@ class BaseDataSet(DataSetProtocol):
         )
         return os.path.join(path, file_name)
 
+    def _add_metadata_to_netcdf_if_nc_exported(self, tag: str, data: Any) -> None:
+        export_paths = self.export_info.export_paths
+        nc_file = export_paths.get(DataExportType.NETCDF.value, None)
+        if nc_file is not None:
+            import h5netcdf
+
+            with h5netcdf.File(nc_file, mode="w") as h5nc_file:
+                h5nc_file.attrs[tag] = data
+
+            # xr_ds = xr.open_dataset(nc_file, engine="h5netcdf")
+            # xr_ds.attrs[tag] = data
+            # from .exporters.export_to_xarray import xarray_to_h5netcdf_with_complex_numbers
+            # xarray_to_h5netcdf_with_complex_numbers(xr_ds, nc_file)
+
     @staticmethod
     def _validate_parameters(
         *params: Union[str, ParamSpec, _BaseParameter]
