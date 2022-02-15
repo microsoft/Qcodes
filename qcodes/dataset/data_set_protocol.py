@@ -445,7 +445,7 @@ class BaseDataSet(DataSetProtocol):
         if nc_file is not None:
             import h5netcdf
 
-            with h5netcdf.File(nc_file, mode="w") as h5nc_file:
+            with h5netcdf.File(nc_file, mode="r+") as h5nc_file:
                 h5nc_file.attrs[tag] = data
 
             # xr_ds = xr.open_dataset(nc_file, engine="h5netcdf")
