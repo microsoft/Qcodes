@@ -1,2 +1,3 @@
 AMI430 3D magnet power supply driver: restore ramp rates of individual magnet
-axes after simultaneous ramp but only if ``block_during_ramp`` is ``True``.
+axes after simultaneous ramp via calling ``wait_while_all_axes_ramping`` or
+automatically if ``block_during_ramp`` is ``True``.
