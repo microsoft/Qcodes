@@ -1094,7 +1094,12 @@ class AMI430_3D(Instrument):
         self._contexts_to_exit = []
 
     def wait_while_all_axes_ramping(self) -> None:
-        """Wait and blocks as long as any magnet axis is ramping."""
+        """
+        Wait and blocks as long as any magnet axis is ramping. After the
+        ramping is finished, also resets the individual ramp rates of the
+        magnet axes if those were made to be restored, e.g. by using
+        ``simultaneous`` ramp mode.
+        """
         while self.any_axis_is_ramping():
             self._instrument_x._sleep(self.ramping_state_check_interval.get())
 
