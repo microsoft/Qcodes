@@ -1305,7 +1305,7 @@ class Parameter(_BaseParameter):
                 self.__doc__))
 
     @property
-    def unit(self) -> Optional[str]:
+    def unit(self) -> str:
         return self._unitval
 
     @unit.setter
