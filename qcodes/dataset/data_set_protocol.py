@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import warnings
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
@@ -444,8 +445,17 @@ class BaseDataSet(DataSetProtocol):
         if nc_file is not None:
             import h5netcdf
 
-            with h5netcdf.File(nc_file, mode="r+") as h5nc_file:
-                h5nc_file.attrs[tag] = data
+            try:
+                with h5netcdf.File(nc_file, mode="r+") as h5nc_file:
+                    h5nc_file.attrs[tag] = data
+            except (
+                FileNotFoundError,
+                OSError,
+            ):  # older versions of h5py may throw a OSError here
+                warnings.warn(
+                    f"Could not add metadata to the exported NetCDF file, "
+                    f"was the file moved? GUID {self.guid}, NetCDF file {nc_file}"
+                )
 
     @staticmethod
     def _validate_parameters(
