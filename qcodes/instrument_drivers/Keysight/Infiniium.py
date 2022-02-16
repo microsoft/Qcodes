@@ -44,13 +44,13 @@ class DSOTimeAxisParam(Parameter):
 
 class DSOFrequencyAxisParam(Parameter):
     """
-    Time axis parameter for the Infiniium series DSO.
+    Frequency axis parameter for the Infiniium series DSO.
     """
 
     def __init__(self, xorigin: float, xincrement: float, points: int, **kwargs: Any):
         """
-        Initialize time axis. If values are unknown, they can be initialized to zero and
-        filled in later.
+        Initialize frequency axis. If values are unknown, they can be initialized
+        to zero and filled in later.
         """
         super().__init__(**kwargs)
 
@@ -100,7 +100,8 @@ class DSOTraceParam(ParameterWithSetpoints):
         """
         instrument = self.instrument
         if isinstance(instrument, InfiniiumChannel):
-            root_instrument: "Infiniium" = self.root_instrument  # type: ignore[assignment]
+            root_instrument: "Infiniium"
+            root_instrument = self.root_instrument  # type: ignore[assignment]
             cache_setpoints = root_instrument.cache_setpoints()
             if not cache_setpoints:
                 self.update_setpoints()
@@ -148,7 +149,8 @@ class DSOTraceParam(ParameterWithSetpoints):
         Update waveform parameters. Must be called before data
         acquisition if instr.cache_setpoints is False
         """
-        instrument: Union[InfiniiumChannel, InfiniiumFunction] = self.instrument  # type: ignore[assignment]
+        instrument: Union[InfiniiumChannel, InfiniiumFunction]
+        instrument = self.instrument  # type: ignore[assignment]
         if preamble is None:
             instrument.write(f":WAV:SOUR {self._channel}")
             preamble = instrument.ask(":WAV:PRE?").strip().split(",")
@@ -198,7 +200,8 @@ class DSOTraceParam(ParameterWithSetpoints):
         root_instr.write(":WAV:DATA?")
         # Ignore first two bytes, which should be "#0"
         _ = root_instr.visa_handle.read_bytes(2)
-        data: np.ndarray = root_instr.visa_handle.read_binary_values(  # type: ignore[assignment]
+        data: np.ndarray
+        data = root_instr.visa_handle.read_binary_values(  # type: ignore[assignment]
             "h",
             container=np.ndarray,
             header_fmt="empty",
@@ -579,7 +582,7 @@ class InfiniiumFunction(InstrumentChannel):
         modify the number of points.
         """
         self.write(f":WAV:SOUR {self.channel_name}")
-        return int(self.ask(f":WAV:POIN?"))
+        return int(self.ask(":WAV:POIN?"))
 
     def _get_func(self) -> str:
         """
@@ -587,7 +590,7 @@ class InfiniiumFunction(InstrumentChannel):
         """
         try:
             self.write(":SYST:HEAD ON")
-            func, _sour = self.ask(f":{self.channel_name}?").strip().split()
+            func, _ = self.ask(f":{self.channel_name}?").strip().split()
             match = re.fullmatch(f":{self.channel_name}:([\\w]+)", func)
             if match:
                 return match.groups()[0]
@@ -933,7 +936,8 @@ class Infiniium(VisaInstrument):
             function = InfiniiumFunction(self, f"func{i}", i)
             _functions.append(function)
             self.add_submodule(f"func{i}", function)
-        # Have to call channel list "funcs" here as functions is a reserved name in Instrument.
+        # Have to call channel list "funcs" here as functions is a
+        # reserved name in Instrument.
         self.add_submodule("funcs", _functions.to_channel_tuple())
 
         # Submodules
