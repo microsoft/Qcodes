@@ -179,6 +179,8 @@ def test_export_csv(tmp_path_factory, mock_dataset):
     path = str(tmp_path)
     mock_dataset.export(export_type="csv", path=path, prefix="qcodes_")
 
+    mock_dataset.add_metadata("metadata_added_after_export", 69)
+
     expected_path = f"qcodes_{mock_dataset.captured_run_id}_{mock_dataset.guid}.csv"
     expected_full_path = os.path.join(path, expected_path)
     assert mock_dataset.export_info.export_paths["csv"] == expected_full_path
@@ -192,6 +194,8 @@ def test_export_netcdf(tmp_path_factory, mock_dataset):
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
     path = str(tmp_path)
     mock_dataset.export(export_type="netcdf", path=path, prefix="qcodes_")
+    mock_dataset.add_metadata("metadata_added_after_export", 69)
+
     expected_path = f"qcodes_{mock_dataset.captured_run_id}_{mock_dataset.guid}.nc"
     assert os.listdir(path) == [expected_path]
     file_path = os.path.join(path, expected_path)
@@ -201,6 +205,10 @@ def test_export_netcdf(tmp_path_factory, mock_dataset):
     assert df.index.values.tolist() == [0.]
     assert df.y.values.tolist() == [1.0]
     assert df.z.values.tolist() == [2.0]
+    expected_attrs = mock_dataset.metadata.copy()
+    expected_attrs.pop("export_info")
+    for attr, val in expected_attrs.items():
+        assert ds.attrs[attr] == val
 
     assert mock_dataset.export_info.export_paths["nc"] == file_path
 
@@ -219,16 +227,31 @@ def test_export_netcdf_csv(tmp_path_factory, mock_dataset):
     mock_dataset.export(export_type="netcdf", path=path, prefix="qcodes_")
     mock_dataset.export(export_type="csv", path=path, prefix="qcodes_")
 
+    mock_dataset.add_metadata("metadata_added_after_export", 69)
+
     assert mock_dataset.export_info.export_paths["nc"] == nc_path
     assert mock_dataset.export_info.export_paths["csv"] == csv_path
 
+    loaded_xr_ds = xr.open_dataset(nc_path)
+    assert loaded_xr_ds.attrs["metadata_added_after_export"] == 69
+
     mock_dataset.export(export_type="netcdf", path=path, prefix="foobar_")
-    nc_path = os.path.join(
+    new_nc_path = os.path.join(
         path, f"foobar_{mock_dataset.captured_run_id}_{mock_dataset.guid}.nc"
     )
 
-    assert mock_dataset.export_info.export_paths["nc"] == nc_path
+    mock_dataset.add_metadata("metadata_added_after_export_2", 696)
+
+    assert mock_dataset.export_info.export_paths["nc"] == new_nc_path
     assert mock_dataset.export_info.export_paths["csv"] == csv_path
+
+    loaded_xr_ds = xr.open_dataset(nc_path)
+    assert loaded_xr_ds.attrs["metadata_added_after_export"] == 69
+    assert "metadata_added_after_export_2" not in loaded_xr_ds.attrs
+
+    loaded_new_xr_ds = xr.open_dataset(new_nc_path)
+    assert loaded_new_xr_ds.attrs["metadata_added_after_export"] == 69
+    assert loaded_new_xr_ds.attrs["metadata_added_after_export_2"] == 696
 
 
 @pytest.mark.usefixtures("experiment")
@@ -374,7 +397,7 @@ def test_export_to_xarray_ds_dict_extra_metadata(mock_dataset):
         _assert_xarray_metadata_is_as_expected(datarray, mock_dataset)
 
 
-def test_export_to_xarray_extra_metadate_can_be_stored(mock_dataset, tmp_path):
+def test_export_to_xarray_extra_metadata_can_be_stored(mock_dataset, tmp_path):
 
     nt_metadata = {
         "foo": {
@@ -386,6 +409,9 @@ def test_export_to_xarray_extra_metadate_can_be_stored(mock_dataset, tmp_path):
     }
     mock_dataset.add_metadata("foo_metadata", json.dumps(nt_metadata))
     mock_dataset.export(export_type="netcdf", path=str(tmp_path))
+
+    mock_dataset.add_metadata("metadata_added_after_export", 69)
+
     data_as_xarray = mock_dataset.to_xarray_dataset()
 
     loaded_data = xr.load_dataset(
@@ -402,6 +428,7 @@ def test_export_to_xarray_extra_metadate_can_be_stored(mock_dataset, tmp_path):
             assert mock_dataset.metadata[key] == loaded_data.attrs[key]
     # check that the added metadata roundtrip correctly
     assert loaded_data.attrs["foo_metadata"] == json.dumps(nt_metadata)
+    assert loaded_data.attrs["metadata_added_after_export"] == 69
     # check that all attrs roundtrip correctly within the xarray ds
     data_as_xarray.attrs.pop("export_info")
     assert loaded_data.attrs == data_as_xarray.attrs

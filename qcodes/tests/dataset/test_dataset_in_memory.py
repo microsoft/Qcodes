@@ -172,6 +172,9 @@ def test_dataset_in_reload_from_netcdf(meas_with_registered_param, DMM, DAC, tmp
     assert isinstance(ds, DataSetInMem)
 
     ds.export(export_type="netcdf", path=str(tmp_path))
+
+    ds.add_metadata("metadata_added_after_export", 69)
+
     loaded_ds = DataSetInMem._load_from_netcdf(
         tmp_path / f"qcodes_{ds.captured_run_id}_{ds.guid}.nc"
     )
@@ -206,6 +209,9 @@ def test_dataset_load_from_netcdf_and_db(
     assert isinstance(ds, DataSetInMem)
 
     ds.export(export_type="netcdf", path=str(tmp_path))
+
+    ds.add_metadata("metadata_added_after_export", 69)
+
     loaded_ds = DataSetInMem._load_from_netcdf(
         tmp_path / f"qcodes_{ds.captured_run_id}_{ds.guid}.nc", path_to_db=path_to_db
     )
@@ -298,6 +304,9 @@ def test_load_from_db(meas_with_registered_param, DMM, DAC, tmp_path):
     ds = datasaver.dataset
     ds.add_metadata("foo", "bar")
     ds.export(export_type="netcdf", path=tmp_path)
+
+    ds.add_metadata("metadata_added_after_export", 69)
+
     loaded_ds = load_by_id(ds.run_id)
     assert isinstance(loaded_ds, DataSetInMem)
     assert loaded_ds.snapshot == ds.snapshot
@@ -306,6 +315,8 @@ def test_load_from_db(meas_with_registered_param, DMM, DAC, tmp_path):
 
     assert "foo" in loaded_ds.metadata.keys()
     assert "export_info" in loaded_ds.metadata.keys()
+    assert "metadata_added_after_export" in loaded_ds.metadata.keys()
+    assert loaded_ds.metadata["metadata_added_after_export"] == 69
 
     compare_datasets(ds, loaded_ds)
 
@@ -353,6 +364,8 @@ def test_load_from_db_dataset_moved(meas_with_registered_param, DMM, DAC, tmp_pa
     ds.add_metadata("foo", "bar")
     ds.export(export_type="netcdf", path=tmp_path)
 
+    ds.add_metadata("metadata_added_after_export", 69)
+
     export_path = ds.export_info.export_paths["nc"]
     new_path = str(Path(export_path).parent / "someotherfilename.nc")
 
@@ -370,6 +383,8 @@ def test_load_from_db_dataset_moved(meas_with_registered_param, DMM, DAC, tmp_pa
 
     assert "foo" in loaded_ds.metadata.keys()
     assert "export_info" in loaded_ds.metadata.keys()
+    assert "metadata_added_after_export" in loaded_ds.metadata.keys()
+
     assert loaded_ds.cache.data() == {}
 
     loaded_ds.set_netcdf_location(new_path)
