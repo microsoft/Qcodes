@@ -7,7 +7,7 @@ colorama==0.4.4
 coverage[toml]==6.3.1
 deepdiff==5.7.0
 execnet==1.9.0
-hypothesis==6.36.1
+hypothesis==6.36.2
 idna==3.3
 importlib-metadata==4.8.1; python_version<'3.8'
 iniconfig==1.1.1
@@ -37,7 +37,7 @@ Sphinx==4.3.2
 stringparser==0.5
 toml==0.10.2
 typed-ast==1.4.3; python_version<'3.8'
-typing-extensions==4.0.1
+typing-extensions==4.1.1
 types-atomicwrites
 types-backports
 types-cryptography

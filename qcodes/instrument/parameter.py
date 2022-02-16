@@ -73,6 +73,7 @@ more specialized ones:
 # if everyone is happy to use these classes.
 
 import collections
+import collections.abc
 import enum
 import logging
 import os
@@ -102,7 +103,7 @@ from typing import (
 )
 
 import numpy
-from typing_extensions import Protocol
+from typing_extensions import Literal, Protocol
 
 from qcodes.data.data_array import DataArray
 from qcodes.instrument.sweep_values import SweepFixedValues
@@ -1170,8 +1171,8 @@ class Parameter(_BaseParameter):
         instrument: Optional["InstrumentBase"] = None,
         label: Optional[str] = None,
         unit: Optional[str] = None,
-        get_cmd: Optional[Union[str, Callable[..., Any], bool]] = None,
-        set_cmd: Optional[Union[str, Callable[..., Any], bool]] = False,
+        get_cmd: Optional[Union[str, Callable[..., Any], Literal[False]]] = None,
+        set_cmd: Optional[Union[str, Callable[..., Any], Literal[False]]] = False,
         initial_value: Optional[Union[float, str]] = None,
         max_val_age: Optional[float] = None,
         vals: Optional[Validator[Any]] = None,
@@ -2632,17 +2633,20 @@ class InstrumentRefParameter(Parameter):
         **kwargs: Passed to InstrumentRefParameter parent class
     """
 
-    def __init__(self, name: str,
-                 instrument: Optional['InstrumentBase'] = None,
-                 label: Optional[str] = None,
-                 unit: Optional[str] = None,
-                 get_cmd: Optional[Union[str, Callable[..., Any], bool]] = None,
-                 set_cmd: Optional[Union[str, Callable[..., Any], bool]] = None,
-                 initial_value: Optional[Union[float, str]] = None,
-                 max_val_age: Optional[float] = None,
-                 vals: Optional[Validator[Any]] = None,
-                 docstring: Optional[str] = None,
-                 **kwargs: Any) -> None:
+    def __init__(
+        self,
+        name: str,
+        instrument: Optional["InstrumentBase"] = None,
+        label: Optional[str] = None,
+        unit: Optional[str] = None,
+        get_cmd: Optional[Union[str, Callable[..., Any], Literal[False]]] = None,
+        set_cmd: Optional[Union[str, Callable[..., Any], Literal[False]]] = None,
+        initial_value: Optional[Union[float, str]] = None,
+        max_val_age: Optional[float] = None,
+        vals: Optional[Validator[Any]] = None,
+        docstring: Optional[str] = None,
+        **kwargs: Any,
+    ) -> None:
         if vals is None:
             vals = Strings()
         if set_cmd is not None:
