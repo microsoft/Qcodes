@@ -128,8 +128,8 @@ class DSOTraceParam(ParameterWithSetpoints):
         """
         return
 
-    @property  # type: ignore[override]
-    def unit(self) -> str:  # type: ignore[override]
+    @property
+    def unit(self) -> str:
         """
         Return the units for this measurement.
         """
@@ -952,7 +952,7 @@ class Infiniium(VisaInstrument):
         )
 
         # Automatically digitize before acquiring a trace
-        self.auto_digitize = Parameter(
+        self.auto_digitize: Parameter = Parameter(
             name="auto_digitize",
             instrument=self,
             label="Auto digitize",
@@ -967,7 +967,7 @@ class Infiniium(VisaInstrument):
             ),
             initial_value=True,
         )
-        self.cache_setpoints = Parameter(
+        self.cache_setpoints: Parameter = Parameter(
             name="cache_setpoints",
             instrument=self,
             label="Cache setpoints",
