@@ -60,8 +60,8 @@ def magnet_axes_instances():
     mag_z.close()
 
 
-@pytest.fixture(scope='function')
-def current_driver(magnet_axes_instances):
+@pytest.fixture(name="current_driver", scope="function")
+def _make_current_driver(magnet_axes_instances):
     """
     Instantiate AMI430_3D instrument with the three mock instruments
     representing current drivers for the x, y, and z directions.
