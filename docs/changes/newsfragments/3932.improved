@@ -1,0 +1,2 @@
+Metadata added after ``DataSet`` ``export`` to a netcdf file is now also added
+to that exported netcdf file
