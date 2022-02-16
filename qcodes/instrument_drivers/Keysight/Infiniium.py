@@ -78,7 +78,11 @@ class DSOTraceParam(ParameterWithSetpoints):
     UNIT_MAP = {0: "UNKNOWN", 1: "V", 2: "s", 3: "''", 4: "A", 5: "dB"}
 
     def __init__(
-        self, name: str, instrument: "InfiniiumChannel", channel: str, **kwargs: Any
+        self,
+        name: str,
+        instrument: Union["InfiniiumChannel", "InfiniiumFunction"],
+        channel: str,
+        **kwargs: Any,
     ):
         """
         Initialize DSOTraceParam bound to a specific channel.
@@ -233,24 +237,27 @@ class AbstractMeasurementSubsystem(InstrumentModule):
 
         ###################################
         # Voltage Parameters
-        self.add_parameter(
+        self.amplitude = Parameter(
             name="amplitude",
+            instrument=self,
             label="Voltage amplitude",
             get_cmd=self._create_query("VAMP"),
             get_parser=float,
             unit="V",
             snapshot_value=False,
         )
-        self.add_parameter(
+        self.average = Parameter(
             name="average",
+            instrument=self,
             label="Voltage average",
             get_cmd=self._create_query("VAV", "DISP"),
             get_parser=float,
             unit="V",
             snapshot_value=False,
         )
-        self.add_parameter(
+        self.base = Parameter(
             name="base",
+            instrument=self,
             label="Statistical base",
             get_cmd=self._create_query("VBAS"),
             get_parser=float,
@@ -259,24 +266,27 @@ class AbstractMeasurementSubsystem(InstrumentModule):
         )
         # Threshold Voltage Measurements - this measurement ignores overshoot
         # in the data
-        self.add_parameter(
+        self.vlow = Parameter(
             name="vlow",
+            instrument=self,
             label="Lower threshold voltage",
             get_cmd=self._create_query("VLOW"),
             get_parser=float,
             unit="V",
             snapshot_value=False,
         )
-        self.add_parameter(
+        self.vmid = Parameter(
             name="vmid",
+            instrument=self,
             label="Middle threshold voltage",
             get_cmd=self._create_query("VMID"),
             get_parser=float,
             unit="V",
             snapshot_value=False,
         )
-        self.add_parameter(
+        self.vup = Parameter(
             name="vup",
+            instrument=self,
             label="Upper threshold voltage",
             get_cmd=self._create_query("VUPP"),
             get_parser=float,
@@ -284,16 +294,18 @@ class AbstractMeasurementSubsystem(InstrumentModule):
             snapshot_value=False,
         )
         # Limit values - the minimum/maximum shown on screen
-        self.add_parameter(
+        self.vmin = Parameter(
             name="vmin",
+            instrument=self,
             label="Voltage minimum",
             get_cmd=self._create_query("VMIN"),
             get_parser=float,
             unit="V",
             snapshot_value=False,
         )
-        self.add_parameter(
+        self.vmax = Parameter(
             name="vmax",
+            instrument=self,
             label="Voltage maximum",
             get_cmd=self._create_query("VMAX"),
             get_parser=float,
@@ -301,32 +313,36 @@ class AbstractMeasurementSubsystem(InstrumentModule):
             snapshot_value=False,
         )
         # Waveform Parameters
-        self.add_parameter(
+        self.overshoot = Parameter(
             name="overshoot",
+            instrument=self,
             label="Voltage overshoot",
             get_cmd=self._create_query("VOV"),
             get_parser=float,
             unit="V",
             snapshot_value=False,
         )
-        self.add_parameter(
+        self.vpp = Parameter(
             name="vpp",
+            instrument=self,
             label="Voltage peak-to-peak",
             get_cmd=self._create_query("VPP"),
             get_parser=float,
             unit="V",
             snapshot_value=False,
         )
-        self.add_parameter(
+        self.vrms = Parameter(
             name="vrms",
+            instrument=self,
             label="Voltage RMS",
             get_cmd=self._create_query("VRMS", "CYCL,AC"),
             get_parser=float,
             unit="V_rms",
             snapshot_value=False,
         )
-        self.add_parameter(
+        self.vrms_dc = Parameter(
             name="vrms_dc",
+            instrument=self,
             label="Voltage RMS with DC Component",
             get_cmd=self._create_query("VRMS", "CYCL,DC"),
             get_parser=float,
@@ -336,40 +352,45 @@ class AbstractMeasurementSubsystem(InstrumentModule):
 
         ###################################
         # Time Parameters
-        self.add_parameter(
+        self.rise_time = Parameter(
             name="rise_time",
+            instrument=self,
             label="Rise time",
             get_cmd=self._create_query("RIS"),
             get_parser=float,
             unit="s",
             snapshot_value=False,
         )
-        self.add_parameter(
+        self.fall_time = Parameter(
             name="fall_time",
+            instrument=self,
             label="Fall time",
             get_cmd=self._create_query("FALL"),
             get_parser=float,
             unit="s",
             snapshot_value=False,
         )
-        self.add_parameter(
+        self.duty_cycle = Parameter(
             name="duty_cycle",
+            instrument=self,
             label="Duty Cycle",
             get_cmd=self._create_query("DUTY"),
             get_parser=float,
             unit="%",
             snapshot_value=False,
         )
-        self.add_parameter(
+        self.period = Parameter(
             name="period",
+            instrument=self,
             label="Period",
             get_cmd=self._create_query("PER"),
             get_parser=float,
             unit="s",
             snapshot_value=False,
         )
-        self.add_parameter(
+        self.frequency = Parameter(
             name="frequency",
+            instrument=self,
             label="Signal frequency",
             get_cmd=self._create_query("FREQ"),
             get_parser=float,
@@ -381,8 +402,9 @@ class AbstractMeasurementSubsystem(InstrumentModule):
                                      """,
             snapshot_value=False,
         )
-        self.add_parameter(
+        self.slew_rate = Parameter(
             name="slew_rate",
+            instrument=self,
             label="Slew rate",
             get_cmd=self._create_query("SLEW"),
             get_parser=float,
@@ -443,8 +465,9 @@ class UnboundMeasurement(AbstractMeasurementSubsystem):
         # Initialize measurement parameters
         super().__init__(parent, name, **kwargs)
 
-        self.add_parameter(
+        self.source = Parameter(
             name="source",
+            instrument=self,
             label="Primary measurement source",
             set_cmd=self._set_source,
             get_cmd=self._get_source,
@@ -509,8 +532,9 @@ class InfiniiumFunction(InstrumentChannel):
         super().__init__(parent, name, **kwargs)
 
         # display
-        self.add_parameter(
+        self.display = Parameter(
             name="display",
+            instrument=self,
             label=f"Function {channel} display on/off",
             set_cmd=f"FUNC{channel}:DISP {{}}",
             get_cmd=f"FUNC{channel}:DISP?",
@@ -518,49 +542,55 @@ class InfiniiumFunction(InstrumentChannel):
         )
 
         # Retrieve basic settings of the function
-        self.add_parameter(
+        self.function = Parameter(
             name="function",
+            instrument=self,
             label=f"Function {channel} function",
             get_cmd=self._get_func,
+            vals=vals.Strings(),
         )
-        self.add_parameter(
+        self.source = Parameter(
             name="source",
+            instrument=self,
             label=f"Function {channel} source",
             get_cmd=f"FUNC{channel}?",
         )
 
         # Trace settings
-        self.add_parameter(
-            name="points", label=f"Function {channel} points", get_cmd=self._get_points
+        self.points = Parameter(
+            name="points",
+            instrument=self,
+            label=f"Function {channel} points",
+            get_cmd=self._get_points,
         )
-        self.add_parameter(
+        self.frequency_axis = DSOFrequencyAxisParam(
             name="frequency_axis",
+            instrument=self,
             label="Frequency",
             unit="Hz",
             xorigin=0.0,
             xincrement=0.0,
             points=1,
             vals=vals.Arrays(shape=(self.points,)),
-            parameter_class=DSOFrequencyAxisParam,
             snapshot_value=False,
         )
-        self.add_parameter(
+        self.time_axis = DSOTimeAxisParam(
             name="time_axis",
+            instrument=self,
             label="Time",
             unit="s",
             xorigin=0.0,
             xincrement=0.0,
             points=1,
             vals=vals.Arrays(shape=(self.points,)),
-            parameter_class=DSOTimeAxisParam,
             snapshot_value=False,
         )
-        self.add_parameter(
+        self.trace = DSOTraceParam(
             name="trace",
+            instrument=self,
             label=f"Function {channel} trace",
             channel=self.channel_name,
             vals=vals.Arrays(shape=(self.points,)),
-            parameter_class=DSOTraceParam,
             snapshot_value=False,
         )
 
@@ -610,8 +640,9 @@ class InfiniiumChannel(InstrumentChannel):
 
         super().__init__(parent, name, **kwargs)
         # display
-        self.add_parameter(
+        self.display = Parameter(
             name="display",
+            instrument=self,
             label=f"Channel {channel} display on/off",
             set_cmd=f"CHAN{channel}:DISP {{}}",
             get_cmd=f"CHAN{channel}:DISP?",
@@ -619,16 +650,18 @@ class InfiniiumChannel(InstrumentChannel):
         )
 
         # scaling
-        self.add_parameter(
+        self.offset = Parameter(
             name="offset",
+            instrument=self,
             label=f"Channel {channel} offset",
             set_cmd=f"CHAN{channel}:OFFS {{}}",
             unit="V",
             get_cmd=f"CHAN{channel}:OFFS?",
             get_parser=float,
         )
-        self.add_parameter(
+        self.range = Parameter(
             name="range",
+            instrument=self,
             label=f"Channel {channel} range",
             unit="V",
             set_cmd=f"CHAN{channel}:RANG {{}}",
@@ -638,8 +671,9 @@ class InfiniiumChannel(InstrumentChannel):
         )
 
         # Trigger level
-        self.add_parameter(
+        self.trigger_level = Parameter(
             name="trigger_level",
+            instrument=self,
             label=f"Channel {channel} trigger level",
             unit="V",
             set_cmd=f":TRIG:LEV CHAN{channel},{{}}",
@@ -649,24 +683,24 @@ class InfiniiumChannel(InstrumentChannel):
         )
 
         # Trace data
-        self.add_parameter(
+        self.time_axis = DSOTimeAxisParam(
             name="time_axis",
+            instrument=self,
             label="Time",
             unit="s",
             xorigin=0.0,
             xincrement=0.0,
             points=1,
             vals=vals.Arrays(shape=(self.parent.acquire_points,)),
-            parameter_class=DSOTimeAxisParam,
             snapshot_value=False,
         )
-        self.add_parameter(
+        self.trace = DSOTraceParam(
             name="trace",
+            instrument=self,
             label=f"Channel {channel} trace",
             unit="V",
             channel=self.channel_name,
             vals=vals.Arrays(shape=(self.parent.acquire_points,)),
-            parameter_class=DSOTraceParam,
             snapshot_value=False,
         )
 
@@ -746,16 +780,18 @@ class Infiniium(VisaInstrument):
         self.no_channels = channels
 
         # Run state
-        self.add_parameter(
-            "run_mode",
+        self.run_mode = Parameter(
+            name="run_mode",
+            instrument=self,
             label="run mode",
             get_cmd=":RST?",
             vals=vals.Enum("RUN", "STOP", "SING"),
         )
 
         # Timing Parameters
-        self.add_parameter(
-            "timebase_range",
+        self.timebase_range = Parameter(
+            name="timebase_range",
+            instrument=self,
             label="Range of the time axis",
             unit="s",
             get_cmd=":TIM:RANG?",
@@ -763,8 +799,9 @@ class Infiniium(VisaInstrument):
             vals=vals.Numbers(5e-12, 20),
             get_parser=float,
         )
-        self.add_parameter(
-            "timebase_position",
+        self.timebase_position = Parameter(
+            name="timebase_position",
+            instrument=self,
             label="Offset of the time axis",
             unit="s",
             get_cmd=":TIM:POS?",
@@ -772,8 +809,9 @@ class Infiniium(VisaInstrument):
             vals=vals.Numbers(),
             get_parser=float,
         )
-        self.add_parameter(
-            "timebase_roll_enabled",
+        self.timebase_roll_enabled = Parameter(
+            name="timebase_roll_enabled",
+            instrument=self,
             label="Is rolling mode enabled",
             get_cmd=":TIM:ROLL:ENABLE?",
             set_cmd=":TIM:ROLL:ENABLE {}",
@@ -781,16 +819,22 @@ class Infiniium(VisaInstrument):
         )
 
         # Trigger
-        self.add_parameter("trigger_mode", label="Trigger mode", get_cmd=":TRIG:MODE?")
-        self.add_parameter(
-            "trigger_sweep",
+        self.trigger_mode = Parameter(
+            name="trigger_mode",
+            label="Trigger mode",
+            get_cmd=":TRIG:MODE?",
+        )
+        self.trigger_sweep = Parameter(
+            name="trigger_sweep",
+            instrument=self,
             label="Trigger sweep mode",
             get_cmd=":TRIG:SWE?",
             set_cmd=":TRIG:SWE {}",
             vals=vals.Enum("AUTO", "TRIG"),
         )
-        self.add_parameter(
-            "trigger_state",
+        self.trigger_state = Parameter(
+            name="trigger_state",
+            instrument=self,
             label="Trigger state",
             get_cmd=":AST?",
             vals=vals.Enum("ARM", "TRIG", "ATRIG", "ADONE"),
@@ -801,8 +845,9 @@ class Infiniium(VisaInstrument):
         # Note that for now we only support parameterized edge triggers - this may
         # be something worth expanding.
         # To set trigger level, use the "trigger_level" parameter in each channel
-        self.add_parameter(
-            "trigger_edge_source",
+        self.trigger_edge_source = Parameter(
+            name="trigger_edge_source",
+            instrument=self,
             label="Source channel for the edge trigger",
             get_cmd=":TRIGger:EDGE:SOURce?",
             set_cmd=":TRIGger:EDGE:SOURce {}",
@@ -814,15 +859,17 @@ class Infiniium(VisaInstrument):
                 )
             ),
         )
-        self.add_parameter(
-            "trigger_edge_slope",
+        self.trigger_edge_slope = Parameter(
+            name="trigger_edge_slope",
+            instrument=self,
             label="slope of the edge trigger",
             get_cmd=":TRIGger:EDGE:SLOPe?",
             set_cmd=":TRIGger:EDGE:SLOPe {}",
             vals=vals.Enum("POS", "POSITIVE", "NEG", "NEGATIVE", "EITH"),
         )
-        self.add_parameter(
-            "trigger_level_aux",
+        self.trigger_level_aux = Parameter(
+            name="trigger_level_aux",
+            instrument=self,
             label="Tirgger level AUX",
             unit="V",
             get_cmd=":TRIGger:LEVel? AUX",
@@ -834,16 +881,18 @@ class Infiniium(VisaInstrument):
         # Aquisition
         # If sample points, rate and timebase_scale are set in an
         # incomensurate way, the scope only displays part of the waveform
-        self.add_parameter(
-            "acquire_points",
+        self.acquire_points = Parameter(
+            name="acquire_points",
+            instrument=self,
             label="sample points",
             get_cmd=":ACQ:POIN?",
             set_cmd=":ACQ:POIN {}",
             get_parser=int,
             vals=vals.Numbers(min_value=self.min_pts, max_value=self.max_pts),
         )
-        self.add_parameter(
-            "sample_rate",
+        self.sample_rate = Parameter(
+            name="sample_rate",
+            instrument=self,
             label="sample rate",
             get_cmd=":ACQ:SRAT?",
             set_cmd=":ACQ:SRAT {}",
@@ -852,8 +901,9 @@ class Infiniium(VisaInstrument):
             vals=vals.Numbers(min_value=self.min_srat, max_value=self.max_srat),
         )
         # Note: newer scopes allow a per-channel bandwidth. This is not implemented yet.
-        self.add_parameter(
-            "bandwidth",
+        self.bandwidth = Parameter(
+            name="bandwidth",
+            instrument=self,
             label="bandwidth",
             get_cmd=":ACQ:BAND?",
             set_cmd=":ACQ:BAND {}",
@@ -861,14 +911,16 @@ class Infiniium(VisaInstrument):
             get_parser=float,
             vals=vals.Numbers(min_value=self.min_bw, max_value=self.max_bw),
         )
-        self.add_parameter(
-            "acquire_interpolate",
+        self.acquire_interpolate = Parameter(
+            name="acquire_interpolate",
+            instrument=self,
             get_cmd=":ACQ:INTerpolate?",
             set_cmd=":ACQuire:INTerpolate {}",
             vals=vals.Enum(0, 1, "INT1", "INT2", "INT4", "INT8", "INT16", "INT32"),
         )
-        self.add_parameter(
-            "acquire_mode",
+        self.acquire_mode = Parameter(
+            name="acquire_mode",
+            instrument=self,
             label="Acquisition mode",
             get_cmd="ACQuire:MODE?",
             set_cmd="ACQuire:MODE {}",
@@ -882,8 +934,9 @@ class Infiniium(VisaInstrument):
                 "SEGHres",
             ),
         )
-        self.add_parameter(
-            "average",
+        self.average = Parameter(
+            name="average",
+            instrument=self,
             label="Averages",
             get_cmd=self._get_avg,
             set_cmd=self._set_avg,
@@ -891,8 +944,9 @@ class Infiniium(VisaInstrument):
         )
 
         # Automatically digitize before acquiring a trace
-        self.add_parameter(
-            "auto_digitize",
+        self.auto_digitize = Parameter(
+            name="auto_digitize",
+            instrument=self,
             label="Auto digitize",
             set_cmd=None,
             get_cmd=None,
@@ -905,8 +959,9 @@ class Infiniium(VisaInstrument):
             ),
             initial_value=True,
         )
-        self.add_parameter(
-            "cache_setpoints",
+        self.cache_setpoints = Parameter(
+            name="cache_setpoints",
+            instrument=self,
             label="Cache setpoints",
             set_cmd=None,
             get_cmd=None,
