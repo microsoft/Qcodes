@@ -1045,9 +1045,7 @@ class AMI430_3D(Instrument):
             self.log.debug(f"Simultaneous ramp: blocking until ramp is finished")
             self.wait_while_all_axes_ramping()
         else:
-            self.log.debug(
-                "Simultaneous ramp: not blocking until ramp is finished"
-            )
+            self.log.debug("Simultaneous ramp: not blocking until ramp is finished")
 
         self.log.debug(f"Simultaneous ramp: returning from the ramp call")
 
