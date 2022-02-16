@@ -285,6 +285,9 @@ class DataSetProtocol(Protocol, Sized):
     def _parameters(self) -> Optional[str]:
         pass
 
+    def _set_export_info(self, export_info: ExportInfo) -> None:
+        pass
+
 
 class BaseDataSet(DataSetProtocol):
 
@@ -370,10 +373,6 @@ class BaseDataSet(DataSetProtocol):
             )
 
         self._set_export_info(export_info)
-
-    def _set_export_info(self, export_info: ExportInfo) -> None:
-        self.add_metadata("export_info", export_info.to_str())
-        self._export_info = export_info
 
     def _export_data(
         self,

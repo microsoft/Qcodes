@@ -576,8 +576,7 @@ class DataSetInMem(BaseDataSet):
 
         self._metadata[tag] = metadata
         self._add_to_dyn_column_if_in_db(tag, metadata)
-        if tag != "export_info":
-            self._add_metadata_to_netcdf_if_nc_exported(tag, metadata)
+        self._add_metadata_to_netcdf_if_nc_exported(tag, metadata)
 
     def _add_to_dyn_column_if_in_db(self, tag: str, data: Any) -> None:
         if self._dataset_is_in_runs_table():
@@ -614,6 +613,15 @@ class DataSetInMem(BaseDataSet):
     @property
     def export_info(self) -> ExportInfo:
         return self._export_info
+
+    def _set_export_info(self, export_info: ExportInfo) -> None:
+        tag = "export_info"
+        metadata = export_info.to_str()
+
+        self._metadata[tag] = metadata
+        self._add_to_dyn_column_if_in_db(tag, metadata)
+
+        self._export_info = export_info
 
     def _enqueue_results(self, result_dict: Mapping[ParamSpecBase, np.ndarray]) -> None:
         """

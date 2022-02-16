@@ -570,8 +570,7 @@ class DataSet(BaseDataSet):
         with atomic(self.conn) as conn:
             add_data_to_dynamic_columns(conn, self.run_id, {tag: metadata})
 
-        if tag != "export_info":
-            self._add_metadata_to_netcdf_if_nc_exported(tag, metadata)
+        self._add_metadata_to_netcdf_if_nc_exported(tag, metadata)
 
     def add_snapshot(self, snapshot: str, overwrite: bool = False) -> None:
         """
@@ -1430,6 +1429,17 @@ class DataSet(BaseDataSet):
     @property
     def export_info(self) -> ExportInfo:
         return self._export_info
+
+    def _set_export_info(self, export_info: ExportInfo) -> None:
+        tag = "export_info"
+        data = export_info.to_str()
+
+        self._metadata[tag] = data
+        # `add_data_to_dynamic_columns` is not atomic by itself, hence using `atomic`
+        with atomic(self.conn) as conn:
+            add_data_to_dynamic_columns(conn, self.run_id, {tag: data})
+
+        self._export_info = export_info
 
     @staticmethod
     def _warn_if_set(
