@@ -100,6 +100,7 @@ from typing import (
     Type,
     Union,
     cast,
+    overload,
 )
 
 import numpy
@@ -441,6 +442,14 @@ class _BaseParameter(Metadatable):
 
     def __repr__(self) -> str:
         return named_repr(self)
+
+    @overload
+    def __call__(self) -> ParamDataType:
+        pass
+
+    @overload
+    def __call__(self, *args: Any, **kwargs: Any) -> None:
+        pass
 
     def __call__(self, *args: Any, **kwargs: Any) -> Optional[ParamDataType]:
         if len(args) == 0 and len(kwargs) == 0:
