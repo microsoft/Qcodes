@@ -244,7 +244,7 @@ class AbstractMeasurementSubsystem(InstrumentModule):
         self.add_parameter(
             name="average",
             label="Voltage average",
-            get_cmd=self._create_query("VAV"),
+            get_cmd=self._create_query("VAV", "DISP"),
             get_parser=float,
             unit="V",
             snapshot_value=False,
