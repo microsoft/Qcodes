@@ -1275,8 +1275,9 @@ class Parameter(_BaseParameter):
 
         #: Label of the data used for plots etc.
         self.label: str = name if label is None else label
-        #: The unit of measure. Use ``''`` for unitless.
+
         self.unit = unit if unit is not None else ''
+        self._unitval: str
 
         if initial_value is not None and initial_cache_value is not None:
             raise SyntaxError('It is not possible to specify both of the '
@@ -1303,6 +1304,18 @@ class Parameter(_BaseParameter):
                 docstring,
                 '',
                 self.__doc__))
+
+    @property
+    def unit(self) -> str:
+        """
+        The unit of measure. Use ``''`` (the empty string)
+        for unitless.
+        """
+        return self._unitval
+
+    @unit.setter
+    def unit(self, unit: str) -> None:
+        self._unitval = unit
 
     def __getitem__(self, keys: Any) -> 'SweepFixedValues':
         """
