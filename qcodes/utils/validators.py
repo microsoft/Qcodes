@@ -12,7 +12,7 @@ from typing import Callable as TCallable
 from typing import Dict as TDict
 from typing import Generic, Hashable
 from typing import List as TList
-from typing import Literal
+from typing_extensions import Literal
 from typing import Optional
 from typing import Sequence as TSequence
 from typing import Tuple, TypeVar, Union, cast
