@@ -417,14 +417,14 @@ class Config:
         return output
 
 
-class DotDict(Dict[Any, Any]):
+class DotDict(Dict[str, Any]):
     """
     Wrapper dict that allows to get dotted attributes
 
     Requires keys to be strings.
     """
 
-    def __init__(self, value: Optional[Dict[str, Any]] = None):
+    def __init__(self, value: Optional[Mapping[str, Any]] = None):
         if value is None:
             pass
         else:
@@ -448,7 +448,9 @@ class DotDict(Dict[Any, Any]):
         target = dict.__getitem__(self, myKey)
         return target[restOfKey]
 
-    def __contains__(self, key: str) -> bool:  # type: ignore[override]
+    def __contains__(self, key: object) -> bool:
+        if not isinstance(key, str):
+            return False
         if '.' not in key:
             return dict.__contains__(self, key)
         myKey, restOfKey = key.split('.', 1)

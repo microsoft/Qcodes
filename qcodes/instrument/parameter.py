@@ -149,7 +149,7 @@ class _SetParamContext:
     """
     def __init__(self, parameter: "_BaseParameter", value: ParamDataType,
                  allow_changes: bool = False):
-        self._parameter = parameter
+        self._parameter: "_BaseParameter" = parameter
         self._value = value
         self._allow_changes = allow_changes
         self._original_value = None
@@ -163,16 +163,15 @@ class _SetParamContext:
 
         if not self._allow_changes:
             self._original_settable = self._parameter.settable
-            self._parameter._settable = False  # type: ignore[has-type]
+            self._parameter._settable = False
 
     def __exit__(self,
                  typ: Optional[Type[BaseException]],
                  value: Optional[BaseException],
                  traceback: Optional[TracebackType]) -> None:
         if not self._allow_changes:
-            self._parameter._settable = (  # type: ignore[has-type]
-                self._original_settable
-            )
+            assert self._original_settable is not None
+            self._parameter._settable = self._original_settable
 
         if self._parameter.cache() != self._original_value:
             self._parameter.set(self._original_value)
@@ -361,7 +360,7 @@ class _BaseParameter(Metadatable):
             and not getattr(self.set_raw,
                             '__qcodes_is_abstract_method__', False)
         )
-        self._settable = False
+        self._settable: bool = False
         if implements_set_raw:
             self.set = self._wrap_set(self.set_raw)
             self._settable = True
