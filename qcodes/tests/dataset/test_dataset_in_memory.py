@@ -1,3 +1,4 @@
+import contextlib
 import os
 import shutil
 import sqlite3
@@ -5,6 +6,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+import xarray
 
 from qcodes import load_by_id
 from qcodes.dataset import load_by_run_spec
@@ -172,6 +174,9 @@ def test_dataset_in_reload_from_netcdf(meas_with_registered_param, DMM, DAC, tmp
     assert isinstance(ds, DataSetInMem)
 
     ds.export(export_type="netcdf", path=str(tmp_path))
+
+    ds.add_metadata("metadata_added_after_export", 69)
+
     loaded_ds = DataSetInMem._load_from_netcdf(
         tmp_path / f"qcodes_{ds.captured_run_id}_{ds.guid}.nc"
     )
@@ -206,6 +211,9 @@ def test_dataset_load_from_netcdf_and_db(
     assert isinstance(ds, DataSetInMem)
 
     ds.export(export_type="netcdf", path=str(tmp_path))
+
+    ds.add_metadata("metadata_added_after_export", 69)
+
     loaded_ds = DataSetInMem._load_from_netcdf(
         tmp_path / f"qcodes_{ds.captured_run_id}_{ds.guid}.nc", path_to_db=path_to_db
     )
@@ -298,6 +306,9 @@ def test_load_from_db(meas_with_registered_param, DMM, DAC, tmp_path):
     ds = datasaver.dataset
     ds.add_metadata("foo", "bar")
     ds.export(export_type="netcdf", path=tmp_path)
+
+    ds.add_metadata("metadata_added_after_export", 69)
+
     loaded_ds = load_by_id(ds.run_id)
     assert isinstance(loaded_ds, DataSetInMem)
     assert loaded_ds.snapshot == ds.snapshot
@@ -306,6 +317,8 @@ def test_load_from_db(meas_with_registered_param, DMM, DAC, tmp_path):
 
     assert "foo" in loaded_ds.metadata.keys()
     assert "export_info" in loaded_ds.metadata.keys()
+    assert "metadata_added_after_export" in loaded_ds.metadata.keys()
+    assert loaded_ds.metadata["metadata_added_after_export"] == 69
 
     compare_datasets(ds, loaded_ds)
 
@@ -353,9 +366,14 @@ def test_load_from_db_dataset_moved(meas_with_registered_param, DMM, DAC, tmp_pa
     ds.add_metadata("foo", "bar")
     ds.export(export_type="netcdf", path=tmp_path)
 
-    export_path = ds.export_info.export_paths["nc"]
-    new_path = str(Path(export_path).parent / "someotherfilename.nc")
+    ds.add_metadata("metadata_added_after_export", 69)
 
+    export_path = ds.export_info.export_paths["nc"]
+
+    with contextlib.closing(xarray.open_dataset(export_path)) as xr_ds:
+        assert xr_ds.attrs["metadata_added_after_export"] == 69
+
+    new_path = str(Path(export_path).parent / "someotherfilename.nc")
     shutil.move(export_path, new_path)
 
     with pytest.warns(
@@ -370,8 +388,39 @@ def test_load_from_db_dataset_moved(meas_with_registered_param, DMM, DAC, tmp_pa
 
     assert "foo" in loaded_ds.metadata.keys()
     assert "export_info" in loaded_ds.metadata.keys()
+    assert "metadata_added_after_export" in loaded_ds.metadata.keys()
+
     assert loaded_ds.cache.data() == {}
+
+    with pytest.warns(
+        UserWarning, match="Could not add metadata to the exported NetCDF file"
+    ):
+        ds.add_metadata("metadata_added_after_move", 696)
+
+    with contextlib.closing(xarray.open_dataset(new_path)) as new_xr_ds:
+        assert new_xr_ds.attrs["metadata_added_after_export"] == 69
+        assert "metadata_added_after_move" not in new_xr_ds.attrs
 
     loaded_ds.set_netcdf_location(new_path)
 
     assert loaded_ds.cache.data().keys() == ds.cache.data().keys()
+
+    with contextlib.closing(xarray.open_dataset(new_path)) as new_xr_ds:
+        assert new_xr_ds.attrs["metadata_added_after_export"] == 69
+        assert "metadata_added_after_move" not in new_xr_ds.attrs
+
+    # This should have effect neither on the loaded_ds nor on the netcdf file
+    ds.add_metadata(
+        "metadata_added_to_old_dataset_after_set_new_netcdf_location", 696977
+    )
+
+    loaded_ds.add_metadata("metadata_added_after_set_new_netcdf_location", 6969)
+
+    with contextlib.closing(xarray.open_dataset(new_path)) as new_xr_ds:
+        assert new_xr_ds.attrs["metadata_added_after_export"] == 69
+        assert "metadata_added_after_move" not in new_xr_ds.attrs
+        assert (
+            "metadata_added_to_old_dataset_after_set_new_netcdf_location"
+            not in new_xr_ds.attrs
+        )
+        assert new_xr_ds.attrs["metadata_added_after_set_new_netcdf_location"] == 6969

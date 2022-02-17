@@ -8,6 +8,7 @@ from time import sleep
 import hypothesis.strategies as hst
 import numpy as np
 import pytest
+import xarray
 from hypothesis import HealthCheck, given, settings
 from numpy.testing import assert_allclose, assert_array_equal
 
@@ -1653,7 +1654,10 @@ def test_datasaver_multidim_array(experiment, bg_writing):  # noqa: F811
 
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("export", [True, False])
-def test_datasaver_export(experiment, bg_writing, tmp_path_factory, export, mocker):
+@pytest.mark.parametrize("export_type", [DataExportType.CSV, DataExportType.NETCDF])
+def test_datasaver_export(
+    experiment, bg_writing, tmp_path_factory, export, export_type, mocker
+):
     """
     Test export data to csv after measurement ends
     """
@@ -1685,7 +1689,7 @@ def test_datasaver_export(experiment, bg_writing, tmp_path_factory, export, mock
         "qcodes.dataset.measurements.get_data_export_automatic"
     )
 
-    mock_type.return_value = DataExportType.CSV
+    mock_type.return_value = export_type
     mock_path.return_value = path
     mock_automatic.return_value = export
     with meas.run(write_in_background=bg_writing) as datasaver:
@@ -1695,10 +1699,16 @@ def test_datasaver_export(experiment, bg_writing, tmp_path_factory, export, mock
             (str(y1), expected["y1"]),
             (str(y2), expected["y2"]),
         )
+
+    datasaver.dataset.add_metadata("metadata_added_after_export", 69)
+
     if export:
-        assert os.listdir(path) == [
-            f"qcodes_{datasaver.dataset.captured_run_id}_{datasaver.dataset.guid}.csv"
-        ]
+        expected_filename = f"qcodes_{datasaver.dataset.captured_run_id}_{datasaver.dataset.guid}.{export_type.value}"
+        assert os.listdir(path) == [expected_filename]
+
+        if export_type == DataExportType.NETCDF:
+            xr_ds = xarray.open_dataset(os.path.join(path, expected_filename))
+            assert xr_ds.attrs["metadata_added_after_export"] == 69
     else:
         assert os.listdir(path) == []
 
