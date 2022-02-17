@@ -448,7 +448,9 @@ class DotDict(Dict[Any, Any]):
         target = dict.__getitem__(self, myKey)
         return target[restOfKey]
 
-    def __contains__(self, key: str) -> bool:  # type: ignore[override]
+    def __contains__(self, key: object) -> bool:
+        if not isinstance(key, str):
+            return False
         if '.' not in key:
             return dict.__contains__(self, key)
         myKey, restOfKey = key.split('.', 1)
