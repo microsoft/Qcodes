@@ -424,7 +424,7 @@ class DotDict(Dict[str, Any]):
     Requires keys to be strings.
     """
 
-    def __init__(self, value: Optional[Dict[str, Any]] = None):
+    def __init__(self, value: Optional[Mapping[str, Any]] = None):
         if value is None:
             pass
         else:
