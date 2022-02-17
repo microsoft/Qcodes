@@ -5,6 +5,7 @@ import numbers
 import time
 import warnings
 from collections import defaultdict
+from contextlib import ExitStack
 from functools import partial
 from typing import (
     Any,
@@ -810,6 +811,8 @@ class AMI430_3D(Instrument):
         )
         """Ramp rate along a line (vector) in 3D field space"""
 
+        self._exit_stack = ExitStack()
+
     def _set_vector_ramp_rate_units(self, val: float) -> float:
         _, common_ramp_rate_units = self._raise_if_not_same_field_and_ramp_rate_units()
         self.vector_ramp_rate.unit = common_ramp_rate_units
@@ -826,6 +829,13 @@ class AMI430_3D(Instrument):
 
         If ``block_during_ramp`` parameter is ``True``, the method will block
         until all axes finished ramping.
+
+        If ``block_during_ramp`` parameter is ``True``, the ramp rates of
+        individual magnet axes will be restored after the end of the
+        ramp to their original values before the call of this method. If
+        ``block_during_ramp`` parameter is ``False``, call the
+        ``wait_while_all_axes_ramping`` method when needed to restore the
+        ramp rates of the individual magnet axes.
 
         It is required for all axis instruments to have the same units for
         ramp rate and field, otherwise an exception is raised. The given
@@ -1005,6 +1015,8 @@ class AMI430_3D(Instrument):
             )
 
     def _perform_simultaneous_ramp(self, values: Tuple[float, float, float]) -> None:
+        self._prepare_to_restore_individual_axes_ramp_rates()
+
         self._update_individual_axes_ramp_rates(values)
 
         axes = (self._instrument_x, self._instrument_y, self._instrument_z)
@@ -1032,6 +1044,8 @@ class AMI430_3D(Instrument):
         if self.block_during_ramp() is True:
             self.log.debug(f"Simultaneous ramp: blocking until ramp is finished")
             self.wait_while_all_axes_ramping()
+        else:
+            self.log.debug("Simultaneous ramp: not blocking until ramp is finished")
 
         self.log.debug(f"Simultaneous ramp: returning from the ramp call")
 
@@ -1061,10 +1075,25 @@ class AMI430_3D(Instrument):
                     block=self.block_during_ramp.get(),
                 )
 
+    def _prepare_to_restore_individual_axes_ramp_rates(self) -> None:
+        for instrument in (self._instrument_x, self._instrument_y, self._instrument_z):
+            self._exit_stack.enter_context(instrument.ramp_rate.restore_at_exit())
+        self._exit_stack.callback(
+            self.log.debug,
+            "Restoring individual axes ramp rates",
+        )
+
     def wait_while_all_axes_ramping(self) -> None:
-        """Wait and blocks as long as any magnet axis is ramping."""
+        """
+        Wait and blocks as long as any magnet axis is ramping. After the
+        ramping is finished, also resets the individual ramp rates of the
+        magnet axes if those were made to be restored, e.g. by using
+        ``simultaneous`` ramp mode.
+        """
         while self.any_axis_is_ramping():
             self._instrument_x._sleep(self.ramping_state_check_interval.get())
+
+        self._exit_stack.close()
 
     def any_axis_is_ramping(self) -> bool:
         """

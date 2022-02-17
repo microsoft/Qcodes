@@ -73,6 +73,7 @@ more specialized ones:
 # if everyone is happy to use these classes.
 
 import collections
+import collections.abc
 import enum
 import logging
 import os
@@ -99,10 +100,11 @@ from typing import (
     Type,
     Union,
     cast,
+    overload,
 )
 
 import numpy
-from typing_extensions import Protocol
+from typing_extensions import Literal, Protocol
 
 from qcodes.data.data_array import DataArray
 from qcodes.instrument.sweep_values import SweepFixedValues
@@ -440,6 +442,14 @@ class _BaseParameter(Metadatable):
 
     def __repr__(self) -> str:
         return named_repr(self)
+
+    @overload
+    def __call__(self) -> ParamDataType:
+        pass
+
+    @overload
+    def __call__(self, *args: Any, **kwargs: Any) -> None:
+        pass
 
     def __call__(self, *args: Any, **kwargs: Any) -> Optional[ParamDataType]:
         if len(args) == 0 and len(kwargs) == 0:
@@ -1170,8 +1180,8 @@ class Parameter(_BaseParameter):
         instrument: Optional["InstrumentBase"] = None,
         label: Optional[str] = None,
         unit: Optional[str] = None,
-        get_cmd: Optional[Union[str, Callable[..., Any], bool]] = None,
-        set_cmd: Optional[Union[str, Callable[..., Any], bool]] = False,
+        get_cmd: Optional[Union[str, Callable[..., Any], Literal[False]]] = None,
+        set_cmd: Optional[Union[str, Callable[..., Any], Literal[False]]] = False,
         initial_value: Optional[Union[float, str]] = None,
         max_val_age: Optional[float] = None,
         vals: Optional[Validator[Any]] = None,
@@ -1265,8 +1275,9 @@ class Parameter(_BaseParameter):
 
         #: Label of the data used for plots etc.
         self.label: str = name if label is None else label
-        #: The unit of measure. Use ``''`` for unitless.
+
         self.unit = unit if unit is not None else ''
+        self._unitval: str
 
         if initial_value is not None and initial_cache_value is not None:
             raise SyntaxError('It is not possible to specify both of the '
@@ -1293,6 +1304,18 @@ class Parameter(_BaseParameter):
                 docstring,
                 '',
                 self.__doc__))
+
+    @property
+    def unit(self) -> str:
+        """
+        The unit of measure. Use ``''`` (the empty string)
+        for unitless.
+        """
+        return self._unitval
+
+    @unit.setter
+    def unit(self, unit: str) -> None:
+        self._unitval = unit
 
     def __getitem__(self, keys: Any) -> 'SweepFixedValues':
         """
@@ -2632,17 +2655,20 @@ class InstrumentRefParameter(Parameter):
         **kwargs: Passed to InstrumentRefParameter parent class
     """
 
-    def __init__(self, name: str,
-                 instrument: Optional['InstrumentBase'] = None,
-                 label: Optional[str] = None,
-                 unit: Optional[str] = None,
-                 get_cmd: Optional[Union[str, Callable[..., Any], bool]] = None,
-                 set_cmd: Optional[Union[str, Callable[..., Any], bool]] = None,
-                 initial_value: Optional[Union[float, str]] = None,
-                 max_val_age: Optional[float] = None,
-                 vals: Optional[Validator[Any]] = None,
-                 docstring: Optional[str] = None,
-                 **kwargs: Any) -> None:
+    def __init__(
+        self,
+        name: str,
+        instrument: Optional["InstrumentBase"] = None,
+        label: Optional[str] = None,
+        unit: Optional[str] = None,
+        get_cmd: Optional[Union[str, Callable[..., Any], Literal[False]]] = None,
+        set_cmd: Optional[Union[str, Callable[..., Any], Literal[False]]] = None,
+        initial_value: Optional[Union[float, str]] = None,
+        max_val_age: Optional[float] = None,
+        vals: Optional[Validator[Any]] = None,
+        docstring: Optional[str] = None,
+        **kwargs: Any,
+    ) -> None:
         if vals is None:
             vals = Strings()
         if set_cmd is not None:
