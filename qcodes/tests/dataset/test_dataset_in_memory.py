@@ -393,7 +393,7 @@ def test_load_from_db_dataset_moved(meas_with_registered_param, DMM, DAC, tmp_pa
     assert loaded_ds.cache.data() == {}
 
     with pytest.warns(
-            UserWarning, match="Could not add metadata to the exported NetCDF file"
+        UserWarning, match="Could not add metadata to the exported NetCDF file"
     ):
         ds.add_metadata("metadata_added_after_move", 696)
 
