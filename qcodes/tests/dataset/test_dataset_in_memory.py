@@ -7,6 +7,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 import xarray
+from numpy.testing import assert_almost_equal
 
 from qcodes import load_by_id
 from qcodes.dataset import load_by_run_spec
@@ -346,6 +347,12 @@ def compare_datasets(ds, loaded_ds):
     assert ds.the_same_dataset_as(loaded_ds)
     assert len(ds) == len(loaded_ds)
     assert len(ds) != 0
+    for outer_var, inner_dict in ds.cache.data().items():
+        for inner_var, expected_data in inner_dict.items():
+            assert_almost_equal(
+                expected_data, loaded_ds.cache.data()[outer_var][inner_var]
+            )
+
     xds = ds.cache.to_xarray_dataset()
     loaded_xds = loaded_ds.cache.to_xarray_dataset()
     assert xds.sizes == loaded_xds.sizes
