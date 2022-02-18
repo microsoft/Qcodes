@@ -44,6 +44,38 @@ def test_dataset_in_memory_reload_from_db(
     compare_datasets(ds, loaded_ds)
 
 
+def test_dataset_in_memory_reload_from_db_2d(
+    meas_with_registered_param_2d, DMM, DAC, tmp_path
+):
+    with meas_with_registered_param_2d.run(
+        dataset_class=DataSetType.DataSetInMem
+    ) as datasaver:
+        for set_v in np.linspace(0, 25, 10):
+            for set_v2 in np.linspace(0, 100, 20):
+                DAC.ch1.set(set_v)
+                DAC.ch2.set(set_v2)
+                get_v = DMM.v1()
+                datasaver.add_result(
+                    (DAC.ch1, set_v), (DAC.ch2, set_v2), (DMM.v1, get_v)
+                )
+
+    ds = datasaver.dataset
+    ds.add_metadata("mymetadatatag", 42)
+
+    paramspecs = ds.get_parameters()
+    assert len(paramspecs) == 3
+    assert paramspecs[0].name == "dummy_dac_ch1"
+    assert paramspecs[1].name == "dummy_dac_ch2"
+    assert paramspecs[2].name == "dummy_dmm_v1"
+    ds.export(export_type="netcdf", path=str(tmp_path))
+
+    assert isinstance(ds, DataSetInMem)
+
+    loaded_ds = load_by_id(ds.run_id)
+    assert isinstance(loaded_ds, DataSetInMem)
+    compare_datasets(ds, loaded_ds)
+
+
 def test_dataset_in_memory_without_cache_raises(
     meas_with_registered_param, DMM, DAC, tmp_path
 ):

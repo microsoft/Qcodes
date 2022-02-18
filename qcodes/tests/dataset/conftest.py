@@ -613,6 +613,15 @@ def meas_with_registered_param(experiment, DAC, DMM):
     yield meas
 
 
+@pytest.fixture
+def meas_with_registered_param_2d(experiment, DAC, DMM):
+    meas = Measurement()
+    meas.register_parameter(DAC.ch1)
+    meas.register_parameter(DAC.ch2)
+    meas.register_parameter(DMM.v1, setpoints=[DAC.ch1, DAC.ch2])
+    yield meas
+
+
 @pytest.fixture(name="meas_with_registered_param_complex")
 def _make_meas_with_registered_param_complex(experiment, DAC, complex_num_instrument):
     meas = Measurement()
