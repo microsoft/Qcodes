@@ -1,0 +1,2 @@
+In the interactive widget the total time of a run is now correctly calculated as
+end-time - start-time not the other way around.
