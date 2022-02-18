@@ -12,12 +12,12 @@ from typing import Callable as TCallable
 from typing import Dict as TDict
 from typing import Generic, Hashable
 from typing import List as TList
-from typing_extensions import Literal
 from typing import Optional
 from typing import Sequence as TSequence
 from typing import Tuple, TypeVar, Union, cast
 
 import numpy as np
+from typing_extensions import Literal
 
 from qcodes.utils.types import complex_types
 
@@ -611,12 +611,12 @@ class MultiType(Validator[Any]):
             ['OR', 'AND'].
     """
 
-    def __init__(self,
-                 *validators: Validator[Any],
-                 combiner: Literal['OR', 'AND'] = 'OR') -> None:
+    def __init__(
+        self, *validators: Validator[Any], combiner: Literal["OR", "AND"] = "OR"
+    ) -> None:
         if not validators:
-            raise TypeError('MultiType needs at least one Validator')
-        if combiner not in ['OR', 'AND']:
+            raise TypeError("MultiType needs at least one Validator")
+        if combiner not in ["OR", "AND"]:
             raise TypeError("MultiType combiner argument must be one of ['OR', 'AND']")
 
         for v in validators:
@@ -641,16 +641,16 @@ class MultiType(Validator[Any]):
         for v in self._validators:
             try:
                 v.validate(value, context)
-                if self._combiner == 'OR':
+                if self._combiner == "OR":
                     return
             except Exception as e:
                 # collect the args from all validators so you can see why
                 # each one that was tested failed
                 args = args + list(e.args)
-                if self._combiner == 'AND':
+                if self._combiner == "AND":
                     raise ValueError(*args)
 
-        if self._combiner == 'OR':
+        if self._combiner == "OR":
             raise ValueError(*args)
 
     def __repr__(self) -> str:
@@ -673,14 +673,15 @@ class MultiTypeOr(MultiType):
             argument is not a valid validator.
     """
 
-    def __init__(self,
-                 *validators: Validator[Any],
-                 ) -> None:
-        super().__init__(*validators, combiner='OR')
+    def __init__(
+        self,
+        *validators: Validator[Any],
+    ) -> None:
+        super().__init__(*validators, combiner="OR")
 
     def __repr__(self) -> str:
         parts = (repr(v)[1:-1] for v in self._validators)
-        return '<MultiTypeOr: {}>'.format(', '.join(parts))
+        return "<MultiTypeOr: {}>".format(", ".join(parts))
 
 
 class MultiTypeAnd(MultiType):
@@ -700,15 +701,16 @@ class MultiTypeAnd(MultiType):
             argument is not a valid validator.
     """
 
-    def __init__(self,
-                 *validators: Validator[Any],
-                 ) -> None:
-        super().__init__(*validators, combiner='AND')
+    def __init__(
+        self,
+        *validators: Validator[Any],
+    ) -> None:
+        super().__init__(*validators, combiner="AND")
         self._valid_values = ()
 
     def __repr__(self) -> str:
         parts = (repr(v)[1:-1] for v in self._validators)
-        return '<MultiTypeAnd: {}>'.format(', '.join(parts))
+        return "<MultiTypeAnd: {}>".format(", ".join(parts))
 
 
 class Arrays(Validator[np.ndarray]):
@@ -806,7 +808,7 @@ class Arrays(Validator[np.ndarray]):
         if min_value is not None and max_value is not None:
             valuesok = max_value > min_value
             if not valuesok:
-                raise TypeError('max_value must be bigger than min_value')
+                raise TypeError("max_value must be bigger than min_value")
 
         if not isinstance(shape,
                           collections.abc.Sequence) and shape is not None:
