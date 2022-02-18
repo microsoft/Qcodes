@@ -25,14 +25,3 @@ def test_bad():
     for args in [[], [1], [Strings(), True]]:
         with pytest.raises(TypeError):
             MultiTypeAnd(*args)
-
-
-def test_valid_values():
-    # the concept of checking Validator.valid_values does not hold for the 'AND' case
-    pass
-    #ms = [MultiTypeAnd(Numbers(min_value=0, max_value=120), PermissiveMultiples(divisor=0.1)),
-    #      MultiTypeAnd(Numbers(min_value=2e-3, max_value=5e4), PermissiveMultiples(divisor=1e-3)),
-    #      MultiTypeAnd(Anything(), MultiTypeAnd(Numbers(), Ints()))]
-    #for m in ms:
-    #    for val in m.valid_values:
-    #        m.validate(val)

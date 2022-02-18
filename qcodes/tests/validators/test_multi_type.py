@@ -72,12 +72,3 @@ def test_valid_values():
     for m in ms:
         for val in m.valid_values:
             m.validate(val)
-
-    # combiner == 'AND'
-    # the concept of checking Validator.valid_values does not hold for the 'AND' case
-    #ms = [MultiType(Numbers(min_value=0, max_value=120), PermissiveMultiples(divisor=0.1), combiner='AND'),
-    #      MultiType(Numbers(min_value=2e-3, max_value=5e4), PermissiveMultiples(divisor=1e-3), combiner='AND'),
-    #      MultiType(Anything(), MultiType(Numbers(), Ints()))]
-    #for m in ms:
-    #    for val in m.valid_values:
-    #        m.validate(val)
