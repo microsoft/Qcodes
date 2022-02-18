@@ -389,12 +389,14 @@ def _get_experiment_button(ds: DataSetProtocol) -> Box:
 
 
 def _get_timestamp_button(ds: DataSetProtocol) -> Box:
-    try:
+    start_timestamp = ds.run_timestamp_raw
+    end_timestamp = ds.completed_timestamp_raw
+    if start_timestamp is not None and end_timestamp is not None:
         total_time = str(
-            datetime.fromtimestamp(ds.run_timestamp_raw)  # type: ignore
-            - datetime.fromtimestamp(ds.completed_timestamp_raw)  # type: ignore
+            datetime.fromtimestamp(end_timestamp)
+            - datetime.fromtimestamp(start_timestamp)
         )
-    except TypeError:
+    else:
         total_time = "?"
     start = ds.run_timestamp()
     body = _yaml_dump(
