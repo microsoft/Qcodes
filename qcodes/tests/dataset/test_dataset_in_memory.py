@@ -50,7 +50,14 @@ def test_dataset_in_memory_reload_from_db_2d(
     shape1 = 10
     shape2 = 20
     meas_with_registered_param_2d.set_shapes(
-        {DAC.ch1.full_name: (shape1,), DAC.ch2.full_name: (shape2,)}
+        {
+            DAC.ch1.full_name: [
+                shape1,
+            ],
+            DAC.ch2.full_name: [
+                shape2,
+            ],
+        }
     )
     with meas_with_registered_param_2d.run(
         dataset_class=DataSetType.DataSetInMem
