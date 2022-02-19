@@ -59,18 +59,19 @@ def test_dataset_in_memory_reload_from_db_2d(
             ],
         }
     )
+    i = 0
     with meas_with_registered_param_2d.run(
         dataset_class=DataSetType.DataSetInMem
     ) as datasaver:
-        for set_v in np.linspace(0, 25, 10):
-            for set_v2 in np.linspace(0, 100, 20):
+        for set_v in np.linspace(0, 25, shape1):
+            for set_v2 in np.linspace(0, 100, shape2):
                 DAC.ch1.set(set_v)
                 DAC.ch2.set(set_v2)
                 get_v = DMM.v1()
                 datasaver.add_result(
-                    (DAC.ch1, set_v), (DAC.ch2, set_v2), (DMM.v1, get_v)
+                    (DAC.ch1, set_v), (DAC.ch2, set_v2), (DMM.v1, float(i))
                 )
-
+                i = i + 1
     ds = datasaver.dataset
     ds.add_metadata("mymetadatatag", 42)
 
