@@ -84,6 +84,15 @@ def test_dataset_in_memory_reload_from_db_2d(
     assert paramspecs[0].name == "dummy_dac_ch1"
     assert paramspecs[1].name == "dummy_dac_ch2"
     assert paramspecs[2].name == "dummy_dmm_v1"
+
+    # if the indexes are not correct here it will break the exported
+    # xarray and therefor netcdf order below and therefor the loaded data
+    # will have the coordinates inverted.
+    assert tuple(ds.cache.to_pandas_dataframe().index.names) == (
+        "dummy_dac_ch1",
+        "dummy_dac_ch2",
+    )
+
     ds.export(export_type="netcdf", path=str(tmp_path))
 
     assert isinstance(ds, DataSetInMem)
