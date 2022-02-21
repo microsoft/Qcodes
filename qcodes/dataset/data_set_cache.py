@@ -299,7 +299,7 @@ def _merge_data(existing_data: Mapping[str, np.ndarray],
                 ) -> Tuple[Dict[str, np.ndarray], Optional[int]]:
 
     subtree_merged_data = {}
-    subtree_parameters = set(existing_data.keys()) | set(new_data.keys())
+    subtree_parameters = existing_data.keys()
     new_write_status: Optional[int]
     single_param_merged_data, new_write_status = _merge_data_single_param(
         existing_data.get(meas_parameter),
