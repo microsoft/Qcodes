@@ -4,9 +4,11 @@ import shutil
 import sqlite3
 from pathlib import Path
 
+import hypothesis.strategies as hst
 import numpy as np
 import pytest
 import xarray
+from hypothesis import HealthCheck, given, settings
 from numpy.testing import assert_almost_equal
 
 from qcodes import load_by_id
@@ -44,11 +46,18 @@ def test_dataset_in_memory_reload_from_db(
     compare_datasets(ds, loaded_ds)
 
 
+@settings(
+    deadline=None,
+    suppress_health_check=(HealthCheck.function_scoped_fixture,),
+    max_examples=10,
+)
+@given(
+    shape1=hst.integers(min_value=1, max_value=100),
+    shape2=hst.integers(min_value=1, max_value=100),
+)
 def test_dataset_in_memory_reload_from_db_2d(
-    meas_with_registered_param_2d, DMM, DAC, tmp_path
+    meas_with_registered_param_2d, DMM, DAC, tmp_path, shape1, shape2
 ):
-    shape1 = 10
-    shape2 = 20
     meas_with_registered_param_2d.set_shapes(
         {
             DMM.v1.full_name: [shape1, shape2],
@@ -394,7 +403,8 @@ def compare_datasets(ds, loaded_ds):
                 == loaded_ds.cache.data()[outer_var][inner_var].shape
             )
             assert_almost_equal(
-                expected_data, loaded_ds.cache.data()[outer_var][inner_var]
+                expected_data,
+                loaded_ds.cache.data()[outer_var][inner_var],
             )
 
     xds = ds.cache.to_xarray_dataset()
