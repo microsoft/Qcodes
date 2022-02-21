@@ -720,6 +720,8 @@ class DataSetInMem(BaseDataSet):
             raise RuntimeError(mssg)
         self._rundescriber = RunDescriber(interdeps, shapes=shapes)
 
+        self.cache._data = self._rundescriber.interdeps._empty_data_dict()
+
     def _get_paramspecs(self) -> SPECS:
         old_interdeps = new_to_old(self.description.interdeps)
         return list(old_interdeps.paramspecs)
