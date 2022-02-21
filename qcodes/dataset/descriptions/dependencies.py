@@ -17,6 +17,8 @@ from typing import (
     Type,
 )
 
+import numpy as np
+
 from .param_spec import ParamSpec, ParamSpecBase
 from .versioning.rundescribertypes import InterDependencies_Dict
 
@@ -271,18 +273,18 @@ class InterDependencies_:
                                           "standalones": standalones}
         return output
 
-    def _empty_data_dict(self) -> Dict[str, Dict[str, None]]:
+    def _empty_data_dict(self) -> Dict[str, Dict[str, np.ndarray]]:
         output = {}
         for key, value in self.dependencies.items():
             ps_id = self._paramspec_to_id[key]
-            output[ps_id] = {ps_id: None}
+            output[ps_id] = {ps_id: np.array([])}
             dep_ids = [self._paramspec_to_id[ps] for ps in value]
             for dep_id in dep_ids:
-                output[ps_id][dep_id] = None
+                output[ps_id][dep_id] = np.array([])
         standalones = [self._paramspec_to_id[ps] for ps in self.standalones]
         for standalone in standalones:
             output[standalone] = {}
-            output[standalone][standalone] = None
+            output[standalone][standalone] = np.array([])
         return output
 
     def _construct_subdict(self, treename: str) -> Dict[str, Any]:
