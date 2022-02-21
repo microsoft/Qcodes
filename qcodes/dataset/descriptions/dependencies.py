@@ -271,6 +271,20 @@ class InterDependencies_:
                                           "standalones": standalones}
         return output
 
+    def _empty_data_dict(self) -> Dict[str, Dict[str, None]]:
+        output = {}
+        for key, value in self.dependencies.items():
+            ps_id = self._paramspec_to_id[key]
+            output[ps_id] = {ps_id: None}
+            dep_ids = [self._paramspec_to_id[ps] for ps in value]
+            for dep_id in dep_ids:
+                output[ps_id][dep_id] = None
+        standalones = [self._paramspec_to_id[ps] for ps in self.standalones]
+        for standalone in standalones:
+            output[standalone] = {}
+            output[standalone][standalone] = None
+        return output
+
     def _construct_subdict(self, treename: str) -> Dict[str, Any]:
         output = {}
         for key, value in getattr(self, treename).items():
