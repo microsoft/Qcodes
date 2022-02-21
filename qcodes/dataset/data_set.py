@@ -555,6 +555,7 @@ class DataSet(BaseDataSet):
                     'been started.')
             raise RuntimeError(mssg)
         self._rundescriber = RunDescriber(interdeps, shapes=shapes)
+        self.cache._data = self._rundescriber.interdeps._empty_data_dict()
 
     def add_metadata(self, tag: str, metadata: Any) -> None:
         """

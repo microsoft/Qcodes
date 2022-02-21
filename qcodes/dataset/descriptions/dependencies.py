@@ -274,7 +274,7 @@ class InterDependencies_:
         return output
 
     def _empty_data_dict(self) -> Dict[str, Dict[str, np.ndarray]]:
-        output = {}
+        output: Dict[str, Dict[str, np.ndarray]] = {}
         for key, value in self.dependencies.items():
             ps_id = self._paramspec_to_id[key]
             output[ps_id] = {ps_id: np.array([])}
