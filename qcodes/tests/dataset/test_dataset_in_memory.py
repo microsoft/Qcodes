@@ -51,12 +51,7 @@ def test_dataset_in_memory_reload_from_db_2d(
     shape2 = 20
     meas_with_registered_param_2d.set_shapes(
         {
-            DAC.ch1.full_name: [
-                shape1,
-            ],
-            DAC.ch2.full_name: [
-                shape2,
-            ],
+            DMM.v1.full_name: [shape1, shape2],
         }
     )
     i = 0
@@ -394,6 +389,10 @@ def compare_datasets(ds, loaded_ds):
     assert len(ds) != 0
     for outer_var, inner_dict in ds.cache.data().items():
         for inner_var, expected_data in inner_dict.items():
+            assert (
+                expected_data.shape
+                == loaded_ds.cache.data()[outer_var][inner_var].shape
+            )
             assert_almost_equal(
                 expected_data, loaded_ds.cache.data()[outer_var][inner_var]
             )
