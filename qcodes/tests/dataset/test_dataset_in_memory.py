@@ -410,9 +410,12 @@ def test_load_from_db_dataset_moved(meas_with_registered_param, DMM, DAC, tmp_pa
         assert "metadata_added_after_move" not in new_xr_ds.attrs
 
     # This should have effect neither on the loaded_ds nor on the netcdf file
-    ds.add_metadata(
-        "metadata_added_to_old_dataset_after_set_new_netcdf_location", 696977
-    )
+    with pytest.warns(
+        UserWarning, match="Could not add metadata to the exported NetCDF file"
+    ):
+        ds.add_metadata(
+            "metadata_added_to_old_dataset_after_set_new_netcdf_location", 696977
+        )
 
     loaded_ds.add_metadata("metadata_added_after_set_new_netcdf_location", 6969)
 
