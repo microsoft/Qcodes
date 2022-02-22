@@ -84,6 +84,12 @@ class DataSetCache(Generic[DatasetType]):
 
         return self._data
 
+    def prepare(self) -> None:
+        if self._data == {}:
+            self._data = self.rundescriber.interdeps._empty_data_dict()
+        else:
+            raise RuntimeError("Cannot prepare a cache that is not empty")
+
     def load_data_from_db(self) -> None:
         """
         Load the data from an on-disk format in case the cache is not live
@@ -468,7 +474,7 @@ class DataSetCacheWithDBBackend(DataSetCache["DataSet"]):
         if self._dataset.completed:
             self._loaded_from_completed_ds = True
         if self._data == {}:
-            self._data = self.rundescriber.interdeps._empty_data_dict()
+            self.prepare()
         (
             self._write_status,
             self._read_status,
