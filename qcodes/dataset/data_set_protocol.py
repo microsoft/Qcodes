@@ -446,7 +446,9 @@ class BaseDataSet(DataSetProtocol):
             import h5netcdf
 
             try:
-                with h5netcdf.File(nc_file, mode="r+") as h5nc_file:
+                with h5netcdf.File(
+                    nc_file, mode="r+", decode_vlen_strings=False
+                ) as h5nc_file:
                     h5nc_file.attrs[tag] = data
             except (
                 FileNotFoundError,
