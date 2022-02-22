@@ -300,6 +300,9 @@ def _merge_data(existing_data: Mapping[str, np.ndarray],
 
     subtree_merged_data = {}
     subtree_parameters = existing_data.keys()
+
+    assert set(existing_data.keys()) == set(new_data.keys())
+
     new_write_status: Optional[int]
     single_param_merged_data, new_write_status = _merge_data_single_param(
         existing_data.get(meas_parameter),
