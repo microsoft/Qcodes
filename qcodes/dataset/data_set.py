@@ -329,6 +329,7 @@ class DataSet(BaseDataSet):
         links = [Link(head=self.guid, **pdict) for pdict in parent_datasets]
         self.parent_dataset_links = links
         self.mark_started(start_bg_writer=write_in_background)
+        self.cache.prepare()
 
     @property
     def cache(self) -> DataSetCacheWithDBBackend:
@@ -554,7 +555,6 @@ class DataSet(BaseDataSet):
                     'been started.')
             raise RuntimeError(mssg)
         self._rundescriber = RunDescriber(interdeps, shapes=shapes)
-        self.cache.prepare()
 
     def add_metadata(self, tag: str, metadata: Any) -> None:
         """

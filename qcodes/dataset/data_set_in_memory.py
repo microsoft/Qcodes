@@ -419,6 +419,7 @@ class DataSetInMem(BaseDataSet):
 
         if self.pristine:
             self._perform_start_actions()
+        self.cache.prepare()
 
     @property
     def pristine(self) -> bool:
@@ -719,8 +720,6 @@ class DataSetInMem(BaseDataSet):
             mssg = "Can not set interdependencies on a DataSet that has been started."
             raise RuntimeError(mssg)
         self._rundescriber = RunDescriber(interdeps, shapes=shapes)
-
-        self.cache.prepare()
 
     def _get_paramspecs(self) -> SPECS:
         old_interdeps = new_to_old(self.description.interdeps)
