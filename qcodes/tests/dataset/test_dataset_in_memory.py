@@ -71,7 +71,6 @@ def test_dataset_in_memory_reload_from_db_2d(
             for set_v2 in np.linspace(0, 100, shape2):
                 DAC.ch1.set(set_v)
                 DAC.ch2.set(set_v2)
-                get_v = DMM.v1()
                 datasaver.add_result(
                     (DAC.ch1, set_v), (DAC.ch2, set_v2), (DMM.v1, float(i))
                 )
