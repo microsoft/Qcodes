@@ -422,6 +422,13 @@ def _make_dac():
     dac.close()
 
 
+@pytest.fixture(name="DAC3D")  # scope is "function" per default
+def _make_dac_3d():
+    dac = DummyInstrument("dummy_dac", gates=["ch1", "ch2", "ch3"])
+    yield dac
+    dac.close()
+
+
 @pytest.fixture(name="DAC_with_metadata")  # scope is "function" per default
 def _make_dac_with_metadata():
     dac = DummyInstrument('dummy_dac', gates=['ch1', 'ch2'],
@@ -619,6 +626,16 @@ def meas_with_registered_param_2d(experiment, DAC, DMM):
     meas.register_parameter(DAC.ch1)
     meas.register_parameter(DAC.ch2)
     meas.register_parameter(DMM.v1, setpoints=[DAC.ch1, DAC.ch2])
+    yield meas
+
+
+@pytest.fixture
+def meas_with_registered_param_3d(experiment, DAC3D, DMM):
+    meas = Measurement()
+    meas.register_parameter(DAC3D.ch1)
+    meas.register_parameter(DAC3D.ch2)
+    meas.register_parameter(DAC3D.ch3)
+    meas.register_parameter(DMM.v1, setpoints=[DAC3D.ch1, DAC3D.ch2, DAC3D.ch3])
     yield meas
 
 

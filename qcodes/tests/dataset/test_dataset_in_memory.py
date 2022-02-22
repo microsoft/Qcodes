@@ -101,6 +101,69 @@ def test_dataset_in_memory_reload_from_db_2d(
     compare_datasets(ds, loaded_ds)
 
 
+@settings(
+    deadline=None,
+    suppress_health_check=(HealthCheck.function_scoped_fixture,),
+    max_examples=10,
+)
+@given(
+    shape1=hst.integers(min_value=1, max_value=10),
+    shape2=hst.integers(min_value=1, max_value=10),
+    shape3=hst.integers(min_value=1, max_value=10),
+)
+def test_dataset_in_memory_reload_from_db_3d(
+    meas_with_registered_param_3d, DMM, DAC3D, tmp_path, shape1, shape2, shape3
+):
+    meas_with_registered_param_3d.set_shapes(
+        {
+            DMM.v1.full_name: [shape1, shape2, shape3],
+        }
+    )
+    i = 0
+    with meas_with_registered_param_3d.run(
+        dataset_class=DataSetType.DataSetInMem
+    ) as datasaver:
+        for set_v in np.linspace(0, 25, shape1):
+            for set_v2 in np.linspace(0, 100, shape2):
+                for set_v3 in np.linspace(0, 400, shape3):
+                    DAC3D.ch1.set(set_v)
+                    DAC3D.ch2.set(set_v2)
+                    DAC3D.ch3.set(set_v3)
+                    datasaver.add_result(
+                        (DAC3D.ch1, set_v),
+                        (DAC3D.ch2, set_v2),
+                        (DAC3D.ch3, set_v3),
+                        (DMM.v1, float(i)),
+                    )
+                    i = i + 1
+    ds = datasaver.dataset
+    ds.add_metadata("mymetadatatag", 42)
+
+    paramspecs = ds.get_parameters()
+    assert len(paramspecs) == 4
+    assert paramspecs[0].name == "dummy_dac_ch1"
+    assert paramspecs[1].name == "dummy_dac_ch2"
+    assert paramspecs[2].name == "dummy_dac_ch3"
+    assert paramspecs[3].name == "dummy_dmm_v1"
+
+    # if the indexes are not correct here it will break the exported
+    # xarray and therefor netcdf order below and therefor the loaded data
+    # will have the coordinates inverted.
+    assert tuple(ds.cache.to_pandas_dataframe().index.names) == (
+        "dummy_dac_ch1",
+        "dummy_dac_ch2",
+        "dummy_dac_ch3",
+    )
+
+    ds.export(export_type="netcdf", path=str(tmp_path))
+
+    assert isinstance(ds, DataSetInMem)
+
+    loaded_ds = load_by_id(ds.run_id)
+    assert isinstance(loaded_ds, DataSetInMem)
+    compare_datasets(ds, loaded_ds)
+
+
 def test_dataset_in_memory_without_cache_raises(
     meas_with_registered_param, DMM, DAC, tmp_path
 ):
