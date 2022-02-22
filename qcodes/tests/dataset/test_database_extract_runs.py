@@ -1,30 +1,34 @@
-from os.path import getmtime
-from contextlib import contextmanager
-import re
 import os
-from pathlib import Path
 import random
+import re
 import uuid
+from contextlib import contextmanager
+from os.path import getmtime
+from pathlib import Path
 
-import pytest
 import numpy as np
+import pytest
 
 import qcodes as qc
 import qcodes.tests.dataset
-from qcodes.dataset.experiment_container import Experiment,\
-    load_experiment_by_name
-from qcodes.dataset.data_set import (DataSet, load_by_guid, load_by_counter,
-                                     load_by_id, load_by_run_spec,
-                                     generate_dataset_table)
-from qcodes.dataset.sqlite.database import get_db_version_and_newest_available_version
-from qcodes.dataset.sqlite.connection import path_to_dbfile
+from qcodes import Station
+from qcodes.dataset.data_set import (
+    DataSet,
+    generate_dataset_table,
+    load_by_counter,
+    load_by_guid,
+    load_by_id,
+    load_by_run_spec,
+)
 from qcodes.dataset.database_extract_runs import extract_runs_into_db
+from qcodes.dataset.experiment_container import Experiment, load_experiment_by_name
+from qcodes.dataset.linked_datasets.links import Link
+from qcodes.dataset.measurements import Measurement
+from qcodes.dataset.sqlite.connection import path_to_dbfile
+from qcodes.dataset.sqlite.database import get_db_version_and_newest_available_version
 from qcodes.dataset.sqlite.queries import get_experiments
 from qcodes.tests.common import error_caused_by
-from qcodes.dataset.measurements import Measurement
-from qcodes import Station
 from qcodes.tests.instrument_mocks import DummyInstrument
-from qcodes.dataset.linked_datasets.links import Link
 
 
 @contextmanager
@@ -130,7 +134,6 @@ def test_basic_extraction(two_empty_temp_db_connections, some_interdeps):
 
     source_dataset.add_metadata('goodness', 'fair')
     source_dataset.add_metadata('test', True)
-
 
     source_dataset.mark_completed()
 
