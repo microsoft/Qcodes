@@ -465,6 +465,7 @@ class DataSetCacheWithDBBackend(DataSetCache["DataSet"]):
         if self._dataset.completed:
             self._loaded_from_completed_ds = True
 
+        self._data = self.rundescriber.interdeps._empty_data_dict()
         (
             self._write_status,
             self._read_status,
