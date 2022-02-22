@@ -415,23 +415,23 @@ def some_interdeps():
     return idps_list
 
 
-@pytest.fixture  # scope is "function" per default
-def DAC():
+@pytest.fixture(name="DAC")  # scope is "function" per default
+def _make_dac():
     dac = DummyInstrument('dummy_dac', gates=['ch1', 'ch2'])
     yield dac
     dac.close()
 
 
-@pytest.fixture  # scope is "function" per default
-def DAC_with_metadata():
+@pytest.fixture(name="DAC_with_metadata")  # scope is "function" per default
+def _make_dac_with_metadata():
     dac = DummyInstrument('dummy_dac', gates=['ch1', 'ch2'],
                           metadata={"dac": "metadata"})
     yield dac
     dac.close()
 
 
-@pytest.fixture
-def DMM():
+@pytest.fixture(name="DMM")
+def _make_dmm():
     dmm = DummyInstrument('dummy_dmm', gates=['v1', 'v2'])
     yield dmm
     dmm.close()
