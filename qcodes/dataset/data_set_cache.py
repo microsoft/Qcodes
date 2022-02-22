@@ -85,6 +85,12 @@ class DataSetCache(Generic[DatasetType]):
         return self._data
 
     def prepare(self) -> None:
+        """
+        Set up the internal datastructure of the cache.
+        Must be called after the dataset has been setup with
+        interdependencies but before data is added to the dataset.
+        """
+
         if self._data == {}:
             self._data = self.rundescriber.interdeps._empty_data_dict()
         else:

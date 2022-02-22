@@ -274,6 +274,12 @@ class InterDependencies_:
         return output
 
     def _empty_data_dict(self) -> Dict[str, Dict[str, np.ndarray]]:
+        """
+        Create an empty dictionary (with empty numpy arrays as values)
+        matching the expected output of get_parameter_data / cache.data
+        based on the interdeps in this class.
+        """
+
         output: Dict[str, Dict[str, np.ndarray]] = {}
         for key, value in self.dependencies.items():
             ps_id = self._paramspec_to_id[key]
