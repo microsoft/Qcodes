@@ -374,6 +374,14 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         return self.full_name
 
     @property
+    def _name(self) -> str:
+        """
+        Private alias kept here for backwards compatibility
+        see https://github.com/zhinst/zhinst-qcodes/issues/27
+        """
+        return self.full_name
+
+    @property
     def short_name(self) -> str:
         """Short name of the instrument"""
         return self._short_name

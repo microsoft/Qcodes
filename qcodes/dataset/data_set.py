@@ -47,6 +47,9 @@ from qcodes.dataset.sqlite.database import (
     get_DB_location,
 )
 from qcodes.dataset.sqlite.queries import (
+    get_guids_from_run_spec,  # for backwards compatibility
+)
+from qcodes.dataset.sqlite.queries import (
     _check_if_table_found,
     _get_result_table_name_by_guid,
     _query_guids_from_run_spec,
