@@ -275,20 +275,20 @@ class InterDependencies_:
 
     def _empty_data_dict(self) -> Dict[str, Dict[str, np.ndarray]]:
         """
-        Create an empty dictionary (with empty numpy arrays as values)
-        matching the expected output of get_parameter_data / cache.data
-        based on the interdeps in this class.
+        Create an dictionary with empty numpy arrays as values
+        matching the expected output of ``DataSet``'s ``get_parameter_data`` /
+        ``cache.data`` so that the order of keys in the returned dictionary
+        is the same as the order of parameters in the interdependencies
+        in this class.
         """
 
         output: Dict[str, Dict[str, np.ndarray]] = {}
-        for key, value in self.dependencies.items():
-            ps_id = self._paramspec_to_id[key]
-            output[ps_id] = {ps_id: np.array([])}
-            dep_ids = [self._paramspec_to_id[ps] for ps in value]
-            for dep_id in dep_ids:
-                output[ps_id][dep_id] = np.array([])
-        standalones = [self._paramspec_to_id[ps] for ps in self.standalones]
-        for standalone in standalones:
+        for dependent, independents in self.dependencies.items():
+            dependent_name = dependent.name
+            output[dependent_name] = {dependent_name: np.array([])}
+            for independent in independents:
+                output[dependent_name][independent.name] = np.array([])
+        for standalone in (ps.name for ps in self.standalones):
             output[standalone] = {}
             output[standalone][standalone] = np.array([])
         return output
