@@ -1711,7 +1711,7 @@ def create_run(
 
     if parameters is not None and description is not None:
         raise RuntimeError(
-            "Passing both parameters and description to create_run is" "not supported."
+            "Passing both parameters and description to create_run is not supported."
         )
     if parameters is not None:
         warnings.warn(
