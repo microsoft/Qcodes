@@ -84,9 +84,11 @@ def test_dataset_in_memory_reload_from_db_2d(
     assert paramspecs[1].name == "dummy_dac_ch2"
     assert paramspecs[2].name == "dummy_dmm_v1"
 
-    # if the indexes are not correct here it will break the exported
-    # xarray and therefor netcdf order below and therefor the loaded data
-    # will have the coordinates inverted.
+    # if the indexes (their order) are not correct here, the exported xarray, and thus
+    # the exported netcdf will have a wrong order of axes in the data, so that
+    # the loaded data will have the coordinates inverted. Hence we assert that
+    # the order is exactly the same as declared via Measurement.register_parameter
+    # calls above
     assert tuple(ds.cache.to_pandas_dataframe().index.names) == (
         "dummy_dac_ch1",
         "dummy_dac_ch2",
@@ -146,9 +148,11 @@ def test_dataset_in_memory_reload_from_db_3d(
     assert paramspecs[2].name == "dummy_dac_ch3"
     assert paramspecs[3].name == "dummy_dmm_v1"
 
-    # if the indexes are not correct here it will break the exported
-    # xarray and therefor netcdf order below and therefor the loaded data
-    # will have the coordinates inverted.
+    # if the indexes (their order) are not correct here, the exported xarray, and thus
+    # the exported netcdf will have a wrong order of axes in the data, so that
+    # the loaded data will have the coordinates inverted. Hence we assert that
+    # the order is exactly the same as declared via Measurement.register_parameter
+    # calls above
     assert tuple(ds.cache.to_pandas_dataframe().index.names) == (
         "dummy_dac_ch1",
         "dummy_dac_ch2",
