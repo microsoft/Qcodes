@@ -1688,8 +1688,8 @@ def create_run(
         - exp_id: the experiment id we want to create the run into
         - name: a friendly name for this run
         - guid: the guid adhering to our internal guid format
-        - parameters: optional list of parameters this run has. This is not recommeded
-            please use description instead.
+        - parameters: optional list of parameters this run has (as ParamSpec objects).
+            This is not recommended, please use description instead.
         - values:  optional list of values for the parameters
         - metadata: optional metadata dictionary
         - captured_run_id: The run_id this data was originally captured with.
