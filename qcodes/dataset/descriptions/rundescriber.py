@@ -38,6 +38,14 @@ class RunDescriber:
         self._verify_interdeps_shape(interdeps, shapes)
 
         self._interdeps = interdeps
+
+        # since this may be loaded from json
+        # the shape may be a list rather than a tuple
+        # so convert to tuple for consistency
+        if shapes is not None:
+            for name, shape in shapes.items():
+                shapes[name] = tuple(shape)
+
         self._shapes = shapes
         self._version = 3
 
@@ -52,7 +60,6 @@ class RunDescriber:
     @property
     def interdeps(self) -> InterDependencies_:
         return self._interdeps
-
 
     @staticmethod
     def _verify_interdeps_shape(interdeps: InterDependencies_,
