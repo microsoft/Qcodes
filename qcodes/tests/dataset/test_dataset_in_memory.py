@@ -60,7 +60,7 @@ def test_dataset_in_memory_reload_from_db_2d(
 ):
     meas_with_registered_param_2d.set_shapes(
         {
-            DMM.v1.full_name: [shape1, shape2],
+            DMM.v1.full_name: (shape1, shape2),
         }
     )
     i = 0
@@ -118,7 +118,7 @@ def test_dataset_in_memory_reload_from_db_3d(
 ):
     meas_with_registered_param_3d.set_shapes(
         {
-            DMM.v1.full_name: [shape1, shape2, shape3],
+            DMM.v1.full_name: (shape1, shape2, shape3),
         }
     )
     i = 0
