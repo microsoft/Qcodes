@@ -415,23 +415,30 @@ def some_interdeps():
     return idps_list
 
 
-@pytest.fixture  # scope is "function" per default
-def DAC():
+@pytest.fixture(name="DAC")  # scope is "function" per default
+def _make_dac():
     dac = DummyInstrument('dummy_dac', gates=['ch1', 'ch2'])
     yield dac
     dac.close()
 
 
-@pytest.fixture  # scope is "function" per default
-def DAC_with_metadata():
+@pytest.fixture(name="DAC3D")  # scope is "function" per default
+def _make_dac_3d():
+    dac = DummyInstrument("dummy_dac", gates=["ch1", "ch2", "ch3"])
+    yield dac
+    dac.close()
+
+
+@pytest.fixture(name="DAC_with_metadata")  # scope is "function" per default
+def _make_dac_with_metadata():
     dac = DummyInstrument('dummy_dac', gates=['ch1', 'ch2'],
                           metadata={"dac": "metadata"})
     yield dac
     dac.close()
 
 
-@pytest.fixture
-def DMM():
+@pytest.fixture(name="DMM")
+def _make_dmm():
     dmm = DummyInstrument('dummy_dmm', gates=['v1', 'v2'])
     yield dmm
     dmm.close()
@@ -610,6 +617,25 @@ def meas_with_registered_param(experiment, DAC, DMM):
     meas = Measurement()
     meas.register_parameter(DAC.ch1)
     meas.register_parameter(DMM.v1, setpoints=[DAC.ch1])
+    yield meas
+
+
+@pytest.fixture
+def meas_with_registered_param_2d(experiment, DAC, DMM):
+    meas = Measurement()
+    meas.register_parameter(DAC.ch1)
+    meas.register_parameter(DAC.ch2)
+    meas.register_parameter(DMM.v1, setpoints=[DAC.ch1, DAC.ch2])
+    yield meas
+
+
+@pytest.fixture
+def meas_with_registered_param_3d(experiment, DAC3D, DMM):
+    meas = Measurement()
+    meas.register_parameter(DAC3D.ch1)
+    meas.register_parameter(DAC3D.ch2)
+    meas.register_parameter(DAC3D.ch3)
+    meas.register_parameter(DMM.v1, setpoints=[DAC3D.ch1, DAC3D.ch2, DAC3D.ch3])
     yield meas
 
 

@@ -682,6 +682,7 @@ class DataSet(BaseDataSet):
             writer_status.write_in_background = False
 
         writer_status.active_datasets.add(self.run_id)
+        self.cache.prepare()
 
     def mark_completed(self) -> None:
         """

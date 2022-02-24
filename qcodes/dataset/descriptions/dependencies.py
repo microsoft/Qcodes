@@ -17,6 +17,8 @@ from typing import (
     Type,
 )
 
+import numpy as np
+
 from .param_spec import ParamSpec, ParamSpecBase
 from .versioning.rundescribertypes import InterDependencies_Dict
 
@@ -269,6 +271,26 @@ class InterDependencies_:
                                           "dependencies": dependencies,
                                           "inferences": inferences,
                                           "standalones": standalones}
+        return output
+
+    def _empty_data_dict(self) -> Dict[str, Dict[str, np.ndarray]]:
+        """
+        Create an dictionary with empty numpy arrays as values
+        matching the expected output of ``DataSet``'s ``get_parameter_data`` /
+        ``cache.data`` so that the order of keys in the returned dictionary
+        is the same as the order of parameters in the interdependencies
+        in this class.
+        """
+
+        output: Dict[str, Dict[str, np.ndarray]] = {}
+        for dependent, independents in self.dependencies.items():
+            dependent_name = dependent.name
+            output[dependent_name] = {dependent_name: np.array([])}
+            for independent in independents:
+                output[dependent_name][independent.name] = np.array([])
+        for standalone in (ps.name for ps in self.standalones):
+            output[standalone] = {}
+            output[standalone][standalone] = np.array([])
         return output
 
     def _construct_subdict(self, treename: str) -> Dict[str, Any]:

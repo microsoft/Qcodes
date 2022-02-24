@@ -14,6 +14,182 @@ from qcodes.instrument.parameter import expand_setpoints_helper
 
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("set_shape", [True, False])
+@pytest.mark.parametrize("in_memory_cache", [True, False])
+@settings(
+    deadline=None,
+    max_examples=10,
+    suppress_health_check=(HealthCheck.function_scoped_fixture,),
+)
+@given(n_points=hst.integers(min_value=1, max_value=11))
+def test_cache_standalone(
+    experiment,
+    DMM,
+    n_points,
+    bg_writing,
+    channel_array_instrument,
+    set_shape,
+    in_memory_cache,
+):
+
+    meas1 = Measurement()
+    meas1.register_parameter(DMM.v1)
+
+    meas_parameters1 = (
+        DMM.v1,
+        channel_array_instrument.A.dummy_multi_parameter,
+        channel_array_instrument.A.dummy_scalar_multi_parameter,
+        channel_array_instrument.A.dummy_2d_multi_parameter,
+        channel_array_instrument.A.dummy_2d_multi_parameter_2,
+        channel_array_instrument.A.dummy_array_parameter,
+        channel_array_instrument.A.dummy_complex_array_parameter,
+        channel_array_instrument.A.dummy_complex,
+        channel_array_instrument.A.dummy_parameter_with_setpoints,
+        channel_array_instrument.A.dummy_parameter_with_setpoints_complex,
+    )
+    pws_shape_1 = 10
+    pws_shape_2 = 3
+    channel_array_instrument.A.dummy_start(0)
+    channel_array_instrument.A.dummy_stop(10)
+    channel_array_instrument.A.dummy_n_points(pws_shape_1)
+    channel_array_instrument.A.dummy_start_2(2)
+    channel_array_instrument.A.dummy_stop_2(7)
+    channel_array_instrument.A.dummy_n_points_2(pws_shape_2)
+
+    if set_shape:
+        meas1.set_shapes(
+            {
+                DMM.v1.full_name: (n_points,),
+                channel_array_instrument.A.dummy_multi_parameter.full_names[0]: (
+                    n_points,
+                    5,
+                ),
+                channel_array_instrument.A.dummy_multi_parameter.full_names[1]: (
+                    n_points,
+                    5,
+                ),
+                channel_array_instrument.A.dummy_scalar_multi_parameter.full_names[0]: (
+                    n_points,
+                ),
+                channel_array_instrument.A.dummy_scalar_multi_parameter.full_names[1]: (
+                    n_points,
+                ),
+                channel_array_instrument.A.dummy_scalar_multi_parameter.full_names[0]: (
+                    n_points,
+                ),
+                channel_array_instrument.A.dummy_scalar_multi_parameter.full_names[1]: (
+                    n_points,
+                ),
+                channel_array_instrument.A.dummy_2d_multi_parameter.full_names[0]: (
+                    n_points,
+                    5,
+                    3,
+                ),
+                channel_array_instrument.A.dummy_2d_multi_parameter.full_names[1]: (
+                    n_points,
+                    5,
+                    3,
+                ),
+                channel_array_instrument.A.dummy_2d_multi_parameter_2.full_names[0]: (
+                    n_points,
+                    5,
+                    3,
+                ),
+                channel_array_instrument.A.dummy_2d_multi_parameter_2.full_names[1]: (
+                    n_points,
+                    2,
+                    7,
+                ),
+                channel_array_instrument.A.dummy_array_parameter.full_name: (
+                    n_points,
+                    5,
+                ),
+                channel_array_instrument.A.dummy_complex_array_parameter.full_name: (
+                    n_points,
+                    5,
+                ),
+                channel_array_instrument.A.dummy_complex.full_name: (n_points,),
+                channel_array_instrument.A.dummy_parameter_with_setpoints.full_name: (
+                    n_points,
+                    pws_shape_1,
+                ),
+                channel_array_instrument.A.dummy_parameter_with_setpoints_complex.full_name: (
+                    n_points,
+                    pws_shape_1,
+                ),
+            }
+        )
+
+    for param in meas_parameters1:
+        meas1.register_parameter(param)
+
+    meas2 = Measurement()
+
+    meas_parameters2 = (channel_array_instrument.A.dummy_parameter_with_setpoints_2d,)
+
+    if set_shape:
+        meas2.set_shapes(
+            {meas_parameters2[0].full_name: (n_points, pws_shape_1, pws_shape_2)}
+        )
+
+    for param in meas_parameters2:
+        meas2.register_parameter(param)
+
+    with meas1.run(
+        write_in_background=bg_writing, in_memory_cache=in_memory_cache
+    ) as datasaver1:
+        with meas2.run(
+            write_in_background=bg_writing, in_memory_cache=in_memory_cache
+        ) as datasaver2:
+
+            dataset1 = datasaver1.dataset
+            dataset2 = datasaver2.dataset
+            _assert_parameter_data_is_identical(
+                dataset1.get_parameter_data(), dataset1.cache.data()
+            )
+            _assert_parameter_data_is_identical(
+                dataset2.get_parameter_data(), dataset2.cache.data()
+            )
+            for _ in range(n_points):
+
+                meas_vals1 = [(param, param.get()) for param in meas_parameters1]
+
+                datasaver1.add_result(*meas_vals1)
+                datasaver1.flush_data_to_database(block=True)
+
+                meas_vals2 = [(param, param.get()) for param in meas_parameters2]
+
+                datasaver2.add_result(*meas_vals2)
+                datasaver2.flush_data_to_database(block=True)
+
+                _assert_parameter_data_is_identical(
+                    dataset1.get_parameter_data(),
+                    dataset1.cache.data(),
+                    shaped_partial=set_shape,
+                )
+                _assert_parameter_data_is_identical(
+                    dataset2.get_parameter_data(),
+                    dataset2.cache.data(),
+                    shaped_partial=set_shape,
+                )
+    _assert_parameter_data_is_identical(
+        dataset1.get_parameter_data(), dataset1.cache.data()
+    )
+    if in_memory_cache is False:
+        assert dataset1.cache._loaded_from_completed_ds is True
+    assert dataset1.completed is True
+    assert dataset1.cache.live is in_memory_cache
+    _assert_parameter_data_is_identical(
+        dataset2.get_parameter_data(), dataset2.cache.data()
+    )
+    if in_memory_cache is False:
+        assert dataset2.cache._loaded_from_completed_ds is True
+    assert dataset2.completed is True
+    assert dataset1.cache.live is in_memory_cache
+
+
+
+@pytest.mark.parametrize("bg_writing", [True, False])
+@pytest.mark.parametrize("set_shape", [True, False])
 @pytest.mark.parametrize("setpoints_type", ['text', 'numeric'])
 @pytest.mark.parametrize("in_memory_cache", [True, False])
 @settings(deadline=None, max_examples=10,
