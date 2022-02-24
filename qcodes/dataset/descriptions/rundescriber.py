@@ -39,13 +39,6 @@ class RunDescriber:
 
         self._interdeps = interdeps
 
-        # since this may be loaded from json
-        # the shape may be a list rather than a tuple
-        # so convert to tuple for consistency
-        if shapes is not None:
-            for name, shape in shapes.items():
-                shapes[name] = tuple(shape)
-
         self._shapes = shapes
         self._version = 3
 
