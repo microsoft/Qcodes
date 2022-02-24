@@ -14,7 +14,7 @@ from hypothesis import given
 import qcodes.dataset.descriptions.versioning.serialization as serial
 from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
-from qcodes.dataset.descriptions.param_spec import ParamSpec
+from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.guids import generate_guid
 
@@ -310,9 +310,15 @@ def test_atomic_creation(experiment):
     with patch(
         "qcodes.dataset.sqlite.queries.add_data_to_dynamic_columns", new=just_throw
     ):
-        x = ParamSpec("x", "numeric")
-        t = ParamSpec("t", "numeric")
-        y = ParamSpec("y", "numeric", depends_on=["x", "t"])
+        x = ParamSpecBase("x", "numeric")
+        t = ParamSpecBase("t", "numeric")
+        y = ParamSpecBase("y", "numeric")
+
+        paramtree = {y: (x, t)}
+
+        interdependencies = InterDependencies_(dependencies=paramtree)
+        rundescriber = RunDescriber(interdependencies)
+
         with pytest.raises(
             RuntimeError, match="Rolling back due to unhandled exception"
         ) as e:
@@ -321,7 +327,7 @@ def test_atomic_creation(experiment):
                 experiment.exp_id,
                 name="testrun",
                 guid=generate_guid(),
-                parameters=[x, t, y],
+                description=rundescriber,
                 metadata={"a": 1},
             )
     assert error_caused_by(e, "This breaks adding metadata")
@@ -337,12 +343,14 @@ def test_atomic_creation(experiment):
 
     # if the above was not correctly rolled back we
     # expect the next creation of a run to fail
-    mut_queries.create_run(experiment.conn,
-                           experiment.exp_id,
-                           name='testrun',
-                           guid=generate_guid(),
-                           parameters=[x, t, y],
-                           metadata={'a': 1})
+    mut_queries.create_run(
+        experiment.conn,
+        experiment.exp_id,
+        name="testrun",
+        guid=generate_guid(),
+        description=rundescriber,
+        metadata={"a": 1},
+    )
 
     runs = mut_conn.transaction(experiment.conn,
                                 'SELECT run_id FROM runs').fetchall()
