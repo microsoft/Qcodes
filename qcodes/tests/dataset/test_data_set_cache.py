@@ -149,7 +149,7 @@ def test_cache_standalone(
             _assert_parameter_data_is_identical(
                 dataset2.get_parameter_data(), dataset2.cache.data()
             )
-            for i in range(n_points):
+            for _ in range(n_points):
 
                 meas_vals1 = [(param, param.get()) for param in meas_parameters1]
 
