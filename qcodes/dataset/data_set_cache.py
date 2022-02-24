@@ -315,8 +315,8 @@ def _merge_data(existing_data: Mapping[str, np.ndarray],
 
     if not set(new_data.keys()).issubset(set(existing_data.keys())):
         raise RuntimeError(
-            "Trying to add unxpected key to cache."
-            "The following keys were unexpected."
+            "Trying to add unexpected key to cache."
+            "The following keys were unexpected: "
             f"{set(new_data.keys() - existing_data.keys())}"
         )
 
