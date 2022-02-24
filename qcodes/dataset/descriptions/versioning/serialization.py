@@ -31,17 +31,32 @@ convention where "*" stands for the storage format. Also note the
 """
 import io
 import json
-from typing import Callable, Dict, Tuple, cast, Any
+from typing import Any, Callable, Dict, Tuple, cast
 
 from qcodes.utils.helpers import YAML
 
 from .. import rundescriber as current
-from .converters import (v0_to_v1, v0_to_v2, v0_to_v3, v1_to_v0, v1_to_v2,
-                         v1_to_v3, v2_to_v0, v2_to_v1, v2_to_v3, v3_to_v0,
-                         v3_to_v1, v3_to_v2)
-from .rundescribertypes import (RunDescriberDicts, RunDescriberV0Dict,
-                                RunDescriberV1Dict, RunDescriberV2Dict,
-                                RunDescriberV3Dict)
+from .converters import (
+    v0_to_v1,
+    v0_to_v2,
+    v0_to_v3,
+    v1_to_v0,
+    v1_to_v2,
+    v1_to_v3,
+    v2_to_v0,
+    v2_to_v1,
+    v2_to_v3,
+    v3_to_v0,
+    v3_to_v1,
+    v3_to_v2,
+)
+from .rundescribertypes import (
+    RunDescriberDicts,
+    RunDescriberV0Dict,
+    RunDescriberV1Dict,
+    RunDescriberV2Dict,
+    RunDescriberV3Dict,
+)
 
 STORAGE_VERSION = 3
 # the version of :class:`RunDescriber` object that is used by the data storage
@@ -129,7 +144,17 @@ def from_json_to_current(json_str: str) -> current.RunDescriber:
     """
     Deserialize a JSON string into a RunDescriber of the current version
     """
-    return from_dict_to_current(json.loads(json_str))
+
+    data = json.loads(json_str)
+    # json maps both list and tuple to list
+    # since we always expects shapes to be a tuple
+    # convert it back to a tuple here
+    shapes = data.get("shapes", None)
+    if shapes is not None:
+        for name, shapelist in shapes.items():
+            shapes[name] = tuple(shapelist)
+
+    return from_dict_to_current(data)
 
 
 # YAML

@@ -38,6 +38,7 @@ class RunDescriber:
         self._verify_interdeps_shape(interdeps, shapes)
 
         self._interdeps = interdeps
+
         self._shapes = shapes
         self._version = 3
 
@@ -52,7 +53,6 @@ class RunDescriber:
     @property
     def interdeps(self) -> InterDependencies_:
         return self._interdeps
-
 
     @staticmethod
     def _verify_interdeps_shape(interdeps: InterDependencies_,

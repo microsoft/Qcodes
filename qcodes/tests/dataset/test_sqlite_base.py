@@ -14,7 +14,7 @@ from hypothesis import given
 import qcodes.dataset.descriptions.versioning.serialization as serial
 from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
-from qcodes.dataset.descriptions.param_spec import ParamSpec
+from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.guids import generate_guid
 
@@ -42,6 +42,19 @@ def shadow_conn(path_to_db: str):
     conn = mut_db.connect(path_to_db)
     yield conn
     conn.close()
+
+
+@pytest.fixture(name="simple_run_describer")
+def _make_simple_run_describer():
+    x = ParamSpecBase("x", "numeric")
+    t = ParamSpecBase("t", "numeric")
+    y = ParamSpecBase("y", "numeric")
+
+    paramtree = {y: (x, t)}
+
+    interdependencies = InterDependencies_(dependencies=paramtree)
+    rundescriber = RunDescriber(interdependencies)
+    yield rundescriber
 
 
 def test_path_to_dbfile(tmp_path):
@@ -113,17 +126,15 @@ def test__validate_table_raises(table_name):
         assert mut_queries._validate_table_name(table_name)
 
 
-def test_get_dependents(experiment):
-    x = ParamSpec('x', 'numeric')
-    t = ParamSpec('t', 'numeric')
-    y = ParamSpec('y', 'numeric', depends_on=['x', 't'])
+def test_get_dependents_simple(experiment, simple_run_describer):
 
-    # Make a dataset
-    (_, run_id, _) = mut_queries.create_run(experiment.conn,
-                                            experiment.exp_id,
-                                            name='testrun',
-                                            guid=generate_guid(),
-                                            parameters=[x, t, y])
+    (_, run_id, _) = mut_queries.create_run(
+        experiment.conn,
+        experiment.exp_id,
+        name="testrun",
+        guid=generate_guid(),
+        description=simple_run_describer,
+    )
 
     deps = mut_queries._get_dependents(experiment.conn, run_id)
 
@@ -131,18 +142,30 @@ def test_get_dependents(experiment):
 
     assert deps == [layout_id]
 
+
+def test_get_dependents(experiment):
     # more parameters, more complicated dependencies
+    x = ParamSpecBase("x", "numeric")
+    t = ParamSpecBase("t", "numeric")
+    y = ParamSpecBase("y", "numeric")
 
-    x_raw = ParamSpec('x_raw', 'numeric')
-    x_cooked = ParamSpec('x_cooked', 'numeric', inferred_from=['x_raw'])
-    z = ParamSpec('z', 'numeric', depends_on=['x_cooked'])
+    x_raw = ParamSpecBase("x_raw", "numeric")
+    x_cooked = ParamSpecBase("x_cooked", "numeric")
+    z = ParamSpecBase("z", "numeric")
 
-    (_, run_id, _) = mut_queries.create_run(experiment.conn,
-                                            experiment.exp_id,
-                                            name='testrun',
-                                            guid=generate_guid(),
-                                            parameters=[x, t, x_raw,
-                                                        x_cooked, y, z])
+    deps_param_tree = {y: (x, t), z: (x_cooked,)}
+    inferred_param_tree = {x_cooked: (x_raw,)}
+    interdeps = InterDependencies_(
+        dependencies=deps_param_tree, inferences=inferred_param_tree
+    )
+    description = RunDescriber(interdeps=interdeps)
+    (_, run_id, _) = mut_queries.create_run(
+        experiment.conn,
+        experiment.exp_id,
+        name="testrun",
+        guid=generate_guid(),
+        description=description,
+    )
 
     deps = mut_queries._get_dependents(experiment.conn, run_id)
 
@@ -295,7 +318,7 @@ def test_is_run_id_in_db(empty_temp_db):
     assert expected_dict == acquired_dict
 
 
-def test_atomic_creation(experiment):
+def test_atomic_creation(experiment, simple_run_describer):
     """"
     Test that dataset creation is atomic. Test for
     https://github.com/QCoDeS/Qcodes/issues/1444
@@ -310,9 +333,7 @@ def test_atomic_creation(experiment):
     with patch(
         "qcodes.dataset.sqlite.queries.add_data_to_dynamic_columns", new=just_throw
     ):
-        x = ParamSpec("x", "numeric")
-        t = ParamSpec("t", "numeric")
-        y = ParamSpec("y", "numeric", depends_on=["x", "t"])
+
         with pytest.raises(
             RuntimeError, match="Rolling back due to unhandled exception"
         ) as e:
@@ -321,7 +342,7 @@ def test_atomic_creation(experiment):
                 experiment.exp_id,
                 name="testrun",
                 guid=generate_guid(),
-                parameters=[x, t, y],
+                description=simple_run_describer,
                 metadata={"a": 1},
             )
     assert error_caused_by(e, "This breaks adding metadata")
@@ -337,12 +358,14 @@ def test_atomic_creation(experiment):
 
     # if the above was not correctly rolled back we
     # expect the next creation of a run to fail
-    mut_queries.create_run(experiment.conn,
-                           experiment.exp_id,
-                           name='testrun',
-                           guid=generate_guid(),
-                           parameters=[x, t, y],
-                           metadata={'a': 1})
+    mut_queries.create_run(
+        experiment.conn,
+        experiment.exp_id,
+        name="testrun",
+        guid=generate_guid(),
+        description=simple_run_describer,
+        metadata={"a": 1},
+    )
 
     runs = mut_conn.transaction(experiment.conn,
                                 'SELECT run_id FROM runs').fetchall()

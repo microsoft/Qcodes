@@ -1,30 +1,40 @@
-from os.path import getmtime
-from contextlib import contextmanager
-import re
 import os
-from pathlib import Path
 import random
+import re
 import uuid
+from contextlib import contextmanager
+from os.path import getmtime
+from pathlib import Path
 
-import pytest
 import numpy as np
+import pytest
+from numpy.testing import assert_array_equal
 
 import qcodes as qc
 import qcodes.tests.dataset
-from qcodes.dataset.experiment_container import Experiment,\
-    load_experiment_by_name
-from qcodes.dataset.data_set import (DataSet, load_by_guid, load_by_counter,
-                                     load_by_id, load_by_run_spec,
-                                     generate_dataset_table)
-from qcodes.dataset.sqlite.database import get_db_version_and_newest_available_version
-from qcodes.dataset.sqlite.connection import path_to_dbfile
+from qcodes import Station
+from qcodes.dataset.data_set import (
+    DataSet,
+    generate_dataset_table,
+    load_by_counter,
+    load_by_guid,
+    load_by_id,
+    load_by_run_spec,
+)
 from qcodes.dataset.database_extract_runs import extract_runs_into_db
+from qcodes.dataset.experiment_container import (
+    Experiment,
+    load_experiment_by_name,
+    load_or_create_experiment,
+)
+from qcodes.dataset.linked_datasets.links import Link
+from qcodes.dataset.measurements import Measurement
+from qcodes.dataset.sqlite.connection import path_to_dbfile
+from qcodes.dataset.sqlite.database import get_db_version_and_newest_available_version
 from qcodes.dataset.sqlite.queries import get_experiments
 from qcodes.tests.common import error_caused_by
-from qcodes.dataset.measurements import Measurement
-from qcodes import Station
 from qcodes.tests.instrument_mocks import DummyInstrument
-from qcodes.dataset.linked_datasets.links import Link
+from qcodes.utils.dataset.doNd import do1d, do2d
 
 
 @contextmanager
@@ -42,8 +52,8 @@ def raise_if_file_changed(path_to_file: str):
         raise RuntimeError(f'File {path_to_file} was modified.')
 
 
-@pytest.fixture(scope='function')
-def inst():
+@pytest.fixture(scope="function", name="inst")
+def _make_inst():
     """
     Dummy instrument for testing, ensuring that it's instance gets closed
     and removed from the global register of instruments, which, if not done,
@@ -131,7 +141,6 @@ def test_basic_extraction(two_empty_temp_db_connections, some_interdeps):
     source_dataset.add_metadata('goodness', 'fair')
     source_dataset.add_metadata('test', True)
 
-
     source_dataset.mark_completed()
 
     assert source_dataset.run_id == source_dataset.captured_run_id
@@ -172,6 +181,60 @@ def test_basic_extraction(two_empty_temp_db_connections, some_interdeps):
     # trying to insert the same run again should be a NOOP
     with raise_if_file_changed(target_path):
         extract_runs_into_db(source_path, target_path, source_dataset.run_id)
+
+
+def test_real_dataset_1d(two_empty_temp_db_connections, inst):
+    source_conn, target_conn = two_empty_temp_db_connections
+
+    source_path = path_to_dbfile(source_conn)
+    target_path = path_to_dbfile(target_conn)
+
+    source_exp = load_or_create_experiment(experiment_name="myexp", conn=source_conn)
+
+    source_dataset, _, _ = do1d(inst.back, 0, 1, 10, 0, inst.plunger, exp=source_exp)
+
+    extract_runs_into_db(source_path, target_path, source_dataset.run_id)
+
+    target_dataset = load_by_guid(source_dataset.guid, conn=target_conn)
+
+    assert source_dataset.the_same_dataset_as(target_dataset)
+    # explicit regression  test for https://github.com/QCoDeS/Qcodes/issues/3953
+    assert source_dataset.description.shapes == {"extract_run_inst_plunger": (10,)}
+    assert source_dataset.description.shapes == target_dataset.description.shapes
+
+    source_data = source_dataset.get_parameter_data()["extract_run_inst_plunger"]
+    target_data = target_dataset.get_parameter_data()["extract_run_inst_plunger"]
+
+    for source_data, target_data in zip(source_data.values(), target_data.values()):
+        assert_array_equal(source_data, target_data)
+
+
+def test_real_dataset_2d(two_empty_temp_db_connections, inst):
+    source_conn, target_conn = two_empty_temp_db_connections
+
+    source_path = path_to_dbfile(source_conn)
+    target_path = path_to_dbfile(target_conn)
+
+    source_exp = load_or_create_experiment(experiment_name="myexp", conn=source_conn)
+
+    source_dataset, _, _ = do2d(
+        inst.back, 0, 1, 10, 0, inst.plunger, 0, 0.1, 15, 0, inst.cutter, exp=source_exp
+    )
+
+    extract_runs_into_db(source_path, target_path, source_dataset.run_id)
+
+    target_dataset = load_by_guid(source_dataset.guid, conn=target_conn)
+
+    assert source_dataset.the_same_dataset_as(target_dataset)
+    # explicit regression  test for https://github.com/QCoDeS/Qcodes/issues/3953
+    assert source_dataset.description.shapes == {"extract_run_inst_cutter": (10, 15)}
+    assert source_dataset.description.shapes == target_dataset.description.shapes
+
+    source_data = source_dataset.get_parameter_data()["extract_run_inst_cutter"]
+    target_data = target_dataset.get_parameter_data()["extract_run_inst_cutter"]
+
+    for source_data, target_data in zip(source_data.values(), target_data.values()):
+        assert_array_equal(source_data, target_data)
 
 
 def test_correct_experiment_routing(two_empty_temp_db_connections,
