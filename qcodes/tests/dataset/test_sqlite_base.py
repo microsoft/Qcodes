@@ -145,20 +145,27 @@ def test_get_dependents_simple(experiment, simple_run_describer):
 
 def test_get_dependents(experiment):
     # more parameters, more complicated dependencies
-    x = ParamSpec("x", "numeric")
-    t = ParamSpec("t", "numeric")
-    y = ParamSpec("y", "numeric", depends_on=["x", "t"])
+    x = ParamSpecBase("x", "numeric")
+    t = ParamSpecBase("t", "numeric")
+    y = ParamSpecBase("y", "numeric")
 
-    x_raw = ParamSpec('x_raw', 'numeric')
-    x_cooked = ParamSpec('x_cooked', 'numeric', inferred_from=['x_raw'])
-    z = ParamSpec('z', 'numeric', depends_on=['x_cooked'])
+    x_raw = ParamSpecBase("x_raw", "numeric")
+    x_cooked = ParamSpecBase("x_cooked", "numeric")
+    z = ParamSpecBase("z", "numeric")
 
-    (_, run_id, _) = mut_queries.create_run(experiment.conn,
-                                            experiment.exp_id,
-                                            name='testrun',
-                                            guid=generate_guid(),
-                                            parameters=[x, t, x_raw,
-                                                        x_cooked, y, z])
+    deps_param_tree = {y: (x, t), z: (x_cooked,)}
+    inferred_param_tree = {x_cooked: (x_raw,)}
+    interdeps = InterDependencies_(
+        dependencies=deps_param_tree, inferences=inferred_param_tree
+    )
+    description = RunDescriber(interdeps=interdeps)
+    (_, run_id, _) = mut_queries.create_run(
+        experiment.conn,
+        experiment.exp_id,
+        name="testrun",
+        guid=generate_guid(),
+        description=description,
+    )
 
     deps = mut_queries._get_dependents(experiment.conn, run_id)
 
