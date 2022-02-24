@@ -52,8 +52,8 @@ def raise_if_file_changed(path_to_file: str):
         raise RuntimeError(f'File {path_to_file} was modified.')
 
 
-@pytest.fixture(scope='function')
-def inst():
+@pytest.fixture(scope="function", name="inst")
+def _make_inst():
     """
     Dummy instrument for testing, ensuring that it's instance gets closed
     and removed from the global register of instruments, which, if not done,
@@ -191,7 +191,7 @@ def test_real_dataset_1d(two_empty_temp_db_connections, inst):
 
     source_exp = load_or_create_experiment(experiment_name="myexp", conn=source_conn)
 
-    source_dataset, a, b = do1d(inst.back, 0, 1, 10, 0, inst.plunger, exp=source_exp)
+    source_dataset, _, _ = do1d(inst.back, 0, 1, 10, 0, inst.plunger, exp=source_exp)
 
     extract_runs_into_db(source_path, target_path, source_dataset.run_id)
 
@@ -217,7 +217,7 @@ def test_real_dataset_2d(two_empty_temp_db_connections, inst):
 
     source_exp = load_or_create_experiment(experiment_name="myexp", conn=source_conn)
 
-    source_dataset, a, b = do2d(
+    source_dataset, _, _ = do2d(
         inst.back, 0, 1, 10, 0, inst.plunger, 0, 0.1, 15, 0, inst.cutter, exp=source_exp
     )
 
