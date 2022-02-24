@@ -329,7 +329,6 @@ class DataSet(BaseDataSet):
         links = [Link(head=self.guid, **pdict) for pdict in parent_datasets]
         self.parent_dataset_links = links
         self.mark_started(start_bg_writer=write_in_background)
-        self.cache.prepare()
 
     @property
     def cache(self) -> DataSetCacheWithDBBackend:
@@ -683,6 +682,7 @@ class DataSet(BaseDataSet):
             writer_status.write_in_background = False
 
         writer_status.active_datasets.add(self.run_id)
+        self.cache.prepare()
 
     def mark_completed(self) -> None:
         """

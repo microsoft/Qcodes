@@ -419,7 +419,7 @@ class DataSetInMem(BaseDataSet):
 
         if self.pristine:
             self._perform_start_actions()
-        self.cache.prepare()
+            self.cache.prepare()
 
     @property
     def pristine(self) -> bool:
