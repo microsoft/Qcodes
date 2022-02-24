@@ -313,7 +313,12 @@ def _merge_data(existing_data: Mapping[str, np.ndarray],
     subtree_merged_data = {}
     subtree_parameters = existing_data.keys()
 
-    assert set(new_data.keys()).issubset(set(existing_data.keys()))
+    if not set(new_data.keys()).issubset(set(existing_data.keys())):
+        raise RuntimeError(
+            "Trying to add unxpected key to cache."
+            "The following keys were unexpected."
+            f"{set(new_data.keys() - existing_data.keys())}"
+        )
 
     new_write_status: Optional[int]
     single_param_merged_data, new_write_status = _merge_data_single_param(
