@@ -4,8 +4,18 @@ between the parameters of that run. Most importantly, the information about
 which parameters depend on each other is handled here.
 """
 from copy import deepcopy
-from typing import (Any, Dict, FrozenSet, Iterable, List, Optional, Sequence,
-                    Set, Tuple, Type)
+from typing import (
+    Any,
+    Dict,
+    FrozenSet,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Type,
+)
 
 from .param_spec import ParamSpec, ParamSpecBase
 from .versioning.rundescribertypes import InterDependencies_Dict
@@ -59,13 +69,17 @@ class InterDependencies_:
 
         deps_error = self.validate_paramspectree(dependencies)
         if deps_error is not None:
-            old_error = deps_error[0](deps_error[1])
-            raise ValueError('Invalid dependencies') from old_error
+            try:
+                raise deps_error[0](deps_error[1])
+            except Exception as old_error:
+                raise ValueError("Invalid dependencies") from old_error
 
         inffs_error = self.validate_paramspectree(inferences)
         if inffs_error is not None:
-            old_error = inffs_error[0](inffs_error[1])
-            raise ValueError('Invalid inferences') from old_error
+            try:
+                raise inffs_error[0](inffs_error[1])
+            except Exception as old_error:
+                raise ValueError("Invalid inferences") from old_error
 
         link_error = self._validate_double_links(dependencies, inferences)
         if link_error is not None:
@@ -74,10 +88,10 @@ class InterDependencies_:
 
         for ps in standalones:
             if not isinstance(ps, ParamSpecBase):
-                base_error = TypeError('Standalones must be a sequence of '
-                                       'ParamSpecs')
-
-                raise ValueError('Invalid standalones') from base_error
+                try:
+                    raise TypeError("Standalones must be a sequence of ParamSpecs")
+                except TypeError as base_error:
+                    raise ValueError("Invalid standalones") from base_error
 
         self._remove_duplicates(dependencies)
         self._remove_duplicates(inferences)
