@@ -39,6 +39,7 @@ from typing import (
     Optional,
     Sequence,
     Union,
+    List
 )
 
 import websockets
@@ -62,7 +63,9 @@ log = logging.getLogger(__name__)
 
 
 def _get_metadata(
-    *parameters: Parameter, use_root_instrument: bool = True
+    *parameters: Parameter,
+    use_root_instrument: bool = True,
+    parameters_metadata: Dict[Union[Parameter, str], dict]
 ) -> Dict[str, Any]:
     """
     Return a dictionary that contains the parameter metadata grouped by the
@@ -71,28 +74,56 @@ def _get_metadata(
     metadata_timestamp = time.time()
     # group metadata by instrument
     metas: Dict[Any, Any] = defaultdict(list)
+
+    # Ensure each element of parameters_metadata is a dict and not something else like a DotDict
+    parameters_metadata = {key: dict(val) for key, val in parameters_metadata.items()}
+
     for parameter in parameters:
+        # Get potential parameter metadata describing how to process parameter
+        if parameter in parameters_metadata:
+            parameter_metadata = parameters_metadata[parameter]
+        elif parameter.name in parameters_metadata:
+            parameter_metadata = parameters_metadata[parameter.name]
+        elif parameter.full_name in parameters_metadata:
+            parameter_metadata = parameters_metadata[parameter.full_name]
+        else:
+            parameter_metadata = {}
+
         # Get the latest value from the parameter,
         # respecting the max_val_age parameter
         meta: Dict[str, Optional[Union[float, str]]] = {}
-        meta["value"] = str(parameter.get_latest())
+        value = parameter.get_latest()
+
+        # Apply a modifier if provided by metadata
+        if 'modifier' in parameter_metadata:
+            value = parameter_metadata['modifier'](value)
+        if 'scale' in parameter_metadata:
+            value = value * parameter_metadata['scale']
+
+        # Format value, usually to a string unless specified in parameter_metadata['formatter']
+        formatter = parameter_metadata.get('formatter', '{}')
+        meta["value"] = formatter.format(value)
+
         timestamp = parameter.get_latest.get_timestamp()
         if timestamp is not None:
             meta["ts"] = timestamp.timestamp()
         else:
             meta["ts"] = None
-        meta["name"] = parameter.label or parameter.name
-        meta["unit"] = parameter.unit
+        meta["name"] = parameter_metadata.get('name') or parameter.label or parameter.name
+        meta["unit"] = parameter_metadata.get('unit') or parameter.unit
 
         # find the base instrument that this parameter belongs to
         if use_root_instrument:
             baseinst = parameter.root_instrument
         else:
             baseinst = parameter.instrument
-        if baseinst is None:
-            metas["Unbound Parameter"].append(meta)
+
+        if 'group' in parameter_metadata:
+            metas[parameter_metadata['group']].append(meta)
+        elif baseinst is not None:
+            metas[str(parameter.root_instrument)].append(meta)
         else:
-            metas[str(baseinst)].append(meta)
+            metas["Unbound Parameter"].append(meta)
 
     # Create list of parameters, grouped by instrument
     parameters_out = []
@@ -105,7 +136,10 @@ def _get_metadata(
 
 
 def _handler(
-    parameters: Sequence[Parameter], interval: float, use_root_instrument: bool = True
+    parameters: Sequence[Parameter],
+    interval: float,
+    use_root_instrument: bool = True,
+    parameters_metadata: Dict[Union[Parameter, str], dict]
 ) -> Callable[["WebSocketServerProtocol", str], Awaitable[None]]:
     """
     Return the websockets server handler.
@@ -120,7 +154,9 @@ def _handler(
                 # Update the parameter values
                 try:
                     meta = _get_metadata(
-                        *parameters, use_root_instrument=use_root_instrument
+                        *parameters,
+                        use_root_instrument=use_root_instrument,
+                        parameters_metadata=parameters_metadata
                     )
                 except ValueError:
                     log.exception("Error getting parameters")
@@ -149,6 +185,8 @@ class Monitor(Thread):
         *parameters: Parameter,
         interval: float = 1,
         use_root_instrument: bool = True,
+        parameters_metadata: Optional[Dict[Union[Parameter, str], dict]] = None,
+        daemon: bool = True
     ):
         """
         Monitor qcodes parameters.
@@ -159,7 +197,7 @@ class Monitor(Thread):
             use_root_instrument: Defines if parameters are grouped according to
                                 parameter.root_instrument or parameter.instrument
         """
-        super().__init__()
+        super().__init__(daemon=daemon)
 
         # Check that all values are valid parameters
         for parameter in parameters:
@@ -170,10 +208,14 @@ class Monitor(Thread):
         self.loop: Optional[asyncio.AbstractEventLoop] = None
         self.server: Optional["WebSocketServer"] = None
         self._parameters = parameters
+        self._parameters_metadata = parameters_metadata
         self.loop_is_closed = Event()
         self.server_is_started = Event()
         self.handler = _handler(
-            parameters, interval=interval, use_root_instrument=use_root_instrument
+            parameters,
+            interval=interval,
+            use_root_instrument=use_root_instrument,
+            parameters_metadata=parameters_metadata or {}
         )
 
         log.debug("Start monitoring thread")
