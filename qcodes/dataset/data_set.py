@@ -416,6 +416,7 @@ class DataSet(BaseDataSet):
         return captured_counter
 
     @property
+    @deprecate(alternative="dataset.rundescriber.parameters")
     def _parameters(self) -> Optional[str]:
         if self.pristine:
             psnames = [ps.name for ps in self.description.interdeps.paramspecs]
@@ -431,10 +432,12 @@ class DataSet(BaseDataSet):
             return parameters
 
     @property
+    @deprecate(alternative="dataset.rundescriber.parameters")
     def parameters(self) -> Optional[str]:
         return self._parameters
 
     @property
+    @deprecate(alternative="dataset.rundescriber.parameters")
     def paramspecs(self) -> Dict[str, ParamSpec]:
         return {ps.name: ps
                 for ps in self.get_parameters()}
