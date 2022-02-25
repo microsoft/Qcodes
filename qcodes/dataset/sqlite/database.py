@@ -237,8 +237,7 @@ def set_journal_mode(conn: ConnectionPlus, journal_mode: JournalMode) -> None:
     Args:
         conn: Connection to the database.
         journal_mode: Which `journal_mode` should be used for atomic commit and rollback.
-            Options are DELETE, TRUNCATE, PERSIST, MEMORY, WAL and OFF. If set to None
-            no changes are made.
+            Options are DELETE, TRUNCATE, PERSIST, MEMORY, WAL and OFF.
     """
     valid_journal_modes = ["DELETE", "TRUNCATE", "PERSIST", "MEMORY", "WAL", "OFF"]
     if journal_mode not in valid_journal_modes:
