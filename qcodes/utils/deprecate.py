@@ -1,7 +1,7 @@
-import warnings
 import types
+import warnings
 from contextlib import contextmanager
-from typing import Optional, Callable, Any, cast, Iterator, List
+from typing import Any, Callable, Iterator, List, Optional, cast
 
 import wrapt
 
@@ -28,7 +28,7 @@ def issue_deprecation_warning(
     what: str,
     reason: Optional[str] = None,
     alternative: Optional[str] = None,
-    stacklevel: int = 2
+    stacklevel: int = 3,
 ) -> None:
     warnings.warn(
         deprecation_message(what, reason, alternative),

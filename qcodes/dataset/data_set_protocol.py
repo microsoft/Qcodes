@@ -31,6 +31,7 @@ from qcodes.dataset.export_config import (
     get_data_export_type,
 )
 from qcodes.dataset.linked_datasets.links import Link
+from qcodes.utils.deprecate import deprecate
 
 from .descriptions.versioning.converters import new_to_old
 from .exporters.export_info import ExportInfo
@@ -326,6 +327,7 @@ class BaseDataSet(DataSetProtocol):
 
         return True
 
+    @deprecate(alternative="dataset.rundescriber.parameters")
     def get_parameters(self) -> SPECS:
         old_interdeps = new_to_old(self.description.interdeps)
         return list(old_interdeps.paramspecs)
@@ -524,6 +526,7 @@ class BaseDataSet(DataSetProtocol):
         return raw_time_to_str_time(self.completed_timestamp_raw, fmt)
 
     @property
+    @deprecate(alternative="dataset.rundescriber.parameters")
     def dependent_parameters(self) -> Tuple[ParamSpecBase, ...]:
         """
         Return all the parameters that explicitly depend on other parameters

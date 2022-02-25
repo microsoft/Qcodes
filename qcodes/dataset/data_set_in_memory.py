@@ -40,6 +40,7 @@ from qcodes.dataset.sqlite.queries import (
     update_parent_datasets,
     update_run_description,
 )
+from qcodes.utils.deprecate import deprecate
 from qcodes.utils.helpers import NumpyJSONEncoder
 
 from .data_set_cache import DataSetCacheInMem
@@ -592,6 +593,7 @@ class DataSetInMem(BaseDataSet):
         return self._metadata
 
     @property
+    @deprecate(alternative="dataset.rundescriber.parameters")
     def paramspecs(self) -> Dict[str, ParamSpec]:
         return {ps.name: ps for ps in self._get_paramspecs()}
 
@@ -721,6 +723,7 @@ class DataSetInMem(BaseDataSet):
             raise RuntimeError(mssg)
         self._rundescriber = RunDescriber(interdeps, shapes=shapes)
 
+    @deprecate(alternative="dataset.rundescriber.parameters")
     def _get_paramspecs(self) -> SPECS:
         old_interdeps = new_to_old(self.description.interdeps)
         return list(old_interdeps.paramspecs)
@@ -799,6 +802,7 @@ class DataSetInMem(BaseDataSet):
         return "\n".join(out)
 
     @property
+    @deprecate(alternative="dataset.rundescriber.parameters")
     def _parameters(self) -> Optional[str]:
         psnames = [ps.name for ps in self.description.interdeps.paramspecs]
         if len(psnames) > 0:
