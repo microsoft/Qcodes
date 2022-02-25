@@ -1,0 +1,2 @@
+Functions and classes marked deprecated with the QCoDes Deprecation decorator will now trigger
+warnings that reflect where they are called from and not the location of the deprecation decorator.
