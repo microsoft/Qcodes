@@ -1,16 +1,16 @@
 import re
 
-import hypothesis.strategies as hst
-from hypothesis import HealthCheck, given, settings
 import hypothesis.extra.numpy as hypnumpy
-import pytest
+import hypothesis.strategies as hst
 import numpy as np
+import pytest
+from hypothesis import HealthCheck, given, settings
 
 import qcodes as qc
-from qcodes.dataset.measurements import DataSaver, Measurement
+from qcodes.dataset.data_export import load_by_id
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
-from qcodes.dataset.data_export import load_by_id
+from qcodes.dataset.measurements import DataSaver, Measurement
 
 
 def test_string_via_dataset(experiment):
@@ -39,8 +39,7 @@ def test_string_via_datasaver(experiment):
 
     test_set = qc.new_data_set("test-dataset")
     idps = InterDependencies_(standalones=(p,))
-    test_set.set_interdependencies(idps)
-    test_set.mark_started()
+    test_set.prepare(snapshot={}, interdeps=idps)
 
     idps = InterDependencies_(standalones=(p,))
 

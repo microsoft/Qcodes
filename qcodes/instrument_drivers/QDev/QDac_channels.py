@@ -197,7 +197,7 @@ class QDac(VisaInstrument):
         self._get_status_performed = False
         # This is the baud rate on power-up. It can be changed later but
         # you must start out with this value.
-        handle.baud_rate = 480600
+        handle.baud_rate = 460800
         handle.parity = visa.constants.Parity(0)
         handle.data_bits = 8
         self.set_terminator('\n')

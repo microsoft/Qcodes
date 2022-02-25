@@ -17,7 +17,7 @@ repos:
     - id: pyupgrade
       args: ['--py37-plus', '--keep-runtime-typing']
   - repo: https://github.com/akaihola/darker
-    rev: 1.4.0
+    rev: 1.4.1
     hooks:
       -   id: darker
           args: [-i]

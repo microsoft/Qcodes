@@ -31,7 +31,7 @@ from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning import serialization as serial
 from qcodes.dataset.descriptions.versioning import v0
-from qcodes.dataset.descriptions.versioning.converters import old_to_new
+from qcodes.dataset.descriptions.versioning.converters import new_to_old, old_to_new
 from qcodes.dataset.guids import generate_guid, parse_guid
 from qcodes.dataset.sqlite.connection import (
     ConnectionPlus,
@@ -1182,10 +1182,10 @@ def _insert_run(
     exp_id: int,
     name: str,
     guid: str,
-    parameters: Optional[Sequence[ParamSpec]] = None,
     captured_run_id: Optional[int] = None,
     captured_counter: Optional[int] = None,
     parent_dataset_links: str = "[]",
+    description: Optional[RunDescriber] = None,
 ) -> Tuple[int, str, int]:
 
     # get run counter and formatter from experiments
@@ -1216,10 +1216,15 @@ def _insert_run(
     formatted_name = format_table_name(format_string, "results", exp_id, run_counter)
     table = "runs"
 
-    parameters = parameters or []
-
-    run_desc = RunDescriber(old_to_new(v0.InterDependencies(*parameters)))
-    desc_str = serial.to_json_for_storage(run_desc)
+    if description is None:
+        description = RunDescriber(InterDependencies_())
+    desc_str = serial.to_json_for_storage(description)
+    legacy_param_specs = new_to_old(description.interdeps).paramspecs
+    # we need to use legacy_param_specs here not because we need the features
+    # of legacy param specs but because they should be inserted into the layouts
+    # table and parameter column in the same order as data_set.add_parameter does
+    # specifically dependencies should come before the dependent parameters for links
+    # in the layout table to work correctly
 
     if captured_run_id is None:
         with atomic(conn) as conn:
@@ -1237,7 +1242,7 @@ def _insert_run(
 
     with atomic(conn) as conn:
 
-        if parameters:
+        if legacy_param_specs:
             query = f"""
             INSERT INTO {table}
                 (name,
@@ -1264,7 +1269,7 @@ def _insert_run(
                 formatted_name,
                 run_counter,
                 None,
-                ",".join(p.name for p in parameters),
+                ",".join(p.name for p in legacy_param_specs),
                 False,
                 desc_str,
                 captured_run_id,
@@ -1272,7 +1277,8 @@ def _insert_run(
                 parent_dataset_links,
             )
             run_id = curr.lastrowid
-            _add_parameters_to_layout_and_deps(conn, run_id, *parameters)
+
+            _add_parameters_to_layout_and_deps(conn, run_id, *legacy_param_specs)
 
         else:
             query = f"""
@@ -1611,7 +1617,7 @@ def _validate_table_name(table_name: str) -> bool:
 def _create_run_table(
     conn: ConnectionPlus,
     formatted_name: str,
-    parameters: Optional[Sequence[ParamSpec]] = None,
+    parameters: Optional[Sequence[ParamSpecBase]] = None,
     values: Optional[VALUES] = None,
 ) -> None:
     """Create run table with formatted_name as name
@@ -1667,19 +1673,23 @@ def create_run(
     parent_dataset_links: str = "[]",
     create_run_table: bool = True,
     snapshot_raw: Optional[str] = None,
+    description: Optional[RunDescriber] = None,
 ) -> Tuple[int, int, Optional[str]]:
     """Create a single run for the experiment.
 
 
     This will register the run in the runs table, the counter in the
-    experiments table and create a new table with the formatted name.
+    experiments table and optionally create a new table with the formatted name.
+
+    Note that it is an error to supply both Parameters and RunDescriber
 
     Args:
         - conn: the connection to the sqlite database
         - exp_id: the experiment id we want to create the run into
         - name: a friendly name for this run
         - guid: the guid adhering to our internal guid format
-        - parameters: optional list of parameters this run has
+        - parameters: optional list of parameters this run has (as ParamSpec objects).
+            This is not recommended, please use description instead.
         - values:  optional list of values for the parameters
         - metadata: optional metadata dictionary
         - captured_run_id: The run_id this data was originally captured with.
@@ -1690,6 +1700,7 @@ def create_run(
             from another database into this database. Otherwise leave as None.
         - create_run_table: Should we create a table to insert the run into.
         - snapshot_raw: Raw string of the snapshot to add to the run.
+        - description: An optional RunDescriber
 
     Returns:
         - run_counter: the id of the newly created run (not unique)
@@ -1697,22 +1708,41 @@ def create_run(
         - formatted_name: the name of the newly created table
     """
     formatted_name: Optional[str]
+
+    if parameters is not None and description is not None:
+        raise RuntimeError(
+            "Passing both parameters and description to create_run is not supported."
+        )
+    if parameters is not None:
+        warnings.warn(
+            "Passing parameters to create_run is deprecated and will "
+            "be removed in the future",
+            stacklevel=2,
+        )
+        description = RunDescriber(old_to_new(v0.InterDependencies(*parameters)))
+    elif description is None:
+        description = RunDescriber(InterDependencies_())
+
     with atomic(conn):
-        run_counter, formatted_name, run_id = _insert_run(conn,
-                                                          exp_id,
-                                                          name,
-                                                          guid,
-                                                          parameters,
-                                                          captured_run_id,
-                                                          captured_counter,
-                                                          parent_dataset_links)
+        run_counter, formatted_name, run_id = _insert_run(
+            conn=conn,
+            exp_id=exp_id,
+            name=name,
+            guid=guid,
+            captured_run_id=captured_run_id,
+            captured_counter=captured_counter,
+            parent_dataset_links=parent_dataset_links,
+            description=description,
+        )
         if metadata:
             add_data_to_dynamic_columns(conn, run_id, metadata)
         if snapshot_raw:
             add_data_to_dynamic_columns(conn, run_id, {"snapshot": snapshot_raw})
         _update_experiment_run_counter(conn, exp_id, run_counter)
         if create_run_table:
-            _create_run_table(conn, formatted_name, parameters, values)
+            _create_run_table(
+                conn, formatted_name, description.interdeps.paramspecs, values
+            )
         else:
             formatted_name = None
     return run_counter, run_id, formatted_name

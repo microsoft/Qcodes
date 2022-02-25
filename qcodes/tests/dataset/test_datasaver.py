@@ -72,8 +72,11 @@ def test_numpy_types(bg_writing):
 
     p = ParamSpecBase(name="p", paramtype="numeric")
     test_set = qc.new_data_set("test-dataset")
-    test_set.set_interdependencies(InterDependencies_(standalones=(p,)))
-    test_set.mark_started(start_bg_writer=bg_writing)
+    test_set.prepare(
+        snapshot={},
+        interdeps=InterDependencies_(standalones=(p,)),
+        write_in_background=bg_writing,
+    )
 
     idps = InterDependencies_(standalones=(p,))
 

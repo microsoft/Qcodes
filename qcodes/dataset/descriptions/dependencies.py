@@ -4,8 +4,20 @@ between the parameters of that run. Most importantly, the information about
 which parameters depend on each other is handled here.
 """
 from copy import deepcopy
-from typing import (Any, Dict, FrozenSet, Iterable, List, Optional, Sequence,
-                    Set, Tuple, Type)
+from typing import (
+    Any,
+    Dict,
+    FrozenSet,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Type,
+)
+
+import numpy as np
 
 from .param_spec import ParamSpec, ParamSpecBase
 from .versioning.rundescribertypes import InterDependencies_Dict
@@ -59,13 +71,17 @@ class InterDependencies_:
 
         deps_error = self.validate_paramspectree(dependencies)
         if deps_error is not None:
-            old_error = deps_error[0](deps_error[1])
-            raise ValueError('Invalid dependencies') from old_error
+            try:
+                raise deps_error[0](deps_error[1])
+            except Exception as old_error:
+                raise ValueError("Invalid dependencies") from old_error
 
         inffs_error = self.validate_paramspectree(inferences)
         if inffs_error is not None:
-            old_error = inffs_error[0](inffs_error[1])
-            raise ValueError('Invalid inferences') from old_error
+            try:
+                raise inffs_error[0](inffs_error[1])
+            except Exception as old_error:
+                raise ValueError("Invalid inferences") from old_error
 
         link_error = self._validate_double_links(dependencies, inferences)
         if link_error is not None:
@@ -74,10 +90,10 @@ class InterDependencies_:
 
         for ps in standalones:
             if not isinstance(ps, ParamSpecBase):
-                base_error = TypeError('Standalones must be a sequence of '
-                                       'ParamSpecs')
-
-                raise ValueError('Invalid standalones') from base_error
+                try:
+                    raise TypeError("Standalones must be a sequence of ParamSpecs")
+                except TypeError as base_error:
+                    raise ValueError("Invalid standalones") from base_error
 
         self._remove_duplicates(dependencies)
         self._remove_duplicates(inferences)
@@ -255,6 +271,26 @@ class InterDependencies_:
                                           "dependencies": dependencies,
                                           "inferences": inferences,
                                           "standalones": standalones}
+        return output
+
+    def _empty_data_dict(self) -> Dict[str, Dict[str, np.ndarray]]:
+        """
+        Create an dictionary with empty numpy arrays as values
+        matching the expected output of ``DataSet``'s ``get_parameter_data`` /
+        ``cache.data`` so that the order of keys in the returned dictionary
+        is the same as the order of parameters in the interdependencies
+        in this class.
+        """
+
+        output: Dict[str, Dict[str, np.ndarray]] = {}
+        for dependent, independents in self.dependencies.items():
+            dependent_name = dependent.name
+            output[dependent_name] = {dependent_name: np.array([])}
+            for independent in independents:
+                output[dependent_name][independent.name] = np.array([])
+        for standalone in (ps.name for ps in self.standalones):
+            output[standalone] = {}
+            output[standalone][standalone] = np.array([])
         return output
 
     def _construct_subdict(self, treename: str) -> Dict[str, Any]:

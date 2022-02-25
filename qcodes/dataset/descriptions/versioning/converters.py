@@ -9,8 +9,12 @@ from typing import Dict, List
 
 from ..dependencies import InterDependencies_
 from ..param_spec import ParamSpec, ParamSpecBase
-from .rundescribertypes import (RunDescriberV0Dict, RunDescriberV1Dict,
-                                RunDescriberV2Dict, RunDescriberV3Dict)
+from .rundescribertypes import (
+    RunDescriberV0Dict,
+    RunDescriberV1Dict,
+    RunDescriberV2Dict,
+    RunDescriberV3Dict,
+)
 from .v0 import InterDependencies
 
 
@@ -57,26 +61,45 @@ def new_to_old(idps: InterDependencies_) -> InterDependencies:
 
     paramspecs: Dict[str, ParamSpec] = {}
 
+
     # first the independent parameters
     for indeps in idps.dependencies.values():
         for indep in indeps:
-            paramspecs.update({indep.name: ParamSpec(name=indep.name,
-                                                     paramtype=indep.type,
-                                                     label=indep.label,
-                                                     unit=indep.unit)})
+            paramspecs.update(
+                {
+                    indep.name: ParamSpec(
+                        name=indep.name,
+                        paramtype=indep.type,
+                        label=indep.label,
+                        unit=indep.unit,
+                    )
+                }
+            )
 
     for inffs in idps.inferences.values():
         for inff in inffs:
-            paramspecs.update({inff.name: ParamSpec(name=inff.name,
-                                                    paramtype=inff.type,
-                                                    label=inff.label,
-                                                    unit=inff.unit)})
+            paramspecs.update(
+                {
+                    inff.name: ParamSpec(
+                        name=inff.name,
+                        paramtype=inff.type,
+                        label=inff.label,
+                        unit=inff.unit,
+                    )
+                }
+            )
 
     for ps_base in idps._paramspec_to_id.keys():
-        paramspecs.update({ps_base.name: ParamSpec(name=ps_base.name,
-                                                   paramtype=ps_base.type,
-                                                   label=ps_base.label,
-                                                   unit=ps_base.unit)})
+        paramspecs.update(
+            {
+                ps_base.name: ParamSpec(
+                    name=ps_base.name,
+                    paramtype=ps_base.type,
+                    label=ps_base.label,
+                    unit=ps_base.unit,
+                )
+            }
+        )
 
     for ps, indeps in idps.dependencies.items():
         for indep in indeps:

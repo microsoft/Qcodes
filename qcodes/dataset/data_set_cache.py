@@ -84,6 +84,18 @@ class DataSetCache(Generic[DatasetType]):
 
         return self._data
 
+    def prepare(self) -> None:
+        """
+        Set up the internal datastructure of the cache.
+        Must be called after the dataset has been setup with
+        interdependencies but before data is added to the dataset.
+        """
+
+        if self._data == {}:
+            self._data = self.rundescriber.interdeps._empty_data_dict()
+        else:
+            raise RuntimeError("Cannot prepare a cache that is not empty")
+
     def load_data_from_db(self) -> None:
         """
         Load the data from an on-disk format in case the cache is not live
@@ -299,7 +311,15 @@ def _merge_data(existing_data: Mapping[str, np.ndarray],
                 ) -> Tuple[Dict[str, np.ndarray], Optional[int]]:
 
     subtree_merged_data = {}
-    subtree_parameters = set(existing_data.keys()) | set(new_data.keys())
+    subtree_parameters = existing_data.keys()
+
+    if not set(new_data.keys()).issubset(set(existing_data.keys())):
+        raise RuntimeError(
+            "Trying to add unexpected key to cache."
+            "The following keys were unexpected: "
+            f"{set(new_data.keys() - existing_data.keys())}"
+        )
+
     new_write_status: Optional[int]
     single_param_merged_data, new_write_status = _merge_data_single_param(
         existing_data.get(meas_parameter),
@@ -464,7 +484,8 @@ class DataSetCacheWithDBBackend(DataSetCache["DataSet"]):
         self._dataset.completed = completed(self._dataset.conn, self._dataset.run_id)
         if self._dataset.completed:
             self._loaded_from_completed_ds = True
-
+        if self._data == {}:
+            self.prepare()
         (
             self._write_status,
             self._read_status,

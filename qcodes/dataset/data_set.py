@@ -47,6 +47,9 @@ from qcodes.dataset.sqlite.database import (
     get_DB_location,
 )
 from qcodes.dataset.sqlite.queries import (
+    get_guids_from_run_spec,  # for backwards compatibility
+)
+from qcodes.dataset.sqlite.queries import (
     _check_if_table_found,
     _get_result_table_name_by_guid,
     _query_guids_from_run_spec,
@@ -679,6 +682,7 @@ class DataSet(BaseDataSet):
             writer_status.write_in_background = False
 
         writer_status.active_datasets.add(self.run_id)
+        self.cache.prepare()
 
     def mark_completed(self) -> None:
         """
