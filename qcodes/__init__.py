@@ -45,6 +45,7 @@ from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.sqlite.database import (
     initialise_database,
     initialise_or_create_database_at,
+    initialised_database_at,
 )
 from qcodes.dataset.sqlite.settings import SQLiteSettings
 from qcodes.instrument.base import Instrument, find_or_create_instrument
