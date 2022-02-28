@@ -5,7 +5,7 @@
 
 
 try:
-    from zhinst.qcodes.uhfqa import *
+    from zhinst.qcodes import UHFQA
 except ImportError:
     raise ImportError('''Could not find Zurich Instruments QCodes drivers.
                          Please install package zhinst-qcodes.
