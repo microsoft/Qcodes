@@ -17,7 +17,6 @@ from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measuremen
 from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.measurements import Measurement
-from qcodes.dataset.plotting import plot_dataset
 from qcodes.instrument.parameter import _BaseParameter
 from qcodes.utils.threading import (
     SequentialParamsCaller,
@@ -1032,6 +1031,7 @@ def plot(
         save_pdf: Save figure in pdf format.
         save_png: Save figure in png format.
     """
+    from qcodes.dataset.plotting import plot_dataset
     dataid = data.captured_run_id
     axes, cbs = plot_dataset(data)
     mainfolder = config.user.mainfolder
