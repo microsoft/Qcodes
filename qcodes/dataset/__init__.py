@@ -28,4 +28,25 @@ from .sqlite.database import (
 )
 from .sqlite.settings import SQLiteSettings
 
-# flake8: noqa (we don't need the "<...> imported but unused" error)
+__all__ = [
+    "load_by_counter",
+    "load_by_guid",
+    "load_by_id",
+    "load_by_run_spec",
+    "new_data_set",
+    "load_from_netcdf",
+    "DataSetProtocol",
+    "DataSetType",
+    "ParamSpec",
+    "experiments",
+    "load_experiment",
+    "load_experiment_by_name",
+    "load_last_experiment",
+    "load_or_create_experiment",
+    "new_experiment",
+    "Measurement",
+    "initialise_database",
+    "initialise_or_create_database_at",
+    "initialised_database_at",
+    "SQLiteSettings",
+]
