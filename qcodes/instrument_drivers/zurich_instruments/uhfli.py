@@ -7,6 +7,10 @@
 try:
     from zhinst.qcodes import UHFLI
 except ImportError:
-    raise ImportError('''Could not find Zurich Instruments QCodes drivers.
-                         Please install package zhinst-qcodes.
-                      ''')
+    raise ImportError(
+        """
+        Could not find Zurich Instruments QCodes drivers.
+        Please install package zhinst-qcodes.
+        """
+    )
+__all__ = ["UHFLI"]
