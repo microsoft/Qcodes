@@ -21,7 +21,11 @@ from .experiment_container import (
     new_experiment,
 )
 from .measurements import Measurement
-from .sqlite.database import initialise_database, initialise_or_create_database_at
+from .sqlite.database import (
+    initialise_database,
+    initialise_or_create_database_at,
+    initialised_database_at,
+)
 from .sqlite.settings import SQLiteSettings
 
 # flake8: noqa (we don't need the "<...> imported but unused" error)
