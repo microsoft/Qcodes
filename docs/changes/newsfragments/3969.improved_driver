@@ -1,0 +1,2 @@
+The Zurich instrument driver stubs in ``qcodes.instrument_drivers.zurich_instruments`` have been updated
+to use the 0.3 version of ``zhinst-qcodes``
