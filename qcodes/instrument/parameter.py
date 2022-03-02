@@ -1247,8 +1247,15 @@ class Parameter(_BaseParameter):
                 self.get_raw = (  # type: ignore[assignment]
                     lambda: self.cache.raw_value)
             else:
-                exec_str_ask = getattr(instrument, "ask", None) \
-                    if instrument else None
+                if isinstance(get_cmd, str) and instrument is None:
+                    raise TypeError(
+                        f"Cannot use a str get_cmd without "
+                        f"binding to an instrument. "
+                        f"Got: get_cmd {get_cmd} for parameter {name}"
+                    )
+
+                exec_str_ask = getattr(instrument, "ask", None) if instrument else None
+
                 self.get_raw = Command(arg_count=0,  # type: ignore[assignment]
                                        cmd=get_cmd,
                                        exec_str=exec_str_ask)
@@ -1263,10 +1270,19 @@ class Parameter(_BaseParameter):
             if set_cmd is None:
                 self.set_raw: Callable[..., Any] = lambda x: x
             else:
-                exec_str_write = getattr(instrument, "write", None) \
-                    if instrument else None
-                self.set_raw = Command(arg_count=1, cmd=set_cmd,
-                                       exec_str=exec_str_write)
+                if isinstance(set_cmd, str) and instrument is None:
+                    raise TypeError(
+                        f"Cannot use a str set_cmd without "
+                        f"binding to an instrument. "
+                        f"Got: set_cmd {set_cmd} for parameter {name}"
+                    )
+
+                exec_str_write = (
+                    getattr(instrument, "write", None) if instrument else None
+                )
+                self.set_raw = Command(
+                    arg_count=1, cmd=set_cmd, exec_str=exec_str_write
+                )
             self._settable = True
             self.set = self._wrap_set(self.set_raw)
 
