@@ -6,11 +6,6 @@ qcodes.instrument (Instruments)
 .. autosummary::
 
     qcodes.instrument
-    qcodes.instrument.visa
-    qcodes.instrument.channel
-    qcodes.instrument.delegate
-    qcodes.instrument.base
-
 
 .. automodule:: qcodes.instrument
 
@@ -18,8 +13,3 @@ qcodes.instrument (Instruments)
 .. toctree::
    :maxdepth: 4
    :hidden:
-
-   visa
-   channel
-   delegate
-   base
