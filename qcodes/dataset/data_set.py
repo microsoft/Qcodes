@@ -1479,7 +1479,8 @@ def load_by_run_spec(
     run matching the supplied specification is found. Along with the error
     specs of the runs found will be printed.
 
-    If the raw data is in the database this will be loaded as a :class:`.DataSet`
+    If the raw data is in the database this will be loaded as a
+    :class:`qcodes.dataset.data_set.DataSet`
     otherwise it will be loaded as a :class:`.DataSetInMemory`
 
     Args:
@@ -1500,8 +1501,9 @@ def load_by_run_spec(
          exists in the database
 
     Returns:
-        :class:`.DataSet` or :class:`.DataSetInMemory` matching the provided
-            specification.
+        :class:`qcodes.dataset.data_set.DataSet` or
+        :class:`.DataSetInMemory` matching the provided
+        specification.
     """
     internal_conn = conn or connect(get_DB_location())
     d: Optional[DataSetProtocol] = None
@@ -1598,15 +1600,17 @@ def load_by_id(run_id: int, conn: Optional[ConnectionPlus] = None) -> DataSetPro
     data to another db file. We recommend using :func:`.load_by_run_spec` which
     does not have this issue and is significantly more flexible.
 
-    If the raw data is in the database this will be loaded as a :class:`.DataSet`
-    otherwise it will be loaded as a :class:`.DataSetInMemory`
+    If the raw data is in the database this will be loaded as a
+    :class:`qcodes.dataset.data_set.DataSet` otherwise it will be
+    loaded as a :class:`.DataSetInMemory`
 
     Args:
         run_id: run id of the dataset
         conn: connection to the database to load from
 
     Returns:
-        :class:`.DataSet` or :class:`.DataSetInMemory` with the given run id
+        :class:`qcodes.dataset.data_set.DataSet` or
+        :class:`.DataSetInMemory` with the given run id
     """
     if run_id is None:
         raise ValueError("run_id has to be a positive integer, not None.")
@@ -1633,7 +1637,8 @@ def load_by_guid(guid: str, conn: Optional[ConnectionPlus] = None) -> DataSetPro
     If no connection is provided, lookup is performed in the database file that
     is specified in the config.
 
-    If the raw data is in the database this will be loaded as a :class:`.DataSet`
+    If the raw data is in the database this will be loaded as a
+    :class:`qcodes.dataset.data_set.DataSet`
     otherwise it will be loaded as a :class:`.DataSetInMemory`
 
     Args:
@@ -1641,7 +1646,8 @@ def load_by_guid(guid: str, conn: Optional[ConnectionPlus] = None) -> DataSetPro
         conn: connection to the database to load from
 
     Returns:
-        :class:`.DataSet` or :class:`.DataSetInMemory` with the given guid
+        :class:`qcodes.dataset.data_set.DataSet` or
+        :class:`.DataSetInMemory` with the given guid
 
     Raises:
         NameError: if no run with the given GUID exists in the database
@@ -1673,7 +1679,8 @@ def load_by_counter(
     data to another db file. We recommend using :func:`.load_by_run_spec` which
     does not have this issue and is significantly more flexible.
 
-    If the raw data is in the database this will be loaded as a :class:`.DataSet`
+    If the raw data is in the database this will be loaded as a
+    :class:`qcodes.dataset.data_set.DataSet`
     otherwise it will be loaded as a :class:`.DataSetInMemory`
 
     Args:
@@ -1683,8 +1690,9 @@ def load_by_counter(
           connection to the DB file specified in the config is made
 
     Returns:
-        :class:`.DataSet` or :class:`.DataSetInMemory` of the given counter in
-            the given experiment
+        :class:`qcodes.dataset.data_set.DataSet` or
+        :class:`.DataSetInMemory` of the given counter in
+        the given experiment
     """
     internal_conn = conn or connect(get_DB_location())
     d: Optional[DataSetProtocol] = None
@@ -1737,7 +1745,7 @@ def new_data_set(name: str,
             and available as part of the `dataset.cache` object.
 
     Return:
-        the newly created :class:`.DataSet`
+        the newly created :class:`qcodes.dataset.data_set.DataSet`
     """
     # note that passing `conn` is a secret feature that is unfortunately used
     # in `Runner` to pass a connection from an existing `Experiment`.

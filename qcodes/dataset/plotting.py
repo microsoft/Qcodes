@@ -321,7 +321,7 @@ def plot_by_id(
     """
     Construct all plots for a given `run_id`. Here `run_id` is an
     alias for `captured_run_id` for historical reasons. See the docs
-    of :func:`.load_by_run_spec` for details of loading runs.
+    of :func:`qcodes.dataset.load_by_run_spec` for details of loading runs.
     All other arguments are forwarded
     to :func:`.plot_dataset`, see this for more details.
     """
