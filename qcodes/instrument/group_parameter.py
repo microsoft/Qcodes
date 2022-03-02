@@ -40,12 +40,13 @@ class GroupParameter(Parameter):
              ``set_cmd`` and ``get_cmd``.
     """
 
-    def __init__(self,
-                 name: str,
-                 instrument: Optional['InstrumentBase'] = None,
-                 initial_value: Union[float, int, str, None] = None,
-                 **kwargs: Any
-                 ) -> None:
+    def __init__(
+        self,
+        name: str,
+        instrument: Optional["InstrumentBase"],
+        initial_value: Union[float, int, str, None] = None,
+        **kwargs: Any,
+    ) -> None:
 
         if "set_cmd" in kwargs or "get_cmd" in kwargs:
             raise ValueError("A GroupParameter does not use 'set_cmd' or "

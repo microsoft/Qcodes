@@ -1176,7 +1176,7 @@ class Parameter(_BaseParameter):
     def __init__(
         self,
         name: str,
-        instrument: Optional["InstrumentBase"] = None,
+        instrument: Optional["InstrumentBase"],
         label: Optional[str] = None,
         unit: Optional[str] = None,
         get_cmd: Optional[Union[str, Callable[..., Any], Literal[False]]] = None,
@@ -1392,12 +1392,17 @@ class ParameterWithSetpoints(Parameter):
     documentation of :class:`Parameter` for more details.
     """
 
-    def __init__(self, name: str, *,
-                 vals: Optional[Validator[Any]] = None,
-                 setpoints: Optional[Sequence[_BaseParameter]] = None,
-                 snapshot_get: bool = False,
-                 snapshot_value: bool = False,
-                 **kwargs: Any) -> None:
+    def __init__(
+        self,
+        name: str,
+        *,
+        instrument: Optional[Instrument],
+        vals: Optional[Validator[Any]] = None,
+        setpoints: Optional[Sequence[_BaseParameter]] = None,
+        snapshot_get: bool = False,
+        snapshot_value: bool = False,
+        **kwargs: Any,
+    ) -> None:
 
         if not isinstance(vals, Arrays):
             raise ValueError(f"A ParameterWithSetpoints must have an Arrays "
@@ -1406,8 +1411,14 @@ class ParameterWithSetpoints(Parameter):
             raise RuntimeError("A ParameterWithSetpoints must have a shape "
                                "defined for its validator.")
 
-        super().__init__(name=name, vals=vals, snapshot_get=snapshot_get,
-                         snapshot_value=snapshot_value, **kwargs)
+        super().__init__(
+            name=name,
+            instrument=instrument,
+            vals=vals,
+            snapshot_get=snapshot_get,
+            snapshot_value=snapshot_value,
+            **kwargs,
+        )
         if setpoints is None:
             self.setpoints: Sequence[_BaseParameter] = []
         else:
@@ -1810,7 +1821,7 @@ class ArrayParameter(_BaseParameter):
         self,
         name: str,
         shape: Sequence[int],
-        instrument: Optional["InstrumentBase"] = None,
+        instrument: Optional["InstrumentBase"],
         label: Optional[str] = None,
         unit: Optional[str] = None,
         setpoints: Optional[Sequence[Any]] = None,
@@ -2026,7 +2037,7 @@ class MultiParameter(_BaseParameter):
         name: str,
         names: Sequence[str],
         shapes: Sequence[Sequence[int]],
-        instrument: Optional["InstrumentBase"] = None,
+        instrument: Optional["InstrumentBase"],
         labels: Optional[Sequence[str]] = None,
         units: Optional[Sequence[str]] = None,
         setpoints: Optional[Sequence[Sequence[Any]]] = None,
@@ -2673,7 +2684,7 @@ class InstrumentRefParameter(Parameter):
     def __init__(
         self,
         name: str,
-        instrument: Optional["InstrumentBase"] = None,
+        instrument: Optional["InstrumentBase"],
         label: Optional[str] = None,
         unit: Optional[str] = None,
         get_cmd: Optional[Union[str, Callable[..., Any], Literal[False]]] = None,
@@ -2710,10 +2721,13 @@ class InstrumentRefParameter(Parameter):
 
 
 class ManualParameter(Parameter):
-    def __init__(self, name: str,
-                 instrument: Optional['InstrumentBase'] = None,
-                 initial_value: Any = None,
-                 **kwargs: Any):
+    def __init__(
+        self,
+        name: str,
+        instrument: Optional["InstrumentBase"],
+        initial_value: Any = None,
+        **kwargs: Any,
+    ):
         """
         A simple alias for a parameter that does not have a set or
         a get function. Useful for parameters that do not have a direct
@@ -2793,11 +2807,7 @@ class ScaledParameter(Parameter):
         else:
             self.unit = output.unit
 
-        super().__init__(
-            name=name,
-            label=self.label,
-            unit=self.unit
-            )
+        super().__init__(name=name, instrument=None, label=self.label, unit=self.unit)
 
         self._wrapped_parameter = output
         self._wrapped_instrument = getattr(output, "_instrument", None)
@@ -2848,8 +2858,9 @@ class ScaledParameter(Parameter):
             self.metadata['variable_multiplier'] = multiplier_name
         else:
             self._multiplier_parameter = ManualParameter(
-                'multiplier', initial_value=multiplier)
-            self.metadata['variable_multiplier'] = False
+                "multiplier", initial_value=multiplier, instrument=None
+            )
+            self.metadata["variable_multiplier"] = False
 
     # Division of the scaler
     @property

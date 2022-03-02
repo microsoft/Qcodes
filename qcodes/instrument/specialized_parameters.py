@@ -5,8 +5,9 @@ provides useful/convenient specializations of such generic parameters.
 """
 
 from time import perf_counter
-from typing import Any
+from typing import Any, Optional
 
+from qcodes.instrument.base import Instrument
 from qcodes.instrument.parameter import Parameter
 
 
@@ -21,7 +22,13 @@ class ElapsedTimeParameter(Parameter):
             :class:`qcodes.instrument.parameter.Parameter` for more details.
     """
 
-    def __init__(self, name: str, label: str = 'Elapsed time', **kwargs: Any):
+    def __init__(
+        self,
+        name: str,
+        instrument: Optional[Instrument],
+        label: str = "Elapsed time",
+        **kwargs: Any,
+    ):
 
         hardcoded_kwargs = ['unit', 'get_cmd', 'set_cmd']
 
@@ -30,11 +37,14 @@ class ElapsedTimeParameter(Parameter):
                 raise ValueError(f'Can not set "{hck}" for an '
                                  'ElapsedTimeParameter.')
 
-        super().__init__(name=name,
-                         label=label,
-                         unit='s',
-                         set_cmd=False,
-                         **kwargs)
+        super().__init__(
+            name=name,
+            instrument=instrument,
+            label=label,
+            unit="s",
+            set_cmd=False,
+            **kwargs,
+        )
 
         self._t0: float = perf_counter()
 
