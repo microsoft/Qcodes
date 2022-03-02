@@ -1,0 +1,2 @@
+Fixed a typo in legacy PyqtGraph plot preventing correct handling of custom units.
+Regression from 0.32.0
