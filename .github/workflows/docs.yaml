@@ -31,13 +31,13 @@ jobs:
       OS: ${{ matrix.os }}
       UPLOAD_TO_GHPAGES: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == '3.9' && github.event_name == 'push' && github.ref == 'refs/heads/master' }}
     steps:
-    - uses: actions/checkout@v2.3.4
+    - uses: actions/checkout@v3
       with:
         fetch-depth: '0'
         # if we upload to ghpages we need the full
         # history to generate correct version info
       if: ${{ fromJSON(env.UPLOAD_TO_GHPAGES) }}
-    - uses: actions/checkout@v2.3.4
+    - uses: actions/checkout@v3
       if: ${{ !fromJSON(env.UPLOAD_TO_GHPAGES) }}
     - name: setup ubuntu-latest xvfb
       uses: ./.github/actions/setup-ubuntu-latest-xvfb
