@@ -17,7 +17,7 @@ entrypoints~=0.4
 google-api-core~=2.5.0
 google-auth~=2.6.0
 googleapis-common-protos~=1.55.0
-h5netcdf~=0.13.1
+h5netcdf~=0.14.1
 h5py~=3.6.0
 idna~=3.3
 importlib-metadata==4.8.1; python_version<'3.8'
