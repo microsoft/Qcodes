@@ -23,8 +23,8 @@ def test_guids_from_dir(tmp_path: Path) -> None:
             new_experiment(sample_name="fivehundredtest_sample",
                            name="fivehundredtest_name")
 
-            p1 = Parameter('Voltage', set_cmd=None)
-            p2 = Parameter('Current', get_cmd=np.random.randn)
+            p1 = Parameter("Voltage", set_cmd=None, instrument=None)
+            p2 = Parameter("Current", get_cmd=np.random.randn, instrument=None)
 
             meas = Measurement()
             meas.register_parameter(p1).register_parameter(p2, setpoints=[p1])
@@ -90,8 +90,8 @@ def test_get_guids_from_multiple_run_ids(tmp_path: Path) -> None:
             exp = load_or_create_experiment(experiment_name="test_guid")
             conn = exp.conn
 
-            p1 = Parameter('Voltage', set_cmd=None)
-            p2 = Parameter('Current', get_cmd=np.random.randn)
+            p1 = Parameter("Voltage", set_cmd=None, instrument=None)
+            p2 = Parameter("Current", get_cmd=np.random.randn, instrument=None)
 
             meas = Measurement(exp=exp)
             meas.register_parameter(p1).register_parameter(p2, setpoints=[p1])

@@ -3,8 +3,9 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from qcodes.instrument.parameter import Parameter, _BaseParameter
 import qcodes.utils.validators as vals
+from qcodes.instrument.parameter import Parameter, _BaseParameter
+
 from .conftest import NOT_PASSED, BetterGettableParam, SettableParam
 
 
@@ -272,18 +273,45 @@ _P = Parameter
 @pytest.mark.parametrize(
     argnames=('p', 'value', 'raw_value'),
     argvalues=(
-        (_P('p', set_cmd=None, get_cmd=None), 4, 4),
-        (_P('p', set_cmd=False, get_cmd=None), 14, 14),
-        (_P('p', set_cmd=None, get_cmd=False), 14, 14),
-        (_P('p', set_cmd=None, get_cmd=None, vals=vals.OnOff()), 'on', 'on'),
-        (_P('p', set_cmd=None, get_cmd=None, val_mapping={'screw': 1}),
-         'screw', 1),
-        (_P('p', set_cmd=None, get_cmd=None, set_parser=str, get_parser=int),
-         14, '14'),
-        (_P('p', set_cmd=None, get_cmd=None, step=7), 14, 14),
-        (_P('p', set_cmd=None, get_cmd=None, offset=3), 14, 17),
-        (_P('p', set_cmd=None, get_cmd=None, scale=2), 14, 28),
-        (_P('p', set_cmd=None, get_cmd=None, offset=-3, scale=2), 14, 25),
+        (_P("p", set_cmd=None, get_cmd=None, instrument=None), 4, 4),
+        (_P("p", set_cmd=False, get_cmd=None, instrument=None), 14, 14),
+        (_P("p", set_cmd=None, get_cmd=False, instrument=None), 14, 14),
+        (
+            _P("p", set_cmd=None, get_cmd=None, vals=vals.OnOff(), instrument=None),
+            "on",
+            "on",
+        ),
+        (
+            _P(
+                "p",
+                set_cmd=None,
+                get_cmd=None,
+                val_mapping={"screw": 1},
+                instrument=None,
+            ),
+            "screw",
+            1,
+        ),
+        (
+            _P(
+                "p",
+                set_cmd=None,
+                get_cmd=None,
+                set_parser=str,
+                get_parser=int,
+                instrument=None,
+            ),
+            14,
+            "14",
+        ),
+        (_P("p", set_cmd=None, get_cmd=None, step=7, instrument=None), 14, 14),
+        (_P("p", set_cmd=None, get_cmd=None, offset=3, instrument=None), 14, 17),
+        (_P("p", set_cmd=None, get_cmd=None, scale=2, instrument=None), 14, 28),
+        (
+            _P("p", set_cmd=None, get_cmd=None, offset=-3, scale=2, instrument=None),
+            14,
+            25,
+        ),
     ),
     ids=(
         'with_nothing_extra',
