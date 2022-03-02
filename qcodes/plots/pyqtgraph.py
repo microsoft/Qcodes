@@ -439,7 +439,7 @@ class QtPlot(BasePlot):
 
             # find if any kwarg from plot.add in the base class
             # matches xunit or yunit, signaling a custom unit
-            if axletter + "unit" in config and getattr(ax, "_qcodes_label", None):
+            if axletter + "unit" in config and not getattr(ax, "_qcodes_label", None):
                 unit = config[axletter + "unit"]
             else:
                 unit = None
@@ -447,9 +447,9 @@ class QtPlot(BasePlot):
             #  find ( more hope to) unit and label from
             # the data array inside the config
             if axletter in config and not getattr(ax, "_qcodes_label", None):
-                # now if we did not have any kwark gor label or unit
+                # now if we did not have any kwarg for label or unit
                 # fallback to the data_array
-                if unit is  None:
+                if unit is None:
                     _, unit = self.get_label(config[axletter])
                 if label is None:
                     label, _ = self.get_label(config[axletter])
