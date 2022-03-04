@@ -11,6 +11,7 @@ from hypothesis import HealthCheck, given, settings
 from qcodes import config
 from qcodes.dataset import new_experiment
 from qcodes.dataset.data_set import DataSet
+from qcodes.dataset.doNd import ArraySweep, LinSweep, LogSweep, do0d, do1d, do2d, dond
 from qcodes.instrument.parameter import Parameter, _BaseParameter
 from qcodes.tests.instrument_mocks import (
     ArraySetPointParam,
@@ -19,7 +20,6 @@ from qcodes.tests.instrument_mocks import (
     MultiSetPointParam,
 )
 from qcodes.utils import validators
-from qcodes.utils.dataset.doNd import ArraySweep, LinSweep, LogSweep, do0d, do1d, do2d, dond
 from qcodes.utils.validators import Arrays
 
 from .conftest import ArrayshapedParam

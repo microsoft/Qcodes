@@ -22,6 +22,7 @@ from qcodes.dataset.data_set import (
     load_by_run_spec,
 )
 from qcodes.dataset.database_extract_runs import extract_runs_into_db
+from qcodes.dataset.doNd import do1d, do2d
 from qcodes.dataset.experiment_container import (
     Experiment,
     load_experiment_by_name,
@@ -34,7 +35,6 @@ from qcodes.dataset.sqlite.database import get_db_version_and_newest_available_v
 from qcodes.dataset.sqlite.queries import get_experiments
 from qcodes.tests.common import error_caused_by
 from qcodes.tests.instrument_mocks import DummyInstrument
-from qcodes.utils.dataset.doNd import do1d, do2d
 
 
 @contextmanager
