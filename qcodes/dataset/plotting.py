@@ -5,6 +5,7 @@ using QCoDeS.
 
 import inspect
 import logging
+import os
 from contextlib import contextmanager
 from functools import partial
 from typing import Any, List, Optional, Sequence, Tuple, Union, cast
@@ -304,6 +305,46 @@ def plot_dataset(
         raise RuntimeError("Non equal number of axes. Perhaps colorbar is "
                            "missing from one of the cases above")
     return axeslist, new_colorbars
+
+
+def plot_and_save_image(
+    data: DataSetProtocol, save_pdf: bool = True, save_png: bool = True
+) -> Tuple[
+    DataSetProtocol,
+    List[matplotlib.axes.Axes],
+    List[Optional[matplotlib.colorbar.Colorbar]],
+]:
+    """
+    The utility function to plot results and save the figures either in pdf or
+    png or both formats.
+
+    Args:
+        data: The QCoDeS dataset to be plotted.
+        save_pdf: Save figure in pdf format.
+        save_png: Save figure in png format.
+    """
+    from qcodes import config
+
+    dataid = data.captured_run_id
+    axes, cbs = plot_dataset(data)
+    mainfolder = config.user.mainfolder
+    experiment_name = data.exp_name
+    sample_name = data.sample_name
+    storage_dir = os.path.join(mainfolder, experiment_name, sample_name)
+    os.makedirs(storage_dir, exist_ok=True)
+    png_dir = os.path.join(storage_dir, "png")
+    pdf_dif = os.path.join(storage_dir, "pdf")
+    os.makedirs(png_dir, exist_ok=True)
+    os.makedirs(pdf_dif, exist_ok=True)
+    for i, ax in enumerate(axes):
+        if save_pdf:
+            full_path = os.path.join(pdf_dif, f"{dataid}_{i}.pdf")
+            ax.figure.savefig(full_path, dpi=500)
+        if save_png:
+            full_path = os.path.join(png_dir, f"{dataid}_{i}.png")
+            ax.figure.savefig(full_path, dpi=500)
+    res = data, axes, cbs
+    return res
 
 
 def plot_by_id(

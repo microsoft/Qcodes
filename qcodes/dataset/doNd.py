@@ -18,6 +18,7 @@ from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measuremen
 from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.measurements import Measurement
+from qcodes.dataset.plotting import plot_and_save_image
 from qcodes.instrument.parameter import _BaseParameter
 from qcodes.utils.threading import (
     SequentialParamsCaller,
@@ -1009,51 +1010,11 @@ def _handle_plotting(
 
     """
     if do_plot:
-        res = plot(data)
+        res = plot_and_save_image(data)
     else:
         res = data, [None], [None]
 
     if interrupted:
         raise interrupted
 
-    return res
-
-
-def plot(
-    data: DataSetProtocol, save_pdf: bool = True, save_png: bool = True
-) -> Tuple[
-    DataSetProtocol,
-    List[matplotlib.axes.Axes],
-    List[Optional[matplotlib.colorbar.Colorbar]],
-]:
-    """
-    The utility function to plot results and save the figures either in pdf or
-    png or both formats.
-
-    Args:
-        data: The QCoDeS dataset to be plotted.
-        save_pdf: Save figure in pdf format.
-        save_png: Save figure in png format.
-    """
-    from qcodes.dataset.plotting import plot_dataset
-
-    dataid = data.captured_run_id
-    axes, cbs = plot_dataset(data)
-    mainfolder = config.user.mainfolder
-    experiment_name = data.exp_name
-    sample_name = data.sample_name
-    storage_dir = os.path.join(mainfolder, experiment_name, sample_name)
-    os.makedirs(storage_dir, exist_ok=True)
-    png_dir = os.path.join(storage_dir, "png")
-    pdf_dif = os.path.join(storage_dir, "pdf")
-    os.makedirs(png_dir, exist_ok=True)
-    os.makedirs(pdf_dif, exist_ok=True)
-    for i, ax in enumerate(axes):
-        if save_pdf:
-            full_path = os.path.join(pdf_dif, f"{dataid}_{i}.pdf")
-            ax.figure.savefig(full_path, dpi=500)
-        if save_png:
-            full_path = os.path.join(png_dir, f"{dataid}_{i}.png")
-            ax.figure.savefig(full_path, dpi=500)
-    res = data, axes, cbs
     return res

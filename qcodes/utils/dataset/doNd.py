@@ -8,6 +8,7 @@ from qcodes.dataset.doNd import (
     do2d,
     dond,
 )
+from qcodes.dataset.plotting import plot_and_save_image as plot
 
 __all__ = [
     "do0d",
@@ -18,4 +19,5 @@ __all__ = [
     "ArraySweep",
     "LinSweep",
     "LogSweep",
+    "plot",
 ]
