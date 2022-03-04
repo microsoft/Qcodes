@@ -207,7 +207,7 @@ def do1d(
         stop: End point of sweep
         num_points: Number of points in sweep
         delay: Delay after setting parameter before measurement is performed
-        *param_meas: Parameter(s) to measure at each step or functions that
+        param_meas: Parameter(s) to measure at each step or functions that
           will be called at each step. The function should take no arguments.
           The parameters and functions are called in the order they are
           supplied.
@@ -349,7 +349,7 @@ def do2d(
         stop2: End point of sweep in the inner loop
         num_points2: Number of points to measure in the inner loop
         delay2: Delay after setting parameter before measurement is performed
-        *param_meas: Parameter(s) to measure at each step or functions that
+        param_meas: Parameter(s) to measure at each step or functions that
           will be called at each step. The function should take no arguments.
           The parameters and functions are called in the order they are
           supplied.
@@ -690,7 +690,7 @@ def dond(
     as sweep objects, and after them the parameters to measure should be passed.
 
     Args:
-        *params: Instances of n sweep classes and m measurement parameters,
+        params: Instances of n sweep classes and m measurement parameters,
             e.g. if linear sweep is considered:
 
             .. code-block::
