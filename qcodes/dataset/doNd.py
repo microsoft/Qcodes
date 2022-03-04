@@ -267,7 +267,6 @@ def do1d(
     _set_write_period(meas, write_period)
     _register_actions(meas, enter_actions, exit_actions)
 
-
     if use_threads is None:
         use_threads = config.dataset.use_threads
 
@@ -808,7 +807,10 @@ def dond(
             for setpoints in tqdm(nested_setpoints, disable=not show_progress):
 
                 active_actions, delays = _select_active_actions_delays(
-                    post_actions, post_delays, setpoints, previous_setpoints,
+                    post_actions,
+                    post_delays,
+                    setpoints,
+                    previous_setpoints,
                 )
                 previous_setpoints = setpoints
 
@@ -859,25 +861,26 @@ def dond(
 
 
 def _parse_dond_arguments(
-        *params: Union[AbstractSweep, Union[ParamMeasT, Sequence[ParamMeasT]]]
-    ) -> Tuple[List[AbstractSweep], List[Union[ParamMeasT, Sequence[ParamMeasT]]]]:
-        """
-        Parse supplied arguments into sweep objects and measurement parameters
-        and their callables.
-        """
-        sweep_instances: List[AbstractSweep] = []
-        params_meas: List[Union[ParamMeasT, Sequence[ParamMeasT]]] = []
-        for par in params:
-            if isinstance(par, AbstractSweep):
-                sweep_instances.append(par)
-            else:
-                params_meas.append(par)
-        return sweep_instances, params_meas
+    *params: Union[AbstractSweep, Union[ParamMeasT, Sequence[ParamMeasT]]]
+) -> Tuple[List[AbstractSweep], List[Union[ParamMeasT, Sequence[ParamMeasT]]]]:
+    """
+    Parse supplied arguments into sweep objects and measurement parameters
+    and their callables.
+    """
+    sweep_instances: List[AbstractSweep] = []
+    params_meas: List[Union[ParamMeasT, Sequence[ParamMeasT]]] = []
+    for par in params:
+        if isinstance(par, AbstractSweep):
+            sweep_instances.append(par)
+        else:
+            params_meas.append(par)
+    return sweep_instances, params_meas
 
 
 def _conditional_parameter_set(
-    parameter: _BaseParameter, value: Union[float, complex],
-    ) -> None:
+    parameter: _BaseParameter,
+    value: Union[float, complex],
+) -> None:
     """
     Reads the cache value of the given parameter and set the parameter to
     the given value if the value is different from the cache value.
@@ -887,13 +890,13 @@ def _conditional_parameter_set(
 
 
 def _make_nested_setpoints(sweeps: List[AbstractSweep]) -> np.ndarray:
-        """Create the cartesian product of all the setpoint values."""
-        if len(sweeps) == 0:
-            return np.array([[]])  # 0d sweep (do0d)
-        setpoint_values = [sweep.get_setpoints() for sweep in sweeps]
-        setpoint_grids = np.meshgrid(*setpoint_values, indexing="ij")
-        flat_setpoint_grids = [np.ravel(grid, order="C") for grid in setpoint_grids]
-        return np.vstack(flat_setpoint_grids).T
+    """Create the cartesian product of all the setpoint values."""
+    if len(sweeps) == 0:
+        return np.array([[]])  # 0d sweep (do0d)
+    setpoint_values = [sweep.get_setpoints() for sweep in sweeps]
+    setpoint_grids = np.meshgrid(*setpoint_values, indexing="ij")
+    flat_setpoint_grids = [np.ravel(grid, order="C") for grid in setpoint_grids]
+    return np.vstack(flat_setpoint_grids).T
 
 
 def _select_active_actions_delays(
@@ -1032,6 +1035,7 @@ def plot(
         save_png: Save figure in png format.
     """
     from qcodes.dataset.plotting import plot_dataset
+
     dataid = data.captured_run_id
     axes, cbs = plot_dataset(data)
     mainfolder = config.user.mainfolder
