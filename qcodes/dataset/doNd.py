@@ -6,7 +6,8 @@ from abc import ABC, abstractmethod
 from contextlib import ExitStack, contextmanager
 from typing import Callable, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
-import matplotlib
+import matplotlib.axes
+import matplotlib.colorbar
 import numpy as np
 from tqdm.auto import tqdm
 from typing_extensions import TypedDict
