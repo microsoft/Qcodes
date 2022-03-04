@@ -150,7 +150,7 @@ def do0d(
     if log_info is not None:
         meas._extra_log_info = log_info
     else:
-        meas._extra_log_info = "Using 'qcodes.utils.dataset.doNd.do0d'"
+        meas._extra_log_info = "Using 'qcodes.dataset.do0d'"
 
     measured_parameters = tuple(
         param for param in param_meas if isinstance(param, _BaseParameter)
@@ -247,7 +247,7 @@ def do1d(
     if log_info is not None:
         meas._extra_log_info = log_info
     else:
-        meas._extra_log_info = "Using 'qcodes.utils.dataset.doNd.do1d'"
+        meas._extra_log_info = "Using 'qcodes.dataset.do1d'"
 
     all_setpoint_params = (param_set,) + tuple(s for s in additional_setpoints)
 
@@ -396,7 +396,7 @@ def do2d(
     if log_info is not None:
         meas._extra_log_info = log_info
     else:
-        meas._extra_log_info = "Using 'qcodes.utils.dataset.doNd.do2d'"
+        meas._extra_log_info = "Using 'qcodes.dataset.do2d'"
     all_setpoint_params = (
         param_set1,
         param_set2,
@@ -938,7 +938,7 @@ def _create_measurements(
     if log_info is not None:
         _extra_log_info = log_info
     else:
-        _extra_log_info = "Using 'qcodes.utils.dataset.doNd.dond'"
+        _extra_log_info = "Using 'qcodes.dataset.dond'"
     for group in grouped_parameters.values():
         meas_name = group["meas_name"]
         meas_params = group["params"]
