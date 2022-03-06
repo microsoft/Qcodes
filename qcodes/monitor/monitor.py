@@ -139,7 +139,7 @@ def _handler(
     parameters: Sequence[Parameter],
     interval: float,
     use_root_instrument: bool = True,
-    parameters_metadata: Dict[Union[Parameter, str], dict]
+    parameters_metadata: Dict[Union[Parameter, str], dict] = {}
 ) -> Callable[["WebSocketServerProtocol", str], Awaitable[None]]:
     """
     Return the websockets server handler.
