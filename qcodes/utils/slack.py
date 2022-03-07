@@ -56,11 +56,6 @@ from requests.exceptions import ConnectTimeout, HTTPError, ReadTimeout
 from requests.packages.urllib3.exceptions import ReadTimeoutError
 from slack_sdk import WebClient
 
-from qcodes import config as qc_config
-from qcodes.instrument.parameter import _BaseParameter
-from qcodes.loops import active_data_set, active_loop
-from qcodes.plots.base import BasePlot
-
 
 class SlackTimeoutWarning(UserWarning):
     pass
@@ -123,6 +118,7 @@ class Slack(threading.Thread):
             auto_start (bool): Defaults to True.
 
         """
+        from qcodes import config as qc_config
         if config is not None:
             self.config = config
         else:
@@ -328,6 +324,7 @@ class Slack(threading.Thread):
         Performs commands depending on messages.
         This includes adding tasks to be performed during each update.
         """
+        from qcodes.instrument.parameter import _BaseParameter
         for user, user_messages in messages.items():
             for message in user_messages:
                 if message.get('user', None) != self.users[user]['id']:
@@ -409,6 +406,8 @@ class Slack(threading.Thread):
         Returns:
             None.
         """
+        from qcodes.plots.base import BasePlot
+
         # Create temporary filename
         temp_filename = tempfile.mktemp(suffix='.jpg')
         # Retrieve latest plot
@@ -436,6 +435,7 @@ class Slack(threading.Thread):
         Returns:
             None.
         """
+        from qcodes.loops import active_data_set
         dataset = active_data_set()
         if dataset is not None:
             self.slack.chat_postMessage(
@@ -459,6 +459,7 @@ class Slack(threading.Thread):
         Returns:
             bool: True if measurement is finished, False otherwise.
         """
+        from qcodes.loops import active_loop
         if active_loop() is None:
             self.slack.chat_postMessage(
                 text='Measurement complete',

@@ -1,10 +1,9 @@
 """This module contains helper scripts to make certain installation tasks
 easier."""
 
+import json
 import os
 import sys
-import json
-from qcodes.station import SCHEMA_PATH, STATION_YAML_EXT, update_config_schema
 
 
 def register_station_schema_with_vscode() -> None:
@@ -26,6 +25,7 @@ def register_station_schema_with_vscode() -> None:
 
     For more information consult `qcodes/docs/examples/Station.ipynb`.
     """
+    from qcodes.station import SCHEMA_PATH, STATION_YAML_EXT, update_config_schema
     if sys.platform != 'win32':
         raise RuntimeError(
             'This script is only supported on Windows platforms.\n '
