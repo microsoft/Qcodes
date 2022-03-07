@@ -97,5 +97,5 @@ xarray~=2022.3.0; python_version>='3.8'
 zipp~=3.7.0
 # not strict requirements but needed for the legacy pyqtgraph based plotting
 PyQt5<5.16
-pyqtgraph~=0.12.3
+pyqtgraph~=0.12.4
 QtPy==2.0.1
