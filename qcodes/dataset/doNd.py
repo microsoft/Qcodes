@@ -224,12 +224,12 @@ def do1d(
             value of 'results' is used for the dataset.
         exp: The experiment to use for this measurement.
         do_plot: should png and pdf versions of the images be saved after the
-            run. If None the setting will be read from ``qcodesrc.json`
+            run. If None the setting will be read from ``qcodesrc.json``
         use_threads: If True measurements from each instrument will be done on
             separate threads. If you are measuring from several instruments
             this may give a significant speedup.
         show_progress: should a progress bar be displayed during the
-            measurement. If None the setting will be read from ``qcodesrc.json`
+            measurement. If None the setting will be read from ``qcodesrc.json``
         log_info: Message that is logged during the measurement. If None a default
             message is used.
         break_condition: Callable that takes no arguments. If returned True,
@@ -377,7 +377,7 @@ def do2d(
             separate threads. If you are measuring from several instruments
             this may give a significant speedup.
         show_progress: should a progress bar be displayed during the
-            measurement. If None the setting will be read from ``qcodesrc.json`
+            measurement. If None the setting will be read from ``qcodesrc.json``
         log_info: Message that is logged during the measurement. If None a default
             message is used.
         break_condition: Callable that takes no arguments. If returned True,
@@ -722,7 +722,7 @@ def dond(
             are shown after the run. If None the setting will be read from
             ``qcodesrc.json``
         show_progress: should a progress bar be displayed during the
-            measurement. If None the setting will be read from ``qcodesrc.json`
+            measurement. If None the setting will be read from ``qcodesrc.json``
         use_threads: If True, measurements from each instrument will be done on
             separate threads. If you are measuring from several instruments
             this may give a significant speedup.
