@@ -1,5 +1,0 @@
-Update the Keysight Infiniium oscilloscope driver to use ParameterWithSetpoints and also make the driver
-work without needing to run prepare_curvedata before measurement. Measurement subsystem is updated to be
-channel aware so it is possible to run measurements on multiple channels in a single qcodes measurement.
-For multiple traces, added the option to control automatic sweeping, similar to the N52xx driver. We can
-now take data from multiple channels with a single digitize.
