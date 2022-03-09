@@ -1,3 +1,0 @@
-Loading a 2 or higher dimentional qcodes dataset back from a netcdf file has been corrected to
-show the dataset in the correct shape.
-QCoDeS dataset are now always written to netcdf files from the cache with the same order of axis as in memory.

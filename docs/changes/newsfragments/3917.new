@@ -1,3 +1,0 @@
-A new set of validators ``MultiTypeAnd`` and ``MultiTypeOr`` that allows combination of
-other validators with And and Or were added. For backwards compatibility the existing
-``MultiType`` validator takes a ``combiner`` argument defaulting to Or.

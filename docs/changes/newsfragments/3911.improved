@@ -1,2 +1,0 @@
-``ChannelTuple`` now has a repr that correctly identifies it as a ``ChannelTuple``
-and not a ``ChannelList``

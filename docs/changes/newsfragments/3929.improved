@@ -1,4 +1,0 @@
-``Parameter.unit`` is now a settable property rather than an attribute.
-This should have few implications for user facing code but makes it possible
-to do the same in a parameter subclass implementing validation or other functionality
-as needed.
