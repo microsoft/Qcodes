@@ -49,7 +49,6 @@ module = [
     "qcodes.instrument_drivers.Keysight.keysightb1500.message_builder.*",
     "qcodes.instrument_drivers.oxford.mercuryiPS",
     "qcodes.instrument_drivers.test",
-    "qcodes.instrument_drivers.ZI.*",
     "qcodes.loops",
     "qcodes.math_utils.*",
     "qcodes.measure",
