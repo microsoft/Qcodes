@@ -305,8 +305,8 @@ class TestDataArray(TestCase):
         xarray_dataarray = da.to_xarray()
         da_transformed = DataArray.from_xarray(xarray_dataarray)
 
-        for key in ["name", "unit", "label"]:
-            self.assertEqual(da.name, da_transformed.name)
+        for key in ["array_id", "unit", "label"]:
+            self.assertEqual(getattr(da, key), getattr(da_transformed, key))
 
 
 class TestLoadData(TestCase):
@@ -653,5 +653,5 @@ class TestDataSet(TestCase):
         qdt = DataSet.from_xarray(ds)
 
         self.assertEqual(qd.x_set.label, qdt.x_set.label)
-        self.assertEqual(qd.x_set.units, qdt.x_set.units)
+        self.assertEqual(qd.x_set.unit, qdt.x_set.unit)
         self.assertEqual([a.name for a in qdt.z.set_arrays], ["y_set", "x_set"])
