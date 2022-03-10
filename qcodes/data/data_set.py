@@ -784,7 +784,15 @@ def xarray_dictionary_to_dataset(
 
     grid_coords: List[Any] = []
     set_array_names = []
-    for array_key, coord_dictionary in xarray_dictionary["coords"].items():
+
+    coordinate_names = list(xarray_dictionary["data_vars"].values())[0]["dims"]
+
+    assert set(coordinate_names) == set(
+        xarray_dictionary["coords"]
+    ), "convertion to qcodes format requires all coordinates to match data variable coordinates"
+
+    for array_key in coordinate_names:
+        coord_dictionary = xarray_dictionary["coords"][array_key]
         preset_data = np.array(coord_dictionary["data"])
 
         tiled_preset_data = np.tile(preset_data, [g.size for g in grid_coords] + [1])
