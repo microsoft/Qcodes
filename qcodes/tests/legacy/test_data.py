@@ -1,23 +1,33 @@
-from unittest import TestCase
-import numpy as np
+import logging
 import os
 import pickle
-import logging
+from unittest import TestCase
+
+import numpy as np
 import pandas as pd
 import xarray as xr
 
-from qcodes.data.location import FormatLocation
 from qcodes.data.data_array import DataArray, data_array_to_xarray_dictionary
+from qcodes.data.data_set import (
+    DataSet,
+    load_data,
+    new_data,
+    qcodes_dataset_to_xarray_dataset,
+    xarray_dataset_to_qcodes_dataset,
+)
 from qcodes.data.io import DiskIO
-from qcodes.data.data_set import load_data, new_data, DataSet, qcodes_dataset_to_xarray_dataset,\
-    xarray_dataset_to_qcodes_dataset
+from qcodes.data.location import FormatLocation
 from qcodes.logger.logger import LogCapture
 
-from .data_mocks import (MockFormatter, MatchIO,
-                         DataSet2D, DataSet1D,
-                         DataSetCombined, RecordingMockFormatter)
-
 from ..common import strip_qc
+from .data_mocks import (
+    DataSet1D,
+    DataSet2D,
+    DataSetCombined,
+    MatchIO,
+    MockFormatter,
+    RecordingMockFormatter,
+)
 
 
 class TestDataArray(TestCase):
@@ -634,3 +644,14 @@ class TestDataSet(TestCase):
         self.assertEqual(list(xarray_dataset.coords.keys()), list(xarray_dataset2.coords.keys()))
         self.assertEqual(list(xarray_dataset.data_vars.keys()), list(xarray_dataset2.data_vars.keys()))
         self.assertEqual(xarray_dataset.tmin.shape, xarray_dataset2.tmin.shape)
+
+    def test_dataset_conversion_transpose_regression(self):
+        qd = DataSet2D(name="test")
+        qd.x_set.label = "X label"
+        qd.x_set.unit = "seconds"
+        ds = qd.to_xarray().transpose()
+        qdt = DataSet.from_xarray(ds)
+
+        self.assertEqual(qd.x_set.label, qdt.x_set.label)
+        self.assertEqual(qd.x_set.units, qdt.x_set.units)
+        self.assertEqual([a.name for a in qdt.z.set_arrays], ["y_set", "x_set"])
