@@ -575,7 +575,7 @@ def data_array_to_xarray_dictionary(data_array: DataArray) -> Dict[str, Any]:
     """
     key_mapping = {"unit": "units", "name": "name", "label": "long_name"}
 
-    data_dictionary = {}
+    data_dictionary: Dict[str, Any] = {}
     data_dictionary["attrs"] = {
         target_key: getattr(data_array, key) for key, target_key in key_mapping.items()
     }
