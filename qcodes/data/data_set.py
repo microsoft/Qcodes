@@ -787,9 +787,10 @@ def xarray_dictionary_to_dataset(
 
     coordinate_names = list(xarray_dictionary["data_vars"].values())[0]["dims"]
 
-    assert set(coordinate_names) == set(
-        xarray_dictionary["coords"]
-    ), "conversion to qcodes requires all coordinates to match data variable coordinates"
+    assert set(coordinate_names) == set(xarray_dictionary["coords"]), (
+        "conversion to qcodes requires all coordinates"
+        + " to match data variable coordinates"
+    )
 
     for array_key in coordinate_names:
         coord_dictionary = xarray_dictionary["coords"][array_key]
