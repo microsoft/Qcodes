@@ -38,6 +38,7 @@ no_implicit_optional = true
 plugins = "numpy.typing.mypy_plugin"
 disallow_untyped_defs = true
 show_error_codes = true
+enable_error_code = "ignore-without-code"
 
 [[tool.mypy.overrides]]
 module = [
