@@ -33,7 +33,7 @@ PyYAML==6.0
 requests==2.27.1
 six==1.16.0
 sortedcontainers==2.4.0
-Sphinx==4.3.2
+Sphinx==4.4.0
 stringparser==0.5
 toml==0.10.2
 typed-ast==1.4.3; python_version<'3.8'
