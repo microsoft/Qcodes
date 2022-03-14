@@ -2,7 +2,7 @@
 requires = [
     "setuptools >= 56.0",
     "wheel >= 0.29.0",
-    "versioningit ~= 0.3.0",
+    "versioningit ~= 1.1.0",
 ]
 build-backend = 'setuptools.build_meta'
 
@@ -118,3 +118,7 @@ distance-dirty = "{version}.dev{distance}+{branch}.{vcs}{rev}.dirty"
 [tool.versioningit.vcs]
 method = "git"
 match = ["v*"]
+
+[tool.versioningit.onbuild]
+source-file = "qcodes/_version.py"
+build-file = "qcodes/_version.py"
