@@ -118,3 +118,7 @@ distance-dirty = "{version}.dev{distance}+{branch}.{vcs}{rev}.dirty"
 [tool.versioningit.vcs]
 method = "git"
 match = ["v*"]
+
+[tool.versioningit.onbuild]
+source-file = "qcodes/_version.py"
+build-file = "qcodes/_version.py"
