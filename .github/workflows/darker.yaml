@@ -14,4 +14,3 @@ jobs:
           options: "--check --diff"
           src: "./qcodes"
           revision: "origin/master..."
-          version: "1.4.1"
