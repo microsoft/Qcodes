@@ -193,7 +193,11 @@ def test_instantiation_from_badly_typed_argument(
 
 
 @given(set_target=random_coordinates["cartesian"])
-@settings(max_examples=10, suppress_health_check=(HealthCheck.function_scoped_fixture,))
+@settings(
+    max_examples=10,
+    suppress_health_check=(HealthCheck.function_scoped_fixture,),
+    deadline=None,
+)
 def test_cartesian_sanity(current_driver, set_target):
     """
     A sanity check to see if the driver remember vectors in any random
@@ -212,7 +216,11 @@ def test_cartesian_sanity(current_driver, set_target):
 
 
 @given(set_target=random_coordinates["spherical"])
-@settings(max_examples=10, suppress_health_check=(HealthCheck.function_scoped_fixture,))
+@settings(
+    max_examples=10,
+    suppress_health_check=(HealthCheck.function_scoped_fixture,),
+    deadline=None,
+)
 def test_spherical_sanity(current_driver, set_target):
     """
     A sanity check to see if the driver remember vectors in any random
@@ -231,7 +239,11 @@ def test_spherical_sanity(current_driver, set_target):
 
 
 @given(set_target=random_coordinates["cylindrical"])
-@settings(max_examples=10, suppress_health_check=(HealthCheck.function_scoped_fixture,))
+@settings(
+    max_examples=10,
+    suppress_health_check=(HealthCheck.function_scoped_fixture,),
+    deadline=None,
+)
 def test_cylindrical_sanity(current_driver, set_target):
     """
     A sanity check to see if the driver remember vectors in any random
@@ -250,7 +262,11 @@ def test_cylindrical_sanity(current_driver, set_target):
 
 
 @given(set_target=random_coordinates["cartesian"])
-@settings(max_examples=10, suppress_health_check=(HealthCheck.function_scoped_fixture,))
+@settings(
+    max_examples=10,
+    suppress_health_check=(HealthCheck.function_scoped_fixture,),
+    deadline=None,
+)
 def test_cartesian_setpoints(current_driver, set_target):
     """
     Check that the individual x, y, z instruments are getting the set
@@ -271,7 +287,11 @@ def test_cartesian_setpoints(current_driver, set_target):
 
 
 @given(set_target=random_coordinates["spherical"])
-@settings(max_examples=10, suppress_health_check=(HealthCheck.function_scoped_fixture,))
+@settings(
+    max_examples=10,
+    suppress_health_check=(HealthCheck.function_scoped_fixture,),
+    deadline=None,
+)
 def test_spherical_setpoints(current_driver, set_target):
     """
     Check that the individual x, y, z instruments are getting the set
@@ -293,8 +313,11 @@ def test_spherical_setpoints(current_driver, set_target):
 
 
 @given(set_target=random_coordinates["cylindrical"])
-@settings(max_examples=10, deadline=500,
-          suppress_health_check=(HealthCheck.function_scoped_fixture,))
+@settings(
+    max_examples=10,
+    deadline=500,
+    suppress_health_check=(HealthCheck.function_scoped_fixture,),
+)
 def test_cylindrical_setpoints(current_driver, set_target):
     """
     Check that the individual x, y, z instruments are getting the set
@@ -1145,6 +1168,7 @@ def test_change_field_units_parameter(ami430, new_value, unit_string):
            > coil_constant_timestamp
 
     ami430.field_units("tesla")
+
 
 def test_switch_heater_enabled(ami430):
     assert ami430.switch_heater.enabled() is False
