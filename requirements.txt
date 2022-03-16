@@ -33,14 +33,14 @@ jupyter-client~=7.1.2
 jupyter-core~=4.9.2
 jupyterlab-pygments~=0.1.2
 kiwisolver~=1.4.0
-MarkupSafe~=2.1.0
+MarkupSafe~=2.1.1
 matplotlib~=3.5.1
 mistune~=0.8.4
 nbclient~=0.5.13
 nbconvert~=6.4.4
 nbformat~=5.2.0
 nest-asyncio~=1.5.4
-notebook~=6.4.9
+notebook~=6.4.10
 numpy~=1.21.5; python_version<'3.8'
 numpy~=1.22.3; python_version>='3.8'
 opencensus~=0.8.0
