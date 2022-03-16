@@ -25,7 +25,7 @@ ipykernel~=6.9.2
 ipython~=8.1.1; python_version>='3.8'
 ipython~=7.31.0; python_version<'3.8'
 ipython-genutils~=0.2.0
-ipywidgets~=7.6.5
+ipywidgets~=7.7.0
 jedi~=0.18.1
 Jinja2~=3.0.3
 jsonschema~=4.4.0
@@ -89,7 +89,7 @@ urllib3~=1.26.8
 wcwidth~=0.2.5
 webencodings~=0.5.1
 websockets~=10.2
-widgetsnbextension~=3.5.2
+widgetsnbextension~=3.6.0
 wincertstore~=0.2
 wrapt~=1.14.0
 xarray~=0.20.2; python_version<'3.8'
