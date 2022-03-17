@@ -51,7 +51,7 @@ types-six
 types-tabulate
 types-toml
 types-typed-ast
-urllib3==1.26.8
+urllib3==1.26.9
 wincertstore==0.2
 wrapt==1.14.0
 zipp==3.7.0
