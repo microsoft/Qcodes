@@ -21,7 +21,7 @@ h5netcdf~=0.15.0
 h5py~=3.6.0
 idna~=3.3
 importlib-metadata==4.8.1; python_version<'3.8'
-ipykernel~=6.9.2
+ipykernel~=6.10.0
 ipython~=8.2.0; python_version>='3.8'
 ipython~=7.31.0; python_version<'3.8'
 ipython-genutils~=0.2.0
@@ -32,7 +32,7 @@ jsonschema~=4.4.0
 jupyter-client~=7.1.2
 jupyter-core~=4.9.2
 jupyterlab-pygments~=0.1.2
-kiwisolver~=1.4.1
+kiwisolver~=1.4.2
 MarkupSafe~=2.1.1
 matplotlib~=3.5.1
 mistune~=0.8.4
