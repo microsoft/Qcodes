@@ -77,7 +77,6 @@ class SR86xBuffer(InstrumentChannel):
 
     def __init__(self, parent: 'SR86x', name: str) -> None:
         super().__init__(parent, name)
-        self._parent = parent
 
         self.add_parameter(
             "capture_length_in_kb",
