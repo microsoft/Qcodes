@@ -4,6 +4,7 @@ import logging
 import time
 import warnings
 import weakref
+from abc import ABCMeta
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -489,7 +490,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 p.validate(value)
 
 
-class InstrumentMeta(type):
+class InstrumentMeta(ABCMeta):
     """
     Metaclass used to customize Instrument creation. We want to register the
     instance iff __init__ successfully runs, however we can only do this if
@@ -504,6 +505,13 @@ class InstrumentMeta(type):
     which we will overload to insert our own custom code AFTER `__init__` is
     complete. Note this is part of the spec and will work in alternate python
     implementations like pypy too.
+
+    We inherit from ABCMeta rather than type for backwards compatibility
+    reasons. There may be instrument interfaces that are defined in
+    terms of an ABC. Inheriting directly from type here would then give
+    `TypeError: metaclass conflict: the metaclass of a derived class must
+    be a (non-strict) subclass of the metaclasses of all its bases`
+    for a class that inherits from ABC
     """
 
     def __call__(cls, *args: Any, **kwargs: Any) -> Any:
