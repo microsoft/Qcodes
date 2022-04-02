@@ -10,6 +10,7 @@ from datetime import datetime
 
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
+from qcodes.utils.dataset.doNd import AbstractSweep
 from qcodes.station import Station
 from qcodes.instrument.base import InstrumentBase
 from qcodes.instrument.sweep_values import SweepValues
@@ -37,6 +38,7 @@ class DatasetHandler:
         # Values:
         # - parameter
         # - dataset_parameter (differs from 'parameter' when multiple share same name)
+        # - latest_value  # TODO
         self.setpoint_list = dict()
 
         self.measurement_list = dict()
@@ -45,6 +47,7 @@ class DatasetHandler:
         # - setpoint_parameters
         # - shape
         # - unstored_results - list where each element contains (*setpoints, measurement_value)
+        # - latest_value  # TODO
 
     def initialize(self):
         # Once initialized, no new parameters can be added
@@ -137,8 +140,11 @@ class DatasetHandler:
                 "parameter or name"
             )
 
+        assert parameter is not None
+
         # Get parameter data array, creating a new one if necessary
         # TODO Need to handle when a parameter is not being passed
+        # TODO Make sure name, label, unit would overwrite parameter
         if action_indices not in self.measurement_list:
             assert not self.initialized, "Cannot measure parameter for the first time after initializing dataset"
 
@@ -149,53 +155,22 @@ class DatasetHandler:
                 'unstored_results': []
             }
 
-        # Select existing array
-        data_array = self.data_arrays[action_indices]
+        measurement_info = self.measurement_list[action_indices]
 
-        # Ensure an existing data array has the correct name
-        # parameter can also be a string, in which case we don't use parameter.name
-        if name is None:
-            name = parameter.name
+        # TODO add check that parameter (or name) matches that of measurement_info
 
-        # TODO is this the right place for this check?
-        if not data_array.name == name:
-            raise SyntaxError(
-                f"Existing DataArray '{data_array.name}' differs from result {name}"
+        # Store result
+        setpoints = None  # TODO
+        result_with_setpoints = tuple(zip(parameters, (*setpoints, result)))
+        if self.initialized:
+            parameters = (
+                *measurement_info['setpoint_parameters'], 
+                measurement_info['dataset_parameter']
             )
-
-        data_to_store = {data_array.array_id: result}
-
-        # If result is an array, update set_array elements
-        if isinstance(result, list):  # Convert result list to array
-            result = np.ndarray(result)
-        if isinstance(result, np.ndarray):
-            ndim = len(self.loop_indices)
-            if len(data_array.set_arrays) != ndim + result.ndim:
-                raise RuntimeError(
-                    f"Wrong number of set arrays for {data_array.name}. "
-                    f"Expected {ndim + result.ndim} instead of "
-                    f"{len(data_array.set_arrays)}."
-                )
-
-            for k, set_array in enumerate(data_array.set_arrays[ndim:]):
-                # Successive set arrays must increase dimensionality by unity
-                arr = np.arange(result.shape[k])
-                if parameter is not None and hasattr(parameter, 'setpoints') \
-                        and parameter.setpoints is not None:
-                    arr_idx = parameter.names.index(name)
-                    arr = parameter.setpoints[arr_idx][k]
-
-                # Add singleton dimensions
-                arr = np.broadcast_to(arr, result.shape[: k + 1])
-                data_to_store[set_array.array_id] = arr
-
-        # Use dummy index if there are no loop indices.
-        # This happens if the measurement is performed outside a Sweep
-        loop_indices = self.loop_indices
-        if not loop_indices and not isinstance(result, (list, np.ndarray)):
-            loop_indices = (0,)
-
-        return data_to_store
+            
+            self.dataset.add_result(result_with_setpoints)
+        else:
+            measurement_info['unstored_results'].append(result_with_setpoints)
     
 
 class DataHandler:
@@ -600,6 +575,20 @@ class MeasurementLoop:
     @property
     def active_action_name(self):
         return self.action_names.get(self.action_indices, None)
+
+    @property
+    def setpoint_list(self):
+        if self.data_handler is not None:
+            return self.data_handler.setpoint_list
+        else:
+            return None
+
+    @property
+    def measurement_list(self):
+        if self.data_handler is not None:
+            return self.data_handler.measurement_list
+        else:
+            return None
 
     def __enter__(self):
         """Operation when entering a loop"""
@@ -1353,7 +1342,6 @@ def running_measurement() -> MeasurementLoop:
     return MeasurementLoop.running_measurement
 
 
-# TODO Any mention of set array should be changed
 class Sweep:
     """Sweep over an iterable inside a Measurement
 
@@ -1378,7 +1366,7 @@ class Sweep:
             for param_val in Sweep(p.
         ```
     """
-    def __init__(self, sequence, name=None, unit=None, reverse=False, restore=False):
+    def __init__(self, sequence, name=None, label=None, unit=None, reverse=False, restore=False):
         if running_measurement() is None:
             raise RuntimeError("Cannot create a sweep outside a Measurement")
 
@@ -1387,6 +1375,7 @@ class Sweep:
 
         # Properties for the data array
         self.name = name
+        self.label = label
         self.unit = unit
 
         self.sequence = sequence
@@ -1396,11 +1385,10 @@ class Sweep:
         self.reverse = reverse
         self.restore = restore
 
+        # Create setpoint_list
+        self.initialize()
         msmt = running_measurement()
-        if msmt.action_indices in msmt.set_arrays:
-            self.set_array = msmt.set_arrays[msmt.action_indices]
-        else:
-            self.set_array = self.create_set_array()
+        self.setpoint_info = msmt.setpoint_list[msmt.action_indices]
 
     def __iter__(self):
         if threading.current_thread() is not MeasurementLoop.measurement_thread:
@@ -1423,7 +1411,6 @@ class Sweep:
         running_measurement().loop_shape += (len(self.sequence),)
         running_measurement().loop_indices += (self.loop_index,)
         running_measurement().action_indices += (0,)
-
 
         return self
 
@@ -1465,30 +1452,39 @@ class Sweep:
         if isinstance(self.sequence, SweepValues):
             self.sequence.set(sweep_value)
 
-        self.set_array[msmt.loop_indices] = sweep_value
+        self.setpoint_info['latest_value'] = sweep_value
 
         self.loop_index += 1 if not self.reverse else -1
 
         return sweep_value
 
+    def initialize(self):
+        msmt = running_measurement()
+        assert msmt.action_indices not in msmt.setpoint_list, f"Setpoint {self.name} already initialized"
+
+        # Determine sweep parameter
+        if isinstance(self.sequence, AbstractSweep) and hasattr(self.sequence, '_param'):
+            # sweep is a doNd sweep that already has a parameter
+            set_parameter = self.sequence._param
+        else:
+            # Need to create a parameter
+            set_parameter = Parameter(
+                name=self.name,
+                label=self.label,
+                unit=self.unit
+            )
+
+        setpoint_info = {
+            'parameter': set_parameter,
+            'latest_value': None
+        }
+
+        # Add to setpoint list
+        msmt.setpoint_list[msmt.action_indices] = setpoint_info
+
+        return setpoint_info
+
     def exit_sweep(self):
         msmt = running_measurement()
         msmt.step_out(reduce_dimension=True)
         raise StopIteration
-
-    def create_set_array(self):
-        if isinstance(self.sequence, SweepValues):
-            return running_measurement()._create_data_array(
-                action_indices=running_measurement().action_indices,
-                result=self.sequence,
-                parameter=self.sequence.parameter,
-                is_setpoint=True,
-            )
-        else:
-            return running_measurement()._create_data_array(
-                action_indices=running_measurement().action_indices,
-                result=self.sequence,
-                name=self.name or "iterator",
-                unit=self.unit,
-                is_setpoint=True,
-            )
