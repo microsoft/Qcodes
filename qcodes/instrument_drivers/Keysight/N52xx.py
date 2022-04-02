@@ -87,7 +87,7 @@ class FormattedSweep(ParameterWithSetpoints):
             raise RuntimeError(
                 "Cannot return setpoints if not attached " "to instrument"
             )
-        root_instrument: "PNABase" = self.root_instrument  # type: ignore
+        root_instrument: "PNABase" = self.root_instrument  # type: ignore[assignment]
         sweep_type = root_instrument.sweep_type()
         if sweep_type == "LIN":
             return (root_instrument.frequency_axis,)

@@ -94,7 +94,7 @@ def guids_from_list_str(s: str) -> Optional[Tuple[str, ...]]:
     if not hasattr(parsed_expression, 'body'):
         return None
 
-    parsed = cast(ast.Expression, parsed_expression).body
+    parsed = parsed_expression.body
 
     if isinstance(parsed, ast.Str):
         if len(parsed.s) > 0:

@@ -4,7 +4,7 @@ import logging
 import time
 import warnings
 import weakref
-from abc import ABC, ABCMeta, abstractmethod
+from abc import ABCMeta
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -21,6 +21,7 @@ from typing import (
 )
 
 import numpy as np
+from typing_extensions import Protocol
 
 from qcodes.logger.instrument_logger import get_instrument_logger
 from qcodes.utils.helpers import DelegateAttributes, full_class, strip_attrs
@@ -489,7 +490,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 p.validate(value)
 
 
-class AbstractInstrumentMeta(ABCMeta):
+class InstrumentMeta(ABCMeta):
     """
     Metaclass used to customize Instrument creation. We want to register the
     instance iff __init__ successfully runs, however we can only do this if
@@ -505,8 +506,12 @@ class AbstractInstrumentMeta(ABCMeta):
     complete. Note this is part of the spec and will work in alternate python
     implementations like pypy too.
 
-    Note: Because we want AbstractInstrument to subclass ABC, we subclass
-    `ABCMeta` instead of `type`.
+    We inherit from ABCMeta rather than type for backwards compatibility
+    reasons. There may be instrument interfaces that are defined in
+    terms of an ABC. Inheriting directly from type here would then give
+    `TypeError: metaclass conflict: the metaclass of a derived class must
+    be a (non-strict) subclass of the metaclasses of all its bases`
+    for a class that inherits from ABC
     """
 
     def __call__(cls, *args: Any, **kwargs: Any) -> Any:
@@ -527,19 +532,22 @@ class AbstractInstrumentMeta(ABCMeta):
         return new_inst
 
 
-class AbstractInstrument(ABC, metaclass=AbstractInstrumentMeta):
-    """ABC that is useful for defining mixin classes for Instrument class"""
-    log: 'InstrumentLoggerAdapter'  # instrument logging
+class InstrumentProtocol(Protocol):
+    """Protocol that is useful for defining mixin classes for Instrument class"""
 
-    @abstractmethod
+    log: "InstrumentLoggerAdapter"  # instrument logging
+
     def ask(self, cmd: str) -> str:
-        pass
+        ...
+
+    def write(self, cmd: str) -> None:
+        ...
 
 
 T = TypeVar("T", bound="Instrument")
 
 
-class Instrument(InstrumentBase, AbstractInstrument):
+class Instrument(InstrumentBase, metaclass=InstrumentMeta):
 
     """
     Base class for all QCodes instruments.
