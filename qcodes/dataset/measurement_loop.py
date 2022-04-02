@@ -1,4 +1,6 @@
+from enum import unique
 import numpy as np
+from collections import Counter
 from typing import List, Tuple, Union, Sequence, Dict, Any, Callable, Iterable
 import threading
 from time import sleep, perf_counter
@@ -6,10 +8,12 @@ import traceback
 import logging
 from datetime import datetime
 
+from qcodes.dataset.measurements import Measurement
+from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
 from qcodes.station import Station
 from qcodes.instrument.base import InstrumentBase
 from qcodes.instrument.sweep_values import SweepValues
-from qcodes.instrument.parameter import Parameter, MultiParameter
+from qcodes.instrument.parameter import DelegateParameter, Parameter, MultiParameter
 from qcodes.utils.helpers import (
     using_ipython,
     directly_executed_from_cell,
@@ -21,10 +25,191 @@ from qcodes import config as qcodes_config
 RAW_VALUE_TYPES = (float, int, bool, np.ndarray, np.integer, np.floating, np.bool_, type(None))
 
 
+class DatasetHandler:
+    """Handler for a single DataSet (with Measurement and Runner)"""
+    def __init__(self):
+        self.initialized = False
+        self.dataset = None
+        self.runner = None
+        self.measurement = None
+
+        # Key: action_index
+        # Values:
+        # - parameter
+        # - dataset_parameter (differs from 'parameter' when multiple share same name)
+        self.setpoint_list = dict()
+
+        self.measurement_list = dict()
+        # Dict with key being action_index and value is a dict containing
+        # - parameter
+        # - setpoint_parameters
+        # - shape
+        # - unstored_results - list where each element contains (*setpoints, measurement_value)
+
+    def initialize(self):
+        # Once initialized, no new parameters can be added
+        assert not self.initialized, "Cannot initialize twice"
+
+        self.measurement = Measurement()
+
+        # Register all setpoints parameters
+        self._create_unique_dataset_parameters(self.setpoint_list)
+        for setpoint_info in self.setpoint_list.values():
+            self.measurement.register_parameter(setpoint_info['dataset_parameter'])
+            
+        # Register all measurement parameters
+        self._create_unique_dataset_parameters(self.measurement_list)
+        for measurement_info in self.measurement_list.values():
+            self.measurement.register_parameter(
+                measurement_info['dataset_parameter'],
+                setpoints=measurement_info['setpoint_parameters']
+            )
+            self.measurement.set_shapes(
+                detect_shape_of_measurement(
+                    (measurement_info['dataset_parameter'],), 
+                    measurement_info['shape']
+                )
+            )
+
+        # Create measurement Runner
+        self.runner = self.measurement.run()
+
+        # Create measurement Dataset
+        self.dataset = self.runner.__enter__()
+
+        # Add results that were taken before initializing dataset
+        for measurement_info in self.measurement_list.values():
+            for unstored_result in measurement_info['unstored_results']:
+                parameters = *measurement_info['setpoint_parameters'], measurement_info['dataset_parameter']
+                result = tuple(zip(parameters, unstored_result))
+                self.dataset.add_result(result)
+
+        self.initialized = True
+
+    def _create_unique_dataset_parameters(self, parameter_list):
+        """Populates 'dataset_parameter' of parameter_list
+        
+        Ensure parameters have unique names
+        """
+        parameter_names = [param_info['parameter'].name for param_info in parameter_list]
+        duplicate_names = [name for name, count in Counter(parameter_names) if count > 1]
+        unique_names = [name for name, count in Counter(parameter_names) if count == 1]
+
+        for name in unique_names:
+            parameter_info = next(
+                param_info for param_info in parameter_list 
+                if param_info['parameter'].name == name
+            )
+            parameter_info['dataset_parameter'] = parameter_info['parameter']
+
+        for name in duplicate_names:
+            # Need to rename parameters with duplicate names
+            duplicate_parameter_info_list = [
+                param_info for param_info in parameter_list 
+                if param_info['parameter'].name == name
+            ]
+            for k, parameter_info in duplicate_parameter_info_list:
+                # Create delegate parameter
+                delegate_parameter = DelegateParameter(
+                    name=f"{parameter_info['parameter'].name}_{k}",
+                    source=parameter_info['parameter']
+                )
+                parameter_info['dataset_parameter'] = delegate_parameter
+
+
+    def add_measurement_result(
+        self, 
+        action_indices, 
+        result, 
+        parameter=None,
+        name: str = None,
+        label: str = None,
+        unit: str = None,
+        ):
+        """Store single measurement result
+
+        This method is called from type-specific methods, such as
+        ``_measure_value``, ``_measure_parameter``, etc.
+        """
+        if parameter is None and name is None:
+            raise SyntaxError(
+                "When adding a measurement result, must provide either a "
+                "parameter or name"
+            )
+
+        # Get parameter data array, creating a new one if necessary
+        # TODO Need to handle when a parameter is not being passed
+        if action_indices not in self.measurement_list:
+            assert not self.initialized, "Cannot measure parameter for the first time after initializing dataset"
+
+            self.measurement_list[action_indices] = {
+                'parameter': parameter,
+                'setpoint_parameters': None,  # TODO
+                'shape': None, # TODO
+                'unstored_results': []
+            }
+
+        # Select existing array
+        data_array = self.data_arrays[action_indices]
+
+        # Ensure an existing data array has the correct name
+        # parameter can also be a string, in which case we don't use parameter.name
+        if name is None:
+            name = parameter.name
+
+        # TODO is this the right place for this check?
+        if not data_array.name == name:
+            raise SyntaxError(
+                f"Existing DataArray '{data_array.name}' differs from result {name}"
+            )
+
+        data_to_store = {data_array.array_id: result}
+
+        # If result is an array, update set_array elements
+        if isinstance(result, list):  # Convert result list to array
+            result = np.ndarray(result)
+        if isinstance(result, np.ndarray):
+            ndim = len(self.loop_indices)
+            if len(data_array.set_arrays) != ndim + result.ndim:
+                raise RuntimeError(
+                    f"Wrong number of set arrays for {data_array.name}. "
+                    f"Expected {ndim + result.ndim} instead of "
+                    f"{len(data_array.set_arrays)}."
+                )
+
+            for k, set_array in enumerate(data_array.set_arrays[ndim:]):
+                # Successive set arrays must increase dimensionality by unity
+                arr = np.arange(result.shape[k])
+                if parameter is not None and hasattr(parameter, 'setpoints') \
+                        and parameter.setpoints is not None:
+                    arr_idx = parameter.names.index(name)
+                    arr = parameter.setpoints[arr_idx][k]
+
+                # Add singleton dimensions
+                arr = np.broadcast_to(arr, result.shape[: k + 1])
+                data_to_store[set_array.array_id] = arr
+
+        # Use dummy index if there are no loop indices.
+        # This happens if the measurement is performed outside a Sweep
+        loop_indices = self.loop_indices
+        if not loop_indices and not isinstance(result, (list, np.ndarray)):
+            loop_indices = (0,)
+
+        return data_to_store
+    
+
 class DataHandler:
     def __init__(self, measurement_loop):
+        # MeasurementLoop corresponding to this DataHandler
+        # Cannot be a nested MeasurementLoop
         self.measurement_loop = measurement_loop
-        self.datasets = []
+
+        self.dataset_handlers = []
+
+    @property
+    def active_dataset_handler(self):
+        # TODO Allow for multiple possible measurements
+        return self.measurements[0]
 
     def finalize(self):
         """Called when outermost measurement is finished"""
@@ -38,8 +223,266 @@ class DataHandler:
     def add_metadata(self):
         pass
 
-    def add_result(self, parameter, result, action_indices, loop_indices, loop_shape, setpoints):
-        pass
+    def add_measurement_result(
+        self, 
+        action_indices, 
+        result, 
+        parameter=None,
+        name: str = None,
+        label: str = None,
+        unit: str = None,
+        ):
+        """Store single measurement result
+
+        This method is called from type-specific methods, such as
+        ``_measure_value``, ``_measure_parameter``, etc.
+        """
+        if parameter is None and name is None:
+            raise SyntaxError(
+                "When adding a measurement result, must provide either a "
+                "parameter or name"
+            )
+
+        # Get parameter data array, creating a new one if necessary
+        if action_indices not in self.data_arrays:
+            # Create array based on first result type and shape
+            self._create_data_array(
+                action_indices,
+                result,
+                parameter=parameter,
+                name=name,
+                label=label,
+                unit=unit,
+            )
+
+        # Select existing array
+        data_array = self.data_arrays[action_indices]
+
+        # Ensure an existing data array has the correct name
+        # parameter can also be a string, in which case we don't use parameter.name
+        if name is None:
+            name = parameter.name
+
+        # TODO is this the right place for this check?
+        if not data_array.name == name:
+            raise SyntaxError(
+                f"Existing DataArray '{data_array.name}' differs from result {name}"
+            )
+
+        data_to_store = {data_array.array_id: result}
+
+        # If result is an array, update set_array elements
+        if isinstance(result, list):  # Convert result list to array
+            result = np.ndarray(result)
+        if isinstance(result, np.ndarray):
+            ndim = len(self.loop_indices)
+            if len(data_array.set_arrays) != ndim + result.ndim:
+                raise RuntimeError(
+                    f"Wrong number of set arrays for {data_array.name}. "
+                    f"Expected {ndim + result.ndim} instead of "
+                    f"{len(data_array.set_arrays)}."
+                )
+
+            for k, set_array in enumerate(data_array.set_arrays[ndim:]):
+                # Successive set arrays must increase dimensionality by unity
+                arr = np.arange(result.shape[k])
+                if parameter is not None and hasattr(parameter, 'setpoints') \
+                        and parameter.setpoints is not None:
+                    arr_idx = parameter.names.index(name)
+                    arr = parameter.setpoints[arr_idx][k]
+
+                # Add singleton dimensions
+                arr = np.broadcast_to(arr, result.shape[: k + 1])
+                data_to_store[set_array.array_id] = arr
+
+        # Use dummy index if there are no loop indices.
+        # This happens if the measurement is performed outside a Sweep
+        loop_indices = self.loop_indices
+        if not loop_indices and not isinstance(result, (list, np.ndarray)):
+            loop_indices = (0,)
+
+        return data_to_store
+
+    # Data array functions
+    # TODO Needs to be reformed
+    def _create_data_array(
+        self,
+        action_indices: Tuple[int],
+        result,
+        parameter: Parameter = None,
+        is_setpoint: bool = False,
+        name: str = None,
+        label: str = None,
+        unit: str = None,
+    ):
+        """Create a data array from a parameter and result.
+
+        The data array shape is extracted from the result shape, and the current
+        loop dimensions.
+
+        The data array is added to the current data set.
+
+        Args:
+            parameter: Parameter for which to create a DataArray. Can also be a
+                string, in which case it is the data_array name
+            result: Result returned by the Parameter
+            action_indices: Action indices for which to store parameter
+            is_setpoint: Whether the Parameter is used for sweeping or measuring
+            label: Data array label. If not provided, the parameter label is
+                used. If the parameter is a name string, the label is extracted
+                from the name.
+            unit: Data array unit. If not provided, the parameter unit is used.
+
+        Returns:
+            Newly created data array
+
+        """
+        if parameter is None and name is None:
+            raise SyntaxError(
+                "When creating a data array, must provide either a parameter or a name"
+            )
+
+        if len(running_measurement().data_arrays) >= self.max_arrays:
+            raise RuntimeError(
+                f"Number of arrays in dataset exceeds "
+                f"Measurement.max_arrays={self.max_arrays}. Perhaps you forgot"
+                f"to encapsulate a loop with a Sweep()?"
+            )
+
+        array_kwargs = {
+            "is_setpoint": is_setpoint,
+            "action_indices": action_indices,
+            "shape": self.loop_shape,
+        }
+
+        if is_setpoint or isinstance(result, (np.ndarray, list)):
+            array_kwargs["shape"] += np.shape(result)
+
+        # Use dummy index (1, ) if measurement is performed outside a Sweep
+        if not array_kwargs["shape"]:
+            array_kwargs["shape"] = (1,)
+
+        if isinstance(parameter, Parameter):
+            array_kwargs["parameter"] = parameter
+            # Add a custom name
+            if name is not None:
+                array_kwargs["full_name"] = name
+            if label is not None:
+                array_kwargs["label"] = label
+            if unit is not None:
+                array_kwargs["unit"] = unit
+        else:
+            array_kwargs["name"] = name
+            if label is None:
+                label = name[0].capitalize() + name[1:].replace("_", " ")
+            array_kwargs["label"] = label
+            array_kwargs["unit"] = unit or ""
+
+        # Add setpoint arrays
+        if not is_setpoint:
+            array_kwargs["set_arrays"] = self._add_set_arrays(
+                action_indices, result, parameter=parameter, name=(name or parameter.name)
+            )
+
+        data_array = DataArray(**array_kwargs)
+
+        data_array.array_id = data_array.full_name
+        data_array.array_id += "_" + "_".join(str(k) for k in action_indices)
+
+        data_array.init_data()
+
+        self.dataset.add_array(data_array)
+        with self.timings.record(['dataset', 'save_metadata']):
+            self.dataset.save_metadata()
+
+        # Add array to set_arrays or to data_arrays of this Measurement
+        if is_setpoint:
+            self.set_arrays[action_indices] = data_array
+        else:
+            self.data_arrays[action_indices] = data_array
+
+        return data_array
+
+    def _add_set_arrays(
+        self, action_indices: Tuple[int], result, name: str, parameter: Union[Parameter, None] = None
+    ):
+        """Create set arrays for a given action index"""
+        set_arrays = []
+        for k in range(1, len(action_indices)):
+            sweep_indices = action_indices[:k]
+    
+            if sweep_indices in self.set_arrays:
+                set_arrays.append(self.set_arrays[sweep_indices])
+                # TODO handle grouped arrays (e.g. ParameterNode, nested Measurement)
+        # Create new set array(s) if parameter result is an array or list
+        if isinstance(result, (np.ndarray, list)):
+            if isinstance(result, list):
+                result = np.ndarray(result)
+    
+            for k, shape in enumerate(result.shape):
+                arr = np.arange(shape)
+                label = None
+                unit = None
+                if parameter is not None and hasattr(parameter, 'setpoints') \
+                        and parameter.setpoints is not None:
+                    arr_idx = parameter.names.index(name)
+                    arr = parameter.setpoints[arr_idx][k]
+                    label = parameter.setpoint_labels[arr_idx][k]
+                    unit = parameter.setpoint_units[arr_idx][k]
+    
+                # Add singleton dimensions
+                arr = np.broadcast_to(arr, result.shape[: k + 1])
+
+                set_array = self._create_data_array(
+                    action_indices=action_indices + (0,) * k,
+                    result=arr,
+                    name=f"{name}_set{k}",
+                    label=label,
+                    unit=unit,
+                    is_setpoint=True,
+                )
+                set_arrays.append(set_array)
+
+        # Add a dummy array in case the measurement was performed outside of
+        # a Sweep. This is not needed if the result is an array
+        if not set_arrays and not self.loop_indices:
+            set_arrays = [
+                self._create_data_array(
+                    action_indices=running_measurement().action_indices,
+                    result=result,
+                    name="None",
+                    is_setpoint=True,
+                )
+            ]
+            set_arrays[0][0] = 1
+
+        return tuple(set_arrays)
+
+    def get_arrays(self, action_indices: Sequence[int] = None) -> List[DataArray]:
+        """Get all arrays belonging to the current action indices
+
+        If the action indices corresponds to a group of arrays (e.g. a nested
+        measurement or ParameterNode), all the arrays in the group are returned
+
+        Args:
+            action_indices: Action indices of arrays.
+                If not provided, the current action_indices are chosen
+
+        Returns:
+            List of data arrays matching the action indices
+        """
+        if action_indices is None:
+            action_indices = self.action_indices
+
+        if not isinstance(action_indices, Sequence):
+            raise SyntaxError("parent_action_indices must be a tuple")
+
+        num_indices = len(action_indices)
+        return [
+            arr
+            for action_indices, arr in self.data_arrays.items()
+            if action_indices[:num_indices] == action_indices
+        ]
 
 
 class MeasurementLoop:
@@ -296,8 +739,8 @@ class MeasurementLoop:
 
         self.is_context_manager = False
 
-    def _initialize_metadata(self, dataset: DataSet = None):
-        # TODO Incorporate method
+    # TODO Needs to be implemented
+    def _initialize_metadata(self, dataset):
         """Initialize dataset metadata"""
         if dataset is None:
             dataset = self.dataset
@@ -331,187 +774,6 @@ class MeasurementLoop:
                 }
             )
 
-    # Data array functions
-    # TODO Needs to be reformed
-    def _create_data_array(
-        self,
-        action_indices: Tuple[int],
-        result,
-        parameter: Parameter = None,
-        is_setpoint: bool = False,
-        name: str = None,
-        label: str = None,
-        unit: str = None,
-    ):
-        """Create a data array from a parameter and result.
-
-        The data array shape is extracted from the result shape, and the current
-        loop dimensions.
-
-        The data array is added to the current data set.
-
-        Args:
-            parameter: Parameter for which to create a DataArray. Can also be a
-                string, in which case it is the data_array name
-            result: Result returned by the Parameter
-            action_indices: Action indices for which to store parameter
-            is_setpoint: Whether the Parameter is used for sweeping or measuring
-            label: Data array label. If not provided, the parameter label is
-                used. If the parameter is a name string, the label is extracted
-                from the name.
-            unit: Data array unit. If not provided, the parameter unit is used.
-
-        Returns:
-            Newly created data array
-
-        """
-        if parameter is None and name is None:
-            raise SyntaxError(
-                "When creating a data array, must provide either a parameter or a name"
-            )
-
-        if len(running_measurement().data_arrays) >= self.max_arrays:
-            raise RuntimeError(
-                f"Number of arrays in dataset exceeds "
-                f"Measurement.max_arrays={self.max_arrays}. Perhaps you forgot"
-                f"to encapsulate a loop with a Sweep()?"
-            )
-
-        array_kwargs = {
-            "is_setpoint": is_setpoint,
-            "action_indices": action_indices,
-            "shape": self.loop_shape,
-        }
-
-        if is_setpoint or isinstance(result, (np.ndarray, list)):
-            array_kwargs["shape"] += np.shape(result)
-
-        # Use dummy index (1, ) if measurement is performed outside a Sweep
-        if not array_kwargs["shape"]:
-            array_kwargs["shape"] = (1,)
-
-        if isinstance(parameter, Parameter):
-            array_kwargs["parameter"] = parameter
-            # Add a custom name
-            if name is not None:
-                array_kwargs["full_name"] = name
-            if label is not None:
-                array_kwargs["label"] = label
-            if unit is not None:
-                array_kwargs["unit"] = unit
-        else:
-            array_kwargs["name"] = name
-            if label is None:
-                label = name[0].capitalize() + name[1:].replace("_", " ")
-            array_kwargs["label"] = label
-            array_kwargs["unit"] = unit or ""
-
-        # Add setpoint arrays
-        if not is_setpoint:
-            array_kwargs["set_arrays"] = self._add_set_arrays(
-                action_indices, result, parameter=parameter, name=(name or parameter.name)
-            )
-
-        data_array = DataArray(**array_kwargs)
-
-        data_array.array_id = data_array.full_name
-        data_array.array_id += "_" + "_".join(str(k) for k in action_indices)
-
-        data_array.init_data()
-
-        self.dataset.add_array(data_array)
-        with self.timings.record(['dataset', 'save_metadata']):
-            self.dataset.save_metadata()
-
-        # Add array to set_arrays or to data_arrays of this Measurement
-        if is_setpoint:
-            self.set_arrays[action_indices] = data_array
-        else:
-            self.data_arrays[action_indices] = data_array
-
-        return data_array
-
-    def _add_set_arrays(
-        self, action_indices: Tuple[int], result, name: str, parameter: Union[Parameter, None] = None
-    ):
-        """Create set arrays for a given action index"""
-        set_arrays = []
-        for k in range(1, len(action_indices)):
-            sweep_indices = action_indices[:k]
-    
-            if sweep_indices in self.set_arrays:
-                set_arrays.append(self.set_arrays[sweep_indices])
-                # TODO handle grouped arrays (e.g. ParameterNode, nested Measurement)
-        # Create new set array(s) if parameter result is an array or list
-        if isinstance(result, (np.ndarray, list)):
-            if isinstance(result, list):
-                result = np.ndarray(result)
-    
-            for k, shape in enumerate(result.shape):
-                arr = np.arange(shape)
-                label = None
-                unit = None
-                if parameter is not None and hasattr(parameter, 'setpoints') \
-                        and parameter.setpoints is not None:
-                    arr_idx = parameter.names.index(name)
-                    arr = parameter.setpoints[arr_idx][k]
-                    label = parameter.setpoint_labels[arr_idx][k]
-                    unit = parameter.setpoint_units[arr_idx][k]
-    
-                # Add singleton dimensions
-                arr = np.broadcast_to(arr, result.shape[: k + 1])
-
-                set_array = self._create_data_array(
-                    action_indices=action_indices + (0,) * k,
-                    result=arr,
-                    name=f"{name}_set{k}",
-                    label=label,
-                    unit=unit,
-                    is_setpoint=True,
-                )
-                set_arrays.append(set_array)
-
-        # Add a dummy array in case the measurement was performed outside of
-        # a Sweep. This is not needed if the result is an array
-        if not set_arrays and not self.loop_indices:
-            set_arrays = [
-                self._create_data_array(
-                    action_indices=running_measurement().action_indices,
-                    result=result,
-                    name="None",
-                    is_setpoint=True,
-                )
-            ]
-            set_arrays[0][0] = 1
-
-        return tuple(set_arrays)
-
-    def get_arrays(self, action_indices: Sequence[int] = None) -> List[DataArray]:
-        """Get all arrays belonging to the current action indices
-
-        If the action indices corresponds to a group of arrays (e.g. a nested
-        measurement or ParameterNode), all the arrays in the group are returned
-
-        Args:
-            action_indices: Action indices of arrays.
-                If not provided, the current action_indices are chosen
-
-        Returns:
-            List of data arrays matching the action indices
-        """
-        if action_indices is None:
-            action_indices = self.action_indices
-
-        if not isinstance(action_indices, Sequence):
-            raise SyntaxError("parent_action_indices must be a tuple")
-
-        num_indices = len(action_indices)
-        return [
-            arr
-            for action_indices, arr in self.data_arrays.items()
-            if action_indices[:num_indices] == action_indices
-        ]
-
     def _verify_action(self, action, name, add_if_new=True):
         """Verify an action corresponds to the current action indices.
 
@@ -529,91 +791,6 @@ class MeasurementLoop:
                 f"Expected: {self.action_names[self.action_indices]}. Received: {name}"
             )
 
-    def _add_measurement_result(
-        self,
-        action_indices,
-        result,
-        parameter=None,
-        store: bool = True,
-        name: str = None,
-        label: str = None,
-        unit: str = None,
-    ):
-        """Store single measurement result
-
-        This method is called from type-specific methods, such as
-        ``_measure_value``, ``_measure_parameter``, etc.
-        """
-        if parameter is None and name is None:
-            raise SyntaxError(
-                "When adding a measurement result, must provide either a "
-                "parameter or name"
-            )
-
-        # Get parameter data array, creating a new one if necessary
-        if action_indices not in self.data_arrays:
-            # Create array based on first result type and shape
-            self._create_data_array(
-                action_indices,
-                result,
-                parameter=parameter,
-                name=name,
-                label=label,
-                unit=unit,
-            )
-
-        # Select existing array
-        data_array = self.data_arrays[action_indices]
-
-        # Ensure an existing data array has the correct name
-        # parameter can also be a string, in which case we don't use parameter.name
-        if name is None:
-            name = parameter.name
-
-        # TODO is this the right place for this check?
-        if not data_array.name == name:
-            raise SyntaxError(
-                f"Existing DataArray '{data_array.name}' differs from result {name}"
-            )
-
-        data_to_store = {data_array.array_id: result}
-
-        # If result is an array, update set_array elements
-        if isinstance(result, list):  # Convert result list to array
-            result = np.ndarray(result)
-        if isinstance(result, np.ndarray):
-            ndim = len(self.loop_indices)
-            if len(data_array.set_arrays) != ndim + result.ndim:
-                raise RuntimeError(
-                    f"Wrong number of set arrays for {data_array.name}. "
-                    f"Expected {ndim + result.ndim} instead of "
-                    f"{len(data_array.set_arrays)}."
-                )
-
-            for k, set_array in enumerate(data_array.set_arrays[ndim:]):
-                # Successive set arrays must increase dimensionality by unity
-                arr = np.arange(result.shape[k])
-                if parameter is not None and hasattr(parameter, 'setpoints') \
-                        and parameter.setpoints is not None:
-                    arr_idx = parameter.names.index(name)
-                    arr = parameter.setpoints[arr_idx][k]
-
-                # Add singleton dimensions
-                arr = np.broadcast_to(arr, result.shape[: k + 1])
-                data_to_store[set_array.array_id] = arr
-
-        # Use dummy index if there are no loop indices.
-        # This happens if the measurement is performed outside a Sweep
-        loop_indices = self.loop_indices
-        if not loop_indices and not isinstance(result, (list, np.ndarray)):
-            loop_indices = (0,)
-
-        if store:
-            with self.timings.record(['dataset', 'store']):
-                self.dataset.store(loop_indices, data_to_store)
-
-        return data_to_store
-
     def _apply_actions(self, actions: list, label="", clear=False):
         """Apply actions, either except_actions or final_actions"""
         for action in actions:
@@ -630,6 +807,7 @@ class MeasurementLoop:
             actions.clear()
 
     # Measurement-related functions
+    # TODO these methods should always end up with a parameter
     def _measure_parameter(self, parameter, name=None, label=None, unit=None, **kwargs):
         """Measure parameter and store results.
 
@@ -644,9 +822,9 @@ class MeasurementLoop:
         # Get parameter result
         result = parameter(**kwargs)
 
-        self._add_measurement_result(
-            self.action_indices,
-            result,
+        self.data_handler.add_measurement_result(
+            action_indices=self.action_indices,
+            result=result,
             parameter=parameter,
             name=name,
             label=label,
@@ -698,7 +876,7 @@ class MeasurementLoop:
         # Determine name
         if name is None:
             if hasattr(callable, "__self__") and isinstance(
-                callable.__self__, ParameterNode
+                callable.__self__, InstrumentBase
             ):
                 name = callable.__self__.name
             elif hasattr(callable, "__name__"):
@@ -772,7 +950,7 @@ class MeasurementLoop:
             value = bool(value)
 
         result = value
-        self._add_measurement_result(
+        self.data_handler.add_measurement_result(
             action_indices=self.action_indices,
             result=result,
             parameter=parameter,
@@ -1169,11 +1347,13 @@ class MeasurementLoop:
         else:
             self.measurement_thread.traceback()
 
+
 def running_measurement() -> MeasurementLoop:
     """Return the running measurement"""
     return MeasurementLoop.running_measurement
 
 
+# TODO Any mention of set array should be changed
 class Sweep:
     """Sweep over an iterable inside a Measurement
 
