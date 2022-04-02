@@ -7,8 +7,7 @@ import logging
 from datetime import datetime
 
 from qcodes.station import Station
-from qcodes.data.data_set import new_data, DataSet
-from qcodes.data.data_array import DataArray
+from qcodes.instrument.base import InstrumentBase
 from qcodes.instrument.sweep_values import SweepValues
 from qcodes.instrument.parameter import Parameter, MultiParameter
 from qcodes.utils.helpers import (
@@ -27,10 +26,16 @@ class DataHandler:
         self.measurement_loop = measurement_loop
         self.datasets = []
 
+    def finalize(self):
+        """Called when outermost measurement is finished"""
+
     def create_dataset(self):
         pass
 
     def new_dataset(self):
+        pass
+
+    def add_metadata(self):
         pass
 
     def add_result(self, parameter, result, action_indices, loop_indices, loop_shape, setpoints):
@@ -83,9 +88,9 @@ class MeasurementLoop:
     def __init__(self, name: str, force_cell_thread: bool = True, notify=False):
         self.name = name
 
-        # Dataset is created during `with Measurement('name')`
-        # TODO option to use multiple datasets
-        self.dataset = None
+        # Data handler is created during `with Measurement('name')`
+        # Used to control dataset(s)
+        self.data_handler = None
 
         # Total dimensionality of loop
         self.loop_shape: Union[Tuple[int], None] = None
@@ -165,16 +170,16 @@ class MeasurementLoop:
                 MeasurementLoop.running_measurement = self
                 MeasurementLoop.measurement_thread = threading.current_thread()
 
-                # Initialize dataset
+                # Initialize dataset handler
                 self.data_handler = DataHandler()
-                self.dataset = new_data(name=self.name)
 
-                self._initialize_metadata(self.dataset)
-                with self.timings.record(['dataset', 'save_metadata']):
-                    self.dataset.save_metadata()
+                # TODO incorporate metadata
+                # self._initialize_metadata(self.dataset)
+                # with self.timings.record(['dataset', 'save_metadata']):
+                #     self.dataset.save_metadata()
 
-                    if hasattr(self.dataset, 'save_config'):
-                        self.dataset.save_config()
+                #     if hasattr(self.dataset, 'save_config'):
+                #         self.dataset.save_config()
 
                 # Initialize attributes
                 self.loop_shape = ()
@@ -200,7 +205,8 @@ class MeasurementLoop:
                 data_groups = [
                     (key, getattr(val, 'name', 'None')) for key, val in msmt.data_groups.items()
                 ]
-                msmt.dataset.add_metadata({'data_groups': data_groups})
+                # TODO add metadata
+                # msmt.dataset.add_metadata({'data_groups': data_groups})
                 msmt.action_indices += (0,)
 
                 # Nested measurement attributes should mimic the primary measurement
@@ -228,7 +234,7 @@ class MeasurementLoop:
 
                 shell = get_ipython()
                 shell.user_ns[self._default_measurement_name] = self
-                shell.user_ns[self._default_dataset_name] = self.dataset
+                # shell.user_ns[self._default_dataset_name] = self.dataset
 
 
             return self
@@ -279,23 +285,11 @@ class MeasurementLoop:
                     self.log("Could not notify", level="error")
 
             t_stop = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            self.dataset.add_metadata({"t_stop": t_stop})
-            self.dataset.add_metadata({"timings": self.timings})
+            self.data_handler.add_metadata({"t_stop": t_stop})
+            self.data_handler.add_metadata({"timings": self.timings})
+            self.data_handler.finalize()
 
-            # If dataset only contains setpoints, don't finalize dataset.
-            if not all([arr.is_setpoint for arr in self.dataset.arrays.values()]):
-                # Sadly the timing to finalize the dataset won't be stored in the metadata.
-                with self.timings.record(['dataset', 'finalize']):
-                    self.dataset.finalize()
-                    self.dataset.active = False
-            else:
-                if hasattr(self.dataset.formatter, 'close_file'):
-                    self.dataset.formatter.close_file(self)
-                self.dataset.save_metadata()
-
-            self.dataset.active = False
-            
-            self.log(f'Measurement finished {self.dataset.location}')
+            self.log(f'Measurement finished')
 
         else:
             msmt.step_out(reduce_dimension=False)
@@ -303,11 +297,12 @@ class MeasurementLoop:
         self.is_context_manager = False
 
     def _initialize_metadata(self, dataset: DataSet = None):
+        # TODO Incorporate method
         """Initialize dataset metadata"""
         if dataset is None:
             dataset = self.dataset
 
-        config = qcodes_config.get('user', {}).get('silq_config', qcodes_config)
+        config = qcodes_config
         dataset.add_metadata({"config": config})
 
         dataset.add_metadata({"measurement_type": "Measurement"})
@@ -337,6 +332,7 @@ class MeasurementLoop:
             )
 
     # Data array functions
+    # TODO Needs to be reformed
     def _create_data_array(
         self,
         action_indices: Tuple[int],
@@ -1017,7 +1013,7 @@ class MeasurementLoop:
             >>> node.p1 has value 1
             ```
         """
-        if isinstance(obj, ParameterNode):
+        if isinstance(obj, InstrumentBase):
             assert val is None
             # kwargs can be either parameters or attrs
             return [
@@ -1143,19 +1139,6 @@ class MeasurementLoop:
         else:
             action_indices = list(self.action_indices)
             action_indices[-1] += N
-            self.action_indices = tuple(action_indices)
-            return self.action_indices
-
-    def revert(self, N=1):
-        """Revert action indices
-
-        Useful if you want to redo a measurement.
-        """
-        if running_measurement() is not self:
-            return running_measurement().revert(N=N)
-        else:
-            action_indices = list(self.action_indices)
-            action_indices[-1] -= N
             self.action_indices = tuple(action_indices)
             return self.action_indices
 
