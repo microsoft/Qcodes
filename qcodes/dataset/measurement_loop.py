@@ -29,8 +29,9 @@ RAW_VALUE_TYPES = (float, int, bool, np.ndarray, np.integer, np.floating, np.boo
 
 class DatasetHandler:
     """Handler for a single DataSet (with Measurement and Runner)"""
-    def __init__(self, measurement_loop):
+    def __init__(self, measurement_loop, name='results'):
         self.measurement_loop = measurement_loop
+        self.name = name
 
         self.initialized = False
         self.datasaver = None
@@ -59,7 +60,7 @@ class DatasetHandler:
         # Once initialized, no new parameters can be added
         assert not self.initialized, "Cannot initialize twice"
 
-        self.measurement = Measurement()
+        self.measurement = Measurement(name=self.name)
 
         # Register all setpoints parameters
         self._create_unique_dataset_parameters(self.setpoint_list)
@@ -107,6 +108,8 @@ class DatasetHandler:
         if not self.initialized:
             self.initialize()
 
+        self.datasaver.flush_data_to_database()
+
     def _create_unique_dataset_parameters(self, parameter_list):
         """Populates 'dataset_parameter' of parameter_list
         
@@ -129,7 +132,7 @@ class DatasetHandler:
                 param_info for param_info in parameter_list.values()
                 if param_info['parameter'].name == name
             ]
-            for k, parameter_info in duplicate_parameter_info_list:
+            for k, parameter_info in enumerate(duplicate_parameter_info_list):
                 # Create delegate parameter
                 delegate_parameter = DelegateParameter(
                     name=f"{parameter_info['parameter'].name}_{k}",
@@ -383,7 +386,10 @@ class MeasurementLoop:
                 MeasurementLoop.measurement_thread = threading.current_thread()
 
                 # Initialize dataset handler
-                self.data_handler = DatasetHandler(measurement_loop=self)
+                self.data_handler = DatasetHandler(
+                    measurement_loop=self,
+                    name=self.name
+                )
 
                 # TODO incorporate metadata
                 # self._initialize_metadata(self.dataset)
