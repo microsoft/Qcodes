@@ -233,7 +233,7 @@ class DatasetHandler:
             )
             
             result_with_setpoints = tuple(zip(parameters, (*setpoints, result)))
-            self.datasaver.add_result(result_with_setpoints)
+            self.datasaver.add_result(*result_with_setpoints)
         else:
             measurement_info['unstored_results'].append((*setpoints, result))
         # Also store in measurement_info
@@ -1180,7 +1180,8 @@ class Sweep:
         ```
     """
     def __init__(self, sequence, name=None, label=None, unit=None, reverse=False, restore=False):
-        if running_measurement() is None:
+        msmt = running_measurement() 
+        if msmt is None:
             raise RuntimeError("Cannot create a sweep outside a Measurement")
 
         if isinstance(sequence, AbstractSweep):
@@ -1200,9 +1201,13 @@ class Sweep:
         self.reverse = reverse
         self.restore = restore
 
+        # Check if this is the first sweep
+        # Useful to know when to initialize dataset
+        msmt = running_measurement()
+        self.is_first_sweep = not any(isinstance(action, Sweep) for action in msmt.actions.values())
+
         # Create setpoint_list
         self.initialize()
-        msmt = running_measurement()
         self.setpoint_info = msmt.setpoint_list[msmt.action_indices]
 
     def __iter__(self):
@@ -1240,6 +1245,16 @@ class Sweep:
             )
         elif msmt.is_stopped:
             raise SystemExit
+
+        # Initialize data handler if the first sweep reaches its second iteration
+        # would be nicer if the sweep doesn't talk to the data handler
+        if self.is_first_sweep:
+            if (
+                (self.reverse and self.loop_index == len(self.sequence) - 2) 
+                or (not self.reverse and self.loop_index == 1)
+            ):
+                if not msmt.data_handler.initialized:
+                    msmt.data_handler.initialize()
 
         # Wait as long as the measurement is paused
         while msmt.is_paused:
@@ -1298,6 +1313,10 @@ class Sweep:
 
             # Add to setpoint list
             msmt.setpoint_list[msmt.action_indices] = setpoint_info
+
+            # Add to measurement actions
+            assert msmt.action_indices not in msmt.actions
+            msmt.actions[msmt.action_indices] = self
 
             return setpoint_info
 

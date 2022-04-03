@@ -187,9 +187,15 @@ def test_2D_measurement_initialization(create_dummy_database):
       p2_set = ManualParameter('p2_set')
 
       with MeasurementLoop('test') as msmt:
-         for k, val in enumerate(Sweep(LinSweep(p1_set, 0, 1, 11))):
+         outer_sweep = Sweep(LinSweep(p1_set, 0, 1, 11))
+         for k, val in enumerate(outer_sweep):
             assert p1_set() == val
-            for val2 in Sweep(LinSweep(p2_set, 0, 1, 11)):
+            assert outer_sweep.is_first_sweep
+
+            inner_sweep = Sweep(LinSweep(p2_set, 0, 1, 11))
+            assert not inner_sweep.is_first_sweep
+            
+            for val2 in inner_sweep:
                assert p2_set() == val2
                p1_get(val+1)
                msmt.measure(p1_get)
