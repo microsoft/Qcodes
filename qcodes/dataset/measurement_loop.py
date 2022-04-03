@@ -1,3 +1,4 @@
+import contextlib
 from enum import unique
 import numpy as np
 from collections import Counter
@@ -10,7 +11,6 @@ from datetime import datetime
 
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
-from qcodes.tests.dataset import measurement
 from qcodes.utils.dataset.doNd import AbstractSweep
 from qcodes.station import Station
 from qcodes.instrument.base import InstrumentBase
@@ -22,7 +22,7 @@ from qcodes.utils.helpers import (
     get_last_input_cells,
     PerformanceTimer
 )
-from qcodes import config as qcodes_config, measure
+from qcodes import config as qcodes_config
 
 RAW_VALUE_TYPES = (float, int, bool, np.ndarray, np.integer, np.floating, np.bool_, type(None))
 
@@ -33,9 +33,10 @@ class DatasetHandler:
         self.measurement_loop = measurement_loop
 
         self.initialized = False
-        self.dataset = None
+        self.datasaver = None
         self.runner = None
         self.measurement = None
+        self.dataset = None
 
         # Key: action_index
         # Values:
@@ -53,6 +54,7 @@ class DatasetHandler:
         # - unstored_results - list where each element contains (*setpoints, measurement_value)
         # - latest_value
 
+    # TODO should be called at appropriate time
     def initialize(self):
         # Once initialized, no new parameters can be added
         assert not self.initialized, "Cannot initialize twice"
@@ -63,7 +65,14 @@ class DatasetHandler:
         self._create_unique_dataset_parameters(self.setpoint_list)
         for setpoint_info in self.setpoint_list.values():
             self.measurement.register_parameter(setpoint_info['dataset_parameter'])
-            
+
+        # Determine setpoint_parameters for each measurement_parameter            
+        for measurement_info in self.measurement_list.values():
+            measurement_info['setpoint_parameters'] = tuple(
+                self.setpoint_list[action_indices]['dataset_parameter']
+                for action_indices in measurement_info['setpoints_action_indices']
+            )
+
         # Register all measurement parameters
         self._create_unique_dataset_parameters(self.measurement_list)
         for measurement_info in self.measurement_list.values():
@@ -82,29 +91,34 @@ class DatasetHandler:
         self.runner = self.measurement.run()
 
         # Create measurement Dataset
-        self.dataset = self.runner.__enter__()
+        self.datasaver = self.runner.__enter__()
+        self.dataset = self.datasaver.dataset
 
         # Add results that were taken before initializing dataset
         for measurement_info in self.measurement_list.values():
             for unstored_result in measurement_info['unstored_results']:
                 parameters = *measurement_info['setpoint_parameters'], measurement_info['dataset_parameter']
                 result = tuple(zip(parameters, unstored_result))
-                self.dataset.add_result(result)
+                self.datasaver.add_result(*result)
 
         self.initialized = True
+
+    def finalize(self):
+        if not self.initialized:
+            self.initialize()
 
     def _create_unique_dataset_parameters(self, parameter_list):
         """Populates 'dataset_parameter' of parameter_list
         
         Ensure parameters have unique names
         """
-        parameter_names = [param_info['parameter'].name for param_info in parameter_list]
-        duplicate_names = [name for name, count in Counter(parameter_names) if count > 1]
-        unique_names = [name for name, count in Counter(parameter_names) if count == 1]
+        parameter_names = [param_info['parameter'].name for param_info in parameter_list.values()]
+        duplicate_names = [name for name, count in Counter(parameter_names).items() if count > 1]
+        unique_names = [name for name, count in Counter(parameter_names).items() if count == 1]
 
         for name in unique_names:
             parameter_info = next(
-                param_info for param_info in parameter_list 
+                param_info for param_info in parameter_list.values()
                 if param_info['parameter'].name == name
             )
             parameter_info['dataset_parameter'] = parameter_info['parameter']
@@ -112,7 +126,7 @@ class DatasetHandler:
         for name in duplicate_names:
             # Need to rename parameters with duplicate names
             duplicate_parameter_info_list = [
-                param_info for param_info in parameter_list 
+                param_info for param_info in parameter_list.values()
                 if param_info['parameter'].name == name
             ]
             for k, parameter_info in duplicate_parameter_info_list:
@@ -142,24 +156,20 @@ class DatasetHandler:
                 'label': label,
                 'unit': unit
             }
-            overwrite_attrs = {key: val for key, val in overwrite_attrs if val is not None}
+            overwrite_attrs = {key: val for key, val in overwrite_attrs.items() if val is not None}
             parameter = DelegateParameter(
                 source=parameter,
                 **overwrite_attrs
             )
 
-        setpoint_parameters = []
         setpoints_action_indices = []
         for k in range(len(action_indices) + 1):
             if action_indices[:k] in self.setpoint_list:
-                setpoint_parameter = self.setpoint_list[action_indices[:k]]['parameter']
-                setpoint_parameters.append(setpoint_parameter)
                 setpoints_action_indices.append(action_indices[:k])
 
         measurement_info = {
             'parameter': parameter,
             'setpoints_action_indices': setpoints_action_indices,
-            'setpoint_parameters': setpoint_parameters,
             'shape': self.measurement_loop.loop_shape,
             'unstored_results': []
         }
@@ -188,7 +198,7 @@ class DatasetHandler:
 
         # Get parameter data array, creating a new one if necessary
         if action_indices not in self.measurement_list:
-            measurement_info = self.create_meaasurement_info(
+            measurement_info = self.create_measurement_info(
                 action_indices=action_indices,
                 parameter=parameter,
                 name=name,
@@ -212,16 +222,17 @@ class DatasetHandler:
             self.setpoint_list[action_indices]['latest_value']
             for action_indices in measurement_info['setpoints_action_indices']
         ]
-        result_with_setpoints = tuple(zip(parameters, (*setpoints, result)))
+
         if self.initialized:
             parameters = (
                 *measurement_info['setpoint_parameters'], 
                 measurement_info['dataset_parameter']
             )
             
-            self.dataset.add_result(result_with_setpoints)
+            result_with_setpoints = tuple(zip(parameters, (*setpoints, result)))
+            self.datasaver.add_result(result_with_setpoints)
         else:
-            measurement_info['unstored_results'].append(result_with_setpoints)
+            measurement_info['unstored_results'].append((*setpoints, result))
         # Also store in measurement_info
         measurement_info['latest_value'] = result    
 
@@ -309,6 +320,10 @@ class MeasurementLoop:
 
         self.timings = PerformanceTimer()
 
+    @property
+    def dataset(self):
+        return self.data_handler.dataset
+
     def log(self, message: str, level="info"):
         """Send a log message
 
@@ -385,8 +400,8 @@ class MeasurementLoop:
                 self.data_arrays = {}
                 self.set_arrays = {}
 
-                self.log(f'Measurement started {self.dataset.location}')
-                print(f'Measurement started {self.dataset.location}')
+                # self.log(f'Measurement started {self.dataset.location}')
+                # print(f'Measurement started {self.dataset.location}')
 
             else:
                 if threading.current_thread() is not MeasurementLoop.measurement_thread:
@@ -482,8 +497,10 @@ class MeasurementLoop:
                     self.log("Could not notify", level="error")
 
             t_stop = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            self.data_handler.add_metadata({"t_stop": t_stop})
-            self.data_handler.add_metadata({"timings": self.timings})
+
+            # TODO include metadata
+            # self.data_handler.add_metadata({"t_stop": t_stop})
+            # self.data_handler.add_metadata({"timings": self.timings})
             self.data_handler.finalize()
 
             self.log(f'Measurement finished')
@@ -494,39 +511,39 @@ class MeasurementLoop:
         self.is_context_manager = False
 
     # TODO Needs to be implemented
-    def _initialize_metadata(self, dataset):
-        """Initialize dataset metadata"""
-        if dataset is None:
-            dataset = self.dataset
+    # def _initialize_metadata(self, dataset):
+    #     """Initialize dataset metadata"""
+    #     if dataset is None:
+    #         dataset = self.dataset
 
-        config = qcodes_config
-        dataset.add_metadata({"config": config})
+    #     config = qcodes_config
+    #     dataset.add_metadata({"config": config})
 
-        dataset.add_metadata({"measurement_type": "Measurement"})
+    #     dataset.add_metadata({"measurement_type": "Measurement"})
 
-        # Add instrument information
-        if Station.default is not None:
-            dataset.add_metadata({"station": Station.default.snapshot()})
+    #     # Add instrument information
+    #     if Station.default is not None:
+    #         dataset.add_metadata({"station": Station.default.snapshot()})
 
-        if using_ipython():
-            measurement_cell = get_last_input_cells(1)[0]
+    #     if using_ipython():
+    #         measurement_cell = get_last_input_cells(1)[0]
 
-            measurement_code = measurement_cell
-            # If the code is run from a measurement thread, there is some
-            # initial code that should be stripped
-            init_string = "get_ipython().run_cell_magic('new_job', '', "
-            if measurement_code.startswith(init_string):
-                measurement_code = measurement_code[len(init_string) + 1 : -4]
+    #         measurement_code = measurement_cell
+    #         # If the code is run from a measurement thread, there is some
+    #         # initial code that should be stripped
+    #         init_string = "get_ipython().run_cell_magic('new_job', '', "
+    #         if measurement_code.startswith(init_string):
+    #             measurement_code = measurement_code[len(init_string) + 1 : -4]
 
-            self._t_start = datetime.now()
-            dataset.add_metadata(
-                {
-                    "measurement_cell": measurement_cell,
-                    "measurement_code": measurement_code,
-                    "last_input_cells": get_last_input_cells(20),
-                    "t_start": self._t_start.strftime('%Y-%m-%d %H:%M:%S')
-                }
-            )
+    #         self._t_start = datetime.now()
+    #         dataset.add_metadata(
+    #             {
+    #                 "measurement_cell": measurement_cell,
+    #                 "measurement_code": measurement_code,
+    #                 "last_input_cells": get_last_input_cells(20),
+    #                 "t_start": self._t_start.strftime('%Y-%m-%d %H:%M:%S')
+    #             }
+    #         )
 
     def _verify_action(self, action, name, add_if_new=True):
         """Verify an action corresponds to the current action indices.
@@ -1105,6 +1122,33 @@ def running_measurement() -> MeasurementLoop:
     return MeasurementLoop.running_measurement
 
 
+class _IterateDondSweep:
+    def __init__(self, sweep: AbstractSweep):
+        self.sweep = sweep
+        self.iterator = None
+        self.parameter = sweep._param
+
+    def __len__(self):
+        return self.sweep.num_points
+
+    def __iter__(self):
+        self.iterator = iter(self.sweep.get_setpoints())
+        return self
+
+    def __next__(self):
+        value = next(self.iterator)
+        self.sweep._param(value)
+        
+        for action in self.sweep.post_actions:
+            action()
+
+        if self.sweep.delay:
+            sleep(self.sweep.delay)
+        
+        return value
+
+
+
 class Sweep:
     """Sweep over an iterable inside a Measurement
 
@@ -1133,7 +1177,9 @@ class Sweep:
         if running_measurement() is None:
             raise RuntimeError("Cannot create a sweep outside a Measurement")
 
-        if not isinstance(sequence, Iterable):
+        if isinstance(sequence, AbstractSweep):
+            sequence = _IterateDondSweep(sequence)
+        elif not isinstance(sequence, Iterable):
             raise SyntaxError("Sweep sequence must be iterable")
 
         # Properties for the data array
@@ -1164,6 +1210,7 @@ class Sweep:
                 running_measurement().mask(self.sequence.parameter, self.sequence.parameter.get())
             else:
                 raise NotImplementedError("Unable to restore non-parameter values.")
+
         if self.reverse:
             self.loop_index = len(self.sequence) - 1
             self.iterator = iter(self.sequence[::-1])
@@ -1223,29 +1270,30 @@ class Sweep:
 
     def initialize(self):
         msmt = running_measurement()
-        assert msmt.action_indices not in msmt.setpoint_list, f"Setpoint {self.name} already initialized"
-
-        # Determine sweep parameter
-        if isinstance(self.sequence, AbstractSweep) and hasattr(self.sequence, '_param'):
-            # sweep is a doNd sweep that already has a parameter
-            set_parameter = self.sequence._param
+        if msmt.action_indices in msmt.setpoint_list:
+            return msmt.setpoint_list[msmt.action_indices]
         else:
-            # Need to create a parameter
-            set_parameter = Parameter(
-                name=self.name,
-                label=self.label,
-                unit=self.unit
-            )
+            # Determine sweep parameter
+            if isinstance(self.sequence, _IterateDondSweep):
+                # sweep is a doNd sweep that already has a parameter
+                set_parameter = self.sequence.parameter
+            else:
+                # Need to create a parameter
+                set_parameter = Parameter(
+                    name=self.name,
+                    label=self.label,
+                    unit=self.unit
+                )
 
-        setpoint_info = {
-            'parameter': set_parameter,
-            'latest_value': None
-        }
+            setpoint_info = {
+                'parameter': set_parameter,
+                'latest_value': None
+            }
 
-        # Add to setpoint list
-        msmt.setpoint_list[msmt.action_indices] = setpoint_info
+            # Add to setpoint list
+            msmt.setpoint_list[msmt.action_indices] = setpoint_info
 
-        return setpoint_info
+            return setpoint_info
 
     def exit_sweep(self):
         msmt = running_measurement()
