@@ -91,4 +91,4 @@ widgetsnbextension==3.6.0
 wincertstore==0.2
 xarray~=0.20.2; python_version<'3.8'
 xarray~=2022.3.0; python_version>='3.8'
-zipp==3.7.0
+zipp==3.8.0
