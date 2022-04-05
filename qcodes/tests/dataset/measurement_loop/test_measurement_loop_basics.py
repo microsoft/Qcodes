@@ -7,14 +7,20 @@ import numpy as np
 import pytest
 
 from qcodes import ManualParameter, Parameter
+from qcodes.dataset.data_set import load_by_id
+from qcodes.dataset.descriptions.rundescriber import RunDescriber
+from qcodes.utils.dataset.doNd import LinSweep
+from qcodes.dataset.measurement_loop import MeasurementLoop, Sweep
 from qcodes.dataset import (
     initialise_or_create_database_at,
-    load_by_run_spec,
     load_or_create_experiment,
 )
 from qcodes.dataset.measurement_loop import MeasurementLoop, Sweep
 from qcodes.utils.dataset.doNd import LinSweep
 
+from qcodes.dataset.descriptions.versioning.converters import new_to_old
+from qcodes.dataset.descriptions.versioning import serialization as serial
+from qcodes.dataset.sqlite.queries import update_run_description, add_parameter
 # def get_data_array(dataset, label):
 
 
@@ -159,27 +165,125 @@ def test_1D_measurement_duplicate_getset(create_dummy_database):
 
 
 def test_2D_measurement_initialization(create_dummy_database):
-    with create_dummy_database():
-        # Initialize parameters
-        p1_get = ManualParameter("p1_get")
-        p1_set = ManualParameter("p1_set")
-        p2_set = ManualParameter("p2_set")
+   with create_dummy_database():
+      # Initialize parameters
+      p1_get = ManualParameter('p1_get')
+      p1_set = ManualParameter('p1_set')
+      p2_set = ManualParameter('p2_set')
 
-        with MeasurementLoop("test") as msmt:
-            outer_sweep = Sweep(LinSweep(p1_set, 0, 1, 11))
-            for k, val in enumerate(outer_sweep):
-                assert p1_set() == val
-                assert outer_sweep.is_first_sweep
+      with MeasurementLoop('test') as msmt:
+         outer_sweep = Sweep(LinSweep(p1_set, 0, 1, 11))
+         for k, val in enumerate(outer_sweep):
+            assert p1_set() == val
+            assert outer_sweep.is_first_sweep
 
-                inner_sweep = Sweep(LinSweep(p2_set, 0, 1, 11))
-                assert not inner_sweep.is_first_sweep
+            inner_sweep = Sweep(LinSweep(p2_set, 0, 1, 11))
+            assert not inner_sweep.is_first_sweep
 
-                for val2 in inner_sweep:
-                    assert p2_set() == val2
-                    p1_get(val + 1)
-                    msmt.measure(p1_get)
+            for val2 in inner_sweep:
+               assert p2_set() == val2
+               p1_get(val+1)
+               msmt.measure(p1_get)
 
-                if not k:
-                    assert not msmt.data_handler.initialized
-                else:
-                    assert msmt.data_handler.initialized
+            if not k:
+               assert not msmt.data_handler.initialized
+            else:
+               assert msmt.data_handler.initialized
+
+def update_interdependencies(msmt, datasaver):
+   dataset = datasaver.dataset
+
+   # Get previous paramspecs
+   previous_paramspecs = dataset._rundescriber.interdeps.paramspecs
+   previous_paramspec_names = [spec.name for spec in previous_paramspecs]
+
+   # Update DataSaver
+   datasaver._interdeps = msmt._interdeps
+
+   # Generate new paramspecs with matching RunDescriber
+   dataset._rundescriber = RunDescriber(msmt._interdeps, shapes=msmt._shapes)
+   paramspecs = new_to_old(dataset._rundescriber.interdeps).paramspecs
+
+   # Add new paramspecs
+   for spec in paramspecs:
+      if spec.name not in previous_paramspec_names:
+         add_parameter(
+            spec, conn=dataset.conn, run_id=dataset.run_id, 
+            insert_into_results_table=True
+         )
+
+   desc_str = serial.to_json_for_storage(dataset.description)
+
+   update_run_description(dataset.conn, dataset.run_id, desc_str)
+
+
+def test_dataset_registering_shared_set(create_dummy_database):
+   from qcodes import Measurement
+
+   with create_dummy_database():
+      p1_get = ManualParameter('p1_get')
+      p1_set = ManualParameter('p1_set')
+
+      p2_get = ManualParameter('p2_get')
+
+      msmt = Measurement()
+      msmt.register_parameter(p1_set)
+      msmt.register_parameter(p1_get, setpoints=(p1_set,))
+      # TODO allow cache
+      with msmt.run(in_memory_cache=False) as datasaver:
+         dataset = datasaver.dataset
+
+         for k, set_v in enumerate(np.linspace(0, 25, 10)):
+            p1_set(set_v)
+            datasaver.add_result((p1_set, set_v),
+                                 (p1_get, 123))
+            if not k:
+               msmt.register_parameter(p2_get, setpoints=(p1_set,))
+               update_interdependencies(msmt, datasaver)
+               
+            datasaver.add_result((p1_set, set_v),
+                                 (p2_get, 124))
+         
+      loaded_dataset = load_by_id(dataset.run_id)
+      run_description = loaded_dataset._get_run_description_from_db()
+      print(run_description)
+
+
+def test_dataset_registering_separate_set(create_dummy_database):
+   from qcodes import Measurement
+
+   with create_dummy_database():
+      p1_get = ManualParameter('p1_get')
+      p1_set = ManualParameter('p1_set')
+
+      p2_set = ManualParameter('p2_set')
+      p2_get = ManualParameter('p2_get')
+
+      msmt = Measurement()
+      msmt.register_parameter(p1_set)
+      msmt.register_parameter(p1_get, setpoints=(p1_set,))
+      # TODO allow cache
+      with msmt.run(in_memory_cache=False) as datasaver:
+         dataset = datasaver.dataset
+
+         for set_v in np.linspace(0, 25, 10):
+            p1_set(set_v)
+            datasaver.add_result((p1_set, set_v),
+                                 (p1_get, 123))
+
+
+         # Add new parameters
+         msmt.register_parameter(p2_set)
+         msmt.register_parameter(p2_get, setpoints=(p2_set,))
+         update_interdependencies(msmt, datasaver)
+
+         print(msmt._interdeps)
+         for set_v in np.linspace(0, 25, 10):
+            p2_set(set_v)
+            datasaver.add_result((p2_set, set_v),
+                                 (p2_get, 124))
+
+         
+      loaded_dataset = load_by_id(dataset.run_id)
+      run_description = loaded_dataset._get_run_description_from_db()
+      print(run_description)
