@@ -12,7 +12,11 @@ import numpy as np
 
 from qcodes import config as qcodes_config
 from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
+from qcodes.dataset.descriptions.rundescriber import RunDescriber
+from qcodes.dataset.descriptions.versioning import serialization as serial
+from qcodes.dataset.descriptions.versioning.converters import new_to_old
 from qcodes.dataset.measurements import Measurement
+from qcodes.dataset.sqlite.queries import add_parameter, update_run_description
 from qcodes.instrument.base import InstrumentBase
 from qcodes.instrument.parameter import DelegateParameter, MultiParameter, Parameter
 from qcodes.instrument.sweep_values import SweepValues
@@ -24,10 +28,6 @@ from qcodes.utils.helpers import (
     get_last_input_cells,
     using_ipython,
 )
-from qcodes.dataset.descriptions.rundescriber import RunDescriber
-from qcodes.dataset.descriptions.versioning import serialization as serial
-from qcodes.dataset.descriptions.versioning.converters import new_to_old
-from qcodes.dataset.sqlite.queries import add_parameter, update_run_description
 
 RAW_VALUE_TYPES = (float, int, bool, np.ndarray, np.integer, np.floating, np.bool_, type(None))
 
@@ -273,8 +273,7 @@ class DatasetHandler:
 
         # Generate new paramspecs with matching RunDescriber
         dataset._rundescriber = RunDescriber(
-            self.measurement._interdeps, 
-            shapes=self.measurement._shapes
+            self.measurement._interdeps, shapes=self.measurement._shapes
         )
         paramspecs = new_to_old(dataset._rundescriber.interdeps).paramspecs
 
