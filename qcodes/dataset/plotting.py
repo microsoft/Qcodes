@@ -13,6 +13,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.ticker import FuncFormatter
+from typing_extensions import Literal
 
 import qcodes as qc
 from qcodes.dataset.data_set import load_by_run_spec
@@ -99,8 +100,8 @@ def plot_dataset(
     rescale_axes: bool = True,
     auto_color_scale: Optional[bool] = None,
     cutoff_percentile: Optional[Union[Tuple[float, float], float]] = None,
-    complex_plot_type: str = "real_and_imag",
-    complex_plot_phase: str = "radians",
+    complex_plot_type: Literal["real_and_imag", "mag_and_phase"] = "real_and_imag",
+    complex_plot_phase: Literal["radians", "degrees"] = "radians",
     **kwargs: Any,
 ) -> AxesTupleList:
     """
@@ -314,14 +315,14 @@ def plot_by_id(
     rescale_axes: bool = True,
     auto_color_scale: Optional[bool] = None,
     cutoff_percentile: Optional[Union[Tuple[float, float], float]] = None,
-    complex_plot_type: str = "real_and_imag",
-    complex_plot_phase: str = "radians",
+    complex_plot_type: Literal["real_and_imag", "mag_and_phase"] = "real_and_imag",
+    complex_plot_phase: Literal["radians", "degrees"] = "radians",
     **kwargs: Any,
 ) -> AxesTupleList:
     """
     Construct all plots for a given `run_id`. Here `run_id` is an
     alias for `captured_run_id` for historical reasons. See the docs
-    of :func:`.load_by_run_spec` for details of loading runs.
+    of :func:`qcodes.dataset.load_by_run_spec` for details of loading runs.
     All other arguments are forwarded
     to :func:`.plot_dataset`, see this for more details.
     """
@@ -339,7 +340,9 @@ def plot_by_id(
 
 
 def _complex_to_real_preparser(
-    alldata: Sequence[Sequence[DSPlotData]], conversion: str, degrees: bool = False
+    alldata: Sequence[Sequence[DSPlotData]],
+    conversion: Literal["real_and_imag", "mag_and_phase"],
+    degrees: bool = False,
 ) -> NamedData:
     """
     Convert complex-valued parameters to two real-valued parameters, either

@@ -21,6 +21,7 @@ from qcodes.instrument.channel import (
 from qcodes.instrument.parameter import ParamRawDataType
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.utils import validators as vals
+from qcodes.utils.delaykeyboardinterrupt import DelayedKeyboardInterrupt
 
 LOG = logging.getLogger(__name__)
 
@@ -788,9 +789,12 @@ class QDac(VisaInstrument):
         """
 
         LOG.debug(f"Writing to instrument {self.name}: {cmd}")
-        self.visa_handle.write(cmd)
-        for _ in range(cmd.count(';')+1):
-            self._write_response = self.visa_handle.read()
+
+        with DelayedKeyboardInterrupt():
+            self.visa_handle.write(cmd)
+            for _ in range(cmd.count(';')+1):
+                self._write_response = self.visa_handle.read()
+
 
     def read(self) -> str:
         return self.visa_handle.read()

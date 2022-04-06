@@ -829,6 +829,7 @@ class Infiniium(VisaInstrument):
         # Trigger
         self.trigger_mode = Parameter(
             name="trigger_mode",
+            instrument=self,
             label="Trigger mode",
             get_cmd=":TRIG:MODE?",
         )

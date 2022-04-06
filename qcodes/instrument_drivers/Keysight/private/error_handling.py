@@ -1,9 +1,16 @@
 from typing import Tuple
 
-from qcodes.instrument.base import AbstractInstrument
+from typing_extensions import Protocol
+
+from qcodes.instrument.base import InstrumentProtocol
 
 
-class KeysightErrorQueueMixin(AbstractInstrument):
+class KeysightErrorProtocol(InstrumentProtocol, Protocol):
+    def error(self) -> Tuple[int, str]:
+        ...
+
+
+class KeysightErrorQueueMixin:
     """
     Mixin class for visa instruments that happen to implement an error queue.
 
@@ -11,7 +18,7 @@ class KeysightErrorQueueMixin(AbstractInstrument):
     instruments (which inherit from VisaInstrument class).
     """
 
-    def error(self) -> Tuple[int, str]:
+    def error(self: KeysightErrorProtocol) -> Tuple[int, str]:
         """
         Return the first error message in the queue. It also clears it from
         the error queue.
@@ -34,7 +41,7 @@ class KeysightErrorQueueMixin(AbstractInstrument):
 
         return code, mssg
 
-    def flush_error_queue(self, verbose: bool=True) -> None:
+    def flush_error_queue(self: KeysightErrorProtocol, verbose: bool = True) -> None:
         """
         Clear the instrument error queue, and prints it.
 

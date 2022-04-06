@@ -1,11 +1,11 @@
-# Zurich Instrument MFLI stub
+# Zurich Instrument SHFQA stub
 #
 # For the real implementation, please look into the package zhinst-qcodes
 # at https://github.com/zhinst/zhinst-qcodes
 
 
 try:
-    from zhinst.qcodes import MFLI
+    from zhinst.qcodes import SHFQA
 except ImportError:
     raise ImportError(
         """
@@ -13,4 +13,4 @@ except ImportError:
         Please install package zhinst-qcodes.
         """
     )
-__all__ = ["MFLI"]
+__all__ = ["SHFQA"]

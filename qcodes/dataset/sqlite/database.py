@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Iterator, Optional, Tuple, Union
 
 import numpy as np
+from typing_extensions import Literal
 
 import qcodes
 from qcodes.dataset.experiment_settings import reset_default_experiment_id
@@ -28,6 +29,8 @@ from qcodes.utils.types import (
     numpy_floats,
     numpy_ints,
 )
+
+JournalMode = Literal["DELETE", "TRUNCATE", "PERSIST", "MEMORY", "WAL", "OFF"]
 
 
 # utility function to allow sqlite/numpy type
@@ -203,7 +206,7 @@ def get_DB_debug() -> bool:
     return bool(qcodes.config["core"]["db_debug"])
 
 
-def initialise_database(journal_mode: Optional[str] = 'WAL') -> None:
+def initialise_database(journal_mode: Optional[JournalMode] = "WAL") -> None:
     """
     Initialise a database in the location specified by the config object
     and set ``atomic commit and rollback mode`` of the db. The db is created
@@ -226,7 +229,7 @@ def initialise_database(journal_mode: Optional[str] = 'WAL') -> None:
     del conn
 
 
-def set_journal_mode(conn: ConnectionPlus, journal_mode: str) -> None:
+def set_journal_mode(conn: ConnectionPlus, journal_mode: JournalMode) -> None:
     """
     Set the ``atomic commit and rollback mode`` of the sqlite database.
     See https://www.sqlite.org/pragma.html#pragma_journal_mode for details.
@@ -234,8 +237,7 @@ def set_journal_mode(conn: ConnectionPlus, journal_mode: str) -> None:
     Args:
         conn: Connection to the database.
         journal_mode: Which `journal_mode` should be used for atomic commit and rollback.
-            Options are DELETE, TRUNCATE, PERSIST, MEMORY, WAL and OFF. If set to None
-            no changes are made.
+            Options are DELETE, TRUNCATE, PERSIST, MEMORY, WAL and OFF.
     """
     valid_journal_modes = ["DELETE", "TRUNCATE", "PERSIST", "MEMORY", "WAL", "OFF"]
     if journal_mode not in valid_journal_modes:
@@ -246,8 +248,9 @@ def set_journal_mode(conn: ConnectionPlus, journal_mode: str) -> None:
     cursor.execute(query)
 
 
-def initialise_or_create_database_at(db_file_with_abs_path: str,
-                                     journal_mode: Optional[str] = 'WAL') -> None:
+def initialise_or_create_database_at(
+    db_file_with_abs_path: str, journal_mode: Optional[JournalMode] = "WAL"
+) -> None:
     """
     This function sets up QCoDeS to refer to the given database file. If the
     database file does not exist, it will be initiated.
@@ -282,9 +285,9 @@ def initialised_database_at(db_file_with_abs_path: str) -> Iterator[None]:
         qcodes.config["core"]["db_location"] = db_location
 
 
-def conn_from_dbpath_or_conn(conn: Optional[ConnectionPlus],
-                             path_to_db: Optional[str]) \
-        -> ConnectionPlus:
+def conn_from_dbpath_or_conn(
+    conn: Optional[ConnectionPlus], path_to_db: Optional[str]
+) -> ConnectionPlus:
     """
     A small helper function to abstract the logic needed for functions
     that take either a `ConnectionPlus` or the path to a db file.

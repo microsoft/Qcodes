@@ -48,21 +48,7 @@ def get_qcodes_version() -> str:
     """
     Get the version of the currently installed QCoDeS
     """
-    import qcodes
-    package_name = "qcodes"
-
-    qcodes_path = Path(qcodes.__file__).parent
-    if _has_pyproject_toml_and_is_git_repo(qcodes_path.parent):
-        log.info(
-            f"QCoDeS seems to be installed editably trying to look up version "
-            f"from git repo in {qcodes_path}"
-        )
-
-        import versioningit
-
-        __version__ = versioningit.get_version(project_dir=qcodes_path.parent)
-    else:
-        __version__ = version(package_name)
+    from qcodes._version import __version__
     return __version__
 
 

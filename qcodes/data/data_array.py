@@ -573,12 +573,12 @@ def data_array_to_xarray_dictionary(data_array: DataArray) -> Dict[str, Any]:
     Returns:
         dict: A dictionary containing the data in xarray format.
     """
-    key_mapping = {"unit": "unit", "name": "name", "label": "label"}
+    key_mapping = {"unit": "units", "name": "name", "label": "long_name"}
 
-    data_dictionary = {
+    data_dictionary: Dict[str, Any] = {"name": data_array.array_id}
+    data_dictionary["attrs"] = {
         target_key: getattr(data_array, key) for key, target_key in key_mapping.items()
     }
-    data_dictionary['long_name'] = data_array.name
     if data_array.is_setpoint:
         data_dictionary["dims"] = tuple([data_array.array_id])
         data_dictionary["depends_on"] = data_dictionary["dims"]
@@ -614,12 +614,12 @@ def xarray_data_array_dictionary_to_data_array(
         preset_data = np.array(array_dictionary["data"])
     array_name = array_dictionary.get("name", array_id)
 
-    array_full_name = array_dictionary.get("long_name", array_name)
+    array_full_name = array_dictionary["attrs"].get("long_name", array_name)
     data_array = DataArray(
         name=array_name,
         full_name=array_full_name,
-        label=array_dictionary.get("label", ""),
-        unit=array_dictionary.get("unit", None),
+        label=array_dictionary["attrs"].get("long_name", ""),
+        unit=array_dictionary["attrs"].get("units", None),
         is_setpoint=is_setpoint,
         shape=preset_data.shape,
         array_id=array_id,

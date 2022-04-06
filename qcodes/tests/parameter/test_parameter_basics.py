@@ -8,7 +8,7 @@ from .conftest import (
     GettableParam,
     VirtualParameter,
     blank_instruments,
-    named_instrument
+    named_instrument,
 )
 
 
@@ -189,3 +189,17 @@ def test_underlying_instrument_for_virtual_parameter():
     vp = VirtualParameter('test_param', param=p)
 
     assert vp.underlying_instrument is named_instrument
+
+
+def test_get_cmd_str_no_instrument_raises():
+    with pytest.raises(
+        TypeError, match="Cannot use a str get_cmd without binding to an instrument."
+    ):
+        Parameter(name="test", instrument=None, get_cmd="get_me")
+
+
+def test_set_cmd_str_no_instrument_raises():
+    with pytest.raises(
+        TypeError, match="Cannot use a str set_cmd without binding to an instrument."
+    ):
+        Parameter(name="test", instrument=None, set_cmd="set_me")

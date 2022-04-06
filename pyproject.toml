@@ -2,7 +2,7 @@
 requires = [
     "setuptools >= 56.0",
     "wheel >= 0.29.0",
-    "versioningit ~= 0.3.0",
+    "versioningit ~= 1.1.0",
 ]
 build-backend = 'setuptools.build_meta'
 
@@ -38,6 +38,7 @@ no_implicit_optional = true
 plugins = "numpy.typing.mypy_plugin"
 disallow_untyped_defs = true
 show_error_codes = true
+enable_error_code = "ignore-without-code"
 
 [[tool.mypy.overrides]]
 module = [
@@ -110,10 +111,14 @@ showcontent = true
 default-version = "0.0"
 
 [tool.versioningit.format]
-distance = "{version}.dev{distance}+{branch}.{vcs}{rev}"
-dirty = "{version}.dev{distance}+{branch}.{vcs}{rev}.dirty"
-distance-dirty = "{version}.dev{distance}+{branch}.{vcs}{rev}.dirty"
+distance = "{next_version}.dev{distance}+{branch}.{vcs}{rev}"
+dirty = "{next_version}.dev{distance}+{branch}.{vcs}{rev}.dirty"
+distance-dirty = "{next_version}.dev{distance}+{branch}.{vcs}{rev}.dirty"
 
 [tool.versioningit.vcs]
 method = "git"
 match = ["v*"]
+
+[tool.versioningit.onbuild]
+source-file = "qcodes/_version.py"
+build-file = "qcodes/_version.py"

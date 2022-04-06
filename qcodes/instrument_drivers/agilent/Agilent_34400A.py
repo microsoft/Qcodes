@@ -31,6 +31,7 @@ class Agilent_34400A(VisaInstrument):
 
         self.resolution = Parameter(
             "resolution",
+            instrument=self,
             get_cmd="VOLT:DC:RES?",
             get_parser=float,
             set_cmd=self._set_resolution,

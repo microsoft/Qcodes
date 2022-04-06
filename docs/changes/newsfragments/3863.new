@@ -1,4 +1,0 @@
-Added a function ``qcodes.dataset.get_guids_by_run_spec`` to look up dataset guids
-from run specficiations. This replaces the now deprecated semi-public method
-``get_guids_from_run_spec``. It has a better handling of connections and more filtering options matching
-``load_by_run_spec``.
