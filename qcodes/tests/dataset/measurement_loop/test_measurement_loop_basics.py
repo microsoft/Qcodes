@@ -32,7 +32,7 @@ def create_dummy_database():
 
 def test_original_dond(create_dummy_database):
     with create_dummy_database():
-        from qcodes.utils.dataset.doNd import dond, LinSweep
+        from qcodes.utils.dataset.doNd import LinSweep, dond
 
         p1_get = ManualParameter("p1_get", initial_value=1)
         p2_get = ManualParameter("p2_get", initial_value=1)
