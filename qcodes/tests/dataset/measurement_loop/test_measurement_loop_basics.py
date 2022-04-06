@@ -193,3 +193,60 @@ def test_initialize_empty_dataset(create_dummy_database):
       #   msmt.register_parameter(p1_get, setpoints=(p1_set,))
         with msmt.run(allow_empty_dataset=True) as datasaver:
            pass
+
+
+def test_nested_measurement(create_dummy_database):
+    def nested_measurement():
+        # Initialize parameters
+        p1_get = ManualParameter("p1_get")
+        p1_set = ManualParameter("p1_set")
+
+        with MeasurementLoop("test") as msmt:
+            for val in Sweep(LinSweep(p1_set, 0, 1, 11)):
+                assert p1_set() == val
+                p1_get(val + 1)
+                msmt.measure(p1_get)
+
+
+    with create_dummy_database():
+        # Initialize parameters
+        p2_set = ManualParameter("p2_set")
+
+        with MeasurementLoop("test") as msmt:
+            for val2 in Sweep(LinSweep(p2_set, 0, 1, 11)):
+                assert p2_set() == val2
+                nested_measurement()
+
+    data = msmt.dataset
+    assert data.name == "test"
+    assert data.parameters == "p2_set,p1_set,p1_get"
+
+    arrays = data.get_parameter_data()
+    data_array = arrays["p1_get"]["p1_get"]
+
+    assert np.allclose(data_array, np.tile(np.linspace(1, 2, 11), (11, 1)))
+
+    assert np.allclose(
+        arrays["p1_get"]["p2_set"], np.tile(np.linspace(0, 1, 11), (11, 1)).transpose()
+    )
+
+    assert np.allclose(
+        arrays["p1_get"]["p1_set"], np.tile(np.linspace(0, 1, 11), (11, 1))
+    )
+
+
+def test_measurement_no_parameter(create_dummy_database):
+    with create_dummy_database():
+        with MeasurementLoop("test") as msmt:
+            for val in Sweep(np.linspace(0, 1, 11), 'p1_set', label='p1 label', unit='V'):
+                msmt.measure(val+1, name='p1_get')
+
+    data = msmt.dataset
+    assert data.name == "test"
+    assert data.parameters == "p1_set,p1_get"
+
+    arrays = data.get_parameter_data()
+    data_arrays = arrays["p1_get"]
+
+    assert np.allclose(data_arrays["p1_get"], np.linspace(1, 2, 11))
+    assert np.allclose(data_arrays["p1_set"], np.linspace(0, 1, 11))
