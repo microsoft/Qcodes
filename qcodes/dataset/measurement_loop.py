@@ -70,11 +70,7 @@ class DatasetHandler:
         self.measurement = Measurement(name=self.name)
 
         # Create measurement Runner
-        # TODO remove cache
-        self.runner = self.measurement.run(
-            allow_empty_dataset=True,
-            in_memory_cache=False
-        )
+        self.runner = self.measurement.run(allow_empty_dataset=True)
 
         # Create measurement Dataset
         self.datasaver = self.runner.__enter__()
@@ -271,6 +267,7 @@ class DatasetHandler:
         # Update DataSaver
         self.datasaver._interdeps = self.measurement._interdeps
 
+        # Update DataSet
         # Generate new paramspecs with matching RunDescriber
         dataset._rundescriber = RunDescriber(
             self.measurement._interdeps, shapes=self.measurement._shapes
@@ -290,6 +287,12 @@ class DatasetHandler:
         desc_str = serial.to_json_for_storage(dataset.description)
 
         update_run_description(dataset.conn, dataset.run_id, desc_str)
+
+        # Update dataset cache
+        cache_data = self.dataset._cache._data
+        interdeps_empty_dict = dataset._rundescriber.interdeps._empty_data_dict()
+        for key, val in interdeps_empty_dict.items():
+            cache_data.setdefault(key, val)
 
 class MeasurementLoop:
     """Class to perform measurements
