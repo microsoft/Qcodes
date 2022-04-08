@@ -15,7 +15,7 @@ if sys.version_info >= (3, 10):
     # official api in 3.10
     from importlib.metadata import distributions
 else:
-    # 3.7 and earlier
+    # 3.9 and earlier
     from importlib_metadata import distributions
 
 log = logging.getLogger(__name__)
