@@ -12,22 +12,6 @@ def test_get_qcodes_version():
     assert ii.get_qcodes_version() == qc.__version__
 
 
-def test_get_qcodes_requirements():
-    with pytest.warns(QCoDeSDeprecationWarning):
-        reqs = ii.get_qcodes_requirements()
-
-    assert isinstance(reqs, list)
-    assert len(reqs) > 0
-
-
-def test_get_qcodes_requirements_versions():
-    with pytest.warns(QCoDeSDeprecationWarning):
-        req_vs = ii.get_qcodes_requirements_versions()
-
-    assert isinstance(req_vs, dict)
-    assert len(req_vs) > 0
-
-
 def test_is_qcodes_installed_editably():
     answer = ii.is_qcodes_installed_editably()
 
