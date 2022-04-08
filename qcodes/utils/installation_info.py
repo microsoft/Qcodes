@@ -8,25 +8,15 @@ import logging
 import subprocess
 import sys
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
-from qcodes.utils.deprecate import deprecate
-
-if sys.version_info >= (3, 8):
-    from importlib.metadata import (
-        PackageNotFoundError,
-        distribution,
-        distributions,
-        version,
-    )
+if sys.version_info >= (3, 10):
+    # distribution.name used below became part of the
+    # official api in 3.10
+    from importlib.metadata import distributions
 else:
     # 3.7 and earlier
-    from importlib_metadata import (
-        PackageNotFoundError,
-        distribution,
-        distributions,
-        version,
-    )
+    from importlib_metadata import distributions
 
 log = logging.getLogger(__name__)
 
