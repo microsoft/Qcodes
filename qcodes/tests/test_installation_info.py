@@ -1,8 +1,5 @@
-import pytest
-
 import qcodes as qc
 import qcodes.utils.installation_info as ii
-from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 # The get_* functions from installation_info are hard to meaningfully test,
 # but we can at least test that they execute without errors
