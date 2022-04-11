@@ -23,7 +23,7 @@ ipython-genutils==0.2.0
 ipywidgets==7.7.0
 jedi==0.18.1
 Jinja2==3.1.1
-jsonpointer==2.2
+jsonpointer==2.3
 jsonschema==4.4.0
 jupyter==1.0.0
 jupyter-client==7.2.2
@@ -50,7 +50,7 @@ prometheus-client==0.14.1
 prompt-toolkit==3.0.29
 pycparser==2.21
 Pygments==2.11.2
-pyparsing==3.0.7
+pyparsing==3.0.8
 pyrsistent==0.18.1
 python-dateutil==2.8.2
 pytz==2022.1
