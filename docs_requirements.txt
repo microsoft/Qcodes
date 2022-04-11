@@ -29,7 +29,7 @@ jupyter==1.0.0
 jupyter-client==7.2.2
 jupyter-console==6.4.3
 jupyter-core==4.9.2
-jupyterlab-pygments==0.1.2
+jupyterlab-pygments==0.2.0
 MarkupSafe==2.1.1
 mistune==0.8.4
 nbclient==0.5.13
@@ -46,7 +46,7 @@ pandas==1.4.2; python_version>='3.8'
 pandocfilters==1.5.0
 parso==0.8.3
 pickleshare==0.7.5
-prometheus-client==0.14.0
+prometheus-client==0.14.1
 prompt-toolkit==3.0.29
 pycparser==2.21
 Pygments==2.11.2
