@@ -22,7 +22,7 @@ jobs:
       DISPLAY: ':99.0'
 
     steps:
-    - uses: actions/checkout@v3.0.0
+    - uses: actions/checkout@v3.0.1
       with:
         submodules: true
     - name: setup ubuntu-latest xvfb
