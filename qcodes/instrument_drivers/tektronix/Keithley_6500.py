@@ -80,7 +80,7 @@ class Keithley_6500(VisaInstrument):
 
         self.add_parameter('mode',
                            get_cmd='SENS:FUNC?',
-                           set_cmd="SENS:FUNC {}",
+                           set_cmd="SENS:FUNC '{}'",
                            val_mapping=self._mode_map)
 
         self.add_parameter('nplc',
