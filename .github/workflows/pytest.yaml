@@ -59,7 +59,7 @@ jobs:
       run: |
         pytest --cov=qcodes --cov-report xml --hypothesis-profile ci qcodes
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3.0.0
+      uses: codecov/codecov-action@v3.1.0
       with:
         file: ./coverage.xml
         env_vars: OS,PYTHON
