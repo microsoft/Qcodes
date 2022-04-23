@@ -4,6 +4,7 @@ import hypothesis.strategies as hst
 import numpy as np
 import pytest
 from hypothesis import HealthCheck, given, settings
+
 from qcodes.instrument.parameter import combine
 from qcodes.utils.helpers import full_class
 
@@ -60,10 +61,12 @@ def testSet(parameters, mocker):
 
 
 @settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
-@given(npoints=hst.integers(1, 100),
-       x_start_stop=hst.lists(hst.integers(), min_size=2, max_size=2).map(sorted),
-       y_start_stop=hst.lists(hst.integers(), min_size=2, max_size=2).map(sorted),
-       z_start_stop=hst.lists(hst.integers(), min_size=2, max_size=2).map(sorted))
+@given(
+    npoints=hst.integers(1, 100),
+    x_start_stop=hst.lists(hst.integers(), min_size=2, max_size=2).map(sorted),  # type: ignore[arg-type]
+    y_start_stop=hst.lists(hst.integers(), min_size=2, max_size=2).map(sorted),  # type: ignore[arg-type]
+    z_start_stop=hst.lists(hst.integers(), min_size=2, max_size=2).map(sorted),  # type: ignore[arg-type]
+)
 def testAggregator(parameters, npoints, x_start_stop, y_start_stop, z_start_stop):
 
     x_set = np.linspace(x_start_stop[0], x_start_stop[1], npoints).reshape(npoints, 1)

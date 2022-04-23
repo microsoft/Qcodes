@@ -1,0 +1,1 @@
+Fixed issue #4121 of setting the mode of the Keithley 6500 by adding single quotes around the mode value in the set_cmd string.

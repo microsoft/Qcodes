@@ -1,10 +1,14 @@
 from functools import partial
-from typing import Optional, Union, Any
+from typing import Any, Optional, Union
 
+from typing_extensions import Literal
+
+from qcodes.instrument.channel import InstrumentChannel
 from qcodes.instrument.parameter import DelegateParameter
 from qcodes.instrument.visa import VisaInstrument
-from qcodes.instrument.channel import InstrumentChannel
-from qcodes.utils.validators import Numbers, Bool, Enum, Ints
+from qcodes.utils.validators import Bool, Enum, Ints, Numbers
+
+ModeType = Literal["CURR", "VOLT"]
 
 
 def float_round(val: float) -> int:
@@ -142,8 +146,7 @@ class GS200_Monitor(InstrumentChannel):
         # If enabled and output is on, then we can perform a measurement.
         return float(self.ask(':MEAS?'))
 
-    def update_measurement_enabled(self, unit: str,
-                                   output_range: float) -> None:
+    def update_measurement_enabled(self, unit: ModeType, output_range: float) -> None:
         """
         Args:
             unit
@@ -463,9 +466,9 @@ class GS200(VisaInstrument):
         self.output_level.step = saved_step
         self.output_level.inter_delay = saved_inter_delay
 
-    def _get_set_output(self, mode: str,
-                        output_level: Optional[float] = None
-                        ) -> Optional[float]:
+    def _get_set_output(
+        self, mode: ModeType, output_level: Optional[float] = None
+    ) -> Optional[float]:
         """
         Get or set the output level.
 
@@ -524,9 +527,11 @@ class GS200(VisaInstrument):
         cmd_str = f":SOUR:LEV{auto_str} {output_level:.5e}"
         self.write(cmd_str)
 
-    def _update_measurement_module(self, source_mode: Optional[str] = None,
-                                   source_range: Optional[float] = None
-                                   ) -> None:
+    def _update_measurement_module(
+        self,
+        source_mode: Optional[ModeType] = None,
+        source_range: Optional[float] = None,
+    ) -> None:
         """
         Update validators/units as source mode/range changes.
 
@@ -560,7 +565,7 @@ class GS200(VisaInstrument):
             # 10mV/100mV ranges.
             self.measure._enabled &= not val
 
-    def _assert_mode(self, mode: str) -> None:
+    def _assert_mode(self, mode: ModeType) -> None:
         """
         Assert that we are in the correct mode to perform an operation.
 
@@ -571,7 +576,7 @@ class GS200(VisaInstrument):
             raise ValueError("Cannot get/set {} settings while in {} mode".
                              format(mode, self.source_mode.get_latest()))
 
-    def _set_source_mode(self, mode: str) -> None:
+    def _set_source_mode(self, mode: ModeType) -> None:
         """
         Set output mode and change delegate parameters' source accordingly.
         Also, exclude/include the parameters from snapshot depending on the
@@ -609,7 +614,7 @@ class GS200(VisaInstrument):
         # Update the measurement mode
         self._update_measurement_module(source_mode=mode)
 
-    def _set_range(self, mode: str, output_range: float) -> None:
+    def _set_range(self, mode: ModeType, output_range: float) -> None:
         """
         Update range
 
@@ -627,7 +632,7 @@ class GS200(VisaInstrument):
                                         source_range=output_range)
         self.write(f':SOUR:RANG {output_range}')
 
-    def _get_range(self, mode: str) -> float:
+    def _get_range(self, mode: ModeType) -> float:
         """
         Query the present range.
 
