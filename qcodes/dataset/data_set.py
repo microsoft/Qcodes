@@ -318,11 +318,12 @@ class DataSet(BaseDataSet):
         shapes: Shapes = None,
         parent_datasets: Sequence[Mapping[Any, Any]] = (),
         write_in_background: bool = False,
+        allow_empty_dataset: bool = False
     ) -> None:
 
         self.add_snapshot(json.dumps({"station": snapshot}, cls=NumpyJSONEncoder))
 
-        if interdeps == InterDependencies_():
+        if interdeps == InterDependencies_() and not allow_empty_dataset:
             raise RuntimeError("No parameters supplied")
 
         self.set_interdependencies(interdeps, shapes)
