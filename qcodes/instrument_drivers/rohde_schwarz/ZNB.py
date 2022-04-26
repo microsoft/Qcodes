@@ -212,7 +212,7 @@ class FrequencySweepMagPhase(MultiParameter):
 
 class FrequencySweepDBPhase(MultiParameter):
     """
-    Sweep that return magnitude in decibel (dB) and phase.
+    Sweep that return magnitude in decibel (dB) and phase in radians.
     """
 
     def __init__(
