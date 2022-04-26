@@ -212,7 +212,7 @@ class FrequencySweepMagPhase(MultiParameter):
 
 class FrequencySweepDBPhase(MultiParameter):
     """
-    Sweep that return magnitude and phase.
+    Sweep that return magnitude in decibel (dB) and phase.
     """
 
     def __init__(
@@ -519,7 +519,7 @@ class ZNBChannel(InstrumentChannel):
             stop=self.stop(),
             npts=self.npts(),
             channel=n,
-            parameter_class=FrequencySweepdBPhase,
+            parameter_class=FrequencySweepDBPhase,
         )
         self.add_parameter(
             name="trace",
