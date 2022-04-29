@@ -452,7 +452,7 @@ class DotDict(Dict[str, Any]):
         if not isinstance(key, str):
             return False
         if '.' not in key:
-            return dict.__contains__(self, key)
+            return super().__contains__(key)
         myKey, restOfKey = key.split('.', 1)
         target = dict.__getitem__(self, myKey)
         return restOfKey in target
