@@ -1,14 +1,15 @@
 from unittest import TestCase
+
+import hypothesis.strategies as hst
 import numpy as np
 from hypothesis import given, settings
-import hypothesis.strategies as hst
+
+from qcodes.actions import Task
+from qcodes.data.location import FormatLocation
+from qcodes.instrument.parameter import Parameter, combine
+from qcodes.loops import Loop
 
 from ..instrument_mocks import DummyInstrument
-from qcodes.instrument.parameter import combine
-from qcodes.loops import Loop
-from qcodes.actions import Task
-from qcodes.instrument.parameter import Parameter
-from qcodes.data.location import FormatLocation
 
 
 class TestLoopCombined(TestCase):
@@ -23,16 +24,33 @@ class TestLoopCombined(TestCase):
         cls.dmm.close()
         del cls.dmm
 
-    @given(npoints=hst.integers(2, 100),
-           x_start_stop=hst.lists(hst.integers(min_value=-800, max_value=400),
-                                  min_size=2, max_size=2,
-                                  unique=True).map(sorted),
-           y_start_stop=hst.lists(hst.integers(min_value=-800, max_value=400),
-                                  min_size=2, max_size=2,
-                                  unique=True).map(sorted),
-           z_start_stop=hst.lists(hst.integers(min_value=-800, max_value=400),
-                                  min_size=2, max_size=2,
-                                  unique=True).map(sorted))
+    @given(
+        npoints=hst.integers(2, 100),
+        x_start_stop=hst.lists(
+            hst.integers(min_value=-800, max_value=400),
+            min_size=2,
+            max_size=2,
+            unique=True,
+        ).map(
+            sorted  # type: ignore[arg-type]
+        ),
+        y_start_stop=hst.lists(
+            hst.integers(min_value=-800, max_value=400),
+            min_size=2,
+            max_size=2,
+            unique=True,
+        ).map(
+            sorted  # type: ignore[arg-type]
+        ),
+        z_start_stop=hst.lists(
+            hst.integers(min_value=-800, max_value=400),
+            min_size=2,
+            max_size=2,
+            unique=True,
+        ).map(
+            sorted  # type: ignore[arg-type]
+        ),
+    )
     @settings(max_examples=10, deadline=300)
     def testLoopCombinedParameterPrintTask(self, npoints, x_start_stop,
                                            y_start_stop, z_start_stop):
@@ -68,16 +86,33 @@ class TestLoopCombined(TestCase):
         np.testing.assert_array_equal(data.arrays['Y'].ndarray, y_set)
         np.testing.assert_array_equal(data.arrays['Z'].ndarray, z_set)
 
-    @given(npoints=hst.integers(2, 100),
-           x_start_stop=hst.lists(hst.integers(min_value=-800, max_value=400),
-                                  min_size=2, max_size=2,
-                                  unique=True).map(sorted),
-           y_start_stop=hst.lists(hst.integers(min_value=-800, max_value=400),
-                                  min_size=2, max_size=2,
-                                  unique=True).map(sorted),
-           z_start_stop=hst.lists(hst.integers(min_value=-800, max_value=400),
-                                  min_size=2, max_size=2,
-                                  unique=True).map(sorted))
+    @given(
+        npoints=hst.integers(2, 100),
+        x_start_stop=hst.lists(
+            hst.integers(min_value=-800, max_value=400),
+            min_size=2,
+            max_size=2,
+            unique=True,
+        ).map(
+            sorted  # type: ignore[arg-type]
+        ),
+        y_start_stop=hst.lists(
+            hst.integers(min_value=-800, max_value=400),
+            min_size=2,
+            max_size=2,
+            unique=True,
+        ).map(
+            sorted  # type: ignore[arg-type]
+        ),
+        z_start_stop=hst.lists(
+            hst.integers(min_value=-800, max_value=400),
+            min_size=2,
+            max_size=2,
+            unique=True,
+        ).map(
+            sorted  # type: ignore[arg-type]
+        ),
+    )
     @settings(max_examples=10, deadline=None)
     def testLoopCombinedParameterTwice(self, npoints, x_start_stop,
                                        y_start_stop, z_start_stop):
@@ -116,16 +151,33 @@ class TestLoopCombined(TestCase):
         np.testing.assert_array_equal(data.arrays['dmm_voltage_1'].ndarray,
                                       np.arange(2, npoints*2+1, 2))
 
-    @given(npoints=hst.integers(2, 100),
-           x_start_stop=hst.lists(hst.integers(min_value=-800, max_value=400),
-                                  min_size=2, max_size=2,
-                                  unique=True).map(sorted),
-           y_start_stop=hst.lists(hst.integers(min_value=-800, max_value=400),
-                                  min_size=2, max_size=2,
-                                  unique=True).map(sorted),
-           z_start_stop=hst.lists(hst.integers(min_value=-800, max_value=400),
-                                  min_size=2, max_size=2,
-                                  unique=True).map(sorted))
+    @given(
+        npoints=hst.integers(2, 100),
+        x_start_stop=hst.lists(
+            hst.integers(min_value=-800, max_value=400),
+            min_size=2,
+            max_size=2,
+            unique=True,
+        ).map(
+            sorted  # type: ignore[arg-type]
+        ),
+        y_start_stop=hst.lists(
+            hst.integers(min_value=-800, max_value=400),
+            min_size=2,
+            max_size=2,
+            unique=True,
+        ).map(
+            sorted  # type: ignore[arg-type]
+        ),
+        z_start_stop=hst.lists(
+            hst.integers(min_value=-800, max_value=400),
+            min_size=2,
+            max_size=2,
+            unique=True,
+        ).map(
+            sorted  # type: ignore[arg-type]
+        ),
+    )
     @settings(max_examples=10, deadline=600)
     def testLoopCombinedParameterAndMore(self, npoints, x_start_stop,
                                          y_start_stop, z_start_stop):
@@ -167,17 +219,34 @@ class TestLoopCombined(TestCase):
         np.testing.assert_array_equal(data.arrays['dmm_voltage_2'].ndarray,
                                       np.arange(2, npoints * 2 + 1, 2))
 
-    @given(npoints=hst.integers(2, 50),
-           npoints_outer=hst.integers(2,25),
-           x_start_stop=hst.lists(hst.integers(min_value=-800, max_value=400),
-                                  min_size=2, max_size=2,
-                                  unique=True).map(sorted),
-           y_start_stop=hst.lists(hst.integers(min_value=-800, max_value=400),
-                                  min_size=2, max_size=2,
-                                  unique=True).map(sorted),
-           z_start_stop=hst.lists(hst.integers(min_value=-800, max_value=400),
-                                  min_size=2, max_size=2,
-                                  unique=True).map(sorted))
+    @given(
+        npoints=hst.integers(2, 50),
+        npoints_outer=hst.integers(2, 25),
+        x_start_stop=hst.lists(
+            hst.integers(min_value=-800, max_value=400),
+            min_size=2,
+            max_size=2,
+            unique=True,
+        ).map(
+            sorted  # type: ignore[arg-type]
+        ),
+        y_start_stop=hst.lists(
+            hst.integers(min_value=-800, max_value=400),
+            min_size=2,
+            max_size=2,
+            unique=True,
+        ).map(
+            sorted  # type: ignore[arg-type]
+        ),
+        z_start_stop=hst.lists(
+            hst.integers(min_value=-800, max_value=400),
+            min_size=2,
+            max_size=2,
+            unique=True,
+        ).map(
+            sorted  # type: ignore[arg-type]
+        ),
+    )
     @settings(max_examples=10, deadline=None)
     def testLoopCombinedParameterInside(self, npoints, npoints_outer,
                                         x_start_stop, y_start_stop,
@@ -202,7 +271,6 @@ class TestLoopCombined(TestCase):
 
         atask = Task(ataskfunc)
         btask = Task(btaskfunc)
-
 
         def wrapper():
             counter = 0

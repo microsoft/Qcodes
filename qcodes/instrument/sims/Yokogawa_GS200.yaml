@@ -1,0 +1,33 @@
+spec: "1.0"
+devices:
+  device 1:
+    eom:
+      GPIB INSTR:
+        q: "\n"
+        r: "\n"
+    error: ERROR
+    dialogues:
+      - q: "*IDN?"
+        r: "QCoDeS Yokogawa Mock,GS200,xxxxxxxx,MOCKFW"
+
+    properties:
+      mode:
+        default: "VOLT"
+        getter:
+          q: ":SOUR:FUNC?"
+          r: "{}"
+        setter:
+          q: "SOUR:FUNC {}"
+      output:
+        default: 0
+        getter:
+          q: "OUTPUT?"
+          r: "{}"
+        setter:
+          q: "OUTPUT {}"
+
+
+
+resources:
+  GPIB::1::INSTR:
+     device: device 1

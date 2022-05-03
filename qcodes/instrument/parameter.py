@@ -767,12 +767,18 @@ class _BaseParameter(Metadatable):
             ValueError: If the value is outside the bounds specified by the
                validator.
         """
-        if self._instrument:
-            context = (getattr(self._instrument, 'name', '') or
-                       str(self._instrument.__class__)) + '.' + self.name
-        else:
-            context = self.name
         if self.vals is not None:
+            if self._instrument:
+                context = (
+                    (
+                        getattr(self._instrument, "name", "")
+                        or str(self._instrument.__class__)
+                    )
+                    + "."
+                    + self.name
+                )
+            else:
+                context = self.name
             self.vals.validate(value, 'Parameter: ' + context)
 
     @property

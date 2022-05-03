@@ -1,6 +1,5 @@
-from typing import Any, TypeVar, Callable
 from functools import partial
-from typing import Union
+from typing import Any, Callable, TypeVar, Union
 
 from qcodes import VisaInstrument
 from qcodes.utils.validators import Bool, Enum, Ints, MultiType, Numbers
@@ -78,10 +77,12 @@ class Keithley_6500(VisaInstrument):
                           'dc voltage': 'VOLT:DC', '2w resistance': 'RES', '4w resistance': 'FRES',
                           'temperature': 'TEMP', 'frequency': 'FREQ'}
 
-        self.add_parameter('mode',
-                           get_cmd='SENS:FUNC?',
-                           set_cmd="SENS:FUNC {}",
-                           val_mapping=self._mode_map)
+        self.add_parameter(
+            "mode",
+            get_cmd="SENS:FUNC?",
+            set_cmd="SENS:FUNC '{}'",
+            val_mapping=self._mode_map,
+        )
 
         self.add_parameter('nplc',
                            get_cmd=partial(
