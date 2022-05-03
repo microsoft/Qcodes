@@ -91,7 +91,7 @@ webencodings~=0.5.1
 websockets~=10.3
 widgetsnbextension~=3.6.0
 wincertstore~=0.2
-wrapt~=1.14.0
+wrapt~=1.14.1
 xarray~=0.20.2; python_version<'3.8'
 xarray~=2022.3.0; python_version>='3.8'
 zipp~=3.8.0
