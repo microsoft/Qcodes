@@ -52,5 +52,5 @@ types-toml
 types-typed-ast
 urllib3==1.26.9
 wincertstore==0.2
-wrapt==1.14.0
+wrapt==1.14.1
 zipp==3.8.0
