@@ -66,7 +66,7 @@ pyrsistent~=0.18.1
 python-dateutil~=2.8.2
 pytz~=2022.1
 PyVISA~=1.11.3
-pywin32==303; sys_platform == 'win32'
+pywin32==304; sys_platform == 'win32'
 pywinpty~=2.0.5; sys_platform == 'win32'
 pyzmq~=22.3.0
 requests~=2.27.1
