@@ -694,6 +694,8 @@ class Measurement:
             produced by the measurement. If not given, a default value of
             'results' is used for the dataset.
     """
+    enteractions = []
+    exitactions = []
 
     def __init__(
         self,
@@ -1231,8 +1233,8 @@ class Measurement:
         if write_in_background is None:
             write_in_background = qc.config.dataset.write_in_background
         return Runner(
-            self.enteractions,
-            self.exitactions,
+            [*self.enteractions, *Measurement.enteractions],
+            [*self.exitactions, *Measurement.exitactions],
             self.experiment,
             station=self.station,
             write_period=self._write_period,
