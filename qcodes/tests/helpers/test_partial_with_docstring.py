@@ -10,7 +10,7 @@ def test_partial_with_docstring():
     assert g.__doc__ == docstring
 
 
-def test_partial_with_docstring_returns_value():
+def test_partial_with_docstring_pass_args():
     """
     When one uses partial to bind the last argument
     it should be possible to provide arguments before
@@ -28,7 +28,7 @@ def test_partial_with_docstring_returns_value():
     assert g(2) == 3
 
 
-def test_partial_with_docstring_returns_value_2():
+def test_partial_with_docstring_returns_value():
     def f(a: int, b: int):
         return a + b
 
