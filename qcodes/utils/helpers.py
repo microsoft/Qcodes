@@ -669,7 +669,7 @@ def partial_with_docstring(func: Callable[..., Any],
     >>> help(g) # this will print the docstring of partial and not the docstring set above
 
     Args:
-        func: A function that izts docstring will be accessed.
+        func: A function that its docstring will be accessed.
         docstring: The docstring of the corresponding function.
     """
     ex = partial(func, **kwargs)
