@@ -529,6 +529,13 @@ class ChannelTuple(Metadatable, Sequence[InstrumentModuleType]):
                 channel.print_readable_snapshot(update=update,
                                                 max_chars=max_chars)
 
+    def invalidate_cache(self) -> None:
+        """
+        Invalidate the cache of all parameter on the ChannelTuple.
+        """
+        for chan in self._channels:
+            chan.invalidate_cache()
+
 # we ignore a mypy error here since the __getitem__ signature above
 # taking a tuple is not compatible with MutableSequence
 # for some reason this does not happen with Sequence

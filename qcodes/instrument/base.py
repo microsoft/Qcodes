@@ -334,6 +334,24 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             submodule.print_readable_snapshot(update=update,
                                               max_chars=max_chars)
 
+    def invalidate_cache(self) -> None:
+        """
+        Invalidate the cache of all parameter on the instrument.
+        Calling this method will recursively mark the cache of all parameters
+        on the instrument and any parameter on instrument modules as invalid.
+
+        This is useful if you have performed manual operations (e.g. using the frontpanel)
+        which changes the state of the instrument outside QCoDeS.
+
+        This in turn means that the next snapshot of the instrument will trigger a (potentially) slow
+        reread of all parameters of the instrument.
+        """
+        for parameter in self.parameters.values():
+            parameter.cache.invalidate()
+
+        for submodule in self.submodules.values():
+            submodule.invalidate_cache()
+
     @property
     def parent(self) -> Optional['InstrumentBase']:
         """
