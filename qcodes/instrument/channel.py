@@ -531,7 +531,7 @@ class ChannelTuple(Metadatable, Sequence[InstrumentModuleType]):
 
     def invalidate_cache(self) -> None:
         """
-        Invalidate the cache of all parameter on the ChannelTuple.
+        Invalidate the cache of all parameters on the ChannelTuple.
         """
         for chan in self._channels:
             chan.invalidate_cache()
