@@ -315,18 +315,24 @@ class DummyChannel(InstrumentChannel):
                            get_cmd=None,
                            set_cmd=None)
 
-        self.add_parameter('dummy_stop',
-                           unit='some unit',
-                           label='f stop',
-                           vals=Numbers(1, 1e3),
-                           get_cmd=None,
-                           set_cmd=None)
+        self.add_parameter(
+            "dummy_stop",
+            initial_value=100,
+            unit="some unit",
+            label="f stop",
+            vals=Numbers(1, 1e3),
+            get_cmd=None,
+            set_cmd=None,
+        )
 
-        self.add_parameter('dummy_n_points',
-                           unit='',
-                           vals=Numbers(1, 1e3),
-                           get_cmd=None,
-                           set_cmd=None)
+        self.add_parameter(
+            "dummy_n_points",
+            initial_value=101,
+            unit="",
+            vals=Numbers(1, 1e3),
+            get_cmd=None,
+            set_cmd=None,
+        )
 
         self.add_parameter('dummy_start_2',
                            initial_value=0,
@@ -336,18 +342,24 @@ class DummyChannel(InstrumentChannel):
                            get_cmd=None,
                            set_cmd=None)
 
-        self.add_parameter('dummy_stop_2',
-                           unit='some unit',
-                           label='f stop',
-                           vals=Numbers(1, 1e3),
-                           get_cmd=None,
-                           set_cmd=None)
+        self.add_parameter(
+            "dummy_stop_2",
+            initial_value=100,
+            unit="some unit",
+            label="f stop",
+            vals=Numbers(1, 1e3),
+            get_cmd=None,
+            set_cmd=None,
+        )
 
-        self.add_parameter('dummy_n_points_2',
-                           unit='',
-                           vals=Numbers(1, 1e3),
-                           get_cmd=None,
-                           set_cmd=None)
+        self.add_parameter(
+            "dummy_n_points_2",
+            initial_value=101,
+            unit="",
+            vals=Numbers(1, 1e3),
+            get_cmd=None,
+            set_cmd=None,
+        )
 
         self.add_parameter('dummy_sp_axis',
                            unit='some unit',
