@@ -357,3 +357,53 @@ def test_get_from_cache_marked_invalid():
                                            " and has an invalid cache"):
         param.cache.get(get_if_invalid=True)
     assert param._get_count == 2
+
+
+def test_marking_invalid_via_instrument(dummy_instrument):
+    def _assert_cache_status(valid: bool):
+        for param in dummy_instrument.parameters.values():
+            assert param.cache.valid is valid, param.full_name
+
+        for instrument_module in dummy_instrument.instrument_modules.values():
+            for param in instrument_module.parameters.values():
+                # Multi Array and ParamWithSetpoints are not updated in snapshot
+                # so not marked valid by snapshot.update(None)
+                # here we therefor exclude them
+                if param.short_name not in [
+                    "dummy_multi_parameter",
+                    "dummy_scalar_multi_parameter",
+                    "dummy_2d_multi_parameter",
+                    "dummy_2d_multi_parameter_2",
+                    "dummy_array_parameter",
+                    "dummy_sp_axis",
+                    "dummy_sp_axis_2",
+                    "dummy_complex_array_parameter",
+                    "dummy_parameter_with_setpoints",
+                    "dummy_parameter_with_setpoints_2d",
+                    "dummy_parameter_with_setpoints_complex",
+                ]:
+                    assert param.cache.valid is valid, param.full_name
+
+    dummy_instrument.snapshot(update=None)
+
+    _assert_cache_status(True)
+
+    dummy_instrument.invalidate_cache()
+
+    _assert_cache_status(False)
+
+    dummy_instrument.snapshot(update=None)
+
+    _assert_cache_status(True)
+
+    dummy_instrument.invalidate_cache()
+
+    _assert_cache_status(False)
+
+    for param in dummy_instrument.parameters.values():
+        param.get()
+    for module in dummy_instrument.instrument_modules.values():
+        for param in module.parameters.values():
+            param.get()
+
+    _assert_cache_status(True)
