@@ -20,7 +20,7 @@ ordered-set==4.1.0
 packaging==21.3
 pluggy==1.0.0
 py==1.11.0
-pyparsing==3.0.8
+pyparsing==3.0.9
 pytest==7.1.2
 pytest-cov==3.0.0
 pytest-forked==1.4.0
