@@ -124,8 +124,7 @@ def test_instantiation_from_names(magnet_axes_instances, request):
     mag_x, mag_y, mag_z = magnet_axes_instances
     request.addfinalizer(AMI430_3D.close_all)
 
-    driver = AMI430_3D("AMI430_3D", mag_x.name, mag_y.name, mag_z.name,
-                       field_limit)
+    driver = AMI430_3D("AMI430_3D", mag_x.name, mag_y.name, mag_z.name, field_limit)
 
     assert driver._instrument_x is mag_x
     assert driver._instrument_y is mag_y
@@ -186,9 +185,7 @@ def test_instantiation_from_badly_typed_argument(
             ValueError, match="instrument_z argument is neither of those"
     ):
         AMI430_3D(
-            "AMI430_3D",
-            mag_x.name, mag_y, badly_typed_instrument_z_argument,
-            field_limit
+            "AMI430_3D", mag_x.name, mag_y, badly_typed_instrument_z_argument, field_limit
         )
 
 
