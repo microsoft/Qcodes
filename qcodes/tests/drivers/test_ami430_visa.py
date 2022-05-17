@@ -64,7 +64,7 @@ def _make_current_driver(magnet_axes_instances):
     """
     mag_x, mag_y, mag_z = magnet_axes_instances
 
-    driver = AMI430_3D("AMI430-3D", mag_x, mag_y, mag_z, field_limit)
+    driver = AMI430_3D("AMI430_3D", mag_x, mag_y, mag_z, field_limit)
 
     yield driver
 
@@ -119,7 +119,7 @@ def test_instantiation_from_names(magnet_axes_instances, request):
     mag_x, mag_y, mag_z = magnet_axes_instances
     request.addfinalizer(AMI430_3D.close_all)
 
-    driver = AMI430_3D("AMI430-3D", mag_x.name, mag_y.name, mag_z.name, field_limit)
+    driver = AMI430_3D("AMI430_3D", mag_x.name, mag_y.name, mag_z.name, field_limit)
 
     assert driver._instrument_x is mag_x
     assert driver._instrument_y is mag_y
@@ -138,7 +138,7 @@ def test_instantiation_from_name_of_nonexistent_ami_instrument(
         KeyError, match=f"with name {non_existent_instrument} does not exist"
     ):
         AMI430_3D(
-            "AMI430-3D", mag_x.name, non_existent_instrument, mag_z.name, field_limit
+            "AMI430_3D", mag_x.name, non_existent_instrument, mag_z.name, field_limit
         )
 
 
@@ -159,7 +159,7 @@ def test_instantiation_from_name_of_existing_non_ami_instrument(
         ),
     ):
         AMI430_3D(
-            "AMI430-3D",
+            "AMI430_3D",
             mag_x.name,
             non_ami_existing_instrument.name,
             mag_z.name,
@@ -175,7 +175,7 @@ def test_instantiation_from_badly_typed_argument(magnet_axes_instances, request)
 
     with pytest.raises(ValueError, match="instrument_z argument is neither of those"):
         AMI430_3D(
-            "AMI430-3D",
+            "AMI430_3D",
             mag_x.name,
             mag_y,
             badly_typed_instrument_z_argument,
@@ -1037,7 +1037,7 @@ def _parametrization_kwargs():
 @pytest.mark.parametrize("field_limit", **_parametrization_kwargs())
 def test_numeric_field_limit(magnet_axes_instances, field_limit, request):
     mag_x, mag_y, mag_z = magnet_axes_instances
-    ami = AMI430_3D("AMI430-3D", mag_x, mag_y, mag_z, field_limit)
+    ami = AMI430_3D("AMI430_3D", mag_x, mag_y, mag_z, field_limit)
     request.addfinalizer(ami.close)
 
     assert isinstance(ami._field_limit, float)

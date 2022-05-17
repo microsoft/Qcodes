@@ -94,7 +94,7 @@ def AMI430_3D():
         lambda x, y, z: x == 0 and y == 0 and z < 3,
         lambda x, y, z: np.linalg.norm([x, y, z]) < 2
     ]
-    driver = AMI430_3D("AMI430-3D", mag_x, mag_y, mag_z, field_limit)
+    driver = AMI430_3D("AMI430_3D", mag_x, mag_y, mag_z, field_limit)
     try:
         yield driver, mag_x, mag_y, mag_z
     finally:
