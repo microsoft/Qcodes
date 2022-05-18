@@ -198,7 +198,7 @@ class PNATrace(InstrumentChannel):
                            get_cmd='CALC:FORM?',
                            set_cmd='CALC:FORM {}',
                            vals=Enum('MLIN', 'MLOG', 'PHAS',
-                                     'UPH', 'IMAG', 'REAL'))
+                                     'UPH', 'IMAG', 'REAL', 'POLAR'))
 
         # And a list of individual formats
         self.add_parameter('magnitude',
@@ -243,6 +243,15 @@ class PNATrace(InstrumentChannel):
                            unit='LinMag',
                            parameter_class=FormattedSweep,
                            vals=Arrays(shape=(self.parent.points,)))
+        self.add_parameter('polar',
+                           sweep_format='POLAR',
+                           label='Polar',
+                           unit='V',
+                           parameter_class=FormattedSweep,
+                           get_parser = lambda data: np.array(
+                               [complex(*pair) for pair in np.array([data[::2], data[1::2]]).T]
+                            ),
+                           vals=Arrays(shape=(self.parent.points,), valid_types=(complex,)))
 
     def run_sweep(self) -> str:
         """
