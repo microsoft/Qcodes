@@ -144,9 +144,7 @@ def test_instantiation_from_name_of_nonexistent_ami_instrument(
             match=f"with name {non_existent_instrument} does not exist"
     ):
         AMI430_3D(
-            "AMI430_3D",
-            mag_x.name, non_existent_instrument, mag_z.name,
-            field_limit
+            "AMI430_3D", mag_x.name, non_existent_instrument, mag_z.name, field_limit
         )
 
 
@@ -185,7 +183,11 @@ def test_instantiation_from_badly_typed_argument(
             ValueError, match="instrument_z argument is neither of those"
     ):
         AMI430_3D(
-            "AMI430_3D", mag_x.name, mag_y, badly_typed_instrument_z_argument, field_limit
+            "AMI430_3D",
+            mag_x.name,
+            mag_y,
+            badly_typed_instrument_z_argument,
+            field_limit
         )
 
 

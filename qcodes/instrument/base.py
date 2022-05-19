@@ -597,7 +597,7 @@ class Instrument(InstrumentBase, metaclass=InstrumentMeta):
         self._t0 = time.time()
 
         if not name.isidentifier():
-            raise ValueError(f"Name {name} not a valid instrument identifier")
+            raise ValueError(f"{name} invalid instrument identifier")
         super().__init__(name, metadata)
 
         self.add_parameter('IDN', get_cmd=self.get_idn,
