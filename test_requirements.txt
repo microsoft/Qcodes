@@ -1,7 +1,7 @@
 apipkg==2.1.1
 atomicwrites==1.4.0
 attrs==21.4.0
-certifi==2021.10.8
+certifi==2022.5.18
 chardet==4.0.0
 colorama==0.4.4
 coverage[toml]==6.3.3
