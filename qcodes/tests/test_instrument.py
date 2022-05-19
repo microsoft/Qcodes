@@ -83,6 +83,7 @@ def test_instrument_fail(close_before_and_after):
     assert DummyFailingInstrument.instances() == []
     assert Instrument._all_instruments == {}
 
+
 def test_instrument_fail_on_invalid_identifier(close_before_and_after):
     with pytest.raises(ValueError, match="!name invalid instrument identifier"):
         DummyInstrument(name="!name")
