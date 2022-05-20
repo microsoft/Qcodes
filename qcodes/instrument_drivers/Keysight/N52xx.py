@@ -1,6 +1,6 @@
 import re
 import time
-from typing import Any, Sequence, Union
+from typing import Any, Iterable, Sequence, Union
 
 import numpy as np
 from pyvisa import errors
@@ -201,62 +201,80 @@ class PNATrace(InstrumentChannel):
                                      'UPH', 'IMAG', 'REAL', 'POLAR'))
 
         # And a list of individual formats
-        self.add_parameter('magnitude',
-                           sweep_format='MLOG',
-                           label='Magnitude',
-                           unit='dB',
-                           parameter_class=FormattedSweep,
-                           vals=Arrays(shape=(self.parent.points,)))
-        self.add_parameter('linear_magnitude',
-                           sweep_format='MLIN',
-                           label='Magnitude',
-                           unit='ratio',
-                           parameter_class=FormattedSweep,
-                           vals=Arrays(shape=(self.parent.points,)))
-        self.add_parameter('phase',
-                           sweep_format='PHAS',
-                           label='Phase',
-                           unit='deg',
-                           parameter_class=FormattedSweep,
-                           vals=Arrays(shape=(self.parent.points,)))
-        self.add_parameter('unwrapped_phase',
-                           sweep_format='UPH',
-                           label='Phase',
-                           unit='deg',
-                           parameter_class=FormattedSweep,
-                           vals=Arrays(shape=(self.parent.points,)))
-        self.add_parameter("group_delay",
-                           sweep_format='GDEL',
-                           label='Group Delay',
-                           unit='s',
-                           parameter_class=FormattedSweep,
-                           vals=Arrays(shape=(self.parent.points,)))
-        self.add_parameter('real',
-                           sweep_format='REAL',
-                           label='Real',
-                           unit='LinMag',
-                           parameter_class=FormattedSweep,
-                           vals=Arrays(shape=(self.parent.points,)))
-        self.add_parameter('imaginary',
-                           sweep_format='IMAG',
-                           label='Imaginary',
-                           unit='LinMag',
-                           parameter_class=FormattedSweep,
-                           vals=Arrays(shape=(self.parent.points,)))
-        self.add_parameter('polar',
-                           sweep_format='POLAR',
-                           label='Polar',
-                           unit='V',
-                           parameter_class=FormattedSweep,
-                           get_parser = lambda data: np.array(
-                               [
-                                   complex(*pair) for pair in
-                                   np.array([data[::2], data[1::2]]).T
-                                ]
-                            ),
-                           vals=Arrays(
-                               shape=(self.parent.points,),
-                               valid_types=(complex,)))
+        self.add_parameter(
+            "magnitude",
+            sweep_format="MLOG",
+            label="Magnitude",
+            unit="dB",
+            parameter_class=FormattedSweep,
+            vals=Arrays(shape=(self.parent.points,)),
+        )
+        self.add_parameter(
+            "linear_magnitude",
+            sweep_format="MLIN",
+            label="Magnitude",
+            unit="ratio",
+            parameter_class=FormattedSweep,
+            vals=Arrays(shape=(self.parent.points,)),
+        )
+        self.add_parameter(
+            "phase",
+            sweep_format="PHAS",
+            label="Phase",
+            unit="deg",
+            parameter_class=FormattedSweep,
+            vals=Arrays(shape=(self.parent.points,)),
+        )
+        self.add_parameter(
+            "unwrapped_phase",
+            sweep_format="UPH",
+            label="Phase",
+            unit="deg",
+            parameter_class=FormattedSweep,
+            vals=Arrays(shape=(self.parent.points,)),
+        )
+        self.add_parameter(
+            "group_delay",
+            sweep_format="GDEL",
+            label="Group Delay",
+            unit="s",
+            parameter_class=FormattedSweep,
+            vals=Arrays(shape=(self.parent.points,)),
+        )
+        self.add_parameter(
+            "real",
+            sweep_format="REAL",
+            label="Real",
+            unit="LinMag",
+            parameter_class=FormattedSweep,
+            vals=Arrays(shape=(self.parent.points,)),
+        )
+        self.add_parameter(
+            "imaginary",
+            sweep_format="IMAG",
+            label="Imaginary",
+            unit="LinMag",
+            parameter_class=FormattedSweep,
+            vals=Arrays(shape=(self.parent.points,)),
+        )
+        self.add_parameter(
+            "polar",
+            sweep_format="POLAR",
+            label="Polar",
+            unit="V",
+            parameter_class=FormattedSweep,
+            get_parser=self._parse_polar_data,
+            vals=Arrays(shape=(self.parent.points,), valid_types=(complex,)),
+        )
+
+    @staticmethod
+    def _parse_polar_data(data: Iterable[float]) -> np.ndarray:
+        """
+        Parse the 2*n-length flat array coming from the instrument
+        and convert to n-length array of complex numbers
+        """
+        pairs = np.array([data[::2], data[1::2]]).T
+        return np.array([complex(*pair) for pair in pairs])
 
     def run_sweep(self) -> str:
         """
