@@ -194,11 +194,11 @@ class PNATrace(InstrumentChannel):
         # supported as there isn't really a good way of saving them into the
         # dataset
         self.add_parameter('format',
-                           label='Format',
-                           get_cmd='CALC:FORM?',
-                           set_cmd='CALC:FORM {}',
-                           vals=Enum('MLIN', 'MLOG', 'PHAS',
-                                     'UPH', 'IMAG', 'REAL', 'POLAR'))
+            label='Format',
+            get_cmd='CALC:FORM?',
+            set_cmd='CALC:FORM {}',
+            vals=Enum('MLIN', 'MLOG', 'PHAS', 'UPH', 'IMAG', 'REAL', 'POLAR')
+        )
 
         # And a list of individual formats
         self.add_parameter(
