@@ -1,6 +1,6 @@
 import re
 import time
-from typing import Any, Iterable, Sequence, Union
+from typing import Any, Sequence, Union
 
 import numpy as np
 from pyvisa import errors
@@ -269,7 +269,7 @@ class PNATrace(InstrumentChannel):
         )
 
     @staticmethod
-    def _parse_polar_data(data: Iterable[float]) -> np.ndarray:
+    def _parse_polar_data(data: Sequence[float]) -> np.ndarray:
         """
         Parse the 2*n-length flat array coming from the instrument
         and convert to n-length array of complex numbers
