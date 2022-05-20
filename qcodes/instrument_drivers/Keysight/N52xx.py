@@ -193,7 +193,8 @@ class PNATrace(InstrumentChannel):
         # Note: Currently parameters that return complex values are not
         # supported as there isn't really a good way of saving them into the
         # dataset
-        self.add_parameter("format",
+        self.add_parameter(
+            "format",
             label="Format",
             get_cmd="CALC:FORM?",
             set_cmd="CALC:FORM {}",
