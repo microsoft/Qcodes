@@ -249,9 +249,14 @@ class PNATrace(InstrumentChannel):
                            unit='V',
                            parameter_class=FormattedSweep,
                            get_parser = lambda data: np.array(
-                               [complex(*pair) for pair in np.array([data[::2], data[1::2]]).T]
+                               [
+                                   complex(*pair) for pair in
+                                   np.array([data[::2], data[1::2]]).T
+                                ]
                             ),
-                           vals=Arrays(shape=(self.parent.points,), valid_types=(complex,)))
+                           vals=Arrays(
+                               shape=(self.parent.points,),
+                               valid_types=(complex,)))
 
     def run_sweep(self) -> str:
         """
