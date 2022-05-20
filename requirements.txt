@@ -68,7 +68,7 @@ pytz~=2022.1
 PyVISA~=1.11.3
 pywin32==304; sys_platform == 'win32'
 pywinpty~=2.0.5; sys_platform == 'win32'
-pyzmq~=22.3.0
+pyzmq~=23.0.0
 requests~=2.27.1
 rsa~=4.8
 ruamel.yaml==0.17.21
