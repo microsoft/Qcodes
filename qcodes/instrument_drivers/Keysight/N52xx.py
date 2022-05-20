@@ -197,7 +197,7 @@ class PNATrace(InstrumentChannel):
             label='Format',
             get_cmd='CALC:FORM?',
             set_cmd='CALC:FORM {}',
-            vals=Enum('MLIN', 'MLOG', 'PHAS', 'UPH', 'IMAG', 'REAL', 'POLAR')
+            vals=Enum('MLIN', 'MLOG', 'PHAS', 'UPH', 'IMAG', 'REAL', 'POLAR'),
         )
 
         # And a list of individual formats
