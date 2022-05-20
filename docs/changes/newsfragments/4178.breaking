@@ -1,0 +1,3 @@
+InstrumentBase class now raises error if name is an invalid identifier.
+Effects creating instruments, channels, modules.
+Issue #4178.

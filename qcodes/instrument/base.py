@@ -52,6 +52,8 @@ class InstrumentBase(Metadatable, DelegateAttributes):
     """
 
     def __init__(self, name: str, metadata: Optional[Mapping[Any, Any]] = None) -> None:
+        if not name.isidentifier():
+            raise ValueError(f"{name} invalid instrument identifier")
         self._short_name = str(name)
 
         self.parameters: Dict[str, _BaseParameter] = {}
@@ -596,8 +598,6 @@ class Instrument(InstrumentBase, metaclass=InstrumentMeta):
 
         self._t0 = time.time()
 
-        if not name.isidentifier():
-            raise ValueError(f"{name} invalid instrument identifier")
         super().__init__(name, metadata)
 
         self.add_parameter('IDN', get_cmd=self.get_idn,
