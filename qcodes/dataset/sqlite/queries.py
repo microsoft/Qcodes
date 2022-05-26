@@ -833,7 +833,12 @@ def new_experiment(conn: ConnectionPlus,
     start_time = start_time or time.time()
     values = (name, sample_name, format_string, 0, start_time, end_time)
     curr = atomic_transaction(conn, query, *values)
-    return curr.lastrowid
+
+    return_value = curr.lastrowid
+
+    if return_value is None:
+        raise RuntimeError(f"Insert of new experiment with {name} failed")
+    return return_value
 
 
 # TODO(WilliamHPNielsen): we should remove the redundant
@@ -1277,6 +1282,8 @@ def _insert_run(
                 parent_dataset_links,
             )
             run_id = curr.lastrowid
+            if run_id is None:
+                raise RuntimeError(f"Creation of run with guid: {guid} failed")
 
             _add_parameters_to_layout_and_deps(conn, run_id, *legacy_param_specs)
 
@@ -1311,7 +1318,8 @@ def _insert_run(
                                parent_dataset_links)
 
     run_id = curr.lastrowid
-
+    if run_id is None:
+        raise RuntimeError(f"Creation of run with guid: {guid} failed")
     return run_counter, formatted_name, run_id
 
 
