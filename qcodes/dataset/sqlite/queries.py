@@ -306,7 +306,14 @@ def get_parameter_data_for_one_paramtree(
     # faster than transposing the data using np.array.transpose
     res_t = map(list, zip(*data))
 
-    for paramspec, column_data in zip_longest(paramspecs, res_t, fillvalue=tuple()):
+    specs_and_data: zip_longest[
+        Tuple[Union[ParamSpecBase, Sequence[Any]], Sequence[Any]]
+    ] = zip_longest(paramspecs, res_t, fillvalue=())
+
+    for paramspec, column_data in specs_and_data:
+        assert isinstance(paramspec, ParamSpecBase)
+        # its not obvious how to type that paramspecs is always
+        # longer than res_t
         if paramspec.type == "numeric":
             # there is no reliable way to
             # tell the difference between a float and and int loaded
