@@ -68,7 +68,7 @@ scipy==1.8.1; python_version>='3.8'
 Send2Trash==1.8.0
 six==1.16.0
 snowballstemmer==2.2.0
-Sphinx==4.3.2
+Sphinx==4.5.0
 sphinx-jsonschema==1.19.1
 sphinx-rtd-theme==1.0.0
 sphinxcontrib-applehelp==1.0.2
