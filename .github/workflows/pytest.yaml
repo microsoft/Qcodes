@@ -69,7 +69,7 @@ jobs:
 # a subset of the tests fails when run in parallel on windows so run those in serial here
     - name: Run serial tests
       run: |
-        pytest -m "serial" -n 0 --dist no --cov=qcodes --cov-report xml --hypothesis-profile ci qcodes
+        pytest -m "serial" -n 0 --dist no --cov=qcodes --cov-report xml --cov-append --hypothesis-profile ci qcodes
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3.1.0
       with:
