@@ -22,7 +22,7 @@ h5py~=3.7.0
 idna~=3.3
 importlib-metadata==4.8.1; python_version<'3.8'
 ipykernel~=6.13.0
-ipython~=8.3.0; python_version>='3.8'
+ipython~=8.4.0; python_version>='3.8'
 ipython~=7.31.0; python_version<'3.8'
 ipython-genutils~=0.2.0
 ipywidgets~=7.7.0
