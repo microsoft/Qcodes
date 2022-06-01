@@ -633,7 +633,7 @@ class Instrument(InstrumentBase, metaclass=InstrumentMeta):
             if len(idparts) < 4:
                 idparts += [None] * (4 - len(idparts))
         except Exception:
-            self.log.exception(f"Error getting or interpreting *IDN?: {repr(idstr)}")
+            self.log.exception(f"Error getting or interpreting *IDN?: {idstr!r}")
             idparts = [None, self.name, None, None]
 
         # some strings include the word 'model' at the front of model
