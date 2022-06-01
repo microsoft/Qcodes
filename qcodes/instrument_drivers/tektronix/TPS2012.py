@@ -37,18 +37,21 @@ class OutputDict(TypedDict):
 
 
 class ScopeArray(ArrayParameter):
-    def __init__(self, name: str,
-                 instrument: "TPS2012Channel",
-                 channel: int):
-        super().__init__(name=name,
-                         shape=(2500,),
-                         label='Voltage',
-                         unit='V ',
-                         setpoint_names=('Time', ),
-                         setpoint_labels=('Time', ),
-                         setpoint_units=('s',),
-                         docstring='holds an array from scope',
-                         instrument=instrument)
+    def __init__(
+        self, name: str, instrument: "TPS2012Channel", channel: int, **kwargs: Any
+    ):
+        super().__init__(
+            name=name,
+            shape=(2500,),
+            label="Voltage",
+            unit="V ",
+            setpoint_names=("Time",),
+            setpoint_labels=("Time",),
+            setpoint_units=("s",),
+            docstring="holds an array from scope",
+            instrument=instrument,
+            **kwargs,
+        )
         self.channel = channel
 
     def calc_set_points(self) -> Tuple[np.ndarray, int]:
