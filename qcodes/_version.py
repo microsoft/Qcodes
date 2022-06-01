@@ -3,10 +3,7 @@ def _get_version() -> str:
 
     import versioningit
 
-    import qcodes
-
-    qcodes_path = Path(qcodes.__file__).parent
-    return versioningit.get_version(project_dir=qcodes_path.parent)
+    return versioningit.get_version(project_dir=Path(__file__).parent.parent)
 
 
 __version__ = _get_version()
