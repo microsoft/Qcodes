@@ -35,7 +35,7 @@ jobs:
       id: prepare-cache-pip
       uses: ./.github/actions/prepare-cache-pip
     - name: pip cache
-      uses: actions/cache@v3.0.2
+      uses: actions/cache@v3.0.3
       with:
         path: ${{ steps.prepare-cache-pip.outputs.cache-dir }}
         key: ${{ runner.os }}-${{ matrix.python-version }}-pip-${{ hashFiles('**/requirements.txt') }}-${{ hashFiles('**/test_requirements.txt') }}-${{ hashFiles('**/setup.cfg') }}
