@@ -210,8 +210,8 @@ class ScopeArray(ArrayParameter):
 
 class TPS2012Channel(InstrumentChannel):
 
-    def __init__(self, parent: "TPS2012", name: str, channel: int):
-        super().__init__(parent, name)
+    def __init__(self, parent: "TPS2012", name: str, channel: int, **kwargs: Any):
+        super().__init__(parent, name, **kwargs)
 
         self.add_parameter('scale',
                            label=f'Channel {channel} Scale',
