@@ -165,24 +165,12 @@ def test_visa_backend(mocker, request):
     assert address_opened[0] == 'ASRL2'
     inst2.close()
 
-    # this one raises a warning
-    with pytest.warns(UserWarning, match="use the visalib"):
-        inst3 = MockBackendVisaInstrument('name3', address='ASRL3@py')
-        request.addfinalizer(inst3.close)
-
+    inst3 = MockBackendVisaInstrument("name3", address="ASRL3", visalib="@py")
+    request.addfinalizer(inst3.close)
     assert rm_mock.call_count == 3
-    assert rm_mock.call_args == (('@py',),)
-    assert address_opened[0] == 'ASRL3'
+    assert rm_mock.call_args == (("@py",),)
+    assert address_opened[0] == "ASRL3"
     inst3.close()
-
-    # this one doesn't
-    inst4 = MockBackendVisaInstrument('name4',
-                                      address='ASRL4', visalib='@py')
-    request.addfinalizer(inst4.close)
-    assert rm_mock.call_count == 4
-    assert rm_mock.call_args == (('@py',),)
-    assert address_opened[0] == 'ASRL4'
-    inst4.close()
 
 
 def test_visa_instr_metadata(request):
