@@ -32,8 +32,10 @@ class VisaInstrument(Instrument):
         terminator: Read termination character(s) to look for. Default ``''``.
         device_clear: Perform a device clear. Default True.
         visalib: Visa backend to use when connecting to this instrument.
-            This should be in the form of a string '@<backend>'.
-            By default the NI backend is used, but '@py' will use the
+            This should be in the form of a string '<pathtofile>@<backend>'.
+            Both parts can be omitted and pyvisa will try to infer the
+            path to the visa backend file.
+            By default the IVI backend is used if found, but '@py' will use the
             ``pyvisa-py`` backend. Note that QCoDeS does not install (or even require)
             ANY backends, it is up to the user to do that. see eg:
             http://pyvisa.readthedocs.org/en/stable/names.html
