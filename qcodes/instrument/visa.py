@@ -253,8 +253,10 @@ class VisaInstrument(Instrument):
         snap = super().snapshot_base(update=update,
                                      params_to_skip_update=params_to_skip_update)
 
-        snap['address'] = self._address
-        snap['terminator'] = self._terminator
-        snap['timeout'] = self.timeout.get()
+        snap["address"] = self._address
+        snap["terminator"] = self.visa_handle.read_termination
+        snap["read_terminator"] = self.visa_handle.read_termination
+        snap["write_terminator"] = self.visa_handle.write_termination
+        snap["timeout"] = self.timeout.get()
 
         return snap
