@@ -103,7 +103,7 @@ class VisaInstrument(Instrument):
             self.visa_log.info('Opening PyVISA Resource Manager with default'
                           ' backend.')
             resource_manager = visa.ResourceManager()
-            self.visabackend = 'ni'
+            self.visabackend = "ivi"
 
         self.visa_log.info(f'Opening PyVISA resource at address: {address}')
         resource = resource_manager.open_resource(address)
