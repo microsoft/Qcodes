@@ -29,7 +29,9 @@ class VisaInstrument(Instrument):
         name: What this instrument is called locally.
         address: The visa resource name to use to connect.
         timeout: seconds to allow for responses. Default 5.
-        terminator: Read termination character(s) to look for. Default ``''``.
+        terminator: Read and write termination character(s).
+            If None the terminator will not be set and we
+            rely on the defaults from PyVisa. Default None.
         device_clear: Perform a device clear. Default True.
         visalib: Visa backend to use when connecting to this instrument.
             This should be in the form of a string '<pathtofile>@<backend>'.
@@ -49,9 +51,16 @@ class VisaInstrument(Instrument):
         visa_handle (pyvisa.resources.Resource): The communication channel.
     """
 
-    def __init__(self, name: str, address: str, timeout: Union[int, float] = 5,
-                 terminator: str = '', device_clear: bool = True,
-                 visalib: Optional[str] = None, **kwargs: Any):
+    def __init__(
+        self,
+        name: str,
+        address: str,
+        timeout: Union[int, float] = 5,
+        terminator: Optional[str] = None,
+        device_clear: bool = True,
+        visalib: Optional[str] = None,
+        **kwargs: Any,
+    ):
 
         super().__init__(name, **kwargs)
         self.visa_log = get_instrument_logger(self, VISA_LOGGER)
@@ -135,20 +144,18 @@ class VisaInstrument(Instrument):
         else:
             self.visa_handle.clear()
 
-    def set_terminator(self, terminator: str) -> None:
+    def set_terminator(self, terminator: Optional[str]) -> None:
         r"""
         Change the read terminator to use.
 
         Args:
-            terminator: Character(s) to look for at the end of a read.
-                eg. ``\r\n``.
+            terminator: Character(s) to look for at the end of a read and
+                to end each write command with.
+                eg. ``\r\n``. If None the terminator will not be set.
         """
-        self.visa_handle.write_termination = terminator
-        self.visa_handle.read_termination = terminator
-        self._terminator = terminator
-
-        if self.visabackend == 'sim':
+        if terminator is not None:
             self.visa_handle.write_termination = terminator
+            self.visa_handle.read_termination = terminator
 
     def _set_visa_timeout(self, timeout: Optional[float]) -> None:
         # according to https://pyvisa.readthedocs.io/en/latest/introduction/resources.html#timeout
