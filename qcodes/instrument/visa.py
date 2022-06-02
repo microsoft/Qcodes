@@ -69,7 +69,7 @@ class VisaInstrument(Instrument):
         try:
             self.set_address(address)
         except Exception as e:
-            self.visa_log.info(f"Could not connect at {address}")
+            self.visa_log.exception(f"Could not connect at {address}")
             self.close()
             raise e
 
@@ -95,13 +95,13 @@ class VisaInstrument(Instrument):
             self.visa_handle.close()
 
         if self.visalib:
-            self.visa_log.info('Opening PyVISA Resource Manager with visalib:'
-                          ' {}'.format(self.visalib))
+            self.visa_log.info(
+                f"Opening PyVISA Resource Manager with visalib: {self.visalib}"
+            )
             resource_manager = visa.ResourceManager(self.visalib)
             self.visabackend = self.visalib.split('@')[1]
         else:
-            self.visa_log.info('Opening PyVISA Resource Manager with default'
-                          ' backend.')
+            self.visa_log.info("Opening PyVISA Resource Manager with default backend.")
             resource_manager = visa.ResourceManager()
             self.visabackend = "ivi"
 
