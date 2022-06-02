@@ -57,7 +57,7 @@ class VisaInstrument(Instrument):
         self.visa_log = get_instrument_logger(self, VISA_LOGGER)
         self.visabackend: str
         self.visa_handle: visa.resources.MessageBasedResource
-        self.visalib: Optional[str]
+        self.visalib: Optional[str] = visalib
 
         self.add_parameter('timeout',
                            get_cmd=self._get_visa_timeout,
@@ -65,23 +65,6 @@ class VisaInstrument(Instrument):
                            unit='s',
                            vals=vals.MultiType(vals.Numbers(min_value=0),
                                                vals.Enum(None)))
-
-        # backwards-compatibility
-        if address and '@' in address:
-            address, visa_library = address.split('@')
-            if visalib:
-                warnings.warn('You have specified the VISA library in two '
-                              'different ways. Please do not include "@" in '
-                              'the address kwarg and only use the visalib '
-                              'kwarg for that.')
-                self.visalib = visalib
-            else:
-                warnings.warn('You have specified the VISA library using '
-                              'an "@" in the address kwarg. Please use the '
-                              'visalib kwarg instead.')
-                self.visalib = '@' + visa_library
-        else:
-            self.visalib = visalib
 
         try:
             self.set_address(address)
