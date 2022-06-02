@@ -632,9 +632,8 @@ class Instrument(InstrumentBase, metaclass=InstrumentMeta):
             # in case parts at the end are missing, fill in None
             if len(idparts) < 4:
                 idparts += [None] * (4 - len(idparts))
-        except:
-            self.log.debug('Error getting or interpreting *IDN?: '
-                           + repr(idstr))
+        except Exception:
+            self.log.exception(f"Error getting or interpreting *IDN?: {idstr!r}")
             idparts = [None, self.name, None, None]
 
         # some strings include the word 'model' at the front of model
