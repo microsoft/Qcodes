@@ -59,7 +59,7 @@ class Formatter:
     def write(self, data_set: 'DataSet', io_manager, location, write_metadata=True,
               force_write=False, only_complete=True):
         """
-        Write the DataSet to storage.
+        Write the ``DataSet`` to storage.
 
         Subclasses must override this method.
 
