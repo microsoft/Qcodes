@@ -171,7 +171,10 @@ def insert_values(conn: ConnectionPlus,
     """
 
     c = atomic_transaction(conn, query, *values)
-    return c.lastrowid
+    return_value = c.lastrowid
+    if return_value is None:
+        raise RuntimeError(f"Insert_values into {formatted_name} failed")
+    return return_value
 
 
 def insert_many_values(conn: ConnectionPlus,
@@ -245,6 +248,8 @@ def insert_many_values(conn: ConnectionPlus,
                 return_value = c.lastrowid
             start += chunk
 
+    if return_value is None:
+        raise RuntimeError(f"insert_many_values into {formatted_name} failed ")
     return return_value
 
 

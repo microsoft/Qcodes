@@ -29,11 +29,15 @@ class VisaInstrument(Instrument):
         name: What this instrument is called locally.
         address: The visa resource name to use to connect.
         timeout: seconds to allow for responses. Default 5.
-        terminator: Read termination character(s) to look for. Default ``''``.
+        terminator: Read and write termination character(s).
+            If None the terminator will not be set and we
+            rely on the defaults from PyVisa. Default None.
         device_clear: Perform a device clear. Default True.
         visalib: Visa backend to use when connecting to this instrument.
-            This should be in the form of a string '@<backend>'.
-            By default the NI backend is used, but '@py' will use the
+            This should be in the form of a string '<pathtofile>@<backend>'.
+            Both parts can be omitted and pyvisa will try to infer the
+            path to the visa backend file.
+            By default the IVI backend is used if found, but '@py' will use the
             ``pyvisa-py`` backend. Note that QCoDeS does not install (or even require)
             ANY backends, it is up to the user to do that. see eg:
             http://pyvisa.readthedocs.org/en/stable/names.html
@@ -47,15 +51,22 @@ class VisaInstrument(Instrument):
         visa_handle (pyvisa.resources.Resource): The communication channel.
     """
 
-    def __init__(self, name: str, address: str, timeout: Union[int, float] = 5,
-                 terminator: str = '', device_clear: bool = True,
-                 visalib: Optional[str] = None, **kwargs: Any):
+    def __init__(
+        self,
+        name: str,
+        address: str,
+        timeout: Union[int, float] = 5,
+        terminator: Optional[str] = None,
+        device_clear: bool = True,
+        visalib: Optional[str] = None,
+        **kwargs: Any,
+    ):
 
         super().__init__(name, **kwargs)
         self.visa_log = get_instrument_logger(self, VISA_LOGGER)
         self.visabackend: str
         self.visa_handle: visa.resources.MessageBasedResource
-        self.visalib: Optional[str]
+        self.visalib: Optional[str] = visalib
 
         self.add_parameter('timeout',
                            get_cmd=self._get_visa_timeout,
@@ -64,27 +75,10 @@ class VisaInstrument(Instrument):
                            vals=vals.MultiType(vals.Numbers(min_value=0),
                                                vals.Enum(None)))
 
-        # backwards-compatibility
-        if address and '@' in address:
-            address, visa_library = address.split('@')
-            if visalib:
-                warnings.warn('You have specified the VISA library in two '
-                              'different ways. Please do not include "@" in '
-                              'the address kwarg and only use the visalib '
-                              'kwarg for that.')
-                self.visalib = visalib
-            else:
-                warnings.warn('You have specified the VISA library using '
-                              'an "@" in the address kwarg. Please use the '
-                              'visalib kwarg instead.')
-                self.visalib = '@' + visa_library
-        else:
-            self.visalib = visalib
-
         try:
             self.set_address(address)
         except Exception as e:
-            self.visa_log.info(f"Could not connect at {address}")
+            self.visa_log.exception(f"Could not connect at {address}")
             self.close()
             raise e
 
@@ -110,15 +104,15 @@ class VisaInstrument(Instrument):
             self.visa_handle.close()
 
         if self.visalib:
-            self.visa_log.info('Opening PyVISA Resource Manager with visalib:'
-                          ' {}'.format(self.visalib))
+            self.visa_log.info(
+                f"Opening PyVISA Resource Manager with visalib: {self.visalib}"
+            )
             resource_manager = visa.ResourceManager(self.visalib)
             self.visabackend = self.visalib.split('@')[1]
         else:
-            self.visa_log.info('Opening PyVISA Resource Manager with default'
-                          ' backend.')
+            self.visa_log.info("Opening PyVISA Resource Manager with default backend.")
             resource_manager = visa.ResourceManager()
-            self.visabackend = 'ni'
+            self.visabackend = "ivi"
 
         self.visa_log.info(f'Opening PyVISA resource at address: {address}')
         resource = resource_manager.open_resource(address)
@@ -150,20 +144,18 @@ class VisaInstrument(Instrument):
         else:
             self.visa_handle.clear()
 
-    def set_terminator(self, terminator: str) -> None:
+    def set_terminator(self, terminator: Optional[str]) -> None:
         r"""
         Change the read terminator to use.
 
         Args:
-            terminator: Character(s) to look for at the end of a read.
-                eg. ``\r\n``.
+            terminator: Character(s) to look for at the end of a read and
+                to end each write command with.
+                eg. ``\r\n``. If None the terminator will not be set.
         """
-        self.visa_handle.write_termination = terminator
-        self.visa_handle.read_termination = terminator
-        self._terminator = terminator
-
-        if self.visabackend == 'sim':
+        if terminator is not None:
             self.visa_handle.write_termination = terminator
+            self.visa_handle.read_termination = terminator
 
     def _set_visa_timeout(self, timeout: Optional[float]) -> None:
         # according to https://pyvisa.readthedocs.io/en/latest/introduction/resources.html#timeout
@@ -261,8 +253,10 @@ class VisaInstrument(Instrument):
         snap = super().snapshot_base(update=update,
                                      params_to_skip_update=params_to_skip_update)
 
-        snap['address'] = self._address
-        snap['terminator'] = self._terminator
-        snap['timeout'] = self.timeout.get()
+        snap["address"] = self._address
+        snap["terminator"] = self.visa_handle.read_termination
+        snap["read_terminator"] = self.visa_handle.read_termination
+        snap["write_terminator"] = self.visa_handle.write_termination
+        snap["timeout"] = self.timeout.get()
 
         return snap

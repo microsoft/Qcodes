@@ -46,7 +46,7 @@ jobs:
       run: sudo apt install pandoc
       if: runner.os == 'Linux'
     - name: Install pandoc on windows
-      uses: Wandalen/wretry.action@v1.0.17
+      uses: Wandalen/wretry.action@v1.0.20
       with:
         action: crazy-max/ghaction-chocolatey@v1.6.0
         with: |
@@ -62,7 +62,7 @@ jobs:
       id: prepare-cache-pip
       uses: ./.github/actions/prepare-cache-pip
     - name: pip cache
-      uses: actions/cache@v3.0.2
+      uses: actions/cache@v3.0.3
       with:
         path: ${{ steps.prepare-cache-pip.outputs.cache-dir }}
         key: ${{ runner.os }}-${{ matrix.python-version }}-pip-${{ hashFiles('**/requirements.txt') }}-${{ hashFiles('**/docs_requirements.txt') }}-${{ hashFiles('**/setup.cfg') }}
@@ -90,7 +90,7 @@ jobs:
         ./make.bat html
       if: runner.os == 'Windows'
     - name: Upload build docs
-      uses: actions/upload-artifact@v3.0.0
+      uses: actions/upload-artifact@v3.1.0
       with:
         name: docs_${{ matrix.python-version }}_${{ matrix.os }}
         path: ${{ github.workspace }}/docs/_build/html
