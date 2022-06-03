@@ -209,6 +209,58 @@ class FrequencySweepMagPhase(MultiParameter):
         return abs(data), np.angle(data)
 
 
+
+class FrequencySweepDBPhase(MultiParameter):
+    """
+    Sweep that return magnitude in decibel (dB) and phase in radians.
+    """
+
+    def __init__(
+        self,
+        name: str,
+        instrument: "ZNBChannel",
+        start: float,
+        stop: float,
+        npts: int,
+        channel: int,
+    ) -> None:
+        super().__init__(
+            name,
+            instrument=instrument,
+            names=("magnitude", "phase"),
+            labels=(
+                f"{instrument.short_name} magnitude",
+                f"{instrument.short_name} phase",
+            ),
+            units=("dB", "rad"),
+            setpoint_units=(("Hz",), ("Hz",)),
+            setpoint_labels=(
+                (f"{instrument.short_name} frequency",),
+                (f"{instrument.short_name} frequency",),
+            ),
+            setpoint_names=(
+                (f"{instrument.short_name}_frequency",),
+                (f"{instrument.short_name}_frequency",),
+            ),
+            shapes=((npts,), (npts,),),
+        )
+        self.set_sweep(start, stop, npts)
+        self._channel = channel
+
+    def set_sweep(self, start: float, stop: float, npts: int) -> None:
+        # Needed to update config of the software parameter on sweep change
+        # frequency setpoints tuple as needs to be hashable for look up.
+        f = tuple(np.linspace(int(start), int(stop), num=npts))
+        self.setpoints = ((f,), (f,))
+        self.shapes = ((npts,), (npts,))
+
+    def get_raw(self) -> Tuple[ParamRawDataType, ...]:
+        assert isinstance(self.instrument, ZNBChannel)
+        with self.instrument.format.set_to("Complex"):
+            data = self.instrument._get_sweep_data(force_polar=True)
+        return 20*np.log10(np.abs(data)), np.angle(data)
+
+
 class FrequencySweep(ArrayParameter):
     """
     Hardware controlled parameter class for Rohde Schwarz ZNB trace.
@@ -460,6 +512,15 @@ class ZNBChannel(InstrumentChannel):
             channel=n,
             parameter_class=FrequencySweepMagPhase,
         )
+
+        self.add_parameter(
+            name="trace_db_phase",
+            start=self.start(),
+            stop=self.stop(),
+            npts=self.npts(),
+            channel=n,
+            parameter_class=FrequencySweepDBPhase,
+        )
         self.add_parameter(
             name="trace",
             start=self.start(),
@@ -704,7 +765,7 @@ class ZNBChannel(InstrumentChannel):
         stop = self.stop()
         npts = self.npts()
         for _, parameter in self.parameters.items():
-            if isinstance(parameter, (FrequencySweep, FrequencySweepMagPhase)):
+            if isinstance(parameter, (FrequencySweep, FrequencySweepMagPhase, FrequencySweepDBPhase)):
                 try:
                     parameter.set_sweep(start, stop, npts)
                 except AttributeError:

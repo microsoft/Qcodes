@@ -357,3 +357,45 @@ def test_get_from_cache_marked_invalid():
                                            " and has an invalid cache"):
         param.cache.get(get_if_invalid=True)
     assert param._get_count == 2
+
+
+def test_marking_invalid_via_instrument(dummy_instrument):
+    def _assert_cache_status(valid: bool):
+        for param in dummy_instrument.parameters.values():
+            assert param.cache.valid is valid, param.full_name
+
+        for instrument_module in dummy_instrument.instrument_modules.values():
+            for param in instrument_module.parameters.values():
+                # parameters not snapshotted will not have a cache
+                # updated when calling snapshot(update=None) os
+                # exclude them
+                if (
+                    param._snapshot_get is True
+                    and param.snapshot_value is True
+                    and param.snapshot_exclude is False
+                ):
+                    assert param.cache.valid is valid, param.full_name
+
+    dummy_instrument.snapshot(update=None)
+
+    _assert_cache_status(True)
+
+    dummy_instrument.invalidate_cache()
+
+    _assert_cache_status(False)
+
+    dummy_instrument.snapshot(update=None)
+
+    _assert_cache_status(True)
+
+    dummy_instrument.invalidate_cache()
+
+    _assert_cache_status(False)
+
+    for param in dummy_instrument.parameters.values():
+        param.get()
+    for module in dummy_instrument.instrument_modules.values():
+        for param in module.parameters.values():
+            param.get()
+
+    _assert_cache_status(True)
