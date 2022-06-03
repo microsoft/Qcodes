@@ -239,8 +239,7 @@ class HDF5Format(Formatter):
                                 datasetshape[1])
             dset.resize(new_datasetshape)
             new_data_shape = (new_dlen - old_dlen, datasetshape[1])
-            dset[old_dlen:new_dlen] = x.flat[old_dlen:new_dlen].reshape(
-                new_data_shape)
+            dset[old_dlen:new_dlen] = x.flat[old_dlen:new_dlen].reshape(new_data_shape)
             # allow resizing extracted data, here so it gets written for
             # incremental writes aswell
             dset.attrs['shape'] = x.shape
