@@ -1,0 +1,1 @@
+The deprecated driver for ZI UHFLI has been removed. Please use the drivers provided by `zhinst-qcodes`.
