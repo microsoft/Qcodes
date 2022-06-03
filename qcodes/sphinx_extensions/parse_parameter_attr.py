@@ -196,9 +196,9 @@ def qcodes_parameter_attr_getter(
                     f"Falling back to default Sphinx attribute loader for {name}"
                     f" on {object_to_document_attr_on}"
                 )
-                attr = safe_getattr(object_to_document_attr_on, name, default)
+                attr = safe_getattr(object_to_document_attr_on, name, *default)
     else:
-        attr = safe_getattr(object_to_document_attr_on, name, default)
+        attr = safe_getattr(object_to_document_attr_on, name, *default)
     return attr
 
 
