@@ -2,6 +2,7 @@ alabaster==0.7.12
 argon2-cffi==21.3.0
 async-generator==1.10
 attrs==21.4.0
+autodocsumm==0.2.8
 Babel==2.10.1
 backcall==0.2.0
 bleach==5.0.0
