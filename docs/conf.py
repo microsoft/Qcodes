@@ -128,7 +128,7 @@ author = 'Giulio Ungaretti, Alex Johnson'
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = "en"
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
@@ -389,7 +389,7 @@ texinfo_show_urls = 'footnote'
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
     "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
-    "matplotlib": ("https://matplotlib.org/", None),
+    "matplotlib": ("https://matplotlib.org/stable", None),
     "python": ("https://docs.python.org/3.7/", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
     "py": ("https://pylib.readthedocs.io/en/stable/", None),
