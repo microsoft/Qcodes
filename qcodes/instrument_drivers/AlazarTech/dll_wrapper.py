@@ -5,8 +5,10 @@ This module provides infrastructure for wrapping DLL libraries, loaded using
 from the DLL library with mostly python types in mind, and conveniently
 specify their signatures in terms of :mod:`ctypes` types.
 """
+from __future__ import annotations
 
 import concurrent
+import concurrent.futures
 import ctypes
 import logging
 import typing
@@ -106,15 +108,15 @@ def _convert_bytes_to_str(
 
 
 class Signature(NamedTuple):
-    return_type: typing.Type[Any] = RETURN_CODE
-    argument_types: Sequence[typing.Type[Any]] = ()
+    return_type: type[Any] = RETURN_CODE
+    argument_types: Sequence[type[Any]] = ()
 
 
 class DllWrapperMeta(type):
     """DLL-path-based 'singleton' metaclass for DLL wrapper classes"""
 
     # Only allow a single instance per DLL path.
-    _instances: "WeakValueDictionary[str, Any]" = WeakValueDictionary()
+    _instances: WeakValueDictionary[str, Any] = WeakValueDictionary()
 
     # Note: without the 'type: ignore' for the ``__call__`` method below, mypy
     # generates 'Signature of "__call__" incompatible with supertype "type"'
@@ -173,7 +175,6 @@ class WrappedDll(metaclass=DllWrapperMeta):
     It is to be filled with :class:`Signature` instances for the DLL
     functions of interest in a subclass.
     """
-
 
     # This is the DLL library instance.
     _dll: ctypes.CDLL
