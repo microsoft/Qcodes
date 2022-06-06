@@ -6,19 +6,29 @@ from the DLL library with mostly python types in mind, and conveniently
 specify their signatures in terms of :mod:`ctypes` types.
 """
 
+import concurrent
 import ctypes
 import logging
-from typing import Type, Dict, NamedTuple, Sequence, NewType, List, Any, TypeVar, Callable, Tuple
-from threading import Lock
-import concurrent
+import typing
 from functools import partial
+from threading import Lock
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    NamedTuple,
+    NewType,
+    Sequence,
+    Tuple,
+    TypeVar,
+)
 from weakref import WeakValueDictionary
 
 from qcodes.instrument.parameter import _BaseParameter
-from .utils import TraceParameter
-from .constants import API_SUCCESS, API_DMA_IN_PROGRESS, ERROR_CODES, \
-    ReturnCode
 
+from .constants import API_DMA_IN_PROGRESS, API_SUCCESS, ERROR_CODES, ReturnCode
+from .utils import TraceParameter
 
 logger = logging.getLogger(__name__)
 
@@ -96,8 +106,8 @@ def _convert_bytes_to_str(
 
 
 class Signature(NamedTuple):
-    return_type: Type[Any] = RETURN_CODE
-    argument_types: Sequence[Type[Any]] = ()
+    return_type: typing.Type[Any] = RETURN_CODE
+    argument_types: Sequence[typing.Type[Any]] = ()
 
 
 class DllWrapperMeta(type):
