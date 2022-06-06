@@ -11,7 +11,6 @@ import concurrent
 import concurrent.futures
 import ctypes
 import logging
-import typing
 from functools import partial
 from threading import Lock
 from typing import (
