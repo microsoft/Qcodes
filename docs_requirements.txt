@@ -26,7 +26,7 @@ Jinja2==3.1.2
 jsonpointer==2.3
 jsonschema==4.6.0
 jupyter==1.0.0
-jupyter-client==7.3.1
+jupyter-client==7.3.2
 jupyter-console==6.4.3
 jupyter-core==4.10.0
 jupyterlab-pygments==0.2.2
@@ -35,7 +35,7 @@ mistune==0.8.4
 nbclient==0.6.4
 nbconvert==6.5.0
 nbformat==5.4.0
-nbsphinx==0.8.8
+nbsphinx==0.8.9
 nest-asyncio==1.5.5
 notebook==6.4.11
 numpy~=1.21.5; python_version<'3.8'
@@ -60,7 +60,7 @@ pywin32==304; sys_platform == 'win32'
 pywinpty==2.0.5; sys_platform == 'win32'
 PyYAML==6.0
 pyzmq==23.1.0
-qtconsole==5.3.0
+qtconsole==5.3.1
 QtPy==2.1.0
 requests==2.27.1
 scipy==1.7.3; python_version<'3.8'
