@@ -57,6 +57,7 @@ extensions = [
     "sphinx.ext.todo",
     "qcodes.sphinx_extensions.parse_parameter_attr",
     "sphinxcontrib.towncrier",
+    "autodocsumm",
 ]
 
 # include special __xxx__ that DO have a docstring
