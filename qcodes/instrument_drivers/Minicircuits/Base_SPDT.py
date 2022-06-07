@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import logging
 import re
 import warnings
-from typing import Any, Dict, Hashable, Optional, Type
+from typing import Any, Dict, Optional
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.channel import ChannelList, InstrumentChannel
@@ -50,7 +52,7 @@ class SwitchChannelBase(InstrumentChannel):
 
 class SPDT_Base(Instrument):
 
-    CHANNEL_CLASS: Type[SwitchChannelBase]
+    CHANNEL_CLASS: type[SwitchChannelBase]
 
     def add_channels(self) -> None:
         channels = ChannelList(

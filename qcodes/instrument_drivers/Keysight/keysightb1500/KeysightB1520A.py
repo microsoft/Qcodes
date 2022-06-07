@@ -27,7 +27,7 @@ from .KeysightB1500_module import (
 from .message_builder import MessageBuilder
 
 if TYPE_CHECKING:
-    from .KeysightB1500_base import KeysightB1500
+    import qcodes.instrument_drivers.Keysight.keysightb1500
 
 _pattern = re.compile(r"((?P<status>\w)(?P<chnr>\w)(?P<dtype>\w))?"
                       r"(?P<value>[+-]\d{1,3}\.\d{3,6}E[+-]\d{2})")
@@ -318,8 +318,13 @@ class B1520A(B1500Module):
     phase_compensation_timeout = 60  # manual says around 30 seconds
     MODULE_KIND = ModuleKind.CMU
 
-    def __init__(self, parent: 'KeysightB1500', name: Optional[str],
-                 slot_nr: int, **kwargs: Any):
+    def __init__(
+        self,
+        parent: "qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500",
+        name: Optional[str],
+        slot_nr: int,
+        **kwargs: Any,
+    ):
         super().__init__(parent, name, slot_nr, **kwargs)
 
         self.channels = (ChNr(slot_nr),)
@@ -864,7 +869,7 @@ class CVSweepMeasurement(MultiParameter, StatusMixin):
             **kwargs)
 
         self.instrument: "B1520A"
-        self.root_instrument: "KeysightB1500"
+        self.root_instrument: "qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500"
 
         self.update_name_label_unit_from_impedance_model()
 
