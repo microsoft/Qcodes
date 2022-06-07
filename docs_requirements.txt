@@ -2,6 +2,7 @@ alabaster==0.7.12
 argon2-cffi==21.3.0
 async-generator==1.10
 attrs==21.4.0
+autodocsumm==0.2.8
 Babel==2.10.1
 backcall==0.2.0
 bleach==5.0.0
@@ -26,7 +27,7 @@ Jinja2==3.1.2
 jsonpointer==2.3
 jsonschema==4.6.0
 jupyter==1.0.0
-jupyter-client==7.3.2
+jupyter-client==7.3.3
 jupyter-console==6.4.3
 jupyter-core==4.10.0
 jupyterlab-pygments==0.2.2
