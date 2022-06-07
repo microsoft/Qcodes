@@ -409,7 +409,8 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         """Short name of the instrument"""
         return self._short_name
 
-    def _is_valid_identifier(self, name: str) -> str:
+    @staticmethod
+    def _is_valid_identifier(name: str) -> str:
         """Check whether given name is a valid instrument identifier."""
         new_name = name.replace("-", "_")
         if not new_name.isidentifier():
