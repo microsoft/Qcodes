@@ -39,7 +39,7 @@ from .KeysightB1500_sampling_measurement import SamplingMeasurement
 from .message_builder import MessageBuilder
 
 if TYPE_CHECKING:
-    from .KeysightB1500_base import KeysightB1500
+    import qcodes.instrument_drivers.Keysight.keysightb1500
 
 
 class SweepSteps(TypedDict, total=False):
@@ -640,8 +640,13 @@ class B1517A(B1500Module):
     MODULE_KIND = ModuleKind.SMU
     _interval_validator = vals.Numbers(0.0001, 65.535)
 
-    def __init__(self, parent: 'KeysightB1500', name: Optional[str],
-                 slot_nr: int, **kwargs: Any):
+    def __init__(
+        self,
+        parent: "qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500",
+        name: Optional[str],
+        slot_nr: int,
+        **kwargs: Any,
+    ):
         super().__init__(parent, name, slot_nr, **kwargs)
         self.channels = (ChNr(slot_nr),)
         self._measure_config: Dict[str, Optional[Any]] = {

@@ -10,7 +10,7 @@ from . import constants
 from .constants import ModuleKind, SlotNr, MeasurementStatus, ChannelName, ChNr
 
 if TYPE_CHECKING:
-    from .KeysightB1500_base import KeysightB1500
+    import qcodes.instrument_drivers.Keysight.keysightb1500
 
 
 _FMTResponse = namedtuple('_FMTResponse', 'value status channel type')
@@ -283,9 +283,13 @@ class B1500Module(InstrumentChannel):
     """
     MODULE_KIND: ModuleKind
 
-    def __init__(self, parent: 'KeysightB1500', name: Optional[str],
-                 slot_nr: int,
-                 **kwargs: Any):
+    def __init__(
+        self,
+        parent: "qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500",
+        name: Optional[str],
+        slot_nr: int,
+        **kwargs: Any,
+    ):
         # self.channels will be populated in the concrete module subclasses
         # because channel count is module specific
         self.channels: Tuple[ChNr, ...]

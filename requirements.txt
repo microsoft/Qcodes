@@ -21,7 +21,7 @@ h5netcdf~=0.15.0
 h5py~=3.7.0
 idna~=3.3
 importlib-metadata==4.8.1; python_version<'3.8'
-ipykernel~=6.13.0
+ipykernel~=6.13.1
 ipython~=8.4.0; python_version>='3.8'
 ipython~=7.31.0; python_version<'3.8'
 ipython-genutils~=0.2.0
@@ -29,7 +29,7 @@ ipywidgets~=7.7.0
 jedi~=0.18.1
 Jinja2~=3.1.2
 jsonschema~=4.6.0
-jupyter-client~=7.3.1
+jupyter-client~=7.3.3
 jupyter-core~=4.10.0
 jupyterlab-pygments~=0.2.2
 kiwisolver~=1.4.2
@@ -68,7 +68,7 @@ pytz~=2022.1
 PyVISA~=1.11.3
 pywin32==304; sys_platform == 'win32'
 pywinpty~=2.0.5; sys_platform == 'win32'
-pyzmq~=23.0.0
+pyzmq~=23.1.0
 requests~=2.27.1
 rsa~=4.8
 ruamel.yaml==0.17.21

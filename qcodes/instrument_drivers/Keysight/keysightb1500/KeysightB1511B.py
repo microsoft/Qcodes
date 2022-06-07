@@ -4,7 +4,7 @@ from .KeysightB1517A import B1517A
 from .constants import IMeasRange, IOutputRange
 
 if TYPE_CHECKING:
-    from .KeysightB1500_base import KeysightB1500
+    import qcodes.instrument_drivers.Keysight.keysightb1500
 
 
 class B1511B(B1517A):
@@ -21,8 +21,13 @@ class B1511B(B1517A):
         asu_present: Flag to acknowledge ASU presence
     """
 
-    def __init__(self, parent: 'KeysightB1500', name: Optional[str],
-                 slot_nr: int, **kwargs: Any):
+    def __init__(
+        self,
+        parent: "qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500",
+        name: Optional[str],
+        slot_nr: int,
+        **kwargs: Any
+    ):
         super().__init__(parent, name, slot_nr, **kwargs)
         self._valid_i_measure_ranges: List[IMeasRange] = [IMeasRange.AUTO,
                                                           IMeasRange.MIN_1nA,

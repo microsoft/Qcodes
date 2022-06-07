@@ -1,3 +1,3 @@
-from .config import Config
-from .config import logger
-from .config import DotDict
+from .config import Config, DotDict, logger
+
+__all__ = ["Config", "DotDict", "logger"]

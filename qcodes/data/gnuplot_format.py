@@ -10,7 +10,7 @@ from .format import Formatter
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .data_set import DataSet
+    import qcodes.data.data_set
 
 
 log = logging.getLogger(__name__)
@@ -253,11 +253,16 @@ class GNUPlotFormat(Formatter):
 
     # this signature is unfortunatly incompatible with the super class
     # so we have to ignore type errors
-    def write(self,  # type: ignore[override]
-              data_set: 'DataSet',
-              io_manager, location, force_write=False,
-              write_metadata=True, only_complete=True,
-              filename=None):
+    def write(  # type: ignore[override]
+        self,
+        data_set: "qcodes.data.data_set.DataSet",
+        io_manager,
+        location,
+        force_write=False,
+        write_metadata=True,
+        only_complete=True,
+        filename=None,
+    ):
         """
         Write updates in this DataSet to storage.
 
@@ -349,8 +354,14 @@ class GNUPlotFormat(Formatter):
             self.write_metadata(
                 data_set, io_manager=io_manager, location=location)
 
-    def write_metadata(self, data_set: 'DataSet', io_manager, location,
-                       read_first=True, **kwargs):
+    def write_metadata(
+        self,
+        data_set: "qcodes.data.data_set.DataSet",
+        io_manager,
+        location,
+        read_first=True,
+        **kwargs
+    ):
         """
         Write all metadata in this DataSet to storage.
 
