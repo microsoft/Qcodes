@@ -84,13 +84,21 @@ def test_instrument_fail(close_before_and_after):
     assert Instrument._all_instruments == {}
 
 
-def test_instrument_fail_on_invalid_identifier(close_before_and_after):
-    with pytest.raises(ValueError, match="!name invalid instrument identifier"):
-        DummyInstrument(name="!name")
-
+def test_instrument_on_invalid_identifier(close_before_and_after):
+    # Check if error raised when invalid identifer name given
+    with pytest.raises(ValueError, match="!-name invalid instrument identifier"):
+        DummyInstrument(name="!-name")
     assert Instrument.instances() == []
     assert DummyInstrument.instances() == []
     assert Instrument._all_instruments == {}
+
+    # Check if name is valid identifier when dashes '-'
+    # are converted to underscores '_'
+    instr = DummyInstrument(name="-name")
+    assert instr.name == "_name"
+    assert Instrument.instances() == []
+    assert DummyInstrument.instances() == [instr]
+    assert Instrument._all_instruments != {}
 
 
 def test_instrument_retry_with_same_name(close_before_and_after):
