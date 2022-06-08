@@ -56,6 +56,11 @@ from requests.exceptions import ConnectTimeout, HTTPError, ReadTimeout
 from requests.packages.urllib3.exceptions import ReadTimeoutError
 from slack_sdk import WebClient
 
+from qcodes import config as qc_config
+from qcodes.instrument.parameter import _BaseParameter
+from qcodes.loops import active_data_set, active_loop
+from qcodes.plots.base import BasePlot
+
 
 class SlackTimeoutWarning(UserWarning):
     pass
@@ -77,16 +82,16 @@ def convert_command(text):
         return string
 
     # Format text to lowercase, and remove trailing whitespaces
-    text = text.lower().rstrip(' ')
-    command, *args_str = text.split(' ')
+    text = text.lower().rstrip(" ")
+    command, *args_str = text.split(" ")
 
     # Convert string args to floats/kwargs
     args = []
     kwargs = {}
     for arg in args_str:
-        if '=' in arg:
+        if "=" in arg:
             # arg is a kwarg
-            key, val = arg.split('=')
+            key, val = arg.split("=")
             # Try to convert into a float
             val = try_convert_str(val)
             kwargs[key] = val
@@ -99,7 +104,6 @@ def convert_command(text):
 
 
 class Slack(threading.Thread):
-
     def __init__(self, interval=3, config=None, auto_start=True, **commands):
         """
         Initializes Slack bot, including auto-updating widget if in notebook
@@ -118,24 +122,25 @@ class Slack(threading.Thread):
             auto_start (bool): Defaults to True.
 
         """
-        from qcodes import config as qc_config
         if config is not None:
             self.config = config
         else:
             self.config = qc_config.user.slack
 
-        self.slack = WebClient(token=self.config['token'])
-        self.users = self.get_users(self.config['names'])
+        self.slack = WebClient(token=self.config["token"])
+        self.users = self.get_users(self.config["names"])
         self.get_im_ids(self.users)
 
-        self.commands = {'plot': self.upload_latest_plot,
-                         'msmt': self.print_measurement_information,
-                         'measurement': self.print_measurement_information,
-                         'notify': self.add_task,
-                         'help': self.help_message,
-                         'task': self.add_task,
-                         **commands}
-        self.task_commands = {'finished': self.check_msmt_finished}
+        self.commands = {
+            "plot": self.upload_latest_plot,
+            "msmt": self.print_measurement_information,
+            "measurement": self.print_measurement_information,
+            "notify": self.add_task,
+            "help": self.help_message,
+            "task": self.add_task,
+            **commands,
+        }
+        self.task_commands = {"finished": self.check_msmt_finished}
 
         self.interval = interval
         self.tasks = []
@@ -201,7 +206,7 @@ class Slack(threading.Thread):
         Returns:
             dict: User information.
         """
-        return self.slack.users_info(user=user_id)['user']
+        return self.slack.users_info(user=user_id)["user"]
 
     def get_users(self, usernames):
         """
@@ -214,13 +219,12 @@ class Slack(threading.Thread):
         """
         users = {}
         response = self.slack.users_list()
-        for member in response['members']:
-            if member['name'] in usernames:
-                users[member['name']] = member
+        for member in response["members"]:
+            if member["name"] in usernames:
+                users[member["name"]] = member
         if len(users) != len(usernames):
             remaining_names = [name for name in usernames if name not in users]
-            raise RuntimeError(
-                f'Could not find names {remaining_names}')
+            raise RuntimeError(f"Could not find names {remaining_names}")
         return users
 
     def get_im_ids(self, users):
@@ -233,18 +237,18 @@ class Slack(threading.Thread):
         Returns:
             None.
         """
-        response = self.slack.conversations_list(types='im')
-        user_ids = {username: user['id'] for username, user in users.items()}
-        im_ids = {chan['user']: chan['id'] for chan in response['channels']}
+        response = self.slack.conversations_list(types="im")
+        user_ids = {username: user["id"] for username, user in users.items()}
+        im_ids = {chan["user"]: chan["id"] for chan in response["channels"]}
         for username, user_id in user_ids.items():
             if user_id in im_ids.keys():
-                users[username]['im_id'] = im_ids[user_id]
+                users[username]["im_id"] = im_ids[user_id]
                 # update last ts
                 messages = self.get_im_messages(username=username, limit=1)
                 if messages:
-                    users[username]['last_ts'] = float(messages[0]['ts'])
+                    users[username]["last_ts"] = float(messages[0]["ts"])
                 else:
-                    users[username]['last_ts'] = None
+                    users[username]["last_ts"] = None
 
     def get_im_messages(self, username, **kwargs):
         """
@@ -259,16 +263,15 @@ class Slack(threading.Thread):
         # provide backward compatibility with 'count' keyword. It still works,
         # but is undocumented. 'count' likely does the same as 'limit', but
         # 'limit' takes precedence
-        if 'limit' not in kwargs.keys():
-            kwargs['limit'] = kwargs.pop('count', None)
+        if "limit" not in kwargs.keys():
+            kwargs["limit"] = kwargs.pop("count", None)
 
-        channel = self.users[username].get('im_id', None)
+        channel = self.users[username].get("im_id", None)
         if channel is None:
             return []
         else:
-            response = self.slack.conversations_history(channel=channel,
-                                                        **kwargs)
-            return response['messages']
+            response = self.slack.conversations_history(channel=channel, **kwargs)
+            return response["messages"]
 
     def get_new_im_messages(self):
         """
@@ -279,15 +282,13 @@ class Slack(threading.Thread):
         """
         im_messages = {}
         for username, user in self.users.items():
-            last_ts = user.get('last_ts', None)
-            new_messages = self.get_im_messages(username=username,
-                                                oldest=last_ts)
+            last_ts = user.get("last_ts", None)
+            new_messages = self.get_im_messages(username=username, oldest=last_ts)
             # Kwarg 'oldest' sometimes also returns message with ts==last_ts
-            new_messages = [m for m in new_messages if
-                            float(m['ts']) != last_ts]
+            new_messages = [m for m in new_messages if float(m["ts"]) != last_ts]
             im_messages[username] = new_messages
             if new_messages:
-                self.users[username]['last_ts'] = float(new_messages[0]['ts'])
+                self.users[username]["last_ts"] = float(new_messages[0]["ts"])
         return im_messages
 
     def update(self):
@@ -309,8 +310,7 @@ class Slack(threading.Thread):
             new_messages = self.get_new_im_messages()
         except (ReadTimeout, HTTPError, ConnectTimeout, ReadTimeoutError) as e:
             # catch any timeouts caused by network delays
-            warnings.warn('error retrieving slack messages',
-                          SlackTimeoutWarning)
+            warnings.warn("error retrieving slack messages", SlackTimeoutWarning)
             logging.info(e)
         self.handle_messages(new_messages)
 
@@ -324,21 +324,20 @@ class Slack(threading.Thread):
         Performs commands depending on messages.
         This includes adding tasks to be performed during each update.
         """
-        from qcodes.instrument.parameter import _BaseParameter
         for user, user_messages in messages.items():
             for message in user_messages:
-                if message.get('user', None) != self.users[user]['id']:
+                if message.get("user", None) != self.users[user]["id"]:
                     # Filter out bot messages
                     continue
-                channel = self.users[user]['im_id']
+                channel = self.users[user]["im_id"]
                 # Extract command (first word) and possible args
-                command, args, kwargs = convert_command(message['text'])
+                command, args, kwargs = convert_command(message["text"])
                 if command in self.commands:
-                    msg = f'Executing {command}'
+                    msg = f"Executing {command}"
                     if args:
-                        msg += f' {args}'
+                        msg += f" {args}"
                     if kwargs:
-                        msg += f' {kwargs}'
+                        msg += f" {kwargs}"
                     self.slack.chat_postMessage(text=msg, channel=channel)
 
                     func = self.commands[command]
@@ -349,26 +348,26 @@ class Slack(threading.Thread):
                             # Only add channel and Slack if they are explicit
                             # kwargs
                             func_sig = inspect.signature(func)
-                            if 'channel' in func_sig.parameters:
-                                kwargs['channel'] = channel
-                            if 'slack' in func_sig.parameters:
-                                kwargs['slack'] = self
+                            if "channel" in func_sig.parameters:
+                                kwargs["channel"] = channel
+                            if "slack" in func_sig.parameters:
+                                kwargs["slack"] = self
                             results = func(*args, **kwargs)
 
                         if results is not None:
                             self.slack.chat_postMessage(
-                                text=f'Results: {results}',
-                                channel=channel)
+                                text=f"Results: {results}", channel=channel
+                            )
 
                     except Exception:
                         self.slack.chat_postMessage(
-                            text=f'Error: {traceback.format_exc()}',
-                            channel=channel)
+                            text=f"Error: {traceback.format_exc()}", channel=channel
+                        )
                 else:
                     self.slack.chat_postMessage(
-                        text='Command {} not understood. Try `help`'.format(
-                            command),
-                        channel=channel)
+                        text=f"Command {command} not understood. Try `help`",
+                        channel=channel,
+                    )
 
     def add_task(self, command, *args, channel, **kwargs):
         """
@@ -383,15 +382,13 @@ class Slack(threading.Thread):
             None.
         """
         if command in self.task_commands:
-            self.slack.chat_postMessage(
-                text=f'Added task "{command}"',
-                channel=channel)
+            self.slack.chat_postMessage(text=f'Added task "{command}"', channel=channel)
             func = self.task_commands[command]
             self.tasks.append(partial(func, *args, channel=channel, **kwargs))
         else:
             self.slack.chat_postMessage(
-                text=f'Task command {command} not understood',
-                channel=channel)
+                text=f"Task command {command} not understood", channel=channel
+            )
 
     def upload_latest_plot(self, channel, **kwargs):
         """
@@ -406,10 +403,9 @@ class Slack(threading.Thread):
         Returns:
             None.
         """
-        from qcodes.plots.base import BasePlot
 
         # Create temporary filename
-        temp_filename = tempfile.mktemp(suffix='.jpg')
+        temp_filename = tempfile.mktemp(suffix=".jpg")
         # Retrieve latest plot
         latest_plot = BasePlot.latest_plot
         if latest_plot is not None:
@@ -419,8 +415,7 @@ class Slack(threading.Thread):
             self.slack.files_upload(file=temp_filename, channels=channel)
             os.remove(temp_filename)
         else:
-            self.slack.chat_postMessage(text='No latest plot',
-                                        channel=channel)
+            self.slack.chat_postMessage(text="No latest plot", channel=channel)
 
     def print_measurement_information(self, channel, **kwargs):
         """
@@ -435,19 +430,17 @@ class Slack(threading.Thread):
         Returns:
             None.
         """
-        from qcodes.loops import active_data_set
         dataset = active_data_set()
         if dataset is not None:
             self.slack.chat_postMessage(
-                text='Measurement is {:.0f}% complete'.format(
-                    100 * dataset.fraction_complete()),
-                channel=channel)
-            self.slack.chat_postMessage(
-                text=repr(dataset), channel=channel)
+                text="Measurement is {:.0f}% complete".format(
+                    100 * dataset.fraction_complete()
+                ),
+                channel=channel,
+            )
+            self.slack.chat_postMessage(text=repr(dataset), channel=channel)
         else:
-            self.slack.chat_postMessage(
-                text='No latest dataset found',
-                channel=channel)
+            self.slack.chat_postMessage(text="No latest dataset found", channel=channel)
 
     def check_msmt_finished(self, channel, **kwargs):
         """
@@ -459,11 +452,8 @@ class Slack(threading.Thread):
         Returns:
             bool: True if measurement is finished, False otherwise.
         """
-        from qcodes.loops import active_loop
         if active_loop() is None:
-            self.slack.chat_postMessage(
-                text='Measurement complete',
-                channel=channel)
+            self.slack.chat_postMessage(text="Measurement complete", channel=channel)
             return True
         else:
             return False
