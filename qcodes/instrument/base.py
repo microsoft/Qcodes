@@ -5,7 +5,6 @@ import time
 import warnings
 import weakref
 from abc import ABCMeta
-from tkinter import W
 from typing import (
     TYPE_CHECKING,
     Any,
