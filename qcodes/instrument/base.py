@@ -412,12 +412,10 @@ class InstrumentBase(Metadatable, DelegateAttributes):
     def _is_valid_identifier(name: str) -> str:
         """Check whether given name is a valid instrument identifier."""
         new_name = name.replace("-", "_")
-        if not new_name.isidentifier():
-            raise ValueError(f"{name} invalid instrument identifier")
         if name != new_name:
-            warnings.warn(
-                f"Changed {name} to {new_name} for valid instrument identifier"
-            )
+            warnings.warn(f"Changed {name} to {new_name} for instrument identifier")
+        if not new_name.isidentifier():
+            raise ValueError(f"{new_name} invalid instrument identifier")
 
         return new_name
 
