@@ -29,6 +29,5 @@ qcodes.utils
    magic
    metadata
    plotting
-   slack
    threading
    validators
