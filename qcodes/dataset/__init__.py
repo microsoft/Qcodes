@@ -11,6 +11,7 @@ from .data_set import (
 )
 from .data_set_in_memory import load_from_netcdf
 from .data_set_protocol import DataSetProtocol, DataSetType
+from .database_extract_runs import extract_runs_into_db
 from .descriptions.param_spec import ParamSpec
 from .doNd import AbstractSweep, ArraySweep, LinSweep, LogSweep, do0d, do1d, do2d, dond
 from .experiment_container import (
@@ -21,6 +22,8 @@ from .experiment_container import (
     load_or_create_experiment,
     new_experiment,
 )
+from .experiment_settings import get_default_experiment_id, reset_default_experiment_id
+from .legacy_import import import_dat_file
 from .measurements import Measurement
 from .plotting import plot_by_id, plot_dataset
 from .sqlite.database import (
@@ -45,6 +48,9 @@ __all__ = [
     "do2d",
     "dond",
     "experiments",
+    "extract_runs_into_db",
+    "get_default_experiment_id",
+    "import_dat_file",
     "initialise_database",
     "initialise_or_create_database_at",
     "initialised_database_at",
@@ -61,4 +67,5 @@ __all__ = [
     "new_experiment",
     "plot_by_id",
     "plot_dataset",
+    "reset_default_experiment_id",
 ]
