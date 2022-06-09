@@ -55,7 +55,7 @@ jobs:
         attempt_delay: 1000
       if: runner.os == 'Windows'
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3.1.2
+      uses: actions/setup-python@v4.0.0
       with:
         python-version: ${{ matrix.python-version }}
     - name: prepare pip cache
