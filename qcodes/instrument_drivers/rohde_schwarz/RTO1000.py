@@ -10,9 +10,8 @@ import numpy as np
 from packaging import version
 
 from qcodes import Instrument
-from qcodes.instrument.channel import InstrumentChannel
-from qcodes.instrument.parameter import ArrayParameter
-from qcodes.instrument.visa import VisaInstrument
+from qcodes.instrument import InstrumentChannel, VisaInstrument
+from qcodes.parameters import ArrayParameter
 from qcodes.utils import validators as vals
 from qcodes.utils.helpers import create_on_off_val_mapping
 

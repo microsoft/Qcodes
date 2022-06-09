@@ -6,10 +6,21 @@ should be of type :class:`GroupParameter`
 
 
 from collections import OrderedDict
-from typing import Any, Callable, Dict, Mapping, Optional, Sequence, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Mapping,
+    Optional,
+    Sequence,
+    Union,
+)
 
-from qcodes.instrument.base import InstrumentBase
-from qcodes.instrument.parameter import ParamDataType, Parameter, ParamRawDataType
+from qcodes.parameters.parameter import ParamDataType, Parameter, ParamRawDataType
+
+if TYPE_CHECKING:
+    from qcodes.instrument.base import InstrumentBase
 
 
 class GroupParameter(Parameter):
@@ -40,23 +51,25 @@ class GroupParameter(Parameter):
              ``set_cmd`` and ``get_cmd``.
     """
 
-    def __init__(self,
-                 name: str,
-                 instrument: Optional['InstrumentBase'] = None,
-                 initial_value: Union[float, int, str, None] = None,
-                 **kwargs: Any
-                 ) -> None:
+    def __init__(
+        self,
+        name: str,
+        instrument: Optional["InstrumentBase"] = None,
+        initial_value: Union[float, int, str, None] = None,
+        **kwargs: Any,
+    ) -> None:
 
         if "set_cmd" in kwargs or "get_cmd" in kwargs:
-            raise ValueError("A GroupParameter does not use 'set_cmd' or "
-                             "'get_cmd' kwarg")
+            raise ValueError(
+                "A GroupParameter does not use 'set_cmd' or " "'get_cmd' kwarg"
+            )
 
         self._group: Union[Group, None] = None
         self._initial_value = initial_value
         super().__init__(name, instrument=instrument, **kwargs)
 
     @property
-    def group(self) -> Optional['Group']:
+    def group(self) -> Optional["Group"]:
         """
         The group that this parameter belongs to.
         """
@@ -64,15 +77,13 @@ class GroupParameter(Parameter):
 
     def get_raw(self) -> ParamRawDataType:
         if self.group is None:
-            raise RuntimeError("Trying to get Group value but no "
-                               "group defined")
+            raise RuntimeError("Trying to get Group value but no " "group defined")
         self.group.update()
         return self.cache.raw_value
 
     def set_raw(self, value: ParamRawDataType) -> None:
         if self.group is None:
-            raise RuntimeError("Trying to set Group value but no "
-                               "group defined")
+            raise RuntimeError("Trying to set Group value but no " "group defined")
         self.group._set_one_parameter_from_raw(self, value)
 
 
@@ -173,8 +184,7 @@ class Group:
 
         if single_instrument:
             if len({p.root_instrument for p in parameters}) > 1:
-                raise ValueError(
-                    "All parameters should belong to the same instrument")
+                raise ValueError("All parameters should belong to the same instrument")
 
         self._instrument = parameters[0].root_instrument
 
@@ -190,29 +200,36 @@ class Group:
             self._check_initial_values(parameters)
 
     def _check_initial_values(self, parameters: Sequence[GroupParameter]) -> None:
-        have_initial_values = [p._initial_value is not None
-                               for p in parameters]
+        have_initial_values = [p._initial_value is not None for p in parameters]
         if any(have_initial_values):
             if not all(have_initial_values):
-                params_with_initial_values = [p.name for p in parameters
-                                              if p._initial_value is not None]
-                params_without_initial_values = [p.name for p in parameters
-                                                 if p._initial_value is None]
-                error_msg = (f'Either none or all of the parameters in a '
-                             f'group should have an initial value. Found '
-                             f'initial values for '
-                             f'{params_with_initial_values} but not for '
-                             f'{params_without_initial_values}.')
+                params_with_initial_values = [
+                    p.name for p in parameters if p._initial_value is not None
+                ]
+                params_without_initial_values = [
+                    p.name for p in parameters if p._initial_value is None
+                ]
+                error_msg = (
+                    f"Either none or all of the parameters in a "
+                    f"group should have an initial value. Found "
+                    f"initial values for "
+                    f"{params_with_initial_values} but not for "
+                    f"{params_without_initial_values}."
+                )
                 raise ValueError(error_msg)
 
-            calling_dict = {name: p._from_value_to_raw_value(p._initial_value)
-                            for name, p in self.parameters.items()}
+            calling_dict = {
+                name: p._from_value_to_raw_value(p._initial_value)
+                for name, p in self.parameters.items()
+            }
 
             self._set_from_dict(calling_dict)
 
-    def _separator_parser(self, separator: str
-                          ) -> Callable[[str], Dict[str, ParamRawDataType]]:
+    def _separator_parser(
+        self, separator: str
+    ) -> Callable[[str], Dict[str, ParamRawDataType]]:
         """A default separator-based string parser"""
+
         def parser(ret_str: str) -> Dict[str, Any]:
             keys = self.parameters.keys()
             values = ret_str.split(separator)
@@ -230,12 +247,12 @@ class Group:
             the group with the corresponding values to be set.
         """
         if not parameters_dict:
-            raise RuntimeError("Provide at least one group parameter and its "
-                               "value to be set.")
+            raise RuntimeError(
+                "Provide at least one group parameter and its " "value to be set."
+            )
         if any((p.get_latest() is None) for p in self.parameters.values()):
             self.update()
-        calling_dict = {name: p.cache.raw_value
-                        for name, p in self.parameters.items()}
+        calling_dict = {name: p.cache.raw_value for name, p in self.parameters.items()}
         for parameter_name, value in parameters_dict.items():
             p = self.parameters[parameter_name]
             raw_value = p._from_value_to_raw_value(value)
@@ -243,8 +260,9 @@ class Group:
 
         self._set_from_dict(calling_dict)
 
-    def _set_one_parameter_from_raw(self, set_parameter: GroupParameter,
-                                    raw_value: ParamRawDataType) -> None:
+    def _set_one_parameter_from_raw(
+        self, set_parameter: GroupParameter, raw_value: ParamRawDataType
+    ) -> None:
         """
         Sets the raw_value of the given parameter within a group to the given
         raw_value by calling the ``set_cmd``.
@@ -256,8 +274,7 @@ class Group:
         # TODO replace get latest with call to cache.invalid once that lands
         if any((p.get_latest() is None) for p in self.parameters.values()):
             self.update()
-        calling_dict = {name: p.cache.raw_value
-                        for name, p in self.parameters.items()}
+        calling_dict = {name: p.cache.raw_value for name, p in self.parameters.items()}
         calling_dict[set_parameter.name] = raw_value
 
         self._set_from_dict(calling_dict)
@@ -271,8 +288,9 @@ class Group:
             raise RuntimeError("Calling set but no `set_cmd` defined")
         command_str = self._set_cmd.format(**calling_dict)
         if self.instrument is None:
-            raise RuntimeError("Trying to set GroupParameter not attached "
-                               "to any instrument.")
+            raise RuntimeError(
+                "Trying to set GroupParameter not attached " "to any instrument."
+            )
         self.instrument.write(command_str)
         for name, p in list(self.parameters.items()):
             p.cache._set_from_raw_value(calling_dict[name])
@@ -283,14 +301,16 @@ class Group:
         the ``get_cmd``.
         """
         if self.instrument is None:
-            raise RuntimeError("Trying to update GroupParameter not attached "
-                               "to any instrument.")
+            raise RuntimeError(
+                "Trying to update GroupParameter not attached " "to any instrument."
+            )
         if self._get_cmd is None:
-            parameter_names = ', '.join(
-                p.full_name for p in self.parameters.values())
-            raise RuntimeError(f'Cannot update values in the group with '
-                               f'parameters - {parameter_names} since it '
-                               f'has no `get_cmd` defined.')
+            parameter_names = ", ".join(p.full_name for p in self.parameters.values())
+            raise RuntimeError(
+                f"Cannot update values in the group with "
+                f"parameters - {parameter_names} since it "
+                f"has no `get_cmd` defined."
+            )
         ret = self.get_parser(self.instrument.ask(self._get_cmd))
         for name, p in list(self.parameters.items()):
             p.cache._set_from_raw_value(ret[name])
@@ -304,7 +324,7 @@ class Group:
         return self._parameters
 
     @property
-    def instrument(self) -> Optional[InstrumentBase]:
+    def instrument(self) -> Optional["InstrumentBase"]:
         """
         The ``root_instrument`` that this parameter belongs to.
         """

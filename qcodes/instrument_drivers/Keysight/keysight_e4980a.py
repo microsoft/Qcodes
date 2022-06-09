@@ -3,9 +3,10 @@ from typing import Any, Sequence, Tuple, Union, cast
 from packaging import version
 from pyvisa.errors import VisaIOError
 
-from qcodes import InstrumentChannel, VisaInstrument
-from qcodes.instrument.group_parameter import Group, GroupParameter
-from qcodes.instrument.parameter import (
+from qcodes.instrument import InstrumentChannel, VisaInstrument
+from qcodes.parameters import (
+    Group,
+    GroupParameter,
     ManualParameter,
     MultiParameter,
     ParamRawDataType,

@@ -4,9 +4,12 @@ from typing import Any, Dict, List, Sequence, Sized, Tuple, Union
 
 import numpy as np
 
-from qcodes.instrument.parameter import (ArrayParameter, MultiParameter,
-                                         ParameterWithSetpoints,
-                                         _BaseParameter)
+from qcodes.parameters import (
+    ArrayParameter,
+    MultiParameter,
+    ParameterWithSetpoints,
+    _BaseParameter,
+)
 from qcodes.utils.validators import Arrays
 
 

@@ -4,8 +4,8 @@ from typing import Any, Iterable, Tuple, Union
 
 import numpy as np
 
-from qcodes import VisaInstrument
-from qcodes.instrument.parameter import (
+from qcodes.instrument import VisaInstrument
+from qcodes.parameters import (
     ArrayParameter,
     Parameter,
     ParameterWithSetpoints,

@@ -1,10 +1,12 @@
-from typing import Dict, ClassVar, Any
+from typing import Any, ClassVar, Dict
 
-from qcodes.instrument_drivers.Lakeshore.lakeshore_base import (
-    LakeshoreBase, BaseOutput, BaseSensorChannel)
-from qcodes.instrument.group_parameter import GroupParameter, Group
 import qcodes.utils.validators as vals
-
+from qcodes.instrument_drivers.Lakeshore.lakeshore_base import (
+    BaseOutput,
+    BaseSensorChannel,
+    LakeshoreBase,
+)
+from qcodes.parameters import Group, GroupParameter
 
 # There are 16 sensors channels (a.k.a. measurement inputs) in Model 372
 _n_channels = 16

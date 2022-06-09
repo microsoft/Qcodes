@@ -40,13 +40,13 @@ import qcodes
 import qcodes.utils.validators as validators
 from qcodes.instrument.base import Instrument, InstrumentBase
 from qcodes.instrument.channel import ChannelTuple
-from qcodes.instrument.parameter import (
+from qcodes.monitor.monitor import Monitor
+from qcodes.parameters import (
     DelegateParameter,
     ManualParameter,
     Parameter,
     _BaseParameter,
 )
-from qcodes.monitor.monitor import Monitor
 from qcodes.utils.deprecate import issue_deprecation_warning
 from qcodes.utils.helpers import (
     YAML,

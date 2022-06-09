@@ -53,7 +53,7 @@ except ImportError:
 if TYPE_CHECKING:
     from websockets.legacy.server import WebSocketServerProtocol, WebSocketServer
 
-from qcodes.instrument.parameter import Parameter
+from qcodes.parameters import Parameter
 
 WEBSOCKET_PORT = 5678
 SERVER_PORT = 3000

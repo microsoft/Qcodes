@@ -1,9 +1,9 @@
-from typing import Optional, Sequence
 from datetime import datetime
+from typing import Optional, Sequence
 
-from qcodes.instrument.parameter import Parameter
-from qcodes.loops import Loop
 from qcodes.actions import _actions_snapshot
+from qcodes.loops import Loop
+from qcodes.parameters import Parameter
 from qcodes.utils.helpers import full_class
 from qcodes.utils.metadata import Metadatable
 

@@ -9,14 +9,14 @@ import numpy as np
 import qcodes.utils.validators as vals
 from qcodes import VisaInstrument
 from qcodes.data.data_set import DataSet
-from qcodes.instrument.base import Instrument, Parameter
-from qcodes.instrument.channel import InstrumentChannel
-from qcodes.instrument.parameter import (
+from qcodes.instrument import Instrument, InstrumentChannel
+from qcodes.measure import Measure
+from qcodes.parameters import (
     ArrayParameter,
+    Parameter,
     ParameterWithSetpoints,
     ParamRawDataType,
 )
-from qcodes.measure import Measure
 from qcodes.utils.helpers import create_on_off_val_mapping
 
 log = logging.getLogger(__name__)

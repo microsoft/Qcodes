@@ -28,7 +28,7 @@ from typing_extensions import Protocol
 
 if TYPE_CHECKING:
     from qcodes.dataset.measurements import res_type
-    from qcodes.instrument.parameter import ParamDataType, _BaseParameter
+    from qcodes.parameters import ParamDataType, _BaseParameter
 
 ParamMeasT = Union["_BaseParameter", Callable[[], None]]
 OutType = List["res_type"]
@@ -139,7 +139,7 @@ class _ParamCaller:
 def _instrument_to_param(
         params: Sequence[ParamMeasT]
 ) -> Dict[Optional[str], Tuple["_BaseParameter", ...]]:
-    from qcodes.instrument.parameter import _BaseParameter
+    from qcodes.parameters import _BaseParameter
     real_parameters = [param for param in params
                        if isinstance(param, _BaseParameter)]
 
@@ -185,7 +185,7 @@ def call_params_threaded(param_meas: Sequence[ParamMeasT]) -> OutType:
 
 
 def _call_params(param_meas: Sequence[ParamMeasT]) -> OutType:
-    from qcodes.instrument.parameter import _BaseParameter
+    from qcodes.parameters import _BaseParameter
     output: OutType = []
 
     for parameter in param_meas:

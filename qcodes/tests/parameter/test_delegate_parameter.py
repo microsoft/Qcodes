@@ -7,7 +7,7 @@ import hypothesis.strategies as hst
 import pytest
 from hypothesis import given
 
-from qcodes.instrument.parameter import DelegateParameter, Parameter, ParamRawDataType
+from qcodes.parameters import DelegateParameter, Parameter, ParamRawDataType
 from .conftest import BetterGettableParam
 
 # Disable warning that is created by using fixtures

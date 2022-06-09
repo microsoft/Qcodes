@@ -1,7 +1,7 @@
 import pytest
 
-from qcodes.instrument.parameter import Parameter
-from qcodes.instrument.sweep_values import SweepValues
+from qcodes.parameters import Parameter
+from qcodes.parameters.sweep_values import SweepValues
 
 from qcodes.utils.validators import Numbers
 

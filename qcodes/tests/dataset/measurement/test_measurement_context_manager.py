@@ -20,11 +20,7 @@ from qcodes.dataset.export_config import DataExportType
 from qcodes.dataset.legacy_import import import_dat_file
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.sqlite.connection import atomic_transaction
-from qcodes.instrument.parameter import (
-    ArrayParameter,
-    Parameter,
-    expand_setpoints_helper,
-)
+from qcodes.parameters import ArrayParameter, Parameter, expand_setpoints_helper
 from qcodes.tests.common import reset_config_on_exit, retry_until_does_not_throw
 
 # pylint: disable=unused-import

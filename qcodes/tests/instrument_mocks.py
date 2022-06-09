@@ -7,7 +7,7 @@ import numpy as np
 
 from qcodes.instrument.base import Instrument, InstrumentBase
 from qcodes.instrument.channel import ChannelList, InstrumentChannel
-from qcodes.instrument.parameter import (
+from qcodes.parameters import (
     ArrayParameter,
     MultiParameter,
     Parameter,

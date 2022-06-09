@@ -42,7 +42,7 @@ if TYPE_CHECKING:
     import pandas as pd
     import xarray as xr
 
-    from qcodes.instrument.parameter import _BaseParameter
+    from qcodes.parameters import _BaseParameter
 
     from .data_set_cache import DataSetCache
 

@@ -4,8 +4,8 @@ from typing import Optional
 
 import pytest
 
-from qcodes import Instrument
-from qcodes.instrument.group_parameter import Group, GroupParameter
+from qcodes.instrument import Instrument
+from qcodes.parameters import Group, GroupParameter
 
 
 @pytest.fixture(autouse=True)

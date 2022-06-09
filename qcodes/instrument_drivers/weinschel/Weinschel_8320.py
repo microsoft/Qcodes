@@ -2,8 +2,8 @@ from typing import Any
 
 import numpy as np
 
-from qcodes.instrument.parameter import Parameter
-from qcodes.instrument.visa import VisaInstrument
+from qcodes.instrument import VisaInstrument
+from qcodes.parameters import Parameter
 from qcodes.utils import validators as vals
 
 

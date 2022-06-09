@@ -3,8 +3,9 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from qcodes.instrument.parameter import Parameter, _BaseParameter
 import qcodes.utils.validators as vals
+from qcodes.parameters import Parameter, _BaseParameter
+
 from .conftest import NOT_PASSED, BetterGettableParam, SettableParam
 
 

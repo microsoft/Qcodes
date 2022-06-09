@@ -5,8 +5,8 @@ from typing import Any, Union
 import numpy as np
 
 import qcodes.utils.validators as vals
-from qcodes.instrument.parameter import ArrayParameter, ParamRawDataType
-from qcodes.instrument.visa import VisaInstrument
+from qcodes.instrument import VisaInstrument
+from qcodes.parameters import ArrayParameter, ParamRawDataType
 
 log = logging.getLogger(__name__)
 

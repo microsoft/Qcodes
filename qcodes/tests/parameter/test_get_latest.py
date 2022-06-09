@@ -1,9 +1,10 @@
-from datetime import datetime, timedelta
 import time
+from datetime import datetime, timedelta
 
 import pytest
 
-from qcodes.instrument.parameter import Parameter, _BaseParameter
+from qcodes.parameters import Parameter, _BaseParameter
+
 from .conftest import BetterGettableParam
 
 

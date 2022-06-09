@@ -1,7 +1,8 @@
-from typing import Union, Optional, Callable, Dict, Any
 from datetime import datetime, timedelta
+from typing import Any, Callable, Dict, Optional, Union
 
-from qcodes.instrument.parameter import Parameter
+from qcodes.parameters import Parameter
+
 from .conftest import NOT_PASSED
 
 

@@ -18,7 +18,7 @@ from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.plotting import plot_and_save_image
-from qcodes.instrument.parameter import _BaseParameter
+from qcodes.parameters import _BaseParameter
 from qcodes.utils.threading import (
     SequentialParamsCaller,
     ThreadPoolParamsCaller,

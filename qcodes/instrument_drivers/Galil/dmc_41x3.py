@@ -7,8 +7,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
-from qcodes.instrument.base import Instrument
-from qcodes.instrument.channel import InstrumentChannel
+from qcodes.instrument import Instrument, InstrumentChannel
 from qcodes.utils.validators import Enum, Ints, Multiples
 
 try:

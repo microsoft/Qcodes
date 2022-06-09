@@ -2,8 +2,8 @@ from enum import IntFlag
 from itertools import takewhile
 from typing import Any, Dict, Iterable, List, Optional, TextIO, Tuple, cast
 
-from qcodes import ChannelList, InstrumentChannel, VisaInstrument
-from qcodes.instrument.group_parameter import Group, GroupParameter
+from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
+from qcodes.parameters import Group, GroupParameter
 from qcodes.utils.validators import Enum, Numbers
 
 

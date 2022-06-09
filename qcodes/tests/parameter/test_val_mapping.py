@@ -1,9 +1,10 @@
 import pytest
 
-from qcodes.instrument.parameter import Parameter
 import qcodes.utils.validators as vals
-from qcodes.utils.helpers import create_on_off_val_mapping
+from qcodes.parameters import Parameter
 from qcodes.tests.instrument_mocks import DummyInstrument
+from qcodes.utils.helpers import create_on_off_val_mapping
+
 from .conftest import ParameterMemory
 
 

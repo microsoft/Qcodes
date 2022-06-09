@@ -26,7 +26,7 @@ from typing import (
 )
 from weakref import WeakValueDictionary
 
-from qcodes.instrument.parameter import _BaseParameter
+from qcodes.parameters import _BaseParameter
 
 from .constants import API_DMA_IN_PROGRESS, API_SUCCESS, ERROR_CODES, ReturnCode
 from .utils import TraceParameter

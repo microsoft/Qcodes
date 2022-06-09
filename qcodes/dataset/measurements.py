@@ -55,9 +55,9 @@ from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.export_config import get_data_export_automatic
-from qcodes.instrument.delegate.grouped_parameter import GroupedParameter
-from qcodes.instrument.parameter import (
+from qcodes.parameters import (
     ArrayParameter,
+    GroupedParameter,
     MultiParameter,
     Parameter,
     ParameterWithSetpoints,

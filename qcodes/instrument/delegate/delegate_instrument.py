@@ -17,12 +17,12 @@ from typing import (
 
 from qcodes.instrument.base import InstrumentBase
 from qcodes.instrument.channel import InstrumentChannel
-from qcodes.instrument.delegate.grouped_parameter import (
+from qcodes.parameters import Parameter
+from qcodes.parameters.grouped_parameter import (
     DelegateGroup,
     DelegateGroupParameter,
     GroupedParameter,
 )
-from qcodes.instrument.parameter import Parameter
 from qcodes.station import Station
 
 _log = logging.getLogger(__name__)

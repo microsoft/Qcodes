@@ -1,7 +1,7 @@
 from typing import Any, Dict, Optional, Tuple
 
-from qcodes.instrument.base import Instrument
-from qcodes.instrument.parameter import MultiParameter, Parameter, ParamRawDataType
+from qcodes.instrument import Instrument
+from qcodes.parameters import MultiParameter, Parameter, ParamRawDataType
 from qcodes.utils.validators import Bool, Enum
 
 

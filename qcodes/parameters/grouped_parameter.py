@@ -12,8 +12,8 @@ from typing import (
     Union,
 )
 
-from qcodes.instrument.group_parameter import Group, GroupParameter
-from qcodes.instrument.parameter import (
+from qcodes.parameters.group_parameter import Group, GroupParameter
+from qcodes.parameters.parameter import (
     DelegateParameter,
     ParamDataType,
     Parameter,
@@ -30,12 +30,11 @@ _log = logging.getLogger(__name__)
 
 
 class DelegateGroupParameter(DelegateParameter, GroupParameter):
-
     def __init__(
         self,
         name: str,
         source: Optional[Parameter],
-        instrument: Optional['InstrumentBase'] = None,
+        instrument: Optional["InstrumentBase"] = None,
         initial_value: Union[float, str, None] = None,
         **kwargs: Any,
     ) -> None:
@@ -91,6 +90,7 @@ class DelegateGroup(Group):
         formatter: Optional formatter for value returned by get_parameters(),
             defaults to a namedtuple with the parameter names as keys.
     """
+
     def __init__(
         self,
         name: str,
@@ -99,18 +99,12 @@ class DelegateGroup(Group):
         setter: Optional[Callable[..., Any]] = None,
         getter: Optional[Callable[..., Any]] = None,
         formatter: Optional[Callable[..., Any]] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ):
-        super().__init__(
-            parameters=parameters,
-            single_instrument=False,
-            **kwargs
-        )
+        super().__init__(parameters=parameters, single_instrument=False, **kwargs)
 
         self.name = name
-        self._parameter_names = parameter_names or [
-            _e.name for _e in parameters
-        ]
+        self._parameter_names = parameter_names or [_e.name for _e in parameters]
         self._set_fn = setter
         self._get_fn = getter
         self._params = parameters
@@ -131,9 +125,7 @@ class DelegateGroup(Group):
             self._set_fn(value)
         else:
             if not isinstance(value, dict):
-                value = {
-                    name: value for name in self._parameter_names
-                }
+                value = {name: value for name in self._parameter_names}
             self.set_parameters(value)
 
     def get(self) -> Any:
@@ -180,21 +172,22 @@ class GroupedParameter(_BaseParameter):
         label: Optional label, defaults to parameter name.
         default set method(s).
     """
+
     def __init__(
         self,
         name: str,
         group: DelegateGroup,
         unit: Optional[str] = None,
         label: Optional[str] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ):
         super().__init__(name, **kwargs)
         self.label = name if label is None else label
-        self.unit = unit if unit is not None else ''
+        self.unit = unit if unit is not None else ""
         self._group = group
 
     @property
-    def group(self) -> 'DelegateGroup':
+    def group(self) -> "DelegateGroup":
         """
         The group that contains the target parameters.
         """

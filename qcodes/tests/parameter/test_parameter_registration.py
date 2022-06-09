@@ -1,6 +1,6 @@
 import pytest
 
-from qcodes.instrument.parameter import Parameter
+from qcodes.parameters import Parameter
 from qcodes.tests.instrument_mocks import DummyAttrInstrument
 from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 

@@ -773,7 +773,7 @@ def test_perform_actual_upgrade_6_to_newest_add_new_data():
     import numpy as np
 
     from qcodes.dataset.measurements import Measurement
-    from qcodes.instrument.parameter import Parameter
+    from qcodes.parameters import Parameter
 
     fixpath = os.path.join(fixturepath, 'db_files', 'version6')
 

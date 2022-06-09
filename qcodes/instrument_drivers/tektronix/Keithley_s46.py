@@ -5,8 +5,8 @@ import re
 from itertools import product
 from typing import Any, Dict, List, Optional
 
-from qcodes import Instrument, VisaInstrument
-from qcodes.instrument.parameter import Parameter, ParamRawDataType
+from qcodes.instrument import Instrument, VisaInstrument
+from qcodes.parameters import Parameter, ParamRawDataType
 
 
 class LockAcquisitionError(Exception):

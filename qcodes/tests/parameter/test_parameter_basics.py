@@ -2,7 +2,7 @@ import pytest
 
 import qcodes.utils.validators as vals
 from qcodes.instrument.function import Function
-from qcodes.instrument.parameter import Parameter, _BaseParameter
+from qcodes.parameters import Parameter, _BaseParameter
 
 from .conftest import (
     GettableParam,

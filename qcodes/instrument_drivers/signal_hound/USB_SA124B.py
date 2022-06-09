@@ -1,17 +1,16 @@
-from time import sleep
-import numpy as np
 import ctypes as ct
 import logging
 from enum import IntEnum
-from typing import Dict, Union, Optional, Any, Tuple
+from time import sleep
+from typing import Any, Dict, Optional, Tuple
 
-from qcodes.instrument.base import Instrument
+import numpy as np
+
 import qcodes.utils.validators as vals
-from qcodes.instrument.parameter import Parameter, ArrayParameter, \
-    ParameterWithSetpoints
+from qcodes.instrument import Instrument
+from qcodes.parameters import ArrayParameter, Parameter, ParameterWithSetpoints
 
 log = logging.getLogger(__name__)
-
 
 
 class TraceParameter(Parameter):

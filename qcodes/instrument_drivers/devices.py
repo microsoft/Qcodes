@@ -1,6 +1,7 @@
-from typing import Union, Optional
+from typing import Optional, Union
 
-from qcodes import Parameter, Instrument
+from qcodes.instrument import Instrument
+from qcodes.parameters import Parameter
 
 
 class VoltageDivider(Parameter):

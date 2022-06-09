@@ -9,7 +9,6 @@ from hypothesis import HealthCheck, given, settings
 
 from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
 from qcodes.dataset.measurements import Measurement
-from qcodes.instrument.parameter import expand_setpoints_helper
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])

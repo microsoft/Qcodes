@@ -6,6 +6,7 @@ from typing import (
     Dict,
     Generic,
     Iterable,
+    Iterator,
     List,
     MutableSequence,
     Optional,
@@ -18,17 +19,17 @@ from typing import (
     overload,
 )
 
-from ..utils.helpers import full_class
-from ..utils.metadata import Metadatable
-from ..utils.validators import Validator
-from .base import Instrument, InstrumentBase
-from .parameter import (
+from qcodes.parameters import (
     ArrayParameter,
-    Iterator,
     MultiParameter,
     Parameter,
     ParamRawDataType,
 )
+
+from ..utils.helpers import full_class
+from ..utils.metadata import Metadatable
+from ..utils.validators import Validator
+from .base import Instrument, InstrumentBase
 
 
 class InstrumentModule(InstrumentBase):
@@ -101,7 +102,7 @@ class InstrumentChannel(InstrumentModule):
 InstrumentModuleType = TypeVar("InstrumentModuleType", bound="InstrumentModule")
 T = TypeVar("T", bound="ChannelTuple")
 
-
+# TODO should this be moved to parameters
 class MultiChannelInstrumentParameter(MultiParameter, Generic[InstrumentModuleType]):
     """
     Parameter to get or set multiple channels simultaneously.

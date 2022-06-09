@@ -1,10 +1,9 @@
 import numpy as np
-from numpy.random import rand
 import pytest
+from numpy.random import rand
 
-from qcodes.instrument.parameter import ParameterWithSetpoints, Parameter,\
-    expand_setpoints_helper
 import qcodes.utils.validators as vals
+from qcodes.parameters import Parameter, ParameterWithSetpoints, expand_setpoints_helper
 
 
 @pytest.fixture()

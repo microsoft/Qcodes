@@ -1,6 +1,6 @@
 import pytest
 
-from qcodes.instrument.parameter import Parameter, _BaseParameter
+from qcodes.parameters import Parameter, _BaseParameter
 from .conftest import (OverwriteGetParam, OverwriteSetParam,
                        GetSetRawParameter, ParameterMemory)
 

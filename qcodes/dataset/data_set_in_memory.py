@@ -53,7 +53,7 @@ if TYPE_CHECKING:
     import pandas as pd
     import xarray as xr
 
-    from ..instrument.parameter import _BaseParameter
+    from ..parameters import _BaseParameter
 
 log = logging.getLogger(__name__)
 

@@ -5,17 +5,17 @@ of its C library in a python-friendly way.
 """
 
 
-from typing import Dict, Tuple, Union, Any
 import ctypes
 from ctypes import POINTER
-
-from .dll_wrapper import WrappedDll, Signature
-from .constants import BOARD_NAMES, REGISTER_ACCESS_PASSWORD, ReturnCode
+from typing import Any, Dict, Tuple, Union
 
 # `_BaseParameter` is needed because users may pass instrument parameters
 # that originate from `Instrument.parameters` dictionary which is typed
 # with `_BaseParameter`, not `Parameter`.
-from qcodes.instrument.parameter import _BaseParameter as Parameter
+from qcodes.parameters import _BaseParameter as Parameter
+
+from .constants import BOARD_NAMES, REGISTER_ACCESS_PASSWORD, ReturnCode
+from .dll_wrapper import Signature, WrappedDll
 
 # Define aliases for ctypes that match Alazar's notation.
 U8 = ctypes.c_uint8

@@ -7,7 +7,7 @@ provides useful/convenient specializations of such generic parameters.
 from time import perf_counter
 from typing import Any
 
-from qcodes.instrument.parameter import Parameter
+from qcodes.parameters.parameter import Parameter
 
 
 class ElapsedTimeParameter(Parameter):
@@ -21,20 +21,15 @@ class ElapsedTimeParameter(Parameter):
             :class:`qcodes.instrument.parameter.Parameter` for more details.
     """
 
-    def __init__(self, name: str, label: str = 'Elapsed time', **kwargs: Any):
+    def __init__(self, name: str, label: str = "Elapsed time", **kwargs: Any):
 
-        hardcoded_kwargs = ['unit', 'get_cmd', 'set_cmd']
+        hardcoded_kwargs = ["unit", "get_cmd", "set_cmd"]
 
         for hck in hardcoded_kwargs:
             if hck in kwargs:
-                raise ValueError(f'Can not set "{hck}" for an '
-                                 'ElapsedTimeParameter.')
+                raise ValueError(f'Can not set "{hck}" for an ' "ElapsedTimeParameter.")
 
-        super().__init__(name=name,
-                         label=label,
-                         unit='s',
-                         set_cmd=False,
-                         **kwargs)
+        super().__init__(name=name, label=label, unit="s", set_cmd=False, **kwargs)
 
         self._t0: float = perf_counter()
 

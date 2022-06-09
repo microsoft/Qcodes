@@ -1,28 +1,25 @@
-import pytest
-from contextlib import contextmanager
+import json
+import os
 import tempfile
 import warnings
-from pathlib import Path
-import os
-from typing import Optional
-import json
+from contextlib import contextmanager
 from io import StringIO
+from pathlib import Path
+from typing import Optional
+
+import pytest
 
 import qcodes
 import qcodes.utils.validators as validators
-from qcodes.utils.helpers import get_qcodes_path
-from qcodes.utils.deprecate import assert_deprecated, deprecation_message
-from qcodes.instrument.parameter import DelegateParameter
-from qcodes import Instrument
-from qcodes.station import (
-    Station, ValidationWarning, update_config_schema, SCHEMA_PATH)
-from qcodes.instrument.parameter import Parameter
+from qcodes.instrument import Instrument
 from qcodes.monitor.monitor import Monitor
-from qcodes.tests.instrument_mocks import (
-    DummyInstrument)
+from qcodes.parameters import DelegateParameter, Parameter
+from qcodes.station import SCHEMA_PATH, Station, ValidationWarning, update_config_schema
 from qcodes.tests.common import default_config
-from qcodes.utils.helpers import NumpyJSONEncoder
-from qcodes.utils.helpers import YAML
+from qcodes.tests.instrument_mocks import DummyInstrument
+from qcodes.utils.deprecate import assert_deprecated, deprecation_message
+from qcodes.utils.helpers import YAML, NumpyJSONEncoder, get_qcodes_path
+
 from .common import DumyPar
 
 

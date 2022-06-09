@@ -12,7 +12,7 @@ from qcodes import config
 from qcodes.dataset import new_experiment
 from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.do_nd import ArraySweep, LinSweep, LogSweep, do0d, do1d, do2d, dond
-from qcodes.instrument.parameter import Parameter, _BaseParameter
+from qcodes.parameters import Parameter, _BaseParameter
 from qcodes.tests.instrument_mocks import (
     ArraySetPointParam,
     Multi2DSetPointParam,

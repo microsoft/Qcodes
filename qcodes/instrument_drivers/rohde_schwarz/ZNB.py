@@ -4,8 +4,8 @@ from typing import Any, Optional, Tuple
 
 import numpy as np
 
-from qcodes import ChannelList, Instrument, InstrumentChannel, VisaInstrument
-from qcodes.instrument.parameter import (
+from qcodes.instrument import ChannelList, Instrument, InstrumentChannel, VisaInstrument
+from qcodes.parameters import (
     ArrayParameter,
     ManualParameter,
     MultiParameter,

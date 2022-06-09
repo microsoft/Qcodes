@@ -48,7 +48,11 @@ from qcodes.instrument.base import Instrument, find_or_create_instrument
 from qcodes.instrument.channel import ChannelList, ChannelTuple, InstrumentChannel
 from qcodes.instrument.function import Function
 from qcodes.instrument.ip import IPInstrument
-from qcodes.instrument.parameter import (
+from qcodes.instrument.visa import VisaInstrument
+from qcodes.instrument_drivers.test import test_instrument, test_instruments
+from qcodes.monitor import Monitor
+from qcodes.monitor.monitor import Monitor
+from qcodes.parameters import (
     ArrayParameter,
     CombinedParameter,
     DelegateParameter,
@@ -59,10 +63,7 @@ from qcodes.instrument.parameter import (
     ScaledParameter,
     combine,
 )
-from qcodes.instrument.sweep_values import SweepFixedValues, SweepValues
-from qcodes.instrument.visa import VisaInstrument
-from qcodes.instrument_drivers.test import test_instrument, test_instruments
-from qcodes.monitor import Monitor
+from qcodes.parameters.sweep_values import SweepFixedValues, SweepValues
 from qcodes.station import Station
 from qcodes.utils import validators
 

@@ -5,14 +5,8 @@ from typing import Any, Sequence, Union
 import numpy as np
 from pyvisa import errors
 
-from qcodes import (
-    ChannelList,
-    InstrumentChannel,
-    Parameter,
-    ParameterWithSetpoints,
-    VisaInstrument,
-)
-from qcodes.instrument.base import _BaseParameter
+from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
+from qcodes.parameters import Parameter, ParameterWithSetpoints, _BaseParameter
 from qcodes.utils.validators import Arrays, Bool, Enum, Ints, Numbers
 
 
