@@ -12,10 +12,11 @@ from qcodes.dataset.doNd import (
 )
 from qcodes.dataset.plotting import plot_and_save_image as plot
 
-warnings.warn(
-    "qcodes.utils.dataset.doNd module is deprecated. "
-    "Please update to import from qcodes.dataset"
-)
+# todo enable warning once new api is in release
+# warnings.warn(
+#     "qcodes.utils.dataset.doNd module is deprecated. "
+#     "Please update to import from qcodes.dataset"
+# )
 
 __all__ = [
     "do0d",
