@@ -58,6 +58,7 @@ extensions = [
     "qcodes.sphinx_extensions.parse_parameter_attr",
     "sphinxcontrib.towncrier",
     "autodocsumm",
+    "sphinx_issues",
 ]
 
 # include special __xxx__ that DO have a docstring
@@ -443,3 +444,5 @@ nbsphinx_execute = 'always'
 towncrier_draft_autoversion_mode = "draft"
 towncrier_draft_include_empty = True
 towncrier_draft_working_directory = ".."
+
+issues_github_path = "QCoDeS/Qcodes"
