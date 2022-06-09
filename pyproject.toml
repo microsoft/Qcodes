@@ -81,6 +81,8 @@ name = "QCoDeS"
 directory = "docs/changes/newsfragments"
 single_file = true
 filename = "docs/changes/{version}.rst"
+issue_format = ":pr:`{issue}`"
+
 [[tool.towncrier.type]]
 directory = "breaking"
 name = "Breaking Changes:"
