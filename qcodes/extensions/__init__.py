@@ -5,4 +5,4 @@ These modules may import from all of QCoDeS but do not them self get imported in
 from .installation import register_station_schema_with_vscode
 from .slack import Slack, SlackTimeoutWarning
 
-__all__ = ["register_station_schema_with_vscode", "Slack", "SlackTimeoutWarning"]
+__all__ = ["Slack", "SlackTimeoutWarning", "register_station_schema_with_vscode"]
