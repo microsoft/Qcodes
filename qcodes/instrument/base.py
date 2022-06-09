@@ -52,6 +52,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
     """
 
     def __init__(self, name: str, metadata: Optional[Mapping[Any, Any]] = None) -> None:
+        name = self._is_valid_identifier(name)
         self._short_name = str(name)
 
         self.parameters: Dict[str, _BaseParameter] = {}
@@ -406,6 +407,17 @@ class InstrumentBase(Metadatable, DelegateAttributes):
     def short_name(self) -> str:
         """Short name of the instrument"""
         return self._short_name
+
+    @staticmethod
+    def _is_valid_identifier(name: str) -> str:
+        """Check whether given name is a valid instrument identifier."""
+        new_name = name.replace("-", "_")
+        if name != new_name:
+            warnings.warn(f"Changed {name} to {new_name} for instrument identifier")
+        if not new_name.isidentifier():
+            raise ValueError(f"{new_name} invalid instrument identifier")
+
+        return new_name
 
     def _is_abstract(self) -> bool:
         """

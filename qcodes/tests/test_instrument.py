@@ -84,6 +84,31 @@ def test_instrument_fail(close_before_and_after):
     assert Instrument._all_instruments == {}
 
 
+def test_instrument_on_invalid_identifier(close_before_and_after):
+    # Check if warning and error raised when invalid identifer name given
+    with pytest.warns(
+        UserWarning, match="Changed !-name to !_name for instrument identifier"
+    ):
+        with pytest.raises(ValueError, match="!_name invalid instrument identifier"):
+            DummyInstrument(name="!-name")
+
+    assert Instrument.instances() == []
+    assert DummyInstrument.instances() == []
+    assert Instrument._all_instruments == {}
+
+    # Check if warning is raised and name is valid
+    # identifier when dashes '-' are converted to underscores '_'
+    with pytest.warns(
+        UserWarning, match="Changed -name to _name for instrument identifier"
+    ):
+        instr = DummyInstrument(name="-name")
+
+    assert instr.name == "_name"
+    assert Instrument.instances() == []
+    assert DummyInstrument.instances() == [instr]
+    assert Instrument._all_instruments != {}
+
+
 def test_instrument_retry_with_same_name(close_before_and_after):
     with pytest.raises(RuntimeError, match="Failed to create instrument"):
         DummyFailingInstrument(name="failinginstrument")
