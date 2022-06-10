@@ -1,2 +1,0 @@
-Improved conversion between `qcodes.data.data_set.DataSet` and `xarray`. The conversion from `xarray` format to QCoDeS is more robust in reordering the coordinates.
-The dataset attributes `label` and `unit` are now converted as well.
