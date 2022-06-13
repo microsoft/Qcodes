@@ -1,4 +1,0 @@
-The QCoDeS instrument baseclass has gained a method `invalidate_cache`.
-This will mark the cache of all parameters on the instrument and its submodules as
-invalid. This is useful if you manually (e.g. via the front panel) make changes to
-the instrument that QCoDeS cannot know about.
