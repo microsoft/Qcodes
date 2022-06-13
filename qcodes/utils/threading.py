@@ -11,6 +11,7 @@ from collections import defaultdict
 from functools import partial
 from types import TracebackType
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -25,13 +26,12 @@ from typing import (
 
 from typing_extensions import Protocol
 
-from qcodes import config
-from qcodes.dataset.measurements import res_type
-from qcodes.instrument.parameter import ParamDataType, _BaseParameter
+if TYPE_CHECKING:
+    from qcodes.dataset.measurements import res_type
+    from qcodes.instrument.parameter import ParamDataType, _BaseParameter
 
-ParamMeasT = Union[_BaseParameter, Callable[[], None]]
-
-OutType = List[res_type]
+ParamMeasT = Union["_BaseParameter", Callable[[], None]]
+OutType = List["res_type"]
 
 T = TypeVar("T")
 
@@ -121,11 +121,11 @@ def thread_map(
 
 class _ParamCaller:
 
-    def __init__(self, *parameters: _BaseParameter):
+    def __init__(self, *parameters: "_BaseParameter"):
 
         self._parameters = parameters
 
-    def __call__(self) -> Tuple[Tuple[_BaseParameter, ParamDataType], ...]:
+    def __call__(self) -> Tuple[Tuple["_BaseParameter", "ParamDataType"], ...]:
         output = []
         for param in self._parameters:
             output.append((param, param.get()))
@@ -138,12 +138,12 @@ class _ParamCaller:
 
 def _instrument_to_param(
         params: Sequence[ParamMeasT]
-) -> Dict[Optional[str], Tuple[_BaseParameter, ...]]:
-
+) -> Dict[Optional[str], Tuple["_BaseParameter", ...]]:
+    from qcodes.instrument.parameter import _BaseParameter
     real_parameters = [param for param in params
                        if isinstance(param, _BaseParameter)]
 
-    output: Dict[Optional[str], Tuple[_BaseParameter, ...]] = defaultdict(tuple)
+    output: Dict[Optional[str], Tuple["_BaseParameter", ...]] = defaultdict(tuple)
     for param in real_parameters:
         if param.underlying_instrument:
             output[param.underlying_instrument.full_name] += (param,)
@@ -185,7 +185,7 @@ def call_params_threaded(param_meas: Sequence[ParamMeasT]) -> OutType:
 
 
 def _call_params(param_meas: Sequence[ParamMeasT]) -> OutType:
-
+    from qcodes.instrument.parameter import _BaseParameter
     output: OutType = []
 
     for parameter in param_meas:
@@ -201,7 +201,7 @@ def process_params_meas(
     param_meas: Sequence[ParamMeasT],
     use_threads: Optional[bool] = None
 ) -> OutType:
-
+    from qcodes import config
     if use_threads is None:
         use_threads = config.dataset.use_threads
 

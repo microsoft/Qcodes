@@ -55,7 +55,7 @@ module = [
     "qcodes.plots.*",
     "qcodes.tests.*",
     "qcodes.utils.magic",
-    "qcodes.utils.slack",
+    "qcodes.extensions.slack",
 
 ]
 disallow_untyped_defs = false

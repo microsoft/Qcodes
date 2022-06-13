@@ -18,6 +18,7 @@ QCoDeS API
 
    configuration/index
    dataset/index
+   extensions/index
    instrument/index
    parameters/index
    logger/index

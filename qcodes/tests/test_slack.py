@@ -45,16 +45,18 @@ def setup_slack():
         'token': '123',
         'names': ['dummyuser']
     }
-    import qcodes.utils.slack  # pylint: disable=import-outside-toplevel
-    slack = qcodes.utils.slack.Slack(config=slack_config, auto_start=False)
+    import qcodes.extensions.slack  # pylint: disable=import-outside-toplevel
+
+    slack = qcodes.extensions.slack.Slack(config=slack_config, auto_start=False)
 
     return slack
 
 
 def test_convert_command_should_convert_floats():
-    import qcodes.utils.slack  # pylint: disable=import-outside-toplevel
-    cmd, arg, kwarg = qcodes.utils.slack.convert_command('comm 0.234 key=0.1')
-    assert cmd == 'comm'
+    import qcodes.extensions.slack  # pylint: disable=import-outside-toplevel
+
+    cmd, arg, kwarg = qcodes.extensions.slack.convert_command("comm 0.234 key=0.1")
+    assert cmd == "comm"
     assert arg == [pytest.approx(0.234)]
     assert kwarg == {'key': pytest.approx(0.1)}
 
@@ -71,8 +73,9 @@ def test_slack_instance_should_get_config_from_qc_config():
         'names': ['dummyuser']
     }
     cf.add(key='slack', value=slack_config)
-    import qcodes.utils.slack  # pylint: disable=import-outside-toplevel
-    slack = qcodes.utils.slack.Slack(config=None, auto_start=False)
+    import qcodes.extensions.slack  # pylint: disable=import-outside-toplevel
+
+    slack = qcodes.extensions.slack.Slack(config=None, auto_start=False)
     assert 'dummyuser' in slack.users.keys()
 
 
@@ -83,8 +86,9 @@ def test_slack_instance_should_start(mocker):
         'names': ['dummyuser']
     }
     mock_thread_start = mocker.patch('threading.Thread.start')
-    import qcodes.utils.slack  # pylint: disable=import-outside-toplevel
-    _ = qcodes.utils.slack.Slack(config=slack_config)
+    import qcodes.extensions.slack  # pylint: disable=import-outside-toplevel
+
+    _ = qcodes.extensions.slack.Slack(config=slack_config)
 
     mock_thread_start.assert_called()
 
@@ -98,8 +102,9 @@ def test_slack_instance_should_not_start_when_already_started(mocker):
     mock_thread_start = mocker.patch('threading.Thread.start')
     mock_thread_start.side_effect = RuntimeError
 
-    import qcodes.utils.slack  # pylint: disable=import-outside-toplevel
-    _ = qcodes.utils.slack.Slack(config=slack_config)
+    import qcodes.extensions.slack  # pylint: disable=import-outside-toplevel
+
+    _ = qcodes.extensions.slack.Slack(config=slack_config)
 
     mock_thread_start.assert_called()
 
@@ -112,8 +117,9 @@ def test_slack_instance_should_start_and_stop(mocker):
     }
     mocker.patch('threading.Thread.start')
 
-    import qcodes.utils.slack  # pylint: disable=import-outside-toplevel
-    slack = qcodes.utils.slack.Slack(config=slack_config, interval=0)
+    import qcodes.extensions.slack  # pylint: disable=import-outside-toplevel
+
+    slack = qcodes.extensions.slack.Slack(config=slack_config, interval=0)
     slack.stop()
 
     assert not slack._is_active
@@ -244,7 +250,7 @@ def test_slack_instance_should_update_with_task_returning_false(slack):
 
 
 def test_slack_instance_should_update_with_task_returning_true(slack, mocker):
-    mocker.patch('qcodes.utils.slack.active_loop', return_value=not None)
+    mocker.patch("qcodes.extensions.slack.active_loop", return_value=not None)
 
     slack.add_task('finished', channel='CH234')
     slack.update()
@@ -254,7 +260,7 @@ def test_slack_instance_should_update_with_task_returning_true(slack, mocker):
 
 
 def test_slack_instance_should_update_with_exception(slack, mocker):
-    method_name = 'qcodes.utils.slack.Slack.get_new_im_messages'
+    method_name = "qcodes.extensions.slack.Slack.get_new_im_messages"
     mock_get_new_im_messages = mocker.patch(method_name)
     mocker.patch('warnings.warn')
     mocker.patch('logging.info')
@@ -324,7 +330,7 @@ def test_slack_inst_should_add_unknown_task_command(mock_webclient, slack):
 
 
 def test_slack_inst_should_upload_latest_plot(mock_webclient, slack, mocker):
-    method_name = 'qcodes.utils.slack.BasePlot.latest_plot'
+    method_name = "qcodes.extensions.slack.BasePlot.latest_plot"
     mocker.patch(method_name, return_value=not None)
     mocker.patch('os.remove')
     slack.upload_latest_plot(channel='CH234')
@@ -341,7 +347,7 @@ def test_slack_inst_should_not_fail_upl_latest_wo_plot(mock_webclient, slack):
 def test_slack_inst_should_print_measurement(mock_webclient, slack, mocker):
     dataset = mocker.MagicMock()
     dataset.fraction_complete.return_value = 0.123
-    mocker.patch('qcodes.utils.slack.active_data_set', return_value=dataset)
+    mocker.patch("qcodes.extensions.slack.active_data_set", return_value=dataset)
 
     slack.print_measurement_information(channel='CH234')
 

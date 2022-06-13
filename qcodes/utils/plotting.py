@@ -6,13 +6,13 @@ For the legacy dataset see :class:`qcodes.plots`
 """
 import copy
 import logging
-from typing import Tuple, Union, Optional, Any, cast, Set, Dict
 from collections import OrderedDict
-import numpy as np
+from typing import Any, Dict, Optional, Set, Tuple, Union, cast
+
 import matplotlib
-import matplotlib.colorbar
 import matplotlib.collections
-import qcodes
+import matplotlib.colorbar
+import numpy as np
 
 log = logging.getLogger(__name__)
 
@@ -253,6 +253,7 @@ def auto_color_scale_from_config(colorbar: matplotlib.colorbar.Colorbar,
             by the lower limit. Default value is read from
             ``config.plotting.auto_color_scale.color_under``.
     """
+    import qcodes
     if colorbar is None:
         log.warning('"auto_color_scale_from_config" did not receive a colorbar '
                     'for scaling. Are you trying to scale a plot without '
