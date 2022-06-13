@@ -61,9 +61,10 @@ from qcodes.parameters import (
     Parameter,
     ParameterWithSetpoints,
     ScaledParameter,
+    SweepFixedValues,
+    SweepValues,
     combine,
 )
-from qcodes.parameters.sweep_values import SweepFixedValues, SweepValues
 from qcodes.station import Station
 from qcodes.utils import validators
 

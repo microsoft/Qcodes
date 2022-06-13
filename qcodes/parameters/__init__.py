@@ -19,6 +19,7 @@ from .parameter import (
     invert_val_mapping,
 )
 from .specialized_parameters import ElapsedTimeParameter
+from .sweep_values import SweepFixedValues, SweepValues
 
 __all__ = [
     "DelegateParameter",
@@ -41,4 +42,6 @@ __all__ = [
     "ElapsedTimeParameter",
     "InstrumentRefParameter",
     "MultiChannelInstrumentParameter",
+    "SweepFixedValues",
+    "SweepValues",
 ]
