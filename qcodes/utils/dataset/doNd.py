@@ -1,6 +1,6 @@
 import warnings
 
-from qcodes.dataset.doNd import (
+from qcodes.dataset.do_nd import (
     AbstractSweep,
     ActionsT,
     ArraySweep,
