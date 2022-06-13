@@ -1,9 +1,13 @@
-from typing import TYPE_CHECKING, Any, Generic, Sequence, Tuple
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Generic, Sequence, Tuple, TypeVar
 
 from .parameter import MultiParameter, ParamRawDataType
 
 if TYPE_CHECKING:
-    from qcodes.instrument.channel import InstrumentModuleType
+    from qcodes.instrument.channel import InstrumentModule
+
+InstrumentModuleType = TypeVar("InstrumentModuleType", bound="InstrumentModule")
 
 
 class MultiChannelInstrumentParameter(MultiParameter, Generic[InstrumentModuleType]):

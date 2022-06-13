@@ -24,7 +24,7 @@ from qcodes.parameters import (
     MultiParameter,
     Parameter,
 )
-
+from qcodes.parameters.multi_channel_instrument_parameter import InstrumentModuleType
 from ..utils.helpers import full_class
 from ..utils.metadata import Metadatable
 from ..utils.validators import Validator
@@ -97,8 +97,6 @@ class InstrumentModule(InstrumentBase):
 class InstrumentChannel(InstrumentModule):
     pass
 
-
-InstrumentModuleType = TypeVar("InstrumentModuleType", bound="InstrumentModule")
 T = TypeVar("T", bound="ChannelTuple")
 
 
