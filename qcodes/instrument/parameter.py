@@ -1,7 +1,4 @@
-from .group_parameter import Group, GroupParameter
-from .grouped_parameter import DelegateGroup, DelegateGroupParameter, GroupedParameter
-from .multi_channel_instrument_parameter import MultiChannelInstrumentParameter
-from .parameter import (
+from qcodes.parameters import (
     ArrayParameter,
     CombinedParameter,
     DelegateParameter,
@@ -13,28 +10,21 @@ from .parameter import (
     ParameterWithSetpoints,
     ParamRawDataType,
     ScaledParameter,
+    SweepFixedValues,
     _BaseParameter,
     combine,
     expand_setpoints_helper,
     invert_val_mapping,
 )
-from .specialized_parameters import ElapsedTimeParameter
-from .sweep_values import SweepFixedValues, SweepValues
+from qcodes.parameters.parameter import GetLatest
 
 __all__ = [
     "ArrayParameter",
     "CombinedParameter",
-    "DelegateGroup",
-    "DelegateGroupParameter",
     "DelegateParameter",
-    "ElapsedTimeParameter",
-    "Group",
-    "GroupParameter",
-    "GroupedParameter",
-    "GroupedParameter",
+    "GetLatest",
     "InstrumentRefParameter",
     "ManualParameter",
-    "MultiChannelInstrumentParameter",
     "MultiParameter",
     "ParamDataType",
     "ParamRawDataType",
@@ -42,7 +32,6 @@ __all__ = [
     "ParameterWithSetpoints",
     "ScaledParameter",
     "SweepFixedValues",
-    "SweepValues",
     "_BaseParameter",
     "combine",
     "expand_setpoints_helper",
