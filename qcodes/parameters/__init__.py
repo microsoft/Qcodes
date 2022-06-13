@@ -1,7 +1,6 @@
-from multi_channel_instrument_parameter import MultiChannelInstrumentParameter
-
 from .group_parameter import Group, GroupParameter
 from .grouped_parameter import GroupedParameter
+from .multi_channel_instrument_parameter import MultiChannelInstrumentParameter
 from .parameter import (
     ArrayParameter,
     CombinedParameter,
