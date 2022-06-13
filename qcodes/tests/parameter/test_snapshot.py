@@ -73,8 +73,8 @@ def test_snapshot_contains_parameter_attributes(
     # TODO: test for parameter with metadata
     assert 'metadata' not in s
 
-    assert s['__class__'] == 'qcodes.instrument.parameter.Parameter'
-    assert s['full_name'] == 'p'
+    assert s["__class__"] == "qcodes.parameters.parameter.Parameter"
+    assert s["full_name"] == "p"
 
     # The following is because the parameter does not belong to an instrument
     # TODO: test for a parameter that is attached to instrument
