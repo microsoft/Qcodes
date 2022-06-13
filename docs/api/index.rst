@@ -23,6 +23,7 @@ QCoDeS API
    logger/index
    math_utils/index
    monitor/index
+   parameters/index
    station
    utils/index
 
