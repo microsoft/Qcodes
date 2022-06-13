@@ -2,9 +2,7 @@ import pytest
 
 from qcodes.parameters import Parameter
 from qcodes.parameters.sweep_values import SweepValues
-
 from qcodes.utils.validators import Numbers
-
 
 
 @pytest.fixture(name='c0')
