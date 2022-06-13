@@ -4,4 +4,3 @@ qcodes.instrument
 =================
 
 .. automodule:: qcodes.instrument
-    :autosummary:
