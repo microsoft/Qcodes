@@ -22,7 +22,7 @@ from qcodes.dataset.data_set import (
     load_by_run_spec,
 )
 from qcodes.dataset.database_extract_runs import extract_runs_into_db
-from qcodes.dataset.doNd import do1d, do2d
+from qcodes.dataset.do_nd import do1d, do2d
 from qcodes.dataset.experiment_container import (
     Experiment,
     load_experiment_by_name,

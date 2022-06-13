@@ -13,7 +13,7 @@ from .data_set_in_memory import load_from_netcdf
 from .data_set_protocol import DataSetProtocol, DataSetType
 from .database_extract_runs import extract_runs_into_db
 from .descriptions.param_spec import ParamSpec
-from .doNd import AbstractSweep, ArraySweep, LinSweep, LogSweep, do0d, do1d, do2d, dond
+from .do_nd import AbstractSweep, ArraySweep, LinSweep, LogSweep, do0d, do1d, do2d, dond
 from .experiment_container import (
     experiments,
     load_experiment,
