@@ -14,8 +14,7 @@ import pyvisa as visa
 from pyvisa.resources.serial import SerialInstrument
 
 from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
-from qcodes.instrument.channel import MultiChannelInstrumentParameter
-from qcodes.parameters import ParamRawDataType
+from qcodes.parameters import MultiChannelInstrumentParameter, ParamRawDataType
 from qcodes.utils import validators as vals
 
 LOG = logging.getLogger(__name__)

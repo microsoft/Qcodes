@@ -1,3 +1,5 @@
+from multi_channel_instrument_parameter import MultiChannelInstrumentParameter
+
 from .group_parameter import Group, GroupParameter
 from .grouped_parameter import GroupedParameter
 from .parameter import (
@@ -39,4 +41,5 @@ __all__ = [
     "invert_val_mapping",
     "ElapsedTimeParameter",
     "InstrumentRefParameter",
+    "MultiChannelInstrumentParameter",
 ]
