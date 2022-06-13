@@ -77,13 +77,13 @@ class GroupParameter(Parameter):
 
     def get_raw(self) -> ParamRawDataType:
         if self.group is None:
-            raise RuntimeError("Trying to get Group value but no " "group defined")
+            raise RuntimeError("Trying to get Group value but no group defined")
         self.group.update()
         return self.cache.raw_value
 
     def set_raw(self, value: ParamRawDataType) -> None:
         if self.group is None:
-            raise RuntimeError("Trying to set Group value but no " "group defined")
+            raise RuntimeError("Trying to set Group value but no group defined")
         self.group._set_one_parameter_from_raw(self, value)
 
 
@@ -248,7 +248,7 @@ class Group:
         """
         if not parameters_dict:
             raise RuntimeError(
-                "Provide at least one group parameter and its " "value to be set."
+                "Provide at least one group parameter and its value to be set."
             )
         if any((p.get_latest() is None) for p in self.parameters.values()):
             self.update()
@@ -289,7 +289,7 @@ class Group:
         command_str = self._set_cmd.format(**calling_dict)
         if self.instrument is None:
             raise RuntimeError(
-                "Trying to set GroupParameter not attached " "to any instrument."
+                "Trying to set GroupParameter not attached to any instrument."
             )
         self.instrument.write(command_str)
         for name, p in list(self.parameters.items()):
@@ -302,7 +302,7 @@ class Group:
         """
         if self.instrument is None:
             raise RuntimeError(
-                "Trying to update GroupParameter not attached " "to any instrument."
+                "Trying to update GroupParameter not attached to any instrument."
             )
         if self._get_cmd is None:
             parameter_names = ", ".join(p.full_name for p in self.parameters.values())

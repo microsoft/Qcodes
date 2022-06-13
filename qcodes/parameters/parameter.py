@@ -763,7 +763,7 @@ class _BaseParameter(Metadatable):
         else:
             if isinstance(value, collections.abc.Sized) and len(value) > 1:
                 raise RuntimeError(
-                    "Don't know how to step a parameter" " with more than one value"
+                    "Don't know how to step a parameter with more than one value"
                 )
             if self.get_latest() is None:
                 self.get()
@@ -1262,7 +1262,7 @@ class Parameter(_BaseParameter):
         #   and into get of _Cache
         if max_val_age is not None and no_instrument_get:
             raise SyntaxError(
-                "Must have get method or specify get_cmd " "when max_val_age is set"
+                "Must have get method or specify get_cmd when max_val_age is set"
             )
 
         # Enable set/get methods from get_cmd/set_cmd if given and
