@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, PropertyMock
 
 import pytest
 from pyvisa import VisaIOError
@@ -34,4 +34,12 @@ def _make_b1500(request):
 
 @pytest.fixture(name="mainframe")
 def _make_mainframe():
-    yield MagicMock()
+    PropertyMock()
+    mainframe = MagicMock()
+    name_parts = PropertyMock(return_value=["mainframe"])
+    type(mainframe).name_parts = name_parts
+    short_name = PropertyMock(return_value="short_name")
+    type(mainframe).short_name = short_name
+    full_name = PropertyMock(return_value="mainframe")
+    type(mainframe).full_name = full_name
+    yield mainframe

@@ -89,7 +89,7 @@ class InstrumentModule(InstrumentBase):
 
     @property
     def name_parts(self) -> List[str]:
-        name_parts = self._parent.name_parts
+        name_parts = list(self._parent.name_parts)
         name_parts.append(self.short_name)
         return name_parts
 

@@ -424,14 +424,20 @@ class DummyChannelInstrument(Instrument):
     Dummy instrument with channels
     """
 
-    def __init__(self, name, **kwargs):
+    def __init__(self, name, channel_names=None, **kwargs):
         super().__init__(name, **kwargs)
 
         channels = ChannelList(self, "TempSensors", DummyChannel, snapshotable=False)
-        for chan_name in ('A', 'B', 'C', 'D', 'E', 'F'):
-            channel = DummyChannel(self, f'Chan{chan_name}', chan_name)
+
+        if channel_names is None:
+            channel_ids = ("A", "B", "C", "D", "E", "F")
+            channel_names = tuple(f"Chan{chan_name}" for chan_name in channel_ids)
+        else:
+            channel_ids = channel_names
+        for chan_name, chan_id in zip(channel_names, channel_ids):
+            channel = DummyChannel(self, chan_name, chan_id)
             channels.append(channel)
-            self.add_submodule(chan_name, channel)
+            self.add_submodule(chan_id, channel)
         self.add_submodule("channels", channels.to_channel_tuple())
 
 
