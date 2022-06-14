@@ -97,6 +97,7 @@ class InstrumentModule(InstrumentBase):
 class InstrumentChannel(InstrumentModule):
     pass
 
+
 T = TypeVar("T", bound="ChannelTuple")
 
 

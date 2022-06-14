@@ -964,7 +964,7 @@ class ParameterBase(Metadatable):
 
         Examples:
 
-            >>> from qcodes import Parameter
+            >>> from qcodes.parameters import Parameter
             >>> p = Parameter("p", set_cmd=None, get_cmd=None)
             >>> p.set(2)
             >>> with p.set_to(3):
