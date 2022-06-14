@@ -1,2 +1,0 @@
-Restrictions on instrument names are now less strict than in ``0.34.0``. Submodules are allowed
-to have names that are not valid identifier as long as the full name is an valid identifier.
