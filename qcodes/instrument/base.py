@@ -52,8 +52,9 @@ class InstrumentBase(Metadatable, DelegateAttributes):
     """
 
     def __init__(self, name: str, metadata: Optional[Mapping[Any, Any]] = None) -> None:
-        name = self._is_valid_identifier(name)
-        self._short_name = str(name)
+        name = self._replace_hyphen(name)
+        self._short_name = name
+        self._is_valid_identifier(self.full_name)
 
         self.parameters: Dict[str, _BaseParameter] = {}
         """
@@ -409,13 +410,17 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         return self._short_name
 
     @staticmethod
-    def _is_valid_identifier(name: str) -> str:
+    def _is_valid_identifier(name: str):
         """Check whether given name is a valid instrument identifier."""
-        new_name = name.replace("-", "_")
+        if not name.isidentifier():
+            raise ValueError(f"{name} invalid instrument identifier")
+
+    @staticmethod
+    def _replace_hyphen(name: str) -> str:
+        """Replace - in name with _ and warn if any is fund"""
+        new_name = str(name).replace("-", "_")
         if name != new_name:
             warnings.warn(f"Changed {name} to {new_name} for instrument identifier")
-        if not new_name.isidentifier():
-            raise ValueError(f"{new_name} invalid instrument identifier")
 
         return new_name
 
