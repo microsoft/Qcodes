@@ -18,7 +18,7 @@ from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.plotting import plot_and_save_image
-from qcodes.parameters import _BaseParameter
+from qcodes.parameters import ParameterBase
 from qcodes.utils.threading import (
     SequentialParamsCaller,
     ThreadPoolParamsCaller,
@@ -28,7 +28,7 @@ from qcodes.utils.threading import (
 ActionsT = Sequence[Callable[[], None]]
 BreakConditionT = Callable[[], bool]
 
-ParamMeasT = Union[_BaseParameter, Callable[[], None]]
+ParamMeasT = Union[ParameterBase, Callable[[], None]]
 
 AxesTuple = Tuple[matplotlib.axes.Axes, matplotlib.colorbar.Colorbar]
 AxesTupleList = Tuple[
@@ -68,11 +68,11 @@ MeasInterruptT = Union[KeyboardInterrupt, BreakConditionInterrupt, None]
 def _register_parameters(
     meas: Measurement,
     param_meas: Sequence[ParamMeasT],
-    setpoints: Optional[Sequence[_BaseParameter]] = None,
+    setpoints: Optional[Sequence[ParameterBase]] = None,
     shapes: Shapes = None,
 ) -> None:
     for parameter in param_meas:
-        if isinstance(parameter, _BaseParameter):
+        if isinstance(parameter, ParameterBase):
             meas.register_parameter(parameter, setpoints=setpoints)
     meas.set_shapes(shapes=shapes)
 
@@ -152,7 +152,7 @@ def do0d(
         meas._extra_log_info = "Using 'qcodes.dataset.do0d'"
 
     measured_parameters = tuple(
-        param for param in param_meas if isinstance(param, _BaseParameter)
+        param for param in param_meas if isinstance(param, ParameterBase)
     )
 
     try:
@@ -177,7 +177,7 @@ def do0d(
 
 
 def do1d(
-    param_set: _BaseParameter,
+    param_set: ParameterBase,
     start: float,
     stop: float,
     num_points: int,
@@ -190,7 +190,7 @@ def do1d(
     exp: Optional[Experiment] = None,
     do_plot: Optional[bool] = None,
     use_threads: Optional[bool] = None,
-    additional_setpoints: Sequence[_BaseParameter] = tuple(),
+    additional_setpoints: Sequence[ParameterBase] = tuple(),
     show_progress: Optional[None] = None,
     log_info: Optional[str] = None,
     break_condition: Optional[BreakConditionT] = None,
@@ -251,7 +251,7 @@ def do1d(
     all_setpoint_params = (param_set,) + tuple(s for s in additional_setpoints)
 
     measured_parameters = tuple(
-        param for param in param_meas if isinstance(param, _BaseParameter)
+        param for param in param_meas if isinstance(param, ParameterBase)
     )
     try:
         loop_shape = (num_points,) + tuple(1 for _ in additional_setpoints)
@@ -305,12 +305,12 @@ def do1d(
 
 
 def do2d(
-    param_set1: _BaseParameter,
+    param_set1: ParameterBase,
     start1: float,
     stop1: float,
     num_points1: int,
     delay1: float,
-    param_set2: _BaseParameter,
+    param_set2: ParameterBase,
     start2: float,
     stop2: float,
     num_points2: int,
@@ -327,7 +327,7 @@ def do2d(
     flush_columns: bool = False,
     do_plot: Optional[bool] = None,
     use_threads: Optional[bool] = None,
-    additional_setpoints: Sequence[_BaseParameter] = tuple(),
+    additional_setpoints: Sequence[ParameterBase] = tuple(),
     show_progress: Optional[None] = None,
     log_info: Optional[str] = None,
     break_condition: Optional[BreakConditionT] = None,
@@ -402,7 +402,7 @@ def do2d(
     ) + tuple(s for s in additional_setpoints)
 
     measured_parameters = tuple(
-        param for param in param_meas if isinstance(param, _BaseParameter)
+        param for param in param_meas if isinstance(param, ParameterBase)
     )
 
     try:
@@ -491,7 +491,7 @@ class AbstractSweep(ABC):
 
     @property
     @abstractmethod
-    def param(self) -> _BaseParameter:
+    def param(self) -> ParameterBase:
         """
         Returns the Qcodes sweep parameter.
         """
@@ -536,7 +536,7 @@ class LinSweep(AbstractSweep):
 
     def __init__(
         self,
-        param: _BaseParameter,
+        param: ParameterBase,
         start: float,
         stop: float,
         num_points: int,
@@ -558,7 +558,7 @@ class LinSweep(AbstractSweep):
         return np.linspace(self._start, self._stop, self._num_points)
 
     @property
-    def param(self) -> _BaseParameter:
+    def param(self) -> ParameterBase:
         return self._param
 
     @property
@@ -588,7 +588,7 @@ class LogSweep(AbstractSweep):
 
     def __init__(
         self,
-        param: _BaseParameter,
+        param: ParameterBase,
         start: float,
         stop: float,
         num_points: int,
@@ -610,7 +610,7 @@ class LogSweep(AbstractSweep):
         return np.logspace(self._start, self._stop, self._num_points)
 
     @property
-    def param(self) -> _BaseParameter:
+    def param(self) -> ParameterBase:
         return self._param
 
     @property
@@ -639,7 +639,7 @@ class ArraySweep(AbstractSweep):
 
     def __init__(
         self,
-        param: _BaseParameter,
+        param: ParameterBase,
         array: Union[Sequence[float], np.ndarray],
         delay: float = 0,
         post_actions: ActionsT = (),
@@ -653,7 +653,7 @@ class ArraySweep(AbstractSweep):
         return self._array
 
     @property
-    def param(self) -> _BaseParameter:
+    def param(self) -> ParameterBase:
         return self._param
 
     @property
@@ -679,7 +679,7 @@ def dond(
     do_plot: Optional[bool] = None,
     show_progress: Optional[bool] = None,
     use_threads: Optional[bool] = None,
-    additional_setpoints: Sequence[_BaseParameter] = tuple(),
+    additional_setpoints: Sequence[ParameterBase] = tuple(),
     log_info: Optional[str] = None,
     break_condition: Optional[BreakConditionT] = None,
 ) -> Union[AxesTupleListWithDataSet, MultiAxesTupleListWithDataSet]:
@@ -781,7 +781,7 @@ def dond(
     )
 
     post_delays: List[float] = []
-    params_set: List[_BaseParameter] = []
+    params_set: List[ParameterBase] = []
     post_actions: List[ActionsT] = []
     for sweep in sweep_instances:
         post_delays.append(sweep.delay)
@@ -879,7 +879,7 @@ def _parse_dond_arguments(
 
 
 def _conditional_parameter_set(
-    parameter: _BaseParameter,
+    parameter: ParameterBase,
     value: Union[float, complex],
 ) -> None:
     """
@@ -924,7 +924,7 @@ def _select_active_actions_delays(
 
 
 def _create_measurements(
-    all_setpoint_params: Sequence[_BaseParameter],
+    all_setpoint_params: Sequence[ParameterBase],
     enter_actions: ActionsT,
     exit_actions: ActionsT,
     exp: Optional[Experiment],
@@ -957,9 +957,9 @@ def _extract_paramters_by_type_and_group(
     measurement_name: str,
     params_meas: Sequence[Union[ParamMeasT, Sequence[ParamMeasT]]],
 ) -> Tuple[
-    Tuple[ParamMeasT, ...], Dict[str, ParameterGroup], Tuple[_BaseParameter, ...]
+    Tuple[ParamMeasT, ...], Dict[str, ParameterGroup], Tuple[ParameterBase, ...]
 ]:
-    measured_parameters: List[_BaseParameter] = []
+    measured_parameters: List[ParameterBase] = []
     all_meas_parameters: List[ParamMeasT] = []
     single_group: List[ParamMeasT] = []
     multi_group: List[Sequence[ParamMeasT]] = []
@@ -968,13 +968,13 @@ def _extract_paramters_by_type_and_group(
         if not isinstance(param, Sequence):
             single_group.append(param)
             all_meas_parameters.append(param)
-            if isinstance(param, _BaseParameter):
+            if isinstance(param, ParameterBase):
                 measured_parameters.append(param)
         elif not isinstance(param, str):
             multi_group.append(param)
             for nested_param in param:
                 all_meas_parameters.append(nested_param)
-                if isinstance(nested_param, _BaseParameter):
+                if isinstance(nested_param, ParameterBase):
                     measured_parameters.append(nested_param)
     if single_group:
         pg: ParameterGroup = {

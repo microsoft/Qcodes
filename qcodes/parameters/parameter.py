@@ -7,8 +7,8 @@ satisfy the Parameter interface. Most of the time that is easiest to do
 by either using or subclassing one of the classes defined here, but you can
 also use any class with the right attributes.
 
-All parameter classes are subclassed from ``._BaseParameter`` (except
-CombinedParameter). The _BaseParameter provides functionality that is common
+All parameter classes are subclassed from ``.ParameterBase`` (except
+CombinedParameter). The ParameterBase provides functionality that is common
 to all parameter types, such as ramping and scaling of values, adding delays
 (see documentation for details).
 
@@ -150,11 +150,11 @@ class _SetParamContext:
 
     def __init__(
         self,
-        parameter: "_BaseParameter",
+        parameter: "ParameterBase",
         value: ParamDataType,
         allow_changes: bool = False,
     ):
-        self._parameter: "_BaseParameter" = parameter
+        self._parameter: "ParameterBase" = parameter
         self._value = value
         self._allow_changes = allow_changes
         self._original_value = None
@@ -189,12 +189,12 @@ def invert_val_mapping(val_mapping: Mapping[Any, Any]) -> Dict[Any, Any]:
     return {v: k for k, v in val_mapping.items()}
 
 
-class _BaseParameter(Metadatable):
+class ParameterBase(Metadatable):
     """
     Shared behavior for all parameters. Not intended to be used
     directly, normally you should use ``Parameter``, ``ArrayParameter``,
     ``MultiParameter``, or ``CombinedParameter``.
-    Note that ``CombinedParameter`` is not yet a subclass of ``_BaseParameter``
+    Note that ``CombinedParameter`` is not yet a subclass of ``ParameterBase``
 
     Args:
         name: the local name of the parameter. Must be a valid
@@ -359,7 +359,7 @@ class _BaseParameter(Metadatable):
         elif hasattr(self, "get"):
             raise RuntimeError(
                 f"Overwriting get in a subclass of "
-                f"_BaseParameter: "
+                f"ParameterBase: "
                 f"{self.full_name} is not allowed."
             )
 
@@ -374,7 +374,7 @@ class _BaseParameter(Metadatable):
         elif hasattr(self, "set"):
             raise RuntimeError(
                 f"Overwriting set in a subclass of "
-                f"_BaseParameter: "
+                f"ParameterBase: "
                 f"{self.full_name} is not allowed."
             )
 
@@ -1061,7 +1061,7 @@ class _BaseParameter(Metadatable):
         return self._abstract
 
 
-class Parameter(_BaseParameter):
+class Parameter(ParameterBase):
     """
     A parameter represents a single degree of freedom. Most often,
     this is the standard parameter for Instruments, though it can also be
@@ -1255,8 +1255,8 @@ class Parameter(_BaseParameter):
         )
 
         no_instrument_get = not self.gettable and (get_cmd is None or get_cmd is False)
-        # TODO: a matching check should be in _BaseParameter but
-        #   due to the current limited design the _BaseParameter cannot
+        # TODO: a matching check should be in ParameterBase but
+        #   due to the current limited design the ParameterBase cannot
         #   know if this subclass will supply a get_cmd
         #   To work around this a RunTime check is put into get of GetLatest
         #   and into get of _Cache
@@ -1439,7 +1439,7 @@ class ParameterWithSetpoints(Parameter):
         name: str,
         *,
         vals: Optional[Validator[Any]] = None,
-        setpoints: Optional[Sequence[_BaseParameter]] = None,
+        setpoints: Optional[Sequence[ParameterBase]] = None,
         snapshot_get: bool = False,
         snapshot_value: bool = False,
         **kwargs: Any,
@@ -1464,14 +1464,14 @@ class ParameterWithSetpoints(Parameter):
             **kwargs,
         )
         if setpoints is None:
-            self.setpoints: Sequence[_BaseParameter] = []
+            self.setpoints: Sequence[ParameterBase] = []
         else:
             self.setpoints = setpoints
 
         self._validate_on_get = True
 
     @property
-    def setpoints(self) -> Sequence[_BaseParameter]:
+    def setpoints(self) -> Sequence[ParameterBase]:
         """
         Sequence of parameters to use as setpoints for this parameter.
 
@@ -1483,7 +1483,7 @@ class ParameterWithSetpoints(Parameter):
         return self._setpoints
 
     @setpoints.setter
-    def setpoints(self, setpoints: Sequence[_BaseParameter]) -> None:
+    def setpoints(self, setpoints: Sequence[ParameterBase]) -> None:
         for setpointarray in setpoints:
             if not isinstance(setpointarray, Parameter):
                 raise TypeError(
@@ -1682,7 +1682,7 @@ class DelegateParameter(Parameter):
         ) -> None:
             """
             This method is needed for interface consistency with ``._Cache``
-            because it is used by ``_BaseParameter`` in
+            because it is used by ``ParameterBase`` in
             ``_wrap_get``/``_wrap_set``. Due to the fact that the source
             parameter already maintains it's own cache and the cache of the
             delegate parameter mirrors the cache of the source parameter by
@@ -1809,7 +1809,7 @@ class DelegateParameter(Parameter):
         return snapshot
 
 
-class ArrayParameter(_BaseParameter):
+class ArrayParameter(ParameterBase):
     """
     A gettable parameter that returns an array of values.
     Not necessarily part of an instrument.
@@ -2029,7 +2029,7 @@ def _is_nested_sequence_or_none(
     return True
 
 
-class MultiParameter(_BaseParameter):
+class MultiParameter(ParameterBase):
     """
     A gettable parameter that returns multiple values with separate names,
     each of arbitrary shape. Not necessarily part of an instrument.
@@ -2264,7 +2264,7 @@ class _CacheProtocol(Protocol):
     """
     This protocol defines the interface that a Parameter Cache implementation
     must implement. This is currently used for 2 implementations, one in
-    _BaseParameter and a specialized one in DelegateParameter.
+    ParameterBase and a specialized one in DelegateParameter.
     """
 
     @property
@@ -2327,9 +2327,7 @@ class _Cache:
             that does not have a get function.
     """
 
-    def __init__(
-        self, parameter: "_BaseParameter", max_val_age: Optional[float] = None
-    ):
+    def __init__(self, parameter: "ParameterBase", max_val_age: Optional[float] = None):
         self._parameter = parameter
         self._value: ParamDataType = None
         self._raw_value: ParamRawDataType = None
@@ -2542,7 +2540,7 @@ class GetLatest(DelegateAttributes):
         parameter: Parameter to be wrapped.
     """
 
-    def __init__(self, parameter: _BaseParameter):
+    def __init__(self, parameter: ParameterBase):
         self.parameter = parameter
 
     delegate_attr_objects = ["parameter"]
@@ -3076,7 +3074,7 @@ class ScaledParameter(Parameter):
 
 def expand_setpoints_helper(
     parameter: ParameterWithSetpoints, results: Optional[ParamDataType] = None
-) -> List[Tuple[_BaseParameter, ParamDataType]]:
+) -> List[Tuple[ParameterBase, ParamDataType]]:
     """
     A helper function that takes a :class:`.ParameterWithSetpoints` and
     acquires the parameter along with it's setpoints. The data is returned

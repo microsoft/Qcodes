@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 import pytest
 
 import qcodes.utils.validators as vals
-from qcodes.parameters import Parameter, _BaseParameter
+from qcodes.parameters import Parameter, ParameterBase
 
 from .conftest import NOT_PASSED, BetterGettableParam, SettableParam
 
@@ -205,14 +205,14 @@ def test_no_get_max_val_age():
 
 def test_no_get_max_val_age_runtime_error(get_if_invalid):
     """
-    _BaseParameter does not have a check on creation time that
+    ParameterBase does not have a check on creation time that
     no get_cmd is mixed with max_val_age since get_cmd could be added
     in a subclass. Here we create a subclass that does not add a get
     command and also does not implement the check for max_val_age
     """
     value = 1
 
-    class LocalParameter(_BaseParameter):
+    class LocalParameter(ParameterBase):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
             self.set_raw = lambda x: x

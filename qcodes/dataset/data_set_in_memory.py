@@ -53,7 +53,7 @@ if TYPE_CHECKING:
     import pandas as pd
     import xarray as xr
 
-    from ..parameters import _BaseParameter
+    from ..parameters import ParameterBase
 
 log = logging.getLogger(__name__)
 
@@ -808,7 +808,7 @@ class DataSetInMem(BaseDataSet):
 
     def to_xarray_dataarray_dict(
         self,
-        *params: Union[str, ParamSpec, _BaseParameter],
+        *params: Union[str, ParamSpec, ParameterBase],
         start: Optional[int] = None,
         end: Optional[int] = None,
     ) -> Dict[str, xr.DataArray]:
@@ -817,7 +817,7 @@ class DataSetInMem(BaseDataSet):
 
     def to_xarray_dataset(
         self,
-        *params: Union[str, ParamSpec, _BaseParameter],
+        *params: Union[str, ParamSpec, ParameterBase],
         start: Optional[int] = None,
         end: Optional[int] = None,
     ) -> xr.Dataset:
@@ -826,7 +826,7 @@ class DataSetInMem(BaseDataSet):
 
     def to_pandas_dataframe_dict(
         self,
-        *params: Union[str, ParamSpec, _BaseParameter],
+        *params: Union[str, ParamSpec, ParameterBase],
         start: Optional[int] = None,
         end: Optional[int] = None,
     ) -> Dict[str, pd.DataFrame]:
@@ -835,7 +835,7 @@ class DataSetInMem(BaseDataSet):
 
     def to_pandas_dataframe(
         self,
-        *params: Union[str, ParamSpec, _BaseParameter],
+        *params: Union[str, ParamSpec, ParameterBase],
         start: Optional[int] = None,
         end: Optional[int] = None,
     ) -> pd.DataFrame:
@@ -844,7 +844,7 @@ class DataSetInMem(BaseDataSet):
 
     def get_parameter_data(
         self,
-        *params: Union[str, ParamSpec, _BaseParameter],
+        *params: Union[str, ParamSpec, ParameterBase],
         start: Optional[int] = None,
         end: Optional[int] = None,
     ) -> ParameterData:
@@ -853,7 +853,7 @@ class DataSetInMem(BaseDataSet):
 
     @staticmethod
     def _warn_if_set(
-        *params: Union[str, ParamSpec, _BaseParameter],
+        *params: Union[str, ParamSpec, ParameterBase],
         start: Optional[int] = None,
         end: Optional[int],
     ) -> None:

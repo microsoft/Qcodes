@@ -9,10 +9,10 @@ import ctypes
 from ctypes import POINTER
 from typing import Any, Dict, Tuple, Union
 
-# `_BaseParameter` is needed because users may pass instrument parameters
+# `ParameterBase` is needed because users may pass instrument parameters
 # that originate from `Instrument.parameters` dictionary which is typed
-# with `_BaseParameter`, not `Parameter`.
-from qcodes.parameters import _BaseParameter as Parameter
+# with `ParameterBase`, not `Parameter`.
+from qcodes.parameters import ParameterBase as Parameter
 
 from .constants import BOARD_NAMES, REGISTER_ACCESS_PASSWORD, ReturnCode
 from .dll_wrapper import Signature, WrappedDll

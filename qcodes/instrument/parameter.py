@@ -7,11 +7,13 @@ from qcodes.parameters import (
     MultiParameter,
     ParamDataType,
     Parameter,
+)
+from qcodes.parameters import ParameterBase as _BaseParameter
+from qcodes.parameters import (
     ParameterWithSetpoints,
     ParamRawDataType,
     ScaledParameter,
     SweepFixedValues,
-    _BaseParameter,
     combine,
     expand_setpoints_helper,
     invert_val_mapping,

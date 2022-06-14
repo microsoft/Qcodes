@@ -17,7 +17,7 @@ class BrokenParameter(Parameter):
 
 
 class BrokenParameter2(Parameter):
-    """A parameter that does not pass kwargs to the _BaseParameter class"""
+    """A parameter that does not pass kwargs to the ParameterBase class"""
 
     def __init__(self, name, instrument, set_cmd, get_cmd):
         super().__init__(name=name, instrument=instrument)

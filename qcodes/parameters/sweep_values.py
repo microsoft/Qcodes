@@ -5,7 +5,7 @@ from qcodes.utils.helpers import is_sequence, make_sweep, named_repr, permissive
 from qcodes.utils.metadata import Metadatable
 
 if TYPE_CHECKING:
-    from qcodes.parameters import _BaseParameter
+    from qcodes.parameters import ParameterBase
 
 
 class SweepValues(Metadatable):
@@ -53,7 +53,7 @@ class SweepValues(Metadatable):
     time what the values will be or even how many there are.
     """
 
-    def __init__(self, parameter: "_BaseParameter", **kwargs: Any):
+    def __init__(self, parameter: "ParameterBase", **kwargs: Any):
         super().__init__(**kwargs)
         self.parameter = parameter
         self.name = parameter.name
@@ -135,7 +135,7 @@ class SweepFixedValues(SweepValues):
 
     def __init__(
         self,
-        parameter: "_BaseParameter",
+        parameter: "ParameterBase",
         keys: Optional[Any] = None,
         start: Optional[float] = None,
         stop: Optional[float] = None,

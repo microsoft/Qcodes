@@ -12,7 +12,7 @@ from qcodes import config
 from qcodes.dataset import new_experiment
 from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.do_nd import ArraySweep, LinSweep, LogSweep, do0d, do1d, do2d, dond
-from qcodes.parameters import Parameter, _BaseParameter
+from qcodes.parameters import Parameter, ParameterBase
 from qcodes.tests.instrument_mocks import (
     ArraySetPointParam,
     Multi2DSetPointParam,
@@ -1011,7 +1011,7 @@ def test_linear_sweep_properties(_param, _param_complex):
     num_points = 5
     delay = 1
     sweep = LinSweep(_param, start, stop, num_points, delay)
-    assert isinstance(sweep.param, _BaseParameter)
+    assert isinstance(sweep.param, ParameterBase)
     assert sweep.delay == delay
     assert sweep.param == _param
     assert sweep.num_points == num_points
@@ -1027,14 +1027,14 @@ def test_linear_sweep_parameter_class(_param, _param_complex):
     num_points = 5
     delay = 1
     sweep = LinSweep(_param, start, stop, num_points, delay)
-    assert isinstance(sweep.param, _BaseParameter)
+    assert isinstance(sweep.param, ParameterBase)
 
     sweep_2 = LinSweep(_param_complex, start, stop, num_points)
-    assert isinstance(sweep_2.param, _BaseParameter)
+    assert isinstance(sweep_2.param, ParameterBase)
 
     arrayparam = ArraySetPointParam(name="arrayparam")
     sweep_3 = LinSweep(arrayparam, start, stop, num_points)
-    assert isinstance(sweep_3.param, _BaseParameter)
+    assert isinstance(sweep_3.param, ParameterBase)
 
 
 def test_log_sweep_get_setpoints(_param):
@@ -1055,7 +1055,7 @@ def test_log_sweep_properties(_param, _param_complex):
     num_points = 5
     delay = 1
     sweep = LogSweep(_param, start, stop, num_points, delay)
-    assert isinstance(sweep.param, _BaseParameter)
+    assert isinstance(sweep.param, ParameterBase)
     assert sweep.delay == delay
     assert sweep.param == _param
     assert sweep.num_points == num_points
@@ -1071,14 +1071,14 @@ def test_log_sweep_parameter_class(_param, _param_complex):
     num_points = 5
     delay = 1
     sweep = LogSweep(_param, start, stop, num_points, delay)
-    assert isinstance(sweep.param, _BaseParameter)
+    assert isinstance(sweep.param, ParameterBase)
 
     sweep_2 = LogSweep(_param_complex, start, stop, num_points)
-    assert isinstance(sweep_2.param, _BaseParameter)
+    assert isinstance(sweep_2.param, ParameterBase)
 
     arrayparam = ArraySetPointParam(name="arrayparam")
     sweep_3 = LogSweep(arrayparam, start, stop, num_points)
-    assert isinstance(sweep_3.param, _BaseParameter)
+    assert isinstance(sweep_3.param, ParameterBase)
 
 
 def test_array_sweep_get_setpoints(_param):
@@ -1102,7 +1102,7 @@ def test_array_sweep_properties(_param):
     array = np.linspace(0, 1, 5)
     delay = 1
     sweep = ArraySweep(_param, array, delay)
-    assert isinstance(sweep.param, _BaseParameter)
+    assert isinstance(sweep.param, ParameterBase)
     assert sweep.delay == delay
     assert sweep.param == _param
     assert sweep.num_points == len(array)
@@ -1116,14 +1116,14 @@ def test_array_sweep_parameter_class(_param, _param_complex):
     array = np.linspace(0, 1, 5)
 
     sweep = ArraySweep(_param, array)
-    assert isinstance(sweep.param, _BaseParameter)
+    assert isinstance(sweep.param, ParameterBase)
 
     sweep_2 = ArraySweep(_param_complex, array)
-    assert isinstance(sweep_2.param, _BaseParameter)
+    assert isinstance(sweep_2.param, ParameterBase)
 
     arrayparam = ArraySetPointParam(name="arrayparam")
     sweep_3 = ArraySweep(arrayparam, array)
-    assert isinstance(sweep_3.param, _BaseParameter)
+    assert isinstance(sweep_3.param, ParameterBase)
 
 
 def test_dond_explicit_exp_meas_sample(_param, experiment):

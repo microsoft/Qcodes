@@ -1,8 +1,13 @@
 import pytest
 
-from qcodes.parameters import Parameter, _BaseParameter
-from .conftest import (OverwriteGetParam, OverwriteSetParam,
-                       GetSetRawParameter, ParameterMemory)
+from qcodes.parameters import Parameter, ParameterBase
+
+from .conftest import (
+    GetSetRawParameter,
+    OverwriteGetParam,
+    OverwriteSetParam,
+    ParameterMemory,
+)
 
 
 def test_parameter_with_overwritten_get_raises():
@@ -11,8 +16,10 @@ def test_parameter_with_overwritten_get_raises():
     """
 
     with pytest.raises(RuntimeError) as record:
-        OverwriteGetParam(name='foo')
-    assert "Overwriting get in a subclass of _BaseParameter: foo is not allowed." == str(record.value)
+        OverwriteGetParam(name="foo")
+    assert "Overwriting get in a subclass of ParameterBase: foo is not allowed." == str(
+        record.value
+    )
 
 
 def test_parameter_with_overwritten_set_raises():
@@ -20,8 +27,10 @@ def test_parameter_with_overwritten_set_raises():
     Test that creating a parameter that overwrites get and set raises runtime errors
     """
     with pytest.raises(RuntimeError) as record:
-        OverwriteSetParam(name='foo')
-    assert "Overwriting set in a subclass of _BaseParameter: foo is not allowed." == str(record.value)
+        OverwriteSetParam(name="foo")
+    assert "Overwriting set in a subclass of ParameterBase: foo is not allowed." == str(
+        record.value
+    )
 
 
 @pytest.mark.parametrize("get_cmd, set_cmd", [(False, False), (False, None), (None, None), (None, False),
@@ -37,7 +46,7 @@ def test_gettable_settable_attributes_with_get_set_cmd(get_cmd, set_cmd):
     assert a.settable is expected_settable
 
 
-@pytest.mark.parametrize("baseclass", [_BaseParameter, Parameter])
+@pytest.mark.parametrize("baseclass", [ParameterBase, Parameter])
 def test_gettable_settable_attributes_with_get_set_raw(baseclass):
     """Test that parameters that have get_raw,set_raw are
     listed as gettable/settable and reverse."""
@@ -58,7 +67,7 @@ def test_gettable_settable_attributes_with_get_set_raw(baseclass):
     assert a.gettable is True
     assert a.settable is True
 
-    b = _BaseParameter('foo', None)
+    b = ParameterBase("foo", None)
 
     assert b.gettable is False
     assert b.settable is False

@@ -60,8 +60,8 @@ from qcodes.parameters import (
     GroupedParameter,
     MultiParameter,
     Parameter,
+    ParameterBase,
     ParameterWithSetpoints,
-    _BaseParameter,
     expand_setpoints_helper,
 )
 from qcodes.station import Station
@@ -172,9 +172,12 @@ class DataSaver:
         # enforcing that setpoints come before dependent variables.
         results_dict: Dict[ParamSpecBase, np.ndarray] = {}
 
-        parameter_names = tuple(partial_result[0].full_name
-                                if isinstance(partial_result[0], _BaseParameter) else partial_result[0]
-                                for partial_result in res_tuple)
+        parameter_names = tuple(
+            partial_result[0].full_name
+            if isinstance(partial_result[0], ParameterBase)
+            else partial_result[0]
+            for partial_result in res_tuple
+        )
         if len(set(parameter_names)) != len(parameter_names):
             non_unique = [
                 item
@@ -190,8 +193,9 @@ class DataSaver:
             parameter = partial_result[0]
             data = partial_result[1]
 
-            if (isinstance(parameter, _BaseParameter) and
-                    isinstance(parameter.vals, vals.Arrays)):
+            if isinstance(parameter, ParameterBase) and isinstance(
+                parameter.vals, vals.Arrays
+            ):
                 if not isinstance(data, np.ndarray):
                     raise TypeError(
                         f"Expected data for Parameter with Array validator "
@@ -356,9 +360,12 @@ class DataSaver:
         return result_dict
 
     def _unpack_setpoints_from_parameter(
-        self, parameter: _BaseParameter, setpoints: Sequence[Any],
-        sp_names: Optional[Sequence[str]], fallback_sp_name: str
-            ) -> Dict[ParamSpecBase, np.ndarray]:
+        self,
+        parameter: ParameterBase,
+        setpoints: Sequence[Any],
+        sp_names: Optional[Sequence[str]],
+        fallback_sp_name: str,
+    ) -> Dict[ParamSpecBase, np.ndarray]:
         """
         Unpack the `setpoints` and their values from a
         :class:`ArrayParameter` or :class:`MultiParameter`
@@ -794,10 +801,12 @@ class Measurement:
         return self
 
     def register_parameter(
-            self: T, parameter: _BaseParameter,
-            setpoints: Optional[setpoints_type] = None,
-            basis: Optional[setpoints_type] = None,
-            paramtype: Optional[str] = None) -> T:
+        self: T,
+        parameter: ParameterBase,
+        setpoints: Optional[setpoints_type] = None,
+        basis: Optional[setpoints_type] = None,
+        paramtype: Optional[str] = None,
+    ) -> T:
         """
         Add QCoDeS Parameter to the dataset produced by running this
         measurement.
@@ -814,7 +823,7 @@ class Measurement:
                 If None the paramtype will be inferred from the parameter type
                 and the validator of the supplied parameter.
         """
-        if not isinstance(parameter, _BaseParameter):
+        if not isinstance(parameter, ParameterBase):
             raise ValueError('Can not register object of type {}. Can only '
                              'register a QCoDeS Parameter.'
                              ''.format(type(parameter)))
@@ -865,8 +874,9 @@ class Measurement:
         return self
 
     @staticmethod
-    def _infer_paramtype(parameter: _BaseParameter,
-                         paramtype: Optional[str]) -> Optional[str]:
+    def _infer_paramtype(
+        parameter: ParameterBase, paramtype: Optional[str]
+    ) -> Optional[str]:
         """
         Infer the best parameter type to store the parameter supplied.
 
@@ -1118,7 +1128,7 @@ class Measurement:
         Remove a custom/QCoDeS parameter from the dataset produced by
         running this measurement
         """
-        if isinstance(parameter, _BaseParameter):
+        if isinstance(parameter, ParameterBase):
             param = str(parameter)
         elif isinstance(parameter, str):
             param = parameter

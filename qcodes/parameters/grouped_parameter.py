@@ -17,8 +17,8 @@ from qcodes.parameters.parameter import (
     DelegateParameter,
     ParamDataType,
     Parameter,
+    ParameterBase,
     ParamRawDataType,
-    _BaseParameter,
 )
 
 if TYPE_CHECKING:
@@ -147,7 +147,7 @@ class DelegateGroup(Group):
         return tuple(p.source for p in self._params)
 
 
-class GroupedParameter(_BaseParameter):
+class GroupedParameter(ParameterBase):
     """
     The GroupedParameter wraps one or more :class:`.DelegateParameter` s,
     such that those parameters can be accessed as if they were one
@@ -156,7 +156,7 @@ class GroupedParameter(_BaseParameter):
     The :class:`GroupedParameter` uses a :class:`DelegateGroup` to keep
     track of the :class:`.DelegateParameter` s. Mainly, this class is a
     thin wrapper around the :class:`DelegateGroup`, and mainly exists
-    in order to allow for it to be used as a :class:`_BaseParameter`.
+    in order to allow for it to be used as a :class:`ParameterBase`.
 
     This class can be seen as the opposite of a :class:`GroupParameter`,
     which is a class to create parameters that are set with a single get
