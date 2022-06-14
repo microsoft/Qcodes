@@ -21,7 +21,7 @@ h5netcdf~=0.15.0
 h5py~=3.7.0
 idna~=3.3
 importlib-metadata==4.8.1; python_version<'3.8'
-ipykernel~=6.13.1
+ipykernel~=6.14.0
 ipython~=8.4.0; python_version>='3.8'
 ipython~=7.31.0; python_version<'3.8'
 ipython-genutils~=0.2.0
