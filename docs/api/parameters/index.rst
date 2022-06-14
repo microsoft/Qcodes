@@ -1,4 +1,4 @@
-.. _parameters_api :
+.. _parameter_api :
 
 qcodes.parameters
 =================
