@@ -96,6 +96,8 @@ def test_instrument_on_invalid_identifier(close_before_and_after):
     assert DummyInstrument.instances() == []
     assert Instrument._all_instruments == {}
 
+
+def test_instrument_warns_on_hyphen_in_name(close_before_and_after):
     # Check if warning is raised and name is valid
     # identifier when dashes '-' are converted to underscores '_'
     with pytest.warns(
@@ -107,6 +109,25 @@ def test_instrument_on_invalid_identifier(close_before_and_after):
     assert Instrument.instances() == []
     assert DummyInstrument.instances() == [instr]
     assert Instrument._all_instruments != {}
+
+
+def test_instrument_allows_channel_name_starting_with_number(close_before_and_after):
+    instr = DummyChannelInstrument(name="foo", channel_names=["1", "2", "3"])
+
+    for chan in instr.channels:
+        assert chan.short_name.isidentifier() is False
+        assert chan.full_name.isidentifier() is True
+    assert Instrument.instances() == []
+    assert DummyChannelInstrument.instances() == [instr]
+    assert Instrument._all_instruments != {}
+
+
+def test_instrument_channel_name_raise_on_invalid(close_before_and_after):
+    with pytest.raises(ValueError, match="foo_☃ invalid instrument identifier"):
+        DummyChannelInstrument(name="foo", channel_names=["☃"])
+    assert Instrument.instances() == []
+    assert DummyChannelInstrument.instances() == []
+    assert Instrument._all_instruments == {}
 
 
 def test_instrument_retry_with_same_name(close_before_and_after):

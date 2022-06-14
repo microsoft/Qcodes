@@ -410,14 +410,14 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         return self._short_name
 
     @staticmethod
-    def _is_valid_identifier(name: str):
+    def _is_valid_identifier(name: str) -> None:
         """Check whether given name is a valid instrument identifier."""
         if not name.isidentifier():
             raise ValueError(f"{name} invalid instrument identifier")
 
     @staticmethod
     def _replace_hyphen(name: str) -> str:
-        """Replace - in name with _ and warn if any is fund"""
+        """Replace - in name with _ and warn if any is found."""
         new_name = str(name).replace("-", "_")
         if name != new_name:
             warnings.warn(f"Changed {name} to {new_name} for instrument identifier")
