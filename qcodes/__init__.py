@@ -24,30 +24,26 @@ add_to_spyder_UMR_excludelist('qcodes')
 
 import atexit
 
-from qcodes.dataset.data_set import (
+from qcodes.dataset import (
+    Measurement,
+    ParamSpec,
+    SQLiteSettings,
+    experiments,
     get_guids_by_run_spec,
+    initialise_database,
+    initialise_or_create_database_at,
+    initialised_database_at,
     load_by_counter,
     load_by_guid,
     load_by_id,
     load_by_run_spec,
-    new_data_set,
-)
-from qcodes.dataset.descriptions.param_spec import ParamSpec
-from qcodes.dataset.experiment_container import (
-    experiments,
     load_experiment,
     load_experiment_by_name,
     load_last_experiment,
     load_or_create_experiment,
+    new_data_set,
     new_experiment,
 )
-from qcodes.dataset.measurements import Measurement
-from qcodes.dataset.sqlite.database import (
-    initialise_database,
-    initialise_or_create_database_at,
-    initialised_database_at,
-)
-from qcodes.dataset.sqlite.settings import SQLiteSettings
 from qcodes.instrument.base import Instrument, find_or_create_instrument
 from qcodes.instrument.channel import ChannelList, ChannelTuple, InstrumentChannel
 from qcodes.instrument.function import Function
@@ -66,7 +62,7 @@ from qcodes.instrument.parameter import (
 from qcodes.instrument.sweep_values import SweepFixedValues, SweepValues
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.instrument_drivers.test import test_instrument, test_instruments
-from qcodes.monitor.monitor import Monitor
+from qcodes.monitor import Monitor
 from qcodes.station import Station
 from qcodes.utils import validators
 

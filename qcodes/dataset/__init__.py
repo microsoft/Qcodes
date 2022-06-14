@@ -3,6 +3,7 @@ The dataset module contains code related to storage and retrieval of data to
 and from disk
 """
 from .data_set import (
+    get_guids_by_run_spec,
     load_by_counter,
     load_by_guid,
     load_by_id,
@@ -50,6 +51,7 @@ __all__ = [
     "experiments",
     "extract_runs_into_db",
     "get_default_experiment_id",
+    "get_guids_by_run_spec",
     "import_dat_file",
     "initialise_database",
     "initialise_or_create_database_at",
