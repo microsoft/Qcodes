@@ -430,6 +430,8 @@ autodoc_mock_imports = [
     "gclib",
 ]
 
+autodoc_typehints_format = "short"
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
