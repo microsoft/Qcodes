@@ -59,6 +59,7 @@ extensions = [
     "sphinxcontrib.towncrier",
     "autodocsumm",
     "sphinx_issues",
+    "sphinx-favicon",
 ]
 
 # include special __xxx__ that DO have a docstring
@@ -218,6 +219,10 @@ html_theme = "sphinx_rtd_theme"
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+
+# Add custom favicon to the sphinx html documentation.
+# Can be an absolute url or a local static file.
+favicons = {"rel": "icon", "static-file": "qcodes_favicon.png", "type": "image/png"}
 
 # Add any extra paths that contain custom files (such as robots.txt or
 # .htaccess) here, relative to this directory. These files are copied
