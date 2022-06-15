@@ -78,7 +78,7 @@ def store_array_to_database_alt(meas: Measurement, array: DataArray) -> int:
 def import_dat_file(location: str,
                     exp: Optional[Experiment] = None) -> List[int]:
     """
-    This imports a QCoDeS legacy :class:.`qcodes.data.data_set.DataSet`
+    This imports a QCoDeS legacy :class:`qcodes.data.data_set.DataSet`
     into the database.
 
     Args:
