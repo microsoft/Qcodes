@@ -256,6 +256,8 @@ def load_experiment(exp_id: int,
 
     Returns:
         experiment with the specified id
+    Raises:
+        ValueError: If experiment id is not an integer.
     """
     conn = conn_from_dbpath_or_conn(conn=conn, path_to_db=None)
     if not isinstance(exp_id, int):
@@ -270,7 +272,9 @@ def load_last_experiment() -> Experiment:
     Load last experiment (from database file from config)
 
     Returns:
-        last experiment
+        The last experiment
+    Raises:
+        ValueError: If no experiment exists in the db.
     """
     conn = connect(get_DB_location())
     last_exp_id = get_last_experiment(conn)
@@ -304,13 +308,12 @@ def load_experiment_by_name(
             to the DB file specified in the config is made
 
     Returns:
-        the requested experiment
+        The requested experiment
 
     Raises:
-        ValueError either if the name and sample name are not unique, unless
-        load_last_duplicate is True, or if no experiment found for the
-        supplied name and sample.
-        .
+        ValueError: either if the name and sample name are not unique, unless
+            load_last_duplicate is True, or if no experiment found for the
+            supplied name and sample.
     """
     conn = conn or connect(get_DB_location())
     if sample is not None:
@@ -363,6 +366,9 @@ def load_or_create_experiment(
 
     Returns:
         The found or created experiment
+    Raises:
+        ValueError: If the name and sample name are not unique, unless
+            load_last_duplicate is True.
     """
     conn = conn or connect(get_DB_location())
     try:

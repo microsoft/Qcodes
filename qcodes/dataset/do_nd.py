@@ -732,13 +732,13 @@ def dond(
         break_condition: Callable that takes no arguments. If returned True,
             measurement is interrupted.
 
-        Returns:
-            A tuple of QCoDeS DataSet, Matplotlib axis, Matplotlib colorbar. If
-            more than one group of measurement parameters is supplied, the output
-            will be a tuple of tuple(QCoDeS DataSet), tuple(Matplotlib axis),
-            tuple(Matplotlib colorbar), in which each element of each sub-tuple
-            belongs to one group, and the order of elements is the order of
-            the supplied groups.
+    Returns:
+        A tuple of QCoDeS DataSet, Matplotlib axis, Matplotlib colorbar. If
+        more than one group of measurement parameters is supplied, the output
+        will be a tuple of tuple(QCoDeS DataSet), tuple(Matplotlib axis),
+        tuple(Matplotlib colorbar), in which each element of each sub-tuple
+        belongs to one group, and the order of elements is the order of
+        the supplied groups.
     """
     if do_plot is None:
         do_plot = config.dataset.dond_plot

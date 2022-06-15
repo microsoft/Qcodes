@@ -109,6 +109,7 @@ def plot_dataset(
     Construct all plots for a given dataset
 
     Implemented so far:
+
        * 1D line and scatter plots
        * 2D plots on filled out rectangular grids
        * 2D scatterplots (fallback)
