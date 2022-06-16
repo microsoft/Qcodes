@@ -1763,7 +1763,7 @@ class ArrayParameter(ParameterBase):
     This method is automatically wrapped to provide a ``.get`` method.
 
     :class:`.ArrayParameter` can be used in both a
-    :class:`qcodes.dataset.measurements.Measurement`
+    :class:`qcodes.dataset.Measurement`
     as well as in the legacy :class:`qcodes.loops.Loop`
     and :class:`qcodes.measure.Measure` measurements
 
