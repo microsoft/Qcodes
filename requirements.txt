@@ -5,7 +5,7 @@ backcall~=0.2.0
 bleach~=5.0.0
 broadbean~=0.10.0
 cachetools~=5.2.0
-certifi~=2022.5.18
+certifi~=2022.6.15
 cffi~=1.15.0
 chardet~=4.0.0
 colorama~=0.4.4
@@ -14,14 +14,14 @@ cycler~=0.11.0
 decorator~=5.1.1
 defusedxml~=0.7.1
 entrypoints~=0.4
-google-api-core~=2.8.1
+google-api-core~=2.8.2
 google-auth~=2.8.0
 googleapis-common-protos~=1.56.2
 h5netcdf~=0.15.0
 h5py~=3.7.0
 idna~=3.3
 importlib-metadata==4.8.1; python_version<'3.8'
-ipykernel~=6.14.0
+ipykernel~=6.15.0
 ipython~=8.4.0; python_version>='3.8'
 ipython~=7.31.0; python_version<'3.8'
 ipython-genutils~=0.2.0
