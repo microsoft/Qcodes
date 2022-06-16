@@ -68,11 +68,11 @@ more specialized ones:
 
 """
 
+from .array_parameter import ArrayParameter
 from .group_parameter import Group, GroupParameter
 from .grouped_parameter import DelegateGroup, DelegateGroupParameter, GroupedParameter
 from .multi_channel_instrument_parameter import MultiChannelInstrumentParameter
 from .parameter import (
-    ArrayParameter,
     CombinedParameter,
     DelegateParameter,
     ManualParameter,
