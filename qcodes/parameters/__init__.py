@@ -69,18 +69,12 @@ more specialized ones:
 """
 
 from .array_parameter import ArrayParameter
+from .combined_parameter import CombinedParameter, combine
 from .group_parameter import Group, GroupParameter
 from .grouped_parameter import DelegateGroup, DelegateGroupParameter, GroupedParameter
 from .multi_channel_instrument_parameter import MultiChannelInstrumentParameter
 from .multi_parameter import MultiParameter
-from .parameter import (
-    CombinedParameter,
-    DelegateParameter,
-    ManualParameter,
-    Parameter,
-    ScaledParameter,
-    combine,
-)
+from .parameter import DelegateParameter, ManualParameter, Parameter, ScaledParameter
 from .parameter_base import (
     ParamDataType,
     ParameterBase,
