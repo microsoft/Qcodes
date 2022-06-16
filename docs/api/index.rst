@@ -16,6 +16,7 @@ QCoDeS API
    :maxdepth: 4
    :includehidden:
 
+   calibrations/index
    configuration/index
    dataset/index
    extensions/index
