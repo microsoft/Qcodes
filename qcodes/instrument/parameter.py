@@ -44,6 +44,9 @@ more specialized ones:
     while allowing to specify label/unit/etc that is different from the
     source parameter.
 
+- :class:`.DelegateParameterWithSetpoints` is similar to :class:`.DelegateParameter`
+    and can be used for proxy-ing other  :class:`.ParameterWithSetpoints` parameters.
+
 - :class:`.ArrayParameter` is an older base class for array-valued parameters.
     For any new driver we strongly recommend using
     :class:`.ParameterWithSetpoints` which is both more flexible and
@@ -1724,6 +1727,128 @@ class DelegateParameter(Parameter):
         snapshot.update(
             {'source_parameter': source_parameter_snapshot}
         )
+        return snapshot
+
+
+class DelegateParameterWithSetpoints(ParameterWithSetpoints):
+    """
+    The :class:`.DelegateParameterWithSetpoints` wraps a given `source`
+    :class:`ParameterWithSetpoints`. Setting/getting it results in
+    a set/get of the source parameter with the provided arguments.
+
+    The reason for using a :class:`DelegateParameterWithSetpoints` instead
+    of the source parameter is to provide all the functionality of the
+    ParameterWithSetpoints class without overwriting properties of the source:
+    for example to set a different scaling factor and unit on the
+    :class:`.DelegateParameterWithSetpoints` or its setpoints without changing
+    those in the source parameter or the source parameter's setpoints.
+
+    Unlike :class:`DelegateParameter`, :class:`DelegateParameterWithSetpoints`
+    does not support changing the `source` :class:`ParameterWithSetpoints`.
+    :py:attr:`~gettable`, :py:attr:`~settable` and :py:attr:`snapshot_value`
+    properties automatically follow the source parameter.
+
+    :py:attr:`.unit` and :py:attr:`.label` can either be set when constructing
+    a :class:`DelegateParameterWithSetpoints` or inherited from the source
+    :class:`ParameterWithSetpoints`.
+
+    If new setpoints are not provided, then the setpoints of the `source`
+    :class:`ParameterWithSetpoints` will be used "as is".
+
+    Note:
+        DelegateParameterWithSetpoints only supports mappings between the
+        :class:`.DelegateParameterWithSetpoints` and
+        :class:`.ParameterWithSetpoints` that are invertible
+        (e.g. a bijection). It is therefor not allowed to create a
+        :class:`.DelegateParameterWithSetpoints` that performs non invertible
+        transforms in its ``get_raw`` method.
+
+        A DelegateParameterWithSetpoints is not registered on the instrument
+        by default. You should pass ``bind_to_instrument=True`` if you want this to
+        be the case.
+    """
+
+    def __init__(
+        self,
+        name: str,
+        *,
+        source: ParameterWithSetpoints,
+        new_setpoints: Optional[Sequence[DelegateParameter]] = None,
+        **kwargs: Any,
+    ) -> None:
+        self._source = source
+
+        super().__init__(name=name, vals=self._source.vals, **kwargs)
+
+        self._gettable = self._source.gettable
+        self._settable = self._source.settable
+        self._snapshot_value = self._source._snapshot_value
+
+        self._delegate_setpoints: Optional[Sequence[DelegateParameter]]
+        if new_setpoints is not None:
+            self._delegate_setpoints = tuple(new_setpoints)
+            for source_setpoint, delegate_setpoint in zip(self._source.setpoints, self._delegate_setpoints):
+                delegate_setpoint.source = cast(Parameter, source_setpoint)
+        else:
+            self._delegate_setpoints = None
+
+        self._update_validators()
+
+    @property
+    def source(self) -> ParameterWithSetpoints:
+        """
+        The source parameter that this :class:`DelegateParameterWithSetpoints`
+        is bound to.
+
+        :getter: Returns the source parameter.
+        """
+        return self._source
+
+    def _update_validators(self) -> None:
+        self.vals = self._source.vals
+        if self._delegate_setpoints is not None:
+            for delegate_setpoint in self._delegate_setpoints:
+                assert delegate_setpoint.source is not None
+                delegate_setpoint.vals = delegate_setpoint.source.vals
+
+    @property
+    def setpoints(self) -> Sequence[_BaseParameter]:
+        self._update_validators()
+        setpoints = (
+            self._delegate_setpoints
+            if self._delegate_setpoints is not None
+            else self._source.setpoints
+        )
+        return setpoints
+
+    @setpoints.setter
+    def setpoints(self, setpoints: Sequence[_BaseParameter]) -> None:
+        if len(setpoints) > 0:
+            raise AttributeError(
+                f"Cannot set setpoints, since the delegate refers to "
+                f"the setpoints of {self._source}"
+            )
+
+    def validate_consistent_shape(self) -> None:
+        self._update_validators()
+        super().validate_consistent_shape()
+
+    def get_raw(self) -> Any:
+        return self._source.get()
+
+    def set_raw(self, value: Any) -> None:
+        self._source.set(value)
+
+    def snapshot_base(
+        self,
+        update: Optional[bool] = True,
+        params_to_skip_update: Optional[Sequence[str]] = None,
+    ) -> Dict[Any, Any]:
+        snapshot = super().snapshot_base(
+            update=update, params_to_skip_update=params_to_skip_update
+        )
+        source_parameter_snapshot = self._source.snapshot(update=update)
+        snapshot.update({"source_parameter": source_parameter_snapshot})
         return snapshot
 
 
