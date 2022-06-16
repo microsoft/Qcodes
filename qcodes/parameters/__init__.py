@@ -78,12 +78,14 @@ from .parameter import (
     InstrumentRefParameter,
     ManualParameter,
     MultiParameter,
-    ParamDataType,
     Parameter,
-    ParameterBase,
-    ParamRawDataType,
     ScaledParameter,
     combine,
+)
+from .parameter_base import (
+    ParamDataType,
+    ParameterBase,
+    ParamRawDataType,
     invert_val_mapping,
 )
 from .parameter_with_setpoints import ParameterWithSetpoints, expand_setpoints_helper
