@@ -17,7 +17,9 @@ from typing import (
     Union,
 )
 
-from qcodes.parameters.parameter import ParamDataType, Parameter, ParamRawDataType
+from qcodes.parameters.parameter import Parameter
+
+from .parameter_base import ParamDataType, ParamRawDataType
 
 if TYPE_CHECKING:
     from qcodes.instrument.base import InstrumentBase

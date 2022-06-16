@@ -5,7 +5,8 @@ import numpy as np
 
 from qcodes.utils.validators import Arrays, Validator
 
-from .parameter import ParamDataType, Parameter, ParameterBase
+from .parameter import Parameter
+from .parameter_base import ParamDataType, ParameterBase
 
 LOG = logging.getLogger(__name__)
 
