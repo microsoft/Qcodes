@@ -5,7 +5,9 @@ provides useful/convenient specializations of such generic parameters.
 """
 
 from time import perf_counter
-from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union
+
+from typing_extensions import Literal
 
 from qcodes.parameters.parameter import Parameter
 from qcodes.utils.validators import Strings, Validator
