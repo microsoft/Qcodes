@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Generic, Sequence, Tuple, TypeVar
 
-from .parameter import MultiParameter, ParamRawDataType
+from .multi_parameter import MultiParameter
+from .parameter import ParamRawDataType
 
 if TYPE_CHECKING:
     from qcodes.instrument.channel import InstrumentModule
