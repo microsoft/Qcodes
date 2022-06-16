@@ -74,7 +74,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         """
         self.instrument_modules: Dict[str, "InstrumentModule"] = {}
         """
-        All the instrument_modules of this instrument
+        All the :class:`InstrumentModule` of this instrument
         Usually populated via :py:meth:`add_submodule`.
         """
 
@@ -106,11 +106,11 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
         Args:
             name: How the parameter will be stored within
-                ``instrument.parameters`` and also how you address it using the
+                :attr:`.parameters` and also how you address it using the
                 shortcut methods: ``instrument.set(param_name, value)`` etc.
 
             parameter_class: You can construct the parameter
-                out of any class. Default :class:`.parameter.Parameter`.
+                out of any class. Default :class:`.parameters.Parameter`.
 
             **kwargs: Constructor arguments for ``parameter_class``.
 
