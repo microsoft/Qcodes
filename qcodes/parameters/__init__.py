@@ -81,13 +81,12 @@ from .parameter import (
     ParamDataType,
     Parameter,
     ParameterBase,
-    ParameterWithSetpoints,
     ParamRawDataType,
     ScaledParameter,
     combine,
-    expand_setpoints_helper,
     invert_val_mapping,
 )
+from .parameter_with_setpoints import ParameterWithSetpoints, expand_setpoints_helper
 from .specialized_parameters import ElapsedTimeParameter
 from .sweep_values import SweepFixedValues, SweepValues
 
