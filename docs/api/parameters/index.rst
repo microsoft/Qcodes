@@ -4,3 +4,4 @@ qcodes.parameters
 =================
 
 .. automodule:: qcodes.parameters
+    :autosummary:

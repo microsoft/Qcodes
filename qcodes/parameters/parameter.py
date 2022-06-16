@@ -1325,8 +1325,8 @@ class Parameter(ParameterBase):
 
         self._meta_attrs.extend(["label", "unit", "vals"])
 
-        #: Label of the data used for plots etc.
-        self.label: str = name if label is None else label
+        self.label = name if label is None else label
+        self._label: str
 
         self.unit = unit if unit is not None else ""
         self._unitval: str
@@ -1370,6 +1370,17 @@ class Parameter(ParameterBase):
     @unit.setter
     def unit(self, unit: str) -> None:
         self._unitval = unit
+
+    @property
+    def label(self) -> str:
+        """
+        Label of the data used for plots etc.
+        """
+        return self._label
+
+    @label.setter
+    def label(self, label: str) -> None:
+        self._label = label
 
     def __getitem__(self, keys: Any) -> "SweepFixedValues":
         """
