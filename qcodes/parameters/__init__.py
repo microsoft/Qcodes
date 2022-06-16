@@ -75,7 +75,6 @@ from .parameter import (
     ArrayParameter,
     CombinedParameter,
     DelegateParameter,
-    InstrumentRefParameter,
     ManualParameter,
     MultiParameter,
     Parameter,
@@ -89,7 +88,7 @@ from .parameter_base import (
     invert_val_mapping,
 )
 from .parameter_with_setpoints import ParameterWithSetpoints, expand_setpoints_helper
-from .specialized_parameters import ElapsedTimeParameter
+from .specialized_parameters import ElapsedTimeParameter, InstrumentRefParameter
 from .sweep_values import SweepFixedValues, SweepValues
 
 __all__ = [
