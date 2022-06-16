@@ -1,6 +1,6 @@
 import collections.abc
 import os
-from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence, Tuple, Type, Union
+from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence, Type, Union
 
 import numpy as np
 
