@@ -5,9 +5,8 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Union
 import numpy as np
 
 import qcodes.utils.validators as vals
-from qcodes.instrument.channel import InstrumentChannel
-from qcodes.instrument.group_parameter import Group, GroupParameter
-from qcodes.instrument.parameter import MultiParameter
+from qcodes.instrument import InstrumentChannel
+from qcodes.parameters import Group, GroupParameter, MultiParameter
 
 from . import constants
 from .constants import MM, ChNr, ModuleKind

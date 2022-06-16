@@ -1,15 +1,15 @@
 import binascii
 import logging
 from functools import partial
-from typing import Any, Dict, Tuple, Union
+from typing import Any, Tuple
 
 import numpy as np
 from pyvisa.errors import VisaIOError
 from typing_extensions import TypedDict
 
-from qcodes import ChannelList, InstrumentChannel, VisaInstrument
 from qcodes import validators as vals
-from qcodes.instrument.parameter import ArrayParameter, ParamRawDataType
+from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
+from qcodes.parameters import ArrayParameter, ParamRawDataType
 
 log = logging.getLogger(__name__)
 

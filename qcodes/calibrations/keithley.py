@@ -3,8 +3,8 @@ from __future__ import annotations
 import time
 from typing import TYPE_CHECKING, Optional, Dict
 
-from qcodes.instrument.base import Instrument
-from qcodes.instrument.parameter import Parameter
+from qcodes.instrument import Instrument
+from qcodes.parameters import Parameter
 
 if TYPE_CHECKING:
     from qcodes.instrument_drivers.tektronix.Keithley_2600_channels import Keithley_2600

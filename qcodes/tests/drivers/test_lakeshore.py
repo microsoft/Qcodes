@@ -24,7 +24,7 @@ class MockVisaInstrument:
     """
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self.visa_log = get_instrument_logger(self, VISA_LOGGER)
+        self.visa_log = get_instrument_logger(self, VISA_LOGGER)  # type: ignore[arg-type]
 
         # This base class mixin holds two dictionaries associated with the
         # pyvisa_instrument.write()

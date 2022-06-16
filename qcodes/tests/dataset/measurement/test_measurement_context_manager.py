@@ -20,11 +20,7 @@ from qcodes.dataset.export_config import DataExportType
 from qcodes.dataset.legacy_import import import_dat_file
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.sqlite.connection import atomic_transaction
-from qcodes.instrument.parameter import (
-    ArrayParameter,
-    Parameter,
-    expand_setpoints_helper,
-)
+from qcodes.parameters import Parameter, expand_setpoints_helper
 from qcodes.tests.common import reset_config_on_exit, retry_until_does_not_throw
 
 # pylint: disable=unused-import
@@ -1398,27 +1394,33 @@ def test_datasaver_parameter_with_setpoints_reg_but_missing_validator(
     param.setpoints = ()
 
     with meas.run(write_in_background=bg_writing) as datasaver:
-        with pytest.raises(ValueError, match=r"Shape of output is not"
-                                             r" consistent with setpoints."
-                                             r" Output is shape "
-                                             r"\(<qcodes.instrument.parameter."
-                                             r"Parameter: dummy_n_points at "
-                                             r"[0-9]+>,\) and setpoints are "
-                                             r"shape \(\)', 'getting dummy_"
-                                             r"channel_inst_ChanA_dummy_"
-                                             r"parameter_with_setpoints"):
+        with pytest.raises(
+            ValueError,
+            match=r"Shape of output is not"
+            r" consistent with setpoints."
+            r" Output is shape "
+            r"\(<qcodes.parameters.parameter."
+            r"Parameter: dummy_n_points at "
+            r"[0-9]+>,\) and setpoints are "
+            r"shape \(\)', 'getting dummy_"
+            r"channel_inst_ChanA_dummy_"
+            r"parameter_with_setpoints",
+        ):
             datasaver.add_result(*expand_setpoints_helper(param))
 
     with meas.run(write_in_background=bg_writing) as datasaver:
-        with pytest.raises(ValueError, match=r"Shape of output is not"
-                                             r" consistent with setpoints."
-                                             r" Output is shape "
-                                             r"\(<qcodes.instrument.parameter."
-                                             r"Parameter: dummy_n_points at "
-                                             r"[0-9]+>,\) and setpoints are "
-                                             r"shape \(\)', 'getting dummy_"
-                                             r"channel_inst_ChanA_dummy_"
-                                             r"parameter_with_setpoints"):
+        with pytest.raises(
+            ValueError,
+            match=r"Shape of output is not"
+            r" consistent with setpoints."
+            r" Output is shape "
+            r"\(<qcodes.parameters.parameter."
+            r"Parameter: dummy_n_points at "
+            r"[0-9]+>,\) and setpoints are "
+            r"shape \(\)', 'getting dummy_"
+            r"channel_inst_ChanA_dummy_"
+            r"parameter_with_setpoints",
+        ):
             datasaver.add_result((param, param.get()))
 
 
@@ -2096,7 +2098,7 @@ def test_save_and_reload_complex_standalone(complex_num_instrument,
                                             bg_writing):
     param = complex_num_instrument.complex_num
     complex_num_instrument.setpoint(1)
-    p = qc.instrument.parameter.Parameter(
+    p = Parameter(
         'test',
         set_cmd=None,
         get_cmd=lambda: 1+1j,

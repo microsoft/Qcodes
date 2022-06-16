@@ -16,9 +16,8 @@ import numpy as np
 from typing_extensions import Literal, TypedDict, overload
 
 import qcodes.utils.validators as vals
-from qcodes.instrument.channel import InstrumentChannel
-from qcodes.instrument.group_parameter import Group, GroupParameter
-from qcodes.instrument.parameter import Parameter, ParamRawDataType
+from qcodes.instrument import InstrumentChannel
+from qcodes.parameters import Group, GroupParameter, Parameter, ParamRawDataType
 from qcodes.utils.deprecate import deprecate
 from qcodes.utils.validators import Arrays
 

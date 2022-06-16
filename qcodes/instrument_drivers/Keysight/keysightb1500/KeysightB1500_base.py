@@ -1,20 +1,28 @@
 import re
 import textwrap
-from typing import Optional, Union, Dict, List, Tuple, Any, Sequence
 from collections import defaultdict
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
-from qcodes import VisaInstrument, MultiParameter, Parameter
-from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_module \
-    import _FMTResponse, fmt_response_base_parser, StatusMixin, \
-    convert_dummy_val_to_nan
+from qcodes.instrument import VisaInstrument
+from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_module import (
+    StatusMixin,
+    _FMTResponse,
+    convert_dummy_val_to_nan,
+    fmt_response_base_parser,
+)
+from qcodes.parameters import MultiParameter, Parameter
 from qcodes.utils.helpers import create_on_off_val_mapping
-from .KeysightB1530A import B1530A
-from .KeysightB1520A import B1520A
-from .KeysightB1517A import B1517A, _ParameterWithStatus
-from .KeysightB1511B import B1511B
-from .KeysightB1500_module import B1500Module, parse_module_query_response, \
-    parse_spot_measurement_response
+
 from . import constants
+from .KeysightB1500_module import (
+    B1500Module,
+    parse_module_query_response,
+    parse_spot_measurement_response,
+)
+from .KeysightB1511B import B1511B
+from .KeysightB1517A import B1517A, _ParameterWithStatus
+from .KeysightB1520A import B1520A
+from .KeysightB1530A import B1530A
 from .message_builder import MessageBuilder
 
 

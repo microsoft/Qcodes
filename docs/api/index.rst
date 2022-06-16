@@ -20,10 +20,10 @@ QCoDeS API
    dataset/index
    extensions/index
    instrument/index
-   parameters/index
    logger/index
    math_utils/index
    monitor/index
+   parameters/index
    station
    utils/index
 

@@ -13,13 +13,8 @@ from typing import Any, Dict, Optional, Sequence, Tuple, Union
 import pyvisa as visa
 from pyvisa.resources.serial import SerialInstrument
 
-from qcodes.instrument.channel import (
-    ChannelList,
-    InstrumentChannel,
-    MultiChannelInstrumentParameter,
-)
-from qcodes.instrument.parameter import ParamRawDataType
-from qcodes.instrument.visa import VisaInstrument
+from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
+from qcodes.parameters import MultiChannelInstrumentParameter, ParamRawDataType
 from qcodes.utils import validators as vals
 
 LOG = logging.getLogger(__name__)

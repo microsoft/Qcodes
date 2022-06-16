@@ -1,9 +1,10 @@
 from types import TracebackType
-from typing import Any, Dict, List, Optional, Type, Union, cast, Set
+from typing import Any, Dict, List, Optional, Set, Type, Union, cast
 
 import numpy as np
-from qcodes import InstrumentChannel, ParameterWithSetpoints, VisaInstrument
-from qcodes.instrument.parameter import invert_val_mapping
+
+from qcodes.instrument import InstrumentChannel, VisaInstrument
+from qcodes.parameters import ParameterWithSetpoints, invert_val_mapping
 from qcodes.utils.helpers import create_on_off_val_mapping
 from qcodes.utils.validators import Arrays, Enum, Ints, Lists, Numbers
 

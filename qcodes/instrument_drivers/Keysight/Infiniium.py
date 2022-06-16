@@ -10,7 +10,7 @@ from qcodes import validators as vals
 from qcodes.instrument import VisaInstrument
 from qcodes.instrument.base import InstrumentBase
 from qcodes.instrument.channel import ChannelList, InstrumentChannel, InstrumentModule
-from qcodes.instrument.parameter import Parameter, ParameterWithSetpoints
+from qcodes.parameters import Parameter, ParameterWithSetpoints
 from qcodes.utils.deprecate import deprecate
 from qcodes.utils.helpers import create_on_off_val_mapping
 

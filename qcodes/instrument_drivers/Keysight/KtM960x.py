@@ -1,13 +1,13 @@
-from .KtM960xDefs import *
-
 import ctypes
 from functools import partial
-from typing import (Dict, Optional, Any, Tuple)
+from typing import Any, Dict, Optional, Tuple
 
-from qcodes.instrument.base import Instrument
-from qcodes.instrument.parameter import ParamRawDataType, MultiParameter
+from qcodes.instrument import Instrument
+from qcodes.parameters import MultiParameter, ParamRawDataType
 from qcodes.utils import validators as vals
 from qcodes.utils.helpers import create_on_off_val_mapping
+
+from .KtM960xDefs import *
 
 
 class Measure(MultiParameter):

@@ -1,19 +1,17 @@
 """Visa instrument driver based on pyvisa."""
-from typing import Sequence, Optional, Dict, Union, Any, cast
-import warnings
 import logging
-from packaging.version import Version
+from typing import Any, Dict, Optional, Sequence, Union
 
 import pyvisa as visa
 import pyvisa.constants as vi_const
 import pyvisa.resources
 
-from .base import Instrument, InstrumentBase
-
 import qcodes.utils.validators as vals
-from qcodes.utils.deprecate import deprecate
 from qcodes.logger.instrument_logger import get_instrument_logger
 from qcodes.utils.delaykeyboardinterrupt import DelayedKeyboardInterrupt
+from qcodes.utils.deprecate import deprecate
+
+from .base import Instrument, InstrumentBase
 
 VISA_LOGGER = '.'.join((InstrumentBase.__module__, 'com', 'visa'))
 

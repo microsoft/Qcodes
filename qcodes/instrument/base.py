@@ -24,12 +24,12 @@ import numpy as np
 from typing_extensions import Protocol
 
 from qcodes.logger.instrument_logger import get_instrument_logger
+from qcodes.parameters import Parameter, ParameterBase
 from qcodes.utils.helpers import DelegateAttributes, full_class, strip_attrs
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.validators import Anything
 
 from .function import Function
-from .parameter import Parameter, _BaseParameter
 
 if TYPE_CHECKING:
     from qcodes.instrument.channel import ChannelTuple, InstrumentModule
@@ -56,7 +56,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         self._short_name = name
         self._is_valid_identifier(self.full_name)
 
-        self.parameters: Dict[str, _BaseParameter] = {}
+        self.parameters: Dict[str, ParameterBase] = {}
         """
         All the parameters supported by this instrument.
         Usually populated via :py:meth:`add_parameter`.
@@ -144,7 +144,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             warnings.warn(
                 f"Parameter {name} did not correctly register itself on instrument"
                 f" {self.name}. Please check that `instrument` argument is passed "
-                f"from {parameter_class!r} all the way to `_BaseParameter`. "
+                f"from {parameter_class!r} all the way to `ParameterBase`. "
                 "This will be an error in the future.",
                 QCoDeSDeprecationWarning,
             )

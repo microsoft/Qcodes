@@ -28,9 +28,9 @@ from typing_extensions import Protocol
 
 if TYPE_CHECKING:
     from qcodes.dataset.measurements import res_type
-    from qcodes.instrument.parameter import ParamDataType, _BaseParameter
+    from qcodes.parameters import ParamDataType, ParameterBase
 
-ParamMeasT = Union["_BaseParameter", Callable[[], None]]
+ParamMeasT = Union["ParameterBase", Callable[[], None]]
 OutType = List["res_type"]
 
 T = TypeVar("T")
@@ -121,11 +121,11 @@ def thread_map(
 
 class _ParamCaller:
 
-    def __init__(self, *parameters: "_BaseParameter"):
+    def __init__(self, *parameters: "ParameterBase"):
 
         self._parameters = parameters
 
-    def __call__(self) -> Tuple[Tuple["_BaseParameter", "ParamDataType"], ...]:
+    def __call__(self) -> Tuple[Tuple["ParameterBase", "ParamDataType"], ...]:
         output = []
         for param in self._parameters:
             output.append((param, param.get()))
@@ -138,12 +138,12 @@ class _ParamCaller:
 
 def _instrument_to_param(
         params: Sequence[ParamMeasT]
-) -> Dict[Optional[str], Tuple["_BaseParameter", ...]]:
-    from qcodes.instrument.parameter import _BaseParameter
-    real_parameters = [param for param in params
-                       if isinstance(param, _BaseParameter)]
+) -> Dict[Optional[str], Tuple["ParameterBase", ...]]:
+    from qcodes.parameters import ParameterBase
 
-    output: Dict[Optional[str], Tuple["_BaseParameter", ...]] = defaultdict(tuple)
+    real_parameters = [param for param in params if isinstance(param, ParameterBase)]
+
+    output: Dict[Optional[str], Tuple["ParameterBase", ...]] = defaultdict(tuple)
     for param in real_parameters:
         if param.underlying_instrument:
             output[param.underlying_instrument.full_name] += (param,)
@@ -185,11 +185,11 @@ def call_params_threaded(param_meas: Sequence[ParamMeasT]) -> OutType:
 
 
 def _call_params(param_meas: Sequence[ParamMeasT]) -> OutType:
-    from qcodes.instrument.parameter import _BaseParameter
+    from qcodes.parameters import ParameterBase
     output: OutType = []
 
     for parameter in param_meas:
-        if isinstance(parameter, _BaseParameter):
+        if isinstance(parameter, ParameterBase):
             output.append((parameter, parameter.get()))
         elif callable(parameter):
             parameter()

@@ -1,10 +1,8 @@
 import pytest
 
-from qcodes.instrument.parameter import Parameter
-from qcodes.instrument.sweep_values import SweepValues
-
+from qcodes.parameters import Parameter
+from qcodes.parameters.sweep_values import SweepValues
 from qcodes.utils.validators import Numbers
-
 
 
 @pytest.fixture(name='c0')
@@ -169,5 +167,5 @@ def test_snapshot(c0):
 def test_repr(c0):
     sv = c0[0]
     assert repr(sv) == (
-        f'<qcodes.instrument.sweep_values.SweepFixedValues: c0 at {id(sv)}>'
+        f"<qcodes.parameters.sweep_values.SweepFixedValues: c0 at {id(sv)}>"
     )

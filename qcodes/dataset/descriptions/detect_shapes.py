@@ -4,15 +4,18 @@ from typing import Any, Dict, List, Sequence, Sized, Tuple, Union
 
 import numpy as np
 
-from qcodes.instrument.parameter import (ArrayParameter, MultiParameter,
-                                         ParameterWithSetpoints,
-                                         _BaseParameter)
+from qcodes.parameters import (
+    ArrayParameter,
+    MultiParameter,
+    ParameterBase,
+    ParameterWithSetpoints,
+)
 from qcodes.utils.validators import Arrays
 
 
 def detect_shape_of_measurement(
-        parameters: Sequence[_BaseParameter],
-        steps: Union[Sequence[int], Sequence[Sized]] = ()
+    parameters: Sequence[ParameterBase],
+    steps: Union[Sequence[int], Sequence[Sized]] = (),
 ) -> Dict[str, Tuple[int, ...]]:
     """
     Construct the shape of a measurement of a dependent parameter from the
@@ -83,7 +86,7 @@ def _get_shape_of_step(
                         f"not: {type(step)}")
 
 
-def _param_is_array_like(meas_param: _BaseParameter) -> bool:
+def _param_is_array_like(meas_param: ParameterBase) -> bool:
     if isinstance(meas_param, (ArrayParameter, ParameterWithSetpoints)):
         return True
     elif isinstance(meas_param.vals, Arrays):
@@ -91,7 +94,7 @@ def _param_is_array_like(meas_param: _BaseParameter) -> bool:
     return False
 
 
-def _get_shape_of_arrayparam(param: _BaseParameter) -> Tuple[int, ...]:
+def _get_shape_of_arrayparam(param: ParameterBase) -> Tuple[int, ...]:
 
     if isinstance(param, ArrayParameter):
         return tuple(param.shape)

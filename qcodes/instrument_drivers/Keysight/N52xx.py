@@ -5,14 +5,8 @@ from typing import Any, Sequence, Union
 import numpy as np
 from pyvisa import errors
 
-from qcodes import (
-    ChannelList,
-    InstrumentChannel,
-    Parameter,
-    ParameterWithSetpoints,
-    VisaInstrument,
-)
-from qcodes.instrument.base import _BaseParameter
+from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
+from qcodes.parameters import Parameter, ParameterBase, ParameterWithSetpoints
 from qcodes.utils.validators import Arrays, Bool, Enum, Ints, Numbers
 
 
@@ -79,7 +73,7 @@ class FormattedSweep(ParameterWithSetpoints):
         self.memory = memory
 
     @property
-    def setpoints(self) -> Sequence[_BaseParameter]:
+    def setpoints(self) -> Sequence[ParameterBase]:
         """
         Overwrite setpoint parameter to ask the PNA what type of sweep
         """

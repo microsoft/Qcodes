@@ -3,9 +3,8 @@ from typing import Any, Optional, Union
 
 from typing_extensions import Literal
 
-from qcodes.instrument.channel import InstrumentChannel
-from qcodes.instrument.parameter import DelegateParameter
-from qcodes.instrument.visa import VisaInstrument
+from qcodes.instrument import InstrumentChannel, VisaInstrument
+from qcodes.parameters import DelegateParameter
 from qcodes.utils.validators import Bool, Enum, Ints, Numbers
 
 ModeType = Literal["CURR", "VOLT"]

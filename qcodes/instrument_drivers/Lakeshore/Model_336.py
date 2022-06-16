@@ -1,9 +1,9 @@
-from typing import ClassVar, Dict, Any
+from typing import Any, ClassVar, Dict
 
-from qcodes.instrument.group_parameter import GroupParameter, Group
-from .lakeshore_base import LakeshoreBase, BaseOutput, BaseSensorChannel
 import qcodes.utils.validators as vals
+from qcodes.parameters import Group, GroupParameter
 
+from .lakeshore_base import BaseOutput, BaseSensorChannel, LakeshoreBase
 
 # There are 4 sensors channels (a.k.a. measurement inputs) in Model 336.
 # Unlike other Lakeshore models, Model 336 refers to the channels using

@@ -8,10 +8,9 @@ from typing import Any
 import numpy as np
 from packaging import version
 
-from qcodes import VisaInstrument
 from qcodes import validators as vals
-from qcodes.instrument.channel import ChannelList, InstrumentChannel
-from qcodes.instrument.parameter import ArrayParameter, ParamRawDataType
+from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
+from qcodes.parameters import ArrayParameter, ParamRawDataType
 from qcodes.utils.validators import Bool, Ints
 
 log = logging.getLogger(__name__)

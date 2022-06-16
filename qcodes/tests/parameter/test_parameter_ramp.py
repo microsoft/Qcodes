@@ -1,13 +1,14 @@
 import logging
 
-import pytest
 import hypothesis.strategies as hst
-from hypothesis import given, settings
 import numpy as np
+import pytest
+from hypothesis import given, settings
+
+from qcodes.parameters import Parameter
+from qcodes.utils.validators import Numbers
 
 from .conftest import MemoryParameter
-from qcodes.utils.validators import Numbers
-from qcodes.instrument.parameter import Parameter
 
 
 def test_step_ramp(caplog):

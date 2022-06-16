@@ -9,9 +9,9 @@ from numpy.testing import assert_allclose, assert_array_equal
 
 from qcodes import Instrument
 from qcodes.data.location import FormatLocation
-from qcodes.instrument.channel import ChannelList, ChannelTuple, InstrumentChannel
-from qcodes.instrument.parameter import Parameter
+from qcodes.instrument import ChannelList, ChannelTuple, InstrumentChannel
 from qcodes.loops import Loop
+from qcodes.parameters import Parameter
 from qcodes.tests.instrument_mocks import DummyChannel, DummyChannelInstrument
 from qcodes.utils.validators import Numbers
 

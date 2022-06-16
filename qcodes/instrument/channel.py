@@ -4,8 +4,8 @@ from typing import (
     Any,
     Callable,
     Dict,
-    Generic,
     Iterable,
+    Iterator,
     List,
     MutableSequence,
     Optional,
@@ -18,17 +18,17 @@ from typing import (
     overload,
 )
 
+from qcodes.parameters import (
+    ArrayParameter,
+    MultiChannelInstrumentParameter,
+    MultiParameter,
+    Parameter,
+)
+from qcodes.parameters.multi_channel_instrument_parameter import InstrumentModuleType
 from ..utils.helpers import full_class
 from ..utils.metadata import Metadatable
 from ..utils.validators import Validator
 from .base import Instrument, InstrumentBase
-from .parameter import (
-    ArrayParameter,
-    Iterator,
-    MultiParameter,
-    Parameter,
-    ParamRawDataType,
-)
 
 
 class InstrumentModule(InstrumentBase):
@@ -98,62 +98,7 @@ class InstrumentChannel(InstrumentModule):
     pass
 
 
-InstrumentModuleType = TypeVar("InstrumentModuleType", bound="InstrumentModule")
 T = TypeVar("T", bound="ChannelTuple")
-
-
-class MultiChannelInstrumentParameter(MultiParameter, Generic[InstrumentModuleType]):
-    """
-    Parameter to get or set multiple channels simultaneously.
-
-    Will normally be created by a :class:`ChannelList` and not directly by
-    anything else.
-
-    Args:
-        channels: A list of channels which we can operate on
-          simultaneously.
-        param_name: Name of the multichannel parameter
-    """
-
-    def __init__(
-        self,
-        channels: Sequence[InstrumentModuleType],
-        param_name: str,
-        *args: Any,
-        **kwargs: Any,
-    ) -> None:
-        super().__init__(*args, **kwargs)
-        self._channels = channels
-        self._param_name = param_name
-
-    def get_raw(self) -> Tuple[ParamRawDataType, ...]:
-        """
-        Return a tuple containing the data from each of the channels in the
-        list.
-        """
-        return tuple(chan.parameters[self._param_name].get() for chan
-                     in self._channels)
-
-    def set_raw(self, value: ParamRawDataType) -> None:
-        """
-        Set all parameters to this value.
-
-        Args:
-            value: The value to set to. The type is given by the
-                underlying parameter.
-        """
-        for chan in self._channels:
-            getattr(chan, self._param_name).set(value)
-
-    @property
-    def full_names(self) -> Tuple[str, ...]:
-        """
-        Overwrite full_names because the instrument name is already included
-        in the name. This happens because the instrument name is included in
-        the channel name merged into the parameter name above.
-        """
-
-        return self.names
 
 
 class ChannelTuple(Metadatable, Sequence[InstrumentModuleType]):

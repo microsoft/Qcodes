@@ -3,9 +3,9 @@ from typing import Any, Optional
 
 import pytest
 
-from qcodes.instrument.base import InstrumentBase
-from qcodes.instrument.parameter import Parameter
 import qcodes.utils.validators as vals
+from qcodes.instrument import InstrumentBase
+from qcodes.parameters import Parameter
 from qcodes.tests.instrument_mocks import DummyChannelInstrument
 
 NOT_PASSED = 'NOT_PASSED'

@@ -42,7 +42,7 @@ if TYPE_CHECKING:
     import pandas as pd
     import xarray as xr
 
-    from qcodes.instrument.parameter import _BaseParameter
+    from qcodes.parameters import ParameterBase
 
     from .data_set_cache import DataSetCache
 
@@ -51,8 +51,8 @@ scalar_res_types: TypeAlias = Union[
     str, complex, np.integer, np.floating, np.complexfloating
 ]
 values_type: TypeAlias = Union[scalar_res_types, np.ndarray, Sequence[scalar_res_types]]
-res_type: TypeAlias = Tuple[Union["_BaseParameter", str], values_type]
-setpoints_type: TypeAlias = Sequence[Union[str, "_BaseParameter"]]
+res_type: TypeAlias = Tuple[Union["ParameterBase", str], values_type]
+setpoints_type: TypeAlias = Sequence[Union[str, "ParameterBase"]]
 SPECS: TypeAlias = List[ParamSpec]
 # Transition period type: SpecsOrInterDeps. We will allow both as input to
 # the DataSet constructor for a while, then deprecate SPECS and finally remove
@@ -226,7 +226,7 @@ class DataSetProtocol(Protocol, Sized):
 
     def get_parameter_data(
         self,
-        *params: Union[str, ParamSpec, _BaseParameter],
+        *params: Union[str, ParamSpec, ParameterBase],
         start: Optional[int] = None,
         end: Optional[int] = None,
     ) -> ParameterData:
@@ -244,7 +244,7 @@ class DataSetProtocol(Protocol, Sized):
 
     def to_xarray_dataarray_dict(
         self,
-        *params: Union[str, ParamSpec, _BaseParameter],
+        *params: Union[str, ParamSpec, ParameterBase],
         start: Optional[int] = None,
         end: Optional[int] = None,
     ) -> Dict[str, xr.DataArray]:
@@ -252,7 +252,7 @@ class DataSetProtocol(Protocol, Sized):
 
     def to_xarray_dataset(
         self,
-        *params: Union[str, ParamSpec, _BaseParameter],
+        *params: Union[str, ParamSpec, ParameterBase],
         start: Optional[int] = None,
         end: Optional[int] = None,
     ) -> xr.Dataset:
@@ -260,7 +260,7 @@ class DataSetProtocol(Protocol, Sized):
 
     def to_pandas_dataframe_dict(
         self,
-        *params: Union[str, ParamSpec, _BaseParameter],
+        *params: Union[str, ParamSpec, ParameterBase],
         start: Optional[int] = None,
         end: Optional[int] = None,
     ) -> Dict[str, pd.DataFrame]:
@@ -268,7 +268,7 @@ class DataSetProtocol(Protocol, Sized):
 
     def to_pandas_dataframe(
         self,
-        *params: Union[str, ParamSpec, _BaseParameter],
+        *params: Union[str, ParamSpec, ParameterBase],
         start: Optional[int] = None,
         end: Optional[int] = None,
     ) -> pd.DataFrame:
@@ -461,7 +461,7 @@ class BaseDataSet(DataSetProtocol):
 
     @staticmethod
     def _validate_parameters(
-        *params: Union[str, ParamSpec, _BaseParameter]
+        *params: Union[str, ParamSpec, ParameterBase]
     ) -> List[str]:
         """
         Validate that the provided parameters have a name and return those

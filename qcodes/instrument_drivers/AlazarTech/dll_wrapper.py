@@ -26,7 +26,7 @@ from typing import (
 )
 from weakref import WeakValueDictionary
 
-from qcodes.instrument.parameter import _BaseParameter
+from qcodes.parameters import ParameterBase
 
 from .constants import API_DMA_IN_PROGRESS, API_SUCCESS, ERROR_CODES, ReturnCode
 from .utils import TraceParameter
@@ -55,7 +55,7 @@ def _api_call_task(
 def _normalize_params(*args: T) -> List[T]:
     args_out: List[T] = []
     for arg in args:
-        if isinstance(arg, _BaseParameter):
+        if isinstance(arg, ParameterBase):
             args_out.append(arg.raw_value)
         else:
             args_out.append(arg)

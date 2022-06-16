@@ -1,8 +1,9 @@
 from typing import Any, Dict, Optional
+
 import numpy as np
 
-from qcodes.instrument.visa import VisaInstrument
-from qcodes.instrument.parameter import Parameter, DelegateParameter
+from qcodes.instrument import VisaInstrument
+from qcodes.parameters import DelegateParameter, Parameter
 from qcodes.utils import validators as vals
 
 

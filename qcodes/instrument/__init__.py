@@ -1,8 +1,6 @@
-from .base import Instrument, find_or_create_instrument
-from .channel import ChannelList, ChannelTuple, InstrumentChannel, InstrumentModule
-from .function import Function
-from .ip import IPInstrument
-from .parameter import (
+# left here for backwards compatibility
+# but not part of the api officially
+from qcodes.parameters import (
     ArrayParameter,
     CombinedParameter,
     DelegateParameter,
@@ -11,7 +9,26 @@ from .parameter import (
     Parameter,
     ParameterWithSetpoints,
     ScaledParameter,
+    SweepFixedValues,
+    SweepValues,
     combine,
 )
-from .sweep_values import SweepFixedValues, SweepValues
+
+from .base import Instrument, InstrumentBase, find_or_create_instrument
+from .channel import ChannelList, ChannelTuple, InstrumentChannel, InstrumentModule
+from .function import Function
+from .ip import IPInstrument
 from .visa import VisaInstrument
+
+__all__ = [
+    "ChannelList",
+    "ChannelTuple",
+    "Function",
+    "IPInstrument",
+    "Instrument",
+    "InstrumentBase",
+    "InstrumentChannel",
+    "InstrumentModule",
+    "VisaInstrument",
+    "find_or_create_instrument",
+]
