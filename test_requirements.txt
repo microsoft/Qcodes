@@ -3,7 +3,7 @@ atomicwrites==1.4.0
 attrs==21.4.0
 certifi==2022.6.15
 chardet==4.0.0
-colorama==0.4.4
+colorama==0.4.5
 coverage[toml]==6.4.1
 deepdiff==5.8.1
 execnet==1.9.0
