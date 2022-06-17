@@ -11,17 +11,16 @@ from typing import (
     Tuple,
     Union,
 )
+import logging
 
-from qcodes.parameters.group_parameter import Group, GroupParameter
-from qcodes.parameters.parameter import Parameter
-
+from .group_parameter import Group, GroupParameter
+from .parameter import Parameter
 from .delegate_parameter import DelegateParameter
 from .parameter_base import ParamDataType, ParameterBase, ParamRawDataType
 
 if TYPE_CHECKING:
     from qcodes.instrument.base import InstrumentBase
 
-import logging
 
 _log = logging.getLogger(__name__)
 

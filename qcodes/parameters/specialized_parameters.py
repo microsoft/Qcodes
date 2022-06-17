@@ -9,8 +9,9 @@ from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 from typing_extensions import Literal
 
-from qcodes.parameters.parameter import Parameter
 from qcodes.utils.validators import Strings, Validator
+
+from .parameter import Parameter
 
 if TYPE_CHECKING:
     from qcodes.instrument import InstrumentBase

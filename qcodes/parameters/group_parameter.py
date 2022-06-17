@@ -4,7 +4,6 @@ parameters that are to be gotten and set by the same command. The parameters
 should be of type :class:`GroupParameter`
 """
 
-
 from collections import OrderedDict
 from typing import (
     TYPE_CHECKING,
@@ -17,8 +16,7 @@ from typing import (
     Union,
 )
 
-from qcodes.parameters.parameter import Parameter
-
+from .parameter import Parameter
 from .parameter_base import ParamDataType, ParamRawDataType
 
 if TYPE_CHECKING:

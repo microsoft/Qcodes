@@ -1,7 +1,9 @@
-from typing import Any, Mapping, Optional, Sequence
+from typing import Any, Mapping, Optional, Sequence, TYPE_CHECKING
 
-from qcodes.instrument.delegate.delegate_instrument import DelegateInstrument
-from qcodes.station import Station
+from .delegate_instrument import DelegateInstrument
+
+if TYPE_CHECKING:
+    from qcodes.station import Station
 
 
 class DelegateChannelInstrument(DelegateInstrument):
