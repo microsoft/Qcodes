@@ -18,7 +18,7 @@ from qcodes.parameters import (
     expand_setpoints_helper,
     invert_val_mapping,
 )
-from qcodes.parameters.parameter import GetLatest
+from qcodes.parameters.parameter_base import GetLatest
 
 __all__ = [
     "ArrayParameter",

@@ -13,13 +13,10 @@ from typing import (
 )
 
 from qcodes.parameters.group_parameter import Group, GroupParameter
-from qcodes.parameters.parameter import (
-    DelegateParameter,
-    ParamDataType,
-    Parameter,
-    ParameterBase,
-    ParamRawDataType,
-)
+from qcodes.parameters.parameter import Parameter
+
+from .delegate_parameter import DelegateParameter
+from .parameter_base import ParamDataType, ParameterBase, ParamRawDataType
 
 if TYPE_CHECKING:
     from qcodes.instrument.base import InstrumentBase
