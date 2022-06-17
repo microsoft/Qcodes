@@ -38,6 +38,8 @@ field_limit = [
 # path to the .yaml file containing the simulated instrument
 visalib = sims.__file__.replace("__init__.py", "AMI430.yaml@sim")
 
+LOG_NAME = "qcodes.instrument.instrument_base"
+
 
 @pytest.fixture(scope="function")
 def magnet_axes_instances():
@@ -406,9 +408,7 @@ def test_ramp_down_first(current_driver, caplog):
     # We begin with ramping down x first while ramping up y and z
     delta = np.array([-0.1, 0.1, 0.1])
 
-    log_name = "qcodes.instrument.base"
-
-    with caplog.at_level(logging.DEBUG, logger=log_name):
+    with caplog.at_level(logging.DEBUG, logger=LOG_NAME):
         for count, ramp_down_name in enumerate(names):
             # The second iteration will ramp down y while ramping up x and z.
             set_point += np.roll(delta, count)
@@ -540,7 +540,7 @@ def test_simultaneous_ramp_mode_does_not_reset_individual_axis_ramp_rates_if_non
 
     ami3d.vector_ramp_rate(0.05)
 
-    with caplog.at_level(logging.DEBUG, logger="qcodes.instrument.base"):
+    with caplog.at_level(logging.DEBUG, logger=LOG_NAME):
 
         # Initiate the simultaneous ramp
         ami3d.cartesian((0.5, 0.5, 0.5))
@@ -582,7 +582,7 @@ def test_simultaneous_ramp_mode_does_not_reset_individual_axis_ramp_rates_if_non
     # However, calling ``wait_while_all_axes_ramping`` DOES restore the
     # individual ramp rates
 
-    with caplog.at_level(logging.DEBUG, logger="qcodes.instrument.base"):
+    with caplog.at_level(logging.DEBUG, logger=LOG_NAME):
         ami3d.wait_while_all_axes_ramping()
 
     messages_2 = [record.message for record in caplog.records]
@@ -626,7 +626,7 @@ def test_simultaneous_ramp_mode_resets_individual_axis_ramp_rates_if_blocking_ra
 
     restore_parameters_stack.enter_context(ami3d.block_during_ramp.set_to(True))
 
-    with caplog.at_level(logging.DEBUG, logger="qcodes.instrument.base"):
+    with caplog.at_level(logging.DEBUG, logger=LOG_NAME):
 
         # Set individual ramp rates to known values
         ami3d._instrument_x.ramp_rate(0.09)
@@ -768,9 +768,7 @@ def test_blocking_ramp_parameter(current_driver, caplog):
 
     assert current_driver.block_during_ramp() is True
 
-    log_name = "qcodes.instrument.base"
-
-    with caplog.at_level(logging.DEBUG, logger=log_name):
+    with caplog.at_level(logging.DEBUG, logger=LOG_NAME):
         current_driver.cartesian((0, 0, 0))
         caplog.clear()
         current_driver.cartesian((0, 0, 1))
