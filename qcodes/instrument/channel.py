@@ -107,7 +107,7 @@ class ChannelTuple(Metadatable, Sequence[InstrumentModuleType]):
     all channels, as well as addressing of individual channels.
 
     This behaves like a python tuple i.e. it implements the
-    ``collections.abc.Sequence`` interface.
+    :class:`collections.abc.Sequence` interface.
 
     Args:
         parent: The instrument to which this ChannelTuple
@@ -127,15 +127,15 @@ class ChannelTuple(Metadatable, Sequence[InstrumentModuleType]):
             ways and should not be repeated in an instrument snapshot.
 
         multichan_paramclass: The class of
-            the object to be returned by the ``__getattr__``
+            the object to be returned by the :meth:`__getattr__`
             method of :class:`ChannelTuple`.
-            Should be a subclass of :class:`MultiChannelInstrumentParameter`.
+            Should be a subclass of :class:`.MultiChannelInstrumentParameter`.
 
     Raises:
         ValueError: If ``chan_type`` is not a subclass of
             :class:`InstrumentChannel`
         ValueError: If ``multichan_paramclass`` is not a subclass of
-            :class:`MultiChannelInstrumentParameter` (note that a class is a
+            :class:`.MultiChannelInstrumentParameter` (note that a class is a
             subclass of itself).
 
     """
@@ -375,9 +375,9 @@ class ChannelTuple(Metadatable, Sequence[InstrumentModuleType]):
         set all items in a channel list simultaneously. If this is the
         name of a channel, return that channel.
 
-        Params:
+        Args:
             name: The name of the parameter, function or channel that we want to
-            operate on.
+                operate on.
         """
         # Check if this is a valid parameter
         if len(self) > 0:
@@ -490,18 +490,18 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentModuleType]):  # type:
     all channels, as well as addressing of individual channels.
 
     This behaves like a python list i.e. it implements the
-    ``collections.abc.MutableSequence`` interface.
+    :class:`collections.abc.MutableSequence` interface.
 
     Note it may be useful to use the mutable ChannelList while constructing it.
     E.g. adding channels as they are created, but in most use cases it is recommended
-    to convert this to a ``ChannelTuple`` before adding it to an instrument.
-    This can be done using the ``to_channel_tuple`` method.
+    to convert this to a :class:`ChannelTuple` before adding it to an instrument.
+    This can be done using the :meth:`to_channel_tuple` method.
 
     Args:
-        parent: The instrument to which this ChannelList
+        parent: The instrument to which this :class:`ChannelList`
             should be attached.
 
-        name: The name of the ChannelList.
+        name: The name of the :class:`ChannelList`.
 
         chan_type: The type of channel contained
             within this list.
@@ -516,15 +516,15 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentModuleType]):  # type:
             ways and should not be repeated in an instrument snapshot.
 
         multichan_paramclass: The class of
-            the object to be returned by the ``__getattr__``
+            the object to be returned by the :meth:`__getattr__`
             method of :class:`ChannelList`.
-            Should be a subclass of :class:`MultiChannelInstrumentParameter`.
+            Should be a subclass of :class:`.MultiChannelInstrumentParameter`.
 
     Raises:
         ValueError: If ``chan_type`` is not a subclass of
             :class:`InstrumentChannel`
         ValueError: If ``multichan_paramclass`` is not a subclass of
-            :class:`MultiChannelInstrumentParameter` (note that a class is a
+            :class:`.MultiChannelInstrumentParameter` (note that a class is a
             subclass of itself).
 
     """
