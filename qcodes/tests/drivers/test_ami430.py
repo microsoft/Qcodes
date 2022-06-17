@@ -12,14 +12,14 @@ from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import floats, tuples
 
 import qcodes.instrument.sims as sims
-from qcodes.instrument.base import Instrument
+from qcodes.instrument import Instrument
 from qcodes.instrument.ip_to_visa import AMI430_VISA
 from qcodes.instrument_drivers.american_magnetics.AMI430 import (
     AMI430,
     AMI430_3D,
     AMI430Warning,
 )
-from qcodes.math_utils.field_vector import FieldVector
+from qcodes.math_utils import FieldVector
 from qcodes.utils.types import (
     numpy_concrete_floats,
     numpy_concrete_ints,

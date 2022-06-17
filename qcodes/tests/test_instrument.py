@@ -1,5 +1,5 @@
 """
-Test suite for instument.base.*
+Test suite for Instrument and InstrumentBase
 """
 import contextlib
 import io
@@ -8,8 +8,12 @@ import weakref
 
 import pytest
 
-from qcodes.instrument.base import Instrument, InstrumentBase, find_or_create_instrument
-from qcodes.parameters import Function, Parameter
+from qcodes.instrument import (
+    Instrument,
+    InstrumentBase,
+    find_or_create_instrument,
+)
+from qcodes.parameters import Parameter, Function
 
 from .instrument_mocks import (
     DummyChannelInstrument,
