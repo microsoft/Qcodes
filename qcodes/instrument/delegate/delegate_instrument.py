@@ -25,8 +25,8 @@ from qcodes.parameters import (
     Parameter,
 )
 
-from ..base import InstrumentBase
 from ..channel import InstrumentChannel
+from ..instrument_base import InstrumentBase
 
 if TYPE_CHECKING:
     from qcodes.station import Station

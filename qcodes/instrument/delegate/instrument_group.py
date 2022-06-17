@@ -1,7 +1,7 @@
 import importlib
 from typing import TYPE_CHECKING, Any, List, Mapping
 
-from ..base import InstrumentBase
+from ..instrument_base import InstrumentBase
 
 if TYPE_CHECKING:
     from qcodes.station import Station
