@@ -44,7 +44,21 @@ def one(curr: sqlite3.Cursor, column: int | str) -> Any:
         return res[0][column]
 
 
-def many(curr: sqlite3.Cursor, *columns: str) -> list[Any]:
+def _need_to_select(curr: sqlite3.Cursor, *columns: str) -> bool:
+    """
+    Return True if the columns' description of the last query doesn't exactly match
+    """
+    return tuple(c[0] for c in curr.description) != columns
+
+
+def _select_columns(row: sqlite3.Row, *columns: str) -> tuple[Any, ...]:
+    """
+    sqlite3.Row({key:value, key2:value2}), (key2,) -> [value2]
+    """
+    return tuple(row[c] for c in columns)
+
+
+def many(curr: sqlite3.Cursor, *columns: str) -> tuple[Any, ...]:
     """Get the values of many columns from one row
     Args:
         curr: cursor to operate on
@@ -57,10 +71,14 @@ def many(curr: sqlite3.Cursor, *columns: str) -> list[Any]:
     if len(res) > 1:
         raise RuntimeError("Expected only one row")
     else:
-        return [res[0][c] for c in columns]
+        return (
+            _select_columns(res[0], *columns)
+            if _need_to_select(curr, *columns)
+            else res[0]
+        )
 
 
-def many_many(curr: sqlite3.Cursor, *columns: str) -> list[list[Any]]:
+def many_many(curr: sqlite3.Cursor, *columns: str) -> list[tuple[Any, ...]]:
     """Get all values of many columns
     Args:
         curr: cursor to operate on
@@ -70,10 +88,11 @@ def many_many(curr: sqlite3.Cursor, *columns: str) -> list[list[Any]]:
         list of lists of values
     """
     res = curr.fetchall()
-    results = []
-    for r in res:
-        results.append([r[c] for c in columns])
-    return results
+    return (
+        [_select_columns(r, *columns) for r in res]
+        if _need_to_select(curr, *columns)
+        else res
+    )
 
 
 def select_one_where(

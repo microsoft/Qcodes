@@ -137,7 +137,7 @@ def get_data(
     columns: list[str],
     start: int | None = None,
     end: int | None = None,
-) -> list[list[Any]]:
+) -> list[tuple[Any, ...]]:
     """
     Get data from the columns of a table.
     Allows to specify a range of rows (1-based indexing, both ends are
@@ -158,7 +158,7 @@ def get_data(
             'get_data: requested data without specifying parameters/columns.'
             'Returning empty list.'
         )
-        return [[]]
+        return [tuple()]
     query = _build_data_query(table_name, columns, start, end)
     c = atomic_transaction(conn, query)
     res = many_many(c, *columns)
@@ -322,7 +322,7 @@ def get_parameter_data_for_one_paramtree(
 
 
 def _expand_data_to_arrays(
-    data: list[list[Any]], paramspecs: Sequence[ParamSpecBase]
+    data: list[tuple[Any, ...]], paramspecs: Sequence[ParamSpecBase]
 ) -> None:
     types = [param.type for param in paramspecs]
     # if we have array type parameters expand all other parameters
@@ -332,49 +332,51 @@ def _expand_data_to_arrays(
         if ('numeric' in types or 'text' in types
                 or 'complex' in types):
             first_array_element = types.index('array')
-            numeric_elms = [i for i, x in enumerate(types)
-                            if x == "numeric"]
-            complex_elms = [i for i, x in enumerate(types)
-                            if x == 'complex']
-            text_elms = [i for i, x in enumerate(types)
-                         if x == "text"]
-            for row in data:
-                for element in numeric_elms:
-                    row[element] = np.full_like(row[first_array_element],
-                                                row[element],
-                                                dtype=np.dtype(np.float64))
-                    # todo should we handle int/float types here
-                    # we would in practice have to perform another
-                    # loop to check that all elements of a given can be cast to
-                    # int without loosing precision before choosing an integer
-                    # representation of the array
-                for element in complex_elms:
-                    row[element] = np.full_like(row[first_array_element],
-                                                row[element],
-                                                dtype=np.dtype(np.complex128))
-                for element in text_elms:
-                    strlen = len(row[element])
-                    row[element] = np.full_like(row[first_array_element],
-                                                row[element],
-                                                dtype=np.dtype(f'U{strlen}'))
+            types_mapping: dict[int, Callable[[str], np.dtype[Any]]] = {}
+            for i, x in enumerate(types):
+                if x == "numeric":
+                    types_mapping[i] = lambda _: np.dtype(np.float64)
+                elif x == "complex":
+                    types_mapping[i] = lambda _: np.dtype(np.complex128)
+                elif x == "text":
+                    types_mapping[i] = lambda array: np.dtype(f"U{len(array)}")
 
-        for row in data:
+            for i_row, row in enumerate(data):
+                # todo should we handle int/float types here
+                # we would in practice have to perform another
+                # loop to check that all elements of a given can be cast to
+                # int without loosing precision before choosing an integer
+                # representation of the array
+                data[i_row] = tuple(
+                    np.full_like(
+                        row[first_array_element], array, dtype=types_mapping[i](array)
+                    )
+                    if i in types_mapping
+                    else array
+                    for i, array in enumerate(row)
+                )
+
+        for i_row, row in enumerate(data):
             # now expand all one element arrays to match the expected size
             # one element arrays are introduced if scalar values are stored
             # with an explicit array storage type
-            sizes = tuple(array.size for array in row)
-            max_size = max(sizes)
-            max_index = sizes.index(max_size)
-
+            max_size = 0
             for i, array in enumerate(row):
-                if array.size != max_size:
-                    if array.size == 1:
-                        row[i] = np.full_like(row[max_index],
-                                              row[i],
-                                              dtype=row[i].dtype)
-                    else:
-                        log.warning(f"Cannot expand array of size {array.size} "
-                                    f"to size {row[max_index].size}")
+                if array.size > max_size:
+                    if max_size > 1:
+                        log.warning(
+                            f"Cannot expand array of size {max_size} "
+                            f"to size {array.size}"
+                        )
+                    max_size, row_shape = array.size, array.shape
+
+            if max_size > 1:
+                data[i_row] = tuple(
+                    np.full(row_shape, array, dtype=array.dtype)
+                    if array.size == 1
+                    else array
+                    for array in row
+                )
 
 
 def _get_data_for_one_param_tree(
@@ -384,7 +386,7 @@ def _get_data_for_one_param_tree(
     output_param: str,
     start: int | None,
     end: int | None,
-) -> tuple[list[list[Any]], list[ParamSpecBase], int]:
+) -> tuple[list[tuple[Any, ...]], list[ParamSpecBase], int]:
     output_param_spec = interdeps._id_to_paramspec[output_param]
     # find all the dependencies of this param
 
@@ -407,7 +409,7 @@ def _get_data_for_one_param_tree(
 )
 def get_values(
     conn: ConnectionPlus, table_name: str, param_name: str
-) -> list[list[Any]]:
+) -> list[tuple[Any, ...]]:
     """
     Get the not-null values of a parameter
 
@@ -436,7 +438,7 @@ def get_parameter_tree_values(
     *other_param_names: str,
     start: int | None = None,
     end: int | None = None,
-) -> list[list[Any]]:
+) -> list[tuple[Any, ...]]:
     """
     Get the values of one or more columns from a data table. The rows
     retrieved are the rows where the 'toplevel_param_name' column has
@@ -498,7 +500,7 @@ def get_parameter_tree_values(
 @deprecate(alternative="get_parameter_data")
 def get_setpoints(
     conn: ConnectionPlus, table_name: str, param_name: str
-) -> dict[str, list[list[Any]]]:
+) -> dict[str, list[tuple[Any, ...]]]:
     """
     Get the setpoints for a given dependent parameter
 
@@ -551,7 +553,7 @@ def get_setpoints(
     setpoint_names = cast(List[str], setpoint_names)
 
     # get the actual setpoint data
-    output: dict[str, list[list[Any]]] = {}
+    output: dict[str, list[tuple[Any, ...]]] = {}
     for sp_name in setpoint_names:
         sql = f"""
         SELECT {sp_name}
@@ -787,7 +789,7 @@ def _get_dependents(conn: ConnectionPlus, run_id: int) -> list[int]:
     return res
 
 
-def _get_dependencies(conn: ConnectionPlus, layout_id: int) -> list[list[int]]:
+def _get_dependencies(conn: ConnectionPlus, layout_id: int) -> list[tuple[int, int]]:
     """
     Get the dependencies of a certain dependent variable (indexed by its
     layout_id)
@@ -800,8 +802,7 @@ def _get_dependencies(conn: ConnectionPlus, layout_id: int) -> list[list[int]]:
     SELECT independent, axis_num FROM dependencies WHERE dependent=?
     """
     c = atomic_transaction(conn, sql, layout_id)
-    res = many_many(c, 'independent', 'axis_num')
-    return res
+    return c.fetchall()
 
 
 # Higher level Wrappers

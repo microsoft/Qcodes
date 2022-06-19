@@ -239,7 +239,7 @@ def test_get_data_no_columns(scalar_dataset):
     with pytest.warns(QCoDeSDeprecationWarning) as record:
         ref = mut_queries.get_data(ds.conn, ds.table_name, [])
 
-    assert ref == [[]]
+    assert ref == [tuple()]
     assert len(record) == 2
     assert str(record[0].message).startswith("The function <get_data>")
     assert str(record[1].message).startswith("get_data")
