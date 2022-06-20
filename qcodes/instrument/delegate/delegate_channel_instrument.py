@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Mapping, Optional, Sequence, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence
 
 from .delegate_instrument import DelegateInstrument
 

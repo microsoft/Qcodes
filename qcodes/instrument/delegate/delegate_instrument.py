@@ -5,6 +5,7 @@ import logging
 from collections import abc
 from functools import partial
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -14,19 +15,18 @@ from typing import (
     Optional,
     Sequence,
     Type,
-    TYPE_CHECKING,
     Union,
 )
 
-from qcodes.parameters import Parameter
 from qcodes.parameters import (
     DelegateGroup,
     DelegateGroupParameter,
     GroupedParameter,
+    Parameter,
 )
+
 from ..base import InstrumentBase
 from ..channel import InstrumentChannel
-
 
 if TYPE_CHECKING:
     from qcodes.station import Station
