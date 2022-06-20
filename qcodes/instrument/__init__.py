@@ -23,7 +23,6 @@ from .visa import VisaInstrument
 __all__ = [
     "ChannelList",
     "ChannelTuple",
-    "Function",
     "IPInstrument",
     "Instrument",
     "InstrumentBase",
