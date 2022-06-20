@@ -554,6 +554,25 @@ class InstrumentMeta(ABCMeta):
         Overloads `type.__call__` to add code that runs only if __init__ completes
         successfully.
         """
+        if len(args) >= 1:
+            name = args[0]
+        else:
+            name = kwargs.get("name", None)
+        existing_instr = None
+        if name is not None:
+
+            try:
+                existing_instr = cls.find_instrument(name, cls)  # type: ignore[attr-defined]
+            except (KeyError, TypeError):
+                pass
+
+        if existing_instr is not None:
+            log.info(f"Reusing existing instrument {name}")
+            # todo this is only really safe if this is the same instrument
+            # e.g. address should be the same but that is a trait only implemented
+            # in subclasses
+            return existing_instr
+
         new_inst = super().__call__(*args, **kwargs)
         is_abstract = new_inst._is_abstract()
         if is_abstract:
