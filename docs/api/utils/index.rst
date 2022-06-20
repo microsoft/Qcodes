@@ -7,7 +7,6 @@ qcodes.utils
 .. autosummary::
 
     qcodes.utils
-    qcodes.utils.command
     qcodes.utils.deprecate
     qcodes.utils.helpers
     qcodes.utils.magic
@@ -23,7 +22,6 @@ qcodes.utils
    :maxdepth: 4
    :hidden:
 
-   command
    deprecate
    helpers
    magic
