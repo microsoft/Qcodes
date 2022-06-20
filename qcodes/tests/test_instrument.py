@@ -8,12 +8,8 @@ import weakref
 
 import pytest
 
-from qcodes.instrument import (
-    Instrument,
-    InstrumentBase,
-    find_or_create_instrument,
-)
-from qcodes.parameters import Parameter, Function
+from qcodes.instrument import Instrument, InstrumentBase, find_or_create_instrument
+from qcodes.parameters import Function, Parameter
 
 from .instrument_mocks import (
     DummyChannelInstrument,
