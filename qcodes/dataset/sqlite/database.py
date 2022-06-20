@@ -26,7 +26,13 @@ from qcodes.dataset.sqlite.db_upgrades import (
     perform_db_upgrade,
 )
 from qcodes.dataset.sqlite.initial_schema import init_db
-from qcodes.utils.types import complex_types, numpy_floats, numpy_ints
+from qcodes.utils.types import (
+    complex_type_union,
+    complex_types,
+    numpy_complex_map_size2type,
+    numpy_floats,
+    numpy_ints,
+)
 
 JournalMode = Literal["DELETE", "TRUNCATE", "PERSIST", "MEMORY", "WAL", "OFF"]
 
@@ -54,10 +60,32 @@ def _convert_array(text: bytes) -> np.ndarray:
     return np.lib.format.read_array(io.BytesIO(text), allow_pickle=False)
 
 
-def _convert_complex(text: bytes) -> np.complexfloating:
-    out = io.BytesIO(text)
-    out.seek(0)
-    return np.load(out)[0]
+def _convert_complex(text: bytes) -> complex_type_union:
+    """
+    See this:
+    https://numpy.org/devdocs/reference/generated/numpy.lib.format.html#format-version-3-0
+
+    np.load and np.lib.format.read_array parse the npy header
+    Skipping the header is 70 times faster
+
+    For backward compatibility with qcodes <=0.34:
+    npy format has an header len evenly divisible by 64, and QCoDeS saved complexes as
+    single value arrays
+    HEADER  HEADER binary  value
+    |--- n x 64 --||- len % 64-|
+
+    For qcodes >0.34:
+    QCoDeS saves complexes directly as binary value: there is no header
+
+    NOTE: Will break with complex512 whose lenght is 64 bytes
+    """
+    try:
+        value_size = len(text) % 64
+        return np.frombuffer(
+            text[-value_size:], dtype=numpy_complex_map_size2type[value_size]
+        ).item()
+    except KeyError as exc:
+        raise ValueError(f"Cannot parse {str(text)}") from exc
 
 
 this_session_default_encoding = sys.getdefaultencoding()
@@ -108,11 +136,15 @@ def _adapt_float(fl: float) -> float | str:
     return float(fl)
 
 
-def _adapt_complex(value: complex | np.complexfloating) -> sqlite3.Binary:
-    out = io.BytesIO()
-    np.save(out, np.array([value]))
-    out.seek(0)
-    return sqlite3.Binary(out.read())
+def _adapt_complex(value: complex_type_union) -> sqlite3.Binary:
+    # np.save and np.lib.format.write_array add an header that is useless for a single
+    # value
+    # Avoiding the header is 15 times faster.
+    return sqlite3.Binary(
+        (
+            value if isinstance(value, np.complexfloating) else np.complex_(value)
+        ).tobytes()
+    )
 
 
 def connect(name: str | Path, debug: bool = False, version: int = -1) -> ConnectionPlus:

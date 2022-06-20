@@ -54,6 +54,7 @@ All numpy float types
 """
 
 numpy_concrete_complex = (np.complex64, np.complex128)
+numpy_complex_map_size2type = {np.dtype(t).itemsize: t for t in numpy_concrete_complex}
 """
 Complex types with fixed sizes.
 """
