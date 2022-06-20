@@ -33,6 +33,7 @@ from qcodes.dataset.sqlite.connection import (
 from qcodes.dataset.sqlite.query_helpers import (
     VALUE,
     VALUES,
+    get_description_map,
     insert_column,
     insert_values,
     is_column_in_table,
@@ -102,6 +103,7 @@ def is_run_id_in_database(conn: ConnectionPlus, *run_ids: int) -> dict[int, bool
     return {run_id: (run_id in existing_ids) for run_id in run_ids}
 
 
+@deprecate("Unused private method to be removed in a future version")
 def _build_data_query(
     table_name: str,
     columns: list[str],
@@ -272,6 +274,7 @@ def get_rundescriber_from_result_table_name(
     return rd
 
 
+@deprecate("Unused and untested method, to be removed in a future version")
 def get_interdeps_from_result_table_name(conn: ConnectionPlus, result_table_name: str) -> InterDependencies_:
     rd = get_rundescriber_from_result_table_name(conn, result_table_name)
     interdeps = rd.interdeps
@@ -470,31 +473,15 @@ def get_parameter_tree_values(
     if start is not None and end is not None and start > end:
         limit = 0
 
-    # Note: if we use placeholders for the SELECT part, then we get rows
-    # back that have "?" as all their keys, making further data extraction
-    # impossible
-    #
-    # Also, placeholders seem to be ignored in the WHERE X IS NOT NULL line
-
     columns = [toplevel_param_name] + list(other_param_names)
-    columns_for_select = ','.join(columns)
-
-    sql_subquery = f"""
-                   (SELECT {columns_for_select}
-                    FROM "{result_table_name}"
-                    WHERE {toplevel_param_name} IS NOT NULL)
-                   """
     sql = f"""
-          SELECT {columns_for_select}
-          FROM {sql_subquery}
-          LIMIT {limit} OFFSET {offset}
-          """
-
+    SELECT {','.join(columns)} FROM "{result_table_name}"
+    WHERE {toplevel_param_name} IS NOT NULL
+    LIMIT ? OFFSET ?
+    """
     cursor = conn.cursor()
-    cursor.execute(sql, ())
-    res = many_many(cursor, *columns)
-
-    return res
+    cursor.execute(sql, (limit, offset))
+    return many_many(cursor, *columns)
 
 
 @deprecate(alternative="get_parameter_data")
@@ -643,7 +630,7 @@ def get_runid_from_guid(conn: ConnectionPlus, guid: str) -> int | None:
         log.critical(errormssg)
         raise RuntimeError(errormssg)
     else:
-        run_id = int(rows[0]['run_id'])
+        run_id = int(rows[0][0])
 
     return run_id
 
@@ -715,11 +702,7 @@ def _query_guids_from_run_spec(
     else:
         cursor.execute(query)
 
-    rows = cursor.fetchall()
-    results = []
-    for r in rows:
-        results.append(r['guid'])
-    return results
+    return [guid for guid, in cursor.fetchall()]
 
 
 @deprecate(
@@ -785,7 +768,7 @@ def _get_dependents(conn: ConnectionPlus, run_id: int) -> list[int]:
     WHERE run_id=? and layout_id in (SELECT dependent FROM dependencies)
     """
     c = atomic_transaction(conn, sql, run_id)
-    res = [d[0] for d in many_many(c, 'layout_id')]
+    res = [layout_id for layout_id, in many_many(c, "layout_id")]
     return res
 
 
@@ -992,20 +975,18 @@ def get_run_counter(conn: ConnectionPlus, exp_id: int) -> int:
     return counter
 
 
-def get_experiments(conn: ConnectionPlus) -> list[sqlite3.Row]:
-    """ Get a list of experiments
-     Args:
-         conn: database connection
+def get_experiments(conn: ConnectionPlus) -> list[int]:
+    """Get a list of experiments
+    Args:
+        conn: database connection
 
      Returns:
          list of rows
-     """
-    sql = """
-    SELECT * FROM experiments
     """
+    sql = "SELECT exp_id FROM experiments"
     c = atomic_transaction(conn, sql)
 
-    return c.fetchall()
+    return [exp_id for exp_id, in c.fetchall()]
 
 
 def get_matching_exp_ids(conn: ConnectionPlus, **match_conditions: Any) -> list[int]:
@@ -1045,11 +1026,9 @@ def get_matching_exp_ids(conn: ConnectionPlus, **match_conditions: Any) -> list[
     query = query.replace("end_time = ?", f"end_time {time_eq} ?")
     query = query.replace("sample_name = ?", f"sample_name {sample_name_eq} ?")
 
-    cursor = conn.cursor()
-    cursor.execute(query, tuple(match_conditions.values()))
-    rows = cursor.fetchall()
+    cursor = conn.execute(query, tuple(match_conditions.values()))
 
-    return [row[0] for row in rows]
+    return [exp_id for exp_id, in cursor.fetchall()]
 
 
 def get_exp_ids_from_run_ids(conn: ConnectionPlus, run_ids: Sequence[int]) -> list[int]:
@@ -1087,7 +1066,7 @@ def get_last_experiment(conn: ConnectionPlus) -> int | None:
     return c.fetchall()[0][0]
 
 
-def get_runs(conn: ConnectionPlus, exp_id: int | None = None) -> list[sqlite3.Row]:
+def get_runs(conn: ConnectionPlus, exp_id: int | None = None) -> list[int]:
     """Get a list of runs.
 
     Args:
@@ -1101,17 +1080,15 @@ def get_runs(conn: ConnectionPlus, exp_id: int | None = None) -> list[sqlite3.Ro
     with atomic(conn) as conn:
         if exp_id:
             sql = """
-            SELECT * FROM runs
-            where exp_id = ?
+            SELECT run_id FROM runs
+            WHERE exp_id = ?
             """
             c = transaction(conn, sql, exp_id)
         else:
-            sql = """
-            SELECT * FROM runs
-            """
+            sql = "SELECT run_id FROM runs"
             c = transaction(conn, sql)
 
-    return c.fetchall()
+    return [run_id for run_id, in c.fetchall()]
 
 
 def get_last_run(conn: ConnectionPlus, exp_id: int | None = None) -> int | None:
@@ -1144,7 +1121,7 @@ def get_last_run(conn: ConnectionPlus, exp_id: int | None = None) -> int | None:
 
 
 def run_exists(conn: ConnectionPlus, run_id: int) -> bool:
-    # the following query always returns a single sqlite3.Row with an integer
+    # the following query always returns a single tuple with an integer
     # value of `1` or `0` for existing and non-existing run_id in the database
     query = """
     SELECT EXISTS(
@@ -1154,23 +1131,22 @@ def run_exists(conn: ConnectionPlus, run_id: int) -> bool:
         LIMIT 1
     );
     """
-    res: sqlite3.Row = atomic_transaction(conn, query, run_id).fetchone()
+    res: tuple[int] = atomic_transaction(conn, query, run_id).fetchone()
     return bool(res[0])
 
 
-def data_sets(conn: ConnectionPlus) -> list[sqlite3.Row]:
-    """ Get a list of datasets
+@deprecate(alternative="get_runs")
+def data_sets(conn: ConnectionPlus) -> list[int]:
+    """Get a list of datasets
     Args:
         conn: database connection
 
     Returns:
         list of rows
     """
-    sql = """
-    SELECT * FROM runs
-    """
+    sql = "SELECT run_id FROM runs"
     c = atomic_transaction(conn, sql)
-    return c.fetchall()
+    return [run_id for run_id, in c.fetchall()]
 
 
 def format_table_name(fmt_str: str, name: str, exp_id: int,
@@ -1353,19 +1329,14 @@ def _get_parameters(conn: ConnectionPlus, run_id: int) -> list[ParamSpec]:
     """
 
     sql = f"""
-    SELECT parameter FROM layouts WHERE run_id={run_id}
+    SELECT parameter FROM layouts
+    WHERE run_id = ?
     """
-    c = conn.execute(sql)
-    param_names_temp = many_many(c, 'parameter')
-    param_names = [p[0] for p in param_names_temp]
-    param_names = cast(List[str], param_names)
-
-    parspecs = []
-
-    for param_name in param_names:
-        parspecs.append(_get_paramspec(conn, run_id, param_name))
-
-    return parspecs
+    c = conn.execute(sql, (run_id,))
+    return [
+        _get_paramspec(conn, run_id, param_name)
+        for param_name, in many_many(c, "parameter")
+    ]
 
 
 def _get_paramspec(conn: ConnectionPlus,
@@ -1383,31 +1354,33 @@ def _get_paramspec(conn: ConnectionPlus,
 
     # get table name
     sql = f"""
-    SELECT result_table_name FROM runs WHERE run_id = {run_id}
+    SELECT result_table_name FROM runs
+    WHERE run_id = ?
     """
-    c = conn.execute(sql)
+    c = conn.execute(sql, (run_id,))
     result_table_name = one(c, 'result_table_name')
 
     # get the data type
     sql = f"""
     PRAGMA TABLE_INFO("{result_table_name}")
     """
-    c = conn.execute(sql)
+    c = c.execute(sql)
+    description = get_description_map(c)
     for row in c.fetchall():
-        if row['name'] == param_name:
-            param_type = row['type']
+        if row[description["name"]] == param_name:
+            param_type = row[description["type"]]
             break
 
     # get everything else
 
     sql = f"""
-    SELECT * FROM layouts
-    WHERE parameter="{param_name}" and run_id={run_id}
+    SELECT layout_id, run_id, parameter, label, unit, inferred_from FROM layouts
+    WHERE parameter = ? and run_id = ?
     """
-    c = conn.execute(sql)
-    resp = many(c, 'layout_id', 'run_id', 'parameter', 'label', 'unit',
-                'inferred_from')
-    (layout_id, _, _, label, unit, inferred_from_string) = resp
+    c = c.execute(sql, (param_name, run_id))
+    (layout_id, _, _, label, unit, inferred_from_string) = many(
+        c, "layout_id", "run_id", "parameter", "label", "unit", "inferred_from"
+    )
 
     if inferred_from_string:
         inferred_from = inferred_from_string.split(', ')
@@ -1424,9 +1397,10 @@ def _get_paramspec(conn: ConnectionPlus,
         depends_on = []
         for _, dp in sorted(zip(ax_nums, dps)):
             sql = f"""
-            SELECT parameter FROM layouts WHERE layout_id = {dp}
+            SELECT parameter FROM layouts
+            WHERE layout_id = ?
             """
-            c = conn.execute(sql)
+            c = conn.execute(sql, (dp,))
             depends_on.append(one(c, 'parameter'))
 
     parspec = ParamSpec(param_name, param_type, label, unit,
@@ -1833,23 +1807,22 @@ def get_metadata_from_run_id(conn: ConnectionPlus, run_id: int) -> dict[str, Any
 
     # first fetch all columns of the runs table
     query = "PRAGMA table_info(runs)"
-    cursor = conn.cursor()
-    for row in cursor.execute(query):
-        if row['name'] not in non_metadata:
-            possible_tags.append(row['name'])
+    cursor = conn.execute(query)
+    description = get_description_map(cursor)
+    for row in cursor.fetchall():
+        if row[description["name"]] not in non_metadata:
+            possible_tags.append(row[description["name"]])
 
     # and then fetch whatever metadata the run might have
     for tag in possible_tags:
         query = f"""
-                SELECT "{tag}"
-                FROM runs
-                WHERE run_id = ?
-                AND "{tag}" IS NOT NULL
-                """
+        SELECT "{tag}" FROM runs
+        WHERE run_id = ? AND "{tag}" IS NOT NULL
+        """
         cursor.execute(query, (run_id,))
         row = cursor.fetchall()
         if row != []:
-            metadata[tag] = row[0][tag]
+            metadata[tag] = row[0][0]
 
     return metadata
 
@@ -2018,10 +1991,9 @@ def update_GUIDs(conn: ConnectionPlus) -> None:
             sql = f"""
                    UPDATE runs
                    SET guid = ?
-                   where run_id == {run_id}
+                   WHERE run_id = ?
                    """
-            cur = conn.cursor()
-            cur.execute(sql, (guid_str,))
+            conn.execute(sql, (guid_str, run_id))
 
         log.info(f'Succesfully updated run number {run_id}.')
 
@@ -2165,14 +2137,16 @@ def _populate_results_table(
     target_cursor = target_conn.cursor()
 
     for row in source_cursor.execute(get_data_query):
-        column_names = ",".join(row.keys()[1:])  # the first key is "id"
+        column_names = ",".join(
+            d[0] for d in source_cursor.description[1:]
+        )  # the first key is "id"
         values = tuple(val for val in row[1:])
         value_placeholders = sql_placeholder_string(len(values))
         insert_data_query = f"""
-                             INSERT INTO "{target_table_name}"
-                             ({column_names})
-                             values {value_placeholders}
-                             """
+        INSERT INTO "{target_table_name}"
+        ({column_names})
+        values {value_placeholders}
+        """
         target_cursor.execute(insert_data_query, values)
 
 

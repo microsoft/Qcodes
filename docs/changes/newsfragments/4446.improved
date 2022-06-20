@@ -1,3 +1,3 @@
 Improve performance of ``sqlite3`` converters and adapters used to write and read in the database.
 
-Get rid of irrelevant unpacking from ``sqlite3.Row`` to ``list``.
+Get rid of ``sqlite3.Row`` and irrelevant unpacking to ``list``.

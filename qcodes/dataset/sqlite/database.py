@@ -149,9 +149,6 @@ def connect(name: str | Path, debug: bool = False, version: int = -1) -> Connect
                            f"version of QCoDeS supports up to "
                            f"version {latest_supported_version}")
 
-    # sqlite3 options
-    conn.row_factory = sqlite3.Row
-
     # Make sure numpy ints and floats types are inserted properly
     for numpy_int in numpy_ints:
         sqlite3.register_adapter(numpy_int, int)

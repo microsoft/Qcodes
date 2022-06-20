@@ -227,9 +227,10 @@ def test_runs_table_columns(empty_temp_db):
     colnames = list(mut_queries.RUNS_TABLE_COLUMNS)
     conn = mut_db.connect(get_DB_location())
     query = "PRAGMA table_info(runs)"
-    cursor = conn.cursor()
-    for row in cursor.execute(query):
-        colnames.remove(row['name'])
+    cursor = conn.execute(query)
+    description = mut_help.get_description_map(cursor)
+    for row in cursor.fetchall():
+        colnames.remove(row[description["name"]])
 
     assert colnames == []
 

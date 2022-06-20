@@ -40,7 +40,11 @@ from qcodes.dataset.sqlite.db_upgrades import (
     set_user_version,
 )
 from qcodes.dataset.sqlite.queries import get_run_description, update_GUIDs
-from qcodes.dataset.sqlite.query_helpers import is_column_in_table, one
+from qcodes.dataset.sqlite.query_helpers import (
+    get_description_map,
+    is_column_in_table,
+    one,
+)
 from qcodes.tests.common import error_caused_by, skip_if_no_fixtures
 from qcodes.tests.dataset.conftest import temporarily_copied_DB
 
@@ -77,16 +81,19 @@ def test_connect_upgrades_user_version(ver):
 
 @pytest.mark.parametrize('version', VERSIONS + (LATEST_VERSION_ARG,))
 def test_tables_exist(empty_temp_db, version):
-    conn = connect(qc.config["core"]["db_location"],
-                   qc.config["core"]["db_debug"],
-                   version=version)
-    cursor = conn.execute("select sql from sqlite_master"
-                          " where type = 'table'")
-    expected_tables = ['experiments', 'runs', 'layouts', 'dependencies']
+    conn = connect(
+        qc.config["core"]["db_location"], qc.config["core"]["db_debug"], version=version
+    )
+    query = """
+    SELECT sql FROM sqlite_master
+    WHERE type = 'table'
+    """
+    cursor = conn.execute(query)
+    expected_tables = ["experiments", "runs", "layouts", "dependencies"]
     rows = [row for row in cursor]
     assert len(rows) == len(expected_tables)
-    for row, expected_table in zip(rows, expected_tables):
-        assert expected_table in row['sql']
+    for (sql,), expected_table in zip(rows, expected_tables):
+        assert expected_table in sql
     conn.close()
 
 
@@ -704,8 +711,10 @@ def test_perform_actual_upgrade_6_to_7():
             atomic_transaction(conn, no_of_runs_query), 'max(run_id)')
         assert no_of_runs == 10
 
-        columns = atomic_transaction(conn, "PRAGMA table_info(runs)").fetchall()
-        col_names = [col['name'] for col in columns]
+        c = atomic_transaction(conn, "PRAGMA table_info(runs)")
+        description = get_description_map(c)
+        columns = c.fetchall()
+        col_names = [col[description["name"]] for col in columns]
 
         assert 'captured_run_id' in col_names
         assert 'captured_counter' in col_names

@@ -169,8 +169,10 @@ class Experiment(Sized):
 
     def data_sets(self) -> list[DataSetProtocol]:
         """Get all the datasets of this experiment"""
-        runs = get_runs(self.conn, self.exp_id)
-        return [load_by_id(run['run_id'], conn=self.conn) for run in runs]
+        return [
+            load_by_id(run_id, conn=self.conn)
+            for run_id in get_runs(self.conn, self.exp_id)
+        ]
 
     def last_data_set(self) -> DataSetProtocol:
         """Get the last dataset of this experiment"""
@@ -216,8 +218,7 @@ def experiments(conn: ConnectionPlus | None = None) -> list[Experiment]:
     """
     conn = conn_from_dbpath_or_conn(conn=conn, path_to_db=None)
     log.info(f"loading experiments from {conn.path_to_dbfile}")
-    rows = get_experiments(conn)
-    return [load_experiment(row['exp_id'], conn) for row in rows]
+    return [load_experiment(exp_id, conn) for exp_id in get_experiments(conn)]
 
 
 def new_experiment(
