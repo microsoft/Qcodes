@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import importlib
 import logging
 from collections import abc
 from functools import partial
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -15,15 +18,19 @@ from typing import (
     Union,
 )
 
-from qcodes.instrument.base import InstrumentBase
-from qcodes.instrument.channel import InstrumentChannel
-from qcodes.parameters import Parameter
-from qcodes.parameters.grouped_parameter import (
+from qcodes.parameters import (
     DelegateGroup,
     DelegateGroupParameter,
     GroupedParameter,
+    Parameter,
 )
-from qcodes.station import Station
+
+from ..base import InstrumentBase
+from ..channel import InstrumentChannel
+
+if TYPE_CHECKING:
+    from qcodes.station import Station
+
 
 _log = logging.getLogger(__name__)
 
