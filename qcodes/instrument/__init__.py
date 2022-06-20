@@ -4,6 +4,7 @@ from qcodes.parameters import (
     ArrayParameter,
     CombinedParameter,
     DelegateParameter,
+    Function,
     ManualParameter,
     MultiParameter,
     Parameter,
@@ -16,7 +17,6 @@ from qcodes.parameters import (
 
 from .base import Instrument, InstrumentBase, find_or_create_instrument
 from .channel import ChannelList, ChannelTuple, InstrumentChannel, InstrumentModule
-from .function import Function
 from .ip import IPInstrument
 from .visa import VisaInstrument
 

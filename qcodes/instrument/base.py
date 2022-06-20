@@ -24,12 +24,10 @@ import numpy as np
 from typing_extensions import Protocol
 
 from qcodes.logger.instrument_logger import get_instrument_logger
-from qcodes.parameters import Parameter, ParameterBase
+from qcodes.parameters import Function, Parameter, ParameterBase
 from qcodes.utils.helpers import DelegateAttributes, full_class, strip_attrs
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.validators import Anything
-
-from .function import Function
 
 if TYPE_CHECKING:
     from qcodes.instrument.channel import ChannelTuple, InstrumentModule

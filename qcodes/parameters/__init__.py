@@ -71,6 +71,7 @@ more specialized ones:
 from .array_parameter import ArrayParameter
 from .combined_parameter import CombinedParameter, combine
 from .delegate_parameter import DelegateParameter
+from .function import Function
 from .group_parameter import Group, GroupParameter
 from .grouped_parameter import DelegateGroup, DelegateGroupParameter, GroupedParameter
 from .multi_channel_instrument_parameter import MultiChannelInstrumentParameter
@@ -94,6 +95,7 @@ __all__ = [
     "DelegateGroupParameter",
     "DelegateParameter",
     "ElapsedTimeParameter",
+    "Function",
     "Group",
     "GroupParameter",
     "GroupedParameter",
@@ -105,11 +107,11 @@ __all__ = [
     "ParamDataType",
     "ParamRawDataType",
     "Parameter",
+    "ParameterBase",
     "ParameterWithSetpoints",
     "ScaledParameter",
     "SweepFixedValues",
     "SweepValues",
-    "ParameterBase",
     "combine",
     "expand_setpoints_helper",
     "invert_val_mapping",
