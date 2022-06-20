@@ -718,7 +718,7 @@ class Keithley_2600(VisaInstrument):
         model = self.ask('localnode.model')
 
         knownmodels = ['2601B', '2602A', '2602B', '2604B', '2611B', '2612B',
-                       '2614B', '2635B', '2636B']
+                       '2614B', '2634B', '2635B', '2636B']
         if model not in knownmodels:
             kmstring = ("{}, " * (len(knownmodels) - 1)).format(*knownmodels[:-1])
             kmstring += f"and {knownmodels[-1]}."
@@ -733,6 +733,7 @@ class Keithley_2600(VisaInstrument):
                          '2611B': [0.2, 2, 20, 200],
                          '2612B': [0.2, 2, 20, 200],
                          '2614B': [0.2, 2, 20, 200],
+			 '2634B': [0.2, 2, 20, 200],
                          '2635B': [0.2, 2, 20, 200],
                          '2636B': [0.2, 2, 20, 200]}
 
