@@ -1,4 +1,4 @@
-from qcodes.parameters.grouped_parameter import GroupedParameter
+from qcodes.parameters import GroupedParameter
 
 from .delegate_channel_instrument import (
     DelegateChannelInstrument,

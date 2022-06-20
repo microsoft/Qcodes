@@ -19,7 +19,7 @@ from typing import (
 )
 
 from qcodes.parameters import Parameter
-from qcodes.parameters.grouped_parameter import (
+from qcodes.parameters import (
     DelegateGroup,
     DelegateGroupParameter,
     GroupedParameter,

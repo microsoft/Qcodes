@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Any, Mapping, Optional, Sequence, TYPE_CHECKING
 
 from .delegate_instrument import DelegateInstrument
