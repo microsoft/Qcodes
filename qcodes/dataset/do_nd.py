@@ -673,7 +673,7 @@ def dond(
     *params: Union[AbstractSweep, Union[ParamMeasT, Sequence[ParamMeasT]]],
     write_period: Optional[float] = None,
     measurement_name: str = "",
-    exp: Optional[Experiment] = None,
+    exp: Optional[Union[Experiment, Sequence[Experiment]]] = None,
     enter_actions: ActionsT = (),
     exit_actions: ActionsT = (),
     do_plot: Optional[bool] = None,
@@ -712,7 +712,8 @@ def dond(
         measurement_name: Name of the measurement. This will be passed down to
             the dataset produced by the measurement. If not given, a default
             value of 'results' is used for the dataset.
-        exp: The experiment to use for this measurement.
+        exp: The experiment to use for this measurement. If you create multiple
+            measurements using groups you may also supply multiple experiments.
         enter_actions: A list of functions taking no arguments that will be
             called before the measurements start.
         exit_actions: A list of functions taking no arguments that will be
@@ -927,7 +928,7 @@ def _create_measurements(
     all_setpoint_params: Sequence[ParameterBase],
     enter_actions: ActionsT,
     exit_actions: ActionsT,
-    exp: Optional[Experiment],
+    experiments: Optional[Union[Experiment, Sequence[Experiment]]],
     grouped_parameters: Dict[str, ParameterGroup],
     shapes: Shapes,
     write_period: Optional[float],
@@ -938,7 +939,22 @@ def _create_measurements(
         _extra_log_info = log_info
     else:
         _extra_log_info = "Using 'qcodes.dataset.dond'"
-    for group in grouped_parameters.values():
+
+    if not isinstance(experiments, Sequence):
+        experiments_internal: Sequence[Optional[Experiment]] = [
+            experiments for _ in grouped_parameters
+        ]
+    else:
+        experiments_internal = experiments
+
+    if len(experiments_internal) != len(grouped_parameters):
+        raise ValueError(
+            f"Inconsistent number of "
+            f"parameter groups and experiments "
+            f"got {len(grouped_parameters)} and {len(experiments_internal)}"
+        )
+
+    for group, exp in zip(grouped_parameters.values(), experiments_internal):
         meas_name = group["meas_name"]
         meas_params = group["params"]
         meas = Measurement(name=meas_name, exp=exp)

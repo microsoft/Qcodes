@@ -47,7 +47,6 @@ from qcodes.dataset import (
 from qcodes.instrument import (
     ChannelList,
     ChannelTuple,
-    Function,
     Instrument,
     InstrumentChannel,
     IPInstrument,
@@ -60,6 +59,7 @@ from qcodes.parameters import (
     ArrayParameter,
     CombinedParameter,
     DelegateParameter,
+    Function,
     ManualParameter,
     MultiParameter,
     Parameter,
