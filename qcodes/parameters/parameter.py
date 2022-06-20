@@ -8,9 +8,9 @@ from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 from typing_extensions import Literal
 
-from qcodes.utils.command import Command
 from qcodes.utils.validators import Validator
 
+from .command import Command
 from .parameter_base import ParamDataType, ParameterBase
 from .sweep_values import SweepFixedValues
 
