@@ -768,12 +768,21 @@ def dond(
         grouped_parameters,
         measured_parameters,
     ) = _extract_paramters_by_type_and_group(measurement_name, params_meas)
-
+    LOG.info(
+        "Starting a doNd with scan with\n setpoints: %s,\n measuring: %s",
+        all_setpoint_params,
+        measured_all,
+    )
+    LOG.debug(
+        "Measured parameters have been grouped into:\n " "%s",
+        {name: group["params"] for name, group in grouped_parameters.items()},
+    )
     try:
         loop_shape = tuple(sweep.num_points for sweep in sweep_instances) + tuple(
             1 for _ in additional_setpoints
         )
         shapes: Shapes = detect_shape_of_measurement(measured_parameters, loop_shape)
+        LOG.debug("Detected shapes to be %s", shapes)
     except TypeError:
         LOG.exception(
             f"Could not detect shape of {measured_parameters} "
