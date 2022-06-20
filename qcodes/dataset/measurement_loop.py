@@ -778,8 +778,8 @@ class MeasurementLoop:
             value = int(value)
         elif isinstance(value, np.floating):
             value = float(value)
-        elif isinstance(value, np.bool_):
-            value = bool(value)
+        elif isinstance(value, (bool, np.bool_)):
+            value = int(value)
 
         result = value
         self.data_handler.add_measurement_result(
@@ -1375,9 +1375,6 @@ class RepetitionSweep(Sweep):
     def __init__(self, repetitions, start=0, name='repetition', label='Repetition', unit=None, reverse=False, restore=False):
         self.start = start
         self.repetitions = repetitions
+        sequence = self.start + np.arange(self.repetitions)
 
-        super().__init__(self.sequence, name, label, unit, reverse, restore)
-
-    @property
-    def sequence(self):
-        return self.start + np.arange(self.repetitions)
+        super().__init__(sequence, name, label, unit, reverse, restore)
