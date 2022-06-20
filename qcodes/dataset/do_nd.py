@@ -764,7 +764,7 @@ def dond(
     )
 
     (
-        all_meas_parameters,
+        measured_all,
         grouped_parameters,
         measured_parameters,
     ) = _extract_paramters_by_type_and_group(measurement_name, params_meas)
@@ -806,9 +806,9 @@ def dond(
         use_threads = config.dataset.use_threads
 
     params_meas_caller = (
-        ThreadPoolParamsCaller(*all_meas_parameters)
+        ThreadPoolParamsCaller(*measured_all)
         if use_threads
-        else SequentialParamsCaller(*all_meas_parameters)
+        else SequentialParamsCaller(*measured_all)
     )
 
     try:
@@ -986,20 +986,20 @@ def _extract_paramters_by_type_and_group(
     Tuple[ParamMeasT, ...], Dict[str, ParameterGroup], Tuple[ParameterBase, ...]
 ]:
     measured_parameters: List[ParameterBase] = []
-    all_meas_parameters: List[ParamMeasT] = []
+    measured_all: List[ParamMeasT] = []
     single_group: List[ParamMeasT] = []
     multi_group: List[Sequence[ParamMeasT]] = []
     grouped_parameters: Dict[str, ParameterGroup] = {}
     for param in params_meas:
         if not isinstance(param, Sequence):
             single_group.append(param)
-            all_meas_parameters.append(param)
+            measured_all.append(param)
             if isinstance(param, ParameterBase):
                 measured_parameters.append(param)
         elif not isinstance(param, str):
             multi_group.append(param)
             for nested_param in param:
-                all_meas_parameters.append(nested_param)
+                measured_all.append(nested_param)
                 if isinstance(nested_param, ParameterBase):
                     measured_parameters.append(nested_param)
     if single_group:
@@ -1017,7 +1017,7 @@ def _extract_paramters_by_type_and_group(
                 "measured_params": [],
             }
             grouped_parameters[f"group_{index}"] = pg
-    return tuple(all_meas_parameters), grouped_parameters, tuple(measured_parameters)
+    return tuple(measured_all), grouped_parameters, tuple(measured_parameters)
 
 
 def _handle_plotting(
