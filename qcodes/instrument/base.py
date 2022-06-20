@@ -4,6 +4,8 @@ Do not use in new code
 Will be deprecated and eventually removed.
 """
 
+from qcodes.parameters import Parameter
+
 from .instrument import (
     Instrument,
     InstrumentMeta,
@@ -17,5 +19,6 @@ __all__ = [
     "InstrumentMeta",
     "InstrumentProtocol",
     "Instrument",
+    "Parameter",
     "find_or_create_instrument",
 ]
