@@ -1691,6 +1691,48 @@ def test_dond_2d_multi_datasets_output_type(
     assert isinstance(data_1[0][1], DataSet) is True
 
 
+@pytest.mark.usefixtures("plot_close")
+def test_dond_2d_multi_datasets_multi_exp(
+    _param, _param_complex, _param_set, _param_set_2, request
+):
+    exp1 = new_experiment("test-experiment-1", sample_name="test-sample-1")
+    exp2 = new_experiment("test-experiment-2", sample_name="test-sample-2")
+
+    request.addfinalizer(exp1.conn.close)
+    request.addfinalizer(exp2.conn.close)
+
+    sweep_1 = LinSweep(_param_set, 0, 0.5, 2, 0)
+    sweep_2 = LinSweep(_param_set_2, 0.5, 1, 2, 0)
+
+    data_1 = dond(sweep_1, sweep_2, [_param], [_param_complex], exp=[exp1, exp2])
+    assert isinstance(data_1[0][0], DataSet) is True
+    assert isinstance(data_1[0][1], DataSet) is True
+
+    assert data_1[0][0].exp_id == exp1.exp_id
+    assert data_1[0][1].exp_id == exp2.exp_id
+
+
+@pytest.mark.usefixtures("plot_close")
+def test_dond_2d_multi_datasets_multi_exp_inconsistent_raises(
+    _param, _param_complex, _param_set, _param_set_2, request
+):
+    exp1 = new_experiment("test-experiment-1", sample_name="test-sample-1")
+    exp2 = new_experiment("test-experiment-2", sample_name="test-sample-2")
+    exp3 = new_experiment("test-experiment-3", sample_name="test-sample-3")
+
+    request.addfinalizer(exp1.conn.close)
+    request.addfinalizer(exp2.conn.close)
+    request.addfinalizer(exp3.conn.close)
+
+    sweep_1 = LinSweep(_param_set, 0, 0.5, 2, 0)
+    sweep_2 = LinSweep(_param_set_2, 0.5, 1, 2, 0)
+
+    with pytest.raises(
+        ValueError, match="Inconsistent number of parameter groups and experiments"
+    ):
+        dond(sweep_1, sweep_2, [_param], [_param_complex], exp=[exp1, exp2, exp3])
+
+
 @pytest.mark.usefixtures("plot_close", "experiment")
 @pytest.mark.parametrize("plot", [None, True, False])
 @pytest.mark.parametrize("plot_config", [None, True, False])
