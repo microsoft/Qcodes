@@ -1369,3 +1369,15 @@ class Sweep:
         msmt = running_measurement()
         msmt.step_out(reduce_dimension=True)
         raise StopIteration
+
+
+class RepetitionSweep(Sweep):
+    def __init__(self, repetitions, start=0, name='repetition', label='Repetition', unit=None, reverse=False, restore=False):
+        self.start = start
+        self.repetitions = repetitions
+
+        super().__init__(self.sequence, name, label, unit, reverse, restore)
+
+    @property
+    def sequence(self):
+        return self.start + np.arange(self.repetitions)
