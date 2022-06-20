@@ -3,7 +3,17 @@ import sys
 import time
 from abc import ABC, abstractmethod
 from contextlib import ExitStack, contextmanager
-from typing import Callable, Dict, Iterator, List, Optional, Sequence, Tuple, Union
+from typing import (
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 import matplotlib.axes
 import matplotlib.colorbar
@@ -929,7 +939,7 @@ def _create_measurements(
     enter_actions: ActionsT,
     exit_actions: ActionsT,
     experiments: Optional[Union[Experiment, Sequence[Experiment]]],
-    grouped_parameters: Dict[str, ParameterGroup],
+    grouped_parameters: Mapping[str, ParameterGroup],
     shapes: Shapes,
     write_period: Optional[float],
     log_info: Optional[str],
