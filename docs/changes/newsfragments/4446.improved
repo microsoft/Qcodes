@@ -1,0 +1,1 @@
+Improve performance of ``sqlite3`` converters and adapters used to write and read in the database.
