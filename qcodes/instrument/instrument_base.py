@@ -11,6 +11,7 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
+    Type,
     Union,
 )
 
@@ -82,7 +83,10 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         self.log = get_instrument_logger(self, __name__)
 
     def add_parameter(
-        self, name: str, parameter_class: type = Parameter, **kwargs: Any
+        self,
+        name: str,
+        parameter_class: Optional[Type[ParameterBase]] = None,
+        **kwargs: Any,
     ) -> None:
         """
         Bind one Parameter to this instrument.
@@ -112,6 +116,9 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 unit of the new parameter is inconsistent with the existing
                 one.
         """
+        if parameter_class is None:
+            parameter_class = Parameter
+
         if "bind_to_instrument" not in kwargs.keys():
             kwargs["bind_to_instrument"] = True
 
