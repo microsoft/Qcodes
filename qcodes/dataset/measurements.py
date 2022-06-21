@@ -19,6 +19,7 @@ from types import TracebackType
 from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union, cast
 
 import numpy as np
+from opentelemetry import trace
 
 import qcodes as qc
 import qcodes.validators as vals
@@ -57,7 +58,7 @@ if TYPE_CHECKING:
     from qcodes.dataset.sqlite.connection import ConnectionPlus
 
 log = logging.getLogger(__name__)
-
+TRACER = trace.get_tracer(__name__)
 
 ActionType = tuple[Callable[..., Any], Sequence[Any]]
 SubscriberType = tuple[
@@ -546,10 +547,10 @@ class Runner:
             write_period = cast(float, qc.config.dataset.write_period)
         return float(write_period)
 
+    @TRACER.start_as_current_span("Runner")
     def __enter__(self) -> DataSaver:
         # TODO: should user actions really precede the dataset?
         # first do whatever bootstrapping the user specified
-
         for func, args in self.enteractions:
             func(*args)
 
@@ -611,7 +612,7 @@ class Runner:
                 # to the database
                 log.debug(f"Subscribing callable {callble} with state {state}")
                 self.ds.subscribe(callble, min_wait=0, min_count=1, state=state)
-
+        trace.get_current_span().set_attribute("guid", self.ds.guid)
         print(
             f"Starting experimental run with id: {self.ds.captured_run_id}."
             f" {self._extra_log_info}"
