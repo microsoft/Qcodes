@@ -2,7 +2,7 @@ from typing import Any, Optional
 
 import qcodes.utils.validators as vals
 from qcodes.instrument_drivers.american_magnetics.AMI430 import AMI430
-from qcodes.logger.instrument_logger import get_instrument_logger
+from qcodes.logger import get_instrument_logger
 from qcodes.utils.helpers import strip_attrs
 
 from .instrument import Instrument

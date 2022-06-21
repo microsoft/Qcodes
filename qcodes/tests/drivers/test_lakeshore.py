@@ -10,7 +10,7 @@ import qcodes.instrument.sims as sims
 from qcodes.instrument import InstrumentBase
 from qcodes.instrument_drivers.Lakeshore.lakeshore_base import BaseSensorChannel
 from qcodes.instrument_drivers.Lakeshore.Model_372 import Model_372
-from qcodes.logger.instrument_logger import get_instrument_logger
+from qcodes.logger import get_instrument_logger
 
 log = logging.getLogger(__name__)
 
