@@ -505,7 +505,7 @@ def experiments_widget(
     as plotting or the ability to easily browse
     the `~qcodes.dataset.data_set.DataSet`\s snapshot.
 
-    Args
+    Args:
         db: Optionally pass a database file, if no database has been loaded.
         data_sets: Sequence of `~qcodes.dataset.data_set.DataSet`s.
             If datasets are explicitly provided via this argument, the ``db``
@@ -532,3 +532,6 @@ def experiments_widget(
     tab = create_tab(do_display=False)
     grid = _experiment_widget(data_sets, tab)
     return VBox([title, tab, grid])
+
+
+__all__ = ["experiments_widget"]
