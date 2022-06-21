@@ -534,4 +534,4 @@ def experiments_widget(
     return VBox([title, tab, grid])
 
 
-__all__ = ["experiments_widget"]
+__all__ = ["experiments_widget", "nested_dict_browser"]
