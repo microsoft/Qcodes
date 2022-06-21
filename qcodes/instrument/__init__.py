@@ -15,8 +15,9 @@ from qcodes.parameters import (
     combine,
 )
 
-from .base import Instrument, InstrumentBase, find_or_create_instrument
 from .channel import ChannelList, ChannelTuple, InstrumentChannel, InstrumentModule
+from .instrument import Instrument, find_or_create_instrument
+from .instrument_base import InstrumentBase
 from .ip import IPInstrument
 from .visa import VisaInstrument
 

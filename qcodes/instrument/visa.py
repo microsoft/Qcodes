@@ -11,7 +11,8 @@ from qcodes.logger.instrument_logger import get_instrument_logger
 from qcodes.utils.delaykeyboardinterrupt import DelayedKeyboardInterrupt
 from qcodes.utils.deprecate import deprecate
 
-from .base import Instrument, InstrumentBase
+from .instrument import Instrument
+from .instrument_base import InstrumentBase
 
 VISA_LOGGER = '.'.join((InstrumentBase.__module__, 'com', 'visa'))
 

@@ -5,8 +5,7 @@ from typing import Any, Dict, List, Optional, Sequence, Union
 
 import numpy as np
 
-from qcodes.instrument.base import Instrument, InstrumentBase
-from qcodes.instrument.channel import ChannelList, InstrumentChannel
+from qcodes.instrument import ChannelList, Instrument, InstrumentBase, InstrumentChannel
 from qcodes.parameters import (
     ArrayParameter,
     MultiParameter,
