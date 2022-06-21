@@ -1,5 +1,5 @@
 """This file contains functions to displays an interactive widget
-with information about `qcodes.experiments()`."""
+with information about :func:`qcodes.dataset.experiments`."""
 
 from __future__ import annotations
 
@@ -496,18 +496,18 @@ def experiments_widget(
     *,
     sort_by: Optional[Literal["timestamp", "run_id"]] = "run_id",
 ) -> VBox:
-    r"""Displays an interactive widget that shows the ``qcodes.experiments()``.
+    r"""Displays an interactive widget that shows the :func:`qcodes.dataset.experiments`.
 
-    With the edit button in the column "Notes" one can make persistent
-    changes to the `~qcodes.dataset.data_set.DataSet`\s attribute
+    With the edit button in the column ``Notes`` one can make persistent
+    changes to the :class:`qcodes.dataset.DataSetProtocol`\s attribute
     ``metadata`` in the key "widget_notes".
     Expanding the coordinates or variables buttons, reveals more options, such
     as plotting or the ability to easily browse
-    the `~qcodes.dataset.data_set.DataSet`\s snapshot.
+    the :class:`qcodes.dataset.DataSetProtocol`\s snapshot.
 
     Args:
         db: Optionally pass a database file, if no database has been loaded.
-        data_sets: Sequence of `~qcodes.dataset.data_set.DataSet`s.
+        data_sets: Sequence of :class:`qcodes.dataset.DataSetProtocol`\s.
             If datasets are explicitly provided via this argument, the ``db``
             argument has no effect.
         sort_by: Sort datasets in widget by either "timestamp" (newest first),
