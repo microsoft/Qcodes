@@ -9,7 +9,7 @@ and functions to extract log messages to :class:`pandas.DataFrame` s
 
 """
 
-from .instrument_logger import filter_instrument
+from .instrument_logger import filter_instrument, get_instrument_logger
 from .log_analysis import (
     capture_dataframe,
     log_to_dataframe,
@@ -39,6 +39,7 @@ __all__ = [
     "flush_telemetry_traces",
     "get_console_handler",
     "get_file_handler",
+    "get_instrument_logger",
     "get_level_code",
     "get_level_name",
     "get_log_file_name",
