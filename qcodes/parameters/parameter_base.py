@@ -29,7 +29,7 @@ from qcodes.utils.helpers import (
     permissive_range,
 )
 from qcodes.utils.metadata import Metadatable
-from qcodes.utils.validators import Enum, Ints, Validator
+from qcodes.validators import Enum, Ints, Validator
 
 from .cache import _Cache, _CacheProtocol
 

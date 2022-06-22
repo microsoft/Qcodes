@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 from typing_extensions import Literal
 
-from qcodes.utils.validators import Strings, Validator
+from qcodes.validators import Strings, Validator
 
 from .parameter import Parameter
 

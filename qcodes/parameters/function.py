@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Any, Callable, List, Optional, Sequence, Union
 
 from qcodes.utils.metadata import Metadatable
-from qcodes.utils.validators import Validator, validate_all
+from qcodes.validators import Validator, validate_all
 
 from .command import Command
 
