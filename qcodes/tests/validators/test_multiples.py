@@ -2,7 +2,7 @@ import math
 
 import numpy as np
 import pytest
-from qcodes.utils.validators import Multiples
+from qcodes.validators import Multiples
 
 from .conftest import AClass, a_func
 

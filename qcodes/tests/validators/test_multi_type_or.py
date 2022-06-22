@@ -1,6 +1,6 @@
 import pytest
 
-from qcodes.utils.validators import Enum, Ints, Lists, MultiTypeOr, Strings
+from qcodes.validators import Enum, Ints, Lists, MultiTypeOr, Strings
 
 from .conftest import AClass, a_func
 
