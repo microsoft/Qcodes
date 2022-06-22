@@ -1,12 +1,6 @@
 import pytest
 
-from qcodes.utils.validators import (
-    Enum,
-    MultiTypeAnd,
-    Numbers,
-    PermissiveMultiples,
-    Strings,
-)
+from qcodes.validators import Enum, MultiTypeAnd, Numbers, PermissiveMultiples, Strings
 
 from .conftest import AClass, a_func
 

@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 
 import pytest
 
-import qcodes.utils.validators as vals
+import qcodes.validators as vals
 from qcodes.parameters import Parameter, ParameterBase
 
 from .conftest import NOT_PASSED, BetterGettableParam, SettableParam

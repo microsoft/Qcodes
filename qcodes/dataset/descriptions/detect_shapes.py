@@ -10,7 +10,7 @@ from qcodes.parameters import (
     ParameterBase,
     ParameterWithSetpoints,
 )
-from qcodes.utils.validators import Arrays
+from qcodes.validators import Arrays
 
 
 def detect_shape_of_measurement(

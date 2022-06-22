@@ -5,9 +5,10 @@ from functools import partial
 
 import numpy as np
 
-from qcodes import IPInstrument, MultiParameter
+from qcodes.instrument import IPInstrument
+from qcodes.parameters import MultiParameter
 from qcodes.utils.deprecate import deprecate
-from qcodes.utils.validators import Bool, Enum
+from qcodes.validators import Bool, Enum
 
 log = logging.getLogger(__name__)
 

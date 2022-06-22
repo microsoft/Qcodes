@@ -13,7 +13,6 @@ qcodes.utils
     qcodes.utils.metadata
     qcodes.utils.plotting
     qcodes.utils.threading
-    qcodes.utils.validators
 
 .. automodule:: qcodes.utils
     :no-inherited-members:
@@ -28,4 +27,3 @@ qcodes.utils
    metadata
    plotting
    threading
-   validators

@@ -1,7 +1,7 @@
 from typing import Any, Dict, Optional
 
-from qcodes import VisaInstrument
-from qcodes.utils.validators import Numbers
+from qcodes.instrument import VisaInstrument
+from qcodes.validators import Numbers
 
 
 class N51x1(VisaInstrument):

@@ -2,13 +2,9 @@ from typing import Any
 
 import numpy as np
 
-from qcodes import (
-    ChannelList,
-    InstrumentChannel,
-    ParameterWithSetpoints,
-    VisaInstrument,
-)
-from qcodes.utils.validators import Arrays, Enum, Numbers
+from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
+from qcodes.parameters import ParameterWithSetpoints
+from qcodes.validators import Arrays, Enum, Numbers
 
 
 class RigolDS1074ZChannel(InstrumentChannel):

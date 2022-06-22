@@ -18,7 +18,7 @@ from typing import (
 from typing_extensions import Protocol
 
 from qcodes.utils.helpers import strip_attrs
-from qcodes.utils.validators import Anything
+from qcodes.validators import Anything
 
 if TYPE_CHECKING:
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter

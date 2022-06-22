@@ -6,7 +6,7 @@ import pytest
 from hypothesis import given, settings
 
 from qcodes.parameters import Parameter
-from qcodes.utils.validators import Numbers
+from qcodes.validators import Numbers
 
 from .conftest import MemoryParameter
 

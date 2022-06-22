@@ -3,7 +3,7 @@ from typing import Any, Callable, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 
-from qcodes.utils.validators import Arrays, Validator
+from qcodes.validators import Arrays, Validator
 
 from .parameter import Parameter
 from .parameter_base import ParamDataType, ParameterBase

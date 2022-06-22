@@ -7,7 +7,7 @@ from typing import Any, Optional, Sequence, Tuple
 import numpy as np
 from packaging import version
 
-import qcodes.utils.validators as vals
+import qcodes.validators as vals
 from qcodes.instrument import Instrument, InstrumentChannel, VisaInstrument
 from qcodes.instrument_drivers.Keysight.private.error_handling import (
     KeysightErrorQueueMixin,

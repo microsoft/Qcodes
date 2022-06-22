@@ -1,8 +1,8 @@
 from functools import partial
 from typing import Any, Callable, TypeVar, Union
 
-from qcodes import VisaInstrument
-from qcodes.utils.validators import Bool, Enum, Ints, MultiType, Numbers
+from qcodes.instrument import VisaInstrument
+from qcodes.validators import Bool, Enum, Ints, MultiType, Numbers
 
 T = TypeVar("T")
 

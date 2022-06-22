@@ -1,6 +1,6 @@
 from typing import Any, ClassVar, Dict
 
-import qcodes.utils.validators as vals
+import qcodes.validators as vals
 from qcodes.parameters import Group, GroupParameter
 
 from .lakeshore_base import BaseOutput, BaseSensorChannel, LakeshoreBase

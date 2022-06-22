@@ -1,11 +1,10 @@
-from typing import Any, TypeVar, Sequence, Set, Tuple, Callable
-
 import re
 import warnings
 from functools import wraps
+from typing import Any, Callable, Sequence, Set, Tuple, TypeVar
 
-from qcodes import VisaInstrument
-from qcodes.utils.validators import MultiType, Ints, Enum, Lists
+from qcodes.instrument import VisaInstrument
+from qcodes.validators import Enum, Ints, Lists, MultiType
 
 T = TypeVar('T')
 

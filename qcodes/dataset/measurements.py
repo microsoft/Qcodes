@@ -35,7 +35,7 @@ from typing import (
 import numpy as np
 
 import qcodes as qc
-import qcodes.utils.validators as vals
+import qcodes.validators as vals
 from qcodes.dataset.data_set import VALUE, DataSet, load_by_guid
 from qcodes.dataset.data_set_in_memory import DataSetInMem
 from qcodes.dataset.data_set_protocol import (

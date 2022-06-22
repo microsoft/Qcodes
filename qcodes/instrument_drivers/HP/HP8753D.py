@@ -4,7 +4,7 @@ from typing import Any, Union
 
 import numpy as np
 
-import qcodes.utils.validators as vals
+import qcodes.validators as vals
 from qcodes.instrument import VisaInstrument
 from qcodes.parameters import ArrayParameter, ParamRawDataType
 

@@ -22,7 +22,7 @@ from qcodes.tests.instrument_mocks import (
     Multi2DSetPointParam2Sizes,
     setpoint_generator,
 )
-from qcodes.utils.validators import Arrays, ComplexNumbers, Numbers
+from qcodes.validators import Arrays, ComplexNumbers, Numbers
 
 
 @pytest.fixture(scope="function", name="non_created_db")

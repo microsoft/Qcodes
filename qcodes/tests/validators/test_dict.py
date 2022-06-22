@@ -1,5 +1,5 @@
 import pytest
-from qcodes.utils.validators import Dict
+from qcodes.validators import Dict
 
 
 def test_dict():

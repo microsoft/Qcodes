@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from numpy.random import rand
 
-import qcodes.utils.validators as vals
+import qcodes.validators as vals
 from qcodes.parameters import Parameter, ParameterWithSetpoints, expand_setpoints_helper
 
 

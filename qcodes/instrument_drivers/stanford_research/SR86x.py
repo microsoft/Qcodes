@@ -3,10 +3,9 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
-from qcodes import VisaInstrument
-from qcodes.instrument import ChannelList, InstrumentChannel
+from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
 from qcodes.parameters import ArrayParameter
-from qcodes.utils.validators import ComplexNumbers, Enum, Ints, Numbers
+from qcodes.validators import ComplexNumbers, Enum, Ints, Numbers
 
 log = logging.getLogger(__name__)
 

@@ -37,7 +37,7 @@ import jsonschema
 import ruamel.yaml
 
 import qcodes
-import qcodes.utils.validators as validators
+from qcodes import validators
 from qcodes.instrument.base import Instrument, InstrumentBase
 from qcodes.instrument.channel import ChannelTuple
 from qcodes.monitor.monitor import Monitor

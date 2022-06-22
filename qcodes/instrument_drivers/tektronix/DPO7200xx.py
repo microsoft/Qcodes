@@ -10,16 +10,10 @@ from typing import Any, Callable, Union, cast
 
 import numpy as np
 
-from qcodes import (
-    ChannelList,
-    Instrument,
-    InstrumentChannel,
-    Parameter,
-    ParameterWithSetpoints,
-    VisaInstrument,
-)
+from qcodes.instrument import ChannelList, Instrument, InstrumentChannel, VisaInstrument
+from qcodes.parameters import Parameter, ParameterWithSetpoints
 from qcodes.utils.helpers import create_on_off_val_mapping
-from qcodes.utils.validators import Arrays, Enum
+from qcodes.validators import Arrays, Enum
 
 
 def strip_quotes(string: str) -> str:

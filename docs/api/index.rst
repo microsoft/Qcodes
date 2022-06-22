@@ -28,6 +28,7 @@ QCoDeS API
    parameters/index
    station
    utils/index
+   validators/index
 
 Legacy API
 ----------

@@ -13,7 +13,7 @@ from qcodes.instrument import ChannelList, ChannelTuple, InstrumentChannel
 from qcodes.loops import Loop
 from qcodes.parameters import Parameter
 from qcodes.tests.instrument_mocks import DummyChannel, DummyChannelInstrument
-from qcodes.utils.validators import Numbers
+from qcodes.validators import Numbers
 
 
 @pytest.fixture(scope='function', name='dci')

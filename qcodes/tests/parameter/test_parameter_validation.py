@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-import qcodes.utils.validators as vals
+import qcodes.validators as vals
 from qcodes.parameters import Parameter
 
 from .conftest import BookkeepingValidator

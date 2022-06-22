@@ -11,7 +11,7 @@ from qcodes.tests.instrument_mocks import (
     Multi2DSetPointParam2Sizes,
     MultiSetPointParam,
 )
-from qcodes.utils.validators import Arrays
+from qcodes.validators import Arrays
 
 from .conftest import ArrayshapedParam
 

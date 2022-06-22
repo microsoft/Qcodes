@@ -3,8 +3,8 @@ import textwrap
 import warnings
 from typing import List, Dict, Optional, Union, Tuple, Any
 
-import qcodes.utils.validators as vals
-from qcodes import VisaInstrument
+import qcodes.validators as vals
+from qcodes.instrument import VisaInstrument
 from qcodes.utils.helpers import create_on_off_val_mapping
 
 

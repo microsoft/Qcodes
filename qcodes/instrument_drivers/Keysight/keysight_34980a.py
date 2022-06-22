@@ -1,14 +1,14 @@
 import logging
-import warnings
 import re
+import warnings
 from functools import wraps
-from typing import Any, TypeVar, Dict
-from .keysight_34980a_submodules import KeysightSubModule
-from .keysight_34934a import Keysight34934A
-from qcodes.instrument.visa import VisaInstrument
+from typing import Any, Callable, Dict, Optional, TypeVar
 
-from qcodes.utils import validators as vals
-from typing import Callable, Optional
+from qcodes import validators as vals
+from qcodes.instrument import VisaInstrument
+
+from .keysight_34934a import Keysight34934A
+from .keysight_34980a_submodules import KeysightSubModule
 
 KEYSIGHT_MODELS = {'34934A': Keysight34934A}
 

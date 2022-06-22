@@ -8,14 +8,13 @@ from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 from typing_extensions import Literal
 
-from qcodes.utils.validators import Validator
-
 from .command import Command
 from .parameter_base import ParamDataType, ParameterBase
 from .sweep_values import SweepFixedValues
 
 if TYPE_CHECKING:
     from qcodes.instrument.base import InstrumentBase
+    from qcodes.validators import Validator
 
 
 log = logging.getLogger(__name__)
@@ -175,7 +174,7 @@ class Parameter(ParameterBase):
         set_cmd: Optional[Union[str, Callable[..., Any], Literal[False]]] = False,
         initial_value: Optional[Union[float, str]] = None,
         max_val_age: Optional[float] = None,
-        vals: Optional[Validator[Any]] = None,
+        vals: Optional["Validator[Any]"] = None,
         docstring: Optional[str] = None,
         initial_cache_value: Optional[Union[float, str]] = None,
         bind_to_instrument: bool = True,

@@ -1,8 +1,4 @@
-"""
-Backwards compatible. New code should import from qcodes.validators
-"""
-
-from qcodes.validators import (
+from .validators import (
     Anything,
     Arrays,
     Bool,
@@ -25,15 +21,6 @@ from qcodes.validators import (
     Strings,
     Validator,
     validate_all,
-)
-from qcodes.validators.validators import (
-    BIGINT,
-    BIGSTRING,
-    T,
-    numbertypes,
-    range_str,
-    shape_tuple_type,
-    shape_type,
 )
 
 __all__ = [

@@ -1,7 +1,8 @@
 from typing import Any
 
-from qcodes import Parameter, VisaInstrument
-from qcodes.utils.validators import Enum, Strings
+from qcodes.instrument import VisaInstrument
+from qcodes.parameters import Parameter
+from qcodes.validators import Enum, Strings
 
 
 class Agilent_34400A(VisaInstrument):
