@@ -10,7 +10,7 @@ from typing import Optional
 import pytest
 
 import qcodes
-import qcodes.validators as validators
+from qcodes import validators
 from qcodes.instrument import Instrument
 from qcodes.monitor.monitor import Monitor
 from qcodes.parameters import DelegateParameter, Parameter

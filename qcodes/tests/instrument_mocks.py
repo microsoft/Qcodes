@@ -12,9 +12,14 @@ from qcodes.parameters import (
     Parameter,
     ParameterWithSetpoints,
 )
-from qcodes.validators import Arrays, ComplexNumbers, Numbers, OnOff
-from qcodes.validators import Sequence as ValidatorSequence
-from qcodes.validators import Strings
+from qcodes.validators import (
+    Arrays,
+    ComplexNumbers,
+    Numbers,
+    OnOff,
+    Sequence as ValidatorSequence,
+    Strings,
+)
 
 log = logging.getLogger(__name__)
 
