@@ -8,7 +8,7 @@ from pyvisa import errors
 from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
 from qcodes.parameters import Parameter, ParameterBase, ParameterWithSetpoints
 from qcodes.validators import Arrays, Bool, Enum, Ints, Numbers
-
+from qcodes.utils.helpers import create_on_off_val_mapping
 
 class PNAAxisParameter(Parameter):
     def __init__(
@@ -381,6 +381,15 @@ class PNABase(VisaInstrument):
             ports.append(port)
             self.add_submodule(f"port{port_num}", port)
         self.add_submodule("ports", ports.to_channel_tuple())
+
+        # RF output
+        self.add_parameter('output',
+                           label='RF Output',
+                           get_cmd=':OUTPut?',
+                           set_cmd=':OUTPut {}',
+                           val_mapping=create_on_off_val_mapping(on_val='1',
+                                                                 off_val='0'))
+
 
         # Drive power
         self.add_parameter('power',
