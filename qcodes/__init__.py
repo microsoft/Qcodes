@@ -24,6 +24,7 @@ add_to_spyder_UMR_excludelist('qcodes')
 
 import atexit
 
+import qcodes.validators
 from qcodes.dataset import (
     Measurement,
     ParamSpec,
@@ -70,7 +71,6 @@ from qcodes.parameters import (
     combine,
 )
 from qcodes.station import Station
-from qcodes.utils import validators
 
 # ensure to close all instruments when interpreter is closed
 atexit.register(Instrument.close_all)
