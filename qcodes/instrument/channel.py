@@ -132,6 +132,8 @@ class ChannelTuple(Metadatable, Sequence[InstrumentModuleType]):
             the object to be returned by the :meth:`__getattr__`
             method of :class:`ChannelTuple`.
             Should be a subclass of :class:`.MultiChannelInstrumentParameter`.
+            Defaults to :class:`.MultiChannelInstrumentParameter` if None.
+
 
     Raises:
         ValueError: If ``chan_type`` is not a subclass of
@@ -149,8 +151,11 @@ class ChannelTuple(Metadatable, Sequence[InstrumentModuleType]):
         chan_type: Type[InstrumentModuleType],
         chan_list: Optional[Sequence[InstrumentModuleType]] = None,
         snapshotable: bool = True,
-        multichan_paramclass: type = MultiChannelInstrumentParameter,
+        multichan_paramclass: Optional[Type[MultiChannelInstrumentParameter]] = None,
     ):
+        if multichan_paramclass is None:
+            multichan_paramclass = MultiChannelInstrumentParameter
+
         super().__init__()
 
         self._parent = parent
@@ -521,6 +526,7 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentModuleType]):  # type:
             the object to be returned by the :meth:`__getattr__`
             method of :class:`ChannelList`.
             Should be a subclass of :class:`.MultiChannelInstrumentParameter`.
+            Defaults to :class:`.MultiChannelInstrumentParameter` if None.
 
     Raises:
         ValueError: If ``chan_type`` is not a subclass of
@@ -538,8 +544,10 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentModuleType]):  # type:
         chan_type: Type[InstrumentModuleType],
         chan_list: Optional[Sequence[InstrumentModuleType]] = None,
         snapshotable: bool = True,
-        multichan_paramclass: type = MultiChannelInstrumentParameter,
+        multichan_paramclass: Optional[Type[MultiChannelInstrumentParameter]] = None,
     ):
+        if multichan_paramclass is None:
+            multichan_paramclass = MultiChannelInstrumentParameter
         super().__init__(
             parent, name, chan_type, chan_list, snapshotable, multichan_paramclass
         )
