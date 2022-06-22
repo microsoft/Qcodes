@@ -4,7 +4,7 @@ from typing import Any, Dict, Iterable, List, Optional, TextIO, Tuple, cast
 
 from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
 from qcodes.parameters import Group, GroupParameter
-from qcodes.utils.validators import Enum, Numbers
+from qcodes.validators import Enum, Numbers
 
 
 def read_curve_file(curve_file: TextIO) -> Dict[Any, Any]:

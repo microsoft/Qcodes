@@ -15,11 +15,10 @@ from typing import (
 import numpy as np
 from typing_extensions import Literal, TypedDict, overload
 
-import qcodes.utils.validators as vals
+import qcodes.validators as vals
 from qcodes.instrument import InstrumentChannel
 from qcodes.parameters import Group, GroupParameter, Parameter, ParamRawDataType
 from qcodes.utils.deprecate import deprecate
-from qcodes.utils.validators import Arrays
 
 from . import constants
 from .constants import (
@@ -764,7 +763,7 @@ class B1517A(B1500Module):
         self.add_parameter(
             name="time_axis",
             get_cmd=self._get_time_axis,
-            vals=Arrays(shape=(self._get_number_of_samples,)),
+            vals=vals.Arrays(shape=(self._get_number_of_samples,)),
             snapshot_value=False,
             label='Time',
             unit='s'
@@ -773,7 +772,7 @@ class B1517A(B1500Module):
         self.add_parameter(
             name="sampling_measurement_trace",
             parameter_class=SamplingMeasurement,
-            vals=Arrays(shape=(self._get_number_of_samples,)),
+            vals=vals.Arrays(shape=(self._get_number_of_samples,)),
             setpoints=(self.time_axis,)
         )
 

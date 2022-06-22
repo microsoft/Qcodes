@@ -6,10 +6,9 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
-import qcodes.utils.validators as vals
-from qcodes import VisaInstrument
+import qcodes.validators as vals
 from qcodes.data.data_set import DataSet
-from qcodes.instrument import Instrument, InstrumentChannel
+from qcodes.instrument import Instrument, InstrumentChannel, VisaInstrument
 from qcodes.measure import Measure
 from qcodes.parameters import (
     ArrayParameter,

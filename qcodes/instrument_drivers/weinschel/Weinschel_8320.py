@@ -2,9 +2,9 @@ from typing import Any
 
 import numpy as np
 
+from qcodes import validators as vals
 from qcodes.instrument import VisaInstrument
 from qcodes.parameters import Parameter
-from qcodes.utils import validators as vals
 
 
 class Weinschel_8320(VisaInstrument):

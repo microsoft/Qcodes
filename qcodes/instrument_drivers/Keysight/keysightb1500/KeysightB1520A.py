@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Union
 
 import numpy as np
 
-import qcodes.utils.validators as vals
+import qcodes.validators as vals
 from qcodes.instrument import InstrumentChannel
 from qcodes.parameters import Group, GroupParameter, MultiParameter
 

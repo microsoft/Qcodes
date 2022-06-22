@@ -2,7 +2,7 @@ from typing import Any, Dict, Optional, Tuple
 
 from qcodes.instrument import Instrument
 from qcodes.parameters import MultiParameter, Parameter, ParamRawDataType
-from qcodes.utils.validators import Bool, Enum
+from qcodes.validators import Bool, Enum
 
 
 class CurrentParameter(MultiParameter):

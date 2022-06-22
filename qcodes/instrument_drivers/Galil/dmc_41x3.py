@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 
 from qcodes.instrument import Instrument, InstrumentChannel
-from qcodes.utils.validators import Enum, Ints, Multiples
+from qcodes.validators import Enum, Ints, Multiples
 
 try:
     import gclib

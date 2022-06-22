@@ -1,8 +1,12 @@
 from typing import Any
 
-from qcodes import VisaInstrument, validators as vals
 import numpy as np
-from qcodes.utils.validators import Numbers, numbertypes
+
+from qcodes.instrument import VisaInstrument
+from qcodes.validators import Numbers
+
+# todo should this be public
+from qcodes.validators.validators import numbertypes
 
 
 class E8267(VisaInstrument):

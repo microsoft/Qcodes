@@ -5,7 +5,7 @@ from typing_extensions import Literal
 
 from qcodes.instrument import InstrumentChannel, VisaInstrument
 from qcodes.parameters import DelegateParameter
-from qcodes.utils.validators import Bool, Enum, Ints, Numbers
+from qcodes.validators import Bool, Enum, Ints, Numbers
 
 ModeType = Literal["CURR", "VOLT"]
 

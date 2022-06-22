@@ -1,8 +1,8 @@
 from typing import Any
 
-from qcodes import VisaInstrument
+from qcodes.instrument import VisaInstrument
 from qcodes.utils.helpers import create_on_off_val_mapping
-from qcodes.utils.validators import Enum, Strings
+from qcodes.validators import Enum, Strings
 
 
 class Keithley_2400(VisaInstrument):

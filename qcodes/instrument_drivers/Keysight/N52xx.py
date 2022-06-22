@@ -7,7 +7,7 @@ from pyvisa import errors
 
 from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
 from qcodes.parameters import Parameter, ParameterBase, ParameterWithSetpoints
-from qcodes.utils.validators import Arrays, Bool, Enum, Ints, Numbers
+from qcodes.validators import Arrays, Bool, Enum, Ints, Numbers
 
 
 class PNAAxisParameter(Parameter):

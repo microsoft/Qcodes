@@ -11,7 +11,6 @@ from packaging import version
 from qcodes import validators as vals
 from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
 from qcodes.parameters import ArrayParameter, ParamRawDataType
-from qcodes.utils.validators import Bool, Ints
 
 log = logging.getLogger(__name__)
 
@@ -253,36 +252,58 @@ class DS4000(VisaInstrument):
                           docstring="Perform autoscale")
 
         # general parameters
-        self.add_parameter('trigger_type',
-                           label='Type of the trigger',
-                           get_cmd=':TRIGger:MODE?',
-                           set_cmd=':TRIGger:MODE {}',
-                           vals=vals.Enum('EDGE', 'PULS', 'RUNT', 'NEDG',
-                                          'SLOP', 'VID', 'PATT', 'RS232',
-                                          'IIC', 'SPI', 'CAN', 'FLEX', 'USB'))
-        self.add_parameter('trigger_mode',
-                           label='Mode of the trigger',
-                           get_cmd=':TRIGger:SWEep?',
-                           set_cmd=':TRIGger:SWEep {}',
-                           vals=vals.Enum('AUTO', 'NORM', 'SING'))
-        self.add_parameter("time_base",
-                           label="Horizontal time base",
-                           get_cmd=":TIMebase:MAIN:SCALe?",
-                           set_cmd=":TIMebase:MAIN:SCALe {}",
-                           get_parser=float,
-                           unit="s/div")
-        self.add_parameter("sample_point_count",
-                           label="Number of the waveform points",
-                           get_cmd=":WAVeform:POINts?",
-                           set_cmd=":WAVeform:POINts {}",
-                           get_parser=int,
-                           vals=Ints(min_value=1))
-        self.add_parameter("enable_auto_scale",
-                           label="Enable or disable autoscale",
-                           get_cmd=":SYSTem:AUToscale?",
-                           set_cmd=":SYSTem:AUToscale {}",
-                           get_parser=bool,
-                           vals=Bool())
+        self.add_parameter(
+            "trigger_type",
+            label="Type of the trigger",
+            get_cmd=":TRIGger:MODE?",
+            set_cmd=":TRIGger:MODE {}",
+            vals=vals.Enum(
+                "EDGE",
+                "PULS",
+                "RUNT",
+                "NEDG",
+                "SLOP",
+                "VID",
+                "PATT",
+                "RS232",
+                "IIC",
+                "SPI",
+                "CAN",
+                "FLEX",
+                "USB",
+            ),
+        )
+        self.add_parameter(
+            "trigger_mode",
+            label="Mode of the trigger",
+            get_cmd=":TRIGger:SWEep?",
+            set_cmd=":TRIGger:SWEep {}",
+            vals=vals.Enum("AUTO", "NORM", "SING"),
+        )
+        self.add_parameter(
+            "time_base",
+            label="Horizontal time base",
+            get_cmd=":TIMebase:MAIN:SCALe?",
+            set_cmd=":TIMebase:MAIN:SCALe {}",
+            get_parser=float,
+            unit="s/div",
+        )
+        self.add_parameter(
+            "sample_point_count",
+            label="Number of the waveform points",
+            get_cmd=":WAVeform:POINts?",
+            set_cmd=":WAVeform:POINts {}",
+            get_parser=int,
+            vals=vals.Ints(min_value=1),
+        )
+        self.add_parameter(
+            "enable_auto_scale",
+            label="Enable or disable autoscale",
+            get_cmd=":SYSTem:AUToscale?",
+            set_cmd=":SYSTem:AUToscale {}",
+            get_parser=bool,
+            vals=vals.Bool(),
+        )
 
         channels = ChannelList(self, "Channels", RigolDS4000Channel, snapshotable=False)
 

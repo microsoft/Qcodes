@@ -3,9 +3,12 @@ from typing import Any, Optional
 
 from numpy import pi
 
-from qcodes import VisaInstrument, validators as vals
-from qcodes.utils.validators import numbertypes
+import qcodes.validators as vals
+from qcodes.instrument import VisaInstrument
 from qcodes.utils.helpers import create_on_off_val_mapping
+
+# todo should this be public
+from qcodes.validators.validators import numbertypes
 
 
 class Agilent_E8527D(VisaInstrument):

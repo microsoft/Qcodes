@@ -5,7 +5,7 @@ import numpy as np
 from qcodes.instrument import InstrumentChannel, VisaInstrument
 from qcodes.parameters import Parameter, ParameterWithSetpoints, ParamRawDataType
 from qcodes.utils.helpers import create_on_off_val_mapping
-from qcodes.utils.validators import Arrays, Enum, Ints, Numbers
+from qcodes.validators import Arrays, Enum, Ints, Numbers
 
 
 class FrequencyAxis(Parameter):

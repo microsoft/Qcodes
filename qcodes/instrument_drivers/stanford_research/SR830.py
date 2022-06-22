@@ -11,7 +11,7 @@ from qcodes.parameters import (
     ParameterWithSetpoints,
     ParamRawDataType,
 )
-from qcodes.utils.validators import Arrays, ComplexNumbers, Enum, Ints, Numbers, Strings
+from qcodes.validators import Arrays, ComplexNumbers, Enum, Ints, Numbers, Strings
 
 
 class ChannelTrace(ParameterWithSetpoints):

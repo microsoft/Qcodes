@@ -5,9 +5,8 @@ import re
 import warnings
 from typing import Any, Dict, Optional
 
-from qcodes.instrument.base import Instrument
-from qcodes.instrument.channel import ChannelList, InstrumentChannel
-from qcodes.utils.validators import Ints
+from qcodes.instrument import ChannelList, Instrument, InstrumentChannel
+from qcodes.validators import Ints
 
 log = logging.getLogger(__name__)
 

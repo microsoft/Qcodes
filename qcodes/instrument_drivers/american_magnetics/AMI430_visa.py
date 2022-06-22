@@ -23,10 +23,10 @@ import numpy as np
 from pyvisa import VisaIOError
 
 from qcodes.instrument import Instrument, InstrumentChannel, VisaInstrument
-from qcodes.math_utils.field_vector import FieldVector
+from qcodes.math_utils import FieldVector
 from qcodes.parameters import Parameter
 from qcodes.utils.deprecate import QCoDeSDeprecationWarning
-from qcodes.utils.validators import Anything, Bool, Enum, Ints, Numbers
+from qcodes.validators import Anything, Bool, Enum, Ints, Numbers
 
 log = logging.getLogger(__name__)
 

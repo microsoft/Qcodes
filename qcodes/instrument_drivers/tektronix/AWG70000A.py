@@ -11,10 +11,9 @@ from typing import Any, Dict, List, Optional, Sequence, Union
 import numpy as np
 from broadbean.sequence import InvalidForgedSequenceError, fs_schema
 
-from qcodes import Instrument, VisaInstrument
 from qcodes import validators as vals
+from qcodes.instrument import Instrument, VisaInstrument
 from qcodes.instrument.channel import ChannelList, InstrumentChannel
-from qcodes.utils.validators import Validator
 
 log = logging.getLogger(__name__)
 
@@ -114,7 +113,7 @@ _marker_low = {'70001A': (-1.4, 1.4),
                '5208': (-0.3, 1.55)}
 
 
-class SRValidator(Validator[float]):
+class SRValidator(vals.Validator[float]):
     """
     Validator to validate the AWG clock sample rate
     """
