@@ -383,13 +383,13 @@ class PNABase(VisaInstrument):
         self.add_submodule("ports", ports.to_channel_tuple())
 
         # RF output
-        self.add_parameter('output',
-                           label='RF Output',
-                           get_cmd=':OUTPut?',
-                           set_cmd=':OUTPut {}',
-                           val_mapping=create_on_off_val_mapping(on_val='1',
-                                                                 off_val='0'))
-
+        self.add_parameter(
+            "output",
+            label="RF Output",
+            get_cmd=":OUTPut?",
+            set_cmd=":OUTPut {}",
+            val_mapping=create_on_off_val_mapping(on_val="1", off_val="0"),
+        )
 
         # Drive power
         self.add_parameter('power',
