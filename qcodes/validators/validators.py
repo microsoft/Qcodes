@@ -19,8 +19,6 @@ from typing import Tuple, TypeVar, Union, cast
 import numpy as np
 from typing_extensions import Literal
 
-from qcodes.utils.types import complex_types
-
 BIGSTRING = 1000000000
 BIGINT = int(1e18)
 
@@ -407,7 +405,7 @@ class ComplexNumbers(Validator[Union[complex, "np.complexfloating[Any,Any]"]]):
     A validator for complex numbers.
     """
 
-    validtypes = complex_types
+    validtypes = (complex, np.complex128, np.complex64)
 
     def __init__(self) -> None:
 
