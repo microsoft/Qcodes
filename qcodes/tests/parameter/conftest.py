@@ -3,7 +3,7 @@ from typing import Any, Optional
 
 import pytest
 
-import qcodes.utils.validators as vals
+import qcodes.validators as vals
 from qcodes.instrument import InstrumentBase
 from qcodes.parameters import Parameter
 from qcodes.tests.instrument_mocks import DummyChannelInstrument

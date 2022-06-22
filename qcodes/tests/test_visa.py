@@ -1,10 +1,8 @@
-import warnings
-
 import pytest
 import pyvisa as visa
 
 from qcodes.instrument.visa import VisaInstrument
-from qcodes.utils.validators import Numbers
+from qcodes.validators import Numbers
 
 
 class MockVisa(VisaInstrument):

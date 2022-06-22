@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 from hypothesis import HealthCheck, given, settings
 
-from qcodes import config
+from qcodes import config, validators
 from qcodes.dataset import new_experiment
 from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.do_nd import ArraySweep, LinSweep, LogSweep, do0d, do1d, do2d, dond
@@ -19,8 +19,6 @@ from qcodes.tests.instrument_mocks import (
     Multi2DSetPointParam2Sizes,
     MultiSetPointParam,
 )
-from qcodes.utils import validators
-from qcodes.utils.validators import Arrays
 
 from .conftest import ArrayshapedParam
 
@@ -233,7 +231,9 @@ def test_do0d_verify_shape(
 
 @pytest.mark.usefixtures("experiment")
 def test_do0d_parameter_with_array_vals():
-    param = ArrayshapedParam(name="paramwitharrayval", vals=Arrays(shape=(10,)))
+    param = ArrayshapedParam(
+        name="paramwitharrayval", vals=validators.Arrays(shape=(10,))
+    )
     results = do0d(param)
     expected_shapes = {"paramwitharrayval": (10,)}
     assert results[0].description.shapes == expected_shapes
@@ -411,7 +411,9 @@ def test_do1d_verify_shape(
 
 @pytest.mark.usefixtures("experiment")
 def test_do1d_parameter_with_array_vals(_param_set):
-    param = ArrayshapedParam(name="paramwitharrayval", vals=Arrays(shape=(10,)))
+    param = ArrayshapedParam(
+        name="paramwitharrayval", vals=validators.Arrays(shape=(10,))
+    )
     start = 0
     stop = 1
     num_points = 15  # make param
@@ -1228,7 +1230,9 @@ def test_dond_0d_output_type(_param, _param_complex, _param_callable):
 
 @pytest.mark.usefixtures("experiment")
 def test_dond_0d_parameter_with_array_vals():
-    param = ArrayshapedParam(name="paramwitharrayval", vals=Arrays(shape=(10,)))
+    param = ArrayshapedParam(
+        name="paramwitharrayval", vals=validators.Arrays(shape=(10,))
+    )
     results = dond(param)
     expected_shapes = {"paramwitharrayval": (10,)}
     assert results[0].description.shapes == expected_shapes
@@ -1271,7 +1275,9 @@ def test_dond_0d_parameter_with_setpoints_2d(dummyinstrument):
 
 @pytest.mark.usefixtures("experiment")
 def test_dond_1d_parameter_with_array_vals(_param_set):
-    param = ArrayshapedParam(name="paramwitharrayval", vals=Arrays(shape=(10,)))
+    param = ArrayshapedParam(
+        name="paramwitharrayval", vals=validators.Arrays(shape=(10,))
+    )
     start = 0
     stop = 1
     num_points = 15  # make param

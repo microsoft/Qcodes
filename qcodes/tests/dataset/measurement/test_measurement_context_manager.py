@@ -13,6 +13,7 @@ from hypothesis import HealthCheck, given, settings
 from numpy.testing import assert_allclose, assert_array_equal
 
 import qcodes as qc
+import qcodes.validators as vals
 from qcodes.dataset.data_set import DataSet, load_by_id
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.experiment_container import new_experiment
@@ -25,7 +26,6 @@ from qcodes.tests.common import reset_config_on_exit, retry_until_does_not_throw
 
 # pylint: disable=unused-import
 from qcodes.tests.test_station import set_default_station_to_none
-from qcodes.utils.validators import Arrays
 
 
 def test_log_messages(caplog, meas_with_registered_param):
@@ -1442,7 +1442,7 @@ def test_datasaver_parameter_with_setpoints_reg_but_missing(
     chan.dummy_start(0)
     chan.dummy_stop(10)
 
-    someparam = Parameter('someparam', vals=Arrays(shape=(10,)))
+    someparam = Parameter("someparam", vals=vals.Arrays(shape=(10,)))
     old_setpoints = param.setpoints
     param.setpoints = (old_setpoints[0], someparam)
 
@@ -2099,10 +2099,8 @@ def test_save_and_reload_complex_standalone(complex_num_instrument,
     param = complex_num_instrument.complex_num
     complex_num_instrument.setpoint(1)
     p = Parameter(
-        'test',
-        set_cmd=None,
-        get_cmd=lambda: 1+1j,
-        vals=qc.utils.validators.ComplexNumbers())
+        "test", set_cmd=None, get_cmd=lambda: 1 + 1j, vals=vals.ComplexNumbers()
+    )
     meas = qc.dataset.measurements.Measurement()
     meas.register_parameter(param)
     pval = param.get()
