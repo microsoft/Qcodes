@@ -6,7 +6,7 @@ import pyvisa as visa
 import pyvisa.constants as vi_const
 import pyvisa.resources
 
-import qcodes.utils.validators as vals
+import qcodes.validators as vals
 from qcodes.logger import get_instrument_logger
 from qcodes.utils.delaykeyboardinterrupt import DelayedKeyboardInterrupt
 from qcodes.utils.deprecate import deprecate
