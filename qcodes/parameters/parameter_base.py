@@ -402,7 +402,7 @@ class ParameterBase(Metadatable):
         """
         State of the parameter as a JSON-compatible dict (everything that
         the custom JSON encoder class
-        :class:`qcodes.utils.helpers.NumpyJSONEncoder` supports).
+        :class:`.NumpyJSONEncoder` supports).
 
         If the parameter has been initiated with ``snapshot_value=False``,
         the snapshot will NOT include the ``value`` and ``raw_value`` of the

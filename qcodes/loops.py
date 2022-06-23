@@ -265,7 +265,7 @@ class Loop(Metadatable):
                       params_to_skip_update: Optional[Sequence[str]] = None):
         """
         State of the loop as a JSON-compatible dict (everything that
-        the custom JSON encoder class :class:'qcodes.utils.helpers.NumpyJSONEncoder'
+        the custom JSON encoder class :class:'.NumpyJSONEncoder'
         supports).
 
         Args:

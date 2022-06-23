@@ -224,7 +224,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         """
         State of the instrument as a JSON-compatible dict (everything that
         the custom JSON encoder class
-        :class:`qcodes.utils.helpers.NumpyJSONEncoder`
+        :class:`.NumpyJSONEncoder`
         supports).
 
         Args:

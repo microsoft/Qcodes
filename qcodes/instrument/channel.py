@@ -341,7 +341,7 @@ class ChannelTuple(Metadatable, Sequence[InstrumentModuleType]):
         """
         State of the instrument as a JSON-compatible dict (everything that
         the custom JSON encoder class
-        :class:`qcodes.utils.helpers.NumpyJSONEncoder` supports).
+        :class:`.NumpyJSONEncoder` supports).
 
         Args:
             update: If True, update the state by querying the
