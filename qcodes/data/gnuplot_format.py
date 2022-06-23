@@ -1,13 +1,16 @@
-import numpy as np
-import re
-import math
 import json
 import logging
+import math
+import re
+from typing import TYPE_CHECKING
 
-from qcodes.utils.helpers import deep_update, NumpyJSONEncoder
+import numpy as np
+
+from qcodes.utils import NumpyJSONEncoder
+from qcodes.utils.helpers import deep_update
+
 from .data_array import DataArray
 from .format import Formatter
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     import qcodes.data.data_set

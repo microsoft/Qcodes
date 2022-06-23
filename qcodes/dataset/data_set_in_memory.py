@@ -40,7 +40,7 @@ from qcodes.dataset.sqlite.queries import (
     update_parent_datasets,
     update_run_description,
 )
-from qcodes.utils.helpers import NumpyJSONEncoder
+from qcodes.utils import NumpyJSONEncoder
 
 from .data_set_cache import DataSetCacheInMem
 from .dataset_helpers import _add_run_to_runs_table

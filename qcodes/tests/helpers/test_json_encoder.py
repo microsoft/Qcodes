@@ -11,7 +11,7 @@ with warnings.catch_warnings():
     warnings.simplefilter("ignore", category=DeprecationWarning)
     import uncertainties
 
-from qcodes.utils.helpers import NumpyJSONEncoder
+from qcodes.utils import NumpyJSONEncoder
 from qcodes.utils.types import numpy_complex, numpy_floats, numpy_ints
 
 
