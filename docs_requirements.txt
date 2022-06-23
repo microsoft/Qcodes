@@ -21,14 +21,14 @@ ipykernel==6.15.0
 ipython~=8.4.0; python_version>='3.8'
 ipython~=7.31.0; python_version<'3.8'
 ipython-genutils==0.2.0
-ipywidgets==7.7.0
+ipywidgets==7.7.1
 jedi==0.18.1
 Jinja2==3.1.2
 jsonpointer==2.3
 jsonschema==4.6.0
 jupyter==1.0.0
 jupyter-client==7.3.4
-jupyter-console==6.4.3
+jupyter-console==6.4.4
 jupyter-core==4.10.0
 jupyterlab-pygments==0.2.2
 MarkupSafe==2.1.1
@@ -90,7 +90,7 @@ typing-extensions==4.2.0
 urllib3==1.26.9
 wcwidth==0.2.5
 webencodings==0.5.1
-widgetsnbextension==3.6.0
+widgetsnbextension==3.6.1
 wincertstore==0.2
 xarray~=0.20.2; python_version<'3.8'
 xarray~=2022.3.0; python_version>='3.8'
