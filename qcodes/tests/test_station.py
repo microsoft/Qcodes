@@ -17,8 +17,9 @@ from qcodes.parameters import DelegateParameter, Parameter
 from qcodes.station import SCHEMA_PATH, Station, ValidationWarning, update_config_schema
 from qcodes.tests.common import default_config
 from qcodes.tests.instrument_mocks import DummyInstrument
+from qcodes.utils import NumpyJSONEncoder
 from qcodes.utils.deprecate import assert_deprecated, deprecation_message
-from qcodes.utils.helpers import YAML, NumpyJSONEncoder, get_qcodes_path
+from qcodes.utils.helpers import YAML, get_qcodes_path
 
 from .common import DumyPar
 

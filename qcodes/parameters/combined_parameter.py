@@ -177,7 +177,7 @@ class CombinedParameter(Metadatable):
         """
         State of the combined parameter as a JSON-compatible dict (everything
         that the custom JSON encoder class
-        :class:`qcodes.utils.helpers.NumpyJSONEncoder` supports).
+        :class:`.NumpyJSONEncoder` supports).
 
         Args:
             update: ``True`` or ``False``.

@@ -7,7 +7,8 @@ import h5py
 import numpy as np
 
 import qcodes as qc
-
+from qcodes.utils import NumpyJSONEncoder
+from qcodes.utils.helpers import deep_update
 from .data_array import DataArray
 from .format import Formatter
 
@@ -503,9 +504,6 @@ def str_to_bool(s):
         return False
     else:
         raise ValueError(f"Cannot covert {s} to a bool")
-
-
-from qcodes.utils.helpers import NumpyJSONEncoder, deep_update
 
 
 class HDF5FormatMetadata(HDF5Format):

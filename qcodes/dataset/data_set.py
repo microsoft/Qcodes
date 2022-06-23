@@ -84,12 +84,12 @@ from qcodes.dataset.sqlite.query_helpers import (
     one,
     select_one_where,
 )
+from qcodes.utils import NumpyJSONEncoder
 from qcodes.utils.deprecate import (
     QCoDeSDeprecationWarning,
     deprecate,
     issue_deprecation_warning,
 )
-from qcodes.utils.helpers import NumpyJSONEncoder
 
 from .data_set_cache import DataSetCacheWithDBBackend
 from .data_set_in_memory import DataSetInMem
