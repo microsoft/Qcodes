@@ -32,7 +32,7 @@ from typing import (
 
 import numpy as np
 
-from .numpy_utils import NumpyJSONEncoder
+from .json_utils import NumpyJSONEncoder
 
 if TYPE_CHECKING:
     from PyQt5.QtWidgets import QMainWindow
