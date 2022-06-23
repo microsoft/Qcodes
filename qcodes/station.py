@@ -176,7 +176,7 @@ class Station(Metadatable, DelegateAttributes):
                       ) -> Dict[Any, Any]:
         """
         State of the station as a JSON-compatible dictionary (everything that
-        the custom JSON encoder class :class:`qcodes.utils.helpers.NumpyJSONEncoder`
+        the custom JSON encoder class :class:`.NumpyJSONEncoder`
         supports).
 
         Note: If the station contains an instrument that has already been
