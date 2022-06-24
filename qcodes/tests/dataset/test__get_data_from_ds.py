@@ -9,7 +9,7 @@ from qcodes.dataset.data_export import _get_data_from_ds, get_data_by_id
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.measurements import Measurement
-from qcodes.utils.deprecate import QCoDeSDeprecationWarning
+from qcodes.utils import QCoDeSDeprecationWarning
 
 
 def test_get_data_by_id_order(dataset):

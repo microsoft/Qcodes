@@ -10,7 +10,7 @@ from typing import Union, Any, Iterator
 
 import wrapt
 
-from qcodes.utils.delaykeyboardinterrupt import DelayedKeyboardInterrupt
+from qcodes.utils import DelayedKeyboardInterrupt
 
 log = logging.getLogger(__name__)
 

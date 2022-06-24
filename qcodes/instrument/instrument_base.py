@@ -25,7 +25,7 @@ from qcodes.utils.metadata import Metadatable
 if TYPE_CHECKING:
     from qcodes.instrument.channel import ChannelTuple, InstrumentModule
 
-from qcodes.utils.deprecate import QCoDeSDeprecationWarning
+from qcodes.utils import QCoDeSDeprecationWarning
 
 log = logging.getLogger(__name__)
 

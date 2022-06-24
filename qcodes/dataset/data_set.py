@@ -84,8 +84,8 @@ from qcodes.dataset.sqlite.query_helpers import (
     one,
     select_one_where,
 )
-from qcodes.utils import NumpyJSONEncoder
-from qcodes.utils.deprecate import (
+from qcodes.utils import (
+    NumpyJSONEncoder,
     QCoDeSDeprecationWarning,
     deprecate,
     issue_deprecation_warning,

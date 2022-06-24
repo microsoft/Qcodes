@@ -18,7 +18,7 @@ from typing_extensions import Literal, TypedDict, overload
 import qcodes.validators as vals
 from qcodes.instrument import InstrumentChannel
 from qcodes.parameters import Group, GroupParameter, Parameter, ParamRawDataType
-from qcodes.utils.deprecate import deprecate
+from qcodes.utils import deprecate
 
 from . import constants
 from .constants import (

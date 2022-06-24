@@ -12,7 +12,7 @@ from qcodes.parameters import (
     MultiParameter,
     ParamRawDataType,
 )
-from qcodes.utils.deprecate import deprecate
+from qcodes.utils import deprecate
 from qcodes.utils.helpers import create_on_off_val_mapping
 
 log = logging.getLogger(__name__)

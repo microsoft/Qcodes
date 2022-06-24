@@ -6,7 +6,7 @@ from qcodes.sphinx_extensions.parse_parameter_attr import (
     ParameterProxy,
     qcodes_parameter_attr_getter,
 )
-from qcodes.utils.deprecate import deprecate
+from qcodes.utils import deprecate
 
 
 class DummyTestClass(InstrumentBase):

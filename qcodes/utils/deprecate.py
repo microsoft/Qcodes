@@ -7,7 +7,10 @@ import wrapt
 
 
 class QCoDeSDeprecationWarning(RuntimeWarning):
-    """Fix for `DeprecationWarning` being suppressed by default."""
+    """
+    A DeprecationWarning used internally in QCoDeS. This
+    fixes `DeprecationWarning` being suppressed by default.
+    """
 
 
 def deprecation_message(
@@ -30,6 +33,9 @@ def issue_deprecation_warning(
     alternative: Optional[str] = None,
     stacklevel: int = 2,
 ) -> None:
+    """
+    Issue a `QCoDeSDeprecationWarning` with a consistently formatted message
+    """
     warnings.warn(
         deprecation_message(what, reason, alternative),
         QCoDeSDeprecationWarning,

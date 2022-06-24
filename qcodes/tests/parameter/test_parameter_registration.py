@@ -2,7 +2,7 @@ import pytest
 
 from qcodes.parameters import Parameter
 from qcodes.tests.instrument_mocks import DummyAttrInstrument
-from qcodes.utils.deprecate import QCoDeSDeprecationWarning
+from qcodes.utils import QCoDeSDeprecationWarning
 
 
 class BrokenParameter(Parameter):
