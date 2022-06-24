@@ -8,7 +8,7 @@ import pyvisa.resources
 
 import qcodes.validators as vals
 from qcodes.logger import get_instrument_logger
-from qcodes.utils.delaykeyboardinterrupt import DelayedKeyboardInterrupt
+from qcodes.utils import DelayedKeyboardInterrupt
 from qcodes.utils.deprecate import deprecate
 
 from .instrument import Instrument

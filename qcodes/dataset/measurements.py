@@ -65,7 +65,7 @@ from qcodes.parameters import (
     expand_setpoints_helper,
 )
 from qcodes.station import Station
-from qcodes.utils.delaykeyboardinterrupt import DelayedKeyboardInterrupt
+from qcodes.utils import DelayedKeyboardInterrupt
 
 if TYPE_CHECKING:
     from qcodes.dataset.sqlite.connection import ConnectionPlus
