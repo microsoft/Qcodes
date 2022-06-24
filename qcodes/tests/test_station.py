@@ -17,8 +17,8 @@ from qcodes.parameters import DelegateParameter, Parameter
 from qcodes.station import SCHEMA_PATH, Station, ValidationWarning, update_config_schema
 from qcodes.tests.common import default_config
 from qcodes.tests.instrument_mocks import DummyInstrument
-from qcodes.utils import NumpyJSONEncoder
-from qcodes.utils.deprecate import assert_deprecated, deprecation_message
+from qcodes.utils import NumpyJSONEncoder, QCoDeSDeprecationWarning
+from qcodes.utils.deprecate import deprecation_message
 from qcodes.utils.helpers import YAML, get_qcodes_path
 
 from .common import DumyPar
@@ -755,11 +755,11 @@ instruments:
     driver: qcodes.tests.instrument_mocks
     type: DummyChannelInstrument
     """)
-    with assert_deprecated(
-        deprecation_message(
-            'use of the "driver"-keyword in the station configuration file',
-            alternative='the "type"-keyword instead, prepending the driver value'
-                        ' to it')):
+    message = deprecation_message(
+        'use of the "driver"-keyword in the station configuration file',
+        alternative='the "type"-keyword instead, prepending the driver value' " to it",
+    )
+    with pytest.warns(QCoDeSDeprecationWarning, match=message):
         st.load_instrument('mock')
 
 
@@ -774,11 +774,11 @@ instruments:
       ch1:
         limits: -10, 10
     """)
-    with assert_deprecated(
-        deprecation_message(
-            'use of a comma separated string for the limits keyword',
-            alternative='an array like "[lower_lim, upper_lim]"')
-    ):
+    message = deprecation_message(
+        "use of a comma separated string for the limits keyword",
+        alternative=r'an array like "\[lower_lim, upper_lim\]"',
+    )
+    with pytest.warns(QCoDeSDeprecationWarning, match=message):
         st.load_instrument('mock')
 
 
