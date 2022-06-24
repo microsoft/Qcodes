@@ -7,7 +7,7 @@ import numpy as np
 
 from qcodes.instrument import IPInstrument
 from qcodes.parameters import MultiParameter
-from qcodes.utils.deprecate import deprecate
+from qcodes.utils import deprecate
 from qcodes.validators import Bool, Enum
 
 log = logging.getLogger(__name__)

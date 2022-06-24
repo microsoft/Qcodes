@@ -7,7 +7,7 @@ from typing_extensions import TypedDict
 from qcodes.dataset.data_set import load_by_id
 from qcodes.dataset.data_set_protocol import DataSetProtocol
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
-from qcodes.utils.deprecate import deprecate
+from qcodes.utils import deprecate
 from qcodes.utils.numpy_utils import list_of_data_to_maybe_ragged_nd_array
 
 log = logging.getLogger(__name__)

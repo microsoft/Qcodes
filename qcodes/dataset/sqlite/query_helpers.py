@@ -17,7 +17,7 @@ from qcodes.dataset.sqlite.connection import (
     transaction,
 )
 from qcodes.dataset.sqlite.settings import SQLiteSettings
-from qcodes.utils.deprecate import deprecate
+from qcodes.utils import deprecate
 
 # represent the type of  data we can/want map to sqlite column
 VALUE = Union[str, complex, List, ndarray, bool, None]

@@ -21,7 +21,7 @@ from qcodes.dataset.sqlite.queries import (
     get_raw_run_attributes,
     raw_time_to_str_time,
 )
-from qcodes.utils.deprecate import QCoDeSDeprecationWarning
+from qcodes.utils import QCoDeSDeprecationWarning
 
 
 @pytest.mark.usefixtures("experiment")

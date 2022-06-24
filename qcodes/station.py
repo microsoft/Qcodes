@@ -47,7 +47,7 @@ from qcodes.parameters import (
     Parameter,
     ParameterBase,
 )
-from qcodes.utils.deprecate import issue_deprecation_warning
+from qcodes.utils import issue_deprecation_warning
 from qcodes.utils.helpers import (
     YAML,
     DelegateAttributes,

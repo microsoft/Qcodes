@@ -53,7 +53,7 @@ from qcodes.dataset.sqlite.query_helpers import (
     sql_placeholder_string,
     update_where,
 )
-from qcodes.utils.deprecate import deprecate
+from qcodes.utils import deprecate
 from qcodes.utils.numpy_utils import list_of_data_to_maybe_ragged_nd_array
 
 log = logging.getLogger(__name__)

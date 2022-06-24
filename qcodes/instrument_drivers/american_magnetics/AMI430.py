@@ -23,7 +23,7 @@ import numpy as np
 from qcodes.instrument import Instrument, InstrumentChannel, IPInstrument
 from qcodes.math_utils import FieldVector
 from qcodes.parameters import Parameter
-from qcodes.utils.deprecate import QCoDeSDeprecationWarning
+from qcodes.utils import QCoDeSDeprecationWarning
 from qcodes.validators import Anything, Bool, Enum, Ints, Numbers
 
 log = logging.getLogger(__name__)
