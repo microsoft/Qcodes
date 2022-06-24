@@ -1,12 +1,25 @@
 from types import TracebackType
-from typing import Any, Dict, List, Optional, Set, Type, Union, cast
+from typing import Any, List, Optional, Set, Type, Union, cast
 
 import numpy as np
+from typing_extensions import TypedDict
 
 from qcodes.instrument import InstrumentChannel, VisaInstrument
 from qcodes.parameters import ParameterWithSetpoints, invert_val_mapping
 from qcodes.utils.helpers import create_on_off_val_mapping
 from qcodes.validators import Arrays, Enum, Ints, Lists, Numbers
+
+
+class _SweepDict(TypedDict):
+    start: float
+    stop: float
+    step_count: int
+    delay: float
+    sweep_count: int
+    range_mode: str
+    fail_abort: str
+    dual: str
+    buffer_name: str
 
 
 class ParameterWithSetpointsCustomized(ParameterWithSetpoints):
@@ -392,7 +405,7 @@ class Source2450(InstrumentChannel):
         unit = self.function_modes[self._proper_function]["unit"]
 
         self.function = self.parent.source_function
-        self._sweep_arguments: Dict[str, Union[float, int, str]] = {}
+        self._sweep_arguments: Optional[_SweepDict] = None
 
         self.add_parameter(
             "range",
@@ -481,7 +494,7 @@ class Source2450(InstrumentChannel):
         )
 
     def get_sweep_axis(self) -> np.ndarray:
-        if self._sweep_arguments == {}:
+        if self._sweep_arguments is None:
             raise ValueError(
                 "Please setup the sweep before getting values of this parameter"
             )
@@ -504,7 +517,7 @@ class Source2450(InstrumentChannel):
             buffer_name: str = "defbuffer1"
     ) -> None:
 
-        self._sweep_arguments = dict(
+        self._sweep_arguments = _SweepDict(
             start=start,
             stop=stop,
             step_count=step_count,
@@ -521,6 +534,8 @@ class Source2450(InstrumentChannel):
         Start a sweep and return when the sweep has finished.
         Note: This call is blocking
         """
+        if self._sweep_arguments is None:
+            raise ValueError("Please call `sweep_setup` before starting a sweep.")
         cmd_args = dict(self._sweep_arguments)
         cmd_args["function"] = self._proper_function
 
@@ -533,7 +548,7 @@ class Source2450(InstrumentChannel):
         self.write("*WAI")
 
     def sweep_reset(self) -> None:
-        self._sweep_arguments = {}
+        self._sweep_arguments = None
 
     def _get_user_delay(self) -> float:
         get_cmd = f":SOURce:{self._proper_function}:DELay:USER" \
