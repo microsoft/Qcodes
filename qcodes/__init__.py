@@ -76,7 +76,7 @@ from qcodes.station import Station
 atexit.register(Instrument.close_all)
 
 if config.core.import_legacy_api:
-    from qcodes.utils.deprecate import QCoDeSDeprecationWarning
+    from qcodes.utils import QCoDeSDeprecationWarning
 
     warnings.warn(
         "import_legacy_api config option is deprecated and will be removed "
