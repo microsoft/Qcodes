@@ -757,7 +757,7 @@ instruments:
     """)
     message = deprecation_message(
         'use of the "driver"-keyword in the station configuration file',
-        alternative='the "type"-keyword instead, prepending the driver value' " to it",
+        alternative='the "type"-keyword instead, prepending the driver value to it',
     )
     with pytest.warns(QCoDeSDeprecationWarning, match=message):
         st.load_instrument('mock')
