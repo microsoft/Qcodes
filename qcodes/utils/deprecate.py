@@ -33,6 +33,9 @@ def issue_deprecation_warning(
     alternative: Optional[str] = None,
     stacklevel: int = 2,
 ) -> None:
+    """
+    Issue a `QCoDeSDeprecationWarning` with a consistently formatted message
+    """
     warnings.warn(
         deprecation_message(what, reason, alternative),
         QCoDeSDeprecationWarning,
