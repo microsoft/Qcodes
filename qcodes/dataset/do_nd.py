@@ -910,11 +910,15 @@ def _conditional_parameter_set(
         parameter.set(value)
 
 
-def _make_nested_setpoints(sweeps: List[AbstractSweep]) -> np.ndarray:
+def _make_nested_setpoints(sweeps: Sequence[AbstractSweep]) -> np.ndarray:
     """Create the cartesian product of all the setpoint values."""
     if len(sweeps) == 0:
         return np.array([[]])  # 0d sweep (do0d)
     setpoint_values = [sweep.get_setpoints() for sweep in sweeps]
+    return _flatten_setpoint_values(setpoint_values)
+
+
+def _flatten_setpoint_values(setpoint_values: Sequence[np.ndarray]) -> np.ndarray:
     setpoint_grids = np.meshgrid(*setpoint_values, indexing="ij")
     flat_setpoint_grids = [np.ravel(grid, order="C") for grid in setpoint_grids]
     return np.vstack(flat_setpoint_grids).T
