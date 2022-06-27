@@ -1863,3 +1863,54 @@ def test_dond_2d_multi_datasets_with_callable_output_data(
     np.testing.assert_array_equal(
         loaded_data_2[_param_2.name][_param_set_2.name], expected_setpoints_2
     )
+
+
+@pytest.mark.usefixtures("plot_close", "experiment")
+def test_dond_multi_sweep(_param_set, _param_set_2, _param, _param_2):
+
+    from qcodes.dataset.do_nd import MultiSweep
+
+    sweep_1 = LinSweep(_param_set, 0, 1, 10, 0)
+    sweep_2 = LinSweep(_param_set_2, 1, 2, 10, 0)
+
+    multi_sweep = MultiSweep([sweep_1, sweep_2])
+
+    output = dond(multi_sweep, [_param], [_param_2], do_plot=False)
+
+    assert sweep_1.param.name == "simple_setter_parameter"
+    assert _param.name == "simple_parameter"
+
+    assert sweep_2.param.name == "simple_setter_parameter_2"
+    assert _param_2.name == "simple_parameter_2"
+
+    assert output[0][0].parameters == "simple_setter_parameter,simple_parameter"
+    assert output[0][1].parameters == "simple_setter_parameter_2,simple_parameter_2"
+
+
+@pytest.mark.usefixtures("plot_close", "experiment")
+def test_dond_multi_sweep_sweeper(_param_set, _param_set_2, _param):
+
+    sweep_len = 10
+    from numpy.testing import assert_array_equal
+
+    from qcodes.dataset.do_nd import MultiSweep, _Sweeper
+
+    sweep_1 = LinSweep(_param_set, 0, 1, sweep_len, 0)
+
+    sweep_2 = LinSweep(_param_set_2, 1, 2, sweep_len, 0)
+
+    multi_sweep = MultiSweep([sweep_1, sweep_2])
+
+    sweeper = _Sweeper([multi_sweep], [])
+
+    assert sweeper.sweep_groupes == {
+        "group_0": [sweep_1.param],
+        "group_1": [sweep_2.param],
+    }
+    assert_array_equal(
+        sweeper.nested_setpoints,
+        np.vstack([sweep_1.get_setpoints(), sweep_2.get_setpoints()]).T,
+    )
+    assert sweeper.shape == (10,)
+    assert sweeper.all_setpoint_params == (sweep_1.param, sweep_2.param)
+    assert sweeper.params_set == (sweep_1.param, sweep_2.param)
