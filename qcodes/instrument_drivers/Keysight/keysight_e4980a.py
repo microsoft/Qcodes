@@ -11,8 +11,8 @@ from qcodes.parameters import (
     MultiParameter,
     ParamRawDataType,
 )
+from qcodes.utils import convert_legacy_version_to_supported_version
 from qcodes.utils.helpers import create_on_off_val_mapping
-from qcodes.utils.installation_info import convert_legacy_version_to_supported_version
 from qcodes.validators import Bool, Enum, Ints, Numbers
 
 

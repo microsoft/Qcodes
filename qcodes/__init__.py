@@ -9,9 +9,7 @@ from typing import Any
 import qcodes.configuration as qcconfig
 from qcodes.logger.logger import conditionally_start_all_logging
 from qcodes.utils.helpers import add_to_spyder_UMR_excludelist
-from qcodes.utils.installation_info import get_qcodes_version
-
-__version__ = get_qcodes_version()
+from ._version import __version__
 
 config: qcconfig.Config = qcconfig.Config()
 
