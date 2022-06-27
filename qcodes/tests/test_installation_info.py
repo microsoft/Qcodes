@@ -1,12 +1,18 @@
+import pytest
+
 import qcodes as qc
 import qcodes.utils.installation_info as ii
+from qcodes.utils import QCoDeSDeprecationWarning
 
 # The get_* functions from installation_info are hard to meaningfully test,
 # but we can at least test that they execute without errors
 
 
 def test_get_qcodes_version():
-    assert ii.get_qcodes_version() == qc.__version__
+    with pytest.warns(QCoDeSDeprecationWarning):
+        version = ii.get_qcodes_version()
+
+    assert version == qc.__version__
 
 
 def test_is_qcodes_installed_editably():

@@ -340,7 +340,7 @@ def log_qcodes_versions(logger: logging.Logger) -> None:
     versions of all installed packages.
     """
 
-    qc_version = ii.get_qcodes_version()
+    qc_version = qc.__version__
     qc_e_inst = ii.is_qcodes_installed_editably()
     ipvs = ii.get_all_installed_package_versions()
 
