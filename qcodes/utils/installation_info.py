@@ -7,7 +7,6 @@ import json
 import logging
 import subprocess
 import sys
-from pathlib import Path
 from typing import Dict, Optional
 
 if sys.version_info >= (3, 10):
@@ -77,9 +76,3 @@ def convert_legacy_version_to_supported_version(ver: str) -> str:
         else:
             temp_list.append(v)
     return "".join(temp_list)
-
-
-def _has_pyproject_toml_and_is_git_repo(path: Path) -> bool:
-    has_pyproject_toml = (path / "pyproject.toml").exists()
-    is_git_repo = (path / ".git").exists()
-    return has_pyproject_toml and is_git_repo
