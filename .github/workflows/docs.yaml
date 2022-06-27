@@ -46,7 +46,7 @@ jobs:
       run: sudo apt install pandoc
       if: runner.os == 'Linux'
     - name: Install pandoc on windows
-      uses: Wandalen/wretry.action@v1.0.25
+      uses: Wandalen/wretry.action@v1.0.27
       with:
         action: crazy-max/ghaction-chocolatey@v1.6.0
         with: |
@@ -95,7 +95,7 @@ jobs:
         name: docs_${{ matrix.python-version }}_${{ matrix.os }}
         path: ${{ github.workspace }}/docs/_build/html
     - name: Deploy to gh pages
-      uses: JamesIves/github-pages-deploy-action@v4.3.3
+      uses: JamesIves/github-pages-deploy-action@v4.3.4
       with:
         branch: gh-pages
         folder: ${{ github.workspace }}/docs/_build/html
