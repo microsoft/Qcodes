@@ -825,10 +825,6 @@ def dond(
 
     sweeper = _Sweeper(sweep_instances, additional_setpoints)
 
-    nested_setpoints = sweeper.nested_setpoints
-
-    all_setpoint_params = sweeper.all_setpoint_params
-
     (
         measured_all,
         grouped_parameters,
@@ -836,7 +832,7 @@ def dond(
     ) = _extract_paramters_by_type_and_group(measurement_name, params_meas)
     LOG.info(
         "Starting a doNd with scan with\n setpoints: %s,\n measuring: %s",
-        all_setpoint_params,
+        sweeper.all_setpoint_params,
         measured_all,
     )
     LOG.debug(
@@ -854,7 +850,7 @@ def dond(
         )
         shapes = None
     meas_list = _create_measurements(
-        all_setpoint_params,
+        sweeper.all_setpoint_params,
         enter_actions,
         exit_actions,
         exp,
@@ -881,7 +877,7 @@ def dond(
             datasavers = [stack.enter_context(measure.run()) for measure in meas_list]
             additional_setpoints_data = process_params_meas(additional_setpoints)
             previous_setpoints = np.empty(len(sweep_instances))
-            for setpoints in tqdm(nested_setpoints, disable=not show_progress):
+            for setpoints in tqdm(sweeper.nested_setpoints, disable=not show_progress):
 
                 active_actions, delays = _select_active_actions_delays(
                     sweeper.post_actions,
