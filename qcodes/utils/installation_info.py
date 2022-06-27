@@ -17,7 +17,7 @@ else:
     # 3.9 and earlier
     from importlib_metadata import distributions
 
-from qcodes.utils import deprecate
+from qcodes.utils.deprecate import deprecate
 
 log = logging.getLogger(__name__)
 
