@@ -744,6 +744,31 @@ class _Sweeper:
         return self._post_actions
 
 
+class _Measurements:
+    def __init__(
+        self,
+        measurement_name: str,
+        params_meas: Sequence[Union[ParamMeasT, Sequence[ParamMeasT]]],
+    ):
+        (
+            self._measured_all,
+            self._grouped_parameters,
+            self._measured_parameters,
+        ) = _extract_paramters_by_type_and_group(measurement_name, params_meas)
+
+    @property
+    def measured_all(self) -> Tuple[ParamMeasT, ...]:
+        return self._measured_all
+
+    @property
+    def grouped_parameters(self) -> Dict[str, ParameterGroup]:
+        return self._grouped_parameters
+
+    @property
+    def measured_parameters(self) -> Tuple[ParameterBase, ...]:
+        return self._measured_parameters
+
+
 def dond(
     *params: Union[AbstractSweep, Union[ParamMeasT, Sequence[ParamMeasT]]],
     write_period: Optional[float] = None,
@@ -825,27 +850,29 @@ def dond(
 
     sweeper = _Sweeper(sweep_instances, additional_setpoints)
 
-    (
-        measured_all,
-        grouped_parameters,
-        measured_parameters,
-    ) = _extract_paramters_by_type_and_group(measurement_name, params_meas)
+    measurements = _Measurements(measurement_name, params_meas)
+
     LOG.info(
         "Starting a doNd with scan with\n setpoints: %s,\n measuring: %s",
         sweeper.all_setpoint_params,
-        measured_all,
+        measurements.measured_all,
     )
     LOG.debug(
         "Measured parameters have been grouped into:\n " "%s",
-        {name: group["params"] for name, group in grouped_parameters.items()},
+        {
+            name: group["params"]
+            for name, group in measurements.grouped_parameters.items()
+        },
     )
     try:
         loop_shape = sweeper.shape
-        shapes: Shapes = detect_shape_of_measurement(measured_parameters, loop_shape)
+        shapes: Shapes = detect_shape_of_measurement(
+            measurements.measured_parameters, loop_shape
+        )
         LOG.debug("Detected shapes to be %s", shapes)
     except TypeError:
         LOG.exception(
-            f"Could not detect shape of {measured_parameters} "
+            f"Could not detect shape of {measurements.measured_parameters} "
             f"falling back to unknown shape."
         )
         shapes = None
@@ -854,7 +881,7 @@ def dond(
         enter_actions,
         exit_actions,
         exp,
-        grouped_parameters,
+        measurements.grouped_parameters,
         shapes,
         write_period,
         log_info,
@@ -867,9 +894,9 @@ def dond(
         use_threads = config.dataset.use_threads
 
     params_meas_caller = (
-        ThreadPoolParamsCaller(*measured_all)
+        ThreadPoolParamsCaller(*measurements.measured_all)
         if use_threads
-        else SequentialParamsCaller(*measured_all)
+        else SequentialParamsCaller(*measurements.measured_all)
     )
 
     try:
@@ -901,7 +928,7 @@ def dond(
                     time.sleep(delay)
 
                 meas_value_pair = call_params_meas()
-                for group in grouped_parameters.values():
+                for group in measurements.grouped_parameters.values():
                     group["measured_params"] = []
                     for measured in meas_value_pair:
                         if measured[0] in group["params"]:
@@ -909,7 +936,9 @@ def dond(
                 for ind, datasaver in enumerate(datasavers):
                     datasaver.add_result(
                         *param_set_list,
-                        *grouped_parameters[f"group_{ind}"]["measured_params"],
+                        *measurements.grouped_parameters[f"group_{ind}"][
+                            "measured_params"
+                        ],
                         *additional_setpoints_data,
                     )
 
@@ -926,7 +955,7 @@ def dond(
             plots_axes.append(plot_axis)
             plots_colorbar.append(plot_color)
 
-    if len(grouped_parameters) == 1:
+    if len(measurements.grouped_parameters) == 1:
         return datasets[0], plots_axes[0], plots_colorbar[0]
     else:
         return tuple(datasets), tuple(plots_axes), tuple(plots_colorbar)
