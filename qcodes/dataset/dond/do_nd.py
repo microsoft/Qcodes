@@ -46,6 +46,16 @@ class ParameterGroup(TypedDict):
     measured_params: list[res_type]
 
 
+class MultiSweep:
+    def __init__(self, sweeps: Sequence[AbstractSweep]):
+        # todo check that all sweeps are the same
+        self._sweeps = tuple(sweeps)
+
+    @property
+    def sweeps(self) -> tuple[AbstractSweep, ...]:
+        return self._sweeps
+
+
 class _Sweeper:
     def __init__(
         self,
