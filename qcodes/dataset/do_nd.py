@@ -689,6 +689,18 @@ class _Sweeper:
         self._additional_setpoints = additional_setpoints
         self._nested_setpoints = self._make_nested_setpoints()
 
+        post_delays: List[float] = []
+        params_set: List[ParameterBase] = []
+        post_actions: List[ActionsT] = []
+        for sweep in self._sweeps:
+            post_delays.append(sweep.delay)
+            params_set.append(sweep.param)
+            post_actions.append(sweep.post_actions)
+
+        self._post_delays = tuple(post_delays)
+        self._params_set = tuple(params_set)
+        self._post_actions = tuple(post_actions)
+
     def _make_nested_setpoints(self) -> np.ndarray:
         """Create the cartesian product of all the setpoint values."""
         if len(self._sweeps) == 0:
@@ -718,6 +730,18 @@ class _Sweeper:
             1 for _ in self._additional_setpoints
         )
         return loop_shape
+
+    @property
+    def post_delays(self) -> Tuple[float, ...]:
+        return self._post_delays
+
+    @property
+    def params_set(self) -> Tuple[ParameterBase, ...]:
+        return self._params_set
+
+    @property
+    def post_actions(self) -> Tuple[ActionsT, ...]:
+        return self._post_actions
 
 
 def dond(
@@ -840,14 +864,6 @@ def dond(
         log_info,
     )
 
-    post_delays: List[float] = []
-    params_set: List[ParameterBase] = []
-    post_actions: List[ActionsT] = []
-    for sweep in sweep_instances:
-        post_delays.append(sweep.delay)
-        params_set.append(sweep.param)
-        post_actions.append(sweep.post_actions)
-
     datasets = []
     plots_axes = []
     plots_colorbar = []
@@ -868,8 +884,8 @@ def dond(
             for setpoints in tqdm(nested_setpoints, disable=not show_progress):
 
                 active_actions, delays = _select_active_actions_delays(
-                    post_actions,
-                    post_delays,
+                    sweeper.post_actions,
+                    sweeper.post_delays,
                     setpoints,
                     previous_setpoints,
                 )
@@ -877,7 +893,7 @@ def dond(
 
                 param_set_list = []
                 param_value_action_delay = zip(
-                    params_set,
+                    sweeper.params_set,
                     setpoints,
                     active_actions,
                     delays,
