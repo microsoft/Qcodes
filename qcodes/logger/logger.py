@@ -26,7 +26,10 @@ if TYPE_CHECKING:
     from opencensus.ext.azure.log_exporter import AzureLogHandler
 
 import qcodes as qc
-import qcodes.utils.installation_info as ii
+from qcodes.utils import (
+    get_all_installed_package_versions,
+    is_qcodes_installed_editably,
+)
 from qcodes.utils.helpers import get_qcodes_user_path
 
 log: logging.Logger = logging.getLogger(__name__)
@@ -341,8 +344,8 @@ def log_qcodes_versions(logger: logging.Logger) -> None:
     """
 
     qc_version = qc.__version__
-    qc_e_inst = ii.is_qcodes_installed_editably()
-    ipvs = ii.get_all_installed_package_versions()
+    qc_e_inst = is_qcodes_installed_editably()
+    ipvs = get_all_installed_package_versions()
 
     logger.info(f"QCoDeS version: {qc_version}")
     logger.info(f"QCoDeS installed in editable mode: {qc_e_inst}")
@@ -385,10 +388,10 @@ def conditionally_start_all_logging() -> None:
             return False
         elif config.logger.start_logging_on_import == 'if_telemetry_set_up':
             return (
-                config.GUID_components.location != 0 and
-                config.GUID_components.work_station != 0 and
-                config.telemetry.instrumentation_key != \
-                    "00000000-0000-0000-0000-000000000000"
+                config.GUID_components.location != 0
+                and config.GUID_components.work_station != 0
+                and config.telemetry.instrumentation_key
+                != "00000000-0000-0000-0000-000000000000"
             )
         else:
             raise RuntimeError('Error in qcodesrc validation.')

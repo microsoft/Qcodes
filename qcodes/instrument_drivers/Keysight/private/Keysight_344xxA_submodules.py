@@ -13,7 +13,7 @@ from qcodes.instrument_drivers.Keysight.private.error_handling import (
     KeysightErrorQueueMixin,
 )
 from qcodes.parameters import Parameter, ParameterWithSetpoints
-from qcodes.utils.installation_info import convert_legacy_version_to_supported_version
+from qcodes.utils import convert_legacy_version_to_supported_version
 
 
 class Trigger(InstrumentChannel):
