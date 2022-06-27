@@ -679,6 +679,47 @@ class ArraySweep(AbstractSweep):
         return self._post_actions
 
 
+class _Sweeper:
+    def __init__(
+        self,
+        sweeps: Sequence[AbstractSweep],
+        additional_setpoints: Sequence[ParameterBase],
+    ):
+        self._sweeps = sweeps
+        self._additional_setpoints = additional_setpoints
+        self._nested_setpoints = self._make_nested_setpoints()
+
+    def _make_nested_setpoints(self) -> np.ndarray:
+        """Create the cartesian product of all the setpoint values."""
+        if len(self._sweeps) == 0:
+            return np.array([[]])  # 0d sweep (do0d)
+        setpoint_values = [sweep.get_setpoints() for sweep in self._sweeps]
+        return _flatten_setpoint_values(setpoint_values)
+
+    @staticmethod
+    def _flatten_setpoint_values(setpoint_values: Sequence[np.ndarray]) -> np.ndarray:
+        setpoint_grids = np.meshgrid(*setpoint_values, indexing="ij")
+        flat_setpoint_grids = [np.ravel(grid, order="C") for grid in setpoint_grids]
+        return np.vstack(flat_setpoint_grids).T
+
+    @property
+    def nested_setpoints(self) -> np.ndarray:
+        return self._nested_setpoints
+
+    @property
+    def all_setpoint_params(self):
+        return tuple(sweep.param for sweep in self._sweeps) + tuple(
+            s for s in self._additional_setpoints
+        )
+
+    @property
+    def shape(self) -> Tuple[int, ...]:
+        loop_shape = tuple(sweep.num_points for sweep in self._sweeps) + tuple(
+            1 for _ in self._additional_setpoints
+        )
+        return loop_shape
+
+
 def dond(
     *params: Union[AbstractSweep, Union[ParamMeasT, Sequence[ParamMeasT]]],
     write_period: Optional[float] = None,
@@ -757,11 +798,12 @@ def dond(
         show_progress = config.dataset.dond_show_progress
 
     sweep_instances, params_meas = _parse_dond_arguments(*params)
-    nested_setpoints = _make_nested_setpoints(sweep_instances)
 
-    all_setpoint_params = tuple(sweep.param for sweep in sweep_instances) + tuple(
-        s for s in additional_setpoints
-    )
+    sweeper = _Sweeper(sweep_instances, additional_setpoints)
+
+    nested_setpoints = sweeper.nested_setpoints
+
+    all_setpoint_params = sweeper.all_setpoint_params
 
     (
         measured_all,
@@ -778,9 +820,7 @@ def dond(
         {name: group["params"] for name, group in grouped_parameters.items()},
     )
     try:
-        loop_shape = tuple(sweep.num_points for sweep in sweep_instances) + tuple(
-            1 for _ in additional_setpoints
-        )
+        loop_shape = sweeper.shape
         shapes: Shapes = detect_shape_of_measurement(measured_parameters, loop_shape)
         LOG.debug("Detected shapes to be %s", shapes)
     except TypeError:
