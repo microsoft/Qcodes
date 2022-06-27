@@ -24,7 +24,7 @@ pyparsing==3.0.9
 pytest==7.1.2
 pytest-cov==3.0.0
 pytest-forked==1.4.0
-pytest-mock==3.7.0
+pytest-mock==3.8.1
 pytest-rerunfailures==10.2
 pytest-xdist==2.5.0
 PyVISA==1.11.3
