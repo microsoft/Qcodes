@@ -55,7 +55,7 @@ def _param():
 
 @pytest.fixture()
 def _param_2():
-    p = Parameter("simple_parameter", set_cmd=None, get_cmd=lambda: 2)
+    p = Parameter("simple_parameter_2", set_cmd=None, get_cmd=lambda: 2)
     return p
 
 
@@ -73,7 +73,7 @@ def _param_complex():
 @pytest.fixture()
 def _param_complex_2():
     p = Parameter(
-        "simple_complex_parameter",
+        "simple_complex_parameter_2",
         set_cmd=None,
         get_cmd=lambda: 2 + 2j,
         vals=validators.ComplexNumbers(),
