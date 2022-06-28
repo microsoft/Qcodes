@@ -5,7 +5,7 @@ attrs==21.4.0
 autodocsumm==0.2.8
 Babel==2.10.3
 backcall==0.2.0
-bleach==5.0.0
+bleach==5.0.1
 certifi==2022.6.15
 cffi==1.15.0
 charset-normalizer~=2.0.12
@@ -48,7 +48,7 @@ pandocfilters==1.5.0
 parso==0.8.3
 pickleshare==0.7.5
 prometheus-client==0.14.1
-prompt-toolkit==3.0.29
+prompt-toolkit==3.0.30
 pycparser==2.21
 Pygments==2.12.0
 pyparsing==3.0.9
