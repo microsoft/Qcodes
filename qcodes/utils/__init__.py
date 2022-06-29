@@ -8,6 +8,7 @@ from .installation_info import (
     is_qcodes_installed_editably,
 )
 from .json_utils import NumpyJSONEncoder
+from .path_helpers import get_qcodes_path, get_qcodes_user_path
 
 __all__ = [
     "DelayedKeyboardInterrupt",
@@ -18,6 +19,8 @@ __all__ = [
     "deprecate",
     "strip_attrs",
     "checked_getattr",
+    "get_qcodes_path",
+    "get_qcodes_user_path",
     "get_all_installed_package_versions",
     "is_qcodes_installed_editably",
     "issue_deprecation_warning",

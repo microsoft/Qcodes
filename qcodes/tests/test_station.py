@@ -13,14 +13,13 @@ from ruamel.yaml import YAML
 import qcodes
 from qcodes import validators
 from qcodes.instrument import Instrument
-from qcodes.monitor.monitor import Monitor
+from qcodes.monitor import Monitor
 from qcodes.parameters import DelegateParameter, Parameter
 from qcodes.station import SCHEMA_PATH, Station, ValidationWarning, update_config_schema
 from qcodes.tests.common import default_config
 from qcodes.tests.instrument_mocks import DummyInstrument
-from qcodes.utils import NumpyJSONEncoder, QCoDeSDeprecationWarning
+from qcodes.utils import NumpyJSONEncoder, QCoDeSDeprecationWarning, get_qcodes_path
 from qcodes.utils.deprecate import deprecation_message
-from qcodes.utils.helpers import get_qcodes_path
 
 from .common import DumyPar
 
