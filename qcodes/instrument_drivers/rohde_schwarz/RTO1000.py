@@ -9,10 +9,10 @@ from typing import Any, Optional
 import numpy as np
 from packaging import version
 
-from qcodes import validators as vals
+import qcodes.validators as vals
 from qcodes.instrument import Instrument, InstrumentChannel, VisaInstrument
 from qcodes.parameters import ArrayParameter
-from qcodes.utils.helpers import create_on_off_val_mapping
+from qcodes.utils import create_on_off_val_mapping
 
 log = logging.getLogger(__name__)
 

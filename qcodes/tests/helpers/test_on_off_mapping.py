@@ -1,7 +1,7 @@
 import pytest
 
 from qcodes.parameters import invert_val_mapping
-from qcodes.utils.helpers import create_on_off_val_mapping
+from qcodes.utils import create_on_off_val_mapping
 
 
 def test_values_of_mapping_are_only_the_given_two():

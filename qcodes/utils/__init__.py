@@ -9,6 +9,7 @@ from .installation_info import (
 )
 from .json_utils import NumpyJSONEncoder
 from .path_helpers import get_qcodes_path, get_qcodes_user_path
+from .val_mapping import create_on_off_val_mapping
 
 __all__ = [
     "DelayedKeyboardInterrupt",
@@ -24,4 +25,5 @@ __all__ = [
     "get_all_installed_package_versions",
     "is_qcodes_installed_editably",
     "issue_deprecation_warning",
+    "create_on_off_val_mapping",
 ]

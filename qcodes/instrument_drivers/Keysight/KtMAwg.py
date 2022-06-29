@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.channel import InstrumentChannel
-from qcodes.utils.helpers import create_on_off_val_mapping
+from qcodes.utils import create_on_off_val_mapping
 from qcodes.validators import Numbers
 
 from .KtMAwgDefs import *

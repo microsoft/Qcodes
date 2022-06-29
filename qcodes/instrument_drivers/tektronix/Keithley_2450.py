@@ -6,7 +6,7 @@ from typing_extensions import TypedDict
 
 from qcodes.instrument import InstrumentChannel, VisaInstrument
 from qcodes.parameters import ParameterWithSetpoints, invert_val_mapping
-from qcodes.utils.helpers import create_on_off_val_mapping
+from qcodes.utils import create_on_off_val_mapping
 from qcodes.validators import Arrays, Enum, Ints, Lists, Numbers
 
 

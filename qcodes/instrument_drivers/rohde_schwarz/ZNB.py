@@ -4,7 +4,7 @@ from typing import Any, Optional, Tuple
 
 import numpy as np
 
-from qcodes import validators as vals
+import qcodes.validators as vals
 from qcodes.instrument import ChannelList, Instrument, InstrumentChannel, VisaInstrument
 from qcodes.parameters import (
     ArrayParameter,
@@ -12,8 +12,7 @@ from qcodes.parameters import (
     MultiParameter,
     ParamRawDataType,
 )
-from qcodes.utils import deprecate
-from qcodes.utils.helpers import create_on_off_val_mapping
+from qcodes.utils import create_on_off_val_mapping, deprecate
 
 log = logging.getLogger(__name__)
 

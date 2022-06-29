@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional
 from qcodes import ChannelList, InstrumentChannel, VisaInstrument
 from qcodes import validators as vals
 from qcodes.instrument.base import Instrument
-from qcodes.utils.helpers import create_on_off_val_mapping
+from qcodes.utils import create_on_off_val_mapping
 
 
 class NotKnownModel(Exception):

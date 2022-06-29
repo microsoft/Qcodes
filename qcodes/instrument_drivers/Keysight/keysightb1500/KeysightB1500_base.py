@@ -4,18 +4,16 @@ from collections import defaultdict
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 from qcodes.instrument import VisaInstrument
-from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_module import (
-    StatusMixin,
-    _FMTResponse,
-    convert_dummy_val_to_nan,
-    fmt_response_base_parser,
-)
 from qcodes.parameters import MultiParameter, Parameter
-from qcodes.utils.helpers import create_on_off_val_mapping
+from qcodes.utils import create_on_off_val_mapping
 
 from . import constants
 from .KeysightB1500_module import (
     B1500Module,
+    StatusMixin,
+    _FMTResponse,
+    convert_dummy_val_to_nan,
+    fmt_response_base_parser,
     parse_module_query_response,
     parse_spot_measurement_response,
 )
