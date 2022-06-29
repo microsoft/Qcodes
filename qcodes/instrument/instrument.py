@@ -17,7 +17,7 @@ from typing import (
 
 from typing_extensions import Protocol
 
-from qcodes.utils.helpers import strip_attrs
+from qcodes.utils import strip_attrs
 from qcodes.validators import Anything
 
 if TYPE_CHECKING:
