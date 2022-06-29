@@ -77,7 +77,9 @@ class _Sweeper:
 
         self._additional_setpoints = additional_setpoints
         self._nested_setpoints = self._make_nested_setpoints(sweeps)
-        self._parameter_groups = self._make_parameter_groups(sweeps)
+        self._parameter_groups = self._make_parameter_groups(
+            sweeps, additional_setpoints
+        )
         for sweep in sweeps:
             if isinstance(sweep, AbstractSweep):
                 _sweeps.append(sweep)
@@ -90,7 +92,7 @@ class _Sweeper:
         self._params_set = tuple(sweep.param for sweep in sweeps)
         self._post_actions = tuple(sweep.post_actions for sweep in sweeps)
 
-    def _make_parameter_groups(self, sweeps):
+    def _make_parameter_groups(self, sweeps, additional_setpoints):
         # todo this only supports one Multisweep
 
         ungrouped_parameters = []
@@ -112,6 +114,10 @@ class _Sweeper:
             else:
                 for i, sweep in enumerate(sweep_or_multi_sweep.sweeps):
                     groups[f"group_{i}"].append(sweep.param)
+
+        for group in groups.values():
+            group.extend(additional_setpoints)
+
         return groups
 
     def _make_nested_setpoints(
