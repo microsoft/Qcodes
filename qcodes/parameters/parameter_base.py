@@ -20,9 +20,8 @@ from typing import (
     Union,
     overload,
 )
-
+from qcodes.utils import DelegateAttributes
 from qcodes.utils.helpers import (
-    DelegateAttributes,
     abstractmethod,
     full_class,
     named_repr,
