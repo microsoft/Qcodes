@@ -32,6 +32,11 @@ from typing import (
 
 import numpy as np
 
+# for backwards compatibility since this module used
+# to contain logic that would abstract between yaml
+# libraries.
+from ruamel.yaml import YAML
+
 from .attribute_helpers import DelegateAttributes, checked_getattr, strip_attrs
 from .json_utils import NumpyJSONEncoder
 
@@ -533,23 +538,6 @@ def abstractmethod(funcobj: Callable[..., Any]) -> Callable[..., Any]:
     """
     funcobj.__qcodes_is_abstract_method__ = True  # type: ignore[attr-defined]
     return funcobj
-
-
-def _ruamel_importer() -> type:
-    try:
-        from ruamel_yaml import YAML
-    except ImportError:
-        try:
-            from ruamel.yaml import YAML
-        except ImportError:
-            raise ImportError('No ruamel module found. Please install '
-                              'either ruamel.yaml or ruamel_yaml.')
-    return YAML
-
-
-# YAML module to be imported. Resovles naming issues of YAML from pypi and
-# anaconda
-YAML = _ruamel_importer()
 
 
 def get_qcodes_path(*subfolder: str) -> str:

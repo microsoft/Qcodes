@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Optional
 
 import pytest
+from ruamel.yaml import YAML
 
 import qcodes
 from qcodes import validators
@@ -19,7 +20,7 @@ from qcodes.tests.common import default_config
 from qcodes.tests.instrument_mocks import DummyInstrument
 from qcodes.utils import NumpyJSONEncoder, QCoDeSDeprecationWarning
 from qcodes.utils.deprecate import deprecation_message
-from qcodes.utils.helpers import YAML, get_qcodes_path
+from qcodes.utils.helpers import get_qcodes_path
 
 from .common import DumyPar
 

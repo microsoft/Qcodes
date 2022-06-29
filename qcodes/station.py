@@ -48,7 +48,7 @@ from qcodes.parameters import (
     ParameterBase,
 )
 from qcodes.utils import DelegateAttributes, checked_getattr, issue_deprecation_warning
-from qcodes.utils.helpers import YAML, get_qcodes_path, get_qcodes_user_path
+from qcodes.utils.helpers import get_qcodes_path, get_qcodes_user_path
 from qcodes.utils.metadata import Metadatable
 
 log = logging.getLogger(__name__)
@@ -413,7 +413,7 @@ class Station(Metadatable, DelegateAttributes):
 
         # Load template schema, and thereby don't fail on instruments that are
         # not included in the user schema.
-        yaml = YAML().load(config)
+        yaml = ruamel.yaml.YAML().load(config)
         with open(SCHEMA_TEMPLATE_PATH) as f:
             schema = json.load(f)
         try:
