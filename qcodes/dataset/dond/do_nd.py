@@ -107,7 +107,7 @@ class _Sweeper:
 
         for sweep_or_multi_sweep in sweeps:
             if isinstance(sweep_or_multi_sweep, AbstractSweep):
-                for group in groups:
+                for group in groups.values():
                     group.append(sweep_or_multi_sweep.param)
             else:
                 for i, sweep in enumerate(sweep_or_multi_sweep.sweeps):
