@@ -1,4 +1,5 @@
-from typing import Any, List, Sequence, Tuple, Union
+from contextlib import contextmanager
+from typing import Any, Iterator, List, Sequence, Tuple, Union
 
 
 class DelegateAttributes:
@@ -123,3 +124,26 @@ def checked_getattr(
     if not isinstance(attr, expected_type):
         raise TypeError()
     return attr
+
+
+@contextmanager
+def attribute_set_to(
+    object_: object, attribute_name: str, new_value: Any
+) -> Iterator[None]:
+    """
+    This context manager allows to change a given attribute of a given object
+    to a new value, and the original value is reverted upon exit of the context
+    manager.
+
+    Args:
+        object_: The object which attribute value is to be changed.
+        attribute_name: The name of the attribute that is to be changed.
+        new_value: The new value to which the attribute of the object is
+                   to be changed.
+    """
+    old_value = getattr(object_, attribute_name)
+    setattr(object_, attribute_name, new_value)
+    try:
+        yield
+    finally:
+        setattr(object_, attribute_name, old_value)

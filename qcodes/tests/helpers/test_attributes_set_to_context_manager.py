@@ -1,7 +1,7 @@
 """
 Test attribute_set_to context manager
 """
-from qcodes.utils.helpers import attribute_set_to
+from qcodes.utils import attribute_set_to
 
 
 class X:

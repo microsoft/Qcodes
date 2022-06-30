@@ -1,6 +1,11 @@
 from . import validators
 from .abstractmethod import qcodes_abstractmethod
-from .attribute_helpers import DelegateAttributes, checked_getattr, strip_attrs
+from .attribute_helpers import (
+    DelegateAttributes,
+    attribute_set_to,
+    checked_getattr,
+    strip_attrs,
+)
 from .deep_update_utils import deep_update
 from .delaykeyboardinterrupt import DelayedKeyboardInterrupt
 from .deprecate import QCoDeSDeprecationWarning, deprecate, issue_deprecation_warning
@@ -39,4 +44,5 @@ __all__ = [
     "deep_update",
     "foreground_qt_window",
     "partial_with_docstring",
+    "attribute_set_to",
 ]
