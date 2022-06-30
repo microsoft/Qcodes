@@ -33,7 +33,7 @@ def test_scale_raw_value():
 #        independently
 
 # define shorthands for strategies
-TestFloats = hst.floats(min_value=-1e40, max_value=1e40).filter(lambda x: x != 0)
+TestFloats = hst.floats(min_value=-1e40, max_value=1e40).filter(lambda x: x >= 1e-20)
 SharedSize = hst.shared(hst.integers(min_value=1, max_value=100), key='shared_size')
 ValuesScalar = hst.shared(hst.booleans(), key='values_scalar')
 
