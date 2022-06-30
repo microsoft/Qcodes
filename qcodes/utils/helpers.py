@@ -104,11 +104,7 @@ def full_class(obj: object) -> str:
 
 def named_repr(obj: Any) -> str:
     """Enhance the standard repr() with the object's name attribute."""
-    s = '<{}.{}: {} at {}>'.format(
-        obj.__module__,
-        type(obj).__name__,
-        str(obj.name),
-        id(obj))
+    s = f"<{obj.__module__}.{type(obj).__name__}: {str(obj.name)} at {id(obj)}>"
     return s
 
 
