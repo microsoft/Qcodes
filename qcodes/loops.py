@@ -50,7 +50,6 @@ from qcodes.data.data_array import DataArray
 from qcodes.data.data_set import new_data
 from qcodes.station import Station
 from qcodes.utils import full_class
-from qcodes.utils.helpers import wait_secs
 from qcodes.utils.metadata import Metadatable
 
 from .actions import (
@@ -66,6 +65,19 @@ from .actions import (
 log = logging.getLogger(__name__)
 
 _tprint_times: Dict[str, float] = {}
+
+
+def wait_secs(finish_clock: float) -> float:
+    """
+    Calculate the number of seconds until a given clock time.
+    The clock time should be the result of ``time.perf_counter()``.
+    Does NOT wait for this time.
+    """
+    delay = finish_clock - time.perf_counter()
+    if delay < 0:
+        logging.warning(f"negative delay {delay:.6f} sec")
+        return 0
+    return delay
 
 
 def tprint(string: str, dt: int = 1, tag: str = "default") -> None:

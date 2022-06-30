@@ -45,6 +45,7 @@ from .attribute_helpers import DelegateAttributes, checked_getattr, strip_attrs
 # from qcodes.tests.common import compare_dictionaries
 # from qcodes.parameters.sweep_values import make_sweep
 # from qcodes.parameters.named_repr import named_repr
+# from qcodes.loops import wait_secs
 from .full_class import full_class
 from .function_helpers import is_function
 from .json_utils import NumpyJSONEncoder
@@ -81,19 +82,6 @@ def deep_update(
         else:
             dest_int[k] = deepcopy(v_update)
     return dest_int
-
-
-def wait_secs(finish_clock: float) -> float:
-    """
-    Calculate the number of seconds until a given clock time.
-    The clock time should be the result of ``time.perf_counter()``.
-    Does NOT wait for this time.
-    """
-    delay = finish_clock - time.perf_counter()
-    if delay < 0:
-        logging.warning(f'negative delay {delay:.6f} sec')
-        return 0
-    return delay
 
 
 def warn_units(class_name: str, instance: object) -> None:
