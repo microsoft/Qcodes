@@ -13,6 +13,7 @@ from .installation_info import (
 )
 from .json_utils import NumpyJSONEncoder
 from .path_helpers import get_qcodes_path, get_qcodes_user_path
+from .qt_helpers import foreground_qt_window
 from .val_mapping import create_on_off_val_mapping
 
 __all__ = [
@@ -34,4 +35,5 @@ __all__ = [
     "is_function",
     "full_class",
     "deep_update",
+    "foreground_qt_window",
 ]

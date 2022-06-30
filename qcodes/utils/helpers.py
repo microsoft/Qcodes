@@ -51,11 +51,8 @@ from .full_class import full_class
 from .function_helpers import is_function
 from .json_utils import NumpyJSONEncoder
 from .path_helpers import QCODES_USER_PATH_ENV, get_qcodes_path, get_qcodes_user_path
+from .qt_helpers import foreground_qt_window
 from .val_mapping import create_on_off_val_mapping
-
-if TYPE_CHECKING:
-    from PyQt5.QtWidgets import QMainWindow
-
 
 log = logging.getLogger(__name__)
 
@@ -65,39 +62,7 @@ def warn_units(class_name: str, instance: object) -> None:
                     '` class, use `unit` instead. ' + repr(instance))
 
 
-def foreground_qt_window(window: "QMainWindow") -> None:
-    """
-    Try as hard as possible to bring a qt window to the front. This
-    will use pywin32 if installed and running on windows as this
-    seems to be the only reliable way to foreground a window. The
-    build-in qt functions often doesn't work. Note that to use this
-    with pyqtgraphs remote process you should use the ref in that module
-    as in the example below.
 
-    Args:
-        window: Handle to qt window to foreground.
-    Examples:
-        >>> Qtplot.qt_helpers.foreground_qt_window(plot.win)
-    """
-    try:
-        import win32con
-        from win32gui import SetWindowPos
-
-        # use the idea from
-        # https://stackoverflow.com/questions/12118939/how-to-make-a-pyqt4-window-jump-to-the-front
-        SetWindowPos(window.winId(),
-                     win32con.HWND_TOPMOST, # = always on top. only reliable way to bring it to the front on windows
-                     0, 0, 0, 0,
-                     win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_SHOWWINDOW)
-        SetWindowPos(window.winId(),
-                     win32con.HWND_NOTOPMOST, # disable the always on top, but leave window at its top position
-                     0, 0, 0, 0,
-                     win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_SHOWWINDOW)
-    except ImportError:
-        pass
-    window.show()
-    window.raise_()
-    window.activateWindow()
 
 
 def add_to_spyder_UMR_excludelist(modulename: str) -> None:
