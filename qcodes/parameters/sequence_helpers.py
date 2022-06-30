@@ -42,7 +42,7 @@ def is_sequence_of(
         return False
 
     if shape is None or shape == ():
-        next_shape: Optional[Tuple[int]] = None
+        next_shape: Optional[Tuple[int, ...]] = None
         if depth is None:
             depth = 1
     else:
@@ -54,7 +54,7 @@ def is_sequence_of(
         if len(obj) != shape[0]:
             return False
 
-        next_shape = cast(Tuple[int], shape[1:])
+        next_shape = cast(Tuple[int, ...], shape[1:])
 
     for item in obj:
         if depth > 1:
