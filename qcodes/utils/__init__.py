@@ -12,6 +12,7 @@ from .installation_info import (
     is_qcodes_installed_editably,
 )
 from .json_utils import NumpyJSONEncoder
+from .partial_utils import partial_with_docstring
 from .path_helpers import get_qcodes_path, get_qcodes_user_path
 from .qt_helpers import foreground_qt_window
 from .spyder_utils import add_to_spyder_UMR_excludelist
@@ -37,4 +38,5 @@ __all__ = [
     "full_class",
     "deep_update",
     "foreground_qt_window",
+    "partial_with_docstring",
 ]
