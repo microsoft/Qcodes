@@ -12,8 +12,8 @@ from qcodes.data.hdf5_format import HDF5Format, str_to_bool
 from qcodes.data.location import FormatLocation
 from qcodes.loops import Loop
 from qcodes.station import Station
+from qcodes.tests.common import compare_dictionaries
 from qcodes.tests.instrument_mocks import MockParabola
-from qcodes.utils.helpers import compare_dictionaries
 
 from .data_mocks import DataSet1D, DataSet2D
 
