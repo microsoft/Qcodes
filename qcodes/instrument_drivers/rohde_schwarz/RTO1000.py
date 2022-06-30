@@ -11,8 +11,7 @@ from packaging import version
 
 import qcodes.validators as vals
 from qcodes.instrument import Instrument, InstrumentChannel, VisaInstrument
-from qcodes.parameters import ArrayParameter
-from qcodes.utils import create_on_off_val_mapping
+from qcodes.parameters import ArrayParameter, create_on_off_val_mapping
 
 log = logging.getLogger(__name__)
 

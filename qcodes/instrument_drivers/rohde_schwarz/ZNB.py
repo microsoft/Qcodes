@@ -11,8 +11,9 @@ from qcodes.parameters import (
     ManualParameter,
     MultiParameter,
     ParamRawDataType,
+    create_on_off_val_mapping,
 )
-from qcodes.utils import create_on_off_val_mapping, deprecate
+from qcodes.utils import deprecate
 
 log = logging.getLogger(__name__)
 

@@ -6,8 +6,12 @@ import numpy as np
 from pyvisa import errors
 
 from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
-from qcodes.parameters import Parameter, ParameterBase, ParameterWithSetpoints
-from qcodes.utils import create_on_off_val_mapping
+from qcodes.parameters import (
+    Parameter,
+    ParameterBase,
+    ParameterWithSetpoints,
+    create_on_off_val_mapping,
+)
 from qcodes.validators import Arrays, Bool, Enum, Ints, Numbers
 
 

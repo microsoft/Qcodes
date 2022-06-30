@@ -14,6 +14,7 @@ from qcodes.parameters.named_repr import named_repr
 from qcodes.parameters.permissive_range import permissive_range
 from qcodes.parameters.sequence_helpers import is_sequence, is_sequence_of
 from qcodes.parameters.sweep_values import make_sweep
+from qcodes.parameters.val_mapping import create_on_off_val_mapping
 from qcodes.tests.common import compare_dictionaries
 
 from .abstractmethod import qcodes_abstractmethod as abstractmethod
@@ -31,7 +32,6 @@ from .partial_utils import partial_with_docstring
 from .path_helpers import QCODES_USER_PATH_ENV, get_qcodes_path, get_qcodes_user_path
 from .qt_helpers import foreground_qt_window
 from .spyder_utils import add_to_spyder_UMR_excludelist
-from .val_mapping import create_on_off_val_mapping
 
 
 # on longer in used but left for backwards compatibility until

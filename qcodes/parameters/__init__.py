@@ -87,6 +87,7 @@ from .parameter_with_setpoints import ParameterWithSetpoints, expand_setpoints_h
 from .scaled_paramter import ScaledParameter
 from .specialized_parameters import ElapsedTimeParameter, InstrumentRefParameter
 from .sweep_values import SweepFixedValues, SweepValues
+from .val_mapping import create_on_off_val_mapping
 
 __all__ = [
     "ArrayParameter",
@@ -112,6 +113,7 @@ __all__ = [
     "ScaledParameter",
     "SweepFixedValues",
     "SweepValues",
+    "create_on_off_val_mapping",
     "combine",
     "expand_setpoints_helper",
     "invert_val_mapping",

@@ -21,7 +21,6 @@ from .partial_utils import partial_with_docstring
 from .path_helpers import get_qcodes_path, get_qcodes_user_path
 from .qt_helpers import foreground_qt_window
 from .spyder_utils import add_to_spyder_UMR_excludelist
-from .val_mapping import create_on_off_val_mapping
 
 __all__ = [
     "DelayedKeyboardInterrupt",
@@ -31,7 +30,6 @@ __all__ = [
     "attribute_set_to",
     "checked_getattr",
     "convert_legacy_version_to_supported_version",
-    "create_on_off_val_mapping",
     "deep_update",
     "deprecate",
     "foreground_qt_window",

@@ -2,7 +2,7 @@ from typing import Any
 
 import qcodes.validators as vals
 from qcodes.instrument import VisaInstrument
-from qcodes.utils import create_on_off_val_mapping
+from qcodes.parameters import create_on_off_val_mapping
 
 
 class RohdeSchwarz_SGS100A(VisaInstrument):

@@ -2,10 +2,13 @@ import ctypes
 from functools import partial
 from typing import Any, Dict, Optional, Tuple
 
-from qcodes import validators as vals
+import qcodes.validators as vals
 from qcodes.instrument import Instrument
-from qcodes.parameters import MultiParameter, ParamRawDataType
-from qcodes.utils import create_on_off_val_mapping
+from qcodes.parameters import (
+    MultiParameter,
+    ParamRawDataType,
+    create_on_off_val_mapping,
+)
 
 from .KtM960xDefs import *
 

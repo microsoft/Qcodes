@@ -15,8 +15,8 @@ from qcodes.parameters import (
     Parameter,
     ParameterWithSetpoints,
     ParamRawDataType,
+    create_on_off_val_mapping,
 )
-from qcodes.utils import create_on_off_val_mapping
 
 log = logging.getLogger(__name__)
 

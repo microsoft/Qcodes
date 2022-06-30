@@ -11,8 +11,11 @@ from typing import Any, Callable, Union, cast
 import numpy as np
 
 from qcodes.instrument import ChannelList, Instrument, InstrumentChannel, VisaInstrument
-from qcodes.parameters import Parameter, ParameterWithSetpoints
-from qcodes.utils import create_on_off_val_mapping
+from qcodes.parameters import (
+    Parameter,
+    ParameterWithSetpoints,
+    create_on_off_val_mapping,
+)
 from qcodes.validators import Arrays, Enum
 
 

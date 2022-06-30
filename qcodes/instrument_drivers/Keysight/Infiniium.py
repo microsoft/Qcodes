@@ -6,12 +6,20 @@ from pyvisa import VisaIOError
 from pyvisa.constants import StatusCode
 from typing_extensions import Literal
 
-from qcodes import validators as vals
-from qcodes.instrument import VisaInstrument
-from qcodes.instrument.base import InstrumentBase
-from qcodes.instrument.channel import ChannelList, InstrumentChannel, InstrumentModule
-from qcodes.parameters import Parameter, ParameterWithSetpoints
-from qcodes.utils import create_on_off_val_mapping, deprecate
+import qcodes.validators as vals
+from qcodes.instrument import (
+    ChannelList,
+    InstrumentBase,
+    InstrumentChannel,
+    InstrumentModule,
+    VisaInstrument,
+)
+from qcodes.parameters import (
+    Parameter,
+    ParameterWithSetpoints,
+    create_on_off_val_mapping,
+)
+from qcodes.utils import deprecate
 
 
 class DSOTimeAxisParam(Parameter):
