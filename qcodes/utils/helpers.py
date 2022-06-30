@@ -36,6 +36,7 @@ import numpy as np
 # libraries.
 from ruamel.yaml import YAML
 
+from .abstractmethod import qcodes_abstractmethod as abstractmethod
 from .attribute_helpers import DelegateAttributes, checked_getattr, strip_attrs
 from .json_utils import NumpyJSONEncoder
 from .path_helpers import QCODES_USER_PATH_ENV, get_qcodes_path, get_qcodes_user_path
@@ -494,19 +495,3 @@ def partial_with_docstring(func: Callable[..., Any],
     inner.__doc__ = docstring
 
     return inner
-
-
-
-
-def abstractmethod(funcobj: Callable[..., Any]) -> Callable[..., Any]:
-    """
-    A decorator indicating abstract methods.
-
-    This is heavily inspired by the decorator of the same name in
-    the ABC standard library. But we make our own version because
-    we actually want to allow the class with the abstract method to be
-    instantiated and we will use this property to detect if the
-    method is abstract and should be overwritten.
-    """
-    funcobj.__qcodes_is_abstract_method__ = True  # type: ignore[attr-defined]
-    return funcobj

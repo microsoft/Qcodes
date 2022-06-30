@@ -1,4 +1,5 @@
 from . import validators
+from .abstractmethod import qcodes_abstractmethod
 from .attribute_helpers import DelegateAttributes, checked_getattr, strip_attrs
 from .delaykeyboardinterrupt import DelayedKeyboardInterrupt
 from .deprecate import QCoDeSDeprecationWarning, deprecate, issue_deprecation_warning
@@ -26,4 +27,5 @@ __all__ = [
     "is_qcodes_installed_editably",
     "issue_deprecation_warning",
     "create_on_off_val_mapping",
+    "qcodes_abstractmethod",
 ]

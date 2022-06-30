@@ -20,13 +20,9 @@ from typing import (
     Union,
     overload,
 )
-from qcodes.utils import DelegateAttributes
-from qcodes.utils.helpers import (
-    abstractmethod,
-    full_class,
-    named_repr,
-    permissive_range,
-)
+
+from qcodes.utils import DelegateAttributes, qcodes_abstractmethod
+from qcodes.utils.helpers import full_class, named_repr, permissive_range
 from qcodes.utils.metadata import Metadatable
 from qcodes.validators import Enum, Ints, Validator
 
@@ -333,7 +329,7 @@ class ParameterBase(Metadatable):
         """
         return self.cache.raw_value
 
-    @abstractmethod
+    @qcodes_abstractmethod
     def get_raw(self) -> ParamRawDataType:
         """
         ``get_raw`` is called to perform the actual data acquisition from the
@@ -345,7 +341,7 @@ class ParameterBase(Metadatable):
         """
         raise NotImplementedError
 
-    @abstractmethod
+    @qcodes_abstractmethod
     def set_raw(self, value: ParamRawDataType) -> None:
         """
         ``set_raw`` is called to perform the actual setting of a parameter on
