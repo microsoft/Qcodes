@@ -13,9 +13,9 @@ from typing import (
 
 import numpy as np
 
-from qcodes.utils.helpers import named_repr
 from qcodes.utils.metadata import Metadatable
 
+from .named_repr import named_repr
 from .permissive_range import permissive_range
 from .sequence_helpers import is_sequence
 

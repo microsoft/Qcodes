@@ -47,6 +47,7 @@ from .val_mapping import create_on_off_val_mapping
 # from qcodes.parameters.permissive_range import permissive_range
 # from qcodes.tests.common import compare_dictionaries
 # from qcodes.parameters.sweep_values import make_sweep
+# from qcodes.parameters.named_repr import named_repr
 
 if TYPE_CHECKING:
     from PyQt5.QtWidgets import QMainWindow
@@ -100,12 +101,6 @@ def is_function(f: object, arg_count: int, coroutine: bool = False) -> bool:
 def full_class(obj: object) -> str:
     """The full importable path to an object's class."""
     return type(obj).__module__ + '.' + type(obj).__name__
-
-
-def named_repr(obj: Any) -> str:
-    """Enhance the standard repr() with the object's name attribute."""
-    s = f"<{obj.__module__}.{type(obj).__name__}: {str(obj.name)} at {id(obj)}>"
-    return s
 
 
 K = TypeVar('K', bound=Hashable)

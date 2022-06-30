@@ -22,11 +22,12 @@ from typing import (
 )
 
 from qcodes.utils import DelegateAttributes, qcodes_abstractmethod
-from qcodes.utils.helpers import full_class, named_repr
+from qcodes.utils.helpers import full_class
 from qcodes.utils.metadata import Metadatable
 from qcodes.validators import Enum, Ints, Validator
 
 from .cache import _Cache, _CacheProtocol
+from .named_repr import named_repr
 from .permissive_range import permissive_range
 
 # for now the type the parameter may contain is not restricted at all
