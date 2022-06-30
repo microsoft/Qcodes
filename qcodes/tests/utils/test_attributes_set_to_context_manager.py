@@ -15,7 +15,7 @@ def test_attribute_set_to_value():
 
     assert 1 == x.y
 
-    with attribute_set_to(x, 'y', 2):
+    with attribute_set_to(x, "y", 2):
         assert 2 == x.y
 
     assert 1 == x.y
@@ -31,7 +31,7 @@ def test_attribute_set_to_object():
     assert original_object is x.y
 
     new_object = X()
-    with attribute_set_to(x, 'y', new_object):
+    with attribute_set_to(x, "y", new_object):
         assert new_object == x.y
         assert new_object is x.y
 

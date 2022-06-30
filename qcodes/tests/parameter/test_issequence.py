@@ -1,9 +1,10 @@
 import pytest
+
 from qcodes.parameters.sequence_helpers import is_sequence
 
 
 def a_func():
-    raise RuntimeError('this function shouldn\'t get called')
+    raise RuntimeError("this function shouldn't get called")
 
 
 class AClass:
@@ -15,11 +16,10 @@ yes_sequence = [
     [1, 2, 3],
     range(5),
     (),
-    ('lions', 'tigers', 'bears'),
-
+    ("lions", "tigers", "bears"),
     # we do have to be careful about generators...
     # ie don't call len() or iterate twice
-    (i ** 2 for i in range(5)),
+    (i**2 for i in range(5)),
 ]
 
 no_sequence = [
@@ -27,8 +27,8 @@ no_sequence = [
     1.0,
     True,
     None,
-    'you can iterate a string but we won\'t',
-    b'nor will we iterate bytes',
+    "you can iterate a string but we won't",
+    b"nor will we iterate bytes",
     a_func,
     AClass,
     AClass(),
