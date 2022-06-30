@@ -1,6 +1,7 @@
 import json
 
-from qcodes.utils.helpers import full_class, named_repr
+from qcodes.parameters.named_repr import named_repr
+from qcodes.utils.helpers import full_class
 
 
 def test_full_class():

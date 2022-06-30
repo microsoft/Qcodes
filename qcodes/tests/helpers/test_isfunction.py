@@ -1,5 +1,5 @@
 import pytest
-from qcodes.utils.helpers import is_function
+from qcodes.utils import is_function
 
 
 def test_non_function():

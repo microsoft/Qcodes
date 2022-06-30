@@ -2,7 +2,7 @@ from typing import Any, Callable, Generic, Optional, TypeVar, Union
 
 from typing_extensions import Literal
 
-from qcodes.utils.helpers import is_function
+from qcodes.utils import is_function
 
 
 class NoCommandError(Exception):
