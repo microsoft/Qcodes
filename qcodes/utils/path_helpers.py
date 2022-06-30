@@ -1,5 +1,14 @@
 import os
+import sys
 from pathlib import Path
+
+if sys.version_info >= (3, 9):
+    # files added to stdlib in 3.9
+    from importlib.resources import files
+else:
+    # 3.8 and earlier
+    from importlib_resources import files
+
 
 QCODES_USER_PATH_ENV = "QCODES_USER_PATH"
 
@@ -10,10 +19,7 @@ def get_qcodes_path(*subfolder: str) -> str:
     appended as subfolder.
 
     """
-    import qcodes
-
-    path = os.sep.join(qcodes.__file__.split(os.sep)[:-1])
-    return os.path.join(path, *subfolder) + os.sep
+    return str(files("qcodes").joinpath(*subfolder))
 
 
 def get_qcodes_user_path(*file_parts: str) -> str:
