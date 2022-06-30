@@ -19,7 +19,7 @@ def get_qcodes_path(*subfolder: str) -> str:
     appended as subfolder.
 
     """
-    return str(files("qcodes").joinpath(*subfolder))
+    return str(files("qcodes").joinpath(*subfolder)) + os.sep
 
 
 def get_qcodes_user_path(*file_parts: str) -> str:
