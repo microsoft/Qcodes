@@ -7,7 +7,6 @@ qcodes.utils
 .. autosummary::
 
     qcodes.utils
-    qcodes.utils.magic
     qcodes.utils.metadata
     qcodes.utils.plotting
     qcodes.utils.threading
@@ -20,7 +19,6 @@ qcodes.utils
    :maxdepth: 4
    :hidden:
 
-   magic
    metadata
    plotting
    threading

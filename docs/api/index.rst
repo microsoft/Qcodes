@@ -41,4 +41,6 @@ Legacy API
    actions
    measure
    data/index
+   extensions/slack
    plots/index
+   utils/magic
