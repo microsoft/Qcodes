@@ -5,7 +5,8 @@ from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence
 
 import numpy as np
 
-from qcodes.utils.helpers import full_class, warn_units
+from qcodes.utils import full_class
+from qcodes.utils.helpers import warn_units
 from qcodes.utils.metadata import Metadatable
 
 from .parameter import Parameter

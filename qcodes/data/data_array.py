@@ -6,8 +6,8 @@ import numpy as np
 if TYPE_CHECKING:
     import xarray as xr
 
-from qcodes.utils import DelegateAttributes
-from qcodes.utils.helpers import full_class, warn_units
+from qcodes.utils import DelegateAttributes, full_class
+from qcodes.utils.helpers import warn_units
 
 
 class DataArray(DelegateAttributes):

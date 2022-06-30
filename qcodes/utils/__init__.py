@@ -3,6 +3,7 @@ from .abstractmethod import qcodes_abstractmethod
 from .attribute_helpers import DelegateAttributes, checked_getattr, strip_attrs
 from .delaykeyboardinterrupt import DelayedKeyboardInterrupt
 from .deprecate import QCoDeSDeprecationWarning, deprecate, issue_deprecation_warning
+from .full_class import full_class
 from .function_helpers import is_function
 from .installation_info import (
     convert_legacy_version_to_supported_version,
@@ -30,4 +31,5 @@ __all__ = [
     "create_on_off_val_mapping",
     "qcodes_abstractmethod",
     "is_function",
+    "full_class",
 ]

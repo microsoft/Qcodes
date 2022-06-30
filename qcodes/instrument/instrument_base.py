@@ -19,8 +19,7 @@ import numpy as np
 
 from qcodes.logger import get_instrument_logger
 from qcodes.parameters import Function, Parameter, ParameterBase
-from qcodes.utils import DelegateAttributes
-from qcodes.utils.helpers import full_class
+from qcodes.utils import DelegateAttributes, full_class
 from qcodes.utils.metadata import Metadatable
 
 if TYPE_CHECKING:

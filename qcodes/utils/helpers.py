@@ -38,10 +38,6 @@ from ruamel.yaml import YAML
 
 from .abstractmethod import qcodes_abstractmethod as abstractmethod
 from .attribute_helpers import DelegateAttributes, checked_getattr, strip_attrs
-from .function_helpers import is_function
-from .json_utils import NumpyJSONEncoder
-from .path_helpers import QCODES_USER_PATH_ENV, get_qcodes_path, get_qcodes_user_path
-from .val_mapping import create_on_off_val_mapping
 
 # from qcodes.loops import tprint
 # from qcodes.parameters.sequence_helpers import is_sequence, is_sequence_of
@@ -49,17 +45,17 @@ from .val_mapping import create_on_off_val_mapping
 # from qcodes.tests.common import compare_dictionaries
 # from qcodes.parameters.sweep_values import make_sweep
 # from qcodes.parameters.named_repr import named_repr
+from .full_class import full_class
+from .function_helpers import is_function
+from .json_utils import NumpyJSONEncoder
+from .path_helpers import QCODES_USER_PATH_ENV, get_qcodes_path, get_qcodes_user_path
+from .val_mapping import create_on_off_val_mapping
 
 if TYPE_CHECKING:
     from PyQt5.QtWidgets import QMainWindow
 
 
 log = logging.getLogger(__name__)
-
-
-def full_class(obj: object) -> str:
-    """The full importable path to an object's class."""
-    return type(obj).__module__ + '.' + type(obj).__name__
 
 
 K = TypeVar('K', bound=Hashable)

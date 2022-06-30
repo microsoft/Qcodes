@@ -49,7 +49,8 @@ import numpy as np
 from qcodes.data.data_array import DataArray
 from qcodes.data.data_set import new_data
 from qcodes.station import Station
-from qcodes.utils.helpers import full_class, wait_secs
+from qcodes.utils import full_class
+from qcodes.utils.helpers import wait_secs
 from qcodes.utils.metadata import Metadatable
 
 from .actions import (
