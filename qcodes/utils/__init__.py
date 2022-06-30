@@ -1,6 +1,7 @@
 from . import validators
 from .abstractmethod import qcodes_abstractmethod
 from .attribute_helpers import DelegateAttributes, checked_getattr, strip_attrs
+from .deep_update_utils import deep_update
 from .delaykeyboardinterrupt import DelayedKeyboardInterrupt
 from .deprecate import QCoDeSDeprecationWarning, deprecate, issue_deprecation_warning
 from .full_class import full_class
@@ -32,4 +33,5 @@ __all__ = [
     "qcodes_abstractmethod",
     "is_function",
     "full_class",
+    "deep_update",
 ]

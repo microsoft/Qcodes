@@ -38,6 +38,7 @@ from ruamel.yaml import YAML
 
 from .abstractmethod import qcodes_abstractmethod as abstractmethod
 from .attribute_helpers import DelegateAttributes, checked_getattr, strip_attrs
+from .deep_update_utils import deep_update
 
 # from qcodes.loops import tprint
 # from qcodes.parameters.sequence_helpers import is_sequence, is_sequence_of
@@ -58,30 +59,6 @@ if TYPE_CHECKING:
 
 log = logging.getLogger(__name__)
 
-
-K = TypeVar('K', bound=Hashable)
-L = TypeVar('L', bound=Hashable)
-
-
-def deep_update(
-        dest: MutableMapping[K, Any],
-        update: Mapping[L, Any]
-) -> MutableMapping[Union[K, L], Any]:
-    """
-    Recursively update one JSON structure with another.
-
-    Only dives into nested dicts; lists get replaced completely.
-    If the original value is a dictionary and the new value is not, or vice versa,
-    we also replace the value completely.
-    """
-    dest_int = cast(MutableMapping[Union[K, L], Any], dest)
-    for k, v_update in update.items():
-        v_dest = dest_int.get(k)
-        if isinstance(v_update, abc.Mapping) and isinstance(v_dest, abc.MutableMapping):
-            deep_update(v_dest, v_update)
-        else:
-            dest_int[k] = deepcopy(v_update)
-    return dest_int
 
 def warn_units(class_name: str, instance: object) -> None:
     logging.warning('`units` is deprecated for the `' + class_name +

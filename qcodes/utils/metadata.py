@@ -11,7 +11,7 @@ from typing import (
     Union,
 )
 
-from .helpers import deep_update
+from .deep_update_utils import deep_update
 
 T = TypeVar('T')
 # NB: At the moment, the Snapshot type is a bit weak, as the Any

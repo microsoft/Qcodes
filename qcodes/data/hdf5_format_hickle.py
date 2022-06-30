@@ -1,9 +1,12 @@
 import logging
-from .hdf5_format import HDF5Format
-import hickle
-from qcodes.utils.helpers import deep_update
-
 from typing import TYPE_CHECKING
+
+import hickle
+
+from qcodes.utils import deep_update
+
+from .hdf5_format import HDF5Format
+
 if TYPE_CHECKING:
     import qcodes.data.data_set
 
