@@ -1,19 +1,18 @@
+import copy
+import cProfile
 import os
 import tempfile
-from typing import Any, Callable, Type, TYPE_CHECKING, Optional
 from contextlib import contextmanager
 from functools import wraps
 from time import sleep
-import cProfile
-import copy
+from typing import TYPE_CHECKING, Any, Callable, Optional, Type
 
 import qcodes
-from qcodes.utils.metadata import Metadatable
 from qcodes.configuration import Config, DotDict
+from qcodes.utils.metadata import Metadatable
 
-from _pytest._code.code import ExceptionChainRepr
 if TYPE_CHECKING:
-    from _pytest._code.code import ExceptionInfo
+    from pytest import ExceptionInfo
 
 
 def strip_qc(d, keys=('instrument', '__class__')):
@@ -114,19 +113,23 @@ def error_caused_by(excinfo: 'ExceptionInfo[Any]', cause: str) -> bool:
     """
 
     exc_repr = excinfo.getrepr()
-    assert isinstance(exc_repr, ExceptionChainRepr)
-    chain = exc_repr.chain
-    # first element of the chain is info about the root exception
-    error_location = chain[0][1]
-    root_traceback = chain[0][0]
-    # the error location is the most reliable data since
-    # it only contains the location and the error raised.
-    # however there are cases where this is empty
-    # in such cases fall back to the traceback
-    if error_location is not None:
-        return cause in str(error_location)
+
+    chain = getattr(exc_repr, "chain", None)
+
+    if chain is not None:
+        # first element of the chain is info about the root exception
+        error_location = chain[0][1]
+        root_traceback = chain[0][0]
+        # the error location is the most reliable data since
+        # it only contains the location and the error raised.
+        # however there are cases where this is empty
+        # in such cases fall back to the traceback
+        if error_location is not None:
+            return cause in str(error_location)
+        else:
+            return cause in str(root_traceback)
     else:
-        return cause in str(root_traceback)
+        return False
 
 
 class DumyPar(Metadatable):
