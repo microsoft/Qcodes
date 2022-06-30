@@ -83,7 +83,6 @@ def deep_update(
             dest_int[k] = deepcopy(v_update)
     return dest_int
 
-
 def warn_units(class_name: str, instance: object) -> None:
     logging.warning('`units` is deprecated for the `' + class_name +
                     '` class, use `unit` instead. ' + repr(instance))

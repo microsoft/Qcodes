@@ -6,9 +6,11 @@ import numpy as np
 if TYPE_CHECKING:
     import xarray as xr
 
-from qcodes.utils import DelegateAttributes, full_class
-from qcodes.utils.helpers import warn_units
+import logging
 
+from qcodes.utils import DelegateAttributes, full_class
+
+_LOG = logging.getLogger(__name__)
 
 class DataArray(DelegateAttributes):
 
@@ -123,7 +125,10 @@ class DataArray(DelegateAttributes):
         self.label = label
         self.shape = shape
         if units is not None:
-            warn_units('DataArray', self)
+            _LOG.warning(
+                f"`units` is deprecated for the "
+                f"`DataArray` class, use `unit` instead. {self!r}"
+            )
             if unit is None:
                 unit = units
         self.unit = unit
