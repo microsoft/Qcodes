@@ -46,6 +46,7 @@ from .val_mapping import create_on_off_val_mapping
 # from qcodes.parameters.sequence_helpers import is_sequence, is_sequence_of
 # from qcodes.parameters.permissive_range import permissive_range
 # from qcodes.tests.common import compare_dictionaries
+# from qcodes.parameters.sweep_values import make_sweep
 
 if TYPE_CHECKING:
     from PyQt5.QtWidgets import QMainWindow
@@ -136,65 +137,6 @@ def deep_update(
     return dest_int
 
 
-# This is very much related to the permissive_range but more
-# strict on the input, start and endpoints are always included,
-# and a sweep is only created if the step matches an integer
-# number of points.
-# numpy is a dependency anyways.
-# Furthermore the sweep allows to take a number of points and generates
-# an array with endpoints included, which is more intuitive to use in a sweep.
-def make_sweep(start: float,
-               stop: float,
-               step: Optional[float] = None,
-               num: Optional[int] = None
-               ) -> List[float]:
-    """
-    Generate numbers over a specified interval.
-    Requires ``start`` and ``stop`` and (``step`` or ``num``).
-    The sign of ``step`` is not relevant.
-
-    Args:
-        start: The starting value of the sequence.
-        stop: The end value of the sequence.
-        step:  Spacing between values.
-        num: Number of values to generate.
-
-    Returns:
-        numpy.ndarray: numbers over a specified interval as a ``numpy.linspace``.
-
-    Examples:
-        >>> make_sweep(0, 10, num=5)
-        [0.0, 2.5, 5.0, 7.5, 10.0]
-        >>> make_sweep(5, 10, step=1)
-        [5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
-        >>> make_sweep(15, 10.5, step=1.5)
-        >[15.0, 13.5, 12.0, 10.5]
-    """
-    if step and num:
-        raise AttributeError('Don\'t use `step` and `num` at the same time.')
-    if (step is None) and (num is None):
-        raise ValueError('If you really want to go from `start` to '
-                         '`stop` in one step, specify `num=2`.')
-    if step is not None:
-        steps = abs((stop - start) / step)
-        tolerance = 1e-10
-        steps_lo = int(np.floor(steps + tolerance))
-        steps_hi = int(np.ceil(steps - tolerance))
-
-        if steps_lo != steps_hi:
-            raise ValueError(
-                'Could not find an integer number of points for '
-                'the the given `start`, `stop`, and `step` '
-                'values. \nNumber of points is {:d} or {:d}.'
-                .format(steps_lo + 1, steps_hi + 1))
-        num_steps = steps_lo + 1
-    elif num is not None:
-        num_steps = num
-
-    output_list = np.linspace(start, stop, num=num_steps).tolist()
-    return cast(List[float], output_list)
-
-
 def wait_secs(finish_clock: float) -> float:
     """
     Calculate the number of seconds until a given clock time.
@@ -206,8 +148,6 @@ def wait_secs(finish_clock: float) -> float:
         logging.warning(f'negative delay {delay:.6f} sec')
         return 0
     return delay
-
-
 
 
 def warn_units(class_name: str, instance: object) -> None:
