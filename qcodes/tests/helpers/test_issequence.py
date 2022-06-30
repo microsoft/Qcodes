@@ -1,5 +1,5 @@
 import pytest
-from qcodes.utils.helpers import is_sequence
+from qcodes.parameters.sequence_helpers import is_sequence
 
 
 def a_func():

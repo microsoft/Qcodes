@@ -5,9 +5,9 @@ from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence, Tuple, Type,
 import numpy as np
 
 from qcodes.data.data_array import DataArray
-from qcodes.utils.helpers import is_sequence_of
 
 from .parameter_base import ParameterBase
+from .sequence_helpers import is_sequence_of
 
 if TYPE_CHECKING:
     from qcodes.instrument import InstrumentBase

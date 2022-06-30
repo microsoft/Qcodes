@@ -42,14 +42,14 @@ Supported commands to .each are:
 import logging
 import time
 from datetime import datetime
-from typing import Optional, Sequence
+from typing import Dict, Optional, Sequence
 
 import numpy as np
 
 from qcodes.data.data_array import DataArray
 from qcodes.data.data_set import new_data
 from qcodes.station import Station
-from qcodes.utils.helpers import full_class, tprint, wait_secs
+from qcodes.utils.helpers import full_class, wait_secs
 from qcodes.utils.metadata import Metadatable
 
 from .actions import (
@@ -63,6 +63,16 @@ from .actions import (
 )
 
 log = logging.getLogger(__name__)
+
+_tprint_times: Dict[str, float] = {}
+
+
+def tprint(string: str, dt: int = 1, tag: str = "default") -> None:
+    """Print progress of a loop every ``dt`` seconds."""
+    ptime = _tprint_times.get(tag, 0)
+    if (time.time() - ptime) > dt:
+        print(string)
+        _tprint_times[tag] = time.time()
 
 
 def active_loop():
