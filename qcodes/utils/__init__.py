@@ -14,6 +14,7 @@ from .installation_info import (
 from .json_utils import NumpyJSONEncoder
 from .path_helpers import get_qcodes_path, get_qcodes_user_path
 from .qt_helpers import foreground_qt_window
+from .spyder_utils import add_to_spyder_UMR_excludelist
 from .val_mapping import create_on_off_val_mapping
 
 __all__ = [
