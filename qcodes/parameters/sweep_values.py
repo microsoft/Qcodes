@@ -1,9 +1,10 @@
 from copy import deepcopy
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Sequence, Union
 
-from qcodes.utils.helpers import make_sweep, named_repr, permissive_range
+from qcodes.utils.helpers import make_sweep, named_repr
 from qcodes.utils.metadata import Metadatable
 
+from .permissive_range import permissive_range
 from .sequence_helpers import is_sequence
 
 if TYPE_CHECKING:
