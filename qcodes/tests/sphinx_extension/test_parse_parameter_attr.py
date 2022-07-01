@@ -1,11 +1,11 @@
 import pytest
 from sphinx.util.inspect import safe_getattr
 
-from qcodes.instrument import InstrumentBase, VisaInstrument
-from qcodes.sphinx_extensions.parse_parameter_attr import (
+from qcodes.extensions.sphinx_extensions.parse_parameter_attr import (
     ParameterProxy,
     qcodes_parameter_attr_getter,
 )
+from qcodes.instrument import InstrumentBase, VisaInstrument
 from qcodes.utils import deprecate
 
 

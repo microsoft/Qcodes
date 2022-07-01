@@ -55,7 +55,7 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx.ext.githubpages",
     "sphinx.ext.todo",
-    "qcodes.sphinx_extensions.parse_parameter_attr",
+    "qcodes.extensions.sphinx_extensions.parse_parameter_attr",
     "sphinxcontrib.towncrier",
     "autodocsumm",
     "sphinx_issues",
