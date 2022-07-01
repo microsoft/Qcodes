@@ -197,12 +197,12 @@ def test_attr_access_channels(testdummychannelinstr):
 
 
 def test_get_idn(testdummy):
-    idn = dict(
-        zip(
-            ("vendor", "model", "serial", "firmware"),
-            [None, testdummy.name, None, None],
-        )
-    )
+    idn = {
+        "vendor": "QCoDeS",
+        "model": str(testdummy.__class__),
+        "seral": "NA",
+        "firmware": "NA",
+    }
     assert testdummy.get_idn() == idn
 
 

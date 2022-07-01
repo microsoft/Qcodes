@@ -19,7 +19,17 @@ from qcodes.validators import Strings
 log = logging.getLogger(__name__)
 
 
-class MockParabola(Instrument):
+class DummyBase(Instrument):
+    def get_idn(self):
+        return {
+            "vendor": "QCoDeS",
+            "model": str(self.__class__),
+            "seral": "NA",
+            "firmware": "NA",
+        }
+
+
+class MockParabola(DummyBase):
     """
     Holds dummy parameters which are get and set able as well as provides
     some basic functions that depends on these parameters for testing
@@ -106,7 +116,7 @@ class MockMetaParabola(InstrumentBase):
         return val*self.gain.get()
 
 
-class DummyInstrument(Instrument):
+class DummyInstrument(DummyBase):
 
     def __init__(self, name: str = 'dummy',
                  gates: Sequence[str] = ('dac1', 'dac2', 'dac3'), **kwargs):
@@ -135,7 +145,7 @@ class DummyInstrument(Instrument):
             )
 
 
-class DummyFailingInstrument(Instrument):
+class DummyFailingInstrument(DummyBase):
     def __init__(self, name: str = "dummy", fail: bool = True, **kwargs):
 
         """
@@ -152,7 +162,7 @@ class DummyFailingInstrument(Instrument):
             raise RuntimeError("Failed to create instrument")
 
 
-class DummyAttrInstrument(Instrument):
+class DummyAttrInstrument(DummyBase):
     def __init__(self, name: str = "dummy", **kwargs: Any):
 
         """
@@ -244,7 +254,7 @@ class DmmGaussParameter(Parameter):
             yield model + noise
 
 
-class DummyInstrumentWithMeasurement(Instrument):
+class DummyInstrumentWithMeasurement(DummyBase):
 
     def __init__(
             self,
@@ -778,7 +788,7 @@ def setpoint_generator(*sp_bases):
     return tuple(setpoints)
 
 
-class SnapShotTestInstrument(Instrument):
+class SnapShotTestInstrument(DummyBase):
     """
     A highly specialized dummy instrument for testing the snapshot. Used by
     test_snapshot.py
@@ -827,7 +837,7 @@ class SnapShotTestInstrument(Instrument):
         return snap
 
 
-class MockField(Instrument):
+class MockField(DummyBase):
 
     def __init__(
             self,
@@ -908,7 +918,7 @@ class MockField(Instrument):
             yield float(self._field_ramp_fcn(_time))
 
 
-class MockLockin(Instrument):
+class MockLockin(DummyBase):
 
     def __init__(
             self,
@@ -988,13 +998,8 @@ class MockDACChannel(InstrumentChannel):
         return self._num
 
 
-class MockDAC(Instrument):
-
-    def __init__(
-        self,
-        name: str = 'mdac',
-        num_channels: int = 10,
-        **kwargs):
+class MockDAC(DummyBase):
+    def __init__(self, name: str = "mdac", num_channels: int = 10, **kwargs):
 
         """
         Create a dummy instrument that can be used for testing
