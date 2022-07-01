@@ -7,7 +7,7 @@ Babel==2.10.3
 backcall==0.2.0
 bleach==5.0.1
 certifi==2022.6.15
-cffi==1.15.0
+cffi==1.15.1
 charset-normalizer~=2.1.0
 colorama==0.4.5
 decorator==5.1.1
@@ -33,7 +33,7 @@ jupyter-core==4.10.0
 jupyterlab-pygments==0.2.2
 MarkupSafe==2.1.1
 mistune==0.8.4
-nbclient==0.6.4
+nbclient==0.6.5
 nbconvert==6.5.0
 nbformat==5.4.0
 nbsphinx==0.8.9
