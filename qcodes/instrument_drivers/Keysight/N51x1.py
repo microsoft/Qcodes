@@ -24,7 +24,10 @@ class N51x1(VisaInstrument):
         # Query the instrument to see what frequency range was purchased
         freq_dict = {'501':1e9, '503':3e9, '506':6e9, '513': 13e9, '520':20e9, '532': 31.8e9, '540': 40e9}
 
-        max_freq = freq_dict[self.ask('*OPT?')]  # TODO: use .split(',') to detect other options
+        options = self.ask('*OPT?')
+        freq_option = options.split(',')[0] # the frequency option seems to be the first one
+        max_freq = freq_dict[freq_option]
+
         self.add_parameter('frequency',
                            label='Frequency',
                            get_cmd='SOUR:FREQ?',
