@@ -6,7 +6,7 @@ import pytest
 from hypothesis import HealthCheck, given, settings
 
 from qcodes.parameters import combine
-from qcodes.utils.helpers import full_class
+from qcodes.utils import full_class
 
 from ..common import DumyPar
 

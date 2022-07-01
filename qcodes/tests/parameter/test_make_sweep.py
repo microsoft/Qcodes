@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
-from qcodes.utils.helpers import make_sweep
+
+from qcodes.parameters.sweep_values import make_sweep
 
 
 def test_good_calls():

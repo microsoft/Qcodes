@@ -7,7 +7,6 @@ qcodes.utils
 .. autosummary::
 
     qcodes.utils
-    qcodes.utils.helpers
     qcodes.utils.magic
     qcodes.utils.metadata
     qcodes.utils.plotting
@@ -21,7 +20,6 @@ qcodes.utils
    :maxdepth: 4
    :hidden:
 
-   helpers
    magic
    metadata
    plotting

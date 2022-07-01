@@ -6,8 +6,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from qcodes.utils import NumpyJSONEncoder
-from qcodes.utils.helpers import deep_update
+from qcodes.utils import NumpyJSONEncoder, deep_update
 
 from .data_array import DataArray
 from .format import Formatter

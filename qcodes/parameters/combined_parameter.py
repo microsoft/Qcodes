@@ -1,14 +1,17 @@
 import collections
 import collections.abc
+import logging
 from copy import copy
 from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence
 
 import numpy as np
 
-from qcodes.utils.helpers import full_class, warn_units
+from qcodes.utils import full_class
 from qcodes.utils.metadata import Metadatable
 
 from .parameter import Parameter
+
+_LOG = logging.getLogger(__name__)
 
 
 def combine(
@@ -83,7 +86,10 @@ class CombinedParameter(Metadatable):
         self.parameter.label = label  # type: ignore[attr-defined]
 
         if units is not None:
-            warn_units("CombinedParameter", self)
+            _LOG.warning(
+                f"`units` is deprecated for the "
+                f"`CombinedParameter` class, use `unit` instead. {self!r}"
+            )
             if unit is None:
                 unit = units
         self.parameter.unit = unit  # type: ignore[attr-defined]

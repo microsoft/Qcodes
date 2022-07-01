@@ -1,14 +1,8 @@
 import pytest
-from qcodes.utils.helpers import permissive_range
 
-bad_args = [
-    [],
-    [1],
-    [1, 2],
-    [None, 1, .1],
-    [1, None, .1],
-    [1, 2, 'not too far']
-]
+from qcodes.parameters.permissive_range import permissive_range
+
+bad_args = [[], [1], [1, 2], [None, 1, 0.1], [1, None, 0.1], [1, 2, "not too far"]]
 
 good_args = [
     ((1, 7, 2), [1, 3, 5]),
@@ -24,7 +18,7 @@ good_args = [
     ((1.0, 7.0, -2.0), [1.0, 3.0, 5.0]),
     ((7.0, 1.0, 2.0), [7.0, 5.0, 3.0]),
     ((7.0, 1.0, -2.0), [7.0, 5.0, 3.0]),
-    ((1.5, 1.8, 0.1), [1.5, 1.6, 1.7])
+    ((1.5, 1.8, 0.1), [1.5, 1.6, 1.7]),
 ]
 
 

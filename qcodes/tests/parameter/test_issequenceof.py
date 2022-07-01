@@ -2,7 +2,7 @@ from typing import Any, List, Tuple
 
 import pytest
 
-from qcodes.utils.helpers import is_sequence_of
+from qcodes.parameters.sequence_helpers import is_sequence_of
 
 simple_good: List[Tuple[Any, ...]] = [
     # empty lists pass without even checking that we provided a
@@ -14,8 +14,8 @@ simple_good: List[Tuple[Any, ...]] = [
     ([1, 2.0], (int, float)),
     ([{}, None], (type(None), dict)),
     # omit type (or set None) and we don't test type at all
-    ([1, '2', dict],),
-    ([1, '2', dict], None)
+    ([1, "2", dict],),
+    ([1, "2", dict], None),
 ]
 
 
@@ -24,13 +24,7 @@ def test_simple_good(args):
     assert is_sequence_of(*args)
 
 
-simple_bad = [
-    (1,),
-    (1, int),
-    ([1, 2.0], int),
-    ([1, 2], float),
-    ([1, 2], (float, dict))
-]
+simple_bad = [(1,), (1, int), ([1, 2.0], int), ([1, 2], float), ([1, 2], (float, dict))]
 
 
 @pytest.mark.parametrize("args", simple_bad)
@@ -52,7 +46,7 @@ good_depth = [
     ([[1, 2], [3, 4]], int, 2),
     ([[1, 2.0], []], (int, float), 2),
     ([[[1]]], int, 3),
-    ([[1, 2], [3, 4]], None, 2)
+    ([[1, 2], [3, 4]], None, 2),
 ]
 
 
@@ -61,11 +55,7 @@ def test_depth_good(args):
     assert is_sequence_of(*args)
 
 
-bad_depth = [
-    ([1], int, 2),
-    ([[1]], int, 1),
-    ([[1]], float, 2)
-]
+bad_depth = [([1], int, 2), ([[1]], int, 1), ([[1]], float, 2)]
 
 
 @pytest.mark.parametrize("args", bad_depth)
@@ -82,7 +72,7 @@ good_shapes = [
     # would be (2, 2) - that's tested in bad below
     ([[1, 2], [3, 4]], list, (2,)),
     (((0, 1, 2), ((0, 1), (0, 1), (0, 1))), tuple, (2,)),
-    (((0, 1, 2), ((0, 1), (0, 1), (0, 1))), (tuple, int), (2, 3))
+    (((0, 1, 2), ((0, 1), (0, 1), (0, 1))), (tuple, int), (2, 3)),
 ]
 
 
@@ -98,7 +88,7 @@ bad_shapes = [
     ([[1, 2], [1]], int, (2, 2)),
     ([[1]], float, (1, 1)),
     ([[1, 2], [3, 4]], int, (2,)),
-    (((0, 1, 2), ((0, 1), (0, 1))), (tuple, int), (2, 3))
+    (((0, 1, 2), ((0, 1), (0, 1))), (tuple, int), (2, 3)),
 ]
 
 

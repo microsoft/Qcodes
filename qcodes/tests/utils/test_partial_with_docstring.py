@@ -1,4 +1,4 @@
-from qcodes.utils.helpers import partial_with_docstring
+from qcodes.utils import partial_with_docstring
 
 
 def test_partial_with_docstring():

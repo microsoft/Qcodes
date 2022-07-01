@@ -47,8 +47,13 @@ from qcodes.parameters import (
     Parameter,
     ParameterBase,
 )
-from qcodes.utils import DelegateAttributes, checked_getattr, issue_deprecation_warning
-from qcodes.utils.helpers import get_qcodes_path, get_qcodes_user_path
+from qcodes.utils import (
+    DelegateAttributes,
+    checked_getattr,
+    get_qcodes_path,
+    get_qcodes_user_path,
+    issue_deprecation_warning,
+)
 from qcodes.utils.metadata import Metadatable
 
 log = logging.getLogger(__name__)

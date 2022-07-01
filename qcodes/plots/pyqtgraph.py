@@ -14,7 +14,7 @@ from pyqtgraph.graphicsItems.PlotItem.PlotItem import PlotItem
 from pyqtgraph.multiprocess.remoteproxy import ClosedError, ObjectProxy
 
 import qcodes
-import qcodes.utils.helpers
+import qcodes.utils.qt_helpers
 
 from .base import BasePlot
 from .colors import color_cycle, colorscales
@@ -86,7 +86,7 @@ class QtPlot(BasePlot):
         else:
             # overrule the remote pyqtgraph class
             self.rpg = pg
-            self.qc_helpers = qcodes.utils.helpers
+            self.qc_helpers = qcodes.utils.qt_helpers
         try:
             self.win = self.rpg.GraphicsLayoutWidget(title=window_title)
             self.win.show()
@@ -136,8 +136,8 @@ class QtPlot(BasePlot):
         # run, so this only starts once and stores the process in the class
         pg.mkQApp()
         cls.proc = pgmp.QtProcess()  # pyqtgraph multiprocessing
-        cls.rpg = cls.proc._import('pyqtgraph')
-        cls.qc_helpers = cls.proc._import('qcodes.utils.helpers')
+        cls.rpg = cls.proc._import("pyqtgraph")
+        cls.qc_helpers = cls.proc._import("qcodes.utils.qt_helpers")
 
     def clear(self):
         """

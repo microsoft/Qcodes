@@ -2,8 +2,9 @@ import time
 from datetime import datetime
 
 import pytest
+
 from qcodes.logger.logger import LogCapture
-from qcodes.utils.helpers import wait_secs
+from qcodes.loops import wait_secs
 
 
 def test_bad_calls():
@@ -18,4 +19,4 @@ def test_warning():
         secs_out = wait_secs(time.perf_counter() - 1)
     assert secs_out == 0
 
-    assert logs.value.count('negative delay') == 1, logs.value
+    assert logs.value.count("negative delay") == 1, logs.value

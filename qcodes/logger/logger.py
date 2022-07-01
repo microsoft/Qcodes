@@ -28,9 +28,9 @@ if TYPE_CHECKING:
 import qcodes as qc
 from qcodes.utils import (
     get_all_installed_package_versions,
+    get_qcodes_user_path,
     is_qcodes_installed_editably,
 )
-from qcodes.utils.helpers import get_qcodes_user_path
 
 log: logging.Logger = logging.getLogger(__name__)
 

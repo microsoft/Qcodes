@@ -15,8 +15,7 @@ from qcodes.data.data_array import (
     data_array_to_xarray_dictionary,
     xarray_data_array_dictionary_to_data_array,
 )
-from qcodes.utils import DelegateAttributes
-from qcodes.utils.helpers import deep_update, full_class
+from qcodes.utils import DelegateAttributes, deep_update, full_class
 
 from .gnuplot_format import GNUPlotFormat
 from .io import DiskIO

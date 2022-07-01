@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from qcodes.utils.helpers import compare_dictionaries
+from qcodes.tests.common import compare_dictionaries
 
 
 def test_same():
