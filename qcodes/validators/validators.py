@@ -603,15 +603,21 @@ class MultiType(Validator[Any]):
     between the different validators. Pass combiner='AND' to
     require all validators to return True instead of atleast
     one returning True.
+
     Examples:
         1. To allow numbers as well as "off":
-            MultiType(Numbers(), Enum("off"))
-            or:
-            MultiType(Numbers(), Enum("off"), combiner='OR')
+
+        >>> MultiType(Numbers(), Enum("off"))
+
+        or:
+
+        >>> MultiType(Numbers(), Enum("off"), combiner='OR')
+
         2. To require values that are divisible by 0.001 while >=0.002 and <=50000.0
-            MultiType(PermissiveMultiples(divisor=1e-3),
-                      Numbers(min_value=2e-3, max_value=5e4),
-                      combiner='AND')
+
+        >>> MultiType(PermissiveMultiples(divisor=1e-3),
+        >>>           Numbers(min_value=2e-3, max_value=5e4),
+        >>>           combiner='AND')
 
     Raises:
         TypeError: If no validators provided. Or if any of the provided
@@ -675,7 +681,8 @@ class MultiTypeOr(MultiType):
 
     Example:
         To allow numbers as well as "off":
-            MultiTypeOr(Numbers(), Enum("off"))
+
+        >>> MultiTypeOr(Numbers(), Enum("off"))
 
     Raises:
         TypeError: If no validators provided. Or if any of the provided
@@ -701,9 +708,10 @@ class MultiTypeAnd(MultiType):
 
     Example:
         To require values that are divisible by 0.001 while >=0.002 and <=50000.0
-            MultiType(PermissiveMultiples(divisor=1e-3),
-                      Numbers(min_value=2e-3, max_value=5e4),
-                      combiner='AND')
+
+        >>> MultiType(PermissiveMultiples(divisor=1e-3),
+        >>>           Numbers(min_value=2e-3, max_value=5e4),
+        >>>           combiner='AND')
 
     Raises:
         TypeError: If no validators provided. Or if any of the provided
