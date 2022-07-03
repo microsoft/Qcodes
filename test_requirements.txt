@@ -37,7 +37,7 @@ Sphinx==4.5.0
 stringparser==0.5
 toml==0.10.2
 typed-ast==1.4.3; python_version<'3.8'
-typing-extensions==4.2.0
+typing-extensions==4.3.0
 types-atomicwrites
 types-backports
 types-cryptography
