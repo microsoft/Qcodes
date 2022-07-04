@@ -19,7 +19,7 @@ from typing_extensions import Literal
 import qcodes as qc
 from qcodes.dataset.data_set import load_by_run_spec
 from qcodes.dataset.data_set_protocol import DataSetProtocol
-from qcodes.utils.plotting import auto_color_scale_from_config, find_scale_and_prefix
+from qcodes.plotting import auto_color_scale_from_config, find_scale_and_prefix
 
 from .data_export import (
     DSPlotData,
