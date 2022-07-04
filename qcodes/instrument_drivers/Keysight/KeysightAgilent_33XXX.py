@@ -4,9 +4,8 @@ from typing import Any, Union
 
 from qcodes import validators as vals
 from qcodes.instrument import Instrument, InstrumentChannel, VisaInstrument
-from qcodes.instrument_drivers.Keysight.private.error_handling import (
-    KeysightErrorQueueMixin,
-)
+
+from .private.error_handling import KeysightErrorQueueMixin
 
 log = logging.getLogger(__name__)
 
