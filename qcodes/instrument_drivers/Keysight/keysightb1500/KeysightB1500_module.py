@@ -1,13 +1,15 @@
 import re
-from typing import Optional, Tuple, TYPE_CHECKING, Dict, Union, cast, Any
-from typing_extensions import TypedDict
 from collections import namedtuple
-import numpy as np
+from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Union, cast
 
-from qcodes import InstrumentChannel
-from .message_builder import MessageBuilder
+import numpy as np
+from typing_extensions import TypedDict
+
+from qcodes.instrument import InstrumentChannel
+
 from . import constants
-from .constants import ModuleKind, SlotNr, MeasurementStatus, ChannelName, ChNr
+from .constants import ChannelName, ChNr, MeasurementStatus, ModuleKind, SlotNr
+from .message_builder import MessageBuilder
 
 if TYPE_CHECKING:
     import qcodes.instrument_drivers.Keysight.keysightb1500

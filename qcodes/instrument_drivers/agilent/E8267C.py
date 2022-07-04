@@ -1,12 +1,9 @@
-from typing import Any
+from typing import Any, Union
 
 import numpy as np
 
 from qcodes.instrument import VisaInstrument
 from qcodes.validators import Enum, Numbers
-
-# todo should this be public
-from qcodes.validators.validators import numbertypes
 
 
 class E8267(VisaInstrument):
@@ -98,9 +95,13 @@ class E8267(VisaInstrument):
 
     # functions to convert between rad and deg
     @staticmethod
-    def deg_to_rad(angle_deg: numbertypes) -> "np.floating[Any]":
+    def deg_to_rad(
+        angle_deg: Union[float, np.floating, np.integer]
+    ) -> "np.floating[Any]":
         return np.deg2rad(float(angle_deg))
 
     @staticmethod
-    def rad_to_deg(angle_rad: numbertypes) -> "np.floating[Any]":
+    def rad_to_deg(
+        angle_rad: Union[float, np.floating, np.integer]
+    ) -> "np.floating[Any]":
         return np.rad2deg(float(angle_rad))

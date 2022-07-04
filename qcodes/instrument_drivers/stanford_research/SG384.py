@@ -1,7 +1,7 @@
 from typing import Any
 
-from qcodes import VisaInstrument, validators as vals
-
+from qcodes import validators as vals
+from qcodes.instrument import VisaInstrument
 
 class SRS_SG384(VisaInstrument):
     """

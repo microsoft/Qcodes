@@ -12,8 +12,7 @@ import numpy as np
 from broadbean.sequence import InvalidForgedSequenceError, fs_schema
 
 from qcodes import validators as vals
-from qcodes.instrument import Instrument, VisaInstrument
-from qcodes.instrument.channel import ChannelList, InstrumentChannel
+from qcodes.instrument import ChannelList, Instrument, InstrumentChannel, VisaInstrument
 
 log = logging.getLogger(__name__)
 

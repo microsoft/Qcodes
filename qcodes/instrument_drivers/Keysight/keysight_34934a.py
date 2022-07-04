@@ -2,7 +2,8 @@ import logging
 import re
 from typing import Callable, List, Optional, Tuple, Union
 
-from qcodes import InstrumentChannel, VisaInstrument, validators
+from qcodes import validators
+from qcodes.instrument import InstrumentChannel, VisaInstrument
 
 from .keysight_34980a_submodules import KeysightSwitchMatrixSubModule
 
