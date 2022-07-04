@@ -25,10 +25,9 @@ from qcodes.parameters import (
     Parameter,
 )
 from qcodes.parameters.multi_channel_instrument_parameter import InstrumentModuleType
-from qcodes.utils import full_class
+from qcodes.utils import Metadatable, full_class
 from qcodes.validators import Validator
 
-from ..utils.metadata import Metadatable
 from .instrument import Instrument
 from .instrument_base import InstrumentBase
 

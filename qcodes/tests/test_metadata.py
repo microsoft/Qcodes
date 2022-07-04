@@ -1,6 +1,6 @@
 import pytest
 
-from qcodes.utils.metadata import Metadatable, diff_param_values
+from qcodes.utils import Metadatable, diff_param_values
 
 
 class HasSnapshotBase(Metadatable):

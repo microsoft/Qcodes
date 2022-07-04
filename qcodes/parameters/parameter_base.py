@@ -21,8 +21,12 @@ from typing import (
     overload,
 )
 
-from qcodes.utils import DelegateAttributes, full_class, qcodes_abstractmethod
-from qcodes.utils.metadata import Metadatable
+from qcodes.utils import (
+    DelegateAttributes,
+    Metadatable,
+    full_class,
+    qcodes_abstractmethod,
+)
 from qcodes.validators import Enum, Ints, Validator
 
 from .cache import _Cache, _CacheProtocol

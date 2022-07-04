@@ -4,8 +4,7 @@ from typing import Optional, Sequence
 from qcodes.actions import _actions_snapshot
 from qcodes.loops import Loop
 from qcodes.parameters import Parameter
-from qcodes.utils import full_class
-from qcodes.utils.metadata import Metadatable
+from qcodes.utils import Metadatable, full_class
 
 
 class Measure(Metadatable):
