@@ -23,12 +23,6 @@ from qcodes.dataset.sqlite.db_upgrades import (
     perform_db_upgrade,
 )
 from qcodes.dataset.sqlite.initial_schema import init_db
-from qcodes.utils.types import (
-    complex_type_union,
-    complex_types,
-    numpy_floats,
-    numpy_ints,
-)
 
 JournalMode = Literal["DELETE", "TRUNCATE", "PERSIST", "MEMORY", "WAL", "OFF"]
 
@@ -51,7 +45,7 @@ def _convert_array(text: bytes) -> np.ndarray:
     return np.load(out)
 
 
-def _convert_complex(text: bytes) -> complex_type_union:
+def _convert_complex(text: bytes) -> np.complexfloating:
     out = io.BytesIO(text)
     out.seek(0)
     return np.load(out)[0]
@@ -112,7 +106,7 @@ def _adapt_float(fl: float) -> Union[float, str]:
     return float(fl)
 
 
-def _adapt_complex(value: complex_type_union) -> sqlite3.Binary:
+def _adapt_complex(value: Union[complex, np.complexfloating]) -> sqlite3.Binary:
     out = io.BytesIO()
     np.save(out, np.array([value]))
     out.seek(0)
@@ -158,15 +152,14 @@ def connect(name: Union[str, Path], debug: bool = False,
     conn.row_factory = sqlite3.Row
 
     # Make sure numpy ints and floats types are inserted properly
-    for numpy_int in numpy_ints:
-        sqlite3.register_adapter(numpy_int, int)
+    sqlite3.register_adapter(np.integer, int)
 
     sqlite3.register_converter("numeric", _convert_numeric)
 
-    for numpy_float in (float,) + numpy_floats:
+    for numpy_float in (float, np.floating):
         sqlite3.register_adapter(numpy_float, _adapt_float)
 
-    for complex_type in complex_types:
+    for complex_type in (complex, np.complexfloating):
         sqlite3.register_adapter(complex_type, _adapt_complex)
     sqlite3.register_converter("complex", _convert_complex)
 
