@@ -10,3 +10,4 @@ from qcodes.plotting import (
     find_scale_and_prefix,
 )
 from qcodes.plotting.matplotlib_helpers import _set_colorbar_extend
+from qcodes.plotting.plotting import _ENGINEERING_PREFIXES, _UNITS_FOR_RESCALING
