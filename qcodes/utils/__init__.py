@@ -17,6 +17,7 @@ from .installation_info import (
     is_qcodes_installed_editably,
 )
 from .json_utils import NumpyJSONEncoder
+from .numpy_utils import list_of_data_to_maybe_ragged_nd_array
 from .partial_utils import partial_with_docstring
 from .path_helpers import get_qcodes_path, get_qcodes_user_path
 from .spyder_utils import add_to_spyder_UMR_excludelist
@@ -38,6 +39,7 @@ __all__ = [
     "is_function",
     "is_qcodes_installed_editably",
     "issue_deprecation_warning",
+    "list_of_data_to_maybe_ragged_nd_array",
     "partial_with_docstring",
     "qcodes_abstractmethod",
     "strip_attrs",
