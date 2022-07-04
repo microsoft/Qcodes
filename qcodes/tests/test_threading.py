@@ -8,8 +8,8 @@ from typing import Any
 
 import pytest
 
+from qcodes.dataset.threading import ThreadPoolParamsCaller, call_params_threaded
 from qcodes.parameters import Parameter, ParamRawDataType
-from qcodes.utils.threading import ThreadPoolParamsCaller, call_params_threaded
 
 from .instrument_mocks import DummyInstrument
 
