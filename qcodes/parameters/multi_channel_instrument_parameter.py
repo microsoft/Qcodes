@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Generic, Sequence, Tuple, TypeVar
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 from .multi_parameter import MultiParameter
 from .parameter_base import ParamRawDataType
@@ -35,7 +36,7 @@ class MultiChannelInstrumentParameter(MultiParameter, Generic[InstrumentModuleTy
         self._channels = channels
         self._param_name = param_name
 
-    def get_raw(self) -> Tuple[ParamRawDataType, ...]:
+    def get_raw(self) -> tuple[ParamRawDataType, ...]:
         """
         Return a tuple containing the data from each of the channels in the
         list.
@@ -54,7 +55,7 @@ class MultiChannelInstrumentParameter(MultiParameter, Generic[InstrumentModuleTy
             getattr(chan, self._param_name).set(value)
 
     @property
-    def full_names(self) -> Tuple[str, ...]:
+    def full_names(self) -> tuple[str, ...]:
         """
         Overwrite full_names because the instrument name is already included
         in the name. This happens because the instrument name is included in

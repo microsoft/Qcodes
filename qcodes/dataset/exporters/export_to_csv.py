@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import os
-from typing import TYPE_CHECKING, Mapping, Optional
+from collections.abc import Mapping
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -19,7 +20,7 @@ def dataframe_to_csv(
     dfdict: Mapping[str, pd.DataFrame],
     path: str,
     single_file: bool = False,
-    single_file_name: Optional[str] = None,
+    single_file_name: str | None = None,
 ) -> None:
     import pandas as pd
 

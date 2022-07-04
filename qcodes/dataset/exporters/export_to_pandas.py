@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Dict, Iterator, Mapping, Union
+from collections.abc import Iterator, Mapping
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -11,7 +12,7 @@ if TYPE_CHECKING:
     from qcodes.dataset.data_set import ParameterData
 
 
-def load_to_dataframe_dict(datadict: ParameterData) -> Dict[str, pd.DataFrame]:
+def load_to_dataframe_dict(datadict: ParameterData) -> dict[str, pd.DataFrame]:
     dfs = {}
     for name, subdict in datadict.items():
         index = _generate_pandas_index(subdict)
@@ -37,7 +38,7 @@ def load_to_concatenated_dataframe(datadict: ParameterData) -> pd.DataFrame:
 
 
 def _data_to_dataframe(
-    data: Mapping[str, np.ndarray], index: Union[pd.Index, pd.MultiIndex, None]
+    data: Mapping[str, np.ndarray], index: pd.Index | pd.MultiIndex | None
 ) -> pd.DataFrame:
     import pandas as pd
     if len(data) == 0:
@@ -59,7 +60,7 @@ def _data_to_dataframe(
 
 def _generate_pandas_index(
     data: Mapping[str, np.ndarray]
-) -> Union[pd.Index, pd.MultiIndex, None]:
+) -> pd.Index | pd.MultiIndex | None:
     # the first element in the dict given by parameter_tree is always the dependent
     # parameter and the index is therefore formed from the rest
     import pandas as pd
@@ -93,7 +94,7 @@ def _parameter_data_identical(
 
 def _same_setpoints(datadict: ParameterData) -> bool:
 
-    def _get_setpoints(dd: ParameterData) -> Iterator[Dict[str, np.ndarray]]:
+    def _get_setpoints(dd: ParameterData) -> Iterator[dict[str, np.ndarray]]:
 
         for dep_name, param_dict in dd.items():
             out = {
