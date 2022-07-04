@@ -17,7 +17,7 @@ from qcodes.dataset.plotting import (
     plot_by_id,
     plot_dataset,
 )
-from qcodes.plotting.plotting import _ENGINEERING_PREFIXES, _UNITS_FOR_RESCALING
+from qcodes.plotting.axis_labels import _ENGINEERING_PREFIXES, _UNITS_FOR_RESCALING
 from qcodes.tests.instrument_mocks import DummyInstrument
 
 

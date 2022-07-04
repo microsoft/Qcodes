@@ -5,7 +5,7 @@ from typing import Any, Optional, Tuple, Union, cast
 import matplotlib
 import numpy as np
 
-from .plotting import DEFAULT_PERCENTILE, auto_range_iqr
+from .auto_range import DEFAULT_PERCENTILE, auto_range_iqr
 
 DEFAULT_COLOR_OVER = "Magenta"
 DEFAULT_COLOR_UNDER = "Cyan"

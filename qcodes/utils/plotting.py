@@ -9,5 +9,5 @@ from qcodes.plotting import (
     auto_range_iqr,
     find_scale_and_prefix,
 )
+from qcodes.plotting.axis_labels import _ENGINEERING_PREFIXES, _UNITS_FOR_RESCALING
 from qcodes.plotting.matplotlib_helpers import _set_colorbar_extend
-from qcodes.plotting.plotting import _ENGINEERING_PREFIXES, _UNITS_FOR_RESCALING
