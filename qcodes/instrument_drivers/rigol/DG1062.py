@@ -2,8 +2,8 @@ import logging
 from functools import partial
 from typing import Any, Dict, List, Union, cast
 
-from qcodes import ChannelList, InstrumentChannel, VisaInstrument
 from qcodes import validators as vals
+from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
 from qcodes.utils import partial_with_docstring
 
 log = logging.getLogger(__name__)
