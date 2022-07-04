@@ -8,7 +8,6 @@ qcodes.utils
 
     qcodes.utils
     qcodes.utils.metadata
-    qcodes.utils.threading
 
 .. automodule:: qcodes.utils
     :no-inherited-members:
@@ -19,4 +18,3 @@ qcodes.utils
    :hidden:
 
    metadata
-   threading
