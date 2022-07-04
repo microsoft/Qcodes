@@ -13,22 +13,24 @@ class N51x1(VisaInstrument):
     def __init__(self, name: str, address: str, min_power: int = -144, max_power: int = 19, **kwargs: Any):
         super().__init__(name, address, terminator='\n', **kwargs)
 
-        self._options = self.ask('*OPT?')
+        self._options = self.ask("*OPT?")
         # Determine installed frequency option
-        freq_dict = {'501': 1e9,
-                     '503': 3e9,
-                     '506': 6e9,
-                     '513': 13e9,
-                     '520': 20e9,
-                     '532': 31.8e9,
-                     '540': 40e9}
+        freq_dict = {
+            "501": 1e9,
+            "503": 3e9,
+            "506": 6e9,
+            "513": 13e9,
+            "520": 20e9,
+            "532": 31.8e9,
+            "540": 40e9,
+        }
 
         frequency_option = None
         for f_option in freq_dict.keys():
             if f_option in self._options:
                 frequency_option = f_option
         if frequency_option is None:
-            raise RuntimeError('Could not determine the frequency option')
+            raise RuntimeError("Could not determine the frequency option")
 
         max_freq = freq_dict[frequency_option]
 
