@@ -8,7 +8,6 @@ qcodes.utils
 
     qcodes.utils
     qcodes.utils.metadata
-    qcodes.utils.plotting
     qcodes.utils.threading
 
 .. automodule:: qcodes.utils
@@ -20,5 +19,4 @@ qcodes.utils
    :hidden:
 
    metadata
-   plotting
    threading
