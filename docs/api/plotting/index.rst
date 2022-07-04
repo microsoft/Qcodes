@@ -1,0 +1,2 @@
+.. automodule:: qcodes.plotting
+    :autosummary:

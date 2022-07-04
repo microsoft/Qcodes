@@ -26,6 +26,7 @@ QCoDeS API
    math_utils/index
    monitor/index
    parameters/index
+   plotting/index
    station
    utils/index
    validators/index
