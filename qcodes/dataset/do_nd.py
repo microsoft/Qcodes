@@ -29,7 +29,7 @@ from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.plotting import plot_and_save_image
 from qcodes.parameters import ParameterBase
-from qcodes.utils.threading import (
+from .threading import (
     SequentialParamsCaller,
     ThreadPoolParamsCaller,
     process_params_meas,

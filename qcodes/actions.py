@@ -1,8 +1,7 @@
 """Actions, mainly to be executed in measurement Loops."""
 import time
 
-from qcodes.utils import is_function
-from qcodes.utils.threading import thread_map
+from qcodes.utils import is_function, thread_map
 
 _NO_SNAPSHOT = {'type': None, 'description': 'Action without snapshot'}
 

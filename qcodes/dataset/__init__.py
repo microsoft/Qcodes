@@ -33,6 +33,11 @@ from .sqlite.database import (
     initialised_database_at,
 )
 from .sqlite.settings import SQLiteSettings
+from .threading import (
+    SequentialParamsCaller,
+    ThreadPoolParamsCaller,
+    call_params_threaded,
+)
 
 __all__ = [
     "AbstractSweep",
@@ -44,6 +49,9 @@ __all__ = [
     "Measurement",
     "ParamSpec",
     "SQLiteSettings",
+    "SequentialParamsCaller",
+    "ThreadPoolParamsCaller",
+    "call_params_threaded",
     "do0d",
     "do1d",
     "do2d",
