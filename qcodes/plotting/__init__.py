@@ -1,3 +1,10 @@
+"""
+This file holds plotting utility functions that are
+independent of the dataset from which to be plotted.
+For the current dataset see :class:`qcodes.dataset.plot_dataset`
+For the legacy dataset see :class:`qcodes.plots`
+"""
+
 from .matplotlib_helpers import (
     apply_auto_color_scale,
     apply_color_scale_limits,

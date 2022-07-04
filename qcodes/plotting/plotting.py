@@ -1,8 +1,5 @@
 """
-This file holds plotting utility functions that are
-independent of the dataset from which to be plotted.
-For the current dataset see :class:`qcodes.dataset.plotting`
-For the legacy dataset see :class:`qcodes.plots`
+This file holds plotting utils that are independent of the backend
 """
 import logging
 from typing import Tuple, Union
