@@ -719,7 +719,7 @@ class _Sweeper:
         return self._nested_setpoints
 
     @property
-    def all_setpoint_params(self):
+    def all_setpoint_params(self) -> Tuple[ParameterBase, ...]:
         return tuple(sweep.param for sweep in self._sweeps) + tuple(
             s for s in self._additional_setpoints
         )
