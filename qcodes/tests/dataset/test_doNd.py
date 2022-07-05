@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 from hypothesis import HealthCheck, given, settings
+from numpy.testing import assert_array_equal
 
 from qcodes import config, validators
 from qcodes.dataset import (
@@ -20,6 +21,11 @@ from qcodes.dataset import (
     new_experiment,
 )
 from qcodes.dataset.data_set import DataSet
+from qcodes.dataset.do_nd import (
+    MultiSweep,
+    _Sweeper,
+)
+
 from qcodes.parameters import Parameter, ParameterBase
 from qcodes.tests.instrument_mocks import (
     ArraySetPointParam,
@@ -1868,8 +1874,6 @@ def test_dond_2d_multi_datasets_with_callable_output_data(
 @pytest.mark.usefixtures("plot_close", "experiment")
 def test_dond_multi_sweep(_param_set, _param_set_2, _param, _param_2):
 
-    from qcodes.dataset.do_nd import MultiSweep
-
     sweep_1 = LinSweep(_param_set, 0, 1, 10, 0)
     sweep_2 = LinSweep(_param_set_2, 1, 2, 10, 0)
 
@@ -1891,9 +1895,6 @@ def test_dond_multi_sweep(_param_set, _param_set_2, _param, _param_2):
 def test_dond_multi_sweep_sweeper(_param_set, _param_set_2, _param):
 
     sweep_len = 10
-    from numpy.testing import assert_array_equal
-
-    from qcodes.dataset.do_nd import MultiSweep, _Sweeper
 
     sweep_1 = LinSweep(_param_set, 0, 1, sweep_len, 0)
 
