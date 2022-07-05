@@ -52,7 +52,7 @@ class Metadatable:
         self,
         update: Optional[bool] = False,
         params_to_skip_update: Optional[Sequence[str]] = None,
-    ) -> Dict[str, Any]:
+    ) -> Snapshot:
         """
         Override this with the primary information for a subclass.
         """
