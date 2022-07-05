@@ -18,8 +18,9 @@ from typing import (
 import numpy as np
 
 from qcodes.logger import get_instrument_logger
+from qcodes.metadatable import Metadatable
 from qcodes.parameters import Function, Parameter, ParameterBase
-from qcodes.utils import DelegateAttributes, Metadatable, full_class
+from qcodes.utils import DelegateAttributes, full_class
 
 if TYPE_CHECKING:
     from qcodes.instrument.channel import ChannelTuple, InstrumentModule

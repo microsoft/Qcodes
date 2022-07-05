@@ -40,6 +40,7 @@ import qcodes
 from qcodes import validators
 from qcodes.instrument.base import Instrument, InstrumentBase
 from qcodes.instrument.channel import ChannelTuple
+from qcodes.metadatable import Metadatable
 from qcodes.monitor.monitor import Monitor
 from qcodes.parameters import (
     DelegateParameter,
@@ -49,7 +50,6 @@ from qcodes.parameters import (
 )
 from qcodes.utils import (
     DelegateAttributes,
-    Metadatable,
     checked_getattr,
     get_qcodes_path,
     get_qcodes_user_path,

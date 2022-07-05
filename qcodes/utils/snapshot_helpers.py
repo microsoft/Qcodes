@@ -1,7 +1,5 @@
 from typing import Any, Dict, NamedTuple, Tuple, TypeVar, Union
 
-from .metadatable import Snapshot
-
 T = TypeVar("T")
 
 ParameterKey = Union[
@@ -11,6 +9,7 @@ ParameterKey = Union[
     Tuple[str, str],
 ]
 ParameterDict = Dict[ParameterKey, T]
+Snapshot = Dict[str, Any]
 
 
 class ParameterDiff(NamedTuple):

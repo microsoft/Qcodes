@@ -24,6 +24,7 @@ QCoDeS API
    interactive_widget
    logger/index
    math_utils/index
+   metadatable/index
    monitor/index
    parameters/index
    plotting/index

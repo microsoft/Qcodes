@@ -17,7 +17,6 @@ from .installation_info import (
     is_qcodes_installed_editably,
 )
 from .json_utils import NumpyJSONEncoder
-from .metadatable import Metadatable
 from .numpy_utils import list_of_data_to_maybe_ragged_nd_array
 from .partial_utils import partial_with_docstring
 from .path_helpers import get_qcodes_path, get_qcodes_user_path
@@ -28,7 +27,6 @@ from .threading_utils import RespondingThread, thread_map
 __all__ = [
     "DelayedKeyboardInterrupt",
     "DelegateAttributes",
-    "Metadatable",
     "NumpyJSONEncoder",
     "ParameterDiff",
     "QCoDeSDeprecationWarning",

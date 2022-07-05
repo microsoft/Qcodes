@@ -1,6 +1,6 @@
 from typing import Any, Dict, Mapping, Optional, Sequence
 
-from .deep_update_utils import deep_update
+from qcodes.utils import deep_update
 
 # NB: At the moment, the Snapshot type is a bit weak, as the Any
 #     for the value type doesn't tell us anything about the schema

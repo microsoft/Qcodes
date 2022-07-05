@@ -13,7 +13,7 @@ from typing import (
 
 import numpy as np
 
-from qcodes.utils import Metadatable
+from qcodes.metadatable import Metadatable
 
 from .named_repr import named_repr
 from .permissive_range import permissive_range
