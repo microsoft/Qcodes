@@ -536,11 +536,6 @@ class DataArray(DelegateAttributes):
 
         return (last_index + 1) / self.ndarray.size
 
-    @property
-    def units(self):
-        warn_units('DataArray', self)
-        return self.unit
-
     def to_xarray(self) -> "xr.DataArray":
         """ Return this DataArray as an xarray dataarray
 
