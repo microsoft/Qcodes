@@ -689,17 +689,9 @@ class _Sweeper:
         self._additional_setpoints = additional_setpoints
         self._nested_setpoints = self._make_nested_setpoints()
 
-        post_delays: List[float] = []
-        params_set: List[ParameterBase] = []
-        post_actions: List[ActionsT] = []
-        for sweep in self._sweeps:
-            post_delays.append(sweep.delay)
-            params_set.append(sweep.param)
-            post_actions.append(sweep.post_actions)
-
-        self._post_delays = tuple(post_delays)
-        self._params_set = tuple(params_set)
-        self._post_actions = tuple(post_actions)
+        self._post_delays = tuple(sweep.delay for sweep in sweeps)
+        self._params_set = tuple(sweep.param for sweep in sweeps)
+        self._post_actions = tuple(sweep.post_actions for sweep in sweeps)
 
     def _make_nested_setpoints(self) -> np.ndarray:
         """Create the cartesian product of all the setpoint values."""
