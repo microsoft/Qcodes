@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, Hashable, Optional, Tuple
 
 import qcodes
 from qcodes.configuration import Config, DotDict
-from qcodes.utils import Metadatable
+from qcodes.metadatable import Metadatable
 
 if TYPE_CHECKING:
     from pytest import ExceptionInfo
