@@ -20,6 +20,7 @@ from .json_utils import NumpyJSONEncoder
 from .numpy_utils import list_of_data_to_maybe_ragged_nd_array
 from .partial_utils import partial_with_docstring
 from .path_helpers import get_qcodes_path, get_qcodes_user_path
+from .snapshot_helpers import ParameterDiff, diff_param_values, extract_param_values
 from .spyder_utils import add_to_spyder_UMR_excludelist
 from .threading_utils import RespondingThread, thread_map
 
@@ -27,6 +28,7 @@ __all__ = [
     "DelayedKeyboardInterrupt",
     "DelegateAttributes",
     "NumpyJSONEncoder",
+    "ParameterDiff",
     "QCoDeSDeprecationWarning",
     "RespondingThread",
     "attribute_set_to",
@@ -34,6 +36,8 @@ __all__ = [
     "convert_legacy_version_to_supported_version",
     "deep_update",
     "deprecate",
+    "diff_param_values",
+    "extract_param_values",
     "full_class",
     "get_all_installed_package_versions",
     "get_qcodes_path",

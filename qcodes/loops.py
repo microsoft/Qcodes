@@ -48,9 +48,9 @@ import numpy as np
 
 from qcodes.data.data_array import DataArray
 from qcodes.data.data_set import new_data
+from qcodes.metadatable import Metadatable
 from qcodes.station import Station
 from qcodes.utils import full_class
-from qcodes.utils.metadata import Metadatable
 
 from .actions import (
     BreakIf,

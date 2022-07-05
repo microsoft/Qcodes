@@ -6,8 +6,8 @@ from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence
 
 import numpy as np
 
+from qcodes.metadatable import Metadatable
 from qcodes.utils import full_class
-from qcodes.utils.metadata import Metadatable
 
 from .parameter import Parameter
 

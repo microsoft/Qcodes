@@ -18,6 +18,7 @@ from typing import (
     overload,
 )
 
+from qcodes.metadatable import Metadatable
 from qcodes.parameters import (
     ArrayParameter,
     MultiChannelInstrumentParameter,
@@ -28,7 +29,6 @@ from qcodes.parameters.multi_channel_instrument_parameter import InstrumentModul
 from qcodes.utils import full_class
 from qcodes.validators import Validator
 
-from ..utils.metadata import Metadatable
 from .instrument import Instrument
 from .instrument_base import InstrumentBase
 
