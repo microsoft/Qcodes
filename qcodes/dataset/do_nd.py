@@ -698,7 +698,7 @@ class _Sweeper:
         if len(self._sweeps) == 0:
             return np.array([[]])  # 0d sweep (do0d)
         setpoint_values = [sweep.get_setpoints() for sweep in self._sweeps]
-        return _flatten_setpoint_values(setpoint_values)
+        return self._flatten_setpoint_values(setpoint_values)
 
     @staticmethod
     def _flatten_setpoint_values(setpoint_values: Sequence[np.ndarray]) -> np.ndarray:
@@ -987,10 +987,6 @@ def _make_nested_setpoints(sweeps: Sequence[AbstractSweep]) -> np.ndarray:
     if len(sweeps) == 0:
         return np.array([[]])  # 0d sweep (do0d)
     setpoint_values = [sweep.get_setpoints() for sweep in sweeps]
-    return _flatten_setpoint_values(setpoint_values)
-
-
-def _flatten_setpoint_values(setpoint_values: Sequence[np.ndarray]) -> np.ndarray:
     setpoint_grids = np.meshgrid(*setpoint_values, indexing="ij")
     flat_setpoint_grids = [np.ravel(grid, order="C") for grid in setpoint_grids]
     return np.vstack(flat_setpoint_grids).T
