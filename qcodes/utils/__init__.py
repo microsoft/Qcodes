@@ -37,6 +37,7 @@ __all__ = [
     "deep_update",
     "deprecate",
     "diff_param_values",
+    "extract_param_values",
     "full_class",
     "get_all_installed_package_versions",
     "get_qcodes_path",
