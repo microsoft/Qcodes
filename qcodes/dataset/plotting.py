@@ -340,10 +340,10 @@ def plot_and_save_image(
     for i, ax in enumerate(axes):
         if save_pdf:
             full_path = os.path.join(pdf_dif, f"{dataid}_{i}.pdf")
-            ax.figure.savefig(full_path, dpi=500)
+            ax.figure.savefig(full_path, dpi=500, bbox_inches="tight")
         if save_png:
             full_path = os.path.join(png_dir, f"{dataid}_{i}.png")
-            ax.figure.savefig(full_path, dpi=500)
+            ax.figure.savefig(full_path, dpi=500, bbox_inches="tight")
     res = data, axes, cbs
     return res
 
