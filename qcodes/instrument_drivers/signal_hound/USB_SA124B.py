@@ -106,7 +106,7 @@ class FrequencySweep(ArrayParameter):
 
     """
     def __init__(self, name: str, instrument: 'SignalHound_USB_SA124B',
-                 sweep_len: int, start_freq: float, stepsize: float, *args: Any, **kwargs: Any) -> None:
+                 sweep_len: int, start_freq: float, stepsize: float, **kwargs: Any) -> None:
         super().__init__(name, shape=(sweep_len,),
                          instrument=instrument,
                          unit='dBm',
@@ -114,7 +114,7 @@ class FrequencySweep(ArrayParameter):
                          setpoint_units=('Hz',),
                          setpoint_labels=(f'Frequency',),
                          setpoint_names=(f'frequency',),
-                        *args, **kwargs)
+                         **kwargs)
         self.set_sweep(sweep_len, start_freq, stepsize)
 
     def set_sweep(self, sweep_len: int, start_freq: float,
