@@ -1,5 +1,6 @@
 from .Agilent_34401A import Agilent34401A
 from .Agilent_34410A import Agilent34410A
 from .Agilent_34411A import Agilent34411A
+from .Agilent_E8267C import AgilentE8267C
 
-__all__ = ["Agilent34401A", "Agilent34410A", "Agilent34411A"]
+__all__ = ["Agilent34401A", "Agilent34410A", "Agilent34411A", "AgilentE8267C"]
