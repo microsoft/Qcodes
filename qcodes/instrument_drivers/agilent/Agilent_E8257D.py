@@ -106,8 +106,8 @@ class AgilentE8257D(VisaInstrument):
             unit="deg",
             get_cmd="PHASE?",
             set_cmd="PHASE" + " {:.8f}",
-            get_parser=np.rad2deg,
-            set_parser=np.deg2rad,
+            get_parser=self.rad_to_deg,
+            set_parser=self.deg_to_rad,
             vals=vals.Numbers(-180, 180),
         )
 
@@ -136,3 +136,16 @@ class AgilentE8257D(VisaInstrument):
 
     def off(self) -> None:
         self.set("status", "off")
+
+    # functions to convert between rad and deg
+    @staticmethod
+    def deg_to_rad(
+        angle_deg: Union[float, str, np.floating, np.integer]
+    ) -> "np.floating[Any]":
+        return np.deg2rad(float(angle_deg))
+
+    @staticmethod
+    def rad_to_deg(
+        angle_rad: Union[float, str, np.floating, np.integer]
+    ) -> "np.floating[Any]":
+        return np.rad2deg(float(angle_rad))

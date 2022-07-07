@@ -96,12 +96,12 @@ class AgilentE8267C(VisaInstrument):
     # functions to convert between rad and deg
     @staticmethod
     def deg_to_rad(
-        angle_deg: Union[float, np.floating, np.integer]
+        angle_deg: Union[float, str, np.floating, np.integer]
     ) -> "np.floating[Any]":
         return np.deg2rad(float(angle_deg))
 
     @staticmethod
     def rad_to_deg(
-        angle_rad: Union[float, np.floating, np.integer]
+        angle_rad: Union[float, str, np.floating, np.integer]
     ) -> "np.floating[Any]":
         return np.rad2deg(float(angle_rad))
