@@ -106,8 +106,8 @@ class AgilentE8257D(VisaInstrument):
             unit="deg",
             get_cmd="PHASE?",
             set_cmd="PHASE" + " {:.8f}",
-            get_parser=np.rad2deg(),
-            set_parser=np.deg2rad(),
+            get_parser=np.rad2deg,
+            set_parser=np.deg2rad,
             vals=vals.Numbers(-180, 180),
         )
 
