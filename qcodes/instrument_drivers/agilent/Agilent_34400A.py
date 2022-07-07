@@ -9,6 +9,8 @@ class Agilent_34400A(VisaInstrument):
     """
     This is the QCoDeS driver for the Agilent_34400A DMM Series,
     tested with Agilent_34401A, Agilent_34410A, and Agilent_34411A.
+
+    Note that most models are better supported by the Keysight 33xxA drivers.
     """
     def __init__(self, name: str, address: str, **kwargs: Any) -> None:
         super().__init__(name, address, terminator='\n', **kwargs)
