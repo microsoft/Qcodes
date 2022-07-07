@@ -6,8 +6,10 @@ import numpy as np
 import qcodes.validators as vals
 from qcodes.instrument import VisaInstrument
 from qcodes.parameters import create_on_off_val_mapping
+from qcodes.utils import deprecate
 
 
+@deprecate(alternative="AgilentE8257D")
 class Agilent_E8527D(VisaInstrument):
     """
     This is the QCoDeS driver for the Agilent_E8527D signal generator.
