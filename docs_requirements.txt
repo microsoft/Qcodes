@@ -29,7 +29,7 @@ jsonschema==4.6.1
 jupyter==1.0.0
 jupyter-client==7.3.4
 jupyter-console==6.4.4
-jupyter-core==4.10.0
+jupyter-core==4.11.0
 jupyterlab-pygments==0.2.2
 MarkupSafe==2.1.1
 mistune==0.8.4
