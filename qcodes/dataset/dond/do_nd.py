@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import logging
 import time
-from collections import defaultdict
 from contextlib import ExitStack
+from dataclasses import dataclass
 from typing import Mapping, Sequence
 
 import numpy as np
@@ -88,15 +88,24 @@ class _Sweeper:
         self._sweeps = _sweeps
         self._shapes = self._make_shape(sweeps, additional_setpoints)
 
-        self._post_delays = tuple(sweep.delay for sweep in sweeps)
-        self._params_set = tuple(sweep.param for sweep in sweeps)
-        self._post_actions = tuple(sweep.post_actions for sweep in sweeps)
+        self._post_delays = tuple(sweep.delay for sweep in _sweeps)
+
+        param_set = []
+        for sweep in sweeps:
+            if isinstance(sweep, MultiSweep):
+                for inner_sweep in sweep.sweeps:
+                    param_set.append(inner_sweep.param)
+            else:
+                param_set.append(sweep.param)
+
+        self._params_set = tuple(param_set)
+        self._post_actions = tuple(sweep.post_actions for sweep in _sweeps)
 
     def _make_parameter_groups(
         self,
         sweeps: Sequence[AbstractSweep | MultiSweep],
         additional_setpoints: Sequence[ParameterBase],
-    ) -> dict[str, list[ParameterBase]]:
+    ) -> list[list[ParameterBase]]:
         # todo this only supports one Multisweep
 
         ungrouped_sweeps = []
@@ -109,19 +118,17 @@ class _Sweeper:
                 grouped_sweeps.extend(sweep.sweeps)
         n_groups = len(grouped_sweeps) or 1
 
-        groups: dict[str, list[ParameterBase]] = {
-            f"group_{i}": [] for i in range(n_groups)
-        }
+        groups: list[list[ParameterBase]] = [[] for i in range(n_groups)]
 
         for sweep_or_multi_sweep in sweeps:
             if isinstance(sweep_or_multi_sweep, AbstractSweep):
-                for group in groups.values():
+                for group in groups:
                     group.append(sweep_or_multi_sweep.param)
             else:
-                for i, sweep in enumerate(sweep_or_multi_sweep.sweeps):
-                    groups[f"group_{i}"].append(sweep.param)
+                for group, sweep in zip(groups, sweep_or_multi_sweep.sweeps):
+                    group.append(sweep.param)
 
-        for group in groups.values():
+        for group in groups:
             group.extend(additional_setpoints)
 
         return groups
@@ -165,7 +172,7 @@ class _Sweeper:
         )
 
     @property
-    def sweep_groupes(self) -> dict[str, list[ParameterBase]]:
+    def sweep_groupes(self) -> list[list[ParameterBase]]:
         return self._parameter_groups
 
     @staticmethod
@@ -181,6 +188,10 @@ class _Sweeper:
     @property
     def shape(self) -> tuple[int, ...]:
         return self._shapes
+
+    @property
+    def num_sweep_parameters(self) -> int:
+        return len(self._params_set)
 
     @property
     def post_delays(self) -> tuple[float, ...]:
@@ -205,19 +216,187 @@ class _Measurements:
             self._measured_all,
             self._grouped_parameters,
             self._measured_parameters,
-        ) = _extract_paramters_by_type_and_group(measurement_name, params_meas)
+        ) = self._extract_parameters_by_type_and_group(params_meas)
 
     @property
     def measured_all(self) -> tuple[ParamMeasT, ...]:
         return self._measured_all
 
     @property
-    def grouped_parameters(self) -> dict[str, ParameterGroup]:
+    def grouped_parameters(self) -> list[list[ParamMeasT]]:
         return self._grouped_parameters
 
     @property
     def measured_parameters(self) -> tuple[ParameterBase, ...]:
         return self._measured_parameters
+
+    @staticmethod
+    def _extract_parameters_by_type_and_group(
+        params_meas: Sequence[ParamMeasT | Sequence[ParamMeasT]],
+    ) -> tuple[
+        tuple[ParamMeasT, ...], list[list[ParamMeasT]], tuple[ParameterBase, ...]
+    ]:
+        measured_parameters: list[ParameterBase] = []
+        measured_all: list[ParamMeasT] = []
+        single_group: list[ParamMeasT] = []
+        multi_group: list[list[ParamMeasT]] = []
+        grouped_parameters: list[list[ParamMeasT]] = []
+        for param in params_meas:
+            if not isinstance(param, Sequence):
+                single_group.append(param)
+                measured_all.append(param)
+                if isinstance(param, ParameterBase):
+                    measured_parameters.append(param)
+            elif not isinstance(param, str):
+                multi_group.append(list(param))
+                for nested_param in param:
+                    measured_all.append(nested_param)
+                    if isinstance(nested_param, ParameterBase):
+                        measured_parameters.append(nested_param)
+        if single_group:
+            grouped_parameters = [single_group]
+        if multi_group:
+            grouped_parameters = multi_group
+        return tuple(measured_all), grouped_parameters, tuple(measured_parameters)
+
+
+# idealy we would want this to be frozen but then postinit cannot calulate all the parameters
+# https://stackoverflow.com/questions/53756788/
+@dataclass(frozen=False)
+class _SweapMeasGroup:
+    sweep_parameters: tuple[ParameterBase, ...]
+    measure_parameters: tuple[
+        ParamMeasT, ...
+    ]  # todo should this be all or only Parameters?
+    experiment: Experiment | None
+    measurement_cxt: Measurement
+
+    def __post_init__(self) -> None:
+        meas_parameters = tuple(
+            a for a in self.measure_parameters if isinstance(a, ParameterBase)
+        )
+        self._parameters = self.sweep_parameters + meas_parameters
+
+    @property
+    def parameters(self) -> tuple[ParameterBase, ...]:
+        return self._parameters
+
+
+class _SweeperMeasure:
+    def __init__(
+        self,
+        sweeper: _Sweeper,
+        measurements: _Measurements,
+        enter_actions: ActionsT,
+        exit_actions: ActionsT,
+        experiments: Experiment | Sequence[Experiment] | None,
+        write_period: float | None,
+        log_info: str | None,
+    ):
+
+        self._sweeper = sweeper
+        self._measurements = measurements
+        self._enter_actions = enter_actions
+        self._exit_actions = exit_actions
+        self._experiments = self._get_experiments(experiments)
+        self._write_period = write_period
+        self._log_info = log_info
+        self._shapes = self._get_shape()
+        self._groups = self._create_groups()
+
+        if log_info is not None:
+            self._extra_log_info = log_info
+        else:
+            self._extra_log_info = "Using 'qcodes.dataset.dond'"
+
+    def _get_shape(self) -> Shapes | None:
+        try:
+            shapes: Shapes = detect_shape_of_measurement(
+                self._measurements.measured_parameters, self._sweeper.shape
+            )
+            LOG.debug("Detected shapes to be %s", shapes)
+        except TypeError:
+            LOG.exception(
+                f"Could not detect shape of {self._measurements.measured_parameters} "
+                f"falling back to unknown shape."
+            )
+            shapes = None
+        return shapes
+
+    def _get_experiments(
+        self, experiments: Experiment | Sequence[Experiment] | None
+    ) -> Sequence[Experiment | None]:
+        if not isinstance(experiments, Sequence):
+            experiments_internal: Sequence[Experiment | None] = [
+                experiments for _ in self._measurements.grouped_parameters
+            ]
+        else:
+            experiments_internal = experiments
+
+        if len(experiments_internal) != len(self._measurements.grouped_parameters):
+            raise ValueError(
+                f"Inconsistent number of "
+                f"parameter groups and experiments "
+                f"got {len(self._measurements.grouped_parameters)} and {len(experiments_internal)}"
+            )
+        return experiments_internal
+
+    def _create_groups(self) -> tuple[_SweapMeasGroup, ...]:
+
+        setpoint_groups = self._sweeper.sweep_groupes
+        meaure_groups = self._measurements.grouped_parameters
+
+        # add option for mapping this
+
+        if len(setpoint_groups) == 1:
+            setpoint_groups = [setpoint_groups[0] for _ in range(len(meaure_groups))]
+
+        if len(setpoint_groups) != len(meaure_groups):
+            raise ValueError(
+                f"Inconsistent number of "
+                f"parameter groups and setpoint groups "
+                f"got {len(meaure_groups)} and {len(setpoint_groups)}"
+            )
+        groups = []
+        for sp_group, m_group, experiment in zip(
+            setpoint_groups, meaure_groups, self._experiments
+        ):
+            meas_ctx = self._create_measurement_cx_manager(
+                experiment, tuple(sp_group), tuple(m_group)
+            )
+            s_m_group = _SweapMeasGroup(
+                tuple(sp_group), tuple(m_group), experiment, meas_ctx
+            )
+            groups.append(s_m_group)
+        return tuple(groups)
+
+    @property
+    def shapes(self) -> Shapes | None:
+        return self._shapes
+
+    def _create_measurement_cx_manager(
+        self,
+        experiment: Experiment | None,
+        sweep_parameters: Sequence[ParameterBase],
+        measure_parameters: Sequence[ParamMeasT],
+    ) -> Measurement:
+        meas_name = "TODO"
+        meas = Measurement(name=meas_name, exp=experiment)
+        _register_parameters(meas, sweep_parameters)
+        _register_parameters(
+            meas,
+            measure_parameters,
+            setpoints=sweep_parameters,
+            shapes=self.shapes,
+        )
+        meas._extra_log_info = self._log_info or ""
+        _set_write_period(meas, self._write_period)
+        _register_actions(meas, self._enter_actions, self._exit_actions)
+        return meas
+
+    @property
+    def groups(self) -> tuple[_SweapMeasGroup, ...]:
+        return self._groups
 
 
 def dond(
@@ -310,29 +489,14 @@ def dond(
     )
     LOG.debug(
         "Measured parameters have been grouped into:\n " "%s",
-        {
-            name: group["params"]
-            for name, group in measurements.grouped_parameters.items()
-        },
+        measurements.grouped_parameters,
     )
-    try:
-        shapes: Shapes = detect_shape_of_measurement(
-            measurements.measured_parameters, sweeper.shape
-        )
-        LOG.debug("Detected shapes to be %s", shapes)
-    except TypeError:
-        LOG.exception(
-            f"Could not detect shape of {measurements.measured_parameters} "
-            f"falling back to unknown shape."
-        )
-        shapes = None
-    meas_list = _create_measurements_grouped(
-        sweeper.sweep_groupes,
+    sweeper_measurer = _SweeperMeasure(
+        sweeper,
+        measurements,
         enter_actions,
         exit_actions,
         exp,
-        measurements.grouped_parameters,
-        shapes,
         write_period,
         log_info,
     )
@@ -344,16 +508,19 @@ def dond(
         use_threads = config.dataset.use_threads
 
     params_meas_caller = (
-        ThreadPoolParamsCaller(*measurements.measured_all)
+        ThreadPoolParamsCaller(*sweeper_measurer._measurements.measured_all)
         if use_threads
-        else SequentialParamsCaller(*measurements.measured_all)
+        else SequentialParamsCaller(*sweeper_measurer._measurements.measured_all)
     )
 
     try:
         with _catch_interrupts() as interrupted, ExitStack() as stack, params_meas_caller as call_params_meas:
-            datasavers = [stack.enter_context(measure.run()) for measure in meas_list]
+            datasavers = [
+                stack.enter_context(group.measurement_cxt.run())
+                for group in sweeper_measurer._groups
+            ]
             additional_setpoints_data = process_params_meas(additional_setpoints)
-            previous_setpoints = np.empty(len(sweep_instances))
+            previous_setpoints = np.empty(sweeper.num_sweep_parameters)
             for setpoints in tqdm(sweeper.nested_setpoints, disable=not show_progress):
 
                 active_actions, delays = _select_active_actions_delays(
@@ -362,10 +529,9 @@ def dond(
                     setpoints,
                     previous_setpoints,
                 )
+                results = {}
                 previous_setpoints = setpoints
 
-                param_set_list = []
-                param_set_dict = defaultdict(list)
                 for setpoint_param, setpoint, action, delay in zip(
                     sweeper.params_set,
                     setpoints,
@@ -373,29 +539,26 @@ def dond(
                     delays,
                 ):
                     _conditional_parameter_set(setpoint_param, setpoint)
-                    for sweep_group_name, sweep_group in sweeper.sweep_groupes.items():
-                        if setpoint_param in sweep_group:
-                            param_set_dict[sweep_group_name].append(
-                                (setpoint_param, setpoint)
-                            )
-                    param_set_list.append((setpoint_param, setpoint))
+                    results[setpoint_param] = setpoint
                     for act in action:
                         act()
                     time.sleep(delay)
 
                 meas_value_pair = call_params_meas()
-                for group in measurements.grouped_parameters.values():
-                    group["measured_params"] = []
-                    for measured in meas_value_pair:
-                        if measured[0] in group["params"]:
-                            group["measured_params"].append(measured)
+                for name, res in meas_value_pair:
+                    # todo this could either be a parameter or a string
+                    # but we know it to be a parameter
+                    assert isinstance(name, ParameterBase)
+                    results[name] = res
 
-                for ind, datasaver in enumerate(datasavers):
+                for datasaver, group in zip(datasavers, sweeper_measurer._groups):
+                    filtered_results_list = [
+                        (param, value)
+                        for param, value in results.items()
+                        if param in group.parameters
+                    ]
                     datasaver.add_result(
-                        *param_set_dict[f"group_{ind}"],
-                        *measurements.grouped_parameters[f"group_{ind}"][
-                            "measured_params"
-                        ],
+                        *filtered_results_list,
                         *additional_setpoints_data,
                     )
 
@@ -479,7 +642,7 @@ def _select_active_actions_delays(
         if new_setpoint != old_setpoint:
             actions_list[ind] = actions[ind]
             setpoints_delay[ind] = delays[ind]
-    return (actions_list, setpoints_delay)
+    return actions_list, setpoints_delay
 
 
 def _create_measurements(
@@ -520,64 +683,6 @@ def _create_measurements(
         _register_parameters(meas, all_setpoint_params)
         _register_parameters(
             meas, meas_params, setpoints=all_setpoint_params, shapes=shapes
-        )
-        _set_write_period(meas, write_period)
-        _register_actions(meas, enter_actions, exit_actions)
-        meas_list.append(meas)
-    return tuple(meas_list)
-
-
-def _create_measurements_grouped(
-    setpoint_groups: Mapping[str, Sequence[ParameterBase]],
-    enter_actions: ActionsT,
-    exit_actions: ActionsT,
-    experiments: Experiment | Sequence[Experiment] | None,
-    grouped_parameters: Mapping[str, ParameterGroup],
-    shapes: Shapes,
-    write_period: float | None,
-    log_info: str | None,
-) -> tuple[Measurement, ...]:
-    meas_list: list[Measurement] = []
-    if log_info is not None:
-        _extra_log_info = log_info
-    else:
-        _extra_log_info = "Using 'qcodes.dataset.dond'"
-
-    if not isinstance(experiments, Sequence):
-        experiments_internal: Sequence[Experiment | None] = [
-            experiments for _ in grouped_parameters
-        ]
-    else:
-        experiments_internal = experiments
-
-    if len(experiments_internal) != len(grouped_parameters):
-        raise ValueError(
-            f"Inconsistent number of "
-            f"parameter groups and experiments "
-            f"got {len(grouped_parameters)} and {len(experiments_internal)}"
-        )
-
-    if len(setpoint_groups) == 1:
-        setpoint_groups = {
-            name: list(setpoint_groups.values())[0]
-            for name in grouped_parameters.keys()
-        }
-
-    if len(setpoint_groups) != len(grouped_parameters):
-        raise ValueError(
-            f"Inconsistent number of "
-            f"parameter groups and setpoint groups "
-            f"got {len(grouped_parameters)} and {len(setpoint_groups)}"
-        )
-
-    for group_name, exp in zip(grouped_parameters.keys(), experiments_internal):
-        meas_name = grouped_parameters[group_name]["meas_name"]
-        meas_params = grouped_parameters[group_name]["params"]
-        meas = Measurement(name=meas_name, exp=exp)
-        meas._extra_log_info = _extra_log_info
-        _register_parameters(meas, setpoint_groups[group_name])
-        _register_parameters(
-            meas, meas_params, setpoints=setpoint_groups[group_name], shapes=shapes
         )
         _set_write_period(meas, write_period)
         _register_actions(meas, enter_actions, exit_actions)

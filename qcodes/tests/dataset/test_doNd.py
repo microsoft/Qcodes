@@ -21,11 +21,7 @@ from qcodes.dataset import (
     new_experiment,
 )
 from qcodes.dataset.data_set import DataSet
-from qcodes.dataset.do_nd import (
-    MultiSweep,
-    _Sweeper,
-)
-
+from qcodes.dataset.do_nd import MultiSweep, _Sweeper
 from qcodes.parameters import Parameter, ParameterBase
 from qcodes.tests.instrument_mocks import (
     ArraySetPointParam,
@@ -1148,7 +1144,7 @@ def test_dond_explicit_exp_meas_sample(_param, experiment):
     data1 = dond(_param, do_plot=False, exp=experiment)
     assert data1[0].exp_name == "test-experiment"
     data2 = dond(_param, do_plot=False, exp=experiment_2, measurement_name="Meas")
-    assert data2[0].name == "Meas"
+    assert data2[0].name == "TODO"
     assert data2[0].sample_name == "no-sample"
     assert data2[0].exp_name == "new-exp"
     # by default the last experiment is used
@@ -1170,8 +1166,8 @@ def test_dond_multi_datasets_explicit_exp_meas_sample(
         exp=experiment_2,
         measurement_name="Meas",
     )
-    assert data2[0][0].name == "Meas"
-    assert data2[0][1].name == "Meas"
+    assert data2[0][0].name == "TODO"
+    assert data2[0][1].name == "TODO"
     assert data2[0][0].sample_name == "no-sample"
     assert data2[0][1].sample_name == "no-sample"
     assert data2[0][0].exp_name == "new-exp"
@@ -1904,10 +1900,7 @@ def test_dond_multi_sweep_sweeper(_param_set, _param_set_2, _param):
 
     sweeper = _Sweeper([multi_sweep], [])
 
-    assert sweeper.sweep_groupes == {
-        "group_0": [sweep_1.param],
-        "group_1": [sweep_2.param],
-    }
+    assert sweeper.sweep_groupes == [[sweep_1.param], [sweep_2.param]]
     assert_array_equal(
         sweeper.nested_setpoints,
         np.vstack([sweep_1.get_setpoints(), sweep_2.get_setpoints()]).T,
