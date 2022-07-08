@@ -103,7 +103,7 @@ def load_to_xarray_dataset(dataset: DataSetProtocol, data: ParameterData) -> xr.
 
     # Casting Hashable for the key type until python/mypy#1114
     # and python/typing#445 are resolved.
-    xrdataset = xr.Dataset(cast(dict[Hashable, xr.DataArray], data_xrdarray_dict))
+    xrdataset = xr.Dataset(cast("dict[Hashable, xr.DataArray]", data_xrdarray_dict))
 
     _add_param_spec_to_xarray_coords(dataset, xrdataset)
     _add_param_spec_to_xarray_data_vars(dataset, xrdataset)
