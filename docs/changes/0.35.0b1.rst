@@ -1,11 +1,11 @@
-QCoDeS 0.35.0beta1 (2022-07-08)
-===============================
+QCoDeS 0.35.0b1 (2022-07-08)
+============================
 
 This is a beta release of the upcoming QCoDeS 0.35.0 release.
 
 In this release a large refactoring of the QCoDeS modules organization has taken place.
 Among other changes the `instrument` module has been split into a `parameters` and
-`instrument` module, yhe `dond` functions have been moved to the `dataset` module
+`instrument` module, the `dond` functions have been moved to the `dataset` module
 and several methods removed from the public API of the `utils` module.
 
 The new API is documented in the :ref:`api` section of the QCoDeS homepage.
