@@ -1,2 +1,0 @@
-:func:`qcodes.dataset.doNd` now  logs more information about how parameters are
-unpacked and grouped making it easier to debug.
