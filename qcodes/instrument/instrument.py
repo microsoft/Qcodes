@@ -69,6 +69,7 @@ class Instrument(InstrumentBase, metaclass=InstrumentMeta):
         super().__init__(name=name, metadata=metadata, label=label)
 
         self.add_parameter("IDN", get_cmd=self.get_idn, vals=Anything())
+        weakref.finalize(self, self.__finalize)
 
     def get_idn(self) -> dict[str, str | None]:
         """
@@ -143,7 +144,7 @@ class Instrument(InstrumentBase, metaclass=InstrumentMeta):
         """Simplified repr giving just the class and name."""
         return f"<{type(self).__name__}: {self.name}>"
 
-    def __del__(self) -> None:
+    def __finalize(self) -> None:
         """Close the instrument and remove its instance record."""
         try:
             self.close()
