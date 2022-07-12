@@ -10,10 +10,11 @@ from typing import (
     Tuple,
     Union,
     cast,
+    overload,
 )
 
 import numpy as np
-from typing_extensions import Literal, TypedDict, overload
+from typing_extensions import Literal, TypedDict
 
 import qcodes.validators as vals
 from qcodes.instrument import InstrumentChannel
