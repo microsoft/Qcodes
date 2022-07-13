@@ -35,9 +35,6 @@ jobs:
     - uses: actions/checkout@v3.0.2
       with:
         submodules: true
-    - name: setup ubuntu-latest xvfb
-      uses: ./.github/actions/setup-ubuntu-latest-xvfb
-      if: runner.os == 'Linux'
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4.0.0
       with:
@@ -64,8 +61,10 @@ jobs:
     - name: Run Mypy
       run: mypy qcodes
     - name: Run parallel tests
-      run: |
-        pytest -m "not serial" --cov=qcodes --cov-report xml --hypothesis-profile ci qcodes
+      uses: GabrielBB/xvfb-action@v1.6
+      with:
+        run: |
+          pytest -m "not serial" --cov=qcodes --cov-report xml --hypothesis-profile ci qcodes
 # a subset of the tests fails when run in parallel on windows so run those in serial here
     - name: Run serial tests
       run: |

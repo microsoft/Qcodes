@@ -39,9 +39,6 @@ jobs:
       if: ${{ fromJSON(env.UPLOAD_TO_GHPAGES) }}
     - uses: actions/checkout@v3.0.2
       if: ${{ !fromJSON(env.UPLOAD_TO_GHPAGES) }}
-    - name: setup ubuntu-latest xvfb
-      uses: ./.github/actions/setup-ubuntu-latest-xvfb
-      if: runner.os == 'Linux'
     - name: install pandoc linux
       run: sudo apt install pandoc
       if: runner.os == 'Linux'
@@ -78,10 +75,12 @@ jobs:
     - name: install qcodes
       run: pip install .
     - name: Build docs on linux
-      run: |
-        cd docs
-        export SPHINXOPTS="-W -v"
-        make html
+      uses: GabrielBB/xvfb-action@v1.6
+      with:
+        run: |
+          cd docs
+          export SPHINXOPTS="-W -v"
+          make html
       if: runner.os == 'Linux'
     - name: Build docs on windows
       run: |
