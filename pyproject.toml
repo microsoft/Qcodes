@@ -94,6 +94,7 @@ test = [
 ]
 docs = [
     "autodocsumm>=0.2.8",
+    "furo>=2022.06.21",
     "nbsphinx>=0.8.9",
     "PyQt5>=5.15.0", # pyqtgraph examples
     "pyqtgraph>=0.11.0", # pyqtgraph examples
@@ -102,7 +103,6 @@ docs = [
     "sphinx-favicon>=0.2",
     "sphinx-issues>=3.0.1",
     "sphinx-jsonschema>=1.19.1",
-    "sphinx-rtd-theme>=1.0.0",
     "sphinxcontrib-towncrier>=0.2.1a0",
     "scipy>=1.7.0", # examples using scipy
     "slack-sdk>=3.4.2", # slack example notebook
