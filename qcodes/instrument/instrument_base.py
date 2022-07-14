@@ -428,10 +428,12 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
     @property
     def short_name(self) -> str:
-        """Short name of the instrument.
+        """
+        Short name of the instrument.
 
         For an :class:`InstrumentModule` this does
-        not include any parent names."""
+        not include any parent names.
+        """
         return self._short_name
 
     @staticmethod
