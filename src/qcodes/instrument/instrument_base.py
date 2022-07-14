@@ -143,9 +143,7 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
         return self._submodules
 
     @submodules.setter
-    def submodules(
-        self, value: dict[str, InstrumentModule | ChannelTuple]
-    ) -> None:
+    def submodules(self, value: dict[str, InstrumentModule | ChannelTuple]) -> None:
         self._submodules = value
 
     @property
@@ -702,7 +700,11 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
     # instrument.get('someparam') === instrument['someparam'].get()         #
     # etc...                                                                #
     #
-    delegate_attr_dicts: ClassVar[list[str]] = ["parameters", "functions", "submodules"]
+    delegate_attr_dicts: ClassVar[list[str]] = [
+        "_parameters",
+        "_functions",
+        "_submodules",
+    ]
 
     @deprecated(
         "Use attributes directly on the instrument object instead.",
