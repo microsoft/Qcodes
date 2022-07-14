@@ -16,7 +16,7 @@ defusedxml~=0.7.1
 entrypoints~=0.4
 google-api-core~=2.8.2
 google-auth~=2.9.0
-googleapis-common-protos~=1.56.3
+googleapis-common-protos~=1.56.4
 h5netcdf~=0.15.0
 h5py~=3.7.0
 idna~=3.3
@@ -95,7 +95,7 @@ wincertstore~=0.2
 wrapt~=1.14.1
 xarray~=0.20.2; python_version<'3.8'
 xarray~=2022.3.0; python_version>='3.8'
-zipp~=3.8.0
+zipp~=3.8.1
 # not strict requirements but needed for the legacy pyqtgraph based plotting
 PyQt5<5.16
 pyqtgraph~=0.12.4
