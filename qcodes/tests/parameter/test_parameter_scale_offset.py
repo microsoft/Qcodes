@@ -33,9 +33,11 @@ def test_scale_raw_value():
 #        independently
 
 # define shorthands for strategies
-TestFloats = hst.floats(min_value=-1e40, max_value=1e40).filter(lambda x: x != 0)
-SharedSize = hst.shared(hst.integers(min_value=1, max_value=100), key='shared_size')
-ValuesScalar = hst.shared(hst.booleans(), key='values_scalar')
+TestFloats = hst.floats(min_value=-1e40, max_value=1e40).filter(
+    lambda x: abs(x) >= 1e-20
+)
+SharedSize = hst.shared(hst.integers(min_value=1, max_value=100), key="shared_size")
+ValuesScalar = hst.shared(hst.booleans(), key="values_scalar")
 
 
 # the following test stra
@@ -89,11 +91,22 @@ def test_scale_and_offset_raw_value_iterable(values, offsets, scales):
         np.testing.assert_allclose(np.array(p.raw_value),
                                    np_values * np_scales + np_offsets)
 
-        # testing conversion back and forth
-        p(values)
-        np_get_values = np.array(p())
-        # No set/get cmd performed
-        np.testing.assert_allclose(np_get_values, np_values)
+        # Due to possible lack of accuracy of the floating-point operations
+        # back-and-forth testing is done only for values of ``offsets`` that are
+        # not too different from ``values*scales``
+        tolerance = 1e7
+        if (
+            abs(values * scales) >= abs(offsets)
+            and abs(values * scales) < tolerance * abs(offsets)
+        ) or (
+            abs(values * scales) < abs(offsets)
+            and abs(offsets) < tolerance * abs(values * scales)
+        ):
+            # testing conversion back and forth
+            p(values)
+            np_get_values = np.array(p())
+            # No set/get cmd performed
+            np.testing.assert_allclose(np_get_values, np_values)
 
     # adding statistics
     if isinstance(offsets, Iterable):
