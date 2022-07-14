@@ -69,7 +69,7 @@ class VisaInstrument(Instrument):
                                                vals.Enum(None)))
 
         try:
-            visa_handle, address, visabackend = self._open_resource(address, visalib)
+            visa_handle, visabackend = self._open_resource(address, visalib)
         except Exception as e:
             self.visa_log.exception(f"Could not connect at {address}")
             self.close()
@@ -91,7 +91,7 @@ class VisaInstrument(Instrument):
 
     def _open_resource(
         self, address: str, visalib: Optional[str]
-    ) -> Tuple[pyvisa.resources.MessageBasedResource, str, str]:
+    ) -> Tuple[pyvisa.resources.MessageBasedResource, str]:
 
         # in case we're changing the address - close the old handle first
         if getattr(self, "visa_handle", None):
@@ -113,7 +113,7 @@ class VisaInstrument(Instrument):
         if not isinstance(resource, pyvisa.resources.MessageBasedResource):
             raise TypeError("QCoDeS only support MessageBasedResource Visa resources")
 
-        return resource, address, visabackend
+        return resource, visabackend
 
     def set_address(self, address: str) -> None:
         """
@@ -125,7 +125,7 @@ class VisaInstrument(Instrument):
                 change the backend for VISA, use the self.visalib attribute
                 (and then call this function).
         """
-        resource, address, visabackend = self._open_resource(address, self.visalib)
+        resource, visabackend = self._open_resource(address, self.visalib)
         self.visa_handle = resource
         self._address = address
         self.visabackend = visabackend

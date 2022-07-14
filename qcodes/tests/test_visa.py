@@ -14,7 +14,7 @@ class MockVisa(VisaInstrument):
                            vals=Numbers(-20, 20))
 
     def _open_resource(self, address: str, visalib):
-        return MockVisaHandle(), address, visalib
+        return MockVisaHandle(), visalib
 
 
 class MockVisaHandle(visa.resources.MessageBasedResource):
