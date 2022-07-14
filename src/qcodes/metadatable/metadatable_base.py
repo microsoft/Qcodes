@@ -19,9 +19,17 @@ Snapshot = dict[str, Any]
 
 
 class Metadatable:
-    def __init__(self, metadata: Optional["Mapping[str, Any]"] = None):
-        self.metadata: dict[str, Any] = {}
+    def __init__(self, metadata: "Mapping[str, Any] | None" = None):
+        self._metadata: dict[str, Any] = {}
         self.load_metadata(metadata or {})
+
+    @property
+    def metadata(self) -> dict[str, Any]:
+        return self._metadata
+
+    @metadata.setter
+    def metadata(self, metadata: dict[str, Any]) -> None:
+        self._metadata = metadata
 
     def load_metadata(self, metadata: "Mapping[str, Any]") -> None:
         """
