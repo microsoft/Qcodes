@@ -522,7 +522,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
     # instrument.get('someparam') === instrument['someparam'].get()         #
     # etc...                                                                #
     #
-    delegate_attr_dicts = ["parameters", "functions", "submodules"]
+    delegate_attr_dicts = ["_parameters", "_functions", "_submodules"]
 
     def __getitem__(self, key: str) -> Union[Callable[..., Any], Parameter]:
         """Delegate instrument['name'] to parameter or function 'name'."""
