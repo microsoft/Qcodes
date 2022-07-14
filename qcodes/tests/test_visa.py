@@ -13,9 +13,8 @@ class MockVisa(VisaInstrument):
                            set_cmd='STAT:{:.3f}',
                            vals=Numbers(-20, 20))
 
-    def set_address(self, address):
-        self.visa_handle = MockVisaHandle()
-        self.visabackend = self.visalib
+    def _open_resource(self, address: str, visalib):
+        return MockVisaHandle(), address, visalib
 
 
 class MockVisaHandle(visa.resources.MessageBasedResource):
@@ -135,7 +134,7 @@ def test_ask_write_local(mock_visa):
 
 def test_visa_backend(mocker, request):
 
-    rm_mock = mocker.patch('qcodes.instrument.visa.visa.ResourceManager')
+    rm_mock = mocker.patch("qcodes.instrument.visa.pyvisa.ResourceManager")
 
     address_opened = [None]
 
