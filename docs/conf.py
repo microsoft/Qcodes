@@ -216,11 +216,11 @@ html_theme = "furo"
 # The name for this set of Sphinx documents.
 # "<project> v<release> documentation" by default.
 #
-# html_title = 'QCoDeS v1'
+html_title = f"{project} v{release}"
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
 #
-# html_short_title = None
+html_short_title = f"{project}"
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
