@@ -33,7 +33,7 @@ def test_scale_raw_value():
 #        independently
 
 # define shorthands for strategies
-TestFloats = hst.floats(min_value=-1e40, max_value=1e40).filter(lambda x: x >= 1e-20)
+TestFloats = hst.floats(min_value=-1e40, max_value=1e40).filter(lambda x: abs(x) >= 1e-20)
 SharedSize = hst.shared(hst.integers(min_value=1, max_value=100), key='shared_size')
 ValuesScalar = hst.shared(hst.booleans(), key='values_scalar')
 
@@ -94,9 +94,9 @@ def test_scale_and_offset_raw_value_iterable(values, offsets, scales):
         # not too different from ``values*scales``
         tolerance = 1e7
         if (
-            abs(values * scales) >= abs(offsets) and abs(values * scales / offsets) < tolerance
+            abs(values * scales) >= abs(offsets) and abs(values * scales) < tolerance * abs(offsets)
         ) or (
-            abs(values * scales) < abs(offsets) and abs(offsets / (values * scales)) < tolerance
+            abs(values * scales) < abs(offsets) and abs(offsets) < tolerance * abs(values * scales)
         ):
             # testing conversion back and forth
             p(values)
