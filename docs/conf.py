@@ -25,7 +25,6 @@ from importlib import reload
 # before qcodes imports pyplot and automatically
 # sets the backend
 import matplotlib
-import sphinx_rtd_theme
 from packaging.version import parse
 
 # setting the metaclass will cause sphinx
