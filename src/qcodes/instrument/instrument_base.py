@@ -75,29 +75,14 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
         self._is_valid_identifier(self.full_name)
 
         self.label = name if label is None else label
-        self._label: str
 
-        self.parameters: dict[str, ParameterBase] = {}
-        """
-        All the parameters supported by this instrument.
-        Usually populated via :py:meth:`add_parameter`.
-        """
-        self.functions: dict[str, Function] = {}
-        """
-        All the functions supported by this
-        instrument. Usually populated via :py:meth:`add_function`.
-        """
-        self.submodules: dict[str, InstrumentModule | ChannelTuple] = {}
-        """
-        All the submodules of this instrument
-        such as channel lists or logical groupings of parameters.
-        Usually populated via :py:meth:`add_submodule`.
-        """
-        self.instrument_modules: dict[str, InstrumentModule] = {}
-        """
-        All the :class:`InstrumentModule` of this instrument
-        Usually populated via :py:meth:`add_submodule`.
-        """
+        self._parameters: dict[str, ParameterBase] = {}
+
+        self._functions: dict[str, Function] = {}
+
+        self._submodules: dict[str, InstrumentModule | ChannelTuple] = {}
+
+        self._instrument_modules: dict[str, InstrumentModule] = {}
 
         self._channel_lists: dict[str, ChannelTuple] = {}
         """
@@ -123,6 +108,57 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
     @label.setter
     def label(self, label: str) -> None:
         self._label = label
+
+    @property
+    def parameters(self) -> dict[str, ParameterBase]:
+        """
+        All the parameters supported by this instrument.
+        Usually populated via :py:meth:`add_parameter`.
+        """
+        return self._parameters
+
+    @parameters.setter
+    def parameters(self, value: dict[str, ParameterBase]) -> None:
+        self._parameters = value
+
+    @property
+    def functions(self) -> dict[str, Function]:
+        """
+        All the functions supported by this
+        instrument. Usually populated via :py:meth:`add_function`.
+        """
+        return self._functions
+
+    @functions.setter
+    def functions(self, value: dict[str, Function]) -> None:
+        self._functions = value
+
+    @property
+    def submodules(self) -> dict[str, InstrumentModule | ChannelTuple]:
+        """
+        All the submodules of this instrument
+        such as channel lists or logical groupings of parameters.
+        Usually populated via :py:meth:`add_submodule`.
+        """
+        return self._submodules
+
+    @submodules.setter
+    def submodules(
+        self, value: dict[str, InstrumentModule | ChannelTuple]
+    ) -> None:
+        self._submodules = value
+
+    @property
+    def instrument_modules(self) -> dict[str, InstrumentModule]:
+        """
+        All the :class:`InstrumentModule` of this instrument
+        Usually populated via :py:meth:`add_submodule`.
+        """
+        return self._instrument_modules
+
+    @instrument_modules.setter
+    def instrument_modules(self, value: dict[str, InstrumentModule]) -> None:
+        self._instrument_modules = value
 
     def add_parameter(
         self,
