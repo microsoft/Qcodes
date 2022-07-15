@@ -111,6 +111,7 @@ class VisaInstrument(Instrument):
         self.visa_log.info(f"Opening PyVISA resource at address: {address}")
         resource = resource_manager.open_resource(address)
         if not isinstance(resource, pyvisa.resources.MessageBasedResource):
+            resource.close()
             raise TypeError("QCoDeS only support MessageBasedResource Visa resources")
 
         return resource, visabackend
