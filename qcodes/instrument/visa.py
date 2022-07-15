@@ -1,8 +1,8 @@
 """Visa instrument driver based on pyvisa."""
 import logging
-from typing import Any, Dict, Optional, Sequence, Union
+from typing import Any, Dict, Optional, Sequence, Tuple, Union
 
-import pyvisa as visa
+import pyvisa
 import pyvisa.constants as vi_const
 import pyvisa.resources
 
@@ -45,8 +45,6 @@ class VisaInstrument(Instrument):
     See help for :class:`.Instrument` for additional information on writing
     instrument subclasses.
 
-    Attributes:
-        visa_handle (pyvisa.resources.Resource): The communication channel.
     """
 
     def __init__(
@@ -62,9 +60,6 @@ class VisaInstrument(Instrument):
 
         super().__init__(name, **kwargs)
         self.visa_log = get_instrument_logger(self, VISA_LOGGER)
-        self.visabackend: str
-        self.visa_handle: visa.resources.MessageBasedResource
-        self.visalib: Optional[str] = visalib
 
         self.add_parameter('timeout',
                            get_cmd=self._get_visa_timeout,
@@ -74,17 +69,52 @@ class VisaInstrument(Instrument):
                                                vals.Enum(None)))
 
         try:
-            self.set_address(address)
+            visa_handle, visabackend = self._open_resource(address, visalib)
         except Exception as e:
             self.visa_log.exception(f"Could not connect at {address}")
             self.close()
             raise e
+
+        self.visabackend: str = visabackend
+        self.visa_handle: pyvisa.resources.MessageBasedResource = visa_handle
+        """
+        The VISA resource used by this instrument.
+        """
+        self.visalib: Optional[str] = visalib
+        self._address = address
 
         if device_clear:
             self.device_clear()
 
         self.set_terminator(terminator)
         self.timeout.set(timeout)
+
+    def _open_resource(
+        self, address: str, visalib: Optional[str]
+    ) -> Tuple[pyvisa.resources.MessageBasedResource, str]:
+
+        # in case we're changing the address - close the old handle first
+        if getattr(self, "visa_handle", None):
+            self.visa_handle.close()
+
+        if visalib is not None:
+            self.visa_log.info(
+                f"Opening PyVISA Resource Manager with visalib: {visalib}"
+            )
+            resource_manager = pyvisa.ResourceManager(visalib)
+            visabackend = visalib.split("@")[1]
+        else:
+            self.visa_log.info("Opening PyVISA Resource Manager with default backend.")
+            resource_manager = pyvisa.ResourceManager()
+            visabackend = "ivi"
+
+        self.visa_log.info(f"Opening PyVISA resource at address: {address}")
+        resource = resource_manager.open_resource(address)
+        if not isinstance(resource, pyvisa.resources.MessageBasedResource):
+            resource.close()
+            raise TypeError("QCoDeS only support MessageBasedResource Visa resources")
+
+        return resource, visabackend
 
     def set_address(self, address: str) -> None:
         """
@@ -96,29 +126,10 @@ class VisaInstrument(Instrument):
                 change the backend for VISA, use the self.visalib attribute
                 (and then call this function).
         """
-
-        # in case we're changing the address - close the old handle first
-        if getattr(self, 'visa_handle', None):
-            self.visa_handle.close()
-
-        if self.visalib:
-            self.visa_log.info(
-                f"Opening PyVISA Resource Manager with visalib: {self.visalib}"
-            )
-            resource_manager = visa.ResourceManager(self.visalib)
-            self.visabackend = self.visalib.split('@')[1]
-        else:
-            self.visa_log.info("Opening PyVISA Resource Manager with default backend.")
-            resource_manager = visa.ResourceManager()
-            self.visabackend = "ivi"
-
-        self.visa_log.info(f'Opening PyVISA resource at address: {address}')
-        resource = resource_manager.open_resource(address)
-        if not isinstance(resource, visa.resources.MessageBasedResource):
-            raise TypeError("QCoDeS only support MessageBasedResource "
-                            "Visa resources")
+        resource, visabackend = self._open_resource(address, self.visalib)
         self.visa_handle = resource
         self._address = address
+        self.visabackend = visabackend
 
     def device_clear(self) -> None:
         """Clear the buffers of the device"""
@@ -197,7 +208,7 @@ class VisaInstrument(Instrument):
                 problem.
         """
         if ret_code != 0:
-            raise visa.VisaIOError(ret_code)
+            raise pyvisa.VisaIOError(ret_code)
 
     def write_raw(self, cmd: str) -> None:
         """
