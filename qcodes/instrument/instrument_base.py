@@ -361,7 +361,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
     @property
     def parent(self) -> Optional["InstrumentBase"]:
         """
-        Returns the parent instrument. By default this is ``None``.
+        The parent instrument. By default, this is ``None``.
         Any SubInstrument should subclass this to return the parent instrument.
         """
         return None
@@ -369,9 +369,11 @@ class InstrumentBase(Metadatable, DelegateAttributes):
     @property
     def ancestors(self) -> List["InstrumentBase"]:
         """
-        Returns a list of instruments, starting from the current instrument
-        and following to the parent instrument and the parents parent
-        instrument until the root instrument is reached.
+        Ancestors in the form of a list of :class:`InstrumentBase`
+
+        The list starts with the current module
+        then the parent and the parents parent
+        until the root instrument is reached.
         """
         if self.parent is not None:
             return [self] + self.parent.ancestors
@@ -380,21 +382,39 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
     @property
     def root_instrument(self) -> "InstrumentBase":
+        """
+        The topmost parent of this module.
+
+        For the ``root_instrument`` this is ``self``.
+        """
+
         return self
 
     @property
     def name_parts(self) -> List[str]:
+        """
+        A list of all the parts of the instrument name from :meth:`root_instrument`
+        to the current :class:`InstrumentModule`.
+        """
         name_parts = [self.short_name]
         return name_parts
 
     @property
     def full_name(self) -> str:
+        """
+        Full name of the instrument.
+
+        For an :class:`InstrumentModule` this includes
+        all parents separated by ``_``
+        """
         return "_".join(self.name_parts)
 
     @property
     def name(self) -> str:
-        """Name of the instrument
-        This is equivalent to full_name for backwards compatibility.
+        """
+        Full name of the instrument
+
+        This is equivalent to :meth:`full_name` for backwards compatibility.
         """
         return self.full_name
 
@@ -408,7 +428,12 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
     @property
     def short_name(self) -> str:
-        """Short name of the instrument"""
+        """
+        Short name of the instrument.
+
+        For an :class:`InstrumentModule` this does
+        not include any parent names.
+        """
         return self._short_name
 
     @staticmethod
