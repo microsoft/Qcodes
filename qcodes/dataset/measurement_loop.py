@@ -18,7 +18,7 @@ from qcodes.dataset.descriptions.versioning.converters import new_to_old
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.sqlite.queries import add_parameter, update_run_description
 from qcodes.instrument.base import InstrumentBase
-from qcodes.instrument.parameter import DelegateParameter, MultiParameter, Parameter
+from qcodes.instrument.parameter import _BaseParameter, DelegateParameter, MultiParameter, Parameter
 from qcodes.instrument.sweep_values import SweepValues
 from qcodes.station import Station
 from qcodes.utils.dataset.doNd import AbstractSweep
@@ -1210,7 +1210,7 @@ class _IterateDondSweep:
 
 
 
-class Sweep:
+class BaseSweep:
     """Sweep over an iterable inside a Measurement
 
     Args:
@@ -1219,10 +1219,9 @@ class Sweep:
             If the sequence
         name: Name of sweep. Not needed if a Parameter is passed
         unit: unit of sweep. Not needed if a Parameter is passed
-        reverse: Sweep over sequence in opposite order.
-            The data is also stored in reverse.
         restore: Stores the state of a parameter before sweeping it,
             then restores the original value upon exiting the loop.
+        delay: Wait time after setting value (default zero).
 
     Examples:
         ```
@@ -1234,7 +1233,7 @@ class Sweep:
             for param_val in Sweep(p.
         ```
     """
-    def __init__(self, sequence, name=None, label=None, unit=None, reverse=False, restore=False):
+    def __init__(self, sequence, name=None, label=None, unit=None, parameter=None, restore=False, delay=None):
         msmt = running_measurement()
         if msmt is None:
             raise RuntimeError("Cannot create a sweep outside a Measurement")
@@ -1248,13 +1247,14 @@ class Sweep:
         self.name = name
         self.label = label
         self.unit = unit
+        self.parameter = parameter
 
         self.sequence = sequence
         self.dimension = len(running_measurement().loop_shape)
         self.loop_index = None
         self.iterator = None
-        self.reverse = reverse
         self.restore = restore
+        self.delay = delay
 
         # Check if this is the first sweep
         # Useful to know when to initialize dataset
@@ -1276,12 +1276,8 @@ class Sweep:
             else:
                 raise NotImplementedError("Unable to restore non-parameter values.")
 
-        if self.reverse:
-            self.loop_index = len(self.sequence) - 1
-            self.iterator = iter(self.sequence[::-1])
-        else:
-            self.loop_index = 0
-            self.iterator = iter(self.sequence)
+        self.loop_index = 0
+        self.iterator = iter(self.sequence)
 
         running_measurement().loop_shape += (len(self.sequence),)
         running_measurement().loop_indices += (self.loop_index,)
@@ -1324,12 +1320,18 @@ class Sweep:
                     pass
             self.exit_sweep()
 
-        if isinstance(self.sequence, SweepValues):
-            self.sequence.set(sweep_value)
+        # Set parameter if passed along
+        if self.parameter is not None:
+            self.parameter(sweep_value)
+            
+        # Optional wait after settings value
+        if self.delay:
+            sleep(self.delay)
+
 
         self.setpoint_info['latest_value'] = sweep_value
 
-        self.loop_index += 1 if not self.reverse else -1
+        self.loop_index += 1
 
         return sweep_value
 
@@ -1337,21 +1339,22 @@ class Sweep:
         msmt = running_measurement()
         if msmt.action_indices in msmt.setpoint_list:
             return msmt.setpoint_list[msmt.action_indices]
-        else:
-            # Determine sweep parameter
+
+        # Determine sweep parameter
+        if self.parameter is None:
             if isinstance(self.sequence, _IterateDondSweep):
                 # sweep is a doNd sweep that already has a parameter
-                set_parameter = self.sequence.parameter
+                self.parameter = self.sequence.parameter
             else:
                 # Need to create a parameter
-                set_parameter = Parameter(
+                self.parameter = Parameter(
                     name=self.name,
                     label=self.label,
                     unit=self.unit
                 )
 
             setpoint_info = {
-                'parameter': set_parameter,
+                'parameter': self.parameter,
                 'latest_value': None,
                 'registered': False
             }
@@ -1371,7 +1374,80 @@ class Sweep:
         raise StopIteration
 
 
-class RepetitionSweep(Sweep):
+class Sweep(BaseSweep):
+    sequence_keywords = ['begin', 'to', 'around', 'num', 'step']
+    base_keywords = ['delay', 'name', 'label', 'unit', 'restore']
+        
+    def __init__(self, *args, begin=None, to=None, around=None, num=None, step=None, delay=None, name=None, label=None, unit=None, restore=None):
+        kwargs = {**self.sequence_keywords, **self.base_keywords}
+
+        sequence_kwargs, base_kwargs = self.transform_args_to_kwargs(*args, **kwargs)
+
+        sequence = self.generate_sequence(**sequence_kwargs)
+
+        super().__init__(sequence=sequence, **base_kwargs)
+            
+    def transform_args_to_kwargs(self, *args, **kwargs):
+        kwargs = kwargs.copy()  # Make a copy of kwargs so original does not change
+
+        if len(args) == 1:  # Sweep([1,2,3], 'name')
+            assert isinstance(args[0], Iterable)
+            assert 'name' in kwargs
+            kwargs['sequence'], = args
+        elif len(args) == 2:
+            if isinstance(args[0], _BaseParameter):  # Sweep(parameter, [1,2,3])
+                assert isinstance(args[1], Iterable)
+                kwargs['parameter'], kwargs['sequence'] = args
+            elif isinstance(args[0], Iterable):  # Sweep([1,2,3], 'name')
+                assert isinstance(args[1], str)
+                assert kwargs.get('name') is None
+                kwargs['sequence'], kwargs['name'] = args
+            else:
+                raise SyntaxError(
+                    'Unknown sweep syntax. Either use "Sweep(parameter, sequence)" or '
+                    'Sweep(sequence, name)"'
+                )
+        elif len(args) == 3:  # Sweep(parameter, 0, 1)
+            assert isinstance(args[0], _BaseParameter)
+            assert isinstance(args[1], (float, int))
+            assert isinstance(args[2], (float, int))
+            assert kwargs['begin'] is None
+            assert kwargs['to'] is None
+            kwargs['parameter'], kwargs['begin'], kwargs['to'] = args
+
+            if not kwargs['step'] and not kwargs['num']:
+                if not hasattr(parameter, '_default_sweep_points'):
+                    raise SyntaxError(
+                        'Cannot determine many measurement points to use. '
+                        'Either provide "step", "num", or set parameter._default_sweep_points'
+                    )
+                else:
+                    kwargs['num'] = parameter._default_sweep_points
+        elif len(args) == 4:  # Sweep(parameter, 0, 1, 151)
+            assert isinstance(args[0], _BaseParameter)
+            assert isinstance(args[1], (float, int))
+            assert isinstance(args[2], (float, int))
+            assert isinstance(args[3], (float, int))
+            assert kwargs['begin'] is None
+            assert kwargs['to'] is None
+            assert kwargs['num'] is None
+            kwargs['parameter'], kwargs['begin'], kwargs['to'], kwargs['num'] = args
+
+        if kwargs['parameter'] is not None:
+            kwargs.setdefault('name', parameter.name)
+            kwargs.setdefault('label', parameter.label)
+            kwargs.setdefault('unit', parameter.unit)
+
+        sequence_kwargs = {key: kwargs[key] for key in self.sequence_keywords}
+        base_kwargs = {key: kwargs[key] for key in self.base_keywords}
+        return sequence_kwargs, base_kwargs
+
+    def generate_sequence(self, **kwargs):
+        pass
+        
+
+
+class RepetitionSweep(BaseSweep):
     def __init__(self, repetitions, start=0, name='repetition', label='Repetition', unit=None, reverse=False, restore=False):
         self.start = start
         self.repetitions = repetitions
