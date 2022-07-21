@@ -218,7 +218,7 @@ def _create_telemetry_handler() -> "AzureLogHandler":
             """
             cdim = self.custom_dimensions.copy()
             cdim.update(getattr(record, "custom_dimensions", {}))
-            record.custom_dimensions = cdim  # type: ignore[attr-defined]
+            record.custom_dimensions = cdim
 
             return True
 
