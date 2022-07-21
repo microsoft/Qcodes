@@ -45,6 +45,8 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-${{ matrix.python-version }}-pip-
     - name: generate min_requirements.txt
+#     Use fork of requirements-builder until official version
+#     has support for pyproject.toml (pep621)
       run: |
         pip install git+https://github.com/jenshnielsen/requirements-builder.git
         pip install versioningit
