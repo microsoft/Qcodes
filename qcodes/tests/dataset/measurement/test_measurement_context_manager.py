@@ -2250,7 +2250,7 @@ def test_parameter_inference(channel_array_instrument):
 
 @pytest.mark.usefixtures("experiment")
 def test_load_legacy_files_2D():
-    location = '../fixtures/2018-01-17/#002_2D_test_15-43-14'
+    location = "../fixtures/data_2018_01_17/data_002_2D_test_15_43_14"
     directory = os.path.dirname(__file__)
     full_location = os.path.join(directory, location)
     run_ids = import_dat_file(full_location)
@@ -2277,7 +2277,7 @@ def test_load_legacy_files_2D():
 
 @pytest.mark.usefixtures("experiment")
 def test_load_legacy_files_1D():
-    location = '../fixtures/2018-01-17/#001_testsweep_15-42-57'
+    location = "../fixtures/data_2018_01_17/data_001_testsweep_15_42_57"
     dir = os.path.dirname(__file__)
     full_location = os.path.join(dir, location)
     run_ids = import_dat_file(full_location)
