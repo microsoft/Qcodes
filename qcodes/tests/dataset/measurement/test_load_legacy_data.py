@@ -1,5 +1,5 @@
 import json
-import os
+from pathlib import Path
 
 import pytest
 
@@ -9,10 +9,13 @@ from qcodes.dataset.data_set import DataSet
 
 @pytest.mark.usefixtures("experiment")
 def test_load_legacy_files_2d():
-    location = "../fixtures/data_2018_01_17/data_002_2D_test_15_43_14"
-    directory = os.path.dirname(__file__)
-    full_location = os.path.join(directory, location)
-    run_ids = import_dat_file(full_location)
+    full_location = (
+        Path(__file__).parent.parent
+        / "fixtures"
+        / "data_2018_01_17"
+        / "data_002_2D_test_15_43_14"
+    )
+    run_ids = import_dat_file(str(full_location))
     run_id = run_ids[0]
     data = load_by_id(run_id)
     assert isinstance(data, DataSet)
@@ -42,10 +45,13 @@ def test_load_legacy_files_2d():
 
 @pytest.mark.usefixtures("experiment")
 def test_load_legacy_files_1d():
-    location = "../fixtures/data_2018_01_17/data_001_testsweep_15_42_57"
-    dir = os.path.dirname(__file__)
-    full_location = os.path.join(dir, location)
-    run_ids = import_dat_file(full_location)
+    full_location = (
+        Path(__file__).parent.parent
+        / "fixtures"
+        / "data_2018_01_17"
+        / "data_001_testsweep_15_42_57"
+    )
+    run_ids = import_dat_file(str(full_location))
     run_id = run_ids[0]
     data = load_by_id(run_id)
     assert isinstance(data, DataSet)
