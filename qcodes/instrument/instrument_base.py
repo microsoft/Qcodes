@@ -5,7 +5,7 @@ import collections.abc
 import logging
 import warnings
 from collections.abc import Callable, Mapping, Sequence
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Type, TypeVar, cast
 
 import numpy as np
 
@@ -21,6 +21,8 @@ if TYPE_CHECKING:
 from qcodes.utils import QCoDeSDeprecationWarning
 
 log = logging.getLogger(__name__)
+
+TParameter = TypeVar("TParameter", bound=ParameterBase)
 
 
 class InstrumentBase(Metadatable, DelegateAttributes):
@@ -99,9 +101,9 @@ class InstrumentBase(Metadatable, DelegateAttributes):
     def add_parameter(
         self,
         name: str,
-        parameter_class: type[ParameterBase] | None = None,
+        parameter_class: type[TParameter] | None = None,
         **kwargs: Any,
-    ) -> None:
+    ) -> TParameter:
         """
         Bind one Parameter to this instrument.
 
@@ -131,7 +133,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 one.
         """
         if parameter_class is None:
-            parameter_class = Parameter
+            parameter_class = cast(Type[TParameter], Parameter)
 
         if "bind_to_instrument" not in kwargs.keys():
             kwargs["bind_to_instrument"] = True
@@ -159,6 +161,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 QCoDeSDeprecationWarning,
             )
             self.parameters[name] = param
+        return param
 
     def add_function(self, name: str, **kwargs: Any) -> None:
         """
