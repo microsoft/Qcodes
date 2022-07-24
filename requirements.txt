@@ -68,7 +68,7 @@ pywinpty~=1.1.1; sys_platform == 'win32'
 pyzmq~=22.1.0
 requests~=2.25.1
 requirements-parser~=0.5.0
-rsa~=4.8
+rsa~=4.9
 ruamel.yaml==0.17.21
 ruamel.yaml.clib~=0.2.6
 schema~=0.7.5
