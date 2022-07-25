@@ -17,10 +17,7 @@ class Function(Metadatable):
     map to simple commands like ``*RST`` (reset) or those with just a few
     arguments.
     It requires a fixed argument count, and positional args
-    only. If your case is more complicated, you're probably better off
-    simply making a new method in your Instrument subclass definition.
-    The function validators.validate_all can help reduce boilerplate code
-    in this case.
+    only.
 
     You execute this function object like a normal function, or use its
     .call method.
@@ -28,6 +25,12 @@ class Function(Metadatable):
     Note:
         Parsers only apply if call_cmd is a string. The function form of
         call_cmd should do its own parsing.
+
+    Note:
+        We do not recommend the usage of Function for any new driver.
+        Function does not add any significant features over a method
+        defined on the class.
+
 
     Args:
         name: the local name of this function

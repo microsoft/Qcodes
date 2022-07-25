@@ -156,8 +156,12 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         This functionality is meant for simple cases, principally things that
         map to simple commands like ``*RST`` (reset) or those with just a few
         arguments. It requires a fixed argument count, and positional args
-        only. If your case is more complicated, you're probably better off
-        simply making a new method in your ``Instrument`` subclass definition.
+        only.
+
+        Note:
+            We do not recommend the usage of Function for any new driver.
+            Function does not add any significant features over a method
+            defined on the class.
 
         Args:
             name: How the Function will be stored within
