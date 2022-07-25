@@ -82,7 +82,7 @@ typing-extensions==4.2.0
 urllib3==1.26.9
 wcwidth==0.2.5
 webencodings==0.5.1
-widgetsnbextension==3.5.1
+widgetsnbextension==3.6.1
 wincertstore==0.2
 xarray==0.20.2
 zipp==3.4.1
