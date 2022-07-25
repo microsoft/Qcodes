@@ -39,5 +39,5 @@ typed-ast==1.4.3
 typing-extensions==4.2.0
 urllib3==1.26.9
 wincertstore==0.2
-wrapt==1.12.1
+wrapt==1.14.1
 zipp==3.4.1
