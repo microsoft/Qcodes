@@ -817,6 +817,24 @@ def test_get_attr_on_empty_channellist_works_as_expected(empty_instrument):
         _ = empty_instrument.channels.temperature
 
 
+def test_channel_tuple_call_method_basic_test(dci):
+    result = dci.channels.turn_on()
+    assert result is None
+
+
+def test_channel_tuple_call_method_called_as_expected(dci, mocker):
+
+    for channel in dci.channels:
+        channel.turn_on = mocker.MagicMock(return_value=1)
+
+    result = dci.channels.turn_on("bar")
+    # We never return the result (same for Function)
+    # should we?
+    assert result is None
+    for channel in dci.channels:
+        channel.turn_on.assert_called_with("bar")
+
+
 def _verify_multiparam_data(data):
     assert 'multi_setpoint_param_this_setpoint_set' in data.arrays.keys()
     assert_array_equal(
