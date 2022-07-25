@@ -16,7 +16,7 @@ defusedxml~=0.7.1
 entrypoints~=0.3
 google-api-core~=1.28.0
 google-auth~=2.8.0
-googleapis-common-protos~=1.53.0
+googleapis-common-protos~=1.56.4
 h5py~=3.2.1
 idna~=3.3
 importlib-metadata==4.0.0; python_version<'3.8'
