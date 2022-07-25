@@ -33,9 +33,13 @@ from packaging.version import parse
 # rather than `__init__` that is unhelpful
 # for instruments. When building the docs
 # we patch it back to ABCMeta
+# this should happen as early as possible
 import qcodes.instrument.instrument_meta
 
 qcodes.instrument.instrument_meta.InstrumentMeta = ABCMeta
+# we need to reload any module that has been imported and
+# makes use of this metaclass. The modules below are all imported
+# by importing qcodes.instrument so we need to reload them
 reload(qcodes.instrument.instrument)
 reload(qcodes.instrument.ip)
 reload(qcodes.instrument.visa)
