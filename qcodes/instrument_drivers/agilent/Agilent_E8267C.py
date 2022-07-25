@@ -8,7 +8,7 @@ from qcodes.validators import Enum, Numbers
 
 class AgilentE8267C(VisaInstrument):
     """
-    This is the code for Agilent E8267C Signal Generator.
+    This is the QCoDeS driver for the Agilent E8267C signal generator.
     """
 
     def __init__(self, name: str, address: str, **kwargs: Any) -> None:
