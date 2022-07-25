@@ -4,3 +4,4 @@ Agilent Drivers
 ===============
 
 .. automodule:: qcodes.instrument_drivers.agilent
+   :autosummary:
