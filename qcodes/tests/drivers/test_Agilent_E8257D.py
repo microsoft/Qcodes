@@ -1,14 +1,15 @@
+from qcodes.instrument_drivers.agilent import AgilentE8257D
 from qcodes.instrument_drivers.test import DriverTestCase
-from qcodes.instrument_drivers.agilent.E8527D import Agilent_E8527D
 
 
-class TestAgilent_E8527D(DriverTestCase):
-    '''
+class TestAgilentE8257D(DriverTestCase):
+    """
     This is a test suite for testing the QuTech_ControlBox Instrument.
     It is designed to provide a test function for each function as well as for
     general things such as testing if the com s are working.
-    '''
-    driver = Agilent_E8527D
+    """
+
+    driver = AgilentE8257D
 
     @classmethod
     def setUpClass(cls):
@@ -17,29 +18,29 @@ class TestAgilent_E8527D(DriverTestCase):
 
     def test_firmware_version(self):
         v = self.instrument.IDN.get()
-        self.assertEqual(v['vendor'], 'Agilent Technologies')
-        self.assertEqual(v['model'], 'E8257D')
+        self.assertEqual(v["vendor"], "Agilent Technologies")
+        self.assertEqual(v["model"], "E8257D")
 
     def test_on_off(self):
         self.instrument.off()
-        self.assertEqual(self.instrument.status.get(), 'Off')
+        self.assertEqual(self.instrument.status.get(), "Off")
 
         self.instrument.on()
-        self.assertEqual(self.instrument.status.get(), 'On')
+        self.assertEqual(self.instrument.status.get(), "On")
 
-        self.instrument.status.set('off')
-        self.assertEqual(self.instrument.status.get(), 'Off')
+        self.instrument.status.set("off")
+        self.assertEqual(self.instrument.status.get(), "Off")
 
-        self.instrument.status.set('On')
-        self.assertEqual(self.instrument.status.get(), 'On')
+        self.instrument.status.set("On")
+        self.assertEqual(self.instrument.status.get(), "On")
 
         # Ensure test ends with instrument being off
         self.instrument.off()
-        self.assertEqual(self.instrument.status.get(), 'Off')
+        self.assertEqual(self.instrument.status.get(), "Off")
 
         # This should raise an error because it is not a valid input
         with self.assertRaises(ValueError):
-            self.instrument.status.set('on24')
+            self.instrument.status.set("on24")
 
     def test_frequency(self):
         with self.assertRaises(ValueError):
