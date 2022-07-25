@@ -51,7 +51,7 @@ class VisaInstrument(Instrument):
         self,
         name: str,
         address: str,
-        timeout: Union[int, float] = 5,
+        timeout: float = 5,
         terminator: Optional[str] = None,
         device_clear: bool = True,
         visalib: Optional[str] = None,
