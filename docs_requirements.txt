@@ -2,7 +2,7 @@ alabaster==0.7.12
 argon2-cffi==21.3.0
 async-generator==1.10
 attrs==21.4.0
-git+https://github.com/Chilipp/autodocsumm.git
+git+https://github.com/Chilipp/autodocsumm.git@c3689c9204afcb2903ca50ca809aefc62f76316d
 Babel==2.10.3
 backcall==0.2.0
 bleach==5.0.1
