@@ -30,6 +30,9 @@ jobs:
       DISPLAY: ':99.0'
       OS: ${{ matrix.os }}
       UPLOAD_TO_GHPAGES: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == '3.10' && github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+      # we expect no warnings from Sphinx in 3.10 and above
+      SPHIX_WARNINGS_AS_ERROR: ${{ matrix.python-version == '3.10' }}
+      SPHIX_OPTS: "-v"
     steps:
     - uses: actions/checkout@v3.0.2
       with:
@@ -39,6 +42,10 @@ jobs:
       if: ${{ fromJSON(env.UPLOAD_TO_GHPAGES) }}
     - uses: actions/checkout@v3.0.2
       if: ${{ !fromJSON(env.UPLOAD_TO_GHPAGES) }}
+    - name: set-sphinx-opts
+      run: |
+        echo "SPHIX_OPTS=-W -v" >> $GITHUB_ENV
+      if: ${{ fromJSON(env.SPHIX_WARNINGS_AS_ERROR) }}
     - name: setup ubuntu-latest xvfb
       uses: ./.github/actions/setup-ubuntu-latest-xvfb
       if: runner.os == 'Linux'
@@ -70,13 +77,13 @@ jobs:
     - name: Build docs on linux
       run: |
         cd docs
-        export SPHINXOPTS="-W -v"
+        export SPHINXOPTS="${{ env.SPHIX_OPTS }}"
         make html
       if: runner.os == 'Linux'
     - name: Build docs on windows
       run: |
         cd docs
-        $env:SPHINXOPTS = "-W -v"
+        $env:SPHINXOPTS = "${{ env.SPHIX_OPTS }}"
         ./make.bat html
       if: runner.os == 'Windows'
     - name: Upload build docs
