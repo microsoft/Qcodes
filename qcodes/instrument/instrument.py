@@ -57,8 +57,6 @@ class Instrument(InstrumentBase, metaclass=InstrumentMeta):
 
     """
 
-    shared_kwargs = ()
-
     _all_instruments: "weakref.WeakValueDictionary[str, Instrument]" = (
         weakref.WeakValueDictionary()
     )
