@@ -7,7 +7,7 @@ colorama==0.4.5
 coverage[toml]==6.4.2
 deepdiff==5.8.1
 execnet==1.9.0
-hypothesis==6.52.4
+hypothesis==6.53.0
 idna==3.3
 importlib-metadata==4.8.1; python_version<'3.8'
 iniconfig==1.1.1
@@ -50,7 +50,7 @@ types-six
 types-tabulate
 types-toml
 types-typed-ast
-urllib3==1.26.10
+urllib3==1.26.11
 wincertstore==0.2
 wrapt==1.14.1
 zipp==3.8.1
