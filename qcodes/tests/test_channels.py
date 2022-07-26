@@ -829,7 +829,6 @@ def test_channel_tuple_call_method_called_as_expected(dci, mocker):
 
     result = dci.channels.turn_on("bar")
     # We never return the result (same for Function)
-    # should we?
     assert result is None
     for channel in dci.channels:
         channel.turn_on.assert_called_with("bar")
