@@ -427,6 +427,9 @@ class DummyChannel(InstrumentChannel):
         self.add_function(name='log_my_name',
                           call_cmd=partial(log.debug, f'{name}'))
 
+    def turn_on(self) -> None:
+        pass
+
 
 class DummyChannelInstrument(Instrument):
     """

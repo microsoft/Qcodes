@@ -59,6 +59,7 @@ def _make_empty_instrument():
 class EmptyChannel(InstrumentChannel):
     pass
 
+
 def test_channels_call_function(dci, caplog):
     """
     Test that dci.channels.some_function() calls
@@ -301,10 +302,12 @@ def test_channel_list_get_validator_not_locked_raised(dci_with_list):
     with pytest.raises(AttributeError, match="Cannot create a validator"):
         dci_with_list.channels.get_validator()
 
+
 def test_channel_tuple_index(dci):
 
     for i, chan in enumerate(dci.channels):
         assert dci.channels.index(chan) == i
+
 
 def test_channel_tuple_snapshot(dci):
     snapshot = dci.channels.snapshot()
@@ -327,6 +330,7 @@ def test_channel_tuple_snapshot_enabled(empty_instrument):
     assert len(snapshot.keys()) == 3
     assert "channels" in snapshot.keys()
 
+
 def test_channel_tuple_dir(dci):
 
     dir_list = dir(dci.channels)
@@ -336,6 +340,7 @@ def test_channel_tuple_dir(dci):
 
     for param in dci.channels[0].parameters.values():
         assert param.short_name in dir_list
+
 
 def test_clear_channels(dci_with_list):
     channels = dci_with_list.channels
@@ -376,6 +381,7 @@ def test_channel_list_lock_twice(dci_with_list):
     channels.lock()
     # locking twice should be a no op
     channels.lock()
+
 
 def test_remove_tupled_channel(dci_with_list):
     channel_tuple = tuple(
@@ -511,6 +517,7 @@ def test_set_element_locked_raises(dci_with_list):
         dci_with_list.channels[0] = dci_with_list.channels[1]
     assert dci_with_list.channels[0] is not dci_with_list.channels[1]
 
+
 @settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(myindexs=hst.lists(elements=hst.integers(0, 7), min_size=2))
 def test_access_channels_by_name(dci, myindexs):
@@ -522,6 +529,7 @@ def test_access_channels_by_name(dci, myindexs):
     mychans = chlist.get_channel_by_name(*channel_names)
     for chan, chanindex in zip(mychans, myindexs):
         assert chan.name == f'dci_Chan{names[chanindex]}'
+
 
 def test_channels_contain(dci):
     names = ("A", "B", "C", "D", "E", "F", "G", "H")
@@ -807,6 +815,23 @@ def test_get_attr_on_empty_channellist_works_as_expected(empty_instrument):
         AttributeError, match="'ChannelTuple' object has no attribute 'temperature'"
     ):
         _ = empty_instrument.channels.temperature
+
+
+def test_channel_tuple_call_method_basic_test(dci):
+    result = dci.channels.turn_on()
+    assert result is None
+
+
+def test_channel_tuple_call_method_called_as_expected(dci, mocker):
+
+    for channel in dci.channels:
+        channel.turn_on = mocker.MagicMock(return_value=1)
+
+    result = dci.channels.turn_on("bar")
+    # We never return the result (same for Function)
+    assert result is None
+    for channel in dci.channels:
+        channel.turn_on.assert_called_with("bar")
 
 
 def _verify_multiparam_data(data):

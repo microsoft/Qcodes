@@ -386,8 +386,8 @@ class ChannelTuple(Metadatable, Sequence[InstrumentModuleType]):
             name: The name of the parameter, function or channel that we want to
                 operate on.
         """
-        # Check if this is a valid parameter
         if len(self) > 0:
+            # Check if this is a valid parameter
             if name in self._channels[0].parameters:
                 param = self._construct_multiparam(name)
                 return param
@@ -401,6 +401,17 @@ class ChannelTuple(Metadatable, Sequence[InstrumentModuleType]):
                         chan.functions[name](*args)
 
                 return multi_func
+
+            # check if this is a method on the channels in the
+            # sequence
+            maybe_callable = getattr(self._channels[0], name, None)
+            if callable(maybe_callable):
+
+                def multi_callable(*args: Any) -> None:
+                    for chan in self._channels:
+                        getattr(chan, name)(*args)
+
+                return multi_callable
 
         try:
             return self._channel_mapping[name]
