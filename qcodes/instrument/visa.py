@@ -1,6 +1,6 @@
 """Visa instrument driver based on pyvisa."""
 import logging
-from typing import Any, Dict, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, Optional, Sequence, Tuple
 
 import pyvisa
 import pyvisa.constants as vi_const
@@ -8,7 +8,7 @@ import pyvisa.resources
 
 import qcodes.validators as vals
 from qcodes.logger import get_instrument_logger
-from qcodes.utils import DelayedKeyboardInterrupt, deprecate
+from qcodes.utils import DelayedKeyboardInterrupt
 
 from .instrument import Instrument
 from .instrument_base import InstrumentBase
@@ -190,25 +190,6 @@ class VisaInstrument(Instrument):
         if getattr(self, 'visa_handle', None):
             self.visa_handle.close()
         super().close()
-
-    @deprecate(reason="pyvisa already checks the error code itself")
-    def check_error(self, ret_code: int) -> None:
-        """
-        Default error checking, raises an error if return code ``!=0``.
-        Does not differentiate between warnings or specific error messages.
-        Override this function in your driver if you want to add specific
-        error messages.
-
-        Args:
-            ret_code: A Visa error code. See eg:
-                https://github.com/hgrecco/pyvisa/blob/master/pyvisa/errors.py
-
-        Raises:
-            visa.VisaIOError: if ``ret_code`` indicates a communication
-                problem.
-        """
-        if ret_code != 0:
-            raise pyvisa.VisaIOError(ret_code)
 
     def write_raw(self, cmd: str) -> None:
         """
