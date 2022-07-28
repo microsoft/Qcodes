@@ -9,7 +9,7 @@ deepdiff==5.8.1
 execnet==1.9.0
 hypothesis==6.53.0
 idna==3.3
-importlib-metadata==4.8.1; python_version<'3.8'
+importlib-metadata==4.12.0; python_version<'3.10'
 iniconfig==1.1.1
 lxml==4.9.1
 mypy==0.971
