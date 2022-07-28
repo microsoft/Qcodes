@@ -53,7 +53,8 @@ jobs:
         requirements-builder -l min -e test setup.py -o min_requirements.txt
     - name: install qcodes
       run: |
-        pip install .[test] -c min_requirements.txt
+        pip install -r min_requirements.txt
+        pip install .[test]
     - name: Run tests
       run: |
         pytest --hypothesis-profile ci qcodes
