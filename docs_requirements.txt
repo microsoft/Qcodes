@@ -2,7 +2,7 @@ alabaster==0.7.12
 argon2-cffi==21.3.0
 async-generator==1.10
 attrs==21.4.0
-git+https://github.com/Chilipp/autodocsumm.git@c3689c9204afcb2903ca50ca809aefc62f76316d
+autodocsumm @ git+https://github.com/Chilipp/autodocsumm.git@c3689c9204afcb2903ca50ca809aefc62f76316d
 Babel==2.10.3
 backcall==0.2.0
 bleach==5.0.1
@@ -16,7 +16,7 @@ docutils==0.17.1
 entrypoints==0.4
 idna==3.3
 imagesize==1.4.1
-importlib-metadata==4.8.1; python_version<'3.8'
+importlib-metadata==4.12.0; python_version<'3.10'
 ipykernel==6.15.1
 ipython~=8.4.0; python_version>='3.8'
 ipython~=7.31.0; python_version<'3.8'
@@ -69,7 +69,7 @@ scipy==1.8.1; python_version>='3.8'
 Send2Trash==1.8.0
 six==1.16.0
 snowballstemmer==2.2.0
-git+https://github.com/jenshnielsen/sphinx.git@fix_9884_50branch
+sphinx @ git+https://github.com/jenshnielsen/sphinx.git@fix_9884_50branch
 sphinx-favicon==0.2
 sphinx-jsonschema==1.19.1
 sphinx-rtd-theme==1.0.0
