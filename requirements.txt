@@ -127,6 +127,8 @@ rsa~=4.9
 ruamel.yaml~=0.17.21
 ruamel.yaml.clib~=0.2.6
 schema~=0.7.5
+scipy==1.7.3; python_version<'3.8'
+scipy==1.8.1; python_version>='3.8'
 Send2Trash~=1.8.0
 six~=1.16.0
 slack-sdk~=3.18.1
