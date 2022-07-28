@@ -41,7 +41,7 @@ jobs:
       uses: actions/cache@v3.0.5
       with:
         path: ${{ steps.prepare-cache-pip.outputs.cache-dir }}
-        key: ${{ runner.os }}-${{ matrix.python-version }}-pip-${{ hashFiles('**/min-requirements.txt') }}-${{ hashFiles('**/setup.cfg') }}
+        key: ${{ runner.os }}-${{ matrix.python-version }}-pip-${{ hashFiles('**/requirements.txt') }}-${{ hashFiles('**/pyproject.toml') }}
         restore-keys: |
           ${{ runner.os }}-${{ matrix.python-version }}-pip-
     - name: generate min_requirements.txt
@@ -51,12 +51,9 @@ jobs:
         pip install git+https://github.com/jenshnielsen/requirements-builder.git
         pip install versioningit
         requirements-builder -l min -e test setup.py -o min_requirements.txt
-    - name: install min_requirements.txt
-      run: |
-        pip install -r min_requirements.txt
     - name: install qcodes
       run: |
-        pip install .
+        pip install .[test] -c min_requirements.txt
     - name: Run tests
       run: |
         pytest --hypothesis-profile ci qcodes
