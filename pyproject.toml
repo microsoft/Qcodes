@@ -74,11 +74,13 @@ qtplot = ["pyqtgraph>=0.11.0"]
 slack = ["slack-sdk>=3.4.2"]
 zurichinstruments = ["zhinst-qcodes>=0.3"]
 test = [
+    "coverage[toml]>=6.0.0",
     "pytest>=6.0.0",
     "PyVisa-sim>=0.4.0",
     "hypothesis>=5.49.0",
     "pytest-xdist>=2.0.0",
     "deepdiff>=5.0.2",
+    "pytest-cov>=3.0.0",
     "pytest-mock>=3.0.0",
     "pytest-rerunfailures>=5.0.0",
     "lxml>=4.3.0",
