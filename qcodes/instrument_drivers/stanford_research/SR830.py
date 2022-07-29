@@ -189,7 +189,7 @@ class ChannelBuffer(ArrayParameter):
 
 class SR830(VisaInstrument):
     """
-    QCoDeS driver for the Stanford Research Systems SR860 Lock-in Amplifier.
+    QCoDeS driver for the Stanford Research Systems SR830 Lock-in Amplifier.
     """
 
     _VOLT_TO_N = {2e-9:    0, 5e-9:    1, 10e-9:  2,
