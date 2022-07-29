@@ -3,7 +3,8 @@ from typing import Any
 from qcodes import validators as vals
 from qcodes.instrument import VisaInstrument
 
-class SRS_SG384(VisaInstrument):
+
+class SG384(VisaInstrument):
     """
     This is the code for SG384 RF Signal Generator
     Status: beta version
@@ -153,3 +154,11 @@ class SRS_SG384(VisaInstrument):
                                         'Blank': 5,
                                         'IQ': 6})
         self.connect_message()
+
+
+class SRS_SG384(SG384):
+    """
+    Deprecated alternative name for backwards compatibility
+    """
+
+    pass
