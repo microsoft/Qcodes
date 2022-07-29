@@ -6,7 +6,8 @@ from qcodes.instrument import VisaInstrument
 
 class SG384(VisaInstrument):
     """
-    This is the code for SG384 RF Signal Generator
+    QCoDeS driver for the Stanford Research Systems SG384 RF Signal Generator.
+
     Status: beta version
     Includes the essential commands from the manual
     """
