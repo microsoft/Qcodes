@@ -6,6 +6,10 @@ from qcodes.parameters import create_on_off_val_mapping
 
 
 class NotKnownModel(Exception):
+    """
+    An Error thrown when connecting to an unknown Aim TTi model
+    """
+
     pass
 
 
@@ -228,7 +232,7 @@ class AimTTi(VisaInstrument):
             "PL303-P": 1,
             "PL601-P": 1,
             "PL303QMD-P": 2,
-            "PL303QMT": 3,
+            "PL303QMT-P": 3,
         }
 
         if (not _model in _numOutputChannels.keys()) or (_model is None):
