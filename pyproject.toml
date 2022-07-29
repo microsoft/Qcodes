@@ -75,22 +75,22 @@ slack = ["slack-sdk>=3.4.2"]
 zurichinstruments = ["zhinst-qcodes>=0.3"]
 test = [
     "coverage[toml]>=6.0.0",
-    "pytest>=6.0.0",
-    "PyVisa-sim>=0.4.0",
-    "hypothesis>=5.49.0",
-    "pytest-xdist>=2.0.0",
     "deepdiff>=5.0.2",
+    "hypothesis>=5.49.0",
+    "lxml>=4.3.0",
+    "mypy>=0.971",
+    "pytest>=6.0.0",
     "pytest-cov>=3.0.0",
     "pytest-mock>=3.0.0",
     "pytest-rerunfailures>=5.0.0",
-    "lxml>=4.3.0",
+    "pytest-xdist>=2.0.0",
+    "pyqtgraph>=0.11.0", # pyqtgraph tests
+    "PyQt5>=5.15.0", # pyqtgraph tests
+    "PyVisa-sim>=0.4.0",
+    "sphinx>=4.5.0",  # sphinx extension tests
     "types_requests>=0.1.8",
     "types-setuptools>=57.0.0",
     "types-tabulate>=0.1.0",
-    "sphinx>=4.5.0",
-    "mypy>=0.971",
-    "pyqtgraph>=0.11.0", # pyqtgraph tests
-    "PyQt5>=5.15.0", # pyqtgraph tests
 ]
 docs = [
     "autodocsumm>=0.2.8",
