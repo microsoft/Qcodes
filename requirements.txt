@@ -4,7 +4,7 @@ argon2-cffi-bindings~=21.2.0
 asttokens~=2.0.5
 atomicwrites~=1.4.1
 attrs~=22.1.0
-autodocsumm @ git+https://github.com/Chilipp/autodocsumm.git@c3689c9204afcb2903ca50ca809aefc62f76316d
+autodocsumm~=0.2.9
 azure-core~=1.24.2
 azure-identity~=1.10.0
 Babel~=2.10.3
