@@ -93,7 +93,7 @@ test = [
     "types-tabulate>=0.1.0",
 ]
 docs = [
-    "autodocsumm>=0.2.8",
+    "autodocsumm>=0.2.9",
     "nbsphinx>=0.8.9",
     "PyQt5>=5.15.0", # pyqtgraph examples
     "pyqtgraph>=0.11.0", # pyqtgraph examples
