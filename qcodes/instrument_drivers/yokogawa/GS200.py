@@ -1,5 +1,6 @@
 """
-Old version of Yokogawa driver for backwards compatibility. Will be deprecated and eventually removed.
+Old version of Yokogawa driver for backwards compatibility.
+Will be deprecated and eventually removed.
 """
 
 from functools import partial
