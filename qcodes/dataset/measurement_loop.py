@@ -1,10 +1,7 @@
-import contextlib
 import logging
 import threading
 import traceback
-from collections import Counter
 from datetime import datetime
-from enum import unique
 from time import perf_counter, sleep
 from typing import Any, Callable, Dict, Iterable, List, Sequence, Tuple, Union
 
@@ -1233,15 +1230,11 @@ class BaseSweep:
             for param_val in Sweep(p.
         ```
     """
-    def __init__(self, sequence, name=None, label=None, unit=None, parameter=None, revert=False, delay=None):
-        msmt = running_measurement()
-        if msmt is None:
-            raise RuntimeError("Cannot create a sweep outside a Measurement")
-
+    def __init__(self, sequence, name=None, label=None, unit=None, parameter=None, revert=False, delay=None, initial_delay=None):
         if isinstance(sequence, AbstractSweep):
             sequence = _IterateDondSweep(sequence)
         elif not isinstance(sequence, Iterable):
-            raise SyntaxError("Sweep sequence must be iterable")
+            raise SyntaxError(f"Sweep sequence must be iterable, not {type(sequence)}")
 
         # Properties for the data array
         self.name = name
@@ -1250,19 +1243,20 @@ class BaseSweep:
         self.parameter = parameter
 
         self.sequence = sequence
-        self.dimension = len(running_measurement().loop_shape)
+        self.dimension = None
         self.loop_index = None
         self.iterator = None
         self.revert = revert
         self.delay = delay
+        self.initial_delay = initial_delay
 
-        # Check if this is the first sweep
-        # Useful to know when to initialize dataset
-        msmt = running_measurement()
+        # setpoint_info will be populated once the sweep starts
+        self.setpoint_info = None
 
-        # Create setpoint_list
-        self.initialize()
-        self.setpoint_info = msmt.setpoint_list[msmt.action_indices]
+        # Validate values
+        if self.parameter is not None and hasattr(self.parameter, 'validate'):
+            for value in self.sequence:
+                self.parameter.validate(value)
 
     def __iter__(self):
         if threading.current_thread() is not MeasurementLoop.measurement_thread:
@@ -1270,18 +1264,27 @@ class BaseSweep:
                 "Cannot create a Sweep while another measurement "
                 "is already running in a different thread."
             )
+            
+        msmt = running_measurement()
+        if msmt is None:
+            raise RuntimeError("Cannot start a sweep outside a Measurement")
+
         if self.revert:
             if isinstance(self.sequence, SweepValues):
-                running_measurement().mask(self.sequence.parameter, self.sequence.parameter.get())
+                msmt.mask(self.sequence.parameter, self.sequence.parameter.get())
             else:
                 raise NotImplementedError("Unable to revert non-parameter values.")
 
         self.loop_index = 0
+        self.dimension = len(msmt.loop_shape)
         self.iterator = iter(self.sequence)
 
-        running_measurement().loop_shape += (len(self.sequence),)
-        running_measurement().loop_indices += (self.loop_index,)
-        running_measurement().action_indices += (0,)
+        # Create setpoint_list
+        self.setpoint_info = self.initialize()
+
+        msmt.loop_shape += (len(self.sequence),)
+        msmt.loop_indices += (self.loop_index,)
+        msmt.action_indices += (0,)
 
         return self
 
@@ -1325,9 +1328,10 @@ class BaseSweep:
             self.parameter(sweep_value)
             
         # Optional wait after settings value
+        if self.initial_delay and self.loop_index == 0:
+            sleep(self.initial_delay)
         if self.delay:
             sleep(self.delay)
-
 
         self.setpoint_info['latest_value'] = sweep_value
 
@@ -1373,12 +1377,49 @@ class BaseSweep:
         msmt.step_out(reduce_dimension=True)
         raise StopIteration
 
+    def execute(
+        self, 
+        name: str = None, 
+        measure_params: Iterable = None, 
+        repetitions: int = 1, 
+        sweep: Union[Iterable, AbstractSweep] = None
+    ):
+        # Get "measure_params" from station if not provided
+        if measure_params is None:
+            station = Station.default
+            if station is None or not getattr(station, 'measure_params', None):
+                raise RuntimeError(
+                    'Cannot determine parameters to measure. '
+                    'Either provide measure_params, or set station.measure_params'
+                )
+            measure_params = station.measure_params
+
+        # Ensure sweeps is a list
+        if isinstance(sweep, BaseSweep):
+            sweeps = [sweep]
+        elif isinstance(sweep, Iterable):
+            sweeps = list(sweep)
+
+        # Add repetition as a sweep if > 1
+        if repetitions > 1:
+            repetition_sweep = BaseSweep(range(repetitions), name='repetition')
+            sweeps = [repetition_sweep] + sweeps
+
+        # Determine "name" if not provided from sweeps
+        if name is None:
+            dimensionality = 1 + len(sweep)
+            sweep_names = [sweep.name for sweep in sweeps] + [str(self.name)]
+            name = f'{dimensionality}D_sweep_' + '_'.join(sweep_names)
+
+        with MeasurementLoop(name) as msmt:
+            measure_sweeps(sweeps=sweeps, measure_params=measure_params, msmt=msmt)
+
 
 class Sweep(BaseSweep):
-    sequence_keywords = ['start', 'stop', 'around', 'num', 'step']
-    base_keywords = ['delay', 'name', 'label', 'unit', 'revert']
+    sequence_keywords = ['start', 'stop', 'around', 'num', 'step', 'parameter', 'sequence']
+    base_keywords = ['delay', 'initial_delay', 'name', 'label', 'unit', 'revert', 'parameter']
         
-    def __init__(self, *args, start=None, stop=None, around=None, num=None, step=None, delay=None, name=None, label=None, unit=None, revert=None):
+    def __init__(self, *args, start=None, stop=None, around=None, num=None, step=None, delay=None, initial_delay=None, name=None, label=None, unit=None, revert=None):
         kwargs = dict(
             start=start,
             stop=stop,
@@ -1386,19 +1427,21 @@ class Sweep(BaseSweep):
             num=num,
             step=step,
             delay=delay, 
+            initial_delay=initial_delay,
             name=name,
             label=label,
             unit=unit,
             revert=revert
         )
 
-        sequence_kwargs, base_kwargs = self.transform_args_to_kwargs(*args, **kwargs)
+        sequence_kwargs, base_kwargs = self._transform_args_to_kwargs(*args, **kwargs)
 
-        sequence = self.generate_sequence(**sequence_kwargs)
+        self._explicit_sequence = None        
+        self.sequence = self._generate_sequence(**sequence_kwargs)
 
-        super().__init__(sequence=sequence, **base_kwargs)
+        super().__init__(sequence=self.sequence, **base_kwargs)
             
-    def transform_args_to_kwargs(self, *args, **kwargs):
+    def _transform_args_to_kwargs(self, *args, **kwargs):
         """Transforms sweep initialization args to kwargs.
         Allowed args are:
 
@@ -1426,8 +1469,6 @@ class Sweep(BaseSweep):
         - Sweep(parameter, start_val, stop_val, num)
           : Sweep "parameter" from "start_val" to "stop_val" with "num" number of points
         """
-        kwargs = kwargs.copy()  # Make a copy of kwargs so original does not change
-
         if len(args) == 1:  # Sweep([1,2,3], name='name')
             if isinstance(args[0], Iterable):
                 assert kwargs.get('name') is not None, "Must provide name if sweeping iterable"
@@ -1435,6 +1476,7 @@ class Sweep(BaseSweep):
             elif isinstance(args[0], _BaseParameter):
                 assert kwargs.get('stop') is not None or kwargs.get('around') is not None, \
                     "Must provide stop value for parameter"
+                kwargs['parameter'], = args
             else:
                 raise SyntaxError('Sweep with 1 arg must have iterable or parameter as arg')
         elif len(args) == 2:
@@ -1444,7 +1486,7 @@ class Sweep(BaseSweep):
                 elif isinstance(args[1], (int, float)):
                     kwargs['parameter'], kwargs['stop'] = args
                 else:
-                    raise SyntaxError('Sweep ')
+                    raise SyntaxError('Sweep with Parameter arg and second arg should h')
             elif isinstance(args[0], Iterable):  # Sweep([1,2,3], 'name')
                 assert isinstance(args[1], str)
                 assert kwargs.get('name') is None
@@ -1461,18 +1503,6 @@ class Sweep(BaseSweep):
             assert kwargs.get('start') is None
             assert kwargs.get('stop') is None
             kwargs['parameter'], kwargs['start'], kwargs['stop'] = args
-
-            if not kwargs.get('step') and not kwargs.get('num'):
-                parameter_sweep_defaults = getattr(kwargs['parameter'], 'sweep_defaults', {})
-                if 'num' in parameter_sweep_defaults:
-                    kwargs['num'] = parameter_sweep_defaults['num']
-                elif 'step' in parameter_sweep_defaults:
-                    kwargs['step'] = parameter_sweep_defaults['step']
-                else:
-                    raise SyntaxError(
-                        'Cannot determine many measurement points to use. '
-                        'Either provide "step", "num", or set parameter._default_sweep_points'
-                    )
         elif len(args) == 4:  # Sweep(parameter, 0, 1, 151)
             assert isinstance(args[0], _BaseParameter)
             assert isinstance(args[1], (float, int))
@@ -1489,37 +1519,90 @@ class Sweep(BaseSweep):
             kwargs.setdefault('label', kwargs['parameter'].label)
             kwargs.setdefault('unit', kwargs['parameter'].unit)
 
+            # Update kwargs with sweep_defaults from parameter
+            if hasattr(kwargs['parameter'], 'sweep_defaults'):
+                for key, val in kwargs['parameter'].sweep_defaults.items():
+                    if kwargs.get(key) is None:
+                        kwargs[key] = val
+
         sequence_kwargs = {key: kwargs.get(key) for key in self.sequence_keywords}
         base_kwargs = {key: kwargs.get(key) for key in self.base_keywords}
+        print(f'{sequence_kwargs=}')  # TODO removeme
+        print(f'{base_kwargs=}')  # TODO removeme
         return sequence_kwargs, base_kwargs
 
-    def generate_sequence(self, **kwargs):
-        if kwargs['around'] is not None and (kwargs['start'] is not None or kwargs['stop'] is not None):
-            raise SyntaxError('Cannot pass kwarg "around" and also "start" or "stop')
-        
-        # Convert "around" to "start" and "stop" using parameter current value
-        if kwargs['around'] is not None:
-            assert kwargs['parameter'] is not None, 'Cannot use kwarg "around" without a parameter'
-            center_value = kwargs['parameter']()
-            kwargs['start'] = center_value - kwargs['around']
-            kwargs['stop'] = center_value + kwargs['around']
-        
-        # Transform "step" into "num"
-        if kwargs['step'] is not None and kwargs['num'] is None:
-            num_float = abs((kwargs['stop'] - kwargs['start']) / kwargs['step'])
-            kwargs['num'] = int(np.ceil(num_float)) + 1
+    def _generate_sequence(self, start=None, stop=None, around=None, num=None, step=None, parameter=None, sequence=None):
+        """Creates a sequence from passed values"""
+        # Return "sequence" if explicitly provided
+        if sequence is not None: 
+            return sequence
 
-        sequence = np.linspace(kwargs['start'], kwargs['stop'], kwargs['num'])
+        # Verify that "around" is used with "parameter" but not with "start" and "stop"
+        if around is not None:
+            if start is not None or stop is not None:
+                raise SyntaxError('Cannot pass kwarg "around" and also "start" or "stop')
+            elif parameter is None:
+                raise SyntaxError('Cannot use kwarg "around" without a parameter')
+                
+            # Convert "around" to "start" and "stop" using parameter current value
+            center_value = parameter()
+            if center_value is None:
+                raise ValueError('Parameter must have initial value if "around" keyword is used')
+            start = center_value - around
+            stop = center_value + around
+        elif stop is not None:
+            # Use "parameter" current value if "start" is not provided
+            if start is None:
+                if parameter is None:
+                    raise SyntaxError('Cannot use "stop" without "start" or a "parameter"')
+                start = parameter()
+                if start is None:
+                    raise ValueError('Parameter must have initial value if start is not explicitly provided')
+        else:
+            raise SyntaxError('Must provide either "around" or "stop"')
+        
+        if num is not None:
+            sequence = np.linspace(start, stop, num)
+        elif step is not None:
+            # Ensure step is positive
+            step = abs(step) if stop > start else -abs(step)
+
+            sequence = np.arange(start, stop, step)
+            
+            # Append final datapoint
+            if abs((stop - sequence[-1]) / step) > 1e-9:
+                sequence = np.append(sequence, [stop])
+        else:
+            raise SyntaxError('Cannot determine measurement points. Either provide "sequence, "step" or "num"')
 
         return sequence
 
-        
-
 
 class RepetitionSweep(BaseSweep):
-    def __init__(self, repetitions, start=0, name='repetition', label='Repetition', unit=None, reverse=False, revert=False):
+    def __init__(self, repetitions, start=0, name='repetition', label='Repetition', unit=None):
         self.start = start
         self.repetitions = repetitions
-        sequence = self.start + np.arange(self.repetitions)
+        sequence = start + np.arange(repetitions)
 
-        super().__init__(sequence, name, label, unit, reverse, revert)
+        super().__init__(sequence, name, label, unit)
+
+
+def measure_sweeps(sweeps: list[BaseSweep], measure_params: list[_BaseParameter], msmt: MeasurementLoop = None):
+    """Recursively iterate over Sweep objects, measuring measure_params in innermost loop
+    
+    Args:
+        sweeps: list of BaseSweep objects to sweep over
+        measure_params: list of parameters to measure in innermost loop
+    """
+    if sweeps:
+        outer_sweep, *inner_sweeps = sweeps
+
+        for _ in outer_sweep:
+            measure_sweeps(inner_sweeps, measure_params, msmt=msmt)
+    
+    else:
+        if msmt is None:
+            msmt = running_measurement()
+
+        for measure_param in measure_params:
+            msmt.measure(measure_param)
