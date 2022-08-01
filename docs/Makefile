@@ -26,6 +26,7 @@ clean:
 # generate api docs for instruments automatically
 genapi:
 	sphinx-apidoc  -o  _auto  -d 10 ../qcodes \
+		../qcodes/instrument_drivers/agilent \
 		../qcodes/instrument_drivers/AimTTi \
 		../qcodes/instrument_drivers/keysight \
 		../qcodes/instrument_drivers/QuantumDesign/DynaCoolPPMS/private/* \
