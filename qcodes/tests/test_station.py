@@ -1,28 +1,26 @@
-import pytest
-from contextlib import contextmanager
+import json
+import os
 import tempfile
 import warnings
-from pathlib import Path
-import os
-from typing import Optional
-import json
+from contextlib import contextmanager
 from io import StringIO
+from pathlib import Path
+from typing import Optional
+
+import pytest
+from ruamel.yaml import YAML
 
 import qcodes
-import qcodes.utils.validators as validators
-from qcodes.utils.helpers import get_qcodes_path
-from qcodes.utils.deprecate import assert_deprecated, deprecation_message
-from qcodes.instrument.parameter import DelegateParameter
-from qcodes import Instrument
-from qcodes.station import (
-    Station, ValidationWarning, update_config_schema, SCHEMA_PATH)
-from qcodes.instrument.parameter import Parameter
-from qcodes.monitor.monitor import Monitor
-from qcodes.tests.instrument_mocks import (
-    DummyInstrument)
+from qcodes import validators
+from qcodes.instrument import Instrument
+from qcodes.monitor import Monitor
+from qcodes.parameters import DelegateParameter, Parameter
+from qcodes.station import SCHEMA_PATH, Station, ValidationWarning, update_config_schema
 from qcodes.tests.common import default_config
-from qcodes.utils.helpers import NumpyJSONEncoder
-from qcodes.utils.helpers import YAML
+from qcodes.tests.instrument_mocks import DummyInstrument
+from qcodes.utils import NumpyJSONEncoder, QCoDeSDeprecationWarning, get_qcodes_path
+from qcodes.utils.deprecate import deprecation_message
+
 from .common import DumyPar
 
 
@@ -757,11 +755,11 @@ instruments:
     driver: qcodes.tests.instrument_mocks
     type: DummyChannelInstrument
     """)
-    with assert_deprecated(
-        deprecation_message(
-            'use of the "driver"-keyword in the station configuration file',
-            alternative='the "type"-keyword instead, prepending the driver value'
-                        ' to it')):
+    message = deprecation_message(
+        'use of the "driver"-keyword in the station configuration file',
+        alternative='the "type"-keyword instead, prepending the driver value to it',
+    )
+    with pytest.warns(QCoDeSDeprecationWarning, match=message):
         st.load_instrument('mock')
 
 
@@ -776,11 +774,11 @@ instruments:
       ch1:
         limits: -10, 10
     """)
-    with assert_deprecated(
-        deprecation_message(
-            'use of a comma separated string for the limits keyword',
-            alternative='an array like "[lower_lim, upper_lim]"')
-    ):
+    message = deprecation_message(
+        "use of a comma separated string for the limits keyword",
+        alternative=r'an array like "\[lower_lim, upper_lim\]"',
+    )
+    with pytest.warns(QCoDeSDeprecationWarning, match=message):
         st.load_instrument('mock')
 
 

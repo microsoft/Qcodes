@@ -27,7 +27,7 @@ from qcodes.dataset.sqlite.queries import _rewrite_timestamps, _unicode_categori
 from qcodes.tests.common import error_caused_by
 from qcodes.tests.dataset.helper_functions import verify_data_dict
 from qcodes.tests.dataset.test_links import generate_some_links
-from qcodes.utils.types import numpy_floats, numpy_ints
+from qcodes.utils.types import numpy_complex, numpy_floats, numpy_ints
 
 n_experiments = 0
 
@@ -557,6 +557,22 @@ def test_numpy_floats(dataset):
     expected_result = np.array([tp(1.2) for tp in numpy_floats])
     data = dataset.get_parameter_data()["y"]["y"]
     assert np.allclose(data, expected_result, atol=1E-8)
+
+
+def test_numpy_complex(dataset):
+    """
+    Test that we can insert numpy complex in the data set
+    """
+    xparam = ParamSpecBase("x", "complex")
+    idps = InterDependencies_(standalones=(xparam,))
+    dataset.set_interdependencies(idps)
+    dataset.mark_started()
+
+    results = [{"x": tp(2.0 + 3.0j)} for tp in numpy_complex]
+    dataset.add_results(results)
+    expected_result = np.array([tp(2.0 + 3.0j) for tp in numpy_complex])
+    result = dataset.get_parameter_data()
+    np.testing.assert_array_equal(result["x"]["x"], expected_result)
 
 
 def test_numpy_nan(dataset):

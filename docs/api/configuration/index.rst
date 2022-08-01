@@ -3,17 +3,12 @@
 qcodes.configuration
 ====================
 
-.. autosummary::
-
-    qcodes.configuration
-    qcodes.configuration.config
-
-
 .. automodule:: qcodes.configuration
+    :autosummary:
 
+qcodes default configuration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. toctree::
-   :maxdepth: 4
-   :hidden:
+The following table contains the default configuration of qcodes.
 
-   config
+.. jsonschema:: ../../../qcodes/configuration/qcodesrc_schema.json

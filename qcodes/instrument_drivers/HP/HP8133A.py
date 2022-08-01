@@ -1,7 +1,7 @@
 from typing import Any
 
-from qcodes import VisaInstrument
-from qcodes.utils.validators import Numbers, Ints, Enum
+from qcodes.instrument import VisaInstrument
+from qcodes.validators import Numbers
 
 
 class HP8133A(VisaInstrument):

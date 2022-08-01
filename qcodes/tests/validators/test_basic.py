@@ -1,7 +1,7 @@
 from typing import Any
 
 import pytest
-from qcodes.utils.validators import Anything, Validator
+from qcodes.validators import Anything, Validator
 
 from .conftest import AClass, a_func
 

@@ -13,23 +13,18 @@ from hypothesis import HealthCheck, given, settings
 from numpy.testing import assert_allclose, assert_array_equal
 
 import qcodes as qc
+import qcodes.validators as vals
 from qcodes.dataset.data_set import DataSet, load_by_id
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.experiment_container import new_experiment
 from qcodes.dataset.export_config import DataExportType
-from qcodes.dataset.legacy_import import import_dat_file
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.sqlite.connection import atomic_transaction
-from qcodes.instrument.parameter import (
-    ArrayParameter,
-    Parameter,
-    expand_setpoints_helper,
-)
+from qcodes.parameters import Parameter, expand_setpoints_helper
 from qcodes.tests.common import reset_config_on_exit, retry_until_does_not_throw
 
 # pylint: disable=unused-import
 from qcodes.tests.test_station import set_default_station_to_none
-from qcodes.utils.validators import Arrays
 
 
 def test_log_messages(caplog, meas_with_registered_param):
@@ -1398,27 +1393,33 @@ def test_datasaver_parameter_with_setpoints_reg_but_missing_validator(
     param.setpoints = ()
 
     with meas.run(write_in_background=bg_writing) as datasaver:
-        with pytest.raises(ValueError, match=r"Shape of output is not"
-                                             r" consistent with setpoints."
-                                             r" Output is shape "
-                                             r"\(<qcodes.instrument.parameter."
-                                             r"Parameter: dummy_n_points at "
-                                             r"[0-9]+>,\) and setpoints are "
-                                             r"shape \(\)', 'getting dummy_"
-                                             r"channel_inst_ChanA_dummy_"
-                                             r"parameter_with_setpoints"):
+        with pytest.raises(
+            ValueError,
+            match=r"Shape of output is not"
+            r" consistent with setpoints."
+            r" Output is shape "
+            r"\(<qcodes.parameters.parameter."
+            r"Parameter: dummy_n_points at "
+            r"[0-9]+>,\) and setpoints are "
+            r"shape \(\)', 'getting dummy_"
+            r"channel_inst_ChanA_dummy_"
+            r"parameter_with_setpoints",
+        ):
             datasaver.add_result(*expand_setpoints_helper(param))
 
     with meas.run(write_in_background=bg_writing) as datasaver:
-        with pytest.raises(ValueError, match=r"Shape of output is not"
-                                             r" consistent with setpoints."
-                                             r" Output is shape "
-                                             r"\(<qcodes.instrument.parameter."
-                                             r"Parameter: dummy_n_points at "
-                                             r"[0-9]+>,\) and setpoints are "
-                                             r"shape \(\)', 'getting dummy_"
-                                             r"channel_inst_ChanA_dummy_"
-                                             r"parameter_with_setpoints"):
+        with pytest.raises(
+            ValueError,
+            match=r"Shape of output is not"
+            r" consistent with setpoints."
+            r" Output is shape "
+            r"\(<qcodes.parameters.parameter."
+            r"Parameter: dummy_n_points at "
+            r"[0-9]+>,\) and setpoints are "
+            r"shape \(\)', 'getting dummy_"
+            r"channel_inst_ChanA_dummy_"
+            r"parameter_with_setpoints",
+        ):
             datasaver.add_result((param, param.get()))
 
 
@@ -1440,7 +1441,7 @@ def test_datasaver_parameter_with_setpoints_reg_but_missing(
     chan.dummy_start(0)
     chan.dummy_stop(10)
 
-    someparam = Parameter('someparam', vals=Arrays(shape=(10,)))
+    someparam = Parameter("someparam", vals=vals.Arrays(shape=(10,)))
     old_setpoints = param.setpoints
     param.setpoints = (old_setpoints[0], someparam)
 
@@ -2096,11 +2097,9 @@ def test_save_and_reload_complex_standalone(complex_num_instrument,
                                             bg_writing):
     param = complex_num_instrument.complex_num
     complex_num_instrument.setpoint(1)
-    p = qc.instrument.parameter.Parameter(
-        'test',
-        set_cmd=None,
-        get_cmd=lambda: 1+1j,
-        vals=qc.utils.validators.ComplexNumbers())
+    p = Parameter(
+        "test", set_cmd=None, get_cmd=lambda: 1 + 1j, vals=vals.ComplexNumbers()
+    )
     meas = qc.dataset.measurements.Measurement()
     meas.register_parameter(param)
     pval = param.get()
@@ -2246,60 +2245,6 @@ def test_parameter_inference(channel_array_instrument):
                                         'array') == 'array'
     assert Measurement._infer_paramtype(chan.dummy_2d_multi_parameter,
                                         'array') == 'array'
-
-
-@pytest.mark.usefixtures("experiment")
-def test_load_legacy_files_2D():
-    location = '../fixtures/2018-01-17/#002_2D_test_15-43-14'
-    directory = os.path.dirname(__file__)
-    full_location = os.path.join(directory, location)
-    run_ids = import_dat_file(full_location)
-    run_id = run_ids[0]
-    data = load_by_id(run_id)
-    assert isinstance(data, DataSet)
-    assert data.parameters == 'dac_ch1_set,dac_ch2_set,dmm_voltage'
-    assert data.number_of_results == 36
-    expected_names = ['dac_ch1_set', 'dac_ch2_set', 'dmm_voltage']
-    expected_labels = ['Gate ch1', 'Gate ch2', 'Gate voltage']
-    expected_units = ['V', 'V', 'V']
-    expected_depends_on = ['', '', 'dac_ch1_set, dac_ch2_set']
-    for i, parameter in enumerate(data.get_parameters()):
-        assert parameter.name == expected_names[i]
-        assert parameter.label == expected_labels[i]
-        assert parameter.unit == expected_units[i]
-        assert parameter.depends_on == expected_depends_on[i]
-        assert parameter.type == 'numeric'
-    snapshot = json.loads(data.get_metadata('snapshot'))
-    assert sorted(list(snapshot.keys())) == ['__class__', 'arrays',
-                                             'formatter', 'io', 'location',
-                                             'loop', 'station']
-
-
-@pytest.mark.usefixtures("experiment")
-def test_load_legacy_files_1D():
-    location = '../fixtures/2018-01-17/#001_testsweep_15-42-57'
-    dir = os.path.dirname(__file__)
-    full_location = os.path.join(dir, location)
-    run_ids = import_dat_file(full_location)
-    run_id = run_ids[0]
-    data = load_by_id(run_id)
-    assert isinstance(data, DataSet)
-    assert data.parameters == 'dac_ch1_set,dmm_voltage'
-    assert data.number_of_results == 201
-    expected_names = ['dac_ch1_set', 'dmm_voltage']
-    expected_labels = ['Gate ch1', 'Gate voltage']
-    expected_units = ['V', 'V']
-    expected_depends_on = ['', 'dac_ch1_set']
-    for i, parameter in enumerate(data.get_parameters()):
-        assert parameter.name == expected_names[i]
-        assert parameter.label == expected_labels[i]
-        assert parameter.unit == expected_units[i]
-        assert parameter.depends_on == expected_depends_on[i]
-        assert parameter.type == 'numeric'
-    snapshot = json.loads(data.get_metadata('snapshot'))
-    assert sorted(list(snapshot.keys())) == ['__class__', 'arrays',
-                                             'formatter', 'io', 'location',
-                                             'loop', 'station']
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])

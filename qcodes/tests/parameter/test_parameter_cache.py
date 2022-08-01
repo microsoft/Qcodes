@@ -3,8 +3,9 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from qcodes.instrument.parameter import Parameter, _BaseParameter
-import qcodes.utils.validators as vals
+import qcodes.validators as vals
+from qcodes.parameters import Parameter, ParameterBase
+
 from .conftest import NOT_PASSED, BetterGettableParam, SettableParam
 
 
@@ -204,14 +205,14 @@ def test_no_get_max_val_age():
 
 def test_no_get_max_val_age_runtime_error(get_if_invalid):
     """
-    _BaseParameter does not have a check on creation time that
+    ParameterBase does not have a check on creation time that
     no get_cmd is mixed with max_val_age since get_cmd could be added
     in a subclass. Here we create a subclass that does not add a get
     command and also does not implement the check for max_val_age
     """
     value = 1
 
-    class LocalParameter(_BaseParameter):
+    class LocalParameter(ParameterBase):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
             self.set_raw = lambda x: x
@@ -357,3 +358,45 @@ def test_get_from_cache_marked_invalid():
                                            " and has an invalid cache"):
         param.cache.get(get_if_invalid=True)
     assert param._get_count == 2
+
+
+def test_marking_invalid_via_instrument(dummy_instrument):
+    def _assert_cache_status(valid: bool):
+        for param in dummy_instrument.parameters.values():
+            assert param.cache.valid is valid, param.full_name
+
+        for instrument_module in dummy_instrument.instrument_modules.values():
+            for param in instrument_module.parameters.values():
+                # parameters not snapshotted will not have a cache
+                # updated when calling snapshot(update=None) os
+                # exclude them
+                if (
+                    param._snapshot_get is True
+                    and param.snapshot_value is True
+                    and param.snapshot_exclude is False
+                ):
+                    assert param.cache.valid is valid, param.full_name
+
+    dummy_instrument.snapshot(update=None)
+
+    _assert_cache_status(True)
+
+    dummy_instrument.invalidate_cache()
+
+    _assert_cache_status(False)
+
+    dummy_instrument.snapshot(update=None)
+
+    _assert_cache_status(True)
+
+    dummy_instrument.invalidate_cache()
+
+    _assert_cache_status(False)
+
+    for param in dummy_instrument.parameters.values():
+        param.get()
+    for module in dummy_instrument.instrument_modules.values():
+        for param in module.parameters.values():
+            param.get()
+
+    _assert_cache_status(True)

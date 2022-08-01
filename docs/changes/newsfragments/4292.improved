@@ -1,0 +1,2 @@
+``ChannelTuple`` and ``ChannelList`` has gained the ability to call methods defined on the channels
+in the sequence in a way similar to how QCoDeS Functions can be called.

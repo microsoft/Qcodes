@@ -1,8 +1,8 @@
 import pytest
 
+import qcodes.validators as vals
+from qcodes.parameters import Parameter
 from qcodes.tests.instrument_mocks import DummyInstrument
-from qcodes.instrument.parameter import Parameter
-import qcodes.utils.validators as vals
 
 
 class DummyTrackingInstrument(DummyInstrument):

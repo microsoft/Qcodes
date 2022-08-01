@@ -8,19 +8,17 @@ import numpy as np
 import pytest
 from hypothesis import HealthCheck, given, settings
 
-from qcodes import config
+from qcodes import config, validators
 from qcodes.dataset import new_experiment
 from qcodes.dataset.data_set import DataSet
-from qcodes.instrument.parameter import Parameter, _BaseParameter
+from qcodes.dataset.do_nd import ArraySweep, LinSweep, LogSweep, do0d, do1d, do2d, dond
+from qcodes.parameters import Parameter, ParameterBase
 from qcodes.tests.instrument_mocks import (
     ArraySetPointParam,
     Multi2DSetPointParam,
     Multi2DSetPointParam2Sizes,
     MultiSetPointParam,
 )
-from qcodes.utils import validators
-from qcodes.utils.dataset.doNd import ArraySweep, LinSweep, LogSweep, do0d, do1d, do2d, dond
-from qcodes.utils.validators import Arrays
 
 from .conftest import ArrayshapedParam
 
@@ -233,7 +231,9 @@ def test_do0d_verify_shape(
 
 @pytest.mark.usefixtures("experiment")
 def test_do0d_parameter_with_array_vals():
-    param = ArrayshapedParam(name="paramwitharrayval", vals=Arrays(shape=(10,)))
+    param = ArrayshapedParam(
+        name="paramwitharrayval", vals=validators.Arrays(shape=(10,))
+    )
     results = do0d(param)
     expected_shapes = {"paramwitharrayval": (10,)}
     assert results[0].description.shapes == expected_shapes
@@ -411,7 +411,9 @@ def test_do1d_verify_shape(
 
 @pytest.mark.usefixtures("experiment")
 def test_do1d_parameter_with_array_vals(_param_set):
-    param = ArrayshapedParam(name="paramwitharrayval", vals=Arrays(shape=(10,)))
+    param = ArrayshapedParam(
+        name="paramwitharrayval", vals=validators.Arrays(shape=(10,))
+    )
     start = 0
     stop = 1
     num_points = 15  # make param
@@ -1011,7 +1013,7 @@ def test_linear_sweep_properties(_param, _param_complex):
     num_points = 5
     delay = 1
     sweep = LinSweep(_param, start, stop, num_points, delay)
-    assert isinstance(sweep.param, _BaseParameter)
+    assert isinstance(sweep.param, ParameterBase)
     assert sweep.delay == delay
     assert sweep.param == _param
     assert sweep.num_points == num_points
@@ -1027,14 +1029,14 @@ def test_linear_sweep_parameter_class(_param, _param_complex):
     num_points = 5
     delay = 1
     sweep = LinSweep(_param, start, stop, num_points, delay)
-    assert isinstance(sweep.param, _BaseParameter)
+    assert isinstance(sweep.param, ParameterBase)
 
     sweep_2 = LinSweep(_param_complex, start, stop, num_points)
-    assert isinstance(sweep_2.param, _BaseParameter)
+    assert isinstance(sweep_2.param, ParameterBase)
 
     arrayparam = ArraySetPointParam(name="arrayparam")
     sweep_3 = LinSweep(arrayparam, start, stop, num_points)
-    assert isinstance(sweep_3.param, _BaseParameter)
+    assert isinstance(sweep_3.param, ParameterBase)
 
 
 def test_log_sweep_get_setpoints(_param):
@@ -1055,7 +1057,7 @@ def test_log_sweep_properties(_param, _param_complex):
     num_points = 5
     delay = 1
     sweep = LogSweep(_param, start, stop, num_points, delay)
-    assert isinstance(sweep.param, _BaseParameter)
+    assert isinstance(sweep.param, ParameterBase)
     assert sweep.delay == delay
     assert sweep.param == _param
     assert sweep.num_points == num_points
@@ -1071,14 +1073,14 @@ def test_log_sweep_parameter_class(_param, _param_complex):
     num_points = 5
     delay = 1
     sweep = LogSweep(_param, start, stop, num_points, delay)
-    assert isinstance(sweep.param, _BaseParameter)
+    assert isinstance(sweep.param, ParameterBase)
 
     sweep_2 = LogSweep(_param_complex, start, stop, num_points)
-    assert isinstance(sweep_2.param, _BaseParameter)
+    assert isinstance(sweep_2.param, ParameterBase)
 
     arrayparam = ArraySetPointParam(name="arrayparam")
     sweep_3 = LogSweep(arrayparam, start, stop, num_points)
-    assert isinstance(sweep_3.param, _BaseParameter)
+    assert isinstance(sweep_3.param, ParameterBase)
 
 
 def test_array_sweep_get_setpoints(_param):
@@ -1102,7 +1104,7 @@ def test_array_sweep_properties(_param):
     array = np.linspace(0, 1, 5)
     delay = 1
     sweep = ArraySweep(_param, array, delay)
-    assert isinstance(sweep.param, _BaseParameter)
+    assert isinstance(sweep.param, ParameterBase)
     assert sweep.delay == delay
     assert sweep.param == _param
     assert sweep.num_points == len(array)
@@ -1116,14 +1118,14 @@ def test_array_sweep_parameter_class(_param, _param_complex):
     array = np.linspace(0, 1, 5)
 
     sweep = ArraySweep(_param, array)
-    assert isinstance(sweep.param, _BaseParameter)
+    assert isinstance(sweep.param, ParameterBase)
 
     sweep_2 = ArraySweep(_param_complex, array)
-    assert isinstance(sweep_2.param, _BaseParameter)
+    assert isinstance(sweep_2.param, ParameterBase)
 
     arrayparam = ArraySetPointParam(name="arrayparam")
     sweep_3 = ArraySweep(arrayparam, array)
-    assert isinstance(sweep_3.param, _BaseParameter)
+    assert isinstance(sweep_3.param, ParameterBase)
 
 
 def test_dond_explicit_exp_meas_sample(_param, experiment):
@@ -1228,7 +1230,9 @@ def test_dond_0d_output_type(_param, _param_complex, _param_callable):
 
 @pytest.mark.usefixtures("experiment")
 def test_dond_0d_parameter_with_array_vals():
-    param = ArrayshapedParam(name="paramwitharrayval", vals=Arrays(shape=(10,)))
+    param = ArrayshapedParam(
+        name="paramwitharrayval", vals=validators.Arrays(shape=(10,))
+    )
     results = dond(param)
     expected_shapes = {"paramwitharrayval": (10,)}
     assert results[0].description.shapes == expected_shapes
@@ -1271,7 +1275,9 @@ def test_dond_0d_parameter_with_setpoints_2d(dummyinstrument):
 
 @pytest.mark.usefixtures("experiment")
 def test_dond_1d_parameter_with_array_vals(_param_set):
-    param = ArrayshapedParam(name="paramwitharrayval", vals=Arrays(shape=(10,)))
+    param = ArrayshapedParam(
+        name="paramwitharrayval", vals=validators.Arrays(shape=(10,))
+    )
     start = 0
     stop = 1
     num_points = 15  # make param
@@ -1689,6 +1695,48 @@ def test_dond_2d_multi_datasets_output_type(
     data_1 = dond(sweep_1, sweep_2, [_param], [_param_complex])
     assert isinstance(data_1[0][0], DataSet) is True
     assert isinstance(data_1[0][1], DataSet) is True
+
+
+@pytest.mark.usefixtures("plot_close")
+def test_dond_2d_multi_datasets_multi_exp(
+    _param, _param_complex, _param_set, _param_set_2, request
+):
+    exp1 = new_experiment("test-experiment-1", sample_name="test-sample-1")
+    exp2 = new_experiment("test-experiment-2", sample_name="test-sample-2")
+
+    request.addfinalizer(exp1.conn.close)
+    request.addfinalizer(exp2.conn.close)
+
+    sweep_1 = LinSweep(_param_set, 0, 0.5, 2, 0)
+    sweep_2 = LinSweep(_param_set_2, 0.5, 1, 2, 0)
+
+    data_1 = dond(sweep_1, sweep_2, [_param], [_param_complex], exp=[exp1, exp2])
+    assert isinstance(data_1[0][0], DataSet) is True
+    assert isinstance(data_1[0][1], DataSet) is True
+
+    assert data_1[0][0].exp_id == exp1.exp_id
+    assert data_1[0][1].exp_id == exp2.exp_id
+
+
+@pytest.mark.usefixtures("plot_close")
+def test_dond_2d_multi_datasets_multi_exp_inconsistent_raises(
+    _param, _param_complex, _param_set, _param_set_2, request
+):
+    exp1 = new_experiment("test-experiment-1", sample_name="test-sample-1")
+    exp2 = new_experiment("test-experiment-2", sample_name="test-sample-2")
+    exp3 = new_experiment("test-experiment-3", sample_name="test-sample-3")
+
+    request.addfinalizer(exp1.conn.close)
+    request.addfinalizer(exp2.conn.close)
+    request.addfinalizer(exp3.conn.close)
+
+    sweep_1 = LinSweep(_param_set, 0, 0.5, 2, 0)
+    sweep_2 = LinSweep(_param_set_2, 0.5, 1, 2, 0)
+
+    with pytest.raises(
+        ValueError, match="Inconsistent number of parameter groups and experiments"
+    ):
+        dond(sweep_1, sweep_2, [_param], [_param_complex], exp=[exp1, exp2, exp3])
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")

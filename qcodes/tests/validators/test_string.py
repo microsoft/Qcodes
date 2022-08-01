@@ -1,5 +1,5 @@
 import pytest
-from qcodes.utils.validators import Strings
+from qcodes.validators import Strings
 
 from .conftest import AClass, a_func
 

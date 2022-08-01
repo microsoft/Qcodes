@@ -3,16 +3,16 @@ from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Type, Union,
 
 import numpy as np
 
-from qcodes import InstrumentChannel, VisaInstrument
-from qcodes.instrument.parameter import (
+from qcodes.instrument import InstrumentChannel, VisaInstrument
+from qcodes.parameters import (
     DelegateParameter,
     MultiParameter,
     Parameter,
     ParamRawDataType,
+    create_on_off_val_mapping,
     invert_val_mapping,
 )
-from qcodes.utils.helpers import create_on_off_val_mapping
-from qcodes.utils.validators import Arrays, Enum, Ints, Lists, Numbers
+from qcodes.validators import Arrays, Enum, Ints, Lists, Numbers
 
 
 class DataArray7510(MultiParameter):

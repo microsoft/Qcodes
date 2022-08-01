@@ -1,8 +1,8 @@
-from typing import Any, Optional, Dict
+from typing import Any, Dict, Optional
 
-from qcodes import Parameter, DelegateParameter
 from qcodes.instrument.base import Instrument
-from qcodes.utils.validators import Enum, Numbers
+from qcodes.parameters import DelegateParameter, Parameter
+from qcodes.validators import Enum, Numbers
 
 
 class SP983C(Instrument):

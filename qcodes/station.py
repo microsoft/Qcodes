@@ -37,25 +37,24 @@ import jsonschema
 import ruamel.yaml
 
 import qcodes
-import qcodes.utils.validators as validators
+from qcodes import validators
 from qcodes.instrument.base import Instrument, InstrumentBase
 from qcodes.instrument.channel import ChannelTuple
-from qcodes.instrument.parameter import (
+from qcodes.metadatable import Metadatable
+from qcodes.monitor.monitor import Monitor
+from qcodes.parameters import (
     DelegateParameter,
     ManualParameter,
     Parameter,
-    _BaseParameter,
+    ParameterBase,
 )
-from qcodes.monitor.monitor import Monitor
-from qcodes.utils.deprecate import issue_deprecation_warning
-from qcodes.utils.helpers import (
-    YAML,
+from qcodes.utils import (
     DelegateAttributes,
     checked_getattr,
     get_qcodes_path,
     get_qcodes_user_path,
+    issue_deprecation_warning,
 )
-from qcodes.utils.metadata import Metadatable
 
 log = logging.getLogger(__name__)
 
@@ -176,7 +175,7 @@ class Station(Metadatable, DelegateAttributes):
                       ) -> Dict[Any, Any]:
         """
         State of the station as a JSON-compatible dictionary (everything that
-        the custom JSON encoder class :class:`qcodes.utils.helpers.NumpyJSONEncoder`
+        the custom JSON encoder class :class:`.NumpyJSONEncoder`
         supports).
 
         Note: If the station contains an instrument that has already been
@@ -419,7 +418,7 @@ class Station(Metadatable, DelegateAttributes):
 
         # Load template schema, and thereby don't fail on instruments that are
         # not included in the user schema.
-        yaml = YAML().load(config)
+        yaml = ruamel.yaml.YAML().load(config)
         with open(SCHEMA_TEMPLATE_PATH) as f:
             schema = json.load(f)
         try:
@@ -552,22 +551,21 @@ class Station(Metadatable, DelegateAttributes):
         def resolve_parameter_identifier(
             instrument: ChannelOrInstrumentBase,
             identifier: str
-        ) -> _BaseParameter:
+        ) -> ParameterBase:
             parts = identifier.split('.')
             if len(parts) > 1:
                 instrument = resolve_instrument_identifier(
                     instrument,
                     '.'.join(parts[:-1]))
             try:
-                return checked_getattr(instrument, parts[-1], _BaseParameter)
+                return checked_getattr(instrument, parts[-1], ParameterBase)
             except TypeError:
                 raise RuntimeError(
                     f'Cannot resolve parameter identifier `{identifier}` to '
                     f'a parameter on instrument {instrument!r}.')
 
         def setup_parameter_from_dict(
-            parameter: _BaseParameter,
-            options: Dict[str, Any]
+            parameter: ParameterBase, options: Dict[str, Any]
         ) -> None:
             for attr, val in options.items():
                 if attr in PARAMETER_ATTRIBUTES:
@@ -614,7 +612,7 @@ class Station(Metadatable, DelegateAttributes):
         ) -> None:
             # keep the original dictionray intact for snapshot
             options = copy(options)
-            param_type: type = _BaseParameter
+            param_type: type = ParameterBase
             kwargs = {}
             if 'source' in options:
                 param_type = DelegateParameter

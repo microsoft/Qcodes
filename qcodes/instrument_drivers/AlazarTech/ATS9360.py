@@ -3,7 +3,7 @@ from typing import Any
 import numpy as np
 from packaging import version
 
-from qcodes.utils import validators
+from qcodes import validators
 
 from .ATS import AlazarTech_ATS
 from .utils import TraceParameter

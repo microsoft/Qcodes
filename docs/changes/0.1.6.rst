@@ -6,16 +6,16 @@ New & Improved
 
 - Improved drivers:
 
-    - M4i improvements (#672, #692)
-    - Improved R&S ZNB8/20 driver with channels and support for many more parameters (#643, #682, #710)
-    - Speedup qdac snapshot (#686, #690)
-    - Keysight 34465A DMM, fix error without DIG option (#697)
+    - M4i improvements (:pr:`672`, :pr:`692`)
+    - Improved R&S ZNB8/20 driver with channels and support for many more parameters (:pr:`643`, :pr:`682`, :pr:`710`)
+    - Speedup qdac snapshot (:pr:`686`, :pr:`690`)
+    - Keysight 34465A DMM, fix error without DIG option (:pr:`697`)
 
 - Features:
 
-    - Slack bot improvements (#671, #675, #681)
-    - Correct issue with storing data from combined measurement (#670)
-    - Also support numpy boolean type in validator (#676)
-    - Remove notebook detection and replace toplevel plotting lib import by config (#699)
-    - add increment function to parameter (#677)
-    - IVVI add function to round float to dac resolution (#695)
+    - Slack bot improvements (:pr:`671`, :pr:`675`, :pr:`681`)
+    - Correct issue with storing data from combined measurement (:pr:`670`)
+    - Also support numpy boolean type in validator (:pr:`676`)
+    - Remove notebook detection and replace toplevel plotting lib import by config (:pr:`699`)
+    - add increment function to parameter (:pr:`677`)
+    - IVVI add function to round float to dac resolution (:pr:`695`)

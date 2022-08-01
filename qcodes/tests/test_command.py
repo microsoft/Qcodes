@@ -1,6 +1,6 @@
 import pytest
 
-from qcodes.utils.command import Command, NoCommandError
+from qcodes.parameters.command import Command, NoCommandError
 
 
 class CustomError(Exception):

@@ -2,8 +2,8 @@ from functools import partial
 from time import time
 from typing import Union, cast
 
-from qcodes import ChannelList, InstrumentChannel, VisaInstrument
-from qcodes.utils import validators as vals
+import qcodes.validators as vals
+from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
 
 number = Union[float, int]
 

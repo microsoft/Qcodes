@@ -33,7 +33,7 @@ import io
 import json
 from typing import Any, Callable, Dict, Tuple, cast
 
-from qcodes.utils.helpers import YAML
+from ruamel.yaml import YAML
 
 from .. import rundescriber as current
 from .converters import (

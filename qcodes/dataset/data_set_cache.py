@@ -8,7 +8,7 @@ import numpy as np
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.sqlite.connection import ConnectionPlus
 from qcodes.dataset.sqlite.queries import completed, load_new_data_for_rundescriber
-from qcodes.utils.deprecate import deprecate
+from qcodes.utils import deprecate
 
 from .exporters.export_to_pandas import (
     load_to_concatenated_dataframe,

@@ -3,9 +3,9 @@ from typing import Any
 import numpy as np
 from packaging import version
 
+from qcodes import validators
 from qcodes.instrument_drivers.AlazarTech.ATS import AlazarTech_ATS
 from qcodes.instrument_drivers.AlazarTech.utils import TraceParameter
-from qcodes.utils import validators
 
 
 class AlazarTech_ATS9373(AlazarTech_ATS):

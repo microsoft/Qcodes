@@ -4,14 +4,14 @@ from typing import Any, Iterable, Tuple, Union
 
 import numpy as np
 
-from qcodes import VisaInstrument
-from qcodes.instrument.parameter import (
+from qcodes.instrument import VisaInstrument
+from qcodes.parameters import (
     ArrayParameter,
     Parameter,
     ParameterWithSetpoints,
     ParamRawDataType,
 )
-from qcodes.utils.validators import Arrays, ComplexNumbers, Enum, Ints, Numbers, Strings
+from qcodes.validators import Arrays, ComplexNumbers, Enum, Ints, Numbers, Strings
 
 
 class ChannelTrace(ParameterWithSetpoints):
@@ -24,7 +24,7 @@ class ChannelTrace(ParameterWithSetpoints):
         Args:
             name: The name of the parameter
             channel: The relevant channel (1 or 2). The name should
-                should match this.
+                match this.
         """
         super().__init__(name, **kwargs)
 
@@ -189,8 +189,7 @@ class ChannelBuffer(ArrayParameter):
 
 class SR830(VisaInstrument):
     """
-    This is the qcodes driver for the Stanford Research Systems SR830
-    Lock-in Amplifier
+    QCoDeS driver for the Stanford Research Systems SR830 Lock-in Amplifier.
     """
 
     _VOLT_TO_N = {2e-9:    0, 5e-9:    1, 10e-9:  2,

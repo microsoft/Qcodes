@@ -1,19 +1,18 @@
+import copy
+import cProfile
 import os
 import tempfile
-from typing import Any, Callable, Type, TYPE_CHECKING, Optional
 from contextlib import contextmanager
 from functools import wraps
 from time import sleep
-import cProfile
-import copy
+from typing import TYPE_CHECKING, Any, Callable, Dict, Hashable, Optional, Tuple, Type
 
 import qcodes
-from qcodes.utils.metadata import Metadatable
 from qcodes.configuration import Config, DotDict
+from qcodes.metadatable import Metadatable
 
-from _pytest._code.code import ExceptionChainRepr
 if TYPE_CHECKING:
-    from _pytest._code.code import ExceptionInfo
+    from pytest import ExceptionInfo
 
 
 def strip_qc(d, keys=('instrument', '__class__')):
@@ -114,19 +113,23 @@ def error_caused_by(excinfo: 'ExceptionInfo[Any]', cause: str) -> bool:
     """
 
     exc_repr = excinfo.getrepr()
-    assert isinstance(exc_repr, ExceptionChainRepr)
-    chain = exc_repr.chain
-    # first element of the chain is info about the root exception
-    error_location = chain[0][1]
-    root_traceback = chain[0][0]
-    # the error location is the most reliable data since
-    # it only contains the location and the error raised.
-    # however there are cases where this is empty
-    # in such cases fall back to the traceback
-    if error_location is not None:
-        return cause in str(error_location)
+
+    chain = getattr(exc_repr, "chain", None)
+
+    if chain is not None:
+        # first element of the chain is info about the root exception
+        error_location = chain[0][1]
+        root_traceback = chain[0][0]
+        # the error location is the most reliable data since
+        # it only contains the location and the error raised.
+        # however there are cases where this is empty
+        # in such cases fall back to the traceback
+        if error_location is not None:
+            return cause in str(error_location)
+        else:
+            return cause in str(root_traceback)
     else:
-        return cause in str(root_traceback)
+        return False
 
 
 class DumyPar(Metadatable):
@@ -213,3 +216,79 @@ def reset_config_on_exit():
         yield
     finally:
         qcodes.config.current_config = default_config_obj
+
+
+def compare_dictionaries(
+    dict_1: Dict[Hashable, Any],
+    dict_2: Dict[Hashable, Any],
+    dict_1_name: Optional[str] = "d1",
+    dict_2_name: Optional[str] = "d2",
+    path: str = "",
+) -> Tuple[bool, str]:
+    """
+    Compare two dictionaries recursively to find non matching elements.
+
+    Args:
+        dict_1: First dictionary to compare.
+        dict_2: Second dictionary to compare.
+        dict_1_name: Optional name of the first dictionary used in the
+                     differences string.
+        dict_2_name: Optional name of the second dictionary used in the
+                     differences string.
+    Returns:
+        Tuple: Are the dicts equal and the difference rendered as
+               a string.
+
+    """
+    err = ""
+    key_err = ""
+    value_err = ""
+    old_path = path
+    for k in dict_1.keys():
+        path = old_path + "[%s]" % k
+        if k not in dict_2.keys():
+            key_err += f"Key {dict_1_name}{path} not in {dict_2_name}\n"
+        else:
+            if isinstance(dict_1[k], dict) and isinstance(dict_2[k], dict):
+                err += compare_dictionaries(
+                    dict_1[k], dict_2[k], dict_1_name, dict_2_name, path
+                )[1]
+            else:
+                match = dict_1[k] == dict_2[k]
+
+                # if values are equal-length numpy arrays, the result of
+                # "==" is a bool array, so we need to 'all' it.
+                # In any other case "==" returns a bool
+                # TODO(alexcjohnson): actually, if *one* is a numpy array
+                # and the other is another sequence with the same entries,
+                # this will compare them as equal. Do we want this, or should
+                # we require exact type match?
+                if hasattr(match, "all"):
+                    match = match.all()
+
+                if not match:
+                    value_err += (
+                        'Value of "{}{}" ("{}", type"{}") not same as\n'
+                        '  "{}{}" ("{}", type"{}")\n\n'
+                    ).format(
+                        dict_1_name,
+                        path,
+                        dict_1[k],
+                        type(dict_1[k]),
+                        dict_2_name,
+                        path,
+                        dict_2[k],
+                        type(dict_2[k]),
+                    )
+
+    for k in dict_2.keys():
+        path = old_path + f"[{k}]"
+        if k not in dict_1.keys():
+            key_err += f"Key {dict_2_name}{path} not in {dict_1_name}\n"
+
+    dict_differences = key_err + value_err + err
+    if len(dict_differences) == 0:
+        dicts_equal = True
+    else:
+        dicts_equal = False
+    return dicts_equal, dict_differences

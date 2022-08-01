@@ -1,8 +1,6 @@
 from typing import Any, Dict, Optional
 
-from qcodes import VisaInstrument
-from qcodes import Instrument
-from qcodes.instrument.channel import InstrumentChannel
+from qcodes.instrument import Instrument, InstrumentChannel, VisaInstrument
 
 
 class B2962AChannel(InstrumentChannel):

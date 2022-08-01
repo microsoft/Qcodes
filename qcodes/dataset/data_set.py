@@ -84,12 +84,12 @@ from qcodes.dataset.sqlite.query_helpers import (
     one,
     select_one_where,
 )
-from qcodes.utils.deprecate import (
+from qcodes.utils import (
+    NumpyJSONEncoder,
     QCoDeSDeprecationWarning,
     deprecate,
     issue_deprecation_warning,
 )
-from qcodes.utils.helpers import NumpyJSONEncoder
 
 from .data_set_cache import DataSetCacheWithDBBackend
 from .data_set_in_memory import DataSetInMem
@@ -110,7 +110,7 @@ if TYPE_CHECKING:
     import pandas as pd
     import xarray as xr
 
-    from qcodes.instrument.parameter import _BaseParameter
+    from qcodes.parameters import ParameterBase
 
 
 log = logging.getLogger(__name__)
@@ -765,7 +765,7 @@ class DataSet(BaseDataSet):
 
     def get_parameter_data(
         self,
-        *params: Union[str, ParamSpec, "_BaseParameter"],
+        *params: Union[str, ParamSpec, "ParameterBase"],
         start: Optional[int] = None,
         end: Optional[int] = None,
     ) -> ParameterData:
@@ -823,7 +823,7 @@ class DataSet(BaseDataSet):
 
     def to_pandas_dataframe_dict(
         self,
-        *params: Union[str, ParamSpec, "_BaseParameter"],
+        *params: Union[str, ParamSpec, "ParameterBase"],
         start: Optional[int] = None,
         end: Optional[int] = None,
     ) -> Dict[str, "pd.DataFrame"]:
@@ -877,7 +877,7 @@ class DataSet(BaseDataSet):
     )
     def get_data_as_pandas_dataframe(
         self,
-        *params: Union[str, ParamSpec, "_BaseParameter"],
+        *params: Union[str, ParamSpec, "ParameterBase"],
         start: Optional[int] = None,
         end: Optional[int] = None,
     ) -> Dict[str, "pd.DataFrame"]:
@@ -921,7 +921,7 @@ class DataSet(BaseDataSet):
 
     def to_pandas_dataframe(
         self,
-        *params: Union[str, ParamSpec, "_BaseParameter"],
+        *params: Union[str, ParamSpec, "ParameterBase"],
         start: Optional[int] = None,
         end: Optional[int] = None,
     ) -> "pd.DataFrame":
@@ -970,7 +970,7 @@ class DataSet(BaseDataSet):
 
     def to_xarray_dataarray_dict(
         self,
-        *params: Union[str, ParamSpec, "_BaseParameter"],
+        *params: Union[str, ParamSpec, "ParameterBase"],
         start: Optional[int] = None,
         end: Optional[int] = None,
     ) -> Dict[str, "xr.DataArray"]:
@@ -1024,7 +1024,7 @@ class DataSet(BaseDataSet):
 
     def to_xarray_dataset(
         self,
-        *params: Union[str, ParamSpec, "_BaseParameter"],
+        *params: Union[str, ParamSpec, "ParameterBase"],
         start: Optional[int] = None,
         end: Optional[int] = None,
     ) -> "xr.Dataset":
@@ -1448,7 +1448,7 @@ class DataSet(BaseDataSet):
 
     @staticmethod
     def _warn_if_set(
-        *params: Union[str, ParamSpec, "_BaseParameter"],
+        *params: Union[str, ParamSpec, "ParameterBase"],
         start: Optional[int] = None,
         end: Optional[int],
     ) -> None:

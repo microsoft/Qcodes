@@ -17,49 +17,55 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest]
-        python-version: [3.7, 3.8, 3.9, "3.10"]
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
+        exclude:
+          - os: windows-latest
+            python-version: "3.7"
+          - os: windows-latest
+            python-version: "3.8"
+          - os: windows-latest
+            python-version: "3.9"
     env:
       DISPLAY: ':99.0'
       OS: ${{ matrix.os }}
       PYTHON: ${{ matrix.python-version }}
 
     steps:
-    - uses: actions/checkout@v3.0.0
+    - uses: actions/checkout@v3.0.2
       with:
         submodules: true
     - name: setup ubuntu-latest xvfb
       uses: ./.github/actions/setup-ubuntu-latest-xvfb
+      if: runner.os == 'Linux'
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3.1.0
+      uses: actions/setup-python@v4.1.0
       with:
         python-version: ${{ matrix.python-version }}
     - name: prepare pip cache
       id: prepare-cache-pip
       uses: ./.github/actions/prepare-cache-pip
     - name: pip cache
-      uses: actions/cache@v3.0.1
+      uses: actions/cache@v3.0.5
       with:
         path: ${{ steps.prepare-cache-pip.outputs.cache-dir }}
-        key: ${{ runner.os }}-${{ matrix.python-version }}-pip-${{ hashFiles('**/requirements.txt') }}-${{ hashFiles('**/test_requirements.txt') }}-${{ hashFiles('**/setup.cfg') }}
+        key: ${{ runner.os }}-${{ matrix.python-version }}-pip-${{ hashFiles('**/requirements.txt') }}-${{ hashFiles('**/pyproject.toml') }}
         restore-keys: |
           ${{ runner.os }}-${{ matrix.python-version }}-pip-
-    - name: install requirements.txt
-      run: |
-        pip install -r requirements.txt
-    - name: install test_requirements.txt
-      run: |
-        pip install -r test_requirements.txt
     - name: install qcodes
       run: |
-        pip install .
+        pip install .[test] -c requirements.txt
     - name: Run Mypy
       run: mypy qcodes
-    - name: Run tests
+    - name: Run parallel tests
       run: |
-        pytest --cov=qcodes --cov-report xml --hypothesis-profile ci qcodes
+        pytest -m "not serial" --cov=qcodes --cov-report xml --hypothesis-profile ci qcodes
+# a subset of the tests fails when run in parallel on windows so run those in serial here
+    - name: Run serial tests
+      run: |
+        pytest -m "serial" -n 0 --dist no --cov=qcodes --cov-report xml --cov-append --hypothesis-profile ci qcodes
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v2.1.0
+      uses: codecov/codecov-action@v3.1.0
       with:
         file: ./coverage.xml
         env_vars: OS,PYTHON

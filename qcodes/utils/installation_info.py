@@ -7,16 +7,17 @@ import json
 import logging
 import subprocess
 import sys
-from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, Optional
+
+if sys.version_info >= (3, 10):
+    # distribution.name used below became part of the
+    # official api in 3.10
+    from importlib.metadata import distributions
+else:
+    # 3.9 and earlier
+    from importlib_metadata import distributions
 
 from qcodes.utils.deprecate import deprecate
-
-if sys.version_info >= (3, 8):
-    from importlib.metadata import PackageNotFoundError, distribution, version
-else:
-    # 3.7 and earlier
-    from importlib_metadata import PackageNotFoundError, distribution, version
 
 log = logging.getLogger(__name__)
 
@@ -44,6 +45,7 @@ def is_qcodes_installed_editably() -> Optional[bool]:
     return answer
 
 
+@deprecate("function 'get_qcodes_version'", alternative="qcodes.__version__")
 def get_qcodes_version() -> str:
     """
     Get the version of the currently installed QCoDeS
@@ -52,48 +54,11 @@ def get_qcodes_version() -> str:
     return __version__
 
 
-@deprecate("Utility function unused within QCoDeS.")
-def get_qcodes_requirements() -> List[str]:
-    """
-    Return a list of the names of the packages that QCoDeS requires
-    """
-    import pkg_resources
-    qc_pkg = distribution('qcodes').requires
-    if qc_pkg is None:
-        return []
-    package_names = [pkg_resources.Requirement.parse(req).unsafe_name for req in qc_pkg]
-
-    return package_names
-
-
-@deprecate("Utility function unused within QCoDeS.")
-def get_qcodes_requirements_versions() -> Dict[str, str]:
-    """
-    Return a dictionary of the currently installed versions of the packages
-    that QCoDeS requires. The dict maps package name to version string.
-    If an (optional) dependency is not installed the name maps to "Not installed".
-    """
-
-    req_names = get_qcodes_requirements()
-
-    req_versions = {}
-
-    for req in req_names:
-        try:
-            req_versions[req] = version(req)
-        except PackageNotFoundError:
-            req_versions[req] = "Not installed"
-
-    return req_versions
-
-
 def get_all_installed_package_versions() -> Dict[str, str]:
     """
     Return a dictionary of the currently installed packages and their versions.
     """
-    import pkg_resources
-    packages = pkg_resources.working_set
-    return {i.key: i.version for i in packages}
+    return {d.name: d.version for d in distributions()}
 
 
 def convert_legacy_version_to_supported_version(ver: str) -> str:
@@ -111,9 +76,3 @@ def convert_legacy_version_to_supported_version(ver: str) -> str:
         else:
             temp_list.append(v)
     return "".join(temp_list)
-
-
-def _has_pyproject_toml_and_is_git_repo(path: Path) -> bool:
-    has_pyproject_toml = (path / "pyproject.toml").exists()
-    is_git_repo = (path / ".git").exists()
-    return has_pyproject_toml and is_git_repo

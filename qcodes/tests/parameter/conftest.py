@@ -3,9 +3,10 @@ from typing import Any, Optional
 
 import pytest
 
-from qcodes.instrument.base import InstrumentBase
-from qcodes.instrument.parameter import Parameter
-import qcodes.utils.validators as vals
+import qcodes.validators as vals
+from qcodes.instrument import InstrumentBase
+from qcodes.parameters import Parameter
+from qcodes.tests.instrument_mocks import DummyChannelInstrument
 
 NOT_PASSED = 'NOT_PASSED'
 
@@ -38,6 +39,13 @@ def update(request):
 @pytest.fixture(params=(True, False))
 def cache_is_valid(request):
     return request.param
+
+
+@pytest.fixture(name="dummy_instrument")
+def _make_dummy_instrument():
+    instr = DummyChannelInstrument("dummy")
+    yield instr
+    instr.close()
 
 
 class GettableParam(Parameter):

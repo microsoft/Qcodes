@@ -7,7 +7,7 @@ improve the code structure (which is more the purpose of the
 
 from typing import TYPE_CHECKING, Any, cast
 
-from qcodes.instrument.parameter import Parameter, ParamRawDataType
+from qcodes.parameters import Parameter, ParamRawDataType
 
 if TYPE_CHECKING:
     from .ATS import AlazarTech_ATS

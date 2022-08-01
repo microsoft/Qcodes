@@ -1,8 +1,8 @@
 from functools import partial
 from typing import Any, Callable, Union
 
-from qcodes import VisaInstrument
-from qcodes.utils.validators import Bool, Enum, Ints, MultiType, Numbers
+from qcodes.instrument import VisaInstrument
+from qcodes.validators import Bool, Enum, Ints, MultiType, Numbers
 
 
 def parse_output_string(s: str) -> str:
