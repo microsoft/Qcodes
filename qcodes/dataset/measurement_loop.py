@@ -1324,7 +1324,7 @@ class BaseSweep:
             self.exit_sweep()
 
         # Set parameter if passed along
-        if self.parameter is not None:
+        if self.parameter is not None and self.parameter.settable:
             self.parameter(sweep_value)
             
         # Optional wait after settings value
@@ -1357,20 +1357,20 @@ class BaseSweep:
                     unit=self.unit
                 )
 
-            setpoint_info = {
-                'parameter': self.parameter,
-                'latest_value': None,
-                'registered': False
-            }
+        setpoint_info = {
+            'parameter': self.parameter,
+            'latest_value': None,
+            'registered': False
+        }
 
-            # Add to setpoint list
-            msmt.setpoint_list[msmt.action_indices] = setpoint_info
+        # Add to setpoint list
+        msmt.setpoint_list[msmt.action_indices] = setpoint_info
 
-            # Add to measurement actions
-            assert msmt.action_indices not in msmt.actions
-            msmt.actions[msmt.action_indices] = self
+        # Add to measurement actions
+        assert msmt.action_indices not in msmt.actions
+        msmt.actions[msmt.action_indices] = self
 
-            return setpoint_info
+        return setpoint_info
 
     def exit_sweep(self):
         msmt = running_measurement()
@@ -1419,7 +1419,21 @@ class Sweep(BaseSweep):
     sequence_keywords = ['start', 'stop', 'around', 'num', 'step', 'parameter', 'sequence']
     base_keywords = ['delay', 'initial_delay', 'name', 'label', 'unit', 'revert', 'parameter']
         
-    def __init__(self, *args, start=None, stop=None, around=None, num=None, step=None, delay=None, initial_delay=None, name=None, label=None, unit=None, revert=None):
+    def __init__(
+        self, 
+        *args, 
+        start: float = None, 
+        stop: float = None, 
+        around: float = None, 
+        num: int = None, 
+        step: float = None, 
+        delay: float = None, 
+        initial_delay: float = None, 
+        name: str = None, 
+        label: str = None, 
+        unit: str = None, 
+        revert: bool = None
+    ):
         kwargs = dict(
             start=start,
             stop=stop,
@@ -1527,8 +1541,7 @@ class Sweep(BaseSweep):
 
         sequence_kwargs = {key: kwargs.get(key) for key in self.sequence_keywords}
         base_kwargs = {key: kwargs.get(key) for key in self.base_keywords}
-        print(f'{sequence_kwargs=}')  # TODO removeme
-        print(f'{base_kwargs=}')  # TODO removeme
+        
         return sequence_kwargs, base_kwargs
 
     def _generate_sequence(self, start=None, stop=None, around=None, num=None, step=None, parameter=None, sequence=None):

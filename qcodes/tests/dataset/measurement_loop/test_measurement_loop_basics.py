@@ -25,7 +25,11 @@ def create_dummy_database():
             db_path = Path(temporary_folder.name) / "test_database.db"
             initialise_or_create_database_at(str(db_path))
 
-            yield load_or_create_experiment("test_experiment")
+            try:
+                exp = load_or_create_experiment("test_experiment")
+                yield exp
+            finally:
+                exp.conn.close()
 
     return func_context_manager
 
@@ -36,9 +40,9 @@ def test_original_dond(create_dummy_database):
 
         p1_get = ManualParameter("p1_get", initial_value=1)
         p2_get = ManualParameter("p2_get", initial_value=1)
-        p1_set = ManualParameter("p1_set")
+        p1_set = ManualParameter("p1_set", initial_value=1)
         dond(
-            LinSweep(p1_set, 0, 1, 101),
+            p1_set, 0, 1, 101,
             p1_get, p2_get
         )
 
@@ -55,7 +59,7 @@ def test_basic_1D_measurement(create_dummy_database):
         p1_set = ManualParameter("p1_set")
 
         with MeasurementLoop("test") as msmt:
-            for val in Sweep(LinSweep(p1_set, 0, 1, 11)):
+            for val in Sweep(p1_set, 0, 1, 11):
                 assert p1_set() == val
                 p1_get(val + 1)
                 msmt.measure(p1_get)
@@ -79,9 +83,9 @@ def test_basic_2D_measurement(create_dummy_database):
         p2_set = ManualParameter("p2_set")
 
         with MeasurementLoop("test") as msmt:
-            for val in Sweep(LinSweep(p1_set, 0, 1, 11)):
+            for val in Sweep(p1_set, 0, 1, 11):
                 assert p1_set() == val
-                for val2 in Sweep(LinSweep(p2_set, 0, 1, 11)):
+                for val2 in Sweep(p2_set, 0, 1, 11):
                     assert p2_set() == val2
                     p1_get(val + 1)
                     msmt.measure(p1_get)
@@ -111,7 +115,7 @@ def test_1D_measurement_duplicate_get(create_dummy_database):
         p1_set = ManualParameter("p1_set")
 
         with MeasurementLoop("test") as msmt:
-            for val in Sweep(LinSweep(p1_set, 0, 1, 11)):
+            for val in Sweep(p1_set, 0, 1, 11):
                 assert p1_set() == val
                 p1_get(val + 1)
                 msmt.measure(p1_get)
@@ -139,11 +143,11 @@ def test_1D_measurement_duplicate_getset(create_dummy_database):
         p1_set = ManualParameter("p1_set")
 
         with MeasurementLoop("test") as msmt:
-            for val in Sweep(LinSweep(p1_set, 0, 1, 11)):
+            for val in Sweep(p1_set, 0, 1, 11):
                 assert p1_set() == val
                 p1_get(val + 1)
                 msmt.measure(p1_get)
-            for val in Sweep(LinSweep(p1_set, 0, 1, 11)):
+            for val in Sweep(p1_set, 0, 1, 11):
                 assert p1_set() == val
                 p1_get(val + 0.5)
                 msmt.measure(p1_get)
@@ -174,11 +178,11 @@ def test_2D_measurement_initialization(create_dummy_database):
         p2_set = ManualParameter("p2_set")
 
         with MeasurementLoop("test") as msmt:
-            outer_sweep = Sweep(LinSweep(p1_set, 0, 1, 11))
+            outer_sweep = Sweep(p1_set, 0, 1, 11)
             for k, val in enumerate(outer_sweep):
                 assert p1_set() == val
 
-                for val2 in Sweep(LinSweep(p2_set, 0, 1, 11)):
+                for val2 in Sweep(p2_set, 0, 1, 11):
                     assert p2_set() == val2
                     p1_get(val + 1)
                     msmt.measure(p1_get)
@@ -202,7 +206,7 @@ def test_nested_measurement(create_dummy_database):
         p1_set = ManualParameter("p1_set")
 
         with MeasurementLoop("test") as msmt:
-            for val in Sweep(LinSweep(p1_set, 0, 1, 11)):
+            for val in Sweep(p1_set, 0, 1, 11):
                 assert p1_set() == val
                 p1_get(val + 1)
                 msmt.measure(p1_get)
@@ -213,7 +217,7 @@ def test_nested_measurement(create_dummy_database):
         p2_set = ManualParameter("p2_set")
 
         with MeasurementLoop("test") as msmt:
-            for val2 in Sweep(LinSweep(p2_set, 0, 1, 11)):
+            for val2 in Sweep(p2_set, 0, 1, 11):
                 assert p2_set() == val2
                 nested_measurement()
 
