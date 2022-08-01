@@ -543,7 +543,7 @@ class YokogawaGS200(VisaInstrument):
             self_range = self.range()
             if self_range is None:
                 raise RuntimeError(
-                    "Trying to set output but not in" " auto mode and range is unknown."
+                    "Trying to set output but not in auto mode and range is unknown."
                 )
         else:
             mode = self.source_mode.get_latest()
@@ -623,9 +623,7 @@ class YokogawaGS200(VisaInstrument):
         """
         if self.source_mode.get_latest() != mode:
             raise ValueError(
-                "Cannot get/set {} settings while in {} mode".format(
-                    mode, self.source_mode.get_latest()
-                )
+                f"Cannot get/set {mode} settings while in {self.source_mode.get_latest()} mode"
             )
 
     def _set_source_mode(self, mode: ModeType) -> None:
