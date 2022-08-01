@@ -69,8 +69,10 @@ class SR86xBufferReadout(ArrayParameter):
 
 class SR86xBuffer(InstrumentChannel):
     """
-    The buffer module for the SR86x driver. This driver has been verified to
-    work with the SR860 and SR865. For reference, please consult the SR860
+    Buffer module for the SR86x drivers.
+
+    This driver has been verified to work with the SR860 and SR865.
+    For reference, please consult the SR860
     manual: http://thinksrs.com/downloads/PDFs/Manuals/SR860m.pdf
     """
 

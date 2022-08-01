@@ -62,7 +62,7 @@ class VoltageParameter(MultiParameter):
 
 class SR560(Instrument):
     """
-    This is the qcodes driver for the SR 560 Voltage-preamplifier.
+    QCoDeS driver for the Stanford Research Systems SR560 Voltage-preamplifier.
 
     This is a virtual driver only and will not talk to your instrument.
 
