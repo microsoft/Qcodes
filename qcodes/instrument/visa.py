@@ -1,6 +1,6 @@
 """Visa instrument driver based on pyvisa."""
 import logging
-from typing import Any, Dict, Optional, Sequence, Tuple
+from typing import Any, Dict, Mapping, Optional, Sequence, Tuple
 
 import pyvisa
 import pyvisa.constants as vi_const
@@ -55,10 +55,10 @@ class VisaInstrument(Instrument):
         terminator: Optional[str] = None,
         device_clear: bool = True,
         visalib: Optional[str] = None,
-        **kwargs: Any,
+        metadata: Optional[Mapping[Any, Any]] = None,
     ):
 
-        super().__init__(name, **kwargs)
+        super().__init__(name, metadata)
         self.visa_log = get_instrument_logger(self, VISA_LOGGER)
 
         self.add_parameter('timeout',
