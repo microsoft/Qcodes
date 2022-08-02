@@ -1,11 +1,11 @@
 # Driver for microwave source HP_83650A
 #
 # Written by Bruno Buijtendorp (brunobuijtendorp@gmail.com)
-from typing import Optional, Any
-
 import logging
-from qcodes import VisaInstrument
+from typing import Any, Optional
+
 from qcodes import validators as vals
+from qcodes.instrument import VisaInstrument
 
 log = logging.getLogger(__name__)
 
