@@ -1,0 +1,1 @@
+:class:`InstrumentBase` has a property ``label``. The label can be set in the __init__.
