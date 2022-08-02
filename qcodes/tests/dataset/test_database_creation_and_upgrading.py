@@ -872,7 +872,7 @@ def test_latest_available_version():
     assert _latest_available_version() == 9
 
 
-@pytest.mark.parametrize('version', VERSIONS)
+@pytest.mark.parametrize("version", VERSIONS[:-1])
 def test_getting_db_version(version):
 
     fixpath = os.path.join(fixturepath, 'db_files', f'version{version}')
