@@ -1264,7 +1264,7 @@ class BaseSweep:
                 "Cannot create a Sweep while another measurement "
                 "is already running in a different thread."
             )
-            
+
         msmt = running_measurement()
         if msmt is None:
             raise RuntimeError("Cannot start a sweep outside a Measurement")
@@ -1326,7 +1326,7 @@ class BaseSweep:
         # Set parameter if passed along
         if self.parameter is not None and self.parameter.settable:
             self.parameter(sweep_value)
-            
+
         # Optional wait after settings value
         if self.initial_delay and self.loop_index == 0:
             sleep(self.initial_delay)
@@ -1378,10 +1378,10 @@ class BaseSweep:
         raise StopIteration
 
     def execute(
-        self, 
-        name: str = None, 
-        measure_params: Iterable = None, 
-        repetitions: int = 1, 
+        self,
+        name: str = None,
+        measure_params: Iterable = None,
+        repetitions: int = 1,
         sweep: Union[Iterable, AbstractSweep] = None
     ):
         # Get "measure_params" from station if not provided
@@ -1418,20 +1418,20 @@ class BaseSweep:
 class Sweep(BaseSweep):
     sequence_keywords = ['start', 'stop', 'around', 'num', 'step', 'parameter', 'sequence']
     base_keywords = ['delay', 'initial_delay', 'name', 'label', 'unit', 'revert', 'parameter']
-        
+
     def __init__(
-        self, 
-        *args, 
-        start: float = None, 
-        stop: float = None, 
-        around: float = None, 
-        num: int = None, 
-        step: float = None, 
-        delay: float = None, 
-        initial_delay: float = None, 
-        name: str = None, 
-        label: str = None, 
-        unit: str = None, 
+        self,
+        *args,
+        start: float = None,
+        stop: float = None,
+        around: float = None,
+        num: int = None,
+        step: float = None,
+        delay: float = None,
+        initial_delay: float = None,
+        name: str = None,
+        label: str = None,
+        unit: str = None,
         revert: bool = None
     ):
         kwargs = dict(
@@ -1440,7 +1440,7 @@ class Sweep(BaseSweep):
             around=around,
             num=num,
             step=step,
-            delay=delay, 
+            delay=delay,
             initial_delay=initial_delay,
             name=name,
             label=label,
@@ -1450,11 +1450,11 @@ class Sweep(BaseSweep):
 
         sequence_kwargs, base_kwargs = self._transform_args_to_kwargs(*args, **kwargs)
 
-        self._explicit_sequence = None        
+        self._explicit_sequence = None
         self.sequence = self._generate_sequence(**sequence_kwargs)
 
         super().__init__(sequence=self.sequence, **base_kwargs)
-            
+
     def _transform_args_to_kwargs(self, *args, **kwargs):
         """Transforms sweep initialization args to kwargs.
         Allowed args are:
@@ -1541,13 +1541,13 @@ class Sweep(BaseSweep):
 
         sequence_kwargs = {key: kwargs.get(key) for key in self.sequence_keywords}
         base_kwargs = {key: kwargs.get(key) for key in self.base_keywords}
-        
+
         return sequence_kwargs, base_kwargs
 
     def _generate_sequence(self, start=None, stop=None, around=None, num=None, step=None, parameter=None, sequence=None):
         """Creates a sequence from passed values"""
         # Return "sequence" if explicitly provided
-        if sequence is not None: 
+        if sequence is not None:
             return sequence
 
         # Verify that "around" is used with "parameter" but not with "start" and "stop"
@@ -1556,7 +1556,7 @@ class Sweep(BaseSweep):
                 raise SyntaxError('Cannot pass kwarg "around" and also "start" or "stop')
             elif parameter is None:
                 raise SyntaxError('Cannot use kwarg "around" without a parameter')
-                
+
             # Convert "around" to "start" and "stop" using parameter current value
             center_value = parameter()
             if center_value is None:
@@ -1573,7 +1573,7 @@ class Sweep(BaseSweep):
                     raise ValueError('Parameter must have initial value if start is not explicitly provided')
         else:
             raise SyntaxError('Must provide either "around" or "stop"')
-        
+
         if num is not None:
             sequence = np.linspace(start, stop, num)
         elif step is not None:
@@ -1581,7 +1581,7 @@ class Sweep(BaseSweep):
             step = abs(step) if stop > start else -abs(step)
 
             sequence = np.arange(start, stop, step)
-            
+
             # Append final datapoint
             if abs((stop - sequence[-1]) / step) > 1e-9:
                 sequence = np.append(sequence, [stop])
@@ -1602,7 +1602,7 @@ class RepetitionSweep(BaseSweep):
 
 def measure_sweeps(sweeps: list[BaseSweep], measure_params: list[_BaseParameter], msmt: MeasurementLoop = None):
     """Recursively iterate over Sweep objects, measuring measure_params in innermost loop
-    
+
     Args:
         sweeps: list of BaseSweep objects to sweep over
         measure_params: list of parameters to measure in innermost loop
@@ -1612,7 +1612,7 @@ def measure_sweeps(sweeps: list[BaseSweep], measure_params: list[_BaseParameter]
 
         for _ in outer_sweep:
             measure_sweeps(inner_sweeps, measure_params, msmt=msmt)
-    
+
     else:
         if msmt is None:
             msmt = running_measurement()
