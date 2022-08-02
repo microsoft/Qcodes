@@ -1,8 +1,3 @@
-"""
-Old version of Yokogawa driver for backwards compatibility.
-Will be deprecated and eventually removed.
-"""
-
 from functools import partial
 from typing import Any, Optional, Union
 
@@ -15,7 +10,7 @@ from qcodes.validators import Bool, Enum, Ints, Numbers
 ModeType = Literal["CURR", "VOLT"]
 
 
-def float_round(val: float) -> int:
+def _float_round(val: float) -> int:
     """
     Rounds a floating number
 
@@ -28,11 +23,11 @@ def float_round(val: float) -> int:
     return round(float(val))
 
 
-class GS200Exception(Exception):
+class YokogawaGS200Exception(Exception):
     pass
 
 
-class GS200_Monitor(InstrumentChannel):
+class YokogawaGS200Monitor(InstrumentChannel):
     """
     Monitor part of the GS200. This is only enabled if it is
     installed in the GS200 (it is an optional extra).
@@ -48,7 +43,7 @@ class GS200_Monitor(InstrumentChannel):
         present
     """
 
-    def __init__(self, parent: "GS200", name: str, present: bool) -> None:
+    def __init__(self, parent: "YokogawaGS200", name: str, present: bool) -> None:
         super().__init__(parent, name)
 
         self.present = present
@@ -93,7 +88,7 @@ class GS200_Monitor(InstrumentChannel):
                 set_cmd=":SENS:NPLC {}",
                 set_parser=int,
                 get_cmd=":SENS:NPLC?",
-                get_parser=float_round,
+                get_parser=_float_round,
             )
             self.add_parameter(
                 "delay",
@@ -103,7 +98,7 @@ class GS200_Monitor(InstrumentChannel):
                 set_cmd=":SENS:DEL {}",
                 set_parser=int,
                 get_cmd=":SENS:DEL?",
-                get_parser=float_round,
+                get_parser=_float_round,
             )
             self.add_parameter(
                 "trigger",
@@ -149,19 +144,19 @@ class GS200_Monitor(InstrumentChannel):
 
     def _get_measurement(self) -> float:
         if self._unit is None or self._range is None:
-            raise GS200Exception("Measurement module not initialized.")
+            raise YokogawaGS200Exception("Measurement module not initialized.")
         if self._parent.auto_range.get() or (self._unit == "VOLT" and self._range < 1):
             # Measurements will not work with autorange, or when
             # range is <1V.
             self._enabled = False
-            raise GS200Exception(
+            raise YokogawaGS200Exception(
                 "Measurements will not work when range is <1V"
                 "or when in auto range mode."
             )
         if not self._output:
-            raise GS200Exception("Output is off.")
+            raise YokogawaGS200Exception("Output is off.")
         if not self._enabled:
-            raise GS200Exception("Measurements are disabled.")
+            raise YokogawaGS200Exception("Measurements are disabled.")
         # If enabled and output is on, then we can perform a measurement.
         return float(self.ask(":MEAS?"))
 
@@ -185,10 +180,10 @@ class GS200_Monitor(InstrumentChannel):
             self.measure.unit = "V"
 
 
-class GS200Program(InstrumentChannel):
+class YokogawaGS200Program(InstrumentChannel):
     """ """
 
-    def __init__(self, parent: "GS200", name: str) -> None:
+    def __init__(self, parent: "YokogawaGS200", name: str) -> None:
         super().__init__(parent, name)
         self._repeat = 1
         self._file_name = None
@@ -260,9 +255,9 @@ class GS200Program(InstrumentChannel):
         )
 
 
-class GS200(VisaInstrument):
+class YokogawaGS200(VisaInstrument):
     """
-    This is the QCoDeS driver for the Yokogawa GS200 voltage and current source.
+    QCoDeS driver for the Yokogawa GS200 voltage and current source.
 
     Args:
       name: What this instrument is called locally.
@@ -373,7 +368,7 @@ class GS200(VisaInstrument):
             vals=Ints(1, 30),
             get_cmd=":SOUR:PROT:VOLT?",
             set_cmd=":SOUR:PROT:VOLT {}",
-            get_parser=float_round,
+            get_parser=_float_round,
             set_parser=int,
         )
 
@@ -420,13 +415,13 @@ class GS200(VisaInstrument):
 
         # Check if monitor is present, and if so enable measurement
         monitor_present = "/MON" in self.ask("*OPT?")
-        measure = GS200_Monitor(self, "measure", monitor_present)
+        measure = YokogawaGS200Monitor(self, "measure", monitor_present)
         self.add_submodule("measure", measure)
 
         # Reset function
         self.add_function("reset", call_cmd="*RST")
 
-        self.add_submodule("program", GS200Program(self, "program"))
+        self.add_submodule("program", YokogawaGS200Program(self, "program"))
 
         self.add_parameter(
             "BNC_out",
@@ -548,7 +543,7 @@ class GS200(VisaInstrument):
             self_range = self.range()
             if self_range is None:
                 raise RuntimeError(
-                    "Trying to set output but not in" " auto mode and range is unknown."
+                    "Trying to set output but not in auto mode and range is unknown."
                 )
         else:
             mode = self.source_mode.get_latest()
@@ -628,9 +623,7 @@ class GS200(VisaInstrument):
         """
         if self.source_mode.get_latest() != mode:
             raise ValueError(
-                "Cannot get/set {} settings while in {} mode".format(
-                    mode, self.source_mode.get_latest()
-                )
+                f"Cannot get/set {mode} settings while in {self.source_mode.get_latest()} mode"
             )
 
     def _set_source_mode(self, mode: ModeType) -> None:
@@ -646,7 +639,7 @@ class GS200(VisaInstrument):
 
         """
         if self.output() == "on":
-            raise GS200Exception("Cannot switch mode while source is on")
+            raise YokogawaGS200Exception("Cannot switch mode while source is on")
 
         if mode == "VOLT":
             self.range.source = self.voltage_range

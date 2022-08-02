@@ -31,7 +31,8 @@ genapi:
 		../qcodes/instrument_drivers/keysight \
 		../qcodes/instrument_drivers/QuantumDesign/DynaCoolPPMS/private/* \
 		../qcodes/instrument_drivers/stanford_research/* \
-		../qcodes/instrument_drivers/weinschel/*
+		../qcodes/instrument_drivers/weinschel/* \
+		../qcodes/instrument_drivers/yokogawa
 	mkdir -p api/generated/
 	cp _auto/qcodes.instrument_drivers.* api/generated/
 
