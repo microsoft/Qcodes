@@ -41,7 +41,8 @@ sphinx-apidoc  -o  _auto  -d 10 ..\qcodes ^
 	..\qcodes\instrument_drivers\AimTTi ^
     ..\qcodes\instrument_drivers\QuantumDesign\DynaCoolPPMS\private\*
     ..\qcodes\instrument_drivers\QuantumDesign\DynaCoolPPMS\private\* ^
-    ..\qcodes\instrument_drivers\stanford_research\*
+    ..\qcodes\instrument_drivers\stanford_research\* ^
+    ..\qcodes\instrument_drivers\weinschel\*
 mkdir api\generated\
 copy _auto\qcodes.instrument_drivers.* api\generated\
 
