@@ -39,6 +39,7 @@ REM for storing drivers, not the lower-case one).
 sphinx-apidoc  -o  _auto  -d 10 ..\qcodes ^
     ..\qcodes\instrument_drivers\agilent\* ^
 	..\qcodes\instrument_drivers\AimTTi ^
+	..\qcodes\instrument_drivers\ithaco ^
     ..\qcodes\instrument_drivers\QuantumDesign\DynaCoolPPMS\private\* ^
     ..\qcodes\instrument_drivers\stanford_research\* ^
     ..\qcodes\instrument_drivers\weinschel\* ^
