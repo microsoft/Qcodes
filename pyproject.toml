@@ -1,8 +1,8 @@
 [build-system]
 requires = [
-    "setuptools >= 61.0",
+    "setuptools >= 61.2",
     "wheel >= 0.29.0",
-    "versioningit ~= 2.0.0",
+    "versioningit ~= 2.0.1",
 ]
 build-backend = 'setuptools.build_meta'
 
@@ -44,7 +44,7 @@ dependencies = [
     "typing_extensions>=3.10.0",
     "tqdm>=4.32.2",
     "uncertainties>=3.1.4",
-    "versioningit>=1.1.0",
+    "versioningit>=2.0.1",
     "websockets>=7.0",
     "wrapt>=1.10.4",
     "xarray>=0.18.0",
