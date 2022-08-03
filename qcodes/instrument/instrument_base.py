@@ -44,10 +44,10 @@ class InstrumentBase(Metadatable, DelegateAttributes):
     """
 
     def __init__(
-            self,
-            name: str,
-            metadata: Optional[Mapping[Any, Any]] = None,
-            label: Optional[str] = None,
+        self,
+        name: str,
+        metadata: Optional[Mapping[Any, Any]] = None,
+        label: Optional[str] = None,
     ) -> None:
         name = self._replace_hyphen(name)
         self._short_name = name

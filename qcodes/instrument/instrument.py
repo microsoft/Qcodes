@@ -66,10 +66,10 @@ class Instrument(InstrumentBase, metaclass=InstrumentMeta):
     _instances: "weakref.WeakSet[Instrument]" = weakref.WeakSet()
 
     def __init__(
-            self,
-            name: str,
-            metadata: Optional[Mapping[Any, Any]] = None,
-            label: Optional[str] = None,
+        self,
+        name: str,
+        metadata: Optional[Mapping[Any, Any]] = None,
+        label: Optional[str] = None,
     ) -> None:
 
         self._t0 = time.time()

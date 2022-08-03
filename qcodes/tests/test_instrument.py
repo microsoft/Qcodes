@@ -393,34 +393,34 @@ def test_instrumentbase_metadata():
 @pytest.mark.parametrize("cls", [(InstrumentBase), (Instrument)])
 def test_instrument_label(cls):
     """Instrument uses nicely formatted label if available."""
-    instrument = cls(name='name')
-    assert instrument.label == 'name'
+    instrument = cls(name="name")
+    assert instrument.label == "name"
 
     random_ascii = "~!@#$%^&*()_-+=`{}[];'\":,./<>?|\\ äöüß"
     instrument.label = random_ascii
     assert instrument.label == random_ascii
 
     label = "Nicely-formatted label"
-    instrument = cls(name='name1', label=label)
+    instrument = cls(name="name1", label=label)
     assert instrument.label == label
 
 
 def test_snapshot_and_meta_attrs():
     """Test snapshot of InstrumentBase contains _meta_attrs attributes"""
-    instr = InstrumentBase('instr', label="Label")
+    instr = InstrumentBase("instr", label="Label")
 
     assert instr.name == 'instr'
 
-    assert hasattr(instr, '_meta_attrs')
-    assert instr._meta_attrs == ['name', 'label']
+    assert hasattr(instr, "_meta_attrs")
+    assert instr._meta_attrs == ["name", "label"]
 
     snapshot = instr.snapshot()
 
     assert 'name' in snapshot
     assert 'instr' == snapshot['name']
 
-    assert 'label' in snapshot
-    assert 'Label' == snapshot['label']
+    assert "label" in snapshot
+    assert "Label" == snapshot["label"]
 
     assert '__class__' in snapshot
     assert 'InstrumentBase' in snapshot['__class__']
