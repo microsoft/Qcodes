@@ -11,6 +11,11 @@ from .Lakeshore_model_336 import (
     LakeshoreModel336CurrentSource,
     LakeshoreModel336VoltageSource,
 )
+from .Lakeshore_model_372 import (
+    LakeshoreModel372,
+    LakeshoreModel372Channel,
+    LakeshoreModel372Output,
+)
 
 __all__ = [
     "LakeshoreModel325",
@@ -22,4 +27,7 @@ __all__ = [
     "LakeshoreModel336Channel",
     "LakeshoreModel336CurrentSource",
     "LakeshoreModel336VoltageSource",
+    "LakeshoreModel372",
+    "LakeshoreModel372Channel",
+    "LakeshoreModel372Output",
 ]
