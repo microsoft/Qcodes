@@ -1258,6 +1258,23 @@ class BaseSweep:
             for value in self.sequence:
                 self.parameter.validate(value)
 
+    def __repr__(self):
+        components = []
+
+        # Add parameter or name
+        if self.parameter is not None:
+            components.append(f'parameter={self.parameter}')
+        elif self.name is not None:
+            components.append(f"'{self.name}'")
+
+        # Add number of elements
+        num_elems = str(len(self.sequence)) if self.sequence is not None else 'unknown'
+        components.append(f'length={num_elems}')
+
+        # Combine components
+        components_str = ', '.join(components)
+        return f'Sweep({components_str})'
+
     def __iter__(self):
         if threading.current_thread() is not MeasurementLoop.measurement_thread:
             raise RuntimeError(
