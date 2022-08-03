@@ -41,7 +41,7 @@ from qcodes.dataset.sqlite.db_upgrades import (
 )
 from qcodes.dataset.sqlite.queries import get_run_description, update_GUIDs
 from qcodes.dataset.sqlite.query_helpers import is_column_in_table, one
-from qcodes.tests.common import error_caused_by
+from qcodes.tests.common import error_caused_by, skip_if_no_fixtures
 from qcodes.tests.dataset.conftest import temporarily_copied_DB
 
 fixturepath = os.sep.join(qcodes.tests.dataset.__file__.split(os.sep)[:-1])
@@ -66,15 +66,6 @@ def location_and_station_set_to(location: int, work_station: int):
 LATEST_VERSION = _latest_available_version()
 VERSIONS = tuple(range(LATEST_VERSION + 1))
 LATEST_VERSION_ARG = -1
-
-
-def _skip_if_no_fixtures(dbname):
-    if not os.path.exists(dbname):
-        pytest.skip(
-            "No db-file fixtures found. "
-            "Make sure that your git clone of qcodes has submodules "
-            "This can be done by executing: `git submodule update --init`"
-        )
 
 
 @pytest.mark.parametrize('ver', VERSIONS + (LATEST_VERSION_ARG,))
@@ -138,7 +129,7 @@ def test_perform_actual_upgrade_0_to_1():
 
     dbname_old = os.path.join(v0fixpath, 'empty.db')
 
-    _skip_if_no_fixtures(dbname_old)
+    skip_if_no_fixtures(dbname_old)
 
     with temporarily_copied_DB(dbname_old, debug=False, version=0) as conn:
 
@@ -164,7 +155,7 @@ def test_perform_actual_upgrade_1_to_2():
 
     dbname_old = os.path.join(v1fixpath, 'empty.db')
 
-    _skip_if_no_fixtures(dbname_old)
+    skip_if_no_fixtures(dbname_old)
 
     with temporarily_copied_DB(dbname_old, debug=False, version=1) as conn:
 
@@ -192,7 +183,7 @@ def test_perform_actual_upgrade_2_to_3_empty():
 
     dbname_old = os.path.join(v2fixpath, 'empty.db')
 
-    _skip_if_no_fixtures(dbname_old)
+    skip_if_no_fixtures(dbname_old)
 
     with temporarily_copied_DB(dbname_old, debug=False, version=2) as conn:
 
@@ -219,7 +210,7 @@ def test_perform_actual_upgrade_2_to_3_empty_runs():
 
     dbname_old = os.path.join(v2fixpath, 'empty_runs.db')
 
-    _skip_if_no_fixtures(dbname_old)
+    skip_if_no_fixtures(dbname_old)
 
     with temporarily_copied_DB(dbname_old, debug=False, version=2) as conn:
 
@@ -232,7 +223,7 @@ def test_perform_actual_upgrade_2_to_3_some_runs():
 
     dbname_old = os.path.join(v2fixpath, 'some_runs.db')
 
-    _skip_if_no_fixtures(dbname_old)
+    skip_if_no_fixtures(dbname_old)
 
     with temporarily_copied_DB(dbname_old, debug=False, version=2) as conn:
 
@@ -323,7 +314,7 @@ def test_perform_upgrade_v2_v3_to_v4_fixes():
 
     dbname_old = os.path.join(v3fixpath, 'some_runs_upgraded_2.db')
 
-    _skip_if_no_fixtures(dbname_old)
+    skip_if_no_fixtures(dbname_old)
 
     with temporarily_copied_DB(dbname_old, debug=False, version=3) as conn:
 
@@ -466,7 +457,7 @@ def test_perform_upgrade_v3_to_v4():
 
     dbname_old = os.path.join(v3fixpath, 'some_runs_upgraded_2.db')
 
-    _skip_if_no_fixtures(dbname_old)
+    skip_if_no_fixtures(dbname_old)
 
     with temporarily_copied_DB(dbname_old, debug=False, version=3) as conn:
 
@@ -631,7 +622,7 @@ def test_perform_actual_upgrade_4_to_5(db_file):
     db_file += '.db'
     dbname_old = os.path.join(v4fixpath, db_file)
 
-    _skip_if_no_fixtures(dbname_old)
+    skip_if_no_fixtures(dbname_old)
 
     with temporarily_copied_DB(dbname_old, debug=False, version=4) as conn:
         # firstly, assert the situation with 'snapshot' column of 'runs' table
@@ -653,7 +644,7 @@ def test_perform_actual_upgrade_5_to_6():
     db_file = 'empty.db'
     dbname_old = os.path.join(fixpath, db_file)
 
-    _skip_if_no_fixtures(dbname_old)
+    skip_if_no_fixtures(dbname_old)
 
     with temporarily_copied_DB(dbname_old, debug=False, version=5) as conn:
         perform_db_upgrade_5_to_6(conn)
@@ -687,7 +678,7 @@ def test_perform_upgrade_6_7():
     db_file = 'empty.db'
     dbname_old = os.path.join(fixpath, db_file)
 
-    _skip_if_no_fixtures(dbname_old)
+    skip_if_no_fixtures(dbname_old)
 
     with temporarily_copied_DB(dbname_old, debug=False, version=6) as conn:
         perform_db_upgrade_6_to_7(conn)
@@ -701,7 +692,7 @@ def test_perform_actual_upgrade_6_to_7():
     db_file = 'some_runs.db'
     dbname_old = os.path.join(fixpath, db_file)
 
-    _skip_if_no_fixtures(dbname_old)
+    skip_if_no_fixtures(dbname_old)
 
     with temporarily_copied_DB(dbname_old, debug=False, version=6) as conn:
         assert isinstance(conn, ConnectionPlus)
@@ -757,7 +748,7 @@ def test_perform_actual_upgrade_6_to_newest_add_new_data():
     db_file = 'some_runs.db'
     dbname_old = os.path.join(fixpath, db_file)
 
-    _skip_if_no_fixtures(dbname_old)
+    skip_if_no_fixtures(dbname_old)
 
     with temporarily_copied_DB(dbname_old, debug=False, version=6) as conn:
         assert isinstance(conn, ConnectionPlus)
@@ -845,7 +836,7 @@ def test_perform_actual_upgrade_7_to_8(db_file):
     db_file += '.db'
     dbname_old = os.path.join(v7fixpath, db_file)
 
-    _skip_if_no_fixtures(dbname_old)
+    skip_if_no_fixtures(dbname_old)
 
     with temporarily_copied_DB(dbname_old, debug=False, version=7) as conn:
 
@@ -879,7 +870,7 @@ def test_getting_db_version(version):
 
     dbname = os.path.join(fixpath, 'empty.db')
 
-    _skip_if_no_fixtures(dbname)
+    skip_if_no_fixtures(dbname)
 
     (db_v, new_v) = get_db_version_and_newest_available_version(dbname)
 
@@ -896,7 +887,7 @@ def test_perform_actual_upgrade_8_to_9(db_file):
     db_file += '.db'
     dbname_old = os.path.join(v8fixpath, db_file)
 
-    _skip_if_no_fixtures(dbname_old)
+    skip_if_no_fixtures(dbname_old)
 
     with temporarily_copied_DB(dbname_old, debug=False, version=8) as conn:
 
