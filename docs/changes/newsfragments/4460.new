@@ -1,1 +1,3 @@
-:class:`InstrumentBase` has a property ``label``. The label can be set in the __init__.
+:class:`InstrumentBase` has a property ``label`` that can host
+a human-readable label/title of the instrument.
+The label can be set in the __init__.
