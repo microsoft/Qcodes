@@ -33,7 +33,7 @@ from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.sqlite.connection import path_to_dbfile
 from qcodes.dataset.sqlite.database import get_db_version_and_newest_available_version
 from qcodes.dataset.sqlite.queries import get_experiments
-from qcodes.tests.common import error_caused_by
+from qcodes.tests.common import error_caused_by, skip_if_no_fixtures
 from qcodes.tests.instrument_mocks import DummyInstrument
 
 
@@ -687,9 +687,7 @@ def test_old_versions_not_touched(two_empty_temp_db_connections,
     fixturepath = os.path.join(fixturepath,
                                'fixtures', 'db_files', 'version2',
                                'some_runs.db')
-    if not os.path.exists(fixturepath):
-        pytest.skip("No db-file fixtures found. You can generate test db-files"
-                    " using the scripts in the legacy_DB_generation folder")
+    skip_if_no_fixtures(fixturepath)
 
     # First test that we cannot use an old version as source
 

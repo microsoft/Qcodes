@@ -76,12 +76,11 @@ Finally we install QCoDeS into this environment.
 
 Installing QCoDeS from GitHub
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Clone the QCoDeS repository from GitHub from https://github.com/QCoDeS/Qcodes
+Clone the QCoDeS repository and submodules from GitHub from https://github.com/QCoDeS/Qcodes
 
 .. code:: bash
 
-    conda create qcodesdev python=3.9
-    conda activate qcodesdev
+    git clone --recurse-submodules https://github.com/QCoDeS/Qcodes <path-to-repository>
 
 Finally install QCoDeS add the repository via
 

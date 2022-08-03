@@ -75,8 +75,8 @@ Development
 Setup
 ~~~~~
 
--  Clone and register the package for development as described in the
-   `README <README.md#installation>`__
+-  Clone and register the package for development as described
+   `here <http://qcodes.github.io/Qcodes/start/index.html#installation>`__
 -  Run tests
 -  Ready to hack
 
