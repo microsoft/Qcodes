@@ -1,11 +1,11 @@
 # Driver for microwave source HP_83650A
 #
 # Written by Bruno Buijtendorp (brunobuijtendorp@gmail.com)
-from typing import Optional, Any
-
 import logging
-from qcodes import VisaInstrument
+from typing import Any, Optional
+
 from qcodes import validators as vals
+from qcodes.instrument import VisaInstrument
 
 log = logging.getLogger(__name__)
 
@@ -14,7 +14,11 @@ def parsestr(v: str) -> str:
     return v.strip().strip('"')
 
 
-class HP_83650A(VisaInstrument):
+class HP83650A(VisaInstrument):
+    """
+    QCoDeS driver for HP 83650A
+
+    """
 
     def __init__(self,
                  name: str,
@@ -23,9 +27,7 @@ class HP_83650A(VisaInstrument):
                  reset: bool = False,
                  server_name: Optional[str] = None,
                  **kwargs: Any):
-        """ Driver for HP_83650A
 
-        """
         self.verbose = verbose
         log.debug('Initializing instrument')
         super().__init__(name, address, **kwargs)
@@ -129,3 +131,10 @@ class HP_83650A(VisaInstrument):
         print(self.amstatus.label + ':', self.amstatus.get())
         print(self.pulsestatus.label + ':', self.pulsestatus.get())
         print(self.pulsesource.label + ':', self.pulsesource.get())
+
+
+class HP_83650A(HP83650A):
+    """
+    Alias of HP83650A for backwards compatibility.
+    Will eventually be deprecated and removed.
+    """
