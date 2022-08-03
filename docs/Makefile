@@ -31,6 +31,7 @@ genapi:
 		../qcodes/instrument_drivers/HP \
 		../qcodes/instrument_drivers/ithaco \
 		../qcodes/instrument_drivers/keysight \
+		../qcodes/instrument_drivers/Lakeshore \
 		../qcodes/instrument_drivers/QuantumDesign/DynaCoolPPMS/private/* \
 		../qcodes/instrument_drivers/stanford_research/* \
 		../qcodes/instrument_drivers/weinschel/* \
