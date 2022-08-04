@@ -1,3 +1,8 @@
+"""
+This contains an alias of the Lakeshore Model 325 driver.
+It will eventually be deprecated and removed
+"""
+
 from enum import IntFlag
 from itertools import takewhile
 from typing import Any, Dict, Iterable, List, Optional, TextIO, Tuple, cast

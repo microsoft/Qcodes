@@ -1,3 +1,8 @@
+"""
+This contains an alias of the Lakeshore Model 372 driver.
+It will eventually be deprecated and removed
+"""
+
 from typing import Any, ClassVar, Dict
 
 import qcodes.validators as vals
