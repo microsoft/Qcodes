@@ -57,7 +57,12 @@ class N51x1(VisaInstrument):
                            set_cmd='SOUR:PHAS {:.2f}',
                            unit='rad'
                            )
-
+        
+        self.add_parameter('auto_freq_ref',
+                           get_cmd=':ROSC:SOUR:AUTO?',
+                           set_cmd=':ROSC:SOUR:AUTO {}',
+                           val_mapping={'on': 1, 'off': 0})
+            
         self.add_parameter('rf_output',
                            get_cmd='OUTP:STAT?',
                            set_cmd='OUTP:STAT {}',
