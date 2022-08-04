@@ -1399,7 +1399,7 @@ class BaseSweep:
         name: str = None,
         measure_params: Iterable = None,
         repetitions: int = 1,
-        sweep: Union[Iterable, AbstractSweep] = None
+        sweep: Union[Iterable, BaseSweep] = None
     ):
         # Get "measure_params" from station if not provided
         if measure_params is None:
@@ -1414,7 +1414,7 @@ class BaseSweep:
         # Ensure sweeps is a list
         if isinstance(sweep, BaseSweep):
             sweeps = [sweep]
-        elif isinstance(sweep, Iterable):
+        elif isinstance(sweep, (list, tuple)):
             sweeps = list(sweep)
 
         # Add repetition as a sweep if > 1
@@ -1425,7 +1425,7 @@ class BaseSweep:
         # Determine "name" if not provided from sweeps
         if name is None:
             dimensionality = 1 + len(sweep)
-            sweep_names = [sweep.name for sweep in sweeps] + [str(self.name)]
+            sweep_names = [str(sweep.name) for sweep in sweeps] + [str(self.name)]
             name = f'{dimensionality}D_sweep_' + '_'.join(sweep_names)
 
         with MeasurementLoop(name) as msmt:
