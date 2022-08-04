@@ -4,7 +4,7 @@ from typing import Dict
 
 import qcodes.instrument.sims as sims
 from qcodes.instrument import InstrumentBase
-from qcodes.instrument_drivers.Lakeshore import LakeshoreModel336
+from qcodes.instrument_drivers.Lakeshore.Model_336 import Model_336
 
 from .test_lakeshore import (
     DictClass,
@@ -17,51 +17,75 @@ from .test_lakeshore import (
 
 log = logging.getLogger(__name__)
 
-VISA_LOGGER = '.'.join((InstrumentBase.__module__, 'com', 'visa'))
+VISA_LOGGER = ".".join((InstrumentBase.__module__, "com", "visa"))
 
 
-class LakeshoreModel336Mock(MockVisaInstrument, LakeshoreModel336):
+class Model_336_Mock(MockVisaInstrument, Model_336):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
         # initial values
         self.heaters: Dict[str, DictClass] = {}
-        self.heaters['1'] = DictClass(P=1, I=2, D=3,
-                                      mode=1,  # 'off'
-                                      input_channel=1,  # 'A'
-                                      powerup_enable=0, polarity=0,
-                                      use_filter=0, delay=1,
-                                      output_range=0,
-                                      setpoint=4)
-        self.heaters['2'] = DictClass(P=1, I=2, D=3,
-                                      mode=2,  # 'closed_loop'
-                                      input_channel=2,  # 'B'
-                                      powerup_enable=0, polarity=0,
-                                      use_filter=0, delay=1,
-                                      output_range=0,
-                                      setpoint=4)
-        self.heaters['3'] = DictClass(mode=4,  # 'monitor_out'
-                                      input_channel=2,  # 'B'
-                                      powerup_enable=0, polarity=0,
-                                      use_filter=0, delay=1,
-                                      output_range=0,
-                                      setpoint=4)
-        self.heaters['4'] = DictClass(mode=5,  # 'warm_up'
-                                      input_channel=1,  # 'A'
-                                      powerup_enable=0, polarity=0,
-                                      use_filter=0, delay=1,
-                                      output_range=0,
-                                      setpoint=4)
+        self.heaters["1"] = DictClass(
+            P=1,
+            I=2,
+            D=3,
+            mode=1,  # 'off'
+            input_channel=1,  # 'A'
+            powerup_enable=0,
+            polarity=0,
+            use_filter=0,
+            delay=1,
+            output_range=0,
+            setpoint=4,
+        )
+        self.heaters["2"] = DictClass(
+            P=1,
+            I=2,
+            D=3,
+            mode=2,  # 'closed_loop'
+            input_channel=2,  # 'B'
+            powerup_enable=0,
+            polarity=0,
+            use_filter=0,
+            delay=1,
+            output_range=0,
+            setpoint=4,
+        )
+        self.heaters["3"] = DictClass(
+            mode=4,  # 'monitor_out'
+            input_channel=2,  # 'B'
+            powerup_enable=0,
+            polarity=0,
+            use_filter=0,
+            delay=1,
+            output_range=0,
+            setpoint=4,
+        )
+        self.heaters["4"] = DictClass(
+            mode=5,  # 'warm_up'
+            input_channel=1,  # 'A'
+            powerup_enable=0,
+            polarity=0,
+            use_filter=0,
+            delay=1,
+            output_range=0,
+            setpoint=4,
+        )
 
-        self.channel_mock = \
-            {str(i): DictClass(t_limit=i, T=4,
-                               sensor_name=f'sensor_{i}',
-                               sensor_type=1,  # 'diode',
-                               auto_range_enabled=0,  # 'off',
-                               range=0,
-                               compensation_enabled=0,  # False,
-                               units=1)  # 'kelvin')
-             for i in self.channel_name_command.keys()}
+        self.channel_mock = {
+            str(i): DictClass(
+                t_limit=i,
+                T=4,
+                sensor_name=f"sensor_{i}",
+                sensor_type=1,  # 'diode',
+                auto_range_enabled=0,  # 'off',
+                range=0,
+                compensation_enabled=0,  # False,
+                units=1,
+            )  # 'kelvin')
+            for i in self.channel_name_command.keys()
+        }
 
         # simulate delayed heating
         self.simulate_heating = False
@@ -80,24 +104,23 @@ class LakeshoreModel336Mock(MockVisaInstrument, LakeshoreModel336):
         # start at 7K.
         return max(4, 7 - delta)
 
-    @query('PID?')
+    @query("PID?")
     def pidq(self, arg):
         heater = self.heaters[arg]
-        return f'{heater.P},{heater.I},{heater.D}'
+        return f"{heater.P},{heater.I},{heater.D}"
 
-    @command('PID')
+    @command("PID")
     @split_args()
     def pid(self, output, P, I, D):
-        for a, v in zip(['P', 'I', 'D'], [P, I, D]):
+        for a, v in zip(["P", "I", "D"], [P, I, D]):
             setattr(self.heaters[output], a, v)
 
-    @query('OUTMODE?')
+    @query("OUTMODE?")
     def outmodeq(self, arg):
         heater = self.heaters[arg]
-        return (f'{heater.mode},{heater.input_channel},'
-                f'{heater.powerup_enable}')
+        return f"{heater.mode},{heater.input_channel}," f"{heater.powerup_enable}"
 
-    @command('OUTMODE')
+    @command("OUTMODE")
     @split_args()
     def outputmode(self, output, mode, input_channel, powerup_enable):
         h = self.heaters[output]
@@ -106,17 +129,26 @@ class LakeshoreModel336Mock(MockVisaInstrument, LakeshoreModel336):
         h.input_channel = input_channel
         h.powerup_enable = powerup_enable
 
-    @query('INTYPE?')
+    @query("INTYPE?")
     def intypeq(self, channel):
         ch = self.channel_mock[channel]
-        return (f'{ch.sensor_type},'
-                f'{ch.auto_range_enabled},{ch.range},'
-                f'{ch.compensation_enabled},{ch.units}')
+        return (
+            f"{ch.sensor_type},"
+            f"{ch.auto_range_enabled},{ch.range},"
+            f"{ch.compensation_enabled},{ch.units}"
+        )
 
-    @command('INTYPE')
+    @command("INTYPE")
     @split_args()
-    def intype(self, channel, sensor_type, auto_range_enabled,
-               range_, compensation_enabled, units):
+    def intype(
+        self,
+        channel,
+        sensor_type,
+        auto_range_enabled,
+        range_,
+        compensation_enabled,
+        units,
+    ):
         ch = self.channel_mock[channel]
         ch.sensor_type = sensor_type
         ch.auto_range_enabled = auto_range_enabled
@@ -124,51 +156,51 @@ class LakeshoreModel336Mock(MockVisaInstrument, LakeshoreModel336):
         ch.compensation_enabled = compensation_enabled
         ch.units = units
 
-    @query('RANGE?')
+    @query("RANGE?")
     def rangeq(self, heater):
         h = self.heaters[heater]
-        return f'{h.output_range}'
+        return f"{h.output_range}"
 
-    @command('RANGE')
+    @command("RANGE")
     @split_args()
     def range_cmd(self, heater, output_range):
         h = self.heaters[heater]
         h.output_range = output_range
 
-    @query('SETP?')
+    @query("SETP?")
     def setpointq(self, heater):
         h = self.heaters[heater]
-        return f'{h.setpoint}'
+        return f"{h.setpoint}"
 
-    @command('SETP')
+    @command("SETP")
     @split_args()
     def setpoint(self, heater, setpoint):
         h = self.heaters[heater]
         h.setpoint = setpoint
 
-    @query('TLIMIT?')
+    @query("TLIMIT?")
     def tlimitq(self, channel):
         chan = self.channel_mock[channel]
-        return f'{chan.tlimit}'
+        return f"{chan.tlimit}"
 
-    @command('TLIMIT')
+    @command("TLIMIT")
     @split_args()
     def tlimitcmd(self, channel, tlimit):
         chan = self.channel_mock[channel]
         chan.tlimit = tlimit
 
-    @query('KRDG?')
+    @query("KRDG?")
     def temperature(self, output):
         chan = self.channel_mock[output]
         if self.simulate_heating:
             return self.get_t_when_heating()
-        return f'{chan.T}'
+        return f"{chan.T}"
 
 
-@instrument_fixture(scope="function", name="lakeshore_336")
-def _make_lakeshore_336():
+@instrument_fixture(scope="function")
+def lakeshore_336():
     visalib = sims.__file__.replace("__init__.py", "lakeshore_model336.yaml@sim")
-    return LakeshoreModel336Mock(
+    return Model_336_Mock(
         "lakeshore_336_fixture", "GPIB::2::INSTR", visalib=visalib, device_clear=False
     )
 
@@ -188,10 +220,10 @@ def test_pid_set(lakeshore_336):
 
 def test_output_mode(lakeshore_336):
     ls = lakeshore_336
-    mode = 'off'
-    input_channel = 'A'
+    mode = "off"
+    input_channel = "A"
     powerup_enable = True
-    outputs = [getattr(ls, f'output_{n}') for n in range(1, 5)]
+    outputs = [getattr(ls, f"output_{n}") for n in range(1, 5)]
     for h in outputs:  # a.k.a. heaters
         h.mode(mode)
         h.input_channel(input_channel)
@@ -203,8 +235,8 @@ def test_output_mode(lakeshore_336):
 
 def test_range(lakeshore_336):
     ls = lakeshore_336
-    output_range = 'medium'
-    outputs = [getattr(ls, f'output_{n}') for n in range(1, 5)]
+    output_range = "medium"
+    outputs = [getattr(ls, f"output_{n}") for n in range(1, 5)]
     for h in outputs:  # a.k.a. heaters
         h.output_range(output_range)
         assert h.output_range() == output_range
@@ -221,7 +253,7 @@ def test_tlimit(lakeshore_336):
 def test_setpoint(lakeshore_336):
     ls = lakeshore_336
     setpoint = 5.1
-    outputs = [getattr(ls, f'output_{n}') for n in range(1, 5)]
+    outputs = [getattr(ls, f"output_{n}") for n in range(1, 5)]
     for h in outputs:  # a.k.a. heaters
         h.setpoint(setpoint)
         assert h.setpoint() == setpoint
