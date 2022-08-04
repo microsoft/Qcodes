@@ -3,4 +3,4 @@ From the Keysight manual:
 This command enables or disables the ability of the signal generator to
 automatically select between the internal and an external reference oscillator.
 
-In addition, the val_mapping dictionary of the `rf_output` parameter is now using the `create_on_off_val_mapping` function. 
+In addition, the val_mapping dictionary of the `rf_output` parameter is now using the `create_on_off_val_mapping` function.
