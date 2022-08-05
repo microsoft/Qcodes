@@ -1411,20 +1411,26 @@ class BaseSweep:
                 )
             measure_params = station.measure_params
 
-        # Ensure sweeps is a list
+
+        # Create list of sweeps
         if isinstance(sweep, BaseSweep):
             sweeps = [sweep]
         elif isinstance(sweep, (list, tuple)):
             sweeps = list(sweep)
+        elif sweep is None:
+            sweeps = []
 
         # Add repetition as a sweep if > 1
         if repetitions > 1:
             repetition_sweep = BaseSweep(range(repetitions), name='repetition')
             sweeps = [repetition_sweep] + sweeps
+            
+        # Add self as innermost sweep
+        sweeps += [self]
 
         # Determine "name" if not provided from sweeps
         if name is None:
-            dimensionality = 1 + len(sweep)
+            dimensionality = 1 + len(sweeps) 
             sweep_names = [str(sweep.name) for sweep in sweeps] + [str(self.name)]
             name = f'{dimensionality}D_sweep_' + '_'.join(sweep_names)
 
