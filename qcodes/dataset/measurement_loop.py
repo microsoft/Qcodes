@@ -1424,13 +1424,13 @@ class BaseSweep:
         if repetitions > 1:
             repetition_sweep = BaseSweep(range(repetitions), name='repetition')
             sweeps = [repetition_sweep] + sweeps
-            
+
         # Add self as innermost sweep
         sweeps += [self]
 
         # Determine "name" if not provided from sweeps
         if name is None:
-            dimensionality = 1 + len(sweeps) 
+            dimensionality = 1 + len(sweeps)
             sweep_names = [str(sweep.name) for sweep in sweeps] + [str(self.name)]
             name = f'{dimensionality}D_sweep_' + '_'.join(sweep_names)
 
