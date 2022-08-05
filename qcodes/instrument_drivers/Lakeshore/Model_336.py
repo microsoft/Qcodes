@@ -25,7 +25,7 @@ class Model_336(LakeshoreBase):
     """
     channel_name_command: Dict[str, str] = _channel_name_to_command_map
 
-    CHANNEL_CLASS = Model_336_Channel  # type: ignore[assignment]
+    CHANNEL_CLASS = Model_336_Channel
 
     input_channel_parameter_values_to_channel_name_on_instrument = \
         _channel_name_to_command_map

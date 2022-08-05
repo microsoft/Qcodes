@@ -33,7 +33,7 @@ class Model_372(LakeshoreBase):
         i: f'ch{i:02}' for i in range(1, 1 + _n_channels)
     }
 
-    CHANNEL_CLASS = Model_372_Channel  # type: ignore[assignment]
+    CHANNEL_CLASS = Model_372_Channel
 
     def __init__(self, name: str, address: str, **kwargs: Any) -> None:
         super().__init__(name, address, **kwargs)
