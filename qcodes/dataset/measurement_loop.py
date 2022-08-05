@@ -1399,7 +1399,7 @@ class BaseSweep:
         name: str = None,
         measure_params: Iterable = None,
         repetitions: int = 1,
-        sweep: Union[Iterable, BaseSweep] = None
+        sweep: Union[Iterable, 'BaseSweep'] = None
     ):
         # Get "measure_params" from station if not provided
         if measure_params is None:
