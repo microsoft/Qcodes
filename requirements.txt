@@ -1,6 +1,6 @@
 argon2-cffi~=21.3.0
 async-generator~=1.10
-attrs~=21.2.0
+attrs~=22.1.0
 backcall~=0.2.0
 bleach~=5.0.0
 broadbean~=0.10.0
