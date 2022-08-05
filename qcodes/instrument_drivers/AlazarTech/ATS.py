@@ -20,7 +20,7 @@ from typing import (
 
 import numpy as np
 
-from qcodes.instrument.base import Instrument
+from qcodes.instrument import Instrument
 
 from .ats_api import AlazarATSAPI
 from .constants import NUMBER_OF_CHANNELS_FROM_BYTE_REPR, max_buffer_size

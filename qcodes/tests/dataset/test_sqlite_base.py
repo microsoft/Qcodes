@@ -26,7 +26,7 @@ from qcodes.dataset.sqlite import query_helpers as mut_help
 from qcodes.dataset.sqlite.connection import path_to_dbfile
 from qcodes.dataset.sqlite.database import get_DB_location
 from qcodes.tests.common import error_caused_by
-from qcodes.utils.deprecate import QCoDeSDeprecationWarning
+from qcodes.utils import QCoDeSDeprecationWarning
 
 from .helper_functions import verify_data_dict
 

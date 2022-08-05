@@ -1,6 +1,6 @@
 import pytest
 
-from qcodes.utils.validators import Enum
+from qcodes.validators import Enum
 
 enums = [
     [True, False],

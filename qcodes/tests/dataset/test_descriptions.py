@@ -1,12 +1,12 @@
 import json
 
 import pytest
+from ruamel.yaml import YAML
 
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning import serialization as serial
 from qcodes.dataset.descriptions.versioning.converters import new_to_old
-from qcodes.utils.helpers import YAML
 
 
 def test_wrong_input_type_raises():

@@ -16,6 +16,14 @@ so that the team and community can provide a solution.
 
 .. contents::
 
+Announcements
+-------------
+
+New releases of QCoDeS and other bigger news will be announced in
+`Github Discussions <https://github.com/QCoDeS/Qcodes/discussions>`__
+under the `Announcements <https://github.com/QCoDeS/Qcodes/discussions/categories/announcements>`__
+category.
+
 QCoDeS Community Drivers
 ------------------------
 

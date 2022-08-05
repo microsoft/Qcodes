@@ -2,8 +2,7 @@ from typing import Any
 
 import pytest
 
-from qcodes import ChannelList, Instrument, InstrumentChannel
-from qcodes.instrument.base import InstrumentBase
+from qcodes.instrument import ChannelList, Instrument, InstrumentBase, InstrumentChannel
 
 
 class ExampleBaseVoltageSource(Instrument):

@@ -12,10 +12,10 @@ ____
   state.
   A second 'ctrl-c' event will stop the execution without any of those safty
   measures and will thereby reproduce the previous behavior of a single 'ctrl-c'.
-  (#1701)
+  (:pr:`1701`)
 * Added validation of station configuration files, including live
-  linting and auto-complete features for vscode (#1759).
-* Enable setting parameters on ``ChannelLists`` in the station config file (#1785)
+  linting and auto-complete features for vscode (:pr:`1759`).
+* Enable setting parameters on ``ChannelLists`` in the station config file (:pr:`1785`)
 
 
 Improved:
@@ -23,35 +23,35 @@ _________
 
 * Complete overhaul of the parameter cache including ``GetLatest``.
   This improves API experience, removes dangerous bugs as well as sources of
-  potential new bugs. (#1757, #1790, #1789, #1768, #1787, #1788, #1827, #1832)
-* Enable logging from multiple processes at the same time (#1816)
-* Documentation: Add new documentation (DataSet #1715), remove outdated
-  documentation (#1779) and improve existing.
-  (#1780, #1771, #1770, #1781, #1777, #1798, #1803)
+  potential new bugs. (:pr:`1757`, :pr:`1790`, :pr:`1789`, :pr:`1768`, :pr:`1787`, :pr:`1788`, :pr:`1827`, :pr:`1832`)
+* Enable logging from multiple processes at the same time (:pr:`1816`)
+* Documentation: Add new documentation (DataSet :pr:`1715`), remove outdated
+  documentation (:pr:`1779`) and improve existing.
+  (:pr:`1780`, :pr:`1771`, :pr:`1770`, :pr:`1781`, :pr:`1777`, :pr:`1798`, :pr:`1803`)
 * Added more and fixed type Annotations.
-  (#1769, #1797, #1794, #1795, #1807, #1811, #1814, #1815, #1817, #1822)
-* Added ``name`` kwarg for initialising ``Measurement`` objects (#1741)
-* Bugfix: properly write complex standalone parameter to DB (#1823)
-* consistent ``snapshot_base`` signatures. (#1768)
-* enable customized log messages for measurement start and end events (#1808)
+  (:pr:`1769`, :pr:`1797`, :pr:`1794`, :pr:`1795`, :pr:`1807`, :pr:`1811`, :pr:`1814`, :pr:`1815`, :pr:`1817`, :pr:`1822`)
+* Added ``name`` kwarg for initialising ``Measurement`` objects (:pr:`1741`)
+* Bugfix: properly write complex standalone parameter to DB (:pr:`1823`)
+* consistent ``snapshot_base`` signatures. (:pr:`1768`)
+* enable customized log messages for measurement start and end events (:pr:`1808`)
 
 New Instrument drivers:
 _______________________
 
-* Driver for AimTTi Pl601-P (#1763)
+* Driver for AimTTi Pl601-P (:pr:`1763`)
 
 
 Under the hood:
 _______________
 
-* Deprecation decorator for classes (#1805, #1806)
-* Improved CI/CD (#1774)
-* Make tests less flaky (#1772, #1826)
-* Docs build on sphinx 2.2.0 (#1783)
-* Getting ready for python 3.8 (#1793)
-* Mypy version 0.740 adaption (#1794)
-* Consistent linting through ``.pylintrc`` (#1804)
-* Fix local docs built (#1803)
+* Deprecation decorator for classes (:pr:`1805`, :pr:`1806`)
+* Improved CI/CD (:pr:`1774`)
+* Make tests less flaky (:pr:`1772`, :pr:`1826`)
+* Docs build on sphinx 2.2.0 (:pr:`1783`)
+* Getting ready for python 3.8 (:pr:`1793`)
+* Mypy version 0.740 adaption (:pr:`1794`)
+* Consistent linting through ``.pylintrc`` (:pr:`1804`)
+* Fix local docs built (:pr:`1803`)
 
 
 
@@ -60,9 +60,9 @@ _________________
 
 * The ``name`` and ``short_name`` attributes of ``InstrumentBase`` became
   read-only properties because it should not be possible to change them on
-  an instantiated instrument. (#1820)
+  an instantiated instrument. (:pr:`1820`)
 
-* deferred operations have been removed (#1818).
+* deferred operations have been removed (:pr:`1818`).
 
 Deprecations:
 _____________
@@ -74,7 +74,7 @@ _____________
   Microsoft Quantum Program into a separate repository that will be community
   maintained. Find the ``qcodes_contrib_drivers`` here:
   https://github.com/QCoDeS/Qcodes_contrib_drivers
-* Module ``qcodes.utils.zmq_helpers`` (#1819)
+* Module ``qcodes.utils.zmq_helpers`` (:pr:`1819`)
 
 
 Recommended Dependencies:

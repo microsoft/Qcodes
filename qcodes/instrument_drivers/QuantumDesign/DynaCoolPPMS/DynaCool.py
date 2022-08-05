@@ -1,13 +1,13 @@
-from functools import partial
-from typing import Dict, Optional, Union, cast, Any, List
 import warnings
+from functools import partial
 from time import sleep
+from typing import Any, Dict, List, Optional, Union, cast
 
-from pyvisa import VisaIOError
 import numpy as np
+from pyvisa import VisaIOError
 
-from qcodes.instrument.visa import VisaInstrument
-import qcodes.utils.validators as vals
+import qcodes.validators as vals
+from qcodes.instrument import VisaInstrument
 
 
 class DynaCool(VisaInstrument):

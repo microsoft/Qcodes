@@ -6,8 +6,8 @@ from hypothesis import given, settings
 
 from qcodes.actions import Task
 from qcodes.data.location import FormatLocation
-from qcodes.instrument.parameter import Parameter, combine
 from qcodes.loops import Loop
+from qcodes.parameters import Parameter, combine
 
 from ..instrument_mocks import DummyInstrument
 

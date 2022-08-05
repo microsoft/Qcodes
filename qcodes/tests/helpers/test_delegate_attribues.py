@@ -1,5 +1,5 @@
 import pytest
-from qcodes.utils.helpers import DelegateAttributes
+from qcodes.utils import DelegateAttributes
 
 
 def test_delegate_dict():

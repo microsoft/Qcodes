@@ -1,7 +1,8 @@
-from typing import Dict, Optional, Any
+from typing import Any, Dict, Optional
+
+from qcodes.instrument import Instrument
 
 from .USBHIDMixin import MiniCircuitsHIDMixin
-from qcodes.instrument.base import Instrument
 
 
 class RUDAT_13G_90(Instrument):

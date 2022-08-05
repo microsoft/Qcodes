@@ -1,10 +1,9 @@
 import hypothesis.strategies as hst
-import numpy as np
 import pytest
 from hypothesis import given
 
-from qcodes.utils.validators import ComplexNumbers
 from qcodes.utils.types import numpy_complex
+from qcodes.validators import ComplexNumbers
 
 
 @given(complex_val=hst.complex_numbers())

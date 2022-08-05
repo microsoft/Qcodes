@@ -23,12 +23,7 @@ from qcodes.dataset.sqlite.db_upgrades import (
     perform_db_upgrade,
 )
 from qcodes.dataset.sqlite.initial_schema import init_db
-from qcodes.utils.types import (
-    complex_type_union,
-    complex_types,
-    numpy_floats,
-    numpy_ints,
-)
+from qcodes.utils.types import complex_types, numpy_floats, numpy_ints
 
 JournalMode = Literal["DELETE", "TRUNCATE", "PERSIST", "MEMORY", "WAL", "OFF"]
 
@@ -51,7 +46,7 @@ def _convert_array(text: bytes) -> np.ndarray:
     return np.load(out)
 
 
-def _convert_complex(text: bytes) -> complex_type_union:
+def _convert_complex(text: bytes) -> np.complexfloating:
     out = io.BytesIO(text)
     out.seek(0)
     return np.load(out)[0]
@@ -112,7 +107,7 @@ def _adapt_float(fl: float) -> Union[float, str]:
     return float(fl)
 
 
-def _adapt_complex(value: complex_type_union) -> sqlite3.Binary:
+def _adapt_complex(value: Union[complex, np.complexfloating]) -> sqlite3.Binary:
     out = io.BytesIO()
     np.save(out, np.array([value]))
     out.seek(0)

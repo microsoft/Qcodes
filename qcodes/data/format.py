@@ -5,7 +5,7 @@ from traceback import format_exc
 from typing import TYPE_CHECKING, Set
 
 if TYPE_CHECKING:
-    from .data_set import DataSet
+    import qcodes.data.data_set
 
 
 log = logging.getLogger(__name__)
@@ -56,8 +56,15 @@ class Formatter:
 
     ArrayGroup = ArrayGroup
 
-    def write(self, data_set: 'DataSet', io_manager, location, write_metadata=True,
-              force_write=False, only_complete=True):
+    def write(
+        self,
+        data_set: "qcodes.data.data_set.DataSet",
+        io_manager,
+        location,
+        write_metadata=True,
+        force_write=False,
+        only_complete=True,
+    ):
         """
         Write the DataSet to storage.
 
@@ -77,7 +84,7 @@ class Formatter:
         """
         raise NotImplementedError
 
-    def read(self, data_set: 'DataSet') -> None:
+    def read(self, data_set: "qcodes.data.data_set.DataSet") -> None:
         """
         Read the entire ``DataSet``.
 
@@ -117,8 +124,14 @@ class Formatter:
                     log.warning('error reading file ' + fn)
                     log.warning(format_exc())
 
-    def write_metadata(self, data_set: 'DataSet',
-                       io_manager, location, read_first=True, **kwargs):
+    def write_metadata(
+        self,
+        data_set: "qcodes.data.data_set.DataSet",
+        io_manager,
+        location,
+        read_first=True,
+        **kwargs
+    ):
         """
         Write the metadata for this DataSet to storage.
 
@@ -134,7 +147,7 @@ class Formatter:
         """
         raise NotImplementedError
 
-    def read_metadata(self, data_set: 'DataSet'):
+    def read_metadata(self, data_set: "qcodes.data.data_set.DataSet"):
         """
         Read the metadata from this DataSet from storage.
 
@@ -145,7 +158,7 @@ class Formatter:
         """
         raise NotImplementedError
 
-    def read_one_file(self, data_set: 'DataSet', f, ids_read):
+    def read_one_file(self, data_set: "qcodes.data.data_set.DataSet", f, ids_read):
         """
         Read data from a single file into a ``DataSet``.
 
@@ -202,9 +215,10 @@ class Formatter:
 
         Returns:
             Tuple(int, int): the first and last raveled indices that should
-                be saved. Returns None if:
-                    * no data is present
-                    * no new data can be found
+            be saved. Returns None if:
+
+            * no data is present
+            * no new data can be found
         """
         inner_setpoint = group.set_arrays[-1]
         full_dim_data = (inner_setpoint, ) + group.data

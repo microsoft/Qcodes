@@ -1,7 +1,6 @@
 import pytest
 
-from qcodes.utils.validators import (
-    Anything,
+from qcodes.validators import (
     Enum,
     Ints,
     Lists,

@@ -2,9 +2,7 @@ import array as arr
 import logging
 import re
 import struct
-import warnings
-from collections import abc, defaultdict, namedtuple
-from functools import WRAPPER_ASSIGNMENTS, wraps
+from collections import abc, defaultdict
 from io import BytesIO
 from time import localtime, sleep
 from typing import Any, Dict, List, NamedTuple, Optional, Sequence, Tuple, Union, cast
@@ -13,9 +11,8 @@ import numpy as np
 from pyvisa.errors import VisaIOError
 from typing_extensions import Literal
 
-from qcodes import VisaInstrument
 from qcodes import validators as vals
-from qcodes.utils.deprecate import deprecate
+from qcodes.instrument import VisaInstrument
 
 # conditionally import lomentum for support of lomentum type sequences
 try:

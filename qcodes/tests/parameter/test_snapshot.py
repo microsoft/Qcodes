@@ -1,7 +1,8 @@
-from typing import Union, Optional, Callable, Dict, Any
 from datetime import datetime, timedelta
+from typing import Any, Callable, Dict, Optional, Union
 
-from qcodes.instrument.parameter import Parameter
+from qcodes.parameters import Parameter
+
 from .conftest import NOT_PASSED
 
 
@@ -72,8 +73,8 @@ def test_snapshot_contains_parameter_attributes(
     # TODO: test for parameter with metadata
     assert 'metadata' not in s
 
-    assert s['__class__'] == 'qcodes.instrument.parameter.Parameter'
-    assert s['full_name'] == 'p'
+    assert s["__class__"] == "qcodes.parameters.parameter.Parameter"
+    assert s["full_name"] == "p"
 
     # The following is because the parameter does not belong to an instrument
     # TODO: test for a parameter that is attached to instrument

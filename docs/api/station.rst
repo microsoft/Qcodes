@@ -4,4 +4,5 @@ qcodes.station
 ==============
 
 .. automodule:: qcodes.station
+   :autosummary:
    :members:

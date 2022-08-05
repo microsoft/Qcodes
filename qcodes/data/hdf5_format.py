@@ -7,12 +7,13 @@ import h5py
 import numpy as np
 
 import qcodes as qc
+from qcodes.utils import NumpyJSONEncoder, deep_update
 
 from .data_array import DataArray
 from .format import Formatter
 
 if TYPE_CHECKING:
-    from .data_set import DataSet
+    import qcodes.data.data_set
 
 class HDF5Format(Formatter):
     """
@@ -24,7 +25,7 @@ class HDF5Format(Formatter):
 
     _format_tag = 'hdf5'
 
-    def close_file(self, data_set: 'DataSet'):
+    def close_file(self, data_set: "qcodes.data.data_set.DataSet"):
         """
         Closes the hdf5 file open in the dataset.
 
@@ -57,7 +58,7 @@ class HDF5Format(Formatter):
                                                 io_manager=data_set.io)
         data_set._h5_base_group = h5py.File(filepath, 'r+')
 
-    def read(self, data_set: 'DataSet', location=None):
+    def read(self, data_set: "qcodes.data.data_set.DataSet", location=None):
         """
         Reads an hdf5 file specified by location into a data_set object.
         If no data_set is provided will create an empty data_set to read into.
@@ -239,8 +240,7 @@ class HDF5Format(Formatter):
                                 datasetshape[1])
             dset.resize(new_datasetshape)
             new_data_shape = (new_dlen - old_dlen, datasetshape[1])
-            dset[old_dlen:new_dlen] = x[old_dlen:new_dlen].reshape(
-                new_data_shape)
+            dset[old_dlen:new_dlen] = x.flat[old_dlen:new_dlen].reshape(new_data_shape)
             # allow resizing extracted data, here so it gets written for
             # incremental writes aswell
             dset.attrs['shape'] = x.shape
@@ -418,7 +418,7 @@ class HDF5Format(Formatter):
                     'storing as string'.format(type(item), key, item))
                 entry_point.attrs[key] = str(item)
 
-    def read_metadata(self, data_set: 'DataSet'):
+    def read_metadata(self, data_set: "qcodes.data.data_set.DataSet"):
         """
         Reads in the metadata, this is also called at the end of a read
         statement so there should be no need to call this explicitly.
@@ -506,15 +506,19 @@ def str_to_bool(s):
         raise ValueError(f"Cannot covert {s} to a bool")
 
 
-from qcodes.utils.helpers import NumpyJSONEncoder, deep_update
-
-
 class HDF5FormatMetadata(HDF5Format):
 
     _format_tag = 'hdf5-json'
     metadata_file = 'snapshot.json'
 
-    def write_metadata(self, data_set: 'DataSet', io_manager=None, location=None, read_first=False, **kwargs):
+    def write_metadata(
+        self,
+        data_set: "qcodes.data.data_set.DataSet",
+        io_manager=None,
+        location=None,
+        read_first=False,
+        **kwargs,
+    ):
         """
         Write all metadata in this DataSet to storage.
 

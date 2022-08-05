@@ -7,4 +7,4 @@ New Features:
 _____________
 
 New suite of sweep functions now in QCoDeS! The famous doNd functions
-from the Copenhagen labs are now part of the QCoDeS library (#1895).
+from the Copenhagen labs are now part of the QCoDeS library (:pr:`1895`).

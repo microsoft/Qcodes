@@ -6,18 +6,17 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
-import qcodes.utils.validators as vals
-from qcodes import VisaInstrument
+import qcodes.validators as vals
 from qcodes.data.data_set import DataSet
-from qcodes.instrument.base import Instrument, Parameter
-from qcodes.instrument.channel import InstrumentChannel
-from qcodes.instrument.parameter import (
+from qcodes.instrument import Instrument, InstrumentChannel, VisaInstrument
+from qcodes.measure import Measure
+from qcodes.parameters import (
     ArrayParameter,
+    Parameter,
     ParameterWithSetpoints,
     ParamRawDataType,
+    create_on_off_val_mapping,
 )
-from qcodes.measure import Measure
-from qcodes.utils.helpers import create_on_off_val_mapping
 
 log = logging.getLogger(__name__)
 
@@ -717,8 +716,18 @@ class Keithley_2600(VisaInstrument):
 
         model = self.ask('localnode.model')
 
-        knownmodels = ['2601B', '2602A', '2602B', '2604B', '2611B', '2612B',
-                       '2614B', '2635B', '2636B']
+        knownmodels = [
+            "2601B",
+            "2602A",
+            "2602B",
+            "2604B",
+            "2611B",
+            "2612B",
+            "2614B",
+            "2634B",
+            "2635B",
+            "2636B",
+        ]
         if model not in knownmodels:
             kmstring = ("{}, " * (len(knownmodels) - 1)).format(*knownmodels[:-1])
             kmstring += f"and {knownmodels[-1]}."
@@ -726,15 +735,18 @@ class Keithley_2600(VisaInstrument):
 
         self.model = model
 
-        self._vranges = {'2601B': [0.1, 1, 6, 40],
-                         '2602A': [0.1, 1, 6, 40],
-                         '2602B': [0.1, 1, 6, 40],
-                         '2604B': [0.1, 1, 6, 40],
-                         '2611B': [0.2, 2, 20, 200],
-                         '2612B': [0.2, 2, 20, 200],
-                         '2614B': [0.2, 2, 20, 200],
-                         '2635B': [0.2, 2, 20, 200],
-                         '2636B': [0.2, 2, 20, 200]}
+        self._vranges = {
+            "2601B": [0.1, 1, 6, 40],
+            "2602A": [0.1, 1, 6, 40],
+            "2602B": [0.1, 1, 6, 40],
+            "2604B": [0.1, 1, 6, 40],
+            "2611B": [0.2, 2, 20, 200],
+            "2612B": [0.2, 2, 20, 200],
+            "2614B": [0.2, 2, 20, 200],
+            "2634B": [0.2, 2, 20, 200],
+            "2635B": [0.2, 2, 20, 200],
+            "2636B": [0.2, 2, 20, 200],
+        }
 
         # TODO: In pulsed mode, models 2611B, 2612B, and 2614B
         # actually allow up to 10 A.

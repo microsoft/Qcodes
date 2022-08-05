@@ -37,7 +37,11 @@ REM is due to duplication of the folder in git that happened
 REM a long time ago (i.e. "Keysight", the upper-case, is used
 REM for storing drivers, not the lower-case one).
 sphinx-apidoc  -o  _auto  -d 10 ..\qcodes ^
+    ..\qcodes\instrument_drivers\agilent\* ^
+	..\qcodes\instrument_drivers\AimTTi ^
     ..\qcodes\instrument_drivers\QuantumDesign\DynaCoolPPMS\private\*
+    ..\qcodes\instrument_drivers\QuantumDesign\DynaCoolPPMS\private\* ^
+    ..\qcodes\instrument_drivers\stanford_research\*
 mkdir api\generated\
 copy _auto\qcodes.instrument_drivers.* api\generated\
 

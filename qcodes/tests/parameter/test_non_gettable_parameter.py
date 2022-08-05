@@ -3,7 +3,7 @@ import logging
 import numpy as np
 from numpy.testing import assert_array_almost_equal
 
-from qcodes.instrument.parameter import Parameter
+from qcodes.parameters import Parameter
 
 
 def test_setting_non_gettable_parameter_with_finite_step(caplog):

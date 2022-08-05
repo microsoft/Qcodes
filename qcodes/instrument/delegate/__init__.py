@@ -1,9 +1,5 @@
-from qcodes.instrument.delegate.delegate_instrument import (
-    GroupedParameter,
-    DelegateInstrument
-)
-from qcodes.instrument.delegate.instrument_group import InstrumentGroup
+from qcodes.parameters import GroupedParameter
 
-from qcodes.instrument.delegate.delegate_channel_instrument import (
-    DelegateChannelInstrument
-)
+from .delegate_channel_instrument import DelegateChannelInstrument
+from .delegate_instrument import DelegateInstrument
+from .instrument_group import InstrumentGroup

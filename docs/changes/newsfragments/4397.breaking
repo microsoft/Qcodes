@@ -1,0 +1,3 @@
+:class:`VisaInstrument` no longer calls :meth:`VisaInstrument.set_address` as part of its
+initialization. If you customize :meth:`VisaInstrument.set_address` in a subclass you may have
+to adapt that class.

@@ -2,13 +2,18 @@ import logging
 import time
 from typing import Dict
 
-from qcodes.instrument.base import InstrumentBase
-from qcodes.instrument_drivers.Lakeshore.Model_336 import Model_336
 import qcodes.instrument.sims as sims
+from qcodes.instrument import InstrumentBase
+from qcodes.instrument_drivers.Lakeshore.Model_336 import Model_336
 
-from .test_lakeshore import MockVisaInstrument, split_args, DictClass, \
-    query, command, instrument_fixture
-
+from .test_lakeshore import (
+    DictClass,
+    MockVisaInstrument,
+    command,
+    instrument_fixture,
+    query,
+    split_args,
+)
 
 log = logging.getLogger(__name__)
 

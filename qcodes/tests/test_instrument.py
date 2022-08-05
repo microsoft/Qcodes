@@ -1,5 +1,5 @@
 """
-Test suite for instument.base.*
+Test suite for Instrument and InstrumentBase
 """
 import contextlib
 import io
@@ -8,9 +8,8 @@ import weakref
 
 import pytest
 
-from qcodes.instrument.base import Instrument, InstrumentBase, find_or_create_instrument
-from qcodes.instrument.function import Function
-from qcodes.instrument.parameter import Parameter
+from qcodes.instrument import Instrument, InstrumentBase, find_or_create_instrument
+from qcodes.parameters import Function, Parameter
 
 from .instrument_mocks import (
     DummyChannelInstrument,
@@ -84,6 +83,52 @@ def test_instrument_fail(close_before_and_after):
     assert Instrument._all_instruments == {}
 
 
+def test_instrument_on_invalid_identifier(close_before_and_after):
+    # Check if warning and error raised when invalid identifer name given
+    with pytest.warns(
+        UserWarning, match="Changed !-name to !_name for instrument identifier"
+    ):
+        with pytest.raises(ValueError, match="!_name invalid instrument identifier"):
+            DummyInstrument(name="!-name")
+
+    assert Instrument.instances() == []
+    assert DummyInstrument.instances() == []
+    assert Instrument._all_instruments == {}
+
+
+def test_instrument_warns_on_hyphen_in_name(close_before_and_after):
+    # Check if warning is raised and name is valid
+    # identifier when dashes '-' are converted to underscores '_'
+    with pytest.warns(
+        UserWarning, match="Changed -name to _name for instrument identifier"
+    ):
+        instr = DummyInstrument(name="-name")
+
+    assert instr.name == "_name"
+    assert Instrument.instances() == []
+    assert DummyInstrument.instances() == [instr]
+    assert Instrument._all_instruments != {}
+
+
+def test_instrument_allows_channel_name_starting_with_number(close_before_and_after):
+    instr = DummyChannelInstrument(name="foo", channel_names=["1", "2", "3"])
+
+    for chan in instr.channels:
+        assert chan.short_name.isidentifier() is False
+        assert chan.full_name.isidentifier() is True
+    assert Instrument.instances() == []
+    assert DummyChannelInstrument.instances() == [instr]
+    assert Instrument._all_instruments != {}
+
+
+def test_instrument_channel_name_raise_on_invalid(close_before_and_after):
+    with pytest.raises(ValueError, match="foo_☃ invalid instrument identifier"):
+        DummyChannelInstrument(name="foo", channel_names=["☃"])
+    assert Instrument.instances() == []
+    assert DummyChannelInstrument.instances() == []
+    assert Instrument._all_instruments == {}
+
+
 def test_instrument_retry_with_same_name(close_before_and_after):
     with pytest.raises(RuntimeError, match="Failed to create instrument"):
         DummyFailingInstrument(name="failinginstrument")
@@ -152,12 +197,12 @@ def test_attr_access_channels(testdummychannelinstr):
 
 
 def test_get_idn(testdummy):
-    idn = dict(
-        zip(
-            ("vendor", "model", "serial", "firmware"),
-            [None, testdummy.name, None, None],
-        )
-    )
+    idn = {
+        "vendor": "QCoDeS",
+        "model": str(testdummy.__class__),
+        "seral": "NA",
+        "firmware": "NA",
+    }
     assert testdummy.get_idn() == idn
 
 

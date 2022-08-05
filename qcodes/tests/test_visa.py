@@ -1,10 +1,8 @@
-import warnings
-
 import pytest
 import pyvisa as visa
 
 from qcodes.instrument.visa import VisaInstrument
-from qcodes.utils.validators import Numbers
+from qcodes.validators import Numbers
 
 
 class MockVisa(VisaInstrument):
@@ -15,9 +13,8 @@ class MockVisa(VisaInstrument):
                            set_cmd='STAT:{:.3f}',
                            vals=Numbers(-20, 20))
 
-    def set_address(self, address):
-        self.visa_handle = MockVisaHandle()
-        self.visabackend = self.visalib
+    def _open_resource(self, address: str, visalib):
+        return MockVisaHandle(), visalib
 
 
 class MockVisaHandle(visa.resources.MessageBasedResource):
@@ -137,7 +134,7 @@ def test_ask_write_local(mock_visa):
 
 def test_visa_backend(mocker, request):
 
-    rm_mock = mocker.patch('qcodes.instrument.visa.visa.ResourceManager')
+    rm_mock = mocker.patch("qcodes.instrument.visa.pyvisa.ResourceManager")
 
     address_opened = [None]
 
@@ -165,24 +162,12 @@ def test_visa_backend(mocker, request):
     assert address_opened[0] == 'ASRL2'
     inst2.close()
 
-    # this one raises a warning
-    with pytest.warns(UserWarning, match="use the visalib"):
-        inst3 = MockBackendVisaInstrument('name3', address='ASRL3@py')
-        request.addfinalizer(inst3.close)
-
+    inst3 = MockBackendVisaInstrument("name3", address="ASRL3", visalib="@py")
+    request.addfinalizer(inst3.close)
     assert rm_mock.call_count == 3
-    assert rm_mock.call_args == (('@py',),)
-    assert address_opened[0] == 'ASRL3'
+    assert rm_mock.call_args == (("@py",),)
+    assert address_opened[0] == "ASRL3"
     inst3.close()
-
-    # this one doesn't
-    inst4 = MockBackendVisaInstrument('name4',
-                                      address='ASRL4', visalib='@py')
-    request.addfinalizer(inst4.close)
-    assert rm_mock.call_count == 4
-    assert rm_mock.call_args == (('@py',),)
-    assert address_opened[0] == 'ASRL4'
-    inst4.close()
 
 
 def test_visa_instr_metadata(request):

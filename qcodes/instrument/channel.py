@@ -4,8 +4,8 @@ from typing import (
     Any,
     Callable,
     Dict,
-    Generic,
     Iterable,
+    Iterator,
     List,
     MutableSequence,
     Optional,
@@ -18,17 +18,19 @@ from typing import (
     overload,
 )
 
-from ..utils.helpers import full_class
-from ..utils.metadata import Metadatable
-from ..utils.validators import Validator
-from .base import Instrument, InstrumentBase
-from .parameter import (
+from qcodes.metadatable import Metadatable
+from qcodes.parameters import (
     ArrayParameter,
-    Iterator,
+    MultiChannelInstrumentParameter,
     MultiParameter,
     Parameter,
-    ParamRawDataType,
 )
+from qcodes.parameters.multi_channel_instrument_parameter import InstrumentModuleType
+from qcodes.utils import full_class
+from qcodes.validators import Validator
+
+from .instrument import Instrument
+from .instrument_base import InstrumentBase
 
 
 class InstrumentModule(InstrumentBase):
@@ -89,7 +91,7 @@ class InstrumentModule(InstrumentBase):
 
     @property
     def name_parts(self) -> List[str]:
-        name_parts = self._parent.name_parts
+        name_parts = list(self._parent.name_parts)
         name_parts.append(self.short_name)
         return name_parts
 
@@ -98,62 +100,7 @@ class InstrumentChannel(InstrumentModule):
     pass
 
 
-InstrumentModuleType = TypeVar("InstrumentModuleType", bound="InstrumentModule")
 T = TypeVar("T", bound="ChannelTuple")
-
-
-class MultiChannelInstrumentParameter(MultiParameter, Generic[InstrumentModuleType]):
-    """
-    Parameter to get or set multiple channels simultaneously.
-
-    Will normally be created by a :class:`ChannelList` and not directly by
-    anything else.
-
-    Args:
-        channels: A list of channels which we can operate on
-          simultaneously.
-        param_name: Name of the multichannel parameter
-    """
-
-    def __init__(
-        self,
-        channels: Sequence[InstrumentModuleType],
-        param_name: str,
-        *args: Any,
-        **kwargs: Any,
-    ) -> None:
-        super().__init__(*args, **kwargs)
-        self._channels = channels
-        self._param_name = param_name
-
-    def get_raw(self) -> Tuple[ParamRawDataType, ...]:
-        """
-        Return a tuple containing the data from each of the channels in the
-        list.
-        """
-        return tuple(chan.parameters[self._param_name].get() for chan
-                     in self._channels)
-
-    def set_raw(self, value: ParamRawDataType) -> None:
-        """
-        Set all parameters to this value.
-
-        Args:
-            value: The value to set to. The type is given by the
-                underlying parameter.
-        """
-        for chan in self._channels:
-            getattr(chan, self._param_name).set(value)
-
-    @property
-    def full_names(self) -> Tuple[str, ...]:
-        """
-        Overwrite full_names because the instrument name is already included
-        in the name. This happens because the instrument name is included in
-        the channel name merged into the parameter name above.
-        """
-
-        return self.names
 
 
 class ChannelTuple(Metadatable, Sequence[InstrumentModuleType]):
@@ -162,7 +109,7 @@ class ChannelTuple(Metadatable, Sequence[InstrumentModuleType]):
     all channels, as well as addressing of individual channels.
 
     This behaves like a python tuple i.e. it implements the
-    ``collections.abc.Sequence`` interface.
+    :class:`collections.abc.Sequence` interface.
 
     Args:
         parent: The instrument to which this ChannelTuple
@@ -182,15 +129,17 @@ class ChannelTuple(Metadatable, Sequence[InstrumentModuleType]):
             ways and should not be repeated in an instrument snapshot.
 
         multichan_paramclass: The class of
-            the object to be returned by the ``__getattr__``
+            the object to be returned by the :meth:`__getattr__`
             method of :class:`ChannelTuple`.
-            Should be a subclass of :class:`MultiChannelInstrumentParameter`.
+            Should be a subclass of :class:`.MultiChannelInstrumentParameter`.
+            Defaults to :class:`.MultiChannelInstrumentParameter` if None.
+
 
     Raises:
         ValueError: If ``chan_type`` is not a subclass of
             :class:`InstrumentChannel`
         ValueError: If ``multichan_paramclass`` is not a subclass of
-            :class:`MultiChannelInstrumentParameter` (note that a class is a
+            :class:`.MultiChannelInstrumentParameter` (note that a class is a
             subclass of itself).
 
     """
@@ -202,8 +151,11 @@ class ChannelTuple(Metadatable, Sequence[InstrumentModuleType]):
         chan_type: Type[InstrumentModuleType],
         chan_list: Optional[Sequence[InstrumentModuleType]] = None,
         snapshotable: bool = True,
-        multichan_paramclass: type = MultiChannelInstrumentParameter,
+        multichan_paramclass: Optional[Type[MultiChannelInstrumentParameter]] = None,
     ):
+        if multichan_paramclass is None:
+            multichan_paramclass = MultiChannelInstrumentParameter
+
         super().__init__()
 
         self._parent = parent
@@ -389,7 +341,7 @@ class ChannelTuple(Metadatable, Sequence[InstrumentModuleType]):
         """
         State of the instrument as a JSON-compatible dict (everything that
         the custom JSON encoder class
-        :class:`qcodes.utils.helpers.NumpyJSONEncoder` supports).
+        :class:`.NumpyJSONEncoder` supports).
 
         Args:
             update: If True, update the state by querying the
@@ -430,12 +382,12 @@ class ChannelTuple(Metadatable, Sequence[InstrumentModuleType]):
         set all items in a channel list simultaneously. If this is the
         name of a channel, return that channel.
 
-        Params:
+        Args:
             name: The name of the parameter, function or channel that we want to
-            operate on.
+                operate on.
         """
-        # Check if this is a valid parameter
         if len(self) > 0:
+            # Check if this is a valid parameter
             if name in self._channels[0].parameters:
                 param = self._construct_multiparam(name)
                 return param
@@ -449,6 +401,17 @@ class ChannelTuple(Metadatable, Sequence[InstrumentModuleType]):
                         chan.functions[name](*args)
 
                 return multi_func
+
+            # check if this is a method on the channels in the
+            # sequence
+            maybe_callable = getattr(self._channels[0], name, None)
+            if callable(maybe_callable):
+
+                def multi_callable(*args: Any) -> None:
+                    for chan in self._channels:
+                        getattr(chan, name)(*args)
+
+                return multi_callable
 
         try:
             return self._channel_mapping[name]
@@ -529,6 +492,13 @@ class ChannelTuple(Metadatable, Sequence[InstrumentModuleType]):
                 channel.print_readable_snapshot(update=update,
                                                 max_chars=max_chars)
 
+    def invalidate_cache(self) -> None:
+        """
+        Invalidate the cache of all parameters on the ChannelTuple.
+        """
+        for chan in self._channels:
+            chan.invalidate_cache()
+
 # we ignore a mypy error here since the __getitem__ signature above
 # taking a tuple is not compatible with MutableSequence
 # for some reason this does not happen with Sequence
@@ -538,18 +508,18 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentModuleType]):  # type:
     all channels, as well as addressing of individual channels.
 
     This behaves like a python list i.e. it implements the
-    ``collections.abc.MutableSequence`` interface.
+    :class:`collections.abc.MutableSequence` interface.
 
     Note it may be useful to use the mutable ChannelList while constructing it.
     E.g. adding channels as they are created, but in most use cases it is recommended
-    to convert this to a ``ChannelTuple`` before adding it to an instrument.
-    This can be done using the ``to_channel_tuple`` method.
+    to convert this to a :class:`ChannelTuple` before adding it to an instrument.
+    This can be done using the :meth:`to_channel_tuple` method.
 
     Args:
-        parent: The instrument to which this ChannelList
+        parent: The instrument to which this :class:`ChannelList`
             should be attached.
 
-        name: The name of the ChannelList.
+        name: The name of the :class:`ChannelList`.
 
         chan_type: The type of channel contained
             within this list.
@@ -564,15 +534,16 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentModuleType]):  # type:
             ways and should not be repeated in an instrument snapshot.
 
         multichan_paramclass: The class of
-            the object to be returned by the ``__getattr__``
+            the object to be returned by the :meth:`__getattr__`
             method of :class:`ChannelList`.
-            Should be a subclass of :class:`MultiChannelInstrumentParameter`.
+            Should be a subclass of :class:`.MultiChannelInstrumentParameter`.
+            Defaults to :class:`.MultiChannelInstrumentParameter` if None.
 
     Raises:
         ValueError: If ``chan_type`` is not a subclass of
             :class:`InstrumentChannel`
         ValueError: If ``multichan_paramclass`` is not a subclass of
-            :class:`MultiChannelInstrumentParameter` (note that a class is a
+            :class:`.MultiChannelInstrumentParameter` (note that a class is a
             subclass of itself).
 
     """
@@ -584,8 +555,10 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentModuleType]):  # type:
         chan_type: Type[InstrumentModuleType],
         chan_list: Optional[Sequence[InstrumentModuleType]] = None,
         snapshotable: bool = True,
-        multichan_paramclass: type = MultiChannelInstrumentParameter,
+        multichan_paramclass: Optional[Type[MultiChannelInstrumentParameter]] = None,
     ):
+        if multichan_paramclass is None:
+            multichan_paramclass = MultiChannelInstrumentParameter
         super().__init__(
             parent, name, chan_type, chan_list, snapshotable, multichan_paramclass
         )

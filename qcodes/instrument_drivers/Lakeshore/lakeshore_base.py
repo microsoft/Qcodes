@@ -4,9 +4,9 @@ from typing import Any, ClassVar, Dict, List, Optional, Sequence
 
 import numpy as np
 
-from qcodes import ChannelList, InstrumentChannel, VisaInstrument
-from qcodes.instrument.group_parameter import Group, GroupParameter
-from qcodes.utils import validators as vals
+from qcodes import validators as vals
+from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
+from qcodes.parameters import Group, GroupParameter
 
 
 class BaseOutput(InstrumentChannel):

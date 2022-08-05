@@ -18,6 +18,8 @@
 #
 import os
 import sys
+from abc import ABCMeta
+from importlib import reload
 
 # Import matplotlib and set the backend
 # before qcodes imports pyplot and automatically
@@ -25,6 +27,23 @@ import sys
 import matplotlib
 import sphinx_rtd_theme
 from packaging.version import parse
+
+# setting the metaclass will cause sphinx
+# to document the signature of `__call__`
+# rather than `__init__` that is unhelpful
+# for instruments. When building the docs
+# we patch it back to ABCMeta
+# this should happen as early as possible
+import qcodes.instrument.instrument_meta
+
+qcodes.instrument.instrument_meta.InstrumentMeta = ABCMeta
+# we need to reload any module that has been imported and
+# makes use of this metaclass. The modules below are all imported
+# by importing qcodes.instrument so we need to reload them
+reload(qcodes.instrument.instrument)
+reload(qcodes.instrument.ip)
+reload(qcodes.instrument.visa)
+reload(qcodes.instrument)
 
 import qcodes
 
@@ -57,6 +76,9 @@ extensions = [
     "sphinx.ext.todo",
     "qcodes.sphinx_extensions.parse_parameter_attr",
     "sphinxcontrib.towncrier",
+    "autodocsumm",
+    "sphinx_issues",
+    "sphinx-favicon",
 ]
 
 # include special __xxx__ that DO have a docstring
@@ -128,7 +150,7 @@ author = 'Giulio Ungaretti, Alex Johnson'
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = "en"
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
@@ -216,6 +238,10 @@ html_theme = "sphinx_rtd_theme"
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+
+# Add custom favicon to the sphinx html documentation.
+# Can be an absolute url or a local static file.
+favicons = {"rel": "icon", "static-file": "qcodes_favicon.png", "type": "image/png"}
 
 # Add any extra paths that contain custom files (such as robots.txt or
 # .htaccess) here, relative to this directory. These files are copied
@@ -389,7 +415,7 @@ texinfo_show_urls = 'footnote'
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
     "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
-    "matplotlib": ("https://matplotlib.org/", None),
+    "matplotlib": ("https://matplotlib.org/stable", None),
     "python": ("https://docs.python.org/3.7/", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
     "py": ("https://pylib.readthedocs.io/en/stable/", None),
@@ -423,6 +449,8 @@ autodoc_mock_imports = [
     "gclib",
 ]
 
+autodoc_typehints_format = "short"
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
@@ -442,3 +470,5 @@ nbsphinx_execute = 'always'
 towncrier_draft_autoversion_mode = "draft"
 towncrier_draft_include_empty = True
 towncrier_draft_working_directory = ".."
+
+issues_github_path = "QCoDeS/Qcodes"

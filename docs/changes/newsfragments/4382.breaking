@@ -1,0 +1,4 @@
+The standard metadata as defined by pep621 has moved from setup.cfg
+to pyproject.toml. This should have no user facing consequences unless
+you install qcodes from source using a very old version of pip (<19)
+or use unusual pip configurations.

@@ -1,7 +1,7 @@
 from typing import Any, List, Sequence, Tuple
 
-from qcodes import ChannelList, InstrumentChannel, VisaInstrument
 from qcodes import validators as vals
+from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
 
 
 class RigolDP8xxChannel(InstrumentChannel):

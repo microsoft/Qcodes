@@ -12,14 +12,14 @@ from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import floats, tuples
 
 import qcodes.instrument.sims as sims
-from qcodes.instrument.base import Instrument
+from qcodes.instrument import Instrument
 from qcodes.instrument.ip_to_visa import AMI430_VISA
 from qcodes.instrument_drivers.american_magnetics.AMI430 import (
     AMI430,
     AMI430_3D,
     AMI430Warning,
 )
-from qcodes.math_utils.field_vector import FieldVector
+from qcodes.math_utils import FieldVector
 from qcodes.utils.types import (
     numpy_concrete_floats,
     numpy_concrete_ints,
@@ -38,6 +38,8 @@ field_limit = [
 
 # path to the .yaml file containing the simulated instrument
 visalib = sims.__file__.replace('__init__.py', 'AMI430.yaml@sim')
+
+LOG_NAME = "qcodes.instrument.instrument_base"
 
 
 @pytest.fixture(scope='function')
@@ -68,7 +70,7 @@ def _make_current_driver(magnet_axes_instances):
     """
     mag_x, mag_y, mag_z = magnet_axes_instances
 
-    driver = AMI430_3D("AMI430-3D", mag_x, mag_y, mag_z, field_limit)
+    driver = AMI430_3D("AMI430_3D", mag_x, mag_y, mag_z, field_limit)
 
     yield driver
 
@@ -124,8 +126,7 @@ def test_instantiation_from_names(magnet_axes_instances, request):
     mag_x, mag_y, mag_z = magnet_axes_instances
     request.addfinalizer(AMI430_3D.close_all)
 
-    driver = AMI430_3D("AMI430-3D", mag_x.name, mag_y.name, mag_z.name,
-                       field_limit)
+    driver = AMI430_3D("AMI430_3D", mag_x.name, mag_y.name, mag_z.name, field_limit)
 
     assert driver._instrument_x is mag_x
     assert driver._instrument_y is mag_y
@@ -145,9 +146,7 @@ def test_instantiation_from_name_of_nonexistent_ami_instrument(
             match=f"with name {non_existent_instrument} does not exist"
     ):
         AMI430_3D(
-            "AMI430-3D",
-            mag_x.name, non_existent_instrument, mag_z.name,
-            field_limit
+            "AMI430_3D", mag_x.name, non_existent_instrument, mag_z.name, field_limit
         )
 
 
@@ -168,7 +167,7 @@ def test_instantiation_from_name_of_existing_non_ami_instrument(
             )
     ):
         AMI430_3D(
-            "AMI430-3D",
+            "AMI430_3D",
             mag_x.name, non_ami_existing_instrument.name, mag_z.name,
             field_limit
         )
@@ -186,8 +185,10 @@ def test_instantiation_from_badly_typed_argument(
             ValueError, match="instrument_z argument is neither of those"
     ):
         AMI430_3D(
-            "AMI430-3D",
-            mag_x.name, mag_y, badly_typed_instrument_z_argument,
+            "AMI430_3D",
+            mag_x.name,
+            mag_y,
+            badly_typed_instrument_z_argument,
             field_limit
         )
 
@@ -416,9 +417,7 @@ def test_ramp_down_first(current_driver, caplog):
     # We begin with ramping down x first while ramping up y and z
     delta = np.array([-0.1, 0.1, 0.1])
 
-    log_name = 'qcodes.instrument.base'
-
-    with caplog.at_level(logging.DEBUG, logger=log_name):
+    with caplog.at_level(logging.DEBUG, logger=LOG_NAME):
         for count, ramp_down_name in enumerate(names):
             # The second iteration will ramp down y while ramping up x and z.
             set_point += np.roll(delta, count)
@@ -551,7 +550,7 @@ def test_simultaneous_ramp_mode_does_not_reset_individual_axis_ramp_rates_if_non
 
     ami3d.vector_ramp_rate(0.05)
 
-    with caplog.at_level(logging.DEBUG, logger="qcodes.instrument.base"):
+    with caplog.at_level(logging.DEBUG, logger=LOG_NAME):
 
         # Initiate the simultaneous ramp
         ami3d.cartesian((0.5, 0.5, 0.5))
@@ -593,7 +592,7 @@ def test_simultaneous_ramp_mode_does_not_reset_individual_axis_ramp_rates_if_non
     # However, calling ``wait_while_all_axes_ramping`` DOES restore the
     # individual ramp rates
 
-    with caplog.at_level(logging.DEBUG, logger="qcodes.instrument.base"):
+    with caplog.at_level(logging.DEBUG, logger=LOG_NAME):
         ami3d.wait_while_all_axes_ramping()
 
     messages_2 = [record.message for record in caplog.records]
@@ -637,7 +636,7 @@ def test_simultaneous_ramp_mode_resets_individual_axis_ramp_rates_if_blocking_ra
 
     restore_parameters_stack.enter_context(ami3d.block_during_ramp.set_to(True))
 
-    with caplog.at_level(logging.DEBUG, logger="qcodes.instrument.base"):
+    with caplog.at_level(logging.DEBUG, logger=LOG_NAME):
 
         # Set individual ramp rates to known values
         ami3d._instrument_x.ramp_rate(0.09)
@@ -785,9 +784,7 @@ def test_blocking_ramp_parameter(current_driver, caplog):
 
     assert current_driver.block_during_ramp() is True
 
-    log_name = 'qcodes.instrument.base'
-
-    with caplog.at_level(logging.DEBUG, logger=log_name):
+    with caplog.at_level(logging.DEBUG, logger=LOG_NAME):
         current_driver.cartesian((0, 0, 0))
         caplog.clear()
         current_driver.cartesian((0, 0, 1))
@@ -1054,7 +1051,7 @@ def _parametrization_kwargs():
 @pytest.mark.parametrize('field_limit', **_parametrization_kwargs())
 def test_numeric_field_limit(magnet_axes_instances, field_limit, request):
     mag_x, mag_y, mag_z = magnet_axes_instances
-    ami = AMI430_3D("AMI430-3D", mag_x, mag_y, mag_z, field_limit)
+    ami = AMI430_3D("AMI430_3D", mag_x, mag_y, mag_z, field_limit)
     request.addfinalizer(ami.close)
 
     assert isinstance(ami._field_limit, float)

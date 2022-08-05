@@ -10,17 +10,16 @@ from typing import (
     Tuple,
     Union,
     cast,
+    overload,
 )
 
 import numpy as np
-from typing_extensions import Literal, TypedDict, overload
+from typing_extensions import Literal, TypedDict
 
-import qcodes.utils.validators as vals
-from qcodes.instrument.channel import InstrumentChannel
-from qcodes.instrument.group_parameter import Group, GroupParameter
-from qcodes.instrument.parameter import Parameter, ParamRawDataType
-from qcodes.utils.deprecate import deprecate
-from qcodes.utils.validators import Arrays
+import qcodes.validators as vals
+from qcodes.instrument import InstrumentChannel
+from qcodes.parameters import Group, GroupParameter, Parameter, ParamRawDataType
+from qcodes.utils import deprecate
 
 from . import constants
 from .constants import (
@@ -39,7 +38,7 @@ from .KeysightB1500_sampling_measurement import SamplingMeasurement
 from .message_builder import MessageBuilder
 
 if TYPE_CHECKING:
-    from .KeysightB1500_base import KeysightB1500
+    import qcodes.instrument_drivers.Keysight.keysightb1500
 
 
 class SweepSteps(TypedDict, total=False):
@@ -640,8 +639,13 @@ class B1517A(B1500Module):
     MODULE_KIND = ModuleKind.SMU
     _interval_validator = vals.Numbers(0.0001, 65.535)
 
-    def __init__(self, parent: 'KeysightB1500', name: Optional[str],
-                 slot_nr: int, **kwargs: Any):
+    def __init__(
+        self,
+        parent: "qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500",
+        name: Optional[str],
+        slot_nr: int,
+        **kwargs: Any,
+    ):
         super().__init__(parent, name, slot_nr, **kwargs)
         self.channels = (ChNr(slot_nr),)
         self._measure_config: Dict[str, Optional[Any]] = {
@@ -760,7 +764,7 @@ class B1517A(B1500Module):
         self.add_parameter(
             name="time_axis",
             get_cmd=self._get_time_axis,
-            vals=Arrays(shape=(self._get_number_of_samples,)),
+            vals=vals.Arrays(shape=(self._get_number_of_samples,)),
             snapshot_value=False,
             label='Time',
             unit='s'
@@ -769,7 +773,7 @@ class B1517A(B1500Module):
         self.add_parameter(
             name="sampling_measurement_trace",
             parameter_class=SamplingMeasurement,
-            vals=Arrays(shape=(self._get_number_of_samples,)),
+            vals=vals.Arrays(shape=(self._get_number_of_samples,)),
             setpoints=(self.time_axis,)
         )
 

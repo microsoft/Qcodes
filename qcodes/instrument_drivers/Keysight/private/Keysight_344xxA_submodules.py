@@ -7,14 +7,13 @@ from typing import Any, Optional, Sequence, Tuple
 import numpy as np
 from packaging import version
 
-import qcodes.utils.validators as vals
-from qcodes import InstrumentChannel, VisaInstrument
-from qcodes.instrument.base import Instrument
-from qcodes.instrument.parameter import Parameter, ParameterWithSetpoints
+import qcodes.validators as vals
+from qcodes.instrument import Instrument, InstrumentChannel, VisaInstrument
 from qcodes.instrument_drivers.Keysight.private.error_handling import (
     KeysightErrorQueueMixin,
 )
-from qcodes.utils.installation_info import convert_legacy_version_to_supported_version
+from qcodes.parameters import Parameter, ParameterWithSetpoints
+from qcodes.utils import convert_legacy_version_to_supported_version
 
 
 class Trigger(InstrumentChannel):

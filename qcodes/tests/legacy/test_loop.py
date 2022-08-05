@@ -1,5 +1,4 @@
 import os
-import time
 from datetime import datetime
 from unittest import TestCase
 from unittest.mock import patch
@@ -8,11 +7,11 @@ import numpy as np
 
 from qcodes.actions import BreakIf, Task, Wait, _QcodesBreak
 from qcodes.data.data_array import DataArray
-from qcodes.instrument.parameter import MultiParameter, Parameter
 from qcodes.logger.logger import LogCapture
 from qcodes.loops import Loop
+from qcodes.parameters import MultiParameter, Parameter
 from qcodes.station import Station
-from qcodes.utils.validators import Numbers
+from qcodes.validators import Numbers
 
 from ..instrument_mocks import DummyInstrument, MultiGetter
 

@@ -1,13 +1,12 @@
 import pytest
 from sphinx.util.inspect import safe_getattr
 
-from qcodes.instrument.base import InstrumentBase
-from qcodes.instrument.visa import VisaInstrument
+from qcodes.instrument import InstrumentBase, VisaInstrument
 from qcodes.sphinx_extensions.parse_parameter_attr import (
     ParameterProxy,
     qcodes_parameter_attr_getter,
 )
-from qcodes.utils.deprecate import deprecate
+from qcodes.utils import deprecate
 
 
 class DummyTestClass(InstrumentBase):

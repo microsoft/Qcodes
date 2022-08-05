@@ -1,7 +1,7 @@
 from typing import Any, Union
 
-from qcodes import ChannelList, Instrument, InstrumentChannel, VisaInstrument
 from qcodes import validators as vals
+from qcodes.instrument import ChannelList, Instrument, InstrumentChannel, VisaInstrument
 
 
 class RohdeSchwarzHMC804xChannel(InstrumentChannel):

@@ -1,14 +1,15 @@
-from unittest import TestCase
 from datetime import datetime
-
-from qcodes.data.location import FormatLocation
-from qcodes.instrument.parameter import Parameter
-from qcodes.measure import Measure
-
-from ..instrument_mocks import MultiGetter, MultiSetPointParam
+from unittest import TestCase
 
 import numpy as np
 from numpy.testing import assert_array_equal
+
+from qcodes.data.location import FormatLocation
+from qcodes.measure import Measure
+from qcodes.parameters import Parameter
+
+from ..instrument_mocks import MultiGetter, MultiSetPointParam
+
 
 class TestMeasure(TestCase):
     def setUp(self):

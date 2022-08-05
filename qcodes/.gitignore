@@ -1,0 +1,3 @@
+# the dist folder here is not created by python build tools
+# like the one at the toplevel so it should be included.
+!dist

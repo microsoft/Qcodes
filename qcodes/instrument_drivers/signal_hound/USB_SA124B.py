@@ -1,17 +1,16 @@
-from time import sleep
-import numpy as np
 import ctypes as ct
 import logging
 from enum import IntEnum
-from typing import Dict, Union, Optional, Any, Tuple
+from time import sleep
+from typing import Any, Dict, Optional, Tuple
 
-from qcodes.instrument.base import Instrument
-import qcodes.utils.validators as vals
-from qcodes.instrument.parameter import Parameter, ArrayParameter, \
-    ParameterWithSetpoints
+import numpy as np
+
+import qcodes.validators as vals
+from qcodes.instrument import Instrument
+from qcodes.parameters import ArrayParameter, Parameter, ParameterWithSetpoints
 
 log = logging.getLogger(__name__)
-
 
 
 class TraceParameter(Parameter):
@@ -106,15 +105,27 @@ class FrequencySweep(ArrayParameter):
           get(): executes a sweep and returns magnitude and phase arrays
 
     """
-    def __init__(self, name: str, instrument: 'SignalHound_USB_SA124B',
-                 sweep_len: int, start_freq: float, stepsize: float) -> None:
-        super().__init__(name, shape=(sweep_len,),
-                         instrument=instrument,
-                         unit='dBm',
-                         label='Magnitude',
-                         setpoint_units=('Hz',),
-                         setpoint_labels=(f'Frequency',),
-                         setpoint_names=(f'frequency',))
+
+    def __init__(
+        self,
+        name: str,
+        instrument: "SignalHound_USB_SA124B",
+        sweep_len: int,
+        start_freq: float,
+        stepsize: float,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(
+            name,
+            shape=(sweep_len,),
+            instrument=instrument,
+            unit="dBm",
+            label="Magnitude",
+            setpoint_units=("Hz",),
+            setpoint_labels=(f"Frequency",),
+            setpoint_names=(f"frequency",),
+            **kwargs,
+        )
         self.set_sweep(sweep_len, start_freq, stepsize)
 
     def set_sweep(self, sweep_len: int, start_freq: float,

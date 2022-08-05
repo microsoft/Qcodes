@@ -7,7 +7,6 @@ import json
 import logging
 import subprocess
 import sys
-from pathlib import Path
 from typing import Dict, Optional
 
 if sys.version_info >= (3, 10):
@@ -17,6 +16,8 @@ if sys.version_info >= (3, 10):
 else:
     # 3.9 and earlier
     from importlib_metadata import distributions
+
+from qcodes.utils.deprecate import deprecate
 
 log = logging.getLogger(__name__)
 
@@ -44,6 +45,7 @@ def is_qcodes_installed_editably() -> Optional[bool]:
     return answer
 
 
+@deprecate("function 'get_qcodes_version'", alternative="qcodes.__version__")
 def get_qcodes_version() -> str:
     """
     Get the version of the currently installed QCoDeS
@@ -74,9 +76,3 @@ def convert_legacy_version_to_supported_version(ver: str) -> str:
         else:
             temp_list.append(v)
     return "".join(temp_list)
-
-
-def _has_pyproject_toml_and_is_git_repo(path: Path) -> bool:
-    has_pyproject_toml = (path / "pyproject.toml").exists()
-    is_git_repo = (path / ".git").exists()
-    return has_pyproject_toml and is_git_repo

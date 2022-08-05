@@ -1,9 +1,6 @@
-from typing import Any
+from typing import Any, Dict, List, Optional
 
-from qcodes import VisaInstrument
-from qcodes import Instrument
-from qcodes.instrument.channel import InstrumentChannel
-from typing import List, Dict, Optional
+from qcodes.instrument import Instrument, InstrumentChannel, VisaInstrument
 
 
 class N6705BChannel(InstrumentChannel):

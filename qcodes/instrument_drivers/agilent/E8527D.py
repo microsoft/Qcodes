@@ -1,13 +1,15 @@
 import warnings
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
-from numpy import pi
+import numpy as np
 
-from qcodes import VisaInstrument, validators as vals
-from qcodes.utils.validators import numbertypes
-from qcodes.utils.helpers import create_on_off_val_mapping
+import qcodes.validators as vals
+from qcodes.instrument import VisaInstrument
+from qcodes.parameters import create_on_off_val_mapping
+from qcodes.utils import deprecate
 
 
+@deprecate(alternative="AgilentE8257D")
 class Agilent_E8527D(VisaInstrument):
     """
     This is the QCoDeS driver for the Agilent_E8527D signal generator.
@@ -120,13 +122,13 @@ class Agilent_E8527D(VisaInstrument):
     # Note it would be useful to have functions like this in some module instead
     # of repeated in every instrument driver.
     @staticmethod
-    def rad_to_deg(angle_rad: numbertypes) -> float:
-        angle_deg = float(angle_rad)/(2*pi)*360
+    def rad_to_deg(angle_rad: Union[float, np.floating, np.integer]) -> float:
+        angle_deg = float(angle_rad) / (2 * np.pi) * 360
         return angle_deg
 
     @staticmethod
-    def deg_to_rad(angle_deg: numbertypes) -> float:
-        angle_rad = float(angle_deg)/360 * 2 * pi
+    def deg_to_rad(angle_deg: Union[float, np.floating, np.integer]) -> float:
+        angle_rad = float(angle_deg) / 360 * 2 * np.pi
         return angle_rad
 
     def on(self) -> None:

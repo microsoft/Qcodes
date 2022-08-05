@@ -3,10 +3,9 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
-from qcodes import VisaInstrument
-from qcodes.instrument.channel import ChannelList, InstrumentChannel
-from qcodes.instrument.parameter import ArrayParameter
-from qcodes.utils.validators import ComplexNumbers, Enum, Ints, Numbers
+from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
+from qcodes.parameters import ArrayParameter
+from qcodes.validators import ComplexNumbers, Enum, Ints, Numbers
 
 log = logging.getLogger(__name__)
 
@@ -70,8 +69,10 @@ class SR86xBufferReadout(ArrayParameter):
 
 class SR86xBuffer(InstrumentChannel):
     """
-    The buffer module for the SR86x driver. This driver has been verified to
-    work with the SR860 and SR865. For reference, please consult the SR860
+    Buffer module for the SR86x drivers.
+
+    This driver has been verified to work with the SR860 and SR865.
+    For reference, please consult the SR860
     manual: http://thinksrs.com/downloads/PDFs/Manuals/SR860m.pdf
     """
 

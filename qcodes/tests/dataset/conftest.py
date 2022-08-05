@@ -13,11 +13,7 @@ from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.sqlite.database import connect
-from qcodes.instrument.parameter import (
-    ArrayParameter,
-    Parameter,
-    ParameterWithSetpoints,
-)
+from qcodes.parameters import ArrayParameter, Parameter, ParameterWithSetpoints
 from qcodes.tests.instrument_mocks import (
     ArraySetPointParam,
     DummyChannelInstrument,
@@ -26,7 +22,7 @@ from qcodes.tests.instrument_mocks import (
     Multi2DSetPointParam2Sizes,
     setpoint_generator,
 )
-from qcodes.utils.validators import Arrays, ComplexNumbers, Numbers
+from qcodes.validators import Arrays, ComplexNumbers, Numbers
 
 
 @pytest.fixture(scope="function", name="non_created_db")

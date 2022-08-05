@@ -10,11 +10,10 @@ from typing import Any, Callable, Dict, List, Optional, Union
 
 import pytest
 
-from qcodes import Instrument
+from qcodes.instrument import Instrument, InstrumentChannel
 from qcodes.instrument.channel import (
     AutoLoadableChannelList,
     AutoLoadableInstrumentChannel,
-    InstrumentChannel,
 )
 
 

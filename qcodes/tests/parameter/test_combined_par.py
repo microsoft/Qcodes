@@ -5,8 +5,8 @@ import numpy as np
 import pytest
 from hypothesis import HealthCheck, given, settings
 
-from qcodes.instrument.parameter import combine
-from qcodes.utils.helpers import full_class
+from qcodes.parameters import combine
+from qcodes.utils import full_class
 
 from ..common import DumyPar
 

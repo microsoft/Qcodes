@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any, List
 
 import numpy
 
-from qcodes.instrument.parameter import ParameterWithSetpoints
+from qcodes.parameters import ParameterWithSetpoints
 from .message_builder import MessageBuilder
 from . import constants
 from .KeysightB1500_module import fmt_response_base_parser, _FMTResponse, \

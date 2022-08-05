@@ -1,9 +1,10 @@
 from typing import Any, Dict, Optional
+
 import numpy as np
 
-from qcodes.instrument.visa import VisaInstrument
-from qcodes.instrument.parameter import Parameter, DelegateParameter
-from qcodes.utils import validators as vals
+from qcodes import validators as vals
+from qcodes.instrument import VisaInstrument
+from qcodes.parameters import DelegateParameter, Parameter
 
 
 class SP983A(VisaInstrument):

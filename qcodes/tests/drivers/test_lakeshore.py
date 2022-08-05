@@ -7,10 +7,10 @@ from typing import Any, Callable, Dict
 import pytest
 
 import qcodes.instrument.sims as sims
-from qcodes.instrument.base import InstrumentBase
+from qcodes.instrument import InstrumentBase
 from qcodes.instrument_drivers.Lakeshore.lakeshore_base import BaseSensorChannel
 from qcodes.instrument_drivers.Lakeshore.Model_372 import Model_372
-from qcodes.logger.instrument_logger import get_instrument_logger
+from qcodes.logger import get_instrument_logger
 
 log = logging.getLogger(__name__)
 
@@ -24,7 +24,7 @@ class MockVisaInstrument:
     """
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self.visa_log = get_instrument_logger(self, VISA_LOGGER)
+        self.visa_log = get_instrument_logger(self, VISA_LOGGER)  # type: ignore[arg-type]
 
         # This base class mixin holds two dictionaries associated with the
         # pyvisa_instrument.write()

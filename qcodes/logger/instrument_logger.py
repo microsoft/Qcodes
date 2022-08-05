@@ -22,7 +22,7 @@ from typing import (
 from .logger import LevelType, get_console_handler, handler_level
 
 if TYPE_CHECKING:
-    import qcodes.instrument.InstrumentBase as InstrumentBase  # noqa: F401 pylint: disable=unused-import
+    from qcodes.instrument import InstrumentBase
 
 
 class InstrumentLoggerAdapter(logging.LoggerAdapter):

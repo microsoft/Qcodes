@@ -9,7 +9,7 @@ from hypothesis.strategies import floats
 from hypothesis.strategies import tuples
 
 from qcodes.math_utils.field_vector import FieldVector
-from qcodes.utils.helpers import NumpyJSONEncoder
+from qcodes.utils import NumpyJSONEncoder
 
 random_coordinates = {
     "cartesian": tuples(

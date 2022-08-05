@@ -5,6 +5,8 @@ import pytest
 import qcodes.instrument.sims as sims
 from qcodes.instrument_drivers.stahl import Stahl
 
+LOG_NAME = "qcodes.instrument.instrument_base"
+
 
 @pytest.fixture(scope="function")
 def stahl_instrument():
@@ -60,7 +62,7 @@ def test_get_set_voltage(stahl_instrument, caplog):
     """
     Test that we can correctly get/set voltages
     """
-    with caplog.at_level(logging.DEBUG, logger="qcodes.instrument.base"):
+    with caplog.at_level(logging.DEBUG, logger=LOG_NAME):
         stahl_instrument.channel[0].voltage(1.2)
     assert stahl_instrument.channel[0].voltage() == -1.2
     assert any("Querying" in rec.message for rec in caplog.records)
@@ -77,7 +79,7 @@ def test_get_set_voltage_assert_warning(stahl_instrument, caplog):
     visa simulation; setting a voltage does not produce an acknowledge
     string. Test that a warning is correctly issued.
     """
-    with caplog.at_level(logging.DEBUG, logger="qcodes.instrument.base"):
+    with caplog.at_level(logging.DEBUG, logger=LOG_NAME):
         stahl_instrument.channel[1].voltage(1.0)
     assert any(
         "did not produce an acknowledge reply" in rec.message for rec in caplog.records
