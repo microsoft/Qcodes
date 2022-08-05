@@ -13,7 +13,7 @@ _n_channels = 16
 
 
 class LakeshoreModel372Output(BaseOutput):
-    """Class for control outputs (heaters) of model 372"""
+    """An InstrumentChannel for control outputs (heaters) of Lakeshore Model 372"""
 
     MODES: ClassVar[Dict[str, int]] = {
         "off": 0,
@@ -94,6 +94,10 @@ class LakeshoreModel372Output(BaseOutput):
 
 
 class LakeshoreModel372Channel(BaseSensorChannel):
+    """
+    An InstrumentChannel representing a single sensor on a Lakeshore Model 372.
+
+    """
     SENSOR_STATUSES = {
         0: "OK",
         1: "CS OVL",
@@ -278,7 +282,7 @@ class LakeshoreModel372Channel(BaseSensorChannel):
 
 class LakeshoreModel372(LakeshoreBase):
     """
-    Lakeshore Model 372 Temperature Controller Driver
+    QCoDeS driver for Lakeshore Model 372 Temperature Controller.
 
     Note that interaction with the control input (referred to as 'A' in the
     Computer Interface Operation section of the manual) is not implemented.

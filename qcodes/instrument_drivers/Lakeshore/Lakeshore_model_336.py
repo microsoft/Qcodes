@@ -22,8 +22,10 @@ _channel_name_to_outmode_command_map: Dict[str, int] = {
 
 class LakeshoreModel336CurrentSource(BaseOutput):
     """
-    Class for control outputs 1 and 2 of model 336 that are variable DC current
-    sources referenced to chassis ground
+    InstrumentChannel for current sources on Lakeshore Model 336.
+
+    Class for control outputs 1 and 2 of Lakeshore Model 336 that are variable DC current
+    sources referenced to chassis ground.
     """
 
     MODES: ClassVar[Dict[str, int]] = {
@@ -51,8 +53,10 @@ class LakeshoreModel336CurrentSource(BaseOutput):
 
 class LakeshoreModel336VoltageSource(BaseOutput):
     """
-    Class for control outputs 3 and 4 of model 336 that are variable DC voltage
-    sources
+    InstrumentChannel for voltage sources on Lakeshore Model 336.
+
+    This is used for control outputs 3 and 4 that are variable DC voltage
+    sources.
     """
 
     MODES: ClassVar[Dict[str, int]] = {
@@ -73,6 +77,11 @@ class LakeshoreModel336VoltageSource(BaseOutput):
 
 
 class LakeshoreModel336Channel(BaseSensorChannel):
+    """
+    An InstrumentChannel representing a single sensor on a Lakeshore Model 336.
+
+    """
+
     SENSOR_STATUSES = {
         0: "OK",
         1: "Invalid Reading",
@@ -154,7 +163,7 @@ class LakeshoreModel336Channel(BaseSensorChannel):
 
 class LakeshoreModel336(LakeshoreBase):
     """
-    Lakeshore Model 336 Temperature Controller Driver
+    QCoDeS driver for Lakeshore Model 336 Temperature Controller.
     """
 
     channel_name_command: Dict[str, str] = _channel_name_to_command_map

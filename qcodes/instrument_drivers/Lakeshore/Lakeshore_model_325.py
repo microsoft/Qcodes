@@ -67,6 +67,9 @@ def _get_sanitize_data(file_data: Dict[Any, Any]) -> Dict[Any, Any]:
 
 
 class LakeshoreModel325Status(IntFlag):
+    """
+    IntFlag that defines status codes for Lakeshore Model 325
+    """
     sensor_units_overrang = 128
     sensor_units_zero = 64
     temp_overrange = 32
@@ -75,6 +78,9 @@ class LakeshoreModel325Status(IntFlag):
 
 
 class LakeshoreModel325Curve(InstrumentChannel):
+    """
+    An InstrumentChannel representing a curve on a Lakeshore Model 325
+    """
 
     valid_sensor_units = ["mV", "V", "Ohm", "log Ohm"]
     temperature_key = "Temperature (K)"
@@ -205,7 +211,7 @@ class LakeshoreModel325Curve(InstrumentChannel):
 
 class LakeshoreModel325Sensor(InstrumentChannel):
     """
-    A single sensor of a  Lakeshore 325.
+    InstrumentChannel for a single sensor of a Lakeshore Model 325.
 
     Args:
         parent (LakeshoreModel325): The instrument this heater belongs to
@@ -291,7 +297,7 @@ class LakeshoreModel325Sensor(InstrumentChannel):
 
 class LakeshoreModel325Heater(InstrumentChannel):
     """
-    Heater control for the Lakeshore 325.
+    InstrumentChannel for heater control on a Lakeshore Model 325.
 
     Args:
         parent (LakeshoreModel325): The instrument this heater belongs to
@@ -436,7 +442,7 @@ class LakeshoreModel325Heater(InstrumentChannel):
 
 class LakeshoreModel325(VisaInstrument):
     """
-    Lakeshore Model 325 Temperature Controller Driver
+    QCoDeS driver for Lakeshore Model 325 Temperature Controller.
     """
 
     def __init__(self, name: str, address: str, **kwargs: Any) -> None:
