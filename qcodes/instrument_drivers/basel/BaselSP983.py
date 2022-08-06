@@ -1,14 +1,13 @@
 from typing import Any, Dict, Optional
 
-from qcodes.instrument.base import Instrument
+from qcodes.instrument import Instrument
 from qcodes.parameters import DelegateParameter, Parameter
 from qcodes.validators import Enum, Numbers
 
 
 class BaselSP983(Instrument):
     """
-    A virtual driver for the Basel SP 983 and SP 983c current to voltage
-    converter.
+    A virtual driver for the Basel SP 983 current to voltage converter.
 
     This driver supports both the SP 983 and SP 983c models. These differ only
     in their handling of input offset voltage. It is the responsibility of the
