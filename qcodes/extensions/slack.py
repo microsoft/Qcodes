@@ -53,8 +53,8 @@ from functools import partial
 from time import sleep
 
 from requests.exceptions import ConnectTimeout, HTTPError, ReadTimeout
-from requests.packages.urllib3.exceptions import ReadTimeoutError
 from slack_sdk import WebClient
+from urllib3.exceptions import ReadTimeoutError
 
 from qcodes import config as qc_config
 from qcodes.loops import active_data_set, active_loop
