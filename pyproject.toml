@@ -169,6 +169,7 @@ disallow_untyped_defs = false
 # dont have them installed.
 [[tool.mypy.overrides]]
 module = [
+    "broadbean.*", # can be removed once broadbean 0.11 is available
     "clr",
     "deepdiff",
     "gclib",
