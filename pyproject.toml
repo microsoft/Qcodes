@@ -134,7 +134,6 @@ profile = "black"
 strict_optional = true
 disallow_untyped_decorators = true
 disallow_any_generics = false
-ignore_missing_imports = true
 show_column_numbers = true
 warn_unused_ignores = true
 warn_unused_configs = true
@@ -164,6 +163,43 @@ module = [
 
 ]
 disallow_untyped_defs = false
+
+# these are packages that we import
+# but either don't have stubs or we
+# dont have them installed.
+[[tool.mypy.overrides]]
+module = [
+    "clr",
+    "deepdiff",
+    "gclib",
+    "IPython.*",
+    "ipywidgets",
+    "h5py",
+    "h5netcdf",
+    "hickle",
+    "lxml",
+    "pandas.*",
+    "jsonschema",
+    "lomentum.tools",
+    "matplotlib.*",
+    "mcl_RF_Switch_Controller64",
+    "opencensus.ext.azure.*",
+    "pythoncom",
+    "pyqtgraph.*",
+    "pywinusb.*",
+    "ruamel",
+    "spyder.utils.site",
+    "spyder_kernels.customize",
+    "System.IO",
+    "tqdm.*",
+    "uncertainties",
+    "win32com.*",
+    "win32con",
+    "win32gui",
+    "wrapt",
+    "zhinst.qcodes",
+]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 minversion = "6.0"
