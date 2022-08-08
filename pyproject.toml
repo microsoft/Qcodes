@@ -87,6 +87,7 @@ test = [
     "pyqtgraph>=0.11.0", # pyqtgraph tests
     "PyQt5>=5.15.0", # pyqtgraph tests
     "PyVisa-sim>=0.4.0",
+    "slack-sdk>=3.4.2", # needed to typecheck slack extension
     "sphinx>=4.5.0",  # sphinx extension tests
     "types_requests>=0.1.8",
     "types-setuptools>=57.0.0",
