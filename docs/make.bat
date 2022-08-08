@@ -44,6 +44,7 @@ sphinx-apidoc  -o  _auto  -d 10 ..\qcodes ^
 	..\qcodes\instrument_drivers\Lakeshore ^
     ..\qcodes\instrument_drivers\QuantumDesign\DynaCoolPPMS\private\* ^
     ..\qcodes\instrument_drivers\stanford_research\* ^
+    ..\qcodes\instrument_drivers\signal_hound\* ^
     ..\qcodes\instrument_drivers\weinschel\* ^
     ..\qcodes\instrument_drivers\yokogawa
 mkdir api\generated\
