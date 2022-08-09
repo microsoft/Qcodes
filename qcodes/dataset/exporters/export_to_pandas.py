@@ -37,7 +37,7 @@ def load_to_concatenated_dataframe(datadict: ParameterData) -> pd.DataFrame:
 
 
 def _data_to_dataframe(
-    data: Mapping[str, np.ndarray], index: Union[pd.Index, pd.MultiIndex]
+    data: Mapping[str, np.ndarray], index: Union[pd.Index, pd.MultiIndex, None]
 ) -> pd.DataFrame:
     import pandas as pd
     if len(data) == 0:
@@ -59,7 +59,7 @@ def _data_to_dataframe(
 
 def _generate_pandas_index(
     data: Mapping[str, np.ndarray]
-) -> Union[pd.Index, pd.MultiIndex]:
+) -> Union[pd.Index, pd.MultiIndex, None]:
     # the first element in the dict given by parameter_tree is always the dependent
     # parameter and the index is therefore formed from the rest
     import pandas as pd

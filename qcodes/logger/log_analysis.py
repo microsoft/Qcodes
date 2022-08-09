@@ -53,7 +53,7 @@ def log_to_dataframe(log: Sequence[str],
 
     split_cont = [line.split(separator) for line in log
                   if line[0].isdigit()]  # avoid tracebacks
-    dataframe = pandas.DataFrame(split_cont, columns=columns)
+    dataframe = pandas.DataFrame(split_cont, columns=list(columns))
 
     return dataframe
 
@@ -122,7 +122,7 @@ def time_difference(firsttimes: Series,
 
     t0s = nfirsttimes.astype("datetime64[ns]")
     t1s = nsecondtimes.astype("datetime64[ns]")
-    timedeltas = (t1s.values - t0s.values).astype('float')*1e-9
+    timedeltas = (t1s.to_numpy() - t0s.to_numpy()).astype("float") * 1e-9
 
     if use_first_series_labels:
         output = pandas.Series(timedeltas, index=nfirsttimes.index)
