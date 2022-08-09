@@ -78,6 +78,7 @@ test = [
     "deepdiff>=5.0.2",
     "hypothesis>=5.49.0",
     "lxml>=4.3.0",
+    "lxml-stubs>=0.4.0",
     "mypy>=0.971",
     "pytest>=6.0.0",
     "pytest-cov>=3.0.0",
@@ -87,6 +88,7 @@ test = [
     "pyqtgraph>=0.11.0", # pyqtgraph tests
     "PyQt5>=5.15.0", # pyqtgraph tests
     "PyVisa-sim>=0.4.0",
+    "slack-sdk>=3.4.2", # needed to typecheck slack extension
     "sphinx>=4.5.0",  # sphinx extension tests
     "types_requests>=0.1.8",
     "types-setuptools>=57.0.0",
@@ -134,7 +136,6 @@ profile = "black"
 strict_optional = true
 disallow_untyped_decorators = true
 disallow_any_generics = false
-ignore_missing_imports = true
 show_column_numbers = true
 warn_unused_ignores = true
 warn_unused_configs = true
@@ -164,6 +165,43 @@ module = [
 
 ]
 disallow_untyped_defs = false
+
+# these are packages that we import
+# but either don't have stubs or we
+# dont have them installed.
+[[tool.mypy.overrides]]
+module = [
+    "broadbean.*", # can be removed once broadbean 0.11 is available
+    "clr",
+    "deepdiff",
+    "gclib",
+    "IPython.*",
+    "ipywidgets",
+    "h5py",
+    "h5netcdf",
+    "hickle",
+    "jsonschema",
+    "lomentum.tools",
+    "matplotlib.*",
+    "mcl_RF_Switch_Controller64",
+    "opencensus.ext.azure.*",
+    "pandas.*",
+    "pythoncom",
+    "pyqtgraph.*",
+    "pywinusb.*",
+    "ruamel",
+    "spyder.utils.site",
+    "spyder_kernels.customize",
+    "System.IO",
+    "tqdm.*",
+    "uncertainties",
+    "win32com.*",
+    "win32con",
+    "win32gui",
+    "wrapt",
+    "zhinst.qcodes",
+]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 minversion = "6.0"
