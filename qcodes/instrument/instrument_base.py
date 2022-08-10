@@ -46,27 +46,13 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         self._short_name = name
         self._is_valid_identifier(self.full_name)
 
-        self.parameters: Dict[str, ParameterBase] = {}
-        """
-        All the parameters supported by this instrument.
-        Usually populated via :py:meth:`add_parameter`.
-        """
-        self.functions: Dict[str, Function] = {}
-        """
-        All the functions supported by this
-        instrument. Usually populated via :py:meth:`add_function`.
-        """
-        self.submodules: Dict[str, Union["InstrumentModule", "ChannelTuple"]] = {}
-        """
-        All the submodules of this instrument
-        such as channel lists or logical groupings of parameters.
-        Usually populated via :py:meth:`add_submodule`.
-        """
-        self.instrument_modules: Dict[str, "InstrumentModule"] = {}
-        """
-        All the :class:`InstrumentModule` of this instrument
-        Usually populated via :py:meth:`add_submodule`.
-        """
+        self._parameters: Dict[str, ParameterBase] = {}
+
+        self._functions: Dict[str, Function] = {}
+
+        self._submodules: Dict[str, Union["InstrumentModule", "ChannelTuple"]] = {}
+
+        self._instrument_modules: Dict[str, "InstrumentModule"] = {}
 
         self._channel_lists: Dict[str, "ChannelTuple"] = {}
         """
@@ -81,6 +67,57 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         self._meta_attrs = ["name"]
 
         self.log = get_instrument_logger(self, __name__)
+
+    @property
+    def parameters(self) -> Dict[str, ParameterBase]:
+        """
+        All the parameters supported by this instrument.
+        Usually populated via :py:meth:`add_parameter`.
+        """
+        return self._parameters
+
+    @parameters.setter
+    def parameters(self, value: Dict[str, ParameterBase]) -> None:
+        self._parameters = value
+
+    @property
+    def functions(self) -> Dict[str, Function]:
+        """
+        All the functions supported by this
+        instrument. Usually populated via :py:meth:`add_function`.
+        """
+        return self._functions
+
+    @functions.setter
+    def functions(self, value: Dict[str, Function]) -> None:
+        self._functions = value
+
+    @property
+    def submodules(self) -> Dict[str, Union["InstrumentModule", "ChannelTuple"]]:
+        """
+        All the submodules of this instrument
+        such as channel lists or logical groupings of parameters.
+        Usually populated via :py:meth:`add_submodule`.
+        """
+        return self._submodules
+
+    @submodules.setter
+    def submodules(
+        self, value: Dict[str, Union["InstrumentModule", "ChannelTuple"]]
+    ) -> None:
+        self._submodules = value
+
+    @property
+    def instrument_modules(self) -> Dict[str, "InstrumentModule"]:
+        """
+        All the :class:`InstrumentModule` of this instrument
+        Usually populated via :py:meth:`add_submodule`.
+        """
+        return self._instrument_modules
+
+    @instrument_modules.setter
+    def instrument_modules(self, value: Dict[str, "InstrumentModule"]) -> None:
+        self._instrument_modules = value
 
     def add_parameter(
         self,
@@ -489,7 +526,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
     # instrument.get('someparam') === instrument['someparam'].get()         #
     # etc...                                                                #
     #
-    delegate_attr_dicts = ["parameters", "functions", "submodules"]
+    delegate_attr_dicts = ["_parameters", "_functions", "_submodules"]
 
     def __getitem__(self, key: str) -> Union[Callable[..., Any], Parameter]:
         """Delegate instrument['name'] to parameter or function 'name'."""

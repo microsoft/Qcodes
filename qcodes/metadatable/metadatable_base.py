@@ -16,8 +16,16 @@ Snapshot = Dict[str, Any]
 
 class Metadatable:
     def __init__(self, metadata: Optional[Mapping[str, Any]] = None):
-        self.metadata: Dict[str, Any] = {}
+        self._metadata: Dict[str, Any] = {}
         self.load_metadata(metadata or {})
+
+    @property
+    def metadata(self) -> Dict[str, Any]:
+        return self._metadata
+
+    @metadata.setter
+    def metadata(self, metadata: Dict[str, Any]) -> None:
+        self._metadata = metadata
 
     def load_metadata(self, metadata: Mapping[str, Any]) -> None:
         """
