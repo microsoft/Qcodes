@@ -137,7 +137,7 @@ def test_sweep_in_dond():
 @pytest.mark.usefixtures("empty_temp_db", "experiment")
 def test_sweep_and_linsweep_in_dond():
     set_parameter = ManualParameter('set_param')
-    
+
     sweep = Sweep(set_parameter, [1,2,3])
 
     set_parameter2 = ManualParameter('set_param2')
@@ -146,7 +146,7 @@ def test_sweep_and_linsweep_in_dond():
 
     dataset, _, _ = dond(sweep, linsweep, get_parameter)
     arr = dataset.get_parameter_data('get_param')['get_param']['get_param']
-    
+
     assert np.allclose(arr, np.repeat(np.array([1,2,3])[:,np.newaxis], 11, axis=1))
 
 
@@ -157,12 +157,11 @@ def test_sweep_execute_sweep_args():
     other_sweep = Sweep(set_parameter2, [1,2,3])
 
     get_param = Parameter(
-        'get_param', 
-        get_cmd=lambda: set_parameter() + set_parameter2())
+        "get_param", get_cmd=lambda: set_parameter() + set_parameter2()
+    )
 
     dataset = sweep.execute(other_sweep, measure_params=get_param)
 
     arr = dataset.get_parameter_data('get_param')['get_param']['get_param']
     assert np.allclose(arr, [[2,3,4], [3,4,5], [4,5,6]])
     print(dataset)
-

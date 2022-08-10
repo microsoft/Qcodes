@@ -1413,7 +1413,7 @@ class BaseSweep(AbstractSweep):
                     'Either provide measure_params, or set station.measure_params'
                 )
             measure_params = station.measure_params
-        
+
         # Convert measure_params to list if it is a single param
         if isinstance(measure_params, _BaseParameter):
             measure_params = [measure_params]
