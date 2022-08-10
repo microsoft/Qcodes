@@ -1249,7 +1249,7 @@ class BaseSweep(AbstractSweep):
         self.loop_index = None
         self.iterator = None
         self.revert = revert
-        self.delay = delay
+        self._delay = delay
         self.initial_delay = initial_delay
 
         # setpoint_info will be populated once the sweep starts
@@ -1453,10 +1453,17 @@ class BaseSweep(AbstractSweep):
         return len(self.sequence)
 
     @property
+    def delay(self) -> float:
+        """
+        Delay between two consecutive sweep points.
+        """
+        return self._delay or 0
+
+    @property
     def post_actions(self) -> ActionsT:
         # TODO maybe add option for post actions
         # However this can cause issues if sweep is prematurely exited
-        return None
+        return []
 
 
 
