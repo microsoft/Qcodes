@@ -1400,7 +1400,7 @@ class BaseSweep(AbstractSweep):
         self,
         *args: Iterable['BaseSweep'],
         name: str = None,
-        measure_params: Iterable = None,
+        measure_params: Union[Iterable, _BaseParameter] = None,
         repetitions: int = 1,
         sweep: Union[Iterable, 'BaseSweep'] = None
     ):
@@ -1413,6 +1413,10 @@ class BaseSweep(AbstractSweep):
                     'Either provide measure_params, or set station.measure_params'
                 )
             measure_params = station.measure_params
+        
+        # Convert measure_params to list if it is a single param
+        if isinstance(measure_params, _BaseParameter):
+            measure_params = [measure_params]
 
         # Create list of sweeps
         sweeps = list(args)
@@ -1439,6 +1443,8 @@ class BaseSweep(AbstractSweep):
 
         with MeasurementLoop(name) as msmt:
             measure_sweeps(sweeps=sweeps, measure_params=measure_params, msmt=msmt)
+
+        return msmt.dataset
 
     # Methods needed to make BaseSweep subclass of AbstractSweep
     def get_setpoints(self) -> np.ndarray:

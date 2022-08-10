@@ -10,7 +10,7 @@ from qcodes import ManualParameter, Parameter
 from qcodes.dataset import initialise_or_create_database_at, load_or_create_experiment
 from qcodes.dataset.data_set import load_by_id
 from qcodes.dataset.measurement_loop import MeasurementLoop, Sweep
-from qcodes.utils.dataset.doNd import LinSweep
+from qcodes.utils.dataset.doNd import LinSweep, dond
 
 
 def test_sweep_1_arg_sequence():
@@ -122,3 +122,47 @@ def test_error_on_iterate_sweep():
 
     with pytest.raises(RuntimeError):
         iter(sweep)
+
+
+@pytest.mark.usefixtures("empty_temp_db", "experiment")
+def test_sweep_in_dond():
+    set_parameter = ManualParameter('set_param')
+    sweep = Sweep(set_parameter, [1,2,3])
+    get_parameter = Parameter('get_param', get_cmd=set_parameter)
+
+    dataset, _, _ = dond(sweep, get_parameter)
+    assert np.allclose(dataset.get_parameter_data('get_param')['get_param']['get_param'], [1,2,3])
+
+
+@pytest.mark.usefixtures("empty_temp_db", "experiment")
+def test_sweep_and_linsweep_in_dond():
+    set_parameter = ManualParameter('set_param')
+    
+    sweep = Sweep(set_parameter, [1,2,3])
+
+    set_parameter2 = ManualParameter('set_param2')
+    linsweep = LinSweep(set_parameter2, 0, 10, 11)
+    get_parameter = Parameter('get_param', get_cmd=set_parameter)
+
+    dataset, _, _ = dond(sweep, linsweep, get_parameter)
+    arr = dataset.get_parameter_data('get_param')['get_param']['get_param']
+    
+    assert np.allclose(arr, np.repeat(np.array([1,2,3])[:,np.newaxis], 11, axis=1))
+
+
+def test_sweep_execute_sweep_args():
+    set_parameter = ManualParameter('set_param')
+    sweep = Sweep(set_parameter, [1,2,3])
+    set_parameter2 = ManualParameter('set_param2')
+    other_sweep = Sweep(set_parameter2, [1,2,3])
+
+    get_param = Parameter(
+        'get_param', 
+        get_cmd=lambda: set_parameter() + set_parameter2())
+
+    dataset = sweep.execute(other_sweep, measure_params=get_param)
+
+    arr = dataset.get_parameter_data('get_param')['get_param']['get_param']
+    assert np.allclose(arr, [[2,3,4], [3,4,5], [4,5,6]])
+    print(dataset)
+
