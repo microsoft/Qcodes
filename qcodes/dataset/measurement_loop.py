@@ -12,13 +12,15 @@ from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measuremen
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning import serialization as serial
 from qcodes.dataset.descriptions.versioning.converters import new_to_old
+from qcodes.dataset.do_nd import AbstractSweep
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.sqlite.queries import add_parameter, update_run_description
 from qcodes.instrument.base import InstrumentBase
 from qcodes.instrument.parameter import _BaseParameter, DelegateParameter, MultiParameter, Parameter
 from qcodes.instrument.sweep_values import SweepValues
+from qcodes.parameters.parameter_base import ParameterBase
 from qcodes.station import Station
-from qcodes.utils.dataset.doNd import AbstractSweep
+from qcodes.utils.dataset.doNd import AbstractSweep, ActionsT
 from qcodes.utils.helpers import (
     PerformanceTimer,
     directly_executed_from_cell,
@@ -1207,7 +1209,7 @@ class _IterateDondSweep:
 
 
 
-class BaseSweep:
+class BaseSweep(AbstractSweep):
     """Sweep over an iterable inside a Measurement
 
     Args:
@@ -1436,6 +1438,27 @@ class BaseSweep:
 
         with MeasurementLoop(name) as msmt:
             measure_sweeps(sweeps=sweeps, measure_params=measure_params, msmt=msmt)
+
+    # Methods needed to make BaseSweep subclass of AbstractSweep
+    def get_setpoints(self) -> np.ndarray:
+        return self.sequence
+
+    @property
+    def param(self) -> ParameterBase:
+        # TODO create necessary parameter if self.parameter is None
+        return self.parameter
+
+    @property
+    def num_points(self) -> float:
+        return len(self.sequence)
+
+    @property
+    def post_actions(self) -> ActionsT:
+        # TODO maybe add option for post actions
+        # However this can cause issues if sweep is prematurely exited
+        return None
+
+
 
 
 class Sweep(BaseSweep):
