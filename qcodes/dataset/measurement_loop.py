@@ -1398,6 +1398,7 @@ class BaseSweep(AbstractSweep):
 
     def execute(
         self,
+        *args: Iterable['BaseSweep'],
         name: str = None,
         measure_params: Iterable = None,
         repetitions: int = 1,
@@ -1413,14 +1414,14 @@ class BaseSweep(AbstractSweep):
                 )
             measure_params = station.measure_params
 
-
         # Create list of sweeps
+        sweeps = list(args)
+        if not all(isinstance(sweep, BaseSweep) for sweep in sweeps):
+            raise ValueError('Args passed to Sweep.execute must be Sweeps')
         if isinstance(sweep, BaseSweep):
-            sweeps = [sweep]
+            sweeps.append(sweep)
         elif isinstance(sweep, (list, tuple)):
-            sweeps = list(sweep)
-        elif sweep is None:
-            sweeps = []
+            sweeps += list(sweep)
 
         # Add repetition as a sweep if > 1
         if repetitions > 1:
