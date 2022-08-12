@@ -123,13 +123,13 @@ def connect(name: Union[str, Path], debug: bool = False,
 
     Args:
         name: name or path to the sqlite file
-        debug: whether or not to turn on tracing
+        debug: should tracing be turned on.
         version: which version to create. We count from 0. -1 means 'latest'.
             Should always be left at -1 except when testing.
 
     Returns:
-        conn: connection object to the database (note, it is
-            `ConnectionPlus`, not `sqlite3.Connection`
+        connection object to the database (note, it is
+        :class:`ConnectionPlus`, not :class:`sqlite3.Connection`)
 
     """
     # register numpy->binary(TEXT) adapter

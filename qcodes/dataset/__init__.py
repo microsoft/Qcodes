@@ -27,7 +27,9 @@ from .experiment_settings import get_default_experiment_id, reset_default_experi
 from .legacy_import import import_dat_file
 from .measurements import Measurement
 from .plotting import plot_by_id, plot_dataset
+from .sqlite.connection import ConnectionPlus
 from .sqlite.database import (
+    connect,
     initialise_database,
     initialise_or_create_database_at,
     initialised_database_at,
@@ -42,6 +44,7 @@ from .threading import (
 __all__ = [
     "AbstractSweep",
     "ArraySweep",
+    "ConnectionPlus",
     "DataSetProtocol",
     "DataSetType",
     "LinSweep",
@@ -52,6 +55,7 @@ __all__ = [
     "SequentialParamsCaller",
     "ThreadPoolParamsCaller",
     "call_params_threaded",
+    "connect",
     "do0d",
     "do1d",
     "do2d",

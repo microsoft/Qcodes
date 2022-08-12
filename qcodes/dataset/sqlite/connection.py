@@ -24,14 +24,19 @@ class ConnectionPlus(wrapt.ObjectProxy):
     It is not allowed to instantiate a new `ConnectionPlus` object from a
     `ConnectionPlus` object.
 
-    Attributes:
-        atomic_in_progress: a bool describing whether the connection is
-            currently in the middle of an atomic block of transactions, thus
-            allowing to nest `atomic` context managers
-        path_to_dbfile: Path to the database file of the connection.
+    It is recommended to create a ConnectionPlus using the function :func:`connect`
+
     """
     atomic_in_progress: bool = False
-    path_to_dbfile = ''
+    """
+    a bool describing whether the connection is
+    currently in the middle of an atomic block of transactions, thus
+    allowing to nest `atomic` context managers
+    """
+    path_to_dbfile: str = ""
+    """
+    Path to the database file of the connection.
+    """
 
     def __init__(self, sqlite3_connection: sqlite3.Connection):
         super().__init__(sqlite3_connection)
