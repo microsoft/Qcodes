@@ -140,7 +140,8 @@ plugins = "numpy.typing.mypy_plugin"
 show_error_codes = true
 enable_error_code = "ignore-without-code"
 # strict confic. Eventually we would like to
-# turn all of these on.
+# turn all of these on. These are all setings
+# turned on by strict as of mypy 0.971
 warn_unused_configs = true
 # waiting for variadic generics so we
 # can type numpy array constructors
@@ -149,7 +150,7 @@ disallow_any_generics = false
 disallow_subclassing_any = false
 disallow_untyped_calls = false
 disallow_untyped_defs = true
-disallow_incomplete_defs = false
+disallow_incomplete_defs = true
 check_untyped_defs = false
 disallow_untyped_decorators = true
 no_implicit_optional = true
@@ -179,6 +180,7 @@ module = [
 
 ]
 disallow_untyped_defs = false
+disallow_incomplete_defs = false
 
 # these are packages that we import
 # but either don't have stubs or we
