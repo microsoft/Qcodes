@@ -115,7 +115,7 @@ pytest-mock~=3.8.2
 pytest-rerunfailures~=10.2
 pytest-xdist~=2.5.0
 python-dateutil~=2.8.2
-pytz~=2022.1
+pytz~=2022.2
 PyVISA~=1.11.3
 PyVISA-sim~=0.4.0
 pywin32==304; sys_platform == 'win32'
