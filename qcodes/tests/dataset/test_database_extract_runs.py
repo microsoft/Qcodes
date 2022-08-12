@@ -1,6 +1,7 @@
 import os
 import random
 import re
+import sys
 import uuid
 from contextlib import contextmanager
 from os.path import getmtime
@@ -512,6 +513,9 @@ def test_load_by_X_functions(two_empty_temp_db_connections,
     assert source_ds_2_2.the_same_dataset_as(test_ds)
 
 
+@pytest.mark.xfail(
+    condition=sys.platform == "win32", reason="Time resolution is too low on windows"
+)
 def test_combine_runs(two_empty_temp_db_connections,
                       empty_temp_db_connection,
                       some_interdeps):
