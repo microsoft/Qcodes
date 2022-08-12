@@ -383,7 +383,7 @@ class QDac(VisaInstrument):
 
                 self._assigned_fgs[chan] = Generator(fg)
                 self._assigned_fgs[chan].t_end = time_end
-                if trigger != 0:
+                if int(trigger) != 0:
                     self._assigned_triggers[fg] = int(trigger)
                 for syn in range(1, self._num_syns+1):
                     self.write(f'syn {syn}')
