@@ -165,8 +165,8 @@ warn_return_any = false
 # and in external libs that dont use
 # __all__ in their public reexported api
 no_implicit_reexport = false
-strict_equality = false
-strict_concatenate = false
+strict_equality = true
+strict_concatenate = true
 
 [[tool.mypy.overrides]]
 module = [
