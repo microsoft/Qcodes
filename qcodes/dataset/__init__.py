@@ -31,7 +31,9 @@ from .sqlite.database import (
     initialise_database,
     initialise_or_create_database_at,
     initialised_database_at,
+    connect
 )
+from .sqlite.connection import ConnectionPlus
 from .sqlite.settings import SQLiteSettings
 from .threading import (
     SequentialParamsCaller,
@@ -42,6 +44,7 @@ from .threading import (
 __all__ = [
     "AbstractSweep",
     "ArraySweep",
+    "ConnectionPlus",
     "DataSetProtocol",
     "DataSetType",
     "LinSweep",
@@ -52,6 +55,7 @@ __all__ = [
     "SequentialParamsCaller",
     "ThreadPoolParamsCaller",
     "call_params_threaded",
+    "connect",
     "do0d",
     "do1d",
     "do2d",
