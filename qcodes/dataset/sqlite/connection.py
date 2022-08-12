@@ -24,6 +24,8 @@ class ConnectionPlus(wrapt.ObjectProxy):
     It is not allowed to instantiate a new `ConnectionPlus` object from a
     `ConnectionPlus` object.
 
+    It is recommended to create a ConnectionPlus using the function :func:`connect`
+
     """
     atomic_in_progress: bool = False
     """
