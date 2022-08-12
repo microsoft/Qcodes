@@ -33,9 +33,7 @@ from .sqlite.database import (
     initialise_database,
     initialise_or_create_database_at,
     initialised_database_at,
-    connect
 )
-from .sqlite.connection import ConnectionPlus
 from .sqlite.settings import SQLiteSettings
 from .threading import (
     SequentialParamsCaller,
