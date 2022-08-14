@@ -121,7 +121,7 @@ PyVISA-sim~=0.4.0
 pywin32==304; sys_platform == 'win32'
 pywinpty~=2.0.7; sys_platform == 'win32'
 PyYAML~=6.0
-pyzmq~=23.2.0
+pyzmq~=23.2.1
 requests~=2.28.1
 rsa~=4.9
 ruamel.yaml~=0.17.21
@@ -147,7 +147,7 @@ sphinxcontrib-jsmath~=1.0.1
 sphinxcontrib-qthelp~=1.0.3
 sphinxcontrib-serializinghtml~=1.1.5
 sphinxcontrib-towncrier~=0.2.1a0
-stack-data~=0.3.0
+stack-data~=0.4.0
 stringparser~=0.5
 tabulate~=0.8.10
 terminado~=0.15.0
