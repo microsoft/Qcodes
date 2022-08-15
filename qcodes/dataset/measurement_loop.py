@@ -1277,6 +1277,9 @@ class BaseSweep(AbstractSweep):
         components_str = ', '.join(components)
         return f'Sweep({components_str})'
 
+    def __len__(self):
+        return len(self.sequence)
+
     def __iter__(self):
         if threading.current_thread() is not MeasurementLoop.measurement_thread:
             raise RuntimeError(

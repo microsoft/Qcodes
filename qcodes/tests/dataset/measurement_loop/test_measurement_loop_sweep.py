@@ -117,6 +117,10 @@ def test_sweep_step():
     assert np.allclose(sweep.sequence, np.append(np.arange(0, 9.9, 0.5), [9.9]))
 
 
+def test_sweep_len():
+    sweep = Sweep(start=0, stop=10, step=0.5)
+    assert len(sweep) == 21
+
 def test_error_on_iterate_sweep():
     sweep = Sweep([1,2,3], 'sweep')
 
