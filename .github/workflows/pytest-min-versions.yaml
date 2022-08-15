@@ -38,6 +38,9 @@ jobs:
         cache-dependency-path: |
           pyproject.toml
           requirements.txt
+    - name: upgrade pip setuptools wheel
+      run: python -m pip install --upgrade pip setuptools wheel
+      shell: bash
     - name: generate min_requirements.txt
 #     Use fork of requirements-builder until official version
 #     has support for pyproject.toml (pep621)
