@@ -58,16 +58,13 @@ jobs:
       uses: actions/setup-python@v4.2.0
       with:
         python-version: ${{ matrix.python-version }}
-    - name: prepare pip cache
-      id: prepare-cache-pip
-      uses: ./.github/actions/prepare-cache-pip
-    - name: pip cache
-      uses: actions/cache@v3.0.7
-      with:
-        path: ${{ steps.prepare-cache-pip.outputs.cache-dir }}
-        key: ${{ runner.os }}-${{ matrix.python-version }}-pip-${{ hashFiles('**/requirements.txt') }}-${{ hashFiles('**/pyproject.toml') }}
-        restore-keys: |
-          ${{ runner.os }}-${{ matrix.python-version }}-pip-
+        cache: 'pip'
+        cache-dependency-path: |
+          pyproject.toml
+          requirements.txt
+    - name: upgrade pip setuptools wheel
+      run: python -m pip install --upgrade pip setuptools wheel
+      shell: bash
     - name: install qcodes
       run: pip install -c requirements.txt .[docs]
     - name: Build docs on linux
