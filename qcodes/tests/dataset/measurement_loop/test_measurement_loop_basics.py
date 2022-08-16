@@ -13,27 +13,28 @@ from qcodes.dataset.measurement_loop import MeasurementLoop, Sweep
 from qcodes.utils.dataset.doNd import LinSweep
 
 
-@pytest.fixture
-def create_dummy_database():
-    @contextlib.contextmanager
-    def func_context_manager():
-        with tempfile.TemporaryDirectory() as temporary_folder:
-            temporary_folder = tempfile.TemporaryDirectory()
-            print(f"Created temporary folder for database: {temporary_folder}")
+# @pytest.fixture
+# def create_dummy_database():
+#     @contextlib.contextmanager
+#     def func_context_manager():
+#         with tempfile.TemporaryDirectory() as temporary_folder:
+#             temporary_folder = tempfile.TemporaryDirectory()
+#             print(f"Created temporary folder for database: {temporary_folder}")
 
-            assert Path(temporary_folder.name).exists()
-            db_path = Path(temporary_folder.name) / "test_database.db"
-            initialise_or_create_database_at(str(db_path))
+#             assert Path(temporary_folder.name).exists()
+#             db_path = Path(temporary_folder.name) / "test_database.db"
+#             initialise_or_create_database_at(str(db_path))
 
-            try:
-                exp = load_or_create_experiment("test_experiment")
-                yield exp
-            finally:
-                exp.conn.close()
+#             try:
+#                 exp = load_or_create_experiment("test_experiment")
+#                 yield exp
+#             finally:
+#                 exp.conn.close()
 
-    return func_context_manager
+#     return func_context_manager
 
 
+@pytest.mark.usefixtures("empty_temp_db", "experiment")
 def test_original_dond(create_dummy_database):
     with create_dummy_database():
         from qcodes.utils.dataset.doNd import LinSweep, dond

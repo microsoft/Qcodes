@@ -25,6 +25,7 @@ from .experiment_container import (
 )
 from .experiment_settings import get_default_experiment_id, reset_default_experiment_id
 from .legacy_import import import_dat_file
+from .measurement_loop import MeasurementLoop, Sweep
 from .measurements import Measurement
 from .plotting import plot_by_id, plot_dataset
 from .sqlite.database import (
@@ -73,9 +74,11 @@ __all__ = [
     "load_from_netcdf",
     "load_last_experiment",
     "load_or_create_experiment",
+    "MeasurementLoop",
     "new_data_set",
     "new_experiment",
     "plot_by_id",
     "plot_dataset",
     "reset_default_experiment_id",
+    "Sweep"
 ]

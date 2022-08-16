@@ -404,13 +404,14 @@ class DataSetInMem(BaseDataSet):
         shapes: Shapes = None,
         parent_datasets: Sequence[Mapping[Any, Any]] = (),
         write_in_background: bool = False,
+        allow_empty_dataset: bool = False
     ) -> None:
         if not self.pristine:
             raise RuntimeError("Cannot prepare a dataset that is not pristine.")
 
         self.add_snapshot(json.dumps({"station": snapshot}, cls=NumpyJSONEncoder))
 
-        if interdeps == InterDependencies_():
+        if interdeps == InterDependencies_() and not allow_empty_dataset:
             raise RuntimeError("No parameters supplied")
 
         self._set_interdependencies(interdeps, shapes)

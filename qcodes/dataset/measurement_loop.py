@@ -12,13 +12,15 @@ from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measuremen
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning import serialization as serial
 from qcodes.dataset.descriptions.versioning.converters import new_to_old
+from qcodes.dataset.do_nd import AbstractSweep
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.sqlite.queries import add_parameter, update_run_description
 from qcodes.instrument.base import InstrumentBase
 from qcodes.instrument.parameter import _BaseParameter, DelegateParameter, MultiParameter, Parameter
 from qcodes.instrument.sweep_values import SweepValues
+from qcodes.parameters.parameter_base import ParameterBase
 from qcodes.station import Station
-from qcodes.utils.dataset.doNd import AbstractSweep
+from qcodes.utils.dataset.doNd import AbstractSweep, ActionsT
 from qcodes.utils.helpers import (
     PerformanceTimer,
     directly_executed_from_cell,
@@ -1207,7 +1209,7 @@ class _IterateDondSweep:
 
 
 
-class BaseSweep:
+class BaseSweep(AbstractSweep):
     """Sweep over an iterable inside a Measurement
 
     Args:
@@ -1247,7 +1249,7 @@ class BaseSweep:
         self.loop_index = None
         self.iterator = None
         self.revert = revert
-        self.delay = delay
+        self._delay = delay
         self.initial_delay = initial_delay
 
         # setpoint_info will be populated once the sweep starts
@@ -1274,6 +1276,9 @@ class BaseSweep:
         # Combine components
         components_str = ', '.join(components)
         return f'Sweep({components_str})'
+
+    def __len__(self):
+        return len(self.sequence)
 
     def __iter__(self):
         if threading.current_thread() is not MeasurementLoop.measurement_thread:
@@ -1396,8 +1401,9 @@ class BaseSweep:
 
     def execute(
         self,
+        *args: Iterable['BaseSweep'],
         name: str = None,
-        measure_params: Iterable = None,
+        measure_params: Union[Iterable, _BaseParameter] = None,
         repetitions: int = 1,
         sweep: Union[Iterable, 'BaseSweep'] = None
     ):
@@ -1411,14 +1417,18 @@ class BaseSweep:
                 )
             measure_params = station.measure_params
 
+        # Convert measure_params to list if it is a single param
+        if isinstance(measure_params, _BaseParameter):
+            measure_params = [measure_params]
 
         # Create list of sweeps
+        sweeps = list(args)
+        if not all(isinstance(sweep, BaseSweep) for sweep in sweeps):
+            raise ValueError('Args passed to Sweep.execute must be Sweeps')
         if isinstance(sweep, BaseSweep):
-            sweeps = [sweep]
+            sweeps.append(sweep)
         elif isinstance(sweep, (list, tuple)):
-            sweeps = list(sweep)
-        elif sweep is None:
-            sweeps = []
+            sweeps += list(sweep)
 
         # Add repetition as a sweep if > 1
         if repetitions > 1:
@@ -1436,6 +1446,36 @@ class BaseSweep:
 
         with MeasurementLoop(name) as msmt:
             measure_sweeps(sweeps=sweeps, measure_params=measure_params, msmt=msmt)
+
+        return msmt.dataset
+
+    # Methods needed to make BaseSweep subclass of AbstractSweep
+    def get_setpoints(self) -> np.ndarray:
+        return self.sequence
+
+    @property
+    def param(self) -> ParameterBase:
+        # TODO create necessary parameter if self.parameter is None
+        return self.parameter
+
+    @property
+    def num_points(self) -> float:
+        return len(self.sequence)
+
+    @property
+    def delay(self) -> float:
+        """
+        Delay between two consecutive sweep points.
+        """
+        return self._delay or 0
+
+    @property
+    def post_actions(self) -> ActionsT:
+        # TODO maybe add option for post actions
+        # However this can cause issues if sweep is prematurely exited
+        return []
+
+
 
 
 class Sweep(BaseSweep):
