@@ -1,7 +1,7 @@
 alabaster~=0.7.12
 argon2-cffi~=21.3.0
 argon2-cffi-bindings~=21.2.0
-asttokens~=2.0.7
+asttokens~=2.0.8
 atomicwrites~=1.4.1
 attrs~=22.1.0
 autodocsumm~=0.2.9
