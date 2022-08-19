@@ -52,6 +52,10 @@ jobs:
       run: |
         pip install -r min_requirements.txt
         pip install .[test]
-    - name: Run tests
+    - name: Run parallel tests
       run: |
-        pytest --hypothesis-profile ci qcodes
+        pytest -m "not serial" --cov=qcodes --cov-report xml --hypothesis-profile ci qcodes
+# a subset of the tests fails when run in parallel on Windows so run those in serial here
+    - name: Run serial tests
+      run: |
+        pytest -m "serial" -n 0 --dist no --cov=qcodes --cov-report xml --cov-append --hypothesis-profile ci qcodes
