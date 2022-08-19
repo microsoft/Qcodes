@@ -1,5 +1,7 @@
-import pytest
+import sys
 import timeit
+
+import pytest
 
 import qcodes.instrument.sims as sims
 from qcodes.instrument_drivers.tektronix.DPO7200xx import TektronixDPO7000xx
@@ -18,7 +20,9 @@ def tektronix_dpo():
     yield driver
     driver.close()
 
-
+@pytest.mark.xfail(
+    condition=sys.platform == "win32", reason="Time resolution is too low on windows"
+)
 def test_adjust_timer(tektronix_dpo):
     """
     After adjusting the type of the measurement or the source of the
