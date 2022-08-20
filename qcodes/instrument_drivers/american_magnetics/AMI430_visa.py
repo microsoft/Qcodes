@@ -56,7 +56,7 @@ class AMI430SwitchHeater(InstrumentChannel):
 
             return check_enabled_decorator
 
-    def __init__(self, parent: "AMI430") -> None:
+    def __init__(self, parent: "AMIModel430") -> None:
         super().__init__(parent, "SwitchHeater")
 
         # Add state parameters
@@ -140,14 +140,14 @@ class AMI430SwitchHeater(InstrumentChannel):
         return bool(int(self.ask("PS?").strip()))
 
 
-class AMI430(VisaInstrument):
+class AMIModel430(VisaInstrument):
     """
     Driver for the American Magnetics Model 430 magnet power supply programmer.
 
     This class controls a single magnet power supply. In order to use two or
     three magnets simultaneously to set field vectors, first instantiate the
     individual magnets using this class and then pass them as arguments to
-    either the AMI430_2D or AMI430_3D virtual instrument classes.
+    the AMIModel4303D virtual instrument classes.
 
     Args:
         name: a name for the instrument
@@ -173,7 +173,7 @@ class AMI430(VisaInstrument):
     ):
         if "has_current_rating" in kwargs.keys():
             warnings.warn(
-                "'has_current_rating' kwarg to AMI430 "
+                "'has_current_rating' kwarg to AMIModel430 "
                 "is deprecated and has no effect",
                 category=QCoDeSDeprecationWarning,
             )
@@ -243,7 +243,7 @@ class AMI430(VisaInstrument):
         )
         if current_ramp_limit is None:
             self._update_ramp_rate_limit(
-                AMI430._DEFAULT_CURRENT_RAMP_LIMIT, update=False
+                AMIModel430._DEFAULT_CURRENT_RAMP_LIMIT, update=False
             )
         else:
             self._update_ramp_rate_limit(current_ramp_limit, update=False)
@@ -495,8 +495,8 @@ class AMI430(VisaInstrument):
             field_units_int = self.field_units.inverse_val_mapping[field_units]
 
         # Map to shortened unit names
-        ramp_rate_units_short = AMI430._SHORT_UNITS[ramp_rate_units_int]
-        field_units_short = AMI430._SHORT_UNITS[field_units_int]
+        ramp_rate_units_short = AMIModel430._SHORT_UNITS[ramp_rate_units_int]
+        field_units_short = AMIModel430._SHORT_UNITS[field_units_int]
 
         # And update all units
         self.coil_constant.unit = f"{field_units_short}/A"
@@ -561,13 +561,17 @@ class AMI430(VisaInstrument):
         return result
 
 
-class AMI4303D(Instrument):
+class AMI430(AMIModel430):
+    pass
+
+
+class AMIModel4303D(Instrument):
     def __init__(
         self,
         name: str,
-        instrument_x: Union[AMI430, str],
-        instrument_y: Union[AMI430, str],
-        instrument_z: Union[AMI430, str],
+        instrument_x: Union[AMIModel430, str],
+        instrument_y: Union[AMIModel430, str],
+        instrument_z: Union[AMIModel430, str],
         field_limit: Union[numbers.Real, Iterable[CartesianFieldLimitFunction]],
         **kwargs: Any,
     ):
@@ -576,16 +580,16 @@ class AMI4303D(Instrument):
         supplies simultaneously for setting magnetic field vectors.
 
         The individual magnet power supplies can be passed in as either
-        instances of AMI430 driver or as names of existing AMI430 instances.
+        instances of AMIModel430 driver or as names of existing AMIModel430 instances.
         In the latter case, the instances will be found via the passed names.
 
         Args:
             name: a name for the instrument
-            instrument_x: AMI430 instance or a names of existing AMI430
+            instrument_x: AMIModel430 instance or a names of existing AMIModel430
                 instance for controlling the X axis of magnetic field
-            instrument_y: AMI430 instance or a names of existing AMI430
+            instrument_y: AMIModel430 instance or a names of existing AMIModel430
                 instance for controlling the Y axis of magnetic field
-            instrument_z: AMI430 instance or a names of existing AMI430
+            instrument_z: AMIModel430 instance or a names of existing AMIModel430
                 instance for controlling the Z axis of magnetic field
             field_limit: a number for maximum allows magnetic field or an
                 iterable of callable field limit functions that define
@@ -600,33 +604,33 @@ class AMI4303D(Instrument):
             (instrument_x, instrument_y, instrument_z),
             ("instrument_x", "instrument_y", "instrument_z"),
         ):
-            if not isinstance(instrument, (AMI430, str)):
+            if not isinstance(instrument, (AMIModel430, str)):
                 raise ValueError(
-                    f"Instruments need to be instances of the class AMI430 "
+                    f"Instruments need to be instances of the class AMIModel430 "
                     f"or be valid names of already instantiated instances "
-                    f"of AMI430 class; {arg_name} argument is "
+                    f"of AMIModel430 class; {arg_name} argument is "
                     f"neither of those"
                 )
 
-        def find_ami430_with_name(ami430_name: str) -> AMI430:
-            found_ami430 = AMI430.find_instrument(
-                name=ami430_name, instrument_class=AMI430
+        def find_ami430_with_name(ami430_name: str) -> AMIModel430:
+            found_ami430 = AMIModel430.find_instrument(
+                name=ami430_name, instrument_class=AMIModel430
             )
             return found_ami430
 
         self._instrument_x = (
             instrument_x
-            if isinstance(instrument_x, AMI430)
+            if isinstance(instrument_x, AMIModel430)
             else find_ami430_with_name(instrument_x)
         )
         self._instrument_y = (
             instrument_y
-            if isinstance(instrument_y, AMI430)
+            if isinstance(instrument_y, AMIModel430)
             else find_ami430_with_name(instrument_y)
         )
         self._instrument_z = (
             instrument_z
-            if isinstance(instrument_z, AMI430)
+            if isinstance(instrument_z, AMIModel430)
             else find_ami430_with_name(instrument_z)
         )
 
@@ -894,10 +898,10 @@ class AMI4303D(Instrument):
         required ramp rates for x, y, z axes (in this order) where axes are
         ramped simultaneously.
         """
-        vector_ramp_rate = AMI430_3D.calculate_vector_ramp_rate_from_duration(
+        vector_ramp_rate = AMIModel4303D.calculate_vector_ramp_rate_from_duration(
             start, setpoint, duration
         )
-        return AMI430_3D.calculate_axes_ramp_rates_from_vector_ramp_rate(
+        return AMIModel4303D.calculate_axes_ramp_rates_from_vector_ramp_rate(
             start, setpoint, vector_ramp_rate
         )
 
@@ -1119,7 +1123,9 @@ class AMI4303D(Instrument):
         ):
             axis_instrument.pause()
 
-    def _request_field_change(self, instrument: AMI430, value: numbers.Real) -> None:
+    def _request_field_change(
+        self, instrument: AMIModel430, value: numbers.Real
+    ) -> None:
         """
         This method is called by the child x/y/z magnets if they are set
         individually. It results in additional safety checks being
@@ -1194,5 +1200,5 @@ class AMI4303D(Instrument):
         self._set_point = set_point
 
 
-class AMI430_3D(AMI4303D):
+class AMI430_3D(AMIModel4303D):
     pass
