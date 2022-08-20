@@ -561,7 +561,7 @@ class AMI430(VisaInstrument):
         return result
 
 
-class AMI430_3D(Instrument):
+class AMI4303D(Instrument):
     def __init__(
         self,
         name: str,
@@ -1192,3 +1192,7 @@ class AMI430_3D(Instrument):
         self._adjust_child_instruments(set_point.get_components("x", "y", "z"))
 
         self._set_point = set_point
+
+
+class AMI430_3D(AMI4303D):
+    pass
