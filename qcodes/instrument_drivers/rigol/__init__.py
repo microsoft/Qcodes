@@ -3,6 +3,7 @@ from .RigolDG4000 import RigolDG4000
 from .RigolDP821 import RigolDP821
 from .RigolDP831 import RigolDP831
 from .RigolDP832 import RigolDP832
+from .RigolDS4000 import RigolDS4000, RigolDS4000Channel
 
 __all__ = [
     "RigolDG1062Burst",
@@ -12,4 +13,6 @@ __all__ = [
     "RigolDP831",
     "RigolDP832",
     "RigolDG4000",
+    "RigolDS4000",
+    "RigolDS4000Channel",
 ]
