@@ -7,6 +7,7 @@ class RigolDP831(_RigolDP8xx):
     """
     This is the qcodes driver for the Rigol DP831(A) Power Supply
     """
+
     def __init__(self, name: str, address: str, **kwargs: Any):
         channel_ranges = [(8.0, 5.0), (30.0, 2.0), (-30.0, 2.0)]
 
