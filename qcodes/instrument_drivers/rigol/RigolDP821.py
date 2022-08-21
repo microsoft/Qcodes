@@ -11,10 +11,7 @@ class RigolDP821(_RigolDP8xx):
     def __init__(self, name: str, address: str, **kwargs: Any):
         channel_ranges = [
             (60.0, 1.0),
-            (
-                8.0,
-                10.0,
-            ),
+            (8.0, 10.0),
         ]
 
         ovp_ranges_std = [(0.01, 66.0), (0.01, 8.8)]
