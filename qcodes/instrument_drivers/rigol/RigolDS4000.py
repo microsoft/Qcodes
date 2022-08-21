@@ -15,7 +15,7 @@ from qcodes.parameters import ArrayParameter, ParamRawDataType
 log = logging.getLogger(__name__)
 
 
-class TraceNotReady(Exception):
+class RigolDS4000TraceNotReady(Exception):
     pass
 
 
@@ -66,9 +66,9 @@ class ScopeArray(ArrayParameter):
 
     def get_raw(self) -> ParamRawDataType:
         assert isinstance(self.instrument, RigolDS4000Channel)
-        assert isinstance(self.root_instrument, DS4000)
+        assert isinstance(self.root_instrument, RigolDS4000)
         if not self.trace_ready:
-            raise TraceNotReady(
+            raise RigolDS4000TraceNotReady(
                 "Please run prepare_curvedata to prepare "
                 "the scope for giving a trace."
             )
