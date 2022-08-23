@@ -61,7 +61,7 @@ class ScaleParameter(TraceParameter):
     Parameter that handles changing the unit when the scale is changed.
     """
 
-    def set_raw(self, value: bool) -> None:  # pylint: disable=method-hidden
+    def set_raw(self, value: str) -> None:  # pylint: disable=method-hidden
         if not isinstance(self.instrument, SignalHoundUSBSA124B):
             raise RuntimeError(
                 "ScaleParameter only works with " "'SignalHound_USB_SA124B'"
