@@ -28,6 +28,7 @@ genapi:
 	sphinx-apidoc  -o  _auto  -d 10 ../qcodes \
 		../qcodes/instrument_drivers/agilent \
 		../qcodes/instrument_drivers/AimTTi \
+		../qcodes/instrument_drivers/basel \
 		../qcodes/instrument_drivers/HP \
 		../qcodes/instrument_drivers/ithaco \
 		../qcodes/instrument_drivers/keysight \
