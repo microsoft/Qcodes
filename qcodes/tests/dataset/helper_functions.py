@@ -1,7 +1,6 @@
-from typing import Sequence, Tuple, Dict
-from operator import mul
-from typing import Optional
 from functools import reduce
+from operator import mul
+from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import pandas
@@ -81,13 +80,13 @@ def verify_dataframe_for_single_param(dataframe: pandas.DataFrame,
     # check that the dataframe has the same elements as index and columns
     pandas_index_names = list(dataframe.index.names)
     pandas_column_names = list(dataframe)
-    pandas_names = []
+    pandas_names: List[Union[str, float]] = []
     for i in pandas_index_names:
         if i is not None:
             pandas_names.append(i)
-    for i in pandas_column_names:
-        if i is not None:
-            pandas_names.append(i)
+    for j in pandas_column_names:
+        if j is not None:
+            pandas_names.append(j)
     assert set(pandas_names) == set(names)
 
     # lets check that the index is made up
@@ -116,4 +115,4 @@ def verify_dataframe_for_single_param(dataframe: pandas.DataFrame,
 
     for name, shape, value in zip(names, shapes, values):
         assert len(simpledf[name]) == reduce(mul, shape)
-        assert_array_equal(dataframe.reset_index()[name].values, value.ravel())
+        assert_array_equal(dataframe.reset_index()[name].to_numpy(), value.ravel())
