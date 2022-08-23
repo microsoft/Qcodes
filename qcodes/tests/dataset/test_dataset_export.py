@@ -5,7 +5,7 @@ import pytest
 import xarray as xr
 
 import qcodes
-from qcodes import new_data_set
+from qcodes.dataset import new_data_set
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.descriptions.versioning import serialization as serial

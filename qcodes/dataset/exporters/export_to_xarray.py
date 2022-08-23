@@ -19,8 +19,7 @@ from .export_to_pandas import (
 if TYPE_CHECKING:
     import xarray as xr
 
-    from qcodes.dataset.data_set import ParameterData
-    from qcodes.dataset.data_set_protocol import DataSetProtocol
+    from qcodes.dataset.data_set_protocol import DataSetProtocol, ParameterData
 
 
 def _load_to_xarray_dataarray_dict_no_metadata(

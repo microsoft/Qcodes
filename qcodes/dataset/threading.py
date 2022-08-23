@@ -25,7 +25,7 @@ from typing import (
 from qcodes.utils import RespondingThread
 
 if TYPE_CHECKING:
-    from qcodes.dataset.data_set_protocol import values_type
+    from qcodes.dataset.data_set_protocol import values_type, res_type
     from qcodes.parameters import ParamDataType, ParameterBase
 
 ParamMeasT = Union["ParameterBase", Callable[[], None]]

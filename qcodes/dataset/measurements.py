@@ -33,7 +33,7 @@ import numpy as np
 
 import qcodes as qc
 import qcodes.validators as vals
-from qcodes.dataset.data_set import VALUE, DataSet, load_by_guid
+from qcodes.dataset.data_set import DataSet, load_by_guid
 from qcodes.dataset.data_set_in_memory import DataSetInMem
 from qcodes.dataset.data_set_protocol import (
     DataSetProtocol,
@@ -52,6 +52,7 @@ from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.export_config import get_data_export_automatic
+from qcodes.dataset.sqlite.query_helpers import VALUE
 from qcodes.parameters import (
     ArrayParameter,
     GroupedParameter,

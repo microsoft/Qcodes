@@ -9,7 +9,7 @@ import numpy as np
 if TYPE_CHECKING:
     import pandas as pd
 
-    from qcodes.dataset.data_set import ParameterData
+    from qcodes.dataset.data_set_protocol import ParameterData
 
 
 def load_to_dataframe_dict(datadict: ParameterData) -> dict[str, pd.DataFrame]:

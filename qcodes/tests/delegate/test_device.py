@@ -3,7 +3,7 @@ import os
 import numpy as np
 import pytest
 
-from qcodes import Measurement
+from qcodes.dataset import Measurement
 from qcodes.tests.instrument_mocks import DummyChannel, MockCustomChannel
 
 
