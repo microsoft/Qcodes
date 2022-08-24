@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import io
-from collections import abc
-from typing import Any, Optional, Sequence, Tuple, Type, Union, cast
+from collections.abc import Iterator, Sequence
+from typing import Any, Tuple, cast
 
 import numpy as np
 
@@ -12,16 +14,16 @@ def is_sequence(obj: Any) -> bool:
     We do not consider strings or unordered collections like sets to be
     sequences, but we do accept iterators (such as generators).
     """
-    return isinstance(obj, (abc.Iterator, abc.Sequence, np.ndarray)) and not isinstance(
+    return isinstance(obj, (Iterator, Sequence, np.ndarray)) and not isinstance(
         obj, (str, bytes, io.IOBase)
     )
 
 
 def is_sequence_of(
     obj: Any,
-    types: Optional[Union[Type[object], Tuple[Type[object], ...]]] = None,
-    depth: Optional[int] = None,
-    shape: Optional[Sequence[int]] = None,
+    types: type[object] | tuple[type[object], ...] | None = None,
+    depth: int | None = None,
+    shape: Sequence[int] | None = None,
 ) -> bool:
     """
     Test if object is a sequence of entirely certain class(es).
@@ -42,7 +44,7 @@ def is_sequence_of(
         return False
 
     if shape is None or shape == ():
-        next_shape: Optional[Tuple[int, ...]] = None
+        next_shape: tuple[int, ...] | None = None
         if depth is None:
             depth = 1
     else:

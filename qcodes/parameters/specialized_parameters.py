@@ -3,9 +3,11 @@ Module for specialized parameters. The :mod:`qcodes.instrument.parameter`
 module provides generic parameters for different generic cases. This module
 provides useful/convenient specializations of such generic parameters.
 """
+from __future__ import annotations
 
+from collections.abc import Callable
 from time import perf_counter
-from typing import TYPE_CHECKING, Any, Callable, Optional, Union
+from typing import TYPE_CHECKING, Any
 
 from typing_extensions import Literal
 
@@ -75,15 +77,15 @@ class InstrumentRefParameter(Parameter):
     def __init__(
         self,
         name: str,
-        instrument: Optional["InstrumentBase"] = None,
-        label: Optional[str] = None,
-        unit: Optional[str] = None,
-        get_cmd: Optional[Union[str, Callable[..., Any], Literal[False]]] = None,
-        set_cmd: Optional[Union[str, Callable[..., Any], Literal[False]]] = None,
-        initial_value: Optional[Union[float, str]] = None,
-        max_val_age: Optional[float] = None,
-        vals: Optional[Validator[Any]] = None,
-        docstring: Optional[str] = None,
+        instrument: InstrumentBase | None = None,
+        label: str | None = None,
+        unit: str | None = None,
+        get_cmd: str | Callable[..., Any] | Literal[False] | None = None,
+        set_cmd: str | Callable[..., Any] | Literal[False] | None = None,
+        initial_value: float | str | None = None,
+        max_val_age: float | None = None,
+        vals: Validator[Any] | None = None,
+        docstring: str | None = None,
         **kwargs: Any,
     ) -> None:
         if vals is None:
@@ -105,7 +107,7 @@ class InstrumentRefParameter(Parameter):
         )
 
     # TODO(nulinspiratie) check class works now it's subclassed from Parameter
-    def get_instr(self) -> "InstrumentBase":
+    def get_instr(self) -> InstrumentBase:
         """
         Returns the instance of the instrument with the name equal to the
         value of this parameter.

@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import enum
 from operator import xor
-from typing import Optional, Union, cast
+from typing import cast
 
 from .parameter import ManualParameter, Parameter
 
@@ -51,11 +53,11 @@ class ScaledParameter(Parameter):
     def __init__(
         self,
         output: Parameter,
-        division: Optional[Union[float, Parameter]] = None,
-        gain: Optional[Union[float, Parameter]] = None,
-        name: Optional[str] = None,
-        label: Optional[str] = None,
-        unit: Optional[str] = None,
+        division: float | Parameter | None = None,
+        gain: float | Parameter | None = None,
+        name: str | None = None,
+        label: str | None = None,
+        unit: str | None = None,
     ) -> None:
 
         # Set label
@@ -121,7 +123,7 @@ class ScaledParameter(Parameter):
         return self._multiplier_parameter
 
     @_multiplier.setter
-    def _multiplier(self, multiplier: Union[float, Parameter]) -> None:
+    def _multiplier(self, multiplier: float | Parameter) -> None:
         if isinstance(multiplier, Parameter):
             self._multiplier_parameter = multiplier
             multiplier_name = self._multiplier_parameter.name
@@ -142,7 +144,7 @@ class ScaledParameter(Parameter):
             return 1 / value
 
     @division.setter
-    def division(self, division: Union[float, Parameter]) -> None:
+    def division(self, division: float | Parameter) -> None:
         self.role = ScaledParameter.Role.DIVISION
         self._multiplier = division  # type: ignore[assignment]
 
@@ -156,7 +158,7 @@ class ScaledParameter(Parameter):
             return 1 / value
 
     @gain.setter
-    def gain(self, gain: Union[float, Parameter]) -> None:
+    def gain(self, gain: float | Parameter) -> None:
         self.role = ScaledParameter.Role.GAIN
         self._multiplier = gain  # type: ignore[assignment]
 

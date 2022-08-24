@@ -1,5 +1,8 @@
+from __future__ import annotations
+
+from collections.abc import Sequence
 from datetime import datetime
-from typing import Any, Dict, Optional, Sequence
+from typing import Any
 
 from .parameter import Parameter
 from .parameter_base import ParamDataType, ParamRawDataType
@@ -43,7 +46,7 @@ class DelegateParameter(Parameter):
     """
 
     class _DelegateCache:
-        def __init__(self, parameter: "DelegateParameter"):
+        def __init__(self, parameter: DelegateParameter):
             self._parameter = parameter
             self._marked_valid: bool = False
 
@@ -68,13 +71,13 @@ class DelegateParameter(Parameter):
             return self._parameter.source.cache.get(get_if_invalid=False)
 
         @property
-        def max_val_age(self) -> Optional[float]:
+        def max_val_age(self) -> float | None:
             if self._parameter.source is None:
                 return None
             return self._parameter.source.cache.max_val_age
 
         @property
-        def timestamp(self) -> Optional[datetime]:
+        def timestamp(self) -> datetime | None:
             if self._parameter.source is None:
                 return None
             return self._parameter.source.cache.timestamp
@@ -124,7 +127,7 @@ class DelegateParameter(Parameter):
             *,
             value: ParamDataType,
             raw_value: ParamRawDataType,
-            timestamp: Optional[datetime] = None,
+            timestamp: datetime | None = None,
         ) -> None:
             """
             This method is needed for interface consistency with ``._Cache``
@@ -142,7 +145,7 @@ class DelegateParameter(Parameter):
     def __init__(
         self,
         name: str,
-        source: Optional[Parameter],
+        source: Parameter | None,
         *args: Any,
         **kwargs: Any,
     ):
@@ -190,7 +193,7 @@ class DelegateParameter(Parameter):
             self.cache.set(initial_cache_value)
 
     @property
-    def source(self) -> Optional[Parameter]:
+    def source(self) -> Parameter | None:
         """
         The source parameter that this :class:`DelegateParameter` is bound to
         or ``None`` if this  :class:`DelegateParameter` is unbound.
@@ -201,11 +204,11 @@ class DelegateParameter(Parameter):
         return self._source
 
     @source.setter
-    def source(self, source: Optional[Parameter]) -> None:
+    def source(self, source: Parameter | None) -> None:
         self._set_properties_from_source(source)
-        self._source: Optional[Parameter] = source
+        self._source: Parameter | None = source
 
-    def _set_properties_from_source(self, source: Optional[Parameter]) -> None:
+    def _set_properties_from_source(self, source: Parameter | None) -> None:
         if source is None:
             self._gettable = False
             self._settable = False
@@ -242,9 +245,9 @@ class DelegateParameter(Parameter):
 
     def snapshot_base(
         self,
-        update: Optional[bool] = True,
-        params_to_skip_update: Optional[Sequence[str]] = None,
-    ) -> Dict[Any, Any]:
+        update: bool | None = True,
+        params_to_skip_update: Sequence[str] | None = None,
+    ) -> dict[Any, Any]:
         snapshot = super().snapshot_base(
             update=update, params_to_skip_update=params_to_skip_update
         )
