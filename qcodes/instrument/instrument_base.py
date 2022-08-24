@@ -39,12 +39,22 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             attaching it to a Station.
         metadata: additional static metadata to add to this
             instrument's JSON snapshot.
+        label: nicely formatted name of the instrument; if None, the
+            ``name`` is used.
     """
 
-    def __init__(self, name: str, metadata: Optional[Mapping[Any, Any]] = None) -> None:
+    def __init__(
+        self,
+        name: str,
+        metadata: Optional[Mapping[Any, Any]] = None,
+        label: Optional[str] = None,
+    ) -> None:
         name = self._replace_hyphen(name)
         self._short_name = name
         self._is_valid_identifier(self.full_name)
+
+        self.label = name if label is None else label
+        self._label: str
 
         self.parameters: Dict[str, ParameterBase] = {}
         """
@@ -78,9 +88,20 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         super().__init__(metadata)
 
         # This is needed for snapshot method to work
-        self._meta_attrs = ["name"]
+        self._meta_attrs = ["name", "label"]
 
         self.log = get_instrument_logger(self, __name__)
+
+    @property
+    def label(self) -> str:
+        """
+        Nicely formatted label of the instrument.
+        """
+        return self._label
+
+    @label.setter
+    def label(self, label: str) -> None:
+        self._label = label
 
     def add_parameter(
         self,

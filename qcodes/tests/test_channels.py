@@ -60,6 +60,17 @@ class EmptyChannel(InstrumentChannel):
     pass
 
 
+def test_instrument_channel_label():
+    dci = DummyChannelInstrument(name="dci_with_labels", label="Instrument Label")
+    channel = DummyChannel(dci, "A_with_label", "A_wl", label="A with f@ncy label")
+    dci.add_submodule("A_with_label", channel)
+    channel = EmptyChannel(dci, "B_with_label", label="B with f@ncy label")
+    dci.add_submodule("B_with_label", channel)
+    assert dci.label == "Instrument Label"
+    assert dci.A_with_label.label == "A with f@ncy label"
+    assert dci.B_with_label.label == "B with f@ncy label"
+
+
 def test_channels_call_function(dci, caplog):
     """
     Test that dci.channels.some_function() calls

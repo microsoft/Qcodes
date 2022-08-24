@@ -54,8 +54,10 @@ class Instrument(InstrumentBase, metaclass=InstrumentMeta):
             attaching it to a Station.
         metadata: additional static metadata to add to this
             instrument's JSON snapshot.
-
+        label: nicely formatted name of the instrument; if None, the
+            ``name`` is used.
     """
+
 
     _all_instruments: "weakref.WeakValueDictionary[str, Instrument]" = (
         weakref.WeakValueDictionary()
@@ -63,11 +65,16 @@ class Instrument(InstrumentBase, metaclass=InstrumentMeta):
     _type = None
     _instances: "weakref.WeakSet[Instrument]" = weakref.WeakSet()
 
-    def __init__(self, name: str, metadata: Optional[Mapping[Any, Any]] = None) -> None:
+    def __init__(
+        self,
+        name: str,
+        metadata: Optional[Mapping[Any, Any]] = None,
+        label: Optional[str] = None,
+    ) -> None:
 
         self._t0 = time.time()
 
-        super().__init__(name, metadata)
+        super().__init__(name=name, metadata=metadata, label=label)
 
         self.add_parameter("IDN", get_cmd=self.get_idn, vals=Anything())
 
