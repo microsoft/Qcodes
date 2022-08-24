@@ -1,19 +1,11 @@
 """Base class for Instrument and InstrumentModule"""
+from __future__ import annotations
+
 import collections.abc
 import logging
 import warnings
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Type,
-    Union,
-)
+from collections.abc import Callable, Mapping, Sequence
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
@@ -46,8 +38,8 @@ class InstrumentBase(Metadatable, DelegateAttributes):
     def __init__(
         self,
         name: str,
-        metadata: Optional[Mapping[Any, Any]] = None,
-        label: Optional[str] = None,
+        metadata: Mapping[Any, Any] | None = None,
+        label: str | None = None,
     ) -> None:
         name = self._replace_hyphen(name)
         self._short_name = name
@@ -56,29 +48,29 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         self.label = name if label is None else label
         self._label: str
 
-        self.parameters: Dict[str, ParameterBase] = {}
+        self.parameters: dict[str, ParameterBase] = {}
         """
         All the parameters supported by this instrument.
         Usually populated via :py:meth:`add_parameter`.
         """
-        self.functions: Dict[str, Function] = {}
+        self.functions: dict[str, Function] = {}
         """
         All the functions supported by this
         instrument. Usually populated via :py:meth:`add_function`.
         """
-        self.submodules: Dict[str, Union["InstrumentModule", "ChannelTuple"]] = {}
+        self.submodules: dict[str, InstrumentModule | ChannelTuple] = {}
         """
         All the submodules of this instrument
         such as channel lists or logical groupings of parameters.
         Usually populated via :py:meth:`add_submodule`.
         """
-        self.instrument_modules: Dict[str, "InstrumentModule"] = {}
+        self.instrument_modules: dict[str, InstrumentModule] = {}
         """
         All the :class:`InstrumentModule` of this instrument
         Usually populated via :py:meth:`add_submodule`.
         """
 
-        self._channel_lists: Dict[str, "ChannelTuple"] = {}
+        self._channel_lists: dict[str, ChannelTuple] = {}
         """
         All the ChannelTuples of this instrument
         Usually populated via :py:meth:`add_submodule`.
@@ -106,7 +98,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
     def add_parameter(
         self,
         name: str,
-        parameter_class: Optional[Type[ParameterBase]] = None,
+        parameter_class: type[ParameterBase] | None = None,
         **kwargs: Any,
     ) -> None:
         """
@@ -200,7 +192,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         self.functions[name] = func
 
     def add_submodule(
-        self, name: str, submodule: Union["InstrumentModule", "ChannelTuple"]
+        self, name: str, submodule: InstrumentModule | ChannelTuple
     ) -> None:
         """
         Bind one submodule to this instrument.
@@ -243,9 +235,9 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
     def snapshot_base(
         self,
-        update: Optional[bool] = False,
-        params_to_skip_update: Optional[Sequence[str]] = None,
-    ) -> Dict[Any, Any]:
+        update: bool | None = False,
+        params_to_skip_update: Sequence[str] | None = None,
+    ) -> dict[Any, Any]:
         """
         State of the instrument as a JSON-compatible dict (everything that
         the custom JSON encoder class
@@ -271,7 +263,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         if params_to_skip_update is None:
             params_to_skip_update = []
 
-        snap: Dict[str, Any] = {
+        snap: dict[str, Any] = {
             "functions": {
                 name: func.snapshot(update=update)
                 for name, func in self.functions.items()
@@ -288,7 +280,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             if param.snapshot_exclude:
                 continue
             if params_to_skip_update and name in params_to_skip_update:
-                update_par: Optional[bool] = False
+                update_par: bool | None = False
             else:
                 update_par = update
             try:
@@ -384,7 +376,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             submodule.invalidate_cache()
 
     @property
-    def parent(self) -> Optional["InstrumentBase"]:
+    def parent(self) -> InstrumentBase | None:
         """
         The parent instrument. By default, this is ``None``.
         Any SubInstrument should subclass this to return the parent instrument.
@@ -392,7 +384,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         return None
 
     @property
-    def ancestors(self) -> List["InstrumentBase"]:
+    def ancestors(self) -> list[InstrumentBase]:
         """
         Ancestors in the form of a list of :class:`InstrumentBase`
 
@@ -406,7 +398,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             return [self]
 
     @property
-    def root_instrument(self) -> "InstrumentBase":
+    def root_instrument(self) -> InstrumentBase:
         """
         The topmost parent of this module.
 
@@ -416,7 +408,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         return self
 
     @property
-    def name_parts(self) -> List[str]:
+    def name_parts(self) -> list[str]:
         """
         A list of all the parts of the instrument name from :meth:`root_instrument`
         to the current :class:`InstrumentModule`.
@@ -512,7 +504,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
     #
     delegate_attr_dicts = ["parameters", "functions", "submodules"]
 
-    def __getitem__(self, key: str) -> Union[Callable[..., Any], Parameter]:
+    def __getitem__(self, key: str) -> Callable[..., Any] | Parameter:
         """Delegate instrument['name'] to parameter or function 'name'."""
         try:
             return self.parameters[key]
