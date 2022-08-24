@@ -2,19 +2,9 @@ from __future__ import annotations
 
 import os
 import warnings
+from collections.abc import Mapping, Sized
 from enum import Enum
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Sized,
-    Tuple,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Tuple, Union
 
 import numpy as np
 from typing_extensions import Protocol, TypeAlias, runtime_checkable
@@ -46,6 +36,8 @@ if TYPE_CHECKING:
 
     from .data_set_cache import DataSetCache
 
+# even with from __future__ import annotations
+# type aliases must use the old format until we drop 3.8/3.9
 array_like_types = (tuple, list, np.ndarray)
 scalar_res_types: TypeAlias = Union[
     str, complex, np.integer, np.floating, np.complexfloating
@@ -71,7 +63,7 @@ class DataSetProtocol(Protocol, Sized):
     # the "persistent traits" are the attributes/properties of the DataSet
     # that are NOT tied to the representation of the DataSet in any particular
     # database
-    persistent_traits: Tuple[str, ...] = (
+    persistent_traits: tuple[str, ...] = (
         "name",
         "guid",
         "number_of_results",
@@ -156,46 +148,46 @@ class DataSetProtocol(Protocol, Sized):
     def sample_name(self) -> str:
         pass
 
-    def run_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S") -> Optional[str]:
+    def run_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S") -> str | None:
         pass
 
     @property
-    def run_timestamp_raw(self) -> Optional[float]:
+    def run_timestamp_raw(self) -> float | None:
         pass
 
-    def completed_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S") -> Optional[str]:
+    def completed_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S") -> str | None:
         pass
 
     @property
-    def completed_timestamp_raw(self) -> Optional[float]:
+    def completed_timestamp_raw(self) -> float | None:
         pass
 
     # snapshot and metadata
     @property
-    def snapshot(self) -> Optional[Dict[str, Any]]:
+    def snapshot(self) -> dict[str, Any] | None:
         pass
 
     def add_snapshot(self, snapshot: str, overwrite: bool = False) -> None:
         pass
 
     @property
-    def _snapshot_raw(self) -> Optional[str]:
+    def _snapshot_raw(self) -> str | None:
         pass
 
     def add_metadata(self, tag: str, metadata: Any) -> None:
         pass
 
     @property
-    def metadata(self) -> Dict[str, Any]:
+    def metadata(self) -> dict[str, Any]:
         pass
 
     @property
-    def path_to_db(self) -> Optional[str]:
+    def path_to_db(self) -> str | None:
         pass
 
     # dataset description and links
     @property
-    def paramspecs(self) -> Dict[str, ParamSpec]:
+    def paramspecs(self) -> dict[str, ParamSpec]:
         pass
 
     @property
@@ -203,16 +195,16 @@ class DataSetProtocol(Protocol, Sized):
         pass
 
     @property
-    def parent_dataset_links(self) -> List[Link]:
+    def parent_dataset_links(self) -> list[Link]:
         pass
 
     # data related members
 
     def export(
         self,
-        export_type: Optional[Union[DataExportType, str]] = None,
-        path: Optional[str] = None,
-        prefix: Optional[str] = None,
+        export_type: DataExportType | str | None = None,
+        path: str | None = None,
+        prefix: str | None = None,
     ) -> None:
         pass
 
@@ -226,9 +218,9 @@ class DataSetProtocol(Protocol, Sized):
 
     def get_parameter_data(
         self,
-        *params: Union[str, ParamSpec, ParameterBase],
-        start: Optional[int] = None,
-        end: Optional[int] = None,
+        *params: str | ParamSpec | ParameterBase,
+        start: int | None = None,
+        end: int | None = None,
     ) -> ParameterData:
         pass
 
@@ -237,40 +229,40 @@ class DataSetProtocol(Protocol, Sized):
         pass
 
     @property
-    def dependent_parameters(self) -> Tuple[ParamSpecBase, ...]:
+    def dependent_parameters(self) -> tuple[ParamSpecBase, ...]:
         pass
 
     # exporters to other in memory formats
 
     def to_xarray_dataarray_dict(
         self,
-        *params: Union[str, ParamSpec, ParameterBase],
-        start: Optional[int] = None,
-        end: Optional[int] = None,
-    ) -> Dict[str, xr.DataArray]:
+        *params: str | ParamSpec | ParameterBase,
+        start: int | None = None,
+        end: int | None = None,
+    ) -> dict[str, xr.DataArray]:
         pass
 
     def to_xarray_dataset(
         self,
-        *params: Union[str, ParamSpec, ParameterBase],
-        start: Optional[int] = None,
-        end: Optional[int] = None,
+        *params: str | ParamSpec | ParameterBase,
+        start: int | None = None,
+        end: int | None = None,
     ) -> xr.Dataset:
         pass
 
     def to_pandas_dataframe_dict(
         self,
-        *params: Union[str, ParamSpec, ParameterBase],
-        start: Optional[int] = None,
-        end: Optional[int] = None,
-    ) -> Dict[str, pd.DataFrame]:
+        *params: str | ParamSpec | ParameterBase,
+        start: int | None = None,
+        end: int | None = None,
+    ) -> dict[str, pd.DataFrame]:
         pass
 
     def to_pandas_dataframe(
         self,
-        *params: Union[str, ParamSpec, ParameterBase],
-        start: Optional[int] = None,
-        end: Optional[int] = None,
+        *params: str | ParamSpec | ParameterBase,
+        start: int | None = None,
+        end: int | None = None,
     ) -> pd.DataFrame:
         pass
 
@@ -283,7 +275,7 @@ class DataSetProtocol(Protocol, Sized):
         pass
 
     @property
-    def _parameters(self) -> Optional[str]:
+    def _parameters(self) -> str | None:
         pass
 
     def _set_export_info(self, export_info: ExportInfo) -> None:
@@ -332,9 +324,9 @@ class BaseDataSet(DataSetProtocol):
 
     def export(
         self,
-        export_type: Optional[Union[DataExportType, str]] = None,
-        path: Optional[str] = None,
-        prefix: Optional[str] = None,
+        export_type: DataExportType | str | None = None,
+        path: str | None = None,
+        prefix: str | None = None,
     ) -> None:
         """Export data to disk with file name {prefix}{run_id}.{ext}.
         Values for the export type, path and prefix can also be set in the "dataset"
@@ -378,9 +370,9 @@ class BaseDataSet(DataSetProtocol):
     def _export_data(
         self,
         export_type: DataExportType,
-        path: Optional[str] = None,
-        prefix: Optional[str] = None,
-    ) -> Optional[str]:
+        path: str | None = None,
+        prefix: str | None = None,
+    ) -> str | None:
         """Export data to disk with file name {prefix}{run_id}.{ext}.
 
         Values for the export type, path and prefix can also be set in the qcodes
@@ -460,9 +452,7 @@ class BaseDataSet(DataSetProtocol):
                 )
 
     @staticmethod
-    def _validate_parameters(
-        *params: Union[str, ParamSpec, ParameterBase]
-    ) -> List[str]:
+    def _validate_parameters(*params: str | ParamSpec | ParameterBase) -> list[str]:
         """
         Validate that the provided parameters have a name and return those
         names as a list.
@@ -500,7 +490,7 @@ class BaseDataSet(DataSetProtocol):
             new_data = param_data.ravel()
         return new_data
 
-    def run_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S") -> Optional[str]:
+    def run_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S") -> str | None:
         """
         Returns run timestamp in a human-readable format
 
@@ -512,7 +502,7 @@ class BaseDataSet(DataSetProtocol):
         """
         return raw_time_to_str_time(self.run_timestamp_raw, fmt)
 
-    def completed_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S") -> Optional[str]:
+    def completed_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S") -> str | None:
         """
         Returns timestamp when measurement run was completed
         in a human-readable format
@@ -524,7 +514,7 @@ class BaseDataSet(DataSetProtocol):
         return raw_time_to_str_time(self.completed_timestamp_raw, fmt)
 
     @property
-    def dependent_parameters(self) -> Tuple[ParamSpecBase, ...]:
+    def dependent_parameters(self) -> tuple[ParamSpecBase, ...]:
         """
         Return all the parameters that explicitly depend on other parameters
         """
