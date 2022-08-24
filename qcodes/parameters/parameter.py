@@ -1,10 +1,11 @@
 # TODO (alexcjohnson) update this with the real duck-typing requirements or
 # create an ABC for Parameter and MultiParameter - or just remove this statement
 # if everyone is happy to use these classes.
+from __future__ import annotations
 
 import logging
 import os
-from typing import TYPE_CHECKING, Any, Callable, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable
 
 from typing_extensions import Literal
 
@@ -167,16 +168,16 @@ class Parameter(ParameterBase):
     def __init__(
         self,
         name: str,
-        instrument: Optional["InstrumentBase"] = None,
-        label: Optional[str] = None,
-        unit: Optional[str] = None,
-        get_cmd: Optional[Union[str, Callable[..., Any], Literal[False]]] = None,
-        set_cmd: Optional[Union[str, Callable[..., Any], Literal[False]]] = False,
-        initial_value: Optional[Union[float, str]] = None,
-        max_val_age: Optional[float] = None,
-        vals: Optional["Validator[Any]"] = None,
-        docstring: Optional[str] = None,
-        initial_cache_value: Optional[Union[float, str]] = None,
+        instrument: InstrumentBase | None = None,
+        label: str | None = None,
+        unit: str | None = None,
+        get_cmd: str | Callable[..., Any] | Literal[False] | None = None,
+        set_cmd: str | Callable[..., Any] | Literal[False] | None = False,
+        initial_value: float | str | None = None,
+        max_val_age: float | None = None,
+        vals: Validator[Any] | None = None,
+        docstring: str | None = None,
+        initial_cache_value: float | str | None = None,
         bind_to_instrument: bool = True,
         **kwargs: Any,
     ) -> None:
@@ -341,7 +342,7 @@ class Parameter(ParameterBase):
     def label(self, label: str) -> None:
         self._label = label
 
-    def __getitem__(self, keys: Any) -> "SweepFixedValues":
+    def __getitem__(self, keys: Any) -> SweepFixedValues:
         """
         Slice a Parameter to get a SweepValues object
         to iterate over during a sweep
@@ -360,8 +361,8 @@ class Parameter(ParameterBase):
         self,
         start: float,
         stop: float,
-        step: Optional[float] = None,
-        num: Optional[int] = None,
+        step: float | None = None,
+        num: int | None = None,
     ) -> SweepFixedValues:
         """
         Create a collection of parameter values to be iterated over.
@@ -393,7 +394,7 @@ class ManualParameter(Parameter):
     def __init__(
         self,
         name: str,
-        instrument: Optional["InstrumentBase"] = None,
+        instrument: InstrumentBase | None = None,
         initial_value: Any = None,
         **kwargs: Any,
     ):

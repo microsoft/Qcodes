@@ -1,4 +1,7 @@
-from typing import TYPE_CHECKING, Any, Callable, List, Optional, Sequence, Union
+from __future__ import annotations
+
+from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING, Any
 
 from qcodes.metadatable import Metadatable
 from qcodes.validators import Validator, validate_all
@@ -71,12 +74,12 @@ class Function(Metadatable):
     def __init__(
         self,
         name: str,
-        instrument: Optional["InstrumentBase"] = None,
-        call_cmd: Optional[Union[str, Callable[..., Any]]] = None,
-        args: Optional[Sequence[Validator[Any]]] = None,
-        arg_parser: Optional[Callable[..., Any]] = None,
-        return_parser: Optional[Callable[..., Any]] = None,
-        docstring: Optional[str] = None,
+        instrument: InstrumentBase | None = None,
+        call_cmd: str | Callable[..., Any] | None = None,
+        args: Sequence[Validator[Any]] | None = None,
+        arg_parser: Callable[..., Any] | None = None,
+        return_parser: Callable[..., Any] | None = None,
+        docstring: str | None = None,
         **kwargs: Any
     ):
         super().__init__(**kwargs)
@@ -100,9 +103,9 @@ class Function(Metadatable):
 
     def _set_call(
         self,
-        call_cmd: Optional[Union[str, Callable[..., Any]]],
-        arg_parser: Optional[Callable[..., Any]],
-        return_parser: Optional[Callable[..., Any]],
+        call_cmd: str | Callable[..., Any] | None,
+        arg_parser: Callable[..., Any] | None,
+        return_parser: Callable[..., Any] | None,
     ) -> None:
         if self._instrument:
             ask_or_write = self._instrument.write
@@ -160,7 +163,7 @@ class Function(Metadatable):
         """
         return self.__call__(*args)
 
-    def get_attrs(self) -> List[str]:
+    def get_attrs(self) -> list[str]:
         """
         Attributes recreated as properties in the RemoteFunction proxy.
 

@@ -1,15 +1,8 @@
+from __future__ import annotations
+
+from collections.abc import Iterator, Sequence
 from copy import deepcopy
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    Iterator,
-    List,
-    Optional,
-    Sequence,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, List, cast
 
 import numpy as np
 
@@ -31,8 +24,8 @@ if TYPE_CHECKING:
 # Furthermore the sweep allows to take a number of points and generates
 # an array with endpoints included, which is more intuitive to use in a sweep.
 def make_sweep(
-    start: float, stop: float, step: Optional[float] = None, num: Optional[int] = None
-) -> List[float]:
+    start: float, stop: float, step: float | None = None, num: int | None = None
+) -> list[float]:
     """
     Generate numbers over a specified interval.
     Requires ``start`` and ``stop`` and (``step`` or ``num``).
@@ -129,11 +122,11 @@ class SweepValues(Metadatable):
     time what the values will be or even how many there are.
     """
 
-    def __init__(self, parameter: "ParameterBase", **kwargs: Any):
+    def __init__(self, parameter: ParameterBase, **kwargs: Any):
         super().__init__(**kwargs)
         self.parameter = parameter
         self.name = parameter.name
-        self._values: List[Any] = []
+        self._values: list[Any] = []
 
         # allow has_set=False to override the existence of a set method,
         # but don't require it to be present (and truthy) otherwise
@@ -211,16 +204,16 @@ class SweepFixedValues(SweepValues):
 
     def __init__(
         self,
-        parameter: "ParameterBase",
-        keys: Optional[Any] = None,
-        start: Optional[float] = None,
-        stop: Optional[float] = None,
-        step: Optional[float] = None,
-        num: Optional[int] = None,
+        parameter: ParameterBase,
+        keys: Any | None = None,
+        start: float | None = None,
+        stop: float | None = None,
+        step: float | None = None,
+        num: int | None = None,
     ):
         super().__init__(parameter)
-        self._snapshot: Dict[str, Any] = {}
-        self._value_snapshot: List[Dict[str, Any]] = []
+        self._snapshot: dict[str, Any] = {}
+        self._value_snapshot: list[dict[str, Any]] = []
 
         if keys is None:
             if start is None:
@@ -258,7 +251,7 @@ class SweepFixedValues(SweepValues):
 
         self.validate(self._values)
 
-    def _add_linear_snapshot(self, vals: List[Any]) -> None:
+    def _add_linear_snapshot(self, vals: list[Any]) -> None:
         self._value_snapshot.append(
             {"first": vals[0], "last": vals[-1], "num": len(vals), "type": "linear"}
         )
@@ -294,7 +287,7 @@ class SweepFixedValues(SweepValues):
         self._values.append(value)
         self._value_snapshot.append({"item": value})
 
-    def extend(self, new_values: Union[Sequence[Any], "SweepFixedValues"]) -> None:
+    def extend(self, new_values: Sequence[Any] | SweepFixedValues) -> None:
         """
         Extend sweep with new_values
 
@@ -319,7 +312,7 @@ class SweepFixedValues(SweepValues):
         else:
             raise TypeError(f"cannot extend SweepFixedValues with {new_values}")
 
-    def copy(self) -> "SweepFixedValues":
+    def copy(self) -> SweepFixedValues:
         """
         Copy this SweepFixedValues.
 
@@ -343,9 +336,9 @@ class SweepFixedValues(SweepValues):
 
     def snapshot_base(
         self,
-        update: Optional[bool] = False,
-        params_to_skip_update: Optional[Sequence[str]] = None,
-    ) -> Dict[Any, Any]:
+        update: bool | None = False,
+        params_to_skip_update: Sequence[str] | None = None,
+    ) -> dict[Any, Any]:
         """
         Snapshot state of SweepValues.
 
@@ -369,23 +362,19 @@ class SweepFixedValues(SweepValues):
     def __len__(self) -> int:
         return len(self._values)
 
-    def __add__(
-        self, other: Union[Sequence[Any], "SweepFixedValues"]
-    ) -> "SweepFixedValues":
+    def __add__(self, other: Sequence[Any] | SweepFixedValues) -> SweepFixedValues:
         new_sv = self.copy()
         new_sv.extend(other)
         return new_sv
 
-    def __iadd__(
-        self, values: Union[Sequence[Any], "SweepFixedValues"]
-    ) -> "SweepFixedValues":
+    def __iadd__(self, values: Sequence[Any] | SweepFixedValues) -> SweepFixedValues:
         self.extend(values)
         return self
 
     def __contains__(self, value: float) -> bool:
         return value in self._values
 
-    def __reversed__(self) -> "SweepFixedValues":
+    def __reversed__(self) -> SweepFixedValues:
         new_sv = self.copy()
         new_sv.reverse()
         return new_sv

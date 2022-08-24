@@ -1,12 +1,14 @@
+from __future__ import annotations
+
 import math
-from typing import List, SupportsAbs
+from typing import SupportsAbs
 
 
 # could use numpy.arange here, but
 # I'd like to be more flexible with the sign of step
 def permissive_range(
     start: float, stop: float, step: SupportsAbs[float]
-) -> List[float]:
+) -> list[float]:
     """
     Returns a range (as a list of values) with floating point steps.
     Always starts at start and moves toward stop, regardless of the

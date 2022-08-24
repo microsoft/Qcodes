@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 from collections import OrderedDict
-from typing import Any, Dict, Tuple, Union
+from typing import Any
 
 
 def create_on_off_val_mapping(
     on_val: Any = True, off_val: Any = False
-) -> Dict[Union[str, bool], Any]:
+) -> dict[str | bool, Any]:
     """
     Returns a value mapping which maps inputs which reasonably mean "on"/"off"
     to the specified ``on_val``/``off_val`` which are to be sent to the
@@ -14,8 +16,8 @@ def create_on_off_val_mapping(
     # Here are the lists of inputs which "reasonably" mean the same as
     # "on"/"off" (note that True/False values will be added below, and they
     # will always be added)
-    ons_: Tuple[Union[str, bool], ...] = ("On", "ON", "on", "1")
-    offs_: Tuple[Union[str, bool], ...] = ("Off", "OFF", "off", "0")
+    ons_: tuple[str | bool, ...] = ("On", "ON", "on", "1")
+    offs_: tuple[str | bool, ...] = ("Off", "OFF", "off", "0")
 
     # The True/False values are added at the end of on/off inputs,
     # so that after inversion True/False will be the only remaining
