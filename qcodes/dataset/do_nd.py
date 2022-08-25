@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import sys
 import time
@@ -29,6 +31,7 @@ from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.plotting import plot_and_save_image
 from qcodes.parameters import ParameterBase
+
 from .threading import (
     SequentialParamsCaller,
     ThreadPoolParamsCaller,
@@ -59,9 +62,9 @@ LOG = logging.getLogger(__name__)
 
 
 class ParameterGroup(TypedDict):
-    params: Tuple[ParamMeasT, ...]
+    params: tuple[ParamMeasT, ...]
     meas_name: str
-    measured_params: List[res_type]
+    measured_params: list[res_type]
 
 
 class UnsafeThreadingException(Exception):
@@ -78,7 +81,7 @@ MeasInterruptT = Union[KeyboardInterrupt, BreakConditionInterrupt, None]
 def _register_parameters(
     meas: Measurement,
     param_meas: Sequence[ParamMeasT],
-    setpoints: Optional[Sequence[ParameterBase]] = None,
+    setpoints: Sequence[ParameterBase] | None = None,
     shapes: Shapes = None,
 ) -> None:
     for parameter in param_meas:
@@ -99,7 +102,7 @@ def _register_actions(
         meas.add_after_run(action, ())
 
 
-def _set_write_period(meas: Measurement, write_period: Optional[float] = None) -> None:
+def _set_write_period(meas: Measurement, write_period: float | None = None) -> None:
     if write_period is not None:
         meas.write_period = write_period
 
@@ -120,12 +123,12 @@ def _catch_interrupts() -> Iterator[Callable[[], MeasInterruptT]]:
 
 def do0d(
     *param_meas: ParamMeasT,
-    write_period: Optional[float] = None,
+    write_period: float | None = None,
     measurement_name: str = "",
-    exp: Optional[Experiment] = None,
-    do_plot: Optional[bool] = None,
-    use_threads: Optional[bool] = None,
-    log_info: Optional[str] = None,
+    exp: Experiment | None = None,
+    do_plot: bool | None = None,
+    use_threads: bool | None = None,
+    log_info: str | None = None,
 ) -> AxesTupleListWithDataSet:
     """
     Perform a measurement of a single parameter. This is probably most
@@ -195,15 +198,15 @@ def do1d(
     *param_meas: ParamMeasT,
     enter_actions: ActionsT = (),
     exit_actions: ActionsT = (),
-    write_period: Optional[float] = None,
+    write_period: float | None = None,
     measurement_name: str = "",
-    exp: Optional[Experiment] = None,
-    do_plot: Optional[bool] = None,
-    use_threads: Optional[bool] = None,
+    exp: Experiment | None = None,
+    do_plot: bool | None = None,
+    use_threads: bool | None = None,
     additional_setpoints: Sequence[ParameterBase] = tuple(),
-    show_progress: Optional[None] = None,
-    log_info: Optional[str] = None,
-    break_condition: Optional[BreakConditionT] = None,
+    show_progress: None | None = None,
+    log_info: str | None = None,
+    break_condition: BreakConditionT | None = None,
 ) -> AxesTupleListWithDataSet:
     """
     Perform a 1D scan of ``param_set`` from ``start`` to ``stop`` in
@@ -326,21 +329,21 @@ def do2d(
     num_points2: int,
     delay2: float,
     *param_meas: ParamMeasT,
-    set_before_sweep: Optional[bool] = True,
+    set_before_sweep: bool | None = True,
     enter_actions: ActionsT = (),
     exit_actions: ActionsT = (),
     before_inner_actions: ActionsT = (),
     after_inner_actions: ActionsT = (),
-    write_period: Optional[float] = None,
+    write_period: float | None = None,
     measurement_name: str = "",
-    exp: Optional[Experiment] = None,
+    exp: Experiment | None = None,
     flush_columns: bool = False,
-    do_plot: Optional[bool] = None,
-    use_threads: Optional[bool] = None,
+    do_plot: bool | None = None,
+    use_threads: bool | None = None,
     additional_setpoints: Sequence[ParameterBase] = tuple(),
-    show_progress: Optional[None] = None,
-    log_info: Optional[str] = None,
-    break_condition: Optional[BreakConditionT] = None,
+    show_progress: None | None = None,
+    log_info: str | None = None,
+    break_condition: BreakConditionT | None = None,
 ) -> AxesTupleListWithDataSet:
     """
     Perform a 1D scan of ``param_set1`` from ``start1`` to ``stop1`` in
@@ -650,7 +653,7 @@ class ArraySweep(AbstractSweep):
     def __init__(
         self,
         param: ParameterBase,
-        array: Union[Sequence[float], np.ndarray],
+        array: Sequence[float] | np.ndarray,
         delay: float = 0,
         post_actions: ActionsT = (),
     ):
@@ -711,28 +714,28 @@ class _Sweeper:
         return self._nested_setpoints
 
     @property
-    def all_setpoint_params(self) -> Tuple[ParameterBase, ...]:
+    def all_setpoint_params(self) -> tuple[ParameterBase, ...]:
         return tuple(sweep.param for sweep in self._sweeps) + tuple(
             s for s in self._additional_setpoints
         )
 
     @property
-    def shape(self) -> Tuple[int, ...]:
+    def shape(self) -> tuple[int, ...]:
         loop_shape = tuple(sweep.num_points for sweep in self._sweeps) + tuple(
             1 for _ in self._additional_setpoints
         )
         return loop_shape
 
     @property
-    def post_delays(self) -> Tuple[float, ...]:
+    def post_delays(self) -> tuple[float, ...]:
         return self._post_delays
 
     @property
-    def params_set(self) -> Tuple[ParameterBase, ...]:
+    def params_set(self) -> tuple[ParameterBase, ...]:
         return self._params_set
 
     @property
-    def post_actions(self) -> Tuple[ActionsT, ...]:
+    def post_actions(self) -> tuple[ActionsT, ...]:
         return self._post_actions
 
 
@@ -740,7 +743,7 @@ class _Measurements:
     def __init__(
         self,
         measurement_name: str,
-        params_meas: Sequence[Union[ParamMeasT, Sequence[ParamMeasT]]],
+        params_meas: Sequence[ParamMeasT | Sequence[ParamMeasT]],
     ):
         (
             self._measured_all,
@@ -749,32 +752,32 @@ class _Measurements:
         ) = _extract_paramters_by_type_and_group(measurement_name, params_meas)
 
     @property
-    def measured_all(self) -> Tuple[ParamMeasT, ...]:
+    def measured_all(self) -> tuple[ParamMeasT, ...]:
         return self._measured_all
 
     @property
-    def grouped_parameters(self) -> Dict[str, ParameterGroup]:
+    def grouped_parameters(self) -> dict[str, ParameterGroup]:
         return self._grouped_parameters
 
     @property
-    def measured_parameters(self) -> Tuple[ParameterBase, ...]:
+    def measured_parameters(self) -> tuple[ParameterBase, ...]:
         return self._measured_parameters
 
 
 def dond(
-    *params: Union[AbstractSweep, Union[ParamMeasT, Sequence[ParamMeasT]]],
-    write_period: Optional[float] = None,
+    *params: AbstractSweep | ParamMeasT | Sequence[ParamMeasT],
+    write_period: float | None = None,
     measurement_name: str = "",
-    exp: Optional[Union[Experiment, Sequence[Experiment]]] = None,
+    exp: Experiment | Sequence[Experiment] | None = None,
     enter_actions: ActionsT = (),
     exit_actions: ActionsT = (),
-    do_plot: Optional[bool] = None,
-    show_progress: Optional[bool] = None,
-    use_threads: Optional[bool] = None,
+    do_plot: bool | None = None,
+    show_progress: bool | None = None,
+    use_threads: bool | None = None,
     additional_setpoints: Sequence[ParameterBase] = tuple(),
-    log_info: Optional[str] = None,
-    break_condition: Optional[BreakConditionT] = None,
-) -> Union[AxesTupleListWithDataSet, MultiAxesTupleListWithDataSet]:
+    log_info: str | None = None,
+    break_condition: BreakConditionT | None = None,
+) -> AxesTupleListWithDataSet | MultiAxesTupleListWithDataSet:
     """
     Perform n-dimentional scan from slowest (first) to the fastest (last), to
     measure m measurement parameters. The dimensions should be specified
@@ -954,14 +957,14 @@ def dond(
 
 
 def _parse_dond_arguments(
-    *params: Union[AbstractSweep, Union[ParamMeasT, Sequence[ParamMeasT]]]
-) -> Tuple[List[AbstractSweep], List[Union[ParamMeasT, Sequence[ParamMeasT]]]]:
+    *params: AbstractSweep | ParamMeasT | Sequence[ParamMeasT],
+) -> tuple[list[AbstractSweep], list[ParamMeasT | Sequence[ParamMeasT]]]:
     """
     Parse supplied arguments into sweep objects and measurement parameters
     and their callables.
     """
-    sweep_instances: List[AbstractSweep] = []
-    params_meas: List[Union[ParamMeasT, Sequence[ParamMeasT]]] = []
+    sweep_instances: list[AbstractSweep] = []
+    params_meas: list[ParamMeasT | Sequence[ParamMeasT]] = []
     for par in params:
         if isinstance(par, AbstractSweep):
             sweep_instances.append(par)
@@ -972,7 +975,7 @@ def _parse_dond_arguments(
 
 def _conditional_parameter_set(
     parameter: ParameterBase,
-    value: Union[float, complex],
+    value: float | complex,
 ) -> None:
     """
     Reads the cache value of the given parameter and set the parameter to
@@ -997,15 +1000,15 @@ def _select_active_actions_delays(
     delays: Sequence[float],
     setpoints: np.ndarray,
     previous_setpoints: np.ndarray,
-) -> Tuple[List[ActionsT], List[float]]:
+) -> tuple[list[ActionsT], list[float]]:
     """
     Select ActionT (Sequence[Callable]) and delays(Sequence[float]) from
     a Sequence of ActionsT and delays, respectively, if the corresponding
     setpoint has changed. Otherwise, select an empty Sequence for actions
     and zero for delays.
     """
-    actions_list: List[ActionsT] = [()] * len(setpoints)
-    setpoints_delay: List[float] = [0] * len(setpoints)
+    actions_list: list[ActionsT] = [()] * len(setpoints)
+    setpoints_delay: list[float] = [0] * len(setpoints)
     for ind, (new_setpoint, old_setpoint) in enumerate(
         zip(setpoints, previous_setpoints)
     ):
@@ -1019,20 +1022,20 @@ def _create_measurements(
     all_setpoint_params: Sequence[ParameterBase],
     enter_actions: ActionsT,
     exit_actions: ActionsT,
-    experiments: Optional[Union[Experiment, Sequence[Experiment]]],
+    experiments: Experiment | Sequence[Experiment] | None,
     grouped_parameters: Mapping[str, ParameterGroup],
     shapes: Shapes,
-    write_period: Optional[float],
-    log_info: Optional[str],
-) -> Tuple[Measurement, ...]:
-    meas_list: List[Measurement] = []
+    write_period: float | None,
+    log_info: str | None,
+) -> tuple[Measurement, ...]:
+    meas_list: list[Measurement] = []
     if log_info is not None:
         _extra_log_info = log_info
     else:
         _extra_log_info = "Using 'qcodes.dataset.dond'"
 
     if not isinstance(experiments, Sequence):
-        experiments_internal: Sequence[Optional[Experiment]] = [
+        experiments_internal: Sequence[Experiment | None] = [
             experiments for _ in grouped_parameters
         ]
     else:
@@ -1062,15 +1065,15 @@ def _create_measurements(
 
 def _extract_paramters_by_type_and_group(
     measurement_name: str,
-    params_meas: Sequence[Union[ParamMeasT, Sequence[ParamMeasT]]],
-) -> Tuple[
-    Tuple[ParamMeasT, ...], Dict[str, ParameterGroup], Tuple[ParameterBase, ...]
+    params_meas: Sequence[ParamMeasT | Sequence[ParamMeasT]],
+) -> tuple[
+    tuple[ParamMeasT, ...], dict[str, ParameterGroup], tuple[ParameterBase, ...]
 ]:
-    measured_parameters: List[ParameterBase] = []
-    measured_all: List[ParamMeasT] = []
-    single_group: List[ParamMeasT] = []
-    multi_group: List[Sequence[ParamMeasT]] = []
-    grouped_parameters: Dict[str, ParameterGroup] = {}
+    measured_parameters: list[ParameterBase] = []
+    measured_all: list[ParamMeasT] = []
+    single_group: list[ParamMeasT] = []
+    multi_group: list[Sequence[ParamMeasT]] = []
+    grouped_parameters: dict[str, ParameterGroup] = {}
     for param in params_meas:
         if not isinstance(param, Sequence):
             single_group.append(param)

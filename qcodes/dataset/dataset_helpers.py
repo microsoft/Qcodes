@@ -1,4 +1,4 @@
-from typing import Optional
+from __future__ import annotations
 
 from qcodes.dataset.data_set_protocol import DataSetProtocol
 from qcodes.dataset.descriptions.versioning.converters import new_to_old
@@ -16,7 +16,7 @@ def _add_run_to_runs_table(
     target_conn: ConnectionPlus,
     target_exp_id: int,
     create_run_table: bool = True,
-) -> Optional[str]:
+) -> str | None:
     metadata = dataset.metadata
     snapshot_raw = dataset._snapshot_raw
     captured_run_id = dataset.captured_run_id

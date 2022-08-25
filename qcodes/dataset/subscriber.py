@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import functools
 import logging
 import time
@@ -25,15 +27,16 @@ class _Subscriber(Thread):
     user's responsibility to operate with it in a thread-safe way.
     """
 
-    def __init__(self,
-                 dataSet: 'DataSet',
-                 id_: str,
-                 callback: Callable[..., None],
-                 state: Optional[Any] = None,
-                 loop_sleep_time: int = 0,  # in milliseconds
-                 min_queue_length: int = 1,
-                 callback_kwargs: Optional[Mapping[str, Any]] = None
-                 ) -> None:
+    def __init__(
+        self,
+        dataSet: DataSet,
+        id_: str,
+        callback: Callable[..., None],
+        state: Any | None = None,
+        loop_sleep_time: int = 0,  # in milliseconds
+        min_queue_length: int = 1,
+        callback_kwargs: Mapping[str, Any] | None = None,
+    ) -> None:
         super().__init__()
 
         self._id = id_
@@ -44,7 +47,7 @@ class _Subscriber(Thread):
 
         self.state = state
 
-        self.data_queue: "Queue[Any]" = Queue()
+        self.data_queue: Queue[Any] = Queue()
         self._queue_length: int = 0
         self._stop_signal: bool = False
         # convert milliseconds to seconds
@@ -85,7 +88,7 @@ class _Subscriber(Thread):
         self._loop()
 
     @staticmethod
-    def _exhaust_queue(queue: "Queue[Any]") -> List[Any]:
+    def _exhaust_queue(queue: Queue[Any]) -> list[Any]:
         result_list = []
         while True:
             try:
