@@ -28,7 +28,7 @@ class DSPlotData(TypedDict):
 
 @deprecate(alternative="ndarray.flatten()")
 def flatten_1D_data_for_plot(
-    rawdata: (Sequence[Sequence[Any]] | np.ndarray),
+    rawdata: Sequence[Sequence[Any]] | np.ndarray,
 ) -> np.ndarray:
     """
     Cast the return value of the database query to

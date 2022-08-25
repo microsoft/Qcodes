@@ -14,6 +14,8 @@ from typing import Any, List, Optional, Sequence, Tuple, cast
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.axes import Axes
+from matplotlib.colorbar import Colorbar
 from matplotlib.ticker import FuncFormatter
 from typing_extensions import Literal
 
@@ -34,9 +36,8 @@ from .data_export import (
 log = logging.getLogger(__name__)
 DB = qc.config["core"]["db_location"]
 
-AxesTuple = Tuple[matplotlib.axes.Axes, matplotlib.colorbar.Colorbar]
-AxesTupleList = Tuple[List[matplotlib.axes.Axes],
-                      List[Optional[matplotlib.colorbar.Colorbar]]]
+AxesTuple = Tuple[Axes, Colorbar]
+AxesTupleList = Tuple[List[Axes], List[Optional[Colorbar]]]
 # NamedData is the structure _get_data_from_ds returns and that plot_by_id
 # uses internally
 NamedData = List[List[DSPlotData]]
@@ -95,10 +96,8 @@ def _appropriate_kwargs(plottype: str,
 
 def plot_dataset(
     dataset: DataSetProtocol,
-    axes: matplotlib.axes.Axes | Sequence[matplotlib.axes.Axes] | None = None,
-    colorbars: matplotlib.colorbar.Colorbar
-    | Sequence[matplotlib.colorbar.Colorbar]
-    | None = None,
+    axes: Axes | Sequence[Axes] | None = None,
+    colorbars: Colorbar | Sequence[Colorbar] | None = None,
     rescale_axes: bool = True,
     auto_color_scale: bool | None = None,
     cutoff_percentile: tuple[float, float] | float | None = None,
@@ -191,11 +190,11 @@ def plot_dataset(
 
     nplots = len(alldata)
 
-    if isinstance(axes, matplotlib.axes.Axes):
+    if isinstance(axes, Axes):
         axeslist = [axes]
     else:
-        axeslist = cast(List[matplotlib.axes.Axes], axes)
-    if isinstance(colorbars, matplotlib.colorbar.Colorbar):
+        axeslist = cast(List[Axes], axes)
+    if isinstance(colorbars, Colorbar):
         colorbars = [colorbars]
 
     if axeslist is None:
@@ -215,7 +214,7 @@ def plot_dataset(
 
     if colorbars is None:
         colorbars = len(axeslist)*[None]
-    new_colorbars: list[matplotlib.colorbar.Colorbar] = []
+    new_colorbars: list[Colorbar] = []
 
     for data, ax, colorbar in zip(alldata, axeslist, colorbars):
 
@@ -311,11 +310,7 @@ def plot_dataset(
 
 def plot_and_save_image(
     data: DataSetProtocol, save_pdf: bool = True, save_png: bool = True
-) -> tuple[
-    DataSetProtocol,
-    list[matplotlib.axes.Axes],
-    list[matplotlib.colorbar.Colorbar | None],
-]:
+) -> tuple[DataSetProtocol, list[Axes], list[Colorbar | None],]:
     """
     The utility function to plot results and save the figures either in pdf or
     png or both formats.
@@ -351,10 +346,8 @@ def plot_and_save_image(
 
 def plot_by_id(
     run_id: int,
-    axes: matplotlib.axes.Axes | Sequence[matplotlib.axes.Axes] | None = None,
-    colorbars: matplotlib.colorbar.Colorbar
-    | Sequence[matplotlib.colorbar.Colorbar]
-    | None = None,
+    axes: Axes | Sequence[Axes] | None = None,
+    colorbars: Colorbar | Sequence[Colorbar] | None = None,
     rescale_axes: bool = True,
     auto_color_scale: bool | None = None,
     cutoff_percentile: tuple[float, float] | float | None = None,
@@ -514,9 +507,9 @@ def _make_label_for_data_axis(data: Sequence[DSPlotData], axis_index: int) -> st
 
 
 def _set_data_axes_labels(
-    ax: matplotlib.axes.Axes,
+    ax: Axes,
     data: Sequence[DSPlotData],
-    cax: matplotlib.colorbar.Colorbar | None = None,
+    cax: Colorbar | None = None,
 ) -> None:
     ax.set_xlabel(_make_label_for_data_axis(data, 0))
     ax.set_ylabel(_make_label_for_data_axis(data, 1))
@@ -525,10 +518,14 @@ def _set_data_axes_labels(
         cax.set_label(_make_label_for_data_axis(data, 2))
 
 
-def plot_2d_scatterplot(x: np.ndarray, y: np.ndarray, z: np.ndarray,
-                        ax: matplotlib.axes.Axes,
-                        colorbar: matplotlib.colorbar.Colorbar = None,
-                        **kwargs: Any) -> AxesTuple:
+def plot_2d_scatterplot(
+    x: np.ndarray,
+    y: np.ndarray,
+    z: np.ndarray,
+    ax: Axes,
+    colorbar: Colorbar = None,
+    **kwargs: Any,
+) -> AxesTuple:
     """
     Make a 2D scatterplot of the data. ``**kwargs`` are passed to matplotlib's
     scatter used for the plotting. By default the data will be rasterized
@@ -579,13 +576,14 @@ def plot_2d_scatterplot(x: np.ndarray, y: np.ndarray, z: np.ndarray,
     return ax, colorbar
 
 
-def plot_on_a_plain_grid(x: np.ndarray,
-                         y: np.ndarray,
-                         z: np.ndarray,
-                         ax: matplotlib.axes.Axes,
-                         colorbar: matplotlib.colorbar.Colorbar = None,
-                         **kwargs: Any
-                         ) -> AxesTuple:
+def plot_on_a_plain_grid(
+    x: np.ndarray,
+    y: np.ndarray,
+    z: np.ndarray,
+    ax: Axes,
+    colorbar: Colorbar = None,
+    **kwargs: Any,
+) -> AxesTuple:
     """
     Plot a heatmap of z using x and y as axes. Assumes that the data
     are rectangular, i.e. that x and y together describe a rectangular
@@ -783,9 +781,9 @@ def _make_rescaled_ticks_and_units(
 
 
 def _rescale_ticks_and_units(
-    ax: matplotlib.axes.Axes,
+    ax: Axes,
     data: Sequence[DSPlotData],
-    cax: matplotlib.colorbar.Colorbar = None,
+    cax: Colorbar | None = None,
 ) -> None:
     """
     Rescale ticks and units for the provided axes as described in
