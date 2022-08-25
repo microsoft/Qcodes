@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from qcodes.utils import ParameterDiff, diff_param_values
 
 from .data_set import load_by_id

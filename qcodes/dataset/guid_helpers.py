@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import ast
 import gc
 from pathlib import Path
@@ -11,7 +13,7 @@ from qcodes.dataset.sqlite.database import connect
 
 def guids_from_dbs(
     db_paths: Iterable[Path],
-) -> Tuple[Dict[Path, List[str]], Dict[str, Path]]:
+) -> tuple[dict[Path, list[str]], dict[str, Path]]:
     """
     Extract all guids from the supplied database paths.
 
@@ -39,8 +41,8 @@ def guids_from_dbs(
 
 
 def guids_from_dir(
-    basepath: Union[Path, str]
-) -> Tuple[Dict[Path, List[str]], Dict[str, Path]]:
+    basepath: Path | str,
+) -> tuple[dict[Path, list[str]], dict[str, Path]]:
     """
     Recursively find all db files under basepath and extract guids.
 
@@ -54,7 +56,7 @@ def guids_from_dir(
     return guids_from_dbs(Path(basepath).glob("**/*.db"))
 
 
-def guids_from_list_str(s: str) -> Optional[Tuple[str, ...]]:
+def guids_from_list_str(s: str) -> tuple[str, ...] | None:
     """
     Get tuple of guids from a python/json string representation of a list.
 
