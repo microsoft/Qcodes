@@ -3,10 +3,13 @@ This module provides a wrapper class :class:`ConnectionPlus` around
 :class:`sqlite3.Connection` together with functions around it which allow
 performing nested atomic transactions on an SQLite database.
 """
+from __future__ import annotations
+
 import logging
 import sqlite3
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Union, Any, Iterator
+from typing import Any
 
 import wrapt
 
@@ -48,8 +51,9 @@ class ConnectionPlus(wrapt.ObjectProxy):
         self.path_to_dbfile = path_to_dbfile(sqlite3_connection)
 
 
-def make_connection_plus_from(conn: Union[sqlite3.Connection, ConnectionPlus]
-                              ) -> ConnectionPlus:
+def make_connection_plus_from(
+    conn: sqlite3.Connection | ConnectionPlus,
+) -> ConnectionPlus:
     """
     Makes a ConnectionPlus connection object out of a given argument.
 
@@ -165,7 +169,7 @@ def atomic_transaction(conn: ConnectionPlus,
     return c
 
 
-def path_to_dbfile(conn: Union[ConnectionPlus, sqlite3.Connection]) -> str:
+def path_to_dbfile(conn: ConnectionPlus | sqlite3.Connection) -> str:
     """
     Return the path of the database file that the conn object is connected to
     """

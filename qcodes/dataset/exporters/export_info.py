@@ -1,8 +1,9 @@
 """This module defines the ExportInfo dataclass."""
+from __future__ import annotations
+
 import json
 import warnings
 from dataclasses import asdict, dataclass
-from typing import Dict
 
 from qcodes.dataset.export_config import DataExportType
 
@@ -10,7 +11,7 @@ from qcodes.dataset.export_config import DataExportType
 @dataclass
 class ExportInfo:
 
-    export_paths: Dict[str, str]
+    export_paths: dict[str, str]
 
     def __post_init__(self) -> None:
         """Verify that keys used in export_paths are as expected."""
@@ -26,7 +27,7 @@ class ExportInfo:
         return json.dumps(asdict(self))
 
     @classmethod
-    def from_str(cls, string: str) -> "ExportInfo":
+    def from_str(cls, string: str) -> ExportInfo:
         if string == "":
             return cls({})
 
