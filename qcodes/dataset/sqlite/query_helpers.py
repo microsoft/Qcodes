@@ -2,9 +2,11 @@
 This module provides a number of convenient general-purpose functions that
 are useful for building more database-specific queries out of them.
 """
+from __future__ import annotations
+
 import itertools
 import sqlite3
-from typing import Any, List, Mapping, Optional, Sequence, Tuple, Union
+from typing import Any, List, Mapping, Sequence, Union
 
 import numpy as np
 from numpy import ndarray
@@ -24,7 +26,7 @@ VALUE = Union[str, complex, List, ndarray, bool, None]
 VALUES = Sequence[VALUE]
 
 
-def one(curr: sqlite3.Cursor, column: Union[int, str]) -> Any:
+def one(curr: sqlite3.Cursor, column: int | str) -> Any:
     """Get the value of one column from one row
     Args:
         curr: cursor to operate on
@@ -42,7 +44,7 @@ def one(curr: sqlite3.Cursor, column: Union[int, str]) -> Any:
         return res[0][column]
 
 
-def many(curr: sqlite3.Cursor, *columns: str) -> List[Any]:
+def many(curr: sqlite3.Cursor, *columns: str) -> list[Any]:
     """Get the values of many columns from one row
     Args:
         curr: cursor to operate on
@@ -58,7 +60,7 @@ def many(curr: sqlite3.Cursor, *columns: str) -> List[Any]:
         return [res[0][c] for c in columns]
 
 
-def many_many(curr: sqlite3.Cursor, *columns: str) -> List[List[Any]]:
+def many_many(curr: sqlite3.Cursor, *columns: str) -> list[list[Any]]:
     """Get all values of many columns
     Args:
         curr: cursor to operate on
@@ -126,7 +128,7 @@ def select_many_where(
     return res
 
 
-def _massage_dict(metadata: Mapping[str, Any]) -> Tuple[str, List[Any]]:
+def _massage_dict(metadata: Mapping[str, Any]) -> tuple[str, list[Any]]:
     """
     {key:value, key2:value} -> ["key=?, key2=?", [value, value]]
     """
@@ -152,11 +154,12 @@ def update_where(conn: ConnectionPlus, table: str,
     atomic_transaction(conn, query, *values, where_value)
 
 
-def insert_values(conn: ConnectionPlus,
-                  formatted_name: str,
-                  columns: List[str],
-                  values: VALUES,
-                  ) -> int:
+def insert_values(
+    conn: ConnectionPlus,
+    formatted_name: str,
+    columns: list[str],
+    values: VALUES,
+) -> int:
     """
     Inserts values for the specified columns.
     Will pad with null if not all parameters are specified.
@@ -253,13 +256,14 @@ def insert_many_values(conn: ConnectionPlus,
     return return_value
 
 
-@deprecate('Unused private method to be removed in a future version')
-def modify_values(conn: ConnectionPlus,
-                  formatted_name: str,
-                  index: int,
-                  columns: List[str],
-                  values: VALUES,
-                  ) -> int:
+@deprecate("Unused private method to be removed in a future version")
+def modify_values(
+    conn: ConnectionPlus,
+    formatted_name: str,
+    index: int,
+    columns: list[str],
+    values: VALUES,
+) -> int:
     """
     Modify values for the specified columns.
     If a column is in the table but not in the columns list is
@@ -281,13 +285,14 @@ def modify_values(conn: ConnectionPlus,
     return c.rowcount
 
 
-@deprecate('Unused private method to be removed in a future version')
-def modify_many_values(conn: ConnectionPlus,
-                       formatted_name: str,
-                       start_index: int,
-                       columns: List[str],
-                       list_of_values: List[VALUES],
-                       ) -> None:
+@deprecate("Unused private method to be removed in a future version")
+def modify_many_values(
+    conn: ConnectionPlus,
+    formatted_name: str,
+    start_index: int,
+    columns: list[str],
+    list_of_values: list[VALUES],
+) -> None:
     """
     Modify many values for the specified columns.
     If a column is in the table but not in the column list is
@@ -330,8 +335,9 @@ def length(conn: ConnectionPlus,
         return _len
 
 
-def insert_column(conn: ConnectionPlus, table: str, name: str,
-                  paramtype: Optional[str] = None) -> None:
+def insert_column(
+    conn: ConnectionPlus, table: str, name: str, paramtype: str | None = None
+) -> None:
     """Insert new column to a table
 
     Args:

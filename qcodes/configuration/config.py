@@ -1,18 +1,19 @@
-import collections.abc
+from __future__ import annotations
+
 import copy
 import json
 import logging
 import os
+from collections.abc import Mapping
 from os.path import expanduser
 from pathlib import Path
-from typing import Any, Dict, Mapping, Optional, Tuple, Union
+from typing import Any, Dict
 
 import jsonschema
 
 logger = logging.getLogger(__name__)
 
-EMPTY_USER_SCHEMA = "User schema at {} not found." + \
-                    "User settings won't be validated"
+EMPTY_USER_SCHEMA = "User schema at {} not found. User settings won't be validated"
 MISS_DESC = """ Passing a description without a type does not make sense.
 Description is ignored """
 
@@ -69,20 +70,20 @@ class Config:
                                                  schema_file_name)
     """Filename of cwd schema"""
 
-    current_schema: Optional['DotDict'] = None
+    current_schema: DotDict | None = None
     """Validators and descriptions of config values"""
-    current_config: Optional['DotDict'] = None
+    current_config: DotDict | None = None
     """Valid config values"""
 
-    defaults: 'DotDict'
+    defaults: DotDict
     """The default configuration"""
-    defaults_schema: 'DotDict'
+    defaults_schema: DotDict
     """The default schema"""
 
-    _diff_config: Dict[str, Any] = {}
-    _diff_schema: Dict[str, Any] = {}
+    _diff_config: dict[str, Any] = {}
+    _diff_schema: dict[str, Any] = {}
 
-    def __init__(self, path: Optional[str] = None) -> None:
+    def __init__(self, path: str | None = None) -> None:
         """
         Args:
             path: Optional path to directory containing
@@ -92,13 +93,13 @@ class Config:
         self.defaults, self.defaults_schema = self.load_default()
         self.update_config()
 
-    def load_default(self) -> Tuple['DotDict', 'DotDict']:
+    def load_default(self) -> tuple[DotDict, DotDict]:
         defaults = self.load_config(self.default_file_name)
         defaults_schema = self.load_config(self.schema_default_file_name)
         self.validate(defaults, defaults_schema)
         return defaults, defaults_schema
 
-    def update_config(self, path: Optional[str] = None) -> Dict[str, Any]:
+    def update_config(self, path: str | None = None) -> dict[str, Any]:
         """
         Load defaults updates with cwd, env, home and the path specified
         and validates.
@@ -154,10 +155,9 @@ class Config:
 
         return config
 
-    def _update_config_from_file(self, file_path: str,
-                                 schema: str,
-                                 config: Dict[str, Any]
-                                 ) -> None:
+    def _update_config_from_file(
+        self, file_path: str, schema: str, config: dict[str, Any]
+    ) -> None:
         """
         Updated ``config`` dictionary with config information from file in
         ``file_path`` that has schema specified in ``schema``
@@ -173,11 +173,12 @@ class Config:
             config = update(config, my_config)
             self.validate(config, self.current_schema, schema)
 
-    def validate(self,
-                 json_config: Optional[Dict[str, Any]] = None,
-                 schema: Optional[Dict[str, Any]] = None,
-                 extra_schema_path: Optional[str] = None
-                 ) -> None:
+    def validate(
+        self,
+        json_config: dict[str, Any] | None = None,
+        schema: dict[str, Any] | None = None,
+        extra_schema_path: str | None = None,
+    ) -> None:
         """
         Validate configuration; if no arguments are passed, the default
         validators are used.
@@ -213,11 +214,14 @@ class Config:
             else:
                 jsonschema.validate(json_config, schema)
 
-    def add(self, key: str, value: Any,
-            value_type: Optional[str] = None,
-            description: Optional[str] = None,
-            default: Optional[Any] = None
-            ) -> None:
+    def add(
+        self,
+        key: str,
+        value: Any,
+        value_type: str | None = None,
+        description: str | None = None,
+        default: Any | None = None,
+    ) -> None:
         """Add custom config value in place
 
         Adds ``key``, ``value`` with optional ``value_type`` to user config and
@@ -276,7 +280,7 @@ class Config:
                 logger.warning(MISS_DESC)
         else:
             # update schema!
-            schema_entry: Dict[str, Dict[str, Union[str, Any]]]
+            schema_entry: dict[str, dict[str, str | Any]]
             schema_entry = {key: {"type": value_type}}
             if description is not None:
                 schema_entry = {
@@ -311,7 +315,7 @@ class Config:
             props["user"].update(schema_entry)
 
     @staticmethod
-    def load_config(path: str) -> 'DotDict':
+    def load_config(path: str) -> DotDict:
         """Load a config JSON file
 
         Args:
@@ -424,7 +428,7 @@ class DotDict(Dict[str, Any]):
     Requires keys to be strings.
     """
 
-    def __init__(self, value: Optional[Mapping[str, Any]] = None):
+    def __init__(self, value: Mapping[str, Any] | None = None):
         if value is None:
             pass
         else:
@@ -457,7 +461,7 @@ class DotDict(Dict[str, Any]):
         target = dict.__getitem__(self, myKey)
         return restOfKey in target
 
-    def __deepcopy__(self, memo: Optional[Dict[Any, Any]]) -> 'DotDict':
+    def __deepcopy__(self, memo: dict[Any, Any] | None) -> DotDict:
         return DotDict(copy.deepcopy(dict(self)))
 
     def __getattr__(self, name: str) -> Any:
@@ -473,10 +477,9 @@ class DotDict(Dict[str, Any]):
         self.__setitem__(key, value)
 
 
-def update(d: Dict[Any, Any],
-           u: Mapping[Any, Any]) -> Dict[Any, Any]:
+def update(d: dict[Any, Any], u: Mapping[Any, Any]) -> dict[Any, Any]:
     for k, v in u.items():
-        if isinstance(v, collections.abc.Mapping):
+        if isinstance(v, Mapping):
             r = update(d.get(k, {}), v)
             d[k] = r
         else:

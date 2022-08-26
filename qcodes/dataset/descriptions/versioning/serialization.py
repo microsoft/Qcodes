@@ -29,9 +29,12 @@ The names of the functions in this module follow the "to_*"/"from_*"
 convention where "*" stands for the storage format. Also note the
 "as_version", "for_storage", and "to_current" suffixes.
 """
+from __future__ import annotations
+
 import io
 import json
-from typing import Any, Callable, Dict, Tuple, cast
+from collections.abc import Callable
+from typing import Any, cast
 
 from ruamel.yaml import YAML
 
@@ -63,7 +66,7 @@ STORAGE_VERSION = 3
 # infrastructure of :mod:`qcodes`
 
 # keys: (from_version, to_version)
-_converters: Dict[Tuple[int, int], Callable[..., Any]] = {
+_converters: dict[tuple[int, int], Callable[..., Any]] = {
     (0, 0): lambda x: x,
     (0, 1): v0_to_v1,
     (0, 2): v0_to_v2,
