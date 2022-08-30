@@ -6,7 +6,7 @@ from .ATS import AlazarTech_ATS
 from .utils import TraceParameter
 
 
-class AlazarTech_ATS9870(AlazarTech_ATS):
+class AlazarTechATS9870(AlazarTech_ATS):
     """
     This class is the driver for the ATS9870 board
     it inherits from the ATS base class
@@ -305,3 +305,7 @@ class AlazarTech_ATS9870(AlazarTech_ATS):
         if model != 'ATS9870':
             raise Exception(f"The Alazar board kind is not 'ATS9870',"
                             f" found '{str(model)}' instead.")
+
+
+class AlazarTech_ATS9870(AlazarTechATS9870):
+    pass

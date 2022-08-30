@@ -6,7 +6,7 @@ from .ATS import AlazarTech_ATS
 from .utils import TraceParameter
 
 
-class AlazarTech_ATS9440(AlazarTech_ATS):
+class AlazarTechATS9440(AlazarTech_ATS):
     """
     This class is the driver for the ATS9440 board
     it inherits from the ATS base class
@@ -300,3 +300,7 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
                            set_cmd=None,
                            initial_value=1000,
                            vals=validators.Ints(min_value=0))
+
+
+class AlazarTech_ATS9440(AlazarTechATS9440):
+    pass
