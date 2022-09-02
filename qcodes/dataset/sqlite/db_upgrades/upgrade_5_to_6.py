@@ -6,10 +6,8 @@ import sys
 from tqdm import tqdm
 
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
-from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic, \
-    atomic_transaction
-from qcodes.dataset.sqlite.queries import get_run_description, \
-    update_run_description
+from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic, atomic_transaction
+from qcodes.dataset.sqlite.queries import get_run_description, update_run_description
 from qcodes.dataset.sqlite.query_helpers import one
 
 
