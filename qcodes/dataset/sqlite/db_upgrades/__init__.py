@@ -15,7 +15,7 @@ principle, the upgrade functions should not have dependecies from
 import logging
 import sys
 from functools import wraps
-from typing import Any, Callable, Dict
+from typing import Callable, Dict
 
 import numpy as np
 from tqdm import tqdm
