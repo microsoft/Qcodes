@@ -52,6 +52,13 @@ def _latest_available_version() -> int:
     return len(_UPGRADE_ACTIONS)
 
 
+def _get_no_of_runs(conn: ConnectionPlus) -> int:
+    no_of_runs_query = "SELECT max(run_id) FROM runs"
+    no_of_runs = one(atomic_transaction(conn, no_of_runs_query), "max(run_id)")
+    no_of_runs = no_of_runs or 0
+    return no_of_runs
+
+
 def upgrader(func: TUpgraderFunction) -> TUpgraderFunction:
     """
     Decorator for database version upgrade functions. An upgrade function
@@ -120,9 +127,10 @@ def perform_db_upgrade(conn: ConnectionPlus, version: int = -1) -> None:
     """
     version = _latest_available_version() if version == -1 else version
 
-    show_progress_bar = True
-
     current_version = get_user_version(conn)
+
+    show_progress_bar = not (_get_no_of_runs(conn) == 0)
+
     if current_version < version:
         log.info("Commencing database upgrade")
         for target_version in sorted(_UPGRADE_ACTIONS)[:version]:
