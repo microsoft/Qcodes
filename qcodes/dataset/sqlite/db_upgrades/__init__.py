@@ -12,10 +12,12 @@ the current state of the SQLite API in QCoDeS (:mod:`.sqlite`). In
 principle, the upgrade functions should not have dependecies from
 :mod:`.queries` module.
 """
+from __future__ import annotations
+
 import logging
 import sys
 from functools import wraps
-from typing import Callable, Dict
+from typing import Callable
 
 import numpy as np
 from tqdm import tqdm
@@ -42,7 +44,7 @@ TUpgraderFunction = Callable[[ConnectionPlus], None]
 # The newest database version is thus determined by the number of upgrades
 # in this module
 # The key is the TARGET VERSION of the upgrade, i.e. the first key is 1
-_UPGRADE_ACTIONS: Dict[int, TUpgraderFunction] = {}
+_UPGRADE_ACTIONS: dict[int, TUpgraderFunction] = {}
 
 
 def _latest_available_version() -> int:
