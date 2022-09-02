@@ -38,7 +38,7 @@ log = logging.getLogger(__name__)
 # INFRASTRUCTURE FOR UPGRADE FUNCTIONS
 
 
-TUpgraderFunction = Callable[[ConnectionPlus], None]
+TUpgraderFunction = Callable[[ConnectionPlus, bool], None]
 
 # Functions decorated as 'upgrader' are inserted into this dict
 # The newest database version is thus determined by the number of upgrades
@@ -83,7 +83,7 @@ def upgrader(func: TUpgraderFunction) -> TUpgraderFunction:
                          ' to version N+1')
 
     @wraps(func)
-    def do_upgrade(conn: ConnectionPlus) -> None:
+    def do_upgrade(conn: ConnectionPlus, show_progress_bar: bool = True) -> None:
 
         log.info(f'Starting database upgrade version {from_version} '
                  f'to {to_version}')
@@ -95,7 +95,7 @@ def upgrader(func: TUpgraderFunction) -> TUpgraderFunction:
             return
 
         # This function either raises or returns
-        func(conn)
+        func(conn, show_progress_bar)
 
         set_user_version(conn, to_version)
         log.info(f'Succesfully performed upgrade {from_version} '
@@ -120,18 +120,22 @@ def perform_db_upgrade(conn: ConnectionPlus, version: int = -1) -> None:
     """
     version = _latest_available_version() if version == -1 else version
 
+    show_progress_bar = True
+
     current_version = get_user_version(conn)
     if current_version < version:
         log.info("Commencing database upgrade")
         for target_version in sorted(_UPGRADE_ACTIONS)[:version]:
-            _UPGRADE_ACTIONS[target_version](conn)
+            _UPGRADE_ACTIONS[target_version](conn, show_progress_bar)
 
 
 # DATABASE UPGRADE FUNCTIONS
 
 
 @upgrader
-def perform_db_upgrade_0_to_1(conn: ConnectionPlus) -> None:
+def perform_db_upgrade_0_to_1(
+    conn: ConnectionPlus, show_progress_bar: bool = True
+) -> None:
     """
     Perform the upgrade from version 0 to version 1
 
@@ -150,7 +154,11 @@ def perform_db_upgrade_0_to_1(conn: ConnectionPlus) -> None:
             cur = transaction(conn, 'SELECT run_id FROM runs')
             run_ids = [r[0] for r in many_many(cur, 'run_id')]
 
-            pbar = tqdm(range(1, len(run_ids) + 1), file=sys.stdout)
+            pbar = tqdm(
+                range(1, len(run_ids) + 1),
+                file=sys.stdout,
+                disable=not show_progress_bar,
+            )
             pbar.set_description("Upgrading database; v0 -> v1")
 
             for run_id in pbar:
@@ -175,7 +183,9 @@ def perform_db_upgrade_0_to_1(conn: ConnectionPlus) -> None:
 
 
 @upgrader
-def perform_db_upgrade_1_to_2(conn: ConnectionPlus) -> None:
+def perform_db_upgrade_1_to_2(
+    conn: ConnectionPlus, show_progress_bar: bool = True
+) -> None:
     """
     Perform the upgrade from version 1 to version 2
 
@@ -186,7 +196,7 @@ def perform_db_upgrade_1_to_2(conn: ConnectionPlus) -> None:
     cur = atomic_transaction(conn, sql)
     n_run_tables = len(cur.fetchall())
 
-    pbar = tqdm(range(1), file=sys.stdout)
+    pbar = tqdm(range(1), file=sys.stdout, disable=not show_progress_bar)
     pbar.set_description("Upgrading database; v1 -> v2")
 
     if n_run_tables == 1:
@@ -211,7 +221,9 @@ def perform_db_upgrade_1_to_2(conn: ConnectionPlus) -> None:
 
 
 @upgrader
-def perform_db_upgrade_2_to_3(conn: ConnectionPlus) -> None:
+def perform_db_upgrade_2_to_3(
+    conn: ConnectionPlus, show_progress_bar: bool = True
+) -> None:
     """
     Perform the upgrade from version 2 to version 3
 
@@ -221,11 +233,14 @@ def perform_db_upgrade_2_to_3(conn: ConnectionPlus) -> None:
     object
     """
     from qcodes.dataset.sqlite.db_upgrades.upgrade_2_to_3 import upgrade_2_to_3
-    upgrade_2_to_3(conn)
+
+    upgrade_2_to_3(conn, show_progress_bar)
 
 
 @upgrader
-def perform_db_upgrade_3_to_4(conn: ConnectionPlus) -> None:
+def perform_db_upgrade_3_to_4(
+    conn: ConnectionPlus, show_progress_bar: bool = True
+) -> None:
     """
     Perform the upgrade from version 3 to version 4. This really
     repeats the version 3 upgrade as it originally had two bugs in
@@ -236,11 +251,14 @@ def perform_db_upgrade_3_to_4(conn: ConnectionPlus) -> None:
     other parameters. Both have since been fixed so rerun the upgrade.
     """
     from qcodes.dataset.sqlite.db_upgrades.upgrade_3_to_4 import upgrade_3_to_4
-    upgrade_3_to_4(conn)
+
+    upgrade_3_to_4(conn, show_progress_bar)
 
 
 @upgrader
-def perform_db_upgrade_4_to_5(conn: ConnectionPlus) -> None:
+def perform_db_upgrade_4_to_5(
+    conn: ConnectionPlus, show_progress_bar: bool = True
+) -> None:
     """
     Perform the upgrade from version 4 to version 5.
 
@@ -250,7 +268,7 @@ def perform_db_upgrade_4_to_5(conn: ConnectionPlus) -> None:
     with snapshot information.
     """
     with atomic(conn) as conn:
-        pbar = tqdm(range(1), file=sys.stdout)
+        pbar = tqdm(range(1), file=sys.stdout, disable=not show_progress_bar)
         pbar.set_description("Upgrading database; v4 -> v5")
         # iterate through the pbar for the sake of the side effect; it
         # prints that the database is being upgraded
@@ -259,7 +277,9 @@ def perform_db_upgrade_4_to_5(conn: ConnectionPlus) -> None:
 
 
 @upgrader
-def perform_db_upgrade_5_to_6(conn: ConnectionPlus) -> None:
+def perform_db_upgrade_5_to_6(
+    conn: ConnectionPlus, show_progress_bar: bool = True
+) -> None:
     """
     Perform the upgrade from version 5 to version 6.
 
@@ -268,11 +288,14 @@ def perform_db_upgrade_5_to_6(conn: ConnectionPlus) -> None:
     not be tracked as schema upgrades.
     """
     from qcodes.dataset.sqlite.db_upgrades.upgrade_5_to_6 import upgrade_5_to_6
-    upgrade_5_to_6(conn)
+
+    upgrade_5_to_6(conn, show_progress_bar)
 
 
 @upgrader
-def perform_db_upgrade_6_to_7(conn: ConnectionPlus) -> None:
+def perform_db_upgrade_6_to_7(
+    conn: ConnectionPlus, show_progress_bar: bool = True
+) -> None:
     """
     Perform the upgrade from version 6 to version 7
 
@@ -286,7 +309,7 @@ def perform_db_upgrade_6_to_7(conn: ConnectionPlus) -> None:
 
     if n_run_tables == 1:
 
-        pbar = tqdm(range(1), file=sys.stdout)
+        pbar = tqdm(range(1), file=sys.stdout, disable=not show_progress_bar)
         pbar.set_description("Upgrading database; v6 -> v7")
         # iterate through the pbar for the sake of the side effect; it
         # prints that the database is being upgraded
@@ -308,14 +331,16 @@ def perform_db_upgrade_6_to_7(conn: ConnectionPlus) -> None:
 
 
 @upgrader
-def perform_db_upgrade_7_to_8(conn: ConnectionPlus) -> None:
+def perform_db_upgrade_7_to_8(
+    conn: ConnectionPlus, show_progress_bar: bool = True
+) -> None:
     """
     Perform the upgrade from version 7 to version 8.
 
     Add a new column to store the dataset's parents to the runs table.
     """
     with atomic(conn) as conn:
-        pbar = tqdm(range(1), file=sys.stdout)
+        pbar = tqdm(range(1), file=sys.stdout, disable=not show_progress_bar)
         pbar.set_description("Upgrading database; v7 -> v8")
         # iterate through the pbar for the sake of the side effect; it
         # prints that the database is being upgraded
@@ -324,7 +349,9 @@ def perform_db_upgrade_7_to_8(conn: ConnectionPlus) -> None:
 
 
 @upgrader
-def perform_db_upgrade_8_to_9(conn: ConnectionPlus) -> None:
+def perform_db_upgrade_8_to_9(
+    conn: ConnectionPlus, show_progress_bar: bool = True
+) -> None:
     """
     Perform the upgrade from version 8 to version 9.
 
@@ -335,7 +362,7 @@ def perform_db_upgrade_8_to_9(conn: ConnectionPlus) -> None:
     cur = atomic_transaction(conn, sql)
     n_run_tables = len(cur.fetchall())
 
-    pbar = tqdm(range(1), file=sys.stdout)
+    pbar = tqdm(range(1), file=sys.stdout, disable=not show_progress_bar)
     pbar.set_description("Upgrading database; v8 -> v9")
 
     if n_run_tables == 1:

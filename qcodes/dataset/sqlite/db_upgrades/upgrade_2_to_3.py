@@ -189,7 +189,7 @@ def _2to3_get_paramspecs(
     return paramspecs
 
 
-def upgrade_2_to_3(conn: ConnectionPlus) -> None:
+def upgrade_2_to_3(conn: ConnectionPlus, show_progress_bar: bool = True) -> None:
     """
     Perform the upgrade from version 2 to version 3
 
@@ -217,7 +217,9 @@ def upgrade_2_to_3(conn: ConnectionPlus) -> None:
         layouts = _2to3_get_layouts(conn)
         dependencies = _2to3_get_dependencies(conn)
 
-        pbar = tqdm(range(1, no_of_runs+1), file=sys.stdout)
+        pbar = tqdm(
+            range(1, no_of_runs + 1), file=sys.stdout, disable=not show_progress_bar
+        )
         pbar.set_description("Upgrading database; v2 -> v3")
 
         for run_id in pbar:
