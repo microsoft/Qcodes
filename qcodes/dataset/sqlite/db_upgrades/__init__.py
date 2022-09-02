@@ -42,7 +42,7 @@ TUpgraderFunction = Callable[[ConnectionPlus], None]
 # The newest database version is thus determined by the number of upgrades
 # in this module
 # The key is the TARGET VERSION of the upgrade, i.e. the first key is 1
-_UPGRADE_ACTIONS: Dict[int, Callable[..., Any]] = {}
+_UPGRADE_ACTIONS: Dict[int, TUpgraderFunction] = {}
 
 
 def _latest_available_version() -> int:
