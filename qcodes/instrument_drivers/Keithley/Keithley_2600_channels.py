@@ -759,8 +759,8 @@ class Keithley2600Channel(InstrumentChannel):
 
 class Keithley2600(VisaInstrument):
     """
-    This is the qcodes driver for the Keithley_2600 Source-Meter series,
-    tested with Keithley_2614B
+    This is the qcodes driver for the Keithley 2600 Source-Meter series,
+    tested with Keithley 2614B
 
     """
 
