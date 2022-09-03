@@ -5,6 +5,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
+from typing_extensions import Literal
 
 import qcodes.validators as vals
 from qcodes.data.data_set import DataSet
@@ -625,7 +626,11 @@ class KeithleyChannel(InstrumentChannel):
         return data
 
     def _fast_sweep(
-        self, start: float, stop: float, steps: int, mode: str = "IV"
+        self,
+        start: float,
+        stop: float,
+        steps: int,
+        mode: Literal["IV", "VI", "VIfourprobe"] = "IV",
     ) -> np.ndarray:
         """
         Perform a fast sweep using a deployed Lua script.
@@ -655,18 +660,18 @@ class KeithleyChannel(InstrumentChannel):
             sour = "v"
             func = "1"
             sense_mode = "0"
-
-        if mode == "VI":
+        elif mode == "VI":
             meas = "v"
             sour = "i"
             func = "0"
             sense_mode = "0"
-
-        if mode == "VIfourprobe":
+        elif mode == "VIfourprobe":
             meas = "v"
             sour = "i"
             func = "0"
             sense_mode = "1"
+        else:
+            raise ValueError(f"Invalid mode {mode}")
 
         script = [
             f"{channel}.measure.nplc = {nplc:.12f}",
