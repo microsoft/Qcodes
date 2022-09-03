@@ -267,8 +267,8 @@ class _ParameterWithStatus(Parameter):
 
 class _MeasurementCurrentParameter(_ParameterWithStatus):
     def set_raw(self, value: ParamRawDataType) -> None:
-        assert isinstance(self.instrument, KeithleyChannel)
-        assert isinstance(self.root_instrument, Keithley_2600)
+        assert isinstance(self.instrument, Keithley2600Channel)
+        assert isinstance(self.root_instrument, Keithley2600)
 
         smu_chan = self.instrument
         channel = smu_chan.channel
@@ -278,8 +278,8 @@ class _MeasurementCurrentParameter(_ParameterWithStatus):
         smu_chan._reset_measurement_statuses_of_parameters()
 
     def get_raw(self) -> ParamRawDataType:
-        assert isinstance(self.instrument, KeithleyChannel)
-        assert isinstance(self.root_instrument, Keithley_2600)
+        assert isinstance(self.instrument, Keithley2600Channel)
+        assert isinstance(self.root_instrument, Keithley2600)
 
         smu = self.instrument
         channel = self.instrument.channel
@@ -297,8 +297,8 @@ class _MeasurementCurrentParameter(_ParameterWithStatus):
 
 class _MeasurementVoltageParameter(_ParameterWithStatus):
     def set_raw(self, value: ParamRawDataType) -> None:
-        assert isinstance(self.instrument, KeithleyChannel)
-        assert isinstance(self.root_instrument, Keithley_2600)
+        assert isinstance(self.instrument, Keithley2600Channel)
+        assert isinstance(self.root_instrument, Keithley2600)
 
         smu_chan = self.instrument
         channel = smu_chan.channel
@@ -308,8 +308,8 @@ class _MeasurementVoltageParameter(_ParameterWithStatus):
         smu_chan._reset_measurement_statuses_of_parameters()
 
     def get_raw(self) -> ParamRawDataType:
-        assert isinstance(self.instrument, KeithleyChannel)
-        assert isinstance(self.root_instrument, Keithley_2600)
+        assert isinstance(self.instrument, Keithley2600Channel)
+        assert isinstance(self.root_instrument, Keithley2600)
 
         smu = self.instrument
         channel = self.instrument.channel
@@ -325,7 +325,7 @@ class _MeasurementVoltageParameter(_ParameterWithStatus):
         return value
 
 
-class KeithleyChannel(InstrumentChannel):
+class Keithley2600Channel(InstrumentChannel):
     """
     Class to hold the two Keithley channels, i.e.
     SMUA and SMUB.
@@ -757,7 +757,7 @@ class KeithleyChannel(InstrumentChannel):
         self.write(f"{channel}.measure.rangei={val}")
 
 
-class Keithley_2600(VisaInstrument):
+class Keithley2600(VisaInstrument):
     """
     This is the qcodes driver for the Keithley_2600 Source-Meter series,
     tested with Keithley_2614B
@@ -883,10 +883,10 @@ class Keithley_2600(VisaInstrument):
             "2636B": [100e-12, 1.5],
         }
         # Add the channel to the instrument
-        self.channels: List[KeithleyChannel] = []
+        self.channels: List[Keithley2600Channel] = []
         for ch in ["a", "b"]:
             ch_name = f"smu{ch}"
-            channel = KeithleyChannel(self, ch_name, ch_name)
+            channel = Keithley2600Channel(self, ch_name, ch_name)
             self.add_submodule(ch_name, channel)
             self.channels.append(channel)
 
