@@ -373,7 +373,7 @@ class TektronixTPS2012(VisaInstrument):
     def clear_message_queue(self, verbose: bool = False) -> None:
         """
         Function to clear up (flush) the VISA message queue of the AWG
-        instrument. Reads all messages in the the queue.
+        instrument. Reads all messages in the queue.
 
         Args:
             verbose: If True, the read messages are printed.
