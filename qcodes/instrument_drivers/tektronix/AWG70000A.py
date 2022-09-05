@@ -146,7 +146,7 @@ class SRValidator(vals.Validator[float]):
             validator.validate(value)
 
 
-class AWGChannel(InstrumentChannel):
+class Tektronix70000AWGChannel(InstrumentChannel):
     """
     Class to hold a channel of the AWG.
     """
@@ -393,8 +393,14 @@ class AWG70000A(VisaInstrument):
     subclasses of this general class.
     """
 
-    def __init__(self, name: str, address: str, num_channels: int,
-                 timeout: float=10, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        name: str,
+        address: str,
+        num_channels: int,
+        timeout: float = 10,
+        **kwargs: Any,
+    ) -> None:
         """
         Args:
             name: The name used internally by QCoDeS in the DataSet
@@ -411,10 +417,11 @@ class AWG70000A(VisaInstrument):
         # The 'model' value begins with 'AWG'
         self.model = self.IDN()['model'][3:]
 
-        if self.model not in ['70001A', '70002A', '70001B', '70002B', '5208']:
-            raise ValueError('Unknown model type: {}. Are you using '
-                             'the right driver for your instrument?'
-                             ''.format(self.model))
+        if self.model not in ["70001A", "70002A", "70001B", "70002B", "5208"]:
+            raise ValueError(
+                f"Unknown model type: {self.model}. Are you using "
+                f"the right driver for your instrument?"
+            )
 
         self.add_parameter('current_directory',
                            label='Current file system directory',
@@ -465,12 +472,13 @@ class AWG70000A(VisaInstrument):
 
         # We deem 2 channels too few for a channel list
         if self.num_channels > 2:
-            chanlist = ChannelList(self, 'Channels', AWGChannel,
-                                   snapshotable=False)
+            chanlist = ChannelList(
+                self, "Channels", Tektronix70000AWGChannel, snapshotable=False
+            )
 
         for ch_num in range(1, num_channels+1):
             ch_name = f'ch{ch_num}'
-            channel = AWGChannel(self, ch_name, ch_num)
+            channel = Tektronix70000AWGChannel(self, ch_name, ch_num)
             self.add_submodule(ch_name, channel)
             if self.num_channels > 2:
                 chanlist.append(channel)

@@ -309,7 +309,7 @@ class TekronixDPOWaveform(InstrumentChannel):
 
         return inner
 
-    def _get_trace_data(self)  -> np.ndarray:
+    def _get_trace_data(self) -> np.ndarray:
 
         self.root_instrument.data.source(self._identifier)
         waveform = self.root_instrument.waveform
