@@ -3,3 +3,5 @@ tektronix awgs has changed name to `Tektronix70000AWGChannel` to conform with th
 classes.
 
 The `InstrumentChannel` class ``TPS2012Channel`` has changed name to ``TektronixTPS2012Channel``
+
+The Tektronix DPO exception `ModeError` has been renamed `TektronixMSODPOModeError`

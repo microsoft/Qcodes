@@ -27,7 +27,7 @@ def strip_quotes(string: str) -> str:
     return string.strip('"')
 
 
-class ModeError(Exception):
+class TektronixMSODPOModeError(Exception):
     """
     Raise this exception if we are in a wrong mode to
     perform an action
@@ -598,7 +598,7 @@ class TektronixDPOHorizontal(InstrumentChannel):
 
     def _set_record_length(self, value: int) -> None:
         if self.mode() != "manual":
-            raise ModeError(
+            raise TektronixMSODPOModeError(
                 "The record length can only be changed in manual mode"
             )
 
@@ -606,9 +606,7 @@ class TektronixDPOHorizontal(InstrumentChannel):
 
     def _set_scale(self, value: float) -> None:
         if self.mode() == "manual":
-            raise ModeError(
-                "The scale cannot be changed in manual mode"
-            )
+            raise TektronixMSODPOModeError("The scale cannot be changed in manual mode")
 
         self.write(f"HORizontal:MODE:SCAle {value}")
 
