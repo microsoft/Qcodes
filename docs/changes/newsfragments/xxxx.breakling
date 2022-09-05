@@ -1,0 +1,5 @@
+The `InstrumentChannel` class `AWGChannel` used by the `70001A', '70002A', '70001B', '70002B', '5208'
+tektronix awgs has changed name to `Tektronix70000AWGChannel` to conform with the naming of the instrument
+classes.
+
+The `InstrumentChannel` class ``TPS2012Channel`` has changed name to ``TektronixTPS2012Channel``
