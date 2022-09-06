@@ -244,7 +244,7 @@ filterwarnings = [
 package = "qcodes"
 name = "QCoDeS"
 directory = "docs/changes/newsfragments"
-single_file = true
+single_file = false
 filename = "docs/changes/{version}.rst"
 issue_format = ":pr:`{issue}`"
 
