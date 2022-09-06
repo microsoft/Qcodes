@@ -5,9 +5,10 @@ Legacy in many ways:
     - assume X server running
     - just test "window creation"
 """
-from unittest import TestCase, skipIf
-import numpy as np
 import os
+from unittest import TestCase, skipIf
+
+import numpy as np
 
 try:
     noQtPlot = False
@@ -17,8 +18,9 @@ except Exception:
 
 try:
     noMatPlot = False
-    from qcodes.plots.qcmatplotlib import MatPlot
     import matplotlib
+
+    from qcodes.plots.qcmatplotlib import MatPlot
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
 except Exception:

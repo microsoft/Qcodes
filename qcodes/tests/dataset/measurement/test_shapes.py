@@ -1,8 +1,8 @@
 import logging
 
-import numpy as np
 import hypothesis.strategies as hst
-from hypothesis import HealthCheck, given, example, settings
+import numpy as np
+from hypothesis import HealthCheck, example, given, settings
 
 from qcodes.dataset.measurements import Measurement
 

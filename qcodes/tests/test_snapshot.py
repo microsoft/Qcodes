@@ -2,8 +2,9 @@
 Test module for snapshots of instruments and parameters
 """
 
-from qcodes.tests.instrument_mocks import SnapShotTestInstrument
 import pytest
+
+from qcodes.tests.instrument_mocks import SnapShotTestInstrument
 
 
 @pytest.mark.parametrize("params,params_to_skip",

@@ -1,10 +1,15 @@
 import warnings
+
 import pytest
 
-
 from qcodes.utils.deprecate import (
-    deprecate, issue_deprecation_warning, _catch_deprecation_warnings,
-    assert_not_deprecated, assert_deprecated, QCoDeSDeprecationWarning)
+    QCoDeSDeprecationWarning,
+    _catch_deprecation_warnings,
+    assert_deprecated,
+    assert_not_deprecated,
+    deprecate,
+    issue_deprecation_warning,
+)
 
 
 def test_assert_deprecated_raises():

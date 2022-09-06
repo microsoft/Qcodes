@@ -1,8 +1,6 @@
-from typing import Iterable, Any
-
 from functools import wraps
 from operator import xor
-from typing import List, Union, Callable, TypeVar, cast, Optional
+from typing import Any, Callable, Iterable, List, Optional, TypeVar, Union, cast
 
 from . import constants
 

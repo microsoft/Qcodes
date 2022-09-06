@@ -1,6 +1,7 @@
 import pytest
 
 from qcodes.parameters import ArrayParameter
+
 from .conftest import blank_instruments, named_instrument
 
 

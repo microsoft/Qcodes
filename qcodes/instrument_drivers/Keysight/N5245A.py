@@ -2,6 +2,7 @@ from typing import Any
 
 from . import N52xx
 
+
 class N5245A(N52xx.PNAxBase):
     def __init__(self, name: str, address: str, **kwargs: Any):
         super().__init__(name, address,

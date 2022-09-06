@@ -1,19 +1,16 @@
 # Test some subscription scenarios
-from typing import List, Tuple, Dict, Union, Any
+import logging
 from numbers import Number
+from typing import Any, Dict, List, Tuple, Union
 
 import pytest
 from numpy import ndarray
-import logging
 
 import qcodes
-from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
+from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.sqlite.connection import atomic_transaction
-
-from qcodes.tests.common import default_config
-from qcodes.tests.common import retry_until_does_not_throw
-
+from qcodes.tests.common import default_config, retry_until_does_not_throw
 
 log = logging.getLogger(__name__)
 

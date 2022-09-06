@@ -1,9 +1,11 @@
 import pytest
 
-from qcodes.instrument_drivers.Keysight.N9030B import (N9030B,
-                                                       SpectrumAnalyzerMode,
-                                                       PhaseNoiseMode)
 import qcodes.instrument.sims as sims
+from qcodes.instrument_drivers.Keysight.N9030B import (
+    N9030B,
+    PhaseNoiseMode,
+    SpectrumAnalyzerMode,
+)
 
 VISALIB = sims.__file__.replace('__init__.py', 'Keysight_N9030B.yaml@sim')
 

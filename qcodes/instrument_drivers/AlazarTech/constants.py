@@ -6,9 +6,8 @@ convenient to find the uesful constants here based on the Alazar SDK manual.
 """
 
 
-from typing import NewType, Dict, Tuple
 from enum import IntEnum, IntFlag
-
+from typing import Dict, NewType, Tuple
 
 ReturnCode = NewType('ReturnCode', int)
 

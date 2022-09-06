@@ -1,9 +1,10 @@
 # pylint: disable=redefined-outer-name
-import pytest
 import logging
 
-from qcodes.instrument_drivers.Keysight.keysight_34980a import Keysight34980A
+import pytest
+
 import qcodes.instrument.sims as sims
+from qcodes.instrument_drivers.Keysight.keysight_34980a import Keysight34980A
 
 VISALIB = sims.__file__.replace('__init__.py', 'keysight_34980A.yaml@sim')
 

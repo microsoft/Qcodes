@@ -1,19 +1,18 @@
-from io import StringIO, BytesIO
 import logging
 import zipfile
+from io import BytesIO, StringIO
 
-import pytest
-import numpy as np
-from hypothesis import given, settings
 import hypothesis.strategies as hst
+import numpy as np
+import pytest
+from broadbean.sequence import InvalidForgedSequenceError
+from hypothesis import given, settings
 from lxml import etree
 
-from qcodes.instrument_drivers.tektronix.AWG70002A import AWG70002A
-from qcodes.instrument_drivers.tektronix.AWG70000A import AWG70000A
 import qcodes.instrument.sims as sims
 import qcodes.tests.drivers.auxiliary_files as auxfiles
-
-from broadbean.sequence import InvalidForgedSequenceError
+from qcodes.instrument_drivers.tektronix.AWG70000A import AWG70000A
+from qcodes.instrument_drivers.tektronix.AWG70002A import AWG70002A
 
 visalib = sims.__file__.replace('__init__.py', 'Tektronix_AWG70000A.yaml@sim')
 

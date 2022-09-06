@@ -2,17 +2,17 @@
 This module contains code used for benchmarking data saving speed of the
 database used under the QCoDeS dataset.
 """
+import os
 import shutil
 import tempfile
-import os
 import time
 
 import numpy as np
 
 import qcodes
 from qcodes import ManualParameter
-from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.experiment_container import new_experiment
+from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.sqlite.database import initialise_database
 
 

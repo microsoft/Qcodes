@@ -2,6 +2,7 @@ from functools import partial
 from typing import Any, List, Sequence, Union
 
 import numpy as np
+
 from qcodes.instrument import VisaInstrument
 from qcodes.validators import Anything, Enum, Ints, MultiType, Numbers
 

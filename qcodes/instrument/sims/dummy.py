@@ -5,7 +5,6 @@
 from typing import Any
 
 import qcodes.validators as vals
-
 from qcodes.instrument.visa import VisaInstrument
 
 

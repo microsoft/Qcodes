@@ -5,19 +5,21 @@ exports of logs and log files to a :class:`pandas.DataFrame`
 
 """
 
+import io
+import logging
+from contextlib import contextmanager
+from typing import Callable, Iterator, Optional, Sequence, Tuple
+
 import pandas
 from pandas.core.series import Series
-from contextlib import contextmanager
-import logging
-import io
 
-from typing import Optional, Sequence, Iterator, Tuple, Callable
-
-from .logger import (LOGGING_SEPARATOR,
-                     FORMAT_STRING_DICT,
-                     get_formatter,
-                     LevelType,
-                     get_log_file_name)
+from .logger import (
+    FORMAT_STRING_DICT,
+    LOGGING_SEPARATOR,
+    LevelType,
+    get_formatter,
+    get_log_file_name,
+)
 
 
 def log_to_dataframe(log: Sequence[str],

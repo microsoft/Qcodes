@@ -4,17 +4,20 @@ This suite of tests is expected to be executed on a Windows PC with a single
 Alazar board installed.
 """
 
-import os
 import gc
 import logging
+import os
 
 import pytest
 
 from qcodes.instrument_drivers.AlazarTech.ATS import AlazarTech_ATS
 from qcodes.instrument_drivers.AlazarTech.ats_api import AlazarATSAPI
+from qcodes.instrument_drivers.AlazarTech.constants import (
+    API_SUCCESS,
+    ERROR_CODES,
+    Capability,
+)
 from qcodes.instrument_drivers.AlazarTech.dll_wrapper import DllWrapperMeta
-from qcodes.instrument_drivers.AlazarTech.constants import ERROR_CODES, \
-    API_SUCCESS, Capability
 
 
 def _skip_if_alazar_dll_and_boards_not_installed():

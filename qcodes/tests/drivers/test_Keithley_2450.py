@@ -1,10 +1,11 @@
 import logging
-import pytest
-import numpy as np
 
-from qcodes.instrument_drivers.tektronix.Keithley_2450 import Keithley2450
+import numpy as np
+import pytest
 
 import qcodes.instrument.sims as sims
+from qcodes.instrument_drivers.tektronix.Keithley_2450 import Keithley2450
+
 visalib = sims.__file__.replace('__init__.py', 'Keithley_2450.yaml@sim')
 
 

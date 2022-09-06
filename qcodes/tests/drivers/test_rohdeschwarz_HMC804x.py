@@ -1,7 +1,8 @@
 import pytest
 
-from qcodes.instrument_drivers.rohde_schwarz.private.HMC804x import _RohdeSchwarzHMC804x
 import qcodes.instrument.sims as sims
+from qcodes.instrument_drivers.rohde_schwarz.private.HMC804x import _RohdeSchwarzHMC804x
+
 visalib = sims.__file__.replace('__init__.py', 'RSHMC804x.yaml@sim')
 
 
