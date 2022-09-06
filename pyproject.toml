@@ -106,7 +106,8 @@ docs = [
     "sphinx-issues>=3.0.1",
     "sphinx-jsonschema>=1.19.1",
     "sphinx-rtd-theme>=1.0.0",
-    "sphinxcontrib-towncrier>=0.2.1a0",
+    "sphinxcontrib-towncrier>=0.3.0a0",
+    "towncrier>=22.8.0",
     "scipy>=1.7.0", # examples using scipy
     "slack-sdk>=3.4.2", # slack example notebook
 ]
@@ -243,7 +244,7 @@ filterwarnings = [
 package = "qcodes"
 name = "QCoDeS"
 directory = "docs/changes/newsfragments"
-single_file = true
+single_file = false
 filename = "docs/changes/{version}.rst"
 issue_format = ":pr:`{issue}`"
 
