@@ -12,6 +12,10 @@ repos:
     - id: debug-statements
     - id: mixed-line-ending
       args: ['--fix=no']
+  - repo: https://github.com/pycqa/isort
+    rev: 5.10.1
+    hooks:
+      - id: isort
   - repo: https://github.com/asottile/pyupgrade
     rev: v2.37.3
     hooks:
