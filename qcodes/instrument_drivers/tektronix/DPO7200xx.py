@@ -623,7 +623,7 @@ class TekronixDPOTrigger(InstrumentChannel):
     trigger conditions are met.
 
     A and B triggers can (and typically do) have separate sources.
-    The B trigger condition is based on a time delay or a speciﬁed
+    The B trigger condition is based on a time delay or a specified
     number of events.
 
     See page75, Using A (Main) and B (Delayed) triggers.
