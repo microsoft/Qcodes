@@ -1,17 +1,17 @@
+from __future__ import annotations
+
 import json
 import sys
 
 from tqdm import tqdm
 
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
-from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic, \
-    atomic_transaction
-from qcodes.dataset.sqlite.queries import get_run_description, \
-    update_run_description
+from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic, atomic_transaction
+from qcodes.dataset.sqlite.queries import get_run_description, update_run_description
 from qcodes.dataset.sqlite.query_helpers import one
 
 
-def upgrade_5_to_6(conn: ConnectionPlus) -> None:
+def upgrade_5_to_6(conn: ConnectionPlus, show_progress_bar: bool = True) -> None:
     """
     Perform the upgrade from version 5 to version 6.
 
@@ -27,7 +27,9 @@ def upgrade_5_to_6(conn: ConnectionPlus) -> None:
     # entire upgrade is one atomic transaction
 
     with atomic(conn) as conn:
-        pbar = tqdm(range(1, no_of_runs+1), file=sys.stdout)
+        pbar = tqdm(
+            range(1, no_of_runs + 1), file=sys.stdout, disable=not show_progress_bar
+        )
         pbar.set_description("Upgrading database; v5 -> v6")
 
         empty_idps_ser = InterDependencies()._to_dict()
