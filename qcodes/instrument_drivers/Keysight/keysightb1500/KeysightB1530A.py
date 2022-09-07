@@ -1,7 +1,8 @@
-from typing import Optional, TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional
 
+from .constants import ChNr, ModuleKind
 from .KeysightB1500_module import B1500Module
-from .constants import ModuleKind, ChNr
+
 if TYPE_CHECKING:
     import qcodes.instrument_drivers.Keysight.keysightb1500
 

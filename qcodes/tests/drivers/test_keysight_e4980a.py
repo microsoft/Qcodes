@@ -1,8 +1,9 @@
-import pytest
 import re
 
-import qcodes.instrument_drivers.Keysight.keysight_e4980a as E4980A
+import pytest
+
 import qcodes.instrument.sims as sims
+import qcodes.instrument_drivers.Keysight.keysight_e4980a as E4980A
 
 VISALIB = sims.__file__.replace('__init__.py', 'Keysight_E4980A.yaml@sim')
 

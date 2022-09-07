@@ -1,11 +1,10 @@
 import logging
+
 import pytest
 
-from qcodes.instrument_drivers.tektronix.Keithley_s46 import (
-    S46, LockAcquisitionError
-)
-
 import qcodes.instrument.sims as sims
+from qcodes.instrument_drivers.tektronix.Keithley_s46 import S46, LockAcquisitionError
+
 visalib = sims.__file__.replace('__init__.py', 'Keithley_s46.yaml@sim')
 
 

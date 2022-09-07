@@ -1,4 +1,5 @@
 import pytest
+
 from qcodes.utils import DelegateAttributes
 
 

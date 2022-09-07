@@ -1,12 +1,12 @@
 import logging
 
-import pytest
-import numpy as np
 import hypothesis as hst
+import numpy as np
+import pytest
 from hypothesis import HealthCheck, settings
 
-from qcodes.instrument_drivers.oxford.MercuryiPS_VISA import MercuryiPS
 import qcodes.instrument.sims as sims
+from qcodes.instrument_drivers.oxford.MercuryiPS_VISA import MercuryiPS
 from qcodes.math_utils.field_vector import FieldVector
 
 visalib = sims.__file__.replace('__init__.py', 'MercuryiPS.yaml@sim')

@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+
 from qcodes.tests.common import compare_dictionaries
 
 

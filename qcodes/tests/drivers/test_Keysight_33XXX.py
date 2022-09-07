@@ -1,7 +1,10 @@
 import pytest
 
-from qcodes.instrument_drivers.Keysight.KeysightAgilent_33XXX import WaveformGenerator_33XXX
 import qcodes.instrument.sims as sims
+from qcodes.instrument_drivers.Keysight.KeysightAgilent_33XXX import (
+    WaveformGenerator_33XXX,
+)
+
 visalib = sims.__file__.replace('__init__.py', 'Keysight_33xxx.yaml@sim')
 
 

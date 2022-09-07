@@ -1,7 +1,8 @@
 import pytest
 
-from qcodes.instrument_drivers.rohde_schwarz.RTO1000 import RTO1000
 import qcodes.instrument.sims as sims
+from qcodes.instrument_drivers.rohde_schwarz.RTO1000 import RTO1000
+
 visalib = sims.__file__.replace('__init__.py', 'RTO_1000.yaml@sim')
 
 

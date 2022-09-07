@@ -1,7 +1,7 @@
 import itertools
 import textwrap
 import warnings
-from typing import List, Dict, Optional, Union, Tuple, Any
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import qcodes.validators as vals
 from qcodes.instrument import VisaInstrument

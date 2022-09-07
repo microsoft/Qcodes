@@ -7,6 +7,7 @@ from unittest.mock import PropertyMock, mock_open
 
 import jsonschema
 import pytest
+
 import qcodes
 from qcodes.configuration import Config
 from qcodes.tests.common import default_config

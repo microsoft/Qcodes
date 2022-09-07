@@ -1,10 +1,10 @@
-import pytest
 import itertools
 
-from qcodes.instrument_drivers.tektronix.Keithley_3706A\
-    import Keithley_3706A
+import pytest
 
 import qcodes.instrument.sims as sims
+from qcodes.instrument_drivers.tektronix.Keithley_3706A import Keithley_3706A
+
 visalib = sims.__file__.replace('__init__.py', 'Keithley_3706A.yaml@sim')
 
 

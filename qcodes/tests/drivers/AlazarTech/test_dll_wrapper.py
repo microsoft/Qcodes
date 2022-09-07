@@ -1,15 +1,13 @@
 """Tests DLL wrapper infrastructure"""
 
 
-import logging
 import gc
+import logging
 import os
 
 import pytest
 
-from qcodes.instrument_drivers.AlazarTech.dll_wrapper import WrappedDll, \
-    DllWrapperMeta
-
+from qcodes.instrument_drivers.AlazarTech.dll_wrapper import DllWrapperMeta, WrappedDll
 
 pytestmark = pytest.mark.skipif(
     os.name != 'nt', reason='These tests are relevant only for Windows')
