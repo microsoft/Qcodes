@@ -248,30 +248,18 @@ single_file = false
 filename = "docs/changes/{version}.rst"
 issue_format = ":pr:`{issue}`"
 
-[[tool.towncrier.type]]
-directory = "breaking"
+[tool.towncrier.fragment.breaking]
 name = "Breaking Changes:"
-showcontent = true
-[[tool.towncrier.type]]
-directory = "new"
+[tool.towncrier.fragment.new]
 name = "New:"
-showcontent = true
-[[tool.towncrier.type]]
-directory = "improved"
+[tool.towncrier.fragment.improved]
 name = "Improved:"
-showcontent = true
-[[tool.towncrier.type]]
-directory = "new_driver"
+[tool.towncrier.fragment.new_driver]
 name = "New Drivers:"
-showcontent = true
-[[tool.towncrier.type]]
-directory = "improved_driver"
+[tool.towncrier.fragment.improved_driver]
 name = "Improved Drivers:"
-showcontent = true
-[[tool.towncrier.type]]
-directory = "underthehood"
+[tool.towncrier.fragment.underthehood]
 name = "Under the hood:"
-showcontent = true
 
 [tool.versioningit]
 default-version = "0.0"
