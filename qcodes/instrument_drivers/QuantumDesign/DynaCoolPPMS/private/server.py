@@ -8,7 +8,7 @@ if sys.platform == "win32":
 else:
     raise RuntimeError("Dynacool server only supported on Windows")
 
-from qcodes.instrument_drivers.QuantumDesign.DynaCoolPPMS.private.commandhandler import (
+from .commandhandler import (
     CommandHandler,
 )
 
