@@ -8,9 +8,7 @@ if sys.platform == "win32":
 else:
     raise RuntimeError("Dynacool server only supported on Windows")
 
-from .commandhandler import (
-    CommandHandler,
-)
+from .commandhandler import CommandHandler
 
 assert sys.platform == 'win32'
 
