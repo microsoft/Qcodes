@@ -1,0 +1,10 @@
+The following ``InstrumentChannel`` classes have changed name for consistency.
+This is expected to be a change with few user facing implications unless you are explicitly
+subclassing the mentioned classes.
+
+* ``DG1062Burst`` has changed name to ``RigolDG1062Burst``
+* ``DG1062Channel`` has changed name to ``RigolDG1062Channel``
+
+The exception thrown by the Rigol DS4000 has changed name from ``TraceNotReady``
+to ``RigolDS4000TraceNotReady``. If you explicitly catch that exception you will
+need to update your code.
