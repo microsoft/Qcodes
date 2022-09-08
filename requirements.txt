@@ -117,7 +117,7 @@ pytest-xdist~=2.5.0
 python-dateutil~=2.8.2
 pytz~=2022.2
 PyVISA~=1.11.3
-PyVISA-sim~=0.4.0
+PyVISA-sim~=0.5.1
 pywin32==304; sys_platform == 'win32'
 pywinpty~=2.0.7; sys_platform == 'win32'
 PyYAML~=6.0
