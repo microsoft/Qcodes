@@ -51,6 +51,7 @@ sphinx-apidoc  -o  _auto  -d 10 ..\qcodes ^
     ..\qcodes\instrument_drivers\stahl\* ^
     ..\qcodes\instrument_drivers\stanford_research\* ^
     ..\qcodes\instrument_drivers\signal_hound\* ^
+    ..\qcodes\instrument_drivers\tektronix\* ^
     ..\qcodes\instrument_drivers\weinschel\* ^
     ..\qcodes\instrument_drivers\yokogawa
 mkdir api\generated\
