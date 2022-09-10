@@ -303,4 +303,8 @@ class AlazarTechATS9440(AlazarTech_ATS):
 
 
 class AlazarTech_ATS9440(AlazarTechATS9440):
+    """
+    Alias for backwards compatibility. Will eventually be deprecated and removed
+    """
+
     pass

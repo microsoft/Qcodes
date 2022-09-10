@@ -391,4 +391,8 @@ class AlazarTechATS9373(AlazarTech_ATS):
 
 
 class AlazarTech_ATS9373(AlazarTechATS9373):
+    """
+    Alias for backwards compatibility. Will eventually be deprecated and removed
+    """
+
     pass

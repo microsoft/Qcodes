@@ -161,4 +161,8 @@ class DemodulationAcquisitionController(AcquisitionController[float]):
 
 
 class Demodulation_AcquisitionController(DemodulationAcquisitionController):
+    """
+    Alias for backwards compatibility. Will eventually be deprecated and removed
+    """
+
     pass

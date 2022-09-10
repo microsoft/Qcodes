@@ -376,4 +376,8 @@ class AlazarTechATS9360(AlazarTech_ATS):
 
 
 class AlazarTech_ATS9360(AlazarTechATS9360):
+    """
+    Alias for backwards compatibility. Will eventually be deprecated and removed
+    """
+
     pass

@@ -308,4 +308,8 @@ class AlazarTechATS9870(AlazarTech_ATS):
 
 
 class AlazarTech_ATS9870(AlazarTechATS9870):
+    """
+    Alias for backwards compatibility. Will eventually be deprecated and removed
+    """
+
     pass
