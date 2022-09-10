@@ -256,6 +256,9 @@ class TektronixTPS2012Channel(InstrumentChannel):
         return state
 
 
+TPS2012Channel = TektronixTPS2012Channel
+
+
 class TektronixTPS2012(VisaInstrument):
     """
     This is the QCoDeS driver for the Tektronix 2012B oscilloscope.
