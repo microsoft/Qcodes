@@ -29,6 +29,7 @@ genapi:
 		../qcodes/instrument_drivers/american_magnetics\* \
 		../qcodes/instrument_drivers/agilent \
 		../qcodes/instrument_drivers/AimTTi \
+		../qcodes/instrument_drivers/AlazarTech \
 		../qcodes/instrument_drivers/basel \
 		../qcodes/instrument_drivers/HP \
 		../qcodes/instrument_drivers/ithaco \
