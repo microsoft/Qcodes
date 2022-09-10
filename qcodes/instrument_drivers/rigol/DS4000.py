@@ -9,6 +9,8 @@ from .Rigol_DS4000 import (
     ScopeArray,
 )
 
+TraceNotReady = RigolDS4000TraceNotReady
+
 
 class DS4000(RigolDS4000):
     pass
