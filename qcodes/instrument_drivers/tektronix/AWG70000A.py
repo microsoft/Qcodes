@@ -385,6 +385,12 @@ class Tektronix70000AWGChannel(InstrumentChannel):
                                    f', {tracknr}')
 
 
+AWGChannel = Tektronix70000AWGChannel
+"""
+Alias for Tektronix70000AWGChannel for backwards compatibility.
+"""
+
+
 class AWG70000A(VisaInstrument):
     """
     The QCoDeS driver for Tektronix AWG70000A series AWG's.
