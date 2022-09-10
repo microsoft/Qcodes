@@ -35,6 +35,12 @@ class TektronixMSODPOModeError(Exception):
     pass
 
 
+ModeError = TektronixMSODPOModeError
+"""
+Alias for backwards compatibility
+"""
+
+
 class TektronixDPO7000xx(VisaInstrument):
     """
     QCoDeS driver for the MSO/DPO5000/B, DPO7000/C,
