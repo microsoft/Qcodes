@@ -11,12 +11,18 @@ from .DPO7200xx import (
     TektronixDPOMeasurement,
     TektronixDPOMeasurementParameter,
     TektronixDPOMeasurementStatistics,
+    TektronixDPOModeError,
     TektronixDPOWaveformFormat,
-    TektronixMSODPOModeError,
 )
 from .Tektronix_70001A import TektronixAWG70001A
 from .Tektronix_70001B import TektronixAWG70001B
 from .Tektronix_70002B import TektronixAWG70002B
+from .Tektronix_DPO5000 import TektronixDPO5000
+from .Tektronix_DPO7000 import TektronixDPO7000
+from .Tektronix_DPO70000 import TektronixDPO70000
+from .Tektronix_DSA70000 import TektronixDSA70000
+from .Tektronix_MSO5000 import TektronixMSO5000
+from .Tektronix_MSO70000 import TektronixMSO70000
 from .TPS2012 import TektronixTPS2012, TektronixTPS2012Channel
 
 __all__ = [
@@ -29,14 +35,20 @@ __all__ = [
     "TektronixAWG70001B",
     "TektronixAWG70002A",
     "TektronixAWG70002B",
+    "TektronixDPO5000",
+    "TektronixDPO7000",
+    "TektronixDPO70000",
     "TektronixDPOChannel",
     "TektronixDPOData",
     "TektronixDPOHorizontal",
     "TektronixDPOMeasurement",
     "TektronixDPOMeasurementParameter",
     "TektronixDPOMeasurementStatistics",
+    "TektronixDPOModeError",
     "TektronixDPOWaveformFormat",
-    "TektronixMSODPOModeError",
+    "TektronixDSA70000",
+    "TektronixMSO5000",
+    "TektronixMSO70000",
     "TektronixTPS2012",
     "TektronixTPS2012Channel",
 ]
