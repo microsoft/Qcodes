@@ -1,5 +1,5 @@
 """
-Driver for the Tekronix S46 RF switch
+Driver for the Keithley S46 RF switch
 """
 import re
 from itertools import product

@@ -22,7 +22,7 @@ from .Keithley_3706A import (
     Keithley3706AUnknownOrEmptySlot,
 )
 from .Keithley_6500 import Keithley6500, Keithley6500CommandSetError
-from .keithley_7510 import (
+from .Keithley_7510 import (
     Keithley7510,
     Keithley7510Buffer,
     Keithley7510DigitizeSense,

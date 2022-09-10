@@ -1,4 +1,4 @@
-from .Keithley_2600_channels import Keithley2600
+from ._Keithley_2600 import Keithley2600
 
 
 class Keithley2604B(Keithley2600):
