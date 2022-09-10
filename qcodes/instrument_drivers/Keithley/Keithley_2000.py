@@ -5,7 +5,7 @@ from qcodes.instrument import VisaInstrument
 from qcodes.validators import Bool, Enum, Ints, MultiType, Numbers
 
 
-def parse_output_string(s: str) -> str:
+def _parse_output_string(s: str) -> str:
     """Parses and cleans string outputs of the Keithley"""
     # Remove surrounding whitespace and newline characters
     s = s.strip()
@@ -28,7 +28,7 @@ def parse_output_string(s: str) -> str:
     return s
 
 
-def parse_output_bool(value: str) -> bool:
+def _parse_output_bool(value: str) -> bool:
     return True if int(value) == 1 else False
 
 
@@ -81,7 +81,7 @@ class Keithley2000(VisaInstrument):
 
         self.add_parameter(
             "auto_range_enabled",
-            get_cmd=partial(self._get_mode_param, "RANG:AUTO", parse_output_bool),
+            get_cmd=partial(self._get_mode_param, "RANG:AUTO", _parse_output_bool),
             set_cmd=partial(self._set_mode_param, "RANG:AUTO"),
             vals=Bool(),
         )
@@ -95,7 +95,7 @@ class Keithley2000(VisaInstrument):
 
         self.add_parameter(
             "averaging_type",
-            get_cmd=partial(self._get_mode_param, "AVER:TCON", parse_output_string),
+            get_cmd=partial(self._get_mode_param, "AVER:TCON", _parse_output_string),
             set_cmd=partial(self._set_mode_param, "AVER:TCON"),
             vals=Enum("moving", "repeat"),
         )
@@ -109,7 +109,7 @@ class Keithley2000(VisaInstrument):
 
         self.add_parameter(
             "averaging_enabled",
-            get_cmd=partial(self._get_mode_param, "AVER:STAT", parse_output_bool),
+            get_cmd=partial(self._get_mode_param, "AVER:STAT", _parse_output_bool),
             set_cmd=partial(self._set_mode_param, "AVER:STAT"),
             vals=Bool(),
         )
@@ -118,7 +118,7 @@ class Keithley2000(VisaInstrument):
         self.add_parameter(
             "display_enabled",
             get_cmd="DISP:ENAB?",
-            get_parser=parse_output_bool,
+            get_parser=_parse_output_bool,
             set_cmd="DISP:ENAB {}",
             set_parser=int,
             vals=Bool(),
@@ -127,7 +127,7 @@ class Keithley2000(VisaInstrument):
         self.add_parameter(
             "trigger_continuous",
             get_cmd="INIT:CONT?",
-            get_parser=parse_output_bool,
+            get_parser=_parse_output_bool,
             set_cmd="INIT:CONT {}",
             set_parser=int,
             vals=Bool(),
@@ -206,7 +206,7 @@ class Keithley2000(VisaInstrument):
         self, parameter: str, parser: Callable[[str], Any]
     ) -> Union[float, str, bool]:
         """Read the current Keithley mode and ask for a parameter"""
-        mode = parse_output_string(self._mode_map[self.mode()])
+        mode = _parse_output_string(self._mode_map[self.mode()])
         cmd = f"{mode}:{parameter}?"
 
         return parser(self.ask(cmd))
@@ -216,7 +216,7 @@ class Keithley2000(VisaInstrument):
         if isinstance(value, bool):
             value = int(value)
 
-        mode = parse_output_string(self._mode_map[self.mode()])
+        mode = _parse_output_string(self._mode_map[self.mode()])
         cmd = f"{mode}:{parameter} {value}"
 
         self.write(cmd)
