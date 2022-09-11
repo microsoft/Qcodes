@@ -22,7 +22,7 @@ ADDRESS = ''
 LINE_TERM = '\r\n'
 
 
-def run_server():
+def run_server() -> None:
 
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
