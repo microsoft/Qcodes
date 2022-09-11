@@ -14,8 +14,10 @@ class DynaCool(VisaInstrument):
     """
     Class to represent the DynaCoolPPMS
 
-    Note that this driver assumes the server.py (from the 'private' folder)
+    Note that this driver assumes the server
     to be running on the DynaCool dedicated control PC.
+    The server can be launched using `qcodes-dynacool-server.exe`
+    or by executing server.py (from the 'private' folder)
 
     Args:
         name: The name used internally by QCoDeS for this driver
