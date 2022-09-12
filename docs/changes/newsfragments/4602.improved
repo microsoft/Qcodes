@@ -1,0 +1,3 @@
+Settings of QCoDeS Validators are now available as properties (mostly read-only),
+e.g. ``min_value`` and ``max_value`` of the ``Numbers`` validator can now be accessed
+via ``numbers_validator_instance.min_value`` and ``numbers_validator_instance.max_value``
