@@ -14,7 +14,7 @@ from typing import Generic, Hashable
 from typing import List as TList
 from typing import Optional
 from typing import Sequence as TSequence
-from typing import Tuple, TypeVar, Union, cast
+from typing import Set, Tuple, TypeVar, Union, cast
 
 import numpy as np
 from typing_extensions import Literal
@@ -638,7 +638,7 @@ class PermissiveMultiples(Validator[numbertypes]):
         if divisor == 0:
             raise ValueError("Can not meaningfully check for multiples of zero.")
         if isinstance(divisor, int):
-            self._mulval: Optional[Multiples] = Multiples(divisor=abs(divisor))
+            self._mulval = Multiples(divisor=abs(divisor))
         else:
             self._mulval = None
         self._valid_values = (divisor,)
@@ -1058,7 +1058,7 @@ class Lists(Validator[TList[Any]]):
 
     @property
     def elt_validator(self) -> Validator[Any]:
-        return self._elt.validator
+        return self._elt_validator
 
 
 class Sequence(Validator[TSequence[Any]]):
@@ -1117,7 +1117,7 @@ class Sequence(Validator[TSequence[Any]]):
 
     @property
     def elt_validator(self) -> Validator[Any]:
-        return self._elt.validator
+        return self._elt_validator
 
     @property
     def length(self) -> Optional[int]:
@@ -1184,12 +1184,13 @@ class Dict(Validator[TDict[Hashable, Any]]):
         if not isinstance(value, dict):
             raise TypeError(f"{repr(value)} is not a dictionary; {context}")
 
-        if self.allowed_keys is not None:
-            forbidden_keys = [key for key in value if key not in self._allowed_keys]
+        allowed_keys = self._allowed_keys
+        if allowed_keys is not None:
+            forbidden_keys = [key for key in value if key not in allowed_keys]
             if forbidden_keys:
                 raise SyntaxError(
                     "Dictionary keys {} are not in allowed keys "
-                    "{}".format(forbidden_keys, self._allowed_keys)
+                    "{}".format(forbidden_keys, allowed_keys)
                 )
 
     def __repr__(self) -> str:
