@@ -114,6 +114,7 @@ docs = [
 
 [project.scripts]
 qcodes-monitor = "qcodes.monitor.monitor:main"
+qcodes-dynacool-server = "qcodes.instrument_drivers.QuantumDesign.DynaCoolPPMS.private.server:run_server"
 
 [tool.coverage.run]
 omit = [

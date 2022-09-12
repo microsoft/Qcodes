@@ -46,7 +46,7 @@ sphinx-apidoc  -o  _auto  -d 10 ..\qcodes ^
     ..\qcodes\instrument_drivers\ithaco ^
     ..\qcodes\instrument_drivers\Keithley ^
     ..\qcodes\instrument_drivers\Lakeshore ^
-    ..\qcodes\instrument_drivers\QuantumDesign\DynaCoolPPMS\private\* ^
+    ..\qcodes\instrument_drivers\QuantumDesign\* ^
     ..\qcodes\instrument_drivers\QDev\* ^
     ..\qcodes\instrument_drivers\rigol\* ^
     ..\qcodes\instrument_drivers\rohde_schwarz\* ^
