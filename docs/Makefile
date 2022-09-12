@@ -33,6 +33,7 @@ genapi:
 		../qcodes/instrument_drivers/basel \
 		../qcodes/instrument_drivers/HP \
 		../qcodes/instrument_drivers/ithaco \
+		../qcodes/instrument_drivers/Keithley \
 		../qcodes/instrument_drivers/keysight \
 		../qcodes/instrument_drivers/Lakeshore \
 		../qcodes/instrument_drivers/QuantumDesign/DynaCoolPPMS/private/* \
@@ -40,6 +41,7 @@ genapi:
 		../qcodes/instrument_drivers/stahl/*\
 		../qcodes/instrument_drivers/stanford_research/* \
 		../qcodes/instrument_drivers/signal_hound/* \
+		../qcodes/instrument_drivers/tektronix/* \
 		../qcodes/instrument_drivers/weinschel/* \
 		../qcodes/instrument_drivers/yokogawa
 	mkdir -p api/generated/
