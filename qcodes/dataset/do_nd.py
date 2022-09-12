@@ -194,7 +194,7 @@ def do1d(
     do_plot: bool | None = None,
     use_threads: bool | None = None,
     additional_setpoints: Sequence[ParameterBase] = tuple(),
-    show_progress: None | None = None,
+    show_progress: bool | None = None,
     log_info: str | None = None,
     break_condition: BreakConditionT | None = None,
 ) -> AxesTupleListWithDataSet:
@@ -331,7 +331,7 @@ def do2d(
     do_plot: bool | None = None,
     use_threads: bool | None = None,
     additional_setpoints: Sequence[ParameterBase] = tuple(),
-    show_progress: None | None = None,
+    show_progress: bool | None = None,
     log_info: str | None = None,
     break_condition: BreakConditionT | None = None,
 ) -> AxesTupleListWithDataSet:
