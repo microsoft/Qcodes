@@ -9,6 +9,7 @@ repos:
       exclude: asv.conf.json
     - id: check-toml
     - id: check-yaml
+    - id: check-case-conflict
     - id: debug-statements
     - id: mixed-line-ending
       args: ['--fix=no']
