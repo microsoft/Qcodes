@@ -139,15 +139,23 @@ class Nothing(Validator[Any]):
 
     def __init__(self, reason: str) -> None:
         if reason:
-            self.reason = reason
+            self._reason = reason
         else:
-            self.reason = "Nothing Validator"
+            self._reason = "Nothing Validator"
 
     def validate(self, value: Any, context: str = "") -> None:
         raise RuntimeError(f"{self.reason}; {context}")
 
     def __repr__(self) -> str:
         return f"<Nothing({self.reason})>"
+
+    @property
+    def reason(self) -> str:
+        return self._reason
+
+    @reason.setter
+    def reason(self, reason: str) -> None:
+        self._reason = reason
 
 
 class Bool(Validator[bool]):
@@ -230,6 +238,14 @@ class Strings(Validator[str]):
         maxv = self._max_length if self._max_length < BIGSTRING else None
         return "<Strings{}>".format(range_str(minv, maxv, "len"))
 
+    @property
+    def min_length(self) -> int:
+        return self._min_length
+
+    @property
+    def max_length(self) -> int:
+        return self._max_length
+
 
 class Numbers(Validator[numbertypes]):
     """
@@ -296,6 +312,14 @@ class Numbers(Validator[numbertypes]):
         maxv = self._max_value if math.isfinite(self._max_value) else None
         return "<Numbers{}>".format(range_str(minv, maxv, "v"))
 
+    @property
+    def min_value(self) -> float:
+        return float(self._min_value)
+
+    @property
+    def max_value(self) -> float:
+        return float(self._max_value)
+
 
 class Ints(Validator[Union[int, "np.integer[Any]"]]):
     """
@@ -361,6 +385,14 @@ class Ints(Validator[Union[int, "np.integer[Any]"]]):
         minv = self._min_value if self._min_value > -BIGINT else None
         maxv = self._max_value if self._max_value < BIGINT else None
         return "<Ints{}>".format(range_str(minv, maxv, "v"))
+
+    @property
+    def min_value(self) -> int:
+        return int(self._min_value)
+
+    @property
+    def max_value(self) -> int:
+        return int(self._max_value)
 
 
 class PermissiveInts(Ints):
@@ -469,6 +501,10 @@ class Enum(Validator[Hashable]):
     def __repr__(self) -> str:
         return f"<Enum: {repr(self._values)}>"
 
+    @property
+    def values(self) -> Set[Hashable]:
+        return self._values.copy()
+
 
 class OnOff(Validator[str]):
     """
@@ -530,6 +566,10 @@ class Multiples(Ints):
 
     is_numeric = True
 
+    @property
+    def divisor(self) -> int:
+        return self._divisor
+
 
 class PermissiveMultiples(Validator[numbertypes]):
     """
@@ -551,16 +591,10 @@ class PermissiveMultiples(Validator[numbertypes]):
     """
 
     def __init__(self, divisor: numbertypes, precision: float = 1e-9) -> None:
-        if divisor == 0:
-            raise ValueError("Can not meaningfully check for multiples of" " zero.")
-        self.divisor = divisor
-        self.precision = precision
+        self._mulval: Optional[Multiples] = None
+        self._precision = precision
         self._numval = Numbers()
-        if isinstance(divisor, int):
-            self._mulval: Optional[Multiples] = Multiples(divisor=abs(divisor))
-        else:
-            self._mulval = None
-        self._valid_values = (divisor,)
+        self.divisor = divisor
 
     def validate(self, value: numbertypes, context: str = "") -> None:
         """
@@ -581,19 +615,42 @@ class PermissiveMultiples(Validator[numbertypes]):
             # multiply our way out of the problem by constructing true
             # multiples in the relevant range and see if `value` is one
             # of them (within rounding errors)
-            divs = int(np.divmod(value, self.divisor)[0])
-            true_vals = np.array([n * self.divisor for n in range(divs, divs + 2)])
+            divs = int(np.divmod(value, self._divisor)[0])
+            true_vals = np.array([n * self._divisor for n in range(divs, divs + 2)])
             abs_errs = [abs(tv - value) for tv in true_vals]
-            if min(abs_errs) > self.precision:
-                raise ValueError(f"{value} is not a multiple" + f" of {self.divisor}.")
+            if min(abs_errs) > self._precision:
+                raise ValueError(f"{value} is not a multiple" + f" of {self._divisor}.")
 
     def __repr__(self) -> str:
         repr_str = "<PermissiveMultiples, Multiples of " "{} to within {}>".format(
-            self.divisor, self.precision
+            self._divisor, self._precision
         )
         return repr_str
 
     is_numeric = True
+
+    @property
+    def divisor(self) -> numbertypes:
+        return self._divisor
+
+    @divisor.setter
+    def divisor(self, divisor: numbertypes) -> None:
+        if divisor == 0:
+            raise ValueError("Can not meaningfully check for multiples of zero.")
+        if isinstance(divisor, int):
+            self._mulval: Optional[Multiples] = Multiples(divisor=abs(divisor))
+        else:
+            self._mulval = None
+        self._valid_values = (divisor,)
+        self._divisor = divisor
+
+    @property
+    def precision(self) -> float:
+        return self._precision
+
+    @precision.setter
+    def precision(self, precision: float) -> None:
+        self._precision = precision
 
 
 class MultiType(Validator[Any]):
@@ -671,6 +728,14 @@ class MultiType(Validator[Any]):
     def __repr__(self) -> str:
         parts = (repr(v)[1:-1] for v in self._validators)
         return "<MultiType: {}>".format(", ".join(parts))
+
+    @property
+    def combiner(self) -> Literal["OR", "AND"]:
+        return self._combiner
+
+    @property
+    def validators(self) -> Tuple[Validator[Any], ...]:
+        return self._validators
 
 
 class MultiTypeOr(MultiType):
@@ -947,6 +1012,14 @@ class Arrays(Validator[np.ndarray]):
             range_str(minv, maxv, "v"), self.shape_unevaluated
         )
 
+    @property
+    def min_value(self) -> Optional[float]:
+        return float(self._min_value) if self._min_value is not None else None
+
+    @property
+    def max_value(self) -> Optional[float]:
+        return float(self._max_value) if self._max_value is not None else None
+
 
 class Lists(Validator[TList[Any]]):
     """
@@ -982,6 +1055,10 @@ class Lists(Validator[TList[Any]]):
         if not isinstance(self._elt_validator, Anything):
             for elt in value:
                 self._elt_validator.validate(elt)
+
+    @property
+    def elt_validator(self) -> Validator[Any]:
+        return self._elt.validator
 
 
 class Sequence(Validator[TSequence[Any]]):
@@ -1038,6 +1115,18 @@ class Sequence(Validator[TSequence[Any]]):
             for elt in value:
                 self._elt_validator.validate(elt)
 
+    @property
+    def elt_validator(self) -> Validator[Any]:
+        return self._elt.validator
+
+    @property
+    def length(self) -> Optional[int]:
+        return self._length
+
+    @property
+    def require_sorted(self) -> bool:
+        return self._require_sorted
+
 
 class Callable(Validator[TCallable[..., Any]]):
     """
@@ -1077,7 +1166,7 @@ class Dict(Validator[TDict[Hashable, Any]]):
         Args:
             allowed_keys: if set, all keys must be in allowed_keys
         """
-        self.allowed_keys = allowed_keys
+        self._allowed_keys = allowed_keys
         self._valid_values = ({0: 1},)
 
     def validate(self, value: TDict[Hashable, Any], context: str = "") -> None:
@@ -1096,15 +1185,23 @@ class Dict(Validator[TDict[Hashable, Any]]):
             raise TypeError(f"{repr(value)} is not a dictionary; {context}")
 
         if self.allowed_keys is not None:
-            forbidden_keys = [key for key in value if key not in self.allowed_keys]
+            forbidden_keys = [key for key in value if key not in self._allowed_keys]
             if forbidden_keys:
                 raise SyntaxError(
                     "Dictionary keys {} are not in allowed keys "
-                    "{}".format(forbidden_keys, self.allowed_keys)
+                    "{}".format(forbidden_keys, self._allowed_keys)
                 )
 
     def __repr__(self) -> str:
-        if self.allowed_keys is None:
+        if self._allowed_keys is None:
             return "<Dict>"
         else:
-            return f"<Dict {self.allowed_keys}>"
+            return f"<Dict {self._allowed_keys}>"
+
+    @property
+    def allowed_keys(self) -> Optional[TSequence[Hashable]]:
+        return self._allowed_keys
+
+    @property.setter
+    def allowed_keys(self, keys: Optional[TSequence[Hashable]]) -> None:
+        self._allowed_keys = keys
