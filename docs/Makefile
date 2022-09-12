@@ -39,6 +39,7 @@ genapi:
 		../qcodes/instrument_drivers/QDev/* \
 		../qcodes/instrument_drivers/QuantumDesign/DynaCoolPPMS/private/* \
 		../qcodes/instrument_drivers/rigol/* \
+		../qcodes/instrument_drivers/rohde_schwarz/* \
 		../qcodes/instrument_drivers/stahl/*\
 		../qcodes/instrument_drivers/stanford_research/* \
 		../qcodes/instrument_drivers/signal_hound/* \

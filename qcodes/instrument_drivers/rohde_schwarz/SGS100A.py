@@ -5,7 +5,7 @@ from qcodes.instrument import VisaInstrument
 from qcodes.parameters import create_on_off_val_mapping
 
 
-class RohdeSchwarz_SGS100A(VisaInstrument):
+class RohdeSchwarzSGS100A(VisaInstrument):
     """
     This is the QCoDeS driver for the Rohde & Schwarz SGS100A signal generator.
 
@@ -150,3 +150,7 @@ class RohdeSchwarz_SGS100A(VisaInstrument):
 
     def off(self) -> None:
         self.status('off')
+
+
+class RohdeSchwarz_SGS100A(RohdeSchwarzSGS100A):
+    pass
