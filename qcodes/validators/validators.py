@@ -1203,6 +1203,6 @@ class Dict(Validator[TDict[Hashable, Any]]):
     def allowed_keys(self) -> Optional[TSequence[Hashable]]:
         return self._allowed_keys
 
-    @property.setter
+    @allowed_keys.setter
     def allowed_keys(self, keys: Optional[TSequence[Hashable]]) -> None:
         self._allowed_keys = keys
