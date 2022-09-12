@@ -5,17 +5,7 @@ import sys
 import time
 from abc import ABC, abstractmethod
 from contextlib import ExitStack, contextmanager
-from typing import (
-    Callable,
-    Dict,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-)
+from typing import Callable, Iterator, List, Mapping, Optional, Sequence, Tuple, Union
 
 import matplotlib.axes
 import matplotlib.colorbar
