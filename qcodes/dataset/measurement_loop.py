@@ -41,7 +41,7 @@ RAW_VALUE_TYPES = (float, int, bool, np.ndarray, np.integer,
 
 class _DatasetHandler:
     """Handler for a single DataSet (with Measurement and Runner)
-    
+
     Used by the `MeasurementLoop` as an interface to the `Measurement` and `DataSet`
     """
 
@@ -96,7 +96,7 @@ class _DatasetHandler:
 
     def _ensure_unique_parameter(self, parameter_info: dict, setpoint: bool, max_idx: int = 99):
         """Ensure setpoint / measurement parameters have unique names
-        
+
         If a previously registered parameter already shares the same name, it adds a
         suffix '{name}_{idx}' where idx starts at zero
 
@@ -270,7 +270,7 @@ class _DatasetHandler:
 
     def _update_interdependencies(self):
         """Updates dataset after instantiation to include new setpoint/measurement parameter
-        
+
         The `DataSet` was not made to register parameters after instantiation, so this
         method is non-intuitive.
         """
@@ -692,7 +692,7 @@ class MeasurementLoop:
             label: Label used to measure parameter, overriding ``parameter.label``
             unit: Unit used to measure parameter, overriding ``parameter.unit``
             **kwargs: optional kwargs passed to parameter, i.e. ``parameter(**kwargs)``
-            
+
         Returns:
             Current value of parameter
         """
@@ -726,7 +726,7 @@ class MeasurementLoop:
             parameter: Parameter to be measured
             name: Name used to measure parameter, overriding ``parameter.name``
             **kwargs: optional kwargs passed to parameter, i.e. ``parameter(**kwargs)``
-            
+
         Returns:
             Current value of parameter
 
@@ -814,7 +814,7 @@ class MeasurementLoop:
         Each key is an array name, and the value is the value to store
 
         Args:
-            value: dictionary with (str, value) entries. 
+            value: dictionary with (str, value) entries.
                 Each element is a separate dataset array
                 name: Dataset name used for dictionary
         """
@@ -849,7 +849,7 @@ class MeasurementLoop:
         Args:
             value: Value to be stored
             name: Name used for storage
-            parameter: optional parameter that is passed on to 
+            parameter: optional parameter that is passed on to
                 `MeasurementLoop.measure` as a kwarg, in which case it's used
                 for name, label, etc.
             label: Optional label for dat array
@@ -1141,7 +1141,7 @@ class MeasurementLoop:
         **kwargs  # Add kwargs because original_value may be None
     ):
         """ Unmasks a previously masked object, i.e. revert value back to original
-        
+
         Args:
             obj: Parameter/object/dictionary for which to revert attribute/key
             attr: object attribute to revert
@@ -1534,7 +1534,7 @@ class BaseSweep(AbstractSweep):
         sweep: Union[Iterable, "BaseSweep"] = None
     ) -> DataSetProtocol:
         """Performs a measurement using this sweep
-        
+
         Args:
             *args: Optional additional sweeps used for N-dimensional measurements
                 The first arg is the outermost sweep dimension, and the sweep on which
