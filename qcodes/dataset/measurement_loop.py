@@ -9,14 +9,13 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tupl
 import numpy as np
 
 from qcodes import config as qcodes_config
-from qcodes.dataset.dond.sweeps import AbstractSweep
-from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.data_set_protocol import DataSetProtocol
 from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning import serialization as serial
 from qcodes.dataset.descriptions.versioning.converters import new_to_old
-from qcodes.dataset.measurements import DataSaver, Runner
+from qcodes.dataset.dond.sweeps import AbstractSweep
+from qcodes.dataset.measurements import DataSaver, Measurement, Runner
 from qcodes.dataset.sqlite.queries import add_parameter, update_run_description
 from qcodes.instrument import (
     DelegateParameter,
