@@ -2,8 +2,8 @@
 Module left for backwards compatibility.
 Please do not import from this in any new code
 """
-from contextlib import contextmanager
 import logging
+from contextlib import contextmanager
 
 # for backwards compatibility since this module used
 # to contain logic that would abstract between yaml
@@ -46,8 +46,10 @@ def warn_units(class_name: str, instance: object) -> None:
 import builtins
 import sys
 import time
-import numpy as np
 from pprint import pprint
+
+import numpy as np
+
 from qcodes.configuration.config import DotDict
 
 

@@ -2,19 +2,20 @@ import contextlib
 import shutil
 import tempfile
 from pathlib import Path
+
 import numpy as np
 import pytest
 
-from qcodes.instrument import ManualParameter, Parameter
 from qcodes.dataset import (
-    initialise_or_create_database_at, 
-    load_or_create_experiment, 
-    load_by_id, 
-    MeasurementLoop, 
+    LinSweep,
+    MeasurementLoop,
     Sweep,
-    dond, 
-    LinSweep
+    dond,
+    initialise_or_create_database_at,
+    load_by_id,
+    load_or_create_experiment,
 )
+from qcodes.instrument import ManualParameter, Parameter
 
 
 @pytest.mark.usefixtures("empty_temp_db", "experiment")
