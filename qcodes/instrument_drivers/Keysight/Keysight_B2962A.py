@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional
 from qcodes.instrument import Instrument, InstrumentChannel, VisaInstrument
 
 
-class B2962AChannel(InstrumentChannel):
+class KeysightB2962AChannel(InstrumentChannel):
     """
 
     """
@@ -83,7 +83,10 @@ class B2962AChannel(InstrumentChannel):
         self.channel = chan
 
 
-class B2962A(VisaInstrument):
+B2962AChannel = KeysightB2962AChannel
+
+
+class KeysightB2962A(VisaInstrument):
     """
     This is the qcodes driver for the Keysight B2962A 6.5 Digit Low Noise
     Power Source
@@ -100,7 +103,7 @@ class B2962A(VisaInstrument):
         # The B2962A supports two channels
         for ch_num in [1, 2]:
             ch_name = f"ch{ch_num:d}"
-            channel = B2962AChannel(self, ch_name, ch_num)
+            channel = KeysightB2962AChannel(self, ch_name, ch_num)
             self.add_submodule(ch_name, channel)
 
         self.connect_message()
@@ -112,3 +115,9 @@ class B2962A(VisaInstrument):
             'vendor': vendor, 'model': model,
             'serial': serial, 'firmware': firmware}
         return IDN
+
+
+class B2962A(KeysightB2962A):
+    """
+    Alias for backwards compatibility
+    """
