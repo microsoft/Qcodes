@@ -9,7 +9,9 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tupl
 import numpy as np
 
 from qcodes import config as qcodes_config
-from qcodes.dataset import AbstractSweep, DataSetProtocol, Measurement
+from qcodes.dataset.dond.sweeps import AbstractSweep
+from qcodes.dataset.measurements import Measurement
+from qcodes.dataset.data_set_protocol import DataSetProtocol
 from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning import serialization as serial
