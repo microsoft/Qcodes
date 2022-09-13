@@ -40,8 +40,11 @@ RAW_VALUE_TYPES = (float, int, bool, np.ndarray, np.integer,
                    np.floating, np.bool_, type(None))
 
 
-class DatasetHandler:
-    """Handler for a single DataSet (with Measurement and Runner)"""
+class _DatasetHandler:
+    """Handler for a single DataSet (with Measurement and Runner)
+    
+    Used by the `MeasurementLoop` as an interface to the `Measurement` and `DataSet`
+    """
 
     def __init__(self, measurement_loop: "MeasurementLoop", name="results"):
         self.measurement_loop = measurement_loop
@@ -72,6 +75,7 @@ class DatasetHandler:
         self.initialize()
 
     def initialize(self):
+        """Creates a `Measurement`, runs it and initializes a dataset"""
         # Once initialized, no new parameters can be added
         assert not self.initialized, "Cannot initialize twice"
 
@@ -88,10 +92,24 @@ class DatasetHandler:
         self.initialized = True
 
     def finalize(self):
+        """Finishes a measurement by flushing all data to the database"""
         self.datasaver.flush_data_to_database()
 
     def _ensure_unique_parameter(self, parameter_info: dict, setpoint: bool, max_idx: int = 99):
-        """Ensure parameters have unique names"""
+        """Ensure setpoint / measurement parameters have unique names
+        
+        If a previously registered parameter already shares the same name, it adds a
+        suffix '{name}_{idx}' where idx starts at zero
+
+        Args:
+            parameter_info: dict for a setpoint/measurement parameter
+                See `DatasetHandler.create_measurement_info` for more information
+            setpoints: Whether parameter is a setpoint
+            max_idx: maximum allowed incremental index when parameters share same name
+
+        Raises:
+            OverflowError if more than ``max_idx`` parameters share the same name
+        """
         if setpoint:
             parameter_list = self.setpoint_list
         else:
@@ -131,6 +149,19 @@ class DatasetHandler:
         label: Optional[str] = None,
         unit: Optional[str] = None
     ) -> Dict[str, Any]:
+        """Creates information dict for a parameter that is to be measured
+
+        Args:
+            action_indices: Indices in measurement loop corresponding to the
+                parameter being measured.
+            parameter: Parameter to be measured.
+            name: Name used for the measured parameter.
+                Will use parameter.name if not provided.
+            label: Label used for the measured parameter.
+                Will use parameter.label if not provided.
+            unit: Unit used for the measured parameter.
+                Will use parameter.unit if not provided.
+        """
         if parameter is None:
             assert name is not None
             parameter = Parameter(name=name, label=label, unit=unit)
@@ -170,6 +201,7 @@ class DatasetHandler:
         label: Optional[str] = None,
         unit: Optional[str] = None
     ):
+        """Register a new measurement parameter"""
         measurement_info = self.create_measurement_info(
             action_indices=action_indices,
             parameter=parameter,
@@ -238,6 +270,11 @@ class DatasetHandler:
         measurement_info["latest_value"] = result
 
     def _update_interdependencies(self):
+        """Updates dataset after instantiation to include new setpoint/measurement parameter
+        
+        The `DataSet` was not made to register parameters after instantiation, so this
+        method is non-intuitive.
+        """
         dataset = self.datasaver.dataset
 
         # Get previous paramspecs
@@ -313,26 +350,17 @@ class DatasetHandler:
 
 
 class MeasurementLoop:
-    """Class to perform measurements
+    """Class to perform measurements  in a fixed sequential order.
+
+    This measurement method complements the other two ways of doing measurements
+    by being more versatile than `do1d`, `do2d`, `dond`, and more implicit that `Measurement`.
+
+    See the tutorial ``MeasurementLoop`` for a tutorial.
 
     Args:
         name: Measurement name, also used as the dataset name
-        force_cell_thread: Enforce that the measurement has been started from a
-            separate thread if it has been directly executed from an IPython
-            cell/prompt. This is because a measurement is usually run from a
-            separate thread using the magic command `%%new_job`.
-            An error is raised if this has not been satisfied.
-            Note that if the measurement is started within a function, no error
-            is raised.
         notify: Notify when measurement is complete.
             The function `Measurement.notify_function` must be set
-
-
-    Notes:
-        When the Measurement is started in a separate thread (using %%new_job),
-        the Measurement is registered in the user namespace as "msmt", and the
-        dataset as "data"
-
     """
 
     # Context manager
@@ -356,7 +384,7 @@ class MeasurementLoop:
     notify_function = None
 
     def __init__(
-        self, name: Optional[str], force_cell_thread: bool = True, notify: bool = False
+        self, name: Optional[str], notify: bool = False
     ):
         self.name: str = name
 
@@ -386,9 +414,6 @@ class MeasurementLoop:
 
         # Whether to notify upon measurement completion
         self.notify: bool = notify
-
-        # Whether to force measurement to start in new thread
-        self.force_cell_thread: bool = force_cell_thread and using_ipython()
 
         # Each measurement can have its own final actions, to be executed
         # regardless of whether the measurement finished successfully or not
@@ -451,7 +476,7 @@ class MeasurementLoop:
             return None
 
     def __enter__(self):
-        """Operation when entering a loop"""
+        """Operation when entering a loop, including dataset instantiation"""
         self.is_context_manager = True
 
         # Encapsulate everything in a try/except to ensure that the context
@@ -463,7 +488,7 @@ class MeasurementLoop:
                 MeasurementLoop.measurement_thread = threading.current_thread()
 
                 # Initialize dataset handler
-                self.data_handler = DatasetHandler(
+                self.data_handler = _DatasetHandler(
                     measurement_loop=self,
                     name=self.name
                 )
@@ -484,7 +509,6 @@ class MeasurementLoop:
                 self.set_arrays = {}
 
                 # self.log(f"Measurement started {self.dataset.location}")
-                # print(f"Measurement started {self.dataset.location}")
 
             else:
                 if threading.current_thread() is not MeasurementLoop.measurement_thread:
@@ -511,27 +535,6 @@ class MeasurementLoop:
                 self.data_arrays = msmt.data_arrays
                 self.set_arrays = msmt.set_arrays
                 self.timings = msmt.timings
-
-            # Perform measurement thread check, and set user namespace variables
-            if self.force_cell_thread and MeasurementLoop.running_measurement is self:
-                # Raise an error if force_cell_thread is True and the code is run
-                # directly from an IPython cell/prompt but not from a separate thread
-                is_main_thread = threading.current_thread() == threading.main_thread()
-                if is_main_thread and directly_executed_from_cell():
-                    raise RuntimeError(
-                        "Measurement must be created in dedicated thread. "
-                        "Otherwise specify force_thread=False"
-                    )
-
-                # Register the Measurement and data as variables in the user namespace
-                # Usually as variable names are "msmt" and "data" respectively
-                from IPython import get_ipython
-
-                shell = get_ipython()
-                shell.user_ns[self._default_measurement_name] = self
-                # shell.user_ns[self._default_dataset_name] = self.dataset
-
-            return self
         except:
             # An error has occured, ensure running_measurement is cleared
             if MeasurementLoop.running_measurement is self:
@@ -633,8 +636,16 @@ class MeasurementLoop:
     def _verify_action(self, action: Callable, name: str, add_if_new: bool = True):
         """Verify an action corresponds to the current action indices.
 
-        This is only relevant if an action has previously been performed at
-        these action indices
+        An action is usually (currently always) a measurement.
+
+        Args:
+            action: Action that is supposed to be performed at these action_indices
+            add_if_new: Register action if the action_indices have not yet been registered
+
+        Raises:
+            RuntimeError if a different action is performed than is usually
+                performed at the current action_indices. An example is when
+                a different parameter is measuremed.
         """
         if self.action_indices not in self.actions:
             if add_if_new:
@@ -663,7 +674,6 @@ class MeasurementLoop:
             actions.clear()
 
     # Measurement-related functions
-    # TODO these methods should always end up with a parameter
     def _measure_parameter(
         self,
         parameter: _BaseParameter,
@@ -676,6 +686,16 @@ class MeasurementLoop:
 
         Called from `measure`.
         MultiParameter is called separately.
+
+        Args:
+            parameter: Parameter to be measured
+            name: Name used to measure parameter, overriding ``parameter.name``
+            label: Label used to measure parameter, overriding ``parameter.label``
+            unit: Unit used to measure parameter, overriding ``parameter.unit``
+            **kwargs: optional kwargs passed to parameter, i.e. ``parameter(**kwargs)``
+            
+        Returns:
+            Current value of parameter
         """
         name = name or parameter.name
 
@@ -702,6 +722,14 @@ class MeasurementLoop:
         """Measure MultiParameter and store results
 
         Called from `measure`
+
+        Args:
+            parameter: Parameter to be measured
+            name: Name used to measure parameter, overriding ``parameter.name``
+            **kwargs: optional kwargs passed to parameter, i.e. ``parameter(**kwargs)``
+            
+        Returns:
+            Current value of parameter
 
         Notes:
             - Does not store setpoints yet
@@ -736,7 +764,11 @@ class MeasurementLoop:
 
         The function should return a dict, from which each item is measured.
         If the function already contains creates a Measurement, the return
-        values aren"t stored.
+        values aren't stored.
+
+        Args:
+            name: Dataset name used for function. Extracts name from function if not provided
+            **kwargs: optional kwargs passed to callable, i.e. ``callable(**kwargs)``
         """
         # Determine name
         if name is None:
@@ -781,6 +813,11 @@ class MeasurementLoop:
         """Store dictionary results
 
         Each key is an array name, and the value is the value to store
+
+        Args:
+            value: dictionary with (str, value) entries. 
+                Each element is a separate dataset array
+                name: Dataset name used for dictionary
         """
         if not isinstance(value, dict):
             raise SyntaxError(f"{name} must be a dict, not {value}")
@@ -809,6 +846,15 @@ class MeasurementLoop:
 
         If this value comes from another parameter acquisition, e.g. from a
         MultiParameter, the parameter can be passed to use the right set arrays.
+
+        Args:
+            value: Value to be stored
+            name: Name used for storage
+            parameter: optional parameter that is passed on to 
+                `MeasurementLoop.measure` as a kwarg, in which case it's used
+                for name, label, etc.
+            label: Optional label for dat array
+            unit: Optional unit for data array
         """
         if name is None:
             raise RuntimeError("Must provide a name when measuring a value")
@@ -1087,14 +1133,24 @@ class MeasurementLoop:
 
     def unmask(
         self,
-        obj: Union[object, dict],
+        obj: Union[_BaseParameter, object, dict],
         attr: Optional[str] = None,
         key: Optional[str] = None,
-        type=None,
+        type: Optional[str] = None,
         value: Optional[Any] = None,
         raise_exception: bool = True,
         **kwargs  # Add kwargs because original_value may be None
     ):
+        """ Unmasks a previously masked object, i.e. revert value back to original
+        
+        Args:
+            obj: Parameter/object/dictionary for which to revert attribute/key
+            attr: object attribute to revert
+            key: dictionary key to revert
+            type: can be 'key', 'attr', 'parameter' if not explicitly provided by kwarg
+            value: Optional masked value, only used for logging
+            raise_exception: Whether to raise exception if unmasking fails
+        """
         if "original_value" not in kwargs:
             # No masked property passed. We collect all the masked properties
             # that satisfy these requirements and unmask each of them.
@@ -1199,7 +1255,7 @@ class MeasurementLoop:
     def step_out(self, reduce_dimension: bool = True):
         """Step out of a Sweep
 
-        This function usually doesn"t need to be called.
+        This function usually doesn't need to be called.
         """
         if MeasurementLoop.running_measurement is not self:
             MeasurementLoop.running_measurement.step_out(
@@ -1232,6 +1288,7 @@ def running_measurement() -> MeasurementLoop:
 
 
 class _IterateDondSweep:
+    """Class used to encapsulate  `AbstractSweep` into `Sweep` as a `Sweep.sequence`"""
     def __init__(self, sweep: AbstractSweep):
         self.sweep: AbstractSweep = sweep
         self.iterator: Iterable = None
@@ -1265,10 +1322,15 @@ class BaseSweep(AbstractSweep):
             Can be an iterable, or a parameter Sweep.
             If the sequence
         name: Name of sweep. Not needed if a Parameter is passed
+        label: Label of sweep. Not needed if a Parameter is passed
         unit: unit of sweep. Not needed if a Parameter is passed
+        parameter: Optional parameter that is being swept over.
+            If provided, the parameter value will be updated every
+            time the sweep is looped over
         revert: Stores the state of a parameter before sweeping it,
             then reverts the original value upon exiting the loop.
         delay: Wait time after setting value (default zero).
+        initial_delay: Delay directly after the first element.
 
     Examples:
         ```
@@ -1425,6 +1487,7 @@ class BaseSweep(AbstractSweep):
         return sweep_value
 
     def initialize(self) -> Dict[str, Any]:
+        """Initializes a `Sweep`, attaching it to the current `MeasurementLoop`"""
         msmt = running_measurement()
         if msmt.action_indices in msmt.setpoint_list:
             return msmt.setpoint_list[msmt.action_indices]
@@ -1458,18 +1521,34 @@ class BaseSweep(AbstractSweep):
         return setpoint_info
 
     def exit_sweep(self):
+        """Exits sweep, stepping out of the current `Measurement.action_indices`""":
         msmt = running_measurement()
         msmt.step_out(reduce_dimension=True)
         raise StopIteration
 
     def execute(
         self,
-        *args: Iterable["BaseSweep"],
+        *args: Optional[Iterable["BaseSweep"]],
         name: str = None,
         measure_params: Union[Iterable, _BaseParameter] = None,
         repetitions: int = 1,
         sweep: Union[Iterable, "BaseSweep"] = None
     ) -> DataSetProtocol:
+        """Performs a measurement using this sweep
+        
+        Args:
+            *args: Optional additional sweeps used for N-dimensional measurements
+                The first arg is the outermost sweep dimension, and the sweep on which
+                `Sweep.execute` was called is the innermost dimension.
+            name: Dataset name, defaults to a concatenation of sweep parameter names
+            measure_params: Parameters to measure.
+                If not provided, it will check the attribute ``Station.measure_params``
+                for parameters. Raises an error if undefined.
+            repetitions: Number of times to repeat measurement, defaults to 1.
+                This will be the outermost loop if set to a value above 1.
+            sweep: Identical to passing *args.
+                Note that ``sweep`` can be either a single Sweep, or a Sweep list.
+        """
         # Get "measure_params" from station if not provided
         if measure_params is None:
             station = Station.default
@@ -1542,6 +1621,57 @@ class BaseSweep(AbstractSweep):
 
 
 class Sweep(BaseSweep):
+    """Default class to create a sweep in `do1d`, `do2d`, `dond` and `MeasurementLoop`
+
+    A Sweep can be created through its kwargs (listed below). For the most frequent
+    use-cases, a Sweep can also be created by passing args in a variety of ways:
+
+    1 arg:
+    - Sweep([1,2,3], name="name")
+        : sweep over sequence [1,2,3] with sweep array name "name"
+        Note that kwarg "name" must be provided
+    - Sweep(parameter, stop=stop_val)
+        : sweep "parameter" from current value to "stop_val"
+    - Sweep(parameter, around=around_val)
+        : sweep "parameter" around current value with range "around_val"
+        : Note that this will set ``revert`` to True if not explicitly False
+    2 args:
+    - Sweep(parameter, [1,2,3])
+        : sweep "parameter" over sequence [1,2,3]
+    - Sweep(parameter, stop_val)
+        : sweep "parameter" from current value to "stop_val"
+    - Sweep([1,2,3], "name")
+        : sweep over sequence [1,2,3] with sweep array name "name"
+    3 args:
+    - Sweep(parameter, start_val, stop_val)
+        : sweep "parameter" from "start_val" to "stop_val"
+        If "num" or "step" is not given as kwarg, it will check if "num" or "step"
+        if set in dict "parameter.sweep_defaults" and use that, or raise an error otherwise.
+    4 args:
+    - Sweep(parameter, start_val, stop_val, num)
+        : Sweep "parameter" from "start_val" to "stop_val" with "num" number of points
+
+    Args:
+        start: start value of sweep sequence
+            Cannot be used together with ``around``
+        stop: stop value of sweep sequence
+            Cannot be used together with ``around``
+        around: sweep around the current parameter value.
+            ``start`` and ``stop`` are then defined from ``around`` and the current vlaue
+            i.e. start=X-dx, stop=X+dx when current_value=X and around=dx.
+            Passing the kwarg "around" also sets revert=True unless explicitly set to False.
+        num: Number of points between start and stop.
+            Cannot be used together with ``step``
+        step: Increment from start to stop.
+            Cannot be used together with ``num``
+        delay: Time delay after incrementing to the next value
+        initial_delay: Time delay after having incremented to its first value
+        name: Sweep name, overrides parameter.name
+        label: Sweep label, overrides parameter.label
+        unit: Sweep unit, overrides parameter.unit
+        revert: Revert parameter back to original value after the sweep ends.
+            This is False by default, unless the kwarg ``around`` is passed
+    """
     sequence_keywords = ["start", "stop", "around",
                          "num", "step", "parameter", "sequence"]
     base_keywords = ["delay", "initial_delay", "name",
@@ -1595,6 +1725,7 @@ class Sweep(BaseSweep):
           : sweep "parameter" from current value to "stop_val"
         - Sweep(parameter, around=around_val)
           : sweep "parameter" around current value with range "around_val"
+          : Note that this will set ``revert`` to True if not explicitly False
         2 args:
         - Sweep(parameter, [1,2,3])
           : sweep "parameter" over sequence [1,2,3]
@@ -1670,6 +1801,11 @@ class Sweep(BaseSweep):
                     if kwargs.get(key) is None:
                         kwargs[key] = val
 
+        # Revert parameter to original value if kwarg "around" is passed
+        # and "revert" is not explicitly False
+        if kwargs["around"] is not None and kwargs["revert"] is None:
+            kwargs["revert"] = True
+
         sequence_kwargs = {key: kwargs.get(key)
                            for key in self.sequence_keywords}
         base_kwargs = {key: kwargs.get(key) for key in self.base_keywords}
@@ -1739,6 +1875,16 @@ class Sweep(BaseSweep):
 
 
 class RepetitionSweep(BaseSweep):
+    """Basic sweep to repeat something multiple times
+    Its functionality is comparable to range(N)
+
+    Args:
+        repetitions: Number of times to loop over
+        start: Starting index
+        name: Sweep name, defaults to "repetition"
+        label: Sweep label, defaults to "Repetition"
+        unit: Optional sweep unit
+    """
     def __init__(
         self,
         repetitions: int,
@@ -1760,6 +1906,9 @@ def measure_sweeps(
     msmt: MeasurementLoop = None
 ):
     """Recursively iterate over Sweep objects, measuring measure_params in innermost loop
+
+    This method is used to perform arbitrary-dimension by passing a list of sweeps,
+    it can be compared to `dond`
 
     Args:
         sweeps: list of BaseSweep objects to sweep over
