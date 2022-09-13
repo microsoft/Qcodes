@@ -1,28 +1,27 @@
-from ast import Call
 import logging
 import threading
 import traceback
+from ast import Call
 from datetime import datetime
 from time import perf_counter, sleep
-from typing import Any, Callable, Dict, Iterable, List, Sequence, Tuple, Union, Optional
+from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 
 from qcodes import config as qcodes_config
-from qcodes.dataset import AbstractSweep, Measurement, DataSetProtocol
+from qcodes.dataset import AbstractSweep, DataSetProtocol, Measurement
 from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning import serialization as serial
 from qcodes.dataset.descriptions.versioning.converters import new_to_old
 from qcodes.dataset.measurements import DataSaver, Runner
 from qcodes.dataset.sqlite.queries import add_parameter, update_run_description
-
 from qcodes.instrument import (
-    InstrumentBase, 
-    DelegateParameter, 
-    MultiParameter, 
-    Parameter, 
-    SweepValues
+    DelegateParameter,
+    InstrumentBase,
+    MultiParameter,
+    Parameter,
+    SweepValues,
 )
 from qcodes.parameters import ParameterBase
 from qcodes.station import Station
@@ -33,6 +32,7 @@ from qcodes.utils.helpers import (
     get_last_input_cells,
     using_ipython,
 )
+
 RAW_VALUE_TYPES = (float, int, bool, np.ndarray, np.integer,
                    np.floating, np.bool_, type(None))
 
@@ -121,10 +121,11 @@ class DatasetHandler:
             parameter_info['dataset_parameter'] = delegate_parameter
 
     def create_measurement_info(
-        self, action_indices: Tuple[int], 
-        parameter: _BaseParameter, 
-        name: Optional[str] = None, 
-        label: Optional[str] = None, 
+        self,
+        action_indices: Tuple[int],
+        parameter: _BaseParameter,
+        name: Optional[str] = None,
+        label: Optional[str] = None,
         unit: Optional[str] = None
     ) -> Dict[str, Any]:
         if parameter is None:
@@ -352,10 +353,7 @@ class MeasurementLoop:
     notify_function = None
 
     def __init__(
-        self, 
-        name: Optional[str], 
-        force_cell_thread: bool = True, 
-        notify: bool = False
+        self, name: Optional[str], force_cell_thread: bool = True, notify: bool = False
     ):
         self.name: str = name
 
@@ -664,11 +662,11 @@ class MeasurementLoop:
     # Measurement-related functions
     # TODO these methods should always end up with a parameter
     def _measure_parameter(
-        self, 
-        parameter: _BaseParameter, 
-        name: Optional[str] = None, 
-        label: Optional[str] = None, 
-        unit: Optional[str] = None, 
+        self,
+        parameter: _BaseParameter,
+        name: Optional[str] = None,
+        label: Optional[str] = None,
+        unit: Optional[str] = None,
         **kwargs
         ) -> Any:
         """Measure parameter and store results.
@@ -696,10 +694,7 @@ class MeasurementLoop:
         return result
 
     def _measure_multi_parameter(
-        self, 
-        multi_parameter: MultiParameter, 
-        name: str = None, 
-        **kwargs
+        self, multi_parameter: MultiParameter, name: str = None, **kwargs
     ) -> Any:
         """Measure MultiParameter and store results
 
@@ -801,11 +796,11 @@ class MeasurementLoop:
         return value
 
     def _measure_value(
-        self, 
-        value: Union[float, int, bool], 
-        name: str, 
-        parameter: Optional[_BaseParameter] = None, 
-        label: Optional[str] = None, 
+        self,
+        value: Union[float, int, bool],
+        name: str,
+        parameter: Optional[_BaseParameter] = None,
+        label: Optional[str] = None,
         unit: Optional[str] = None) -> Union[float, int, bool]:
         """Store a single value (float/int/bool)
 
@@ -1168,7 +1163,7 @@ class MeasurementLoop:
 
         Args:
             N: number of action indices to skip
-        
+
         Returns:
             Measurement action_indices after skipping
 
@@ -1284,8 +1279,8 @@ class BaseSweep(AbstractSweep):
     """
 
     def __init__(
-        self, 
-        sequence: Union[Iterable, SweepValues, AbstractSweep], 
+        self,
+        sequence: Union[Iterable, SweepValues, AbstractSweep],
         name: Optional[str] = None,
         label: Optional[str] = None,
         unit: Optional[str] = None,
@@ -1679,13 +1674,13 @@ class Sweep(BaseSweep):
         return sequence_kwargs, base_kwargs
 
     def _generate_sequence(
-        self, 
-        start: Optional[float] = None, 
-        stop: Optional[float] = None, 
-        around: Optional[float] = None, 
-        num: Optional[int] = None, 
-        step: Optional[float] = None, 
-        parameter: Optional[_BaseParameter] = None, 
+        self,
+        start: Optional[float] = None,
+        stop: Optional[float] = None,
+        around: Optional[float] = None,
+        num: Optional[int] = None,
+        step: Optional[float] = None,
+        parameter: Optional[_BaseParameter] = None,
         sequence: Optional[Iterable] = None
     ):
         """Creates a sequence from passed values"""
@@ -1742,12 +1737,13 @@ class Sweep(BaseSweep):
 
 class RepetitionSweep(BaseSweep):
     def __init__(
-        self, 
-        repetitions: int, 
-        start: int = 0, 
-        name: str = 'repetition', 
-        label: str = 'Repetition', 
-        unit: Optional[str] = None):
+        self,
+        repetitions: int,
+        start: int = 0,
+        name: str = "repetition",
+        label: str = "Repetition",
+        unit: Optional[str] = None,
+    ):
         self.start = start
         self.repetitions = repetitions
         sequence = start + np.arange(repetitions)
@@ -1756,8 +1752,8 @@ class RepetitionSweep(BaseSweep):
 
 
 def measure_sweeps(
-    sweeps: list[BaseSweep], 
-    measure_params: list[_BaseParameter], 
+    sweeps: list[BaseSweep],
+    measure_params: list[_BaseParameter],
     msmt: MeasurementLoop = None
 ):
     """Recursively iterate over Sweep objects, measuring measure_params in innermost loop
