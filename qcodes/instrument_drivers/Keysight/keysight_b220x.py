@@ -358,3 +358,15 @@ class KeysightB220X(VisaInstrument):
         l = [f'{self._card:01d}{i:02d}{o:02d}' for i, o in paths]
         channel_list = f"(@{','.join(l)})"
         return channel_list
+
+
+class KeysightB2200(KeysightB220X):
+    """
+    QCodes driver for B2200
+    """
+
+
+class KeysightB2201(KeysightB220X):
+    """
+    QCodes driver for B2201
+    """

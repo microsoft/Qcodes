@@ -7,6 +7,7 @@ from .Keysight_34470A_submodules import Keysight34470A
 from .keysight_34934a import Keysight34934A
 from .keysight_34980a import Keysight34980A
 from .keysight_34980a_submodules import Keysight34980ASwitchMatrixSubModule
+from .keysight_b220x import KeysightB2200, KeysightB2201
 
 __all__ = [
     "Keysight34410A",
@@ -18,4 +19,6 @@ __all__ = [
     "Keysight34934A",
     "Keysight34980A",
     "Keysight34980ASwitchMatrixSubModule",
+    "KeysightB2200",
+    "KeysightB2201",
 ]
