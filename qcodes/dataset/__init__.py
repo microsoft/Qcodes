@@ -29,8 +29,8 @@ from .experiment_container import (
 )
 from .experiment_settings import get_default_experiment_id, reset_default_experiment_id
 from .legacy_import import import_dat_file
-from .measurements import Measurement
 from .measurement_loop import MeasurementLoop, Sweep
+from .measurements import Measurement
 from .plotting import plot_by_id, plot_dataset
 from .sqlite.connection import ConnectionPlus
 from .sqlite.database import (
