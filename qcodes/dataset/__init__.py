@@ -17,7 +17,8 @@ from .descriptions.param_spec import ParamSpec
 from .dond.do_0d import do0d
 from .dond.do_1d import do1d
 from .dond.do_2d import do2d
-from .dond.do_nd import AbstractSweep, ArraySweep, LinSweep, LogSweep, dond
+from .dond.do_nd import dond
+from .dond.sweeps import AbstractSweep, ArraySweep, LinSweep, LogSweep
 from .experiment_container import (
     experiments,
     load_experiment,
