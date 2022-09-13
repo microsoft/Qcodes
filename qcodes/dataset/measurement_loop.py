@@ -24,6 +24,7 @@ from qcodes.instrument import (
     Parameter, 
     SweepValues
 )
+from qcodes.instrument.parameter import _BaseParameter
 from qcodes.parameters import ParameterBase
 from qcodes.station import Station
 from qcodes.utils.dataset.doNd import AbstractSweep, ActionsT
