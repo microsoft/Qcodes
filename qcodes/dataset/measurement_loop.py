@@ -9,18 +9,22 @@ from typing import Any, Callable, Dict, Iterable, List, Sequence, Tuple, Union, 
 import numpy as np
 
 from qcodes import config as qcodes_config
+from qcodes.dataset import AbstractSweep, Measurement, DataSetProtocol
 from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning import serialization as serial
 from qcodes.dataset.descriptions.versioning.converters import new_to_old
-from qcodes.dataset.do_nd import AbstractSweep
-from qcodes.dataset.measurements import Measurement, DataSaver, Runner
-from qcodes.dataset.data_set_protocol import DataSetProtocol
+from qcodes.dataset.measurements import DataSaver, Runner
 from qcodes.dataset.sqlite.queries import add_parameter, update_run_description
-from qcodes.instrument.base import InstrumentBase
-from qcodes.instrument.parameter import _BaseParameter, DelegateParameter, MultiParameter, Parameter
-from qcodes.instrument.sweep_values import SweepValues
-from qcodes.parameters.parameter_base import ParameterBase
+
+from qcodes.instrument import (
+    InstrumentBase, 
+    DelegateParameter, 
+    MultiParameter, 
+    Parameter, 
+    SweepValues
+)
+from qcodes.parameters import ParameterBase
 from qcodes.station import Station
 from qcodes.utils.dataset.doNd import AbstractSweep, ActionsT
 from qcodes.utils.helpers import (

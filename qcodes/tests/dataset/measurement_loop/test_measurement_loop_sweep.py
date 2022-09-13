@@ -2,15 +2,19 @@ import contextlib
 import shutil
 import tempfile
 from pathlib import Path
-
 import numpy as np
 import pytest
 
-from qcodes import ManualParameter, Parameter
-from qcodes.dataset import initialise_or_create_database_at, load_or_create_experiment
-from qcodes.dataset.data_set import load_by_id
-from qcodes.dataset.measurement_loop import MeasurementLoop, Sweep
-from qcodes.utils.dataset.doNd import LinSweep, dond
+from qcodes.instrument import ManualParameter, Parameter
+from qcodes.dataset import (
+    initialise_or_create_database_at, 
+    load_or_create_experiment, 
+    load_by_id, 
+    MeasurementLoop, 
+    Sweep,
+    dond, 
+    LinSweep
+)
 
 
 def test_sweep_1_arg_sequence():
