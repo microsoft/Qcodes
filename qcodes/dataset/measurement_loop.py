@@ -28,11 +28,13 @@ from qcodes.utils.helpers import (
     using_ipython,
 )
 
-RAW_VALUE_TYPES = (float, int, bool, np.ndarray, np.integer, np.floating, np.bool_, type(None))
+RAW_VALUE_TYPES = (float, int, bool, np.ndarray, np.integer,
+                   np.floating, np.bool_, type(None))
 
 
 class DatasetHandler:
     """Handler for a single DataSet (with Measurement and Runner)"""
+
     def __init__(self, measurement_loop, name='results'):
         self.measurement_loop = measurement_loop
         self.name = name
@@ -105,7 +107,7 @@ class DatasetHandler:
             else:
                 raise OverflowError(
                     f'All parameter names {parameter_name}_{{idx}} up to idx {max_idx} are taken'
-                    )
+                )
             # Create a delegate parameter with modified name
             delegate_parameter = DelegateParameter(
                 name=parameter_name,
@@ -125,7 +127,8 @@ class DatasetHandler:
                 'label': label,
                 'unit': unit
             }
-            overwrite_attrs = {key: val for key, val in overwrite_attrs.items() if val is not None}
+            overwrite_attrs = {key: val for key,
+                               val in overwrite_attrs.items() if val is not None}
             parameter = DelegateParameter(
                 source=parameter,
                 **overwrite_attrs
@@ -174,7 +177,7 @@ class DatasetHandler:
         name: str = None,
         label: str = None,
         unit: str = None,
-        ):
+    ):
         """Store single measurement result
 
         This method is called from type-specific methods, such as
@@ -235,7 +238,8 @@ class DatasetHandler:
                 continue
 
             self._ensure_unique_parameter(setpoint_info, setpoint=True)
-            self.measurement.register_parameter(setpoint_info['dataset_parameter'])
+            self.measurement.register_parameter(
+                setpoint_info['dataset_parameter'])
             setpoint_info['registered'] = True
 
         # Register all measurement parameters in Measurement
@@ -259,7 +263,8 @@ class DatasetHandler:
             measurement_info['registered'] = True
             self.measurement.set_shapes(
                 detect_shape_of_measurement(
-                    (measurement_info["dataset_parameter"],), measurement_info["shape"]
+                    (measurement_info["dataset_parameter"],
+                     ), measurement_info["shape"]
                 )
             )
 
@@ -292,6 +297,7 @@ class DatasetHandler:
         interdeps_empty_dict = dataset._rundescriber.interdeps._empty_data_dict()
         for key, val in interdeps_empty_dict.items():
             cache_data.setdefault(key, val)
+
 
 class MeasurementLoop:
     """Class to perform measurements
@@ -508,7 +514,6 @@ class MeasurementLoop:
                 shell.user_ns[self._default_measurement_name] = self
                 # shell.user_ns[self._default_dataset_name] = self.dataset
 
-
             return self
         except:
             # An error has occured, ensure running_measurement is cleared
@@ -531,9 +536,11 @@ class MeasurementLoop:
             MeasurementLoop.running_measurement = None
 
         if exc_type is not None:
-            self.log(f"Measurement error {exc_type.__name__}({exc_val})", level="error")
+            self.log(
+                f"Measurement error {exc_type.__name__}({exc_val})", level="error")
 
-            self._apply_actions(self.except_actions, label="except", clear=True)
+            self._apply_actions(self.except_actions,
+                                label="except", clear=True)
 
             if msmt is self:
                 self._apply_actions(
@@ -547,7 +554,8 @@ class MeasurementLoop:
         if msmt is self:
             # Also perform global final actions
             # These are always performed when outermost measurement finishes
-            self._apply_actions(MeasurementLoop.final_actions, label="global final")
+            self._apply_actions(
+                MeasurementLoop.final_actions, label="global final")
 
             # Notify that measurement is complete
             if self.notify and self.notify_function is not None:
@@ -713,7 +721,8 @@ class MeasurementLoop:
             elif hasattr(callable, "__name__"):
                 name = callable.__name__
             else:
-                action_indices_str = "_".join(str(idx) for idx in self.action_indices)
+                action_indices_str = "_".join(str(idx)
+                                              for idx in self.action_indices)
                 name = f"data_group_{action_indices_str}"
 
         # Ensure measuring callable matches the current action_indices
@@ -733,7 +742,8 @@ class MeasurementLoop:
             # No nested measurement has been performed in the callable.
             # Add results, which should be dict, by creating a nested measurement
             if not isinstance(results, dict):
-                raise SyntaxError(f"{name} results must be a dict, not {results}")
+                raise SyntaxError(
+                    f"{name} results must be a dict, not {results}")
 
             with MeasurementLoop(name) as msmt:
                 for key, val in results.items():
@@ -750,7 +760,8 @@ class MeasurementLoop:
             raise SyntaxError(f"{name} must be a dict, not {value}")
 
         if not isinstance(name, str) or name == "":
-            raise SyntaxError(f"Dict result {name} must have a valid name: {value}")
+            raise SyntaxError(
+                f"Dict result {name} must have a valid name: {value}")
 
         # Ensure measuring callable matches the current action_indices
         self._verify_action(action=None, name=name, add_if_new=True)
@@ -872,13 +883,15 @@ class MeasurementLoop:
             )
             self.skip()  # Increment last action index by 1
         elif isinstance(measurable, MultiParameter):
-            result = self._measure_multi_parameter(measurable, name=name, **kwargs)
+            result = self._measure_multi_parameter(
+                measurable, name=name, **kwargs)
         elif callable(measurable):
             result = self._measure_callable(measurable, name=name, **kwargs)
         elif isinstance(measurable, dict):
             result = self._measure_dict(measurable, name=name)
         elif isinstance(measurable, RAW_VALUE_TYPES):
-            result = self._measure_value(measurable, name=name, label=label, unit=unit, **kwargs)
+            result = self._measure_value(
+                measurable, name=name, label=label, unit=unit, **kwargs)
             self.skip()  # Increment last action index by 1
         else:
             raise RuntimeError(
@@ -893,7 +906,6 @@ class MeasurementLoop:
             self.measure((t_now - self._t_start).total_seconds(),
                          'T_post', unit='s', timestamp=False)
             self.skip()  # Increment last action index by 1
-
 
         self.timings.record(
             ['measurement', initial_action_indices, 'total'],
@@ -1155,7 +1167,8 @@ class MeasurementLoop:
         This function usually doesn't need to be called.
         """
         if MeasurementLoop.running_measurement is not self:
-            MeasurementLoop.running_measurement.step_out(reduce_dimension=reduce_dimension)
+            MeasurementLoop.running_measurement.step_out(
+                reduce_dimension=reduce_dimension)
         else:
             if reduce_dimension:
                 self.loop_shape = self.loop_shape[:-1]
@@ -1172,7 +1185,8 @@ class MeasurementLoop:
          Measurement must be ran from separate thread
         """
         if self.measurement_thread is None:
-            raise RuntimeError('Measurement was not started in separate thread')
+            raise RuntimeError(
+                'Measurement was not started in separate thread')
         else:
             self.measurement_thread.traceback()
 
@@ -1208,7 +1222,6 @@ class _IterateDondSweep:
         return value
 
 
-
 class BaseSweep(AbstractSweep):
     """Sweep over an iterable inside a Measurement
 
@@ -1232,11 +1245,13 @@ class BaseSweep(AbstractSweep):
             for param_val in Sweep(p.
         ```
     """
+
     def __init__(self, sequence, name=None, label=None, unit=None, parameter=None, revert=False, delay=None, initial_delay=None):
         if isinstance(sequence, AbstractSweep):
             sequence = _IterateDondSweep(sequence)
         elif not isinstance(sequence, Iterable):
-            raise SyntaxError(f"Sweep sequence must be iterable, not {type(sequence)}")
+            raise SyntaxError(
+                f"Sweep sequence must be iterable, not {type(sequence)}")
 
         # Properties for the data array
         self.name = name
@@ -1270,7 +1285,8 @@ class BaseSweep(AbstractSweep):
             components.append(f"'{self.name}'")
 
         # Add number of elements
-        num_elems = str(len(self.sequence)) if self.sequence is not None else 'unknown'
+        num_elems = str(len(self.sequence)
+                        ) if self.sequence is not None else 'unknown'
         components.append(f'length={num_elems}')
 
         # Combine components
@@ -1293,9 +1309,11 @@ class BaseSweep(AbstractSweep):
 
         if self.revert:
             if isinstance(self.sequence, SweepValues):
-                msmt.mask(self.sequence.parameter, self.sequence.parameter.get())
+                msmt.mask(self.sequence.parameter,
+                          self.sequence.parameter.get())
             else:
-                raise NotImplementedError("Unable to revert non-parameter values.")
+                raise NotImplementedError(
+                    "Unable to revert non-parameter values.")
 
         self.loop_index = 0
         self.dimension = len(msmt.loop_shape)
@@ -1441,11 +1459,13 @@ class BaseSweep(AbstractSweep):
         # Determine "name" if not provided from sweeps
         if name is None:
             dimensionality = 1 + len(sweeps)
-            sweep_names = [str(sweep.name) for sweep in sweeps] + [str(self.name)]
+            sweep_names = [str(sweep.name)
+                           for sweep in sweeps] + [str(self.name)]
             name = f'{dimensionality}D_sweep_' + '_'.join(sweep_names)
 
         with MeasurementLoop(name) as msmt:
-            measure_sweeps(sweeps=sweeps, measure_params=measure_params, msmt=msmt)
+            measure_sweeps(
+                sweeps=sweeps, measure_params=measure_params, msmt=msmt)
 
         return msmt.dataset
 
@@ -1476,11 +1496,11 @@ class BaseSweep(AbstractSweep):
         return []
 
 
-
-
 class Sweep(BaseSweep):
-    sequence_keywords = ['start', 'stop', 'around', 'num', 'step', 'parameter', 'sequence']
-    base_keywords = ['delay', 'initial_delay', 'name', 'label', 'unit', 'revert', 'parameter']
+    sequence_keywords = ['start', 'stop', 'around',
+                         'num', 'step', 'parameter', 'sequence']
+    base_keywords = ['delay', 'initial_delay', 'name',
+                     'label', 'unit', 'revert', 'parameter']
 
     def __init__(
         self,
@@ -1511,7 +1531,8 @@ class Sweep(BaseSweep):
             revert=revert
         )
 
-        sequence_kwargs, base_kwargs = self._transform_args_to_kwargs(*args, **kwargs)
+        sequence_kwargs, base_kwargs = self._transform_args_to_kwargs(
+            *args, **kwargs)
 
         self._explicit_sequence = None
         self.sequence = self._generate_sequence(**sequence_kwargs)
@@ -1548,14 +1569,16 @@ class Sweep(BaseSweep):
         """
         if len(args) == 1:  # Sweep([1,2,3], name='name')
             if isinstance(args[0], Iterable):
-                assert kwargs.get('name') is not None, "Must provide name if sweeping iterable"
+                assert kwargs.get(
+                    'name') is not None, "Must provide name if sweeping iterable"
                 kwargs['sequence'], = args
             elif isinstance(args[0], _BaseParameter):
                 assert kwargs.get('stop') is not None or kwargs.get('around') is not None, \
                     "Must provide stop value for parameter"
                 kwargs['parameter'], = args
             else:
-                raise SyntaxError('Sweep with 1 arg must have iterable or parameter as arg')
+                raise SyntaxError(
+                    'Sweep with 1 arg must have iterable or parameter as arg')
         elif len(args) == 2:
             if isinstance(args[0], _BaseParameter):  # Sweep(parameter, [1,2,3])
                 if isinstance(args[1], Iterable):
@@ -1563,7 +1586,8 @@ class Sweep(BaseSweep):
                 elif isinstance(args[1], (int, float)):
                     kwargs['parameter'], kwargs['stop'] = args
                 else:
-                    raise SyntaxError('Sweep with Parameter arg and second arg should h')
+                    raise SyntaxError(
+                        'Sweep with Parameter arg and second arg should h')
             elif isinstance(args[0], Iterable):  # Sweep([1,2,3], 'name')
                 assert isinstance(args[1], str)
                 assert kwargs.get('name') is None
@@ -1602,7 +1626,8 @@ class Sweep(BaseSweep):
                     if kwargs.get(key) is None:
                         kwargs[key] = val
 
-        sequence_kwargs = {key: kwargs.get(key) for key in self.sequence_keywords}
+        sequence_kwargs = {key: kwargs.get(key)
+                           for key in self.sequence_keywords}
         base_kwargs = {key: kwargs.get(key) for key in self.base_keywords}
 
         return sequence_kwargs, base_kwargs
@@ -1616,24 +1641,29 @@ class Sweep(BaseSweep):
         # Verify that "around" is used with "parameter" but not with "start" and "stop"
         if around is not None:
             if start is not None or stop is not None:
-                raise SyntaxError('Cannot pass kwarg "around" and also "start" or "stop')
+                raise SyntaxError(
+                    'Cannot pass kwarg "around" and also "start" or "stop')
             elif parameter is None:
-                raise SyntaxError('Cannot use kwarg "around" without a parameter')
+                raise SyntaxError(
+                    'Cannot use kwarg "around" without a parameter')
 
             # Convert "around" to "start" and "stop" using parameter current value
             center_value = parameter()
             if center_value is None:
-                raise ValueError('Parameter must have initial value if "around" keyword is used')
+                raise ValueError(
+                    'Parameter must have initial value if "around" keyword is used')
             start = center_value - around
             stop = center_value + around
         elif stop is not None:
             # Use "parameter" current value if "start" is not provided
             if start is None:
                 if parameter is None:
-                    raise SyntaxError('Cannot use "stop" without "start" or a "parameter"')
+                    raise SyntaxError(
+                        'Cannot use "stop" without "start" or a "parameter"')
                 start = parameter()
                 if start is None:
-                    raise ValueError('Parameter must have initial value if start is not explicitly provided')
+                    raise ValueError(
+                        'Parameter must have initial value if start is not explicitly provided')
         else:
             raise SyntaxError('Must provide either "around" or "stop"')
 
@@ -1649,7 +1679,8 @@ class Sweep(BaseSweep):
             if abs((stop - sequence[-1]) / step) > 1e-9:
                 sequence = np.append(sequence, [stop])
         else:
-            raise SyntaxError('Cannot determine measurement points. Either provide "sequence, "step" or "num"')
+            raise SyntaxError(
+                'Cannot determine measurement points. Either provide "sequence, "step" or "num"')
 
         return sequence
 
