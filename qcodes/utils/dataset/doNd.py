@@ -1,9 +1,6 @@
-import warnings
-
-from qcodes.dataset.do_0d import do0d
-from qcodes.dataset.do_1d import do1d
-from qcodes.dataset.do_2d import do2d
-from qcodes.dataset.do_nd import (
+from qcodes.dataset.dond.do_1d import do1d
+from qcodes.dataset.dond.do_2d import do2d
+from qcodes.dataset.dond.do_nd import (
     AbstractSweep,
     ArraySweep,
     LinSweep,
@@ -18,7 +15,7 @@ from qcodes.dataset.do_nd import (
     _select_active_actions_delays,
     dond,
 )
-from qcodes.dataset.do_nd_utils import (
+from qcodes.dataset.dond.do_nd_utils import (
     ActionsT,
     AxesTuple,
     AxesTupleList,

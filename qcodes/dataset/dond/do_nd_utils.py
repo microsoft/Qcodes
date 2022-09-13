@@ -6,12 +6,11 @@ from typing import Callable, Iterator, List, Optional, Sequence, Tuple, Union
 import matplotlib.axes
 import matplotlib.colorbar
 
+from qcodes.dataset.data_set_protocol import DataSetProtocol
+from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
+from qcodes.dataset.measurements import Measurement
+from qcodes.dataset.plotting import plot_and_save_image
 from qcodes.parameters import ParameterBase
-
-from .data_set_protocol import DataSetProtocol
-from .descriptions.versioning.rundescribertypes import Shapes
-from .measurements import Measurement
-from .plotting import plot_and_save_image
 
 ActionsT = Sequence[Callable[[], None]]
 BreakConditionT = Callable[[], bool]

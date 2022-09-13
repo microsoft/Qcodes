@@ -9,11 +9,9 @@ import numpy as np
 from tqdm.auto import tqdm
 
 from qcodes import config
-from qcodes.parameters import ParameterBase
-
-from .descriptions.detect_shapes import detect_shape_of_measurement
-from .descriptions.versioning.rundescribertypes import Shapes
-from .do_nd_utils import (
+from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
+from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
+from qcodes.dataset.dond.do_nd_utils import (
     ActionsT,
     AxesTupleListWithDataSet,
     BreakConditionInterrupt,
@@ -25,13 +23,14 @@ from .do_nd_utils import (
     _register_parameters,
     _set_write_period,
 )
-from .experiment_container import Experiment
-from .measurements import Measurement
-from .threading import (
+from qcodes.dataset.experiment_container import Experiment
+from qcodes.dataset.measurements import Measurement
+from qcodes.dataset.threading import (
     SequentialParamsCaller,
     ThreadPoolParamsCaller,
     process_params_meas,
 )
+from qcodes.parameters import ParameterBase
 
 LOG = logging.getLogger(__name__)
 
