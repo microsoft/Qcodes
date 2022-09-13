@@ -1,10 +1,11 @@
 # pylint: disable=redefined-outer-name
+import hypothesis.strategies as st
 import pytest
 from hypothesis import given
-import hypothesis.strategies as st
-from qcodes.instrument_drivers.Keysight.keysight_34980a import Keysight34980A
-from qcodes.instrument_drivers.Keysight.keysight_34934a import Keysight34934A
+
 import qcodes.instrument.sims as sims
+from qcodes.instrument_drivers.Keysight.keysight_34934a import Keysight34934A
+from qcodes.instrument_drivers.Keysight.keysight_34980a import Keysight34980A
 
 VISALIB = sims.__file__.replace('__init__.py', 'keysight_34980A.yaml@sim')
 

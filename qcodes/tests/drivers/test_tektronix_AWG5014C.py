@@ -1,8 +1,9 @@
-import pytest
 import numpy as np
+import pytest
 
-from qcodes.instrument_drivers.tektronix.AWG5014 import Tektronix_AWG5014
 import qcodes.instrument.sims as sims
+from qcodes.instrument_drivers.tektronix.AWG5014 import Tektronix_AWG5014
+
 visalib = sims.__file__.replace('__init__.py', 'Tektronix_AWG5014C.yaml@sim')
 
 

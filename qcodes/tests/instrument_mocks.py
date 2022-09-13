@@ -284,8 +284,8 @@ class DummyChannel(InstrumentChannel):
     A single dummy channel implementation
     """
 
-    def __init__(self, parent, name, channel):
-        super().__init__(parent, name)
+    def __init__(self, parent, name, channel, **kwargs):
+        super().__init__(parent, name, **kwargs)
 
         self._channel = channel
 

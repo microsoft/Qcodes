@@ -1,17 +1,21 @@
-import re
 import json
-from datetime import datetime, timedelta
 import random
+import re
+from datetime import datetime, timedelta
 from typing import List
 
-import pytest
 import hypothesis.strategies as hst
+import pytest
 from hypothesis import given, settings
 
-
-from qcodes.dataset.linked_datasets.links import (
-    Link, link_to_str, str_to_link, str_to_links, links_to_str)
 from qcodes.dataset.guids import generate_guid
+from qcodes.dataset.linked_datasets.links import (
+    Link,
+    link_to_str,
+    links_to_str,
+    str_to_link,
+    str_to_links,
+)
 
 
 def generate_some_links(N: int) -> List[Link]:

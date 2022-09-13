@@ -1,17 +1,9 @@
+from __future__ import annotations
+
 import logging
 from collections import OrderedDict, namedtuple
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-)
+from collections.abc import Callable, Iterable, Mapping, Sequence
+from typing import TYPE_CHECKING, Any
 
 from .delegate_parameter import DelegateParameter
 from .group_parameter import Group, GroupParameter
@@ -29,9 +21,9 @@ class DelegateGroupParameter(DelegateParameter, GroupParameter):
     def __init__(
         self,
         name: str,
-        source: Optional[Parameter],
-        instrument: Optional["InstrumentBase"] = None,
-        initial_value: Union[float, str, None] = None,
+        source: Parameter | None,
+        instrument: InstrumentBase | None = None,
+        initial_value: float | str | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(
@@ -91,10 +83,10 @@ class DelegateGroup(Group):
         self,
         name: str,
         parameters: Sequence[DelegateGroupParameter],
-        parameter_names: Optional[Iterable[str]] = None,
-        setter: Optional[Callable[..., Any]] = None,
-        getter: Optional[Callable[..., Any]] = None,
-        formatter: Optional[Callable[..., Any]] = None,
+        parameter_names: Iterable[str] | None = None,
+        setter: Callable[..., Any] | None = None,
+        getter: Callable[..., Any] | None = None,
+        formatter: Callable[..., Any] | None = None,
         **kwargs: Any,
     ):
         super().__init__(parameters=parameters, single_instrument=False, **kwargs)
@@ -113,10 +105,10 @@ class DelegateGroup(Group):
         else:
             self._formatter = formatter
 
-    def _namedtuple(self, *args: Any, **kwargs: Any) -> Tuple[Any, ...]:
+    def _namedtuple(self, *args: Any, **kwargs: Any) -> tuple[Any, ...]:
         return namedtuple(self.name, self._parameter_names)(*args, **kwargs)
 
-    def set(self, value: Union[ParamDataType, Mapping[str, ParamDataType]]) -> None:
+    def set(self, value: ParamDataType | Mapping[str, ParamDataType]) -> None:
         if self._set_fn is not None:
             self._set_fn(value)
         else:
@@ -138,7 +130,7 @@ class DelegateGroup(Group):
             p.set(calling_dict[name])
 
     @property
-    def source_parameters(self) -> Tuple[Optional[Parameter], ...]:
+    def source_parameters(self) -> tuple[Parameter | None, ...]:
         """Get source parameters of each DelegateParameter"""
         return tuple(p.source for p in self._params)
 
@@ -173,8 +165,8 @@ class GroupedParameter(ParameterBase):
         self,
         name: str,
         group: DelegateGroup,
-        unit: Optional[str] = None,
-        label: Optional[str] = None,
+        unit: str | None = None,
+        label: str | None = None,
         **kwargs: Any,
     ):
         super().__init__(name, **kwargs)
@@ -183,27 +175,27 @@ class GroupedParameter(ParameterBase):
         self._group = group
 
     @property
-    def group(self) -> "DelegateGroup":
+    def group(self) -> DelegateGroup:
         """
         The group that contains the target parameters.
         """
         return self._group
 
     @property
-    def parameters(self) -> Dict[str, GroupParameter]:
+    def parameters(self) -> dict[str, GroupParameter]:
         """Get delegate parameters wrapped by this GroupedParameter"""
         return self.group.parameters
 
     @property
-    def source_parameters(self) -> Tuple[Optional[Parameter], ...]:
+    def source_parameters(self) -> tuple[Parameter | None, ...]:
         """Get source parameters of each DelegateParameter"""
         return self.group.source_parameters
 
-    def get_raw(self) -> Union[ParamDataType, Mapping[str, ParamDataType]]:
+    def get_raw(self) -> ParamDataType | Mapping[str, ParamDataType]:
         """Get parameter raw value"""
         return self.group.get_parameters()
 
-    def set_raw(self, value: Union[ParamDataType, Mapping[str, ParamDataType]]) -> None:
+    def set_raw(self, value: ParamDataType | Mapping[str, ParamDataType]) -> None:
         """Set parameter raw value
 
         Args:

@@ -3,15 +3,16 @@ from typing import Any
 from .AWG70000A import AWG70000A
 
 
-class AWG70002A(AWG70000A):
+class TektronixAWG70002A(AWG70000A):
     """
     The QCoDeS driver for Tektronix AWG70002A series AWG's.
 
     All the actual driver meat is in the superclass AWG70000A.
     """
 
-    def __init__(self, name: str, address: str,
-                 timeout: float=10, **kwargs: Any) -> None:
+    def __init__(
+        self, name: str, address: str, timeout: float = 10, **kwargs: Any
+    ) -> None:
         """
         Args:
             name: The name used internally by QCoDeS in the DataSet
@@ -21,3 +22,11 @@ class AWG70002A(AWG70000A):
 
         super().__init__(name, address, num_channels=2,
                          timeout=timeout, **kwargs)
+
+
+class AWG70002A(TektronixAWG70002A):
+    """
+    Alias with non-conformant name left for backwards compatibility
+    """
+
+    pass

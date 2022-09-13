@@ -1,7 +1,7 @@
-from typing import Optional, TYPE_CHECKING, List, Any
+from typing import TYPE_CHECKING, Any, List, Optional
 
-from .KeysightB1517A import B1517A
 from .constants import IMeasRange, IOutputRange
+from .KeysightB1517A import B1517A
 
 if TYPE_CHECKING:
     import qcodes.instrument_drivers.Keysight.keysightb1500

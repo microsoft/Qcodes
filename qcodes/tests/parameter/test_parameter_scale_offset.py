@@ -1,8 +1,8 @@
 from collections.abc import Iterable
 
 import hypothesis.strategies as hst
-from hypothesis import given, event, settings
 import numpy as np
+from hypothesis import event, given, settings
 
 from qcodes.parameters import Parameter
 

@@ -3,8 +3,12 @@ import sqlite3
 
 import pytest
 
-from qcodes.dataset.sqlite.connection import ConnectionPlus, \
-    make_connection_plus_from, atomic, atomic_transaction
+from qcodes.dataset.sqlite.connection import (
+    ConnectionPlus,
+    atomic,
+    atomic_transaction,
+    make_connection_plus_from,
+)
 from qcodes.dataset.sqlite.database import connect
 from qcodes.tests.common import error_caused_by
 

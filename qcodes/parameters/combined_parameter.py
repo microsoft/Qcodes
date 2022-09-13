@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import collections
 import collections.abc
 import logging
+from collections.abc import Callable, Iterator, Sequence
 from copy import copy
-from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence
+from typing import Any
 
 import numpy as np
 
@@ -15,13 +18,13 @@ _LOG = logging.getLogger(__name__)
 
 
 def combine(
-    *parameters: "Parameter",
+    *parameters: Parameter,
     name: str,
-    label: Optional[str] = None,
-    unit: Optional[str] = None,
-    units: Optional[str] = None,
-    aggregator: Optional[Callable[[Sequence[Any]], Any]] = None,
-) -> "CombinedParameter":
+    label: str | None = None,
+    unit: str | None = None,
+    units: str | None = None,
+    aggregator: Callable[[Sequence[Any]], Any] | None = None,
+) -> CombinedParameter:
     """
     Combine parameters into one sweepable parameter
 
@@ -60,10 +63,10 @@ class CombinedParameter(Metadatable):
         self,
         parameters: Sequence[Parameter],
         name: str,
-        label: Optional[str] = None,
-        unit: Optional[str] = None,
-        units: Optional[str] = None,
-        aggregator: Optional[Callable[..., Any]] = None,
+        label: str | None = None,
+        unit: str | None = None,
+        units: str | None = None,
+        aggregator: Callable[..., Any] | None = None,
     ) -> None:
         super().__init__()
         # TODO(giulioungaretti)temporary hack
@@ -93,7 +96,7 @@ class CombinedParameter(Metadatable):
             if unit is None:
                 unit = units
         self.parameter.unit = unit  # type: ignore[attr-defined]
-        self.setpoints: List[Any] = []
+        self.setpoints: list[Any] = []
         # endhack
         self.parameters = parameters
         self.sets = [parameter.set for parameter in self.parameters]
@@ -103,7 +106,7 @@ class CombinedParameter(Metadatable):
             self.f = aggregator
             setattr(self, "aggregate", self._aggregate)
 
-    def set(self, index: int) -> List[Any]:
+    def set(self, index: int) -> list[Any]:
         """
         Set multiple parameters.
 
@@ -118,7 +121,7 @@ class CombinedParameter(Metadatable):
             setFunction(value)
         return values
 
-    def sweep(self, *array: np.ndarray) -> "CombinedParameter":
+    def sweep(self, *array: np.ndarray) -> CombinedParameter:
         """
         Creates a new combined parameter to be iterated over.
         One can sweep over either:
@@ -177,9 +180,9 @@ class CombinedParameter(Metadatable):
 
     def snapshot_base(
         self,
-        update: Optional[bool] = False,
-        params_to_skip_update: Optional[Sequence[str]] = None,
-    ) -> Dict[Any, Any]:
+        update: bool | None = False,
+        params_to_skip_update: Sequence[str] | None = None,
+    ) -> dict[Any, Any]:
         """
         State of the combined parameter as a JSON-compatible dict (everything
         that the custom JSON encoder class
@@ -192,7 +195,7 @@ class CombinedParameter(Metadatable):
         Returns:
             dict: Base snapshot.
         """
-        meta_data: Dict[str, Any] = collections.OrderedDict()
+        meta_data: dict[str, Any] = collections.OrderedDict()
         meta_data["__class__"] = full_class(self)
         param = self.parameter
         meta_data["unit"] = param.unit  # type: ignore[attr-defined]

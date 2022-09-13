@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import re
 import warnings
-from typing import Any, Dict, Optional
+from typing import Any
 
 from qcodes.instrument import ChannelList, Instrument, InstrumentChannel
 from qcodes.validators import Ints
@@ -32,7 +32,7 @@ class SwitchChannelBase(InstrumentChannel):
             get_cmd=self._get_switch,
             vals=Ints(1, 2))
 
-    def __call__(self, *args: int) -> Optional[int]:
+    def __call__(self, *args: int) -> int | None:
         if len(args) == 1:
             self.switch(args[0])
             return None
@@ -58,7 +58,7 @@ class SPDT_Base(Instrument):
             self, "Channels", self.CHANNEL_CLASS, snapshotable=False)
 
         _chanlist = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
-        self._deprecated_attributes: Dict[str, str] = {
+        self._deprecated_attributes: dict[str, str] = {
             f'channel_{k}': k
             for k in _chanlist
         }

@@ -1,5 +1,6 @@
 import pytest
 from pyvisa.errors import VisaIOError
+
 from qcodes.instrument_drivers.Keysight.keysight_b220x import KeysightB220X
 
 

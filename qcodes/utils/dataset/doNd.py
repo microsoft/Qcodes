@@ -1,37 +1,32 @@
-import warnings
-
-from qcodes.dataset.do_nd import (
-    AbstractSweep,
+from qcodes.dataset.dond.do_1d import do1d
+from qcodes.dataset.dond.do_2d import do2d
+from qcodes.dataset.dond.do_nd import (
+    ParameterGroup,
+    _conditional_parameter_set,
+    _create_measurements,
+    _extract_paramters_by_type_and_group,
+    _make_nested_setpoints,
+    _parse_dond_arguments,
+    _select_active_actions_delays,
+    dond,
+)
+from qcodes.dataset.dond.do_nd_utils import (
     ActionsT,
-    ArraySweep,
     AxesTuple,
     AxesTupleList,
     AxesTupleListWithDataSet,
     BreakConditionInterrupt,
     BreakConditionT,
-    LinSweep,
-    LogSweep,
     MeasInterruptT,
     MultiAxesTupleListWithDataSet,
-    ParameterGroup,
     ParamMeasT,
-    UnsafeThreadingException,
     _catch_interrupts,
-    _conditional_parameter_set,
-    _create_measurements,
-    _extract_paramters_by_type_and_group,
     _handle_plotting,
-    _make_nested_setpoints,
-    _parse_dond_arguments,
     _register_actions,
     _register_parameters,
-    _select_active_actions_delays,
     _set_write_period,
-    do0d,
-    do1d,
-    do2d,
-    dond,
 )
+from qcodes.dataset.dond.sweeps import AbstractSweep, ArraySweep, LinSweep, LogSweep
 from qcodes.dataset.plotting import plot_and_save_image as plot
 
 # todo enable warning once new api is in release
@@ -39,6 +34,10 @@ from qcodes.dataset.plotting import plot_and_save_image as plot
 #     "qcodes.utils.dataset.doNd module is deprecated. "
 #     "Please update to import from qcodes.dataset"
 # )
+
+
+class UnsafeThreadingException(Exception):
+    pass
 
 __all__ = [
     "AbstractSweep",

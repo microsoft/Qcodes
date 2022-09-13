@@ -2,6 +2,7 @@ import math
 
 import numpy as np
 import pytest
+
 from qcodes.validators import Bool
 
 from .conftest import AClass, a_func

@@ -5,19 +5,21 @@ exports of logs and log files to a :class:`pandas.DataFrame`
 
 """
 
+import io
+import logging
+from contextlib import contextmanager
+from typing import Callable, Iterator, Optional, Sequence, Tuple
+
 import pandas
 from pandas.core.series import Series
-from contextlib import contextmanager
-import logging
-import io
 
-from typing import Optional, Sequence, Iterator, Tuple, Callable
-
-from .logger import (LOGGING_SEPARATOR,
-                     FORMAT_STRING_DICT,
-                     get_formatter,
-                     LevelType,
-                     get_log_file_name)
+from .logger import (
+    FORMAT_STRING_DICT,
+    LOGGING_SEPARATOR,
+    LevelType,
+    get_formatter,
+    get_log_file_name,
+)
 
 
 def log_to_dataframe(log: Sequence[str],
@@ -53,7 +55,7 @@ def log_to_dataframe(log: Sequence[str],
 
     split_cont = [line.split(separator) for line in log
                   if line[0].isdigit()]  # avoid tracebacks
-    dataframe = pandas.DataFrame(split_cont, columns=columns)
+    dataframe = pandas.DataFrame(split_cont, columns=list(columns))
 
     return dataframe
 
@@ -122,7 +124,7 @@ def time_difference(firsttimes: Series,
 
     t0s = nfirsttimes.astype("datetime64[ns]")
     t1s = nsecondtimes.astype("datetime64[ns]")
-    timedeltas = (t1s.values - t0s.values).astype('float')*1e-9
+    timedeltas = (t1s.to_numpy() - t0s.to_numpy()).astype("float") * 1e-9
 
     if use_first_series_labels:
         output = pandas.Series(timedeltas, index=nfirsttimes.index)

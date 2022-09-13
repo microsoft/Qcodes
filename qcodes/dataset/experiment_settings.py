@@ -1,11 +1,10 @@
 """Settings that are indirectly related to experiments."""
-
-from typing import Dict, Optional
+from __future__ import annotations
 
 from qcodes.dataset.sqlite.connection import ConnectionPlus, path_to_dbfile
 from qcodes.dataset.sqlite.queries import get_last_experiment
 
-_default_experiment: Dict[str, Optional[int]] = {}
+_default_experiment: dict[str, int | None] = {}
 
 
 def _set_default_experiment_id(db_path: str, exp_id: int) -> None:
@@ -21,7 +20,7 @@ def _set_default_experiment_id(db_path: str, exp_id: int) -> None:
     _default_experiment[db_path] = exp_id
 
 
-def _get_latest_default_experiment_id(db_path: str) -> Optional[int]:
+def _get_latest_default_experiment_id(db_path: str) -> int | None:
     """
     Gets the latest created or loaded experiment's exp_id. If no experiment is set
     None will be returned.
@@ -36,7 +35,7 @@ def _get_latest_default_experiment_id(db_path: str) -> Optional[int]:
     return _default_experiment.get(db_path, None)
 
 
-def reset_default_experiment_id(conn: Optional[ConnectionPlus] = None) -> None:
+def reset_default_experiment_id(conn: ConnectionPlus | None = None) -> None:
     """
     Resets the default experiment id to to the last experiment in the db.
     """

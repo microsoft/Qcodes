@@ -2,8 +2,9 @@ import os
 
 import pytest
 
-from qcodes.instrument_drivers.tektronix.AWG5208 import AWG5208
 import qcodes.instrument.sims as sims
+from qcodes.instrument_drivers.tektronix.AWG5208 import AWG5208
+
 visalib = sims.__file__.replace('__init__.py', 'Tektronix_AWG5208.yaml@sim')
 
 

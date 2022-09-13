@@ -19,13 +19,13 @@ def create_parameter(snapshot_get: bool,
     if offset != NOT_PASSED:
         kwargs.update(offset=offset)
 
-    if snapshot_get != NOT_PASSED:
+    if snapshot_get != NOT_PASSED:  # type: ignore[comparison-overlap]
         kwargs.update(snapshot_get=snapshot_get)
 
-    if snapshot_value != NOT_PASSED:
+    if snapshot_value != NOT_PASSED:  # type: ignore[comparison-overlap]
         kwargs.update(snapshot_value=snapshot_value)
 
-    if get_cmd != NOT_PASSED:
+    if get_cmd != NOT_PASSED:  # type: ignore[comparison-overlap]
         kwargs.update(get_cmd=get_cmd)
 
     p = Parameter('p', **kwargs)

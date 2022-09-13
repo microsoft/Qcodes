@@ -1,14 +1,15 @@
 from qcodes.instrument_drivers.test import DriverTestCase
-from qcodes.instrument_drivers.weinschel.Weinschel_8320 import Weinschel_8320
+from qcodes.instrument_drivers.weinschel import Weinschel8320
 
 
-class TestWeinschel_8320(DriverTestCase):
-    '''
+class TestWeinschel8320(DriverTestCase):
+    """
     This is a test suite for testing the weinschel/aeroflex stepped attenuator.
     It is designed to provide a test function for each function as well as for
     general things such as testing if the com s are working.
-    '''
-    driver = Weinschel_8320
+    """
+
+    driver = Weinschel8320
 
     def test_firmware_version(self):
         v = self.instrument.IDN.get()

@@ -137,7 +137,7 @@ class ScopeTrace(ArrayParameter):
         return output
 
 
-class ScopeMeasurement(InstrumentChannel):
+class RohdeSchwarzRTO1000ScopeMeasurement(InstrumentChannel):
     """
     Class to hold a measurement of the scope.
     """
@@ -290,7 +290,10 @@ class ScopeMeasurement(InstrumentChannel):
                                      ' results.')
 
 
-class ScopeChannel(InstrumentChannel):
+ScopeMeasurement = RohdeSchwarzRTO1000ScopeMeasurement
+
+
+class RohdeSchwarzRTO1000ScopeChannel(InstrumentChannel):
     """
     Class to hold an input channel of the scope.
 
@@ -432,7 +435,10 @@ class ScopeChannel(InstrumentChannel):
         self._parent.write(f'CHANnel{self.channum}:SCALe {value}')
 
 
-class RTO1000(VisaInstrument):
+ScopeChannel = RohdeSchwarzRTO1000ScopeChannel
+
+
+class RohdeSchwarzRTO1000(VisaInstrument):
     """
     QCoDeS Instrument driver for the
     Rohde-Schwarz RTO1000 series oscilloscopes.
@@ -684,13 +690,15 @@ class RTO1000(VisaInstrument):
                            get_parser=str)
 
         # Add the channels to the instrument
-        for ch in range(1, self.num_chans+1):
-            chan = ScopeChannel(self, f'channel{ch}', ch)
-            self.add_submodule(f'ch{ch}', chan)
+        for ch in range(1, self.num_chans + 1):
+            chan = RohdeSchwarzRTO1000ScopeChannel(self, f"channel{ch}", ch)
+            self.add_submodule(f"ch{ch}", chan)
 
-        for measId in range(1, self.num_meas+1):
-            measCh = ScopeMeasurement(self, f'measurement{measId}', measId)
-            self.add_submodule(f'meas{measId}', measCh)
+        for measId in range(1, self.num_meas + 1):
+            measCh = RohdeSchwarzRTO1000ScopeMeasurement(
+                self, f"measurement{measId}", measId
+            )
+            self.add_submodule(f"meas{measId}", measCh)
 
         self.add_function('stop', call_cmd='STOP')
         self.add_function('reset', call_cmd='*RST')
@@ -805,3 +813,11 @@ class RTO1000(VisaInstrument):
         val = self.ask(f'TRIGger1:LEVel{source}?')
 
         return float(val.strip())
+
+
+class RTO1000(RohdeSchwarzRTO1000):
+    """
+    Backwards compatibility alias for RohdeSchwarzRTO1000
+    """
+
+    pass

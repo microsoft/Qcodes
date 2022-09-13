@@ -3,13 +3,15 @@ This module provides means of connecting to a QCoDeS database file and
 initialising it. Note that connecting/initialisation take into account
 database version and possibly perform database upgrades.
 """
+from __future__ import annotations
+
 import io
 import sqlite3
 import sys
+from collections.abc import Iterator
 from contextlib import contextmanager
 from os.path import expanduser, normpath
 from pathlib import Path
-from typing import Iterator, Optional, Tuple, Union
 
 import numpy as np
 from typing_extensions import Literal
@@ -55,7 +57,7 @@ def _convert_complex(text: bytes) -> np.complexfloating:
 this_session_default_encoding = sys.getdefaultencoding()
 
 
-def _convert_numeric(value: bytes) -> Union[float, int, str]:
+def _convert_numeric(value: bytes) -> float | int | str:
     """
     This is a converter for sqlite3 'numeric' type class.
 
@@ -101,21 +103,20 @@ def _convert_numeric(value: bytes) -> Union[float, int, str]:
         return numeric_int
 
 
-def _adapt_float(fl: float) -> Union[float, str]:
+def _adapt_float(fl: float) -> float | str:
     if np.isnan(fl):
         return "nan"
     return float(fl)
 
 
-def _adapt_complex(value: Union[complex, np.complexfloating]) -> sqlite3.Binary:
+def _adapt_complex(value: complex | np.complexfloating) -> sqlite3.Binary:
     out = io.BytesIO()
     np.save(out, np.array([value]))
     out.seek(0)
     return sqlite3.Binary(out.read())
 
 
-def connect(name: Union[str, Path], debug: bool = False,
-            version: int = -1) -> ConnectionPlus:
+def connect(name: str | Path, debug: bool = False, version: int = -1) -> ConnectionPlus:
     """
     Connect or create  database. If debug the queries will be echoed back.
     This function takes care of registering the numpy/sqlite type
@@ -123,13 +124,13 @@ def connect(name: Union[str, Path], debug: bool = False,
 
     Args:
         name: name or path to the sqlite file
-        debug: whether or not to turn on tracing
+        debug: should tracing be turned on.
         version: which version to create. We count from 0. -1 means 'latest'.
             Should always be left at -1 except when testing.
 
     Returns:
-        conn: connection object to the database (note, it is
-            `ConnectionPlus`, not `sqlite3.Connection`
+        connection object to the database (note, it is
+        :class:`ConnectionPlus`, not :class:`sqlite3.Connection`)
 
     """
     # register numpy->binary(TEXT) adapter
@@ -173,8 +174,7 @@ def connect(name: Union[str, Path], debug: bool = False,
     return conn
 
 
-def get_db_version_and_newest_available_version(path_to_db: str) -> Tuple[int,
-                                                                          int]:
+def get_db_version_and_newest_available_version(path_to_db: str) -> tuple[int, int]:
     """
     Connect to a DB without performing any upgrades and get the version of
     that database file along with the newest available version (the one that
@@ -201,7 +201,7 @@ def get_DB_debug() -> bool:
     return bool(qcodes.config["core"]["db_debug"])
 
 
-def initialise_database(journal_mode: Optional[JournalMode] = "WAL") -> None:
+def initialise_database(journal_mode: JournalMode | None = "WAL") -> None:
     """
     Initialise a database in the location specified by the config object
     and set ``atomic commit and rollback mode`` of the db. The db is created
@@ -244,7 +244,7 @@ def set_journal_mode(conn: ConnectionPlus, journal_mode: JournalMode) -> None:
 
 
 def initialise_or_create_database_at(
-    db_file_with_abs_path: str, journal_mode: Optional[JournalMode] = "WAL"
+    db_file_with_abs_path: str, journal_mode: JournalMode | None = "WAL"
 ) -> None:
     """
     This function sets up QCoDeS to refer to the given database file. If the
@@ -281,7 +281,7 @@ def initialised_database_at(db_file_with_abs_path: str) -> Iterator[None]:
 
 
 def conn_from_dbpath_or_conn(
-    conn: Optional[ConnectionPlus], path_to_db: Optional[str]
+    conn: ConnectionPlus | None, path_to_db: str | None
 ) -> ConnectionPlus:
     """
     A small helper function to abstract the logic needed for functions

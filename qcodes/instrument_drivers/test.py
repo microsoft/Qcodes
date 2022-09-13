@@ -1,5 +1,6 @@
 import unittest
 from typing import Optional
+
 """
 This module defines:
 
@@ -64,8 +65,8 @@ def test_instruments(verbosity=1):
 
     optional verbosity (default 1)
     """
-    import qcodes.instrument_drivers as qcdrivers
     import qcodes
+    import qcodes.instrument_drivers as qcdrivers
 
     driver_path = qcdrivers.__path__[0]
     suite = unittest.defaultTestLoader.discover(
@@ -80,8 +81,8 @@ def test_instrument(instrument_testcase, verbosity=2):
 
     optional verbosity (default 2)
     """
-    import sys
     import importlib
+    import sys
 
     # reload the test case
     module_name = instrument_testcase.__module__

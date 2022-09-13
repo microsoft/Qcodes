@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import logging
-from typing import Any, Callable, List, Optional, Sequence, Tuple, Union
+from collections.abc import Callable, Sequence
+from typing import Any
 
 import numpy as np
 
@@ -30,8 +33,8 @@ class ParameterWithSetpoints(Parameter):
         self,
         name: str,
         *,
-        vals: Optional[Validator[Any]] = None,
-        setpoints: Optional[Sequence[ParameterBase]] = None,
+        vals: Validator[Any] | None = None,
+        setpoints: Sequence[ParameterBase] | None = None,
         snapshot_get: bool = False,
         snapshot_value: bool = False,
         **kwargs: Any,
@@ -99,7 +102,7 @@ class ParameterWithSetpoints(Parameter):
                 f"not have an Arrays validator."
             )
         output_shape = self.vals.shape_unevaluated
-        setpoints_shape_list: List[Optional[Union[int, Callable[[], int]]]] = []
+        setpoints_shape_list: list[int | Callable[[], int] | None] = []
         for sp in self.setpoints:
             if not isinstance(sp.vals, Arrays):
                 raise ValueError(
@@ -152,8 +155,8 @@ class ParameterWithSetpoints(Parameter):
 
 
 def expand_setpoints_helper(
-    parameter: ParameterWithSetpoints, results: Optional[ParamDataType] = None
-) -> List[Tuple[ParameterBase, ParamDataType]]:
+    parameter: ParameterWithSetpoints, results: ParamDataType | None = None
+) -> list[tuple[ParameterBase, ParamDataType]]:
     """
     A helper function that takes a :class:`.ParameterWithSetpoints` and
     acquires the parameter along with it's setpoints. The data is returned

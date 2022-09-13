@@ -1,6 +1,7 @@
 import os
 import random
 import re
+import sys
 import uuid
 from contextlib import contextmanager
 from os.path import getmtime
@@ -13,6 +14,7 @@ from numpy.testing import assert_array_equal
 import qcodes as qc
 import qcodes.tests.dataset
 from qcodes import Station
+from qcodes.dataset import do1d, do2d
 from qcodes.dataset.data_set import (
     DataSet,
     generate_dataset_table,
@@ -22,7 +24,6 @@ from qcodes.dataset.data_set import (
     load_by_run_spec,
 )
 from qcodes.dataset.database_extract_runs import extract_runs_into_db
-from qcodes.dataset.do_nd import do1d, do2d
 from qcodes.dataset.experiment_container import (
     Experiment,
     load_experiment_by_name,
@@ -33,7 +34,7 @@ from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.sqlite.connection import path_to_dbfile
 from qcodes.dataset.sqlite.database import get_db_version_and_newest_available_version
 from qcodes.dataset.sqlite.queries import get_experiments
-from qcodes.tests.common import error_caused_by
+from qcodes.tests.common import error_caused_by, skip_if_no_fixtures
 from qcodes.tests.instrument_mocks import DummyInstrument
 
 
@@ -512,6 +513,9 @@ def test_load_by_X_functions(two_empty_temp_db_connections,
     assert source_ds_2_2.the_same_dataset_as(test_ds)
 
 
+@pytest.mark.xfail(
+    condition=sys.platform == "win32", reason="Time resolution is too low on windows"
+)
 def test_combine_runs(two_empty_temp_db_connections,
                       empty_temp_db_connection,
                       some_interdeps):
@@ -687,9 +691,7 @@ def test_old_versions_not_touched(two_empty_temp_db_connections,
     fixturepath = os.path.join(fixturepath,
                                'fixtures', 'db_files', 'version2',
                                'some_runs.db')
-    if not os.path.exists(fixturepath):
-        pytest.skip("No db-file fixtures found. You can generate test db-files"
-                    " using the scripts in the legacy_DB_generation folder")
+    skip_if_no_fixtures(fixturepath)
 
     # First test that we cannot use an old version as source
 

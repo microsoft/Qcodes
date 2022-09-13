@@ -7,6 +7,8 @@ from functools import wraps
 from time import sleep
 from typing import TYPE_CHECKING, Any, Callable, Dict, Hashable, Optional, Tuple, Type
 
+import pytest
+
 import qcodes
 from qcodes.configuration import Config, DotDict
 from qcodes.metadatable import Metadatable
@@ -130,6 +132,15 @@ def error_caused_by(excinfo: 'ExceptionInfo[Any]', cause: str) -> bool:
             return cause in str(root_traceback)
     else:
         return False
+
+
+def skip_if_no_fixtures(dbname):
+    if not os.path.exists(dbname):
+        pytest.skip(
+            "No db-file fixtures found. "
+            "Make sure that your git clone of qcodes has submodules "
+            "This can be done by executing: `git submodule update --init`"
+        )
 
 
 class DumyPar(Metadatable):

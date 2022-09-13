@@ -1,8 +1,8 @@
 import pytest
 
+import qcodes.instrument.sims as sims
 from qcodes.instrument_drivers.AimTTi.AimTTi_PL601P_channels import AimTTi
 
-import qcodes.instrument.sims as sims
 visalib = sims.__file__.replace('__init__.py', 'AimTTi_PL601P.yaml@sim')
 
 
