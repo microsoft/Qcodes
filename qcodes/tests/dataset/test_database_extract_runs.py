@@ -14,6 +14,7 @@ from numpy.testing import assert_array_equal
 import qcodes as qc
 import qcodes.tests.dataset
 from qcodes import Station
+from qcodes.dataset import do1d, do2d
 from qcodes.dataset.data_set import (
     DataSet,
     generate_dataset_table,
@@ -23,7 +24,6 @@ from qcodes.dataset.data_set import (
     load_by_run_spec,
 )
 from qcodes.dataset.database_extract_runs import extract_runs_into_db
-from qcodes.dataset.do_nd import do1d, do2d
 from qcodes.dataset.experiment_container import (
     Experiment,
     load_experiment_by_name,

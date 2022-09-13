@@ -9,9 +9,17 @@ import pytest
 from hypothesis import HealthCheck, given, settings
 
 from qcodes import config, validators
-from qcodes.dataset import new_experiment
+from qcodes.dataset import (
+    ArraySweep,
+    LinSweep,
+    LogSweep,
+    do0d,
+    do1d,
+    do2d,
+    dond,
+    new_experiment,
+)
 from qcodes.dataset.data_set import DataSet
-from qcodes.dataset.do_nd import ArraySweep, LinSweep, LogSweep, do0d, do1d, do2d, dond
 from qcodes.parameters import Parameter, ParameterBase
 from qcodes.tests.instrument_mocks import (
     ArraySetPointParam,
