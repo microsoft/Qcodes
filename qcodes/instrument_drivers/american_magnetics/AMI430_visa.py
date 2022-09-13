@@ -809,6 +809,10 @@ class AMIModel4303D(Instrument):
 
         self._exit_stack = ExitStack()
 
+    def get_idn(self) -> dict[str, str | None]:
+        idparts = ["American Magnetics", self.name, None, None]
+        return dict(zip(("vendor", "model", "serial", "firmware"), idparts))
+
     def _set_vector_ramp_rate_units(self, val: float) -> float:
         _, common_ramp_rate_units = self._raise_if_not_same_field_and_ramp_rate_units()
         self.vector_ramp_rate.unit = common_ramp_rate_units
