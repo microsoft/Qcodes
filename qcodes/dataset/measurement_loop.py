@@ -1922,7 +1922,7 @@ class RepetitionSweep(BaseSweep):
 def measure_sweeps(
     sweeps: list[BaseSweep],
     measure_params: list[_BaseParameter],
-    msmt: MeasurementLoop = None,
+    msmt: "MeasurementLoop" = None,
 ):
     """Recursively iterate over Sweep objects, measuring measure_params in innermost loop
 
@@ -1933,7 +1933,7 @@ def measure_sweeps(
         sweeps: list of BaseSweep objects to sweep over
         measure_params: list of parameters to measure in innermost loop
     """
-    
+
     if sweeps:
         outer_sweep, *inner_sweeps = sweeps
 
