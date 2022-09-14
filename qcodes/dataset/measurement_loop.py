@@ -1,14 +1,12 @@
 import logging
 import threading
 import traceback
-from ast import Call
 from datetime import datetime
 from time import perf_counter, sleep
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 
-from qcodes import config as qcodes_config
 from qcodes.dataset.data_set_protocol import DataSetProtocol
 from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
@@ -72,7 +70,7 @@ class _DatasetHandler:
         # - shape
         # - unstored_results - list where each element contains (*setpoints, measurement_value)
         # - latest_value
-        self.measurement_list: Dict[Tuple[int], Any] = dict()
+        self.measurement_list: Dict[Tuple[int], Any] = {}
 
         self.initialize()
 
@@ -575,18 +573,16 @@ class MeasurementLoop:
             if self.notify and self.notify_function is not None:
                 try:
                     self.notify_function(exc_type, exc_val, exc_tb)
-                except:
+                except Exception:
                     self.log("Could not notify", level="error")
 
-            t_stop = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
             # TODO include metadata
+            # t_stop = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             # self.data_handler.add_metadata({"t_stop": t_stop})
             # self.data_handler.add_metadata({"timings": self.timings})
             self.data_handler.finalize()
 
-            self.log(f"Measurement finished")
-
+            self.log("Measurement finished")
         else:
             msmt.step_out(reduce_dimension=False)
 
@@ -617,7 +613,7 @@ class MeasurementLoop:
     #         if measurement_code.startswith(init_string):
     #             measurement_code = measurement_code[len(init_string) + 1 : -4]
 
-    #         self._t_start = datetime.now()
+        self._t_start = datetime.now()
     #         dataset.add_metadata(
     #             {
     #                 "measurement_cell": measurement_cell,
@@ -657,7 +653,7 @@ class MeasurementLoop:
         for action in actions:
             try:
                 action()
-            except Exception as e:
+            except Exception:
                 self.log(
                     f"Could not execute {label} action {action} \n"
                     f"{traceback.format_exc()}",
@@ -754,7 +750,7 @@ class MeasurementLoop:
         return results
 
     def _measure_callable(
-        self, callable: Callable, name: str = None, **kwargs
+        self, measurable_function: Callable, name: str = None, **kwargs
     ) -> Dict[str, Any]:
         """Measure a callable (function) and store results
 
@@ -768,23 +764,23 @@ class MeasurementLoop:
         """
         # Determine name
         if name is None:
-            if hasattr(callable, "__self__") and isinstance(
-                callable.__self__, InstrumentBase
+            if hasattr(measurable_function, "__self__") and isinstance(
+                measurable_function.__self__, InstrumentBase
             ):
-                name = callable.__self__.name
-            elif hasattr(callable, "__name__"):
-                name = callable.__name__
+                name = measurable_function.__self__.name
+            elif hasattr(measurable_function, "__name__"):
+                name = measurable_function.__name__
             else:
                 action_indices_str = "_".join(str(idx) for idx in self.action_indices)
                 name = f"data_group_{action_indices_str}"
 
         # Ensure measuring callable matches the current action_indices
-        self._verify_action(action=callable, name=name, add_if_new=True)
+        self._verify_action(action=measurable_function, name=name, add_if_new=True)
 
         # Record action_indices before the callable is called
         action_indices = self.action_indices
 
-        results = callable(**kwargs)
+        results = measurable_function(**kwargs)
 
         # Check if the callable already performed a nested measurement
         # In this case, the nested measurement is stored as a data_group, and
@@ -914,9 +910,9 @@ class MeasurementLoop:
                 "Must use the Measurement as a context manager, "
                 "i.e. 'with Measurement(name) as msmt:'"
             )
-        elif self.is_stopped:
+        if self.is_stopped:
             raise SystemExit("Measurement.stop() has been called")
-        elif threading.current_thread() is not MeasurementLoop.measurement_thread:
+        if threading.current_thread() is not MeasurementLoop.measurement_thread:
             raise RuntimeError(
                 "Cannot measure while another measurement is already running "
                 "in a different thread."
@@ -1138,7 +1134,7 @@ class MeasurementLoop:
         obj: Union[_BaseParameter, object, dict],
         attr: Optional[str] = None,
         key: Optional[str] = None,
-        type: Optional[str] = None,
+        unmask_type: Optional[str] = None,
         value: Optional[Any] = None,
         raise_exception: bool = True,
         **kwargs,  # Add kwargs because original_value may be None
@@ -1176,17 +1172,17 @@ class MeasurementLoop:
             # A masked property has been passed, which we unmask here
             try:
                 original_value = kwargs["original_value"]
-                if type == "key":
+                if unmask_type == "key":
                     obj[key] = original_value
-                elif type == "attr":
+                elif unmask_type == "attr":
                     setattr(obj, attr, original_value)
-                elif type == "parameter":
+                elif unmask_type == "parameter":
                     obj(original_value)
                 else:
-                    raise SyntaxError(f"Unmask type {type} not understood")
+                    raise SyntaxError(f"Unmask type {unmask_type} not understood")
             except Exception as e:
                 self.log(
-                    f"Could not unmask {obj} {type} from masked value {value} "
+                    f"Could not unmask {obj} {unmask_type} from masked value {value} "
                     f"to original value {original_value}\n"
                     f"{traceback.format_exc()}",
                     level="error",
@@ -1280,8 +1276,8 @@ class MeasurementLoop:
         """
         if self.measurement_thread is None:
             raise RuntimeError("Measurement was not started in separate thread")
-        else:
-            self.measurement_thread.traceback()
+        
+        self.measurement_thread.traceback()
 
 
 def running_measurement() -> MeasurementLoop:
@@ -1442,7 +1438,8 @@ class BaseSweep(AbstractSweep):
                 "Must use the Measurement as a context manager, "
                 "i.e. 'with Measurement(name) as msmt:'"
             )
-        elif msmt.is_stopped:
+        
+        if msmt.is_stopped:
             raise SystemExit
 
         # Wait as long as the measurement is paused
@@ -1641,7 +1638,7 @@ class Sweep(BaseSweep):
     - Sweep(parameter, start_val, stop_val)
         : sweep "parameter" from "start_val" to "stop_val"
         If "num" or "step" is not given as kwarg, it will check if "num" or "step"
-        if set in dict "parameter.sweep_defaults" and use that, or raise an error otherwise.
+        is set in dict "parameter.sweep_defaults" and use that, or else raise an error.
     4 args:
     - Sweep(parameter, start_val, stop_val, num)
         : Sweep "parameter" from "start_val" to "stop_val" with "num" number of points
@@ -1652,9 +1649,9 @@ class Sweep(BaseSweep):
         stop: stop value of sweep sequence
             Cannot be used together with ``around``
         around: sweep around the current parameter value.
-            ``start`` and ``stop`` are then defined from ``around`` and the current vlaue
+            ``start`` and ``stop`` are defined from ``around`` and the current value
             i.e. start=X-dx, stop=X+dx when current_value=X and around=dx.
-            Passing the kwarg "around" also sets revert=True unless explicitly set to False.
+            Passing the kwarg "around" also sets revert=True unless explicitly set False
         num: Number of points between start and stop.
             Cannot be used together with ``step``
         step: Increment from start to stop.
@@ -1774,8 +1771,8 @@ class Sweep(BaseSweep):
                     kwargs["parameter"], kwargs["stop"] = args
                 else:
                     raise SyntaxError(
-                        "Sweep with Parameter arg and second arg should have second arg be either "
-                        "a sequence or a target value"
+                        "Sweep with Parameter arg and second arg should have second arg
+                        " be either a sequence or a target value"
                     )
             elif isinstance(args[0], Iterable):  # Sweep([1,2,3], "name")
                 assert isinstance(args[1], str)
@@ -1885,7 +1882,8 @@ class Sweep(BaseSweep):
                 sequence = np.append(sequence, [stop])
         else:
             raise SyntaxError(
-                "Cannot determine measurement points. Either provide 'sequence', 'step' or 'num'"
+                "Cannot determine measurement points. "
+                "Either provide 'sequence', 'step' or 'num'"
             )
 
         return sequence

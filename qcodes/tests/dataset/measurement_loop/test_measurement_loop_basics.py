@@ -1,21 +1,11 @@
-import contextlib
-import shutil
-import tempfile
-from pathlib import Path
-
 import numpy as np
 import pytest
 
 from qcodes.dataset import (
-    LinSweep,
     MeasurementLoop,
     Sweep,
-    dond,
-    initialise_or_create_database_at,
-    load_by_id,
-    load_or_create_experiment,
 )
-from qcodes.instrument import ManualParameter, Parameter
+from qcodes.instrument import ManualParameter
 
 
 @pytest.mark.usefixtures("empty_temp_db", "experiment")
@@ -32,7 +22,7 @@ def test_create_measurement():
     MeasurementLoop("test")
 
 
-def test_basic_1D_measurement():
+def test_basic_1d_measurement():
     # Initialize parameters
     p1_get = ManualParameter("p1_get")
     p1_set = ManualParameter("p1_set")
@@ -54,7 +44,7 @@ def test_basic_1D_measurement():
     assert np.allclose(data_arrays["p1_set"], np.linspace(0, 1, 11))
 
 
-def test_basic_2D_measurement():
+def test_basic_2d_measurement():
     # Initialize parameters
     p1_get = ManualParameter("p1_get")
     p1_set = ManualParameter("p1_set")
@@ -86,7 +76,7 @@ def test_basic_2D_measurement():
     )
 
 
-def test_1D_measurement_duplicate_get():
+def test_1d_measurement_duplicate_get():
     # Initialize parameters
     p1_get = ManualParameter("p1_get")
     p1_set = ManualParameter("p1_set")
@@ -113,7 +103,7 @@ def test_1D_measurement_duplicate_get():
         assert np.allclose(data_arrays["p1_set"], np.linspace(0, 1, 11))
 
 
-def test_1D_measurement_duplicate_getset():
+def test_1d_measurement_duplicate_getset():
     # Initialize parameters
     p1_get = ManualParameter("p1_get")
     p1_set = ManualParameter("p1_set")
@@ -146,7 +136,7 @@ def test_1D_measurement_duplicate_getset():
         assert np.allclose(data_arrays[set_key], np.linspace(0, 1, 11))
 
 
-def test_2D_measurement_initialization():
+def test_2d_measurement_initialization():
     # Initialize parameters
     p1_get = ManualParameter("p1_get")
     p1_set = ManualParameter("p1_set")
