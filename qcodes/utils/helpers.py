@@ -4,6 +4,7 @@ Please do not import from this in any new code
 """
 import logging
 from contextlib import contextmanager
+from typing import Any
 
 # for backwards compatibility since this module used
 # to contain logic that would abstract between yaml
@@ -53,58 +54,7 @@ import numpy as np
 from qcodes.configuration.config import DotDict
 
 
-def using_ipython() -> bool:
-    """Check if code is run from IPython (including jupyter notebook/lab)"""
-    return hasattr(builtins, "__IPYTHON__")
-
-
-def directly_executed_from_cell(level: int = 1) -> bool:
-    """Test if this function is called directly from an IPython cell
-    The IPython prompt is also valid.
-
-    Args:
-         level: Difference in frames from IPython cell/prompt to check.
-            Since the check is executed from this function, the default level is 1.
-
-    Returns:
-        True if directly run from IPython cell/prompt, False otherwise
-
-    Examples:
-        These examples should be run in a notebook cell.
-
-        >>> directly_executed_from_cell()
-        ... True
-
-        >>> def wrap_function(**kwargs):
-        >>>     return directly_executed_from_cell(**kwargs)
-        >>> wrap_function()
-        ... False
-        >>> wrap_function(level=2)
-        ... True
-
-    """
-    if level < 1:
-        raise SyntaxError("Level must be 1 or higher")
-
-    frame = sys._getframe(level)
-    return "_" in frame.f_locals
-
-
-def get_last_input_cells(cells=3):
-    """
-    Get last input cell. Note that get_last_input_cell.globals must be set to
-    the ipython globals
-    Returns:
-        last cell input if successful, else None
-    """
-    global In
-    if "In" in globals() or hasattr(builtins, "In"):
-        return In[-cells:]
-    else:
-        logging.warning("No input cells found")
-
-
-def get_exponent(val):
+def get_exponent(val: float):
     prefactors = [
         (9, "G"),
         (6, "M"),
@@ -127,7 +77,7 @@ class PerformanceTimer:
     def __init__(self):
         self.timings = DotDict()
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str):
         val = self.timings.__getitem__(key)
         return self._timing_to_str(val)
 
@@ -137,14 +87,14 @@ class PerformanceTimer:
     def clear(self):
         self.timings.clear()
 
-    def _timing_to_str(self, val):
+    def _timing_to_str(self, val: float) -> str:
         mean_val = np.mean(val)
         exponent, prefactor = get_exponent(mean_val)
         factor = np.power(10.0, exponent)
 
         return f"{mean_val / factor:.3g}+-{np.abs(np.std(val))/factor:.3g} {prefactor}s"
 
-    def _timings_to_str(self, d: dict):
+    def _timings_to_str(self, d: dict) -> str:
 
         timings_str = DotDict()
         for key, val in d.items():
@@ -156,7 +106,7 @@ class PerformanceTimer:
         return timings_str
 
     @contextmanager
-    def record(self, key, val=None):
+    def record(self, key: str, val: Any = None):
         if isinstance(key, str):
             timing_list = self.timings.setdefault(key, [])
         elif isinstance(key, (list)):

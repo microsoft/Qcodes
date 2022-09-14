@@ -28,12 +28,7 @@ from qcodes.instrument.parameter import _BaseParameter
 from qcodes.parameters import ParameterBase
 from qcodes.station import Station
 from qcodes.utils.dataset.doNd import AbstractSweep, ActionsT
-from qcodes.utils.helpers import (
-    PerformanceTimer,
-    directly_executed_from_cell,
-    get_last_input_cells,
-    using_ipython,
-)
+from qcodes.utils.helpers import PerformanceTimer
 
 RAW_VALUE_TYPES = (
     float,
@@ -53,15 +48,15 @@ class _DatasetHandler:
     Used by the `MeasurementLoop` as an interface to the `Measurement` and `DataSet`
     """
 
-    def __init__(self, measurement_loop: "MeasurementLoop", name="results"):
+    def __init__(self, measurement_loop: "MeasurementLoop", name: str = "results"):
         self.measurement_loop = measurement_loop
         self.name = name
 
         self.initialized: bool = False
-        self.datasaver: DataSaver = None
-        self.runner: Runner = None
-        self.measurement: Measurement = None
-        self.dataset: DataSetProtocol = None
+        self.datasaver: Optional[DataSaver] = None
+        self.runner: Optional[Runner] = None
+        self.measurement: Optional[Measurement] = None
+        self.dataset: Optional[DataSetProtocol] = None
 
         # Key: action_index
         # Values:
@@ -77,11 +72,11 @@ class _DatasetHandler:
         # - shape
         # - unstored_results - list where each element contains (*setpoints, measurement_value)
         # - latest_value
-        self.measurement_list: Dict[str, Any] = dict()
+        self.measurement_list: Dict[Tuple[int], Any] = dict()
 
         self.initialize()
 
-    def initialize(self):
+    def initialize(self) -> None:
         """Creates a `Measurement`, runs it and initializes a dataset"""
         # Once initialized, no new parameters can be added
         assert not self.initialized, "Cannot initialize twice"
@@ -98,13 +93,13 @@ class _DatasetHandler:
 
         self.initialized = True
 
-    def finalize(self):
+    def finalize(self) -> None:
         """Finishes a measurement by flushing all data to the database"""
         self.datasaver.flush_data_to_database()
 
     def _ensure_unique_parameter(
         self, parameter_info: dict, setpoint: bool, max_idx: int = 99
-    ):
+    ) -> None:
         """Ensure setpoint / measurement parameters have unique names
 
         If a previously registered parameter already shares the same name, it adds a
@@ -152,7 +147,7 @@ class _DatasetHandler:
     def create_measurement_info(
         self,
         action_indices: Tuple[int],
-        parameter: _BaseParameter,
+        parameter: Parameter,
         name: Optional[str] = None,
         label: Optional[str] = None,
         unit: Optional[str] = None,
@@ -204,7 +199,7 @@ class _DatasetHandler:
         name: Optional[str] = None,
         label: Optional[str] = None,
         unit: Optional[str] = None,
-    ):
+    ) -> None:
         """Register a new measurement parameter"""
         measurement_info = self.create_measurement_info(
             action_indices=action_indices,
@@ -226,7 +221,7 @@ class _DatasetHandler:
         name: Optional[str] = None,
         label: Optional[str] = None,
         unit: Optional[str] = None,
-    ):
+    ) -> None:
         """Store single measurement result
 
         This method is called from type-specific methods, such as
@@ -273,7 +268,7 @@ class _DatasetHandler:
         # Also store in measurement_info
         measurement_info["latest_value"] = result
 
-    def _update_interdependencies(self):
+    def _update_interdependencies(self) -> None:
         """Updates dataset after instantiation to include new setpoint/measurement parameter
 
         The `DataSet` was not made to register parameters after instantiation, so this
@@ -429,7 +424,7 @@ class MeasurementLoop:
     def dataset(self) -> DataSetProtocol:
         return self.data_handler.dataset
 
-    def log(self, message: str, level: str = "info"):
+    def log(self, message: str, level: str = "info") -> None:
         """Send a log message
 
         Args:
@@ -475,7 +470,7 @@ class MeasurementLoop:
         else:
             return None
 
-    def __enter__(self):
+    def __enter__(self) -> "MeasurementLoop":
         """Operation when entering a loop, including dataset instantiation"""
         self.is_context_manager = True
 
@@ -543,7 +538,7 @@ class MeasurementLoop:
                 MeasurementLoop.running_measurement = None
             raise
 
-    def __exit__(self, exc_type: Exception, exc_val, exc_tb):
+    def __exit__(self, exc_type: Exception, exc_val, exc_tb) -> None:
         """Operation when exiting a loop
 
         Args:
@@ -632,7 +627,7 @@ class MeasurementLoop:
     #             }
     #         )
 
-    def _verify_action(self, action: Callable, name: str, add_if_new: bool = True):
+    def _verify_action(self, action: Callable, name: str, add_if_new: bool = True) -> None:
         """Verify an action corresponds to the current action indices.
 
         An action is usually (currently always) a measurement.
@@ -657,7 +652,7 @@ class MeasurementLoop:
                 f"Expected: {self.action_names[self.action_indices]}. Received: {name}"
             )
 
-    def _apply_actions(self, actions: list, label="", clear=False):
+    def _apply_actions(self, actions: list, label="", clear=False) -> None:
         """Apply actions, either except_actions or final_actions"""
         for action in actions:
             try:
@@ -890,7 +885,7 @@ class MeasurementLoop:
         unit: Optional[str] = None,
         timestamp: bool = False,
         **kwargs,
-    ):
+    )-> Any:
         """Perform a single measurement of a Parameter, function, etc.
 
 
@@ -1147,7 +1142,7 @@ class MeasurementLoop:
         value: Optional[Any] = None,
         raise_exception: bool = True,
         **kwargs,  # Add kwargs because original_value may be None
-    ):
+    ) -> None:
         """Unmasks a previously masked object, i.e. revert value back to original
 
         Args:
@@ -1200,7 +1195,7 @@ class MeasurementLoop:
                 if raise_exception:
                     raise e
 
-    def unmask_all(self):
+    def unmask_all(self) -> None:
         """Unmask all masked properties"""
         masked_properties = reversed(self._masked_properties)
         for masked_property in masked_properties:
@@ -1208,15 +1203,15 @@ class MeasurementLoop:
         self._masked_properties.clear()
 
     # Functions relating to measurement flow
-    def pause(self):
+    def pause(self) -> None:
         """Pause measurement at start of next parameter sweep/measurement"""
         running_measurement().is_paused = True
 
-    def resume(self):
+    def resume(self) -> None:
         """Resume measurement after being paused"""
         running_measurement().is_paused = False
 
-    def stop(self):
+    def stop(self) -> None:
         """Stop measurement at start of next parameter sweep/measurement"""
         running_measurement().is_stopped = True
         # Unpause loop
@@ -1259,7 +1254,7 @@ class MeasurementLoop:
             self.action_indices = tuple(action_indices)
             return self.action_indices
 
-    def step_out(self, reduce_dimension: bool = True):
+    def step_out(self, reduce_dimension: bool = True) -> None:
         """Step out of a Sweep
 
         This function usually doesn't need to be called.
@@ -1278,7 +1273,7 @@ class MeasurementLoop:
             action_indices[-1] += 1
             self.action_indices = tuple(action_indices)
 
-    def traceback(self):
+    def traceback(self) -> None:
         """Print traceback if an error occurred.
 
         Measurement must be ran from separate thread
@@ -1309,7 +1304,7 @@ class _IterateDondSweep:
         self.iterator = iter(self.sweep.get_setpoints())
         return self
 
-    def __next__(self):
+    def __next__(self) -> float:
         value = next(self.iterator)
         self.sweep._param(value)
 
@@ -1522,7 +1517,7 @@ class BaseSweep(AbstractSweep):
 
         return setpoint_info
 
-    def exit_sweep(self):
+    def exit_sweep(self) -> None:
         """Exits sweep, stepping out of the current `Measurement.action_indices`"""
         msmt = running_measurement()
         msmt.step_out(reduce_dimension=True)
@@ -1672,7 +1667,7 @@ class Sweep(BaseSweep):
         revert: Revert parameter back to original value after the sweep ends.
             This is False by default, unless the kwarg ``around`` is passed
     """
-    
+
     sequence_keywords = [
         "start",
         "stop",
@@ -1727,7 +1722,7 @@ class Sweep(BaseSweep):
 
         super().__init__(sequence=self.sequence, **base_kwargs)
 
-    def _transform_args_to_kwargs(self, *args, **kwargs):
+    def _transform_args_to_kwargs(self, *args, **kwargs) -> Tuple[dict]:
         """Transforms sweep initialization args to kwargs.
         Allowed args are:
 
@@ -1839,7 +1834,7 @@ class Sweep(BaseSweep):
         step: Optional[float] = None,
         parameter: Optional[_BaseParameter] = None,
         sequence: Optional[Iterable] = None,
-    ):
+    ) -> Sequence:
         """Creates a sequence from passed values"""
         # Return "sequence" if explicitly provided
         if sequence is not None:
@@ -1927,7 +1922,7 @@ def measure_sweeps(
     sweeps: List[BaseSweep],
     measure_params: List[_BaseParameter],
     msmt: "MeasurementLoop" = None,
-):
+) -> None:
     """Recursively iterate over Sweep objects, measuring measure_params in innermost loop
 
     This method is used to perform arbitrary-dimension by passing a list of sweeps,
