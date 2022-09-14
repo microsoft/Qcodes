@@ -9,7 +9,7 @@ from __future__ import annotations
 import io
 import logging
 from contextlib import contextmanager
-from typing import Callable, Iterator, Optional, Sequence, Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable, Iterator, Optional, Sequence, Tuple
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -23,9 +23,11 @@ from .logger import (
 )
 
 
-def log_to_dataframe(log: Sequence[str],
-                     columns: Optional[Sequence[str]] = None,
-                     separator: Optional[str] = None) -> pd.DataFrame:
+def log_to_dataframe(
+    log: Sequence[str],
+    columns: Sequence[str] | None = None,
+    separator: str | None = None,
+) -> pd.DataFrame:
     """
     Return the provided or default log string as a :class:`pd.DataFrame`.
 
@@ -63,9 +65,11 @@ def log_to_dataframe(log: Sequence[str],
     return dataframe
 
 
-def logfile_to_dataframe(logfile: Optional[str] = None,
-                         columns: Optional[Sequence[str]] = None,
-                         separator: Optional[str] = None) -> pd.DataFrame:
+def logfile_to_dataframe(
+    logfile: str | None = None,
+    columns: Sequence[str] | None = None,
+    separator: str | None = None,
+) -> pd.DataFrame:
     """
     Return the provided or default logfile as a :class:`pd.DataFrame`.
 
@@ -140,9 +144,9 @@ def time_difference(firsttimes: pd.Series,
 
 
 @contextmanager
-def capture_dataframe(level: LevelType = logging.DEBUG,
-                      logger: Optional[logging.Logger] = None) -> \
-        Iterator[Tuple[logging.StreamHandler, Callable[[], pd.DataFrame]]]:
+def capture_dataframe(
+    level: LevelType = logging.DEBUG, logger: logging.Logger | None = None
+) -> Iterator[tuple[logging.StreamHandler, Callable[[], pd.DataFrame]]]:
     """
     Context manager to capture the logs in a :class:`pd.DataFrame`
 
