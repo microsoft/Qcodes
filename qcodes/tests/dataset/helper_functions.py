@@ -1,14 +1,16 @@
 from functools import reduce
 from operator import mul
-from typing import Dict, List, Optional, Sequence, Tuple, Union
+from typing import Dict, List, Optional, Sequence, Tuple, TYPE_CHECKING, Union
 
 import numpy as np
-import pandas
 from numpy.testing import assert_array_equal
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 
 def verify_data_dict(data: Dict[str, Dict[str, np.ndarray]],
-                     dataframe: Optional[Dict[str, pandas.DataFrame]],
+                     dataframe: Optional[Dict[str, pd.DataFrame]],
                      parameter_names: Sequence[str],
                      expected_names: Dict[str, Sequence[str]],
                      expected_shapes: Dict[str, Sequence[Tuple[int, ...]]],
@@ -73,10 +75,12 @@ def verify_data_dict_for_single_param(datadict: Dict[str, np.ndarray],
         assert_array_equal(mydata, value)
 
 
-def verify_dataframe_for_single_param(dataframe: pandas.DataFrame,
+def verify_dataframe_for_single_param(dataframe: pd.DataFrame,
                                       names: Sequence[str],
                                       shapes: Sequence[Tuple[int, ...]],
                                       values):
+    import pandas as pd
+
     # check that the dataframe has the same elements as index and columns
     pandas_index_names = list(dataframe.index.names)
     pandas_column_names = list(dataframe)
@@ -103,7 +107,7 @@ def verify_dataframe_for_single_param(dataframe: pandas.DataFrame,
             # one dimensional arrays will have single values for there indexed
             # not tuples as they don't use multiindex. Put these in tuples
             # for easy comparison
-            if not isinstance(dataframe.index, pandas.MultiIndex):
+            if not isinstance(dataframe.index, pd.MultiIndex):
                 row_index_values = (row_index_values,)
 
             expected_values = \
