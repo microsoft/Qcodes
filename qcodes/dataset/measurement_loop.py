@@ -1771,7 +1771,7 @@ class Sweep(BaseSweep):
                     kwargs["parameter"], kwargs["stop"] = args
                 else:
                     raise SyntaxError(
-                        "Sweep with Parameter arg and second arg should have second arg
+                        "Sweep with Parameter arg and second arg should have second arg"
                         " be either a sequence or a target value"
                     )
             elif isinstance(args[0], Iterable):  # Sweep([1,2,3], "name")
