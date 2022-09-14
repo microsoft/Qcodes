@@ -214,7 +214,7 @@ def test_nested_measurement():
 def test_measurement_no_parameter():
     with MeasurementLoop("test") as msmt:
         for val in Sweep(np.linspace(0, 1, 11), "p1_set", label="p1 label", unit="V"):
-            msmt.measure(val+1, name="p1_get")
+            msmt.measure(val + 1, name="p1_get")
 
     data = msmt.dataset
     assert data.name == "test"

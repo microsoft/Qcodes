@@ -43,7 +43,7 @@ RAW_VALUE_TYPES = (
     np.integer,
     np.floating,
     np.bool_,
-    type(None)
+    type(None),
 )
 
 
@@ -292,8 +292,7 @@ class _DatasetHandler:
                 continue
 
             self._ensure_unique_parameter(setpoint_info, setpoint=True)
-            self.measurement.register_parameter(
-                setpoint_info["dataset_parameter"])
+            self.measurement.register_parameter(setpoint_info["dataset_parameter"])
             setpoint_info["registered"] = True
 
         # Register all measurement parameters in Measurement
@@ -799,8 +798,7 @@ class MeasurementLoop:
             # No nested measurement has been performed in the callable.
             # Add results, which should be dict, by creating a nested measurement
             if not isinstance(results, dict):
-                raise SyntaxError(
-                    f"{name} results must be a dict, not {results}")
+                raise SyntaxError(f"{name} results must be a dict, not {results}")
 
             with MeasurementLoop(name) as msmt:
                 for key, val in results.items():
@@ -953,7 +951,7 @@ class MeasurementLoop:
                 (t_now - self._t_start).total_seconds(),
                 "T_pre",
                 unit="s",
-                timestamp=False
+                timestamp=False,
             )
             self.skip()  # Increment last action index by 1
 
@@ -988,7 +986,7 @@ class MeasurementLoop:
                 (t_now - self._t_start).total_seconds(),
                 "T_post",
                 unit="s",
-                timestamp=False
+                timestamp=False,
             )
             self.skip()  # Increment last action index by 1
 
@@ -1013,6 +1011,7 @@ class MeasurementLoop:
         Returns:
             original value
         """
+
         original_value = getattr(obj, attr)
         setattr(obj, attr, value)
 
@@ -1716,7 +1715,7 @@ class Sweep(BaseSweep):
             name=name,
             label=label,
             unit=unit,
-            revert=revert
+            revert=revert,
         )
 
         sequence_kwargs, base_kwargs = self._transform_args_to_kwargs(*args, **kwargs)
@@ -1864,7 +1863,9 @@ class Sweep(BaseSweep):
             # Use "parameter" current value if "start" is not provided
             if start is None:
                 if parameter is None:
-                    raise SyntaxError("Cannot use 'stop' without 'start' or a 'parameter'")
+                    raise SyntaxError(
+                        "Cannot use 'stop' without 'start' or a 'parameter'"
+                    )
                 start = parameter()
                 if start is None:
                     raise ValueError(
