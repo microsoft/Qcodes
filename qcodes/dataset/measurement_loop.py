@@ -1276,7 +1276,7 @@ class MeasurementLoop:
         """
         if self.measurement_thread is None:
             raise RuntimeError("Measurement was not started in separate thread")
-        
+
         self.measurement_thread.traceback()
 
 
@@ -1438,7 +1438,7 @@ class BaseSweep(AbstractSweep):
                 "Must use the Measurement as a context manager, "
                 "i.e. 'with Measurement(name) as msmt:'"
             )
-        
+
         if msmt.is_stopped:
             raise SystemExit
 

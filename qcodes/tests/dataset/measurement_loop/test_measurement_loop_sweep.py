@@ -1,11 +1,7 @@
 import numpy as np
 import pytest
 
-from qcodes.dataset import (
-    LinSweep,
-    Sweep,
-    dond,
-)
+from qcodes.dataset import LinSweep, Sweep, dond
 from qcodes.instrument import ManualParameter, Parameter
 
 
