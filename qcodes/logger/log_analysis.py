@@ -1,17 +1,18 @@
 """
 This module defines a number of functions to make it easier to
 work with log messages from QCoDeS. Specifically it enables
-exports of logs and log files to a :class:`pandas.DataFrame`
+exports of logs and log files to a :class:`pd.DataFrame`
 
 """
+from __future__ import annotations
 
 import io
 import logging
 from contextlib import contextmanager
-from typing import Callable, Iterator, Optional, Sequence, Tuple
+from typing import Callable, Iterator, Optional, Sequence, Tuple, TYPE_CHECKING
 
-import pandas
-from pandas.core.series import Series
+if TYPE_CHECKING:
+    import pandas as pd
 
 from .logger import (
     FORMAT_STRING_DICT,
@@ -24,9 +25,9 @@ from .logger import (
 
 def log_to_dataframe(log: Sequence[str],
                      columns: Optional[Sequence[str]] = None,
-                     separator: Optional[str] = None) -> pandas.DataFrame:
+                     separator: Optional[str] = None) -> pd.DataFrame:
     """
-    Return the provided or default log string as a :class:`pandas.DataFrame`.
+    Return the provided or default log string as a :class:`pd.DataFrame`.
 
     Unless :data:`qcodes.logger.logger.LOGGING_SEPARATOR` or
     :data:`qcodes.logger.logger.FORMAT_STRING_DICT` have been changed using the
@@ -46,8 +47,10 @@ def log_to_dataframe(log: Sequence[str],
             :func:`qcodes.logger.logger.start_logger`.
 
     Returns:
-        A :class:`pandas.DataFrame` containing the log content.
+        A :class:`pd.DataFrame` containing the log content.
     """
+    import pandas as pd
+
     separator = separator or LOGGING_SEPARATOR
     columns = columns or list(FORMAT_STRING_DICT.keys())
     # note: if we used commas as separators, pandas read_csv
@@ -55,16 +58,16 @@ def log_to_dataframe(log: Sequence[str],
 
     split_cont = [line.split(separator) for line in log
                   if line[0].isdigit()]  # avoid tracebacks
-    dataframe = pandas.DataFrame(split_cont, columns=list(columns))
+    dataframe = pd.DataFrame(split_cont, columns=list(columns))
 
     return dataframe
 
 
 def logfile_to_dataframe(logfile: Optional[str] = None,
                          columns: Optional[Sequence[str]] = None,
-                         separator: Optional[str] = None) -> pandas.DataFrame:
+                         separator: Optional[str] = None) -> pd.DataFrame:
     """
-    Return the provided or default logfile as a :class:`pandas.DataFrame`.
+    Return the provided or default logfile as a :class:`pd.DataFrame`.
 
     Unless :data:`qcodes.logger.logger.LOGGING_SEPARATOR` or
     :data:`qcodes.logger.logger.FORMAT_STRING_DICT` have been changed using
@@ -85,7 +88,7 @@ def logfile_to_dataframe(logfile: Optional[str] = None,
 
 
     Returns:
-        A :class:`pandas.DataFrame` containing the logfile content.
+        A :class:`pd.DataFrame` containing the logfile content.
     """
     logfile = logfile or get_log_file_name()
     with open(logfile) as f:
@@ -94,9 +97,9 @@ def logfile_to_dataframe(logfile: Optional[str] = None,
     return log_to_dataframe(raw_cont, columns, separator)
 
 
-def time_difference(firsttimes: Series,
-                    secondtimes: Series,
-                    use_first_series_labels: bool = True) -> Series:
+def time_difference(firsttimes: pd.Series,
+                    secondtimes: pd.Series,
+                    use_first_series_labels: bool = True) -> pd.Series:
     """
     Calculate the time differences between two series
     containing time stamp strings as their values.
@@ -109,8 +112,10 @@ def time_difference(firsttimes: Series,
             the labels of secondtimes
 
     Returns:
-        A :class:`pandas.Series`  with float values of the time difference (s)
+        A :class:`pd.Series`  with float values of the time difference (s)
     """
+    import pandas as pd
+
 
     if ',' in firsttimes.iloc[0]:
         nfirsttimes = firsttimes.str.replace(',', '.')
@@ -127,9 +132,9 @@ def time_difference(firsttimes: Series,
     timedeltas = (t1s.to_numpy() - t0s.to_numpy()).astype("float") * 1e-9
 
     if use_first_series_labels:
-        output = pandas.Series(timedeltas, index=nfirsttimes.index)
+        output = pd.Series(timedeltas, index=nfirsttimes.index)
     else:
-        output = pandas.Series(timedeltas, index=nsecondtimes.index)
+        output = pd.Series(timedeltas, index=nsecondtimes.index)
 
     return output
 
@@ -137,9 +142,9 @@ def time_difference(firsttimes: Series,
 @contextmanager
 def capture_dataframe(level: LevelType = logging.DEBUG,
                       logger: Optional[logging.Logger] = None) -> \
-        Iterator[Tuple[logging.StreamHandler, Callable[[], pandas.DataFrame]]]:
+        Iterator[Tuple[logging.StreamHandler, Callable[[], pd.DataFrame]]]:
     """
-    Context manager to capture the logs in a :class:`pandas.DataFrame`
+    Context manager to capture the logs in a :class:`pd.DataFrame`
 
     Example:
         >>> with logger.capture_dataframe() as (handler, cb):
@@ -153,7 +158,7 @@ def capture_dataframe(level: LevelType = logging.DEBUG,
 
     Returns:
         Tuple of handler that is used to capture the log messages and callback
-        that returns the cumulative :class:`pandas.DataFrame` at any given
+        that returns the cumulative :class:`pd.DataFrame` at any given
         point (within the context)
     """
     # get root logger if none is specified.

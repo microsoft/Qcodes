@@ -4,7 +4,6 @@ import pickle
 from unittest import TestCase
 
 import numpy as np
-import pandas as pd
 import xarray as xr
 
 from qcodes.data.data_array import DataArray, data_array_to_xarray_dictionary
@@ -630,6 +629,7 @@ class TestDataSet(TestCase):
         qds = DataSet.from_xarray(xds)
 
     def test_xarray_example_conversion(self):
+        import pandas as pd
         times = pd.date_range("2000-01-01", "2000-1-31", name="time")
         shape = (31, 3)
         xarray_dataset = xr.Dataset(
