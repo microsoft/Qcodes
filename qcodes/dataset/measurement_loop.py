@@ -36,13 +36,13 @@ from qcodes.utils.helpers import (
 )
 
 RAW_VALUE_TYPES = (
-    float, 
-    int, 
-    bool, 
-    np.ndarray, 
+    float,
+    int,
+    bool,
+    np.ndarray,
     np.integer,
-    np.floating, 
-    np.bool_, 
+    np.floating,
+    np.bool_,
     type(None)
 )
 
@@ -174,7 +174,7 @@ class _DatasetHandler:
             assert name is not None
             parameter = Parameter(name=name, label=label, unit=unit)
         elif {name, label, unit} != {
-            None, 
+            None,
         }:
             overwrite_attrs = {"name": name, "label": label, "unit": unit}
             overwrite_attrs = {
@@ -522,7 +522,7 @@ class MeasurementLoop:
                 msmt = MeasurementLoop.running_measurement
                 msmt.data_groups[msmt.action_indices] = self
                 # data_groups = [
-                #     (key, getattr(val, "name", "None")) 
+                #     (key, getattr(val, "name", "None"))
                 #     for key, val in msmt.data_groups.items()
                 # ]
                 # TODO add metadata
@@ -951,8 +951,8 @@ class MeasurementLoop:
             # Store time referenced to t_start
             self.measure(
                 (t_now - self._t_start).total_seconds(),
-                "T_pre", 
-                unit="s", 
+                "T_pre",
+                unit="s",
                 timestamp=False
             )
             self.skip()  # Increment last action index by 1
@@ -986,8 +986,8 @@ class MeasurementLoop:
             # Store time referenced to t_start
             self.measure(
                 (t_now - self._t_start).total_seconds(),
-                "T_post", 
-                unit="s", 
+                "T_post",
+                unit="s",
                 timestamp=False
             )
             self.skip()  # Increment last action index by 1
@@ -1672,21 +1672,21 @@ class Sweep(BaseSweep):
             This is False by default, unless the kwarg ``around`` is passed
     """
     sequence_keywords = [
-        "start", 
-        "stop", 
+        "start",
+        "stop",
         "around",
-        "num", 
-        "step", 
-        "parameter", 
+        "num",
+        "step",
+        "parameter",
         "sequence",
     ]
     base_keywords = [
-        "delay", 
-        "initial_delay", 
+        "delay",
+        "initial_delay",
         "name",
-        "label", 
-        "unit", 
-        "revert", 
+        "label",
+        "unit",
+        "revert",
         "parameter",
     ]
 
@@ -1933,7 +1933,7 @@ def measure_sweeps(
         sweeps: list of BaseSweep objects to sweep over
         measure_params: list of parameters to measure in innermost loop
     """
-    
+
     if sweeps:
         outer_sweep, *inner_sweeps = sweeps
 
