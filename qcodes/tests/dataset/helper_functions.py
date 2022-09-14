@@ -1,6 +1,6 @@
 from functools import reduce
 from operator import mul
-from typing import Dict, List, Optional, Sequence, Tuple, TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 from numpy.testing import assert_array_equal
