@@ -535,7 +535,7 @@ class MeasurementLoop:
                 self.data_arrays = msmt.data_arrays
                 self.set_arrays = msmt.set_arrays
                 self.timings = msmt.timings
-                
+
             return self
         except:
             # An error has occured, ensure running_measurement is cleared
