@@ -106,12 +106,12 @@ def get_last_input_cells(cells=3):
 
 def get_exponent(val):
     prefactors = [
-        (9, "G"), 
-        (6, "M"), 
-        (3, "k"), 
-        (0, ""), 
-        (-3, "m"), 
-        (-6, "u"), 
+        (9, "G"),
+        (6, "M"),
+        (3, "k"),
+        (0, ""),
+        (-3, "m"),
+        (-6, "u"),
         (-9, "n")
     ]
     for exponent, prefactor in prefactors:
