@@ -67,7 +67,7 @@ def get_exponent(val: float):
     for exponent, prefactor in prefactors:
         if val >= np.power(10.0, exponent):
             return exponent, prefactor
-    
+
     return prefactors[-1]
 
 
