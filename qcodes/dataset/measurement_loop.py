@@ -1672,7 +1672,7 @@ class Sweep(BaseSweep):
         revert: Revert parameter back to original value after the sweep ends.
             This is False by default, unless the kwarg ``around`` is passed
     """
-    
+
     sequence_keywords = [
         "start",
         "stop",
