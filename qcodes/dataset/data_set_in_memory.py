@@ -401,7 +401,7 @@ class DataSetInMem(BaseDataSet):
         shapes: Shapes = None,
         parent_datasets: Sequence[Mapping[Any, Any]] = (),
         write_in_background: bool = False,
-        allow_empty_dataset: bool = False
+        allow_empty_dataset: bool = False,
     ) -> None:
         if not self.pristine:
             raise RuntimeError("Cannot prepare a dataset that is not pristine.")

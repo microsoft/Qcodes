@@ -55,7 +55,7 @@ from qcodes.configuration.config import DotDict
 
 def using_ipython() -> bool:
     """Check if code is run from IPython (including jupyter notebook/lab)"""
-    return hasattr(builtins, '__IPYTHON__')
+    return hasattr(builtins, "__IPYTHON__")
 
 
 def directly_executed_from_cell(level: int = 1) -> bool:
@@ -84,10 +84,10 @@ def directly_executed_from_cell(level: int = 1) -> bool:
 
     """
     if level < 1:
-        raise SyntaxError('Level must be 1 or higher')
+        raise SyntaxError("Level must be 1 or higher")
 
     frame = sys._getframe(level)
-    return '_' in frame.f_locals
+    return "_" in frame.f_locals
 
 
 def get_last_input_cells(cells=3):
@@ -98,14 +98,22 @@ def get_last_input_cells(cells=3):
         last cell input if successful, else None
     """
     global In
-    if 'In' in globals() or hasattr(builtins, 'In'):
+    if "In" in globals() or hasattr(builtins, "In"):
         return In[-cells:]
     else:
-        logging.warning('No input cells found')
+        logging.warning("No input cells found")
 
 
 def get_exponent(val):
-    prefactors = [(9, 'G'), (6, 'M'), (3, 'k'), (0, ''), (-3, 'm'), (-6, 'u'), (-9, 'n')]
+    prefactors = [
+        (9, "G"), 
+        (6, "M"), 
+        (3, "k"), 
+        (0, ""), 
+        (-3, "m"), 
+        (-6, "u"), 
+        (-9, "n")
+    ]
     for exponent, prefactor in prefactors:
         if val >= np.power(10., exponent):
             return exponent, prefactor
@@ -113,7 +121,7 @@ def get_exponent(val):
         return prefactors[-1]
 
 
-class PerformanceTimer():
+class PerformanceTimer:
     max_records = 100
 
     def __init__(self):
@@ -132,9 +140,9 @@ class PerformanceTimer():
     def _timing_to_str(self, val):
         mean_val = np.mean(val)
         exponent, prefactor = get_exponent(mean_val)
-        factor = np.power(10., exponent)
+        factor = np.power(10.0, exponent)
 
-        return f'{mean_val / factor:.3g}+-{np.abs(np.std(val))/factor:.3g} {prefactor}s'
+        return f"{mean_val / factor:.3g}+-{np.abs(np.std(val))/factor:.3g} {prefactor}s"
 
     def _timings_to_str(self, d: dict):
 
@@ -156,7 +164,7 @@ class PerformanceTimer():
             d = self.timings.create_dicts(*parent_keys)
             timing_list = d.setdefault(subkey, [])
         else:
-            raise ValueError('Key must be str or list/tuple')
+            raise ValueError("Key must be str or list/tuple")
 
         if val is not None:
             timing_list.append(val)

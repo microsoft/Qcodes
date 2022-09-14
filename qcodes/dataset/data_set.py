@@ -313,7 +313,7 @@ class DataSet(BaseDataSet):
         shapes: Shapes = None,
         parent_datasets: Sequence[Mapping[Any, Any]] = (),
         write_in_background: bool = False,
-        allow_empty_dataset: bool = False
+        allow_empty_dataset: bool = False,
     ) -> None:
 
         self.add_snapshot(json.dumps({"station": snapshot}, cls=NumpyJSONEncoder))

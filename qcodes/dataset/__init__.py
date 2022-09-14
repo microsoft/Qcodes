@@ -88,5 +88,5 @@ __all__ = [
     "plot_by_id",
     "plot_dataset",
     "reset_default_experiment_id",
-    "Sweep"
+    "Sweep",
 ]

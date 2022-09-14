@@ -25,10 +25,7 @@ def test_original_dond():
     p1_get = ManualParameter("p1_get", initial_value=1)
     p2_get = ManualParameter("p2_get", initial_value=1)
     p1_set = ManualParameter("p1_set", initial_value=1)
-    dond(
-        p1_set, 0, 1, 101,
-        p1_get, p2_get
-    )
+    dond(p1_set, 0, 1, 101, p1_get, p2_get)
 
 
 def test_create_measurement():
@@ -138,7 +135,7 @@ def test_1D_measurement_duplicate_getset():
     arrays = data.get_parameter_data()
 
     offsets = {"p1_get": 1, "p1_get_1": 0.5}
-    for suffix in ['', '_1']:
+    for suffix in ["", "_1"]:
         get_key = f"p1_get{suffix}"
         set_key = f"p1_set{suffix}"
         data_arrays = arrays[get_key]
@@ -216,8 +213,8 @@ def test_nested_measurement():
 
 def test_measurement_no_parameter():
     with MeasurementLoop("test") as msmt:
-        for val in Sweep(np.linspace(0, 1, 11), 'p1_set', label='p1 label', unit='V'):
-            msmt.measure(val+1, name='p1_get')
+        for val in Sweep(np.linspace(0, 1, 11), "p1_set", label="p1 label", unit="V"):
+            msmt.measure(val+1, name="p1_get")
 
     data = msmt.dataset
     assert data.name == "test"
@@ -232,7 +229,7 @@ def test_measurement_no_parameter():
 
 # def test_measurement_percentage_complete():
 #     with MeasurementLoop("test") as msmt:
-#         for val in Sweep(np.linspace(0, 1, 11), 'p1_set'):
+#         for val in Sweep(np.linspace(0, 1, 11), "p1_set"):
 #             print(msmt.percentage_complete())
-#             msmt.measure(val+1, name='p1_get')
+#             msmt.measure(val+1, name="p1_get")
 #             print(msmt.percentage_complete())
