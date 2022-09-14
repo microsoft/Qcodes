@@ -1921,8 +1921,8 @@ class RepetitionSweep(BaseSweep):
 
 
 def measure_sweeps(
-    sweeps: list[BaseSweep],
-    measure_params: list[_BaseParameter],
+    sweeps: List[BaseSweep],
+    measure_params: List[_BaseParameter],
     msmt: "MeasurementLoop" = None,
 ):
     """Recursively iterate over Sweep objects, measuring measure_params in innermost loop
