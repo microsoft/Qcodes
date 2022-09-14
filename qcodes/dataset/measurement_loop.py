@@ -1520,7 +1520,7 @@ class BaseSweep(AbstractSweep):
         return setpoint_info
 
     def exit_sweep(self):
-        """Exits sweep, stepping out of the current `Measurement.action_indices`""":
+        """Exits sweep, stepping out of the current `Measurement.action_indices`"""
         msmt = running_measurement()
         msmt.step_out(reduce_dimension=True)
         raise StopIteration
