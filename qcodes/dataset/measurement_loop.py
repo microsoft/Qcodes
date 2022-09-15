@@ -1759,6 +1759,12 @@ class Sweep(BaseSweep):
                     kwargs.get("stop") is not None or kwargs.get("around") is not None
                 ), "Must provide stop value for parameter"
                 (kwargs["parameter"],) = args
+            elif isinstance(args[0], AbstractSweep):
+                kwargs["sequence"] = _IterateDondSweep(args[0])
+                parameter = kwargs["sequence"].parameter
+                kwargs["name"] = kwargs["name"] or parameter.name
+                kwargs["label"] = kwargs["label"] or parameter.label
+                kwargs["unit"] = kwargs["unit"] or parameter.unit
             else:
                 raise SyntaxError(
                     "Sweep with 1 arg must have iterable or parameter as arg"

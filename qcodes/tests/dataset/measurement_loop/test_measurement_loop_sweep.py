@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from qcodes.dataset import LinSweep, Sweep, dond
+from qcodes.dataset import LinSweep, Sweep, dond, MeasurementLoop
 from qcodes.instrument import ManualParameter, Parameter
 
 
@@ -149,6 +149,21 @@ def test_sweep_and_linsweep_in_dond():
 
     assert np.allclose(arr, np.repeat(np.array([1, 2, 3])[:, np.newaxis], 11, axis=1))
 
+
+@pytest.mark.usefixtures("empty_temp_db", "experiment")
+def test_linsweep_in_MeasurementLoop():
+    set_parameter = ManualParameter("set_param")
+    get_parameter = ManualParameter("get_param", initial_value=42)
+
+    linsweep = LinSweep(set_parameter, 0, 10, 11)
+
+    sweep = Sweep(linsweep)
+    assert sweep.name == 'set_param'
+
+    with MeasurementLoop('linsweep_in_MeasurementLoop') as msmt:
+        for k, val in enumerate(sweep):
+            assert val == k
+            msmt.measure(get_parameter)
 
 def test_sweep_execute_sweep_args():
     set_parameter = ManualParameter("set_param")
