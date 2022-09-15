@@ -168,3 +168,25 @@ def test_numpy_encoder_examplemetadata():
         'myuserdict': {'a': 1}
     }
     assert metadata == data_dict
+
+
+def test_bytes():
+    e = NumpyJSONEncoder()
+    value = b"abc123"
+    v = e.encode(value)
+
+    default_encoder = json.JSONEncoder()
+    # encoding bytes is the same as using the
+    # default encode on the str value of the bytes
+    assert v == default_encoder.encode(str(value))
+
+
+def test_bytes_array():
+    e = NumpyJSONEncoder()
+    value = bytearray(b"abc123")
+    v = e.encode(value)
+
+    default_encoder = json.JSONEncoder()
+    # encoding bytes is the same as using the
+    # default encode on the str value of the bytes array
+    assert v == default_encoder.encode(str(value))
