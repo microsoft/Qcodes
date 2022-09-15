@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from qcodes.dataset import LinSweep, Sweep, dond, MeasurementLoop
+from qcodes.dataset import LinSweep, MeasurementLoop, Sweep, dond
 from qcodes.instrument import ManualParameter, Parameter
 
 
