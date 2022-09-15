@@ -39,11 +39,7 @@ class NumpyJSONEncoder(json.JSONEncoder):
         * Other objects which cannot be serialized get converted to their
           string representation (using the ``str`` function).
         """
-        with warnings.catch_warnings():
-            # this context manager can be removed when uncertainties
-            # no longer triggers deprecation warnings
-            warnings.simplefilter("ignore", category=DeprecationWarning)
-            import uncertainties
+        import uncertainties
 
         if isinstance(obj, np.generic) and not isinstance(obj, np.complexfloating):
             # for numpy scalars
