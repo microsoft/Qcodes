@@ -587,6 +587,7 @@ class MeasurementLoop:
             msmt.step_out(reduce_dimension=False)
 
         self.is_context_manager = False
+        self._t_start = datetime.now()
 
     # TODO Needs to be implemented
     # def _initialize_metadata(self, dataset):
@@ -613,7 +614,6 @@ class MeasurementLoop:
     #         if measurement_code.startswith(init_string):
     #             measurement_code = measurement_code[len(init_string) + 1 : -4]
 
-        self._t_start = datetime.now()
     #         dataset.add_metadata(
     #             {
     #                 "measurement_cell": measurement_cell,
@@ -623,7 +623,9 @@ class MeasurementLoop:
     #             }
     #         )
 
-    def _verify_action(self, action: Callable, name: str, add_if_new: bool = True) -> None:
+    def _verify_action(
+        self, action: Callable, name: str, add_if_new: bool = True
+    ) -> None:
         """Verify an action corresponds to the current action indices.
 
         An action is usually (currently always) a measurement.
@@ -881,7 +883,7 @@ class MeasurementLoop:
         unit: Optional[str] = None,
         timestamp: bool = False,
         **kwargs,
-    )-> Any:
+    ) -> Any:
         """Perform a single measurement of a Parameter, function, etc.
 
 

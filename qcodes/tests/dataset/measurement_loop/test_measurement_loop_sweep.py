@@ -158,12 +158,13 @@ def test_linsweep_in_MeasurementLoop():
     linsweep = LinSweep(set_parameter, 0, 10, 11)
 
     sweep = Sweep(linsweep)
-    assert sweep.name == 'set_param'
+    assert sweep.name == "set_param"
 
-    with MeasurementLoop('linsweep_in_MeasurementLoop') as msmt:
+    with MeasurementLoop("linsweep_in_MeasurementLoop") as msmt:
         for k, val in enumerate(sweep):
             assert val == k
             msmt.measure(get_parameter)
+
 
 def test_sweep_execute_sweep_args():
     set_parameter = ManualParameter("set_param")

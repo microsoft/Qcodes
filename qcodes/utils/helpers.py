@@ -4,7 +4,7 @@ Please do not import from this in any new code
 """
 import logging
 from contextlib import contextmanager
-from typing import Any
+from typing import Any, Tuple
 
 # for backwards compatibility since this module used
 # to contain logic that would abstract between yaml
@@ -54,7 +54,26 @@ import numpy as np
 from qcodes.configuration.config import DotDict
 
 
-def get_exponent(val: float):
+def get_exponent_prefactor(val: float) -> Tuple[int, str]:
+    """Get the exponent and unit prefactor of a number
+    
+    Currently lower bounded at atto
+
+    Args:
+        val: value for which to get exponent and prefactor
+    
+    Returns:
+        Exponent corresponding to prefactor
+        Prefactor
+
+    Examples:
+        ```
+        get_exponent_prefactor(1.82e-8)
+        >>> -9, "n"  # i.e. 18.2*10**-9 n{unit}
+        ```
+    
+
+    """
     prefactors = [
         (9, "G"),
         (6, "M"),
@@ -63,6 +82,9 @@ def get_exponent(val: float):
         (-3, "m"),
         (-6, "u"),
         (-9, "n"),
+        (-12, "p"),
+        (-15, "f"),
+        (-18, "a"),
     ]
     for exponent, prefactor in prefactors:
         if val >= np.power(10.0, exponent):
@@ -77,19 +99,19 @@ class PerformanceTimer:
     def __init__(self):
         self.timings = DotDict()
 
-    def __getitem__(self, key: str):
+    def __getitem__(self, key: str) -> str:
         val = self.timings.__getitem__(key)
         return self._timing_to_str(val)
 
     def __repr__(self):
         return pprint.pformat(self._timings_to_str(self.timings), indent=2)
 
-    def clear(self):
+    def clear(self) -> None:
         self.timings.clear()
 
     def _timing_to_str(self, val: float) -> str:
         mean_val = np.mean(val)
-        exponent, prefactor = get_exponent(mean_val)
+        exponent, prefactor = get_exponent_prefactor(mean_val)
         factor = np.power(10.0, exponent)
 
         return f"{mean_val / factor:.3g}+-{np.abs(np.std(val))/factor:.3g} {prefactor}s"
@@ -106,7 +128,7 @@ class PerformanceTimer:
         return timings_str
 
     @contextmanager
-    def record(self, key: str, val: Any = None):
+    def record(self, key: str, val: Any = None) -> None:
         if isinstance(key, str):
             timing_list = self.timings.setdefault(key, [])
         elif isinstance(key, (list)):
