@@ -68,8 +68,12 @@ class USB_SPDT(SPDT_Base):
                 the dll to open properties and check the 'unblock' checkmark
                 in the bottom. Check that your python installation is 64bit."""
             )
-        import mcl_RF_Switch_Controller64  # pyright: ignore[reportMissingImports]
-        self.switch = mcl_RF_Switch_Controller64.USB_RF_SwitchBox()
+        try:
+            import mcl_RF_Switch_Controller64 as mw_driver  # pyright: ignore[reportMissingImports]
+        except:
+            import mcl_RF_Switch_Controller_NET45 as mw_driver  # pyright: ignore[reportMissingImports]
+
+        self.switch = mw_driver.USB_RF_SwitchBox()
 
         if not self.switch.Connect(serial_number):
             raise RuntimeError('Could not connect to device')
