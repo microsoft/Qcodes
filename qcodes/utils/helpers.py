@@ -56,12 +56,12 @@ from qcodes.configuration.config import DotDict
 
 def get_exponent_prefactor(val: float) -> Tuple[int, str]:
     """Get the exponent and unit prefactor of a number
-    
+
     Currently lower bounded at atto
 
     Args:
         val: value for which to get exponent and prefactor
-    
+
     Returns:
         Exponent corresponding to prefactor
         Prefactor
@@ -71,7 +71,7 @@ def get_exponent_prefactor(val: float) -> Tuple[int, str]:
         get_exponent_prefactor(1.82e-8)
         >>> -9, "n"  # i.e. 18.2*10**-9 n{unit}
         ```
-    
+
 
     """
     prefactors = [
