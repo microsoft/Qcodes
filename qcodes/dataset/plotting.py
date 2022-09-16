@@ -9,7 +9,8 @@ import logging
 import os
 from contextlib import contextmanager
 from functools import partial
-from typing import Any, cast, List, Optional, Sequence, Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple, cast
+
 import numpy as np
 
 if TYPE_CHECKING:

@@ -1,7 +1,16 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
-from typing import Callable, Iterator, List, Optional, Sequence, Tuple, TYPE_CHECKING, Union
+from typing import (
+    TYPE_CHECKING,
+    Callable,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 if TYPE_CHECKING:
     import matplotlib.axes

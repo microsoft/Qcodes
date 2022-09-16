@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import time
 from contextlib import ExitStack
-from typing import Mapping, Sequence, TYPE_CHECKING
+from typing import TYPE_CHECKING, Mapping, Sequence
 
 import numpy as np
 from tqdm.auto import tqdm
