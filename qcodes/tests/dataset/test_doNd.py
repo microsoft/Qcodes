@@ -21,7 +21,7 @@ from qcodes.dataset import (
     new_experiment,
 )
 from qcodes.dataset.data_set import DataSet
-from qcodes.dataset.do_nd import MultiSweep, _Sweeper
+from qcodes.dataset.dond.do_nd import MultiSweep, _Sweeper
 from qcodes.parameters import Parameter, ParameterBase
 from qcodes.tests.instrument_mocks import (
     ArraySetPointParam,
@@ -1900,11 +1900,6 @@ def test_dond_multi_sweep_sweeper(_param_set, _param_set_2, _param):
 
     sweeper = _Sweeper([multi_sweep], [])
 
-    assert sweeper.sweep_groupes == [[sweep_1.param], [sweep_2.param]]
-    assert_array_equal(
-        sweeper.nested_setpoints,
-        np.vstack([sweep_1.get_setpoints(), sweep_2.get_setpoints()]).T,
-    )
+    assert sweeper.sweep_groupes == ((sweep_1.param,), (sweep_2.param,))
     assert sweeper.shape == (10,)
     assert sweeper.all_setpoint_params == (sweep_1.param, sweep_2.param)
-    assert sweeper.params_set == (sweep_1.param, sweep_2.param)

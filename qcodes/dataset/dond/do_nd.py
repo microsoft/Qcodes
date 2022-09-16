@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import itertools
 import logging
 import time
+from collections.abc import Iterable
 from contextlib import ExitStack
 from dataclasses import dataclass
-from typing import Mapping, Sequence
+from typing import Any, Mapping, Sequence
 
 import numpy as np
 from tqdm.auto import tqdm
@@ -56,15 +58,21 @@ class MultiSweep:
     def sweeps(self) -> tuple[AbstractSweep, ...]:
         return self._sweeps
 
-    def get_setpoints(self) -> np.ndarray:
-        setpoints = np.zeros_like(self.sweeps[0].get_setpoints(), dtype=object)
-        for i in range(len(setpoints)):
-            setpoints[i] = tuple(sweep.get_setpoints()[i] for sweep in self._sweeps)
-        return setpoints
+    def get_setpoints(self) -> Iterable:
+        return zip(*(sweep.get_setpoints() for sweep in self.sweeps))
 
     @property
     def num_points(self) -> int:
         return self.sweeps[0].num_points
+
+
+@dataclass
+class ParameterSetEvent:
+    parameter: ParameterBase
+    new_value: float
+    should_set: bool
+    delay: float
+    actions: ActionsT
 
 
 class _Sweeper:
@@ -73,107 +81,89 @@ class _Sweeper:
         sweeps: Sequence[AbstractSweep | MultiSweep],
         additional_setpoints: Sequence[ParameterBase],
     ):
-        _sweeps = []
-
         self._additional_setpoints = additional_setpoints
-        self._nested_setpoints = self._make_nested_setpoints(sweeps)
-        self._parameter_groups = self._make_parameter_groups(
-            sweeps, additional_setpoints
-        )
-        for sweep in sweeps:
-            if isinstance(sweep, AbstractSweep):
-                _sweeps.append(sweep)
-            else:
-                _sweeps.extend(sweep.sweeps)
-        self._sweeps = _sweeps
+        self._sweeps = sweeps
+        self._setpoints = self._make_setpoints_tuples()
+        self._setpoints_dict = self._make_setpoints_dict()
         self._shapes = self._make_shape(sweeps, additional_setpoints)
 
-        self._post_delays = tuple(sweep.delay for sweep in _sweeps)
+    @property
+    def setpoint_dicts(self):
+        return self._setpoints_dict
 
-        param_set = []
-        for sweep in sweeps:
+    def _make_setpoints_tuples(self) -> tuple[tuple[Any, ...]]:
+        sweeps = tuple(sweep.get_setpoints() for sweep in self._sweeps)
+        return tuple(itertools.product(*sweeps))
+
+    def _make_single_point_setpoints_dict(self, index: int) -> dict[str, float]:
+
+        setpoint_dict = {}
+        values = self._make_setpoints_tuples()[index]
+        for sweep, subvalues in zip(self._sweeps, values):
             if isinstance(sweep, MultiSweep):
-                for inner_sweep in sweep.sweeps:
-                    param_set.append(inner_sweep.param)
+                for individual_sweep, value in zip(sweep.sweeps, subvalues):
+                    setpoint_dict[individual_sweep.param.full_name] = value
             else:
-                param_set.append(sweep.param)
+                setpoint_dict[sweep.param.full_name] = subvalues
+        return setpoint_dict
 
-        self._params_set = tuple(param_set)
-        self._post_actions = tuple(sweep.post_actions for sweep in _sweeps)
+    def _make_setpoints_dict(self) -> dict[str, list[Any]]:
 
-    def _make_parameter_groups(
-        self,
-        sweeps: Sequence[AbstractSweep | MultiSweep],
-        additional_setpoints: Sequence[ParameterBase],
-    ) -> list[list[ParameterBase]]:
-        # todo this only supports one Multisweep
+        setpoint_dict = {}
 
-        ungrouped_sweeps = []
-        grouped_sweeps: list[AbstractSweep] = []
-
-        for sweep in sweeps:
-            if isinstance(sweep, AbstractSweep):
-                ungrouped_sweeps.append(sweep)
+        for sweep in self._sweeps:
+            if isinstance(sweep, MultiSweep):
+                for individual_sweep in sweep.sweeps:
+                    setpoint_dict[individual_sweep.param.full_name] = []
             else:
-                grouped_sweeps.extend(sweep.sweeps)
-        n_groups = len(grouped_sweeps) or 1
+                setpoint_dict[sweep.param.full_name] = []
 
-        groups: list[list[ParameterBase]] = [[] for i in range(n_groups)]
-
-        for sweep_or_multi_sweep in sweeps:
-            if isinstance(sweep_or_multi_sweep, AbstractSweep):
-                for group in groups:
-                    group.append(sweep_or_multi_sweep.param)
-            else:
-                for group, sweep in zip(groups, sweep_or_multi_sweep.sweeps):
-                    group.append(sweep.param)
-
-        for group in groups:
-            group.extend(additional_setpoints)
-
-        return groups
-
-    def _make_nested_setpoints(
-        self, sweeps: Sequence[AbstractSweep | MultiSweep]
-    ) -> np.ndarray:
-        """Create the cartesian product of all the setpoint values."""
-        if len(sweeps) == 0:
-            return np.array([[]])  # 0d sweep (do0d)
-        setpoint_values = [sweep.get_setpoints() for sweep in sweeps]
-        return self._flatten_setpoint_values(setpoint_values)
-
-    @staticmethod
-    def _flatten_setpoint_values(setpoint_values: Sequence[np.ndarray]) -> np.ndarray:
-        setpoint_grids = np.meshgrid(*setpoint_values, indexing="ij")
-        flat_setpoint_grids = [np.ravel(grid, order="C") for grid in setpoint_grids]
-        new_flat_grids = []
-        # todo this is not the greatest. The idea is that when setpoint elements
-        # are tuples they will not be expanded by meshgrid so we can use them
-        # directly as being sweept in parallel.
-        for grid in flat_setpoint_grids:
-            if grid.dtype == np.dtype("O"):
-                n_params = len(grid[0])
-                for i in range(n_params):
-                    vals = np.array([grid[j][i] for j in range(len(grid))])
-                    new_flat_grids.append(vals)
-            else:
-                new_flat_grids.append(grid)
-
-        return np.vstack(new_flat_grids).T
+        for setpoint_tuples in self._setpoints:
+            for sweep, values in zip(self._sweeps, setpoint_tuples):
+                if isinstance(sweep, MultiSweep):
+                    for individual_sweep, individual_value in zip(sweep.sweeps, values):
+                        setpoint_dict[individual_sweep.param.full_name].append(
+                            individual_value
+                        )
+                else:
+                    setpoint_dict[sweep.param.full_name].append(values)
+        return setpoint_dict
 
     @property
-    def nested_setpoints(self) -> np.ndarray:
-        return self._nested_setpoints
+    def all_sweeps(self):
+        sweeps = []
+        for sweep in self._sweeps:
+            if isinstance(sweep, MultiSweep):
+                sweeps.extend(sweep.sweeps)
+            else:
+                sweeps.append(sweep)
+        return sweeps
 
     @property
     def all_setpoint_params(self) -> tuple[ParameterBase, ...]:
-        return tuple(sweep.param for sweep in self._sweeps) + tuple(
-            s for s in self._additional_setpoints
-        )
+        return tuple(sweep.param for sweep in self.all_sweeps)
 
     @property
-    def sweep_groupes(self) -> list[list[ParameterBase]]:
-        return self._parameter_groups
+    def param_tuples(self) -> tuple[tuple[ParameterBase, ...]]:
+        """
+        These are all the combinations of setpoints we consider
+        valid for setpoints in a dataset. As of now that means
+        take one element from each dimension. If that is a multisweep
+        pick one of the components.
+        """
+        param_list = []
+        for sweep in self._sweeps:
+            if isinstance(sweep, MultiSweep):
+                param_list.append(tuple(sub_sweep.param for sub_sweep in sweep.sweeps))
+            else:
+                param_list.append([sweep.param])
+
+        param_list.extend([[setpoint] for setpoint in self._additional_setpoints])
+        return tuple(itertools.product(*param_list))
+
+    @property
+    def sweep_groupes(self):
+        return self.param_tuples
 
     @staticmethod
     def _make_shape(
@@ -189,21 +179,23 @@ class _Sweeper:
     def shape(self) -> tuple[int, ...]:
         return self._shapes
 
-    @property
-    def num_sweep_parameters(self) -> int:
-        return len(self._params_set)
+    def __getitem__(self, index) -> tuple[ParameterSetEvent]:
+        setpoints = self._make_single_point_setpoints_dict(index)
 
-    @property
-    def post_delays(self) -> tuple[float, ...]:
-        return self._post_delays
+        sweeps = self.all_sweeps
 
-    @property
-    def params_set(self) -> tuple[ParameterBase, ...]:
-        return self._params_set
+        parameter_set_events = []
 
-    @property
-    def post_actions(self) -> tuple[ActionsT, ...]:
-        return self._post_actions
+        for sweep, new_value in zip(sweeps, setpoints.values()):
+            event = ParameterSetEvent(
+                new_value=new_value,
+                parameter=sweep.param,
+                should_set=True,
+                delay=sweep.delay,
+                actions=sweep.post_actions,
+            )
+            parameter_set_events.append(event)
+        return tuple(parameter_set_events)
 
 
 class _Measurements:
@@ -520,29 +512,17 @@ def dond(
                 for group in sweeper_measurer._groups
             ]
             additional_setpoints_data = process_params_meas(additional_setpoints)
-            previous_setpoints = np.empty(sweeper.num_sweep_parameters)
-            for setpoints in tqdm(sweeper.nested_setpoints, disable=not show_progress):
-
-                active_actions, delays = _select_active_actions_delays(
-                    sweeper.post_actions,
-                    sweeper.post_delays,
-                    setpoints,
-                    previous_setpoints,
-                )
+            for set_events in tqdm(sweeper, disable=not show_progress):
                 results = {}
-                previous_setpoints = setpoints
+                for set_event in set_events:
 
-                for setpoint_param, setpoint, action, delay in zip(
-                    sweeper.params_set,
-                    setpoints,
-                    active_actions,
-                    delays,
-                ):
-                    _conditional_parameter_set(setpoint_param, setpoint)
-                    results[setpoint_param] = setpoint
-                    for act in action:
-                        act()
-                    time.sleep(delay)
+                    if set_event.should_set:
+                        set_event.parameter(set_event.new_value)
+                        for act in set_event.actions:
+                            act()
+                        time.sleep(set_event.delay)
+
+                    results[set_event.parameter] = set_event.new_value
 
                 meas_value_pair = call_params_meas()
                 for name, res in meas_value_pair:

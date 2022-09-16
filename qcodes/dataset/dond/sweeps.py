@@ -57,6 +57,9 @@ class AbstractSweep(ABC, Generic[T]):
         """
         pass
 
+    def __repr__(self) -> str:
+        return f"Sweep of {self.param.full_name}"
+
 
 class LinSweep(AbstractSweep[np.float64]):
     """
