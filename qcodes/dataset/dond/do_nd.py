@@ -180,17 +180,31 @@ class _Sweeper:
         return self._shapes
 
     def __getitem__(self, index) -> tuple[ParameterSetEvent]:
+
         setpoints = self._make_single_point_setpoints_dict(index)
+
+        if index == 0:
+            previous_setpoints = {}
+            for key in setpoints.keys():
+                previous_setpoints[key] = None
+        else:
+            previous_setpoints = self._make_single_point_setpoints_dict(index - 1)
 
         sweeps = self.all_sweeps
 
         parameter_set_events = []
 
-        for sweep, new_value in zip(sweeps, setpoints.values()):
+        for sweep, new_value, old_value in zip(
+            sweeps, setpoints.values(), previous_setpoints.values()
+        ):
+            if old_value is None or old_value != new_value:
+                should_set = True
+            else:
+                should_set = False
             event = ParameterSetEvent(
                 new_value=new_value,
                 parameter=sweep.param,
-                should_set=True,
+                should_set=should_set,
                 delay=sweep.delay,
                 actions=sweep.post_actions,
             )
@@ -515,7 +529,6 @@ def dond(
             for set_events in tqdm(sweeper, disable=not show_progress):
                 results = {}
                 for set_event in set_events:
-
                     if set_event.should_set:
                         set_event.parameter(set_event.new_value)
                         for act in set_event.actions:
