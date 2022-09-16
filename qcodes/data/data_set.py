@@ -5,10 +5,11 @@ import time
 from collections import OrderedDict
 from copy import deepcopy
 from traceback import format_exc
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, TYPE_CHECKING
 
 import numpy as np
-import xarray as xr
+if TYPE_CHECKING:
+    import xarray as xr
 
 from qcodes.data.data_array import (
     DataArray,
@@ -689,12 +690,12 @@ class DataSet(DelegateAttributes):
 
         return out
 
-    def to_xarray(self) -> xr.Dataset:
+    def to_xarray(self) -> 'xr.Dataset':
         """ Convert the dataset to an xarray Dataset """
         return qcodes_dataset_to_xarray_dataset(self)
 
     @classmethod
-    def from_xarray(cls, xarray_dataset: xr.Dataset) -> 'DataSet':
+    def from_xarray(cls, xarray_dataset: 'xr.Dataset') -> 'DataSet':
         """ Convert the dataset to an xarray DataSet """
         return xarray_dataset_to_qcodes_dataset(xarray_dataset)
 
@@ -761,8 +762,10 @@ def dataset_to_xarray_dictionary(
 
 def qcodes_dataset_to_xarray_dataset(
     data_set: DataSet,
-) -> xr.Dataset:
+) -> 'xr.Dataset':
     """ Convert QCoDeS gridded dataset to xarray dataset """
+    import xarray as xr
+
     xarray_dictionary = dataset_to_xarray_dictionary(data_set)
     xarray_dataset = xr.Dataset.from_dict(xarray_dictionary)
     return xarray_dataset
@@ -816,7 +819,7 @@ def xarray_dictionary_to_dataset(
     return dataset
 
 
-def xarray_dataset_to_qcodes_dataset(xarray_data_set: xr.Dataset) -> DataSet:
+def xarray_dataset_to_qcodes_dataset(xarray_data_set: 'xr.Dataset') -> DataSet:
     """ Convert QCoDeS gridded dataset to xarray dataset """
     xarray_dictionary = xarray_data_set.to_dict()
     qcodes_dataset = xarray_dictionary_to_dataset(xarray_dictionary)

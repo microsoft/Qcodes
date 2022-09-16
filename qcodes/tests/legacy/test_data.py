@@ -1,10 +1,12 @@
 import logging
 import os
 import pickle
+from typing import TYPE_CHECKING
 from unittest import TestCase
 
 import numpy as np
-import xarray as xr
+if TYPE_CHECKING:
+    import xarray as xr
 
 from qcodes.data.data_array import DataArray, data_array_to_xarray_dictionary
 from qcodes.data.data_set import (
@@ -630,6 +632,7 @@ class TestDataSet(TestCase):
 
     def test_xarray_example_conversion(self):
         import pandas as pd
+        import xarray as xr
         times = pd.date_range("2000-01-01", "2000-1-31", name="time")
         shape = (31, 3)
         xarray_dataset = xr.Dataset(

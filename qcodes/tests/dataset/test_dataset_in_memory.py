@@ -3,11 +3,13 @@ import os
 import shutil
 import sqlite3
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import hypothesis.strategies as hst
 import numpy as np
 import pytest
-import xarray
+if TYPE_CHECKING:
+    import xarray as xr
 from hypothesis import HealthCheck, given, settings
 from numpy.testing import assert_almost_equal
 
@@ -489,6 +491,8 @@ def compare_datasets(ds, loaded_ds):
 
 
 def test_load_from_db_dataset_moved(meas_with_registered_param, DMM, DAC, tmp_path):
+    import xarray as xr
+
     Station(DAC, DMM)
     with meas_with_registered_param.run(
         dataset_class=DataSetType.DataSetInMem
@@ -506,7 +510,7 @@ def test_load_from_db_dataset_moved(meas_with_registered_param, DMM, DAC, tmp_pa
 
     export_path = ds.export_info.export_paths["nc"]
 
-    with contextlib.closing(xarray.open_dataset(export_path)) as xr_ds:
+    with contextlib.closing(xr.open_dataset(export_path)) as xr_ds:
         assert xr_ds.attrs["metadata_added_after_export"] == 69
 
     new_path = str(Path(export_path).parent / "someotherfilename.nc")
@@ -533,7 +537,7 @@ def test_load_from_db_dataset_moved(meas_with_registered_param, DMM, DAC, tmp_pa
     ):
         ds.add_metadata("metadata_added_after_move", 696)
 
-    with contextlib.closing(xarray.open_dataset(new_path)) as new_xr_ds:
+    with contextlib.closing(xr.open_dataset(new_path)) as new_xr_ds:
         assert new_xr_ds.attrs["metadata_added_after_export"] == 69
         assert "metadata_added_after_move" not in new_xr_ds.attrs
 
@@ -541,7 +545,7 @@ def test_load_from_db_dataset_moved(meas_with_registered_param, DMM, DAC, tmp_pa
 
     assert loaded_ds.cache.data().keys() == ds.cache.data().keys()
 
-    with contextlib.closing(xarray.open_dataset(new_path)) as new_xr_ds:
+    with contextlib.closing(xr.open_dataset(new_path)) as new_xr_ds:
         assert new_xr_ds.attrs["metadata_added_after_export"] == 69
         assert "metadata_added_after_move" not in new_xr_ds.attrs
 
@@ -555,7 +559,7 @@ def test_load_from_db_dataset_moved(meas_with_registered_param, DMM, DAC, tmp_pa
 
     loaded_ds.add_metadata("metadata_added_after_set_new_netcdf_location", 6969)
 
-    with contextlib.closing(xarray.open_dataset(new_path)) as new_xr_ds:
+    with contextlib.closing(xr.open_dataset(new_path)) as new_xr_ds:
         assert new_xr_ds.attrs["metadata_added_after_export"] == 69
         assert "metadata_added_after_move" not in new_xr_ds.attrs
         assert (
