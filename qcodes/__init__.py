@@ -53,7 +53,6 @@ from qcodes.instrument import (
     VisaInstrument,
     find_or_create_instrument,
 )
-from qcodes.instrument_drivers.test import test_instrument, test_instruments
 from qcodes.monitor import Monitor
 from qcodes.parameters import (
     ArrayParameter,
