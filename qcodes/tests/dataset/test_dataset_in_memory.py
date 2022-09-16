@@ -3,14 +3,12 @@ import os
 import shutil
 import sqlite3
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 import hypothesis.strategies as hst
 import numpy as np
 import pytest
 
-if TYPE_CHECKING:
-    import xarray as xr
+import xarray as xr
 
 from hypothesis import HealthCheck, given, settings
 from numpy.testing import assert_almost_equal
@@ -493,7 +491,6 @@ def compare_datasets(ds, loaded_ds):
 
 
 def test_load_from_db_dataset_moved(meas_with_registered_param, DMM, DAC, tmp_path):
-    import xarray as xr
 
     Station(DAC, DMM)
     with meas_with_registered_param.run(

@@ -4,14 +4,12 @@ import os
 import re
 import traceback
 from time import sleep
-from typing import TYPE_CHECKING
 
 import hypothesis.strategies as hst
 import numpy as np
 import pytest
 
-if TYPE_CHECKING:
-    import xarray as xr
+import xarray as xr
 
 from hypothesis import HealthCheck, given, settings
 from numpy.testing import assert_allclose, assert_array_equal
@@ -1712,7 +1710,6 @@ def test_datasaver_export(
         assert os.listdir(path) == [expected_filename]
 
         if export_type == DataExportType.NETCDF:
-            import xarray as xr
 
             xr_ds = xr.open_dataset(os.path.join(path, expected_filename))
             assert xr_ds.attrs["metadata_added_after_export"] == 69

@@ -1,11 +1,9 @@
 import json
 import os
-from typing import TYPE_CHECKING
 
 import pytest
 
-if TYPE_CHECKING:
-    import xarray as xr
+import xarray as xr
 
 import qcodes
 from qcodes import new_data_set
