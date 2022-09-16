@@ -2,8 +2,10 @@ import json
 import warnings
 from collections import OrderedDict, UserDict
 
+import hypothesis.strategies as hst
 import numpy as np
 import pytest
+from hypothesis import given
 
 with warnings.catch_warnings():
     # this context manager can be removed when uncertainties
@@ -168,3 +170,26 @@ def test_numpy_encoder_examplemetadata():
         'myuserdict': {'a': 1}
     }
     assert metadata == data_dict
+
+
+@given(bytes_to_encode=hst.binary(max_size=100))
+def test_bytes(bytes_to_encode):
+    e = NumpyJSONEncoder()
+    v = e.encode(bytes_to_encode)
+
+    default_encoder = json.JSONEncoder()
+    # encoding bytes is the same as using the
+    # default encode on the str value of the bytes
+    assert v == default_encoder.encode(str(bytes_to_encode))
+
+
+@given(bytes_to_encode=hst.binary(max_size=100))
+def test_bytes_array(bytes_to_encode):
+    e = NumpyJSONEncoder()
+    value = bytearray(bytes_to_encode)
+    v = e.encode(value)
+
+    default_encoder = json.JSONEncoder()
+    # encoding bytes is the same as using the
+    # default encode on the str value of the bytes array
+    assert v == default_encoder.encode(str(value))
