@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from unittest import TestCase
 
 import numpy as np
+
 if TYPE_CHECKING:
     import xarray as xr
 
