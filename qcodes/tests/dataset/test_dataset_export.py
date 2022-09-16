@@ -1,8 +1,10 @@
 import json
 import os
+from typing import TYPE_CHECKING
 
 import pytest
-import xarray as xr
+if TYPE_CHECKING:
+    import xarray as xr
 
 import qcodes
 from qcodes import new_data_set
@@ -191,6 +193,7 @@ def test_export_csv(tmp_path_factory, mock_dataset):
 
 @pytest.mark.usefixtures('experiment')
 def test_export_netcdf(tmp_path_factory, mock_dataset):
+    import xarray as xr
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
     path = str(tmp_path)
     mock_dataset.export(export_type="netcdf", path=path, prefix="qcodes_")
@@ -215,6 +218,8 @@ def test_export_netcdf(tmp_path_factory, mock_dataset):
 
 @pytest.mark.usefixtures("experiment")
 def test_export_netcdf_csv(tmp_path_factory, mock_dataset):
+    import xarray as xr
+
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
     path = str(tmp_path)
     csv_path = os.path.join(
@@ -256,6 +261,8 @@ def test_export_netcdf_csv(tmp_path_factory, mock_dataset):
 
 @pytest.mark.usefixtures("experiment")
 def test_export_netcdf_complex_data(tmp_path_factory, mock_dataset_complex):
+    import xarray as xr
+
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
     path = str(tmp_path)
     mock_dataset_complex.export(export_type="netcdf", path=path, prefix="qcodes_")
@@ -398,6 +405,7 @@ def test_export_to_xarray_ds_dict_extra_metadata(mock_dataset):
 
 
 def test_export_to_xarray_extra_metadata_can_be_stored(mock_dataset, tmp_path):
+    import xarray as xr
 
     nt_metadata = {
         "foo": {
