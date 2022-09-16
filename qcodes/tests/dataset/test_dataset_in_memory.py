@@ -8,8 +8,10 @@ from typing import TYPE_CHECKING
 import hypothesis.strategies as hst
 import numpy as np
 import pytest
+
 if TYPE_CHECKING:
     import xarray as xr
+
 from hypothesis import HealthCheck, given, settings
 from numpy.testing import assert_almost_equal
 
