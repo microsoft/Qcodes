@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import sys
 import time
-from typing import Sequence, TYPE_CHECKING
+from typing import TYPE_CHECKING, Sequence
 
 import numpy as np
 from tqdm.auto import tqdm
@@ -31,7 +31,6 @@ LOG = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
-
     from qcodes.dataset.dond.do_nd_utils import (
         ActionsT,
         AxesTupleListWithDataSet,
