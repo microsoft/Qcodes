@@ -1,8 +1,10 @@
+from __future__ import annotations
 import copy
 import logging
-from typing import Any, Optional, Tuple, Union, cast
+from typing import Any, cast, Optional, Tuple, TYPE_CHECKING, Union
 
-import matplotlib
+if TYPE_CHECKING:
+    import matplotlib
 import numpy as np
 
 from .auto_range import DEFAULT_PERCENTILE, auto_range_iqr

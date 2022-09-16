@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import time
 from contextlib import ExitStack
-from typing import Mapping, Sequence
+from typing import Mapping, Sequence, TYPE_CHECKING
 
 import numpy as np
 from tqdm.auto import tqdm
@@ -12,14 +12,8 @@ from typing_extensions import TypedDict
 from qcodes import config
 from qcodes.dataset.data_set_protocol import res_type
 from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
-from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.dond.do_nd_utils import (
-    ActionsT,
-    AxesTupleListWithDataSet,
     BreakConditionInterrupt,
-    BreakConditionT,
-    MultiAxesTupleListWithDataSet,
-    ParamMeasT,
     _catch_interrupts,
     _handle_plotting,
     _register_actions,
@@ -39,6 +33,15 @@ from .sweeps import AbstractSweep
 
 LOG = logging.getLogger(__name__)
 
+if TYPE_CHECKING:
+    from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
+    from qcodes.dataset.dond.do_nd_utils import (
+        ActionsT,
+        AxesTupleListWithDataSet,
+        BreakConditionT,
+        MultiAxesTupleListWithDataSet,
+        ParamMeasT,
+    )
 
 class ParameterGroup(TypedDict):
     params: tuple[ParamMeasT, ...]
