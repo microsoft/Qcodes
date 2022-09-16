@@ -1,4 +1,5 @@
 """DataSet class and factory functions."""
+from __future__ import annotations
 
 import logging
 import time
@@ -690,12 +691,12 @@ class DataSet(DelegateAttributes):
 
         return out
 
-    def to_xarray(self) -> 'xr.Dataset':
+    def to_xarray(self) -> xr.Dataset:
         """ Convert the dataset to an xarray Dataset """
         return qcodes_dataset_to_xarray_dataset(self)
 
     @classmethod
-    def from_xarray(cls, xarray_dataset: 'xr.Dataset') -> 'DataSet':
+    def from_xarray(cls, xarray_dataset: xr.Dataset) -> 'DataSet':
         """ Convert the dataset to an xarray DataSet """
         return xarray_dataset_to_qcodes_dataset(xarray_dataset)
 
@@ -762,7 +763,7 @@ def dataset_to_xarray_dictionary(
 
 def qcodes_dataset_to_xarray_dataset(
     data_set: DataSet,
-) -> 'xr.Dataset':
+) -> xr.Dataset:
     """ Convert QCoDeS gridded dataset to xarray dataset """
     import xarray as xr
 
@@ -819,7 +820,7 @@ def xarray_dictionary_to_dataset(
     return dataset
 
 
-def xarray_dataset_to_qcodes_dataset(xarray_data_set: 'xr.Dataset') -> DataSet:
+def xarray_dataset_to_qcodes_dataset(xarray_data_set: xr.Dataset) -> DataSet:
     """ Convert QCoDeS gridded dataset to xarray dataset """
     xarray_dictionary = xarray_data_set.to_dict()
     qcodes_dataset = xarray_dictionary_to_dataset(xarray_dictionary)
