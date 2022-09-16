@@ -3,7 +3,6 @@ import os
 from typing import TYPE_CHECKING
 
 import pytest
-
 import xarray as xr
 
 import qcodes
