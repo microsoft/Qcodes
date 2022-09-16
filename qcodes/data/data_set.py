@@ -5,9 +5,10 @@ import time
 from collections import OrderedDict
 from copy import deepcopy
 from traceback import format_exc
-from typing import Any, Callable, Dict, List, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
 import numpy as np
+
 if TYPE_CHECKING:
     import xarray as xr
 
