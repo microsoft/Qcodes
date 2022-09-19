@@ -310,6 +310,10 @@ class _SweeperMeasure:
         experiments: Experiment | Sequence[Experiment] | None,
         write_period: float | None,
         log_info: str | None,
+        dataset_mapping: Sequence[
+            tuple[tuple[ParameterBase, ...], Sequence[ParamMeasT]]
+        ]
+        | None = None,
     ):
 
         self._sweeper = sweeper
@@ -319,6 +323,7 @@ class _SweeperMeasure:
         self._experiments = self._get_experiments(experiments)
         self._write_period = write_period
         self._log_info = log_info
+        self._dataset_mapping = dataset_mapping
         self._shapes = self._get_shape()
         self._groups = self._create_groups()
 
@@ -361,31 +366,52 @@ class _SweeperMeasure:
 
     def _create_groups(self) -> tuple[_SweapMeasGroup, ...]:
 
-        setpoint_groups = self._sweeper.sweep_groupes
-        meaure_groups = self._measurements.grouped_parameters
+        if self._dataset_mapping is None:
+            setpoint_groups = self._sweeper.sweep_groupes
+            meaure_groups = self._measurements.grouped_parameters
 
-        # add option for mapping this
+            if len(setpoint_groups) == 1:
+                setpoint_groups = (setpoint_groups[0],) * len(meaure_groups)
 
-        if len(setpoint_groups) == 1:
-            setpoint_groups = (setpoint_groups[0],) * len(meaure_groups)
+            if len(setpoint_groups) != len(meaure_groups):
+                raise ValueError(
+                    f"Inconsistent number of "
+                    f"parameter groups and setpoint groups "
+                    f"got {len(meaure_groups)} and {len(setpoint_groups)}"
+                )
+            groups = []
+            sp_group: Sequence[ParameterBase]
+            m_group: Sequence[ParamMeasT]
+            for sp_group, m_group, experiment in zip(
+                setpoint_groups, meaure_groups, self._experiments
+            ):
+                meas_ctx = self._create_measurement_cx_manager(
+                    experiment, tuple(sp_group), tuple(m_group)
+                )
+                s_m_group = _SweapMeasGroup(
+                    tuple(sp_group), tuple(m_group), experiment, meas_ctx
+                )
+                groups.append(s_m_group)
+        else:
+            potential_setpoint_groups = self._sweeper.sweep_groupes
+            requested_meaure_groups = self._measurements.grouped_parameters
+            groups = []
+            for (sp_group, m_group), experiment in zip(
+                self._dataset_mapping, self._experiments
+            ):
+                LOG.info(f"creating context manager for {sp_group} {m_group}")
+                meas_ctx = self._create_measurement_cx_manager(
+                    experiment, tuple(sp_group), tuple(m_group)
+                )
+                s_m_group = _SweapMeasGroup(
+                    tuple(sp_group), tuple(m_group), experiment, meas_ctx
+                )
+                groups.append(s_m_group)
 
-        if len(setpoint_groups) != len(meaure_groups):
-            raise ValueError(
-                f"Inconsistent number of "
-                f"parameter groups and setpoint groups "
-                f"got {len(meaure_groups)} and {len(setpoint_groups)}"
-            )
-        groups = []
-        for sp_group, m_group, experiment in zip(
-            setpoint_groups, meaure_groups, self._experiments
-        ):
-            meas_ctx = self._create_measurement_cx_manager(
-                experiment, tuple(sp_group), tuple(m_group)
-            )
-            s_m_group = _SweapMeasGroup(
-                tuple(sp_group), tuple(m_group), experiment, meas_ctx
-            )
-            groups.append(s_m_group)
+            # verify that each sweepgroup in the dict is part of the sweep groups
+            # verify that each measurement group is a value in the dict
+            # verify that each value in the dict is a measurement group
+            # take each of the sweep groups and map it to measure groups
         return tuple(groups)
 
     @property
@@ -430,6 +456,8 @@ def dond(
     additional_setpoints: Sequence[ParameterBase] = tuple(),
     log_info: str | None = None,
     break_condition: BreakConditionT | None = None,
+    dataset_mapping: Sequence[tuple[tuple[ParameterBase, ...], Sequence[ParamMeasT]]]
+    | None = None,
 ) -> AxesTupleListWithDataSet | MultiAxesTupleListWithDataSet:
     """
     Perform n-dimentional scan from slowest (first) to the fastest (last), to
@@ -517,6 +545,7 @@ def dond(
         exp,
         write_period,
         log_info,
+        dataset_mapping,
     )
 
     datasets = []
