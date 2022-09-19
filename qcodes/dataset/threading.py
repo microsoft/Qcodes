@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from qcodes.parameters import ParamDataType, ParameterBase
 
 ParamMeasT = Union["ParameterBase", Callable[[], None]]
-OutType = List[Tuple["ParameterBase", values_type]]
+OutType = List[Tuple["ParameterBase", "values_type"]]
 
 T = TypeVar("T")
 

@@ -395,11 +395,37 @@ class _SweeperMeasure:
                 groups.append(s_m_group)
         else:
             potential_setpoint_groups = self._sweeper.sweep_groupes
-            requested_meaure_groups = self._measurements.grouped_parameters
+            requested_measure_groups = self._measurements.grouped_parameters
+
+            output_parameter_tuples = tuple(
+                output[1] for output in self._dataset_mapping
+            )
+
+            for r_m_group in requested_measure_groups:
+                if r_m_group not in output_parameter_tuples:
+                    raise ValueError(
+                        "Measuring a (group of) parameter(s) which is not "
+                        f"in the dataset_mapping. Did not find {r_m_group} in"
+                        f"{self._dataset_mapping}."
+                    )
+
             groups = []
             for (sp_group, m_group), experiment in zip(
                 self._dataset_mapping, self._experiments
             ):
+                if sp_group not in potential_setpoint_groups:
+                    raise ValueError(
+                        f"The dataset_mapping contains {sp_group} "
+                        f"which is not among the expected groups of setpoints "
+                        f"{potential_setpoint_groups}"
+                    )
+                if m_group not in requested_measure_groups:
+                    raise ValueError(
+                        f"The dataset_mapping contains {m_group} "
+                        f"which is not among the expected groups of setpoints "
+                        f"{requested_measure_groups}"
+                    )
+
                 LOG.info(f"creating context manager for {sp_group} {m_group}")
                 meas_ctx = self._create_measurement_cx_manager(
                     experiment, tuple(sp_group), tuple(m_group)
@@ -408,11 +434,6 @@ class _SweeperMeasure:
                     tuple(sp_group), tuple(m_group), experiment, meas_ctx
                 )
                 groups.append(s_m_group)
-
-            # verify that each sweepgroup in the dict is part of the sweep groups
-            # verify that each measurement group is a value in the dict
-            # verify that each value in the dict is a measurement group
-            # take each of the sweep groups and map it to measure groups
         return tuple(groups)
 
     @property
