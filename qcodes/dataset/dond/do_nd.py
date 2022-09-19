@@ -563,7 +563,7 @@ def dond(
         with _catch_interrupts() as interrupted, ExitStack() as stack, params_meas_caller as call_params_meas:
             datasavers = [
                 stack.enter_context(group.measurement_cxt.run())
-                for group in sweeper_measurer._groups
+                for group in sweeper_measurer.groups
             ]
             additional_setpoints_data = process_params_meas(additional_setpoints)
             for set_events in tqdm(sweeper, disable=not show_progress):
@@ -581,7 +581,7 @@ def dond(
                 for name, res in meas_value_pair:
                     results[name] = res
 
-                for datasaver, group in zip(datasavers, sweeper_measurer._groups):
+                for datasaver, group in zip(datasavers, sweeper_measurer.groups):
                     filtered_results_list = [
                         (param, value)
                         for param, value in results.items()
