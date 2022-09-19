@@ -13,7 +13,6 @@ from tqdm.auto import tqdm
 from typing_extensions import TypedDict
 
 from qcodes import config
-from qcodes.dataset.data_set_protocol import res_type
 from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
 from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.dond.do_nd_utils import (
@@ -48,7 +47,6 @@ SweepVarType = Any
 class ParameterGroup(TypedDict):
     params: tuple[ParamMeasT, ...]
     meas_name: str
-    measured_params: list[res_type]
 
 
 class MultiSweep:
@@ -748,7 +746,6 @@ def _extract_paramters_by_type_and_group(
         pg: ParameterGroup = {
             "params": tuple(single_group),
             "meas_name": measurement_name,
-            "measured_params": [],
         }
         grouped_parameters["group_0"] = pg
     if multi_group:
@@ -756,7 +753,6 @@ def _extract_paramters_by_type_and_group(
             pg = {
                 "params": tuple(par),
                 "meas_name": measurement_name,
-                "measured_params": [],
             }
             grouped_parameters[f"group_{index}"] = pg
     return tuple(measured_all), grouped_parameters, tuple(measured_parameters)
