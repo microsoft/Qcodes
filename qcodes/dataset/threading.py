@@ -11,18 +11,18 @@ import logging
 from collections import defaultdict
 from functools import partial
 from types import TracebackType
-from typing import TYPE_CHECKING, Callable, List, Sequence, TypeVar, Union
+from typing import TYPE_CHECKING, Callable, List, Sequence, Tuple, TypeVar, Union
 
 from typing_extensions import Protocol
 
 from qcodes.utils import RespondingThread
 
 if TYPE_CHECKING:
-    from qcodes.dataset.measurements import res_type
+    from qcodes.dataset.measurements import values_type
     from qcodes.parameters import ParamDataType, ParameterBase
 
 ParamMeasT = Union["ParameterBase", Callable[[], None]]
-OutType = List["res_type"]
+OutType = List[Tuple["ParameterBase", values_type]]
 
 T = TypeVar("T")
 

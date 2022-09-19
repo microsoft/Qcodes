@@ -580,9 +580,6 @@ def dond(
 
                 meas_value_pair = call_params_meas()
                 for name, res in meas_value_pair:
-                    # todo this could either be a parameter or a string
-                    # but we know it to be a parameter
-                    assert isinstance(name, ParameterBase)
                     results[name] = res
 
                 for datasaver, group in zip(datasavers, sweeper_measurer._groups):
