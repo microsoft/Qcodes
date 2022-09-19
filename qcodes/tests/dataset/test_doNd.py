@@ -22,7 +22,7 @@ from qcodes.dataset import (
 )
 from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.dond.do_nd import MultiSweep, _Sweeper
-from qcodes.parameters import Parameter, ParameterBase
+from qcodes.parameters import ManualParameter, Parameter, ParameterBase
 from qcodes.tests.instrument_mocks import (
     ArraySetPointParam,
     Multi2DSetPointParam,
@@ -1903,3 +1903,28 @@ def test_dond_multi_sweep_sweeper(_param_set, _param_set_2, _param):
     assert sweeper.sweep_groupes == ((sweep_1.param,), (sweep_2.param,))
     assert sweeper.shape == (10,)
     assert sweeper.all_setpoint_params == (sweep_1.param, sweep_2.param)
+
+
+def test_dond_multi_sweep_sweeper_combined(_param_set, _param_set_2, _param):
+    a = ManualParameter("a", initial_value=0)
+    b = ManualParameter("b", initial_value=0)
+    c = ManualParameter("c", initial_value=0)
+    d = ManualParameter("d", initial_value=1)
+    e = ManualParameter("e", initial_value=2)
+    f = ManualParameter("f", initial_value=3)
+    sweepA = LinSweep(a, 0, 3, 10)
+    sweepB = LinSweep(b, 5, 7, 10)
+    sweepC = LinSweep(c, 8, 12, 10)
+
+    datasets, _, _ = dond(
+        MultiSweep([sweepA, sweepB]),
+        sweepC,
+        [d],
+        [e],
+        [f],
+        do_plot=False,
+        dataset_mapping=[((a, c), (d,)), ((b, c), (e,)), ((b, c), (f,))],
+    )
+    assert datasets[0].parameters == "a,c,d"
+    assert datasets[1].parameters == "b,c,e"
+    assert datasets[2].parameters == "b,c,f"
