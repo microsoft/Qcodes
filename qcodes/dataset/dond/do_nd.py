@@ -149,8 +149,9 @@ class _Sweeper:
     def all_setpoint_params(self) -> tuple[ParameterBase, ...]:
         return tuple(sweep.param for sweep in self.all_sweeps)
 
+
     @property
-    def param_tuples(self) -> tuple[tuple[ParameterBase, ...], ...]:
+    def sweep_groupes(self) -> tuple[tuple[ParameterBase, ...], ...]:
         """
         These are all the combinations of setpoints we consider
         valid for setpoints in a dataset. As of now that means
@@ -171,10 +172,6 @@ class _Sweeper:
             Tuple[Tuple[ParameterBase, ...]], tuple(itertools.product(*param_list))
         )
         return param_tuples
-
-    @property
-    def sweep_groupes(self) -> tuple[tuple[ParameterBase, ...], ...]:
-        return self.param_tuples
 
     @staticmethod
     def _make_shape(
