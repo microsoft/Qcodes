@@ -240,7 +240,7 @@ class _Measurements:
         return self._measured_all
 
     @property
-    def grouped_parameters(self) -> list[list[ParamMeasT]]:
+    def grouped_parameters(self) -> tuple[tuple[ParamMeasT, ...], ...]:
         return self._grouped_parameters
 
     @property
@@ -251,13 +251,15 @@ class _Measurements:
     def _extract_parameters_by_type_and_group(
         params_meas: Sequence[ParamMeasT | Sequence[ParamMeasT]],
     ) -> tuple[
-        tuple[ParamMeasT, ...], list[list[ParamMeasT]], tuple[ParameterBase, ...]
+        tuple[ParamMeasT, ...],
+        tuple[tuple[ParamMeasT, ...], ...],
+        tuple[ParameterBase, ...],
     ]:
         measured_parameters: list[ParameterBase] = []
         measured_all: list[ParamMeasT] = []
         single_group: list[ParamMeasT] = []
-        multi_group: list[list[ParamMeasT]] = []
-        grouped_parameters: list[list[ParamMeasT]] = []
+        multi_group: list[tuple[ParamMeasT, ...]] = []
+        grouped_parameters: tuple[tuple[ParamMeasT, ...], ...]
         for param in params_meas:
             if not isinstance(param, Sequence):
                 single_group.append(param)
@@ -265,15 +267,15 @@ class _Measurements:
                 if isinstance(param, ParameterBase):
                     measured_parameters.append(param)
             elif not isinstance(param, str):
-                multi_group.append(list(param))
+                multi_group.append(tuple(param))
                 for nested_param in param:
                     measured_all.append(nested_param)
                     if isinstance(nested_param, ParameterBase):
                         measured_parameters.append(nested_param)
         if single_group:
-            grouped_parameters = [single_group]
+            grouped_parameters = (tuple(single_group),)
         if multi_group:
-            grouped_parameters = multi_group
+            grouped_parameters = tuple(multi_group)
         return tuple(measured_all), grouped_parameters, tuple(measured_parameters)
 
 
