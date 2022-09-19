@@ -6,7 +6,7 @@ import time
 from collections.abc import Iterable
 from contextlib import ExitStack
 from dataclasses import dataclass
-from typing import Any, Mapping, Sequence
+from typing import Any, Mapping, Sequence, cast
 
 import numpy as np
 from tqdm.auto import tqdm
@@ -41,6 +41,8 @@ from qcodes.parameters import ParameterBase
 from .sweeps import AbstractSweep
 
 LOG = logging.getLogger(__name__)
+
+SweepVarType = Any
 
 
 class ParameterGroup(TypedDict):
@@ -88,14 +90,14 @@ class _Sweeper:
         self._shapes = self._make_shape(sweeps, additional_setpoints)
 
     @property
-    def setpoint_dicts(self):
+    def setpoint_dicts(self) -> dict[str, list[Any]]:
         return self._setpoints_dict
 
     def _make_setpoints_tuples(self) -> tuple[tuple[Any, ...]]:
         sweeps = tuple(sweep.get_setpoints() for sweep in self._sweeps)
         return tuple(itertools.product(*sweeps))
 
-    def _make_single_point_setpoints_dict(self, index: int) -> dict[str, float]:
+    def _make_single_point_setpoints_dict(self, index: int) -> dict[str, SweepVarType]:
 
         setpoint_dict = {}
         values = self._make_setpoints_tuples()[index]
@@ -109,7 +111,7 @@ class _Sweeper:
 
     def _make_setpoints_dict(self) -> dict[str, list[Any]]:
 
-        setpoint_dict = {}
+        setpoint_dict: dict[str, list[SweepVarType]] = {}
 
         for sweep in self._sweeps:
             if isinstance(sweep, MultiSweep):
@@ -130,14 +132,14 @@ class _Sweeper:
         return setpoint_dict
 
     @property
-    def all_sweeps(self):
-        sweeps = []
+    def all_sweeps(self) -> tuple[AbstractSweep, ...]:
+        sweeps: list[AbstractSweep] = []
         for sweep in self._sweeps:
             if isinstance(sweep, MultiSweep):
                 sweeps.extend(sweep.sweeps)
             else:
                 sweeps.append(sweep)
-        return sweeps
+        return tuple(sweeps)
 
     @property
     def all_setpoint_params(self) -> tuple[ParameterBase, ...]:
@@ -151,18 +153,23 @@ class _Sweeper:
         take one element from each dimension. If that is a multisweep
         pick one of the components.
         """
-        param_list = []
+        param_list: list[tuple[ParameterBase, ...]] = []
         for sweep in self._sweeps:
             if isinstance(sweep, MultiSweep):
                 param_list.append(tuple(sub_sweep.param for sub_sweep in sweep.sweeps))
             else:
-                param_list.append([sweep.param])
+                param_list.append((sweep.param,))
 
-        param_list.extend([[setpoint] for setpoint in self._additional_setpoints])
-        return tuple(itertools.product(*param_list))
+        param_list.extend([(setpoint,) for setpoint in self._additional_setpoints])
+        # looks lite itertools.product is not yet generic in input type
+        # so output ends up being tuple[tuple[Any]] even with a specified input type
+        param_tuples = cast(
+            tuple[tuple[ParameterBase, ...]], tuple(itertools.product(*param_list))
+        )
+        return param_tuples
 
     @property
-    def sweep_groupes(self):
+    def sweep_groupes(self) -> tuple[tuple[ParameterBase, ...]]:
         return self.param_tuples
 
     @staticmethod
@@ -179,12 +186,12 @@ class _Sweeper:
     def shape(self) -> tuple[int, ...]:
         return self._shapes
 
-    def __getitem__(self, index) -> tuple[ParameterSetEvent]:
+    def __getitem__(self, index: int) -> tuple[ParameterSetEvent, ...]:
 
         setpoints = self._make_single_point_setpoints_dict(index)
 
         if index == 0:
-            previous_setpoints = {}
+            previous_setpoints: dict[str, SweepVarType | None] = {}
             for key in setpoints.keys():
                 previous_setpoints[key] = None
         else:
@@ -355,7 +362,7 @@ class _SweeperMeasure:
         # add option for mapping this
 
         if len(setpoint_groups) == 1:
-            setpoint_groups = [setpoint_groups[0] for _ in range(len(meaure_groups))]
+            setpoint_groups = (setpoint_groups[0],) * len(meaure_groups)
 
         if len(setpoint_groups) != len(meaure_groups):
             raise ValueError(
