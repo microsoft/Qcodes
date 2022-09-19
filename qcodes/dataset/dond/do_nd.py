@@ -36,6 +36,7 @@ from qcodes.dataset.threading import (
     process_params_meas,
 )
 from qcodes.parameters import ParameterBase
+from qcodes.utils import deprecate
 
 from .sweeps import AbstractSweep
 
@@ -629,6 +630,8 @@ def _parse_dond_arguments(
     return sweep_instances, params_meas
 
 
+## Unused deprecated helper functions
+@deprecate("Unused internal function")
 def _conditional_parameter_set(
     parameter: ParameterBase,
     value: float | complex,
@@ -641,6 +644,7 @@ def _conditional_parameter_set(
         parameter.set(value)
 
 
+@deprecate("Unused internal function")
 def _make_nested_setpoints(sweeps: Sequence[AbstractSweep]) -> np.ndarray:
     """Create the cartesian product of all the setpoint values."""
     if len(sweeps) == 0:
@@ -651,6 +655,7 @@ def _make_nested_setpoints(sweeps: Sequence[AbstractSweep]) -> np.ndarray:
     return np.vstack(flat_setpoint_grids).T
 
 
+@deprecate("Unused internal function")
 def _select_active_actions_delays(
     actions: Sequence[ActionsT],
     delays: Sequence[float],
@@ -674,6 +679,7 @@ def _select_active_actions_delays(
     return actions_list, setpoints_delay
 
 
+@deprecate("Unused internal function")
 def _create_measurements(
     all_setpoint_params: Sequence[ParameterBase],
     enter_actions: ActionsT,
@@ -719,6 +725,7 @@ def _create_measurements(
     return tuple(meas_list)
 
 
+@deprecate("Unused internal function")
 def _extract_paramters_by_type_and_group(
     measurement_name: str,
     params_meas: Sequence[ParamMeasT | Sequence[ParamMeasT]],
