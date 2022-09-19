@@ -6,7 +6,7 @@ import time
 from collections.abc import Iterable
 from contextlib import ExitStack
 from dataclasses import dataclass
-from typing import Any, Mapping, Sequence, cast
+from typing import Any, Mapping, Sequence, Tuple, Union, cast
 
 import numpy as np
 from tqdm.auto import tqdm
@@ -93,9 +93,14 @@ class _Sweeper:
     def setpoint_dicts(self) -> dict[str, list[Any]]:
         return self._setpoints_dict
 
-    def _make_setpoints_tuples(self) -> tuple[tuple[Any, ...]]:
+    def _make_setpoints_tuples(
+        self,
+    ) -> tuple[tuple[tuple[SweepVarType, ...] | SweepVarType]]:
         sweeps = tuple(sweep.get_setpoints() for sweep in self._sweeps)
-        return tuple(itertools.product(*sweeps))
+        return cast(
+            Tuple[Tuple[Union[Tuple[SweepVarType, ...], SweepVarType]]],
+            tuple(itertools.product(*sweeps)),
+        )
 
     def _make_single_point_setpoints_dict(self, index: int) -> dict[str, SweepVarType]:
 
@@ -146,7 +151,7 @@ class _Sweeper:
         return tuple(sweep.param for sweep in self.all_sweeps)
 
     @property
-    def param_tuples(self) -> tuple[tuple[ParameterBase, ...]]:
+    def param_tuples(self) -> tuple[tuple[ParameterBase, ...], ...]:
         """
         These are all the combinations of setpoints we consider
         valid for setpoints in a dataset. As of now that means
@@ -164,12 +169,12 @@ class _Sweeper:
         # looks lite itertools.product is not yet generic in input type
         # so output ends up being tuple[tuple[Any]] even with a specified input type
         param_tuples = cast(
-            tuple[tuple[ParameterBase, ...]], tuple(itertools.product(*param_list))
+            Tuple[Tuple[ParameterBase, ...]], tuple(itertools.product(*param_list))
         )
         return param_tuples
 
     @property
-    def sweep_groupes(self) -> tuple[tuple[ParameterBase, ...]]:
+    def sweep_groupes(self) -> tuple[tuple[ParameterBase, ...], ...]:
         return self.param_tuples
 
     @staticmethod
