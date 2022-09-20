@@ -30,19 +30,19 @@ BreakConditionT = Callable[[], bool]
 ParamMeasT = Union[ParameterBase, Callable[[], None]]
 
 if TYPE_CHECKING:
-    AxesTuple = Tuple[matplotlib.axes.Axes, matplotlib.colorbar.Colorbar]
+    AxesTuple = Tuple["matplotlib.axes.Axes", "matplotlib.colorbar.Colorbar"]
     AxesTupleList = Tuple[
-        List[matplotlib.axes.Axes], List[Optional[matplotlib.colorbar.Colorbar]]
+        List["matplotlib.axes.Axes"], List[Optional["matplotlib.colorbar.Colorbar"]]
     ]
     AxesTupleListWithDataSet = Tuple[
         DataSetProtocol,
-        List[matplotlib.axes.Axes],
-        List[Optional[matplotlib.colorbar.Colorbar]],
+        List["matplotlib.axes.Axes"],
+        List[Optional["matplotlib.colorbar.Colorbar"]],
     ]
     MultiAxesTupleListWithDataSet = Tuple[
         Tuple[DataSetProtocol, ...],
-        Tuple[List[matplotlib.axes.Axes], ...],
-        Tuple[List[Optional[matplotlib.colorbar.Colorbar]], ...],
+        Tuple[List["matplotlib.axes.Axes"], ...],
+        Tuple[List[Optional["matplotlib.colorbar.Colorbar"]], ...],
     ]
 
 

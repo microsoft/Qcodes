@@ -37,12 +37,13 @@ from .data_export import (
 log = logging.getLogger(__name__)
 DB = qc.config["core"]["db_location"]
 
+# NamedData is the structure _get_data_from_ds returns and that plot_by_id
+# uses internally
+NamedData = List[List[DSPlotData]]
+
 if TYPE_CHECKING:
-    AxesTuple = Tuple[Axes, Colorbar]
-    AxesTupleList = Tuple[List[Axes], List[Optional[Colorbar]]]
-    # NamedData is the structure _get_data_from_ds returns and that plot_by_id
-    # uses internally
-    NamedData = List[List[DSPlotData]]
+    AxesTuple = Tuple["Axes", "Colorbar"]
+    AxesTupleList = Tuple[List["Axes"], List[Optional["Colorbar"]]]
 
 
 
