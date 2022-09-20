@@ -665,6 +665,100 @@ class MeasurementLoop:
         if clear:
             actions.clear()
 
+    def _get_maximum_action_index(self, action_indices, position):
+        msmt = running_measurement()
+
+        # Get maximum action idx
+        max_idx = 0
+        for idxs in msmt.actions:
+            if idxs[:position] != action_indices[:position]:
+                continue
+            if len(idxs) <= position:
+                continue
+            max_idx = max(max_idx, idxs[position])
+        return max_idx
+
+    def _fraction_complete_action_indices(self, action_indices, silent=True):
+        """Calculate fraction complete from finished action_indices"""
+        msmt = running_measurement()
+        fraction_complete = 0
+        scale = 1
+
+        max_idxs = []
+        for k, action_idx in enumerate(action_indices):
+            # Check if previous idx is a sweep
+            # If so, reduce scale by loop dimension
+            action = msmt.actions.get(action_indices[:k])
+            if not silent:
+                print(f'{action=}, {isinstance(action, BaseSweep)=}')
+            if isinstance(action, BaseSweep):
+                if not silent:
+                    print(f'Decreasing scale by {len(action)}')
+                scale /= len(action)
+
+            max_idx = self._get_maximum_action_index(action_indices, position=k)
+
+            fraction_complete += action_idx / (max_idx + 1) * scale
+            scale /= max_idx + 1
+            max_idxs.append(max_idx)
+            if not silent:
+                print(f'{fraction_complete=}, {scale=}, {action_idx=}, {max_idxs=}')
+
+        return fraction_complete
+
+    def _fraction_complete_loop(self, action_indices, silent=True):
+        msmt = running_measurement()
+        fraction_complete = 0
+        scale = 1
+        loop_idx = 0
+        
+        for k, action_idx in enumerate(action_indices):
+            # Check if current action is a sweep
+            # If so, reduce scale by action index fraction
+            action = msmt.actions.get(action_indices[:k+1])
+            if isinstance(action, BaseSweep):
+                max_idx = self._get_maximum_action_index(action_indices, position=k)
+                
+                if not silent:
+                    print(f'Reducing current Sweep {loop_idx=} {msmt.loop_indices[loop_idx]} / {len(action)} * {scale}')
+                    print(f'{max_idx=}')
+                scale /= (max_idx + 1)
+
+            # Check if previous idx is a sweep
+            # If so, reduce scale by loop dimension
+            action = msmt.actions.get(action_indices[:k])
+            if not silent:
+                print(f'{action=}, {isinstance(action, BaseSweep)=}')
+            if isinstance(action, BaseSweep):
+                if not silent:
+                    print(f'Reducing previous Sweep {loop_idx=} fraction {msmt.loop_indices[loop_idx]} / {len(action)} * {scale}')
+                fraction_complete += msmt.loop_indices[loop_idx] / len(action) * scale
+                loop_idx += 1
+                scale /= len(action)
+
+        return fraction_complete
+
+    def fraction_complete(self, silent=True):
+        msmt = running_measurement()
+        if msmt is None:
+            return 1
+
+        fraction_complete = 0
+
+        # Calculate fraction complete from action indices
+        fraction_complete_actions = self._fraction_complete_action_indices(msmt.action_indices, silent=silent+1)
+        fraction_complete += fraction_complete_actions
+        if not silent:
+            print(f'Fraction complete from action indices: {fraction_complete_actions:.3f}')
+
+        # Calculate fraction complete from point in loop
+        fraction_complete_loop = self._fraction_complete_loop(msmt.action_indices, silent=silent+1)
+        fraction_complete += fraction_complete_loop
+        if not silent:
+            print(f'Fraction complete from loop: {fraction_complete_loop:.3f}')
+
+        return fraction_complete
+
     # Measurement-related functions
     def _measure_parameter(
         self,
