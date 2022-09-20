@@ -907,7 +907,7 @@ def test_dond_multi_sweep_sweeper(_param_set, _param_set_2, _param):
     assert sweeper.all_setpoint_params == (sweep_1.param, sweep_2.param)
 
 
-def test_dond_multi_sweep_sweeper_combined(_param_set, _param_set_2, _param):
+def test_dond_multi_sweep_sweeper_combined():
     a = ManualParameter("a", initial_value=0)
     b = ManualParameter("b", initial_value=0)
     c = ManualParameter("c", initial_value=0)
@@ -930,3 +930,28 @@ def test_dond_multi_sweep_sweeper_combined(_param_set, _param_set_2, _param):
     assert datasets[0].parameters == "a,c,d"
     assert datasets[1].parameters == "b,c,e"
     assert datasets[2].parameters == "b,c,f"
+
+
+@given(
+    n_points_1=hst.integers(min_value=1, max_value=500),
+    n_points_2=hst.integers(min_value=1, max_value=500),
+)
+def test_multi_sweep_validation(n_points_1, n_points_2):
+    a = ManualParameter("a", initial_value=0)
+    b = ManualParameter("b", initial_value=0)
+    sweepA = LinSweep(a, 0, 3, n_points_1)
+    sweepB = LinSweep(b, 5, 7, n_points_2)
+
+    if n_points_1 != n_points_2:
+        with pytest.raises(
+            ValueError, match="All Sweeps in a MultiSweep must have the same length"
+        ):
+            MultiSweep([sweepA, sweepB])
+
+
+def test_empty_multisweep_raises():
+
+    with pytest.raises(
+        ValueError, match="A MultiSweep must contain at least one sweep."
+    ):
+        MultiSweep([])

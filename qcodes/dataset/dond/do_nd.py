@@ -52,7 +52,20 @@ class ParameterGroup(TypedDict):
 
 class MultiSweep:
     def __init__(self, sweeps: Sequence[AbstractSweep]):
-        # todo check that all sweeps are the same
+
+        if len(sweeps) == 0:
+            raise ValueError("A MultiSweep must contain at least one sweep.")
+
+        len_1 = sweeps[0].num_points
+
+        for sweep in sweeps:
+            if sweep.num_points != len_1:
+                raise ValueError(
+                    f"All Sweeps in a MultiSweep must have the same length."
+                    f"Sweep of {sweep.param} had {sweep.num_points} but the "
+                    f"first one had {len_1}."
+                )
+
         self._sweeps = tuple(sweeps)
 
     @property
