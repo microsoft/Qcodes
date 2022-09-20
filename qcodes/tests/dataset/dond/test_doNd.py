@@ -894,9 +894,13 @@ def test_dond_multi_sweep_sweeper(_param_set, _param_set_2, _param):
 
     sweep_len = 10
 
-    sweep_1 = LinSweep(_param_set, 0, 1, sweep_len, 0)
+    delay_1 = 0.1
 
-    sweep_2 = LinSweep(_param_set_2, 1, 2, sweep_len, 0)
+    sweep_1 = LinSweep(_param_set, 0, 1, sweep_len, delay_1)
+
+    delay_2 = 0.2
+
+    sweep_2 = LinSweep(_param_set_2, 1, 2, sweep_len, delay_2)
 
     multi_sweep = MultiSweep([sweep_1, sweep_2])
 
@@ -905,6 +909,30 @@ def test_dond_multi_sweep_sweeper(_param_set, _param_set_2, _param):
     assert sweeper.sweep_groupes == ((sweep_1.param,), (sweep_2.param,))
     assert sweeper.shape == (10,)
     assert sweeper.all_setpoint_params == (sweep_1.param, sweep_2.param)
+
+    assert list(sweeper.setpoint_dicts.keys()) == [
+        "simple_setter_parameter",
+        "simple_setter_parameter_2",
+    ]
+    assert sweeper.setpoint_dicts["simple_setter_parameter"] == list(
+        sweep_1.get_setpoints()
+    )
+    assert sweeper.setpoint_dicts["simple_setter_parameter_2"] == list(
+        sweep_2.get_setpoints()
+    )
+
+    for output, setpoint_1, setpoint_2 in zip(
+        sweeper, sweep_1.get_setpoints(), sweep_2.get_setpoints()
+    ):
+        assert output[0].parameter == sweep_1.param
+        assert output[0].new_value == setpoint_1
+        assert output[0].should_set is True
+        assert output[0].delay == delay_1
+
+        assert output[1].parameter == sweep_2.param
+        assert output[1].new_value == setpoint_2
+        assert output[1].should_set is True
+        assert output[1].delay == delay_2
 
 
 def test_dond_multi_sweep_sweeper_combined():
