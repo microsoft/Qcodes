@@ -463,7 +463,7 @@ class _SweeperMeasure:
 
 
 def dond(
-    *params: AbstractSweep | ParamMeasT | Sequence[ParamMeasT],
+    *params: AbstractSweep | MultiSweep | ParamMeasT | Sequence[ParamMeasT],
     write_period: float | None = None,
     measurement_name: str = "",
     exp: Experiment | Sequence[Experiment] | None = None,
@@ -632,7 +632,7 @@ def dond(
 
 
 def _parse_dond_arguments(
-    *params: AbstractSweep | ParamMeasT | Sequence[ParamMeasT],
+    *params: AbstractSweep | MultiSweep | ParamMeasT | Sequence[ParamMeasT],
 ) -> tuple[list[AbstractSweep | MultiSweep], list[ParamMeasT | Sequence[ParamMeasT]]]:
     """
     Parse supplied arguments into sweep objects and measurement parameters
