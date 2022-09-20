@@ -153,6 +153,8 @@ def plot_dataset(
 
     Config dependencies: (qcodesrc.json)
     """
+    import matplotlib.axes
+    import matplotlib.colorbar
     import matplotlib.pyplot as plt
 
     # list of kwargs for plotting function, so that kwargs can be passed to
@@ -196,11 +198,11 @@ def plot_dataset(
 
     nplots = len(alldata)
 
-    if isinstance(axes, Axes):
+    if isinstance(axes, matplotlib.axes.Axes):
         axeslist = [axes]
     else:
-        axeslist = cast(List[Axes], axes)
-    if isinstance(colorbars, Colorbar):
+        axeslist = cast(List[matplotlib.axes.Axes], axes)
+    if isinstance(colorbars, matplotlib.colorbar.Colorbar):
         colorbars = [colorbars]
 
     if axeslist is None:

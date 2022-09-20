@@ -79,6 +79,8 @@ def apply_color_scale_limits(
         RuntimeError: If not received mesh data. Or if you specified both
         `data_lim` and `data_array`.
     """
+    import matplotlib.collections
+
     # browse the input data and make sure that `data_lim` and `new_lim` are
     # available
     if not isinstance(colorbar.mappable, matplotlib.collections.QuadMesh):
