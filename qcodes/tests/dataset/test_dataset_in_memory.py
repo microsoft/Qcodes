@@ -3,7 +3,6 @@ import os
 import shutil
 import sqlite3
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 import hypothesis.strategies as hst
 import numpy as np

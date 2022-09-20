@@ -9,7 +9,7 @@ from __future__ import annotations
 import io
 import logging
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Callable, Iterator, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Callable, Iterator, Sequence
 
 if TYPE_CHECKING:
     import pandas as pd
