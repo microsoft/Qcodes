@@ -6,6 +6,7 @@ database version and possibly perform database upgrades.
 from __future__ import annotations
 
 import io
+import math
 import sqlite3
 import sys
 from collections.abc import Iterator
@@ -37,15 +38,20 @@ def _adapt_array(arr: np.ndarray) -> sqlite3.Binary:
     https://stackoverflow.com/questions/3425320/sqlite3-programmingerror-you-must-not-use-8-bit-bytestrings-unless-you-use-a-te
     """
     out = io.BytesIO()
-    np.save(out, arr)
+    # Directly use np.lib.format.write_array instead of np.save, force version to be
+    # 3.0 (when reading, version 1.0 and 2.0 can result in a slow clean up step to
+    # ensure backward compatibility with python 2) and disable pickle (slow and
+    # insecure)
+    np.lib.format.write_array(out, arr, version=(3, 0), allow_pickle=False)
     out.seek(0)
     return sqlite3.Binary(out.read())
 
 
 def _convert_array(text: bytes) -> np.ndarray:
-    out = io.BytesIO(text)
-    out.seek(0)
-    return np.load(out)
+    # Using np.lib.format.read_array (counterpart of np.lib.format.write_array)
+    # npy format version 3.0 is 3 times faster than previous verions (no clean up step
+    # for python 2 backward compatibility)
+    return np.lib.format.read_array(io.BytesIO(text), allow_pickle=False)
 
 
 def _convert_complex(text: bytes) -> np.complexfloating:
@@ -75,36 +81,29 @@ def _convert_numeric(value: bytes) -> float | int | str:
     try:
         # First, try to convert bytes to float
         numeric = float(value)
-    except ValueError as e:
-        # If an exception has been raised, we first need to find out
-        # if the reason was the conversion to float, and, if so, we are sure
-        # that we need to return a string
-        if "could not convert string to float" in str(e):
-            return str(value, encoding=this_session_default_encoding)
-        else:
-            # otherwise, the exception is forwarded up the stack
-            raise e
+    except ValueError:
+        # Let string casting fail if bytes encoding is invalid
+        return str(value, encoding=this_session_default_encoding)
 
-    # If that worked, e.g. did not raise an exception, then we check if the
-    # outcome is 'nan'
-    if np.isnan(numeric):
+    # If that worked, e.g. did not raise an exception, then we check if the outcome is
+    # either an infinity or a NaN
+    # For a single value, math.isfinite is 10 times faster than np.isinfinite (or
+    # combining np.isnan and np.isinf)
+    if not math.isfinite(numeric):
         return numeric
 
-    # Then we check if the outcome is 'inf', includes +inf and -inf
-    if np.isinf(numeric):
-        return numeric
-
-    # If it is not 'nan' and not 'inf', then we need to see if the value is
-    # really an integer or with floating point digits
+    # If it is not 'nan' and not 'inf', then we need to see if the value is really an
+    # integer or with floating point digits
     numeric_int = int(numeric)
     if numeric != numeric_int:
         return numeric
     else:
         return numeric_int
 
-
 def _adapt_float(fl: float) -> float | str:
-    if np.isnan(fl):
+    # For a single value, math.isnan is 10 times faster than np.isnan
+    # Overall, saving floats with numeric format is 2 times faster with math.isnan
+    if math.isnan(fl):
         return "nan"
     return float(fl)
 
@@ -149,9 +148,6 @@ def connect(name: str | Path, debug: bool = False, version: int = -1) -> Connect
         raise RuntimeError(f"Database {name} is version {db_version} but this "
                            f"version of QCoDeS supports up to "
                            f"version {latest_supported_version}")
-
-    # sqlite3 options
-    conn.row_factory = sqlite3.Row
 
     # Make sure numpy ints and floats types are inserted properly
     for numpy_int in numpy_ints:

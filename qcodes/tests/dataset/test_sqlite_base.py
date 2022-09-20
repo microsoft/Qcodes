@@ -227,9 +227,10 @@ def test_runs_table_columns(empty_temp_db):
     colnames = list(mut_queries.RUNS_TABLE_COLUMNS)
     conn = mut_db.connect(get_DB_location())
     query = "PRAGMA table_info(runs)"
-    cursor = conn.cursor()
-    for row in cursor.execute(query):
-        colnames.remove(row['name'])
+    cursor = conn.execute(query)
+    description = mut_help.get_description_map(cursor)
+    for row in cursor.fetchall():
+        colnames.remove(row[description["name"]])
 
     assert colnames == []
 
@@ -239,7 +240,7 @@ def test_get_data_no_columns(scalar_dataset):
     with pytest.warns(QCoDeSDeprecationWarning) as record:
         ref = mut_queries.get_data(ds.conn, ds.table_name, [])
 
-    assert ref == [[]]
+    assert ref == [tuple()]
     assert len(record) == 2
     assert str(record[0].message).startswith("The function <get_data>")
     assert str(record[1].message).startswith("get_data")
