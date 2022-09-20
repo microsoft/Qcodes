@@ -983,3 +983,105 @@ def test_empty_multisweep_raises():
         ValueError, match="A MultiSweep must contain at least one sweep."
     ):
         MultiSweep([])
+
+
+def test_dond_multi_sweep_not_specified_2_and_3():
+    a = ManualParameter("a", initial_value=0)
+    b = ManualParameter("b", initial_value=0)
+    c = ManualParameter("c", initial_value=0)
+    d = ManualParameter("d", initial_value=1)
+    e = ManualParameter("e", initial_value=2)
+    f = ManualParameter("f", initial_value=3)
+    sweepA = LinSweep(a, 0, 3, 10)
+    sweepB = LinSweep(b, 5, 7, 10)
+    sweepC = LinSweep(c, 8, 12, 10)
+
+    with pytest.raises(
+        ValueError, match="Inconsistent number of parameter groups and setpoint groups"
+    ):
+        datasets, _, _ = dond(
+            MultiSweep([sweepA, sweepB]),
+            sweepC,
+            [d],
+            [e],
+            [f],
+            do_plot=False,
+        )
+
+
+def test_dond_multi_sweep_sweeper_combined_missing_in_mapping():
+    a = ManualParameter("a", initial_value=0)
+    b = ManualParameter("b", initial_value=0)
+    c = ManualParameter("c", initial_value=0)
+    d = ManualParameter("d", initial_value=1)
+    e = ManualParameter("e", initial_value=2)
+    f = ManualParameter("f", initial_value=3)
+    sweepA = LinSweep(a, 0, 3, 10)
+    sweepB = LinSweep(b, 5, 7, 10)
+    sweepC = LinSweep(c, 8, 12, 10)
+
+    with pytest.raises(
+        ValueError,
+        match="Measuring a \\(group of\\) parameter\\(s\\) which is not in the dataset_mapping",
+    ):
+        datasets, _, _ = dond(
+            MultiSweep([sweepA, sweepB]),
+            sweepC,
+            [d],
+            [e],
+            [f],
+            do_plot=False,
+            dataset_mapping=[((a, c), (d,)), ((b, c), (e,))],
+        )
+
+
+def test_dond_multi_sweep_sweeper_wrong_sp_in_mapping():
+    a = ManualParameter("a", initial_value=0)
+    b = ManualParameter("b", initial_value=0)
+    c = ManualParameter("c", initial_value=0)
+    d = ManualParameter("d", initial_value=1)
+    e = ManualParameter("e", initial_value=2)
+    f = ManualParameter("f", initial_value=3)
+    sweepA = LinSweep(a, 0, 3, 10)
+    sweepB = LinSweep(b, 5, 7, 10)
+    sweepC = LinSweep(c, 8, 12, 10)
+
+    with pytest.raises(ValueError, match=f"not among the expected groups of setpoints"):
+        datasets, _, _ = dond(
+            MultiSweep([sweepA, sweepB]),
+            sweepC,
+            [d],
+            [e],
+            [f],
+            do_plot=False,
+            dataset_mapping=[((a, b), (d,)), ((b, c), (e,)), ((b, c), (f,))],
+        )
+
+
+def test_dond_multi_sweep_sweeper_wrong_mp_in_mapping():
+    a = ManualParameter("a", initial_value=0)
+    b = ManualParameter("b", initial_value=0)
+    c = ManualParameter("c", initial_value=0)
+    d = ManualParameter("d", initial_value=1)
+    e = ManualParameter("e", initial_value=2)
+    f = ManualParameter("f", initial_value=3)
+    g = ManualParameter("g", initial_value=4)
+    sweepA = LinSweep(a, 0, 3, 10)
+    sweepB = LinSweep(b, 5, 7, 10)
+    sweepC = LinSweep(c, 8, 12, 10)
+
+    with pytest.raises(ValueError, match=f"Requested for data to be split into"):
+        datasets, _, _ = dond(
+            MultiSweep([sweepA, sweepB]),
+            sweepC,
+            [d],
+            [e],
+            [f],
+            do_plot=False,
+            dataset_mapping=[
+                ((a, c), (d,)),
+                ((b, c), (e,)),
+                ((b, c), (f,)),
+                ((b, c), (g,)),
+            ],
+        )

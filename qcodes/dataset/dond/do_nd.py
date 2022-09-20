@@ -407,6 +407,12 @@ class _SweeperMeasure:
             potential_setpoint_groups = self._sweeper.sweep_groupes
             requested_measure_groups = self._measurements.grouped_parameters
 
+            if len(self._dataset_mapping) != len(requested_measure_groups):
+                raise ValueError(
+                    f"Requested for data to be split into {len(requested_measure_groups)}"
+                    f"but found {len(self._dataset_mapping)} groups in mapping."
+                )
+
             output_parameter_tuples = tuple(
                 output[1] for output in self._dataset_mapping
             )
@@ -426,13 +432,13 @@ class _SweeperMeasure:
                 if sp_group not in potential_setpoint_groups:
                     raise ValueError(
                         f"The dataset_mapping contains {sp_group} "
-                        f"which is not among the expected groups of setpoints "
+                        f"which is not among the expected groups of setpoints."
                         f"{potential_setpoint_groups}"
                     )
                 if m_group not in requested_measure_groups:
                     raise ValueError(
                         f"The dataset_mapping contains {m_group} "
-                        f"which is not among the expected groups of setpoints "
+                        f"which is not among the expected groups of measured points."
                         f"{requested_measure_groups}"
                     )
 
