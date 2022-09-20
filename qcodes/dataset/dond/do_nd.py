@@ -117,7 +117,7 @@ class _Sweeper:
     def _make_single_point_setpoints_dict(self, index: int) -> dict[str, SweepVarType]:
 
         setpoint_dict = {}
-        values = self._make_setpoints_tuples()[index]
+        values = self._setpoints[index]
         for sweep, subvalues in zip(self._sweeps, values):
             if isinstance(sweep, MultiSweep):
                 for individual_sweep, value in zip(sweep.sweeps, subvalues):
