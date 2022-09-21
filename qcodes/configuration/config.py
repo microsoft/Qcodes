@@ -175,20 +175,30 @@ class Config:
 
     def validate(
         self,
-        json_config: dict[str, Any] | None = None,
-        schema: dict[str, Any] | None = None,
+        json_config: Mapping[str, Any] | None = None,
+        schema: Mapping[str, Any] | None = None,
         extra_schema_path: str | None = None,
     ) -> None:
         """
         Validate configuration; if no arguments are passed, the default
-        validators are used.
+        config is validated against the default schema. If either
+        ``json_config`` or ``schema`` is passed the corresponding
+        default is not used.
 
         Args:
-            json_config: json file to validate
+            json_config: json dictionary to validate
             schema: schema dictionary
             extra_schema_path: schema path that contains extra validators to be
                 added to schema dictionary
         """
+        if schema is None:
+            if self.current_schema is None:
+                raise RuntimeError("Cannot validate as current_schema is None")
+            schema = self.current_schema
+
+        if json_config is None:
+            json_config = self.current_config
+
         if extra_schema_path is not None:
             # add custom validation
             if os.path.isfile(extra_schema_path):
@@ -198,21 +208,12 @@ class Config:
                     # so that default types and values can NEVER
                     # be overwritten
                     new_user = json.load(f)["properties"]["user"]
-                    if schema is None:
-                        if self.current_schema is None:
-                            raise RuntimeError("Cannot validate as "
-                                               "current_schema is None")
-                        schema = self.current_schema
                     user = schema["properties"]['user']
                     user["properties"].update(new_user["properties"])
-                jsonschema.validate(json_config, schema)
             else:
                 logger.warning(EMPTY_USER_SCHEMA.format(extra_schema_path))
-        else:
-            if json_config is None and schema is None:
-                jsonschema.validate(self.current_config, self.current_schema)
-            else:
-                jsonschema.validate(json_config, schema)
+
+        jsonschema.validate(json_config, schema)
 
     def add(
         self,
