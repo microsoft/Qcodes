@@ -91,6 +91,7 @@ test = [
     "PyVisa-sim>=0.4.0",
     "slack-sdk>=3.4.2", # needed to typecheck slack extension
     "sphinx>=4.5.0",  # sphinx extension tests
+    "types-jsonschema>=4.16.0",
     "types_requests>=0.1.8",
     "types-setuptools>=57.0.0",
     "types-tabulate>=0.1.0",
@@ -205,7 +206,6 @@ module = [
     "h5py",
     "h5netcdf",
     "hickle",
-    "jsonschema",
     "lomentum.tools",
     "matplotlib.*",
     "mcl_RF_Switch_Controller64",
