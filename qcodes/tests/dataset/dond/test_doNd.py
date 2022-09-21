@@ -1092,3 +1092,45 @@ def test_dond_multi_sweep_sweeper_wrong_mp_in_mapping():
                 ((b, c), (g,)),
             ],
         )
+
+
+def test_dond_multi_sweep_parameter_with_setpoints(dummyinstrument):
+
+    outer_shape = 10
+    inner_shape = 15
+
+    n_points_a = 20
+    dummyinstrument.A.dummy_n_points(n_points_a)
+    n_points_b = 25
+    dummyinstrument.B.dummy_n_points(n_points_b)
+
+    a = ManualParameter("a", initial_value=0)
+    b = ManualParameter("b", initial_value=0)
+    c = ManualParameter("c", initial_value=0)
+    sweep_a = LinSweep(a, 0, 3, outer_shape)
+    sweep_b = LinSweep(b, 5, 7, outer_shape)
+    sweep_c = LinSweep(c, 8, 12, inner_shape)
+
+    datasets, _, _ = dond(
+        MultiSweep([sweep_a, sweep_b]),
+        sweep_c,
+        [dummyinstrument.A.dummy_parameter_with_setpoints],
+        [dummyinstrument.B.dummy_parameter_with_setpoints],
+        do_plot=False,
+    )
+
+    assert (
+        datasets[0].parameters
+        == "a,c,dummyinstrument_ChanA_dummy_sp_axis,dummyinstrument_ChanA_dummy_parameter_with_setpoints"
+    )
+    assert datasets[0].description.shapes[
+        "dummyinstrument_ChanA_dummy_parameter_with_setpoints"
+    ] == (outer_shape, inner_shape, n_points_a)
+
+    assert (
+        datasets[1].parameters
+        == "b,c,dummyinstrument_ChanB_dummy_sp_axis,dummyinstrument_ChanB_dummy_parameter_with_setpoints"
+    )
+    assert datasets[1].description.shapes[
+        "dummyinstrument_ChanB_dummy_parameter_with_setpoints"
+    ] == (outer_shape, inner_shape, n_points_b)
