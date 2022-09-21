@@ -1029,7 +1029,7 @@ def test_dond_multi_sweep_sweeper_combined_missing_in_mapping():
 
     with pytest.raises(
         ValueError,
-        match="Measuring a \\(group of\\) parameter\\(s\\) which is not in the dataset_mapping",
+        match="Requested for data to be split into 3 but found 2 groups in mapping",
     ):
         datasets, _, _ = dond(
             MultiSweep([sweepA, sweepB]),
