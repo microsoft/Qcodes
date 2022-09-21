@@ -44,7 +44,7 @@ def _register_parameters(
     meas: Measurement,
     param_meas: Sequence[ParamMeasT],
     setpoints: Sequence[ParameterBase] | None = None,
-    shapes: Shapes = None,
+    shapes: Shapes | None = None,
 ) -> None:
     for parameter in param_meas:
         if isinstance(parameter, ParameterBase):

@@ -327,7 +327,7 @@ class _SweeperMeasure:
 
     def _get_shape(self) -> Shapes | None:
         try:
-            shapes: Shapes = detect_shape_of_measurement(
+            shapes: Shapes | None = detect_shape_of_measurement(
                 self._measurements.measured_parameters, self._sweeper.shape
             )
             LOG.debug("Detected shapes to be %s", shapes)

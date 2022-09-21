@@ -85,7 +85,7 @@ class DataSetProtocol(Protocol, Sized):
         *,
         snapshot: Mapping[Any, Any],
         interdeps: InterDependencies_,
-        shapes: Shapes = None,
+        shapes: Shapes | None = None,
         parent_datasets: Sequence[Mapping[Any, Any]] = (),
         write_in_background: bool = False,
     ) -> None:

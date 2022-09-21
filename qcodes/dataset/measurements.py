@@ -527,7 +527,7 @@ class Runner:
         self.experiment = experiment
         self.station = station
         self._interdependencies = interdeps
-        self._shapes: Shapes = shapes
+        self._shapes: Shapes | None = shapes
         self.name = name if name else 'results'
         self._parent_datasets = parent_datasets
         self._extra_log_info = extra_log_info
@@ -713,7 +713,7 @@ class Measurement:
         self.name = name
         self.write_period: float = qc.config.dataset.write_period
         self._interdeps = InterDependencies_()
-        self._shapes: Shapes = None
+        self._shapes: Shapes | None = None
         self._parent_datasets: list[dict[str, str]] = []
         self._extra_log_info: str = ''
 
@@ -1211,7 +1211,7 @@ class Measurement:
 
         return self
 
-    def set_shapes(self, shapes: Shapes) -> None:
+    def set_shapes(self, shapes: Shapes | None) -> None:
         """
         Set the shapes of the data to be recorded in this
         measurement.

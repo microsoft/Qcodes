@@ -30,8 +30,9 @@ class RunDescriber:
     attributes when converting itself to dictionary.
     """
 
-    def __init__(self, interdeps: InterDependencies_,
-                 shapes: Shapes = None) -> None:
+    def __init__(
+        self, interdeps: InterDependencies_, shapes: Shapes | None = None
+    ) -> None:
 
         if not isinstance(interdeps, InterDependencies_):
             raise ValueError('The interdeps arg must be of type: '
@@ -49,7 +50,7 @@ class RunDescriber:
         return self._version
 
     @property
-    def shapes(self) -> Shapes:
+    def shapes(self) -> Shapes | None:
         return self._shapes
 
     @property
@@ -57,8 +58,9 @@ class RunDescriber:
         return self._interdeps
 
     @staticmethod
-    def _verify_interdeps_shape(interdeps: InterDependencies_,
-                                shapes: Shapes) -> None:
+    def _verify_interdeps_shape(
+        interdeps: InterDependencies_, shapes: Shapes | None
+    ) -> None:
         """
         Verify that interdeps and shape are consistent
         """
