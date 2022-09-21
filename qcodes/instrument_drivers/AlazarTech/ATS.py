@@ -290,22 +290,22 @@ class AlazarTech_ATS(Instrument):
         return buffer
 
     def acquire(
-            self,
-            mode: Optional[str] = None,
-            samples_per_record: Optional[int] = None,
-            records_per_buffer: Optional[int] = None,
-            buffers_per_acquisition: Optional[int] = None,
-            channel_selection: Optional[str] = None,
-            transfer_offset: Optional[int] = None,
-            external_startcapture: Optional[str] = None,
-            enable_record_headers: Optional[str] = None,
-            alloc_buffers: Optional[str] = None,
-            fifo_only_streaming: Optional[str] = None,
-            interleave_samples:  Optional[str] = None,
-            get_processed_data: Optional[str] = None,
-            allocated_buffers: Optional[int] = None,
-            buffer_timeout: Optional[int] = None,
-            acquisition_controller: Optional["AcquisitionController[Any]"] = None
+        self,
+        mode: Optional[str] = None,
+        samples_per_record: Optional[int] = None,
+        records_per_buffer: Optional[int] = None,
+        buffers_per_acquisition: Optional[int] = None,
+        channel_selection: Optional[str] = None,
+        transfer_offset: Optional[int] = None,
+        external_startcapture: Optional[str] = None,
+        enable_record_headers: Optional[str] = None,
+        alloc_buffers: Optional[str] = None,
+        fifo_only_streaming: Optional[str] = None,
+        interleave_samples: Optional[str] = None,
+        get_processed_data: Optional[str] = None,
+        allocated_buffers: Optional[int] = None,
+        buffer_timeout: Optional[int] = None,
+        acquisition_controller: Optional["AcquisitionController[OutputType]"] = None,
     ) -> OutputType:
         """
         perform a single acquisition with the Alazar board, and set certain
