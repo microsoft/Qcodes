@@ -574,8 +574,12 @@ def dond(
                 for group in sweeper_measurer.groups
             ]
             additional_setpoints_data = process_params_meas(additional_setpoints)
-            for set_events in tqdm(sweeper, disable=not show_progress):
-                results = {}
+            # _Sweeper is not considdered an Iterable since it does not implement __iter__
+            # However, it does implement __getitem__ and is therefor safe to iterate over
+            # https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterable
+            # https://github.com/python/cpython/issues/86992#issuecomment-1093897307
+            for set_events in tqdm(sweeper, disable=not show_progress):  # type: ignore[call-overload]
+                results: dict[ParameterBase, Any] = {}
                 for set_event in set_events:
                     if set_event.should_set:
                         set_event.parameter(set_event.new_value)
