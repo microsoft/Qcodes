@@ -177,6 +177,7 @@ def test_dond_explicit_exp_meas_sample(_param, experiment):
     assert data3[0].sample_name == "no-sample"
     assert data3[0].name == "results"
 
+
 def test_dond_multi_datasets_explicit_exp_meas_sample(
     _param, _param_complex, experiment
 ):
@@ -201,6 +202,19 @@ def test_dond_multi_datasets_explicit_exp_meas_sample(
     data3 = dond([_param], [_param_complex], do_plot=False)
     assert data3[0][0].exp_name == "new-exp"
     assert data3[0][1].exp_name == "new-exp"
+
+
+def test_dond_multi_datasets_explicit_meas_names(_param, _param_complex, experiment):
+
+    data1 = dond(
+        [_param],
+        [_param_complex],
+        measurement_name=["foo", "bar"],
+        do_plot=False,
+        exp=experiment,
+    )
+    assert data1[0][0].name == "foo"
+    assert data1[0][1].name == "bar"
 
 
 @pytest.mark.usefixtures("experiment")
