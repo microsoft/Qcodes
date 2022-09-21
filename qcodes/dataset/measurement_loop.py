@@ -738,7 +738,7 @@ class MeasurementLoop:
 
         return fraction_complete
 
-    def fraction_complete(self, silent=True):
+    def fraction_complete(self, silent=True, precision=3):
         msmt = running_measurement()
         if msmt is None:
             return 1
@@ -757,7 +757,7 @@ class MeasurementLoop:
         if not silent:
             print(f'Fraction complete from loop: {fraction_complete_loop:.3f}')
 
-        return fraction_complete
+        return np.round(fraction_complete, precision)
 
     # Measurement-related functions
     def _measure_parameter(
