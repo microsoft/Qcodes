@@ -1141,6 +1141,7 @@ def test_dond_multi_sweep_parameter_with_setpoints(dummyinstrument):
         datasets[0].parameters
         == "a,c,dummyinstrument_ChanA_dummy_sp_axis,dummyinstrument_ChanA_dummy_parameter_with_setpoints"
     )
+    assert len(datasets[0].description.shapes) == 1
     assert datasets[0].description.shapes[
         "dummyinstrument_ChanA_dummy_parameter_with_setpoints"
     ] == (outer_shape, inner_shape, n_points_a)
@@ -1149,6 +1150,7 @@ def test_dond_multi_sweep_parameter_with_setpoints(dummyinstrument):
         datasets[1].parameters
         == "b,c,dummyinstrument_ChanB_dummy_sp_axis,dummyinstrument_ChanB_dummy_parameter_with_setpoints"
     )
+    assert len(datasets[1].description.shapes) == 1
     assert datasets[1].description.shapes[
         "dummyinstrument_ChanB_dummy_parameter_with_setpoints"
     ] == (outer_shape, inner_shape, n_points_b)

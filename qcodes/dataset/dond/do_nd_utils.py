@@ -46,10 +46,18 @@ def _register_parameters(
     setpoints: Sequence[ParameterBase] | None = None,
     shapes: Shapes | None = None,
 ) -> None:
-    for parameter in param_meas:
-        if isinstance(parameter, ParameterBase):
-            meas.register_parameter(parameter, setpoints=setpoints)
-    meas.set_shapes(shapes=shapes)
+    real_parameters = [
+        param for param in param_meas if isinstance(param, ParameterBase)
+    ]
+    parameter_names = [param.full_name for param in real_parameters]
+
+    for parameter in real_parameters:
+        meas.register_parameter(parameter, setpoints=setpoints)
+    if shapes is not None:
+        filtered_shapes = {
+            name: shape for name, shape in shapes.items() if name in parameter_names
+        }
+        meas.set_shapes(shapes=filtered_shapes)
 
 
 def _set_write_period(meas: Measurement, write_period: float | None = None) -> None:
