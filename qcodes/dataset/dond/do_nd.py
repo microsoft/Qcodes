@@ -3,7 +3,6 @@ from __future__ import annotations
 import itertools
 import logging
 import time
-from collections.abc import Iterable
 from contextlib import ExitStack
 from dataclasses import dataclass
 from typing import Any, Mapping, Sequence, Tuple, Union, cast
@@ -38,7 +37,7 @@ from qcodes.dataset.threading import (
 from qcodes.parameters import ParameterBase
 from qcodes.utils import deprecate
 
-from .sweeps import AbstractSweep
+from .sweeps import AbstractSweep, MultiSweep
 
 LOG = logging.getLogger(__name__)
 
@@ -48,36 +47,6 @@ SweepVarType = Any
 class ParameterGroup(TypedDict):
     params: tuple[ParamMeasT, ...]
     meas_name: str
-
-
-class MultiSweep:
-    def __init__(self, sweeps: Sequence[AbstractSweep]):
-
-        if len(sweeps) == 0:
-            raise ValueError("A MultiSweep must contain at least one sweep.")
-
-        len_1 = sweeps[0].num_points
-
-        for sweep in sweeps:
-            if sweep.num_points != len_1:
-                raise ValueError(
-                    f"All Sweeps in a MultiSweep must have the same length."
-                    f"Sweep of {sweep.param} had {sweep.num_points} but the "
-                    f"first one had {len_1}."
-                )
-
-        self._sweeps = tuple(sweeps)
-
-    @property
-    def sweeps(self) -> tuple[AbstractSweep, ...]:
-        return self._sweeps
-
-    def get_setpoints(self) -> Iterable:
-        return zip(*(sweep.get_setpoints() for sweep in self.sweeps))
-
-    @property
-    def num_points(self) -> int:
-        return self.sweeps[0].num_points
 
 
 @dataclass

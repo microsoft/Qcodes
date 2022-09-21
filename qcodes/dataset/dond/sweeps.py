@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from typing import Any, Generic, TypeVar
 
 import numpy as np
@@ -206,3 +206,33 @@ class ArraySweep(AbstractSweep, Generic[T]):
     @property
     def post_actions(self) -> ActionsT:
         return self._post_actions
+
+
+class MultiSweep:
+    def __init__(self, sweeps: Sequence[AbstractSweep]):
+
+        if len(sweeps) == 0:
+            raise ValueError("A MultiSweep must contain at least one sweep.")
+
+        len_1 = sweeps[0].num_points
+
+        for sweep in sweeps:
+            if sweep.num_points != len_1:
+                raise ValueError(
+                    f"All Sweeps in a MultiSweep must have the same length."
+                    f"Sweep of {sweep.param} had {sweep.num_points} but the "
+                    f"first one had {len_1}."
+                )
+
+        self._sweeps = tuple(sweeps)
+
+    @property
+    def sweeps(self) -> tuple[AbstractSweep, ...]:
+        return self._sweeps
+
+    def get_setpoints(self) -> Iterable:
+        return zip(*(sweep.get_setpoints() for sweep in self.sweeps))
+
+    @property
+    def num_points(self) -> int:
+        return self.sweeps[0].num_points

@@ -10,9 +10,16 @@ from hypothesis import HealthCheck, given, settings
 from numpy.testing import assert_array_equal
 
 from qcodes import config, validators
-from qcodes.dataset import ArraySweep, LinSweep, LogSweep, dond, new_experiment
+from qcodes.dataset import (
+    ArraySweep,
+    LinSweep,
+    LogSweep,
+    MultiSweep,
+    dond,
+    new_experiment,
+)
 from qcodes.dataset.data_set import DataSet
-from qcodes.dataset.dond.do_nd import MultiSweep, _Sweeper
+from qcodes.dataset.dond.do_nd import _Sweeper
 from qcodes.parameters import ManualParameter, Parameter, ParameterBase
 from qcodes.tests.dataset.conftest import ArrayshapedParam
 from qcodes.tests.instrument_mocks import (
