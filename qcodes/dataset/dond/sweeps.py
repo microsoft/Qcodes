@@ -209,6 +209,12 @@ class ArraySweep(AbstractSweep, Generic[T]):
 
 
 class MultiSweep:
+    """
+    A combination of Multiple sweeps that are to be performed in parallel
+    such that all parameters in the `MultiSweep` are set to the next value
+    before a parameter is read.
+
+    """
     def __init__(self, sweeps: Sequence[AbstractSweep]):
 
         if len(sweeps) == 0:
