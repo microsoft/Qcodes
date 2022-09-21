@@ -4,7 +4,7 @@ import traceback
 from datetime import datetime
 from time import perf_counter, sleep
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Union
-
+from tqdm.auto import tqdm
 import numpy as np
 
 from qcodes.dataset.data_set_protocol import DataSetProtocol
@@ -356,6 +356,8 @@ class MeasurementLoop:
         name: Measurement name, also used as the dataset name
         notify: Notify when measurement is complete.
             The function `Measurement.notify_function` must be set
+        show_progress: Whether to show progress bars.
+            If not specified, will use value of class attribute ``MeasurementLoop.show_progress``
     """
 
     # Context manager
@@ -370,6 +372,10 @@ class MeasurementLoop:
     except_actions = []
     max_arrays = 100
 
+    # Progress bar
+    show_progress: bool = True
+    _progress_bar_kwargs: Dict[str, Any] = {'mininterval': 0.2}
+
     _t_start = None
 
     # Notification function, called if notify=True.
@@ -378,7 +384,7 @@ class MeasurementLoop:
     # The last three are only not None if an error has occured
     notify_function = None
 
-    def __init__(self, name: Optional[str], notify: bool = False):
+    def __init__(self, name: Optional[str], notify: bool = False, show_progress: bool = None):
         self.name: str = name
 
         # Data handler is created during `with Measurement("name")`
@@ -393,6 +399,12 @@ class MeasurementLoop:
 
         # Index of current action
         self.action_indices: Union[Tuple[int], None] = None
+
+        # Progress bars, only used if show_progress is True
+        if show_progress is not None:
+            self.show_progress = show_progress
+        self.progress_bars: Dict[Tuple[int], tqdm] = {}
+
 
         # contains data groups, such as ParameterNodes and nested measurements
         self._data_groups: Dict[Tuple[int], "MeasurementLoop"] = {}
@@ -550,6 +562,9 @@ class MeasurementLoop:
             # an error occurs during final actions.
             MeasurementLoop.running_measurement = None
 
+            for progress_bar in self.progress_bars.values():
+                progress_bar.close()
+
         if exc_type is not None:
             self.log(f"Measurement error {exc_type.__name__}({exc_val})", level="error")
 
@@ -677,6 +692,33 @@ class MeasurementLoop:
                 continue
             max_idx = max(max_idx, idxs[position])
         return max_idx
+
+    def _update_progress_bar(self, action_indices, description=None, create_if_new=True):
+        # Register new progress bar
+        if action_indices not in self.progress_bars:
+            if create_if_new:
+                self.progress_bars[action_indices] = tqdm(
+                    total=np.prod(self.loop_shape),
+                    desc=description,
+                    **self._progress_bar_kwargs
+                )
+            else:
+                raise RuntimeError('Cannot update progress bar if not created')
+
+        # Update progress bar
+        progress_bar = self.progress_bars[action_indices]
+        value = 1
+        for k, loop_idx in enumerate(self.loop_indices[::-1]):
+            if k:
+                factor = np.prod(self.loop_shape[-k:])
+            else:
+                factor = 1
+            value += factor * loop_idx
+
+        progress_bar.update(value - progress_bar.n)
+        if value == progress_bar.total:
+            progress_bar.close()
+
 
     def _fraction_complete_action_indices(self, action_indices, silent=True):
         """Calculate fraction complete from finished action_indices"""
@@ -1032,6 +1074,7 @@ class MeasurementLoop:
         t0 = perf_counter()
         initial_action_indices = self.action_indices
 
+        # Optionally record timestamp before measurement has been recorded
         if timestamp:
             t_now = datetime.now()
 
@@ -1067,6 +1110,15 @@ class MeasurementLoop:
                 f"is not a dict, int, float, bool, or numpy array."
             )
 
+        # Optionally show progress bar
+        if self.show_progress:
+            self._update_progress_bar(
+                action_indices=initial_action_indices, 
+                description=f'Measuring {self.action_names.get(initial_action_indices)}',
+                create_if_new=True
+            )
+
+        # Optionally record timestamp after measurement has been recorded
         if timestamp:
             t_now = datetime.now()
 
