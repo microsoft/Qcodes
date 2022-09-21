@@ -193,7 +193,7 @@ class Config:
         """
         if schema is None:
             if self.current_schema is None:
-                raise RuntimeError("Cannot validate as " "current_schema is None")
+                raise RuntimeError("Cannot validate as current_schema is None")
             schema = self.current_schema
 
         if json_config is None:
