@@ -402,7 +402,7 @@ class _SweeperMeasure:
                 )
 
             output_parameter_tuples = tuple(
-                output[1] for output in self._dataset_mapping
+                tuple(output[1]) for output in self._dataset_mapping
             )
 
             for r_m_group in requested_measure_groups:
@@ -419,13 +419,13 @@ class _SweeperMeasure:
                 self._experiments,
                 self._measurements.measurement_names,
             ):
-                if sp_group not in potential_setpoint_groups:
+                if tuple(sp_group) not in potential_setpoint_groups:
                     raise ValueError(
                         f"The dataset_mapping contains {sp_group} "
                         f"which is not among the expected groups of setpoints."
                         f"{potential_setpoint_groups}"
                     )
-                if m_group not in requested_measure_groups:
+                if tuple(m_group) not in requested_measure_groups:
                     raise ValueError(
                         f"The dataset_mapping contains {m_group} "
                         f"which is not among the expected groups of measured points."

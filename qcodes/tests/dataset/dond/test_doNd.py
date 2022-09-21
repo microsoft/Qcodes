@@ -985,6 +985,30 @@ def test_dond_multi_sweep_sweeper_combined():
     assert datasets[2].parameters == "b,c,f"
 
 
+def test_dond_multi_sweep_sweeper_combined_lists():
+    a = ManualParameter("a", initial_value=0)
+    b = ManualParameter("b", initial_value=0)
+    c = ManualParameter("c", initial_value=0)
+    d = ManualParameter("d", initial_value=1)
+    e = ManualParameter("e", initial_value=2)
+    f = ManualParameter("f", initial_value=3)
+    sweepA = LinSweep(a, 0, 3, 10)
+    sweepB = LinSweep(b, 5, 7, 10)
+    sweepC = LinSweep(c, 8, 12, 10)
+
+    datasets, _, _ = dond(
+        MultiSweep([sweepA, sweepB]),
+        sweepC,
+        [d],
+        [e],
+        [f],
+        do_plot=False,
+        dataset_mapping=[([a, c], [d]), [(b, c), (e,)], ((b, c), (f,))],
+    )
+    assert datasets[0].parameters == "a,c,d"
+    assert datasets[1].parameters == "b,c,e"
+    assert datasets[2].parameters == "b,c,f"
+
 @given(
     n_points_1=hst.integers(min_value=1, max_value=500),
     n_points_2=hst.integers(min_value=1, max_value=500),
