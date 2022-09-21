@@ -378,7 +378,7 @@ class _SweeperMeasure:
 
             if len(self._dataset_mapping) != len(requested_measure_groups):
                 raise ValueError(
-                    f"Requested for data to be split into {len(requested_measure_groups)}"
+                    f"Requested for data to be split into {len(requested_measure_groups)} "
                     f"but found {len(self._dataset_mapping)} groups in mapping."
                 )
 
