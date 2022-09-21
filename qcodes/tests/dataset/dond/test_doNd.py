@@ -164,14 +164,18 @@ def test_dond_explicit_exp_meas_sample(_param, experiment):
 
     data1 = dond(_param, do_plot=False, exp=experiment)
     assert data1[0].exp_name == "test-experiment"
+    assert data1[0].name == "results"
+    assert data1[0].sample_name == "test-sample"
     data2 = dond(_param, do_plot=False, exp=experiment_2, measurement_name="Meas")
-    assert data2[0].name == "TODO"
+    assert data2[0].name == "Meas"
     assert data2[0].sample_name == "no-sample"
     assert data2[0].exp_name == "new-exp"
     # by default the last experiment is used
     data3 = dond(_param, do_plot=False)
-    assert data3[0].exp_name == "new-exp"
 
+    assert data3[0].exp_name == "new-exp"
+    assert data3[0].sample_name == "no-sample"
+    assert data3[0].name == "results"
 
 def test_dond_multi_datasets_explicit_exp_meas_sample(
     _param, _param_complex, experiment
@@ -187,8 +191,8 @@ def test_dond_multi_datasets_explicit_exp_meas_sample(
         exp=experiment_2,
         measurement_name="Meas",
     )
-    assert data2[0][0].name == "TODO"
-    assert data2[0][1].name == "TODO"
+    assert data2[0][0].name == "Meas"
+    assert data2[0][1].name == "Meas"
     assert data2[0][0].sample_name == "no-sample"
     assert data2[0][1].sample_name == "no-sample"
     assert data2[0][0].exp_name == "new-exp"

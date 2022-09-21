@@ -205,7 +205,7 @@ class _Sweeper:
 class _Measurements:
     def __init__(
         self,
-        measurement_name: str,
+        measurement_name: str | Sequence[str],
         params_meas: Sequence[ParamMeasT | Sequence[ParamMeasT]],
     ):
         (
@@ -213,6 +213,19 @@ class _Measurements:
             self._grouped_parameters,
             self._measured_parameters,
         ) = self._extract_parameters_by_type_and_group(params_meas)
+        self.measurement_names = self._create_measurement_names(measurement_name)
+
+    def _create_measurement_names(
+        self, measurement_name: str | Sequence[str]
+    ) -> tuple[str, ...]:
+        if isinstance(measurement_name, str):
+            return (measurement_name,) * len(self._grouped_parameters)
+        else:
+            if len(measurement_name) != len(self._grouped_parameters):
+                raise ValueError(
+                    f"Got {len(measurement_name)} but should create {len(self._grouped_parameters)} datasets."
+                )
+            return tuple(measurement_name)
 
     @property
     def measured_all(self) -> tuple[ParamMeasT, ...]:
@@ -362,11 +375,14 @@ class _SweeperMeasure:
             groups = []
             sp_group: Sequence[ParameterBase]
             m_group: Sequence[ParamMeasT]
-            for sp_group, m_group, experiment in zip(
-                setpoint_groups, meaure_groups, self._experiments
+            for sp_group, m_group, experiment, meas_name in zip(
+                setpoint_groups,
+                meaure_groups,
+                self._experiments,
+                self._measurements.measurement_names,
             ):
                 meas_ctx = self._create_measurement_cx_manager(
-                    experiment, tuple(sp_group), tuple(m_group)
+                    experiment, meas_name, tuple(sp_group), tuple(m_group)
                 )
                 s_m_group = _SweapMeasGroup(
                     tuple(sp_group), tuple(m_group), experiment, meas_ctx
@@ -395,8 +411,10 @@ class _SweeperMeasure:
                     )
 
             groups = []
-            for (sp_group, m_group), experiment in zip(
-                self._dataset_mapping, self._experiments
+            for (sp_group, m_group), experiment, meas_name in zip(
+                self._dataset_mapping,
+                self._experiments,
+                self._measurements.measurement_names,
             ):
                 if sp_group not in potential_setpoint_groups:
                     raise ValueError(
@@ -413,7 +431,7 @@ class _SweeperMeasure:
 
                 LOG.info(f"creating context manager for {sp_group} {m_group}")
                 meas_ctx = self._create_measurement_cx_manager(
-                    experiment, tuple(sp_group), tuple(m_group)
+                    experiment, meas_name, tuple(sp_group), tuple(m_group)
                 )
                 s_m_group = _SweapMeasGroup(
                     tuple(sp_group), tuple(m_group), experiment, meas_ctx
@@ -428,11 +446,11 @@ class _SweeperMeasure:
     def _create_measurement_cx_manager(
         self,
         experiment: Experiment | None,
+        measurement_name: str,
         sweep_parameters: Sequence[ParameterBase],
         measure_parameters: Sequence[ParamMeasT],
     ) -> Measurement:
-        meas_name = "TODO"
-        meas = Measurement(name=meas_name, exp=experiment)
+        meas = Measurement(name=measurement_name, exp=experiment)
         _register_parameters(meas, sweep_parameters)
         _register_parameters(
             meas,
@@ -453,7 +471,7 @@ class _SweeperMeasure:
 def dond(
     *params: AbstractSweep | MultiSweep | ParamMeasT | Sequence[ParamMeasT],
     write_period: float | None = None,
-    measurement_name: str = "",
+    measurement_name: str | Sequence[str] = "",
     exp: Experiment | Sequence[Experiment] | None = None,
     enter_actions: ActionsT = (),
     exit_actions: ActionsT = (),
@@ -492,9 +510,10 @@ def dond(
 
         write_period: The time after which the data is actually written to the
             database.
-        measurement_name: Name of the measurement. This will be passed down to
+        measurement_name: Name(s) of the measurement. This will be passed down to
             the dataset produced by the measurement. If not given, a default
-            value of 'results' is used for the dataset.
+            value of 'results' is used for the dataset. If more that one is
+            given each dataset will have an individual name.
         exp: The experiment to use for this measurement. If you create multiple
             measurements using groups you may also supply multiple experiments.
         enter_actions: A list of functions taking no arguments that will be
