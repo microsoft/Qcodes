@@ -580,13 +580,13 @@ class AlazarTech_ATS(Instrument):
         # return result
         return acquisition_controller.post_acquire()
 
-    def _set_if_present(self, param_name: str, value: int | str | float | None) -> None:
+    def _set_if_present(self, param_name: str, value: str | float | None) -> None:
         if value is not None:
             parameter = self.parameters[param_name]
             parameter.set(value)
 
     def _set_list_if_present(
-        self, param_base: str, value: Sequence[int | str | float]
+        self, param_base: str, value: Sequence[str | float]
     ) -> None:
         if value is not None:
             for i, v in enumerate(value):
