@@ -1,22 +1,12 @@
+from __future__ import annotations
+
 import ctypes
 import logging
 import sys
 import time
 import warnings
 from contextlib import contextmanager
-from typing import (
-    Any,
-    Dict,
-    Generic,
-    Iterator,
-    List,
-    Optional,
-    Sequence,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import Any, Generic, Iterator, Sequence, Type, TypeVar, Union, cast
 
 import numpy as np
 
@@ -65,7 +55,7 @@ class AlazarTech_ATS(Instrument):
     channels = 2
 
     @classmethod
-    def find_boards(cls, dll_path: Optional[str] = None) -> List[Dict[str, Any]]:
+    def find_boards(cls, dll_path: str | None = None) -> list[dict[str, Any]]:
         """
         Find connected Alazar boards
 
@@ -86,8 +76,9 @@ class AlazarTech_ATS(Instrument):
         return boards
 
     @classmethod
-    def get_board_info(cls, api: AlazarATSAPI, system_id: int,
-                       board_id: int) -> Dict[str, Union[str, int]]:
+    def get_board_info(
+        cls, api: AlazarATSAPI, system_id: int, board_id: int
+    ) -> dict[str, str | int]:
         """
         Get the information from a connected Alazar board
 
@@ -127,9 +118,14 @@ class AlazarTech_ATS(Instrument):
         }
 
     def __init__(
-            self, name: str, system_id: int = 1, board_id: int = 1,
-            dll_path: Optional[str] = None,
-            api: Optional[AlazarATSAPI] = None, **kwargs: Any) -> None:
+        self,
+        name: str,
+        system_id: int = 1,
+        board_id: int = 1,
+        dll_path: str | None = None,
+        api: AlazarATSAPI | None = None,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(name, **kwargs)
         self.api = api or AlazarATSAPI(dll_path or self.dll_path)
 
@@ -142,9 +138,9 @@ class AlazarTech_ATS(Instrument):
 
         self.capability = CapabilityHelper(self.api, self._handle)
 
-        self.buffer_list: List['Buffer'] = []
+        self.buffer_list: list[Buffer] = []
 
-    def get_idn(self) -> Dict[str, Optional[Union[str, int]]]:  # type: ignore[override]
+    def get_idn(self) -> dict[str, str | int | None]:  # type: ignore[override]
         # TODO return type is inconsistent with the super class. We should consider
         # if ints and floats are allowed as values in the dict
         """
@@ -281,7 +277,7 @@ class AlazarTech_ATS(Instrument):
             self,
             sample_type: CtypesTypes,
             n_bytes: int
-    ) -> "Buffer":
+    ) -> Buffer:
         buffer = Buffer(sample_type, n_bytes)
         self.api.post_async_buffer(
             self._handle, ctypes.cast(
@@ -291,21 +287,21 @@ class AlazarTech_ATS(Instrument):
 
     def acquire(
         self,
-        mode: Optional[str] = None,
-        samples_per_record: Optional[int] = None,
-        records_per_buffer: Optional[int] = None,
-        buffers_per_acquisition: Optional[int] = None,
-        channel_selection: Optional[str] = None,
-        transfer_offset: Optional[int] = None,
-        external_startcapture: Optional[str] = None,
-        enable_record_headers: Optional[str] = None,
-        alloc_buffers: Optional[str] = None,
-        fifo_only_streaming: Optional[str] = None,
-        interleave_samples: Optional[str] = None,
-        get_processed_data: Optional[str] = None,
-        allocated_buffers: Optional[int] = None,
-        buffer_timeout: Optional[int] = None,
-        acquisition_controller: Optional["AcquisitionController[OutputType]"] = None,
+        mode: str | None = None,
+        samples_per_record: int | None = None,
+        records_per_buffer: int | None = None,
+        buffers_per_acquisition: int | None = None,
+        channel_selection: str | None = None,
+        transfer_offset: int | None = None,
+        external_startcapture: str | None = None,
+        enable_record_headers: str | None = None,
+        alloc_buffers: str | None = None,
+        fifo_only_streaming: str | None = None,
+        interleave_samples: str | None = None,
+        get_processed_data: str | None = None,
+        allocated_buffers: int | None = None,
+        buffer_timeout: int | None = None,
+        acquisition_controller: AcquisitionController[OutputType] | None = None,
     ) -> OutputType:
         """
         perform a single acquisition with the Alazar board, and set certain
@@ -393,7 +389,7 @@ class AlazarTech_ATS(Instrument):
         transfer_buffer_size = (transfer_record_size *
                                 records_per_buffer * number_of_channels)
 
-        sample_type: Union[Type[ctypes.c_uint16], Type[ctypes.c_uint8]] = (
+        sample_type: type[ctypes.c_uint16] | type[ctypes.c_uint8] = (
             ctypes.c_uint16 if whole_bytes_per_sample > 1 else ctypes.c_uint8)
         internal_buffer_size_requested = (bits_per_sample * samples_per_record *
                                           records_per_buffer) // 8
@@ -584,14 +580,14 @@ class AlazarTech_ATS(Instrument):
         # return result
         return acquisition_controller.post_acquire()
 
-    def _set_if_present(self,
-                        param_name: str,
-                        value: Union[int, str, float, None]) -> None:
+    def _set_if_present(self, param_name: str, value: int | str | float | None) -> None:
         if value is not None:
             parameter = self.parameters[param_name]
             parameter.set(value)
 
-    def _set_list_if_present(self, param_base: str, value: Sequence[Union[int, str, float]]) -> None:
+    def _set_list_if_present(
+        self, param_base: str, value: Sequence[int | str | float]
+    ) -> None:
         if value is not None:
             for i, v in enumerate(value):
                 parameter = self.parameters[param_base + str(i + 1)]
@@ -818,9 +814,9 @@ class AcquisitionInterface(Generic[OutputType]):
         """
         pass
 
-    def handle_buffer(self,
-                      buffer: np.ndarray,
-                      buffer_number: Optional[int] = None) -> None:
+    def handle_buffer(
+        self, buffer: np.ndarray, buffer_number: int | None = None
+    ) -> None:
         """
         This method should store or process the information that is contained
         in the buffers obtained during the acquisition.
