@@ -201,6 +201,9 @@ class _Sweeper:
             parameter_set_events.append(event)
         return tuple(parameter_set_events)
 
+    def __len__(self) -> int:
+        return int(np.product(self.shape))
+
 
 class _Measurements:
     def __init__(
