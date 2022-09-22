@@ -373,7 +373,7 @@ class MeasurementLoop:
     max_arrays = 100
 
     # Progress bar
-    show_progress: bool = True
+    show_progress: bool = False
     _progress_bar_kwargs: Dict[str, Any] = {'mininterval': 0.2}
 
     _t_start = None
