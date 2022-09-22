@@ -4,6 +4,7 @@ import traceback
 from datetime import datetime
 from time import perf_counter, sleep
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Union
+from warnings import warn
 from tqdm.auto import tqdm
 import numpy as np
 
@@ -1112,11 +1113,14 @@ class MeasurementLoop:
 
         # Optionally show progress bar
         if self.show_progress:
-            self._update_progress_bar(
-                action_indices=initial_action_indices, 
-                description=f'Measuring {self.action_names.get(initial_action_indices)}',
-                create_if_new=True
-            )
+            try:
+                self._update_progress_bar(
+                    action_indices=initial_action_indices, 
+                    description=f'Measuring {self.action_names.get(initial_action_indices)}',
+                    create_if_new=True
+                )
+            except Exception as e:
+                warn(f'Failed to update progress bar. Error: {e}')
 
         # Optionally record timestamp after measurement has been recorded
         if timestamp:
