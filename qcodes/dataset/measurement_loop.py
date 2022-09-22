@@ -1634,6 +1634,43 @@ class BaseSweep(AbstractSweep):
 
         return sweep_value
 
+    def __call__(
+        self,
+        *args: Optional[Iterable["BaseSweep"]],
+        name: str = None,
+        measure_params: Union[Iterable, _BaseParameter] = None,
+        repetitions: int = 1,
+        sweep: Union[Iterable, "BaseSweep"] = None,
+        plot: bool = False,
+    ):
+        """Perform sweep, identical to `Sweep.execute`
+        
+
+        Args:
+            *args: Optional additional sweeps used for N-dimensional measurements
+                The first arg is the outermost sweep dimension, and the sweep on which
+                `Sweep.execute` was called is the innermost dimension.
+            name: Dataset name, defaults to a concatenation of sweep parameter names
+            measure_params: Parameters to measure.
+                If not provided, it will check the attribute ``Station.measure_params``
+                for parameters. Raises an error if undefined.
+            repetitions: Number of times to repeat measurement, defaults to 1.
+                This will be the outermost loop if set to a value above 1.
+            sweep: Identical to passing *args.
+                Note that ``sweep`` can be either a single Sweep, or a Sweep list.
+
+        Returns:
+            Dataset corresponding to measurement
+        """
+        return self.execute(
+            *args, 
+            name=name, 
+            measure_params=measure_params,
+            repetitions=repetitions,
+            sweep=sweep,
+            plot=plot
+        )
+
     def initialize(self) -> Dict[str, Any]:
         """Initializes a `Sweep`, attaching it to the current `MeasurementLoop`"""
         msmt = running_measurement()
@@ -1695,6 +1732,9 @@ class BaseSweep(AbstractSweep):
                 This will be the outermost loop if set to a value above 1.
             sweep: Identical to passing *args.
                 Note that ``sweep`` can be either a single Sweep, or a Sweep list.
+
+        Returns:
+            Dataset corresponding to measurement
         """
         # Get "measure_params" from station if not provided
         if measure_params is None:
