@@ -10,7 +10,7 @@ from qcodes.dataset.data_set_protocol import DataSetProtocol
 from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.plotting import plot_and_save_image
-from qcodes.parameters import ParameterBase
+from qcodes.parameters import MultiParameter, ParameterBase
 
 ActionsT = Sequence[Callable[[], None]]
 BreakConditionT = Callable[[], bool]
@@ -50,6 +50,10 @@ def _register_parameters(
         param for param in param_meas if isinstance(param, ParameterBase)
     ]
     parameter_names = [param.full_name for param in real_parameters]
+
+    for param in real_parameters:
+        if isinstance(param, MultiParameter):
+            parameter_names.extend(param.full_names)
 
     for parameter in real_parameters:
         meas.register_parameter(parameter, setpoints=setpoints)
