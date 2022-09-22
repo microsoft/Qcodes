@@ -1220,8 +1220,6 @@ class Measurement:
             shapes: Dictionary from names of dependent parameters to a tuple
                 of integers describing the shape of the measurement.
         """
-        RunDescriber._verify_interdeps_shape(interdeps=self._interdeps,
-                                             shapes=shapes)
         self._shapes = shapes
 
     def run(
