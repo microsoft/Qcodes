@@ -129,8 +129,9 @@ class _Sweeper:
 
     @property
     def all_setpoint_params(self) -> tuple[ParameterBase, ...]:
-        return tuple(sweep.param for sweep in self.all_sweeps)
-
+        return tuple(sweep.param for sweep in self.all_sweeps) + tuple(
+            self._additional_setpoints
+        )
 
     @property
     def sweep_groupes(self) -> tuple[tuple[ParameterBase, ...], ...]:
@@ -150,10 +151,11 @@ class _Sweeper:
         param_list.extend([(setpoint,) for setpoint in self._additional_setpoints])
         # looks lite itertools.product is not yet generic in input type
         # so output ends up being tuple[tuple[Any]] even with a specified input type
-        param_tuples = cast(
+        param_tuples_single = cast(
             Tuple[Tuple[ParameterBase, ...]], tuple(itertools.product(*param_list))
         )
-        return param_tuples
+        param_tuples_all = (tuple(itertools.chain(*param_list)),)
+        return tuple(set(param_tuples_single + param_tuples_all))
 
     @staticmethod
     def _make_shape(
@@ -363,32 +365,22 @@ class _SweeperMeasure:
     def _create_groups(self) -> tuple[_SweapMeasGroup, ...]:
 
         if self._dataset_mapping is None:
-            setpoint_groups = self._sweeper.sweep_groupes
+            setpoint = self._sweeper.all_setpoint_params
             meaure_groups = self._measurements.grouped_parameters
 
-            if len(setpoint_groups) == 1:
-                setpoint_groups = (setpoint_groups[0],) * len(meaure_groups)
-
-            if len(setpoint_groups) != len(meaure_groups):
-                raise ValueError(
-                    f"Inconsistent number of "
-                    f"parameter groups and setpoint groups "
-                    f"got {len(meaure_groups)} and {len(setpoint_groups)}"
-                )
             groups = []
             sp_group: Sequence[ParameterBase]
             m_group: Sequence[ParamMeasT]
-            for sp_group, m_group, experiment, meas_name in zip(
-                setpoint_groups,
+            for m_group, experiment, meas_name in zip(
                 meaure_groups,
                 self._experiments,
                 self._measurements.measurement_names,
             ):
                 meas_ctx = self._create_measurement_cx_manager(
-                    experiment, meas_name, tuple(sp_group), tuple(m_group)
+                    experiment, meas_name, setpoint, tuple(m_group)
                 )
                 s_m_group = _SweapMeasGroup(
-                    tuple(sp_group), tuple(m_group), experiment, meas_ctx
+                    setpoint, tuple(m_group), experiment, meas_ctx
                 )
                 groups.append(s_m_group)
         else:

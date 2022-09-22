@@ -910,8 +910,14 @@ def test_dond_multi_sweep(_param_set, _param_set_2, _param, _param_2):
     assert sweep_2.param.name == "simple_setter_parameter_2"
     assert _param_2.name == "simple_parameter_2"
 
-    assert output[0][0].parameters == "simple_setter_parameter,simple_parameter"
-    assert output[0][1].parameters == "simple_setter_parameter_2,simple_parameter_2"
+    assert (
+        output[0][0].parameters
+        == "simple_setter_parameter,simple_setter_parameter_2,simple_parameter"
+    )
+    assert (
+        output[0][1].parameters
+        == "simple_setter_parameter,simple_setter_parameter_2,simple_parameter_2"
+    )
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
@@ -931,7 +937,17 @@ def test_dond_multi_sweep_sweeper(_param_set, _param_set_2, _param):
 
     sweeper = _Sweeper([multi_sweep], [])
 
-    assert sweeper.sweep_groupes == ((sweep_1.param,), (sweep_2.param,))
+    expected_sweeper_groups = (
+        (sweep_1.param,),
+        (sweep_2.param,),
+        (
+            sweep_1.param,
+            sweep_2.param,
+        ),
+    )
+    for g in expected_sweeper_groups:
+        assert g in sweeper.sweep_groupes
+    assert len(expected_sweeper_groups) == len(sweeper.sweep_groupes)
     assert sweeper.shape == (10,)
     assert sweeper.all_setpoint_params == (sweep_1.param, sweep_2.param)
 
@@ -1034,7 +1050,7 @@ def test_empty_multisweep_raises():
         MultiSweep([])
 
 
-def test_dond_multi_sweep_not_specified_2_and_3():
+def test_dond_multi_sweep_more_groups():
     a = ManualParameter("a", initial_value=0)
     b = ManualParameter("b", initial_value=0)
     c = ManualParameter("c", initial_value=0)
@@ -1045,17 +1061,16 @@ def test_dond_multi_sweep_not_specified_2_and_3():
     sweepB = LinSweep(b, 5, 7, 10)
     sweepC = LinSweep(c, 8, 12, 10)
 
-    with pytest.raises(
-        ValueError, match="Inconsistent number of parameter groups and setpoint groups"
-    ):
-        datasets, _, _ = dond(
-            MultiSweep([sweepA, sweepB]),
-            sweepC,
-            [d],
-            [e],
-            [f],
-            do_plot=False,
-        )
+
+    datasets, _, _ = dond(
+        MultiSweep([sweepA, sweepB]),
+        sweepC,
+        [d],
+        [e],
+        [f],
+        do_plot=False,
+    )
+    assert len(datasets) == 3
 
 
 def test_dond_multi_sweep_sweeper_combined_missing_in_mapping():
@@ -1163,7 +1178,7 @@ def test_dond_multi_sweep_parameter_with_setpoints(dummyinstrument):
 
     assert (
         datasets[0].parameters
-        == "a,c,dummyinstrument_ChanA_dummy_sp_axis,dummyinstrument_ChanA_dummy_parameter_with_setpoints"
+        == "a,b,c,dummyinstrument_ChanA_dummy_sp_axis,dummyinstrument_ChanA_dummy_parameter_with_setpoints"
     )
     assert len(datasets[0].description.shapes) == 1
     assert datasets[0].description.shapes[
@@ -1172,9 +1187,33 @@ def test_dond_multi_sweep_parameter_with_setpoints(dummyinstrument):
 
     assert (
         datasets[1].parameters
-        == "b,c,dummyinstrument_ChanB_dummy_sp_axis,dummyinstrument_ChanB_dummy_parameter_with_setpoints"
+        == "a,b,c,dummyinstrument_ChanB_dummy_sp_axis,dummyinstrument_ChanB_dummy_parameter_with_setpoints"
     )
     assert len(datasets[1].description.shapes) == 1
     assert datasets[1].description.shapes[
         "dummyinstrument_ChanB_dummy_parameter_with_setpoints"
     ] == (outer_shape, inner_shape, n_points_b)
+
+
+def test_dond_sweeper_combinations(_param_set, _param_set_2, _param):
+    outer_shape = 10
+    inner_shape = 15
+
+    a = ManualParameter("a", initial_value=0)
+    b = ManualParameter("b", initial_value=0)
+    c = ManualParameter("c", initial_value=0)
+    sweep_a = LinSweep(a, 0, 3, outer_shape)
+    sweep_b = LinSweep(b, 5, 7, outer_shape)
+    sweep_c = LinSweep(c, 8, 12, inner_shape)
+
+    multi_sweep = MultiSweep([sweep_a, sweep_b])
+
+    sweeper = _Sweeper([multi_sweep, sweep_c], [])
+
+    sweep_groups = sweeper.sweep_groupes
+
+    expected_sweeper_groups = ((a, c), (b, c), (a, b, c))
+
+    assert len(expected_sweeper_groups) == len(sweep_groups)
+    for g in expected_sweeper_groups:
+        assert g in sweep_groups
