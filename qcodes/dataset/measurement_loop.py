@@ -1679,6 +1679,7 @@ class BaseSweep(AbstractSweep):
         measure_params: Union[Iterable, _BaseParameter] = None,
         repetitions: int = 1,
         sweep: Union[Iterable, "BaseSweep"] = None,
+        plot: bool = False,
     ) -> DataSetProtocol:
         """Performs a measurement using this sweep
 
@@ -1734,6 +1735,9 @@ class BaseSweep(AbstractSweep):
 
         with MeasurementLoop(name) as msmt:
             measure_sweeps(sweeps=sweeps, measure_params=measure_params, msmt=msmt)
+
+        if plot and self.plot_function is not None:
+            self.plot_function(msmt.dataset)
 
         return msmt.dataset
 
