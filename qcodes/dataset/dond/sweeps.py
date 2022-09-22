@@ -215,6 +215,7 @@ class MultiSweep:
     before a parameter is read.
 
     """
+
     def __init__(self, sweeps: Sequence[AbstractSweep]):
 
         if len(sweeps) == 0:

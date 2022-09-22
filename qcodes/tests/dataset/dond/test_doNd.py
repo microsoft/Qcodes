@@ -1025,6 +1025,7 @@ def test_dond_multi_sweep_sweeper_combined_lists():
     assert datasets[1].parameters == "b,c,e"
     assert datasets[2].parameters == "b,c,f"
 
+
 @given(
     n_points_1=hst.integers(min_value=1, max_value=500),
     n_points_2=hst.integers(min_value=1, max_value=500),
@@ -1060,7 +1061,6 @@ def test_dond_multi_sweep_more_groups():
     sweepA = LinSweep(a, 0, 3, 10)
     sweepB = LinSweep(b, 5, 7, 10)
     sweepC = LinSweep(c, 8, 12, 10)
-
 
     datasets, _, _ = dond(
         MultiSweep([sweepA, sweepB]),
