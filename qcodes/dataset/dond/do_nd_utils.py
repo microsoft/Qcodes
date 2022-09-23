@@ -49,15 +49,16 @@ def _register_parameters(
     real_parameters = [
         param for param in param_meas if isinstance(param, ParameterBase)
     ]
-    parameter_names = [param.full_name for param in real_parameters]
-
-    for param in real_parameters:
-        if isinstance(param, MultiParameter):
-            parameter_names.extend(param.full_names)
 
     for parameter in real_parameters:
         meas.register_parameter(parameter, setpoints=setpoints)
+
     if shapes is not None:
+        parameter_names = [param.full_name for param in real_parameters]
+        for param in real_parameters:
+            if isinstance(param, MultiParameter):
+                parameter_names.extend(param.full_names)
+
         filtered_shapes = {
             name: shape for name, shape in shapes.items() if name in parameter_names
         }
