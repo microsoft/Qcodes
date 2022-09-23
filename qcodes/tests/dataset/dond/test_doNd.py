@@ -900,7 +900,7 @@ def test_dond_multi_sweep(_param_set, _param_set_2, _param, _param_2):
     sweep_1 = LinSweep(_param_set, 0, 1, 10, 0)
     sweep_2 = LinSweep(_param_set_2, 1, 2, 10, 0)
 
-    multi_sweep = MultiSweep([sweep_1, sweep_2])
+    multi_sweep = MultiSweep(sweep_1, sweep_2)
 
     output = dond(multi_sweep, [_param], [_param_2], do_plot=False)
 
@@ -933,7 +933,7 @@ def test_dond_multi_sweep_sweeper(_param_set, _param_set_2, _param):
 
     sweep_2 = LinSweep(_param_set_2, 1, 2, sweep_len, delay_2)
 
-    multi_sweep = MultiSweep([sweep_1, sweep_2])
+    multi_sweep = MultiSweep(sweep_1, sweep_2)
 
     sweeper = _Sweeper([multi_sweep], [])
 
@@ -988,7 +988,7 @@ def test_dond_multi_sweep_sweeper_combined():
     sweepC = LinSweep(c, 8, 12, 10)
 
     datasets, _, _ = dond(
-        MultiSweep([sweepA, sweepB]),
+        MultiSweep(sweepA, sweepB),
         sweepC,
         [d],
         [e],
@@ -1013,7 +1013,7 @@ def test_dond_multi_sweep_sweeper_combined_lists():
     sweepC = LinSweep(c, 8, 12, 10)
 
     datasets, _, _ = dond(
-        MultiSweep([sweepA, sweepB]),
+        MultiSweep(sweepA, sweepB),
         sweepC,
         [d],
         [e],
@@ -1040,7 +1040,7 @@ def test_multi_sweep_validation(n_points_1, n_points_2):
         with pytest.raises(
             ValueError, match="All Sweeps in a MultiSweep must have the same length"
         ):
-            MultiSweep([sweepA, sweepB])
+            MultiSweep(sweepA, sweepB)
 
 
 def test_empty_multisweep_raises():
@@ -1048,7 +1048,7 @@ def test_empty_multisweep_raises():
     with pytest.raises(
         ValueError, match="A MultiSweep must contain at least one sweep."
     ):
-        MultiSweep([])
+        MultiSweep()
 
 
 def test_dond_multi_sweep_more_groups():
@@ -1063,7 +1063,7 @@ def test_dond_multi_sweep_more_groups():
     sweepC = LinSweep(c, 8, 12, 10)
 
     datasets, _, _ = dond(
-        MultiSweep([sweepA, sweepB]),
+        MultiSweep(sweepA, sweepB),
         sweepC,
         [d],
         [e],
@@ -1089,7 +1089,7 @@ def test_dond_multi_sweep_sweeper_combined_missing_in_mapping():
         match="Requested for data to be split into 3 but found 2 groups in mapping",
     ):
         datasets, _, _ = dond(
-            MultiSweep([sweepA, sweepB]),
+            MultiSweep(sweepA, sweepB),
             sweepC,
             [d],
             [e],
@@ -1112,7 +1112,7 @@ def test_dond_multi_sweep_sweeper_wrong_sp_in_mapping():
 
     with pytest.raises(ValueError, match=f"not among the expected groups of setpoints"):
         datasets, _, _ = dond(
-            MultiSweep([sweepA, sweepB]),
+            MultiSweep(sweepA, sweepB),
             sweepC,
             [d],
             [e],
@@ -1136,7 +1136,7 @@ def test_dond_multi_sweep_sweeper_wrong_mp_in_mapping():
 
     with pytest.raises(ValueError, match=f"Requested for data to be split into"):
         datasets, _, _ = dond(
-            MultiSweep([sweepA, sweepB]),
+            MultiSweep(sweepA, sweepB),
             sweepC,
             [d],
             [e],
@@ -1169,7 +1169,7 @@ def test_dond_multi_sweep_parameter_with_setpoints(dummyinstrument):
     sweep_c = LinSweep(c, 8, 12, inner_shape)
 
     datasets, _, _ = dond(
-        MultiSweep([sweep_a, sweep_b]),
+        MultiSweep(sweep_a, sweep_b),
         sweep_c,
         [dummyinstrument.A.dummy_parameter_with_setpoints],
         [dummyinstrument.B.dummy_parameter_with_setpoints],
@@ -1206,7 +1206,7 @@ def test_dond_sweeper_combinations(_param_set, _param_set_2, _param):
     sweep_b = LinSweep(b, 5, 7, outer_shape)
     sweep_c = LinSweep(c, 8, 12, inner_shape)
 
-    multi_sweep = MultiSweep([sweep_a, sweep_b])
+    multi_sweep = MultiSweep(sweep_a, sweep_b)
 
     sweeper = _Sweeper([multi_sweep, sweep_c], [])
 

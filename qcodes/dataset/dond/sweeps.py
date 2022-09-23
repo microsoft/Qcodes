@@ -216,7 +216,7 @@ class MultiSweep:
 
     """
 
-    def __init__(self, sweeps: Sequence[AbstractSweep]):
+    def __init__(self, *sweeps: AbstractSweep):
 
         if len(sweeps) == 0:
             raise ValueError("A MultiSweep must contain at least one sweep.")
