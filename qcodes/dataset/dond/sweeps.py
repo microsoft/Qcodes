@@ -205,10 +205,10 @@ class ArraySweep(AbstractSweep, Generic[T]):
         return self._post_actions
 
 
-class MultiSweep:
+class TogetherSweep:
     """
     A combination of Multiple sweeps that are to be performed in parallel
-    such that all parameters in the `MultiSweep` are set to the next value
+    such that all parameters in the `TogetherSweep` are set to the next value
     before a parameter is read.
 
     """
@@ -216,14 +216,14 @@ class MultiSweep:
     def __init__(self, *sweeps: AbstractSweep):
 
         if len(sweeps) == 0:
-            raise ValueError("A MultiSweep must contain at least one sweep.")
+            raise ValueError("A TogetherSweep must contain at least one sweep.")
 
         len_0 = sweeps[0].num_points
 
         for sweep in sweeps:
             if sweep.num_points != len_0:
                 raise ValueError(
-                    f"All Sweeps in a MultiSweep must have the same length."
+                    f"All Sweeps in a TogetherSweep must have the same length."
                     f"Sweep of {sweep.param} had {sweep.num_points} but the "
                     f"first one had {len_0}."
                 )

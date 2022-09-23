@@ -37,7 +37,7 @@ from qcodes.dataset.threading import (
 from qcodes.parameters import ParameterBase
 from qcodes.utils import deprecate
 
-from .sweeps import AbstractSweep, MultiSweep
+from .sweeps import AbstractSweep, TogetherSweep
 
 LOG = logging.getLogger(__name__)
 
@@ -61,7 +61,7 @@ class ParameterSetEvent:
 class _Sweeper:
     def __init__(
         self,
-        sweeps: Sequence[AbstractSweep | MultiSweep],
+        sweeps: Sequence[AbstractSweep | TogetherSweep],
         additional_setpoints: Sequence[ParameterBase],
     ):
         self._additional_setpoints = additional_setpoints
@@ -88,7 +88,7 @@ class _Sweeper:
         setpoint_dict = {}
         values = self._setpoints[index]
         for sweep, subvalues in zip(self._sweeps, values):
-            if isinstance(sweep, MultiSweep):
+            if isinstance(sweep, TogetherSweep):
                 for individual_sweep, value in zip(sweep.sweeps, subvalues):
                     setpoint_dict[individual_sweep.param.full_name] = value
             else:
@@ -100,7 +100,7 @@ class _Sweeper:
         setpoint_dict: dict[str, list[SweepVarType]] = {}
 
         for sweep in self._sweeps:
-            if isinstance(sweep, MultiSweep):
+            if isinstance(sweep, TogetherSweep):
                 for individual_sweep in sweep.sweeps:
                     setpoint_dict[individual_sweep.param.full_name] = []
             else:
@@ -108,7 +108,7 @@ class _Sweeper:
 
         for setpoint_tuples in self._setpoints:
             for sweep, values in zip(self._sweeps, setpoint_tuples):
-                if isinstance(sweep, MultiSweep):
+                if isinstance(sweep, TogetherSweep):
                     for individual_sweep, individual_value in zip(sweep.sweeps, values):
                         setpoint_dict[individual_sweep.param.full_name].append(
                             individual_value
@@ -121,7 +121,7 @@ class _Sweeper:
     def all_sweeps(self) -> tuple[AbstractSweep, ...]:
         sweeps: list[AbstractSweep] = []
         for sweep in self._sweeps:
-            if isinstance(sweep, MultiSweep):
+            if isinstance(sweep, TogetherSweep):
                 sweeps.extend(sweep.sweeps)
             else:
                 sweeps.append(sweep)
@@ -143,7 +143,7 @@ class _Sweeper:
         """
         param_list: list[tuple[ParameterBase, ...]] = []
         for sweep in self._sweeps:
-            if isinstance(sweep, MultiSweep):
+            if isinstance(sweep, TogetherSweep):
                 param_list.append(tuple(sub_sweep.param for sub_sweep in sweep.sweeps))
             else:
                 param_list.append((sweep.param,))
@@ -159,7 +159,7 @@ class _Sweeper:
 
     @staticmethod
     def _make_shape(
-        sweeps: Sequence[AbstractSweep | MultiSweep],
+        sweeps: Sequence[AbstractSweep | TogetherSweep],
         addtional_setpoints: Sequence[ParameterBase],
     ) -> tuple[int, ...]:
         loop_shape = tuple(sweep.num_points for sweep in sweeps) + tuple(
@@ -464,7 +464,7 @@ class _SweeperMeasure:
 
 
 def dond(
-    *params: AbstractSweep | MultiSweep | ParamMeasT | Sequence[ParamMeasT],
+    *params: AbstractSweep | TogetherSweep | ParamMeasT | Sequence[ParamMeasT],
     write_period: float | None = None,
     measurement_name: str | Sequence[str] = "",
     exp: Experiment | Sequence[Experiment] | None = None,
@@ -638,18 +638,20 @@ def dond(
 
 
 def _parse_dond_arguments(
-    *params: AbstractSweep | MultiSweep | ParamMeasT | Sequence[ParamMeasT],
-) -> tuple[list[AbstractSweep | MultiSweep], list[ParamMeasT | Sequence[ParamMeasT]]]:
+    *params: AbstractSweep | TogetherSweep | ParamMeasT | Sequence[ParamMeasT],
+) -> tuple[
+    list[AbstractSweep | TogetherSweep], list[ParamMeasT | Sequence[ParamMeasT]]
+]:
     """
     Parse supplied arguments into sweep objects and measurement parameters
     and their callables.
     """
-    sweep_instances: list[AbstractSweep | MultiSweep] = []
+    sweep_instances: list[AbstractSweep | TogetherSweep] = []
     params_meas: list[ParamMeasT | Sequence[ParamMeasT]] = []
     for par in params:
         if isinstance(par, AbstractSweep):
             sweep_instances.append(par)
-        elif isinstance(par, MultiSweep):
+        elif isinstance(par, TogetherSweep):
             sweep_instances.append(par)
         else:
             params_meas.append(par)
