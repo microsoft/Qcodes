@@ -390,6 +390,98 @@ class Parameter(ParameterBase):
         return SweepFixedValues(self, start=start, stop=stop, step=step, num=num)
 
 
+    def sweep(
+        self,
+        *args,
+        start: float = None,
+        stop: float = None,
+        around: float = None,
+        num: int = None,
+        step: float = None,
+        delay: float = None,
+        initial_delay: float = None,
+        revert: bool = None,
+        measurement_name: str = None,
+        measure_params: ParameterBase=None,
+        repetitions: int = 1,
+        sweep=None,
+        plot: bool = False,
+    ):
+        """Perform a measurement by sweeping this parameter
+
+        This creates a `Sweep` object and executes a measurement with it.
+
+        For the most frequent use-cases, a Sweep can also be created by passing args in a variety of ways:
+
+        1 arg:
+        - parameter.sweep([1,2,3])
+            : sweep "parameter" over sequence [1,2,3]
+        - parameter.sweep(stop_val)
+            : sweep "parameter" from current value to "stop_val"
+        2 args:
+        - parameter.sweep(start_val, stop_val)
+            : sweep "parameter" from "start_val" to "stop_val"
+            If "num" or "step" is not given as kwarg, it will check if "num" or "step"
+            is set in dict "parameter.sweep_defaults" and use that, or else raise an error.
+        3 args:
+        - Sweep(start_val, stop_val, num)
+            : Sweep "parameter" from "start_val" to "stop_val" with "num" number of points
+
+        Args:
+            start: start value of sweep sequence
+                Cannot be used together with ``around``
+            stop: stop value of sweep sequence
+                Cannot be used together with ``around``
+            around: sweep around the current parameter value.
+                ``start`` and ``stop`` are defined from ``around`` and the current value
+                i.e. start=X-dx, stop=X+dx when current_value=X and around=dx.
+                Passing the kwarg "around" also sets revert=True unless explicitly set False
+            num: Number of points between start and stop.
+                Cannot be used together with ``step``
+            step: Increment from start to stop.
+                Cannot be used together with ``num``
+            delay: Time delay after incrementing to the next value
+            initial_delay: Time delay after having incremented to its first value
+            name: Sweep name, overrides parameter.name
+            label: Sweep label, overrides parameter.label
+            unit: Sweep unit, overrides parameter.unit
+            revert: Revert parameter back to original value after the sweep ends.
+                This is False by default, unless the kwarg ``around`` is passed
+            measurement_name: Dataset name, defaults to a concatenation of sweep parameter names
+            measure_params: Parameters to measure.
+                If not provided, it will check the attribute ``Station.measure_params``
+                for parameters. Raises an error if undefined.
+            repetitions: Number of times to repeat measurement, defaults to 1.
+                This will be the outermost loop if set to a value above 1.
+            sweep: Additional sweeps used for N-dimensional measurements
+                The first element is the outermost sweep dimension, and the sweep on which
+                `parameter.sweep` was called is the innermost dimension.
+                Note that ``sweep`` can be either a single Sweep, or a Sweep list.
+        """
+        from qcodes.dataset import Sweep
+        sweep = Sweep(
+            self,  # Pass parameter as first arg
+            *args,
+            start=start,
+            stop=stop,
+            around=around,
+            num=num,
+            step=step,
+            delay=delay,
+            initial_delay=initial_delay,
+            revert=revert
+        )
+
+        dataset = sweep.execute(
+            name=measurement_name,
+            measure_params=measure_params,
+            repetitions=repetitions,
+            sweep=sweep,
+            plot=plot,
+        )
+        return dataset
+
+
 class ManualParameter(Parameter):
     def __init__(
         self,
