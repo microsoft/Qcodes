@@ -28,6 +28,7 @@ from qcodes.tests.instrument_mocks import (
     Multi2DSetPointParam2Sizes,
     MultiSetPointParam,
 )
+from qcodes.validators import Ints
 
 
 def test_linear_sweep_get_setpoints(_param):
@@ -1217,3 +1218,11 @@ def test_dond_sweeper_combinations(_param_set, _param_set_2, _param):
     assert len(expected_sweeper_groups) == len(sweep_groups)
     for g in expected_sweeper_groups:
         assert g in sweep_groups
+
+
+def test_sweep_int_vs_float():
+
+    float_param = ManualParameter("float_param", initial_value=0.0)
+    int_param = ManualParameter("int_param", vals=Ints(0, 100))
+
+    dond(ArraySweep(int_param, [1, 2, 3]), float_param)
