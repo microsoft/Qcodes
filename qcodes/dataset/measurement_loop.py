@@ -5,8 +5,9 @@ from datetime import datetime
 from time import perf_counter, sleep
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 from warnings import warn
-from tqdm.auto import tqdm
+
 import numpy as np
+from tqdm.auto import tqdm
 
 from qcodes.dataset.data_set_protocol import DataSetProtocol
 from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
@@ -754,14 +755,14 @@ class MeasurementLoop:
         fraction_complete = 0
         scale = 1
         loop_idx = 0
-        
+
         for k, action_idx in enumerate(action_indices):
             # Check if current action is a sweep
             # If so, reduce scale by action index fraction
             action = msmt.actions.get(action_indices[:k+1])
             if isinstance(action, BaseSweep):
                 max_idx = self._get_maximum_action_index(action_indices, position=k)
-                
+
                 if not silent:
                     print(f'Reducing current Sweep {loop_idx=} {msmt.loop_indices[loop_idx]} / {len(action)} * {scale}')
                     print(f'{max_idx=}')
@@ -1115,7 +1116,7 @@ class MeasurementLoop:
         if self.show_progress:
             try:
                 self._update_progress_bar(
-                    action_indices=initial_action_indices, 
+                    action_indices=initial_action_indices,
                     description=f'Measuring {self.action_names.get(initial_action_indices)}',
                     create_if_new=True
                 )
@@ -1644,7 +1645,7 @@ class BaseSweep(AbstractSweep):
         plot: bool = False,
     ):
         """Perform sweep, identical to `Sweep.execute`
-        
+
 
         Args:
             *args: Optional additional sweeps used for N-dimensional measurements
@@ -1663,8 +1664,8 @@ class BaseSweep(AbstractSweep):
             Dataset corresponding to measurement
         """
         return self.execute(
-            *args, 
-            name=name, 
+            *args,
+            name=name,
             measure_params=measure_params,
             repetitions=repetitions,
             sweep=sweep,
