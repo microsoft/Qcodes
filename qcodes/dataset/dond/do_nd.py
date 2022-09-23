@@ -308,8 +308,8 @@ class _SweeperMeasure:
         experiments: Experiment | Sequence[Experiment] | None,
         write_period: float | None,
         log_info: str | None,
-        dataset_mapping: Sequence[
-            tuple[tuple[ParameterBase, ...], Sequence[ParamMeasT]]
+        dataset_dependencies: Sequence[
+            tuple[Sequence[ParameterBase], Sequence[ParamMeasT]]
         ]
         | None = None,
     ):
@@ -321,7 +321,7 @@ class _SweeperMeasure:
         self._experiments = self._get_experiments(experiments)
         self._write_period = write_period
         self._log_info = log_info
-        self._dataset_mapping = dataset_mapping
+        self._dataset_dependencies = dataset_dependencies
         self._shapes = self._get_shape()
         self._groups = self._create_groups()
 
@@ -364,7 +364,7 @@ class _SweeperMeasure:
 
     def _create_groups(self) -> tuple[_SweapMeasGroup, ...]:
 
-        if self._dataset_mapping is None:
+        if self._dataset_dependencies is None:
             setpoint = self._sweeper.all_setpoint_params
             meaure_groups = self._measurements.grouped_parameters
 
@@ -387,39 +387,39 @@ class _SweeperMeasure:
             potential_setpoint_groups = self._sweeper.sweep_groupes
             requested_measure_groups = self._measurements.grouped_parameters
 
-            if len(self._dataset_mapping) != len(requested_measure_groups):
+            if len(self._dataset_dependencies) != len(requested_measure_groups):
                 raise ValueError(
                     f"Requested for data to be split into {len(requested_measure_groups)} "
-                    f"but found {len(self._dataset_mapping)} groups in mapping."
+                    f"but found {len(self._dataset_dependencies)} groups in dataset_dependencies."
                 )
 
             output_parameter_tuples = tuple(
-                tuple(output[1]) for output in self._dataset_mapping
+                tuple(output[1]) for output in self._dataset_dependencies
             )
 
             for r_m_group in requested_measure_groups:
                 if r_m_group not in output_parameter_tuples:
                     raise ValueError(
                         "Measuring a (group of) parameter(s) which is not "
-                        f"in the dataset_mapping. Did not find {r_m_group} in"
-                        f"{self._dataset_mapping}."
+                        f"in the dataset_dependencies. Did not find {r_m_group} in "
+                        f"{self._dataset_dependencies}."
                     )
 
             groups = []
             for (sp_group, m_group), experiment, meas_name in zip(
-                self._dataset_mapping,
+                self._dataset_dependencies,
                 self._experiments,
                 self._measurements.measurement_names,
             ):
                 if tuple(sp_group) not in potential_setpoint_groups:
                     raise ValueError(
-                        f"The dataset_mapping contains {sp_group} "
+                        f"dataset_dependencies contains {sp_group} "
                         f"which is not among the expected groups of setpoints."
                         f"{potential_setpoint_groups}"
                     )
                 if tuple(m_group) not in requested_measure_groups:
                     raise ValueError(
-                        f"The dataset_mapping contains {m_group} "
+                        f"dataset_dependencies contains {m_group} "
                         f"which is not among the expected groups of measured points."
                         f"{requested_measure_groups}"
                     )
@@ -476,7 +476,7 @@ def dond(
     additional_setpoints: Sequence[ParameterBase] = tuple(),
     log_info: str | None = None,
     break_condition: BreakConditionT | None = None,
-    dataset_mapping: Sequence[tuple[tuple[ParameterBase, ...], Sequence[ParamMeasT]]]
+    dataset_dependencies: Sequence[tuple[Sequence[ParameterBase], Sequence[ParamMeasT]]]
     | None = None,
 ) -> AxesTupleListWithDataSet | MultiAxesTupleListWithDataSet:
     """
@@ -529,6 +529,10 @@ def dond(
             message is used.
         break_condition: Callable that takes no arguments. If returned True,
             measurement is interrupted.
+        dataset_dependencies: Optionally describe that measured datasets only depends
+            on a subset of the setpoint parameters. Given as a Sequence of
+            Pairs (tuples). In each pair the first element is a Sequence of
+            setpoint parameters and the second a Sequence of measured parameters.
 
     Returns:
         A tuple of QCoDeS DataSet, Matplotlib axis, Matplotlib colorbar. If
@@ -566,7 +570,7 @@ def dond(
         exp,
         write_period,
         log_info,
-        dataset_mapping,
+        dataset_dependencies,
     )
 
     datasets = []

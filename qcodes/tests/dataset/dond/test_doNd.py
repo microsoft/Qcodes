@@ -994,7 +994,7 @@ def test_dond_together_sweep_sweeper_combined():
         [e],
         [f],
         do_plot=False,
-        dataset_mapping=[((a, c), (d,)), ((b, c), (e,)), ((b, c), (f,))],
+        dataset_dependencies=[((a, c), (d,)), ((b, c), (e,)), ((b, c), (f,))],
     )
     assert datasets[0].parameters == "a,c,d"
     assert datasets[1].parameters == "b,c,e"
@@ -1019,7 +1019,7 @@ def test_dond_togehter_sweep_sweeper_combined_lists():
         [e],
         [f],
         do_plot=False,
-        dataset_mapping=[([a, c], [d]), [(b, c), (e,)], ((b, c), (f,))],
+        dataset_dependencies=[([a, c], [d]), [(b, c), (e,)], ((b, c), (f,))],
     )
     assert datasets[0].parameters == "a,c,d"
     assert datasets[1].parameters == "b,c,e"
@@ -1073,7 +1073,7 @@ def test_dond_together_sweep_more_groups():
     assert len(datasets) == 3
 
 
-def test_dond_together_sweep_sweeper_combined_missing_in_mapping():
+def test_dond_together_sweep_sweeper_combined_missing_in_dataset_dependencies():
     a = ManualParameter("a", initial_value=0)
     b = ManualParameter("b", initial_value=0)
     c = ManualParameter("c", initial_value=0)
@@ -1086,7 +1086,7 @@ def test_dond_together_sweep_sweeper_combined_missing_in_mapping():
 
     with pytest.raises(
         ValueError,
-        match="Requested for data to be split into 3 but found 2 groups in mapping",
+        match="Requested for data to be split into 3 but found 2 groups in dataset_dependencies",
     ):
         datasets, _, _ = dond(
             TogetherSweep(sweepA, sweepB),
@@ -1095,11 +1095,11 @@ def test_dond_together_sweep_sweeper_combined_missing_in_mapping():
             [e],
             [f],
             do_plot=False,
-            dataset_mapping=[((a, c), (d,)), ((b, c), (e,))],
+            dataset_dependencies=[((a, c), (d,)), ((b, c), (e,))],
         )
 
 
-def test_dond_together_sweep_sweeper_wrong_sp_in_mapping():
+def test_dond_together_sweep_sweeper_wrong_sp_in_dataset_dependencies():
     a = ManualParameter("a", initial_value=0)
     b = ManualParameter("b", initial_value=0)
     c = ManualParameter("c", initial_value=0)
@@ -1118,11 +1118,11 @@ def test_dond_together_sweep_sweeper_wrong_sp_in_mapping():
             [e],
             [f],
             do_plot=False,
-            dataset_mapping=[((a, b), (d,)), ((b, c), (e,)), ((b, c), (f,))],
+            dataset_dependencies=[((a, b), (d,)), ((b, c), (e,)), ((b, c), (f,))],
         )
 
 
-def test_dond_together_sweep_sweeper_wrong_mp_in_mapping():
+def test_dond_together_sweep_sweeper_wrong_mp_in_dataset_dependencies():
     a = ManualParameter("a", initial_value=0)
     b = ManualParameter("b", initial_value=0)
     c = ManualParameter("c", initial_value=0)
@@ -1142,7 +1142,7 @@ def test_dond_together_sweep_sweeper_wrong_mp_in_mapping():
             [e],
             [f],
             do_plot=False,
-            dataset_mapping=[
+            dataset_dependencies=[
                 ((a, c), (d,)),
                 ((b, c), (e,)),
                 ((b, c), (f,)),
