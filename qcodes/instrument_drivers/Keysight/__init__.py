@@ -21,6 +21,7 @@ from .Keysight_N5222B import KeysightN5222B
 from .Keysight_N5230C import KeysightN5230C
 from .Keysight_N6705B import KeysightN6705B, KeysightN6705BChannel
 from .Keysight_P9374A import KeysightP9374A
+from .N52xx import KeysightPNAPort, KeysightPNATrace
 
 __all__ = [
     "Keysight34410A",
@@ -47,4 +48,6 @@ __all__ = [
     "KeysightN6705B",
     "KeysightN6705BChannel",
     "KeysightP9374A",
+    "KeysightPNAPort",
+    "KeysightPNATrace",
 ]
