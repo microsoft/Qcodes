@@ -4,7 +4,8 @@ import traceback
 from datetime import datetime
 from time import perf_counter, sleep
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Union
-
+from warnings import warn
+from tqdm.auto import tqdm
 import numpy as np
 
 from qcodes.dataset.data_set_protocol import DataSetProtocol
@@ -356,6 +357,8 @@ class MeasurementLoop:
         name: Measurement name, also used as the dataset name
         notify: Notify when measurement is complete.
             The function `Measurement.notify_function` must be set
+        show_progress: Whether to show progress bars.
+            If not specified, will use value of class attribute ``MeasurementLoop.show_progress``
     """
 
     # Context manager
@@ -370,6 +373,10 @@ class MeasurementLoop:
     except_actions = []
     max_arrays = 100
 
+    # Progress bar
+    show_progress: bool = False
+    _progress_bar_kwargs: Dict[str, Any] = {'mininterval': 0.2}
+
     _t_start = None
 
     # Notification function, called if notify=True.
@@ -378,7 +385,7 @@ class MeasurementLoop:
     # The last three are only not None if an error has occured
     notify_function = None
 
-    def __init__(self, name: Optional[str], notify: bool = False):
+    def __init__(self, name: Optional[str], notify: bool = False, show_progress: bool = None):
         self.name: str = name
 
         # Data handler is created during `with Measurement("name")`
@@ -393,6 +400,12 @@ class MeasurementLoop:
 
         # Index of current action
         self.action_indices: Union[Tuple[int], None] = None
+
+        # Progress bars, only used if show_progress is True
+        if show_progress is not None:
+            self.show_progress = show_progress
+        self.progress_bars: Dict[Tuple[int], tqdm] = {}
+
 
         # contains data groups, such as ParameterNodes and nested measurements
         self._data_groups: Dict[Tuple[int], "MeasurementLoop"] = {}
@@ -550,6 +563,9 @@ class MeasurementLoop:
             # an error occurs during final actions.
             MeasurementLoop.running_measurement = None
 
+            for progress_bar in self.progress_bars.values():
+                progress_bar.close()
+
         if exc_type is not None:
             self.log(f"Measurement error {exc_type.__name__}({exc_val})", level="error")
 
@@ -664,6 +680,127 @@ class MeasurementLoop:
 
         if clear:
             actions.clear()
+
+    def _get_maximum_action_index(self, action_indices, position):
+        msmt = running_measurement()
+
+        # Get maximum action idx
+        max_idx = 0
+        for idxs in msmt.actions:
+            if idxs[:position] != action_indices[:position]:
+                continue
+            if len(idxs) <= position:
+                continue
+            max_idx = max(max_idx, idxs[position])
+        return max_idx
+
+    def _update_progress_bar(self, action_indices, description=None, create_if_new=True):
+        # Register new progress bar
+        if action_indices not in self.progress_bars:
+            if create_if_new:
+                self.progress_bars[action_indices] = tqdm(
+                    total=np.prod(self.loop_shape),
+                    desc=description,
+                    **self._progress_bar_kwargs
+                )
+            else:
+                raise RuntimeError('Cannot update progress bar if not created')
+
+        # Update progress bar
+        progress_bar = self.progress_bars[action_indices]
+        value = 1
+        for k, loop_idx in enumerate(self.loop_indices[::-1]):
+            if k:
+                factor = np.prod(self.loop_shape[-k:])
+            else:
+                factor = 1
+            value += factor * loop_idx
+
+        progress_bar.update(value - progress_bar.n)
+        if value == progress_bar.total:
+            progress_bar.close()
+
+
+    def _fraction_complete_action_indices(self, action_indices, silent=True):
+        """Calculate fraction complete from finished action_indices"""
+        msmt = running_measurement()
+        fraction_complete = 0
+        scale = 1
+
+        max_idxs = []
+        for k, action_idx in enumerate(action_indices):
+            # Check if previous idx is a sweep
+            # If so, reduce scale by loop dimension
+            action = msmt.actions.get(action_indices[:k])
+            if not silent:
+                print(f'{action=}, {isinstance(action, BaseSweep)=}')
+            if isinstance(action, BaseSweep):
+                if not silent:
+                    print(f'Decreasing scale by {len(action)}')
+                scale /= len(action)
+
+            max_idx = self._get_maximum_action_index(action_indices, position=k)
+
+            fraction_complete += action_idx / (max_idx + 1) * scale
+            scale /= max_idx + 1
+            max_idxs.append(max_idx)
+            if not silent:
+                print(f'{fraction_complete=}, {scale=}, {action_idx=}, {max_idxs=}')
+
+        return fraction_complete
+
+    def _fraction_complete_loop(self, action_indices, silent=True):
+        msmt = running_measurement()
+        fraction_complete = 0
+        scale = 1
+        loop_idx = 0
+        
+        for k, action_idx in enumerate(action_indices):
+            # Check if current action is a sweep
+            # If so, reduce scale by action index fraction
+            action = msmt.actions.get(action_indices[:k+1])
+            if isinstance(action, BaseSweep):
+                max_idx = self._get_maximum_action_index(action_indices, position=k)
+                
+                if not silent:
+                    print(f'Reducing current Sweep {loop_idx=} {msmt.loop_indices[loop_idx]} / {len(action)} * {scale}')
+                    print(f'{max_idx=}')
+                scale /= (max_idx + 1)
+
+            # Check if previous idx is a sweep
+            # If so, reduce scale by loop dimension
+            action = msmt.actions.get(action_indices[:k])
+            if not silent:
+                print(f'{action=}, {isinstance(action, BaseSweep)=}')
+            if isinstance(action, BaseSweep):
+                if not silent:
+                    print(f'Reducing previous Sweep {loop_idx=} fraction {msmt.loop_indices[loop_idx]} / {len(action)} * {scale}')
+                fraction_complete += msmt.loop_indices[loop_idx] / len(action) * scale
+                loop_idx += 1
+                scale /= len(action)
+
+        return fraction_complete
+
+    def fraction_complete(self, silent=True, precision=3):
+        msmt = running_measurement()
+        if msmt is None:
+            return 1
+
+        fraction_complete = 0
+
+        # Calculate fraction complete from action indices
+        fraction_complete_actions = self._fraction_complete_action_indices(msmt.action_indices, silent=silent+1)
+        fraction_complete += fraction_complete_actions
+        if not silent:
+            print(f'Fraction complete from action indices: {fraction_complete_actions:.3f}')
+
+        # Calculate fraction complete from point in loop
+        fraction_complete_loop = self._fraction_complete_loop(msmt.action_indices, silent=silent+1)
+        fraction_complete += fraction_complete_loop
+        if not silent:
+            print(f'Fraction complete from loop: {fraction_complete_loop:.3f}')
+
+        return np.round(fraction_complete, precision)
 
     # Measurement-related functions
     def _measure_parameter(
@@ -938,6 +1075,7 @@ class MeasurementLoop:
         t0 = perf_counter()
         initial_action_indices = self.action_indices
 
+        # Optionally record timestamp before measurement has been recorded
         if timestamp:
             t_now = datetime.now()
 
@@ -973,6 +1111,18 @@ class MeasurementLoop:
                 f"is not a dict, int, float, bool, or numpy array."
             )
 
+        # Optionally show progress bar
+        if self.show_progress:
+            try:
+                self._update_progress_bar(
+                    action_indices=initial_action_indices, 
+                    description=f'Measuring {self.action_names.get(initial_action_indices)}',
+                    create_if_new=True
+                )
+            except Exception as e:
+                warn(f'Failed to update progress bar. Error: {e}')
+
+        # Optionally record timestamp after measurement has been recorded
         if timestamp:
             t_now = datetime.now()
 
@@ -1484,6 +1634,43 @@ class BaseSweep(AbstractSweep):
 
         return sweep_value
 
+    def __call__(
+        self,
+        *args: Optional[Iterable["BaseSweep"]],
+        name: str = None,
+        measure_params: Union[Iterable, _BaseParameter] = None,
+        repetitions: int = 1,
+        sweep: Union[Iterable, "BaseSweep"] = None,
+        plot: bool = False,
+    ):
+        """Perform sweep, identical to `Sweep.execute`
+        
+
+        Args:
+            *args: Optional additional sweeps used for N-dimensional measurements
+                The first arg is the outermost sweep dimension, and the sweep on which
+                `Sweep.execute` was called is the innermost dimension.
+            name: Dataset name, defaults to a concatenation of sweep parameter names
+            measure_params: Parameters to measure.
+                If not provided, it will check the attribute ``Station.measure_params``
+                for parameters. Raises an error if undefined.
+            repetitions: Number of times to repeat measurement, defaults to 1.
+                This will be the outermost loop if set to a value above 1.
+            sweep: Identical to passing *args.
+                Note that ``sweep`` can be either a single Sweep, or a Sweep list.
+
+        Returns:
+            Dataset corresponding to measurement
+        """
+        return self.execute(
+            *args, 
+            name=name, 
+            measure_params=measure_params,
+            repetitions=repetitions,
+            sweep=sweep,
+            plot=plot
+        )
+
     def initialize(self) -> Dict[str, Any]:
         """Initializes a `Sweep`, attaching it to the current `MeasurementLoop`"""
         msmt = running_measurement()
@@ -1529,6 +1716,7 @@ class BaseSweep(AbstractSweep):
         measure_params: Union[Iterable, _BaseParameter] = None,
         repetitions: int = 1,
         sweep: Union[Iterable, "BaseSweep"] = None,
+        plot: bool = False,
     ) -> DataSetProtocol:
         """Performs a measurement using this sweep
 
@@ -1544,6 +1732,9 @@ class BaseSweep(AbstractSweep):
                 This will be the outermost loop if set to a value above 1.
             sweep: Identical to passing *args.
                 Note that ``sweep`` can be either a single Sweep, or a Sweep list.
+
+        Returns:
+            Dataset corresponding to measurement
         """
         # Get "measure_params" from station if not provided
         if measure_params is None:
@@ -1584,6 +1775,9 @@ class BaseSweep(AbstractSweep):
 
         with MeasurementLoop(name) as msmt:
             measure_sweeps(sweeps=sweeps, measure_params=measure_params, msmt=msmt)
+
+        if plot and self.plot_function is not None:
+            self.plot_function(msmt.dataset)
 
         return msmt.dataset
 
