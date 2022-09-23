@@ -559,7 +559,7 @@ def dond(
         measurements.measured_all,
     )
     LOG.debug(
-        "Measured parameters have been grouped into:\n " "%s",
+        "Measured parameters have been grouped into:\n%s",
         measurements.grouped_parameters,
     )
     sweeper_measurer = _SweeperMeasure(
