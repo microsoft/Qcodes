@@ -221,14 +221,14 @@ class MultiSweep:
         if len(sweeps) == 0:
             raise ValueError("A MultiSweep must contain at least one sweep.")
 
-        len_1 = sweeps[0].num_points
+        len_0 = sweeps[0].num_points
 
         for sweep in sweeps:
-            if sweep.num_points != len_1:
+            if sweep.num_points != len_0:
                 raise ValueError(
                     f"All Sweeps in a MultiSweep must have the same length."
                     f"Sweep of {sweep.param} had {sweep.num_points} but the "
-                    f"first one had {len_1}."
+                    f"first one had {len_0}."
                 )
 
         self._sweeps = tuple(sweeps)
