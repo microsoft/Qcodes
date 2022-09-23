@@ -20,6 +20,7 @@ from .Keysight_N5183B import KeysightN5183B
 from .Keysight_N5222B import KeysightN5222B
 from .Keysight_N5230C import KeysightN5230C
 from .Keysight_N6705B import KeysightN6705B, KeysightN6705BChannel
+from .Keysight_P9374A import KeysightP9374A
 
 __all__ = [
     "Keysight34410A",
@@ -45,4 +46,5 @@ __all__ = [
     "KeysightN5230C",
     "KeysightN6705B",
     "KeysightN6705BChannel",
+    "KeysightP9374A",
 ]
