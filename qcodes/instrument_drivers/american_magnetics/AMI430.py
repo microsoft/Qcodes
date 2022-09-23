@@ -9,6 +9,7 @@ from functools import partial
 from typing import (
     Any,
     Callable,
+    Dict,
     Iterable,
     List,
     Optional,
@@ -757,6 +758,10 @@ class AMI430_3D(Instrument):
         """Ramp rate along a line (vector) in 3D field space"""
 
         self._exit_stack = ExitStack()
+
+    def get_idn(self) -> Dict[str, Optional[str]]:
+        idparts = ["American Magnetics", self.name, None, None]
+        return dict(zip(("vendor", "model", "serial", "firmware"), idparts))
 
     def _set_vector_ramp_rate_units(self, val: float) -> float:
         _, common_ramp_rate_units = self._raise_if_not_same_field_and_ramp_rate_units()

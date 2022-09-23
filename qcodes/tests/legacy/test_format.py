@@ -1,14 +1,14 @@
-from unittest import TestCase
 import os
-
-from qcodes.data.location import FormatLocation
-from qcodes.data.format import Formatter
-from qcodes.data.gnuplot_format import GNUPlotFormat
+from unittest import TestCase
 
 from qcodes.data.data_array import DataArray
-from qcodes.data.data_set import DataSet, new_data, load_data
+from qcodes.data.data_set import DataSet, load_data, new_data
+from qcodes.data.format import Formatter
+from qcodes.data.gnuplot_format import GNUPlotFormat
+from qcodes.data.location import FormatLocation
 from qcodes.logger.logger import LogCapture
-from .data_mocks import DataSet1D, file_1d, DataSetCombined, files_combined
+
+from .data_mocks import DataSet1D, DataSetCombined, file_1d, files_combined
 
 
 class TestBaseFormatter(TestCase):

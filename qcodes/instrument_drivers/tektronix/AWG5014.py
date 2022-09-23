@@ -34,7 +34,7 @@ def parsestr(v: str) -> str:
     return v.strip().strip('"')
 
 
-class Tektronix_AWG5014(VisaInstrument):
+class TektronixAWG5014(VisaInstrument):
     """
     This is the QCoDeS driver for the Tektronix AWG5014
     Arbitrary Waveform Generator.
@@ -1853,7 +1853,7 @@ class Tektronix_AWG5014(VisaInstrument):
     def clear_message_queue(self, verbose: bool = False) -> None:
         """
         Function to clear up (flush) the VISA message queue of the AWG
-        instrument. Reads all messages in the the queue.
+        instrument. Reads all messages in the queue.
 
         Args:
             verbose: If True, the read messages are printed.
@@ -1870,3 +1870,11 @@ class Tektronix_AWG5014(VisaInstrument):
             except VisaIOError:
                 gotexception = True
         self.visa_handle.timeout = original_timeout
+
+
+class Tektronix_AWG5014(TektronixAWG5014):
+    """
+    Alias with non-conformant name left for backwards compatibility
+    """
+
+    pass

@@ -1,18 +1,11 @@
 """Instrument base class."""
+from __future__ import annotations
+
 import logging
 import time
 import weakref
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    List,
-    Mapping,
-    Optional,
-    Type,
-    TypeVar,
-    cast,
-)
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from typing_extensions import Protocol
 
@@ -32,7 +25,7 @@ log = logging.getLogger(__name__)
 class InstrumentProtocol(Protocol):
     """Protocol that is useful for defining mixin classes for Instrument class"""
 
-    log: "InstrumentLoggerAdapter"  # instrument logging
+    log: InstrumentLoggerAdapter  # instrument logging
 
     def ask(self, cmd: str) -> str:
         ...
@@ -54,24 +47,30 @@ class Instrument(InstrumentBase, metaclass=InstrumentMeta):
             attaching it to a Station.
         metadata: additional static metadata to add to this
             instrument's JSON snapshot.
-
+        label: nicely formatted name of the instrument; if None, the
+            ``name`` is used.
     """
 
-    _all_instruments: "weakref.WeakValueDictionary[str, Instrument]" = (
-        weakref.WeakValueDictionary()
-    )
+    _all_instruments: weakref.WeakValueDictionary[
+        str, Instrument
+    ] = weakref.WeakValueDictionary()
     _type = None
-    _instances: "weakref.WeakSet[Instrument]" = weakref.WeakSet()
+    _instances: weakref.WeakSet[Instrument] = weakref.WeakSet()
 
-    def __init__(self, name: str, metadata: Optional[Mapping[Any, Any]] = None) -> None:
+    def __init__(
+        self,
+        name: str,
+        metadata: Mapping[Any, Any] | None = None,
+        label: str | None = None,
+    ) -> None:
 
         self._t0 = time.time()
 
-        super().__init__(name, metadata)
+        super().__init__(name=name, metadata=metadata, label=label)
 
         self.add_parameter("IDN", get_cmd=self.get_idn, vals=Anything())
 
-    def get_idn(self) -> Dict[str, Optional[str]]:
+    def get_idn(self) -> dict[str, str | None]:
         """
         Parse a standard VISA ``*IDN?`` response into an ID dict.
 
@@ -93,7 +92,7 @@ class Instrument(InstrumentBase, metaclass=InstrumentMeta):
             idstr = self.ask("*IDN?")
             # form is supposed to be comma-separated, but we've seen
             # other separators occasionally
-            idparts: List[Optional[str]]
+            idparts: list[str | None]
             for separator in ",;:":
                 # split into no more than 4 parts, so we don't lose info
                 idparts = [p.strip() for p in idstr.split(separator, 3)]
@@ -115,7 +114,7 @@ class Instrument(InstrumentBase, metaclass=InstrumentMeta):
         return dict(zip(("vendor", "model", "serial", "firmware"), idparts))
 
     def connect_message(
-        self, idn_param: str = "IDN", begin_time: Optional[float] = None
+        self, idn_param: str = "IDN", begin_time: float | None = None
     ) -> None:
         """
         Print a standard message on initial connection to an instrument.
@@ -189,14 +188,14 @@ class Instrument(InstrumentBase, metaclass=InstrumentMeta):
         log.info("Closing all registered instruments")
         for inststr in list(cls._all_instruments):
             try:
-                inst: "Instrument" = cls.find_instrument(inststr)
+                inst: Instrument = cls.find_instrument(inststr)
                 log.info("Closing %s", inststr)
                 inst.close()
             except:
                 log.exception("Failed to close %s, ignored", inststr)
 
     @classmethod
-    def record_instance(cls, instance: "Instrument") -> None:
+    def record_instance(cls, instance: Instrument) -> None:
         """
         Record (a weak ref to) an instance in a class's instance list.
 
@@ -228,7 +227,7 @@ class Instrument(InstrumentBase, metaclass=InstrumentMeta):
         cls._instances.add(instance)
 
     @classmethod
-    def instances(cls) -> List["Instrument"]:
+    def instances(cls) -> list[Instrument]:
         """
         Get all currently defined instances of this instrument class.
 
@@ -245,7 +244,7 @@ class Instrument(InstrumentBase, metaclass=InstrumentMeta):
         return list(getattr(cls, "_instances", weakref.WeakSet()))
 
     @classmethod
-    def remove_instance(cls, instance: "Instrument") -> None:
+    def remove_instance(cls, instance: Instrument) -> None:
         """
         Remove a particular instance from the record.
 
@@ -263,9 +262,7 @@ class Instrument(InstrumentBase, metaclass=InstrumentMeta):
                 del all_ins[name]
 
     @classmethod
-    def find_instrument(
-        cls, name: str, instrument_class: Optional[Type[T]] = None
-    ) -> T:
+    def find_instrument(cls, name: str, instrument_class: type[T] | None = None) -> T:
         """
         Find an existing instrument by name.
 
@@ -303,7 +300,7 @@ class Instrument(InstrumentBase, metaclass=InstrumentMeta):
         return ins
 
     @staticmethod
-    def exist(name: str, instrument_class: Optional[type] = None) -> bool:
+    def exist(name: str, instrument_class: type | None = None) -> bool:
         """
         Check if an instrument with a given names exists (i.e. is already
         instantiated).
@@ -330,7 +327,7 @@ class Instrument(InstrumentBase, metaclass=InstrumentMeta):
         return instrument_exists
 
     @staticmethod
-    def is_valid(instr_instance: "Instrument") -> bool:
+    def is_valid(instr_instance: Instrument) -> bool:
         """
         Check if a given instance of an instrument is valid: if an instrument
         has been closed, its instance is not longer a "valid" instrument.
@@ -435,7 +432,7 @@ class Instrument(InstrumentBase, metaclass=InstrumentMeta):
 
 
 def find_or_create_instrument(
-    instrument_class: Type[T],
+    instrument_class: type[T],
     name: str,
     *args: Any,
     recreate: bool = False,

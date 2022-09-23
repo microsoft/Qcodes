@@ -1,6 +1,7 @@
 from typing import Any, Dict, Optional
 
 from qcodes.instrument import VisaInstrument
+from qcodes.parameters import create_on_off_val_mapping
 from qcodes.validators import Numbers
 
 
@@ -58,10 +59,19 @@ class N51x1(VisaInstrument):
                            unit='rad'
                            )
 
-        self.add_parameter('rf_output',
-                           get_cmd='OUTP:STAT?',
-                           set_cmd='OUTP:STAT {}',
-                           val_mapping={'on': 1, 'off': 0})
+        self.add_parameter(
+            "auto_freq_ref",
+            get_cmd=":ROSC:SOUR:AUTO?",
+            set_cmd=":ROSC:SOUR:AUTO {}",
+            val_mapping=create_on_off_val_mapping(on_val=1, off_val=0),
+        )
+
+        self.add_parameter(
+            "rf_output",
+            get_cmd="OUTP:STAT?",
+            set_cmd="OUTP:STAT {}",
+            val_mapping=create_on_off_val_mapping(on_val=1, off_val=0),
+        )
 
         self.connect_message()
 

@@ -9,17 +9,26 @@ repos:
       exclude: asv.conf.json
     - id: check-toml
     - id: check-yaml
+    - id: check-case-conflict
     - id: debug-statements
     - id: mixed-line-ending
       args: ['--fix=no']
+  - repo: https://github.com/pycqa/isort
+    rev: 5.10.1
+    hooks:
+      - id: isort
   - repo: https://github.com/asottile/pyupgrade
-    rev: v2.37.2
+    rev: v2.38.0
     hooks:
     - id: pyupgrade
-      args: ['--py37-plus', '--keep-runtime-typing']
+      args: ['--py37-plus']
   - repo: https://github.com/akaihola/darker
-    rev: 1.5.0
+    rev: 1.5.1
     hooks:
       -   id: darker
           args: [-i]
           additional_dependencies: [isort]
+  - repo: https://github.com/abravalheri/validate-pyproject
+    rev: v0.10.1
+    hooks:
+      - id: validate-pyproject

@@ -1,7 +1,7 @@
 import pytest
-import qcodes.instrument_drivers.Keysight.Keysight_N6705B as N6705B
 
 import qcodes.instrument.sims as sims
+import qcodes.instrument_drivers.Keysight.Keysight_N6705B as N6705B
 
 visalib = sims.__file__.replace('__init__.py', 'Keysight_N6705B.yaml@sim')
 

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Any
 
 from ..param_spec import ParamSpec
@@ -43,7 +45,7 @@ class InterDependencies:
 
 
     @classmethod
-    def _from_dict(cls, ser: InterDependenciesDict) -> 'InterDependencies':
+    def _from_dict(cls, ser: InterDependenciesDict) -> InterDependencies:
         """
         Create an InterDependencies object from a dictionary
         """

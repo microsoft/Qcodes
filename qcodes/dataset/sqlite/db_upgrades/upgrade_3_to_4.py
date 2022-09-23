@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import logging
 import sys
@@ -5,19 +7,22 @@ import sys
 from tqdm import tqdm
 
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
-from qcodes.dataset.sqlite.connection import ConnectionPlus, \
-    atomic_transaction, atomic
-from qcodes.dataset.sqlite.db_upgrades.upgrade_2_to_3 import \
-    _2to3_get_result_tables, _2to3_get_layout_ids, _2to3_get_indeps, \
-    _2to3_get_deps, _2to3_get_layouts, _2to3_get_dependencies, \
-    _2to3_get_paramspecs
+from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic, atomic_transaction
+from qcodes.dataset.sqlite.db_upgrades.upgrade_2_to_3 import (
+    _2to3_get_dependencies,
+    _2to3_get_deps,
+    _2to3_get_indeps,
+    _2to3_get_layout_ids,
+    _2to3_get_layouts,
+    _2to3_get_paramspecs,
+    _2to3_get_result_tables,
+)
 from qcodes.dataset.sqlite.query_helpers import one
-
 
 log = logging.getLogger(__name__)
 
 
-def upgrade_3_to_4(conn: ConnectionPlus) -> None:
+def upgrade_3_to_4(conn: ConnectionPlus, show_progress_bar: bool = True) -> None:
     """
     Perform the upgrade from version 3 to version 4. This really
     repeats the version 3 upgrade as it originally had two bugs in
@@ -44,7 +49,9 @@ def upgrade_3_to_4(conn: ConnectionPlus) -> None:
         layouts = _2to3_get_layouts(conn)
         dependencies = _2to3_get_dependencies(conn)
 
-        pbar = tqdm(range(1, no_of_runs+1), file=sys.stdout)
+        pbar = tqdm(
+            range(1, no_of_runs + 1), file=sys.stdout, disable=not show_progress_bar
+        )
         pbar.set_description("Upgrading database; v3 -> v4")
 
         for run_id in pbar:

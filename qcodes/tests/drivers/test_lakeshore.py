@@ -268,9 +268,9 @@ class Model_372_Mock(MockVisaInstrument, Model_372):
         return f'{chan.T}'
 
 
-def instrument_fixture(scope='function'):
+def instrument_fixture(scope="function", name=None):
     def wrapper(func):
-        @pytest.fixture(scope=scope)
+        @pytest.fixture(scope=scope, name=name)
         def wrapped_fixture():
             inst = func()
             try:

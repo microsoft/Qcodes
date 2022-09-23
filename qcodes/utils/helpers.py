@@ -2,8 +2,9 @@
 Module left for backwards compatibility.
 Please do not import from this in any new code
 """
-from contextlib import contextmanager
 import logging
+from contextlib import contextmanager
+from typing import Any, Tuple
 
 # for backwards compatibility since this module used
 # to contain logic that would abstract between yaml
@@ -46,95 +47,76 @@ def warn_units(class_name: str, instance: object) -> None:
 import builtins
 import sys
 import time
-import numpy as np
 from pprint import pprint
+
+import numpy as np
+
 from qcodes.configuration.config import DotDict
 
 
-def using_ipython() -> bool:
-    """Check if code is run from IPython (including jupyter notebook/lab)"""
-    return hasattr(builtins, '__IPYTHON__')
+def get_exponent_prefactor(val: float) -> Tuple[int, str]:
+    """Get the exponent and unit prefactor of a number
 
-
-def directly_executed_from_cell(level: int = 1) -> bool:
-    """Test if this function is called directly from an IPython cell
-    The IPython prompt is also valid.
+    Currently lower bounded at atto
 
     Args:
-         level: Difference in frames from IPython cell/prompt to check.
-            Since the check is executed from this function, the default level is 1.
+        val: value for which to get exponent and prefactor
 
     Returns:
-        True if directly run from IPython cell/prompt, False otherwise
+        Exponent corresponding to prefactor
+        Prefactor
 
     Examples:
-        These examples should be run in a notebook cell.
+        ```
+        get_exponent_prefactor(1.82e-8)
+        >>> -9, "n"  # i.e. 18.2*10**-9 n{unit}
+        ```
 
-        >>> directly_executed_from_cell()
-        ... True
-
-        >>> def wrap_function(**kwargs):
-        >>>     return directly_executed_from_cell(**kwargs)
-        >>> wrap_function()
-        ... False
-        >>> wrap_function(level=2)
-        ... True
 
     """
-    if level < 1:
-        raise SyntaxError('Level must be 1 or higher')
-
-    frame = sys._getframe(level)
-    return '_' in frame.f_locals
-
-
-def get_last_input_cells(cells=3):
-    """
-    Get last input cell. Note that get_last_input_cell.globals must be set to
-    the ipython globals
-    Returns:
-        last cell input if successful, else None
-    """
-    global In
-    if 'In' in globals() or hasattr(builtins, 'In'):
-        return In[-cells:]
-    else:
-        logging.warning('No input cells found')
-
-
-def get_exponent(val):
-    prefactors = [(9, 'G'), (6, 'M'), (3, 'k'), (0, ''), (-3, 'm'), (-6, 'u'), (-9, 'n')]
+    prefactors = [
+        (9, "G"),
+        (6, "M"),
+        (3, "k"),
+        (0, ""),
+        (-3, "m"),
+        (-6, "u"),
+        (-9, "n"),
+        (-12, "p"),
+        (-15, "f"),
+        (-18, "a"),
+    ]
     for exponent, prefactor in prefactors:
-        if val >= np.power(10., exponent):
+        if val >= np.power(10.0, exponent):
             return exponent, prefactor
-    else:
-        return prefactors[-1]
+
+    return prefactors[-1]
 
 
-class PerformanceTimer():
+class PerformanceTimer:
     max_records = 100
 
     def __init__(self):
         self.timings = DotDict()
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> str:
         val = self.timings.__getitem__(key)
         return self._timing_to_str(val)
 
     def __repr__(self):
         return pprint.pformat(self._timings_to_str(self.timings), indent=2)
 
-    def clear(self):
+    def clear(self) -> None:
         self.timings.clear()
 
-    def _timing_to_str(self, val):
+    def _timing_to_str(self, val: float) -> str:
         mean_val = np.mean(val)
-        exponent, prefactor = get_exponent(mean_val)
-        factor = np.power(10., exponent)
+        exponent, prefactor = get_exponent_prefactor(mean_val)
+        factor = np.power(10.0, exponent)
 
-        return f'{mean_val / factor:.3g}+-{np.abs(np.std(val))/factor:.3g} {prefactor}s'
+        return f"{mean_val / factor:.3g}+-{np.abs(np.std(val))/factor:.3g} {prefactor}s"
 
-    def _timings_to_str(self, d: dict):
+    def _timings_to_str(self, d: dict) -> str:
 
         timings_str = DotDict()
         for key, val in d.items():
@@ -146,7 +128,7 @@ class PerformanceTimer():
         return timings_str
 
     @contextmanager
-    def record(self, key, val=None):
+    def record(self, key: str, val: Any = None) -> None:
         if isinstance(key, str):
             timing_list = self.timings.setdefault(key, [])
         elif isinstance(key, (list)):
@@ -154,7 +136,7 @@ class PerformanceTimer():
             d = self.timings.create_dicts(*parent_keys)
             timing_list = d.setdefault(subkey, [])
         else:
-            raise ValueError('Key must be str or list/tuple')
+            raise ValueError("Key must be str or list/tuple")
 
         if val is not None:
             timing_list.append(val)

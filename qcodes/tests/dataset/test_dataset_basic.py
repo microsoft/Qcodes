@@ -1,5 +1,7 @@
+import io
 import random
 import re
+import sys
 from copy import copy
 from typing import Dict, List, Optional, Sequence, Tuple
 
@@ -22,12 +24,12 @@ from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.guids import parse_guid
 from qcodes.dataset.sqlite.connection import atomic, path_to_dbfile
-from qcodes.dataset.sqlite.database import get_DB_location
+from qcodes.dataset.sqlite.database import _convert_array, get_DB_location
 from qcodes.dataset.sqlite.queries import _rewrite_timestamps, _unicode_categories
 from qcodes.tests.common import error_caused_by
 from qcodes.tests.dataset.helper_functions import verify_data_dict
 from qcodes.tests.dataset.test_links import generate_some_links
-from qcodes.utils.types import numpy_complex, numpy_floats, numpy_ints
+from qcodes.utils.types import complex_types, numpy_complex, numpy_floats, numpy_ints
 
 n_experiments = 0
 
@@ -272,8 +274,10 @@ def test_load_by_id_for_none():
        dataset_name=hst.text(hst.characters(whitelist_categories=_unicode_categories),
                              min_size=1))
 @pytest.mark.usefixtures("empty_temp_db")
-def test_add_experiments(experiment_name,
-                         sample_name, dataset_name):
+@pytest.mark.xfail(
+    condition=sys.platform == "win32", reason="Time resolution is too low on windows"
+)
+def test_add_experiments(experiment_name, sample_name, dataset_name):
     global n_experiments
     n_experiments += 1
 
@@ -600,6 +604,15 @@ def test_numpy_inf(dataset):
     dataset.add_results(data_dict)
     retrieved = dataset.get_parameter_data()["m"]["m"]
     assert np.isinf(retrieved).all()
+
+
+def test_backward_compat__adapt_array_v0_33():
+    for dtype in numpy_floats + complex_types:
+        arr = np.asarray([1.0], dtype=np.dtype(dtype))
+        out = io.BytesIO()
+        np.save(out, arr)
+        out.seek(0)
+        assert arr == _convert_array(out.read())
 
 
 def test_missing_keys(dataset):

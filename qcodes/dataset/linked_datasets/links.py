@@ -2,9 +2,11 @@
 This module defines the Link dataclass as well as two functions to read and
 write an Link object to/from string, respectively
 """
-from typing import List
-from dataclasses import dataclass, asdict
+from __future__ import annotations
+
 import json
+from dataclasses import asdict, dataclass
+
 from qcodes.dataset.guids import validate_guid_format
 
 
@@ -62,7 +64,7 @@ def str_to_link(string: str) -> Link:
     return link
 
 
-def links_to_str(links: List[Link]) -> str:
+def links_to_str(links: list[Link]) -> str:
     """
     Convert a list of links to string. Note that this is the output that gets
     stored in the DB file
@@ -71,7 +73,7 @@ def links_to_str(links: List[Link]) -> str:
     return output
 
 
-def str_to_links(links_string: str) -> List[Link]:
+def str_to_links(links_string: str) -> list[Link]:
     """
     Convert a string into a list of Links
     """

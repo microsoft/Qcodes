@@ -3,8 +3,12 @@ import sqlite3
 
 import pytest
 
-from qcodes.dataset.sqlite.connection import ConnectionPlus, \
-    make_connection_plus_from, atomic, atomic_transaction
+from qcodes.dataset.sqlite.connection import (
+    ConnectionPlus,
+    atomic,
+    atomic_transaction,
+    make_connection_plus_from,
+)
 from qcodes.dataset.sqlite.database import connect
 from qcodes.tests.common import error_caused_by
 
@@ -328,5 +332,4 @@ def test_connect():
     assert isinstance(conn, sqlite3.Connection)
     assert isinstance(conn, ConnectionPlus)
     assert False is conn.atomic_in_progress
-
-    assert sqlite3.Row is conn.row_factory
+    assert None is conn.row_factory

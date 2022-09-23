@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from typing_extensions import Protocol
 
@@ -21,11 +21,11 @@ class _CacheProtocol(Protocol):
         ...
 
     @property
-    def timestamp(self) -> Optional[datetime]:
+    def timestamp(self) -> datetime | None:
         ...
 
     @property
-    def max_val_age(self) -> Optional[float]:
+    def max_val_age(self) -> float | None:
         ...
 
     @property
@@ -49,7 +49,7 @@ class _CacheProtocol(Protocol):
         *,
         value: ParamDataType,
         raw_value: ParamRawDataType,
-        timestamp: Optional[datetime] = None,
+        timestamp: datetime | None = None,
     ) -> None:
         ...
 
@@ -76,11 +76,11 @@ class _Cache:
             that does not have a get function.
     """
 
-    def __init__(self, parameter: ParameterBase, max_val_age: Optional[float] = None):
+    def __init__(self, parameter: ParameterBase, max_val_age: float | None = None):
         self._parameter = parameter
         self._value: ParamDataType = None
         self._raw_value: ParamRawDataType = None
-        self._timestamp: Optional[datetime] = None
+        self._timestamp: datetime | None = None
         self._max_val_age = max_val_age
         self._marked_valid: bool = False
 
@@ -90,7 +90,7 @@ class _Cache:
         return self._raw_value
 
     @property
-    def timestamp(self) -> Optional[datetime]:
+    def timestamp(self) -> datetime | None:
         """
         Timestamp of the moment when cache was last updated
 
@@ -100,7 +100,7 @@ class _Cache:
         return self._timestamp
 
     @property
-    def max_val_age(self) -> Optional[float]:
+    def max_val_age(self) -> float | None:
         """
         Max time (in seconds) to trust a value stored in cache. If the
         parameter has not been set or measured more recently than this,
@@ -157,7 +157,7 @@ class _Cache:
         *,
         value: ParamDataType,
         raw_value: ParamRawDataType,
-        timestamp: Optional[datetime] = None,
+        timestamp: datetime | None = None,
     ) -> None:
         """
         Simply overwrites the value, raw value, and timestamp in this cache

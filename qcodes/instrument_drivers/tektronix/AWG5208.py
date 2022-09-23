@@ -1,8 +1,9 @@
 from typing import Any
+
 from .AWG70000A import AWG70000A
 
 
-class AWG5208(AWG70000A):
+class TektronixAWG5208(AWG70000A):
     """
     The QCoDeS driver for Tektronix AWG5208
     """
@@ -18,3 +19,11 @@ class AWG5208(AWG70000A):
 
         super().__init__(name, address, num_channels=8,
                          timeout=timeout, **kwargs)
+
+
+class AWG5208(TektronixAWG5208):
+    """
+    Alias with non-conformant name left for backwards compatibility
+    """
+
+    pass

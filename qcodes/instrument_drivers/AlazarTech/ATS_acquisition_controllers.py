@@ -7,7 +7,7 @@ from .ATS import AcquisitionController, OutputType
 
 
 # DFT AcquisitionController
-class Demodulation_AcquisitionController(AcquisitionController[float]):
+class DemodulationAcquisitionController(AcquisitionController[float]):
     """
     This class represents an example acquisition controller. End users will
     probably want to use something more sophisticated. It will average all
@@ -158,3 +158,11 @@ class Demodulation_AcquisitionController(AcquisitionController[float]):
 
         # see manual page 52!!! (using unsigned data)
         return ampl, math.atan2(ImPart, RePart) * 360 / (2 * math.pi)
+
+
+class Demodulation_AcquisitionController(DemodulationAcquisitionController):
+    """
+    Alias for backwards compatibility. Will eventually be deprecated and removed
+    """
+
+    pass

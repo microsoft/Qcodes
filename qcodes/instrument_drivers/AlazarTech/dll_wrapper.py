@@ -11,19 +11,10 @@ import concurrent
 import concurrent.futures
 import ctypes
 import logging
+from collections.abc import Callable, Sequence
 from functools import partial
 from threading import Lock
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    NamedTuple,
-    NewType,
-    Sequence,
-    Tuple,
-    TypeVar,
-)
+from typing import Any, NamedTuple, NewType, TypeVar
 from weakref import WeakValueDictionary
 
 from qcodes.parameters import ParameterBase
@@ -52,8 +43,8 @@ def _api_call_task(
     return retval
 
 
-def _normalize_params(*args: T) -> List[T]:
-    args_out: List[T] = []
+def _normalize_params(*args: T) -> list[T]:
+    args_out: list[T] = []
     for arg in args:
         if isinstance(arg, ParameterBase):
             args_out.append(arg.raw_value)
@@ -69,10 +60,8 @@ def _mark_params_as_updated(*args: Any) -> None:
 
 
 def _check_error_code(
-        return_code: int,
-        func: Callable[..., Any],
-        arguments: Tuple[Any, ...]
-) -> Tuple[Any, ...]:
+    return_code: int, func: Callable[..., Any], arguments: tuple[Any, ...]
+) -> tuple[Any, ...]:
     if (return_code != API_SUCCESS) and (return_code != API_DMA_IN_PROGRESS):
         argrepr = repr(arguments)
         if len(argrepr) > 100:
@@ -96,9 +85,7 @@ def _check_error_code(
 
 
 def _convert_bytes_to_str(
-        output: bytes,
-        func: Callable[..., Any],
-        arguments: Tuple[Any, ...]
+    output: bytes, func: Callable[..., Any], arguments: tuple[Any, ...]
 ) -> str:
     return output.decode()
 
@@ -168,7 +155,7 @@ class WrappedDll(metaclass=DllWrapperMeta):
         dll_path: Path to the DLL library to load and wrap
     """
 
-    signatures: Dict[str, Signature] = {}
+    signatures: dict[str, Signature] = {}
     """
     Signatures for loaded DLL functions;
     It is to be filled with :class:`Signature` instances for the DLL

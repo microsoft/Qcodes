@@ -39,11 +39,7 @@ class NumpyJSONEncoder(json.JSONEncoder):
         * Other objects which cannot be serialized get converted to their
           string representation (using the ``str`` function).
         """
-        with warnings.catch_warnings():
-            # this context manager can be removed when uncertainties
-            # no longer triggers deprecation warnings
-            warnings.simplefilter("ignore", category=DeprecationWarning)
-            import uncertainties
+        import uncertainties
 
         if isinstance(obj, np.generic) and not isinstance(obj, np.complexfloating):
             # for numpy scalars
@@ -78,7 +74,12 @@ class NumpyJSONEncoder(json.JSONEncoder):
                     return obj.data
                 # See if the object supports the pickle protocol.
                 # If so, we should be able to use that to serialize.
-                if hasattr(obj, "__getnewargs__"):
+                # __getnewargs__ will return bytes for a bytes object
+                # causing an infinte recursion, so we do not
+                # try to pickle bytes or bytearrays
+                if hasattr(obj, "__getnewargs__") and not isinstance(
+                    obj, (bytes, bytearray)
+                ):
                     return {
                         "__class__": type(obj).__name__,
                         "__args__": getattr(obj, "__getnewargs__")(),

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Any, cast
 
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
@@ -89,7 +91,7 @@ class RunDescriber:
         return ser
 
     @classmethod
-    def _from_dict(cls, ser: RunDescriberDicts) -> 'RunDescriber':
+    def _from_dict(cls, ser: RunDescriberDicts) -> RunDescriber:
         """
         Make a RunDescriber object from a dictionary. This method is
         intended to be used only by the deserialization routines.

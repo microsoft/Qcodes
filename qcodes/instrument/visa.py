@@ -1,6 +1,9 @@
 """Visa instrument driver based on pyvisa."""
+from __future__ import annotations
+
 import logging
-from typing import Any, Dict, Optional, Sequence, Tuple
+from collections.abc import Sequence
+from typing import Any
 
 import pyvisa
 import pyvisa.constants as vi_const
@@ -52,9 +55,9 @@ class VisaInstrument(Instrument):
         name: str,
         address: str,
         timeout: float = 5,
-        terminator: Optional[str] = None,
+        terminator: str | None = None,
         device_clear: bool = True,
-        visalib: Optional[str] = None,
+        visalib: str | None = None,
         **kwargs: Any,
     ):
 
@@ -80,7 +83,7 @@ class VisaInstrument(Instrument):
         """
         The VISA resource used by this instrument.
         """
-        self.visalib: Optional[str] = visalib
+        self.visalib: str | None = visalib
         self._address = address
 
         if device_clear:
@@ -90,8 +93,8 @@ class VisaInstrument(Instrument):
         self.timeout.set(timeout)
 
     def _open_resource(
-        self, address: str, visalib: Optional[str]
-    ) -> Tuple[pyvisa.resources.MessageBasedResource, str]:
+        self, address: str, visalib: str | None
+    ) -> tuple[pyvisa.resources.MessageBasedResource, str]:
 
         # in case we're changing the address - close the old handle first
         if getattr(self, "visa_handle", None):
@@ -153,7 +156,7 @@ class VisaInstrument(Instrument):
         else:
             self.visa_handle.clear()
 
-    def set_terminator(self, terminator: Optional[str]) -> None:
+    def set_terminator(self, terminator: str | None) -> None:
         r"""
         Change the read terminator to use.
 
@@ -166,7 +169,7 @@ class VisaInstrument(Instrument):
             self.visa_handle.write_termination = terminator
             self.visa_handle.read_termination = terminator
 
-    def _set_visa_timeout(self, timeout: Optional[float]) -> None:
+    def _set_visa_timeout(self, timeout: float | None) -> None:
         # according to https://pyvisa.readthedocs.io/en/latest/introduction/resources.html#timeout
         # both float('+inf') and None are accepted as meaning infinite timeout
         # however None does not pass the typechecking in 1.11.1
@@ -176,7 +179,7 @@ class VisaInstrument(Instrument):
             # pyvisa uses milliseconds but we use seconds
             self.visa_handle.timeout = timeout * 1000.0
 
-    def _get_visa_timeout(self) -> Optional[float]:
+    def _get_visa_timeout(self) -> float | None:
 
         timeout_ms = self.visa_handle.timeout
         if timeout_ms is None:
@@ -218,9 +221,11 @@ class VisaInstrument(Instrument):
             self.visa_log.debug(f"Response: {response}")
         return response
 
-    def snapshot_base(self, update: Optional[bool] = True,
-                      params_to_skip_update: Optional[Sequence[str]] = None
-                      ) -> Dict[Any, Any]:
+    def snapshot_base(
+        self,
+        update: bool | None = True,
+        params_to_skip_update: Sequence[str] | None = None,
+    ) -> dict[Any, Any]:
         """
         State of the instrument as a JSON-compatible dict (everything that
         the custom JSON encoder class :class:`.NumpyJSONEncoder`

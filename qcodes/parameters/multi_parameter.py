@@ -1,6 +1,8 @@
-import collections.abc
+from __future__ import annotations
+
 import os
-from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence, Tuple, Type, Union
+from collections.abc import Iterator, Mapping, Sequence
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
@@ -15,8 +17,8 @@ if TYPE_CHECKING:
 
 def _is_nested_sequence_or_none(
     obj: Any,
-    types: Optional[Union[Type[object], Tuple[Type[object], ...]]],
-    shapes: Sequence[Sequence[Optional[int]]],
+    types: type[object] | tuple[type[object], ...] | None,
+    shapes: Sequence[Sequence[int | None]],
 ) -> bool:
     """Validator for MultiParameter setpoints/names/labels"""
     if obj is None:
@@ -122,18 +124,18 @@ class MultiParameter(ParameterBase):
         name: str,
         names: Sequence[str],
         shapes: Sequence[Sequence[int]],
-        instrument: Optional["InstrumentBase"] = None,
-        labels: Optional[Sequence[str]] = None,
-        units: Optional[Sequence[str]] = None,
-        setpoints: Optional[Sequence[Sequence[Any]]] = None,
-        setpoint_names: Optional[Sequence[Sequence[str]]] = None,
-        setpoint_labels: Optional[Sequence[Sequence[str]]] = None,
-        setpoint_units: Optional[Sequence[Sequence[str]]] = None,
-        docstring: Optional[str] = None,
+        instrument: InstrumentBase | None = None,
+        labels: Sequence[str] | None = None,
+        units: Sequence[str] | None = None,
+        setpoints: Sequence[Sequence[Any]] | None = None,
+        setpoint_names: Sequence[Sequence[str]] | None = None,
+        setpoint_labels: Sequence[Sequence[str]] | None = None,
+        setpoint_units: Sequence[Sequence[str]] | None = None,
+        docstring: str | None = None,
         snapshot_get: bool = True,
         snapshot_value: bool = False,
         snapshot_exclude: bool = False,
-        metadata: Optional[Mapping[Any, Any]] = None,
+        metadata: Mapping[Any, Any] | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(
@@ -164,7 +166,7 @@ class MultiParameter(ParameterBase):
         self.labels = labels if labels is not None else names
         self.units = units if units is not None else [""] * len(names)
 
-        nt: Type[None] = type(None)
+        nt: type[None] = type(None)
 
         if not is_sequence_of(shapes, int, depth=2) or len(shapes) != len(names):
             raise ValueError(
@@ -175,8 +177,8 @@ class MultiParameter(ParameterBase):
         sp_types = (
             nt,
             DataArray,
-            collections.abc.Sequence,
-            collections.abc.Iterator,
+            Sequence,
+            Iterator,
             np.ndarray,
         )
         if not _is_nested_sequence_or_none(setpoints, sp_types, shapes):
@@ -214,7 +216,7 @@ class MultiParameter(ParameterBase):
             raise AttributeError("MultiParameter must have a get, set or both")
 
     @property
-    def short_names(self) -> Tuple[str, ...]:
+    def short_names(self) -> tuple[str, ...]:
         """
         short_names is identical to names i.e. the names of the parameter
         parts but does not add the instrument name.
@@ -225,7 +227,7 @@ class MultiParameter(ParameterBase):
         return self.names
 
     @property
-    def full_names(self) -> Tuple[str, ...]:
+    def full_names(self) -> tuple[str, ...]:
         """
         Names of the parameter components including the name of the instrument
         and submodule that the parameter may be bound to. The name parts are
@@ -238,7 +240,7 @@ class MultiParameter(ParameterBase):
             return self.names
 
     @property
-    def setpoint_full_names(self) -> Optional[Sequence[Sequence[str]]]:
+    def setpoint_full_names(self) -> Sequence[Sequence[str]] | None:
         """
         Full names of setpoints including instrument names, if available
         """

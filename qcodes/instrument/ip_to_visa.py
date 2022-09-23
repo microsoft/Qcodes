@@ -1,4 +1,6 @@
-from typing import Any, Optional
+from __future__ import annotations
+
+from typing import Any
 
 import qcodes.validators as vals
 from qcodes.instrument_drivers.american_magnetics.AMI430 import AMI430
@@ -39,13 +41,17 @@ class IPToVisa(VisaInstrument, IPInstrument):  # type: ignore[misc]
     nasty surprises.
     """
 
-    def __init__(self, name: str, address: str,
-                 port: Optional[int],
-                 visalib: str,
-                 device_clear: bool = False,
-                 terminator: str = '\n',
-                 timeout: float = 3,
-                 **kwargs: Any):
+    def __init__(
+        self,
+        name: str,
+        address: str,
+        port: int | None,
+        visalib: str,
+        device_clear: bool = False,
+        terminator: str = "\n",
+        timeout: float = 3,
+        **kwargs: Any,
+    ):
 
         # remove IPInstrument-specific kwargs
         ipkwargs = ['write_confirmation']

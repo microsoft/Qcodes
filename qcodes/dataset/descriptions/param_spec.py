@@ -1,5 +1,8 @@
+from __future__ import annotations
+
+from collections.abc import Sequence
 from copy import deepcopy
-from typing import Any, List, Optional, Sequence, Union
+from typing import Any
 
 from typing_extensions import TypedDict
 
@@ -7,24 +10,26 @@ from typing_extensions import TypedDict
 class ParamSpecBaseDict(TypedDict):
     name: str
     paramtype: str
-    label: Optional[str]
-    unit: Optional[str]
+    label: str | None
+    unit: str | None
 
 
 class ParamSpecDict(ParamSpecBaseDict):
-    inferred_from: List[str]
-    depends_on: List[str]
+    inferred_from: list[str]
+    depends_on: list[str]
 
 
 class ParamSpecBase:
 
     allowed_types = ['array', 'numeric', 'text', 'complex']
 
-    def __init__(self,
-                 name: str,
-                 paramtype: str,
-                 label: Optional[str] = None,
-                 unit: Optional[str] = None):
+    def __init__(
+        self,
+        name: str,
+        paramtype: str,
+        label: str | None = None,
+        unit: str | None = None,
+    ):
         """
         Args:
             name: name of the parameter
@@ -101,7 +106,7 @@ class ParamSpecBase:
         return output
 
     @classmethod
-    def _from_dict(cls, ser: ParamSpecBaseDict) -> 'ParamSpecBase':
+    def _from_dict(cls, ser: ParamSpecBaseDict) -> ParamSpecBase:
         """
         Create a ParamSpec instance of the current version
         from a dictionary representation of ParamSpec of some version
@@ -117,14 +122,16 @@ class ParamSpecBase:
 
 
 class ParamSpec(ParamSpecBase):
-
-    def __init__(self, name: str,
-                 paramtype: str,
-                 label: Optional[str] = None,
-                 unit: Optional[str] = None,
-                 inferred_from: Optional[Sequence[Union['ParamSpec', str]]] = None,
-                 depends_on: Optional[Sequence[Union['ParamSpec', str]]] = None,
-                 **metadata: Any) -> None:
+    def __init__(
+        self,
+        name: str,
+        paramtype: str,
+        label: str | None = None,
+        unit: str | None = None,
+        inferred_from: Sequence[ParamSpec | str] | None = None,
+        depends_on: Sequence[ParamSpec | str] | None = None,
+        **metadata: Any,
+    ) -> None:
         """
         Args:
             name: name of the parameter
@@ -136,8 +143,8 @@ class ParamSpec(ParamSpecBase):
 
         super().__init__(name, paramtype, label, unit)
 
-        self._inferred_from: List[str] = []
-        self._depends_on: List[str] = []
+        self._inferred_from: list[str] = []
+        self._depends_on: list[str] = []
 
         inferred_from = [] if inferred_from is None else inferred_from
         depends_on = [] if depends_on is None else depends_on
@@ -163,11 +170,11 @@ class ParamSpec(ParamSpecBase):
             self.metadata = metadata
 
     @property
-    def inferred_from_(self) -> List[str]:
+    def inferred_from_(self) -> list[str]:
         return deepcopy(self._inferred_from)
 
     @property
-    def depends_on_(self) -> List[str]:
+    def depends_on_(self) -> list[str]:
         return deepcopy(self._depends_on)
 
     @property
@@ -178,7 +185,7 @@ class ParamSpec(ParamSpecBase):
     def depends_on(self) -> str:
         return ', '.join(self._depends_on)
 
-    def copy(self) -> 'ParamSpec':
+    def copy(self) -> ParamSpec:
         """
         Make a copy of self
         """
@@ -250,10 +257,7 @@ class ParamSpec(ParamSpecBase):
                              unit=self.unit)
 
     @classmethod
-    def _from_dict(  # type: ignore[override]
-            cls,
-            ser: ParamSpecDict
-    ) -> 'ParamSpec':
+    def _from_dict(cls, ser: ParamSpecDict) -> ParamSpec:  # type: ignore[override]
         """
         Create a ParamSpec instance of the current version
         from a dictionary representation of ParamSpec of some version

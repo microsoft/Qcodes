@@ -15,7 +15,7 @@ from qcodes.parameters import MultiChannelInstrumentParameter, ParamRawDataType
 log = logging.getLogger(__name__)
 
 
-class QDacChannel(InstrumentChannel):
+class QDevQDacChannel(InstrumentChannel):
     """
     A single output channel of the QDac.
 
@@ -118,7 +118,10 @@ class QDacChannel(InstrumentChannel):
         return snap
 
 
-class QDacMultiChannelParameter(MultiChannelInstrumentParameter):
+QDacChannel = QDevQDacChannel
+
+
+class QDevQDacMultiChannelParameter(MultiChannelInstrumentParameter):
     """
     The class to be returned by __getattr__ of the ChannelList. Here customised
     for fast multi-readout of voltages.
@@ -151,7 +154,10 @@ class QDacMultiChannelParameter(MultiChannelInstrumentParameter):
         return output
 
 
-class QDac(VisaInstrument):
+QDacMultiChannelParameter = QDevQDacMultiChannelParameter
+
+
+class QDevQDac(VisaInstrument):
     """
     Channelised driver for the QDev digital-analog converter QDac
 
@@ -220,12 +226,16 @@ class QDac(VisaInstrument):
         self.chan_range = range(1, 1 + self.num_chans)
         self.channel_validator = vals.Ints(1, self.num_chans)
 
-        channels = ChannelList(self, "Channels", QDacChannel,
-                               snapshotable=False,
-                               multichan_paramclass=QDacMultiChannelParameter)
+        channels = ChannelList(
+            self,
+            "Channels",
+            QDevQDacChannel,
+            snapshotable=False,
+            multichan_paramclass=QDevQDacMultiChannelParameter,
+        )
 
         for i in self.chan_range:
-            channel = QDacChannel(self, f'chan{i:02}', i)
+            channel = QDevQDacChannel(self, f"chan{i:02}", i)
             channels.append(channel)
             # Should raise valueerror if name is invalid (silently fails now)
             self.add_submodule(f"ch{i:02}", channel)
@@ -314,7 +324,7 @@ class QDac(VisaInstrument):
             # happen inside _rampvoltage
             self._rampvoltage(chan, fg, v_start, v_set, time)
         else:
-            v_dac = QDac._get_v_dac_from_v_exp(channel, v_set)
+            v_dac = QDevQDac._get_v_dac_from_v_exp(channel, v_set)
             # set the mode back to DC in case it had been changed
             # and then set the voltage
             self.write(f'wav {chan} 0 0 0;set {chan} {v_dac:.6f}')
@@ -338,16 +348,16 @@ class QDac(VisaInstrument):
     # commands.
     # Then we have the general relationship`v_exp = v_dac * attenuation`,
     @staticmethod
-    def _get_attenuation(channel: QDacChannel) -> float:
+    def _get_attenuation(channel: QDevQDacChannel) -> float:
         return 0.1 if channel.vrange.cache() == 1 else 1.0
 
     @staticmethod
-    def _get_v_dac_from_v_exp(channel: QDacChannel, v_exp: float) -> float:
-        return v_exp / QDac._get_attenuation(channel)
+    def _get_v_dac_from_v_exp(channel: QDevQDacChannel, v_exp: float) -> float:
+        return v_exp / QDevQDac._get_attenuation(channel)
 
     @staticmethod
-    def _get_v_exp_from_v_dac(channel: QDacChannel, v_dac: float) -> float:
-        return v_dac * QDac._get_attenuation(channel)
+    def _get_v_exp_from_v_dac(channel: QDevQDacChannel, v_dac: float) -> float:
+        return v_dac * QDevQDac._get_attenuation(channel)
 
     def _set_vrange(self, chan: int, switchint: int) -> None:
         """
@@ -366,10 +376,10 @@ class QDac(VisaInstrument):
         # for definitions.
         channel = self.channels[chan-1]
         if channel.vrange.cache() != switchint:
-            v_dac = QDac._get_v_dac_from_v_exp(channel, channel.v.cache())
+            v_dac = QDevQDac._get_v_dac_from_v_exp(channel, channel.v.cache())
             channel.vrange.cache.set(switchint)
             self._update_v_validator(channel, switchint)
-            channel.v.cache.set(QDac._get_v_exp_from_v_dac(channel, v_dac))
+            channel.v.cache.set(QDevQDac._get_v_exp_from_v_dac(channel, v_dac))
 
     def _get_vrange(self, chan: int) -> float:
         """
@@ -458,7 +468,7 @@ class QDac(VisaInstrument):
             channel.vrange.cache.set(v_range)
             self._update_v_validator(channel, v_range)
             channel.irange.cache.set(i_range)
-            channel.v.cache.set(QDac._get_v_exp_from_v_dac(channel, v_dac))
+            channel.v.cache.set(QDevQDac._get_v_exp_from_v_dac(channel, v_dac))
 
             chans_left.remove(chan)
 
@@ -471,7 +481,7 @@ class QDac(VisaInstrument):
             _ = param.get()
 
     @staticmethod
-    def _update_v_validator(channel: QDacChannel, v_range: int) -> None:
+    def _update_v_validator(channel: QDevQDacChannel, v_range: int) -> None:
         range = (-10.01, 10.01) if v_range == 0 else (-1.001, 1.001)
         channel.v.vals = vals.Numbers(*range)
 
@@ -734,3 +744,11 @@ class QDac(VisaInstrument):
                 line += f": {returnmap[pp][value]}"
                 line += ". "
             print(line)
+
+
+class QDac(QDevQDac):
+    """
+    Backwards compatibility alias for QDevQDac driver
+    """
+
+    pass

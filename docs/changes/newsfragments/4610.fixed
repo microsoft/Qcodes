@@ -1,0 +1,1 @@
+Add ``get_idn`` to AMI 430 3D virtual instrument driver so that it does not raise a warning when added to a station

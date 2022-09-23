@@ -1,9 +1,9 @@
-import pytest
 import numpy as np
+import pytest
+
 from qcodes.instrument.mockers.simulated_ats_api import SimulatedATS9360API
 from qcodes.instrument_drivers.AlazarTech.ATS import AcquisitionInterface
-from qcodes.instrument_drivers.AlazarTech.ATS9360 import (
-    AlazarTech_ATS9360 as ATS9360)
+from qcodes.instrument_drivers.AlazarTech.ATS9360 import AlazarTech_ATS9360 as ATS9360
 
 
 def ones_generator(data):

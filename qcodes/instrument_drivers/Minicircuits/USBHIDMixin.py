@@ -2,9 +2,9 @@
 A mixin module for USB Human Interface Device instruments
 """
 import os
-import time
 import struct
-from typing import Optional, List, Any
+import time
+from typing import Any, List, Optional
 
 try:
     import pywinusb.hid as hid

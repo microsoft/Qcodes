@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic_transaction
 from qcodes.dataset.sqlite.query_helpers import one
 

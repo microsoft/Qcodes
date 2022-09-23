@@ -1,7 +1,11 @@
 import io
+
 import pytest
 
-from qcodes.instrument_drivers.Lakeshore.Model_325 import read_curve_file, get_sanitize_data
+from qcodes.instrument_drivers.Lakeshore.Lakeshore_model_325 import (
+    _get_sanitize_data,
+    _read_curve_file,
+)
 
 curve_file_content = """ \
 Sensor Model:   CX-1050-SD-HT-1.4L
@@ -28,7 +32,7 @@ def curve_file():
 
 
 def test_file_parser(curve_file):
-    file_data = read_curve_file(curve_file)
+    file_data = _read_curve_file(curve_file)
 
     assert list(file_data.keys()) == ["metadata", "data"]
 
@@ -50,8 +54,8 @@ def test_file_parser(curve_file):
 
 def test_sanitise_data(curve_file):
 
-    file_data = read_curve_file(curve_file)
-    data_dict = get_sanitize_data(file_data)
+    file_data = _read_curve_file(curve_file)
+    data_dict = _get_sanitize_data(file_data)
 
     assert data_dict == {
         "log Ohm": (1.70333, 1.70444, 1.72168, 1.73995, 1.75936, 1.78),

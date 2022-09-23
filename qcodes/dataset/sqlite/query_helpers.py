@@ -2,9 +2,11 @@
 This module provides a number of convenient general-purpose functions that
 are useful for building more database-specific queries out of them.
 """
+from __future__ import annotations
+
 import itertools
 import sqlite3
-from typing import Any, List, Mapping, Optional, Sequence, Tuple, Union
+from typing import Any, List, Mapping, Sequence, Union
 
 import numpy as np
 from numpy import ndarray
@@ -24,7 +26,18 @@ VALUE = Union[str, complex, List, ndarray, bool, None]
 VALUES = Sequence[VALUE]
 
 
-def one(curr: sqlite3.Cursor, column: Union[int, str]) -> Any:
+def get_description_map(curr: sqlite3.Cursor) -> dict[str, int]:
+    """Get the description of the last query
+    Args:
+        curr: last cursor operated on
+
+    Returns:
+        dictionary mapping column names and their indices
+    """
+    return {c[0]: i for i, c in enumerate(curr.description)}
+
+
+def one(curr: sqlite3.Cursor, column: int | str) -> Any:
     """Get the value of one column from one row
     Args:
         curr: cursor to operate on
@@ -39,10 +52,19 @@ def one(curr: sqlite3.Cursor, column: Union[int, str]) -> Any:
     elif len(res) == 0:
         raise RuntimeError("Expected one row")
     else:
-        return res[0][column]
+        return res[0][
+            column if isinstance(column, int) else get_description_map(curr)[column]
+        ]
 
 
-def many(curr: sqlite3.Cursor, *columns: str) -> List[Any]:
+def _need_to_select(curr: sqlite3.Cursor, *columns: str) -> bool:
+    """
+    Return True if the columns' description of the last query doesn't exactly match
+    """
+    return tuple(c[0] for c in curr.description) != columns
+
+
+def many(curr: sqlite3.Cursor, *columns: str) -> tuple[Any, ...]:
     """Get the values of many columns from one row
     Args:
         curr: cursor to operate on
@@ -54,11 +76,16 @@ def many(curr: sqlite3.Cursor, *columns: str) -> List[Any]:
     res = curr.fetchall()
     if len(res) > 1:
         raise RuntimeError("Expected only one row")
+    elif _need_to_select(curr, *columns):
+        raise RuntimeError(
+            "Expected consistent selection: cursor has columns"
+            f"{tuple(c[0] for c in curr.description)} but expected {columns}"
+        )
     else:
-        return [res[0][c] for c in columns]
+        return res[0]
 
 
-def many_many(curr: sqlite3.Cursor, *columns: str) -> List[List[Any]]:
+def many_many(curr: sqlite3.Cursor, *columns: str) -> list[tuple[Any, ...]]:
     """Get all values of many columns
     Args:
         curr: cursor to operate on
@@ -68,10 +95,14 @@ def many_many(curr: sqlite3.Cursor, *columns: str) -> List[List[Any]]:
         list of lists of values
     """
     res = curr.fetchall()
-    results = []
-    for r in res:
-        results.append([r[c] for c in columns])
-    return results
+
+    if _need_to_select(curr, *columns):
+        raise RuntimeError(
+            "Expected consistent selection: cursor has columns"
+            f"{tuple(c[0] for c in curr.description)} but expected {columns}"
+        )
+
+    return res
 
 
 def select_one_where(
@@ -126,7 +157,7 @@ def select_many_where(
     return res
 
 
-def _massage_dict(metadata: Mapping[str, Any]) -> Tuple[str, List[Any]]:
+def _massage_dict(metadata: Mapping[str, Any]) -> tuple[str, list[Any]]:
     """
     {key:value, key2:value} -> ["key=?, key2=?", [value, value]]
     """
@@ -152,11 +183,12 @@ def update_where(conn: ConnectionPlus, table: str,
     atomic_transaction(conn, query, *values, where_value)
 
 
-def insert_values(conn: ConnectionPlus,
-                  formatted_name: str,
-                  columns: List[str],
-                  values: VALUES,
-                  ) -> int:
+def insert_values(
+    conn: ConnectionPlus,
+    formatted_name: str,
+    columns: list[str],
+    values: VALUES,
+) -> int:
     """
     Inserts values for the specified columns.
     Will pad with null if not all parameters are specified.
@@ -253,13 +285,14 @@ def insert_many_values(conn: ConnectionPlus,
     return return_value
 
 
-@deprecate('Unused private method to be removed in a future version')
-def modify_values(conn: ConnectionPlus,
-                  formatted_name: str,
-                  index: int,
-                  columns: List[str],
-                  values: VALUES,
-                  ) -> int:
+@deprecate("Unused private method to be removed in a future version")
+def modify_values(
+    conn: ConnectionPlus,
+    formatted_name: str,
+    index: int,
+    columns: list[str],
+    values: VALUES,
+) -> int:
     """
     Modify values for the specified columns.
     If a column is in the table but not in the columns list is
@@ -281,13 +314,14 @@ def modify_values(conn: ConnectionPlus,
     return c.rowcount
 
 
-@deprecate('Unused private method to be removed in a future version')
-def modify_many_values(conn: ConnectionPlus,
-                       formatted_name: str,
-                       start_index: int,
-                       columns: List[str],
-                       list_of_values: List[VALUES],
-                       ) -> None:
+@deprecate("Unused private method to be removed in a future version")
+def modify_many_values(
+    conn: ConnectionPlus,
+    formatted_name: str,
+    start_index: int,
+    columns: list[str],
+    list_of_values: list[VALUES],
+) -> None:
     """
     Modify many values for the specified columns.
     If a column is in the table but not in the column list is
@@ -330,8 +364,9 @@ def length(conn: ConnectionPlus,
         return _len
 
 
-def insert_column(conn: ConnectionPlus, table: str, name: str,
-                  paramtype: Optional[str] = None) -> None:
+def insert_column(
+    conn: ConnectionPlus, table: str, name: str, paramtype: str | None = None
+) -> None:
     """Insert new column to a table
 
     Args:
@@ -344,8 +379,9 @@ def insert_column(conn: ConnectionPlus, table: str, name: str,
     # and do nothing if it is
     query = f'PRAGMA TABLE_INFO("{table}");'
     cur = atomic_transaction(conn, query)
-    columns = many_many(cur, "name")
-    if name in [col[0] for col in columns]:
+    description = get_description_map(cur)
+    columns = cur.fetchall()
+    if name in [col[description["name"]] for col in columns]:
         return
 
     with atomic(conn) as conn:
@@ -371,8 +407,9 @@ def is_column_in_table(conn: ConnectionPlus, table: str, column: str) -> bool:
         column: the column name
     """
     cur = atomic_transaction(conn, f"PRAGMA table_info({table})")
+    description = get_description_map(cur)
     for row in cur.fetchall():
-        if row['name'] == column:
+        if row[description["name"]] == column:
             return True
     return False
 

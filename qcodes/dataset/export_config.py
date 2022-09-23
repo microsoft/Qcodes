@@ -1,7 +1,8 @@
+from __future__ import annotations
+
 import enum
 import logging
 from os.path import exists, expanduser, normpath
-from typing import List, Optional, Union
 
 from qcodes import config
 
@@ -60,7 +61,8 @@ def set_data_export_path(export_path: str) -> None:
 
 
 def get_data_export_type(
-    export_type: Optional[Union[DataExportType, str]] = None) -> Optional[DataExportType]:
+    export_type: DataExportType | str | None = None,
+) -> DataExportType | None:
     """Get the file type for exporting data to disk at the end of
     a measurement from config
 
@@ -116,6 +118,6 @@ def get_data_export_prefix() -> str:
     return config[DATASET_CONFIG_SECTION][EXPORT_PREFIX]
 
 
-def get_data_export_name_elements() -> List[str]:
+def get_data_export_name_elements() -> list[str]:
     """Get the elements to include in the export name."""
     return config[DATASET_CONFIG_SECTION][EXPORT_NAME_ELEMENTS]
