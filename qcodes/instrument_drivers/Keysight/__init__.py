@@ -20,6 +20,11 @@ from .Keysight_N5183B import KeysightN5183B
 from .Keysight_N5222B import KeysightN5222B
 from .Keysight_N5230C import KeysightN5230C
 from .Keysight_N6705B import KeysightN6705B, KeysightN6705BChannel
+from .Keysight_N9030B import (
+    KeysightN9030B,
+    KeysightN9030BPhaseNoiseMode,
+    KeysightN9030BSpectrumAnalyzerMode,
+)
 from .Keysight_P9374A import KeysightP9374A
 from .N52xx import KeysightPNAPort, KeysightPNATrace
 
@@ -50,4 +55,7 @@ __all__ = [
     "KeysightP9374A",
     "KeysightPNAPort",
     "KeysightPNATrace",
+    "KeysightN9030B",
+    "KeysightN9030BPhaseNoiseMode",
+    "KeysightN9030BSpectrumAnalyzerMode",
 ]
