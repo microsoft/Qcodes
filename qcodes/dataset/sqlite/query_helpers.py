@@ -26,6 +26,17 @@ VALUE = Union[str, complex, List, ndarray, bool, None]
 VALUES = Sequence[VALUE]
 
 
+def get_description_map(curr: sqlite3.Cursor) -> dict[str, int]:
+    """Get the description of the last query
+    Args:
+        curr: last cursor operated on
+
+    Returns:
+        dictionary mapping column names and their indices
+    """
+    return {c[0]: i for i, c in enumerate(curr.description)}
+
+
 def one(curr: sqlite3.Cursor, column: int | str) -> Any:
     """Get the value of one column from one row
     Args:
@@ -41,10 +52,19 @@ def one(curr: sqlite3.Cursor, column: int | str) -> Any:
     elif len(res) == 0:
         raise RuntimeError("Expected one row")
     else:
-        return res[0][column]
+        return res[0][
+            column if isinstance(column, int) else get_description_map(curr)[column]
+        ]
 
 
-def many(curr: sqlite3.Cursor, *columns: str) -> list[Any]:
+def _need_to_select(curr: sqlite3.Cursor, *columns: str) -> bool:
+    """
+    Return True if the columns' description of the last query doesn't exactly match
+    """
+    return tuple(c[0] for c in curr.description) != columns
+
+
+def many(curr: sqlite3.Cursor, *columns: str) -> tuple[Any, ...]:
     """Get the values of many columns from one row
     Args:
         curr: cursor to operate on
@@ -56,11 +76,16 @@ def many(curr: sqlite3.Cursor, *columns: str) -> list[Any]:
     res = curr.fetchall()
     if len(res) > 1:
         raise RuntimeError("Expected only one row")
+    elif _need_to_select(curr, *columns):
+        raise RuntimeError(
+            "Expected consistent selection: cursor has columns"
+            f"{tuple(c[0] for c in curr.description)} but expected {columns}"
+        )
     else:
-        return [res[0][c] for c in columns]
+        return res[0]
 
 
-def many_many(curr: sqlite3.Cursor, *columns: str) -> list[list[Any]]:
+def many_many(curr: sqlite3.Cursor, *columns: str) -> list[tuple[Any, ...]]:
     """Get all values of many columns
     Args:
         curr: cursor to operate on
@@ -70,10 +95,14 @@ def many_many(curr: sqlite3.Cursor, *columns: str) -> list[list[Any]]:
         list of lists of values
     """
     res = curr.fetchall()
-    results = []
-    for r in res:
-        results.append([r[c] for c in columns])
-    return results
+
+    if _need_to_select(curr, *columns):
+        raise RuntimeError(
+            "Expected consistent selection: cursor has columns"
+            f"{tuple(c[0] for c in curr.description)} but expected {columns}"
+        )
+
+    return res
 
 
 def select_one_where(
@@ -350,8 +379,9 @@ def insert_column(
     # and do nothing if it is
     query = f'PRAGMA TABLE_INFO("{table}");'
     cur = atomic_transaction(conn, query)
-    columns = many_many(cur, "name")
-    if name in [col[0] for col in columns]:
+    description = get_description_map(cur)
+    columns = cur.fetchall()
+    if name in [col[description["name"]] for col in columns]:
         return
 
     with atomic(conn) as conn:
@@ -377,8 +407,9 @@ def is_column_in_table(conn: ConnectionPlus, table: str, column: str) -> bool:
         column: the column name
     """
     cur = atomic_transaction(conn, f"PRAGMA table_info({table})")
+    description = get_description_map(cur)
     for row in cur.fetchall():
-        if row['name'] == column:
+        if row[description["name"]] == column:
             return True
     return False
 

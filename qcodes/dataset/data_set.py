@@ -1175,11 +1175,14 @@ class DataSet(BaseDataSet):
         """
         Remove all subscribers
         """
-        sql = "select * from sqlite_master where type = 'trigger';"
+        sql = """
+        SELECT name FROM sqlite_master
+        WHERE type = 'trigger'
+        """
         triggers = atomic_transaction(self.conn, sql).fetchall()
         with atomic(self.conn) as conn:
-            for trigger in triggers:
-                remove_trigger(conn, trigger['name'])
+            for (trigger,) in triggers:
+                remove_trigger(conn, trigger)
             for sub in self.subscribers.values():
                 sub.schedule_stop()
                 sub.join()

@@ -16,7 +16,7 @@ from qcodes.dataset.sqlite.connection import (
     atomic_transaction,
     transaction,
 )
-from qcodes.dataset.sqlite.query_helpers import one
+from qcodes.dataset.sqlite.query_helpers import get_description_map, one
 
 log = logging.getLogger(__name__)
 
@@ -29,8 +29,8 @@ def _2to3_get_result_tables(conn: ConnectionPlus) -> dict[int, str]:
     data = cur.fetchall()
     cur.close()
     results = {}
-    for row in data:
-        results[row['run_id']] = row['result_table_name']
+    for run_id, result_table_name in data:
+        results[run_id] = result_table_name
     return results
 
 
@@ -47,9 +47,7 @@ def _2to3_get_layout_ids(conn: ConnectionPlus) -> DefaultDict[int, list[int]]:
 
     results: DefaultDict[int, list[int]] = defaultdict(list)
 
-    for row in data:
-        run_id = row['run_id']
-        layout_id = row['layout_id']
+    for run_id, layout_id in data:
         results[run_id].append(layout_id)
 
     return results
@@ -68,9 +66,7 @@ def _2to3_get_indeps(conn: ConnectionPlus) -> DefaultDict[int, list[int]]:
     cur.close()
     results: DefaultDict[int, list[int]] = defaultdict(list)
 
-    for row in data:
-        run_id = row['run_id']
-        layout_id = row['layout_id']
+    for run_id, layout_id in data:
         results[run_id].append(layout_id)
 
     return results
@@ -89,9 +85,7 @@ def _2to3_get_deps(conn: ConnectionPlus) -> DefaultDict[int, list[int]]:
     cur.close()
     results: DefaultDict[int, list[int]] = defaultdict(list)
 
-    for row in data:
-        run_id = row['run_id']
-        layout_id = row['layout_id']
+    for run_id, layout_id in data:
         results[run_id].append(layout_id)
 
     return results
@@ -112,9 +106,7 @@ def _2to3_get_dependencies(conn: ConnectionPlus) -> DefaultDict[int, list[int]]:
     if len(data) == 0:
         return results
 
-    for row in data:
-        dep = row['dependent']
-        indep = row['independent']
+    for dep, indep in data:
         results[dep].append(indep)
 
     return results
@@ -129,11 +121,8 @@ def _2to3_get_layouts(conn: ConnectionPlus) -> dict[int, tuple[str, str, str, st
     cur.execute(query)
 
     results: dict[int, tuple[str, str, str, str]] = {}
-    for row in cur.fetchall():
-        results[row['layout_id']] = (row['parameter'],
-                                     row['label'],
-                                     row['unit'],
-                                     row['inferred_from'])
+    for layout_id, parameter, label, unit, inferred_from in cur.fetchall():
+        results[layout_id] = (parameter, label, unit, inferred_from)
     return results
 
 
@@ -159,10 +148,11 @@ def _2to3_get_paramspecs(
         # get the data type
         sql = f'PRAGMA TABLE_INFO("{result_table_name}")'
         c = transaction(conn, sql)
+        description = get_description_map(c)
         paramtype = None
         for row in c.fetchall():
-            if row['name'] == name:
-                paramtype = row['type']
+            if row[description["name"]] == name:
+                paramtype = row[description["type"]]
                 break
         if paramtype is None:
             raise TypeError(f"Could not determine type of {name} during the"

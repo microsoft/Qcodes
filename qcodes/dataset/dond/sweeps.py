@@ -2,20 +2,24 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
+from typing import Any, Generic, TypeVar
 
 import numpy as np
+import numpy.typing as npt
 
 from qcodes.dataset.dond.do_nd_utils import ActionsT
 from qcodes.parameters import ParameterBase
 
+T = TypeVar("T", bound=np.generic)
 
-class AbstractSweep(ABC):
+
+class AbstractSweep(ABC, Generic[T]):
     """
     Abstract sweep class that defines an interface for concrete sweep classes.
     """
 
     @abstractmethod
-    def get_setpoints(self) -> np.ndarray:
+    def get_setpoints(self) -> npt.NDArray[T]:
         """
         Returns an array of setpoint values for this sweep.
         """
@@ -54,7 +58,7 @@ class AbstractSweep(ABC):
         pass
 
 
-class LinSweep(AbstractSweep):
+class LinSweep(AbstractSweep[np.float64]):
     """
     Linear sweep.
 
@@ -63,7 +67,7 @@ class LinSweep(AbstractSweep):
         start: Sweep start value.
         stop: Sweep end value.
         num_points: Number of sweep points.
-        delay: Time in seconds between two consequtive sweep points
+        delay: Time in seconds between two consecutive sweep points
     """
 
     def __init__(
@@ -82,7 +86,7 @@ class LinSweep(AbstractSweep):
         self._delay = delay
         self._post_actions = post_actions
 
-    def get_setpoints(self) -> np.ndarray:
+    def get_setpoints(self) -> npt.NDArray[np.float64]:
         """
         Linear (evenly spaced) numpy array for supplied start, stop and
         num_points.
@@ -106,7 +110,7 @@ class LinSweep(AbstractSweep):
         return self._post_actions
 
 
-class LogSweep(AbstractSweep):
+class LogSweep(AbstractSweep[np.float64]):
     """
     Logarithmic sweep.
 
@@ -115,7 +119,7 @@ class LogSweep(AbstractSweep):
         start: Sweep start value.
         stop: Sweep end value.
         num_points: Number of sweep points.
-        delay: Time in seconds between two consequtive sweep points.
+        delay: Time in seconds between two consecutive sweep points.
     """
 
     def __init__(
@@ -134,7 +138,7 @@ class LogSweep(AbstractSweep):
         self._delay = delay
         self._post_actions = post_actions
 
-    def get_setpoints(self) -> np.ndarray:
+    def get_setpoints(self) -> npt.NDArray[np.float64]:
         """
         Logarithmically spaced numpy array for supplied start, stop and
         num_points.
@@ -158,7 +162,7 @@ class LogSweep(AbstractSweep):
         return self._post_actions
 
 
-class ArraySweep(AbstractSweep):
+class ArraySweep(AbstractSweep, Generic[T]):
     """
     Sweep the values of a given array.
 
@@ -172,7 +176,7 @@ class ArraySweep(AbstractSweep):
     def __init__(
         self,
         param: ParameterBase,
-        array: Sequence[float] | np.ndarray,
+        array: Sequence[Any] | npt.NDArray[T],
         delay: float = 0,
         post_actions: ActionsT = (),
     ):
@@ -181,7 +185,7 @@ class ArraySweep(AbstractSweep):
         self._delay = delay
         self._post_actions = post_actions
 
-    def get_setpoints(self) -> np.ndarray:
+    def get_setpoints(self) -> npt.NDArray[T]:
         return self._array
 
     @property
