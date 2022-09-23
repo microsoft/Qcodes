@@ -17,6 +17,7 @@ from .keysight_e4980a import (
 )
 from .Keysight_N5173B import KeysightN5173B
 from .Keysight_N5183B import KeysightN5183B
+from .Keysight_N5222B import KeysightN5222B
 from .Keysight_N6705B import KeysightN6705B, KeysightN6705BChannel
 
 __all__ = [
@@ -39,6 +40,7 @@ __all__ = [
     "KeysightE4980AMeasurements",
     "KeysightN5173B",
     "KeysightN5183B",
+    "KeysightN5222B",
     "KeysightN6705B",
     "KeysightN6705BChannel",
 ]
