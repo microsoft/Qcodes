@@ -76,10 +76,10 @@ class _Sweeper:
 
     def _make_setpoints_tuples(
         self,
-    ) -> tuple[tuple[tuple[SweepVarType, ...] | SweepVarType]]:
+    ) -> tuple[tuple[tuple[SweepVarType, ...] | SweepVarType, ...], ...]:
         sweeps = tuple(sweep.get_setpoints() for sweep in self._sweeps)
         return cast(
-            Tuple[Tuple[Union[Tuple[SweepVarType, ...], SweepVarType]]],
+            Tuple[Tuple[Union[Tuple[SweepVarType, ...], SweepVarType], ...], ...],
             tuple(itertools.product(*sweeps)),
         )
 
@@ -152,7 +152,7 @@ class _Sweeper:
         # looks lite itertools.product is not yet generic in input type
         # so output ends up being tuple[tuple[Any]] even with a specified input type
         param_tuples_single = cast(
-            Tuple[Tuple[ParameterBase, ...]], tuple(itertools.product(*param_list))
+            Tuple[Tuple[ParameterBase, ...], ...], tuple(itertools.product(*param_list))
         )
         param_tuples_all = (tuple(itertools.chain(*param_list)),)
         return tuple(set(param_tuples_single + param_tuples_all))
