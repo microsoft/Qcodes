@@ -71,7 +71,7 @@ class _Sweeper:
         self._shapes = self._make_shape(sweeps, additional_setpoints)
 
     @property
-    def setpoint_dicts(self) -> dict[str, list[Any]]:
+    def setpoint_dict(self) -> dict[str, list[Any]]:
         return self._setpoints_dict
 
     def _make_setpoints_tuples(
