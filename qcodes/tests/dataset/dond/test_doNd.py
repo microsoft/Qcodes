@@ -952,14 +952,14 @@ def test_dond_together_sweep_sweeper(_param_set, _param_set_2, _param):
     assert sweeper.shape == (10,)
     assert sweeper.all_setpoint_params == (sweep_1.param, sweep_2.param)
 
-    assert list(sweeper.setpoint_dicts.keys()) == [
+    assert list(sweeper.setpoint_dict.keys()) == [
         "simple_setter_parameter",
         "simple_setter_parameter_2",
     ]
-    assert sweeper.setpoint_dicts["simple_setter_parameter"] == list(
+    assert sweeper.setpoint_dict["simple_setter_parameter"] == list(
         sweep_1.get_setpoints()
     )
-    assert sweeper.setpoint_dicts["simple_setter_parameter_2"] == list(
+    assert sweeper.setpoint_dict["simple_setter_parameter_2"] == list(
         sweep_2.get_setpoints()
     )
 
@@ -1087,7 +1087,7 @@ def test_dond_together_sweep_sweeper_combined_missing_in_dataset_dependencies():
 
     with pytest.raises(
         ValueError,
-        match="Requested for data to be split into 3 but found 2 groups in dataset_dependencies",
+        match="Requested for data to be split into 3 datasets but found 2 groups in dataset_dependencies",
     ):
         datasets, _, _ = dond(
             TogetherSweep(sweepA, sweepB),

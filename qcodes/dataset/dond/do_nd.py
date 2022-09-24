@@ -378,9 +378,7 @@ class _SweeperMeasure:
                 meas_ctx = self._create_measurement_ctx_manager(
                     experiment, meas_name, setpoints, tuple(m_group)
                 )
-                s_m_group = _SweepMeasGroup(
-                    setpoints, tuple(m_group), experiment, meas_ctx
-                )
+                s_m_group = _SweepMeasGroup(setpoints, tuple(m_group), meas_ctx)
                 groups.append(s_m_group)
         else:
             potential_setpoint_groups = self._sweeper.sweep_groupes
@@ -388,7 +386,7 @@ class _SweeperMeasure:
 
             if len(self._dataset_dependencies) != len(requested_measure_groups):
                 raise ValueError(
-                    f"Requested for data to be split into {len(requested_measure_groups)} datasets"
+                    f"Requested for data to be split into {len(requested_measure_groups)} datasets "
                     f"but found {len(self._dataset_dependencies)} groups in dataset_dependencies."
                 )
 
@@ -427,9 +425,7 @@ class _SweeperMeasure:
                 meas_ctx = self._create_measurement_ctx_manager(
                     experiment, meas_name, tuple(sp_group), tuple(m_group)
                 )
-                s_m_group = _SweepMeasGroup(
-                    tuple(sp_group), tuple(m_group), experiment, meas_ctx
-                )
+                s_m_group = _SweepMeasGroup(tuple(sp_group), tuple(m_group), meas_ctx)
                 groups.append(s_m_group)
         return tuple(groups)
 
