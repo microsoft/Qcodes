@@ -365,22 +365,22 @@ class _SweeperMeasure:
     def _create_groups(self) -> tuple[_SweapMeasGroup, ...]:
 
         if self._dataset_dependencies is None:
-            setpoint = self._sweeper.all_setpoint_params
-            meaure_groups = self._measurements.grouped_parameters
+            setpoints = self._sweeper.all_setpoint_params
+            measure_groups = self._measurements.grouped_parameters
 
             groups = []
             sp_group: Sequence[ParameterBase]
             m_group: Sequence[ParamMeasT]
             for m_group, experiment, meas_name in zip(
-                meaure_groups,
+                measure_groups,
                 self._experiments,
                 self._measurements.measurement_names,
             ):
-                meas_ctx = self._create_measurement_cx_manager(
-                    experiment, meas_name, setpoint, tuple(m_group)
+                meas_ctx = self._create_measurement_ctx_manager(
+                    experiment, meas_name, setpoints, tuple(m_group)
                 )
                 s_m_group = _SweapMeasGroup(
-                    setpoint, tuple(m_group), experiment, meas_ctx
+                    setpoints, tuple(m_group), experiment, meas_ctx
                 )
                 groups.append(s_m_group)
         else:
@@ -425,7 +425,7 @@ class _SweeperMeasure:
                     )
 
                 LOG.info(f"creating context manager for {sp_group} {m_group}")
-                meas_ctx = self._create_measurement_cx_manager(
+                meas_ctx = self._create_measurement_ctx_manager(
                     experiment, meas_name, tuple(sp_group), tuple(m_group)
                 )
                 s_m_group = _SweapMeasGroup(
@@ -438,7 +438,7 @@ class _SweeperMeasure:
     def shapes(self) -> Shapes | None:
         return self._shapes
 
-    def _create_measurement_cx_manager(
+    def _create_measurement_ctx_manager(
         self,
         experiment: Experiment | None,
         measurement_name: str,
