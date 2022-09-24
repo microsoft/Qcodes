@@ -269,10 +269,19 @@ class _Measurements:
                     measured_all.append(nested_param)
                     if isinstance(nested_param, ParameterBase):
                         measured_parameters.append(nested_param)
+        if single_group and multi_group:
+            raise ValueError(
+                f"Got both grouped and non grouped "
+                f"parameters to measure in "
+                f"{params_meas}. This is not supported."
+            )
+
         if single_group:
             grouped_parameters = (tuple(single_group),)
         if multi_group:
             grouped_parameters = tuple(multi_group)
+        if not single_group and not multi_group:
+            raise ValueError("No parameters to measure supplied")
         return tuple(measured_all), grouped_parameters, tuple(measured_parameters)
 
 
@@ -281,9 +290,7 @@ class _Measurements:
 @dataclass(frozen=False)
 class _SweepMeasGroup:
     sweep_parameters: tuple[ParameterBase, ...]
-    measure_parameters: tuple[
-        ParamMeasT, ...
-    ]
+    measure_parameters: tuple[ParamMeasT, ...]
     measurement_cxt: Measurement
 
     def __post_init__(self) -> None:

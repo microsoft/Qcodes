@@ -1226,3 +1226,22 @@ def test_sweep_int_vs_float():
     int_param = ManualParameter("int_param", vals=Ints(0, 100))
 
     dond(ArraySweep(int_param, [1, 2, 3]), float_param)
+
+
+def test_error_no_measured_parameters():
+    float_param = ManualParameter("float_param", initial_value=0.0)
+    int_param = ManualParameter("int_param", vals=Ints(0, 100))
+
+    with pytest.raises(ValueError, match="No parameters to measure supplied"):
+        dond(ArraySweep(int_param, [1, 2, 3]), ArraySweep(float_param, [1.0, 2.0, 3.0]))
+
+
+def test_error_measured_grouped_and_not_grouped():
+    param_1 = ManualParameter("param_1", initial_value=0.0)
+    param_2 = ManualParameter("param_2", initial_value=0.0)
+    param_3 = ManualParameter("param_3", initial_value=0.0)
+
+    with pytest.raises(
+        ValueError, match="Got both grouped and non grouped parameters to measure in"
+    ):
+        dond(LinSweep(param_1, 0, 10, 10), param_2, [param_3])
