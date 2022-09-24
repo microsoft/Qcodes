@@ -322,7 +322,7 @@ class _SweeperMeasure:
         self._write_period = write_period
         self._log_info = log_info
         self._dataset_dependencies = dataset_dependencies
-        self._shapes = self._get_shape()
+        self._shapes = self._get_shapes()
         self._groups = self._create_groups()
 
         if log_info is not None:
@@ -330,7 +330,7 @@ class _SweeperMeasure:
         else:
             self._extra_log_info = "Using 'qcodes.dataset.dond'"
 
-    def _get_shape(self) -> Shapes | None:
+    def _get_shapes(self) -> Shapes | None:
         try:
             shapes: Shapes | None = detect_shape_of_measurement(
                 self._measurements.measured_parameters, self._sweeper.shape
