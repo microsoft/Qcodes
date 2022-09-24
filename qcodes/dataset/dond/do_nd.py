@@ -228,7 +228,7 @@ class _Measurements:
         else:
             if len(measurement_name) != len(self._grouped_parameters):
                 raise ValueError(
-                    f"Got {len(measurement_name)} but should create {len(self._grouped_parameters)} datasets."
+                    f"Got {len(measurement_name)} measurement names but should create {len(self._grouped_parameters)} datasets."
                 )
             return tuple(measurement_name)
 
@@ -283,7 +283,7 @@ class _SweapMeasGroup:
     sweep_parameters: tuple[ParameterBase, ...]
     measure_parameters: tuple[
         ParamMeasT, ...
-    ]  # todo should this be all or only Parameters?
+    ]
     experiment: Experiment | None
     measurement_cxt: Measurement
 
@@ -389,7 +389,7 @@ class _SweeperMeasure:
 
             if len(self._dataset_dependencies) != len(requested_measure_groups):
                 raise ValueError(
-                    f"Requested for data to be split into {len(requested_measure_groups)} "
+                    f"Requested for data to be split into {len(requested_measure_groups)} datasets"
                     f"but found {len(self._dataset_dependencies)} groups in dataset_dependencies."
                 )
 
@@ -414,13 +414,13 @@ class _SweeperMeasure:
                 if tuple(sp_group) not in potential_setpoint_groups:
                     raise ValueError(
                         f"dataset_dependencies contains {sp_group} "
-                        f"which is not among the expected groups of setpoints."
+                        f"which is not among the expected groups of setpoints "
                         f"{potential_setpoint_groups}"
                     )
                 if tuple(m_group) not in requested_measure_groups:
                     raise ValueError(
                         f"dataset_dependencies contains {m_group} "
-                        f"which is not among the expected groups of measured points."
+                        f"which is not among the expected groups of measured parameters "
                         f"{requested_measure_groups}"
                     )
 
@@ -508,7 +508,7 @@ def dond(
         measurement_name: Name(s) of the measurement. This will be passed down to
             the dataset produced by the measurement. If not given, a default
             value of 'results' is used for the dataset. If more that one is
-            given each dataset will have an individual name.
+            given, each dataset will have an individual name.
         exp: The experiment to use for this measurement. If you create multiple
             measurements using groups you may also supply multiple experiments.
         enter_actions: A list of functions taking no arguments that will be
@@ -529,10 +529,10 @@ def dond(
             message is used.
         break_condition: Callable that takes no arguments. If returned True,
             measurement is interrupted.
-        dataset_dependencies: Optionally describe that measured datasets only depends
+        dataset_dependencies: Optionally describe that measured datasets only depend
             on a subset of the setpoint parameters. Given as a Sequence of
             Pairs (tuples). In each pair the first element is a Sequence of
-            setpoint parameters and the second a Sequence of measured parameters.
+            setpoint parameters and the second is a Sequence of measured parameters.
 
     Returns:
         A tuple of QCoDeS DataSet, Matplotlib axis, Matplotlib colorbar. If
@@ -608,8 +608,8 @@ def dond(
                     results[set_event.parameter] = set_event.new_value
 
                 meas_value_pair = call_params_meas()
-                for name, res in meas_value_pair:
-                    results[name] = res
+                for meas_param, value in meas_value_pair:
+                    results[meas_param] = value
 
                 for datasaver, group in zip(datasavers, sweeper_measurer.groups):
                     filtered_results_list = [
