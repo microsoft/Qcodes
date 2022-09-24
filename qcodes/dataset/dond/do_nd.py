@@ -279,12 +279,11 @@ class _Measurements:
 # idealy we would want this to be frozen but then postinit cannot calulate all the parameters
 # https://stackoverflow.com/questions/53756788/
 @dataclass(frozen=False)
-class _SweapMeasGroup:
+class _SweepMeasGroup:
     sweep_parameters: tuple[ParameterBase, ...]
     measure_parameters: tuple[
         ParamMeasT, ...
     ]
-    experiment: Experiment | None
     measurement_cxt: Measurement
 
     def __post_init__(self) -> None:
@@ -362,7 +361,7 @@ class _SweeperMeasure:
             )
         return experiments_internal
 
-    def _create_groups(self) -> tuple[_SweapMeasGroup, ...]:
+    def _create_groups(self) -> tuple[_SweepMeasGroup, ...]:
 
         if self._dataset_dependencies is None:
             setpoints = self._sweeper.all_setpoint_params
@@ -379,7 +378,7 @@ class _SweeperMeasure:
                 meas_ctx = self._create_measurement_ctx_manager(
                     experiment, meas_name, setpoints, tuple(m_group)
                 )
-                s_m_group = _SweapMeasGroup(
+                s_m_group = _SweepMeasGroup(
                     setpoints, tuple(m_group), experiment, meas_ctx
                 )
                 groups.append(s_m_group)
@@ -428,7 +427,7 @@ class _SweeperMeasure:
                 meas_ctx = self._create_measurement_ctx_manager(
                     experiment, meas_name, tuple(sp_group), tuple(m_group)
                 )
-                s_m_group = _SweapMeasGroup(
+                s_m_group = _SweepMeasGroup(
                     tuple(sp_group), tuple(m_group), experiment, meas_ctx
                 )
                 groups.append(s_m_group)
@@ -459,7 +458,7 @@ class _SweeperMeasure:
         return meas
 
     @property
-    def groups(self) -> tuple[_SweapMeasGroup, ...]:
+    def groups(self) -> tuple[_SweepMeasGroup, ...]:
         return self._groups
 
 
