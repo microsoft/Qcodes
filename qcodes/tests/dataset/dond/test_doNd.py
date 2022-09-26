@@ -1213,17 +1213,19 @@ def test_dond_sweeper_combinations(_param_set, _param_set_2, _param):
     a = ManualParameter("a", initial_value=0)
     b = ManualParameter("b", initial_value=0)
     c = ManualParameter("c", initial_value=0)
+    d = ManualParameter("d", initial_value=0)
     sweep_a = LinSweep(a, 0, 3, outer_shape)
     sweep_b = LinSweep(b, 5, 7, outer_shape)
-    sweep_c = LinSweep(c, 8, 12, inner_shape)
+    sweep_c = LinSweep(c, 8, 12, outer_shape)
+    sweep_d = LinSweep(d, 13, 16, inner_shape)
 
-    multi_sweep = TogetherSweep(sweep_a, sweep_b)
+    multi_sweep = TogetherSweep(sweep_a, sweep_b, sweep_c)
 
-    sweeper = _Sweeper([multi_sweep, sweep_c], [])
+    sweeper = _Sweeper([multi_sweep, sweep_d], [])
 
     sweep_groups = sweeper.sweep_groupes
 
-    expected_sweeper_groups = ((a, c), (b, c), (a, b, c))
+    expected_sweeper_groups = ((a, d), (b, d), (c, d), (a, b, c, d))
 
     assert len(expected_sweeper_groups) == len(sweep_groups)
     for g in expected_sweeper_groups:
