@@ -1229,7 +1229,9 @@ def test_sweep_int_vs_float():
     float_param = ManualParameter("float_param", initial_value=0.0)
     int_param = ManualParameter("int_param", vals=Ints(0, 100))
 
-    dond(ArraySweep(int_param, [1, 2, 3]), float_param)
+    dataset, _, _ = dond(ArraySweep(int_param, [1, 2, 3]), float_param)
+    assert dataset.parameters == "int_param,float_param"
+    assert dataset.cache.data()["float_param"]["int_param"].dtype.kind == "i"
 
 
 def test_error_no_measured_parameters():
