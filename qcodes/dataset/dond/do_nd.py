@@ -389,7 +389,7 @@ class _SweeperMeasure:
         if len(experiments_internal) != len(self._measurements.grouped_parameters):
             raise ValueError(
                 f"Inconsistent number of "
-                f"parameter groups and experiments "
+                f"parameter groups and experiments, "
                 f"got {len(self._measurements.grouped_parameters)} and {len(experiments_internal)}"
             )
         return experiments_internal
@@ -535,7 +535,7 @@ def dond(
             database.
         measurement_name: Name(s) of the measurement. This will be passed down to
             the dataset produced by the measurement. If not given, a default
-            value of 'results' is used for the dataset. If more that one is
+            value of 'results' is used for the dataset. If more than one is
             given, each dataset will have an individual name.
         exp: The experiment to use for this measurement. If you create multiple
             measurements using groups you may also supply multiple experiments.
