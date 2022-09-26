@@ -428,12 +428,12 @@ def test_snapshot_and_meta_attrs():
 
 
 class TestSnapshotType(Metadatable):
-    def __init__(self, sample_value : int) -> None:
+    def __init__(self, sample_value: int) -> None:
         super().__init__()
         self.sample_value = sample_value
 
-    def snapshot_base(self, update = True, params_to_skip_update = None):
-        return { 'sample_key': self.sample_value }
+    def snapshot_base(self, update=True, params_to_skip_update=None):
+        return {"sample_key": self.sample_value}
 
 
 class TestInstrument(InstrumentBase):
@@ -451,21 +451,21 @@ def test_snapshot_and_meta_attrs2():
     """Test snapshot of child of InstrumentBase which contains _meta_attrs attribute that is itself Metadatable"""
     instr = TestInstrument("instr", label="Label")
 
-    assert instr.name == 'instr'
+    assert instr.name == "instr"
 
     assert hasattr(instr, "_meta_attrs")
     assert instr._meta_attrs == ["name", "label", "test_attribute"]
 
     snapshot = instr.snapshot()
 
-    assert 'name' in snapshot
-    assert 'instr' == snapshot['name']
+    assert "name" in snapshot
+    assert "instr" == snapshot['name']
 
     assert "label" in snapshot
     assert "Label" == snapshot["label"]
 
-    assert '__class__' in snapshot
-    assert 'TestInstrument' in snapshot['__class__']
+    assert "__class__" in snapshot
+    assert "TestInstrument" in snapshot["__class__"]
 
-    assert 'test_attribute' in snapshot
-    assert {'sample_key': 12} == snapshot["test_attribute"]
+    assert "test_attribute" in snapshot
+    assert {"sample_key": 12} == snapshot["test_attribute"]
