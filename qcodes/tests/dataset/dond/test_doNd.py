@@ -1076,6 +1076,9 @@ def test_dond_together_sweep_more_groups():
         do_plot=False,
     )
     assert len(datasets) == 3
+    assert datasets[0].parameters == "a,b,c,d"
+    assert datasets[1].parameters == "a,b,c,e"
+    assert datasets[2].parameters == "a,b,c,f"
 
 
 def test_dond_together_sweep_sweeper_combined_missing_in_dataset_dependencies():
