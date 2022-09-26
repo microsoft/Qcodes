@@ -137,25 +137,51 @@ class _Sweeper:
     def sweep_groupes(self) -> tuple[tuple[ParameterBase, ...], ...]:
         """
         These are all the combinations of setpoints we consider
-        valid for setpoints in a dataset. As of now that means
-        take one element from each dimension. If that is a multisweep
-        pick one of the components.
+        valid for setpoints in a dataset. A dataset must depend on
+        at least one parameter from each dimension of the dond.
+        For dimensions that uses TogetherSweep they may depend
+        on one or more of the parameters of that sweep.
         """
-        param_list: list[tuple[ParameterBase, ...]] = []
+        param_tuple_list: list[tuple[ParameterBase, ...]] = []
         for sweep in self._sweeps:
             if isinstance(sweep, TogetherSweep):
-                param_list.append(tuple(sub_sweep.param for sub_sweep in sweep.sweeps))
+                param_tuple_list.append(
+                    tuple(sub_sweep.param for sub_sweep in sweep.sweeps)
+                )
             else:
-                param_list.append((sweep.param,))
+                param_tuple_list.append((sweep.param,))
 
-        param_list.extend([(setpoint,) for setpoint in self._additional_setpoints])
-        # looks lite itertools.product is not yet generic in input type
-        # so output ends up being tuple[tuple[Any]] even with a specified input type
-        param_tuples_single = cast(
-            Tuple[Tuple[ParameterBase, ...], ...], tuple(itertools.product(*param_list))
+        param_tuple_list.extend(
+            [(setpoint,) for setpoint in self._additional_setpoints]
         )
-        param_tuples_all = (tuple(itertools.chain(*param_list)),)
-        return tuple(set(param_tuples_single + param_tuples_all))
+
+        # in param_tuple_list there is a tuple of possible setpoints for each
+        # dim in the dond. For regular sweeps this is a 1 tuple but for
+        # a TogetherSweep is if of len num parameters.
+
+        # now we expand to a list of setpoints in a TogetherSweep
+        # to all list of all possible combinations of these.
+        expanded_parameter_list = []
+        for param_tuple in param_tuple_list:
+            expanded_parameter_list.append(
+                tuple(
+                    itertools.chain.from_iterable(
+                        itertools.combinations(param_tuple, j + 1)
+                        for j in range(len(param_tuple))
+                    )
+                )
+            )
+
+        # next we generate all valid combinations of picking one parameter from each
+        # dimension in the setpoints.
+        setpoint_combinations = list(itertools.product(*expanded_parameter_list))
+
+        for k in range(len(setpoint_combinations)):
+            setpoint_combinations[k] = tuple(
+                itertools.chain.from_iterable(setpoint_combinations[k])
+            )
+
+        return tuple(setpoint_combinations)
 
     @staticmethod
     def _make_shape(

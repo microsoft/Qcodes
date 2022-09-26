@@ -1225,7 +1225,15 @@ def test_dond_sweeper_combinations(_param_set, _param_set_2, _param):
 
     sweep_groups = sweeper.sweep_groupes
 
-    expected_sweeper_groups = ((a, d), (b, d), (c, d), (a, b, c, d))
+    expected_sweeper_groups = (
+        (a, d),
+        (b, d),
+        (c, d),
+        (a, b, d),
+        (a, c, d),
+        (b, c, d),
+        (a, b, c, d),
+    )
 
     assert len(expected_sweeper_groups) == len(sweep_groups)
     for g in expected_sweeper_groups:
