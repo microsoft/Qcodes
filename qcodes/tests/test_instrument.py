@@ -10,6 +10,7 @@ import pytest
 
 from qcodes.instrument import Instrument, InstrumentBase, find_or_create_instrument
 from qcodes.parameters import Function, Parameter
+from qcodes.utils.metadata import Metadatable
 
 from .instrument_mocks import (
     DummyChannelInstrument,
@@ -426,22 +427,13 @@ def test_snapshot_and_meta_attrs():
     assert 'InstrumentBase' in snapshot['__class__']
 
 
-from qcodes.utils.metadata import Metadatable
-from typing import Any, Optional, Sequence, Dict
 class TestSnapshotType(Metadatable):
     def __init__(self, sample_value : int) -> None:
         super().__init__()
         self.sample_value = sample_value
 
-    def snapshot_base(self, update: Optional[bool] = True,
-                      params_to_skip_update: Optional[Sequence[str]] = None
-                      ) -> Dict[Any, Any]:
-
-        state: Dict[str, Any] = {
-            'sample_key': self.sample_value
-            }
-
-        return state
+    def snapshot_base(self, update = True, params_to_skip_update = None):
+        return { 'sample_key': self.sample_value }
 
 
 class TestInstrument(InstrumentBase):
@@ -473,7 +465,7 @@ def test_snapshot_and_meta_attrs2():
     assert "Label" == snapshot["label"]
 
     assert '__class__' in snapshot
-    assert 'InstrumentBase' in snapshot['__class__']
+    assert 'TestInstrument' in snapshot['__class__']
 
     assert 'test_attribute' in snapshot
     assert {'sample_key': 12} == snapshot["test_attribute"]
