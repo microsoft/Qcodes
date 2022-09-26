@@ -1139,7 +1139,10 @@ def test_dond_together_sweep_sweeper_wrong_mp_in_dataset_dependencies():
     sweepB = LinSweep(b, 5, 7, 10)
     sweepC = LinSweep(c, 8, 12, 10)
 
-    with pytest.raises(ValueError, match=f"Requested for data to be split into"):
+    with pytest.raises(
+        ValueError,
+        match="Requested for data to be split into 3 datasets but found 4 groups",
+    ):
         datasets, _, _ = dond(
             TogetherSweep(sweepA, sweepB),
             sweepC,
