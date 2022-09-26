@@ -340,8 +340,8 @@ class _SweeperMeasure:
         experiments: Experiment | Sequence[Experiment] | None,
         write_period: float | None,
         log_info: str | None,
-        dataset_dependencies: Sequence[
-            tuple[Sequence[ParameterBase], Sequence[ParamMeasT]]
+        dataset_dependencies: dict[
+            str, tuple[Sequence[ParameterBase], Sequence[ParamMeasT]]
         ]
         | None = None,
     ):
@@ -424,7 +424,7 @@ class _SweeperMeasure:
                 )
 
             output_parameter_tuples = tuple(
-                tuple(output[1]) for output in self._dataset_dependencies
+                tuple(output[1]) for output in self._dataset_dependencies.values()
             )
 
             for r_m_group in requested_measure_groups:
@@ -436,11 +436,11 @@ class _SweeperMeasure:
                     )
 
             groups = []
-            for (sp_group, m_group), experiment, meas_name in zip(
-                self._dataset_dependencies,
+            for experiment, meas_name in zip(
                 self._experiments,
                 self._measurements.measurement_names,
             ):
+                (sp_group, m_group) = self._dataset_dependencies[meas_name]
                 if tuple(sp_group) not in potential_setpoint_groups:
                     raise ValueError(
                         f"dataset_dependencies contains {sp_group} "
@@ -504,8 +504,7 @@ def dond(
     additional_setpoints: Sequence[ParameterBase] = tuple(),
     log_info: str | None = None,
     break_condition: BreakConditionT | None = None,
-    dataset_dependencies: Sequence[tuple[Sequence[ParameterBase], Sequence[ParamMeasT]]]
-    | None = None,
+    dataset_dependencies: Mapping[str, Sequence[ParamMeasT]] | None = None,
 ) -> AxesTupleListWithDataSet | MultiAxesTupleListWithDataSet:
     """
     Perform n-dimentional scan from slowest (first) to the fastest (last), to
@@ -530,6 +529,15 @@ def dond(
                 LinSweep(param_set_1, start_1, stop_1, num_points_1, delay_1), ...,
                 LinSweep(param_set_n, start_n, stop_n, num_points_n, delay_n),
                 [param_meas_1, param_meas_2], ..., [param_meas_m]
+
+            If you want to sweep multiple parameters together.
+
+            .. code-block::
+
+                TogetherSweep(LinSweep(param_set_1, start_1, stop_1, num_points, delay_1),
+                              LinSweep(param_set_2, start_2, stop_2, num_points, delay_2))
+                param_meas_1, param_meas_2, ..., param_meas_m
+
 
         write_period: The time after which the data is actually written to the
             database.
@@ -558,9 +566,10 @@ def dond(
         break_condition: Callable that takes no arguments. If returned True,
             measurement is interrupted.
         dataset_dependencies: Optionally describe that measured datasets only depend
-            on a subset of the setpoint parameters. Given as a Sequence of
-            Pairs (tuples). In each pair the first element is a Sequence of
-            setpoint parameters and the second is a Sequence of measured parameters.
+            on a subset of the setpoint parameters. Given as a mapping from
+            measurement names to Sequence of Parameters. Note that a dataset must
+            depend on at least one parameter from each dimension but can depend
+            on one or more parameters from a dimension sweeped with a TogetherSweep.
 
     Returns:
         A tuple of QCoDeS DataSet, Matplotlib axis, Matplotlib colorbar. If
@@ -577,9 +586,17 @@ def dond(
 
     sweep_instances, params_meas = _parse_dond_arguments(*params)
 
+    measurement_name = _validate_dataset_dependenceies_and_names(
+        dataset_dependencies, measurement_name, params_meas
+    )
+
     sweeper = _Sweeper(sweep_instances, additional_setpoints)
 
     measurements = _Measurements(measurement_name, params_meas)
+
+    dataset_dependencies_split = _split_dateset_dependencies(
+        dataset_dependencies, measurements
+    )
 
     LOG.info(
         "Starting a doNd with scan with\n setpoints: %s,\n measuring: %s",
@@ -598,7 +615,7 @@ def dond(
         exp,
         write_period,
         log_info,
-        dataset_dependencies,
+        dataset_dependencies_split,
     )
 
     datasets = []
@@ -667,6 +684,59 @@ def dond(
         return datasets[0], plots_axes[0], plots_colorbar[0]
     else:
         return tuple(datasets), tuple(plots_axes), tuple(plots_colorbar)
+
+
+def _validate_dataset_dependenceies_and_names(
+    dataset_dependencies, measurement_name, params_meas
+):
+    if dataset_dependencies is not None and len(dataset_dependencies) != len(
+        params_meas
+    ):
+        raise ValueError(
+            f"Requested for data to be split into {len(params_meas)} datasets "
+            f"but found {len(dataset_dependencies)} groups in dataset_dependencies."
+        )
+    if dataset_dependencies is not None and measurement_name != "":
+        if isinstance(measurement_name, str):
+            raise ValueError(
+                "Creating multiple datasets but one only one measurement name given."
+            )
+        if set(dataset_dependencies.keys()) != set(measurement_name):
+            raise ValueError(
+                f"Inconsistent measurement names: measurement_name contains {measurement_name} "
+                f"but dataset_dependencies contains {tuple(dataset_dependencies.keys())}."
+            )
+        pass
+    elif dataset_dependencies is not None:
+        measurement_name = tuple(dataset_dependencies.keys())
+    return measurement_name
+
+
+def _split_dateset_dependencies(dataset_dependencies, measurements):
+    # split measured parameters from setpoint parameters using param_meas
+    dataset_dependencies_split: dict[
+        str, tuple[Sequence[ParameterBase], Sequence[ParamMeasT]]
+    ] | None
+    if dataset_dependencies is not None:
+        dataset_dependencies_split = {}
+        for name, dataset_parameters in dataset_dependencies.items():
+            meas_parameters = tuple(
+                param
+                for param in dataset_parameters
+                if param in measurements.measured_all
+            )
+            setpoint_parameters = cast(
+                Sequence[ParameterBase],
+                tuple(
+                    param
+                    for param in dataset_parameters
+                    if param not in measurements.measured_all
+                ),
+            )
+            dataset_dependencies_split[name] = (setpoint_parameters, meas_parameters)
+    else:
+        dataset_dependencies_split = None
+    return dataset_dependencies_split
 
 
 def _parse_dond_arguments(

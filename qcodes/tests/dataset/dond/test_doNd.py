@@ -1,6 +1,8 @@
 """
 These are the basic black box tests for the doNd functions.
 """
+import re
+
 import hypothesis.strategies as hst
 import matplotlib
 import matplotlib.pyplot as plt
@@ -995,11 +997,118 @@ def test_dond_together_sweep_sweeper_combined():
         [e],
         [f],
         do_plot=False,
-        dataset_dependencies=[((a, c), (d,)), ((b, c), (e,)), ((b, c), (f,))],
+        dataset_dependencies={
+            "ds1": (a, c, d),
+            "ds2": (b, c, e),
+            "ds3": (b, c, f),
+        },
     )
     assert datasets[0].parameters == "a,c,d"
+    assert datasets[0].name == "ds1"
     assert datasets[1].parameters == "b,c,e"
+    assert datasets[1].name == "ds2"
     assert datasets[2].parameters == "b,c,f"
+    assert datasets[2].name == "ds3"
+
+
+def test_dond_together_sweep_sweeper_combined_explict_names():
+    a = ManualParameter("a", initial_value=0)
+    b = ManualParameter("b", initial_value=0)
+    c = ManualParameter("c", initial_value=0)
+    d = ManualParameter("d", initial_value=1)
+    e = ManualParameter("e", initial_value=2)
+    f = ManualParameter("f", initial_value=3)
+    sweepA = LinSweep(a, 0, 3, 10)
+    sweepB = LinSweep(b, 5, 7, 10)
+    sweepC = LinSweep(c, 8, 12, 10)
+
+    datasets, _, _ = dond(
+        TogetherSweep(sweepA, sweepB),
+        sweepC,
+        [d],
+        [e],
+        [f],
+        measurement_name=("ds1", "ds2", "ds3"),
+        do_plot=False,
+        dataset_dependencies={
+            "ds1": (a, c, d),
+            "ds2": (b, c, e),
+            "ds3": (b, c, f),
+        },
+    )
+    assert datasets[0].parameters == "a,c,d"
+    assert datasets[0].name == "ds1"
+    assert datasets[1].parameters == "b,c,e"
+    assert datasets[1].name == "ds2"
+    assert datasets[2].parameters == "b,c,f"
+    assert datasets[2].name == "ds3"
+
+
+def test_dond_together_sweep_sweeper_combined_explict_names_inconsistent():
+    a = ManualParameter("a", initial_value=0)
+    b = ManualParameter("b", initial_value=0)
+    c = ManualParameter("c", initial_value=0)
+    d = ManualParameter("d", initial_value=1)
+    e = ManualParameter("e", initial_value=2)
+    f = ManualParameter("f", initial_value=3)
+    sweepA = LinSweep(a, 0, 3, 10)
+    sweepB = LinSweep(b, 5, 7, 10)
+    sweepC = LinSweep(c, 8, 12, 10)
+
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "Inconsistent measurement names: measurement_name contains "
+            "('ds1', 'ds2', 'ds4') but dataset_dependencies contains ('ds1', 'ds2', 'ds3')."
+        ),
+    ):
+        datasets, _, _ = dond(
+            TogetherSweep(sweepA, sweepB),
+            sweepC,
+            [d],
+            [e],
+            [f],
+            measurement_name=("ds1", "ds2", "ds4"),
+            do_plot=False,
+            dataset_dependencies={
+                "ds1": (a, c, d),
+                "ds2": (b, c, e),
+                "ds3": (b, c, f),
+            },
+        )
+
+
+def test_dond_together_sweep_sweeper_combined_explict_names_and_single_name():
+    a = ManualParameter("a", initial_value=0)
+    b = ManualParameter("b", initial_value=0)
+    c = ManualParameter("c", initial_value=0)
+    d = ManualParameter("d", initial_value=1)
+    e = ManualParameter("e", initial_value=2)
+    f = ManualParameter("f", initial_value=3)
+    sweepA = LinSweep(a, 0, 3, 10)
+    sweepB = LinSweep(b, 5, 7, 10)
+    sweepC = LinSweep(c, 8, 12, 10)
+
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "Creating multiple datasets but one only one measurement name given."
+        ),
+    ):
+        datasets, _, _ = dond(
+            TogetherSweep(sweepA, sweepB),
+            sweepC,
+            [d],
+            [e],
+            [f],
+            measurement_name="my_measurement",
+            do_plot=False,
+            dataset_dependencies={
+                "ds1": (a, c, d),
+                "ds2": (b, c, e),
+                "ds3": (b, c, f),
+            },
+        )
 
 
 def test_dond_together_sweep_sweeper_combined_lists():
@@ -1020,15 +1129,18 @@ def test_dond_together_sweep_sweeper_combined_lists():
         [e],
         [f],
         do_plot=False,
-        dataset_dependencies=[
-            ([a, c], [d]),
-            [(b, c), (e,)],
-            [[b, c], [f]],
-        ],
+        dataset_dependencies={
+            "ds1": [a, c, d],
+            "ds2": [b, c, e],
+            "ds3": [b, c, f],
+        },
     )
     assert datasets[0].parameters == "a,c,d"
+    assert datasets[0].name == "ds1"
     assert datasets[1].parameters == "b,c,e"
+    assert datasets[1].name == "ds2"
     assert datasets[2].parameters == "b,c,f"
+    assert datasets[2].name == "ds3"
 
 
 @given(
@@ -1103,7 +1215,10 @@ def test_dond_together_sweep_sweeper_combined_missing_in_dataset_dependencies():
             [e],
             [f],
             do_plot=False,
-            dataset_dependencies=[((a, c), (d,)), ((b, c), (e,))],
+            dataset_dependencies={
+                "ds1": (a, c, d),
+                "ds2": (b, c, e),
+            },
         )
 
 
@@ -1126,7 +1241,7 @@ def test_dond_together_sweep_sweeper_wrong_sp_in_dataset_dependencies():
             [e],
             [f],
             do_plot=False,
-            dataset_dependencies=[((a, b), (d,)), ((b, c), (e,)), ((b, c), (f,))],
+            dataset_dependencies={"ds1": (a, b, d), "ds2": (b, c, e), "ds3": (b, c, f)},
         )
 
 
@@ -1153,12 +1268,12 @@ def test_dond_together_sweep_sweeper_wrong_mp_in_dataset_dependencies():
             [e],
             [f],
             do_plot=False,
-            dataset_dependencies=[
-                ((a, c), (d,)),
-                ((b, c), (e,)),
-                ((b, c), (f,)),
-                ((b, c), (g,)),
-            ],
+            dataset_dependencies={
+                "ds1": (a, c, d),
+                "ds2": (b, c, e),
+                "ds3": (b, c, f),
+                "ds4": (b, c, g),
+            },
         )
 
 
