@@ -687,8 +687,10 @@ def dond(
 
 
 def _validate_dataset_dependenceies_and_names(
-    dataset_dependencies, measurement_name, params_meas
-):
+    dataset_dependencies: Mapping[str, Sequence[ParamMeasT]] | None,
+    measurement_name: str | Sequence[str],
+    params_meas: Sequence[ParamMeasT | Sequence[ParamMeasT]],
+) -> Sequence[str] | str:
     if dataset_dependencies is not None and len(dataset_dependencies) != len(
         params_meas
     ):
@@ -712,7 +714,10 @@ def _validate_dataset_dependenceies_and_names(
     return measurement_name
 
 
-def _split_dateset_dependencies(dataset_dependencies, measurements):
+def _split_dateset_dependencies(
+    dataset_dependencies: Mapping[str, Sequence[ParamMeasT]] | None,
+    measurements: _Measurements,
+) -> dict[str, tuple[Sequence[ParameterBase], Sequence[ParamMeasT]]] | None:
     # split measured parameters from setpoint parameters using param_meas
     dataset_dependencies_split: dict[
         str, tuple[Sequence[ParameterBase], Sequence[ParamMeasT]]
