@@ -85,7 +85,8 @@ def one(curr: sqlite3.Cursor, column: int | str) -> Any:
 
 def _need_to_select(curr: sqlite3.Cursor, *columns: str) -> bool:
     """
-    Return True if the columns' description of the last query doesn't exactly match
+    Return True if the columns' description of the last query doesn't exactly match,
+    the order is important
     """
     return tuple(c[0] for c in curr.description) != columns
 
