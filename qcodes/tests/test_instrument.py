@@ -459,7 +459,7 @@ def test_snapshot_and_meta_attrs2():
     snapshot = instr.snapshot()
 
     assert "name" in snapshot
-    assert "instr" == snapshot['name']
+    assert "instr" == snapshot["name"]
 
     assert "label" in snapshot
     assert "Label" == snapshot["label"]
