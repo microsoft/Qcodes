@@ -105,7 +105,7 @@ def many(curr: sqlite3.Cursor, *columns: str) -> tuple[Any, ...]:
         raise RuntimeError("Expected only one row")
     elif _need_to_select(curr, *columns):
         raise RuntimeError(
-            "Expected consistent selection: cursor has columns"
+            "Expected consistent selection: cursor has columns "
             f"{tuple(c[0] for c in curr.description)} but expected {columns}"
         )
     else:
@@ -125,7 +125,7 @@ def many_many(curr: sqlite3.Cursor, *columns: str) -> list[tuple[Any, ...]]:
 
     if _need_to_select(curr, *columns):
         raise RuntimeError(
-            "Expected consistent selection: cursor has columns"
+            "Expected consistent selection: cursor has columns "
             f"{tuple(c[0] for c in curr.description)} but expected {columns}"
         )
 
