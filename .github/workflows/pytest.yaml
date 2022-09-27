@@ -18,10 +18,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        # we need to pin to 3.10.6 until
-        # https://github.com/python/mypy/pull/13500
-        # is part of a released version of mypy
-        python-version: ["3.7", "3.8", "3.9", "3.10.6"]
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
         exclude:
           - os: windows-latest
             python-version: "3.7"
