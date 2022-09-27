@@ -143,14 +143,17 @@ def select_one_where(
     Args:
         conn: Connection to the db
         table: Table to look for values in
-        column: Column to return value from
+        column: Column to return value from, it is important that the casing
+            of the column name is exactly the one used when the column was
+            created
         where_column: Column to match on
         where_value: Value to match in where_column
 
     Returns:
         Value found
-    raises:
-        RuntimeError if not exactly match is found.
+
+    Raises:
+        RuntimeError if not exactly one match is found.
     """
     query = f"""
     SELECT {column}
