@@ -275,7 +275,7 @@ class _Measurements:
                 grouped_parameters, experiments, measurement_name
             )
         elif dataset_dependencies:
-            _validate_dataset_dependenceies_and_names(
+            _validate_dataset_dependencies_and_names(
                 dataset_dependencies, measurement_name
             )
             dataset_dependencies_split = self._split_dateset_dependencies(
@@ -682,7 +682,7 @@ def dond(
                 for group in measurements.groups
             ]
             additional_setpoints_data = process_params_meas(additional_setpoints)
-            # _Sweeper is not considdered an Iterable since it does not implement __iter__
+            # _Sweeper is not considered an Iterable since it does not implement __iter__
             # However, it does implement __getitem__ and is therefor safe to iterate over
             # https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterable
             # https://github.com/python/cpython/issues/86992#issuecomment-1093897307
@@ -731,7 +731,7 @@ def dond(
         return tuple(datasets), tuple(plots_axes), tuple(plots_colorbar)
 
 
-def _validate_dataset_dependenceies_and_names(
+def _validate_dataset_dependencies_and_names(
     dataset_dependencies: Mapping[str, Sequence[ParamMeasT]] | None,
     measurement_name: str | Sequence[str],
 ) -> None:
