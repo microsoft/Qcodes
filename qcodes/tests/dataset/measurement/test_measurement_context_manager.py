@@ -4,7 +4,6 @@ import os
 import re
 import traceback
 from time import sleep
-from typing import TYPE_CHECKING
 
 import hypothesis.strategies as hst
 import numpy as np

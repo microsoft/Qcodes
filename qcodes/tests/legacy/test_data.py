@@ -1,7 +1,6 @@
 import logging
 import os
 import pickle
-from typing import TYPE_CHECKING
 from unittest import TestCase
 
 import numpy as np

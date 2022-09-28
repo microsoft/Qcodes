@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import copy
 import logging
-from typing import TYPE_CHECKING, Any, Optional, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Tuple, cast
 
 if TYPE_CHECKING:
     import matplotlib
@@ -79,6 +79,8 @@ def apply_color_scale_limits(
         RuntimeError: If not received mesh data. Or if you specified both
         `data_lim` and `data_array`.
     """
+    import matplotlib.collections
+
     # browse the input data and make sure that `data_lim` and `new_lim` are
     # available
     if not isinstance(colorbar.mappable, matplotlib.collections.QuadMesh):
