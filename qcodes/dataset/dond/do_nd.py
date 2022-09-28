@@ -396,7 +396,7 @@ class _Measurements:
         self,
         grouped_parameters: tuple[tuple[ParamMeasT, ...], ...],
         experiments: Experiment | Sequence[Experiment] | None,
-        meas_names: str,
+        meas_names: str | Sequence[str],
     ) -> tuple[_SweepMeasGroup, ...]:
 
         setpoints = self._sweeper.all_setpoint_params
@@ -405,14 +405,16 @@ class _Measurements:
         sp_group: Sequence[ParameterBase]
         m_group: Sequence[ParamMeasT]
 
-        experiments = self._get_experiments(experiments, len(grouped_parameters))
+        experiments_internal = self._get_experiments(
+            experiments, len(grouped_parameters)
+        )
         measurement_names = self._create_measurement_names(
             meas_names, len(grouped_parameters)
         )
 
         for m_group, experiment, meas_name in zip(
             grouped_parameters,
-            experiments,
+            experiments_internal,
             measurement_names,
         ):
             meas_ctx = self._create_measurement_ctx_manager(
@@ -426,15 +428,16 @@ class _Measurements:
         self,
         dataset_dependencies: dict[
             str, tuple[Sequence[ParameterBase], Sequence[ParamMeasT]]
-        ]
-        | None,
+        ],
         all_measured_parameters: tuple[ParameterBase, ...],
         experiments: Experiment | Sequence[Experiment] | None,
-        meas_names: str,
+        meas_names: str | Sequence[str],
     ) -> tuple[_SweepMeasGroup, ...]:
         potential_setpoint_groups = self._sweeper.sweep_groupes
 
-        experiments = self._get_experiments(experiments, len(dataset_dependencies))
+        experiments_internal = self._get_experiments(
+            experiments, len(dataset_dependencies)
+        )
         if meas_names == "":
             meas_names = tuple(dataset_dependencies.keys())
 
@@ -456,7 +459,7 @@ class _Measurements:
 
         groups = []
         for experiment, meas_name in zip(
-            experiments,
+            experiments_internal,
             measurement_names,
         ):
             (sp_group, m_group) = dataset_dependencies[meas_name]
@@ -497,32 +500,28 @@ class _Measurements:
 
     def _split_dateset_dependencies(
         self,
-        dataset_dependencies: Mapping[str, Sequence[ParamMeasT]] | None,
-    ) -> dict[str, tuple[Sequence[ParameterBase], Sequence[ParamMeasT]]] | None:
+        dataset_dependencies: Mapping[str, Sequence[ParamMeasT]],
+    ) -> dict[str, tuple[Sequence[ParameterBase], Sequence[ParamMeasT]]]:
         # split measured parameters from setpoint parameters using param_meas
         dataset_dependencies_split: dict[
             str, tuple[Sequence[ParameterBase], Sequence[ParamMeasT]]
-        ] | None
-        if dataset_dependencies is not None:
-            dataset_dependencies_split = {}
-            for name, dataset_parameters in dataset_dependencies.items():
-                meas_parameters = tuple(
-                    param for param in dataset_parameters if param in self.measured_all
-                )
-                setpoint_parameters = cast(
-                    Sequence[ParameterBase],
-                    tuple(
-                        param
-                        for param in dataset_parameters
-                        if param not in self.measured_all
-                    ),
-                )
-                dataset_dependencies_split[name] = (
-                    setpoint_parameters,
-                    meas_parameters,
-                )
-        else:
-            dataset_dependencies_split = None
+        ] = {}
+        for name, dataset_parameters in dataset_dependencies.items():
+            meas_parameters = tuple(
+                param for param in dataset_parameters if param in self.measured_all
+            )
+            setpoint_parameters = cast(
+                Sequence[ParameterBase],
+                tuple(
+                    param
+                    for param in dataset_parameters
+                    if param not in self.measured_all
+                ),
+            )
+            dataset_dependencies_split[name] = (
+                setpoint_parameters,
+                meas_parameters,
+            )
         return dataset_dependencies_split
 
 
