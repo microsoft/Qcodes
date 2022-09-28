@@ -236,15 +236,49 @@ class _Sweeper:
 class _Measurements:
     def __init__(
         self,
+        sweeper: _Sweeper,
         measurement_name: str | Sequence[str],
         params_meas: Sequence[ParamMeasT | Sequence[ParamMeasT]],
+        enter_actions: ActionsT,
+        exit_actions: ActionsT,
+        experiments: Experiment | Sequence[Experiment] | None,
+        write_period: float | None,
+        log_info: str | None,
+        dataset_dependencies: Mapping[str, Sequence[ParamMeasT]] | None = None,
     ):
+        self._sweeper = sweeper
+        self._enter_actions = enter_actions
+        self._exit_actions = exit_actions
+        self._write_period = write_period
+        self._log_info = log_info
+        if log_info is not None:
+            self._extra_log_info = log_info
+        else:
+            self._extra_log_info = "Using 'qcodes.dataset.dond'"
+
+        # if dataset_dependencies:
+        #     # check that measurement parameters are not grouped
+        #     if any(isinstance(param_meas, Sequence) for param_meas in params_meas):
+        #         raise ValueError("Measured parameters have been grouped both in input "
+        #                          "and using dataset dependencies. This is not allowed")
+
+        measurement_name = _validate_dataset_dependenceies_and_names(
+            dataset_dependencies, measurement_name
+        )
+
         (
             self._measured_all,
             self._grouped_parameters,
             self._measured_parameters,
         ) = self._extract_parameters_by_type_and_group(params_meas)
+
+        self._experiments = self._get_experiments(experiments)
+        self._dataset_dependencies = self._split_dateset_dependencies(
+            dataset_dependencies
+        )
+        self._shapes = self._get_shapes()
         self.measurement_names = self._create_measurement_names(measurement_name)
+        self._groups = self._create_groups()
 
     def _create_measurement_names(
         self, measurement_name: str | Sequence[str]
@@ -295,82 +329,31 @@ class _Measurements:
                     measured_all.append(nested_param)
                     if isinstance(nested_param, ParameterBase):
                         measured_parameters.append(nested_param)
+
         if single_group and multi_group:
             raise ValueError(
                 f"Got both grouped and non grouped "
                 f"parameters to measure in "
                 f"{params_meas}. This is not supported."
             )
-
         if single_group:
             grouped_parameters = (tuple(single_group),)
         if multi_group:
             grouped_parameters = tuple(multi_group)
         if not single_group and not multi_group:
             raise ValueError("No parameters to measure supplied")
+
         return tuple(measured_all), grouped_parameters, tuple(measured_parameters)
-
-
-# idealy we would want this to be frozen but then postinit cannot calulate all the parameters
-# https://stackoverflow.com/questions/53756788/
-@dataclass(frozen=False)
-class _SweepMeasGroup:
-    sweep_parameters: tuple[ParameterBase, ...]
-    measure_parameters: tuple[ParamMeasT, ...]
-    measurement_cxt: Measurement
-
-    def __post_init__(self) -> None:
-        meas_parameters = tuple(
-            a for a in self.measure_parameters if isinstance(a, ParameterBase)
-        )
-        self._parameters = self.sweep_parameters + meas_parameters
-
-    @property
-    def parameters(self) -> tuple[ParameterBase, ...]:
-        return self._parameters
-
-
-class _SweeperMeasure:
-    def __init__(
-        self,
-        sweeper: _Sweeper,
-        measurements: _Measurements,
-        enter_actions: ActionsT,
-        exit_actions: ActionsT,
-        experiments: Experiment | Sequence[Experiment] | None,
-        write_period: float | None,
-        log_info: str | None,
-        dataset_dependencies: dict[
-            str, tuple[Sequence[ParameterBase], Sequence[ParamMeasT]]
-        ]
-        | None = None,
-    ):
-
-        self._sweeper = sweeper
-        self._measurements = measurements
-        self._enter_actions = enter_actions
-        self._exit_actions = exit_actions
-        self._experiments = self._get_experiments(experiments)
-        self._write_period = write_period
-        self._log_info = log_info
-        self._dataset_dependencies = dataset_dependencies
-        self._shapes = self._get_shapes()
-        self._groups = self._create_groups()
-
-        if log_info is not None:
-            self._extra_log_info = log_info
-        else:
-            self._extra_log_info = "Using 'qcodes.dataset.dond'"
 
     def _get_shapes(self) -> Shapes | None:
         try:
             shapes: Shapes | None = detect_shape_of_measurement(
-                self._measurements.measured_parameters, self._sweeper.shape
+                self.measured_parameters, self._sweeper.shape
             )
             LOG.debug("Detected shapes to be %s", shapes)
         except TypeError:
             LOG.exception(
-                f"Could not detect shape of {self._measurements.measured_parameters} "
+                f"Could not detect shape of {self.measured_parameters} "
                 f"falling back to unknown shape."
             )
             shapes = None
@@ -381,16 +364,16 @@ class _SweeperMeasure:
     ) -> Sequence[Experiment | None]:
         if not isinstance(experiments, Sequence):
             experiments_internal: Sequence[Experiment | None] = [
-                experiments for _ in self._measurements.grouped_parameters
+                experiments for _ in self.grouped_parameters
             ]
         else:
             experiments_internal = experiments
 
-        if len(experiments_internal) != len(self._measurements.grouped_parameters):
+        if len(experiments_internal) != len(self.grouped_parameters):
             raise ValueError(
                 f"Inconsistent number of "
                 f"parameter groups and experiments, "
-                f"got {len(self._measurements.grouped_parameters)} and {len(experiments_internal)}"
+                f"got {len(self.grouped_parameters)} and {len(experiments_internal)}"
             )
         return experiments_internal
 
@@ -398,7 +381,7 @@ class _SweeperMeasure:
 
         if self._dataset_dependencies is None:
             setpoints = self._sweeper.all_setpoint_params
-            measure_groups = self._measurements.grouped_parameters
+            measure_groups = self.grouped_parameters
 
             groups = []
             sp_group: Sequence[ParameterBase]
@@ -406,7 +389,7 @@ class _SweeperMeasure:
             for m_group, experiment, meas_name in zip(
                 measure_groups,
                 self._experiments,
-                self._measurements.measurement_names,
+                self.measurement_names,
             ):
                 meas_ctx = self._create_measurement_ctx_manager(
                     experiment, meas_name, setpoints, tuple(m_group)
@@ -415,7 +398,7 @@ class _SweeperMeasure:
                 groups.append(s_m_group)
         else:
             potential_setpoint_groups = self._sweeper.sweep_groupes
-            requested_measure_groups = self._measurements.grouped_parameters
+            requested_measure_groups = self.grouped_parameters
 
             if len(self._dataset_dependencies) != len(requested_measure_groups):
                 raise ValueError(
@@ -438,7 +421,7 @@ class _SweeperMeasure:
             groups = []
             for experiment, meas_name in zip(
                 self._experiments,
-                self._measurements.measurement_names,
+                self.measurement_names,
             ):
                 (sp_group, m_group) = self._dataset_dependencies[meas_name]
                 if tuple(sp_group) not in potential_setpoint_groups:
@@ -489,6 +472,55 @@ class _SweeperMeasure:
     @property
     def groups(self) -> tuple[_SweepMeasGroup, ...]:
         return self._groups
+
+    def _split_dateset_dependencies(
+        self,
+        dataset_dependencies: Mapping[str, Sequence[ParamMeasT]] | None,
+    ) -> dict[str, tuple[Sequence[ParameterBase], Sequence[ParamMeasT]]] | None:
+        # split measured parameters from setpoint parameters using param_meas
+        dataset_dependencies_split: dict[
+            str, tuple[Sequence[ParameterBase], Sequence[ParamMeasT]]
+        ] | None
+        if dataset_dependencies is not None:
+            dataset_dependencies_split = {}
+            for name, dataset_parameters in dataset_dependencies.items():
+                meas_parameters = tuple(
+                    param for param in dataset_parameters if param in self.measured_all
+                )
+                setpoint_parameters = cast(
+                    Sequence[ParameterBase],
+                    tuple(
+                        param
+                        for param in dataset_parameters
+                        if param not in self.measured_all
+                    ),
+                )
+                dataset_dependencies_split[name] = (
+                    setpoint_parameters,
+                    meas_parameters,
+                )
+        else:
+            dataset_dependencies_split = None
+        return dataset_dependencies_split
+
+
+# idealy we would want this to be frozen but then postinit cannot calulate all the parameters
+# https://stackoverflow.com/questions/53756788/
+@dataclass(frozen=False)
+class _SweepMeasGroup:
+    sweep_parameters: tuple[ParameterBase, ...]
+    measure_parameters: tuple[ParamMeasT, ...]
+    measurement_cxt: Measurement
+
+    def __post_init__(self) -> None:
+        meas_parameters = tuple(
+            a for a in self.measure_parameters if isinstance(a, ParameterBase)
+        )
+        self._parameters = self.sweep_parameters + meas_parameters
+
+    @property
+    def parameters(self) -> tuple[ParameterBase, ...]:
+        return self._parameters
 
 
 def dond(
@@ -586,16 +618,18 @@ def dond(
 
     sweep_instances, params_meas = _parse_dond_arguments(*params)
 
-    measurement_name = _validate_dataset_dependenceies_and_names(
-        dataset_dependencies, measurement_name, params_meas
-    )
-
     sweeper = _Sweeper(sweep_instances, additional_setpoints)
 
-    measurements = _Measurements(measurement_name, params_meas)
-
-    dataset_dependencies_split = _split_dateset_dependencies(
-        dataset_dependencies, measurements
+    measurements = _Measurements(
+        sweeper,
+        measurement_name,
+        params_meas,
+        enter_actions,
+        exit_actions,
+        exp,
+        write_period,
+        log_info,
+        dataset_dependencies,
     )
 
     LOG.info(
@@ -607,16 +641,6 @@ def dond(
         "Measured parameters have been grouped into:\n%s",
         measurements.grouped_parameters,
     )
-    sweeper_measurer = _SweeperMeasure(
-        sweeper,
-        measurements,
-        enter_actions,
-        exit_actions,
-        exp,
-        write_period,
-        log_info,
-        dataset_dependencies_split,
-    )
 
     datasets = []
     plots_axes = []
@@ -625,16 +649,16 @@ def dond(
         use_threads = config.dataset.use_threads
 
     params_meas_caller = (
-        ThreadPoolParamsCaller(*sweeper_measurer._measurements.measured_all)
+        ThreadPoolParamsCaller(*measurements.measured_all)
         if use_threads
-        else SequentialParamsCaller(*sweeper_measurer._measurements.measured_all)
+        else SequentialParamsCaller(*measurements.measured_all)
     )
 
     try:
         with _catch_interrupts() as interrupted, ExitStack() as stack, params_meas_caller as call_params_meas:
             datasavers = [
                 stack.enter_context(group.measurement_cxt.run())
-                for group in sweeper_measurer.groups
+                for group in measurements.groups
             ]
             additional_setpoints_data = process_params_meas(additional_setpoints)
             # _Sweeper is not considdered an Iterable since it does not implement __iter__
@@ -656,7 +680,7 @@ def dond(
                 for meas_param, value in meas_value_pair:
                     results[meas_param] = value
 
-                for datasaver, group in zip(datasavers, sweeper_measurer.groups):
+                for datasaver, group in zip(datasavers, measurements.groups):
                     filtered_results_list = [
                         (param, value)
                         for param, value in results.items()
@@ -689,15 +713,7 @@ def dond(
 def _validate_dataset_dependenceies_and_names(
     dataset_dependencies: Mapping[str, Sequence[ParamMeasT]] | None,
     measurement_name: str | Sequence[str],
-    params_meas: Sequence[ParamMeasT | Sequence[ParamMeasT]],
 ) -> Sequence[str] | str:
-    if dataset_dependencies is not None and len(dataset_dependencies) != len(
-        params_meas
-    ):
-        raise ValueError(
-            f"Requested for data to be split into {len(params_meas)} datasets "
-            f"but found {len(dataset_dependencies)} groups in dataset_dependencies."
-        )
     if dataset_dependencies is not None and measurement_name != "":
         if isinstance(measurement_name, str):
             raise ValueError(
@@ -712,36 +728,6 @@ def _validate_dataset_dependenceies_and_names(
     elif dataset_dependencies is not None:
         measurement_name = tuple(dataset_dependencies.keys())
     return measurement_name
-
-
-def _split_dateset_dependencies(
-    dataset_dependencies: Mapping[str, Sequence[ParamMeasT]] | None,
-    measurements: _Measurements,
-) -> dict[str, tuple[Sequence[ParameterBase], Sequence[ParamMeasT]]] | None:
-    # split measured parameters from setpoint parameters using param_meas
-    dataset_dependencies_split: dict[
-        str, tuple[Sequence[ParameterBase], Sequence[ParamMeasT]]
-    ] | None
-    if dataset_dependencies is not None:
-        dataset_dependencies_split = {}
-        for name, dataset_parameters in dataset_dependencies.items():
-            meas_parameters = tuple(
-                param
-                for param in dataset_parameters
-                if param in measurements.measured_all
-            )
-            setpoint_parameters = cast(
-                Sequence[ParameterBase],
-                tuple(
-                    param
-                    for param in dataset_parameters
-                    if param not in measurements.measured_all
-                ),
-            )
-            dataset_dependencies_split[name] = (setpoint_parameters, meas_parameters)
-    else:
-        dataset_dependencies_split = None
-    return dataset_dependencies_split
 
 
 def _parse_dond_arguments(

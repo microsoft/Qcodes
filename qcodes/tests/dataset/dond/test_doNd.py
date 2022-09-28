@@ -1206,7 +1206,7 @@ def test_dond_together_sweep_sweeper_combined_missing_in_dataset_dependencies():
 
     with pytest.raises(
         ValueError,
-        match="Requested for data to be split into 3 datasets but found 2 groups in dataset_dependencies",
+        match="Got 2 measurement names but should create 3 datasets",
     ):
         datasets, _, _ = dond(
             TogetherSweep(sweepA, sweepB),
@@ -1259,7 +1259,7 @@ def test_dond_together_sweep_sweeper_wrong_mp_in_dataset_dependencies():
 
     with pytest.raises(
         ValueError,
-        match="Requested for data to be split into 3 datasets but found 4 groups",
+        match="Got 4 measurement names but should create 3 datasets",
     ):
         datasets, _, _ = dond(
             TogetherSweep(sweepA, sweepB),
