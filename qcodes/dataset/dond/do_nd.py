@@ -349,11 +349,11 @@ class _Measurements:
                 f"parameters to measure in "
                 f"{params_meas}. This is not supported."
             )
-        if single_group:
+        elif single_group:
             grouped_parameters = (tuple(single_group),)
-        if multi_group:
+        elif multi_group:
             grouped_parameters = tuple(multi_group)
-        if not single_group and not multi_group:
+        else:
             raise ValueError("No parameters to measure supplied")
 
         return tuple(measured_all), grouped_parameters, tuple(measured_parameters)
