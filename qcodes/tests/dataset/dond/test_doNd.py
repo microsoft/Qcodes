@@ -774,7 +774,7 @@ def test_dond_2d_multi_datasets_multi_exp_inconsistent_raises(
     sweep_2 = LinSweep(_param_set_2, 0.5, 1, 2, 0)
 
     with pytest.raises(
-        ValueError, match="Inconsistent number of parameter groups and experiments"
+        ValueError, match="Inconsistent number of datasets and experiments"
     ):
         dond(sweep_1, sweep_2, [_param], [_param_complex], exp=[exp1, exp2, exp3])
 
@@ -993,9 +993,9 @@ def test_dond_together_sweep_sweeper_combined():
     datasets, _, _ = dond(
         TogetherSweep(sweepA, sweepB),
         sweepC,
-        [d],
-        [e],
-        [f],
+        d,
+        e,
+        f,
         do_plot=False,
         dataset_dependencies={
             "ds1": (a, c, d),
@@ -1025,9 +1025,9 @@ def test_dond_together_sweep_sweeper_combined_explict_names():
     datasets, _, _ = dond(
         TogetherSweep(sweepA, sweepB),
         sweepC,
-        [d],
-        [e],
-        [f],
+        d,
+        e,
+        f,
         measurement_name=("ds1", "ds2", "ds3"),
         do_plot=False,
         dataset_dependencies={
@@ -1065,9 +1065,9 @@ def test_dond_together_sweep_sweeper_combined_explict_names_inconsistent():
         datasets, _, _ = dond(
             TogetherSweep(sweepA, sweepB),
             sweepC,
-            [d],
-            [e],
-            [f],
+            d,
+            e,
+            f,
             measurement_name=("ds1", "ds2", "ds4"),
             do_plot=False,
             dataset_dependencies={
@@ -1098,9 +1098,9 @@ def test_dond_together_sweep_sweeper_combined_explict_names_and_single_name():
         datasets, _, _ = dond(
             TogetherSweep(sweepA, sweepB),
             sweepC,
-            [d],
-            [e],
-            [f],
+            d,
+            e,
+            f,
             measurement_name="my_measurement",
             do_plot=False,
             dataset_dependencies={
@@ -1125,9 +1125,9 @@ def test_dond_together_sweep_sweeper_combined_lists():
     datasets, _, _ = dond(
         TogetherSweep(sweepA, sweepB),
         sweepC,
-        [d],
-        [e],
-        [f],
+        d,
+        e,
+        f,
         do_plot=False,
         dataset_dependencies={
             "ds1": [a, c, d],
@@ -1168,7 +1168,7 @@ def test_empty_together_sweep_raises():
         TogetherSweep()
 
 
-def test_dond_together_sweep_more_groups():
+def test_dond_together_sweep_more_parameters():
     a = ManualParameter("a", initial_value=0)
     b = ManualParameter("b", initial_value=0)
     c = ManualParameter("c", initial_value=0)
@@ -1179,18 +1179,15 @@ def test_dond_together_sweep_more_groups():
     sweepB = LinSweep(b, 5, 7, 10)
     sweepC = LinSweep(c, 8, 12, 10)
 
-    datasets, _, _ = dond(
+    dataset, _, _ = dond(
         TogetherSweep(sweepA, sweepB),
         sweepC,
-        [d],
-        [e],
-        [f],
+        d,
+        e,
+        f,
         do_plot=False,
     )
-    assert len(datasets) == 3
-    assert datasets[0].parameters == "a,b,c,d"
-    assert datasets[1].parameters == "a,b,c,e"
-    assert datasets[2].parameters == "a,b,c,f"
+    assert dataset.parameters == "a,b,c,d,e,f"
 
 
 def test_dond_together_sweep_sweeper_combined_missing_in_dataset_dependencies():
@@ -1206,14 +1203,14 @@ def test_dond_together_sweep_sweeper_combined_missing_in_dataset_dependencies():
 
     with pytest.raises(
         ValueError,
-        match="Got 2 measurement names but should create 3 datasets",
+        match="Parameter f is measured but not added to any dataset",
     ):
         datasets, _, _ = dond(
             TogetherSweep(sweepA, sweepB),
             sweepC,
-            [d],
-            [e],
-            [f],
+            d,
+            e,
+            f,
             do_plot=False,
             dataset_dependencies={
                 "ds1": (a, c, d),
@@ -1237,9 +1234,9 @@ def test_dond_together_sweep_sweeper_wrong_sp_in_dataset_dependencies():
         datasets, _, _ = dond(
             TogetherSweep(sweepA, sweepB),
             sweepC,
-            [d],
-            [e],
-            [f],
+            d,
+            e,
+            f,
             do_plot=False,
             dataset_dependencies={"ds1": (a, b, d), "ds2": (b, c, e), "ds3": (b, c, f)},
         )
@@ -1259,14 +1256,14 @@ def test_dond_together_sweep_sweeper_wrong_mp_in_dataset_dependencies():
 
     with pytest.raises(
         ValueError,
-        match="Got 4 measurement names but should create 3 datasets",
+        match="which is not among the expected groups of setpoints",
     ):
         datasets, _, _ = dond(
             TogetherSweep(sweepA, sweepB),
             sweepC,
-            [d],
-            [e],
-            [f],
+            d,
+            e,
+            f,
             do_plot=False,
             dataset_dependencies={
                 "ds1": (a, c, d),
@@ -1341,8 +1338,59 @@ def test_dond_together_sweep_parameter_with_setpoints_explicit_mapping(dummyinst
     datasets, _, _ = dond(
         TogetherSweep(sweep_a, sweep_b),
         sweep_c,
-        [dummyinstrument.A.dummy_parameter_with_setpoints],
-        [dummyinstrument.B.dummy_parameter_with_setpoints],
+        dummyinstrument.A.dummy_parameter_with_setpoints,
+        dummyinstrument.B.dummy_parameter_with_setpoints,
+        dataset_dependencies={
+            "ds1": (a, c, dummyinstrument.A.dummy_parameter_with_setpoints),
+            "ds2": (b, c, dummyinstrument.B.dummy_parameter_with_setpoints),
+        },
+        do_plot=False,
+    )
+
+    assert (
+        datasets[0].parameters
+        == "a,c,dummyinstrument_ChanA_dummy_sp_axis,dummyinstrument_ChanA_dummy_parameter_with_setpoints"
+    )
+    assert len(datasets[0].description.shapes) == 1
+    assert datasets[0].description.shapes[
+        "dummyinstrument_ChanA_dummy_parameter_with_setpoints"
+    ] == (outer_shape, inner_shape, n_points_a)
+
+    assert (
+        datasets[1].parameters
+        == "b,c,dummyinstrument_ChanB_dummy_sp_axis,dummyinstrument_ChanB_dummy_parameter_with_setpoints"
+    )
+    assert len(datasets[1].description.shapes) == 1
+    assert datasets[1].description.shapes[
+        "dummyinstrument_ChanB_dummy_parameter_with_setpoints"
+    ] == (outer_shape, inner_shape, n_points_b)
+
+
+def test_dond_together_sweep_parameter_with_setpoints_explicit_mapping_and_callable(
+    dummyinstrument,
+):
+
+    outer_shape = 10
+    inner_shape = 15
+
+    n_points_a = 20
+    dummyinstrument.A.dummy_n_points(n_points_a)
+    n_points_b = 25
+    dummyinstrument.B.dummy_n_points(n_points_b)
+
+    a = ManualParameter("a", initial_value=0)
+    b = ManualParameter("b", initial_value=0)
+    c = ManualParameter("c", initial_value=0)
+    sweep_a = LinSweep(a, 0, 3, outer_shape)
+    sweep_b = LinSweep(b, 5, 7, outer_shape)
+    sweep_c = LinSweep(c, 8, 12, inner_shape)
+
+    datasets, _, _ = dond(
+        TogetherSweep(sweep_a, sweep_b),
+        sweep_c,
+        lambda: print("this is a sideffect"),
+        dummyinstrument.A.dummy_parameter_with_setpoints,
+        dummyinstrument.B.dummy_parameter_with_setpoints,
         dataset_dependencies={
             "ds1": (a, c, dummyinstrument.A.dummy_parameter_with_setpoints),
             "ds2": (b, c, dummyinstrument.B.dummy_parameter_with_setpoints),

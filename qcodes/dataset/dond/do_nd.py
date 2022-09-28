@@ -256,53 +256,66 @@ class _Measurements:
         else:
             self._extra_log_info = "Using 'qcodes.dataset.dond'"
 
-        # if dataset_dependencies:
-        #     # check that measurement parameters are not grouped
-        #     if any(isinstance(param_meas, Sequence) for param_meas in params_meas):
-        #         raise ValueError("Measured parameters have been grouped both in input "
-        #                          "and using dataset dependencies. This is not allowed")
-
-        measurement_name = _validate_dataset_dependenceies_and_names(
-            dataset_dependencies, measurement_name
-        )
-
         (
             self._measured_all,
-            self._grouped_parameters,
+            grouped_parameters,
             self._measured_parameters,
         ) = self._extract_parameters_by_type_and_group(params_meas)
 
-        self._experiments = self._get_experiments(experiments)
-        self._dataset_dependencies = self._split_dateset_dependencies(
-            dataset_dependencies
-        )
         self._shapes = self._get_shapes()
-        self.measurement_names = self._create_measurement_names(measurement_name)
-        self._groups = self._create_groups()
 
-    def _create_measurement_names(
-        self, measurement_name: str | Sequence[str]
-    ) -> tuple[str, ...]:
-        if isinstance(measurement_name, str):
-            return (measurement_name,) * len(self._grouped_parameters)
-        else:
-            if len(measurement_name) != len(self._grouped_parameters):
-                raise ValueError(
-                    f"Got {len(measurement_name)} measurement names but should create {len(self._grouped_parameters)} datasets."
-                )
-            return tuple(measurement_name)
+        if dataset_dependencies and len(grouped_parameters) > 1:
+            raise ValueError(
+                "Measured parameters have been grouped both in input "
+                "and using dataset dependencies. This is not allowed"
+            )
+
+        if dataset_dependencies is None:
+            self._groups = self._create_groups_from_grouped_parameters(
+                grouped_parameters, experiments, measurement_name
+            )
+        elif dataset_dependencies:
+            _validate_dataset_dependenceies_and_names(
+                dataset_dependencies, measurement_name
+            )
+            dataset_dependencies_split = self._split_dateset_dependencies(
+                dataset_dependencies
+            )
+            self._groups = self._create_groups_from_dataset_dependencies(
+                dataset_dependencies_split,
+                self._measured_parameters,
+                experiments,
+                measurement_name,
+            )
 
     @property
     def measured_all(self) -> tuple[ParamMeasT, ...]:
         return self._measured_all
 
     @property
-    def grouped_parameters(self) -> tuple[tuple[ParamMeasT, ...], ...]:
-        return self._grouped_parameters
-
-    @property
     def measured_parameters(self) -> tuple[ParameterBase, ...]:
         return self._measured_parameters
+
+    @property
+    def shapes(self) -> Shapes | None:
+        return self._shapes
+
+    @property
+    def groups(self) -> tuple[_SweepMeasGroup, ...]:
+        return self._groups
+
+    @staticmethod
+    def _create_measurement_names(
+        measurement_name: str | Sequence[str], n_names_required: int
+    ) -> tuple[str, ...]:
+        if isinstance(measurement_name, str):
+            return (measurement_name,) * n_names_required
+        else:
+            if len(measurement_name) != n_names_required:
+                raise ValueError(
+                    f"Got {len(measurement_name)} measurement names but should create {n_names_required} datasets."
+                )
+            return tuple(measurement_name)
 
     @staticmethod
     def _extract_parameters_by_type_and_group(
@@ -359,95 +372,108 @@ class _Measurements:
             shapes = None
         return shapes
 
+    @staticmethod
     def _get_experiments(
-        self, experiments: Experiment | Sequence[Experiment] | None
+        experiments: Experiment | Sequence[Experiment] | None,
+        n_experiments_required: int,
     ) -> Sequence[Experiment | None]:
         if not isinstance(experiments, Sequence):
             experiments_internal: Sequence[Experiment | None] = [
-                experiments for _ in self.grouped_parameters
-            ]
+                experiments
+            ] * n_experiments_required
         else:
             experiments_internal = experiments
 
-        if len(experiments_internal) != len(self.grouped_parameters):
+        if len(experiments_internal) != n_experiments_required:
             raise ValueError(
                 f"Inconsistent number of "
-                f"parameter groups and experiments, "
-                f"got {len(self.grouped_parameters)} and {len(experiments_internal)}"
+                f"datasets and experiments, "
+                f"got {n_experiments_required} and {len(experiments_internal)}."
             )
         return experiments_internal
 
-    def _create_groups(self) -> tuple[_SweepMeasGroup, ...]:
+    def _create_groups_from_grouped_parameters(
+        self,
+        grouped_parameters: tuple[tuple[ParamMeasT, ...], ...],
+        experiments: Experiment | Sequence[Experiment] | None,
+        meas_names: str,
+    ) -> tuple[_SweepMeasGroup, ...]:
 
-        if self._dataset_dependencies is None:
-            setpoints = self._sweeper.all_setpoint_params
-            measure_groups = self.grouped_parameters
+        setpoints = self._sweeper.all_setpoint_params
 
-            groups = []
-            sp_group: Sequence[ParameterBase]
-            m_group: Sequence[ParamMeasT]
-            for m_group, experiment, meas_name in zip(
-                measure_groups,
-                self._experiments,
-                self.measurement_names,
-            ):
-                meas_ctx = self._create_measurement_ctx_manager(
-                    experiment, meas_name, setpoints, tuple(m_group)
-                )
-                s_m_group = _SweepMeasGroup(setpoints, tuple(m_group), meas_ctx)
-                groups.append(s_m_group)
-        else:
-            potential_setpoint_groups = self._sweeper.sweep_groupes
-            requested_measure_groups = self.grouped_parameters
+        groups = []
+        sp_group: Sequence[ParameterBase]
+        m_group: Sequence[ParamMeasT]
 
-            if len(self._dataset_dependencies) != len(requested_measure_groups):
-                raise ValueError(
-                    f"Requested for data to be split into {len(requested_measure_groups)} datasets "
-                    f"but found {len(self._dataset_dependencies)} groups in dataset_dependencies."
-                )
+        experiments = self._get_experiments(experiments, len(grouped_parameters))
+        measurement_names = self._create_measurement_names(
+            meas_names, len(grouped_parameters)
+        )
 
-            output_parameter_tuples = tuple(
-                tuple(output[1]) for output in self._dataset_dependencies.values()
+        for m_group, experiment, meas_name in zip(
+            grouped_parameters,
+            experiments,
+            measurement_names,
+        ):
+            meas_ctx = self._create_measurement_ctx_manager(
+                experiment, meas_name, setpoints, tuple(m_group)
             )
-
-            for r_m_group in requested_measure_groups:
-                if r_m_group not in output_parameter_tuples:
-                    raise ValueError(
-                        "Measuring a (group of) parameter(s) which is not "
-                        f"in the dataset_dependencies. Did not find {r_m_group} in "
-                        f"{self._dataset_dependencies}."
-                    )
-
-            groups = []
-            for experiment, meas_name in zip(
-                self._experiments,
-                self.measurement_names,
-            ):
-                (sp_group, m_group) = self._dataset_dependencies[meas_name]
-                if tuple(sp_group) not in potential_setpoint_groups:
-                    raise ValueError(
-                        f"dataset_dependencies contains {sp_group} "
-                        f"which is not among the expected groups of setpoints "
-                        f"{potential_setpoint_groups}"
-                    )
-                if tuple(m_group) not in requested_measure_groups:
-                    raise ValueError(
-                        f"dataset_dependencies contains {m_group} "
-                        f"which is not among the expected groups of measured parameters "
-                        f"{requested_measure_groups}"
-                    )
-
-                LOG.info(f"creating context manager for {sp_group} {m_group}")
-                meas_ctx = self._create_measurement_ctx_manager(
-                    experiment, meas_name, tuple(sp_group), tuple(m_group)
-                )
-                s_m_group = _SweepMeasGroup(tuple(sp_group), tuple(m_group), meas_ctx)
-                groups.append(s_m_group)
+            s_m_group = _SweepMeasGroup(setpoints, tuple(m_group), meas_ctx)
+            groups.append(s_m_group)
         return tuple(groups)
 
-    @property
-    def shapes(self) -> Shapes | None:
-        return self._shapes
+    def _create_groups_from_dataset_dependencies(
+        self,
+        dataset_dependencies: dict[
+            str, tuple[Sequence[ParameterBase], Sequence[ParamMeasT]]
+        ]
+        | None,
+        all_measured_parameters: tuple[ParameterBase, ...],
+        experiments: Experiment | Sequence[Experiment] | None,
+        meas_names: str,
+    ) -> tuple[_SweepMeasGroup, ...]:
+        potential_setpoint_groups = self._sweeper.sweep_groupes
+
+        experiments = self._get_experiments(experiments, len(dataset_dependencies))
+        if meas_names == "":
+            meas_names = tuple(dataset_dependencies.keys())
+
+        measurement_names = self._create_measurement_names(
+            meas_names, len(dataset_dependencies)
+        )
+
+        all_dataset_dependencies_meas_parameters = tuple(
+            itertools.chain.from_iterable(
+                output[1] for output in dataset_dependencies.values()
+            )
+        )
+
+        for meas_param in all_measured_parameters:
+            if meas_param not in all_dataset_dependencies_meas_parameters:
+                raise ValueError(
+                    f"Parameter {meas_param} is measured but not added to any dataset."
+                )
+
+        groups = []
+        for experiment, meas_name in zip(
+            experiments,
+            measurement_names,
+        ):
+            (sp_group, m_group) = dataset_dependencies[meas_name]
+            if tuple(sp_group) not in potential_setpoint_groups:
+                raise ValueError(
+                    f"dataset_dependencies contains {sp_group} "
+                    f"which is not among the expected groups of setpoints "
+                    f"{potential_setpoint_groups}"
+                )
+
+            LOG.info(f"creating context manager for {sp_group} {m_group}")
+            meas_ctx = self._create_measurement_ctx_manager(
+                experiment, meas_name, tuple(sp_group), tuple(m_group)
+            )
+            s_m_group = _SweepMeasGroup(tuple(sp_group), tuple(m_group), meas_ctx)
+            groups.append(s_m_group)
+        return tuple(groups)
 
     def _create_measurement_ctx_manager(
         self,
@@ -468,10 +494,6 @@ class _Measurements:
         _set_write_period(meas, self._write_period)
         _register_actions(meas, self._enter_actions, self._exit_actions)
         return meas
-
-    @property
-    def groups(self) -> tuple[_SweepMeasGroup, ...]:
-        return self._groups
 
     def _split_dateset_dependencies(
         self,
@@ -638,8 +660,8 @@ def dond(
         measurements.measured_all,
     )
     LOG.debug(
-        "Measured parameters have been grouped into:\n%s",
-        measurements.grouped_parameters,
+        "dond has been grouped into the following datasets:\n%s",
+        measurements.groups,
     )
 
     datasets = []
@@ -704,7 +726,7 @@ def dond(
             plots_axes.append(plot_axis)
             plots_colorbar.append(plot_color)
 
-    if len(measurements.grouped_parameters) == 1:
+    if len(measurements.groups) == 1:
         return datasets[0], plots_axes[0], plots_colorbar[0]
     else:
         return tuple(datasets), tuple(plots_axes), tuple(plots_colorbar)
@@ -713,7 +735,7 @@ def dond(
 def _validate_dataset_dependenceies_and_names(
     dataset_dependencies: Mapping[str, Sequence[ParamMeasT]] | None,
     measurement_name: str | Sequence[str],
-) -> Sequence[str] | str:
+) -> None:
     if dataset_dependencies is not None and measurement_name != "":
         if isinstance(measurement_name, str):
             raise ValueError(
@@ -724,10 +746,6 @@ def _validate_dataset_dependenceies_and_names(
                 f"Inconsistent measurement names: measurement_name contains {measurement_name} "
                 f"but dataset_dependencies contains {tuple(dataset_dependencies.keys())}."
             )
-        pass
-    elif dataset_dependencies is not None:
-        measurement_name = tuple(dataset_dependencies.keys())
-    return measurement_name
 
 
 def _parse_dond_arguments(
