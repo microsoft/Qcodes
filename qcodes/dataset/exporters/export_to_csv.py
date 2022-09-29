@@ -22,7 +22,7 @@ def dataframe_to_csv(
     single_file: bool = False,
     single_file_name: str | None = None,
 ) -> None:
-    import pandas as pd
+    import pandas as pd # pylint: disable=import-outside-toplevel
 
     dfs_to_save = list()
     for parametername, df in dfdict.items():
