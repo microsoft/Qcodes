@@ -328,11 +328,11 @@ class BaseDataSet(DataSetProtocol):
         path: str | None = None,
         prefix: str | None = None,
     ) -> None:
-        """Export data to disk with file name {prefix}{name_elements}.{ext}.
+        """Export data to disk with file name `{prefix}{name_elements}.{ext}`.
         Name elements are names of dataset object attributes that are taken
         from the dataset and inserted into the name of the export file, for
         example if name elements are ``["captured_run_id", "guid"]``, then
-        the file name will be {prefix}{captured_run_id}_{guid}.{ext}.
+        the file name will be `{prefix}{captured_run_id}_{guid}.{ext}`.
         Values for the export type, path, export_name_elements and prefix can
         also be set in the "dataset" section of qcodes config.
 
@@ -377,7 +377,7 @@ class BaseDataSet(DataSetProtocol):
         path: str | None = None,
         prefix: str | None = None,
     ) -> str | None:
-        """Export data to disk with file name {prefix}{name_elements}.{ext}.
+        """Export data to disk with file name `{prefix}{name_elements}.{ext}`.
         Name elements are names of dataset object attributes that are taken
         from the dataset and inserted into the name of the export file, for
         example if name elements are ``["captured_run_id", "guid"]``, then
