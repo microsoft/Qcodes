@@ -349,7 +349,8 @@ class _Measurements:
                 f"parameters to measure in "
                 f"{params_meas}. This is not supported."
             )
-        elif single_group:
+
+        if single_group:
             grouped_parameters = (tuple(single_group),)
         elif multi_group:
             grouped_parameters = tuple(multi_group)
@@ -402,7 +403,6 @@ class _Measurements:
         setpoints = self._sweeper.all_setpoint_params
 
         groups = []
-        sp_group: Sequence[ParameterBase]
         m_group: Sequence[ParamMeasT]
 
         experiments_internal = self._get_experiments(
@@ -525,7 +525,8 @@ class _Measurements:
         return dataset_dependencies_split
 
 
-# idealy we would want this to be frozen but then postinit cannot calulate all the parameters
+# idealy we would want this to be frozen but then postinit
+# cannot calculate all the parameters
 # https://stackoverflow.com/questions/53756788/
 @dataclass(frozen=False)
 class _SweepMeasGroup:
@@ -682,8 +683,9 @@ def dond(
                 for group in measurements.groups
             ]
             additional_setpoints_data = process_params_meas(additional_setpoints)
-            # _Sweeper is not considered an Iterable since it does not implement __iter__
-            # However, it does implement __getitem__ and is therefor safe to iterate over
+            # _Sweeper is not considered an Iterable since it does not
+            # implement __iter__. However, it does implement __getitem__
+            # and is therefor safe to iterate over.
             # https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterable
             # https://github.com/python/cpython/issues/86992#issuecomment-1093897307
             for set_events in tqdm(sweeper, disable=not show_progress):  # type: ignore[call-overload]
@@ -742,8 +744,10 @@ def _validate_dataset_dependencies_and_names(
             )
         if set(dataset_dependencies.keys()) != set(measurement_name):
             raise ValueError(
-                f"Inconsistent measurement names: measurement_name contains {measurement_name} "
-                f"but dataset_dependencies contains {tuple(dataset_dependencies.keys())}."
+                f"Inconsistent measurement names: measurement_name "
+                f"contains {measurement_name} "
+                f"but dataset_dependencies contains "
+                f"{tuple(dataset_dependencies.keys())}."
             )
 
 
