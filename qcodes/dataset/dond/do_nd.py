@@ -52,7 +52,7 @@ class ParameterGroup(TypedDict):
 @dataclass
 class ParameterSetEvent:
     parameter: ParameterBase
-    new_value: float
+    new_value: SweepVarType
     should_set: bool
     delay: float
     actions: ActionsT
