@@ -428,6 +428,9 @@ def test_snapshot_and_meta_attrs():
 
 
 class TestSnapshotType(Metadatable):
+
+    __test__ = False
+
     def __init__(self, sample_value: int) -> None:
         super().__init__()
         self.sample_value = sample_value
@@ -437,6 +440,9 @@ class TestSnapshotType(Metadatable):
 
 
 class TestInstrument(InstrumentBase):
+
+    __test__ = False
+
     def __init__(self, name, label) -> None:
         super().__init__(name, label=label)
         self._meta_attrs.extend(["test_attribute"])
