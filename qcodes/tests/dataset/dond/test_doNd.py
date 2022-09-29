@@ -1,6 +1,7 @@
 """
 These are the basic black box tests for the doNd functions.
 """
+import logging
 import re
 
 import hypothesis.strategies as hst
@@ -1535,3 +1536,15 @@ def test_post_action(mocker):
     dond(LinSweep(param_1, 0, 10, 10, post_actions=post_actions), param_2)
 
     post_actions[0].assert_called_with()
+
+
+def test_extra_log_info(caplog):
+
+    param_1 = ManualParameter("param_1", initial_value=0.0)
+    param_2 = ManualParameter("param_2", initial_value=0.0)
+
+    log_message = "FOOBAR"
+    with caplog.at_level(level=logging.INFO):
+        dond(LinSweep(param_1, 0, 10, 10), param_2, log_info=log_message)
+
+    assert log_message in caplog.text
