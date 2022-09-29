@@ -161,27 +161,27 @@ class _Sweeper:
 
         # now we expand to a list of setpoints in a TogetherSweep
         # to all list of all possible combinations of these.
-        expanded_parameter_list = []
-        for param_tuple in param_tuple_list:
-            expanded_parameter_list.append(
-                tuple(
-                    itertools.chain.from_iterable(
-                        itertools.combinations(param_tuple, j + 1)
-                        for j in range(len(param_tuple))
-                    )
+
+        expanded_parameter = tuple(
+            tuple(
+                itertools.chain.from_iterable(
+                    itertools.combinations(param_tuple, j + 1)
+                    for j in range(len(param_tuple))
                 )
             )
+            for param_tuple in param_tuple_list
+        )
 
         # next we generate all valid combinations of picking one parameter from each
         # dimension in the setpoints.
-        setpoint_combinations = list(itertools.product(*expanded_parameter_list))
+        setpoint_combinations = itertools.product(*expanded_parameter)
 
-        for k in range(len(setpoint_combinations)):
-            setpoint_combinations[k] = tuple(
-                itertools.chain.from_iterable(setpoint_combinations[k])
-            )
+        setpoint_combinations_expanded = tuple(
+            tuple(itertools.chain.from_iterable(setpoint_combination))
+            for setpoint_combination in setpoint_combinations
+        )
 
-        return tuple(setpoint_combinations)
+        return setpoint_combinations_expanded
 
     @staticmethod
     def _make_shape(
