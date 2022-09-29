@@ -267,7 +267,7 @@ class _Measurements:
         if dataset_dependencies and len(grouped_parameters) > 1:
             raise ValueError(
                 "Measured parameters have been grouped both in input "
-                "and using dataset dependencies. This is not allowed"
+                "and using dataset dependencies. This is not supported."
             )
 
         if dataset_dependencies is None:
@@ -313,7 +313,7 @@ class _Measurements:
         else:
             if len(measurement_name) != n_names_required:
                 raise ValueError(
-                    f"Got {len(measurement_name)} measurement names but should create {n_names_required} datasets."
+                    f"Got {len(measurement_name)} measurement names but should create {n_names_required} dataset(s)."
                 )
             return tuple(measurement_name)
 

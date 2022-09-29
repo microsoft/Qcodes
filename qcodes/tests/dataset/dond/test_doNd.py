@@ -220,6 +220,20 @@ def test_dond_multi_datasets_explicit_meas_names(_param, _param_complex, experim
     assert data1[0][1].name == "bar"
 
 
+def test_dond_multi_datasets_meas_names_len_mismatch(_param, experiment):
+
+    with pytest.raises(
+        ValueError,
+        match=re.escape("Got 2 measurement names but should" " create 1 dataset(s)."),
+    ):
+        dond(
+            [_param],
+            measurement_name=["foo", "bar"],
+            do_plot=False,
+            exp=experiment,
+        )
+
+
 @pytest.mark.usefixtures("experiment")
 @pytest.mark.parametrize(
     "multiparamtype",
@@ -1009,6 +1023,39 @@ def test_dond_together_sweep_sweeper_combined():
     assert datasets[1].name == "ds2"
     assert datasets[2].parameters == "b,c,f"
     assert datasets[2].name == "ds3"
+
+
+def test_dond_together_sweep_sweeper_mixed_splitting():
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "Measured parameters have been grouped both in input "
+            "and using dataset dependencies. This is not supported."
+        ),
+    ):
+        a = ManualParameter("a", initial_value=0)
+        b = ManualParameter("b", initial_value=0)
+        c = ManualParameter("c", initial_value=0)
+        d = ManualParameter("d", initial_value=1)
+        e = ManualParameter("e", initial_value=2)
+        f = ManualParameter("f", initial_value=3)
+        sweepA = LinSweep(a, 0, 3, 10)
+        sweepB = LinSweep(b, 5, 7, 10)
+        sweepC = LinSweep(c, 8, 12, 10)
+
+        datasets, _, _ = dond(
+            TogetherSweep(sweepA, sweepB),
+            sweepC,
+            [d],
+            [e],
+            [f],
+            do_plot=False,
+            dataset_dependencies={
+                "ds1": (a, c, d),
+                "ds2": (b, c, e),
+                "ds3": (b, c, f),
+            },
+        )
 
 
 def test_dond_together_sweep_sweeper_combined_explict_names():
