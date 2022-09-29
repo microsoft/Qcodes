@@ -1525,3 +1525,13 @@ def test_error_measured_grouped_and_not_grouped():
         ValueError, match="Got both grouped and non grouped parameters to measure in"
     ):
         dond(LinSweep(param_1, 0, 10, 10), param_2, [param_3])
+
+
+def test_post_action(mocker):
+    param_1 = ManualParameter("param_1", initial_value=0.0)
+    param_2 = ManualParameter("param_2", initial_value=0.0)
+
+    post_actions = (mocker.MagicMock(),)
+    dond(LinSweep(param_1, 0, 10, 10, post_actions=post_actions), param_2)
+
+    post_actions[0].assert_called_with()
