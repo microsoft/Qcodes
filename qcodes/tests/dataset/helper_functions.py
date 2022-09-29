@@ -87,7 +87,7 @@ def verify_dataframe_for_single_param(
     shapes: Sequence[tuple[int, ...]],
     values,
 ):
-    import pandas as pd # pylint: disable=import-outside-toplevel
+    import pandas as pd  # pylint: disable=import-outside-toplevel
 
     # check that the dataframe has the same elements as index and columns
     pandas_index_names = list(dataframe.index.names)
