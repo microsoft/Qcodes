@@ -1549,3 +1549,14 @@ def test_extra_log_info(caplog):
         dond(LinSweep(param_1, 0, 10, 10), param_2, log_info=log_message)
 
     assert log_message in caplog.text
+
+
+def test_default_log_info(caplog):
+
+    param_1 = ManualParameter("param_1", initial_value=0.0)
+    param_2 = ManualParameter("param_2", initial_value=0.0)
+
+    with caplog.at_level(level=logging.INFO):
+        dond(LinSweep(param_1, 0, 10, 10), param_2)
+
+    assert "Using 'qcodes.dataset.dond'" in caplog.text
