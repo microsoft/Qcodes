@@ -267,7 +267,8 @@ class _Measurements:
             raise ValueError(
                 "Measured parameters have been grouped both in input "
                 "and given in dataset dependencies. This is not supported, "
-                "group measurement parameters either in input or in dataset dependencies."
+                "group measurement parameters either in input or in "
+                "dataset dependencies."
             )
 
         if dataset_dependencies is None:
@@ -313,7 +314,8 @@ class _Measurements:
         else:
             if len(measurement_name) != n_names_required:
                 raise ValueError(
-                    f"Got {len(measurement_name)} measurement names but should create {n_names_required} dataset(s)."
+                    f"Got {len(measurement_name)} measurement names "
+                    f"but should create {n_names_required} dataset(s)."
                 )
             return tuple(measurement_name)
 
@@ -454,7 +456,8 @@ class _Measurements:
         for meas_param in all_measured_parameters:
             if meas_param not in all_dataset_dependencies_meas_parameters:
                 raise ValueError(
-                    f"Parameter {meas_param} is measured but not added to any dataset in dataset_dependencies."
+                    f"Parameter {meas_param} is measured but not added "
+                    f"to any dataset in dataset_dependencies."
                 )
 
         groups = []
@@ -470,7 +473,10 @@ class _Measurements:
                     f"{potential_setpoint_groups}"
                 )
 
-            LOG.info(f"creating context manager for setpoints {sp_group} and measurement parameters {m_group}")
+            LOG.info(
+                f"creating context manager for setpoints"
+                f" {sp_group} and measurement parameters {m_group}"
+            )
             meas_ctx = self._create_measurement_ctx_manager(
                 experiment, meas_name, tuple(sp_group), tuple(m_group)
             )
