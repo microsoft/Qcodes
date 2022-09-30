@@ -208,13 +208,12 @@ class _Sweeper:
         else:
             previous_setpoints = self._make_single_point_setpoints_dict(index - 1)
 
-        sweeps = self.all_sweeps
-
         parameter_set_events = []
 
-        for sweep, new_value, old_value in zip(
-            sweeps, setpoints.values(), previous_setpoints.values()
-        ):
+        for sweep in self.all_sweeps:
+
+            new_value = setpoints[sweep.param.full_name]
+            old_value = previous_setpoints[sweep.param.full_name]
             if old_value is None or old_value != new_value:
                 should_set = True
             else:
