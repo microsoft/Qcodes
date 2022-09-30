@@ -969,14 +969,14 @@ def test_dond_together_sweep_sweeper(_param_set, _param_set_2, _param):
     assert sweeper.shape == (10,)
     assert sweeper.all_setpoint_params == (sweep_1.param, sweep_2.param)
 
-    assert list(sweeper.setpoint_dict.keys()) == [
+    assert list(sweeper.setpoints_dict.keys()) == [
         "simple_setter_parameter",
         "simple_setter_parameter_2",
     ]
-    assert sweeper.setpoint_dict["simple_setter_parameter"] == list(
+    assert sweeper.setpoints_dict["simple_setter_parameter"] == list(
         sweep_1.get_setpoints()
     )
-    assert sweeper.setpoint_dict["simple_setter_parameter_2"] == list(
+    assert sweeper.setpoints_dict["simple_setter_parameter_2"] == list(
         sweep_2.get_setpoints()
     )
 
@@ -1031,7 +1031,8 @@ def test_dond_together_sweep_sweeper_mixed_splitting():
         ValueError,
         match=re.escape(
             "Measured parameters have been grouped both in input "
-            "and using dataset dependencies. This is not supported."
+            "and given in dataset dependencies. This is not supported, "
+            "group measurement parameters either in input or in dataset dependencies."
         ),
     ):
         a = ManualParameter("a", initial_value=0)
@@ -1140,7 +1141,7 @@ def test_dond_together_sweep_sweeper_combined_explict_names_and_single_name():
     with pytest.raises(
         ValueError,
         match=re.escape(
-            "Creating multiple datasets but one only one measurement name given."
+            "Creating multiple datasets but only one measurement name given."
         ),
     ):
         datasets, _, _ = dond(

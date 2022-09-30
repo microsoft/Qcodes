@@ -68,7 +68,7 @@ class _Sweeper:
         self._sweeps = sweeps
         self._setpoints = self._make_setpoints_tuples()
         self._setpoints_dict = self._make_setpoints_dict()
-        self._shapes = self._make_shape(sweeps, additional_setpoints)
+        self._shape = self._make_shape(sweeps, additional_setpoints)
 
     @property
     def setpoints_dict(self) -> dict[str, list[Any]]:
@@ -174,7 +174,7 @@ class _Sweeper:
 
         # next we generate all valid combinations of picking one parameter from each
         # dimension in the setpoints.
-        setpoint_combinations = itertools.product(*expanded_parameter)
+        setpoint_combinations = itertools.product(*expanded_param_tuples)
 
         setpoint_combinations_expanded = tuple(
             tuple(itertools.chain.from_iterable(setpoint_combination))
@@ -267,8 +267,8 @@ class _Measurements:
         if dataset_dependencies and len(grouped_parameters) > 1:
             raise ValueError(
                 "Measured parameters have been grouped both in input "
-                "and in the given dataset dependencies. This is not supported, "
-                "group measurement parameters either in input or in dataset dependencies"
+                "and given in dataset dependencies. This is not supported, "
+                "group measurement parameters either in input or in dataset dependencies."
             )
 
         if dataset_dependencies is None:
