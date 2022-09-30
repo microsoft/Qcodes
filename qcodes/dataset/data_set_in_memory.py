@@ -398,7 +398,7 @@ class DataSetInMem(BaseDataSet):
         *,
         snapshot: Mapping[Any, Any],
         interdeps: InterDependencies_,
-        shapes: Shapes = None,
+        shapes: Shapes | None = None,
         parent_datasets: Sequence[Mapping[Any, Any]] = (),
         write_in_background: bool = False,
     ) -> None:
@@ -700,7 +700,7 @@ class DataSetInMem(BaseDataSet):
         self._parent_dataset_links = links
 
     def _set_interdependencies(
-        self, interdeps: InterDependencies_, shapes: Shapes = None
+        self, interdeps: InterDependencies_, shapes: Shapes | None = None
     ) -> None:
         """
         Set the interdependencies object (which holds all added

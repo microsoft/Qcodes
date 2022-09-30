@@ -310,7 +310,7 @@ class DataSet(BaseDataSet):
         *,
         snapshot: Mapping[Any, Any],
         interdeps: InterDependencies_,
-        shapes: Shapes = None,
+        shapes: Shapes | None = None,
         parent_datasets: Sequence[Mapping[Any, Any]] = (),
         write_in_background: bool = False,
     ) -> None:
@@ -531,9 +531,9 @@ class DataSet(BaseDataSet):
         self.conn.close()
         self.conn = connect(path_to_db, self._debug)
 
-    def set_interdependencies(self,
-                              interdeps: InterDependencies_,
-                              shapes: Shapes = None) -> None:
+    def set_interdependencies(
+        self, interdeps: InterDependencies_, shapes: Shapes | None = None
+    ) -> None:
         """
         Set the interdependencies object (which holds all added
         parameters and their relationships) of this dataset and

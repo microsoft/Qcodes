@@ -69,7 +69,7 @@ def do0d(
     )
 
     try:
-        shapes: Shapes = detect_shape_of_measurement(
+        shapes: Shapes | None = detect_shape_of_measurement(
             measured_parameters,
         )
     except TypeError:
