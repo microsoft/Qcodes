@@ -175,5 +175,5 @@ widgetsnbextension~=4.0.3
 wincertstore~=0.2
 wrapt~=1.14.1
 xarray~=0.20.2; python_version<'3.8'
-xarray~=2022.6.0; python_version>='3.8'
+xarray~=2022.9.0; python_version>='3.8'
 zipp~=3.8.1
