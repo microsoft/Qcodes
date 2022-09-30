@@ -195,7 +195,7 @@ class _Sweeper:
 
     @property
     def shape(self) -> tuple[int, ...]:
-        return self._shapes
+        return self._shape
 
     def __getitem__(self, index: int) -> tuple[ParameterSetEvent, ...]:
 
