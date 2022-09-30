@@ -5,6 +5,7 @@ from typing import (
     Any,
     Dict,
     List,
+    Literal,
     Optional,
     Sequence,
     Tuple,
@@ -14,7 +15,7 @@ from typing import (
 )
 
 import numpy as np
-from typing_extensions import Literal, TypedDict
+from typing_extensions import TypedDict
 
 import qcodes.validators as vals
 from qcodes.instrument import InstrumentChannel

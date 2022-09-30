@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Any, Generic, TypeVar
-
-from typing_extensions import Literal
+from typing import Any, Generic, Literal, TypeVar
 
 from qcodes.utils import is_function
 

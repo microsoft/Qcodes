@@ -5,11 +5,21 @@ import struct
 from collections import abc, defaultdict
 from io import BytesIO
 from time import localtime, sleep
-from typing import Any, Dict, List, NamedTuple, Optional, Sequence, Tuple, Union, cast
+from typing import (
+    Any,
+    Dict,
+    List,
+    Literal,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    cast,
+)
 
 import numpy as np
 from pyvisa.errors import VisaIOError
-from typing_extensions import Literal
 
 from qcodes import validators as vals
 from qcodes.instrument import VisaInstrument

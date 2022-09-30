@@ -1,10 +1,9 @@
 import re
-from typing import Any, Optional, Sequence, Union
+from typing import Any, Literal, Optional, Sequence, Union
 
 import numpy as np
 from pyvisa import VisaIOError
 from pyvisa.constants import StatusCode
-from typing_extensions import Literal
 
 import qcodes.validators as vals
 from qcodes.instrument import (

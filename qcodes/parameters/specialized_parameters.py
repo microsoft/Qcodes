@@ -7,9 +7,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from time import perf_counter
-from typing import TYPE_CHECKING, Any
-
-from typing_extensions import Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from qcodes.validators import Strings, Validator
 
