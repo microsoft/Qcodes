@@ -225,7 +225,7 @@ def test_dond_multi_datasets_meas_names_len_mismatch(_param, experiment):
 
     with pytest.raises(
         ValueError,
-        match=re.escape("Got 2 measurement names but should" " create 1 dataset(s)."),
+        match=re.escape("Got 2 measurement names but should create 1 dataset(s)."),
     ):
         dond(
             [_param],
