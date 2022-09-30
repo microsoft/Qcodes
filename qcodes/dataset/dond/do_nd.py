@@ -71,7 +71,7 @@ class _Sweeper:
         self._shapes = self._make_shape(sweeps, additional_setpoints)
 
     @property
-    def setpoint_dict(self) -> dict[str, list[Any]]:
+    def setpoints_dict(self) -> dict[str, list[Any]]:
         return self._setpoints_dict
 
     def _make_setpoints_tuples(
@@ -157,12 +157,12 @@ class _Sweeper:
 
         # in param_tuple_list there is a tuple of possible setpoints for each
         # dim in the dond. For regular sweeps this is a 1 tuple but for
-        # a TogetherSweep is if of len num parameters.
+        # a TogetherSweep it is of length of the number of parameters.
 
         # now we expand to a list of setpoints in a TogetherSweep
-        # to all list of all possible combinations of these.
+        # to a list of all possible combinations of these.
 
-        expanded_parameter = tuple(
+        expanded_param_tuples = tuple(
             tuple(
                 itertools.chain.from_iterable(
                     itertools.combinations(param_tuple, j + 1)
@@ -267,7 +267,8 @@ class _Measurements:
         if dataset_dependencies and len(grouped_parameters) > 1:
             raise ValueError(
                 "Measured parameters have been grouped both in input "
-                "and using dataset dependencies. This is not supported."
+                "and in the given dataset dependencies. This is not supported, "
+                "group measurement parameters either in input or in dataset dependencies"
             )
 
         if dataset_dependencies is None:
@@ -454,7 +455,7 @@ class _Measurements:
         for meas_param in all_measured_parameters:
             if meas_param not in all_dataset_dependencies_meas_parameters:
                 raise ValueError(
-                    f"Parameter {meas_param} is measured but not added to any dataset."
+                    f"Parameter {meas_param} is measured but not added to any dataset in dataset_dependencies."
                 )
 
         groups = []
@@ -470,7 +471,7 @@ class _Measurements:
                     f"{potential_setpoint_groups}"
                 )
 
-            LOG.info(f"creating context manager for {sp_group} {m_group}")
+            LOG.info(f"creating context manager for setpoints {sp_group} and measurement parameters {m_group}")
             meas_ctx = self._create_measurement_ctx_manager(
                 experiment, meas_name, tuple(sp_group), tuple(m_group)
             )
@@ -493,7 +494,7 @@ class _Measurements:
             setpoints=sweep_parameters,
             shapes=self.shapes,
         )
-        meas._extra_log_info = self._log_info or ""
+        meas._extra_log_info = self._extra_log_info
         _set_write_period(meas, self._write_period)
         _register_actions(meas, self._enter_actions, self._exit_actions)
         return meas
@@ -740,7 +741,7 @@ def _validate_dataset_dependencies_and_names(
     if dataset_dependencies is not None and measurement_name != "":
         if isinstance(measurement_name, str):
             raise ValueError(
-                "Creating multiple datasets but one only one measurement name given."
+                "Creating multiple datasets but only one measurement name given."
             )
         if set(dataset_dependencies.keys()) != set(measurement_name):
             raise ValueError(
