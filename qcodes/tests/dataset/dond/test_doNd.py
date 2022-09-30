@@ -1026,6 +1026,35 @@ def test_dond_together_sweep_sweeper_combined():
     assert datasets[2].name == "ds3"
 
 
+def test_dond_together_sweep_sweeper_combined_2_in_1():
+    a = ManualParameter("a", initial_value=0)
+    b = ManualParameter("b", initial_value=0)
+    c = ManualParameter("c", initial_value=0)
+    d = ManualParameter("d", initial_value=1)
+    e = ManualParameter("e", initial_value=2)
+    f = ManualParameter("f", initial_value=3)
+    sweep_a = LinSweep(a, 0, 3, 10)
+    sweep_b = LinSweep(b, 5, 7, 10)
+    sweep_c = LinSweep(c, 8, 12, 10)
+
+    datasets, _, _ = dond(
+        TogetherSweep(sweep_a, sweep_b),
+        sweep_c,
+        d,
+        e,
+        f,
+        do_plot=False,
+        dataset_dependencies={
+            "ds1": (a, c, d, f),
+            "ds2": (b, c, e),
+        },
+    )
+    assert datasets[0].parameters == "a,c,d,f"
+    assert datasets[0].name == "ds1"
+    assert datasets[1].parameters == "b,c,e"
+    assert datasets[1].name == "ds2"
+
+
 def test_dond_together_sweep_sweeper_mixed_splitting():
     with pytest.raises(
         ValueError,
