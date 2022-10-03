@@ -1,0 +1,2 @@
+From now `test_intrument` and `test_intruments` must be imported from
+`qcodes.instrument_drivers.test`.
