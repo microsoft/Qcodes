@@ -80,7 +80,7 @@ if config.core.import_legacy_api:
     from qcodes.utils import QCoDeSDeprecationWarning
 
     warnings.warn(
-        "import_legacy_api config option has no effect "
+        "`core.import_legacy_api` and `gui.plotlib` config option has no effect "
         "and will be removed in the future. "
         "Please avoid setting this in your `qcodesrc.json` config file.",
         QCoDeSDeprecationWarning,
