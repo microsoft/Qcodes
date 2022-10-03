@@ -18,7 +18,6 @@ if TYPE_CHECKING:
     from matplotlib.axes import Axes
     from matplotlib.colorbar import Colorbar
     from typing_extensions import Literal
-    from matplotlib.ticker import FuncFormatter
 
 import qcodes as qc
 from qcodes.dataset.data_set import load_by_run_spec
@@ -41,9 +40,8 @@ DB = qc.config["core"]["db_location"]
 # uses internally
 NamedData = List[List[DSPlotData]]
 
-if TYPE_CHECKING:
-    AxesTuple = Tuple["Axes", "Colorbar"]
-    AxesTupleList = Tuple[List["Axes"], List[Optional["Colorbar"]]]
+AxesTuple = Tuple["Axes", "Colorbar"]
+AxesTupleList = Tuple[List["Axes"], List[Optional["Colorbar"]]]
 
 
 
