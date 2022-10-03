@@ -1,1 +1,0 @@
-InstrumentBase and ParameterBase now call snapshot() on _meta_attrs attributes that inherit from Metadatable.
