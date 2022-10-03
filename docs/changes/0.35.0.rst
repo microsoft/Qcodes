@@ -1,0 +1,71 @@
+QCoDeS 0.35.0 (2022-10-03)
+==========================
+
+Breaking Changes:
+-----------------
+
+- The standard metadata as defined by pep621 has moved from setup.cfg
+  to pyproject.toml. This should have no user facing consequences unless
+  you install qcodes from source using a very old version of pip (<19)
+  or use unusual pip configurations. (:pr:`4382`)
+- :class:`VisaInstrument` no longer calls :meth:`VisaInstrument.set_address` as part of its
+  initialization. If you customize :meth:`VisaInstrument.set_address` in a subclass you may have
+  to adapt that class. (:pr:`4397`)
+- The deprecated method check_error has been removed from the visa instrument class. (:pr:`4426`)
+- The unused attribute shared_kwargs on the ``Instrument`` class has been removed. (:pr:`4427`)
+- The following ``InstrumentChannel`` classes have changed name for consistency.
+  This is expected to be a change with few user facing implications unless you are explicitly
+  subclassing the mentioned classes.
+
+  * ``DG1062Burst`` has changed name to ``RigolDG1062Burst``
+  * ``DG1062Channel`` has changed name to ``RigolDG1062Channel`` (:pr:`4538`)
+- ``DataSet.get_metadata`` method for retrieving a metadata value for a
+  given tag is now case-sensitive with respect to the tag.
+  For example, if metadata was added with ``dataset.add_metadata('something', 1)``,
+  it can only be retrieved by using its exact casing of the tag,
+  ``dataset.get_metadata('something')``, and not e.g.
+  ``dataset.get_metadata('SomeThinG')``. In the previous versions of QCoDeS,
+  any casing of the tag in ``DataSet.get_metadata`` would work and return the
+  value stored under that tag. Note that this change brings consistency
+  with how getting metadata via the ``dataset.metadata`` works:
+  ``dataset.metadata['something']`` does return the value, and
+  ``dataset.metadata['SomeThinG']`` does not. (:pr:`4658`)
+
+
+Improved:
+---------
+
+- ``ChannelTuple`` and ``ChannelList`` has gained the ability to call methods defined on the channels
+  in the sequence in a way similar to how QCoDeS Functions can be called. (:pr:`4292`)
+- ``dond`` has gained the ability to sweep multiple parameters at the same time enabling the creation of more complex
+  measurements. (:pr:`4325`)
+- Improve performance of ``sqlite3`` converters and adapters used to write and read in the database.
+
+  Get rid of ``sqlite3.Row`` and irrelevant unpacking to ``list``. (:pr:`4446`)
+- Settings of QCoDeS Validators are now available as properties (mostly read-only),
+  e.g. ``min_value`` and ``max_value`` of the ``Numbers`` validator can now be accessed
+  via ``numbers_validator_instance.min_value`` and ``numbers_validator_instance.max_value`` (:pr:`4602`)
+- Fixed a bug in the QCoDeS JSON encoder that would trigger an infinite recursion for snapshots containing
+  bytes (bytestrings with a b prefix). (:pr:`4621`)
+- InstrumentBase and ParameterBase now call snapshot() on _meta_attrs attributes that inherit from Metadatable. (:pr:`4655`)
+- The Dataset no longer prints upgrade progressbars when upgrading an empty database. This means that
+  the progressbar will no longer be shown when creating a new database. (:pr:`4969`)
+
+
+Improved Drivers:
+-----------------
+
+- A parameter `auto_freq_ref` was added to the `Keysight.N51x1` class.
+  From the Keysight manual:
+  This command enables or disables the ability of the signal generator to
+  automatically select between the internal and an external reference oscillator.
+
+  In addition, the val_mapping dictionary of the `rf_output` parameter is now using the `create_on_off_val_mapping` function. (:pr:`4472`)
+- Add ``get_idn`` to AMI 430 3D virtual instrument driver so that it does not raise a warning when added to a station (:pr:`4610`)
+
+New:
+----
+
+- :class:`InstrumentBase` has a property ``label`` that can host
+  a human-readable label/title of the instrument.
+  The label can be set in the __init__. (:pr:`4460`)

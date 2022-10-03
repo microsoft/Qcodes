@@ -1,2 +1,0 @@
-Fixed a bug in the QCoDeS JSON encoder that would trigger an infinite recursion for snapshots containing
-bytes (bytestrings with a b prefix).
