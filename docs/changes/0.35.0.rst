@@ -1,6 +1,40 @@
 QCoDeS 0.35.0 (2022-10-03)
 ==========================
 
+**NOTE**: this release includes changes from :doc:`0.35.0b1`,
+refer to the that changelog for details of those changes.
+
+In this release a large refactoring of the QCoDeS modules organization has taken place.
+Among other changes the ``instrument`` module has been split into a ``parameters`` and
+``instrument`` module, the ``dond`` functions have been moved to the ``dataset`` module
+and several methods removed from the public API of the ``utils`` module.
+
+The new API is documented in the :ref:`api` section of the QCoDeS homepage.
+
+Going forward we aim to establish a policy where the QCoDeS public API is defined
+by modules explicitly documented in the :ref:`api` and importable from submodules at most
+one level deep. I.e. ``from qcodes.instrument import InstrumentChannel`` is supported but
+``f`rom qcodes.instrument.channel import InstrumentChannel`` is considered unsupported.
+
+Importing from previously existing locations should continue to work
+but it is recommended to update to the new API.
+In the future we may deprecate and eventually remove these modules
+but no firm date is set for this.
+
+Please report any issues you may see with importing from the previously existing API
+or if you depend on any functions, classes etc. not available from the new public API.
+
+This release also includes a significant but still incomplete refactoring of the QCoDeS
+instrument drivers in ``qcodes.instrument_drivers``. Many but not all drivers have been updated
+to use names that conform to the standard documented
+`here <../examples/writing_drivers/Creating-Instrument-Drivers.ipynb#Naming-the-Instrument-class>`__
+i.e. they use CamelCase as other classes and are named as ``InstrumentvendorModel``
+and are importable directly from the instrument vendor module i.e.
+``from qcodes.instrument_drivers.AimTTi import AimTTiPL068P`` .
+As above aliases for older names are put in place unless explicitly
+documented otherwise. In the future we may deprecate and eventually remove these classes
+but no firm date is set for this.
+
 Breaking Changes:
 -----------------
 
