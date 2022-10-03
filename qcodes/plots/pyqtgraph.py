@@ -208,10 +208,9 @@ class QtPlot(BasePlot):
         if any([('symbol' in key) for key in kwargs]):
             if 'symbolPen' not in kwargs:
                 symbol_pen_width = 0.5 if antialias else 1.0
-                kwargs['symbolPen'] = self.rpg.mkPen('444',
-                                                     width=symbol_pen_width)
-            if 'symbolBrush' not in kwargs:
-                kwargs['symbolBrush'] = color
+                kwargs["symbolPen"] = self.rpg.mkPen("#444", width=symbol_pen_width)
+            if "symbolBrush" not in kwargs:
+                kwargs["symbolBrush"] = color
 
         # suppress warnings when there are only NaN to plot
         with warnings.catch_warnings():

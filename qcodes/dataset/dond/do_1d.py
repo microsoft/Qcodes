@@ -118,7 +118,9 @@ def do1d(
     )
     try:
         loop_shape = (num_points,) + tuple(1 for _ in additional_setpoints)
-        shapes: Shapes = detect_shape_of_measurement(measured_parameters, loop_shape)
+        shapes: Shapes | None = detect_shape_of_measurement(
+            measured_parameters, loop_shape
+        )
     except TypeError:
         LOG.exception(
             f"Could not detect shape of {measured_parameters} "

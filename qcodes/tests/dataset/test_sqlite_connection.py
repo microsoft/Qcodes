@@ -332,5 +332,4 @@ def test_connect():
     assert isinstance(conn, sqlite3.Connection)
     assert isinstance(conn, ConnectionPlus)
     assert False is conn.atomic_in_progress
-
-    assert sqlite3.Row is conn.row_factory
+    assert None is conn.row_factory

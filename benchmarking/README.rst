@@ -21,7 +21,7 @@ following command from this directory:
 
 .. code:: bash
 
-  asv run python=same
+  asv run --python=same
 
 If you do not have an environment set, then ``asv`` can set it up
 automatically. The benchmarks are executed in the same way:

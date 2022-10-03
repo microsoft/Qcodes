@@ -1,3 +1,4 @@
+from qcodes.dataset.dond.do_0d import do0d
 from qcodes.dataset.dond.do_1d import do1d
 from qcodes.dataset.dond.do_2d import do2d
 from qcodes.dataset.dond.do_nd import (
