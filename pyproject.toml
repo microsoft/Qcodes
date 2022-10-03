@@ -27,7 +27,7 @@ dependencies = [
     "h5netcdf>=0.10.0,!=0.14.0",
     # see https://github.com/h5netcdf/h5netcdf/issues/154
     "h5py>=3.0.0",
-    "importlib-metadata>=4.4,<5.0.0; python_version < '3.10'",
+    "importlib-metadata>=4.4; python_version < '3.10'",
     "importlib-resources>=2.0.0; python_version < '3.9'",
     "ipywidgets>=7.5.0,<9.0.0",
     "jsonschema>=3.0.0",
