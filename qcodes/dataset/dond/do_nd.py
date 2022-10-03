@@ -4,9 +4,8 @@ import itertools
 import logging
 import time
 from contextlib import ExitStack
-from typing import TYPE_CHECKING, Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any, Mapping, Sequence, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Mapping, Sequence, Tuple, Union, cast
 
 import numpy as np
 from tqdm.auto import tqdm
