@@ -204,7 +204,7 @@ class StrEnum(str, Enum):
     pass
 
 
-class MeasurementStatus(StrEnum):
+class Keithley2600MeasurementStatus(StrEnum):
     """
     Keeps track of measurement status.
     """
@@ -218,11 +218,14 @@ class MeasurementStatus(StrEnum):
     COMPLIANCE_ERROR = "Reached compliance limit."  # deprecated, dont use it. It exists only for backwards compatibility
 
 
+MeasurementStatus = Keithley2600MeasurementStatus
+"Alias for backwards compatibility. Will eventually be deprecated and removed"
+
 _from_bits_tuple_to_status = {
-    (0, 0): MeasurementStatus.NORMAL,
-    (1, 0): MeasurementStatus.VOLTAGE_COMPLIANCE_ERROR,
-    (0, 1): MeasurementStatus.CURRENT_COMPLIANCE_ERROR,
-    (1, 1): MeasurementStatus.VOLTAGE_AND_CURRENT_COMPLIANCE_ERROR,
+    (0, 0): Keithley2600MeasurementStatus.NORMAL,
+    (1, 0): Keithley2600MeasurementStatus.VOLTAGE_COMPLIANCE_ERROR,
+    (0, 1): Keithley2600MeasurementStatus.CURRENT_COMPLIANCE_ERROR,
+    (1, 1): Keithley2600MeasurementStatus.VOLTAGE_AND_CURRENT_COMPLIANCE_ERROR,
 }
 
 
