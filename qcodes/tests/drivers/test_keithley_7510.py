@@ -4,7 +4,7 @@ import pytest
 from hypothesis import given, settings
 
 import qcodes.instrument.sims as sims
-from qcodes.instrument_drivers.tektronix.keithley_7510 import Keithley7510
+from qcodes.instrument_drivers.Keithley import Keithley7510
 
 VISALIB = sims.__file__.replace('__init__.py', 'keithley_7510.yaml@sim')
 
