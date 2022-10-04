@@ -5,7 +5,7 @@ import logging
 import time
 from contextlib import ExitStack
 from dataclasses import dataclass
-from typing import Any, Mapping, Sequence, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Mapping, Sequence, Tuple, Union, cast
 
 import numpy as np
 from tqdm.auto import tqdm
@@ -13,14 +13,8 @@ from typing_extensions import TypedDict
 
 from qcodes import config
 from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
-from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.dond.do_nd_utils import (
-    ActionsT,
-    AxesTupleListWithDataSet,
     BreakConditionInterrupt,
-    BreakConditionT,
-    MultiAxesTupleListWithDataSet,
-    ParamMeasT,
     _catch_interrupts,
     _handle_plotting,
     _register_actions,
@@ -40,6 +34,16 @@ from qcodes.utils import deprecate
 from .sweeps import AbstractSweep, TogetherSweep
 
 LOG = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
+    from qcodes.dataset.dond.do_nd_utils import (
+        ActionsT,
+        AxesTupleListWithDataSet,
+        BreakConditionT,
+        MultiAxesTupleListWithDataSet,
+        ParamMeasT,
+    )
 
 SweepVarType = Any
 

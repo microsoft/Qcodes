@@ -21,7 +21,7 @@ def load_to_dataframe_dict(datadict: ParameterData) -> dict[str, pd.DataFrame]:
 
 
 def load_to_concatenated_dataframe(datadict: ParameterData) -> pd.DataFrame:
-    import pandas as pd
+    import pandas as pd  # pylint: disable=import-outside-toplevel
 
     if not _same_setpoints(datadict):
         warnings.warn(
@@ -40,7 +40,7 @@ def load_to_concatenated_dataframe(datadict: ParameterData) -> pd.DataFrame:
 def _data_to_dataframe(
     data: Mapping[str, np.ndarray], index: pd.Index | pd.MultiIndex | None
 ) -> pd.DataFrame:
-    import pandas as pd
+    import pandas as pd  # pylint: disable=import-outside-toplevel
     if len(data) == 0:
         return pd.DataFrame()
     dependent_col_name = list(data.keys())[0]
@@ -63,7 +63,7 @@ def _generate_pandas_index(
 ) -> pd.Index | pd.MultiIndex | None:
     # the first element in the dict given by parameter_tree is always the dependent
     # parameter and the index is therefore formed from the rest
-    import pandas as pd
+    import pandas as pd  # pylint: disable=import-outside-toplevel
     keys = list(data.keys())
     if len(data) <= 1:
         index = None

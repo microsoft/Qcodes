@@ -8,7 +8,7 @@ from time import sleep
 import hypothesis.strategies as hst
 import numpy as np
 import pytest
-import xarray
+import xarray as xr
 from hypothesis import HealthCheck, given, settings
 from numpy.testing import assert_allclose, assert_array_equal
 
@@ -1708,7 +1708,8 @@ def test_datasaver_export(
         assert os.listdir(path) == [expected_filename]
 
         if export_type == DataExportType.NETCDF:
-            xr_ds = xarray.open_dataset(os.path.join(path, expected_filename))
+
+            xr_ds = xr.open_dataset(os.path.join(path, expected_filename))
             assert xr_ds.attrs["metadata_added_after_export"] == 69
     else:
         assert os.listdir(path) == []

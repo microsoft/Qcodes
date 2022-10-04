@@ -6,10 +6,7 @@ from collections.abc import Mapping, Sequence
 from copy import deepcopy
 from functools import partial
 
-import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib import ticker
-from matplotlib.transforms import Bbox
 from numpy.ma import getmask, masked_invalid
 
 import qcodes
@@ -83,6 +80,8 @@ class MatPlot(BasePlot):
         return self.subplots[key]
 
     def _init_plot(self, subplots=None, figsize=None, num=None):
+        import matplotlib.pyplot as plt
+
         if isinstance(subplots, Mapping):
             if figsize is None:
                 figsize = (6, 4)
@@ -235,6 +234,9 @@ class MatPlot(BasePlot):
         """
         # matplotlib doesn't know how to autoscale to a pcolormesh after the
         # first draw (relim ignores it...) so we have to do this ourselves
+
+        from matplotlib.transforms import Bbox
+
         bboxes = dict(zip(self.subplots, [[] for p in self.subplots]))
 
         for trace in self.traces:
@@ -451,6 +453,9 @@ class MatPlot(BasePlot):
         This scales units defined in BasePlot.standardunits only
         to avoid prefixes on combined or non standard units
         """
+
+        from matplotlib import ticker
+
         def scale_formatter(i, pos, scale):
             return f"{i * scale:g}"
 

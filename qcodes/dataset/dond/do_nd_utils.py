@@ -1,35 +1,47 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
-from typing import Callable, Iterator, List, Optional, Sequence, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Callable,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
-import matplotlib.axes
-import matplotlib.colorbar
+if TYPE_CHECKING:
+    import matplotlib.axes
+    import matplotlib.colorbar
 
 from qcodes.dataset.data_set_protocol import DataSetProtocol
-from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.plotting import plot_and_save_image
 from qcodes.parameters import MultiParameter, ParameterBase
+
+if TYPE_CHECKING:
+    from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 
 ActionsT = Sequence[Callable[[], None]]
 BreakConditionT = Callable[[], bool]
 
 ParamMeasT = Union[ParameterBase, Callable[[], None]]
 
-AxesTuple = Tuple[matplotlib.axes.Axes, matplotlib.colorbar.Colorbar]
+AxesTuple = Tuple["matplotlib.axes.Axes", "matplotlib.colorbar.Colorbar"]
 AxesTupleList = Tuple[
-    List[matplotlib.axes.Axes], List[Optional[matplotlib.colorbar.Colorbar]]
+    List["matplotlib.axes.Axes"], List[Optional["matplotlib.colorbar.Colorbar"]]
 ]
 AxesTupleListWithDataSet = Tuple[
     DataSetProtocol,
-    List[matplotlib.axes.Axes],
-    List[Optional[matplotlib.colorbar.Colorbar]],
+    List["matplotlib.axes.Axes"],
+    List[Optional["matplotlib.colorbar.Colorbar"]],
 ]
 MultiAxesTupleListWithDataSet = Tuple[
     Tuple[DataSetProtocol, ...],
-    Tuple[List[matplotlib.axes.Axes], ...],
-    Tuple[List[Optional[matplotlib.colorbar.Colorbar]], ...],
+    Tuple[List["matplotlib.axes.Axes"], ...],
+    Tuple[List[Optional["matplotlib.colorbar.Colorbar"]], ...],
 ]
 
 

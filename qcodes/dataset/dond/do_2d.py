@@ -3,20 +3,15 @@ from __future__ import annotations
 import logging
 import sys
 import time
-from typing import Sequence
+from typing import TYPE_CHECKING, Sequence
 
 import numpy as np
 from tqdm.auto import tqdm
 
 from qcodes import config
 from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
-from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.dond.do_nd_utils import (
-    ActionsT,
-    AxesTupleListWithDataSet,
     BreakConditionInterrupt,
-    BreakConditionT,
-    ParamMeasT,
     _catch_interrupts,
     _handle_plotting,
     _register_actions,
@@ -34,6 +29,14 @@ from qcodes.parameters import ParameterBase
 
 LOG = logging.getLogger(__name__)
 
+if TYPE_CHECKING:
+    from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
+    from qcodes.dataset.dond.do_nd_utils import (
+        ActionsT,
+        AxesTupleListWithDataSet,
+        BreakConditionT,
+        ParamMeasT,
+    )
 
 def do2d(
     param_set1: ParameterBase,
