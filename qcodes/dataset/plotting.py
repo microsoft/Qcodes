@@ -9,7 +9,7 @@ import logging
 import os
 from contextlib import contextmanager
 from functools import partial
-from typing import Any, List, Optional, Sequence, Tuple, cast
+from typing import Any, List, Literal, Optional, Sequence, Tuple, cast
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -17,7 +17,6 @@ import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.colorbar import Colorbar
 from matplotlib.ticker import FuncFormatter
-from typing_extensions import Literal
 
 import qcodes as qc
 from qcodes.dataset.data_set import load_by_run_spec

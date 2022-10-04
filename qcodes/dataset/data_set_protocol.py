@@ -4,10 +4,20 @@ import os
 import warnings
 from collections.abc import Mapping, Sized
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Protocol,
+    Sequence,
+    Tuple,
+    Union,
+    runtime_checkable,
+)
 
 import numpy as np
-from typing_extensions import Protocol, TypeAlias, runtime_checkable
+from typing_extensions import TypeAlias
 
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase

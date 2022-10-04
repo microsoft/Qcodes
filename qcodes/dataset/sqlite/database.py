@@ -13,9 +13,9 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from os.path import expanduser, normpath
 from pathlib import Path
+from typing import Literal
 
 import numpy as np
-from typing_extensions import Literal
 
 import qcodes
 from qcodes.dataset.experiment_settings import reset_default_experiment_id

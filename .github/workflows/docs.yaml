@@ -18,21 +18,21 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python-version: ["3.7", "3.9", "3.10"]
+        python-version: ["3.8", "3.9", "3.10"]
         exclude:
           - os: windows-latest
             python-version: 3.9
           - os: windows-latest
             python-version: 3.10
           - os: ubuntu-latest
-            python-version: 3.7
+            python-version: 3.8
     env:
       DISPLAY: ':99.0'
       OS: ${{ matrix.os }}
       UPLOAD_TO_GHPAGES: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == '3.10' && github.event_name == 'push' && github.ref == 'refs/heads/master' }}
       # we expect no warnings from Sphinx in 3.10 and above
-      SPHIX_WARNINGS_AS_ERROR: ${{ matrix.python-version == '3.10' }}
-      SPHIX_OPTS: "-v"
+      SPHINX_WARNINGS_AS_ERROR: ${{ matrix.python-version == '3.10' }}
+      SPHINX_OPTS: "-v"
     steps:
     - uses: actions/checkout@v3.0.2
       with:
@@ -45,7 +45,7 @@ jobs:
     - name: set-sphinx-opts
       run: |
         echo "SPHIX_OPTS=-W -v" >> $GITHUB_ENV
-      if: ${{ fromJSON(env.SPHIX_WARNINGS_AS_ERROR) }}
+      if: ${{ fromJSON(env.SPHINX_WARNINGS_AS_ERROR) }}
     - name: setup ubuntu-latest xvfb
       uses: ./.github/actions/setup-ubuntu-latest-xvfb
       if: runner.os == 'Linux'
@@ -77,13 +77,13 @@ jobs:
     - name: Build docs on linux
       run: |
         cd docs
-        export SPHINXOPTS="${{ env.SPHIX_OPTS }}"
+        export SPHINXOPTS="${{ env.SPHINX_OPTS }}"
         make html
       if: runner.os == 'Linux'
     - name: Build docs on windows
       run: |
         cd docs
-        $env:SPHINXOPTS = "${{ env.SPHIX_OPTS }}"
+        $env:SPHINXOPTS = "${{ env.SPHINX_OPTS }}"
         ./make.bat html
       if: runner.os == 'Windows'
     - name: Upload build docs

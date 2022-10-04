@@ -2,10 +2,9 @@ import logging
 import struct
 import warnings
 from enum import Enum
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple
 
 import numpy as np
-from typing_extensions import Literal
 
 import qcodes.validators as vals
 from qcodes.data.data_set import DataSet

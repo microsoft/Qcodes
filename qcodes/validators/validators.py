@@ -12,12 +12,11 @@ from typing import Callable as TCallable
 from typing import Dict as TDict
 from typing import Generic, Hashable
 from typing import List as TList
-from typing import Optional
+from typing import Literal, Optional
 from typing import Sequence as TSequence
 from typing import Set, Tuple, TypeVar, Union, cast
 
 import numpy as np
-from typing_extensions import Literal
 
 BIGSTRING = 1000000000
 BIGINT = int(1e18)

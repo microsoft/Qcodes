@@ -21,7 +21,7 @@ repos:
     rev: v2.38.2
     hooks:
     - id: pyupgrade
-      args: ['--py37-plus']
+      args: ['--py38-plus']
   - repo: https://github.com/akaihola/darker
     rev: 1.5.1
     hooks:

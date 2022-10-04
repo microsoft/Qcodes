@@ -5,9 +5,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import TYPE_CHECKING, Any, Callable
-
-from typing_extensions import Literal
+from typing import TYPE_CHECKING, Any, Callable, Literal
 
 from .command import Command
 from .parameter_base import ParamDataType, ParameterBase
