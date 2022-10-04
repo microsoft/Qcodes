@@ -9,7 +9,7 @@ import traceback
 from collections.abc import Callable, Iterable, Sequence
 from datetime import datetime
 from functools import partial, reduce
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from IPython.display import clear_output, display
 from ipywidgets import (
@@ -26,7 +26,6 @@ from ipywidgets import (
     VBox,
 )
 from ruamel.yaml import YAML
-from typing_extensions import Literal
 
 import qcodes
 from qcodes.dataset import initialise_or_create_database_at

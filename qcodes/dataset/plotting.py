@@ -9,7 +9,7 @@ import logging
 import os
 from contextlib import contextmanager
 from functools import partial
-from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple, cast
+from typing import TYPE_CHECKING, Any, List, Literal, Optional, Sequence, Tuple, cast
 
 import numpy as np
 
@@ -17,8 +17,7 @@ if TYPE_CHECKING:
     import matplotlib
     from matplotlib.axes import Axes
     from matplotlib.colorbar import Colorbar
-    from typing_extensions import Literal
-
+    
 import qcodes as qc
 from qcodes.dataset.data_set import load_by_run_spec
 from qcodes.dataset.data_set_protocol import DataSetProtocol

@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING
-
-from typing_extensions import Protocol
+from typing import TYPE_CHECKING, Protocol
 
 if TYPE_CHECKING:
     from .parameter_base import ParamDataType, ParameterBase, ParamRawDataType

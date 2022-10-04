@@ -1,6 +1,4 @@
-from typing import Tuple
-
-from typing_extensions import Protocol
+from typing import Protocol, Tuple
 
 from qcodes.instrument.base import InstrumentProtocol
 

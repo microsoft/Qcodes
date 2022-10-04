@@ -11,9 +11,16 @@ import logging
 from collections import defaultdict
 from functools import partial
 from types import TracebackType
-from typing import TYPE_CHECKING, Callable, List, Sequence, Tuple, TypeVar, Union
-
-from typing_extensions import Protocol
+from typing import (
+    TYPE_CHECKING,
+    Callable,
+    List,
+    Protocol,
+    Sequence,
+    Tuple,
+    TypeVar,
+    Union,
+)
 
 from qcodes.utils import RespondingThread
 
