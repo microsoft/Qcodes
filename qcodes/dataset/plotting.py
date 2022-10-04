@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     import matplotlib
     from matplotlib.axes import Axes
     from matplotlib.colorbar import Colorbar
-    
+
 import qcodes as qc
 from qcodes.dataset.data_set import load_by_run_spec
 from qcodes.dataset.data_set_protocol import DataSetProtocol
