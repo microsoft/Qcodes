@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import itertools
 import sqlite3
-from typing import Any, List, Mapping, Sequence, Union
+from typing import Any, List, Mapping, Sequence, Tuple, Union
 
 import numpy as np
 from numpy import ndarray
@@ -45,7 +45,7 @@ def one(curr: sqlite3.Cursor, column: int | str) -> Any:
 
 
 def many(curr: sqlite3.Cursor,
-         columns: str | List[str],) -> list[Any]:
+         columns: str | List[str] | Tuple[str]) -> list[Any]:
     """Get the values of many columns from one row
     Args:
         curr: cursor to operate on
@@ -62,7 +62,7 @@ def many(curr: sqlite3.Cursor,
 
 
 def many_many(curr: sqlite3.Cursor,
-              columns: str | List[str],
+              columns: str | List[str] | Tuple[str],
               results: list | None = None) -> list[list[Any]]:
     """Get all values of many columns
     Args:

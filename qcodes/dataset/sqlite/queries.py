@@ -871,7 +871,7 @@ def _get_dependencies(conn: ConnectionPlus, layout_id: int) -> list[list[int]]:
     SELECT independent, axis_num FROM dependencies WHERE dependent=?
     """
     c = atomic_transaction(conn, sql, layout_id)
-    res = many_many(c, 'independent', 'axis_num')
+    res = many_many(c, ['independent', 'axis_num'])
     return res
 
 
