@@ -4,7 +4,7 @@ import os
 import warnings
 from collections.abc import Mapping, Sized
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Sequence, Tuple, Union
 
 import numpy as np
 from typing_extensions import Protocol, TypeAlias, runtime_checkable
@@ -221,6 +221,7 @@ class DataSetProtocol(Protocol, Sized):
         *params: str | ParamSpec | ParameterBase,
         start: int | None = None,
         end: int | None = None,
+        callback: Callable | None = None,
     ) -> ParameterData:
         pass
 

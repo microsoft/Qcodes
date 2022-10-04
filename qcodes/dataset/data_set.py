@@ -762,6 +762,7 @@ class DataSet(BaseDataSet):
         *params: str | ParamSpec | ParameterBase,
         start: int | None = None,
         end: int | None = None,
+        callback: Callable | None = None,
     ) -> ParameterData:
         """
         Returns the values stored in the :class:`.DataSet` for the specified parameters
@@ -801,6 +802,8 @@ class DataSet(BaseDataSet):
                 if None
             end: end value of selection range (by results count); ignored if
                 None
+            callback: Function called during the data loading every
+                Config.callback_percent.
 
         Returns:
             Dictionary from requested parameters to Dict of parameter names
@@ -813,7 +816,7 @@ class DataSet(BaseDataSet):
         else:
             valid_param_names = self._validate_parameters(*params)
         return get_parameter_data(self.conn, self.table_name,
-                                  valid_param_names, start, end)
+                                  valid_param_names, start, end, callback)
 
     def to_pandas_dataframe_dict(
         self,

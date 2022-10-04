@@ -45,6 +45,7 @@ from qcodes.dataset.sqlite.query_helpers import (
     update_where,
 )
 from qcodes.utils import deprecate, list_of_data_to_maybe_ragged_nd_array
+from qcodes.configuration import Config
 
 log = logging.getLogger(__name__)
 
@@ -161,7 +162,7 @@ def get_data(
         return [[]]
     query = _build_data_query(table_name, columns, start, end)
     c = atomic_transaction(conn, query)
-    res = many_many(c, *columns)
+    res = many_many(c, columns)
 
     return res
 
@@ -172,6 +173,7 @@ def get_parameter_data(
     columns: Sequence[str] = (),
     start: int | None = None,
     end: int | None = None,
+    callback: Callable | None = None,
 ) -> dict[str, dict[str, np.ndarray]]:
     """
     Get data for one or more parameters and its dependencies. The data
@@ -197,6 +199,8 @@ def get_parameter_data(
             are returned.
         start: start of range; if None, then starts from the top of the table
         end: end of range; if None, then ends at the bottom of the table
+        callback: Function called during the data loading every
+            Config.callback_percent.
     """
     rundescriber = get_rundescriber_from_result_table_name(conn, table_name)
 
@@ -212,7 +216,8 @@ def get_parameter_data(
             rundescriber,
             output_param,
             start,
-            end)
+            end,
+            callback)
     return output
 
 
@@ -223,6 +228,7 @@ def get_shaped_parameter_data_for_one_paramtree(
     output_param: str,
     start: int | None,
     end: int | None,
+    callback: Callable | None,
 ) -> dict[str, np.ndarray]:
     """
     Get the data for a parameter tree and reshape it according to the
@@ -239,7 +245,8 @@ def get_shaped_parameter_data_for_one_paramtree(
         rundescriber,
         output_param,
         start,
-        end
+        end,
+        callback
     )
     if rundescriber.shapes is not None:
         shape = rundescriber.shapes.get(output_param)
@@ -285,10 +292,11 @@ def get_parameter_data_for_one_paramtree(
     output_param: str,
     start: int | None,
     end: int | None,
+    callback: Callable | None,
 ) -> tuple[dict[str, np.ndarray], int]:
     interdeps = rundescriber.interdeps
     data, paramspecs, n_rows = _get_data_for_one_param_tree(
-        conn, table_name, interdeps, output_param, start, end
+        conn, table_name, interdeps, output_param, start, end, callback
     )
     if not paramspecs[0].name == output_param:
         raise ValueError("output_param should always be the first "
@@ -384,6 +392,7 @@ def _get_data_for_one_param_tree(
     output_param: str,
     start: int | None,
     end: int | None,
+    callback: Callable | None,
 ) -> tuple[list[list[Any]], list[ParamSpecBase], int]:
     output_param_spec = interdeps._id_to_paramspec[output_param]
     # find all the dependencies of this param
@@ -396,7 +405,8 @@ def _get_data_for_one_param_tree(
                                     output_param,
                                     *dependency_names,
                                     start=start,
-                                    end=end)
+                                    end=end,
+                                    callback=callback)
     n_rows = len(res)
     return res, paramspecs, n_rows
 
@@ -436,6 +446,7 @@ def get_parameter_tree_values(
     *other_param_names: str,
     start: int | None = None,
     end: int | None = None,
+    callback: Callable | None = None,
 ) -> list[list[Any]]:
     """
     Get the values of one or more columns from a data table. The rows
@@ -456,17 +467,61 @@ def get_parameter_tree_values(
         end: The (1-indexed) result to include as the last result to be
             returned. None is equivalent to "all the rest". If start > end,
             nothing is returned.
+        callback: Function called during the data loading every
+            Config.callback_percent.
 
     Returns:
         A list of list. The outer list index is row number, the inner list
         index is parameter value (first toplevel_param, then other_param_names)
     """
 
+    cursor = conn.cursor()
+
+    offset: int | np.ndarray
+
     offset = max((start - 1), 0) if start is not None else 0
     limit = max((end - offset), 0) if end is not None else -1
 
     if start is not None and end is not None and start > end:
         limit = 0
+
+    # start and end currently not working with callback
+    if start is None and end is None and callback is not None:
+
+        # Since sqlite3 does not allow to keep track of the data loading
+        # progress, we compute how many sqlite request correspond to
+        # a progress of Config.callback_percent
+
+        # First, we get the number of dependent parameters
+        rd = get_rundescriber_from_result_table_name(conn, result_table_name)._to_dict()
+        # New qcodes
+        if 'interdependencies_' in rd.keys():
+            nbParamDependent = len(rd['interdependencies_']['dependencies'])
+        # Old qcodes
+        else:
+            nbParamDependent = len([i for i in rd['interdependencies']['paramspecs'] if i['name']==toplevel_param_name][0]['depends_on'])
+
+        # Second, we get the number of points
+        sql_callback_query = f"""
+                            SELECT MAX(id)
+                            FROM "{result_table_name}"
+                            """
+        cursor.execute(sql_callback_query, ())
+        rows = cursor.fetchall()
+        max_id = int(rows[0]['max(id)'])
+        nb_point = int(max_id/nbParamDependent)
+
+        # Third, we get the number of rows corresponding to a download of
+        # Config.callback_percent
+        if nb_point>=100:
+            limit = int(max_id/100*Config.callback_percent/2)
+
+            offset = np.arange(0, nb_point, limit)
+            # Ensure that the last call gets all the points
+            if offset[-1]!=nb_point:
+                offset = np.append(offset, nb_point)
+
+            iteration = 100/(len(offset)-1)
 
     # Note: if we use placeholders for the SELECT part, then we get rows
     # back that have "?" as all their keys, making further data extraction
@@ -482,15 +537,31 @@ def get_parameter_tree_values(
                     FROM "{result_table_name}"
                     WHERE {toplevel_param_name} IS NOT NULL)
                    """
-    sql = f"""
-          SELECT {columns_for_select}
-          FROM {sql_subquery}
-          LIMIT {limit} OFFSET {offset}
-          """
 
-    cursor = conn.cursor()
-    cursor.execute(sql, ())
-    res = many_many(cursor, *columns)
+    if isinstance(offset, int) and callback is None:
+        sql = f"""
+            SELECT {columns_for_select}
+            FROM {sql_subquery}
+            LIMIT {limit} OFFSET {offset}
+            """
+
+        cursor.execute(sql, ())
+        res = many_many(cursor, columns)
+    if isinstance(offset, np.ndarray) and callback is not None:
+
+        res = []
+        progress = 0.
+        callback(progress)
+        for i in range(len(offset)-1):
+            sql = f"""
+                  SELECT {columns_for_select}
+                  FROM {sql_subquery}
+                  LIMIT {limit} OFFSET {offset[i]}
+                  """
+            cursor.execute(sql)
+            res = many_many(cursor, columns, res)
+            progress += iteration
+            callback(progress)
 
     return res
 
@@ -1404,8 +1475,12 @@ def _get_paramspec(conn: ConnectionPlus,
     WHERE parameter="{param_name}" and run_id={run_id}
     """
     c = conn.execute(sql)
-    resp = many(c, 'layout_id', 'run_id', 'parameter', 'label', 'unit',
-                'inferred_from')
+    resp = many(c, ['layout_id',
+                    'run_id',
+                    'parameter',
+                    'label',
+                    'unit',
+                    'inferred_from'])
     (layout_id, _, _, label, unit, inferred_from_string) = resp
 
     if inferred_from_string:
@@ -2093,7 +2168,8 @@ def load_new_data_for_rundescriber(
             rundescriber=rundescriber,
             output_param=meas_parameter,
             start=start,
-            end=None
+            end=None,
+            callback=None,
         )
         new_data_dict[meas_parameter] = new_data
         updated_read_status[meas_parameter] = start + n_rows_read - 1
