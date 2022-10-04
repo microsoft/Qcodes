@@ -101,9 +101,9 @@ def logfile_to_dataframe(
     return log_to_dataframe(raw_cont, columns, separator)
 
 
-def time_difference(firsttimes: pd.Series,
-                    secondtimes: pd.Series,
-                    use_first_series_labels: bool = True) -> pd.Series:
+def time_difference(
+    firsttimes: pd.Series, secondtimes: pd.Series, use_first_series_labels: bool = True
+) -> pd.Series:
     """
     Calculate the time differences between two series
     containing time stamp strings as their values.

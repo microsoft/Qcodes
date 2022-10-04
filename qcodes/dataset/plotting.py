@@ -160,9 +160,9 @@ def plot_dataset(
     # First find the kwargs that belong to subplots and than add those that are
     # redirected to the `figure`-call.
     SUBPLOTS_OWN_KWARGS = set(inspect.signature(plt.subplots).parameters.keys())
-    SUBPLOTS_OWN_KWARGS.remove('fig_kw')
+    SUBPLOTS_OWN_KWARGS.remove("fig_kw")
     FIGURE_KWARGS = set(inspect.signature(plt.figure).parameters.keys())
-    FIGURE_KWARGS.remove('kwargs')
+    FIGURE_KWARGS.remove("kwargs")
     SUBPLOTS_KWARGS = SUBPLOTS_OWN_KWARGS.union(FIGURE_KWARGS)
 
 
