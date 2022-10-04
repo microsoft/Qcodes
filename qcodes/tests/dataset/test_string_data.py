@@ -7,7 +7,7 @@ import pytest
 from hypothesis import HealthCheck, given, settings
 
 import qcodes as qc
-from qcodes.dataset.data_export import load_by_id
+from qcodes.dataset import load_by_id
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.measurements import DataSaver, Measurement

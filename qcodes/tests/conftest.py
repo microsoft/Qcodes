@@ -6,7 +6,7 @@ import pytest
 from hypothesis import settings
 
 import qcodes as qc
-from qcodes import initialise_database, new_data_set
+from qcodes.dataset import initialise_database, new_data_set
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.experiment_container import new_experiment

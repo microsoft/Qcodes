@@ -3,7 +3,7 @@ import time
 from typing import Any, Sequence, Union
 
 import numpy as np
-from pyvisa import errors
+from pyvisa import constants, errors
 
 from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
 from qcodes.parameters import (
@@ -600,7 +600,7 @@ class PNABase(VisaInstrument):
             active_trace = self.active_trace()
         except errors.VisaIOError as e:
             self.log.debug("Exception on querying active trace: %r", e)
-            if e.error_code == errors.StatusCode.error_timeout:
+            if e.error_code == constants.StatusCode.error_timeout:
                 self.log.info("No active trace on PNA")
                 active_trace = None
             else:

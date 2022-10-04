@@ -9,8 +9,8 @@ import weakref
 import pytest
 
 from qcodes.instrument import Instrument, InstrumentBase, find_or_create_instrument
+from qcodes.metadatable import Metadatable
 from qcodes.parameters import Function, Parameter
-from qcodes.utils.metadata import Metadatable
 
 from .instrument_mocks import (
     DummyChannelInstrument,

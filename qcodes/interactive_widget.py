@@ -29,9 +29,8 @@ from ipywidgets import (
 from ruamel.yaml import YAML
 
 import qcodes
-from qcodes.dataset import initialise_or_create_database_at
+from qcodes.dataset import experiments, initialise_or_create_database_at, plot_dataset
 from qcodes.dataset.data_set_protocol import DataSetProtocol
-from qcodes.dataset.plotting import plot_dataset
 
 if TYPE_CHECKING:
     from qcodes.dataset.descriptions.param_spec import ParamSpecBase
@@ -516,9 +515,7 @@ def experiments_widget(
     if data_sets is None:
         if db is not None:
             initialise_or_create_database_at(db)
-        data_sets = [
-            ds for exp in qcodes.experiments() for ds in exp.data_sets()
-        ]
+        data_sets = [ds for exp in experiments() for ds in exp.data_sets()]
     if sort_by == "run_id":
         data_sets = sorted(data_sets, key=lambda ds: ds.run_id)
     elif sort_by == "timestamp":

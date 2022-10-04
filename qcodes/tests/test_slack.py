@@ -4,7 +4,7 @@ import pytest
 from requests.exceptions import ConnectTimeout, HTTPError, ReadTimeout
 from urllib3.exceptions import ReadTimeoutError
 
-from qcodes import Parameter
+from qcodes.parameters import Parameter
 
 
 class AnyStringWith(str):

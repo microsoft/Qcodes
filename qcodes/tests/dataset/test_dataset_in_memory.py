@@ -11,8 +11,7 @@ import xarray
 from hypothesis import HealthCheck, given, settings
 from numpy.testing import assert_almost_equal
 
-from qcodes import load_by_id
-from qcodes.dataset import load_by_run_spec
+from qcodes.dataset import load_by_id, load_by_run_spec
 from qcodes.dataset.data_set_in_memory import DataSetInMem
 from qcodes.dataset.data_set_protocol import DataSetType
 from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic_transaction

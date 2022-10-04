@@ -4,11 +4,10 @@ from typing import List
 import pytest
 
 import qcodes as qc
-from qcodes import load_by_guid, load_or_create_experiment
+from qcodes.dataset import connect, load_by_guid, load_or_create_experiment
 from qcodes.dataset.data_set_in_memory import DataSetInMem
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
-from qcodes.dataset.sqlite.database import connect
 
 
 def test_create_dataset_in_memory_explicit_db(empty_temp_db):

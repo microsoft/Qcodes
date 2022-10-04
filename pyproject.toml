@@ -164,10 +164,7 @@ warn_unused_ignores = true
 # this triggers failures due to returning
 # values from untyped 3th party libs
 warn_return_any = false
-# this happens both internally
-# and in external libs that dont use
-# __all__ in their public reexported api
-no_implicit_reexport = false
+no_implicit_reexport = true
 strict_equality = true
 strict_concatenate = true
 

@@ -6,11 +6,13 @@
 import warnings
 from typing import Any
 
+import qcodes._version
 import qcodes.configuration as qcconfig
 from qcodes.logger.logger import conditionally_start_all_logging
-from qcodes.utils import add_to_spyder_UMR_excludelist
+from qcodes.utils.spyder_utils import add_to_spyder_UMR_excludelist
 
-from ._version import __version__
+__version__ = qcodes._version.__version__
+
 
 config: qcconfig.Config = qcconfig.Config()
 
