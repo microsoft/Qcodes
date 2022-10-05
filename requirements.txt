@@ -126,7 +126,7 @@ schema~=0.7.5
 scipy==1.9.1
 Send2Trash~=1.8.0
 six~=1.16.0
-slack-sdk~=3.18.4
+slack-sdk~=3.19.0
 snowballstemmer~=2.2.0
 sortedcontainers~=2.4.0
 soupsieve~=2.3.2.post1
