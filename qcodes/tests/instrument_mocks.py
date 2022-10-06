@@ -209,7 +209,7 @@ class DmmExponentialParameter(Parameter):
         dac = self.root_instrument._setter_instr
         val = self._ed.send(dac.ch1.cache.get())
         next(self._ed)
-        log.debug(f"Getting raw value parameter {self.full_name} as {val}")
+        log.debug(f"Getting raw value of parameter: {self.full_name} as {val}")
         return val
 
     @staticmethod
@@ -241,7 +241,7 @@ class DmmGaussParameter(Parameter):
         dac = self.root_instrument._setter_instr
         val = self._gauss.send((dac.ch1.cache.get(), dac.ch2.cache.get()))
         next(self._gauss)
-        log.debug(f"Getting raw value parameter {self.full_name} as {val}")
+        log.debug(f"Getting raw value of parameter: {self.full_name} as {val}")
         return val
 
     def _gauss_model(self):

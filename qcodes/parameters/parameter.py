@@ -179,13 +179,13 @@ class Parameter(ParameterBase):
         bind_to_instrument: bool = True,
         **kwargs: Any,
     ) -> None:
-        def _get_manual_parameter() -> Any:
+        def _get_manual_parameter() -> ParamRawDataType:
             log.debug(
-                f"Getting raw value parameter {self.full_name} as {self.cache.raw_value}"
+                f"Getting raw value of parameter: {self.full_name} as {self.cache.raw_value}"
             )
             return self.cache.raw_value
 
-        def _set_manual_parameter(x: Any) -> Any:
+        def _set_manual_parameter(x: ParamRawDataType) -> ParamRawDataType:
             log.debug(f"Setting raw value of parameter: {self.full_name} to {x}")
             return x
 
