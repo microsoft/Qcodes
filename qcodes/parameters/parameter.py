@@ -181,12 +181,14 @@ class Parameter(ParameterBase):
     ) -> None:
         def _get_manual_parameter() -> ParamRawDataType:
             log.debug(
-                f"Getting raw value of parameter: {self.full_name} as {self.cache.raw_value}"
+                "Getting raw value of parameter: %s as %s",
+                self.full_name,
+                self.cache.raw_value,
             )
             return self.cache.raw_value
 
         def _set_manual_parameter(x: ParamRawDataType) -> ParamRawDataType:
-            log.debug(f"Setting raw value of parameter: {self.full_name} to {x}")
+            log.debug("Setting raw value of parameter: %s to %s", self.full_name, x)
             return x
 
         if instrument is not None and bind_to_instrument:
