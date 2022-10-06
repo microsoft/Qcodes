@@ -8,7 +8,7 @@ import os
 from typing import TYPE_CHECKING, Any, Callable, Literal
 
 from .command import Command
-from .parameter_base import ParamDataType, ParameterBase
+from .parameter_base import ParamDataType, ParameterBase, ParamRawDataType
 from .sweep_values import SweepFixedValues
 
 if TYPE_CHECKING:
