@@ -699,6 +699,7 @@ def dond(
             # https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterable
             # https://github.com/python/cpython/issues/86992#issuecomment-1093897307
             for set_events in tqdm(sweeper, disable=not show_progress):  # type: ignore[call-overload]
+                LOG.debug(f"processing set events: {set_events}")
                 results: dict[ParameterBase, Any] = {}
                 for set_event in set_events:
                     if set_event.should_set:

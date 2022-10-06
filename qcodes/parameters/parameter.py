@@ -179,6 +179,16 @@ class Parameter(ParameterBase):
         bind_to_instrument: bool = True,
         **kwargs: Any,
     ) -> None:
+        def _get_manual_parameter() -> Any:
+            log.debug(
+                f"Getting raw value parameter {self.full_name} as {self.cache.raw_value}"
+            )
+            return self.cache.raw_value
+
+        def _set_manual_parameter(x: Any) -> Any:
+            log.debug(f"Setting raw value of parameter: {self.full_name} to {x}")
+            return x
+
         if instrument is not None and bind_to_instrument:
             existing_parameter = instrument.parameters.get(name, None)
 
@@ -236,7 +246,7 @@ class Parameter(ParameterBase):
             )
         elif not self.gettable and get_cmd is not False:
             if get_cmd is None:
-                self.get_raw = lambda: self.cache.raw_value  # type: ignore[assignment]
+                self.get_raw: Callable[[], Any] = _get_manual_parameter
             else:
                 if isinstance(get_cmd, str) and instrument is None:
                     raise TypeError(
@@ -247,7 +257,7 @@ class Parameter(ParameterBase):
 
                 exec_str_ask = getattr(instrument, "ask", None) if instrument else None
 
-                self.get_raw = Command(  # type: ignore[assignment]
+                self.get_raw = Command(
                     arg_count=0,
                     cmd=get_cmd,
                     exec_str=exec_str_ask,
@@ -263,7 +273,7 @@ class Parameter(ParameterBase):
             )
         elif not self.settable and set_cmd is not False:
             if set_cmd is None:
-                self.set_raw: Callable[..., Any] = lambda x: x
+                self.set_raw: Callable[..., Any] = _set_manual_parameter
             else:
                 if isinstance(set_cmd, str) and instrument is None:
                     raise TypeError(

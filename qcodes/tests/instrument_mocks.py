@@ -207,8 +207,9 @@ class DmmExponentialParameter(Parameter):
         provide a ``get`` method on the parameter instance.
         """
         dac = self.root_instrument._setter_instr
-        val = self._ed.send(dac.ch1())
+        val = self._ed.send(dac.ch1.cache.get())
         next(self._ed)
+        log.debug(f"Getting raw value parameter {self.full_name} as {val}")
         return val
 
     @staticmethod
@@ -238,8 +239,9 @@ class DmmGaussParameter(Parameter):
         provide a ``get`` method on the parameter instance.
         """
         dac = self.root_instrument._setter_instr
-        val = self._gauss.send((dac.ch1.get(), dac.ch2.get()))
+        val = self._gauss.send((dac.ch1.cache.get(), dac.ch2.cache.get()))
         next(self._gauss)
+        log.debug(f"Getting raw value parameter {self.full_name} as {val}")
         return val
 
     def _gauss_model(self):
