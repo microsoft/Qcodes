@@ -1,7 +1,6 @@
 """
 Test suite for monitor
 """
-import asyncio
 import json
 import random
 
@@ -40,7 +39,19 @@ def _make_channel_instr():
     finally:
         instr.close()
 
-# Test cases for the qcodes monitor
+
+@pytest.fixture(name="channel_instr_monitor", params=[True, False])
+def _make_channel_instr_monitor(channel_instr, request):
+
+    m = monitor.Monitor(
+        channel_instr.A.dummy_start,
+        channel_instr.B.dummy_start,
+        use_root_instrument=request.param,
+    )
+    try:
+        yield m, request.param
+    finally:
+        m.stop()
 
 
 def test_setup_teardown(request):
@@ -86,95 +97,75 @@ def test_double_join(request):
     m.stop()
 
 
-def test_connection(request, event_loop):
+@pytest.mark.usefixtures("inst_and_monitor")
+@pytest.mark.asyncio
+async def test_connection():
     """
     Test that we can connect to a monitor instance
     """
-    m = monitor.Monitor()
-    request.addfinalizer(m.stop)
-
-    async def async_test_connection():
-        async with websockets.connect(f"ws://localhost:{monitor.WEBSOCKET_PORT}"):
-            pass
-
-    event_loop.run_until_complete(async_test_connection())
+    async with websockets.connect(f"ws://localhost:{monitor.WEBSOCKET_PORT}"):
+        pass
 
 
-def test_parameter(inst_and_monitor, event_loop):
+@pytest.mark.asyncio
+async def test_instrument_update(inst_and_monitor):
     """
     Test instrument updates
     """
-
     instr, my_monitor, monitor_parameters, param = inst_and_monitor
+    async with websockets.connect(
+        f"ws://localhost:{monitor.WEBSOCKET_PORT}"
+    ) as websocket:
 
-    async def async_test_monitor():
-        async with websockets.connect(
-            f"ws://localhost:{monitor.WEBSOCKET_PORT}"
-        ) as websocket:
+        # Receive data from monitor
+        data = await websocket.recv()
+        data = json.loads(data)
+        # Check fields
+        assert "ts" in data
+        assert "parameters" in data
+        # Check one instrument and "No Instrument" is being sent
+        assert len(data["parameters"]) == 2
+        assert data["parameters"][1]["instrument"] == "Unbound Parameter"
+        metadata = data["parameters"][0]
+        assert metadata["instrument"] == str(instr)
 
-            # Recieve data from monitor
-            data = await websocket.recv()
-            data = json.loads(data)
-            # Check fields
-            assert "ts" in data
-            assert "parameters" in data
-            # Check one instrument and "No Instrument" is being sent
+        # Check parameter values
+        old_timestamps = {}
+        for local_param, mon in zip(monitor_parameters, metadata["parameters"]):
+            assert isinstance(local_param, Parameter)
+            assert str(local_param.get_latest()) == mon["value"]
+            assert local_param.label == mon["name"]
+            old_timestamps[local_param.label] = float(mon["ts"])
+            local_param(random.random())
+
+        # Check parameter updates
+        data_str = await websocket.recv()
+        data_str = await websocket.recv()
+        data = json.loads(data_str)
+        metadata = data["parameters"][0]
+        for local_param, mon in zip(monitor_parameters, metadata["parameters"]):
+            assert str(local_param.get_latest()) == mon["value"]
+            assert isinstance(local_param, Parameter)
+            assert local_param.label == mon["name"]
+            assert float(mon["ts"]) > old_timestamps[local_param.label]
+
+        # Check unbound parameter
+        metadata = data["parameters"][1]["parameters"]
+        assert len(metadata) == 1
+        assert param.label == metadata[0]["name"]
+
+
+@pytest.mark.asyncio
+async def test_monitor_root_instr(channel_instr_monitor):
+    _, use_root_instrument = channel_instr_monitor
+    async with websockets.connect(
+        f"ws://localhost:{monitor.WEBSOCKET_PORT}"
+    ) as websocket:
+
+        # Receive data from monitor
+        data = await websocket.recv()
+        data = json.loads(data)
+        if use_root_instrument:
+            assert len(data["parameters"]) == 1
+        else:
             assert len(data["parameters"]) == 2
-            assert data["parameters"][1]["instrument"] == "Unbound Parameter"
-            metadata = data["parameters"][0]
-            assert metadata["instrument"] == str(instr)
-
-            # Check parameter values
-            old_timestamps = {}
-            for local_param, mon in zip(monitor_parameters, metadata["parameters"]):
-                assert isinstance(local_param, Parameter)
-                assert str(local_param.get_latest()) == mon["value"]
-                assert local_param.label == mon["name"]
-                old_timestamps[local_param.label] = float(mon["ts"])
-                local_param(random.random())
-
-            # Check parameter updates
-            data_str = await websocket.recv()
-            data_str = await websocket.recv()
-            data = json.loads(data_str)
-            metadata = data["parameters"][0]
-            for local_param, mon in zip(monitor_parameters, metadata["parameters"]):
-                assert str(local_param.get_latest()) == mon["value"]
-                assert isinstance(local_param, Parameter)
-                assert local_param.label == mon["name"]
-                assert float(mon["ts"]) > old_timestamps[local_param.label]
-
-            # Check unbound parameter
-            metadata = data["parameters"][1]["parameters"]
-            assert len(metadata) == 1
-            assert param.label == metadata[0]["name"]
-
-    event_loop.run_until_complete(async_test_monitor())
-
-
-@pytest.mark.parametrize("use_root_instrument", [True, False])
-def test_use_root_instrument(request, channel_instr, use_root_instrument, event_loop):
-    """
-    Test instrument updates
-    """
-    m = monitor.Monitor(
-        channel_instr.A.dummy_start,
-        channel_instr.B.dummy_start,
-        use_root_instrument=use_root_instrument,
-    )
-    request.addfinalizer(m.stop)
-
-    async def async_test_monitor(use_root_instrument):
-        async with websockets.connect(
-            f"ws://localhost:{monitor.WEBSOCKET_PORT}"
-        ) as websocket:
-
-            # Recieve data from monitor
-            data = await websocket.recv()
-            data = json.loads(data)
-            if use_root_instrument:
-                assert len(data["parameters"]) == 1
-            else:
-                assert len(data["parameters"]) == 2
-
-    event_loop.run_until_complete(async_test_monitor(use_root_instrument))
