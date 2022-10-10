@@ -42,6 +42,7 @@ def _make_channel_instr():
 
 # Test cases for the qcodes monitor
 
+
 def test_setup_teardown(request):
     """
     Check that monitor starts up and closes correctly
@@ -85,39 +86,25 @@ def test_double_join(request):
     m.stop()
 
 
-def test_connection(request):
+def test_connection(request, event_loop):
     """
     Test that we can connect to a monitor instance
     """
     m = monitor.Monitor()
     request.addfinalizer(m.stop)
-    loop = asyncio.new_event_loop()
-
-    def cleanup_loop():
-        loop.stop()
-        loop.close()
-    request.addfinalizer(cleanup_loop)
-    asyncio.set_event_loop(loop)
 
     async def async_test_connection():
         async with websockets.connect(f"ws://localhost:{monitor.WEBSOCKET_PORT}"):
             pass
-    loop.run_until_complete(async_test_connection())
 
-    m.stop()
+    event_loop.run_until_complete(async_test_connection())
 
-def test_parameter(request, inst_and_monitor):
+
+def test_parameter(inst_and_monitor, event_loop):
     """
     Test instrument updates
     """
-    loop = asyncio.new_event_loop()
 
-    def cleanup_loop():
-        loop.stop()
-        loop.close()
-    request.addfinalizer(cleanup_loop)
-
-    asyncio.set_event_loop(loop)
     instr, my_monitor, monitor_parameters, param = inst_and_monitor
 
     async def async_test_monitor():
@@ -162,24 +149,14 @@ def test_parameter(request, inst_and_monitor):
             assert len(metadata) == 1
             assert param.label == metadata[0]["name"]
 
-    loop.run_until_complete(async_test_monitor())
+    event_loop.run_until_complete(async_test_monitor())
 
 
 @pytest.mark.parametrize("use_root_instrument", [True, False])
-def test_use_root_instrument(request, channel_instr, use_root_instrument):
+def test_use_root_instrument(request, channel_instr, use_root_instrument, event_loop):
     """
     Test instrument updates
     """
-    loop = asyncio.new_event_loop()
-
-    def cleanup_loop():
-        loop.stop()
-        loop.close()
-
-    request.addfinalizer(cleanup_loop)
-
-    asyncio.set_event_loop(loop)
-
     m = monitor.Monitor(
         channel_instr.A.dummy_start,
         channel_instr.B.dummy_start,
@@ -200,4 +177,4 @@ def test_use_root_instrument(request, channel_instr, use_root_instrument):
             else:
                 assert len(data["parameters"]) == 2
 
-    loop.run_until_complete(async_test_monitor(use_root_instrument))
+    event_loop.run_until_complete(async_test_monitor(use_root_instrument))
