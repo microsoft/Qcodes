@@ -17,13 +17,12 @@ list of parameters to monitor:
 
 ``monitor = qcodes.Monitor(param1, param2, param3, ...)``
 """
-
+from __future__ import annotations
 
 import asyncio
 import json
 import logging
 import os
-import signal
 import socketserver
 import time
 import webbrowser
@@ -31,7 +30,7 @@ from asyncio import CancelledError
 from collections import defaultdict
 from contextlib import suppress
 from threading import Event, Thread
-from typing import Any, Awaitable, Callable, Dict, Optional, Sequence, Union
+from typing import Any, Awaitable, Callable, Sequence
 
 import websockets
 import websockets.exceptions
@@ -47,18 +46,18 @@ log = logging.getLogger(__name__)
 
 def _get_metadata(
     *parameters: Parameter, use_root_instrument: bool = True
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Return a dictionary that contains the parameter metadata grouped by the
     instrument it belongs to.
     """
     metadata_timestamp = time.time()
     # group metadata by instrument
-    metas: Dict[Any, Any] = defaultdict(list)
+    metas: dict[Any, Any] = defaultdict(list)
     for parameter in parameters:
         # Get the latest value from the parameter,
         # respecting the max_val_age parameter
-        meta: Dict[str, Optional[Union[float, str]]] = {}
+        meta: dict[str, float | str | None] = {}
         meta["value"] = str(parameter.get_latest())
         timestamp = parameter.get_latest.get_timestamp()
         if timestamp is not None:
@@ -151,8 +150,8 @@ class Monitor(Thread):
                 raise TypeError(f"We can only monitor QCodes "
                                 f"Parameters, not {type(parameter)}")
 
-        self.loop: Optional[asyncio.AbstractEventLoop] = None
-        self._stop_loop_future: Optional[asyncio.Future] = None
+        self.loop: asyncio.AbstractEventLoop | None = None
+        self._stop_loop_future: asyncio.Future | None = None
         self._parameters = parameters
         self.loop_is_closed = Event()
         self.server_is_started = Event()
@@ -211,7 +210,7 @@ class Monitor(Thread):
         self.join()
         Monitor.running = None
 
-    def join(self, timeout: Optional[float] = None) -> None:
+    def join(self, timeout: float | None = None) -> None:
         """
         Overwrite ``Thread.join`` to make sure server is stopped before
         joining avoiding a potential deadlock.
