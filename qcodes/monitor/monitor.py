@@ -190,8 +190,10 @@ class Monitor(Thread):
                 except asyncio.CancelledError:
                     log.debug("Websocket server thread shutting down")
 
-        asyncio.run(run_loop())
-        self.loop_is_closed.set()
+        try:
+            asyncio.run(run_loop())
+        finally:
+            self.loop_is_closed.set()
 
     def update_all(self) -> None:
         """
