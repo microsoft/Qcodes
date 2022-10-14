@@ -93,7 +93,10 @@ def _handler(
     """
     Return the websockets server handler.
     """
-    async def server_func(websocket: websockets.server.WebSocketServerProtocol, _: str) -> None:
+
+    async def server_func(
+        websocket: websockets.server.WebSocketServerProtocol, _: str
+    ) -> None:
         """
         Create a websockets handler that sends parameter values to a listener
         every "interval" seconds.
