@@ -1,3 +1,9 @@
+from .Keysight_33210a import Keysight33210A
+from .Keysight_33250a import Keysight33250A
+from .Keysight_33511b import Keysight33511B
+from .Keysight_33512b import Keysight33512B
+from .Keysight_33522b import Keysight33522B
+from .Keysight_33622a import Keysight33622A
 from .Keysight_34410A_submodules import Keysight34410A
 from .Keysight_34411A_submodules import Keysight34411A
 from .Keysight_34460A_submodules import Keysight34460A
@@ -26,9 +32,18 @@ from .Keysight_N9030B import (
     KeysightN9030BSpectrumAnalyzerMode,
 )
 from .Keysight_P9374A import KeysightP9374A
+from .KeysightAgilent_33XXX import Keysight33xxxOutputChannel, Keysight33xxxSyncChannel
 from .N52xx import KeysightPNAPort, KeysightPNATrace
 
 __all__ = [
+    "Keysight33210A",
+    "Keysight33250A",
+    "Keysight33511B",
+    "Keysight33512B",
+    "Keysight33522B",
+    "Keysight33622A",
+    "Keysight33xxxOutputChannel",
+    "Keysight33xxxSyncChannel",
     "Keysight34410A",
     "Keysight34411A",
     "Keysight34460A",
@@ -52,10 +67,10 @@ __all__ = [
     "KeysightN5230C",
     "KeysightN6705B",
     "KeysightN6705BChannel",
-    "KeysightP9374A",
-    "KeysightPNAPort",
-    "KeysightPNATrace",
     "KeysightN9030B",
     "KeysightN9030BPhaseNoiseMode",
     "KeysightN9030BSpectrumAnalyzerMode",
+    "KeysightP9374A",
+    "KeysightPNAPort",
+    "KeysightPNATrace",
 ]
