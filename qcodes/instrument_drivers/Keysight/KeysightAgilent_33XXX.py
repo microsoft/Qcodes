@@ -17,7 +17,7 @@ log = logging.getLogger(__name__)
 
 class Keysight33xxxOutputChannel(InstrumentChannel):
     """
-    Class to hold the output channel of a waveform generator
+    Class to hold the output channel of a Keysight 33xxxx waveform generator.
     """
     def __init__(self, parent: Instrument, name: str, channum: int) -> None:
         """
@@ -251,8 +251,8 @@ OutputChannel = Keysight33xxxOutputChannel
 
 class Keysight33xxxSyncChannel(InstrumentChannel):
     """
-    Class to hold the sync output. Has very few parameters for
-    single channel instruments
+    Class to hold the sync output of a Keysight 33xxxx waveform generator.
+    Has very few parameters for single channel instruments.
     """
 
     def __init__(self, parent: Instrument, name: str):
