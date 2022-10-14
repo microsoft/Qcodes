@@ -224,7 +224,7 @@ class Monitor(Thread):
             log.debug("monitor is dead")
             return
         try:
-            if self.loop is not None:
+            if self.loop is not None and self._stop_loop_future is not None:
                 log.debug("Instructing server to stop event loop.")
                 self.loop.call_soon_threadsafe(self._stop_loop_future.cancel)
             else:
