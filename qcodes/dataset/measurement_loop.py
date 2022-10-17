@@ -434,7 +434,10 @@ class MeasurementLoop:
 
     @property
     def dataset(self) -> DataSetProtocol:
-        return self.data_handler.dataset
+        if self.data_handler is None:
+            return None
+        else:
+            return self.data_handler.dataset
 
     def log(self, message: str, level: str = "info") -> None:
         """Send a log message
@@ -1753,12 +1756,13 @@ class BaseSweep(AbstractSweep):
 
         # Create list of sweeps
         sweeps = list(args)
-        if not all(isinstance(sweep, BaseSweep) for sweep in sweeps):
-            raise ValueError("Args passed to Sweep.execute must be Sweeps")
         if isinstance(sweep, BaseSweep):
             sweeps.append(sweep)
         elif isinstance(sweep, (list, tuple)):
-            sweeps += list(sweep)
+            sweeps.extend(sweep)
+
+        if not all(isinstance(sweep, BaseSweep) for sweep in sweeps):
+            raise ValueError("Args passed to Sweep.execute must be Sweeps")
 
         # Add repetition as a sweep if > 1
         if repetitions > 1:
