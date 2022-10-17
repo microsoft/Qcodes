@@ -459,7 +459,7 @@ class Parameter(ParameterBase):
                 Note that ``sweep`` can be either a single Sweep, or a Sweep list.
         """
         from qcodes.dataset import Sweep
-        sweep = Sweep(
+        parameter_sweep = Sweep(
             self,  # Pass parameter as first arg
             *args,
             start=start,
@@ -471,8 +471,7 @@ class Parameter(ParameterBase):
             initial_delay=initial_delay,
             revert=revert
         )
-
-        dataset = sweep.execute(
+        dataset = parameter_sweep.execute(
             name=measurement_name,
             measure_params=measure_params,
             repetitions=repetitions,
