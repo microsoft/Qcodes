@@ -1332,6 +1332,14 @@ class MeasurementLoop:
             # A masked property has been passed, which we unmask here
             try:
                 original_value = kwargs["original_value"]
+                if unmask_type is None:
+                    if isinstance(obj, Parameter):
+                        unmask_type = "parameter"
+                    elif isinstance(obj, dict):
+                        unmask_type = "key"
+                    elif hasattr(obj, attr):
+                        unmask_type = "attr"
+                        
                 if unmask_type == "key":
                     obj[key] = original_value
                 elif unmask_type == "attr":
@@ -1574,6 +1582,8 @@ class BaseSweep(AbstractSweep):
         if self.revert:
             if isinstance(self.sequence, SweepValues):
                 msmt.mask(self.sequence.parameter, self.sequence.parameter.get())
+            elif self.parameter is not None:
+                msmt.mask(self.parameter, self.parameter.get())
             else:
                 raise NotImplementedError("Unable to revert non-parameter values.")
 
