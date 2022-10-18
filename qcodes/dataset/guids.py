@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import random
 import re
 import time
+import warnings
 from collections.abc import Sequence
 
 import numpy as np
@@ -29,6 +31,12 @@ def generate_guid(timeint: int | None = None, sampleint: int | None = None) -> s
     cfg = qc.config
 
     try:
+        guid_type = cfg["dataset"]["guid_type"]
+    except KeyError:
+        raise RuntimeError(
+            "Invalid QCoDeS config file! No guid_type specified. Can not proceed."
+        )
+    try:
         guid_comp = cfg['GUID_components']
     except KeyError:
         raise RuntimeError('Invalid QCoDeS config file! No GUID_components '
@@ -38,12 +46,27 @@ def generate_guid(timeint: int | None = None, sampleint: int | None = None) -> s
     station = guid_comp['work_station']
 
     if timeint is None:
-        # ms resolution, checked on windows
+        # ms resolution, checked on Windows
         timeint = int(np.round(time.time()*1000))
     if sampleint is None:
         sampleint = guid_comp['sample']
+    if sampleint != 0 and guid_type == "random_sample":
+        raise RuntimeError(
+            "QCoDeS is configured to disregard sample from config file but this "
+            "is set to a non default value which is therefore unused."
+        )
 
-    if sampleint == 0:
+    if sampleint != 0:
+        warnings.warn(
+            "Setting a non default sample GUID_component is deprecated. "
+            "the sample part of the GUID will be replaced by a randon string "
+            "in a future release. To opt in to the new format now "
+            "set GUID_type to `random_sample_str` in your qcodesrc.json config file."
+        )
+
+    if guid_type == "random_sample":
+        sampleint = random.randint(0, 16**8 - 1)
+    elif sampleint == 0:
         sampleint = int('a'*8, base=16)
 
     loc_str = f'{location:02x}'
