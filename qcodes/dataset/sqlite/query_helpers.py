@@ -39,9 +39,14 @@ def get_description_map(curr: sqlite3.Cursor) -> dict[str, int]:
 
 def one(curr: sqlite3.Cursor, column: int | str) -> Any:
     """Get the value of one column from one row
+
     Args:
         curr: cursor to operate on
-        column: name of the column
+        column: name of the column or the index of the desired column in the
+            result rows that ``cursor.fetchall()`` returns. In case a
+            column name is being passed, it is important that the casing
+            of the column name is exactly the one used when the column was
+            created.
 
     Returns:
         the value
@@ -52,14 +57,36 @@ def one(curr: sqlite3.Cursor, column: int | str) -> Any:
     elif len(res) == 0:
         raise RuntimeError("Expected one row")
     else:
-        return res[0][
-            column if isinstance(column, int) else get_description_map(curr)[column]
-        ]
+        row = res[0]
+
+        if isinstance(column, int):
+            column_index_in_the_row = column
+        else:
+            columns_name_to_index_map = get_description_map(curr)
+            maybe_column_index = columns_name_to_index_map.get(column)
+            if maybe_column_index is not None:
+                column_index_in_the_row = maybe_column_index
+            else:
+                # Note that the error message starts the same way as an
+                # sqlite3 error about a column not existing:
+                # ``no such column: <column name>`` - this is on purpose,
+                # because if the given column name is not found in the
+                # description map from the cursor then something is
+                # definitely wrong, and likely the requested column does not
+                # exist or the casing of its name is not equal to the casing
+                # in the database
+                raise RuntimeError(
+                    f"no such column: {column}. "
+                    f"Valid columns are {tuple(columns_name_to_index_map.keys())}"
+                )
+
+        return row[column_index_in_the_row]
 
 
 def _need_to_select(curr: sqlite3.Cursor, *columns: str) -> bool:
     """
-    Return True if the columns' description of the last query doesn't exactly match
+    Return True if the columns' description of the last query doesn't exactly match,
+    the order is important
     """
     return tuple(c[0] for c in curr.description) != columns
 
@@ -78,7 +105,7 @@ def many(curr: sqlite3.Cursor, *columns: str) -> tuple[Any, ...]:
         raise RuntimeError("Expected only one row")
     elif _need_to_select(curr, *columns):
         raise RuntimeError(
-            "Expected consistent selection: cursor has columns"
+            "Expected consistent selection: cursor has columns "
             f"{tuple(c[0] for c in curr.description)} but expected {columns}"
         )
     else:
@@ -98,7 +125,7 @@ def many_many(curr: sqlite3.Cursor, *columns: str) -> list[tuple[Any, ...]]:
 
     if _need_to_select(curr, *columns):
         raise RuntimeError(
-            "Expected consistent selection: cursor has columns"
+            "Expected consistent selection: cursor has columns "
             f"{tuple(c[0] for c in curr.description)} but expected {columns}"
         )
 
@@ -116,14 +143,17 @@ def select_one_where(
     Args:
         conn: Connection to the db
         table: Table to look for values in
-        column: Column to return value from
+        column: Column to return value from, it is important that the casing
+            of the column name is exactly the one used when the column was
+            created
         where_column: Column to match on
         where_value: Value to match in where_column
 
     Returns:
         Value found
-    raises:
-        RuntimeError if not exactly match is found.
+
+    Raises:
+        RuntimeError if not exactly one match is found.
     """
     query = f"""
     SELECT {column}

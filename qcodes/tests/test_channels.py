@@ -7,9 +7,8 @@ import pytest
 from hypothesis import HealthCheck, given, settings
 from numpy.testing import assert_allclose, assert_array_equal
 
-from qcodes import Instrument
 from qcodes.data.location import FormatLocation
-from qcodes.instrument import ChannelList, ChannelTuple, InstrumentChannel
+from qcodes.instrument import ChannelList, ChannelTuple, Instrument, InstrumentChannel
 from qcodes.loops import Loop
 from qcodes.parameters import Parameter
 from qcodes.tests.instrument_mocks import DummyChannel, DummyChannelInstrument

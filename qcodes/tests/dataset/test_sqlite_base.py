@@ -1,6 +1,7 @@
 # Since all other tests of data_set and measurements will inevitably also
 # test the sqlite module, we mainly test exceptions and small helper
 # functions here
+import re
 import time
 import unicodedata
 from contextlib import contextmanager
@@ -16,6 +17,7 @@ from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
+from qcodes.dataset.experiment_container import load_or_create_experiment
 from qcodes.dataset.guids import generate_guid
 
 # mut: module under test
@@ -23,7 +25,7 @@ from qcodes.dataset.sqlite import connection as mut_conn
 from qcodes.dataset.sqlite import database as mut_db
 from qcodes.dataset.sqlite import queries as mut_queries
 from qcodes.dataset.sqlite import query_helpers as mut_help
-from qcodes.dataset.sqlite.connection import path_to_dbfile
+from qcodes.dataset.sqlite.connection import atomic_transaction, path_to_dbfile
 from qcodes.dataset.sqlite.database import get_DB_location
 from qcodes.tests.common import error_caused_by
 from qcodes.utils import QCoDeSDeprecationWarning
@@ -68,11 +70,86 @@ def test_path_to_dbfile(tmp_path):
         conn.close()
 
 
-def test_one_raises(experiment):
+def test_one_raises_on_no_results(experiment):
     conn = experiment.conn
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(RuntimeError, match="Expected one row"):
         mut_queries.one(conn.cursor(), column='Something_you_dont_have')
+
+
+def test_one_raises_on_more_than_one_result(experiment):
+    conn = experiment.conn
+
+    # create another experiment with so that the query below returns
+    # MORE THAN ONE experiment id
+    load_or_create_experiment(experiment.name + "2", experiment.sample_name)
+
+    query = f"""
+    SELECT exp_id
+    FROM experiments
+    """
+    cur = atomic_transaction(conn, query)
+
+    with pytest.raises(RuntimeError, match="Expected only one row"):
+        mut_queries.one(cur, column="exp_id")
+
+
+def test_one_raises_on_wrong_column_name(experiment):
+    conn = experiment.conn
+
+    query = f"""
+    SELECT exp_id
+    FROM experiments
+    """
+    cur = atomic_transaction(conn, query)
+
+    with pytest.raises(RuntimeError, match=re.escape("no such column: eXP_id")):
+        mut_queries.one(cur, column="eXP_id")
+
+
+def test_one_raises_on_wrong_column_index(experiment):
+    conn = experiment.conn
+
+    query = f"""
+    SELECT exp_id
+    FROM experiments
+    """
+    cur = atomic_transaction(conn, query)
+
+    with pytest.raises(IndexError):
+        mut_queries.one(cur, column=1)
+
+
+def test_one_works_if_given_column_index(experiment):
+    # This test relies on the fact that there's only one experiment in the
+    # given database
+    conn = experiment.conn
+
+    query = f"""
+    SELECT exp_id
+    FROM experiments
+    """
+    cur = atomic_transaction(conn, query)
+
+    exp_id = mut_queries.one(cur, column=0)
+
+    assert exp_id == experiment.exp_id
+
+
+def test_one_works_if_given_column_name(experiment):
+    # This test relies on the fact that there's only one experiment in the
+    # given database
+    conn = experiment.conn
+
+    query = f"""
+    SELECT exp_id
+    FROM experiments
+    """
+    cur = atomic_transaction(conn, query)
+
+    exp_id = mut_queries.one(cur, column="exp_id")
+
+    assert exp_id == experiment.exp_id
 
 
 def test_atomic_transaction_raises(experiment):

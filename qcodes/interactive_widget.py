@@ -9,9 +9,8 @@ import traceback
 from collections.abc import Callable, Iterable, Sequence
 from datetime import datetime
 from functools import partial, reduce
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
-import matplotlib.pyplot as plt
 from IPython.display import clear_output, display
 from ipywidgets import (
     HTML,
@@ -27,12 +26,10 @@ from ipywidgets import (
     VBox,
 )
 from ruamel.yaml import YAML
-from typing_extensions import Literal
 
 import qcodes
-from qcodes.dataset import initialise_or_create_database_at
+from qcodes.dataset import experiments, initialise_or_create_database_at, plot_dataset
 from qcodes.dataset.data_set_protocol import DataSetProtocol
-from qcodes.dataset.plotting import plot_dataset
 
 if TYPE_CHECKING:
     from qcodes.dataset.descriptions.param_spec import ParamSpecBase
@@ -217,6 +214,8 @@ def nested_dict_browser(
 
 
 def _plot_ds(ds: DataSetProtocol) -> None:
+    import matplotlib.pyplot as plt
+
     plot_dataset(ds)  # might fail
     plt.show()
 
@@ -517,9 +516,7 @@ def experiments_widget(
     if data_sets is None:
         if db is not None:
             initialise_or_create_database_at(db)
-        data_sets = [
-            ds for exp in qcodes.experiments() for ds in exp.data_sets()
-        ]
+        data_sets = [ds for exp in experiments() for ds in exp.data_sets()]
     if sort_by == "run_id":
         data_sets = sorted(data_sets, key=lambda ds: ds.run_id)
     elif sort_by == "timestamp":

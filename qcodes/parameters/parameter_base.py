@@ -451,6 +451,8 @@ class ParameterBase(Metadatable):
                     attr_strip = attr.lstrip("_")  # strip leading underscores
                     if isinstance(val, Validator):
                         state[attr_strip] = repr(val)
+                    elif isinstance(val, Metadatable):
+                        state[attr_strip] = val.snapshot(update=update)
                     else:
                         state[attr_strip] = val
 

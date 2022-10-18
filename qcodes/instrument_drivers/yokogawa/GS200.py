@@ -4,9 +4,7 @@ Will be deprecated and eventually removed.
 """
 
 from functools import partial
-from typing import Any, Optional, Union
-
-from typing_extensions import Literal
+from typing import Any, Literal, Optional, Union
 
 from qcodes.instrument import InstrumentChannel, VisaInstrument
 from qcodes.parameters import DelegateParameter

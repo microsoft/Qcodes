@@ -1,2 +1,0 @@
-The Dataset no longer prints upgrade progressbars when upgrading an empty database. This means that
-the progressbar will no longer be shown when creating a new database.

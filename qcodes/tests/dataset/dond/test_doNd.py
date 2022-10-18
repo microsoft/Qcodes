@@ -1,1006 +1,37 @@
 """
 These are the basic black box tests for the doNd functions.
 """
+import logging
+import re
+
 import hypothesis.strategies as hst
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 from hypothesis import HealthCheck, given, settings
+from numpy.testing import assert_array_equal
 
 from qcodes import config, validators
 from qcodes.dataset import (
     ArraySweep,
     LinSweep,
     LogSweep,
-    do0d,
-    do1d,
-    do2d,
+    TogetherSweep,
     dond,
     new_experiment,
 )
 from qcodes.dataset.data_set import DataSet
-from qcodes.parameters import Parameter, ParameterBase
+from qcodes.dataset.dond.do_nd import _Sweeper
+from qcodes.parameters import ManualParameter, Parameter, ParameterBase
+from qcodes.tests.dataset.conftest import ArrayshapedParam
 from qcodes.tests.instrument_mocks import (
     ArraySetPointParam,
     Multi2DSetPointParam,
     Multi2DSetPointParam2Sizes,
     MultiSetPointParam,
 )
-
-from .conftest import ArrayshapedParam
-
-
-@pytest.fixture(autouse=True)
-def set_tmp_output_dir(tmpdir):
-    old_config = config.user.mainfolder
-    try:
-        config.user.mainfolder = str(tmpdir)
-        yield
-    finally:
-        config.user.mainfolder = old_config
-
-
-@pytest.fixture()
-def plot_close():
-    yield
-    plt.close("all")
-
-
-@pytest.fixture()
-def _param():
-    p = Parameter("simple_parameter", set_cmd=None, get_cmd=lambda: 1)
-    return p
-
-
-@pytest.fixture()
-def _param_2():
-    p = Parameter("simple_parameter", set_cmd=None, get_cmd=lambda: 2)
-    return p
-
-
-@pytest.fixture()
-def _param_complex():
-    p = Parameter(
-        "simple_complex_parameter",
-        set_cmd=None,
-        get_cmd=lambda: 1 + 1j,
-        vals=validators.ComplexNumbers(),
-    )
-    return p
-
-
-@pytest.fixture()
-def _param_complex_2():
-    p = Parameter(
-        "simple_complex_parameter",
-        set_cmd=None,
-        get_cmd=lambda: 2 + 2j,
-        vals=validators.ComplexNumbers(),
-    )
-    return p
-
-
-@pytest.fixture()
-def _param_set():
-    p = Parameter("simple_setter_parameter", set_cmd=None, get_cmd=None)
-    return p
-
-
-@pytest.fixture()
-def _param_set_2():
-    p = Parameter("simple_setter_parameter_2", set_cmd=None, get_cmd=None)
-    return p
-
-
-def _param_func(_p):
-    """
-    A private utility function.
-    """
-    _new_param = Parameter(
-        "modified_parameter", set_cmd=None, get_cmd=lambda: _p.get() * 2
-    )
-    return _new_param
-
-
-@pytest.fixture()
-def _param_callable(_param):
-    return _param_func(_param)
-
-
-def test_param_callable(_param_callable):
-    _param_modified = _param_callable
-    assert _param_modified.get() == 2
-
-
-@pytest.fixture()
-def _string_callable():
-    return "Call"
-
-
-@pytest.mark.usefixtures("plot_close", "experiment")
-@pytest.mark.parametrize("period", [None, 1])
-@pytest.mark.parametrize("plot", [None, True, False])
-@pytest.mark.parametrize("plot_config", [None, True, False])
-def test_do0d_with_real_parameter(period, plot, plot_config):
-    arrayparam = ArraySetPointParam(name="arrayparam")
-
-    if plot_config is not None:
-        config.dataset.dond_plot = plot_config
-
-    output = do0d(arrayparam, write_period=period, do_plot=plot)
-    assert len(output[1]) == 1
-    if plot is True or plot is None and plot_config is True:
-        assert isinstance(output[1][0], matplotlib.axes.Axes)
-    else:
-        assert output[1][0] is None
-
-
-@pytest.mark.usefixtures("plot_close", "experiment")
-@pytest.mark.parametrize(
-    "period, plot", [(None, True), (None, False), (1, True), (1, False)]
-)
-def test_do0d_with_complex_parameter(_param_complex, period, plot):
-    do0d(_param_complex, write_period=period, do_plot=plot)
-
-
-@pytest.mark.usefixtures("plot_close", "experiment")
-@pytest.mark.parametrize(
-    "period, plot", [(None, True), (None, False), (1, True), (1, False)]
-)
-def test_do0d_with_a_callable(_param_callable, period, plot):
-    do0d(_param_callable, write_period=period, do_plot=plot)
-
-
-@pytest.mark.usefixtures("plot_close", "experiment")
-@pytest.mark.parametrize(
-    "period, plot", [(None, True), (None, False), (1, True), (1, False)]
-)
-def test_do0d_with_2_parameters(_param, _param_complex, period, plot):
-    do0d(_param, _param_complex, write_period=period, do_plot=plot)
-
-
-@pytest.mark.usefixtures("plot_close", "experiment")
-@pytest.mark.parametrize(
-    "period, plot", [(None, True), (None, False), (1, True), (1, False)]
-)
-def test_do0d_with_parameter_and_a_callable(
-    _param_complex, _param_callable, period, plot
-):
-    do0d(_param_callable, _param_complex, write_period=period, do_plot=plot)
-
-
-@pytest.mark.usefixtures("plot_close", "experiment")
-def test_do0d_output_type_real_parameter(_param):
-    data = do0d(_param)
-    assert isinstance(data[0], DataSet) is True
-
-
-@pytest.mark.usefixtures("plot_close", "experiment")
-def test_do0d_output_type_complex_parameter(_param_complex):
-    data_complex = do0d(_param_complex)
-    assert isinstance(data_complex[0], DataSet) is True
-
-
-@pytest.mark.usefixtures("plot_close", "experiment")
-def test_do0d_output_type_callable(_param_callable):
-    data_func = do0d(_param_callable)
-    assert isinstance(data_func[0], DataSet) is True
-
-
-@pytest.mark.usefixtures("plot_close", "experiment")
-def test_do0d_output_data(_param):
-    exp = do0d(_param)
-    data = exp[0]
-    assert data.parameters == _param.name
-    loaded_data = data.get_parameter_data()["simple_parameter"]["simple_parameter"]
-    assert loaded_data == np.array([_param.get()])
-
-
-@pytest.mark.usefixtures("experiment")
-@pytest.mark.parametrize(
-    "multiparamtype",
-    [MultiSetPointParam, Multi2DSetPointParam, Multi2DSetPointParam2Sizes],
-)
-@given(n_points_pws=hst.integers(min_value=1, max_value=1000))
-@settings(deadline=None, suppress_health_check=(HealthCheck.function_scoped_fixture,))
-def test_do0d_verify_shape(
-    _param, _param_complex, multiparamtype, dummyinstrument, n_points_pws
-):
-    arrayparam = ArraySetPointParam(name="arrayparam")
-    multiparam = multiparamtype(name="multiparam")
-    paramwsetpoints = dummyinstrument.A.dummy_parameter_with_setpoints
-    dummyinstrument.A.dummy_start(0)
-    dummyinstrument.A.dummy_stop(1)
-    dummyinstrument.A.dummy_n_points(n_points_pws)
-
-    results = do0d(
-        arrayparam, multiparam, paramwsetpoints, _param, _param_complex, do_plot=False
-    )
-    expected_shapes = {}
-    for i, name in enumerate(multiparam.full_names):
-        expected_shapes[name] = tuple(multiparam.shapes[i])
-    expected_shapes["arrayparam"] = tuple(arrayparam.shape)
-    expected_shapes["simple_parameter"] = (1,)
-    expected_shapes["simple_complex_parameter"] = (1,)
-    expected_shapes[paramwsetpoints.full_name] = (n_points_pws,)
-    assert results[0].description.shapes == expected_shapes
-
-    ds = results[0]
-
-    assert ds.description.shapes == expected_shapes
-
-    data = ds.get_parameter_data()
-
-    for name, data in data.items():
-        for param_data in data.values():
-            assert param_data.shape == expected_shapes[name]
-
-
-@pytest.mark.usefixtures("experiment")
-def test_do0d_parameter_with_array_vals():
-    param = ArrayshapedParam(
-        name="paramwitharrayval", vals=validators.Arrays(shape=(10,))
-    )
-    results = do0d(param)
-    expected_shapes = {"paramwitharrayval": (10,)}
-    assert results[0].description.shapes == expected_shapes
-
-
-def test_do0d_explicit_experiment(_param, experiment):
-    experiment_2 = new_experiment("new-exp", "no-sample")
-
-    data1 = do0d(_param, do_plot=False, exp=experiment)
-    assert data1[0].exp_name == "test-experiment"
-    data2 = do0d(_param, do_plot=False, exp=experiment_2)
-    assert data2[0].exp_name == "new-exp"
-    # by default the last experiment is used
-    data3 = do0d(_param, do_plot=False)
-    assert data3[0].exp_name == "new-exp"
-
-
-@pytest.mark.usefixtures("experiment")
-def test_do0d_explicit_name(_param):
-    data1 = do0d(_param, do_plot=False, measurement_name="my measurement")
-    assert data1[0].name == "my measurement"
-
-
-@pytest.mark.usefixtures("plot_close", "experiment")
-@pytest.mark.parametrize("delay", [0, 0.1, 1])
-def test_do1d_with_real_parameter(_param_set, _param, delay):
-
-    start = 0
-    stop = 1
-    num_points = 1
-
-    do1d(_param_set, start, stop, num_points, delay, _param)
-
-
-@pytest.mark.usefixtures("plot_close", "experiment")
-@pytest.mark.parametrize("plot", [None, True, False])
-@pytest.mark.parametrize("plot_config", [None, True, False])
-def test_do1d_plot(_param_set, _param, plot, plot_config):
-
-    if plot_config is not None:
-        config.dataset.dond_plot = plot_config
-
-    start = 0
-    stop = 1
-    num_points = 1
-
-    output = do1d(_param_set, start, stop, num_points, 0, _param, do_plot=plot)
-    assert len(output[1]) == 1
-    if plot is True or plot is None and plot_config is True:
-        assert isinstance(output[1][0], matplotlib.axes.Axes)
-    else:
-        assert output[1][0] is None
-
-
-@pytest.mark.usefixtures("plot_close", "experiment")
-@pytest.mark.parametrize("delay", [0, 0.1, 1])
-def test_do1d_with_complex_parameter(_param_set, _param_complex, delay):
-
-    start = 0
-    stop = 1
-    num_points = 1
-
-    do1d(_param_set, start, stop, num_points, delay, _param_complex)
-
-
-@pytest.mark.usefixtures("plot_close", "experiment")
-@pytest.mark.parametrize("delay", [0, 0.1, 1])
-def test_do1d_with_2_parameter(_param_set, _param, _param_complex, delay):
-
-    start = 0
-    stop = 1
-    num_points = 1
-
-    do1d(_param_set, start, stop, num_points, delay, _param, _param_complex)
-
-
-@pytest.mark.usefixtures("plot_close", "experiment")
-@pytest.mark.parametrize("delay", [0, 0.1, 1])
-def test_do1d_output_type_real_parameter(_param_set, _param, delay):
-
-    start = 0
-    stop = 1
-    num_points = 1
-
-    data = do1d(_param_set, start, stop, num_points, delay, _param)
-    assert isinstance(data[0], DataSet) is True
-
-
-@pytest.mark.usefixtures("plot_close", "experiment")
-def test_do1d_output_data(_param, _param_set):
-
-    start = 0
-    stop = 1
-    num_points = 5
-    delay = 0
-
-    exp = do1d(_param_set, start, stop, num_points, delay, _param)
-    data = exp[0]
-
-    assert data.parameters == f"{_param_set.name},{_param.name}"
-    loaded_data = data.get_parameter_data()["simple_parameter"]
-
-    np.testing.assert_array_equal(loaded_data[_param.name], np.ones(5))
-    np.testing.assert_array_equal(loaded_data[_param_set.name], np.linspace(0, 1, 5))
-
-
-def test_do0d_parameter_with_setpoints_2d(dummyinstrument):
-    dummyinstrument.A.dummy_start(0)
-    dummyinstrument.A.dummy_stop(10)
-    dummyinstrument.A.dummy_n_points(10)
-    dummyinstrument.A.dummy_start_2(2)
-    dummyinstrument.A.dummy_stop_2(7)
-    dummyinstrument.A.dummy_n_points_2(3)
-    dataset, _, _ = do0d(dummyinstrument.A.dummy_parameter_with_setpoints_2d)
-
-    data = dataset.cache.data()[
-        "dummyinstrument_ChanA_dummy_parameter_with_setpoints_2d"
-    ]
-    for array in data.values():
-        assert array.shape == (10, 3)
-
-
-@pytest.mark.usefixtures("experiment")
-@pytest.mark.parametrize(
-    "multiparamtype",
-    [MultiSetPointParam, Multi2DSetPointParam, Multi2DSetPointParam2Sizes],
-)
-@given(
-    num_points=hst.integers(min_value=1, max_value=10),
-    n_points_pws=hst.integers(min_value=1, max_value=500),
-)
-@settings(deadline=None, suppress_health_check=(HealthCheck.function_scoped_fixture,))
-def test_do1d_verify_shape(
-    _param,
-    _param_complex,
-    _param_set,
-    multiparamtype,
-    dummyinstrument,
-    num_points,
-    n_points_pws,
-):
-    arrayparam = ArraySetPointParam(name="arrayparam")
-    multiparam = multiparamtype(name="multiparam")
-    paramwsetpoints = dummyinstrument.A.dummy_parameter_with_setpoints
-    dummyinstrument.A.dummy_start(0)
-    dummyinstrument.A.dummy_stop(1)
-    dummyinstrument.A.dummy_n_points(n_points_pws)
-
-    start = 0
-    stop = 1
-    delay = 0
-
-    results = do1d(
-        _param_set,
-        start,
-        stop,
-        num_points,
-        delay,
-        arrayparam,
-        multiparam,
-        paramwsetpoints,
-        _param,
-        _param_complex,
-        do_plot=False,
-    )
-    expected_shapes = {}
-    for i, name in enumerate(multiparam.full_names):
-        expected_shapes[name] = (num_points,) + tuple(multiparam.shapes[i])
-    expected_shapes["arrayparam"] = (num_points,) + tuple(arrayparam.shape)
-    expected_shapes["simple_parameter"] = (num_points,)
-    expected_shapes["simple_complex_parameter"] = (num_points,)
-    expected_shapes[paramwsetpoints.full_name] = (num_points, n_points_pws)
-    assert results[0].description.shapes == expected_shapes
-
-
-@pytest.mark.usefixtures("experiment")
-def test_do1d_parameter_with_array_vals(_param_set):
-    param = ArrayshapedParam(
-        name="paramwitharrayval", vals=validators.Arrays(shape=(10,))
-    )
-    start = 0
-    stop = 1
-    num_points = 15  # make param
-    delay = 0
-
-    results = do1d(_param_set, start, stop, num_points, delay, param, do_plot=False)
-    expected_shapes = {"paramwitharrayval": (num_points, 10)}
-
-    ds = results[0]
-
-    assert ds.description.shapes == expected_shapes
-
-    data = ds.get_parameter_data()
-
-    for name, data in data.items():
-        for param_data in data.values():
-            assert param_data.shape == expected_shapes[name]
-
-
-def test_do1d_explicit_experiment(_param_set, _param, experiment):
-    start = 0
-    stop = 1
-    num_points = 5
-    delay = 0
-
-    experiment_2 = new_experiment("new-exp", "no-sample")
-
-    data1 = do1d(
-        _param_set,
-        start,
-        stop,
-        num_points,
-        delay,
-        _param,
-        do_plot=False,
-        exp=experiment,
-    )
-    assert data1[0].exp_name == "test-experiment"
-    data2 = do1d(
-        _param_set,
-        start,
-        stop,
-        num_points,
-        delay,
-        _param,
-        do_plot=False,
-        exp=experiment_2,
-    )
-    assert data2[0].exp_name == "new-exp"
-    # by default the last experiment is used
-    data3 = do1d(_param_set, start, stop, num_points, delay, _param, do_plot=False)
-    assert data3[0].exp_name == "new-exp"
-
-
-@pytest.mark.usefixtures("experiment")
-def test_do1d_explicit_name(_param_set, _param):
-    start = 0
-    stop = 1
-    num_points = 5
-    delay = 0
-
-    data1 = do1d(
-        _param_set,
-        start,
-        stop,
-        num_points,
-        delay,
-        _param,
-        do_plot=False,
-        measurement_name="my measurement",
-    )
-    assert data1[0].name == "my measurement"
-
-
-@pytest.mark.usefixtures("plot_close", "experiment")
-@pytest.mark.parametrize(
-    "sweep, columns", [(False, False), (False, True), (True, False), (True, True)]
-)
-def test_do2d(_param, _param_complex, _param_set, _param_set_2, sweep, columns):
-
-    start_p1 = 0
-    stop_p1 = 1
-    num_points_p1 = 1
-    delay_p1 = 0
-
-    start_p2 = 0.1
-    stop_p2 = 1.1
-    num_points_p2 = 2
-    delay_p2 = 0.01
-
-    do2d(
-        _param_set,
-        start_p1,
-        stop_p1,
-        num_points_p1,
-        delay_p1,
-        _param_set_2,
-        start_p2,
-        stop_p2,
-        num_points_p2,
-        delay_p2,
-        _param,
-        _param_complex,
-        set_before_sweep=sweep,
-        flush_columns=columns,
-    )
-
-
-@pytest.mark.usefixtures("plot_close", "experiment")
-@pytest.mark.parametrize("plot", [None, True, False])
-@pytest.mark.parametrize("plot_config", [None, True, False])
-def test_do2d_plot(_param_set, _param_set_2, _param, plot, plot_config):
-
-    if plot_config is not None:
-        config.dataset.dond_plot = plot_config
-
-    start_p1 = 0
-    stop_p1 = 1
-    num_points_p1 = 1
-    delay_p1 = 0
-
-    start_p2 = 0.1
-    stop_p2 = 1.1
-    num_points_p2 = 2
-    delay_p2 = 0
-
-    output = do2d(
-        _param_set,
-        start_p1,
-        stop_p1,
-        num_points_p1,
-        delay_p1,
-        _param_set_2,
-        start_p2,
-        stop_p2,
-        num_points_p2,
-        delay_p2,
-        _param,
-        do_plot=plot,
-    )
-
-    assert len(output[1]) == 1
-    if plot is True or plot is None and plot_config is True:
-        assert isinstance(output[1][0], matplotlib.axes.Axes)
-    else:
-        assert output[1][0] is None
-
-
-@pytest.mark.usefixtures("plot_close", "experiment")
-def test_do2d_output_type(_param, _param_complex, _param_set, _param_set_2):
-
-    start_p1 = 0
-    stop_p1 = 0.5
-    num_points_p1 = 1
-    delay_p1 = 0
-
-    start_p2 = 0.1
-    stop_p2 = 0.75
-    num_points_p2 = 2
-    delay_p2 = 0.025
-
-    data = do2d(
-        _param_set,
-        start_p1,
-        stop_p1,
-        num_points_p1,
-        delay_p1,
-        _param_set_2,
-        start_p2,
-        stop_p2,
-        num_points_p2,
-        delay_p2,
-        _param,
-        _param_complex,
-    )
-    assert isinstance(data[0], DataSet) is True
-
-
-@pytest.mark.usefixtures("plot_close", "experiment")
-def test_do2d_output_data(_param, _param_complex, _param_set, _param_set_2):
-
-    start_p1 = 0
-    stop_p1 = 0.5
-    num_points_p1 = 5
-    delay_p1 = 0
-
-    start_p2 = 0.5
-    stop_p2 = 1
-    num_points_p2 = 5
-    delay_p2 = 0.0
-
-    exp = do2d(
-        _param_set,
-        start_p1,
-        stop_p1,
-        num_points_p1,
-        delay_p1,
-        _param_set_2,
-        start_p2,
-        stop_p2,
-        num_points_p2,
-        delay_p2,
-        _param,
-        _param_complex,
-    )
-    data = exp[0]
-
-    assert data.parameters == (
-        f"{_param_set.name},{_param_set_2.name}," f"{_param.name},{_param_complex.name}"
-    )
-    loaded_data = data.get_parameter_data()
-    expected_data_1 = np.ones(25).reshape(num_points_p1, num_points_p2)
-
-    np.testing.assert_array_equal(
-        loaded_data[_param.name][_param.name], expected_data_1
-    )
-    expected_data_2 = (1 + 1j) * np.ones(25).reshape(num_points_p1, num_points_p2)
-    np.testing.assert_array_equal(
-        loaded_data[_param_complex.name][_param_complex.name], expected_data_2
-    )
-
-    expected_setpoints_1 = np.repeat(
-        np.linspace(start_p1, stop_p1, num_points_p1), num_points_p2
-    ).reshape(num_points_p1, num_points_p2)
-    np.testing.assert_array_equal(
-        loaded_data[_param_complex.name][_param_set.name], expected_setpoints_1
-    )
-
-    expected_setpoints_2 = np.tile(
-        np.linspace(start_p2, stop_p2, num_points_p2), num_points_p1
-    ).reshape(num_points_p1, num_points_p2)
-    np.testing.assert_array_equal(
-        loaded_data[_param_complex.name][_param_set_2.name], expected_setpoints_2
-    )
-
-
-@pytest.mark.usefixtures("experiment")
-@pytest.mark.parametrize(
-    "sweep, columns", [(False, False), (False, True), (True, False), (True, True)]
-)
-@pytest.mark.parametrize(
-    "multiparamtype",
-    [MultiSetPointParam, Multi2DSetPointParam, Multi2DSetPointParam2Sizes],
-)
-@given(
-    num_points_p1=hst.integers(min_value=1, max_value=5),
-    num_points_p2=hst.integers(min_value=1, max_value=5),
-    n_points_pws=hst.integers(min_value=1, max_value=500),
-)
-@settings(deadline=None, suppress_health_check=(HealthCheck.function_scoped_fixture,))
-def test_do2d_verify_shape(
-    _param,
-    _param_complex,
-    _param_set,
-    _param_set_2,
-    multiparamtype,
-    dummyinstrument,
-    sweep,
-    columns,
-    num_points_p1,
-    num_points_p2,
-    n_points_pws,
-):
-    arrayparam = ArraySetPointParam(name="arrayparam")
-    multiparam = multiparamtype(name="multiparam")
-    paramwsetpoints = dummyinstrument.A.dummy_parameter_with_setpoints
-    dummyinstrument.A.dummy_start(0)
-    dummyinstrument.A.dummy_stop(1)
-    dummyinstrument.A.dummy_n_points(n_points_pws)
-
-    start_p1 = 0
-    stop_p1 = 1
-    delay_p1 = 0
-
-    start_p2 = 0.1
-    stop_p2 = 1.1
-    delay_p2 = 0
-
-    results = do2d(
-        _param_set,
-        start_p1,
-        stop_p1,
-        num_points_p1,
-        delay_p1,
-        _param_set_2,
-        start_p2,
-        stop_p2,
-        num_points_p2,
-        delay_p2,
-        arrayparam,
-        multiparam,
-        paramwsetpoints,
-        _param,
-        _param_complex,
-        set_before_sweep=sweep,
-        flush_columns=columns,
-        do_plot=False,
-    )
-    expected_shapes = {}
-    for i, name in enumerate(multiparam.full_names):
-        expected_shapes[name] = (num_points_p1, num_points_p2) + tuple(
-            multiparam.shapes[i]
-        )
-    expected_shapes["arrayparam"] = (num_points_p1, num_points_p2) + tuple(
-        arrayparam.shape
-    )
-    expected_shapes["simple_parameter"] = (num_points_p1, num_points_p2)
-    expected_shapes["simple_complex_parameter"] = (num_points_p1, num_points_p2)
-    expected_shapes[paramwsetpoints.full_name] = (
-        num_points_p1,
-        num_points_p2,
-        n_points_pws,
-    )
-
-    assert results[0].description.shapes == expected_shapes
-    ds = results[0]
-
-    data = ds.get_parameter_data()
-
-    for name, data in data.items():
-        for param_data in data.values():
-            assert param_data.shape == expected_shapes[name]
-
-
-@pytest.mark.usefixtures("plot_close", "experiment")
-def test_do1d_additional_setpoints(_param, _param_complex, _param_set):
-    additional_setpoints = [
-        Parameter(f"additional_setter_parameter_{i}", set_cmd=None, get_cmd=None)
-        for i in range(2)
-    ]
-    start_p1 = 0
-    stop_p1 = 0.5
-    num_points_p1 = 5
-    delay_p1 = 0
-
-    for x in range(3):
-        for y in range(4):
-            additional_setpoints[0](x)
-            additional_setpoints[1](y)
-            results = do1d(
-                _param_set,
-                start_p1,
-                stop_p1,
-                num_points_p1,
-                delay_p1,
-                _param,
-                _param_complex,
-                additional_setpoints=additional_setpoints,
-            )
-            for deps in results[0].description.interdeps.dependencies.values():
-                assert len(deps) == 1 + len(additional_setpoints)
-            # Calling the fixture won't work here due to loop-scope.
-            # Thus, we make an explicit call to close plots. This will be
-            # repeated in similarly design tests.
-            plt.close("all")
-
-
-@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
-@given(num_points_p1=hst.integers(min_value=1, max_value=10))
-@pytest.mark.usefixtures("experiment")
-def test_do1d_additional_setpoints_shape(
-    _param, _param_complex, _param_set, num_points_p1
-):
-    arrayparam = ArraySetPointParam(name="arrayparam")
-    array_shape = arrayparam.shape
-    additional_setpoints = [
-        Parameter(f"additional_setter_parameter_{i}", set_cmd=None, get_cmd=None)
-        for i in range(2)
-    ]
-    start_p1 = 0
-    stop_p1 = 0.5
-    delay_p1 = 0
-
-    x = 1
-    y = 2
-
-    additional_setpoints[0](x)
-    additional_setpoints[1](y)
-    results = do1d(
-        _param_set,
-        start_p1,
-        stop_p1,
-        num_points_p1,
-        delay_p1,
-        _param,
-        arrayparam,
-        additional_setpoints=additional_setpoints,
-        do_plot=False,
-    )
-    expected_shapes = {
-        "arrayparam": (num_points_p1, 1, 1, array_shape[0]),
-        "simple_parameter": (num_points_p1, 1, 1),
-    }
-    assert results[0].description.shapes == expected_shapes
-
-
-@pytest.mark.usefixtures("plot_close", "experiment")
-def test_do2d_additional_setpoints(_param, _param_complex, _param_set, _param_set_2):
-    additional_setpoints = [
-        Parameter(f"additional_setter_parameter_{i}", set_cmd=None, get_cmd=None)
-        for i in range(2)
-    ]
-    start_p1 = 0
-    stop_p1 = 0.5
-    num_points_p1 = 5
-    delay_p1 = 0
-
-    start_p2 = 0.5
-    stop_p2 = 1
-    num_points_p2 = 5
-    delay_p2 = 0.0
-    for x in range(3):
-        for y in range(4):
-            additional_setpoints[0](x)
-            additional_setpoints[1](y)
-            results = do2d(
-                _param_set,
-                start_p1,
-                stop_p1,
-                num_points_p1,
-                delay_p1,
-                _param_set_2,
-                start_p2,
-                stop_p2,
-                num_points_p2,
-                delay_p2,
-                _param,
-                _param_complex,
-                additional_setpoints=additional_setpoints,
-            )
-            for deps in results[0].description.interdeps.dependencies.values():
-                assert len(deps) == 2 + len(additional_setpoints)
-            plt.close("all")
-
-
-@given(
-    num_points_p1=hst.integers(min_value=1, max_value=5),
-    num_points_p2=hst.integers(min_value=1, max_value=5),
-)
-@settings(deadline=None, suppress_health_check=(HealthCheck.function_scoped_fixture,))
-@pytest.mark.usefixtures("experiment")
-def test_do2d_additional_setpoints_shape(
-    _param, _param_complex, _param_set, _param_set_2, num_points_p1, num_points_p2
-):
-    arrayparam = ArraySetPointParam(name="arrayparam")
-    array_shape = arrayparam.shape
-    additional_setpoints = [
-        Parameter(f"additional_setter_parameter_{i}", set_cmd=None, get_cmd=None)
-        for i in range(2)
-    ]
-    start_p1 = 0
-    stop_p1 = 0.5
-    delay_p1 = 0
-
-    start_p2 = 0.5
-    stop_p2 = 1
-    delay_p2 = 0.0
-
-    x = 1
-    y = 2
-
-    additional_setpoints[0](x)
-    additional_setpoints[1](y)
-    results = do2d(
-        _param_set,
-        start_p1,
-        stop_p1,
-        num_points_p1,
-        delay_p1,
-        _param_set_2,
-        start_p2,
-        stop_p2,
-        num_points_p2,
-        delay_p2,
-        _param,
-        _param_complex,
-        arrayparam,
-        additional_setpoints=additional_setpoints,
-        do_plot=False,
-    )
-    expected_shapes = {
-        "arrayparam": (num_points_p1, num_points_p2, 1, 1, array_shape[0]),
-        "simple_complex_parameter": (num_points_p1, num_points_p2, 1, 1),
-        "simple_parameter": (num_points_p1, num_points_p2, 1, 1),
-    }
-    assert results[0].description.shapes == expected_shapes
-
-
-def test_do2d_explicit_experiment(_param_set, _param_set_2, _param, experiment):
-    start_p1 = 0
-    stop_p1 = 0.5
-    num_points_p1 = 5
-    delay_p1 = 0
-
-    start_p2 = 0.5
-    stop_p2 = 1
-    num_points_p2 = 5
-    delay_p2 = 0.0
-
-    experiment_2 = new_experiment("new-exp", "no-sample")
-
-    data1 = do2d(
-        _param_set,
-        start_p1,
-        stop_p1,
-        num_points_p1,
-        delay_p1,
-        _param_set_2,
-        start_p2,
-        stop_p2,
-        num_points_p2,
-        delay_p2,
-        _param,
-        do_plot=False,
-        exp=experiment,
-    )
-    assert data1[0].exp_name == "test-experiment"
-    data2 = do2d(
-        _param_set,
-        start_p1,
-        stop_p1,
-        num_points_p1,
-        delay_p1,
-        _param_set_2,
-        start_p2,
-        stop_p2,
-        num_points_p2,
-        delay_p2,
-        _param,
-        do_plot=False,
-        exp=experiment_2,
-    )
-    assert data2[0].exp_name == "new-exp"
-    # by default the last experiment is used
-    data3 = do2d(
-        _param_set,
-        start_p1,
-        stop_p1,
-        num_points_p1,
-        delay_p1,
-        _param_set_2,
-        start_p2,
-        stop_p2,
-        num_points_p2,
-        delay_p2,
-        _param,
-        do_plot=False,
-    )
-    assert data3[0].exp_name == "new-exp"
-
-
-@pytest.mark.usefixtures("experiment")
-def test_do2d_explicit_name(_param_set, _param_set_2, _param):
-    start_p1 = 0
-    stop_p1 = 0.5
-    num_points_p1 = 5
-    delay_p1 = 0
-
-    start_p2 = 0.5
-    stop_p2 = 1
-    num_points_p2 = 5
-    delay_p2 = 0.0
-
-    data1 = do2d(
-        _param_set,
-        start_p1,
-        stop_p1,
-        num_points_p1,
-        delay_p1,
-        _param_set_2,
-        start_p2,
-        stop_p2,
-        num_points_p2,
-        delay_p2,
-        _param,
-        do_plot=False,
-        measurement_name="my measurement",
-    )
-    assert data1[0].name == "my measurement"
+from qcodes.validators import Ints
 
 
 def test_linear_sweep_get_setpoints(_param):
@@ -1096,16 +127,12 @@ def test_array_sweep_get_setpoints(_param):
     delay = 1
     sweep = ArraySweep(_param, array, delay)
 
-    np.testing.assert_array_equal(
-        sweep.get_setpoints(), array
-    )
+    np.testing.assert_array_equal(sweep.get_setpoints(), array)
 
     array2 = [1, 2, 3, 4, 5, 5.2]
     sweep2 = ArraySweep(_param, array2)
 
-    np.testing.assert_array_equal(
-        sweep2.get_setpoints(), np.array(array2)
-    )
+    np.testing.assert_array_equal(sweep2.get_setpoints(), np.array(array2))
 
 
 def test_array_sweep_properties(_param):
@@ -1141,13 +168,18 @@ def test_dond_explicit_exp_meas_sample(_param, experiment):
 
     data1 = dond(_param, do_plot=False, exp=experiment)
     assert data1[0].exp_name == "test-experiment"
+    assert data1[0].name == "results"
+    assert data1[0].sample_name == "test-sample"
     data2 = dond(_param, do_plot=False, exp=experiment_2, measurement_name="Meas")
     assert data2[0].name == "Meas"
     assert data2[0].sample_name == "no-sample"
     assert data2[0].exp_name == "new-exp"
     # by default the last experiment is used
     data3 = dond(_param, do_plot=False)
+
     assert data3[0].exp_name == "new-exp"
+    assert data3[0].sample_name == "no-sample"
+    assert data3[0].name == "results"
 
 
 def test_dond_multi_datasets_explicit_exp_meas_sample(
@@ -1174,6 +206,33 @@ def test_dond_multi_datasets_explicit_exp_meas_sample(
     data3 = dond([_param], [_param_complex], do_plot=False)
     assert data3[0][0].exp_name == "new-exp"
     assert data3[0][1].exp_name == "new-exp"
+
+
+def test_dond_multi_datasets_explicit_meas_names(_param, _param_complex, experiment):
+
+    data1 = dond(
+        [_param],
+        [_param_complex],
+        measurement_name=["foo", "bar"],
+        do_plot=False,
+        exp=experiment,
+    )
+    assert data1[0][0].name == "foo"
+    assert data1[0][1].name == "bar"
+
+
+def test_dond_multi_datasets_meas_names_len_mismatch(_param, experiment):
+
+    with pytest.raises(
+        ValueError,
+        match=re.escape("Got 2 measurement names but should create 1 dataset(s)."),
+    ):
+        dond(
+            [_param],
+            measurement_name=["foo", "bar"],
+            do_plot=False,
+            exp=experiment,
+        )
 
 
 @pytest.mark.usefixtures("experiment")
@@ -1222,18 +281,6 @@ def test_dond_0d_output_data(_param):
     assert data.parameters == _param.name
     loaded_data = data.get_parameter_data()["simple_parameter"]["simple_parameter"]
     assert loaded_data == np.array([_param.get()])
-
-
-@pytest.mark.usefixtures("plot_close", "experiment")
-def test_dond_0d_output_type(_param, _param_complex, _param_callable):
-    data_1 = do0d(_param)
-    assert isinstance(data_1[0], DataSet) is True
-
-    data_2 = do0d(_param_complex)
-    assert isinstance(data_2[0], DataSet) is True
-
-    data_3 = do0d(_param_callable)
-    assert isinstance(data_3[0], DataSet) is True
 
 
 @pytest.mark.usefixtures("experiment")
@@ -1742,7 +789,7 @@ def test_dond_2d_multi_datasets_multi_exp_inconsistent_raises(
     sweep_2 = LinSweep(_param_set_2, 0.5, 1, 2, 0)
 
     with pytest.raises(
-        ValueError, match="Inconsistent number of parameter groups and experiments"
+        ValueError, match="Inconsistent number of datasets and experiments"
     ):
         dond(sweep_1, sweep_2, [_param], [_param_complex], exp=[exp1, exp2, exp3])
 
@@ -1863,3 +910,682 @@ def test_dond_2d_multi_datasets_with_callable_output_data(
     np.testing.assert_array_equal(
         loaded_data_2[_param_2.name][_param_set_2.name], expected_setpoints_2
     )
+
+
+@pytest.mark.usefixtures("plot_close", "experiment")
+def test_dond_together_sweep(_param_set, _param_set_2, _param, _param_2):
+
+    sweep_1 = LinSweep(_param_set, 0, 1, 10, 0)
+    sweep_2 = LinSweep(_param_set_2, 1, 2, 10, 0)
+
+    together_sweep = TogetherSweep(sweep_1, sweep_2)
+
+    output = dond(together_sweep, [_param], [_param_2], do_plot=False)
+
+    assert sweep_1.param.name == "simple_setter_parameter"
+    assert _param.name == "simple_parameter"
+
+    assert sweep_2.param.name == "simple_setter_parameter_2"
+    assert _param_2.name == "simple_parameter_2"
+
+    assert (
+        output[0][0].parameters
+        == "simple_setter_parameter,simple_setter_parameter_2,simple_parameter"
+    )
+    assert (
+        output[0][1].parameters
+        == "simple_setter_parameter,simple_setter_parameter_2,simple_parameter_2"
+    )
+
+
+@pytest.mark.usefixtures("plot_close", "experiment")
+def test_dond_together_sweep_sweeper(_param_set, _param_set_2, _param):
+
+    sweep_len = 10
+
+    delay_1 = 0.1
+
+    sweep_1 = LinSweep(_param_set, 0, 1, sweep_len, delay_1)
+
+    delay_2 = 0.2
+
+    sweep_2 = LinSweep(_param_set_2, 1, 2, sweep_len, delay_2)
+
+    together_sweep = TogetherSweep(sweep_1, sweep_2)
+
+    sweeper = _Sweeper([together_sweep], [])
+
+    expected_sweeper_groups = (
+        (sweep_1.param,),
+        (sweep_2.param,),
+        (
+            sweep_1.param,
+            sweep_2.param,
+        ),
+    )
+    for g in expected_sweeper_groups:
+        assert g in sweeper.sweep_groupes
+    assert len(expected_sweeper_groups) == len(sweeper.sweep_groupes)
+    assert sweeper.shape == (10,)
+    assert sweeper.all_setpoint_params == (sweep_1.param, sweep_2.param)
+
+    assert list(sweeper.setpoints_dict.keys()) == [
+        "simple_setter_parameter",
+        "simple_setter_parameter_2",
+    ]
+    assert sweeper.setpoints_dict["simple_setter_parameter"] == list(
+        sweep_1.get_setpoints()
+    )
+    assert sweeper.setpoints_dict["simple_setter_parameter_2"] == list(
+        sweep_2.get_setpoints()
+    )
+
+    for output, setpoint_1, setpoint_2 in zip(
+        sweeper, sweep_1.get_setpoints(), sweep_2.get_setpoints()
+    ):
+        assert output[0].parameter == sweep_1.param
+        assert output[0].new_value == setpoint_1
+        assert output[0].should_set is True
+        assert output[0].delay == delay_1
+
+        assert output[1].parameter == sweep_2.param
+        assert output[1].new_value == setpoint_2
+        assert output[1].should_set is True
+        assert output[1].delay == delay_2
+
+
+def test_dond_together_sweep_sweeper_combined():
+    a = ManualParameter("a", initial_value=0)
+    b = ManualParameter("b", initial_value=0)
+    c = ManualParameter("c", initial_value=0)
+    d = ManualParameter("d", initial_value=1)
+    e = ManualParameter("e", initial_value=2)
+    f = ManualParameter("f", initial_value=3)
+    sweepA = LinSweep(a, 0, 3, 10)
+    sweepB = LinSweep(b, 5, 7, 10)
+    sweepC = LinSweep(c, 8, 12, 10)
+
+    datasets, _, _ = dond(
+        TogetherSweep(sweepA, sweepB),
+        sweepC,
+        d,
+        e,
+        f,
+        do_plot=False,
+        dataset_dependencies={
+            "ds1": (a, c, d),
+            "ds2": (b, c, e),
+            "ds3": (b, c, f),
+        },
+    )
+    assert datasets[0].parameters == "a,c,d"
+    assert datasets[0].name == "ds1"
+    assert datasets[1].parameters == "b,c,e"
+    assert datasets[1].name == "ds2"
+    assert datasets[2].parameters == "b,c,f"
+    assert datasets[2].name == "ds3"
+
+
+def test_dond_together_sweep_sweeper_combined_2_in_1():
+    a = ManualParameter("a", initial_value=0)
+    b = ManualParameter("b", initial_value=0)
+    c = ManualParameter("c", initial_value=0)
+    d = ManualParameter("d", initial_value=1)
+    e = ManualParameter("e", initial_value=2)
+    f = ManualParameter("f", initial_value=3)
+    sweep_a = LinSweep(a, 0, 3, 10)
+    sweep_b = LinSweep(b, 5, 7, 10)
+    sweep_c = LinSweep(c, 8, 12, 10)
+
+    datasets, _, _ = dond(
+        TogetherSweep(sweep_a, sweep_b),
+        sweep_c,
+        d,
+        e,
+        f,
+        do_plot=False,
+        dataset_dependencies={
+            "ds1": (a, c, d, f),
+            "ds2": (b, c, e),
+        },
+    )
+    assert datasets[0].parameters == "a,c,d,f"
+    assert datasets[0].name == "ds1"
+    assert datasets[1].parameters == "b,c,e"
+    assert datasets[1].name == "ds2"
+
+
+def test_dond_together_sweep_sweeper_mixed_splitting():
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "Measured parameters have been grouped both in input "
+            "and given in dataset dependencies. This is not supported, "
+            "group measurement parameters either in input or in dataset dependencies."
+        ),
+    ):
+        a = ManualParameter("a", initial_value=0)
+        b = ManualParameter("b", initial_value=0)
+        c = ManualParameter("c", initial_value=0)
+        d = ManualParameter("d", initial_value=1)
+        e = ManualParameter("e", initial_value=2)
+        f = ManualParameter("f", initial_value=3)
+        sweepA = LinSweep(a, 0, 3, 10)
+        sweepB = LinSweep(b, 5, 7, 10)
+        sweepC = LinSweep(c, 8, 12, 10)
+
+        datasets, _, _ = dond(
+            TogetherSweep(sweepA, sweepB),
+            sweepC,
+            [d],
+            [e],
+            [f],
+            do_plot=False,
+            dataset_dependencies={
+                "ds1": (a, c, d),
+                "ds2": (b, c, e),
+                "ds3": (b, c, f),
+            },
+        )
+
+
+def test_dond_together_sweep_sweeper_combined_explict_names():
+    a = ManualParameter("a", initial_value=0)
+    b = ManualParameter("b", initial_value=0)
+    c = ManualParameter("c", initial_value=0)
+    d = ManualParameter("d", initial_value=1)
+    e = ManualParameter("e", initial_value=2)
+    f = ManualParameter("f", initial_value=3)
+    sweepA = LinSweep(a, 0, 3, 10)
+    sweepB = LinSweep(b, 5, 7, 10)
+    sweepC = LinSweep(c, 8, 12, 10)
+
+    datasets, _, _ = dond(
+        TogetherSweep(sweepA, sweepB),
+        sweepC,
+        d,
+        e,
+        f,
+        measurement_name=("ds1", "ds2", "ds3"),
+        do_plot=False,
+        dataset_dependencies={
+            "ds1": (a, c, d),
+            "ds2": (b, c, e),
+            "ds3": (b, c, f),
+        },
+    )
+    assert datasets[0].parameters == "a,c,d"
+    assert datasets[0].name == "ds1"
+    assert datasets[1].parameters == "b,c,e"
+    assert datasets[1].name == "ds2"
+    assert datasets[2].parameters == "b,c,f"
+    assert datasets[2].name == "ds3"
+
+
+def test_dond_together_sweep_sweeper_combined_explict_names_inconsistent():
+    a = ManualParameter("a", initial_value=0)
+    b = ManualParameter("b", initial_value=0)
+    c = ManualParameter("c", initial_value=0)
+    d = ManualParameter("d", initial_value=1)
+    e = ManualParameter("e", initial_value=2)
+    f = ManualParameter("f", initial_value=3)
+    sweepA = LinSweep(a, 0, 3, 10)
+    sweepB = LinSweep(b, 5, 7, 10)
+    sweepC = LinSweep(c, 8, 12, 10)
+
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "Inconsistent measurement names: measurement_name contains "
+            "('ds1', 'ds2', 'ds4') but dataset_dependencies contains ('ds1', 'ds2', 'ds3')."
+        ),
+    ):
+        datasets, _, _ = dond(
+            TogetherSweep(sweepA, sweepB),
+            sweepC,
+            d,
+            e,
+            f,
+            measurement_name=("ds1", "ds2", "ds4"),
+            do_plot=False,
+            dataset_dependencies={
+                "ds1": (a, c, d),
+                "ds2": (b, c, e),
+                "ds3": (b, c, f),
+            },
+        )
+
+
+def test_dond_together_sweep_sweeper_combined_explict_names_and_single_name():
+    a = ManualParameter("a", initial_value=0)
+    b = ManualParameter("b", initial_value=0)
+    c = ManualParameter("c", initial_value=0)
+    d = ManualParameter("d", initial_value=1)
+    e = ManualParameter("e", initial_value=2)
+    f = ManualParameter("f", initial_value=3)
+    sweepA = LinSweep(a, 0, 3, 10)
+    sweepB = LinSweep(b, 5, 7, 10)
+    sweepC = LinSweep(c, 8, 12, 10)
+
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "Creating multiple datasets but only one measurement name given."
+        ),
+    ):
+        datasets, _, _ = dond(
+            TogetherSweep(sweepA, sweepB),
+            sweepC,
+            d,
+            e,
+            f,
+            measurement_name="my_measurement",
+            do_plot=False,
+            dataset_dependencies={
+                "ds1": (a, c, d),
+                "ds2": (b, c, e),
+                "ds3": (b, c, f),
+            },
+        )
+
+
+def test_dond_together_sweep_sweeper_combined_lists():
+    a = ManualParameter("a", initial_value=0)
+    b = ManualParameter("b", initial_value=0)
+    c = ManualParameter("c", initial_value=0)
+    d = ManualParameter("d", initial_value=1)
+    e = ManualParameter("e", initial_value=2)
+    f = ManualParameter("f", initial_value=3)
+    sweepA = LinSweep(a, 0, 3, 10)
+    sweepB = LinSweep(b, 5, 7, 10)
+    sweepC = LinSweep(c, 8, 12, 10)
+
+    datasets, _, _ = dond(
+        TogetherSweep(sweepA, sweepB),
+        sweepC,
+        d,
+        e,
+        f,
+        do_plot=False,
+        dataset_dependencies={
+            "ds1": [a, c, d],
+            "ds2": [b, c, e],
+            "ds3": [b, c, f],
+        },
+    )
+    assert datasets[0].parameters == "a,c,d"
+    assert datasets[0].name == "ds1"
+    assert datasets[1].parameters == "b,c,e"
+    assert datasets[1].name == "ds2"
+    assert datasets[2].parameters == "b,c,f"
+    assert datasets[2].name == "ds3"
+
+
+@given(
+    n_points_1=hst.integers(min_value=1, max_value=500),
+    n_points_2=hst.integers(min_value=1, max_value=500),
+)
+def test_together_sweep_validation(n_points_1, n_points_2):
+    a = ManualParameter("a", initial_value=0)
+    b = ManualParameter("b", initial_value=0)
+    sweepA = LinSweep(a, 0, 3, n_points_1)
+    sweepB = LinSweep(b, 5, 7, n_points_2)
+
+    if n_points_1 != n_points_2:
+        with pytest.raises(
+            ValueError, match="All Sweeps in a TogetherSweep must have the same length"
+        ):
+            TogetherSweep(sweepA, sweepB)
+
+
+def test_empty_together_sweep_raises():
+
+    with pytest.raises(
+        ValueError, match="A TogetherSweep must contain at least one sweep."
+    ):
+        TogetherSweep()
+
+
+def test_dond_together_sweep_more_parameters():
+    a = ManualParameter("a", initial_value=0)
+    b = ManualParameter("b", initial_value=0)
+    c = ManualParameter("c", initial_value=0)
+    d = ManualParameter("d", initial_value=1)
+    e = ManualParameter("e", initial_value=2)
+    f = ManualParameter("f", initial_value=3)
+    sweepA = LinSweep(a, 0, 3, 10)
+    sweepB = LinSweep(b, 5, 7, 10)
+    sweepC = LinSweep(c, 8, 12, 10)
+
+    dataset, _, _ = dond(
+        TogetherSweep(sweepA, sweepB),
+        sweepC,
+        d,
+        e,
+        f,
+        do_plot=False,
+    )
+    assert dataset.parameters == "a,b,c,d,e,f"
+
+
+def test_dond_together_sweep_sweeper_combined_missing_in_dataset_dependencies():
+    a = ManualParameter("a", initial_value=0)
+    b = ManualParameter("b", initial_value=0)
+    c = ManualParameter("c", initial_value=0)
+    d = ManualParameter("d", initial_value=1)
+    e = ManualParameter("e", initial_value=2)
+    f = ManualParameter("f", initial_value=3)
+    sweepA = LinSweep(a, 0, 3, 10)
+    sweepB = LinSweep(b, 5, 7, 10)
+    sweepC = LinSweep(c, 8, 12, 10)
+
+    with pytest.raises(
+        ValueError,
+        match="Parameter f is measured but not added to any dataset",
+    ):
+        datasets, _, _ = dond(
+            TogetherSweep(sweepA, sweepB),
+            sweepC,
+            d,
+            e,
+            f,
+            do_plot=False,
+            dataset_dependencies={
+                "ds1": (a, c, d),
+                "ds2": (b, c, e),
+            },
+        )
+
+
+def test_dond_together_sweep_sweeper_wrong_sp_in_dataset_dependencies():
+    a = ManualParameter("a", initial_value=0)
+    b = ManualParameter("b", initial_value=0)
+    c = ManualParameter("c", initial_value=0)
+    d = ManualParameter("d", initial_value=1)
+    e = ManualParameter("e", initial_value=2)
+    f = ManualParameter("f", initial_value=3)
+    sweepA = LinSweep(a, 0, 3, 10)
+    sweepB = LinSweep(b, 5, 7, 10)
+    sweepC = LinSweep(c, 8, 12, 10)
+
+    with pytest.raises(ValueError, match=f"not among the expected groups of setpoints"):
+        datasets, _, _ = dond(
+            TogetherSweep(sweepA, sweepB),
+            sweepC,
+            d,
+            e,
+            f,
+            do_plot=False,
+            dataset_dependencies={"ds1": (a, b, d), "ds2": (b, c, e), "ds3": (b, c, f)},
+        )
+
+
+def test_dond_together_sweep_sweeper_wrong_mp_in_dataset_dependencies():
+    a = ManualParameter("a", initial_value=0)
+    b = ManualParameter("b", initial_value=0)
+    c = ManualParameter("c", initial_value=0)
+    d = ManualParameter("d", initial_value=1)
+    e = ManualParameter("e", initial_value=2)
+    f = ManualParameter("f", initial_value=3)
+    g = ManualParameter("g", initial_value=4)
+    sweepA = LinSweep(a, 0, 3, 10)
+    sweepB = LinSweep(b, 5, 7, 10)
+    sweepC = LinSweep(c, 8, 12, 10)
+
+    with pytest.raises(
+        ValueError,
+        match="which is not among the expected groups of setpoints",
+    ):
+        datasets, _, _ = dond(
+            TogetherSweep(sweepA, sweepB),
+            sweepC,
+            d,
+            e,
+            f,
+            do_plot=False,
+            dataset_dependencies={
+                "ds1": (a, c, d),
+                "ds2": (b, c, e),
+                "ds3": (b, c, f),
+                "ds4": (b, c, g),
+            },
+        )
+
+
+def test_dond_together_sweep_parameter_with_setpoints(dummyinstrument):
+
+    outer_shape = 10
+    inner_shape = 15
+
+    n_points_a = 20
+    dummyinstrument.A.dummy_n_points(n_points_a)
+    n_points_b = 25
+    dummyinstrument.B.dummy_n_points(n_points_b)
+
+    a = ManualParameter("a", initial_value=0)
+    b = ManualParameter("b", initial_value=0)
+    c = ManualParameter("c", initial_value=0)
+    sweep_a = LinSweep(a, 0, 3, outer_shape)
+    sweep_b = LinSweep(b, 5, 7, outer_shape)
+    sweep_c = LinSweep(c, 8, 12, inner_shape)
+
+    datasets, _, _ = dond(
+        TogetherSweep(sweep_a, sweep_b),
+        sweep_c,
+        [dummyinstrument.A.dummy_parameter_with_setpoints],
+        [dummyinstrument.B.dummy_parameter_with_setpoints],
+        do_plot=False,
+    )
+
+    assert (
+        datasets[0].parameters
+        == "a,b,c,dummyinstrument_ChanA_dummy_sp_axis,dummyinstrument_ChanA_dummy_parameter_with_setpoints"
+    )
+    assert len(datasets[0].description.shapes) == 1
+    assert datasets[0].description.shapes[
+        "dummyinstrument_ChanA_dummy_parameter_with_setpoints"
+    ] == (outer_shape, inner_shape, n_points_a)
+
+    assert (
+        datasets[1].parameters
+        == "a,b,c,dummyinstrument_ChanB_dummy_sp_axis,dummyinstrument_ChanB_dummy_parameter_with_setpoints"
+    )
+    assert len(datasets[1].description.shapes) == 1
+    assert datasets[1].description.shapes[
+        "dummyinstrument_ChanB_dummy_parameter_with_setpoints"
+    ] == (outer_shape, inner_shape, n_points_b)
+
+
+def test_dond_together_sweep_parameter_with_setpoints_explicit_mapping(dummyinstrument):
+
+    outer_shape = 10
+    inner_shape = 15
+
+    n_points_a = 20
+    dummyinstrument.A.dummy_n_points(n_points_a)
+    n_points_b = 25
+    dummyinstrument.B.dummy_n_points(n_points_b)
+
+    a = ManualParameter("a", initial_value=0)
+    b = ManualParameter("b", initial_value=0)
+    c = ManualParameter("c", initial_value=0)
+    sweep_a = LinSweep(a, 0, 3, outer_shape)
+    sweep_b = LinSweep(b, 5, 7, outer_shape)
+    sweep_c = LinSweep(c, 8, 12, inner_shape)
+
+    datasets, _, _ = dond(
+        TogetherSweep(sweep_a, sweep_b),
+        sweep_c,
+        dummyinstrument.A.dummy_parameter_with_setpoints,
+        dummyinstrument.B.dummy_parameter_with_setpoints,
+        dataset_dependencies={
+            "ds1": (a, c, dummyinstrument.A.dummy_parameter_with_setpoints),
+            "ds2": (b, c, dummyinstrument.B.dummy_parameter_with_setpoints),
+        },
+        do_plot=False,
+    )
+
+    assert (
+        datasets[0].parameters
+        == "a,c,dummyinstrument_ChanA_dummy_sp_axis,dummyinstrument_ChanA_dummy_parameter_with_setpoints"
+    )
+    assert len(datasets[0].description.shapes) == 1
+    assert datasets[0].description.shapes[
+        "dummyinstrument_ChanA_dummy_parameter_with_setpoints"
+    ] == (outer_shape, inner_shape, n_points_a)
+
+    assert (
+        datasets[1].parameters
+        == "b,c,dummyinstrument_ChanB_dummy_sp_axis,dummyinstrument_ChanB_dummy_parameter_with_setpoints"
+    )
+    assert len(datasets[1].description.shapes) == 1
+    assert datasets[1].description.shapes[
+        "dummyinstrument_ChanB_dummy_parameter_with_setpoints"
+    ] == (outer_shape, inner_shape, n_points_b)
+
+
+def test_dond_together_sweep_parameter_with_setpoints_explicit_mapping_and_callable(
+    dummyinstrument,
+):
+
+    outer_shape = 10
+    inner_shape = 15
+
+    n_points_a = 20
+    dummyinstrument.A.dummy_n_points(n_points_a)
+    n_points_b = 25
+    dummyinstrument.B.dummy_n_points(n_points_b)
+
+    a = ManualParameter("a", initial_value=0)
+    b = ManualParameter("b", initial_value=0)
+    c = ManualParameter("c", initial_value=0)
+    sweep_a = LinSweep(a, 0, 3, outer_shape)
+    sweep_b = LinSweep(b, 5, 7, outer_shape)
+    sweep_c = LinSweep(c, 8, 12, inner_shape)
+
+    datasets, _, _ = dond(
+        TogetherSweep(sweep_a, sweep_b),
+        sweep_c,
+        lambda: print("this is a sideffect"),
+        dummyinstrument.A.dummy_parameter_with_setpoints,
+        dummyinstrument.B.dummy_parameter_with_setpoints,
+        dataset_dependencies={
+            "ds1": (a, c, dummyinstrument.A.dummy_parameter_with_setpoints),
+            "ds2": (b, c, dummyinstrument.B.dummy_parameter_with_setpoints),
+        },
+        do_plot=False,
+    )
+
+    assert (
+        datasets[0].parameters
+        == "a,c,dummyinstrument_ChanA_dummy_sp_axis,dummyinstrument_ChanA_dummy_parameter_with_setpoints"
+    )
+    assert len(datasets[0].description.shapes) == 1
+    assert datasets[0].description.shapes[
+        "dummyinstrument_ChanA_dummy_parameter_with_setpoints"
+    ] == (outer_shape, inner_shape, n_points_a)
+
+    assert (
+        datasets[1].parameters
+        == "b,c,dummyinstrument_ChanB_dummy_sp_axis,dummyinstrument_ChanB_dummy_parameter_with_setpoints"
+    )
+    assert len(datasets[1].description.shapes) == 1
+    assert datasets[1].description.shapes[
+        "dummyinstrument_ChanB_dummy_parameter_with_setpoints"
+    ] == (outer_shape, inner_shape, n_points_b)
+
+
+def test_dond_sweeper_combinations(_param_set, _param_set_2, _param):
+    outer_shape = 10
+    inner_shape = 15
+
+    a = ManualParameter("a", initial_value=0)
+    b = ManualParameter("b", initial_value=0)
+    c = ManualParameter("c", initial_value=0)
+    d = ManualParameter("d", initial_value=0)
+    sweep_a = LinSweep(a, 0, 3, outer_shape)
+    sweep_b = LinSweep(b, 5, 7, outer_shape)
+    sweep_c = LinSweep(c, 8, 12, outer_shape)
+    sweep_d = LinSweep(d, 13, 16, inner_shape)
+
+    multi_sweep = TogetherSweep(sweep_a, sweep_b, sweep_c)
+
+    sweeper = _Sweeper([multi_sweep, sweep_d], [])
+
+    sweep_groups = sweeper.sweep_groupes
+
+    expected_sweeper_groups = (
+        (a, d),
+        (b, d),
+        (c, d),
+        (a, b, d),
+        (a, c, d),
+        (b, c, d),
+        (a, b, c, d),
+    )
+
+    assert len(expected_sweeper_groups) == len(sweep_groups)
+    for g in expected_sweeper_groups:
+        assert g in sweep_groups
+
+
+def test_sweep_int_vs_float():
+
+    float_param = ManualParameter("float_param", initial_value=0.0)
+    int_param = ManualParameter("int_param", vals=Ints(0, 100))
+
+    dataset, _, _ = dond(ArraySweep(int_param, [1, 2, 3]), float_param)
+    assert dataset.parameters == "int_param,float_param"
+    assert dataset.cache.data()["float_param"]["int_param"].dtype.kind == "i"
+
+
+def test_error_no_measured_parameters():
+    float_param = ManualParameter("float_param", initial_value=0.0)
+    int_param = ManualParameter("int_param", vals=Ints(0, 100))
+
+    with pytest.raises(ValueError, match="No parameters to measure supplied"):
+        dond(ArraySweep(int_param, [1, 2, 3]), ArraySweep(float_param, [1.0, 2.0, 3.0]))
+
+
+def test_error_measured_grouped_and_not_grouped():
+    param_1 = ManualParameter("param_1", initial_value=0.0)
+    param_2 = ManualParameter("param_2", initial_value=0.0)
+    param_3 = ManualParameter("param_3", initial_value=0.0)
+
+    with pytest.raises(
+        ValueError, match="Got both grouped and non grouped parameters to measure in"
+    ):
+        dond(LinSweep(param_1, 0, 10, 10), param_2, [param_3])
+
+
+def test_post_action(mocker):
+    param_1 = ManualParameter("param_1", initial_value=0.0)
+    param_2 = ManualParameter("param_2", initial_value=0.0)
+
+    post_actions = (mocker.MagicMock(),)
+    dond(LinSweep(param_1, 0, 10, 10, post_actions=post_actions), param_2)
+
+    post_actions[0].assert_called_with()
+
+
+def test_extra_log_info(caplog):
+
+    param_1 = ManualParameter("param_1", initial_value=0.0)
+    param_2 = ManualParameter("param_2", initial_value=0.0)
+
+    log_message = "FOOBAR"
+    with caplog.at_level(level=logging.INFO):
+        dond(LinSweep(param_1, 0, 10, 10), param_2, log_info=log_message)
+
+    assert log_message in caplog.text
+
+
+def test_default_log_info(caplog):
+
+    param_1 = ManualParameter("param_1", initial_value=0.0)
+    param_2 = ManualParameter("param_2", initial_value=0.0)
+
+    with caplog.at_level(level=logging.INFO):
+        dond(LinSweep(param_1, 0, 10, 10), param_2)
+
+    assert "Using 'qcodes.dataset.dond'" in caplog.text
