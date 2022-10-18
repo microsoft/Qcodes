@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tupl
 from warnings import warn
 
 import numpy as np
-from tqdm.auto import tqdm
+from tqdm import tqdm
 
 from qcodes.dataset.data_set_protocol import DataSetProtocol
 from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
