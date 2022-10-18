@@ -415,7 +415,7 @@ class Parameter(ParameterBase):
         measure_params: ParameterBase=None,
         repetitions: int = 1,
         sweep=None,
-        plot: bool = False,
+        plot: bool = None,
     ):
         """Perform a measurement by sweeping this parameter
 
@@ -468,7 +468,7 @@ class Parameter(ParameterBase):
                 `parameter.sweep` was called is the innermost dimension.
                 Note that ``sweep`` can be either a single Sweep, or a Sweep list.
         """
-        from qcodes.dataset import Sweep
+        from qcodes.dataset import MeasurementLoop, Sweep
         parameter_sweep = Sweep(
             self,  # Pass parameter as first arg
             *args,
@@ -481,6 +481,12 @@ class Parameter(ParameterBase):
             initial_delay=initial_delay,
             revert=revert
         )
+        
+        # Only plot if not excplicitly set and not part of a larger measurement
+        if plot is None:
+            plot = (MeasurementLoop.running_measurement is None)
+
+
         dataset = parameter_sweep.execute(
             name=measurement_name,
             measure_params=measure_params,
