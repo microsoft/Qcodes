@@ -18,7 +18,7 @@ from .dond.do_0d import do0d
 from .dond.do_1d import do1d
 from .dond.do_2d import do2d
 from .dond.do_nd import dond
-from .dond.sweeps import AbstractSweep, ArraySweep, LinSweep, LogSweep
+from .dond.sweeps import AbstractSweep, ArraySweep, LinSweep, LogSweep, TogetherSweep
 from .experiment_container import (
     experiments,
     load_experiment,
@@ -55,6 +55,7 @@ __all__ = [
     "LinSweep",
     "LogSweep",
     "Measurement",
+    "TogetherSweep",
     "ParamSpec",
     "SQLiteSettings",
     "SequentialParamsCaller",

@@ -10,6 +10,9 @@ import inspect
 from typing import Any, Dict, Optional, Tuple, Type, Union
 
 import parso
+import parso.python
+import parso.python.tree
+import parso.tree
 from sphinx.util import logging
 from sphinx.util.inspect import safe_getattr
 
@@ -44,7 +47,7 @@ def find_class(
     for child in node.children:
         if isinstance(child, parso.python.tree.Class) and child.name.value == classname:
             nodes.append(child)
-        elif isinstance(child, parso.python.tree.Node):
+        elif isinstance(child, parso.tree.Node):
             nodes.extend(find_class(child, classname))
     return tuple(nodes)
 
@@ -60,7 +63,7 @@ def find_init_func(
             and child.name.value == "__init__"
         ):
             nodes.append(child)
-        elif isinstance(child, parso.python.tree.Node):
+        elif isinstance(child, parso.tree.Node):
             nodes.extend(find_init_func(child))
     return tuple(nodes)
 
@@ -98,7 +101,7 @@ def extract_statements_from_node(
     for child in parso_node.children:
         if isinstance(child, parso.python.tree.ExprStmt):
             nodes.append(child)
-        elif isinstance(child, parso.python.tree.Node):
+        elif isinstance(child, parso.tree.Node):
             nodes.extend(extract_statements_from_node(child))
     return tuple(nodes)
 
@@ -129,14 +132,14 @@ def extract_code_as_repr(
     lhs = stm.children[0]
     rhs = stm.get_rhs()
 
-    if isinstance(lhs, parso.python.tree.BaseNode) and len(lhs.children) == 2:
+    if isinstance(lhs, parso.tree.BaseNode) and len(lhs.children) == 2:
         obj1 = lhs.children[0]
         obj2 = lhs.children[1]
         if (
-            isinstance(obj1, parso.python.tree.Leaf)
+            isinstance(obj1, parso.tree.Leaf)
             and obj1.value == "self"
-            and isinstance(obj2, parso.python.tree.BaseNode)
-            and isinstance(obj2.children[1], parso.python.tree.Leaf)
+            and isinstance(obj2, parso.tree.BaseNode)
+            and isinstance(obj2.children[1], parso.tree.Leaf)
         ):
             name = obj2.children[1].value
             code = " ".join(rhs.get_code().strip().split())

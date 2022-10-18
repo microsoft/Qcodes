@@ -1,3 +1,4 @@
+from ._Keithley_2600 import Keithley2600MeasurementStatus
 from .Keithley_2000 import Keithley2000
 from .Keithley_2400 import Keithley2400
 from .Keithley_2450 import (
@@ -41,6 +42,7 @@ __all__ = [
     "Keithley2450Buffer",
     "Keithley2450Sense",
     "Keithley2450Source",
+    "Keithley2600MeasurementStatus",
     "Keithley2601B",
     "Keithley2602A",
     "Keithley2602B",
@@ -56,11 +58,11 @@ __all__ = [
     "Keithley3706AUnknownOrEmptySlot",
     "Keithley6500",
     "Keithley6500CommandSetError",
-    "Keithley7510Buffer",
     "Keithley7510",
-    "Keithley7510Sense",
+    "Keithley7510Buffer",
     "Keithley7510DigitizeSense",
+    "Keithley7510Sense",
     "KeithleyS46",
-    "KeithleyS46RelayLock",
     "KeithleyS46LockAcquisitionError",
+    "KeithleyS46RelayLock",
 ]

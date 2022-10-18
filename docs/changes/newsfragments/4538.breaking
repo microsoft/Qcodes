@@ -1,6 +1,0 @@
-The following ``InstrumentChannel`` classes have changed name for consistency.
-This is expected to be a change with few user facing implications unless you are explicitly
-subclassing the mentioned classes.
-
-* ``DG1062Burst`` has changed name to ``RigolDG1062Burst``
-* ``DG1062Channel`` has changed name to ``RigolDG1062Channel``

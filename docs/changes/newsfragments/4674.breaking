@@ -1,0 +1,2 @@
+The deprecated imports of `Loop`, `Measure` and members of `qcodes.data` in the toplevel QCoDeS namespace has been
+removed.

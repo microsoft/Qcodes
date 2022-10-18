@@ -11,14 +11,15 @@ import pytest
 from hypothesis import HealthCheck, given, settings
 
 import qcodes as qc
-from qcodes import (
+from qcodes.dataset import (
     experiments,
     load_by_counter,
     load_by_id,
     new_data_set,
     new_experiment,
 )
-from qcodes.dataset.data_set import CompletedError, DataSet
+from qcodes.dataset.data_set import DataSet
+from qcodes.dataset.data_set_protocol import CompletedError
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.descriptions.rundescriber import RunDescriber

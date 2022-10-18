@@ -4,10 +4,9 @@ coordinate systems.
 """
 
 
-from typing import Any, List, Optional, Sequence, Type, TypeVar, Union
+from typing import Any, List, Literal, Optional, Sequence, Type, TypeVar, Union
 
 import numpy as np
-from typing_extensions import Literal
 
 NormOrder = Union[None, float, Literal["fro"], Literal["nuc"]]
 T = TypeVar("T", bound="FieldVector")
