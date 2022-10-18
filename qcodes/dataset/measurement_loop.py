@@ -838,6 +838,10 @@ class MeasurementLoop:
         # Get parameter result
         result = parameter(**kwargs)
 
+        # Result "None causes issues, so it's converted to NaN"
+        if result is None:
+            result = np.nan
+
         self.data_handler.add_measurement_result(
             action_indices=self.action_indices,
             result=result,
