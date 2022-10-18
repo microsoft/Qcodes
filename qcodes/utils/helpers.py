@@ -150,7 +150,7 @@ class PerformanceTimer:
         for _ in range(len(timing_list) - self.max_records):
             timing_list.pop(0)
 
-        
+
 @deprecate("Internal function no longer part of the public qcodes api")
 def compare_dictionaries(
     dict_1: Dict[Hashable, Any],
