@@ -1339,7 +1339,7 @@ class MeasurementLoop:
                         unmask_type = "key"
                     elif hasattr(obj, attr):
                         unmask_type = "attr"
-                        
+
                 if unmask_type == "key":
                     obj[key] = original_value
                 elif unmask_type == "attr":
@@ -1509,6 +1509,7 @@ class BaseSweep(AbstractSweep):
             for param_val in Sweep(p.
         ```
     """
+    plot_function = None
 
     def __init__(
         self,
@@ -1795,8 +1796,8 @@ class BaseSweep(AbstractSweep):
         with MeasurementLoop(name) as msmt:
             measure_sweeps(sweeps=sweeps, measure_params=measure_params, msmt=msmt)
 
-        if plot and self.plot_function is not None:
-            self.plot_function(msmt.dataset)
+        if plot and Sweep.plot_function is not None and MeasurementLoop.running_measurement is None:
+            Sweep.plot_function(msmt.dataset)
 
         return msmt.dataset
 
