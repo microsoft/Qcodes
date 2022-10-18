@@ -1339,7 +1339,7 @@ class MeasurementLoop:
                         unmask_type = "key"
                     elif hasattr(obj, attr):
                         unmask_type = "attr"
-                        
+
                 if unmask_type == "key":
                     obj[key] = original_value
                 elif unmask_type == "attr":
