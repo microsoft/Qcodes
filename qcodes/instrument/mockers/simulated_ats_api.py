@@ -13,11 +13,12 @@ from typing import Any, Callable, Dict, Optional, Tuple
 import numpy as np
 
 from qcodes.instrument_drivers.AlazarTech.ats_api import AlazarATSAPI
-from qcodes.instrument_drivers.AlazarTech.constants import API_SUCCESS, Capability
-from qcodes.instrument_drivers.AlazarTech.dll_wrapper import (
+from qcodes.instrument_drivers.AlazarTech.constants import (
+    API_SUCCESS,
+    Capability,
     ReturnCode,
-    _mark_params_as_updated,
 )
+from qcodes.instrument_drivers.AlazarTech.dll_wrapper import _mark_params_as_updated
 
 
 class SimulatedATS9360API(AlazarATSAPI):

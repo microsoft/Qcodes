@@ -293,8 +293,13 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 snap["parameters"][name] = param.snapshot(update=False)
 
         for attr in set(self._meta_attrs):
-            if hasattr(self, attr):
-                snap[attr] = getattr(self, attr)
+            val = getattr(self, attr, None)
+            if val is not None:
+                if isinstance(val, Metadatable):
+                    snap[attr] = val.snapshot(update=update)
+                else:
+                    snap[attr] = val
+
         return snap
 
     def print_readable_snapshot(

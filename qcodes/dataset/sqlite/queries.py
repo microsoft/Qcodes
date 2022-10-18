@@ -1789,7 +1789,9 @@ def get_data_by_tag_and_table_name(
         # in an atomic that will do a rollback
         # this probably just means that the column is not there
         # and therefore it contains no data
-        if str(e.__cause__).startswith("no such column"):
+        if str(e.__cause__).startswith("no such column") or str(e).startswith(
+            "no such column"
+        ):
             data = None
         else:
             raise e

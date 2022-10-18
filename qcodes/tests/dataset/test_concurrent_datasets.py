@@ -3,7 +3,7 @@ Test that multiple datasets can coexist as expected
 """
 import pytest
 
-from qcodes import new_experiment
+from qcodes.dataset import new_experiment
 from qcodes.dataset.data_set import DataSet
 
 

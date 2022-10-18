@@ -3,20 +3,15 @@ from __future__ import annotations
 import logging
 import sys
 import time
-from typing import Sequence
+from typing import TYPE_CHECKING, Sequence
 
 import numpy as np
 from tqdm.auto import tqdm
 
 from qcodes import config
 from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
-from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.dond.do_nd_utils import (
-    ActionsT,
-    AxesTupleListWithDataSet,
     BreakConditionInterrupt,
-    BreakConditionT,
-    ParamMeasT,
     _catch_interrupts,
     _handle_plotting,
     _register_actions,
@@ -34,6 +29,14 @@ from qcodes.parameters import ParameterBase
 
 LOG = logging.getLogger(__name__)
 
+if TYPE_CHECKING:
+    from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
+    from qcodes.dataset.dond.do_nd_utils import (
+        ActionsT,
+        AxesTupleListWithDataSet,
+        BreakConditionT,
+        ParamMeasT,
+    )
 
 def do2d(
     param_set1: ParameterBase,
@@ -138,7 +141,9 @@ def do2d(
 
     try:
         loop_shape = (num_points1, num_points2) + tuple(1 for _ in additional_setpoints)
-        shapes: Shapes = detect_shape_of_measurement(measured_parameters, loop_shape)
+        shapes: Shapes | None = detect_shape_of_measurement(
+            measured_parameters, loop_shape
+        )
     except TypeError:
         LOG.exception(
             f"Could not detect shape of {measured_parameters} "

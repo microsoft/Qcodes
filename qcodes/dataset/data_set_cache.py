@@ -24,9 +24,9 @@ if TYPE_CHECKING:
     import pandas as pd
     import xarray as xr
 
-    from .data_set import DataSet, ParameterData
+    from .data_set import DataSet
     from .data_set_in_memory import DataSetInMem
-    from .data_set_protocol import DataSetProtocol
+    from .data_set_protocol import DataSetProtocol, ParameterData
 
 DatasetType = TypeVar("DatasetType", bound="DataSetProtocol", covariant=True)
 

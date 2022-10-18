@@ -13,18 +13,18 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from os.path import expanduser, normpath
 from pathlib import Path
+from typing import Literal
 
 import numpy as np
-from typing_extensions import Literal
 
 import qcodes
 from qcodes.dataset.experiment_settings import reset_default_experiment_id
 from qcodes.dataset.sqlite.connection import ConnectionPlus
 from qcodes.dataset.sqlite.db_upgrades import (
     _latest_available_version,
-    get_user_version,
     perform_db_upgrade,
 )
+from qcodes.dataset.sqlite.db_upgrades.version import get_user_version
 from qcodes.dataset.sqlite.initial_schema import init_db
 from qcodes.utils.types import complex_types, numpy_floats, numpy_ints
 

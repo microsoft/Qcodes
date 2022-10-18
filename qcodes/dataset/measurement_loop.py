@@ -838,6 +838,10 @@ class MeasurementLoop:
         # Get parameter result
         result = parameter(**kwargs)
 
+        # Result "None causes issues, so it's converted to NaN"
+        if result is None:
+            result = np.nan
+
         self.data_handler.add_measurement_result(
             action_indices=self.action_indices,
             result=result,
@@ -1328,6 +1332,14 @@ class MeasurementLoop:
             # A masked property has been passed, which we unmask here
             try:
                 original_value = kwargs["original_value"]
+                if unmask_type is None:
+                    if isinstance(obj, Parameter):
+                        unmask_type = "parameter"
+                    elif isinstance(obj, dict):
+                        unmask_type = "key"
+                    elif hasattr(obj, attr):
+                        unmask_type = "attr"
+
                 if unmask_type == "key":
                     obj[key] = original_value
                 elif unmask_type == "attr":
@@ -1497,6 +1509,7 @@ class BaseSweep(AbstractSweep):
             for param_val in Sweep(p.
         ```
     """
+    plot_function = None
 
     def __init__(
         self,
@@ -1570,6 +1583,8 @@ class BaseSweep(AbstractSweep):
         if self.revert:
             if isinstance(self.sequence, SweepValues):
                 msmt.mask(self.sequence.parameter, self.sequence.parameter.get())
+            elif self.parameter is not None:
+                msmt.mask(self.parameter, self.parameter.get())
             else:
                 raise NotImplementedError("Unable to revert non-parameter values.")
 
@@ -1781,8 +1796,8 @@ class BaseSweep(AbstractSweep):
         with MeasurementLoop(name) as msmt:
             measure_sweeps(sweeps=sweeps, measure_params=measure_params, msmt=msmt)
 
-        if plot and self.plot_function is not None:
-            self.plot_function(msmt.dataset)
+        if plot and Sweep.plot_function is not None and MeasurementLoop.running_measurement is None:
+            Sweep.plot_function(msmt.dataset)
 
         return msmt.dataset
 

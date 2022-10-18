@@ -9,15 +9,14 @@ import logging
 import os
 from contextlib import contextmanager
 from functools import partial
-from typing import Any, List, Optional, Sequence, Tuple, cast
+from typing import TYPE_CHECKING, Any, List, Literal, Optional, Sequence, Tuple, cast
 
-import matplotlib
-import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.axes import Axes
-from matplotlib.colorbar import Colorbar
-from matplotlib.ticker import FuncFormatter
-from typing_extensions import Literal
+
+if TYPE_CHECKING:
+    import matplotlib
+    from matplotlib.axes import Axes
+    from matplotlib.colorbar import Colorbar
 
 import qcodes as qc
 from qcodes.dataset.data_set import load_by_run_spec
@@ -36,22 +35,13 @@ from .data_export import (
 log = logging.getLogger(__name__)
 DB = qc.config["core"]["db_location"]
 
-AxesTuple = Tuple[Axes, Colorbar]
-AxesTupleList = Tuple[List[Axes], List[Optional[Colorbar]]]
 # NamedData is the structure _get_data_from_ds returns and that plot_by_id
 # uses internally
 NamedData = List[List[DSPlotData]]
 
-# list of kwargs for plotting function, so that kwargs can be passed to
-# :func:`plot_dataset` and will be distributed to the respective plotting func.
-# subplots passes on the kwargs called `fig_kw` to the underlying `figure` call
-# First find the kwargs that belong to subplots and than add those that are
-# redirected to the `figure`-call.
-SUBPLOTS_OWN_KWARGS = set(inspect.signature(plt.subplots).parameters.keys())
-SUBPLOTS_OWN_KWARGS.remove('fig_kw')
-FIGURE_KWARGS = set(inspect.signature(plt.figure).parameters.keys())
-FIGURE_KWARGS.remove('kwargs')
-SUBPLOTS_KWARGS = SUBPLOTS_OWN_KWARGS.union(FIGURE_KWARGS)
+AxesTuple = Tuple["Axes", "Colorbar"]
+AxesTupleList = Tuple[List["Axes"], List[Optional["Colorbar"]]]
+
 
 
 @contextmanager
@@ -160,6 +150,21 @@ def plot_dataset(
 
     Config dependencies: (qcodesrc.json)
     """
+    import matplotlib.axes
+    import matplotlib.colorbar
+    import matplotlib.pyplot as plt
+
+    # list of kwargs for plotting function, so that kwargs can be passed to
+    # :func:`plot_dataset` and will be distributed to the respective plotting func.
+    # subplots passes on the kwargs called `fig_kw` to the underlying `figure` call
+    # First find the kwargs that belong to subplots and than add those that are
+    # redirected to the `figure`-call.
+    SUBPLOTS_OWN_KWARGS = set(inspect.signature(plt.subplots).parameters.keys())
+    SUBPLOTS_OWN_KWARGS.remove("fig_kw")
+    FIGURE_KWARGS = set(inspect.signature(plt.figure).parameters.keys())
+    FIGURE_KWARGS.remove("kwargs")
+    SUBPLOTS_KWARGS = SUBPLOTS_OWN_KWARGS.union(FIGURE_KWARGS)
+
 
     # handle arguments and defaults
     subplots_kwargs = {k: kwargs.pop(k)
@@ -190,11 +195,11 @@ def plot_dataset(
 
     nplots = len(alldata)
 
-    if isinstance(axes, Axes):
+    if isinstance(axes, matplotlib.axes.Axes):
         axeslist = [axes]
     else:
-        axeslist = cast(List[Axes], axes)
-    if isinstance(colorbars, Colorbar):
+        axeslist = cast(List[matplotlib.axes.Axes], axes)
+    if isinstance(colorbars, matplotlib.colorbar.Colorbar):
         colorbars = [colorbars]
 
     if axeslist is None:
@@ -542,6 +547,8 @@ def plot_2d_scatterplot(
     Returns:
         The matplotlib axis handles for plot and colorbar
     """
+    import matplotlib
+
     if 'rasterized' in kwargs.keys():
         rasterized = kwargs.pop('rasterized')
     else:
@@ -606,6 +613,7 @@ def plot_on_a_plain_grid(
     Returns:
         The matplotlib axes handle for plot and colorbar
     """
+    import matplotlib
 
     log.debug(f'Got kwargs: {kwargs}')
 
@@ -764,6 +772,8 @@ def _make_rescaled_ticks_and_units(
         A tuple with the ticks formatter (matlplotlib.ticker.FuncFormatter) and
         the new label.
     """
+    from matplotlib.ticker import FuncFormatter
+
     unit = data_dict['unit']
 
     maxval = np.nanmax(np.abs(data_dict['data']))

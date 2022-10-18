@@ -11,11 +11,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3.0.2
+    - uses: actions/checkout@v3.1.0
     - name: Set up Python
-      uses: actions/setup-python@v4.2.0
+      uses: actions/setup-python@v4.3.0
       with:
-        python-version: '3.7'
+        python-version: '3.10'
     - name: Install build deps
       run: pip install --upgrade pip setuptools wheel build
     - name: Build

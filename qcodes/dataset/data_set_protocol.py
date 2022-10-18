@@ -4,10 +4,20 @@ import os
 import warnings
 from collections.abc import Mapping, Sized
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Protocol,
+    Sequence,
+    Tuple,
+    Union,
+    runtime_checkable,
+)
 
 import numpy as np
-from typing_extensions import Protocol, TypeAlias, runtime_checkable
+from typing_extensions import TypeAlias
 
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
@@ -85,7 +95,7 @@ class DataSetProtocol(Protocol, Sized):
         *,
         snapshot: Mapping[Any, Any],
         interdeps: InterDependencies_,
-        shapes: Shapes = None,
+        shapes: Shapes | None = None,
         parent_datasets: Sequence[Mapping[Any, Any]] = (),
         write_in_background: bool = False,
         allow_empty_dataset: bool = False,
@@ -329,9 +339,13 @@ class BaseDataSet(DataSetProtocol):
         path: str | None = None,
         prefix: str | None = None,
     ) -> None:
-        """Export data to disk with file name {prefix}{run_id}.{ext}.
-        Values for the export type, path and prefix can also be set in the "dataset"
-        section of qcodes config.
+        """Export data to disk with file name `{prefix}{name_elements}.{ext}`.
+        Name elements are names of dataset object attributes that are taken
+        from the dataset and inserted into the name of the export file, for
+        example if name elements are ``["captured_run_id", "guid"]``, then
+        the file name will be `{prefix}{captured_run_id}_{guid}.{ext}`.
+        Values for the export type, path, export_name_elements and prefix can
+        also be set in the "dataset" section of qcodes config.
 
         Args:
             export_type: Data export type, e.g. "netcdf" or ``DataExportType.NETCDF``,
@@ -374,10 +388,13 @@ class BaseDataSet(DataSetProtocol):
         path: str | None = None,
         prefix: str | None = None,
     ) -> str | None:
-        """Export data to disk with file name {prefix}{run_id}.{ext}.
-
-        Values for the export type, path and prefix can also be set in the qcodes
-        "dataset" config.
+        """Export data to disk with file name `{prefix}{name_elements}.{ext}`.
+        Name elements are names of dataset object attributes that are taken
+        from the dataset and inserted into the name of the export file, for
+        example if name elements are ``["captured_run_id", "guid"]``, then
+        the file name will be `{prefix}{captured_run_id}_{guid}.{ext}`.
+        Values for the export type, path, export_name_elements and prefix can
+        also be set in the "dataset" section of qcodes config.
 
         Args:
             export_type: Data export type, e.g. DataExportType.NETCDF
