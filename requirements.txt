@@ -54,7 +54,7 @@ jedi~=0.18.1
 Jinja2~=3.1.2
 jsonpointer~=2.3
 jsonschema~=4.16.0
-jupyter-client~=7.4.2
+jupyter-client~=7.4.3
 jupyter-core~=4.11.1
 jupyterlab-pygments~=0.2.2
 jupyterlab-widgets~=3.0.3
@@ -69,7 +69,7 @@ msal-extensions~=1.0.0
 mypy==0.982
 mypy-extensions~=0.4.3
 nbclient~=0.7.0
-nbconvert~=7.2.1
+nbconvert~=7.2.2
 nbformat~=5.7.0
 nbsphinx~=0.8.9
 nest-asyncio~=1.5.6
