@@ -52,7 +52,7 @@ def disable_telemetry():
 
 
 @pytest.fixture(scope="function")
-def default_config(user_config: str | None = None):
+def default_config():
     """
     Fixture to temporarily establish default config settings.
     This is achieved by overwriting the config paths of the user-,
@@ -60,9 +60,6 @@ def default_config(user_config: str | None = None):
     config file in the qcodes repository,
     additionally the current config object `qcodes.config` gets copied and
     reestablished.
-
-    Args:
-        user_config: represents the user config file content.
     """
     home_file_name = Config.home_file_name
     schema_home_file_name = Config.schema_home_file_name
@@ -75,9 +72,6 @@ def default_config(user_config: str | None = None):
     with tempfile.TemporaryDirectory() as tmpdirname:
         file_name = os.path.join(tmpdirname, "user_config.json")
         file_name_schema = os.path.join(tmpdirname, "user_config_schema.json")
-        if user_config is not None:
-            with open(file_name, "w") as f:
-                f.write(user_config)
 
         Config.home_file_name = file_name
         Config.schema_home_file_name = file_name_schema
