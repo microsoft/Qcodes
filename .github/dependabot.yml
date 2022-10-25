@@ -6,6 +6,7 @@ updates:
     interval: daily
   open-pull-requests-limit: 20
   rebase-strategy: "disabled"
+  versioning-strategy: increase-if-necessary
 - package-ecosystem: github-actions
   directory: "/"
   rebase-strategy: "disabled"
