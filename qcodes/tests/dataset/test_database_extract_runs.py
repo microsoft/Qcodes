@@ -586,11 +586,6 @@ def test_combine_runs(two_empty_temp_db_connections,
     cfg = qc.config
     guid_comp = cfg['GUID_components']
 
-    # borrowed fallback logic from generate_guid
-    sampleint = guid_comp['sample']
-    if sampleint == 0:
-        sampleint = int('a'*8, base=16)
-
     for i in range(2, len(lines)):
         split_line = re.split(r'\s+', lines[i].strip())
         mydict = {headers[j]: split_line[j] for j in range(len(split_line))}
@@ -599,7 +594,6 @@ def test_combine_runs(two_empty_temp_db_connections,
         assert ds.captured_counter == int(mydict['captured_counter'])
         assert ds.exp_name == mydict['experiment_name']
         assert ds.sample_name == mydict['sample_name']
-        assert int(mydict['sample_id']) == sampleint
         assert guid_comp['location'] == int(mydict['location'])
         assert guid_comp['work_station'] == int(mydict['work_station'])
 
