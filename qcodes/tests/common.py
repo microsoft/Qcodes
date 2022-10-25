@@ -161,6 +161,7 @@ class DumyPar(Metadatable):
         return value
 
 
+@deprecate(reason="Unused internally", alternative="default_config fixture")
 @contextmanager
 def default_config(user_config: Optional[str] = None):
     """
