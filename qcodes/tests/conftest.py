@@ -52,7 +52,7 @@ def disable_telemetry():
 
 
 @pytest.fixture(scope="function")
-def default_config():
+def default_config(tmp_path):
     """
     Fixture to temporarily establish default config settings.
     This is achieved by overwriting the config paths of the user-,
@@ -68,32 +68,30 @@ def default_config():
     cwd_file_name = Config.cwd_file_name
     schema_cwd_file_name = Config.schema_cwd_file_name
 
-    Config.home_file_name = ""
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        file_name = os.path.join(tmpdirname, "user_config.json")
-        file_name_schema = os.path.join(tmpdirname, "user_config_schema.json")
+    file_name = str(tmp_path / "user_config.json")
+    file_name_schema = str(tmp_path / "user_config_schema.json")
 
-        Config.home_file_name = file_name
-        Config.schema_home_file_name = file_name_schema
-        Config.env_file_name = ""
-        Config.schema_env_file_name = ""
-        Config.cwd_file_name = ""
-        Config.schema_cwd_file_name = ""
+    Config.home_file_name = file_name
+    Config.schema_home_file_name = file_name_schema
+    Config.env_file_name = ""
+    Config.schema_env_file_name = ""
+    Config.cwd_file_name = ""
+    Config.schema_cwd_file_name = ""
 
-        default_config_obj: DotDict | None = copy.deepcopy(qc.config.current_config)
-        qc.config = Config()
+    default_config_obj: DotDict | None = copy.deepcopy(qc.config.current_config)
+    qc.config = Config()
 
-        try:
-            yield
-        finally:
-            Config.home_file_name = home_file_name
-            Config.schema_home_file_name = schema_home_file_name
-            Config.env_file_name = env_file_name
-            Config.schema_env_file_name = schema_env_file_name
-            Config.cwd_file_name = cwd_file_name
-            Config.schema_cwd_file_name = schema_cwd_file_name
+    try:
+        yield
+    finally:
+        Config.home_file_name = home_file_name
+        Config.schema_home_file_name = schema_home_file_name
+        Config.env_file_name = env_file_name
+        Config.schema_env_file_name = schema_env_file_name
+        Config.cwd_file_name = cwd_file_name
+        Config.schema_cwd_file_name = schema_cwd_file_name
 
-            qc.config.current_config = default_config_obj
+        qc.config.current_config = default_config_obj
 
 
 @pytest.fixture(scope="function")
