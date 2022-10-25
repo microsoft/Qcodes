@@ -512,6 +512,7 @@ def test_load_by_X_functions(two_empty_temp_db_connections,
     assert source_ds_2_2.the_same_dataset_as(test_ds)
 
 
+@pytest.mark.usefixtures("reset_config_on_exit")
 def test_combine_runs(two_empty_temp_db_connections,
                       empty_temp_db_connection,
                       some_interdeps):
@@ -520,6 +521,8 @@ def test_combine_runs(two_empty_temp_db_connections,
     can be reloaded by the original captured_run_id and the experiment
     name.
     """
+    qc.config.dataset.GUID_type = "random_sample"
+
     source_conn_1, source_conn_2 = two_empty_temp_db_connections
     target_conn = empty_temp_db_connection
 
