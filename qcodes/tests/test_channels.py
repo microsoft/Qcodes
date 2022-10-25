@@ -448,7 +448,7 @@ def test_access_channels_by_slice(dci, start, stop, step):
         assert chan.name == f'dci_Chan{exp_chan}'
 
 
-@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,), deadline=1000)
 @given(myindexs=hst.lists(elements=hst.integers(-8, 7), min_size=1))
 def test_access_channels_by_tuple(dci, myindexs):
     names = ('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H')
@@ -528,7 +528,7 @@ def test_set_element_locked_raises(dci_with_list):
     assert dci_with_list.channels[0] is not dci_with_list.channels[1]
 
 
-@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,), deadline=1000)
 @given(myindexs=hst.lists(elements=hst.integers(0, 7), min_size=2))
 def test_access_channels_by_name(dci, myindexs):
     names = ("A", "B", "C", "D", "E", "F", "G", "H")
