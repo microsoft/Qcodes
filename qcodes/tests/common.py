@@ -12,6 +12,7 @@ import pytest
 import qcodes
 from qcodes.configuration import Config, DotDict
 from qcodes.metadatable import Metadatable
+from qcodes.utils import deprecate
 
 if TYPE_CHECKING:
     from pytest import ExceptionInfo
@@ -212,13 +213,13 @@ def default_config(user_config: Optional[str] = None):
             qcodes.config.current_config = default_config_obj
 
 
+@deprecate(reason="Unused internally", alternative="reset_config_on_exit fixture")
 @contextmanager
 def reset_config_on_exit():
     """
-    Context manager to clean any modefication of the in memory config on exit
+    Context manager to clean any modification of the in memory config on exit
 
     """
-
     default_config_obj: Optional[DotDict] = copy.deepcopy(
         qcodes.config.current_config
     )
