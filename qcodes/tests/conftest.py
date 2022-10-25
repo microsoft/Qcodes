@@ -4,12 +4,14 @@ import copy
 import gc
 import os
 import sys
+import tempfile
 from typing import TYPE_CHECKING
 
 import pytest
 from hypothesis import settings
 
 import qcodes as qc
+from qcodes.configuration import Config
 from qcodes.dataset import initialise_database, new_data_set
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
@@ -47,6 +49,57 @@ def disable_telemetry():
         yield
     finally:
         qc.config.telemetry.enabled = original_state
+
+
+@pytest.fixture(scope="function")
+def default_config(user_config: str | None = None):
+    """
+    Fixture to temporarily establish default config settings.
+    This is achieved by overwriting the config paths of the user-,
+    environment-, and current directory-config files with the path of the
+    config file in the qcodes repository,
+    additionally the current config object `qcodes.config` gets copied and
+    reestablished.
+
+    Args:
+        user_config: represents the user config file content.
+    """
+    home_file_name = Config.home_file_name
+    schema_home_file_name = Config.schema_home_file_name
+    env_file_name = Config.env_file_name
+    schema_env_file_name = Config.schema_env_file_name
+    cwd_file_name = Config.cwd_file_name
+    schema_cwd_file_name = Config.schema_cwd_file_name
+
+    Config.home_file_name = ""
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        file_name = os.path.join(tmpdirname, "user_config.json")
+        file_name_schema = os.path.join(tmpdirname, "user_config_schema.json")
+        if user_config is not None:
+            with open(file_name, "w") as f:
+                f.write(user_config)
+
+        Config.home_file_name = file_name
+        Config.schema_home_file_name = file_name_schema
+        Config.env_file_name = ""
+        Config.schema_env_file_name = ""
+        Config.cwd_file_name = ""
+        Config.schema_cwd_file_name = ""
+
+        default_config_obj: DotDict | None = copy.deepcopy(qc.config.current_config)
+        qc.config = Config()
+
+        try:
+            yield
+        finally:
+            Config.home_file_name = home_file_name
+            Config.schema_home_file_name = schema_home_file_name
+            Config.env_file_name = env_file_name
+            Config.schema_env_file_name = schema_env_file_name
+            Config.cwd_file_name = cwd_file_name
+            Config.schema_cwd_file_name = schema_cwd_file_name
+
+            qc.config.current_config = default_config_obj
 
 
 @pytest.fixture(scope="function")
