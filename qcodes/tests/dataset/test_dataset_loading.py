@@ -1,4 +1,3 @@
-import sys
 import time
 from math import floor
 
@@ -26,9 +25,6 @@ from qcodes.utils import QCoDeSDeprecationWarning
 
 
 @pytest.mark.usefixtures("experiment")
-@pytest.mark.xfail(
-    condition=sys.platform == "win32", reason="Time resolution is too low on windows"
-)
 def test_load_by_id():
     ds = new_data_set("test-dataset")
     run_id = ds.run_id
