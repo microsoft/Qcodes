@@ -10,7 +10,7 @@ import qcodes
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.sqlite.connection import atomic_transaction
-from qcodes.tests.common import default_config, retry_until_does_not_throw
+from qcodes.tests.common import retry_until_does_not_throw
 
 log = logging.getLogger(__name__)
 
@@ -56,6 +56,67 @@ def basic_subscriber():
         state[length] = results
 
     return subscriber
+
+
+@pytest.mark.usefixtures("default_config")
+@pytest.fixture(name="working_subscriber_config")
+def _make_working_subscriber_config(tmp_path):
+    # This string represents the config file in the home directory:
+    config = """
+    {
+        "subscription":{
+            "subscribers":{
+                "test_subscriber":{
+                    "factory": "qcodes.tests.dataset.test_subscribing.MockSubscriber",
+                    "factory_kwargs":{
+                        "lg": false
+                    },
+                    "subscription_kwargs":{
+                        "min_wait": 0,
+                        "min_count": 1,
+                        "callback_kwargs": {}
+                    }
+                }
+            }
+        }
+    }
+    """
+    tmp_config_file_path = tmp_path / "qcodesrc.json"
+    with open(tmp_config_file_path, "w") as f:
+        f.write(config)
+    qcodes.config.update_config(str(tmp_path))
+    yield
+
+
+@pytest.mark.usefixtures("default_config")
+@pytest.fixture(name="broken_subscriber_config")
+def _make_broken_subscriber_config(tmp_path):
+    # This string represents the config file in the home directory:
+    config = """
+    {
+        "subscription":{
+            "subscribers":{
+                "test_subscriber_wrong":{
+                    "factory": "qcodes.tests.dataset.test_subscribing.MockSubscriber",
+                    "factory_kwargs":{
+                        "lg": false
+                    },
+                    "subscription_kwargs":{
+                        "min_wait": 0,
+                        "min_count": 1,
+                        "callback_kwargs": {}
+                    }
+                }
+            }
+        }
+    }
+    """
+    tmp_config_file_path = tmp_path / "qcodesrc.json"
+    with open(tmp_config_file_path, "w") as f:
+        f.write(config)
+    qcodes.config.update_config(str(tmp_path))
+    yield
+
 
 
 @pytest.mark.flaky(reruns=5)
@@ -105,106 +166,50 @@ def test_basic_subscription(dataset, basic_subscriber):
     assert len(triggers) == 0
 
 
+@pytest.mark.usefixtures("working_subscriber_config")
 def test_subscription_from_config(dataset, basic_subscriber):
     """
     This test is similar to `test_basic_subscription`, with the only
     difference that another subscriber from a config file is added.
     """
-    # This string represents the config file in the home directory:
-    config = """
-    {
-        "subscription":{
-            "subscribers":{
-                "test_subscriber":{
-                    "factory": "qcodes.tests.dataset.test_subscribing.MockSubscriber",
-                    "factory_kwargs":{
-                        "lg": false
-                    },
-                    "subscription_kwargs":{
-                        "min_wait": 0,
-                        "min_count": 1,
-                        "callback_kwargs": {}
-                    }
-                }
-            }
-        }
-    }
-    """
-    # This little dance around the db_location is due to the fact that the
-    # dataset fixture creates a dataset in a db in a temporary directory.
-    # Therefore we need to 'backup' the path to the db when using the
-    # default configuration.
-    db_location = qcodes.config.core.db_location
-    with default_config(user_config=config):
-        qcodes.config.core.db_location = db_location
+    assert "test_subscriber" in qcodes.config.subscription.subscribers
 
-        assert 'test_subscriber' in qcodes.config.subscription.subscribers
+    xparam = ParamSpecBase(name="x", paramtype="numeric", label="x parameter", unit="V")
+    yparam = ParamSpecBase(
+        name="y", paramtype="numeric", label="y parameter", unit="Hz"
+    )
+    idps = InterDependencies_(dependencies={yparam: (xparam,)})
+    dataset.set_interdependencies(idps)
 
-        xparam = ParamSpecBase(name='x',
-                           paramtype='numeric',
-                           label='x parameter',
-                           unit='V')
-        yparam = ParamSpecBase(name='y',
-                              paramtype='numeric',
-                              label='y parameter',
-                              unit='Hz')
-        idps = InterDependencies_(dependencies={yparam: (xparam,)})
-        dataset.set_interdependencies(idps)
+    dataset.mark_started()
 
-        dataset.mark_started()
+    sub_id = dataset.subscribe(basic_subscriber, min_wait=0, min_count=1, state={})
+    sub_id_c = dataset.subscribe_from_config("test_subscriber")
+    assert len(dataset.subscribers) == 2
+    assert list(dataset.subscribers.keys()) == [sub_id, sub_id_c]
 
-        sub_id = dataset.subscribe(basic_subscriber, min_wait=0, min_count=1,
-                                   state={})
-        sub_id_c = dataset.subscribe_from_config('test_subscriber')
-        assert len(dataset.subscribers) == 2
-        assert list(dataset.subscribers.keys()) == [sub_id, sub_id_c]
+    expected_state = {}
 
-        expected_state = {}
+    # Here we are only testing 2 to reduce the CI time
+    for x in range(2):
+        y = -(x**2)
+        dataset.add_results([{"x": x, "y": y}])
+        expected_state[x + 1] = [(x, y)]
 
-        # Here we are only testing 2 to reduce the CI time
-        for x in range(2):
-            y = -x**2
-            dataset.add_results([{'x': x, 'y': y}])
-            expected_state[x+1] = [(x, y)]
+        @retry_until_does_not_throw(exception_class_to_expect=AssertionError, tries=10)
+        def assert_expected_state():
+            assert dataset.subscribers[sub_id].state == expected_state
+            assert dataset.subscribers[sub_id_c].state == expected_state
 
-            @retry_until_does_not_throw(
-                exception_class_to_expect=AssertionError, tries=10)
-            def assert_expected_state():
-                assert dataset.subscribers[sub_id].state == expected_state
-                assert dataset.subscribers[sub_id_c].state == expected_state
-
-            assert_expected_state()
+        assert_expected_state()
 
 
+@pytest.mark.usefixtures("broken_subscriber_config")
 def test_subscription_from_config_wrong_name(dataset):
     """
     This test checks that an exception is thrown if a wrong name for a
     subscriber is passed
     """
-    # This string represents the config file in the home directory:
-    config = """
-    {
-        "subscription":{
-            "subscribers":{
-                "test_subscriber_wrong":{
-                    "factory": "qcodes.tests.dataset.test_subscribing.MockSubscriber",
-                    "factory_kwargs":{
-                        "lg": false
-                    },
-                    "subscription_kwargs":{
-                        "min_wait": 0,
-                        "min_count": 1,
-                        "callback_kwargs": {}
-                    }
-                }
-            }
-        }
-    }
-    """
-    db_location = qcodes.config.core.db_location
-    with default_config(user_config=config):
-        qcodes.config.core.db_location = db_location
-
-        assert 'test_subscriber' not in qcodes.config.subscription.subscribers
-        with pytest.raises(RuntimeError):
-            sub_id_c = dataset.subscribe_from_config('test_subscriber')
+    assert "test_subscriber" not in qcodes.config.subscription.subscribers
+    with pytest.raises(RuntimeError):
+        sub_id_c = dataset.subscribe_from_config("test_subscriber")

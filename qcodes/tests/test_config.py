@@ -10,7 +10,6 @@ import pytest
 
 import qcodes
 from qcodes.configuration import Config
-from qcodes.tests.common import default_config
 
 VALID_JSON = "{}"
 ENV_KEY = "/dev/random"
@@ -282,24 +281,23 @@ def test_update_and_validate_user_config(config, mocker):
     assert config.current_schema == UPDATED_SCHEMA
 
 
+@pytest.mark.usefixtures("default_config")
 def test_update_from_path(path_to_config_file_on_disk):
-    with default_config():
-        cfg = qcodes.config
+    cfg = qcodes.config
 
-        # check that the default is still the default
-        assert cfg["core"]["db_debug"] is False
+    # check that the default is still the default
+    assert cfg["core"]["db_debug"] is False
 
-        cfg.update_config(path=path_to_config_file_on_disk)
-        assert cfg['core']['db_debug'] is True
+    cfg.update_config(path=path_to_config_file_on_disk)
+    assert cfg["core"]["db_debug"] is True
 
-        # check that the settings NOT specified in our config file on path
-        # are still saved as configurations
-        assert cfg['gui']['notebook'] is True
-        assert cfg['station']['default_folder'] == '.'
+    # check that the settings NOT specified in our config file on path
+    # are still saved as configurations
+    assert cfg["gui"]["notebook"] is True
+    assert cfg["station"]["default_folder"] == "."
 
-        expected_path = os.path.join(path_to_config_file_on_disk,
-                                     'qcodesrc.json')
-        assert cfg.current_config_path == expected_path
+    expected_path = os.path.join(path_to_config_file_on_disk, "qcodesrc.json")
+    assert cfg.current_config_path == expected_path
 
 
 def test_repr():
@@ -313,24 +311,30 @@ def test_repr():
     assert rep == expected_rep
 
 
+@pytest.mark.usefixtures("default_config")
 def test_add_and_describe():
     """
-    Test that a key an be added and described
+    Test that a key can be added and described
     """
-    with default_config():
+    key = "newkey"
+    value = "testvalue"
+    value_type = "string"
+    description = "A test"
+    default = "testdefault"
 
-        key = 'newkey'
-        value = 'testvalue'
-        value_type = 'string'
-        description = 'A test'
-        default = 'testdefault'
+    cfg = qcodes.config
+    cfg.add(
+        key=key,
+        value=value,
+        value_type=value_type,
+        description=description,
+        default=default,
+    )
 
-        cfg = qcodes.config
-        cfg.add(key=key, value=value, value_type=value_type,
-                description=description, default=default)
+    desc = cfg.describe(f"user.{key}")
+    expected_desc = (
+        f"{description}.\nCurrent value: {value}. "
+        f"Type: {value_type}. Default: {default}."
+    )
 
-        desc = cfg.describe(f'user.{key}')
-        expected_desc = (f"{description}.\nCurrent value: {value}. "
-                         f"Type: {value_type}. Default: {default}.")
-
-        assert desc == expected_desc
+    assert desc == expected_desc
