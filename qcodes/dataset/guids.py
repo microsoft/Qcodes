@@ -31,7 +31,7 @@ def generate_guid(timeint: int | None = None, sampleint: int | None = None) -> s
     cfg = qc.config
 
     try:
-        guid_type = cfg["dataset"]["guid_type"]
+        guid_type = cfg["dataset"]["GUID_type"]
     except KeyError:
         raise RuntimeError(
             "Invalid QCoDeS config file! No guid_type specified. Can not proceed."
