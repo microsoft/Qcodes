@@ -3,6 +3,7 @@ from math import floor
 
 import pytest
 
+import qcodes as qc
 from qcodes.dataset.data_set import (
     DataSet,
     get_guids_by_run_spec,
