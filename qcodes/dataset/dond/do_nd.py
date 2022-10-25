@@ -60,6 +60,7 @@ class ParameterSetEvent:
     should_set: bool
     delay: float
     actions: ActionsT
+    get_after_set: bool
 
 
 class _Sweeper:
@@ -228,6 +229,7 @@ class _Sweeper:
                 should_set=should_set,
                 delay=sweep.delay,
                 actions=sweep.post_actions,
+                get_after_set=sweep.get_after_set,
             )
             parameter_set_events.append(event)
         return tuple(parameter_set_events)
@@ -708,7 +710,10 @@ def dond(
                             act()
                         time.sleep(set_event.delay)
 
-                    results[set_event.parameter] = set_event.new_value
+                    if set_event.get_after_set:
+                        results[set_event.parameter] = set_event.parameter()
+                    else:
+                        results[set_event.parameter] = set_event.new_value
 
                 meas_value_pair = call_params_meas()
                 for meas_param, value in meas_value_pair:
