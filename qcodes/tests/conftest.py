@@ -1,6 +1,10 @@
+from __future__ import annotations
+
+import copy
 import gc
 import os
 import sys
+from typing import TYPE_CHECKING
 
 import pytest
 from hypothesis import settings
@@ -15,6 +19,8 @@ settings.register_profile("ci", deadline=1000)
 
 n_experiments = 0
 
+if TYPE_CHECKING:
+    from qcodes.configuration import DotDict
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "win32: tests that only run under windows")
@@ -41,6 +47,21 @@ def disable_telemetry():
         yield
     finally:
         qc.config.telemetry.enabled = original_state
+
+
+@pytest.fixture(scope="function")
+def reset_config_on_exit():
+
+    """
+    Fixture to clean any modification of the in memory config on exit
+
+    """
+    default_config_obj: DotDict | None = copy.deepcopy(qc.config.current_config)
+
+    try:
+        yield
+    finally:
+        qc.config.current_config = default_config_obj
 
 
 @pytest.fixture(scope="session", autouse=True)
