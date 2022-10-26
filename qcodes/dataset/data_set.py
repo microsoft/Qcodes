@@ -803,7 +803,7 @@ class DataSet(BaseDataSet):
             end: end value of selection range (by results count); ignored if
                 None
             callback: Function called during the data loading every
-                Config.callback_percent.
+                config.dataset.callback_percent.
 
         Returns:
             Dictionary from requested parameters to Dict of parameter names

@@ -17,6 +17,7 @@ import numpy as np
 from typing_extensions import TypedDict
 
 import qcodes as qc
+from qcodes import config
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
@@ -45,7 +46,6 @@ from qcodes.dataset.sqlite.query_helpers import (
     update_where,
 )
 from qcodes.utils import deprecate, list_of_data_to_maybe_ragged_nd_array
-from qcodes.configuration import Config
 
 log = logging.getLogger(__name__)
 
@@ -200,7 +200,7 @@ def get_parameter_data(
         start: start of range; if None, then starts from the top of the table
         end: end of range; if None, then ends at the bottom of the table
         callback: Function called during the data loading every
-            Config.callback_percent.
+            config.dataset.callback_percent.
     """
     rundescriber = get_rundescriber_from_result_table_name(conn, table_name)
 
@@ -468,7 +468,7 @@ def get_parameter_tree_values(
             returned. None is equivalent to "all the rest". If start > end,
             nothing is returned.
         callback: Function called during the data loading every
-            Config.callback_percent.
+            config.dataset.callback_percent.
 
     Returns:
         A list of list. The outer list index is row number, the inner list
@@ -490,7 +490,7 @@ def get_parameter_tree_values(
 
         # Since sqlite3 does not allow to keep track of the data loading
         # progress, we compute how many sqlite request correspond to
-        # a progress of Config.callback_percent
+        # a progress of config.dataset.callback_percent
 
         # First, we get the number of dependent parameters
         rd = get_rundescriber_from_result_table_name(conn, result_table_name)._to_dict()
@@ -512,9 +512,9 @@ def get_parameter_tree_values(
         nb_point = int(max_id/nb_param_dependent)
 
         # Third, we get the number of rows corresponding to a download of
-        # Config.callback_percent
+        # config.dataset.callback_percent
         if nb_point>=100:
-            limit = int(max_id/100*Config.callback_percent/2)
+            limit = int(max_id/100*config.dataset.callback_percent/2)
 
             offset = np.arange(0, nb_point, limit)
             # Ensure that the last call gets all the points

@@ -80,10 +80,6 @@ class Config:
     defaults_schema: DotDict
     """The default schema"""
 
-    callback_percent: int = 5
-    """If user wants to callback a function while loading data, the callback is
-    done every callback_percent"""
-
     _diff_config: dict[str, Any] = {}
     _diff_schema: dict[str, Any] = {}
 
