@@ -152,6 +152,7 @@ def test_static_method_raises(self):
         assert c.static_method(1) == 2
 
 
+@pytest.mark.xfail(reason="This is not implemented yet.")
 def test_class_method_uninhibited():
     with pytest.warns(expected_warning=QCoDeSDeprecationWarning):
         assert C.class_method(1) == 2
