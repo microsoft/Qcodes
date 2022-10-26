@@ -45,7 +45,7 @@ def one(curr: sqlite3.Cursor, column: int | str) -> Any:
 
 
 def many(curr: sqlite3.Cursor,
-         columns: str | List[str] | Tuple[str]) -> list[Any]:
+         columns: str | Sequence[str]) -> list[Any]:
     """Get the values of many columns from one row
     Args:
         curr: cursor to operate on
@@ -62,7 +62,7 @@ def many(curr: sqlite3.Cursor,
 
 
 def many_many(curr: sqlite3.Cursor,
-              columns: str | List[str] | Tuple[str],
+              columns: str | Sequence[str],
               results: list | None = None) -> list[list[Any]]:
     """Get all values of many columns
     Args:
