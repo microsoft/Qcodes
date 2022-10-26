@@ -221,7 +221,7 @@ class DataSetProtocol(Protocol, Sized):
         *params: str | ParamSpec | ParameterBase,
         start: int | None = None,
         end: int | None = None,
-        callback: Callable | None = None,
+        callback: Callable[[float], None] | None = None,
     ) -> ParameterData:
         pass
 

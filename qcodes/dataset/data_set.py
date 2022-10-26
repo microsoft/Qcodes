@@ -762,7 +762,7 @@ class DataSet(BaseDataSet):
         *params: str | ParamSpec | ParameterBase,
         start: int | None = None,
         end: int | None = None,
-        callback: Callable | None = None,
+        callback: Callable[[float], None] | None = None,
     ) -> ParameterData:
         """
         Returns the values stored in the :class:`.DataSet` for the specified parameters

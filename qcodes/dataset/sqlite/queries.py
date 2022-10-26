@@ -173,7 +173,7 @@ def get_parameter_data(
     columns: Sequence[str] = (),
     start: int | None = None,
     end: int | None = None,
-    callback: Callable | None = None,
+    callback: Callable[[float], None] | None = None,
 ) -> dict[str, dict[str, np.ndarray]]:
     """
     Get data for one or more parameters and its dependencies. The data
@@ -446,7 +446,7 @@ def get_parameter_tree_values(
     *other_param_names: str,
     start: int | None = None,
     end: int | None = None,
-    callback: Callable | None = None,
+    callback: Callable[[float], None] | None = None,
 ) -> list[list[Any]]:
     """
     Get the values of one or more columns from a data table. The rows
