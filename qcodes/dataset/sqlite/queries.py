@@ -496,10 +496,10 @@ def get_parameter_tree_values(
         rd = get_rundescriber_from_result_table_name(conn, result_table_name)._to_dict()
         # New qcodes
         if 'interdependencies_' in rd.keys():
-            nbParamDependent = len(rd['interdependencies_']['dependencies'])
+            nb_param_dependent = len(rd['interdependencies_']['dependencies'])
         # Old qcodes
         else:
-            nbParamDependent = len([i for i in rd['interdependencies']['paramspecs'] if i['name']==toplevel_param_name][0]['depends_on'])
+            nb_param_dependent = len([i for i in rd['interdependencies']['paramspecs'] if i['name']==toplevel_param_name][0]['depends_on'])
 
         # Second, we get the number of points
         sql_callback_query = f"""
@@ -509,7 +509,7 @@ def get_parameter_tree_values(
         cursor.execute(sql_callback_query, ())
         rows = cursor.fetchall()
         max_id = int(rows[0]['max(id)'])
-        nb_point = int(max_id/nbParamDependent)
+        nb_point = int(max_id/nb_param_dependent)
 
         # Third, we get the number of rows corresponding to a download of
         # Config.callback_percent
