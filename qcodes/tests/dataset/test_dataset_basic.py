@@ -225,8 +225,12 @@ def test_dataset_read_only_properties(dataset):
                        'snapshot', 'snapshot_raw', 'dependent_parameters']
 
     # It is not expected to be possible to set readonly properties
+    # the error message changed in python 3.11
+    # from 'can't set ...' to 'has no setter ...'
     for prop in read_only_props:
-        with pytest.raises(AttributeError, match="can't set attribute"):
+        with pytest.raises(
+            AttributeError, match="(can't set attribute|object has no setter)"
+        ):
             setattr(dataset, prop, True)
 
 
