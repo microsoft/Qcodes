@@ -9,10 +9,10 @@ import logging
 import os
 from contextlib import contextmanager
 from functools import partial
+from textwrap import wrap
 from typing import TYPE_CHECKING, Any, List, Literal, Optional, Sequence, Tuple, cast
 
 import numpy as np
-from textwrap import wrap
 
 if TYPE_CHECKING:
     import matplotlib
