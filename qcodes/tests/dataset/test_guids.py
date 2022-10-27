@@ -1,3 +1,4 @@
+import random
 import time
 from uuid import uuid4
 
@@ -15,6 +16,16 @@ from qcodes.dataset.guids import (
     set_guid_work_station_code,
     validate_guid_format,
 )
+
+
+@pytest.fixture(name="seed_random")
+def _make_seed_random():
+    state = random.getstate()
+    random.seed(a=0)
+    try:
+        yield
+    finally:
+        random.setstate(state)
 
 
 @pytest.mark.usefixtures("default_config")
@@ -187,3 +198,34 @@ def test_validation():
 
     with pytest.raises(ValueError):
         validate_guid_format(valid_guid[1:])
+
+
+@pytest.mark.usefixtures("seed_random")
+@pytest.mark.usefixtures("default_config")
+def test_random_sample_guid():
+
+    cfg = qc.config
+    cfg["dataset"]["GUID_type"] = "random_sample"
+
+    expected_guid_prefixes = ["d82c07cd", "6baa9455", "82e2e662"]
+    for expected_guid_prefix in expected_guid_prefixes:
+        guid = generate_guid()
+        assert guid.split("-")[0] == expected_guid_prefix
+
+
+@pytest.mark.usefixtures("default_config")
+def test_random_sample_and_sample_int_in_guid_raises():
+
+    cfg = qc.config
+    cfg["dataset"]["GUID_type"] = "random_sample"
+
+    with pytest.raises(
+        RuntimeError, match="QCoDeS is configured to disregard sample from config"
+    ):
+        generate_guid(sampleint=10)
+
+
+@pytest.mark.usefixtures("default_config")
+def test_sample_int_in_guid_warns():
+    with pytest.warns(match="Setting a non default sample"):
+        generate_guid(sampleint=10)
