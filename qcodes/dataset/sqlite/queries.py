@@ -228,7 +228,7 @@ def get_shaped_parameter_data_for_one_paramtree(
     output_param: str,
     start: int | None,
     end: int | None,
-    callback: Callable | None,
+    callback: Callable[[float], None] | None = None,
 ) -> dict[str, np.ndarray]:
     """
     Get the data for a parameter tree and reshape it according to the
@@ -292,7 +292,7 @@ def get_parameter_data_for_one_paramtree(
     output_param: str,
     start: int | None,
     end: int | None,
-    callback: Callable | None,
+    callback: Callable[[float], None] | None = None,
 ) -> tuple[dict[str, np.ndarray], int]:
     interdeps = rundescriber.interdeps
     data, paramspecs, n_rows = _get_data_for_one_param_tree(
@@ -392,7 +392,7 @@ def _get_data_for_one_param_tree(
     output_param: str,
     start: int | None,
     end: int | None,
-    callback: Callable | None,
+    callback: Callable[[float], None] | None = None,
 ) -> tuple[list[list[Any]], list[ParamSpecBase], int]:
     output_param_spec = interdeps._id_to_paramspec[output_param]
     # find all the dependencies of this param
@@ -559,7 +559,9 @@ def get_parameter_tree_values(
                   LIMIT {limit} OFFSET {offset[i]}
                   """
             cursor.execute(sql)
-            res = many_many(cursor, columns, res)
+            res_temp = many_many(cursor, columns)
+            for i in res_temp:
+                res.append(i)
             progress += iteration
             callback(progress)
 
