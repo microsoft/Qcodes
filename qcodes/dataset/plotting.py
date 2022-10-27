@@ -12,6 +12,7 @@ from functools import partial
 from typing import TYPE_CHECKING, Any, List, Literal, Optional, Sequence, Tuple, cast
 
 import numpy as np
+from textwrap import wrap
 
 if TYPE_CHECKING:
     import matplotlib
@@ -259,7 +260,7 @@ def plot_dataset(
 
             new_colorbars.append(None)
 
-            ax.set_title(title)
+            ax.set_title(wrap(title))
 
         elif len(data) == 3:  # 2D PLOTTING
             log.debug(f'Doing a 2D plot with kwargs: {kwargs}')
