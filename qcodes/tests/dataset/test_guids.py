@@ -45,7 +45,9 @@ def test_generate_guid(loc, stat, smpl):
     if smpl == 0 or smpl == 2_863_311_530:
         guid = generate_guid()
     else:
-        with pytest.warns(match="Setting a non default sample"):
+        with pytest.warns(
+            expected_warning=Warning, match="Setting a non default sample"
+        ):
             guid = generate_guid()
 
     gen_time = int(np.round(time.time() * 1000))
@@ -118,7 +120,9 @@ def test_filter_guid(locs, stats, smpls):
         if smpl == 0 or smpl == 2_863_311_530:
             guid = generate_guid()
         else:
-            with pytest.warns(match="Setting a non default sample"):
+            with pytest.warns(
+                expected_warning=Warning, match="Setting a non default sample"
+            ):
                 guid = generate_guid()
 
         gen_time = int(np.round(time.time() * 1000))
@@ -240,5 +244,5 @@ def test_random_sample_and_sample_int_in_guid_raises():
 
 @pytest.mark.usefixtures("default_config")
 def test_sample_int_in_guid_warns():
-    with pytest.warns(match="Setting a non default sample"):
+    with pytest.warns(expected_warning=Warning, match="Setting a non default sample"):
         generate_guid(sampleint=10)
