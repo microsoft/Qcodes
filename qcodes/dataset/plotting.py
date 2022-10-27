@@ -303,7 +303,7 @@ def plot_dataset(
 
             new_colorbars.append(colorbar)
 
-            ax.set_title(title)
+            ax.set_title("\n".join(wrap(title)))
 
         else:
             log.warning(
