@@ -30,8 +30,11 @@ def _make_seed_random():
 
 @pytest.mark.usefixtures("default_config")
 @settings(max_examples=50, deadline=1000)
-@given(loc=hst.integers(0, 255), stat=hst.integers(0, 65535),
-       smpl=hst.integers(0, 4294967295))
+@given(
+    loc=hst.integers(0, 255),
+    stat=hst.integers(0, 65535),
+    smpl=hst.integers(0, 4_294_967_295),
+)
 def test_generate_guid(loc, stat, smpl):
     # update config to generate a particular guid. Read it back to verify
     cfg = qc.config
@@ -39,7 +42,12 @@ def test_generate_guid(loc, stat, smpl):
     cfg["GUID_components"]["work_station"] = stat
     cfg["GUID_components"]["sample"] = smpl
 
-    guid = generate_guid()
+    if smpl == 0 or smpl == 2_863_311_530:
+        guid = generate_guid()
+    else:
+        with pytest.warns(match="Setting a non default sample"):
+            guid = generate_guid()
+
     gen_time = int(np.round(time.time() * 1000))
 
     comps = parse_guid(guid)
@@ -107,7 +115,12 @@ def test_filter_guid(locs, stats, smpls):
         cfg['GUID_components']['work_station'] = stat
         cfg['GUID_components']['sample'] = smpl
 
-        guid = generate_guid()
+        if smpl == 0 or smpl == 2_863_311_530:
+            guid = generate_guid()
+        else:
+            with pytest.warns(match="Setting a non default sample"):
+                guid = generate_guid()
+
         gen_time = int(np.round(time.time() * 1000))
 
         comps = parse_guid(guid)
