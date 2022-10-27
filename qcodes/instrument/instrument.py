@@ -5,9 +5,7 @@ import logging
 import time
 import weakref
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, cast
-
-from typing_extensions import Protocol
+from typing import TYPE_CHECKING, Any, Protocol, TypeVar, cast
 
 from qcodes.utils import strip_attrs
 from qcodes.validators import Anything

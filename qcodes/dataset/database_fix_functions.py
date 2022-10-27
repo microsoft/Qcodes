@@ -16,7 +16,7 @@ from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning.converters import old_to_new
 from qcodes.dataset.descriptions.versioning.rundescribertypes import RunDescriberV1Dict
 from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic, atomic_transaction
-from qcodes.dataset.sqlite.db_upgrades import get_user_version
+from qcodes.dataset.sqlite.db_upgrades.version import get_user_version
 from qcodes.dataset.sqlite.queries import (
     _get_parameters,
     _update_run_description,

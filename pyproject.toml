@@ -15,25 +15,25 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "Topic :: Scientific/Engineering",
 ]
 license = {text = "MIT"}
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 dependencies = [
     "broadbean>=0.9.1",
     "h5netcdf>=0.10.0,!=0.14.0",
     # see https://github.com/h5netcdf/h5netcdf/issues/154
     "h5py>=3.0.0",
-    "importlib-metadata>=4.4,<5.0.0; python_version < '3.10'",
+    "importlib-metadata>=4.4; python_version < '3.10'",
     "importlib-resources>=2.0.0; python_version < '3.9'",
     "ipywidgets>=7.5.0,<9.0.0",
     "jsonschema>=3.0.0",
     "matplotlib>=3.3.0",
-    "numpy>=1.17.0",
+    "numpy>=1.21.0",
     "opencensus>=0.7.10",
     "opencensus-ext-azure>=1.0.4, <2.0.0",
     "packaging>=20.0",
@@ -45,7 +45,7 @@ dependencies = [
     "tqdm>=4.32.2",
     "uncertainties>=3.1.4",
     "versioningit>=2.0.1",
-    "websockets>=7.0",
+    "websockets>=9.0",
     "wrapt>=1.10.4",
     "xarray>=0.18.0",
     # transitive dependencies. We list these explicitly to",
@@ -77,23 +77,27 @@ test = [
     "coverage[toml]>=6.0.0",
     "deepdiff>=5.0.2",
     "hypothesis>=5.49.0",
-    "lxml>=4.3.0",
+    "lxml>=4.4.1",
     "lxml-stubs>=0.4.0",
     "mypy>=0.971",
     "pandas-stubs>=1.2.0.1",
-    "pytest>=6.0.0",
+    "pytest>=6.1.0",
+    "pytest-asyncio>=0.19.0",
     "pytest-cov>=3.0.0",
+    "pytest-csv>=3.0.0",
     "pytest-mock>=3.0.0",
-    "pytest-rerunfailures>=5.0.0",
+    "pytest-rerunfailures>=10.0",
     "pytest-xdist>=2.0.0",
     "pyqtgraph>=0.11.0", # pyqtgraph tests
     "PyQt5>=5.15.0", # pyqtgraph tests
     "PyVisa-sim>=0.4.0",
     "slack-sdk>=3.4.2", # needed to typecheck slack extension
     "sphinx>=4.5.0",  # sphinx extension tests
+    "types-jsonschema>=4.16.0",
     "types_requests>=0.1.8",
     "types-setuptools>=57.0.0",
     "types-tabulate>=0.1.0",
+    "types-tqdm>=4.64.6",
 ]
 docs = [
     "autodocsumm>=0.2.9",
@@ -163,10 +167,7 @@ warn_unused_ignores = true
 # this triggers failures due to returning
 # values from untyped 3th party libs
 warn_return_any = false
-# this happens both internally
-# and in external libs that dont use
-# __all__ in their public reexported api
-no_implicit_reexport = false
+no_implicit_reexport = true
 strict_equality = true
 strict_concatenate = true
 
@@ -204,7 +205,6 @@ module = [
     "h5py",
     "h5netcdf",
     "hickle",
-    "jsonschema",
     "lomentum.tools",
     "matplotlib.*",
     "mcl_RF_Switch_Controller64",
@@ -216,7 +216,6 @@ module = [
     "spyder.utils.site",
     "spyder_kernels.customize",
     "System.IO",
-    "tqdm.*",
     "uncertainties",
     "win32com.*",
     "win32con",

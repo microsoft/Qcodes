@@ -1,18 +1,24 @@
+from __future__ import annotations
+
 from functools import reduce
 from operator import mul
-from typing import Dict, List, Optional, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, Sequence
 
 import numpy as np
-import pandas
 from numpy.testing import assert_array_equal
 
+if TYPE_CHECKING:
+    import pandas as pd
 
-def verify_data_dict(data: Dict[str, Dict[str, np.ndarray]],
-                     dataframe: Optional[Dict[str, pandas.DataFrame]],
-                     parameter_names: Sequence[str],
-                     expected_names: Dict[str, Sequence[str]],
-                     expected_shapes: Dict[str, Sequence[Tuple[int, ...]]],
-                     expected_values: Dict[str, Sequence[np.ndarray]]) -> None:
+
+def verify_data_dict(
+    data: dict[str, dict[str, np.ndarray]],
+    dataframe: dict[str, pd.DataFrame] | None,
+    parameter_names: Sequence[str],
+    expected_names: dict[str, Sequence[str]],
+    expected_shapes: dict[str, Sequence[tuple[int, ...]]],
+    expected_values: dict[str, Sequence[np.ndarray]],
+) -> None:
     """
     Simple helper function to verify a dict of data. It can also optionally
 
@@ -56,10 +62,12 @@ def verify_data_dict(data: Dict[str, Dict[str, np.ndarray]],
                                               expected_values[param])
 
 
-def verify_data_dict_for_single_param(datadict: Dict[str, np.ndarray],
-                                      names: Sequence[str],
-                                      shapes: Sequence[Tuple[int, ...]],
-                                      values):
+def verify_data_dict_for_single_param(
+    datadict: dict[str, np.ndarray],
+    names: Sequence[str],
+    shapes: Sequence[tuple[int, ...]],
+    values,
+):
     # check that there are no unexpected elements in the dict
     key_names = list(datadict.keys())
     assert set(key_names) == set(names)
@@ -73,14 +81,18 @@ def verify_data_dict_for_single_param(datadict: Dict[str, np.ndarray],
         assert_array_equal(mydata, value)
 
 
-def verify_dataframe_for_single_param(dataframe: pandas.DataFrame,
-                                      names: Sequence[str],
-                                      shapes: Sequence[Tuple[int, ...]],
-                                      values):
+def verify_dataframe_for_single_param(
+    dataframe: pd.DataFrame,
+    names: Sequence[str],
+    shapes: Sequence[tuple[int, ...]],
+    values,
+):
+    import pandas as pd  # pylint: disable=import-outside-toplevel
+
     # check that the dataframe has the same elements as index and columns
     pandas_index_names = list(dataframe.index.names)
     pandas_column_names = list(dataframe)
-    pandas_names: List[Union[str, float]] = []
+    pandas_names: list[str | float] = []
     for i in pandas_index_names:
         if i is not None:
             pandas_names.append(i)
@@ -103,7 +115,7 @@ def verify_dataframe_for_single_param(dataframe: pandas.DataFrame,
             # one dimensional arrays will have single values for there indexed
             # not tuples as they don't use multiindex. Put these in tuples
             # for easy comparison
-            if not isinstance(dataframe.index, pandas.MultiIndex):
+            if not isinstance(dataframe.index, pd.MultiIndex):
                 row_index_values = (row_index_values,)
 
             expected_values = \

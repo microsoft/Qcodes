@@ -18,31 +18,33 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        # we need to pin to 3.10.6 until
-        # https://github.com/python/mypy/pull/13500
-        # is part of a released version of mypy
-        python-version: ["3.7", "3.8", "3.9", "3.10.6"]
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
         exclude:
-          - os: windows-latest
-            python-version: "3.7"
           - os: windows-latest
             python-version: "3.8"
           - os: windows-latest
             python-version: "3.9"
+          - os: windows-latest
+            python-version: "3.11"
     env:
       DISPLAY: ':99.0'
       OS: ${{ matrix.os }}
       PYTHON: ${{ matrix.python-version }}
 
     steps:
-    - uses: actions/checkout@v3.0.2
+    - uses: actions/checkout@v3.1.0
       with:
         submodules: true
     - name: setup ubuntu-latest xvfb
       uses: ./.github/actions/setup-ubuntu-latest-xvfb
       if: runner.os == 'Linux'
+    # install libhdf5-dev untill we have wheels for python 3.11
+    - name: install libhdf5
+      run: sudo apt install libhdf5-dev
+      shell: bash
+      if: runner.os == 'Linux'
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4.2.0
+      uses: actions/setup-python@v4.3.0
       with:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
@@ -59,13 +61,18 @@ jobs:
       run: mypy -p qcodes
     - name: Run parallel tests
       run: |
-        pytest -m "not serial" --cov=qcodes --cov-report xml --hypothesis-profile ci qcodes
+        pytest -m "not serial" --cov=qcodes --cov-report xml --hypothesis-profile ci qcodes --csv test_durations.csv --csv-columns name,duration
 # a subset of the tests fails when run in parallel on Windows so run those in serial here
+    - name: Compare test duration time
+      uses: actions/upload-artifact@v3
+      with:
+        name: blueracer
+        path: test_durations.csv
     - name: Run serial tests
       run: |
         pytest -m "serial" -n 0 --dist no --cov=qcodes --cov-report xml --cov-append --hypothesis-profile ci qcodes
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3.1.0
+      uses: codecov/codecov-action@v3.1.1
       with:
         file: ./coverage.xml
         env_vars: OS,PYTHON

@@ -33,7 +33,7 @@ class InterDependencies_Dict(TypedDict):
     standalones: list[str]
 
 
-Shapes = Optional[Dict[str, Tuple[int, ...]]]
+Shapes = Dict[str, Tuple[int, ...]]
 
 
 class RunDescriberV0Dict(TypedDict):
@@ -51,7 +51,7 @@ class RunDescriberV2Dict(RunDescriberV0Dict):
 
 
 class RunDescriberV3Dict(RunDescriberV2Dict):
-    shapes: Shapes
+    shapes: Shapes | None
     # dict from dependent to dict from depenency to num points in grid
 
 

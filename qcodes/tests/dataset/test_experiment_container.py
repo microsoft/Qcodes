@@ -138,8 +138,12 @@ def test_experiment_read_only_properties(experiment):
                        'format_string']
 
     # It is not expected to be possible to set read only properties
+    # the error message changed in python 3.11
+    # from 'can't set ...' to 'has no setter ...'
     for prop in read_only_props:
-        with pytest.raises(AttributeError, match="can't set attribute"):
+        with pytest.raises(
+            AttributeError, match="(can't set attribute|object has no setter)"
+        ):
             setattr(experiment, prop, True)
 
 

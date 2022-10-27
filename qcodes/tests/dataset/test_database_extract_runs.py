@@ -13,7 +13,6 @@ from numpy.testing import assert_array_equal
 
 import qcodes as qc
 import qcodes.tests.dataset
-from qcodes import Station
 from qcodes.dataset import do1d, do2d
 from qcodes.dataset.data_set import (
     DataSet,
@@ -34,6 +33,7 @@ from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.sqlite.connection import path_to_dbfile
 from qcodes.dataset.sqlite.database import get_db_version_and_newest_available_version
 from qcodes.dataset.sqlite.queries import get_experiments
+from qcodes.station import Station
 from qcodes.tests.common import error_caused_by, skip_if_no_fixtures
 from qcodes.tests.instrument_mocks import DummyInstrument
 

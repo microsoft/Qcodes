@@ -19,8 +19,7 @@ from .export_to_pandas import (
 if TYPE_CHECKING:
     import xarray as xr
 
-    from qcodes.dataset.data_set import ParameterData
-    from qcodes.dataset.data_set_protocol import DataSetProtocol
+    from qcodes.dataset.data_set_protocol import DataSetProtocol, ParameterData
 
 
 def _load_to_xarray_dataarray_dict_no_metadata(
@@ -154,6 +153,15 @@ def xarray_to_h5netcdf_with_complex_numbers(
     if "c" in data_var_kinds or "c" in coord_kinds:
         # see http://xarray.pydata.org/en/stable/howdoi.html
         # for how to export complex numbers
-        xarray_dataset.to_netcdf(path=file_path, engine="h5netcdf", invalid_netcdf=True)
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                module="h5netcdf",
+                message="You are writing invalid netcdf features",
+                category=UserWarning,
+            )
+            xarray_dataset.to_netcdf(
+                path=file_path, engine="h5netcdf", invalid_netcdf=True
+            )
     else:
         xarray_dataset.to_netcdf(path=file_path, engine="h5netcdf")

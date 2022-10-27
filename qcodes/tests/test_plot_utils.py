@@ -2,6 +2,7 @@
 Tests for `qcodes.utils.plotting`.
 """
 import matplotlib
+import pytest
 
 # set matplotlib backend before importing pyplot
 matplotlib.use("Agg")
@@ -11,7 +12,6 @@ from pytest import fixture
 
 import qcodes
 from qcodes.dataset.plotting import plot_by_id
-from qcodes.tests.common import default_config
 
 from .dataset_generators import dataset_with_outliers_generator
 
@@ -47,21 +47,15 @@ def test_extend(dataset_with_outliers):
     plt.close()
 
 
+@pytest.mark.usefixtures("default_config")
 def test_defaults(dataset_with_outliers):
     run_id = dataset_with_outliers.run_id
 
-    # plot_by_id loads from the database location provided in the qcodes
-    # config. But the tests are supposed to run with the standard config.
-    # Therefore we need to backup the db location and add it to the default
-    # config context.
-    db_location = qcodes.config.core.db_location
-    with default_config():
-        qcodes.config.core.db_location = db_location
-        _, cb = plot_by_id(run_id)
-        assert cb[0].extend == 'neither'
+    _, cb = plot_by_id(run_id)
+    assert cb[0].extend == "neither"
 
-        qcodes.config.plotting.auto_color_scale.enabled = True
+    qcodes.config.plotting.auto_color_scale.enabled = True
 
-        _, cb = plot_by_id(run_id)
-        assert cb[0].extend == 'both'
+    _, cb = plot_by_id(run_id)
+    assert cb[0].extend == "both"
     plt.close()

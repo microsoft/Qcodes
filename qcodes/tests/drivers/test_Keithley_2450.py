@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 import qcodes.instrument.sims as sims
-from qcodes.instrument_drivers.tektronix.Keithley_2450 import Keithley2450
+from qcodes.instrument_drivers.Keithley import Keithley2450
 
 visalib = sims.__file__.replace('__init__.py', 'Keithley_2450.yaml@sim')
 

@@ -3,12 +3,12 @@ from hypothesis import given
 
 from qcodes.instrument_drivers.Lakeshore import Model_325
 
-STATUS = Model_325.Status
+STATUS = Model_325.Status  # type: ignore[attr-defined]
 
 
 @given(
     st.lists(st.sampled_from(list(STATUS)), min_size=1, max_size=5, unique=True).map(
-        sorted  # type: ignore[arg-type]
+        sorted
     )
 )
 def test_decode_sensor_status(list_of_codes):

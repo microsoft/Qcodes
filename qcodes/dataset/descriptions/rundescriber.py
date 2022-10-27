@@ -30,14 +30,14 @@ class RunDescriber:
     attributes when converting itself to dictionary.
     """
 
-    def __init__(self, interdeps: InterDependencies_,
-                 shapes: Shapes = None) -> None:
+    def __init__(
+        self, interdeps: InterDependencies_, shapes: Shapes | None = None
+    ) -> None:
 
         if not isinstance(interdeps, InterDependencies_):
             raise ValueError('The interdeps arg must be of type: '
                              'InterDependencies_. '
                              f'Got {type(interdeps)}.')
-        self._verify_interdeps_shape(interdeps, shapes)
 
         self._interdeps = interdeps
 
@@ -49,31 +49,12 @@ class RunDescriber:
         return self._version
 
     @property
-    def shapes(self) -> Shapes:
+    def shapes(self) -> Shapes | None:
         return self._shapes
 
     @property
     def interdeps(self) -> InterDependencies_:
         return self._interdeps
-
-    @staticmethod
-    def _verify_interdeps_shape(interdeps: InterDependencies_,
-                                shapes: Shapes) -> None:
-        """
-        Verify that interdeps and shape are consistent
-        """
-        for dependent, dependencies in interdeps.dependencies.items():
-            if shapes is not None:
-                shape = shapes.get(dependent.name)
-                if shape is not None:
-                    if len(shape) < len(dependencies):
-                        raise ValueError(f"Found inconsistency between "
-                                         f"InterDependencies and shape "
-                                         f"metadata. "
-                                         f"{dependent.name} has "
-                                         f"{len(dependencies)} dependencies "
-                                         f"but it's shape "
-                                         f"is given as {shape}")
 
     def _to_dict(self) -> RunDescriberV3Dict:
         """
