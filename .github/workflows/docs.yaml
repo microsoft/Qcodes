@@ -18,12 +18,14 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python-version: ["3.8", "3.9", "3.10"]
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
         exclude:
           - os: windows-latest
             python-version: 3.9
           - os: windows-latest
             python-version: 3.10
+          - os: windows-latest
+            python-version: 3.11
           - os: ubuntu-latest
             python-version: 3.8
     env:
@@ -61,6 +63,11 @@ jobs:
         attempt_limit: 5
         attempt_delay: 1000
       if: runner.os == 'Windows'
+    # install libhdf5-dev untill we have wheels for python 3.11
+    - name: install libhdf5
+      run: sudo apt install libhdf5-dev
+      shell: bash
+      if: runner.os == 'Linux'
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4.3.0
       with:
