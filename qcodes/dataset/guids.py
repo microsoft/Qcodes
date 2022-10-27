@@ -32,15 +32,17 @@ def generate_guid(timeint: int | None = None, sampleint: int | None = None) -> s
 
     try:
         guid_type = cfg["dataset"]["GUID_type"]
-    except KeyError:
+    except KeyError as err:
         raise RuntimeError(
             "Invalid QCoDeS config file! No guid_type specified. Can not proceed."
-        )
+        ) from err
     try:
         guid_comp = cfg['GUID_components']
-    except KeyError:
-        raise RuntimeError('Invalid QCoDeS config file! No GUID_components '
-                           'specified. Can not proceed.')
+    except KeyError as err:
+        raise RuntimeError(
+            "Invalid QCoDeS config file! No GUID_components "
+            "specified. Can not proceed."
+        ) from err
 
     location = guid_comp['location']
     station = guid_comp['work_station']
