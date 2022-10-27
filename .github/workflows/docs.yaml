@@ -32,7 +32,10 @@ jobs:
       DISPLAY: ':99.0'
       OS: ${{ matrix.os }}
       UPLOAD_TO_GHPAGES: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == '3.10' && github.event_name == 'push' && github.ref == 'refs/heads/master' }}
-      # we expect no warnings from Sphinx in 3.10 and above
+      # we expect no warnings from Sphinx in 3.10
+      # The std-lib docstring of IntEnum in 3.11.0 is not valid
+      # causing errors like in the docstring of from_bytes (from Int)
+      # WARNING: Inline interpreted text or phrase reference start-string without end-string.
       SPHINX_WARNINGS_AS_ERROR: ${{ matrix.python-version == '3.10' }}
       SPHINX_OPTS: "-v"
     steps:
