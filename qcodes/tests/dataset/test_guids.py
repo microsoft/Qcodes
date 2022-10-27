@@ -220,7 +220,7 @@ def test_random_sample_guid():
     cfg = qc.config
     cfg["dataset"]["GUID_type"] = "random_sample"
 
-    expected_guid_prefixes = ["d82c07cd", "6baa9455", "82e2e662"]
+    expected_guid_prefixes = ["d82c07ce", "629f6fbf", "c2094cad"]
     for expected_guid_prefix in expected_guid_prefixes:
         guid = generate_guid()
         assert guid.split("-")[0] == expected_guid_prefix

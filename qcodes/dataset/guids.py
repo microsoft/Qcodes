@@ -68,7 +68,7 @@ def generate_guid(timeint: int | None = None, sampleint: int | None = None) -> s
         )
 
     if guid_type == "random_sample":
-        sampleint = random.randint(0, 16**8 - 1)
+        sampleint = random.randint(1, 16**8 - 1)
     elif sampleint == 0:
         sampleint = int('a'*8, base=16)
 
