@@ -162,7 +162,7 @@ def get_data(
         return [[]]
     query = _build_data_query(table_name, columns, start, end)
     c = atomic_transaction(conn, query)
-    res = many_many(c, columns)
+    res = many_many(c, *columns)
 
     return res
 
@@ -546,7 +546,7 @@ def get_parameter_tree_values(
             """
 
         cursor.execute(sql, ())
-        res = many_many(cursor, columns)
+        res = many_many(cursor, *columns)
     if isinstance(offset, np.ndarray) and callback is not None:
 
         res = []
@@ -559,9 +559,8 @@ def get_parameter_tree_values(
                   LIMIT {limit} OFFSET {offset[i]}
                   """
             cursor.execute(sql)
-            res_temp = many_many(cursor, columns)
-            for i in res_temp:
-                res.append(i)
+            for j in many_many(cursor, *columns):
+                res.append(j)
             progress += iteration
             callback(progress)
 
@@ -873,7 +872,7 @@ def _get_dependencies(conn: ConnectionPlus, layout_id: int) -> list[list[int]]:
     SELECT independent, axis_num FROM dependencies WHERE dependent=?
     """
     c = atomic_transaction(conn, sql, layout_id)
-    res = many_many(c, ['independent', 'axis_num'])
+    res = many_many(c, 'independent', 'axis_num')
     return res
 
 
@@ -1477,12 +1476,8 @@ def _get_paramspec(conn: ConnectionPlus,
     WHERE parameter="{param_name}" and run_id={run_id}
     """
     c = conn.execute(sql)
-    resp = many(c, ['layout_id',
-                    'run_id',
-                    'parameter',
-                    'label',
-                    'unit',
-                    'inferred_from'])
+    resp = many(c, 'layout_id', 'run_id', 'parameter', 'label', 'unit',
+                'inferred_from')
     (layout_id, _, _, label, unit, inferred_from_string) = resp
 
     if inferred_from_string:

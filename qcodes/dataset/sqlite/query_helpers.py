@@ -45,7 +45,7 @@ def one(curr: sqlite3.Cursor, column: int | str) -> Any:
 
 
 def many(curr: sqlite3.Cursor,
-         columns: str | Sequence[str]) -> list[Any]:
+         *columns: str) -> list[Any]:
     """Get the values of many columns from one row
     Args:
         curr: cursor to operate on
@@ -62,28 +62,19 @@ def many(curr: sqlite3.Cursor,
 
 
 def many_many(curr: sqlite3.Cursor,
-              columns: str | Sequence[str],
-              results: list | None = None) -> list[list[Any]]:
+              *columns: str) -> list[list[Any]]:
     """Get all values of many columns
     Args:
         curr: cursor to operate on
         columns: names of the columns
-        results: list of list of all values
 
     Returns:
         list of lists of values
     """
     res = curr.fetchall()
-
-    if isinstance(columns, str):
-        columns = [columns]
-
-    if results is None:
-        results = []
-
+    results = []
     for r in res:
         results.append([r[c] for c in columns])
-
     return results
 
 
@@ -135,7 +126,7 @@ def select_many_where(
         {where_column} = ?
     """
     cur = atomic_transaction(conn, query, where_value)
-    res = many(cur, columns)
+    res = many(cur, *columns)
     return res
 
 
