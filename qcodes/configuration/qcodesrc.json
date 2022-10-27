@@ -59,6 +59,7 @@
         "use_monitor": false
     },
     "GUID_components": {
+        "GUID_type": "explicit_sample",
         "location": 0,
         "work_station": 0,
         "sample": 0
@@ -73,8 +74,7 @@
         "export_type": null,
         "export_prefix": "qcodes_",
         "export_path": "~",
-        "export_name_elements": ["captured_run_id", "guid"],
-        "GUID_type": "explicit_sample"
+        "export_name_elements": ["captured_run_id", "guid"]
     },
     "telemetry":
     {

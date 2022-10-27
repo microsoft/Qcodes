@@ -31,19 +31,18 @@ def generate_guid(timeint: int | None = None, sampleint: int | None = None) -> s
     cfg = qc.config
 
     try:
-        guid_type = cfg["dataset"]["GUID_type"]
-    except KeyError as err:
-        raise RuntimeError(
-            "Invalid QCoDeS config file! No guid_type specified. Can not proceed."
-        ) from err
-    try:
         guid_comp = cfg['GUID_components']
     except KeyError as err:
         raise RuntimeError(
             "Invalid QCoDeS config file! No GUID_components "
             "specified. Can not proceed."
         ) from err
-
+    try:
+        guid_type = guid_comp["GUID_type"]
+    except KeyError as err:
+        raise RuntimeError(
+            "Invalid QCoDeS config file! No GUID_type specified. Can not proceed."
+        ) from err
     location = guid_comp['location']
     station = guid_comp['work_station']
 
@@ -54,16 +53,17 @@ def generate_guid(timeint: int | None = None, sampleint: int | None = None) -> s
         sampleint = guid_comp['sample']
     if sampleint != 0 and guid_type == "random_sample":
         raise RuntimeError(
-            "QCoDeS is configured to disregard sample from config file but this "
-            "is set to a non default value which is therefore unused."
+            "QCoDeS is configured to disregard GUID_components.sample from config file but this "
+            f"is set to a non default value of {sampleint} which is therefore unused."
         )
 
     if sampleint not in (0, 2863311530):
         warnings.warn(
-            "Setting a non default sample GUID_component is deprecated. "
-            "the sample part of the GUID will be replaced by a randon string "
+            "Setting a non default GUID_components.sample is deprecated. "
+            "The sample part of the GUID will be replaced by a random string "
             "in a future release. To opt in to the new format now "
-            "set GUID_type to `random_sample_str` in your qcodesrc.json config file.",
+            "set GUID_type to `random_sample` in your qcodesrc.json config file. "
+            "If you rely on this feature please get in touch.",
             stacklevel=2,
         )
 

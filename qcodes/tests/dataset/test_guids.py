@@ -1,4 +1,5 @@
 import random
+import re
 import time
 from uuid import uuid4
 
@@ -46,7 +47,8 @@ def test_generate_guid(loc, stat, smpl):
         guid = generate_guid()
     else:
         with pytest.warns(
-            expected_warning=Warning, match="Setting a non default sample"
+            expected_warning=Warning,
+            match=re.escape("Setting a non default GUID_components.sample"),
         ):
             guid = generate_guid()
 
@@ -121,7 +123,8 @@ def test_filter_guid(locs, stats, smpls):
             guid = generate_guid()
         else:
             with pytest.warns(
-                expected_warning=Warning, match="Setting a non default sample"
+                expected_warning=Warning,
+                match=re.escape("Setting a non default GUID_components.sample"),
             ):
                 guid = generate_guid()
 
@@ -222,7 +225,7 @@ def test_validation():
 def test_random_sample_guid():
 
     cfg = qc.config
-    cfg["dataset"]["GUID_type"] = "random_sample"
+    cfg["GUID_components"]["GUID_type"] = "random_sample"
 
     expected_guid_prefixes = ["d82c07ce", "629f6fbf", "c2094cad"]
     for expected_guid_prefix in expected_guid_prefixes:
@@ -234,15 +237,21 @@ def test_random_sample_guid():
 def test_random_sample_and_sample_int_in_guid_raises():
 
     cfg = qc.config
-    cfg["dataset"]["GUID_type"] = "random_sample"
+    cfg["GUID_components"]["GUID_type"] = "random_sample"
 
     with pytest.raises(
-        RuntimeError, match="QCoDeS is configured to disregard sample from config"
+        RuntimeError,
+        match=re.escape(
+            "QCoDeS is configured to disregard GUID_components.sample from config"
+        ),
     ):
         generate_guid(sampleint=10)
 
 
 @pytest.mark.usefixtures("default_config")
 def test_sample_int_in_guid_warns():
-    with pytest.warns(expected_warning=Warning, match="Setting a non default sample"):
+    with pytest.warns(
+        expected_warning=Warning,
+        match=re.escape("Setting a non default GUID_components.sample"),
+    ):
         generate_guid(sampleint=10)
