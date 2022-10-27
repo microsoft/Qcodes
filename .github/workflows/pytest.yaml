@@ -54,8 +54,13 @@ jobs:
       run: mypy -p qcodes
     - name: Run parallel tests
       run: |
-        pytest -m "not serial" --cov=qcodes --cov-report xml --hypothesis-profile ci qcodes
+        pytest -m "not serial" --cov=qcodes --cov-report xml --hypothesis-profile ci qcodes --csv test_durations.csv --csv-columns name,duration
 # a subset of the tests fails when run in parallel on Windows so run those in serial here
+    - name: Compare test duration time
+      uses: actions/upload-artifact@v3
+      with:
+        name: blueracer
+        path: test_durations.csv
     - name: Run serial tests
       run: |
         pytest -m "serial" -n 0 --dist no --cov=qcodes --cov-report xml --cov-append --hypothesis-profile ci qcodes
