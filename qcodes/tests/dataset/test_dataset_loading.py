@@ -28,7 +28,7 @@ from qcodes.utils import QCoDeSDeprecationWarning
 @pytest.mark.usefixtures("experiment")
 @pytest.mark.usefixtures("reset_config_on_exit")
 def test_load_by_id():
-    qc.config.dataset.GUID_type = "random_sample"
+    qc.config.GUID_components.GUID_type = "random_sample"
     ds = new_data_set("test-dataset")
     run_id = ds.run_id
     ds.mark_started()

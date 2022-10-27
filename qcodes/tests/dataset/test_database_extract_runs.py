@@ -521,7 +521,7 @@ def test_combine_runs(two_empty_temp_db_connections,
     can be reloaded by the original captured_run_id and the experiment
     name.
     """
-    qc.config.dataset.GUID_type = "random_sample"
+    qc.config.GUID_components.GUID_type = "random_sample"
 
     source_conn_1, source_conn_2 = two_empty_temp_db_connections
     target_conn = empty_temp_db_connection
