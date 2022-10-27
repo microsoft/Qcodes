@@ -61,7 +61,8 @@ def generate_guid(timeint: int | None = None, sampleint: int | None = None) -> s
             "Setting a non default sample GUID_component is deprecated. "
             "the sample part of the GUID will be replaced by a randon string "
             "in a future release. To opt in to the new format now "
-            "set GUID_type to `random_sample_str` in your qcodesrc.json config file."
+            "set GUID_type to `random_sample_str` in your qcodesrc.json config file.",
+            stacklevel=2,
         )
 
     if guid_type == "random_sample":
