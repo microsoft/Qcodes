@@ -56,7 +56,7 @@ def generate_guid(timeint: int | None = None, sampleint: int | None = None) -> s
             "is set to a non default value which is therefore unused."
         )
 
-    if sampleint != 0:
+    if sampleint != 0 and sampleint != 2863311530:
         warnings.warn(
             "Setting a non default sample GUID_component is deprecated. "
             "the sample part of the GUID will be replaced by a randon string "
