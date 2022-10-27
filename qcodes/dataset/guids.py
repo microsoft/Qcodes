@@ -51,13 +51,18 @@ def generate_guid(timeint: int | None = None, sampleint: int | None = None) -> s
         timeint = int(np.round(time.time()*1000))
     if sampleint is None:
         sampleint = guid_comp['sample']
-    if sampleint != 0 and guid_type == "random_sample":
+
+    # 2863311530 is the base 10 repr of
+    # aaaaaaaa
+    default_sample_ids = (0, 2863311530)
+
+    if sampleint not in default_sample_ids and guid_type == "random_sample":
         raise RuntimeError(
             "QCoDeS is configured to disregard GUID_components.sample from config file but this "
             f"is set to a non default value of {sampleint} which is therefore unused."
         )
 
-    if sampleint not in (0, 2863311530):
+    if sampleint not in default_sample_ids:
         warnings.warn(
             "Setting a non default GUID_components.sample is deprecated. "
             "The sample part of the GUID will be replaced by a random string "
