@@ -18,19 +18,24 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python-version: ["3.8", "3.9", "3.10"]
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
         exclude:
           - os: windows-latest
             python-version: 3.9
           - os: windows-latest
             python-version: 3.10
+          - os: windows-latest
+            python-version: 3.11
           - os: ubuntu-latest
             python-version: 3.8
     env:
       DISPLAY: ':99.0'
       OS: ${{ matrix.os }}
       UPLOAD_TO_GHPAGES: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == '3.10' && github.event_name == 'push' && github.ref == 'refs/heads/master' }}
-      # we expect no warnings from Sphinx in 3.10 and above
+      # we expect no warnings from Sphinx in 3.10
+      # The std-lib docstring of IntEnum in 3.11.0 is not valid
+      # causing errors like in the docstring of from_bytes (from Int)
+      # WARNING: Inline interpreted text or phrase reference start-string without end-string.
       SPHINX_WARNINGS_AS_ERROR: ${{ matrix.python-version == '3.10' }}
       SPHINX_OPTS: "-v"
     steps:
@@ -61,6 +66,11 @@ jobs:
         attempt_limit: 5
         attempt_delay: 1000
       if: runner.os == 'Windows'
+    # install libhdf5-dev untill we have wheels for python 3.11
+    - name: install libhdf5
+      run: sudo apt install libhdf5-dev
+      shell: bash
+      if: runner.os == 'Linux'
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4.3.0
       with:

@@ -83,7 +83,11 @@ def deprecate(
                     # by wrapt.
                     # if anyone reading this knows how the following line
                     # works please let me know.
-                    if isinstance(obj.__dict__.get(m_name, None), staticmethod):
+                    # wrapt cannot wrap class methods in 3.11.0
+                    # see https://github.com/python/cpython/issues/63272
+                    if isinstance(
+                        obj.__dict__.get(m_name, None), (staticmethod, classmethod)
+                    ):
                         continue
                     # pylint: disable=no-value-for-parameter
                     setattr(obj, m_name, decorate_callable(m))
