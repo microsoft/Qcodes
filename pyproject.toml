@@ -114,6 +114,8 @@ docs = [
     "towncrier>=22.8.0",
     "scipy>=1.7.0", # examples using scipy
     "slack-sdk>=3.4.2", # slack example notebook
+    "myst-nb",
+    "myst-parser",
 ]
 
 [project.scripts]
