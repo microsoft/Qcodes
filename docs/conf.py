@@ -61,7 +61,6 @@ sys.path.insert(0, os.path.abspath('..'))
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    "nbsphinx",
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
@@ -101,41 +100,6 @@ source_suffix = '.rst'
 
 version = qcodes.__version__
 release = parse(qcodes.__version__).public
-
-# Add link to Binder in Prolog (WRITE MORE DETAILS ONCE FIXED)
-nbsphinx_prolog = r"""
-{% set docname = 'docs/' + env.doc2path(env.docname, base=None) %}
-
-.. raw:: html
-
-    <div class="admonition note">
-      <p>This page was generated from
-        <a class="reference external"
-        href="https://github.com/qcodes/qcodes/blob/master/{{docname|e}}">{{ docname|replace("\\","/") }}</a>.
-        Interactive online version:
-        <a href="https://mybinder.org/v2/gh/qcodes/qcodes/master?filepath={{
-        docname|replace("\\","/") }}"><img
-    alt="Binder badge"
-        src="https://mybinder.org/badge_logo.svg"
-        style="vertical-align:text-bottom"></a>.
-      </p>
-      <script>
-        if (document.location.host) {
-          var p = document.currentScript.previousSibling.previousSibling;
-          var a = document.createElement('a');
-          a.innerHTML = 'View in <em>nbviewer</em>';
-          a.href = `https://nbviewer.jupyter.org/url${
-            (window.location.protocol == 'https:' ? 's/' : '/') +
-            window.location.host +
-            window.location.pathname.slice(0, -4) }ipynb`;
-          a.classList.add('reference');
-          a.classList.add('external');
-          p.appendChild(a);
-          p.appendChild(document.createTextNode('.'));
-        }
-      </script>
-    </div>
-"""
 
 # The master toctree document.
 master_doc = 'index'
@@ -462,10 +426,6 @@ nitpicky = False
 
 numfig = True
 
-# Use this kernel instead of the one stored in the notebook metadata:
-nbsphinx_kernel_name = 'python3'
-# always execute notebooks.
-nbsphinx_execute = 'always'
 
 towncrier_draft_autoversion_mode = "draft"
 towncrier_draft_include_empty = True
