@@ -32,9 +32,9 @@ def _make_seed_random():
 @pytest.mark.usefixtures("default_config")
 @settings(max_examples=50, deadline=1000)
 @given(
-    loc=hst.integers(0, 255),
-    stat=hst.integers(0, 65535),
-    smpl=hst.integers(0, 4_294_967_295),
+    loc=hst.integers(0, 0xFF),
+    stat=hst.integers(0, 0xFFFF),
+    smpl=hst.integers(0, 0xFF_FFF_FFF),
 )
 def test_generate_guid(loc, stat, smpl):
     # update config to generate a particular guid. Read it back to verify
@@ -43,7 +43,7 @@ def test_generate_guid(loc, stat, smpl):
     cfg["GUID_components"]["work_station"] = stat
     cfg["GUID_components"]["sample"] = smpl
 
-    if smpl == 0 or smpl == 2_863_311_530:
+    if smpl in (0, 0xAA_AAA_AAA):
         guid = generate_guid()
     else:
         with pytest.warns(
@@ -57,7 +57,7 @@ def test_generate_guid(loc, stat, smpl):
     comps = parse_guid(guid)
 
     if smpl == 0:
-        smpl = int("a" * 8, base=16)
+        smpl = 0xAA_AAA_AAA
 
     assert comps["location"] == loc
     assert comps["work_station"] == stat
@@ -105,21 +105,18 @@ def test_set_guid_workstation_code(ws, monkeypatch):
 
 @pytest.mark.usefixtures("default_config")
 @settings(max_examples=50, deadline=1000)
-@given(locs=hst.lists(hst.integers(0, 255), min_size=2, max_size=2,
-                      unique=True),
-       stats=hst.lists(hst.integers(0, 65535), min_size=2, max_size=2,
-                       unique=True),
-       smpls=hst.lists(hst.integers(0, 4294967295), min_size=2, max_size=2,
-                       unique=True),
-       )
+@given(
+    locs=hst.lists(hst.integers(0, 0xFF), min_size=2, max_size=2, unique=True),
+    stats=hst.lists(hst.integers(0, 0xFFFF), min_size=2, max_size=2, unique=True),
+    smpls=hst.lists(hst.integers(0, 0xFF_FFF_FFF), min_size=2, max_size=2, unique=True),
+)
 def test_filter_guid(locs, stats, smpls):
-
     def make_test_guid(cfg, loc: int, smpl: int, stat: int):
-        cfg['GUID_components']['location'] = loc
-        cfg['GUID_components']['work_station'] = stat
-        cfg['GUID_components']['sample'] = smpl
+        cfg["GUID_components"]["location"] = loc
+        cfg["GUID_components"]["work_station"] = stat
+        cfg["GUID_components"]["sample"] = smpl
 
-        if smpl == 0 or smpl == 2_863_311_530:
+        if smpl in (0, 0xAAAAAAAA):
             guid = generate_guid()
         else:
             with pytest.warns(

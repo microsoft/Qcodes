@@ -52,9 +52,7 @@ def generate_guid(timeint: int | None = None, sampleint: int | None = None) -> s
     if sampleint is None:
         sampleint = guid_comp['sample']
 
-    # 2863311530 is the base 10 repr of
-    # aaaaaaaa
-    default_sample_ids = (0, 2863311530)
+    default_sample_ids = (0, 0xAA_AAA_AAA)
 
     if sampleint not in default_sample_ids and guid_type == "random_sample":
         raise RuntimeError(
@@ -73,9 +71,9 @@ def generate_guid(timeint: int | None = None, sampleint: int | None = None) -> s
         )
 
     if guid_type == "random_sample":
-        sampleint = random.randint(1, 16**8 - 1)
+        sampleint = random.randint(1, 0xFF_FFF_FFF)
     elif sampleint == 0:
-        sampleint = int('a'*8, base=16)
+        sampleint = 0xAA_AAA_AAA
 
     loc_str = f'{location:02x}'
     stat_str = f'{station:06x}'
@@ -204,6 +202,6 @@ def validate_guid_format(guid: str) -> None:
     future)
     """
     if _guid_pattern.match(guid):
-            return
+        return
     else:
         raise ValueError(f'Did not receive a valid guid. Got {guid}')
