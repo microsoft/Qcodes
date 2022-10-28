@@ -5,6 +5,7 @@ from datetime import datetime
 from time import perf_counter, sleep
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 from warnings import warn
+from matplotlib import pyplot as plt
 
 import numpy as np
 from tqdm import tqdm
@@ -1798,6 +1799,7 @@ class BaseSweep(AbstractSweep):
 
         if plot and Sweep.plot_function is not None and MeasurementLoop.running_measurement is None:
             Sweep.plot_function(msmt.dataset)
+            plt.show()
 
         return msmt.dataset
 
