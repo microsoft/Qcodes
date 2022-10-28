@@ -59,6 +59,13 @@ class AbstractSweep(ABC, Generic[T]):
 
     @property
     def get_after_set(self) -> bool:
+        """
+        Should we perform a call to get on the parameter after setting it
+        and store that rather than the setpoint value in the dataset?
+
+        This defaults to False for backwards compatibility
+        but subclasses should overwrite this to implement if correctly.
+        """
         return False
 
 
@@ -71,7 +78,10 @@ class LinSweep(AbstractSweep[np.float64]):
         start: Sweep start value.
         stop: Sweep end value.
         num_points: Number of sweep points.
-        delay: Time in seconds between two consecutive sweep points
+        delay: Time in seconds between two consecutive sweep points.
+        post_actions: Actions to do after each sweep point.
+        get_after_set: Should we perform a get on the parameter after setting it
+            and store the value returned by get rather than the set value in the dataset.
     """
 
     def __init__(
@@ -130,6 +140,9 @@ class LogSweep(AbstractSweep[np.float64]):
         stop: Sweep end value.
         num_points: Number of sweep points.
         delay: Time in seconds between two consecutive sweep points.
+        post_actions: Actions to do after each sweep point.
+        get_after_set: Should we perform a get on the parameter after setting it
+            and store the value returned by get rather than the set value in the dataset.
     """
 
     def __init__(
@@ -178,7 +191,6 @@ class LogSweep(AbstractSweep[np.float64]):
         return self._get_after_set
 
 
-
 class ArraySweep(AbstractSweep, Generic[T]):
     """
     Sweep the values of a given array.
@@ -188,7 +200,8 @@ class ArraySweep(AbstractSweep, Generic[T]):
         array: array with values to sweep.
         delay: Time in seconds between two consecutive sweep points.
         post_actions: Actions to do after each sweep point.
-
+        get_after_set: Should we perform a get on the parameter after setting it
+            and store the value returned by get rather than the set value in the dataset.
     """
 
     def __init__(
