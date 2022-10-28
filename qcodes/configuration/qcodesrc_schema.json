@@ -276,6 +276,12 @@
         "GUID_components":{
             "type": "object",
             "properties": {
+                "GUID_type": {
+                    "type": "string",
+                    "enum": ["explicit_sample", "random_sample"],
+                    "default": "explicit_sample",
+                    "description": "Type of GUID to use. Currently possible to chose between an explicitly assigned 'Sample identification code' and a random string as the first part of the GUID."
+                },
                 "location": {
                     "type": "integer",
                     "default": 0,
