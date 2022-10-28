@@ -244,7 +244,3 @@ dataset5 = datasaver.dataset
 ```{code-cell} ipython3
 dataset5.get_parameter_data()
 ```
-
-```{code-cell} ipython3
-
-```

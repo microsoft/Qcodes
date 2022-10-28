@@ -150,7 +150,3 @@ print(qdac.temp5_2.get(), qdac.temp0_0.unit)
 ```{code-cell} ipython3
 qdac.close()
 ```
-
-```{code-cell} ipython3
-
-```

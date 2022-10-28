@@ -457,11 +457,3 @@ where `qcodes_contrib_drivers` and `zhinst` are example packages that are availa
 ```{code-cell} ipython3
 os.path.expandvars(os.path.join('%APPDATA%', 'Code', 'User', 'settings.json'))
 ```
-
-```{code-cell} ipython3
-
-```
-
-```{code-cell} ipython3
-
-```

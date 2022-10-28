@@ -242,7 +242,3 @@ except ValueError as err:
     print(err)
     
 ```
-
-```{code-cell} ipython3
-
-```

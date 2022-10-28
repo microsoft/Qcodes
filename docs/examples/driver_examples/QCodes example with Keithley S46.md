@@ -111,7 +111,3 @@ s46.open_all_channels()
 ```{code-cell} ipython3
 s46.closed_channels()
 ```
-
-```{code-cell} ipython3
-
-```

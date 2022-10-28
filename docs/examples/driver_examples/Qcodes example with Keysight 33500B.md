@@ -105,7 +105,3 @@ for ii in range(3):
 
 ks.flush_error_queue()
 ```
-
-```{code-cell} ipython3
-
-```

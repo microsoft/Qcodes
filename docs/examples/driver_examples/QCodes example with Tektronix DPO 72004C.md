@@ -260,7 +260,3 @@ plot_by_id(dataid)
 In order to fully support math operations and spectral analysis, we need code to add a math function through the QCoDeS driver, rather than manually. Additionally, we need to be able to adjust the frequency ranges and possibly other relevant parameters.
 
 As always, contributions are more then welcome! :-)
-
-```{code-cell} ipython3
-
-```

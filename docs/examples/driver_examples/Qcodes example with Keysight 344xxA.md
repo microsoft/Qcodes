@@ -367,7 +367,3 @@ for _ in range(3):
 ```{code-cell} ipython3
 dmm.flush_error_queue(verbose=True)
 ```
-
-```{code-cell} ipython3
-
-```

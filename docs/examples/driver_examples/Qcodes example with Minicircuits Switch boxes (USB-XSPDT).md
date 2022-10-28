@@ -48,7 +48,3 @@ setting all switches to line 2
 ```{code-cell} ipython3
 dev.all(2)
 ```
-
-```{code-cell} ipython3
-
-```

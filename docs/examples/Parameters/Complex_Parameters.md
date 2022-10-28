@@ -136,7 +136,3 @@ amplitudes()
 ```{code-cell} ipython3
 amplitudes(1/np.sqrt(2)*np.array([0, 1+1j, 0, 0, 0]))
 ```
-
-```{code-cell} ipython3
-
-```

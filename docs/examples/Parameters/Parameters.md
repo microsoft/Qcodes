@@ -201,7 +201,3 @@ A settable Parameter typically represents a configuration setting or other contr
 
 These parameters are identical in implementation to the above cases, using set_raw and get_raw methods for instrument facing communications. In order to see examples of these parameters, we advise reviewing our notebooks on insturments and instrument drivers.
 
-
-```{code-cell} ipython3
-
-```

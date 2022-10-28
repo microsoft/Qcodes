@@ -82,7 +82,3 @@ with meas.run() as datasaver:
     
     dataset = datasaver.dataset  # convenient to have for plotting
 ```
-
-```{code-cell} ipython3
-
-```

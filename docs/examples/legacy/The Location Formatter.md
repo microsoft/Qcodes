@@ -79,7 +79,3 @@ loc_provider = FormatLocation(fmt=loc_fmt, record=rcd)
 loop = Loop(gates.plunger.sweep(0, 1, num=25), 0).each(meter.voltage)
 data2 = loop.run(location=loc_provider)
 ```
-
-```{code-cell} ipython3
-
-```

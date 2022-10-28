@@ -508,7 +508,3 @@ We support and provide drivers for most of the instruments currently in use at t
 ### QCoDeS logging
 
 In every measurement session, it is highly recommended to have QCoDeS logging turned on. This will allow you to have all the logs in case troubleshooting is required. This feature is detailed further in an [example notebook](logging/logging_example.ipynb) that describes all the logging features.
-
-```{code-cell} ipython3
-
-```

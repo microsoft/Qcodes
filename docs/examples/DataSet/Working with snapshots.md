@@ -248,7 +248,3 @@ from qcodes.utils.metadata import diff_param_values
 ```{code-cell} ipython3
 diff_param_values(dataset.snapshot, bad_dataset.snapshot).changed
 ```
-
-```{code-cell} ipython3
-
-```

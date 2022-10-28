@@ -470,7 +470,3 @@ datasaver.dataset.get_parameter_data()
 gs.reset()
 dmm.reset()
 ```
-
-```{code-cell} ipython3
-
-```

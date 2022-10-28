@@ -99,7 +99,3 @@ Each DataSet holds:
 ### DataSets can fail:
 
 If somehow the data in storage does not match the record in memory of what it has saved, for example if you change the stored file during acquisition. The consequences depend on the formatter (this could be completely destructive for GNUPlotFormat or other text-based formats, probably less so for HDF5) but in general the DataSet has no way of independently checking that the existing data on disk is still what it thinks it is. A safe but slow way around this is to rewrite the stored files completely
-
-```{code-cell} ipython3
-
-```

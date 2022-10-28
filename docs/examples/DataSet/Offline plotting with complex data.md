@@ -163,7 +163,3 @@ axs, cbs = plot_dataset(ds3)
 ```{code-cell} ipython3
 axs, cbs = plot_dataset(ds3, complex_plot_type='mag_and_phase')
 ```
-
-```{code-cell} ipython3
-
-```

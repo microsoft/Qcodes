@@ -41,7 +41,3 @@ When a VisaInstrument has been instantiated before, particularly with TCPIP, som
 - [Writing instrument drivers](Creating-Instrument-Drivers.ipynb): This notebook features examples for developing instrument drivers, including the definition of channels and drivers.
 - [Simulated PyVISA instruments](Creating-Simulated-PyVISA-Instruments.ipynb): This provides examples of writing simulated instruments for testing software.
 - [Abstract instruments](abstract_instruments.ipynb): This example focuses on creating abstraction to enforce standardized interfaces.
-
-```{code-cell} ipython3
-
-```

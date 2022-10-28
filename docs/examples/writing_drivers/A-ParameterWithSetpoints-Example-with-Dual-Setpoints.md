@@ -238,11 +238,3 @@ dataset = datasaver.dataset
 ```{code-cell} ipython3
 _ = plot_dataset(dataset)
 ```
-
-```{code-cell} ipython3
-
-```
-
-```{code-cell} ipython3
-
-```

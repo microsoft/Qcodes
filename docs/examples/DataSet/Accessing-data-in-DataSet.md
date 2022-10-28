@@ -353,7 +353,3 @@ The dataset support exporting to netcdf and csv via the `dataset.export` method.
 If the user desires to export a QCoDeS `DataSet` into a format that is not readily supported by `DataSet` methods, we recommend to use `to_pandas_dataframe_dict` or `to_pandas_dataframe_dict` first, and then convert the resulting `DataFrame` s into a the desired format. This is becuase `pandas` package already implements converting `DataFrame` to various popular formats including comma-separated text file (`.csv`), HDF (`.hdf5`), xarray, Excel (`.xls`, `.xlsx`), and more; refer to [Working with pandas and xarray article](Working-With-Pandas-and-XArray.ipynb), and [`pandas` documentation](https://pandas.pydata.org/pandas-docs/stable/reference/frame.html#serialization-io-conversion) for more information.
 
 Refer to the docstrings of those methods for more information on how to use them.
-
-```{code-cell} ipython3
-
-```

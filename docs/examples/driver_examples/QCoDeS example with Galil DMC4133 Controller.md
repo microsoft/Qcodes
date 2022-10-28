@@ -460,7 +460,3 @@ When you are done with the all the measurements, use following command to close 
 ```{code-cell} ipython3
 arm.controller.close()
 ```
-
-```{code-cell} ipython3
-
-```

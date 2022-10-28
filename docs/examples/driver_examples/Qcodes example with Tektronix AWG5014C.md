@@ -277,7 +277,3 @@ Finally, close down the instrument.
 ```{code-cell} ipython3
 awg1.close()
 ```
-
-```{code-cell} ipython3
-
-```

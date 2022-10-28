@@ -143,7 +143,3 @@ When a dataset is loaded using ``load_by_run_spec`` and related functions QCoDeS
 +++
 
 A dataset can also be loaded directly from the netcdf file. See [Exporting QCoDes Datasets](./Exporting-data-to-other-file-formats.ipynb) for more information on how this is done. Including information about how you can change the ``netcdf`` location.
-
-```{code-cell} ipython3
-
-```

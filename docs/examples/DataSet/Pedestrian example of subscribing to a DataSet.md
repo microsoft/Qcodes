@@ -133,7 +133,3 @@ for x in np.linspace(0, 3*np.pi, 100):
     dataSet.add_results([{"blip": x, "blop": yvalue}])
     sleep(0.1)
 ```
-
-```{code-cell} ipython3
-
-```

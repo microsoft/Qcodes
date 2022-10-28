@@ -60,7 +60,3 @@ stahl.channel[1].is_locked()
 ```{code-cell} ipython3
 stahl.output_type
 ```
-
-```{code-cell} ipython3
-
-```

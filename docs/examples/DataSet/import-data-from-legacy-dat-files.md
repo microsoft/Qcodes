@@ -52,7 +52,3 @@ axs, cbaxs = plot_by_id(run_ids[0])
 run_ids = import_dat_file(location2d, exp=exp)
 axs, cbaxs = plot_by_id(run_ids[0])
 ```
-
-```{code-cell} ipython3
-
-```

@@ -55,7 +55,3 @@ array_counter = ArrayCounter()
 # simple get
 print('first call:', array_counter())
 ```
-
-```{code-cell} ipython3
-
-```

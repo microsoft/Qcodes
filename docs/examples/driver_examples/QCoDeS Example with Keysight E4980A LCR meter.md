@@ -299,7 +299,3 @@ plot = plot_by_id(run_id)
 ```{code-cell} ipython3
 meter.reset()
 ```
-
-```{code-cell} ipython3
-
-```

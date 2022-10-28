@@ -53,7 +53,3 @@ And finally turned off
 ps.ch1.state('OFF')
 ps.state('OFF')
 ```
-
-```{code-cell} ipython3
-
-```

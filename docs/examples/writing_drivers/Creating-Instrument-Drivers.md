@@ -651,7 +651,3 @@ A driver should be documented in the following ways.
 * Parameters should have a meaningful docstring if the usage of the parameter is not obvious.
 * An IPython notebook that documents the usage of the instrument should be added to `docs/example/driver_examples/Qcodes example with <company> <model>.ipynb` Note that we execute notebooks by default as part of the docs build. That is usually not possible for instrument examples so we want to disable the execution. This can be done as described [here](https://nbsphinx.readthedocs.io/en/latest/never-execute.html) editing the notebooks metadata accessible via `Edit/Edit Notebook Metadata` from the notebook interface.
 
-
-```{code-cell} ipython3
-
-```

@@ -487,7 +487,3 @@ dataset = datasaver.dataset
 ```{code-cell} ipython3
 ax, cax = plot_dataset(dataset)
 ```
-
-```{code-cell} ipython3
-
-```

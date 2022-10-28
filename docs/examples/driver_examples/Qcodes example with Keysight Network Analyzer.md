@@ -153,7 +153,3 @@ plot_by_id(dataid)
 # Set the PNA back into continuous sweep mode
 pna.sweep_mode("CONT")
 ```
-
-```{code-cell} ipython3
-
-```

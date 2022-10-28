@@ -234,7 +234,3 @@ If you are using matplotlib but do not want to rely on `plot_dataset`, you can s
 
 If you want to use the qcodes config system for defaults call
 `qcodes.utils.plotting.auto_color_scale_from_config(colorbar,...)` instead.
-
-```{code-cell} ipython3
-
-```

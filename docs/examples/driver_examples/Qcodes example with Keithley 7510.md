@@ -340,7 +340,3 @@ To make changes:
 dmm.sense.average_type('MOV')
 dmm.sense.average_type()
 ```
-
-```{code-cell} ipython3
-
-```

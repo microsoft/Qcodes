@@ -139,7 +139,3 @@ ax.set_xlabel('Time (s)')
 ax.set_ylabel('Signal (V)')
 plt.legend()
 ```
-
-```{code-cell} ipython3
-
-```

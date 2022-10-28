@@ -97,7 +97,3 @@ Some data management options--including the ability to save data in memory only-
 - [Saving data by a background thread](Saving_data_in_the_background.ipynb)
 
 Moreover, we have also written an [example notebook](Extracting-runs-from-one-DB-file-to-another.ipynb) of transferring `DataSets` between database flies that may serve as a template for more complex data organization protocols.
-
-```{code-cell} ipython3
-
-```

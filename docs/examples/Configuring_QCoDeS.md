@@ -149,7 +149,3 @@ qc.config.current_config.core.loglevel = 'YOLO'
 qc.config.validate()
 # NOTE that you how have a broken config! 
 ```
-
-```{code-cell} ipython3
-
-```

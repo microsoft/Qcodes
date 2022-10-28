@@ -110,7 +110,3 @@ print(data.combined_set)
 # snapshot of the combined parameter
 combined.snapshot()
 ```
-
-```{code-cell} ipython3
-
-```

@@ -57,7 +57,3 @@ data = Measure(
     dac2.A.dummy_array_parameter,
 ).run()
 ```
-
-```{code-cell} ipython3
-
-```

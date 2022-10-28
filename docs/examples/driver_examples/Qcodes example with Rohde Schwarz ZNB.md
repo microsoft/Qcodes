@@ -475,7 +475,3 @@ b = vna.channels.S11.trace.get()
 ```{code-cell} ipython3
 vna.close()
 ```
-
-```{code-cell} ipython3
-
-```

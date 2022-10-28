@@ -93,7 +93,3 @@ fig.autofmt_xdate()
 ax.set_ylabel('Response time (s)')
 plt.legend()
 ```
-
-```{code-cell} ipython3
-
-```

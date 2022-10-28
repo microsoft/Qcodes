@@ -39,7 +39,3 @@ Welcome to QCoDeS! This document will help you find an overview over the availab
    Title      | description   | local link    | online link
 ------------- |:-------------:| -------------:|------------
 ![auto](files/auto_color_scale_small.png) | Auto color scaling | [offline](plotting/auto_color_scale.ipynb) | [online](https://nbviewer.jupyter.org/github/QCoDeS/Qcodes/tree/master/docs/examples/plotting/auto_color_scale.ipynb)
-
-```{code-cell} ipython3
-
-```

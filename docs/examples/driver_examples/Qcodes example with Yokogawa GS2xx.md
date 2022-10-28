@@ -232,7 +232,3 @@ gs.output('off')
 ```{code-cell} ipython3
 gs.close()
 ```
-
-```{code-cell} ipython3
-
-```

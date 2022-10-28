@@ -187,7 +187,3 @@ And a dataset stored as binary arrays
 ds = load_by_id(run_id_a)
 ds.get_parameter_data('x1')
 ```
-
-```{code-cell} ipython3
-
-```

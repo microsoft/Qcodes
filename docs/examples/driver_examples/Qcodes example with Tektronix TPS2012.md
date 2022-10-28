@@ -112,7 +112,3 @@ plot.add(data2.TPS1_scope_measurement_1, subplot=2)
 ```{code-cell} ipython3
 tps.close()
 ```
-
-```{code-cell} ipython3
-
-```

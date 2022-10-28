@@ -159,7 +159,3 @@ dynacool.field_ramp(1)
 print(f'Now the field is {dynacool.field_measured()} T...')
 print(f'...and the field target is {dynacool.field_target()} T.')
 ```
-
-```{code-cell} ipython3
-
-```

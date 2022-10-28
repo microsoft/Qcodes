@@ -229,7 +229,3 @@ with meas.run() as datasaver:
         
 plot = plot_by_id(datasaver.run_id)
 ```
-
-```{code-cell} ipython3
-
-```

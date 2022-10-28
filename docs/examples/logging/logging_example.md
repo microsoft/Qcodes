@@ -222,7 +222,3 @@ df
 ```
 
 For an analysis of the timestamps please also refer to the log analysis [example notebook](logfile_parsing.ipynb).
-
-```{code-cell} ipython3
-
-```

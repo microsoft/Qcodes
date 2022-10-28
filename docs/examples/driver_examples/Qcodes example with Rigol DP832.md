@@ -61,7 +61,3 @@ Working mode can be probed 9Voltage/Current regulatde, or unregulated)
 ```{code-cell} ipython3
 ps.ch1.mode()
 ```
-
-```{code-cell} ipython3
-
-```

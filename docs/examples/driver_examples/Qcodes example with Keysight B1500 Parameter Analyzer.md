@@ -810,7 +810,3 @@ response = b1500.ask(
 
 KeysightB1500.parse_spot_measurement_response(response)
 ```
-
-```{code-cell} ipython3
-
-```

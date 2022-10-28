@@ -521,7 +521,3 @@ plt.ylabel("Measured value, V")
 plt.legend()  # show legend
 plt.tight_layout()  # adjust the figure so that all the labels fit
 ```
-
-```{code-cell} ipython3
-
-```

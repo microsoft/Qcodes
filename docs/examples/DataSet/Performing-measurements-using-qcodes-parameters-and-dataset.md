@@ -767,7 +767,3 @@ with meas.run() as datasaver:
         print(f'First parameter value list: {first_param_list}')
         sleep(0.1)
 ```
-
-```{code-cell} ipython3
-
-```

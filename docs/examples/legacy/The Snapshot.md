@@ -88,7 +88,3 @@ pprint(data.snapshot())
 # It's worthwhile familiarising yourself with it, so that you may retrieve
 # valuable information down the line!
 ```
-
-```{code-cell} ipython3
-
-```

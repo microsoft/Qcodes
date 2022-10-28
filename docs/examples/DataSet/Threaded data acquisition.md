@@ -206,7 +206,3 @@ t1 = time.perf_counter()
 print('Report:')
 print(f'Data acquisition time:            {t1 - t0} s')
 ```
-
-```{code-cell} ipython3
-
-```

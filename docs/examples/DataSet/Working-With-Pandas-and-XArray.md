@@ -215,7 +215,3 @@ fig.tight_layout()
 ```
 
 Above we demonstrated a few ways to index the data from a DataArray. For instance the DataArray can be directly plotted, the extracted mean or a specific row/column can also be plotted.
-
-```{code-cell} ipython3
-
-```

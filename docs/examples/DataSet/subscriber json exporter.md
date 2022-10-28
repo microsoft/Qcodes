@@ -120,7 +120,3 @@ dataSet_hm.mark_completed()
 ```{code-cell} ipython3
 mystate['json']
 ```
-
-```{code-cell} ipython3
-
-```

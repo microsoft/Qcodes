@@ -483,7 +483,3 @@ Here, we note some important cases where errors are generated if:
     -  Slots are passed as arguments of `close_channel()`, `exclusive_close()` and `exclusive_slot_close()`
     -  A delay time is tried to be set for analog backplane relays
     -  A channel name is used to set as a backplane instead of a backplane name in `set_backplane()` and vice versa
-
-```{code-cell} ipython3
-
-```

@@ -199,7 +199,3 @@ The reason for the singular/plural is that the module can work with one row and 
 **When work with list of row-column pairs, use the plural version of functions**
  - instrument.module.connect_paths([(r1, c1), (r2, c2)])
  - instrument.module.are_closed([(r1, c1), (r2, c2)])
-
-```{code-cell} ipython3
-
-```

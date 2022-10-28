@@ -210,7 +210,3 @@ gd.channels[0].burst.idle("FPT")
 # We can also give a number 
 gd.channels[0].burst.idle(0)
 ```
-
-```{code-cell} ipython3
-
-```

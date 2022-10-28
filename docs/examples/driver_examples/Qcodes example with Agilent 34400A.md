@@ -136,7 +136,3 @@ for i in range(2):
     axes[i].lines[0].set_markeredgecolor((0.4, 0.6, 0.9))
     axes[i].lines[0].set_color((0.8, 0.8, 0.8))
 ```
-
-```{code-cell} ipython3
-
-```

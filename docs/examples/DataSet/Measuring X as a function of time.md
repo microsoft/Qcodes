@@ -70,7 +70,3 @@ dataset = datasaver.dataset
 ```{code-cell} ipython3
 axs, cbs = plot_dataset(dataset)
 ```
-
-```{code-cell} ipython3
-
-```

@@ -105,7 +105,3 @@ run_id = datasaver.run_id
 ```{code-cell} ipython3
 _ = plot_by_id(run_id)
 ```
-
-```{code-cell} ipython3
-
-```

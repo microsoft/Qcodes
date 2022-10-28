@@ -123,7 +123,3 @@ On starting these measurements, a plottr plot window (as shown below) will open 
 ![Live Plot](../files/live_plot.gif)
 
 For more details about Plottr, head to [Plottr Documentation](https://plottr.readthedocs.io/en/latest/index.html)
-
-```{code-cell} ipython3
-
-```
