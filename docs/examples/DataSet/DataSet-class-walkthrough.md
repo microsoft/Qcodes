@@ -79,7 +79,7 @@ experiment = load_or_create_experiment(
 # This parameter is created in order to
 # justify creation of a `Station` object,
 # which, in turn, is needed to remind the
-# reader about the importance of adding 
+# reader about the importance of adding
 # all instruments to the station.
 fs = Parameter(name='force_side', label='Side of the Force',
                initial_value='dark',

@@ -107,7 +107,7 @@ dataSet.mark_started()
 def ASCII_plotter_5bit(results, length, state):
     """
     Glorious 5-bit signal plotter
-    
+
     Digitises the range (-1, 1) with 4 bits and plots it
     in stdout. Crashes and burns if given data outside that
     interval.
@@ -120,7 +120,7 @@ def ASCII_plotter_5bit(results, length, state):
         yvalue = int(yvalue*31)
         plotline[yvalue] = 'O'
         print(''.join(plotline))
-        
+
 ```
 
 ```{code-cell} ipython3

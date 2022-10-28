@@ -60,7 +60,7 @@ N = 500
 with meas.run() as datasaver:
     time_data = np.linspace(0, 1, N)
     signal_data = np.sin(2*np.pi*time_data) + 0.25*np.random.randn(N)
-    
+
     datasaver.add_result(('time', time_data), ('signal', signal_data))
 dataset = datasaver.dataset
 ```
@@ -111,17 +111,17 @@ with meas.run() as datasaver:
     raw = datasaver.parent_datasets[0]
     xdata = np.ravel(raw.get_parameter_data()['signal']['time'])
     ydata = np.ravel(raw.get_parameter_data()['signal']['signal'])
-    
+
     popt, pcov = opt.curve_fit(fit_func, xdata, ydata, p0=[1, 1])
-    
+
     fit_axis = xdata
     fit_curve = fit_func(fit_axis, *popt)
-    
+
     datasaver.add_result(('fit_axis', fit_axis),
                          ('fit_curve', fit_curve),
                          ('fit_param_a', popt[0]),
                          ('fit_param_b', popt[1]))
-    
+
 fit_data = datasaver.dataset
 ```
 

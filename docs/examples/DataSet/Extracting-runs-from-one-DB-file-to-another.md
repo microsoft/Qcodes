@@ -162,7 +162,7 @@ The GUID should be preserved.
 target_exp_aux.data_set(2).guid
 ```
 
-And the original `run_id` is preserved as `captured_run_id` 
+And the original `run_id` is preserved as `captured_run_id`
 
 ```{code-cell} ipython3
 target_exp_aux.data_set(2).captured_run_id

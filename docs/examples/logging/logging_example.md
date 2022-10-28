@@ -102,7 +102,7 @@ To configure the levels you want to log/handle, you need to edit the `qcodesrc.j
             "pyvisa": "INFO"
         }
 ```
-While `console_level` and `file_level` describe the levels of the two default handlers described previously, `logger_levels` is a dictionary that can be used to limit the messages passed on by module level loggers. This means with these defaults, the `pyvisa` module will not log messages on a `DEBUG` level. Therefore setting the `console_level` to `DEBUG` will not show the `pyvisa` debug messages (you certainly don't want to see them as they log every single character that is passed to an instrument with an individual message). On the other hand setting the console level to warning will still suppress `pyvisa` info messages. 
+While `console_level` and `file_level` describe the levels of the two default handlers described previously, `logger_levels` is a dictionary that can be used to limit the messages passed on by module level loggers. This means with these defaults, the `pyvisa` module will not log messages on a `DEBUG` level. Therefore setting the `console_level` to `DEBUG` will not show the `pyvisa` debug messages (you certainly don't want to see them as they log every single character that is passed to an instrument with an individual message). On the other hand setting the console level to warning will still suppress `pyvisa` info messages.
 
 +++
 
@@ -125,7 +125,7 @@ log.debug('This message will not be visible as the logging level is set to `DEBU
 
 with logger.console_level(logging.DEBUG):
     log.debug('This message is visible as the logging level is temporarily elevated to `DEBUG`')
-    
+
 log.debug('The level is back to what it used to be')
 ```
 

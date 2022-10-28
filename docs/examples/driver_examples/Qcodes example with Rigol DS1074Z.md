@@ -19,7 +19,7 @@ This notebook presents the implementation of QCoDeS driver for the Rigol DS1074Z
 
 +++
 
-## Importing dependencies 
+## Importing dependencies
 
 ```{code-cell} ipython3
 #Qcodes import
@@ -28,7 +28,7 @@ from qcodes.instrument_drivers.rigol.DS1074Z import DS1074Z
 from qcodes import initialise_database, load_or_create_experiment, Measurement
 ```
 
-## Create the instrument 
+## Create the instrument
 
 +++
 
@@ -38,18 +38,18 @@ The instrument is created in the following way. The address can be found using t
 rigol = DS1074Z('rigol', 'USB0::0x1AB1::0x04CE::DS1ZB161650342::INSTR')
 ```
 
-## Trigger setup  
+## Trigger setup
 
 +++
 
-Trigger source can be set to any channel (1 to 4). Here we use the input signal from channel 1 itself as a source for trigger. 
+Trigger source can be set to any channel (1 to 4). Here we use the input signal from channel 1 itself as a source for trigger.
 
 ```{code-cell} ipython3
 rigol.trigger_edge_source('ch1')
 rigol.trigger_edge_slope('negative')
 ```
 
-The trigger-mode type supported by this oscilloscope are `edge`, `pulse`, `video` and `pattern`. Both the trigger mode and trigger level can be set in the following manner. 
+The trigger-mode type supported by this oscilloscope are `edge`, `pulse`, `video` and `pattern`. Both the trigger mode and trigger level can be set in the following manner.
 
 ```{code-cell} ipython3
 rigol.trigger_mode('edge')

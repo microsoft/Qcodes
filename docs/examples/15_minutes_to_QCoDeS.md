@@ -56,13 +56,13 @@ from qcodes.dataset import (
 
 ## Dummy instruments for generating synthetic data
 from qcodes.tests.instrument_mocks import (
-    DummyInstrument, 
+    DummyInstrument,
     DummyInstrumentWithMeasurement
 )
 
 ## Multidimensional scanning module
 from qcodes.utils.dataset.doNd import (
-    dond, 
+    dond,
     LinSweep
 )
 
@@ -76,9 +76,9 @@ from qcodes.interactive_widget import experiments_widget
 
 ## Instruments
 
-`Instrument` class in QCoDeS is responsible for holding connections to hardware and controlling the instruments by its built in methods. For more information on instrument class we refer to the [detailed description here](writing_drivers/Instruments.ipynb)  or the corresponding [api documentation](../api/instrument/index.rst). 
+`Instrument` class in QCoDeS is responsible for holding connections to hardware and controlling the instruments by its built in methods. For more information on instrument class we refer to the [detailed description here](writing_drivers/Instruments.ipynb)  or the corresponding [api documentation](../api/instrument/index.rst).
 
-Let us, now, create two dummy instruments: a digital-to-analog converter (`dac`) with two channels, and a digital multimeter (`dmm`) to measure the signals produced: 
+Let us, now, create two dummy instruments: a digital-to-analog converter (`dac`) with two channels, and a digital multimeter (`dmm`) to measure the signals produced:
 
 ```{code-cell} ipython3
 # A dummy signal generator with two parameters ch1 and ch2
@@ -95,15 +95,15 @@ All instruments feature methods to enable you to inspect their configuration. We
 dmm.print_readable_snapshot()
 ```
 
-As we can see here, our dummy multimeter, `dmm`, has two `Parameters` (v1 and v2), that correspond the two channels of our dummy signal generator `dac`. 
+As we can see here, our dummy multimeter, `dmm`, has two `Parameters` (v1 and v2), that correspond the two channels of our dummy signal generator `dac`.
 
 +++
 
 ## Parameters
 
-A QCoDeS `Parameter` is a value from an instrument that may get and/or set values by methods. Intuitively this is how QCoDeS communicates with most instrumentation, for example a digital multimeter contains settings (e.g. mode, range) and provide data (e.g. voltage, current). These methods are defined by [instrument drivers](index.rst#drivers), that utilize the [parameter API](../api/parameters/index.rst). 
+A QCoDeS `Parameter` is a value from an instrument that may get and/or set values by methods. Intuitively this is how QCoDeS communicates with most instrumentation, for example a digital multimeter contains settings (e.g. mode, range) and provide data (e.g. voltage, current). These methods are defined by [instrument drivers](index.rst#drivers), that utilize the [parameter API](../api/parameters/index.rst).
 
-In this example we are using dummy instruments with trivial `set` and `get` methods to generate synthetic data. 
+In this example we are using dummy instruments with trivial `set` and `get` methods to generate synthetic data.
 
 For the `dac`, these settable `Parameters` are added in the instantiation of the `DummyInstrument` class (i.e. `ch1` and `ch2`).
 
@@ -111,18 +111,18 @@ For the `dac`, these settable `Parameters` are added in the instantiation of the
 > dac = DummyInstrument('dac', **gates=['ch1', 'ch2']**)
 
 
-Similarly, the dummy digital multimeter, `dmm`, has gettable `Parameters` added by the instantiation of the `DummyInstrumentWithMeasurement` class defined by the output channels of the setter instrument (i.e. the dac). 
+Similarly, the dummy digital multimeter, `dmm`, has gettable `Parameters` added by the instantiation of the `DummyInstrumentWithMeasurement` class defined by the output channels of the setter instrument (i.e. the dac).
 
 
 > dmm = DummyInstrumentWithMeasurement('dmm', **setter_instr=dac**)
 
 
-Instruments may vary in their instantiation (e.g. gates vs. setter_inst), but the `parameters` are the common interface for measurements in QCoDeS. 
+Instruments may vary in their instantiation (e.g. gates vs. setter_inst), but the `parameters` are the common interface for measurements in QCoDeS.
 
-For convenience QCoDeS provides a variety of parameter classes built in to accommodate a range of instruments: 
+For convenience QCoDeS provides a variety of parameter classes built in to accommodate a range of instruments:
 
    - `Parameter` : Represents a single value at a given time (e.g. voltage, current), please refer to the [example parameter notebook](Parameters/Parameters.ipynb).
-   
+
    - `ParameterWithSetpoints`: Represents an array of values of all the same type that are returned all at once (e.g. a voltage vs. time waveform). This class is detailed in our [parameter with setpoint notebook](Parameters/Simple-Example-of-ParameterWithSetpoints.ipynb) along with experimental use cases.
 
    - `DelegateParameter`: It is intended for proxy-ing other parameters and is detailed in the [parameter API](../api/parameters/index.rst). You can use different label, unit, etc in the delegated parameter as compared to the source parameter.
@@ -145,7 +145,7 @@ Similarly, a gettable parameter will often return its value with a simple functi
 dmm.v1()
 ```
 
-## Stations  
+## Stations
 
 A station is a collection of all the instruments and devices present in your experiment. As mentioned earlier, it can be thought of as a bucket where you can add your `Instruments`, `Parameters` and other components. Each of these terms has a definite meaning in QCoDeS and shall be explained in later sections. Once a station is properly configured, you can use its instances to access these components. We refer to tutorial on [Station](Station.ipynb) for more details.
 
@@ -157,9 +157,9 @@ station = qc.Station()
 
 ### Adding instruments to the station
 
-Every instrument that you are working with during an experiment should be added to a `Station`.  
+Every instrument that you are working with during an experiment should be added to a `Station`.
 
-Here, we add the `dac` and `dmm` instruments by using our station's `add_component()` method: 
+Here, we add the `dac` and `dmm` instruments by using our station's `add_component()` method:
 
 ```{code-cell} ipython3
 station.add_component(dac)
@@ -215,7 +215,7 @@ The instantiation of the instruments, that is, setting up the proper initial val
 
 ## Databases and experiments.
 
-With `Station` a working station, the next step is to set up a `database` in order to save our data to. In QCoDeS, we implement a SQLite3 database for this purpose. 
+With `Station` a working station, the next step is to set up a `database` in order to save our data to. In QCoDeS, we implement a SQLite3 database for this purpose.
 
 ### Initialize or create a database
 
@@ -227,7 +227,7 @@ The initialization (or creation) of the database at a particular location is ach
 initialise_or_create_database_at("~/experiments_for_15_mins.db")
 ```
 
-By default, QCoDeS only supports a single active database. The current database location is stored in the configuration data (i.e. qcodes.config). 
+By default, QCoDeS only supports a single active database. The current database location is stored in the configuration data (i.e. qcodes.config).
 
 ```{code-cell} ipython3
 qc.config.core.db_location
@@ -254,7 +254,7 @@ The method shown above to load or create the experiment is the most versatile on
 
 ## Measurement Context Manager
 
-The `Measurement` object is used to obtain data from instruments in QCoDeS, as such it is instantiated with both an `experiment` (to handle data) and `station` to control the instruments. If these arguments are absent, the most recent experiment and station are used as defaults. A keyword argument `name` can also be set as any string value, this string will be used to identify the resulting dataset. 
+The `Measurement` object is used to obtain data from instruments in QCoDeS, as such it is instantiated with both an `experiment` (to handle data) and `station` to control the instruments. If these arguments are absent, the most recent experiment and station are used as defaults. A keyword argument `name` can also be set as any string value, this string will be used to identify the resulting dataset.
 
 ```{code-cell} ipython3
 context_meas = Measurement(exp=tutorial_exp, station=station, name='context_example')
@@ -269,9 +269,9 @@ It is possible to instantiate a `measurement` prior to creating or loading an ex
 
 ### Registering parameters to measure
 
-QCoDeS features the ability to store the relationship between parameters (i.e. parameter `y` is dependent on `x`). This feature allows the intent of the measurement to be clearly recorded in the experimental records. In addition, the parameter dependency is used to define the coordinate axes when plotting the data using QCoDeS. The parameters which are being measured are first registered with the `measurement`. When registering a dependent parameter (i.e. y(x)) the independent parameter is declared as a setpoint. As a consequence, independent parameters must be registered prior to their corresponding dependent parameters. 
+QCoDeS features the ability to store the relationship between parameters (i.e. parameter `y` is dependent on `x`). This feature allows the intent of the measurement to be clearly recorded in the experimental records. In addition, the parameter dependency is used to define the coordinate axes when plotting the data using QCoDeS. The parameters which are being measured are first registered with the `measurement`. When registering a dependent parameter (i.e. y(x)) the independent parameter is declared as a setpoint. As a consequence, independent parameters must be registered prior to their corresponding dependent parameters.
 
-In our example, ``dac.ch1`` is the independent parameter and ``dmm.v1`` is the dependent parameter. So we register ``dmm.v1`` with the setpoint as ``dac.ch1``. 
+In our example, ``dac.ch1`` is the independent parameter and ``dmm.v1`` is the dependent parameter. So we register ``dmm.v1`` with the setpoint as ``dac.ch1``.
 
 ```{code-cell} ipython3
 # Register the independent parameter...
@@ -284,7 +284,7 @@ context_meas.register_parameter(dmm.v1, setpoints=(dac.ch1,))
 
 The QCoDeS measurement module provides a context manager for registering parameters to measure and store results. Within the context manager, measured data is periodically saved to the database as a background process.
 
-To conduct a simple measurement, we can create a simple loop inside the context manager which will control the instruments, acquire data, and store the results. 
+To conduct a simple measurement, we can create a simple loop inside the context manager which will control the instruments, acquire data, and store the results.
 
 > This is the a more user-configurable approach for acquiring data in QCoDeS. For more examples and details, refer to [Performing measurements using QCoDeS parameters and DataSet example](./DataSet/Performing-measurements-using-qcodes-parameters-and-dataset.ipynb)
 
@@ -307,9 +307,9 @@ The `meas.run` method returns a context manager to control data acquisition and 
 
 +++
 
-## Using the doNd multi-dimensional measurement utility 
+## Using the doNd multi-dimensional measurement utility
 
-Qcodes also includes functions to produce multidimensional data sets with [optimized data handling](DataSet/Using_doNd_functions_in_comparison_to_Measurement_context_manager_for_performing_measurements.ipynb); of these, ``dond`` (i.e. do n-dimensional facilitates collecting multidimensional data.  Similar optimizations can be made using the measurement context (see [measuring with shaped data](DataSet/Performing-measurements-using-qcodes-parameters-and-dataset.ipynb#Specifying-shape-of-measurement)), but this approach simplifies the setup and readability of the code. 
+Qcodes also includes functions to produce multidimensional data sets with [optimized data handling](DataSet/Using_doNd_functions_in_comparison_to_Measurement_context_manager_for_performing_measurements.ipynb); of these, ``dond`` (i.e. do n-dimensional facilitates collecting multidimensional data.  Similar optimizations can be made using the measurement context (see [measuring with shaped data](DataSet/Performing-measurements-using-qcodes-parameters-and-dataset.ipynb#Specifying-shape-of-measurement)), but this approach simplifies the setup and readability of the code.
 
 > This is a more user-friendly way of acquiring multi-dimensional data in QCoDeS.
 
@@ -322,7 +322,7 @@ sweep_2 = LinSweep(dac.ch2, -1, 1, 20, 0.01)
 ```
 
 
-This linear sweeps for `dac.ch1` and `dac.ch2` are defined by the endpoints of the sweep (-1 to 1 V), the number of steps (20) and a time delay between each step (0.01 s). This delay time is used to allow real instruments to equilibrate between each step in the sweep. Multiple types of sweeps are [included with QCoDeS](DataSet/Using_doNd_functions_in_comparison_to_Measurement_context_manager_for_performing_measurements.ipynb) to enable a variety of sampling schemes. 
+This linear sweeps for `dac.ch1` and `dac.ch2` are defined by the endpoints of the sweep (-1 to 1 V), the number of steps (20) and a time delay between each step (0.01 s). This delay time is used to allow real instruments to equilibrate between each step in the sweep. Multiple types of sweeps are [included with QCoDeS](DataSet/Using_doNd_functions_in_comparison_to_Measurement_context_manager_for_performing_measurements.ipynb) to enable a variety of sampling schemes.
 
 > When using `dond` we do not register parameters, this is done automatically by the function. With dond every dependent parameter depends on all sweep parameters.
 
@@ -352,13 +352,13 @@ In this section we detail methods and functions for working with `DataSets`. In 
 
 +++
 
-The most direct way of finding our data is the `experiments` function; this queries the currently initialized `database` and prints the `experiments` and `datasets` contained inside. 
+The most direct way of finding our data is the `experiments` function; this queries the currently initialized `database` and prints the `experiments` and `datasets` contained inside.
 
 ```{code-cell} ipython3
 experiments()
 ```
 
-While this example database contains only a few experiments this number may grow significantly as you perform measurements on your nanoelectronic devices. 
+While this example database contains only a few experiments this number may grow significantly as you perform measurements on your nanoelectronic devices.
 
 While our example database contains only few experiments, in reality the database will contain several experiments containing many datasets. Often, you would like to load a dataset from a particular experiment for further analysis. Here we shall explore different ways to find and retrieve already measured dataset from the database.
 
@@ -378,7 +378,7 @@ tutorial_exp.data_sets()
 
 In order to plot or analyze data, we will need to retrieve the `datasets`. While this can be done directly from the `experiment`, instrument environments are typically not used for analysis. Moreover, we may wish to compare data from separate `experiments` requiring us to load datasets separately.
 
-In QCoDeS, `datasets` can be obtained using simple criteria via the  `load_by_run_spec` function. For this example we will load our previous 1d and 2d datasets by their name and database id number: 
+In QCoDeS, `datasets` can be obtained using simple criteria via the  `load_by_run_spec` function. For this example we will load our previous 1d and 2d datasets by their name and database id number:
 
 ```{code-cell} ipython3
 dataset_1d = load_by_run_spec(experiment_name='tutorial_exp', captured_run_id=1)
@@ -405,7 +405,7 @@ With 1d data a simple line plot will be generated with the dependent and indepen
 plot_dataset(dataset_2d)
 ```
 
-With 2d data heat maps will be generated with the independent parameters set to the X and Y axes and the dependent parameter set as the color scale. Similar to the 1d case, this automatic visualization depends on the predefined `parameters` provided to the `dond` function. 
+With 2d data heat maps will be generated with the independent parameters set to the X and Y axes and the dependent parameter set as the color scale. Similar to the 1d case, this automatic visualization depends on the predefined `parameters` provided to the `dond` function.
 
 >For more detailed examples of plotting QCoDeS datasets, we have articles covering a variety of data types:
 >
@@ -474,7 +474,7 @@ We refer to [example notebook on working with pandas](DataSet/Working-With-Panda
 
 +++
 
-Going beyond text-based review, we have also included a graphical widget to allow the easy exploration of our databases, with an interface for viewing the station snapshot, adding notes, or producing plots of the selected day.  
+Going beyond text-based review, we have also included a graphical widget to allow the easy exploration of our databases, with an interface for viewing the station snapshot, adding notes, or producing plots of the selected day.
 
 > This widget uses [ipywidgets](https://ipywidgets.readthedocs.io/) to display an interactive elements and is only available when run in a Jupyter notebook. However, we do provide a quick, non-interactive demonstration video below as well.
 
@@ -494,7 +494,7 @@ Here's a short video that summarizes the looks and the features:
 
 +++
 
-### QCoDeS configuration  
+### QCoDeS configuration
 
 QCoDeS uses a JSON based configuration system. It is shipped with a default configuration. The default config file should not be overwritten. If you have any modifications, you should save the updated config file on your home directory or in the current working directory of your script/notebook. The QCoDeS config system first looks in the current directory for a config file and then in the home directory for one and only then - if no config files are found - it falls back to using the default one. The default config is located in `qcodes.config`. To know how to change and save the config please refer to the [documentation on config](Configuring_QCoDeS.ipynb).
 

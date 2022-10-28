@@ -17,17 +17,17 @@ kernelspec:
 
 ## Summary of automated tests that the driver goes through
 
-We have performed a lot of stand alone tests (tests with mocked hardware) in qcodes/tests/test_ami430.py. In particular, we have tested: 
+We have performed a lot of stand alone tests (tests with mocked hardware) in qcodes/tests/test_ami430.py. In particular, we have tested:
 - If the driver remembers the internal setpoints if these are given in cartesian, spherical and cylindrical coordinates
 - Check that we send to correct setpoint instructions to the individual instruments if inputs are cartesian, spherical or cylindrical coordinates
-- Test that we can call the measured parameters (e.g. cartesian_measured) without exceptions occurring. 
+- Test that we can call the measured parameters (e.g. cartesian_measured) without exceptions occurring.
 - Check that instruments which need to ramp down are given adjustment instructions first
 - Check that field limit exceptions are raised properly
-- Check that the driver remembers theta and phi coordinates even if the vector norm is zero. 
-- Test that a warning is issued when the maximum ramp rate is increased 
+- Check that the driver remembers theta and phi coordinates even if the vector norm is zero.
+- Test that a warning is issued when the maximum ramp rate is increased
 - Test that an exception is raised when we try to set a ramp rate which is higher then the maximum allowed value.
 
-Furthermore, in qcodes/tests/test_field_vector.py we have tested if the cartesian to spherical/cylindrical coordinate transformations and visa-versa has been correctly implemented by asserting symmetry rules. 
+Furthermore, in qcodes/tests/test_field_vector.py we have tested if the cartesian to spherical/cylindrical coordinate transformations and visa-versa has been correctly implemented by asserting symmetry rules.
 
 +++
 
@@ -56,9 +56,9 @@ iz = AMI430("z", address="TCPIP0::169.254.21.127::7180::SOCKET")
 On individual instruments (individual axes), we:
 
 - Test that we can correctly set current values of individual sources
-- Test that we can correctly measure current values of individual sources 
-- Test that we can put the sources in paused mode 
-- Test that the ramp rates are properly set 
+- Test that we can correctly measure current values of individual sources
+- Test that we can put the sources in paused mode
+- Test that the ramp rates are properly set
 
 ```{code-cell} ipython3
 # lets test an individual instrument first. We select the z axis.
@@ -148,8 +148,8 @@ The maximum current ramp rate can be increased to a desired value via setting th
 
 With the 3D driver, we:
 
-- Test that the correct set points are reached if we give inputs in cartesian, spherical or cylindrical coordinates 
-- Test that we can set theta and phi to non-zero values which are remembered if r is ramped from zero to r > 0. 
+- Test that the correct set points are reached if we give inputs in cartesian, spherical or cylindrical coordinates
+- Test that we can set theta and phi to non-zero values which are remembered if r is ramped from zero to r > 0.
 - Test that instruments are ramped up and down in the correct order, with ramp downs occuring before ramp ups.
 
 ```{code-cell} ipython3
@@ -376,7 +376,7 @@ iz.ramp_rate(0.03)
 # rates of the inidividual axes
 i3d.block_during_ramp(False)
 
-# Starting the ramp will change the values of the ramp rates 
+# Starting the ramp will change the values of the ramp rates
 # of the individual axes
 i3d.ramp_simultaneously(setpoint=FieldVector(0.5, 1.0, 0.01), duration=2)
 
@@ -427,7 +427,7 @@ Note that the results of testing on the real instruments show that:
 
 +++
 
-## Dond while ramping 
+## Dond while ramping
 
 +++
 

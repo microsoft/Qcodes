@@ -40,8 +40,8 @@ There are 3 available:
 - `Instrument` - superclass of both `VisaInstrument` and `IPInstrument`, use this if you do not communicate over a text channel, for example:
   - PCI cards with their own DLLs
   - Instruments with only manual controls.
-  
-If possible, please use a `VisaInstrument`, as this allows for the creation of a simulated instrument. (See the [Creating Simulated PyVISA Instruments](Creating-Simulated-PyVISA-Instruments.ipynb) notebook) 
+
+If possible, please use a `VisaInstrument`, as this allows for the creation of a simulated instrument. (See the [Creating Simulated PyVISA Instruments](Creating-Simulated-PyVISA-Instruments.ipynb) notebook)
 
 +++
 
@@ -64,16 +64,16 @@ A parameter represents a single value of a single feature of an instrument, e.g.
   * `max_val_age`: Max time (in seconds) to trust a value stored in cache. If the parameter has not been set or measured more recently than this, an additional measurement will be performed in order to update the cached value. If it is ``None``, this behavior is disabled. ``max_val_age`` should not be used for a parameter that does not have a get function.
   * `get_parser`, a parser of the raw return value. Since all VISA instruments return strings, but users usually want numbers, `int` and `float` are popular `get_parsers`
   * `docstring` A short string describing the function of the parameter
-  
+
 Golden rule: if a `Parameter` is settable, it must always accept its own output as input.
 
 There are two different ways of adding parameters to instruments. They are almost equivalent but comes with some trade-offs. We will show both below.
 You may either declare the parameter as an attribute directly on the instrument or add it via the via the `add_parameter` method on the instrument class.
 
-Declaring a parameter as an attribute directly on the instrument enables Sphinx, IDEs such as VSCode and static tools such as Mypy to work more fluently with 
+Declaring a parameter as an attribute directly on the instrument enables Sphinx, IDEs such as VSCode and static tools such as Mypy to work more fluently with
 the parameter than if it is created via `add_parameter` however you must take care to remember to pass `instrument=self` to the parameter such that the
-parameter will know which instrument it belongs to. 
-Instrument.add_parameter is better suited for when you want to dynamically or programmatically add a parameter to an instrument. For historical reasons most 
+parameter will know which instrument it belongs to.
+Instrument.add_parameter is better suited for when you want to dynamically or programmatically add a parameter to an instrument. For historical reasons most
 instruments currently use `add_parameter`.
 
 
@@ -84,26 +84,26 @@ Similar to parameters QCoDeS instruments implement the concept of functions that
 ### What's an InstrumentModule, then?
 
 An `InstrumentModule` is a submodule of the instrument holding `Parameter`s. It sometimes makes sense to group `Parameter`s, for instance when an oscilloscope has four identical input channels (see Keithley example below)
-or when it makes sense to group a particular set of parameters into their own module (such as a trigger module containing trigger related settings) 
+or when it makes sense to group a particular set of parameters into their own module (such as a trigger module containing trigger related settings)
 
 `InstrumentChannel` is a subclass of `InstrumentModule` which behaves identically to `InstrumentModule` you should chose either one depending on if you are implementing a module or a channel. As a rule of thumb you should use `InstrumentChannel` for something that the instrument has more than one of.
 
 +++
 
-## Naming Instruments 
+## Naming Instruments
 
 We are aiming to organize drivers in QCoDeS in a consistent way for easy discovery.
-Note that not all drivers in QCoDeS are currently named consistently. 
-However, we aim to gradually update all drivers to be named as outlined above and any new driver 
+Note that not all drivers in QCoDeS are currently named consistently.
+However, we aim to gradually update all drivers to be named as outlined above and any new driver
 should be named in the way outlined below.
 
-The same rules should apply for QCoDeS-contrib-drivers with the exception that all drivers are stored in subfolders of the drivers folder. 
+The same rules should apply for QCoDeS-contrib-drivers with the exception that all drivers are stored in subfolders of the drivers folder.
 
 ### Naming the Instrument class
 A driver for an instrument with model `Model` and from the vendor `Vendor` should be stored in the file:
 
 ```
-qcodes\instrument_drivers\{Vendor}\{Vendor}_{Model}.py 
+qcodes\instrument_drivers\{Vendor}\{Vendor}_{Model}.py
 ```
 using snake case with an underscore between the vendor and model name but starting the
 vendor name with upper case.
@@ -120,8 +120,8 @@ Note that we use vendor names starting with upper case for both folders and file
 It is also fine to use an acronym for instrument vendors when there are well established. E.g. drivers for `American Magnetics Inc.` instruments
 may use the acronym `AMI` to refer to the vendor.
 
-As an example the driver for the Weinschel 8320 should be stored in the file `qcodes\instrument_drivers\Weinschel\Weinschel_8320.py` and the 
-class named `Weinschel8320` 
+As an example the driver for the Weinschel 8320 should be stored in the file `qcodes\instrument_drivers\Weinschel\Weinschel_8320.py` and the
+class named `Weinschel8320`
 
 ### Naming InstrumentModule classes
 
@@ -131,15 +131,15 @@ from the name which instrument it belongs to. E.g a hypothetical `InstrumentChan
 
 ### Driver supporting multiple models.
 
-Often instrument vendors supply multiple instruments in a family with very similar specs only different in limits such as voltage ranges or 
+Often instrument vendors supply multiple instruments in a family with very similar specs only different in limits such as voltage ranges or
 highest supported frequency.
 
 
 As an example have a look at the Keysight 344xxA series of digital multi meters. To implement drivers for such instruments it is preferable
 to implement a private base class such as `_Keysight344xxA`. This class should be stored either in a `private` subfolder of the Vendor folder or
-in a file starting with an underscore i.e. `_Keysight344xxA.py`. If possible, we prefer a format where `x` is used to signal the parts of the model numbers that 
-may change. Along with this class subclasses for each of the supported models should be implemented. These may either make small modifications to the baseclass as needed 
-or be empty subclasses if no modifications are needed. 
+in a file starting with an underscore i.e. `_Keysight344xxA.py`. If possible, we prefer a format where `x` is used to signal the parts of the model numbers that
+may change. Along with this class subclasses for each of the supported models should be implemented. These may either make small modifications to the baseclass as needed
+or be empty subclasses if no modifications are needed.
 
 E.g. subclasses of the Keysight 344xxA driver for the specific model `34410A` should be named as `Keysight34410A` and stored in `Keysight34410A.py`.
 
@@ -219,7 +219,7 @@ class Weinschel8320(VisaInstrument):
 
 The Keithley 2600 sourcemeter driver uses two channels. The actual driver is quite long, so here we show an abridged version that has:
 
-- A class defining a `Channel`. All the `Parameter`s of the `Channel` go here. 
+- A class defining a `Channel`. All the `Parameter`s of the `Channel` go here.
 - A nifty way to look up the model number, allowing it to be a driver for many different Keithley models
 
 
@@ -401,10 +401,10 @@ class AlazarTech_ATS(Instrument):
         # etc...
 ```
 
-It's very typical for DLL based instruments to only be supported on Windows. In such a driver care should be taken to ensure that the driver raises a clear error message if it is initialized on a different platform. This is typically best done by 
+It's very typical for DLL based instruments to only be supported on Windows. In such a driver care should be taken to ensure that the driver raises a clear error message if it is initialized on a different platform. This is typically best done by
 by checking `sys.platform` as below. In this example we are using `ctypes.windll` to interact with the DLL. `windll` is only defined on on Windows.
 
-QCoDeS is automatically typechecked with MyPy, this may give some complications for drivers that are not compatible with multiple OSes as there is no supported way to disabling the typecheck on a per platform basis for a specific submodule. 
+QCoDeS is automatically typechecked with MyPy, this may give some complications for drivers that are not compatible with multiple OSes as there is no supported way to disabling the typecheck on a per platform basis for a specific submodule.
 Specifically MyPy will correctly notice that `self.dll` does not exist on non Windows platforms unless we add the line `self.dll: Any = None` to the example below. By giving `self.dll` the type `Any` we effectively disable any typecheck related to `self.dll` on non Windows platforms which is exactly what we want. This works because MyPy knows how to interprete the `sys.platform` check and allows `self.dll` to have different types on different OSes.
 
 ```{code-cell} ipython3
@@ -570,7 +570,7 @@ self.add_parameter(name, parameter_class=OtherClass, **kwargs)
 
 `MultiParameter` is designed to for the situation where multiple different types of data is captured from the same instrument command.
 
-It is important that parameters subclass forwards the `name`, `label(s)`, `unit(s)` and `instrument` along with any unknown `**kwargs` to the superclasss. 
+It is important that parameters subclass forwards the `name`, `label(s)`, `unit(s)` and `instrument` along with any unknown `**kwargs` to the superclasss.
 
 +++
 
@@ -608,8 +608,8 @@ self.add_parameter(new_name, **kwargs)
 
 +++
 
-A QCoDeS driver should be prepared for interruptions of the measurement triggered by a KeyboardInterrupt from the enduser. 
-If an interrupt happens at an unfortunate time i.e. while communicating with the instrument or writing results of a measurement this may leave the program in an inconsistent state e.g. with a command in the output buffer of a VISA instrument. To protect against this QCoDeS ships with a context manager that intercepts KeyBoardInterrupts and delays them until it is safe to stop the program. By default QCoDeS protects writing to the database and communicating with VISA instruments in this way. 
+A QCoDeS driver should be prepared for interruptions of the measurement triggered by a KeyboardInterrupt from the enduser.
+If an interrupt happens at an unfortunate time i.e. while communicating with the instrument or writing results of a measurement this may leave the program in an inconsistent state e.g. with a command in the output buffer of a VISA instrument. To protect against this QCoDeS ships with a context manager that intercepts KeyBoardInterrupts and delays them until it is safe to stop the program. By default QCoDeS protects writing to the database and communicating with VISA instruments in this way.
 
 
 However, there may be situations where a driver needs additional protection around a critical piece of code. The following example shows how a critical piece of code can be protected. The reader is encouraged to experiment with this using the `interrupt the kernel` button in this notebook. Note how the first KeyBoardInterrupt triggers a message to the screen and then executes the code within the context manager but not the code outside. Furthermore 2 KeyBoardInterrupts rapidly after each other will trigger an immediate interrupt that does not complete the code within the context manager. The context manager can therefore be wrapped around any piece of code that the end user should not normally be allowed to interrupt.
@@ -628,7 +628,7 @@ print("Executing code after context manager")
 
 ## Organization
 
-Your drivers do not need to be part of QCoDeS in order to use them with QCoDeS, but we strongly encourage you to contribute them to the [qcodes contrib drivers](https://github.com/QCoDeS/Qcodes_contrib_drivers) project. That way we prevent duplication of effort, and you will likely get help making the driver better, with more features and better code. 
+Your drivers do not need to be part of QCoDeS in order to use them with QCoDeS, but we strongly encourage you to contribute them to the [qcodes contrib drivers](https://github.com/QCoDeS/Qcodes_contrib_drivers) project. That way we prevent duplication of effort, and you will likely get help making the driver better, with more features and better code.
 
 Make one driver per module, inside a directory named for the company (or institution), within the `instrument_drivers` directory, following the convention:
 
@@ -645,9 +645,8 @@ And note that due to mergers, some drivers may not be in the folder you expect:
 
 ## Documentation
 
-A driver should be documented in the following ways. 
+A driver should be documented in the following ways.
 
 * All methods of the driver class should be documented including the arguments and return type of the function. QCoDeS docstrings uses the [Google style](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html)
 * Parameters should have a meaningful docstring if the usage of the parameter is not obvious.
 * An IPython notebook that documents the usage of the instrument should be added to `docs/example/driver_examples/Qcodes example with <company> <model>.ipynb` Note that we execute notebooks by default as part of the docs build. That is usually not possible for instrument examples so we want to disable the execution. This can be done as described [here](https://nbsphinx.readthedocs.io/en/latest/never-execute.html) editing the notebooks metadata accessible via `Edit/Edit Notebook Metadata` from the notebook interface.
-

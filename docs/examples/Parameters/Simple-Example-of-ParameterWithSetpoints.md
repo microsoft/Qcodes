@@ -12,7 +12,7 @@ kernelspec:
 ---
 
 # Simple Example of ParameterWithSetpoints
-This notebook provides an example for writing a simple driver with a parameter that has setpoints. Let's name this parameter that has setpoints as "y". Then, the setpoints, say "x1, x2, x3 ..", are the parameters on which the parameter 
+This notebook provides an example for writing a simple driver with a parameter that has setpoints. Let's name this parameter that has setpoints as "y". Then, the setpoints, say "x1, x2, x3 ..", are the parameters on which the parameter
 "y" depends upon. Meaning "y" is a function of "x1, x2, x3 ..." where "x1, x2, x3 ..." are known as the setpoints of parameter "y".
 
 This is most likely to be useful for instruments that return arrays of results. In this notebook, we will show an example of this.
@@ -38,14 +38,14 @@ from qcodes.dataset.experiment_container import load_or_create_experiment
 from qcodes.instrument.parameter import ParameterWithSetpoints, Parameter
 ```
 
-First, we define a dummy instrument that returns something like a frequency spectrum starting from a frequency given by `f_start` to a frequency given by `f_stop` in `n_points` steps. 
+First, we define a dummy instrument that returns something like a frequency spectrum starting from a frequency given by `f_start` to a frequency given by `f_stop` in `n_points` steps.
 
-The extra functionality of the `ParameterWithSetpoints` is implemented by giving it a reference to one or more parameters that acts like its setpoints. 
+The extra functionality of the `ParameterWithSetpoints` is implemented by giving it a reference to one or more parameters that acts like its setpoints.
 
 To setup a `ParameterWithSetpoints` we have to do two things in addition to what we do for a normal parameter.
 
 * Define one or more parameter for the setpoints (one for each dimension of the array and let the `ParameterWithSetpoints` know that these are the setpoints.
-* Give both the setpoints parameter(s) and the `ParameterWithSetpoints` a `validator` of type `Arrays` with a shape. The shapes should be such that the combined shape of the setpoints matches the shape of the `ParameterWithSetpoints`. Note that if the shape changes with the setting of the instrument, it can be defined by another parameter as shown below. 
+* Give both the setpoints parameter(s) and the `ParameterWithSetpoints` a `validator` of type `Arrays` with a shape. The shapes should be such that the combined shape of the setpoints matches the shape of the `ParameterWithSetpoints`. Note that if the shape changes with the setting of the instrument, it can be defined by another parameter as shown below.
 
 ```{code-cell} ipython3
 class GeneratedSetPoints(Parameter):
@@ -64,18 +64,18 @@ class GeneratedSetPoints(Parameter):
                               self._numpointsparam())
 
 class DummyArray(ParameterWithSetpoints):
-    
+
     def get_raw(self):
         npoints = self.root_instrument.n_points.get_latest()
         return np.random.rand(npoints)
-    
+
 
 class DummySpectrumAnalyzer(Instrument):
-    
+
     def __init__(self, name, **kwargs):
-        
+
         super().__init__(name, **kwargs)
-            
+
 
         self.add_parameter('f_start',
                            initial_value=0,
@@ -98,7 +98,7 @@ class DummySpectrumAnalyzer(Instrument):
                            vals=Numbers(1,1e3),
                            get_cmd=None,
                            set_cmd=None)
-        
+
         self.add_parameter('freq_axis',
                            unit='Hz',
                            label='Freq Axis',
@@ -107,14 +107,14 @@ class DummySpectrumAnalyzer(Instrument):
                            stopparam=self.f_stop,
                            numpointsparam=self.n_points,
                            vals=Arrays(shape=(self.n_points.get_latest,)))
-                           
+
         self.add_parameter('spectrum',
                    unit='dBm',
                    setpoints=(self.freq_axis,),
                    label='Spectrum',
                    parameter_class=DummyArray,
                    vals=Arrays(shape=(self.n_points.get_latest,)))
-                
+
 ```
 
 In the above example, the shape is defined by the parameter `n_points` that defines how many samples our `DummySpectrumAnalyzer` returns.
@@ -160,7 +160,7 @@ len(freq_axis)
 freq_axis[:10]
 ```
 
-As expected we get a result wit 501 points as we asked for an axis with 501 points. 
+As expected we get a result wit 501 points as we asked for an axis with 501 points.
 
 +++
 
@@ -207,7 +207,7 @@ a.spectrum.setpoints = (a.freq_axis,)
 
 +++
 
-We can also directly consume the parameter in a measurement without defining the setpoints of the parameter again. The setpoints are automatically obtained from the definition of the `ParameterWithSetpoint` instance. 
+We can also directly consume the parameter in a measurement without defining the setpoints of the parameter again. The setpoints are automatically obtained from the definition of the `ParameterWithSetpoint` instance.
 
 ```{code-cell} ipython3
 meas = Measurement()
@@ -237,7 +237,7 @@ Note that it is an error to supply values for some but not all of the setpoints.
 
 +++
 
-First we add another parameter. This parameter will just serve the example of having something to sweep 
+First we add another parameter. This parameter will just serve the example of having something to sweep
 that is not directly connected to the spectrum.
 
 ```{code-cell} ipython3

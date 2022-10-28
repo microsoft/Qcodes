@@ -98,7 +98,7 @@ for ii in range(noofseqelems):
     m1s[0].append(m1)
     m2 = np.zeros(noofpoints)
     m2s[0].append(m2)
-    
+
     # waveform and markers for channel two
     wf = np.sin(np.pi*(ii+1)*np.linspace(0, 1, noofpoints))
     wf *= np.arctan(np.linspace(-20, 20, noofpoints))/np.pi*2
@@ -140,7 +140,7 @@ plt.tight_layout()
 
 ### GETTING THEM THERE VIA AN .AWG FILE <a class="anchor" id="viaawg"></a>
 
-The fastest way to transfer waveforms to the AWG is by using an .awg file. 
+The fastest way to transfer waveforms to the AWG is by using an .awg file.
 
 In addition to waveforms and markers, me must specify sequencing options for each sequence element.
 
@@ -163,7 +163,7 @@ jump_tos = [2]*noofseqelems
 Then all the magic happens in the following function call (type help(make_send_and_load_awg_file) to see all possible input parameters):
 
 ```{code-cell} ipython3
-awg1.make_send_and_load_awg_file(waveforms, m1s, m2s, 
+awg1.make_send_and_load_awg_file(waveforms, m1s, m2s,
                                  nreps, trig_waits,
                                  goto_states, jump_tos, channels=[1, 3])
 ```
@@ -189,7 +189,7 @@ which returns a tuple containing:
 To see how everything fits together, we may now upload the file we just parsed.
 
 ```{code-cell} ipython3
-awg1.make_send_and_load_awg_file(waveforms, m1s, m2s, 
+awg1.make_send_and_load_awg_file(waveforms, m1s, m2s,
                                  nreps, trig_waits,
                                  goto_states, jump_tos, channels=channels)
 ```
@@ -267,7 +267,7 @@ goto_states = [0]*noofseqelems
 # Event jump
 jump_tos = [0]*noofseqelems
 
-awg1.make_send_and_load_awg_file(waveforms, m1s, m2s, 
+awg1.make_send_and_load_awg_file(waveforms, m1s, m2s,
                                  nreps, trig_waits,
                                  goto_states, jump_tos, channels=[1, 3])
 ```

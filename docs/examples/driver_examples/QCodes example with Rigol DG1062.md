@@ -14,12 +14,12 @@ kernelspec:
 # QCoDeS Example with the Rigol DG 1062 Instrument
 
 ```{code-cell} ipython3
-import time 
+import time
 
 from qcodes.instrument_drivers.rigol.DG1062 import DG1062
 ```
 
-Instantiate the driver 
+Instantiate the driver
 
 ```{code-cell} ipython3
 gd = DG1062("gd", "TCPIP0::169.254.187.99::INSTR")
@@ -41,7 +41,7 @@ Trun the output for channel 1 to "on"
 
 ```{code-cell} ipython3
 gd.channels[0].state(1)
-# This is idential to 
+# This is idential to
 gd.ch1.state(1)
 ```
 
@@ -51,13 +51,13 @@ With `apply` we can check which waveform is being generated now, for example on 
 gd.channels[0].current_waveform()
 ```
 
-We can also change the waveform 
+We can also change the waveform
 
 ```{code-cell} ipython3
 gd.channels[0].apply(waveform="SIN", freq=2000, ampl=0.5, offset=0.0, phase=0.0)
 ```
 
-Change individual settings like so: 
+Change individual settings like so:
 
 ```{code-cell} ipython3
 gd.channels[0].offset(0.1)
@@ -70,19 +70,19 @@ gd.channels[0].waveform()
 ```
 
 ```{code-cell} ipython3
-try: 
+try:
     gd.channels[0].waveform("SIN")
-except NotImplementedError: 
+except NotImplementedError:
     print("We cannot set a waveform like this ")
 ```
 
-We can however do this: 
+We can however do this:
 
 ```{code-cell} ipython3
 gd.channels[0].sin(freq=1E3, ampl=1.0, offset=0, phase=0)
 ```
 
-To find out which arguments are applicable to a waveform: 
+To find out which arguments are applicable to a waveform:
 
 +++
 
@@ -92,7 +92,7 @@ Find out which waveforms are available
 print(gd.waveforms)
 ```
 
-## Setting the impedance 
+## Setting the impedance
 
 ```{code-cell} ipython3
 gd.channels[1].impedance(50)
@@ -103,10 +103,10 @@ gd.channels[1].impedance()
 ```
 
 ```{code-cell} ipython3
-gd.channels[1].impedance("HighZ") 
+gd.channels[1].impedance("HighZ")
 ```
 
-Alternatively, we can do 
+Alternatively, we can do
 
 ```python
 gd.channels[1].impedance("INF")
@@ -116,20 +116,20 @@ gd.channels[1].impedance("INF")
 gd.channels[1].impedance()
 ```
 
-## Sync commands 
+## Sync commands
 
 ```{code-cell} ipython3
 gd.channels[0].sync()
 ```
 
 ```{code-cell} ipython3
-gd.channels[0].sync("OFF") 
+gd.channels[0].sync("OFF")
 ```
 
-Alternativly we can do 
+Alternativly we can do
 
 ```python
-gd.channels[0].sync(0) 
+gd.channels[0].sync(0)
 ```
 
 ```{code-cell} ipython3
@@ -150,40 +150,40 @@ gd.channels[0].sync("ON")
 gd.channels[0].sync()
 ```
 
-## Burst commands 
+## Burst commands
 
 +++
 
-### Internally triggered burst 
+### Internally triggered burst
 
 ```{code-cell} ipython3
-# Interal triggering only works if the trigger source is manual 
+# Interal triggering only works if the trigger source is manual
 gd.channels[0].burst.source("MAN")
 ```
 
 ```{code-cell} ipython3
-# The number of cycles is infinite 
+# The number of cycles is infinite
 gd.channels[0].burst.mode("INF")
 ```
 
-If we want a finite number of cycles: 
+If we want a finite number of cycles:
 
 ```python
 gd.channels[0].burst.mode("TRIG")
 gd.channels[0].burst.ncycles(10000)
 ```
 
-Setting a period for each cycle: 
+Setting a period for each cycle:
 
 ```python
 gd.channels[0].burst.period(1E-3)
 ```
 
 ```{code-cell} ipython3
-# Put channel 1 in burst mode 
+# Put channel 1 in burst mode
 gd.channels[0].burst.on(1)
-# Turn on the channel. For some reason, if we turn on the channel 
-# immediately after turning on the burst, we trigger immediately. 
+# Turn on the channel. For some reason, if we turn on the channel
+# immediately after turning on the burst, we trigger immediately.
 time.sleep(0.1)
 gd.channels[0].state(1)
 ```
@@ -193,7 +193,7 @@ gd.channels[0].state(1)
 gd.channels[0].burst.trigger()
 ```
 
-### extranally triggered burst 
+### extranally triggered burst
 
 ```{code-cell} ipython3
 gd.channels[0].burst.source("EXT")
@@ -207,6 +207,6 @@ gd.channels[0].burst.idle("FPT")
 ```
 
 ```{code-cell} ipython3
-# We can also give a number 
+# We can also give a number
 gd.channels[0].burst.idle(0)
 ```

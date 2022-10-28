@@ -208,7 +208,7 @@ wfm_ch2_n1 = np.array([rampsignal, m1, m2])
 wfm_ch2_n2 = np.array([sinesignal, m1, m2])
 
 # Step 2: decide on sequencing information
-# This information is provided as lists of the same length as the 
+# This information is provided as lists of the same length as the
 # sequence
 trig_waits = [0, 0]  # 0: off, 1: trigA, 2: trigB, 3: EXT
 nreps = [2, 3]  # 0 corresponds to infinite

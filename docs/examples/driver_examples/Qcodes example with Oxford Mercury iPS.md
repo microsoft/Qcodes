@@ -24,7 +24,7 @@ from time import sleep
 
 ```{code-cell} ipython3
 # Note that the MercuryiPS_VISA is a VISA instrument using
-# a socket connection. The VISA resource name therefore 
+# a socket connection. The VISA resource name therefore
 # contains the port number and the word 'SOCKET'
 mips = MercuryiPS('mips', 'TCPIP0::192.168.15.106::7020::SOCKET')
 ```
@@ -117,7 +117,7 @@ mips.z_target(0)
 
 mips.ramp(mode='simul')
 
-# since simul mode is non-blocking, 
+# since simul mode is non-blocking,
 # we can read out during the ramp
 while mips.is_ramping():
     print(f'Ramping X to {mips.x_target()} T, now at {mips.x_measured()} T')
@@ -156,7 +156,7 @@ mips.r_target(0)
 
 mips.ramp(mode='simul')
 
-# since simul mode is non-blocking, 
+# since simul mode is non-blocking,
 # we can read out during the ramp
 while mips.is_ramping():
     print(f"Ramping... r: {mips.r_measured():.6f} T, "

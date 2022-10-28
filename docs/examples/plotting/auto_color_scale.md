@@ -22,7 +22,7 @@ kernelspec:
 ## TL;DR
  * use `plot_by_id(run_id, auto_color_scale=True, cutoff_percentile=(0.5, 0.6)` to enable automatic color scaling
  * this maximally cuts 0.5% of the low valued data points and 0.6% of the high valued data points.
- * You can also use it for matplotlib with the supplied auto scaling function. 
+ * You can also use it for matplotlib with the supplied auto scaling function.
  * Set your defaults in `qcodesrc.json`.
 
 +++
@@ -42,7 +42,7 @@ kernelspec:
 ## Introduction to the problem and risks
 It is a fairly common issue that a heat map plot does not properly show the right details due to some outliers that push the range of the color scale beyond the desired limits, as it is shown in the image below:
 ![](./files/auto_color_scale_swamped_small.png)
-Here there are two pixels (black and white) corresponding to high and low outliers. The remaining data is uniformly displayed as red and the actual structure of it is drowned. 
+Here there are two pixels (black and white) corresponding to high and low outliers. The remaining data is uniformly displayed as red and the actual structure of it is drowned.
 One can of course specify the limits of the color bar manually to view the full structure as shown here:
 ![](./files/auto_color_scale_clean_small.png)
 But for measurements that takes a lot of time to perform, manual intervention becomes an unwieldy task.
@@ -101,17 +101,17 @@ and the actual structure of the data becomes visible.
 Please note two further details:
  - The triangles that appeared at the top and the bottom of the color bar: These indicate that the color bar does not cover the full range of the data spectrum.
  - The clipped regions are marked with colors that are clearly not part of the color scale in order to clearly separate those regions where we cannot make any claim about any structure.
- 
+
 
 +++
 
  ## Details of the calculation<a name="calculation"></a>
- 
+
 The new limits are calculated in three steps:
  -  Determine the inter quartile range (IQR), i.e. the distance between the first (q1) and the third (q3) quartile (see image below).
  - Expand the region spanned by [q1, q3] by 1.5 x the IQR (yet not beyond the original limits of the min/max of the data).
  - Limit the amount of data points clipped on each side to an amount that is described by the lower (pl) and upper (pu) cutoff percentiles. E.g. for pu=pl=0.5%, no more the white and gray areas may not take up more than half a percent each of the total area.
- 
+
 To understand how this works lets consider the histogram of the previous example:
 
 ```{code-cell} ipython3

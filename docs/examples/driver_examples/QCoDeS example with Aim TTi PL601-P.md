@@ -15,7 +15,7 @@ kernelspec:
 
 +++
 
-This is the example notebook that presents the basic features of the QCoDeS driver for the Aim TTi PL601-P programmable power supply. Aim TTi currently has six programmable power supply models. Among these, PL068-P, PL155-P, PL303-P and PL601-P have single output channel. The models PL303QMD-P and PL303QMT-P have dual and triple output channels, respectively. All programmable Aim TTi power supplies have the same remote control interface, therefore, the property calls in this notebook applies to all. Their names and the corresponding number of channels are implemented in the driver. Upon connection, if the instrument model is one of the listed above, driver shall automatically determine the output channel count.  
+This is the example notebook that presents the basic features of the QCoDeS driver for the Aim TTi PL601-P programmable power supply. Aim TTi currently has six programmable power supply models. Among these, PL068-P, PL155-P, PL303-P and PL601-P have single output channel. The models PL303QMD-P and PL303QMT-P have dual and triple output channels, respectively. All programmable Aim TTi power supplies have the same remote control interface, therefore, the property calls in this notebook applies to all. Their names and the corresponding number of channels are implemented in the driver. Upon connection, if the instrument model is one of the listed above, driver shall automatically determine the output channel count.
 
 +++
 
@@ -83,7 +83,7 @@ tti.ch1.curr.unit
 tti.ch1.curr.label
 ```
 
-the PL601-P has two current ranges for the output called ``Low (1mA-500mA)`` and ``High (1mA-1500mA)`` range, associated with the integers ``1`` and ``2``, respectively. 
+the PL601-P has two current ranges for the output called ``Low (1mA-500mA)`` and ``High (1mA-1500mA)`` range, associated with the integers ``1`` and ``2``, respectively.
 
 ```{code-cell} ipython3
 tti.ch1.curr_range()
@@ -227,7 +227,7 @@ tti.ch1.decrement_curr_by_step_size()
 tti.ch1.curr()
 ```
 
-Note that, the step sizes reset to the default values after a power cycle. Therefore, if you wish to have definite step sizes for a specific purpose, we suggest you to save your set up (see above) before turning off the instrument. 
+Note that, the step sizes reset to the default values after a power cycle. Therefore, if you wish to have definite step sizes for a specific purpose, we suggest you to save your set up (see above) before turning off the instrument.
 
 Finally, the current meter averaging can be turned on and off remotely. As there is no remote query for the status, user should observe the "Meter Average" signal light. To turn it on, we simply write:
 

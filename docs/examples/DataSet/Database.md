@@ -13,7 +13,7 @@ kernelspec:
 
 # Databases
 
-This is an example notebook to briefly discuss the use of SQLite3 databases in QCoDeS. Generally, databases are used to store values of `parameters` obtained during a `measurement` in `DataSet` ojects. Specifically, storage occurs as part of  the `add_result` method of the `datasaver` object in the context manager. `DataSets` can also be read from the database for analysis.  
+This is an example notebook to briefly discuss the use of SQLite3 databases in QCoDeS. Generally, databases are used to store values of `parameters` obtained during a `measurement` in `DataSet` ojects. Specifically, storage occurs as part of  the `add_result` method of the `datasaver` object in the context manager. `DataSets` can also be read from the database for analysis.
 
 ## Imports
 
@@ -39,7 +39,7 @@ initialise_database()
 print(qc.config.core.db_location)
 ```
 
-When an existing database is initialized, it is always examined and upgraded to the latest version by a tested automatic process. When this occurs, a more detailed output is produced that details the upgrade process. This upgrade occurs with journaling to ensure data safety, to date there have been no instances of data corruption during database upgrades. 
+When an existing database is initialized, it is always examined and upgraded to the latest version by a tested automatic process. When this occurs, a more detailed output is produced that details the upgrade process. This upgrade occurs with journaling to ensure data safety, to date there have been no instances of data corruption during database upgrades.
 
 Example database upgrade output:
 > Upgrading database; v0 -> v1: : 0it [00:00, ?it/s]
@@ -62,9 +62,9 @@ Example database upgrade output:
 
 +++
 
-Frequently, new databases will need to be created to meet the needs of data storage and organization. Moreover, these should be created a particular locations (e.g. a specific drive) with particular names (e.g. QCoDeS_example.db). These operations are all executed in an intelligent way by the `initialise_or_create_database_at` function. 
+Frequently, new databases will need to be created to meet the needs of data storage and organization. Moreover, these should be created a particular locations (e.g. a specific drive) with particular names (e.g. QCoDeS_example.db). These operations are all executed in an intelligent way by the `initialise_or_create_database_at` function.
 
-> Note that this will only change the location of the database in the current session not the default location stored in the qcodes config file. This means that this function 
+> Note that this will only change the location of the database in the current session not the default location stored in the qcodes config file. This means that this function
 is well suited to be part of a measurement script that ensures all data measured goes into the correct db but not to set the default location.
 
 > Note: This function requires a path to exist, i.e. it cannot create folders.

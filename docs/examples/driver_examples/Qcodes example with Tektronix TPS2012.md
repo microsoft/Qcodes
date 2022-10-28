@@ -71,7 +71,7 @@ There is a simple command to get two arrays for the horizontal and vertical data
 
 +++
 
-Because this is early beta version you must currently call `set_set_points` on each channel just before reading a trace from the channel. This is a limitation in the current dataset/loop of qcodes. You should also ensure that the scope has been triggered at these settings before calling set_set_points or you will get inconsitent data. 
+Because this is early beta version you must currently call `set_set_points` on each channel just before reading a trace from the channel. This is a limitation in the current dataset/loop of qcodes. You should also ensure that the scope has been triggered at these settings before calling set_set_points or you will get inconsitent data.
 
 In this example notebook we use force_trigger to ensure that we always have data when setting the set_points
 

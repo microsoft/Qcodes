@@ -87,7 +87,7 @@ The field has **five** related parameters:
 - `field_approach`: The approach that the system should use to ramp. By default it is set to `linear`.
 - `field_ramp`: This is a convenience parameter that sets the target field and then triggers a blocking ramp.
 
-The idea is that the user first sets the `field_target` and then ramps the field to that target using the `ramp` method. The ramp method takes a `mode` argument that controls whether the ramp is blocking or non-blocking. 
+The idea is that the user first sets the `field_target` and then ramps the field to that target using the `ramp` method. The ramp method takes a `mode` argument that controls whether the ramp is blocking or non-blocking.
 
 Using the simulation software, the field change is instanteneous irrespective of rate. We nevertheless include two examples of ramping here.
 

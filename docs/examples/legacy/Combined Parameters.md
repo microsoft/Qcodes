@@ -15,7 +15,7 @@ kernelspec:
 
 ```{code-cell} ipython3
 import qcodes as qc
-import numpy as np 
+import numpy as np
 
 from qcodes.instrument.parameter import ManualParameter
 from qcodes.utils.validators import Numbers
@@ -23,7 +23,7 @@ from qcodes.loops import Loop
 ```
 
 If you want to sweep multiple parameters at once qcodes offers the combine function.
-You can combine any number of any kind paramter. 
+You can combine any number of any kind paramter.
 We'll use a ManualParameter for this example.
 
 ```{code-cell} ipython3
@@ -35,7 +35,7 @@ p4 = ManualParameter('p4', vals=Numbers(-10, 10))
 p4.set(-1)
 ```
 
-##  Simple combined  parameters 
+##  Simple combined  parameters
 
 ```{code-cell} ipython3
 combined = qc.combine(p1, p2, p3, name='combined')
@@ -56,7 +56,7 @@ data = loop.get_data_set(name='testsweep')
 data = loop.run()
 ```
 
-The combined_set just stores the indices 
+The combined_set just stores the indices
 
 ```{code-cell} ipython3
 print(data.combined_set)

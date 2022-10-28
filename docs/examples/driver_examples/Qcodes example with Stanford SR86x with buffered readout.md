@@ -30,7 +30,7 @@ This notebook covers several capturing modes including starting capture at trigg
 
 # Useful utilities
 import time
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt
 import numpy
 from pprint import pprint  # for pretty printing lists and dictionaries
 
@@ -166,7 +166,7 @@ lockin.buffer.capture_rate(1220.7)
 print(f"Capture rate is set to {lockin.buffer.capture_rate()}")
 ```
 
-In case you want to capture data at a maximum possible rate, but you do not remember the value of the maximum possible capture rate, the convenient `set_capture_rate_to_maximum` method can be used: 
+In case you want to capture data at a maximum possible rate, but you do not remember the value of the maximum possible capture rate, the convenient `set_capture_rate_to_maximum` method can be used:
 
 ```{code-cell} ipython3
 lockin.buffer.set_capture_rate_to_maximum()
@@ -180,18 +180,18 @@ Now let's acquire some data:
 ```{code-cell} ipython3
 sample_count = 678
 
-# Set the capture length (which is a portion of the buffer size) 
+# Set the capture length (which is a portion of the buffer size)
 # to fit the number of samples that we want to capture.
-# For more information about the maximum buffer size, 
+# For more information about the maximum buffer size,
 # and other buffer-related properties, refer to the instrument manual.
 lockin.buffer.set_capture_length_to_fit_samples(sample_count)
 
-# Start capturing data immediately, 
+# Start capturing data immediately,
 # and without overwriting the buffer in case it gets full.
 # For more information about the capture modes, refer to the instrument manual.
 lockin.buffer.start_capture("ONE", "IMM")
 
-# We call this blocking method to wait until 
+# We call this blocking method to wait until
 # the requested number of samples is captured.
 lockin.buffer.wait_until_samples_captured(sample_count)
 
@@ -266,7 +266,7 @@ awg.sample_rate(3000)  # S/s
 # while the marker channel plays a falling edge from 1 to 0.
 waveform_ch1 = numpy.zeros((2, 3000))  # the waveform will have a length of 1s
                                        # (3000 samples for 3000 S/s sample rate)
-waveform_ch1[1, :-1500] = 1  # falling from 1 to 0 (a.u.), 
+waveform_ch1[1, :-1500] = 1  # falling from 1 to 0 (a.u.),
                              # at 0.5s after the start of the waveform
 elements = numpy.array([waveform_ch1])  # we only have one element in the sequence
 waveforms = numpy.array([elements])  # we will use only 1 channel
@@ -298,7 +298,7 @@ awg.ch1.setSequenceTrack(seq_name, 0)
 # Assign a loaded waveform to the channel
 awg.ch1.setWaveform(awg.waveformList[0])
 
-# Set the marker's high as high as possible 
+# Set the marker's high as high as possible
 # so that the lock-in detects the falling edge
 awg.ch1.marker1_high(1.75)  # V
 awg.ch1.marker1_low(0)  # V
@@ -319,13 +319,13 @@ lockin.buffer.capture_rate(4882.8)
 ```{code-cell} ipython3
 sample_count = 321
 
-# Set the capture length (which is a portion of the buffer size) 
+# Set the capture length (which is a portion of the buffer size)
 # to fit the number of samples that we want to acquire.
-# For more information about the maximum buffer size, 
+# For more information about the maximum buffer size,
 # and other buffer-related properties, refer to the instrument manual.
 lockin.buffer.set_capture_length_to_fit_samples(sample_count)
 
-# Start capturing data when a trigger signal is recieved, 
+# Start capturing data when a trigger signal is recieved,
 # and without overwriting the buffer in case it gets full.
 # This basically arms the lock-in amplifier.
 # For more information about the capture modes, refer to the instrument manual.
@@ -335,7 +335,7 @@ lockin.buffer.start_capture("ONE", "TRIG")
 # Basically, this call indirectly triggers the lock-in to start capturing data.
 awg.play()
 
-# We call this blocking function to wait 
+# We call this blocking function to wait
 # until the requested number of samples is captured.
 lockin.buffer.wait_until_samples_captured(sample_count)
 
@@ -358,11 +358,11 @@ For convenience, the measurement code from above is encapsulated into a method o
 
 ```{code-cell} ipython3
 try:
-    
+
     # Note the second argument - it is a callable
     # that is responsible for emitting the trigger signal
     data = lockin.buffer.capture_samples_after_trigger(sample_count, awg.play)
-    
+
 finally:  # the try-finally block is here purely
           # to ensure that the AWG is stopped anyway
     awg.stop()
@@ -376,7 +376,7 @@ fig = plt.figure(figsize=(6, 3))
 
 # plot values of all the captured variables
 for var_name in data:
-    plt.plot(data[var_name], label=var_name)  
+    plt.plot(data[var_name], label=var_name)
 plt.xlabel("Sample, #")
 plt.ylabel("Measured value, V")
 
@@ -398,7 +398,7 @@ The following code is specific to the AWG5208 that is used in this example. One 
 awg.sample_rate(3000)  # S/s
 
 # Create a waveform where the analog channel plays 0s,
-# while the marker channel plays 
+# while the marker channel plays
 # a number of falling edges from 1 to 0.
 
 n_samples_in_waveform = 3000
@@ -446,7 +446,7 @@ awg.ch1.setSequenceTrack(seq_name, 0)
 # Assign a waveform to the channel
 awg.ch1.setWaveform(awg.waveformList[0])
 
-# Set the marker's high as high as possible 
+# Set the marker's high as high as possible
 # so that the lock-in detects the falling edge
 awg.ch1.marker1_high(1.75)  # V
 awg.ch1.marker1_low(0)  # V
@@ -459,9 +459,9 @@ awg.ch1.state(1)  # turns the channel "on"
 ```{code-cell} ipython3
 sample_count = n_trigger_pulses
 
-# Set the capture length (which is a portion of the buffer size) 
+# Set the capture length (which is a portion of the buffer size)
 # to fit the number of samples that we want to acquire.
-# For more information about the maximum buffer size, 
+# For more information about the maximum buffer size,
 # and other buffer-related properties, refer to the instrument manual.
 lockin.buffer.set_capture_length_to_fit_samples(sample_count)
 
@@ -496,12 +496,12 @@ For convenience, the measurement code from above is encapsulated into a method o
 
 ```{code-cell} ipython3
 try:
-    
-    # Note the second argument - it is a callable 
+
+    # Note the second argument - it is a callable
     # that is responsible for starting the trigger pulse train
     data = lockin.buffer.capture_one_sample_per_trigger(sample_count, awg.play)
-    
-finally:  # the try-finally block is here purely 
+
+finally:  # the try-finally block is here purely
           # to ensure that the AWG is stopped anyway
     awg.stop()
 ```

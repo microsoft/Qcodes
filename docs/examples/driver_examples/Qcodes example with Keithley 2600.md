@@ -57,7 +57,7 @@ Each channel operates in either `voltage` or `current` mode. The mode controls t
 
 keith.smua.mode('voltage')
 keith.smua.nplc(0.05)  # 0.05 Power Line Cycles per measurement. At 50 Hz, this corresponds to 1 ms
-keith.smua.sourcerange_v(20) 
+keith.smua.sourcerange_v(20)
 keith.smua.measurerange_i(0.1)
 #
 keith.smua.volt(1)  # set the source to output 1 V
@@ -79,19 +79,19 @@ Let's make a fast IV curve by sweeping the voltage from 1 V to 2 V in 500 steps
 
 +++
 
-First we need to prepare the sweep by spesifyring the start, stop, number of points and the mode  
+First we need to prepare the sweep by spesifyring the start, stop, number of points and the mode
 
 ```{code-cell} ipython3
 keith.smua.fastsweep.prepareSweep(1, 2, 500, mode='IV')
 ```
 
-When the sweep parameters are set, we can use a "do0d" to preform the sweep 
+When the sweep parameters are set, we can use a "do0d" to preform the sweep
 
 ```{code-cell} ipython3
 do0d(keith.smua.fastsweep, do_plot = True)
 ```
 
-We can likewise do a VI two- or four-probe measurement 
+We can likewise do a VI two- or four-probe measurement
 
 ```{code-cell} ipython3
 keith.smua.fastsweep.prepareSweep(0.001, 0.1, 500, mode='VI')
@@ -144,11 +144,11 @@ initialise_database()
 new_experiment(name='tutorial_exp', sample_name="no sample")
 
 with timemeas.run() as datasaver:
-    
+
     somenumbers = keith.smua.timetrace.get()
-    datasaver.add_result((keith.smua.timetrace, somenumbers), 
+    datasaver.add_result((keith.smua.timetrace, somenumbers),
                          (keith.smua.time_axis, keith.smua.time_axis.get()))
-    
+
 data = datasaver.dataset
 plot_dataset(data)
 ```
@@ -165,11 +165,11 @@ keith.smua.timetrace_npts(600)
 
 ```{code-cell} ipython3
 with timemeas.run() as datasaver:
-    
+
     somenumbers = keith.smua.timetrace.get()
-    datasaver.add_result((keith.smua.timetrace, somenumbers), 
+    datasaver.add_result((keith.smua.timetrace, somenumbers),
                          (keith.smua.time_axis, keith.smua.time_axis.get()))
-    
+
 data = datasaver.dataset
 plot_dataset(data)
 ```

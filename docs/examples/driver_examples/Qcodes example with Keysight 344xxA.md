@@ -113,14 +113,14 @@ For the commonly occuring case were one would like to measure N voltage points e
  - `timetrace_npts` - the number of points
  - `time_axis` - the corresponding time axis (np.array, starts at 0)
  - `timetrace` - the array of voltage values
- 
+
 Note that changing `timetrace_dt` and `timetrace_npts` does not change any corresponding setting on the instrument before `timetrace.get` is called. Once that happens, the state of the instrument is __temporarily__ switched into one compatible with performing a time trace measurement. This specifically means that we set
- 
+
  - `trigger.count` to 1
  - `trigger.source` to "BUS" (internal trigger - __no other trigger can be used__)
  - `sample.timer` to `timetrace_dt`
  - `sample.count` to `timetrace_npts`
- 
+
 After the acquisition has completed, the previous instrument settings are restored. This behaviour guarantees that calling `timetrace.get` always works, irrespective of instrument state. The only exception is if the specified `timetrace_dt` can not be realized with the present `dmm.NPLC` and/or `dmm.aperture_time` settings. If that is the case, the `timetrace.get` method will raise a `RuntimeError` with an instructive error message. The user may manually compare the value of `sample.timer_minimum` to the value of `timetrace_dt`.
 
 +++
@@ -140,7 +140,7 @@ print(f'Minimal allowable dt: {dmm.sample.timer_minimum()} s')
 with meas.run() as datasaver:
     datasaver.add_result((dmm.timetrace, dmm.timetrace()),
                           (dmm.time_axis, dmm.time_axis()))
-    
+
 time_trace_ds = datasaver.dataset
 ```
 
@@ -254,7 +254,7 @@ Note that for this simple type of measurement with measurement times being equid
 
 +++
 
-Some parameters can be set to special values like `MIN`/`MAX`/`DEF` which usually mean minimum/maximum/default, respectively. 
+Some parameters can be set to special values like `MIN`/`MAX`/`DEF` which usually mean minimum/maximum/default, respectively.
 
 In order to obtain the actual value of the parameter that gets set when setting it to one of these special values, just call the get method of the parameter.
 
@@ -305,13 +305,13 @@ dmm.display.clear()
 ```
 
 ```{code-cell} ipython3
-# Note that a call to `display_clear` also updates 
+# Note that a call to `display_clear` also updates
 # the value of the `display_text` parameter:
 assert dmm.display.text() == ''
 ```
 
 ```{code-cell} ipython3
-# Display can also be cleared by setting 
+# Display can also be cleared by setting
 # `display_text` to an empty string
 dmm.display.text('some text')  # Displays some text
 time.sleep(0.5)
@@ -329,7 +329,7 @@ dmm.display.text("I'm disabled but still showing text")
 ```
 
 ```{code-cell} ipython3
-# Enabling display in this state 
+# Enabling display in this state
 # won't change what's being displayed
 dmm.display.enabled(True)
 ```
@@ -348,7 +348,7 @@ dmm.display.clear()
 Use the following methods to read the error queue of the instrument. The instrument has an error queue of length up to 20 messages. The queue message retrieval is first-in-first-out.
 
 ```{code-cell} ipython3
-# Retrieve the first (i.e. oldest) error message 
+# Retrieve the first (i.e. oldest) error message
 # in the queue (and thereby remove from the queue)
 dmm.error()
 ```

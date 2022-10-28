@@ -35,7 +35,7 @@ qc.logger.start_all_logging()
 
 ## Mock Set-up
 
-For this notebook, we create a mock station setup. 
+For this notebook, we create a mock station setup.
 
 ```{code-cell} ipython3
 dac = DummyInstrument('dac', gates=['ch1', 'ch2'])
@@ -46,7 +46,7 @@ station = qc.Station(dmm, dac)
 
 ## Initialize/Create Database
 
-Database needs to be initialized or created if it doesn't exist already, using `initialize_or_create_database` method. Furthermore, datasets are associated with experiments and by default the run is appended to the latest existing experiment. We can load or create an experiment using `load_or_create_experiment` function. 
+Database needs to be initialized or created if it doesn't exist already, using `initialize_or_create_database` method. Furthermore, datasets are associated with experiments and by default the run is appended to the latest existing experiment. We can load or create an experiment using `load_or_create_experiment` function.
 
 ```{code-cell} ipython3
 db_file_path = os.path.join(os.getcwd(), 'plottr_for_live_plotting_tutorial.db')
@@ -55,7 +55,7 @@ exp = load_or_create_experiment(experiment_name='plottr_for_live_plotting_with_s
                           sample_name="no sample")
 ```
 
-## Launch Plottr Inspectr 
+## Launch Plottr Inspectr
 
 Open an anaconda prompt and activate your conda environment where plottr is installed. Start Inspectr GUI with `plottr-inspectr` command (more details for launching Inspectr are [here](https://github.com/toolsforexperiments/plottr#inspectr-qcodes-dataset-inspection-and-live-plotting). You will see a window as show below. In this window, set `Refresh interval (s)` to the desired value and check `Auto-plot new`. Using `File` button, load the database initialized/created above (Alternatively, database can be dragged and dropped on the Inspectr window).
 
@@ -77,7 +77,7 @@ jobs = bg.BackgroundJobManager()
 jobs.new(inspectr.main, db_file_path)
 ```
 
-Set refresh interval and auto-plot new as mentioned above. 
+Set refresh interval and auto-plot new as mentioned above.
 
 +++
 
@@ -104,7 +104,7 @@ with meas.run() as datasaver:
         get_v = dmm.v1.get()
         datasaver.add_result((dac.ch1, set_v),
                              (dmm.v1, get_v))
-        
+
     dataset = datasaver.dataset
 ```
 

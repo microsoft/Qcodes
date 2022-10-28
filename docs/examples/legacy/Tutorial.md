@@ -11,7 +11,7 @@ kernelspec:
   name: python3
 ---
 
-# QCoDeS tutorial 
+# QCoDeS tutorial
 Basic overview of QCoDeS
 
 ## Table of Contents <a class="anchor" id="toc"></a>
@@ -26,10 +26,10 @@ Basic overview of QCoDeS
 ## Typical QCodes workflow <a class="anchor" id="workflow"></a>
 (back to [ToC](#toc))
 
-1. Start up an interactive python session (e.g. using jupyter) 
-2. import desired modules 
-3. instantiate required instruments 
-4. experiment! 
+1. Start up an interactive python session (e.g. using jupyter)
+2. import desired modules
+3. instantiate required instruments
+4. experiment!
 
 +++
 
@@ -52,7 +52,7 @@ from qcodes.data.data_set import load_data
 
 ```{code-cell} ipython3
 # It is not enough to import the instruments, they must also be instantiated
-# Note that this can only be done once. If you try to re-instantiate an existing instrument, QCoDeS will 
+# Note that this can only be done once. If you try to re-instantiate an existing instrument, QCoDeS will
 # complain that 'Another instrument has the name'.
 
 
@@ -61,7 +61,7 @@ from qcodes.data.data_set import load_data
 dac = DummyInstrument(name="dac", gates=['ch1', 'ch2'])  # The DAC voltage source
 dmm = DummyInstrument(name="dmm", gates=['voltage'])  # The DMM voltage reader
 
-# the default dummy instrument returns always a constant value, in the following line we make it random 
+# the default dummy instrument returns always a constant value, in the following line we make it random
 # just for the looks 💅
 import random
 dmm.voltage.get =  lambda: random.randint(0, 100)
@@ -80,13 +80,13 @@ chX = 0
 
 def myget():
     return chX
-    
+
 def myset(x):
     global chX
     chX = x
     print('Setting to {}'.format(x))
     return None
-    
+
 dac.add_parameter('verbose_channel',
                   label='Verbose Channel',
                   unit='V',
@@ -94,7 +94,7 @@ dac.add_parameter('verbose_channel',
                   set_cmd=myset)
 ```
 
-### The location provider can be set globally 
+### The location provider can be set globally
 
 ```{code-cell} ipython3
 loc_provider = qc.data.location.FormatLocation(fmt='data/{date}/#{counter}_{name}_{time}')
@@ -108,11 +108,11 @@ We are now ready to play with the instruments!
 ## Basic instrument interaction <a class="anchor" id="inst_io"></a>
 (back to [ToC](#toc))
 
-The interaction with instruments mainly consists of `setting` and `getting` the instruments' `parameters`. A parameter can be anything from the frequency of a signal generator over the output impedance of an AWG to the traces from a lock-in amplifier. In this tutorial we --for didactical reasons-- only consider scalar parameters. 
+The interaction with instruments mainly consists of `setting` and `getting` the instruments' `parameters`. A parameter can be anything from the frequency of a signal generator over the output impedance of an AWG to the traces from a lock-in amplifier. In this tutorial we --for didactical reasons-- only consider scalar parameters.
 
 ```{code-cell} ipython3
 # The voltages output by the dac can be set like so
-dac.ch1.set(8)  
+dac.ch1.set(8)
 # Now the output is 8 V. We can read this value back
 dac.ch1.get()
 ```
@@ -120,7 +120,7 @@ dac.ch1.get()
 Setting IMMEDIATELY changes a value. For voltages, that is sometimes undesired. The value can instead be ramped by stepping and waiting.
 
 ```{code-cell} ipython3
-dac.verbose_channel.set(0) 
+dac.verbose_channel.set(0)
 dac.verbose_channel.set(9)  # immediate voltage jump of 9 Volts (!)
 
 # first set a step size
@@ -134,7 +134,7 @@ dac.verbose_channel.set(5)
 # after such a ramp, it is a good idea to reset the step and delay
 dac.verbose_channel.step = 0
 # and a wait time
-dac.verbose_channel.inter_delay = 0 
+dac.verbose_channel.inter_delay = 0
 ```
 
 <span style="color:blue">**NOTE**</span>: that is ramp is blocking and has a low resolution since each `set` on a real instrument has a latency on the order of ms. Some instrument drivers support native-resolution asynchronous ramping. Always refer to your instrument driver if you need high performance of an instrument.
@@ -150,7 +150,7 @@ dac.verbose_channel.inter_delay = 0
 
 Before you run a measurement loop you do two things:
 1. You describe what parameter(s) to vary and how. This is the creation of a `Loop` object: `loop = Loop(sweep_values, ...)`
-2. You describe what to do at each step in the loop. This is `loop.each(*actions)` 
+2. You describe what to do at each step in the loop. This is `loop.each(*actions)`
   - measurements (any object with a `.get` method will be interpreted as a measurement)
   - `Task`: some callable (which can have arguments with it) to be executed each time through the loop. Does not generate data.
   - `Wait`: a specialized `Task` just to wait a certain time.
@@ -182,9 +182,9 @@ plot_1d
 
 +++
 
-Once the measurement is done, take a look at the file in finder/explorer (the dataset.location should give you the relative path). 
-Note also the snapshot that captures the settings of all instruments at the start of the Loop. 
-This metadata is also accesible from the dataset and captures a snapshot of each instrument listed in the station. 
+Once the measurement is done, take a look at the file in finder/explorer (the dataset.location should give you the relative path).
+Note also the snapshot that captures the settings of all instruments at the start of the Loop.
+This metadata is also accesible from the dataset and captures a snapshot of each instrument listed in the station.
 
 ```{code-cell} ipython3
 dac.snapshot()

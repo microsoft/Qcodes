@@ -52,7 +52,7 @@ Instruments which fail to initialize are not registered:
 BaseVoltageSource.instances()
 ```
 
-### Units of parameters defined in sub classes *must* match units defined in the base class 
+### Units of parameters defined in sub classes *must* match units defined in the base class
 
 ```{code-cell} ipython3
 class WrongSource2(BaseVoltageSource):

@@ -32,9 +32,9 @@ Parameters have specific responsibilities in QCodes:
 - Generating the commands to pass to the Instrument and interpreting its response
 - Testing whether an input is valid, via a validator method
 - Providing get or set methods for mathematical abstractions
-- Providing context and meaning to its data through descriptive attributes (e.g. name, units) 
+- Providing context and meaning to its data through descriptive attributes (e.g. name, units)
 
-Parameters hold onto their latest set or measured value via an internal cache, as well as the timestamp of the latest cache update. 
+Parameters hold onto their latest set or measured value via an internal cache, as well as the timestamp of the latest cache update.
 
 ## Examples
 
@@ -51,9 +51,9 @@ from qcodes.instrument.base import (
     InstrumentBase
 )
 from qcodes.instrument.parameter import (
-    Parameter, 
+    Parameter,
     ArrayParameter,
-    MultiParameter, 
+    MultiParameter,
     ManualParameter
 )
 from qcodes.tests.instrument_mocks import (
@@ -83,12 +83,12 @@ class MyCounter(Parameter):
                          docstring='counts how many times get has been called '
                                    'but can be reset to any integer >= 0 by set')
         self._count = 0
-    
+
     # you must provide a get method, a set method, or both.
     def get_raw(self):
         self._count += 1
         return self._count
-    
+
     def set_raw(self, val):
         self._count = val
         return self._count
@@ -115,7 +115,7 @@ print('After, we can get', c())
 
 #### Inspecting parameter attributes
 
-When developing protocols, it may be useful to inspect if a parameter is settable or gettable. This can be seen in the respective .settable and .gettable attributes produced by the `Parameter` base class.  
+When developing protocols, it may be useful to inspect if a parameter is settable or gettable. This can be seen in the respective .settable and .gettable attributes produced by the `Parameter` base class.
 
 ```{code-cell} ipython3
 print(f"Is c is gettable? {c.gettable}")
@@ -169,13 +169,13 @@ class VirtualParameter(Parameter):
     def __init__(self, name, dac_param):
         self._dac_param = dac_param
         super().__init__(name)
-    
+
     @property
     def underlying_instrument(self) -> Optional[InstrumentBase]:
         return self._dac_param.root_instrument
-    
+
     def get_raw(self):
-        return self._dac_param.get()    
+        return self._dac_param.get()
 ```
 
 > `underlying_insturment`: We advise that this property is included with virtual parameters to avoid race conditions when multi-theading (e.g. using the `dond` function with `use_threads=true`). This allows qcodes to know which instrument in accessed when accessing the parameter. This ensures that a given instrument is ever only accessed from one thread.
@@ -200,4 +200,3 @@ The most useful `Parameters` are part of an `Instrument`. These `Parameters` are
 A settable Parameter typically represents a configuration setting or other controlled characteristic of the Instrument. Most such Parameters have a simple numeric value, but the value can be a string or other data type if necessary. If a settable Parameter is also gettable, getting it typically just reads back the value that was previously set but there can be differences due to processing (e.g. rounding, truncation, etc.).  A Parameter that is only gettable typically represents a single measurement command, and may feature some processing.
 
 These parameters are identical in implementation to the above cases, using set_raw and get_raw methods for instrument facing communications. In order to see examples of these parameters, we advise reviewing our notebooks on insturments and instrument drivers.
-

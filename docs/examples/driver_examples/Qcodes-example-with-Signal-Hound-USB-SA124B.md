@@ -15,7 +15,7 @@ kernelspec:
 
 +++
 
-Please also note the extensions to this driver in [Qcodes example with Signal Hound USB-SA124B ParameterWithSetpoints](Qcodes-example-with-Signal-Hound-USB-SA124B-ParameterWithSetpoints.ipynb) 
+Please also note the extensions to this driver in [Qcodes example with Signal Hound USB-SA124B ParameterWithSetpoints](Qcodes-example-with-Signal-Hound-USB-SA124B-ParameterWithSetpoints.ipynb)
 
 ```{code-cell} ipython3
 %matplotlib notebook
@@ -38,8 +38,8 @@ sh = SignalHound_USB_SA124B('mysignalhound')
 
 +++
 
-The primary functionality of the Signal Hound driver is to capture a frequency trace. 
-The frequency trace is defined by the center frequency and span. After changing any parameter on the Signal Hound 
+The primary functionality of the Signal Hound driver is to capture a frequency trace.
+The frequency trace is defined by the center frequency and span. After changing any parameter on the Signal Hound
 is is important to sync the parameters to the device or you will get a runtime error.
 
 ```{code-cell} ipython3

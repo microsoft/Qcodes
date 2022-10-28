@@ -69,7 +69,7 @@ class SleepyDmmExponentialParameter(Parameter):
             yield a * np.exp(-b * x) + 0.02 * a * np.random.randn()
 ```
 
-The above parameter class is made to return data with a delay on purpose with help of `time.sleep(0.1)` statement in the `get_raw` method to simulate slow communication with actual instruments. 
+The above parameter class is made to return data with a delay on purpose with help of `time.sleep(0.1)` statement in the `get_raw` method to simulate slow communication with actual instruments.
 
 ```{code-cell} ipython3
 dmm1.add_parameter('v3',
@@ -103,7 +103,7 @@ exp = load_or_create_experiment(
 
 ## Measurement 1: Non threaded data acquisition
 
-In the following measurment, we do not use threads and note down the time taken for the data acquisition. 
+In the following measurment, we do not use threads and note down the time taken for the data acquisition.
 
 ```{code-cell} ipython3
 meas1 = Measurement(exp=exp, name='exponential_decay_non_threaded_data_acquisition')
@@ -114,20 +114,20 @@ meas1.register_parameter(dmm2.v3, setpoints=(dac.ch1,))
 
 ```{code-cell} ipython3
 data_acq_time = 0
-with meas1.run() as datasaver:             
+with meas1.run() as datasaver:
     for set_v in np.linspace(0, 25, 10):
         dac.ch1.set(set_v)
-        
+
         t1 = time.perf_counter()
         datasaver.add_result((dac.ch1, set_v),
                              (dmm1.v3, dmm1.v3.get()),
                              (dmm2.v3, dmm1.v3.get()))
         t2 = time.perf_counter()
-        
+
         data_acq_time += t2 - t1
-    
+
     dataset1D1 = datasaver.dataset
-    
+
 print('Report:')
 print(f'Data acquisition time:            {data_acq_time} s')
 ```
@@ -158,7 +158,7 @@ data_acq_time = 0
 with meas2.run() as datasaver, pool_caller as call_params_in_pool:  # <----- This line is different
     for set_v in np.linspace(0, 25, 10):
         dac.ch1.set(set_v)
-        
+
         t1 = time.perf_counter()
         datasaver.add_result(*call_params_in_pool())  # <----- This line is different
         t2 = time.perf_counter()

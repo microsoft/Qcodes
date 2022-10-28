@@ -37,7 +37,7 @@ except (ValueError, VisaIOError):
     # Below is an example how to set up the mock instrument
     import qcodes.instrument.sims as sims
     visalib = sims.__file__.replace('__init__.py', 'keysight_34980A.yaml@sim')
-    
+
     switch_matrix = Keysight34980A('switch_matrix_sim',
                                    address='GPIB::1::INSTR',
                                    visalib=visalib)
@@ -103,9 +103,9 @@ print(switch_matrix.module[2].is_closed(3, 45)) # check if row 3 is connected to
 We expect the following command to raise an exception because the column value 67 is out of range for module in slot 1.
 
 ```{code-cell} ipython3
-try: 
+try:
     switch_matrix.module[1].connect(5, 67)
-except ValueError as err: 
+except ValueError as err:
     print(err)
 ```
 
@@ -195,7 +195,7 @@ The reason for the singular/plural is that the module can work with one row and 
 **When work with single row-column pair, use the singular version of functions**
  - instrument.module.connect(r, c)
  - instrument.module.is_closed(r,c)
- 
+
 **When work with list of row-column pairs, use the plural version of functions**
  - instrument.module.connect_paths([(r1, c1), (r2, c2)])
  - instrument.module.are_closed([(r1, c1), (r2, c2)])

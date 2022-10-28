@@ -121,7 +121,7 @@ smatrix.get_switch_cards()
 
 +++
 
-The system switch provides an option for the users to save their current setups to be used later. One can save a configuration either to the non-volatile memory of the instrument or to a USB drive. To this end, we use `save_setup()` function which either takes no arguments or a string which represents the path and the file name to which the setup shall be saved on an external drive. If no arguments provided, the setup shall be saved to the intstument. Note that, in the latter case, any existing saved configurations shall be overwritten. 
+The system switch provides an option for the users to save their current setups to be used later. One can save a configuration either to the non-volatile memory of the instrument or to a USB drive. To this end, we use `save_setup()` function which either takes no arguments or a string which represents the path and the file name to which the setup shall be saved on an external drive. If no arguments provided, the setup shall be saved to the intstument. Note that, in the latter case, any existing saved configurations shall be overwritten.
 
 ```{code-cell} ipython3
 smatrix.save_setup()
@@ -143,7 +143,7 @@ The system switch has limited memory which can be queried via:
 smatrix.get_available_memory()
 ```
 
-The memory usage of a saved setup is depicted by the `Config Memory`. User given channel patterns occupy the `Pattern Memory`. The system switch is capable of storing and running Lua scripts. This functionality is not explicitly implemented by the QCoDeS driver. However, if desired, one can still send, save and execute Lua scripts through `write()` and `ask()` methods of the `InstrumentBase` class of QCoDeS which is inherited by every instrument driver. If this is the case, the saved Lua scripts occupy the `Script Memory`.    
+The memory usage of a saved setup is depicted by the `Config Memory`. User given channel patterns occupy the `Pattern Memory`. The system switch is capable of storing and running Lua scripts. This functionality is not explicitly implemented by the QCoDeS driver. However, if desired, one can still send, save and execute Lua scripts through `write()` and `ask()` methods of the `InstrumentBase` class of QCoDeS which is inherited by every instrument driver. If this is the case, the saved Lua scripts occupy the `Script Memory`.
 
 +++
 
@@ -161,7 +161,7 @@ First, let us call the installed switch cards again:
 smatrix.get_switch_cards()
 ```
 
-The system switch has six available slots from which three are currently occupied by `6x16` high density matrices. As implied, these matrices have `6` rows and `16` columns, hence, in total, `96` available channels, each. 
+The system switch has six available slots from which three are currently occupied by `6x16` high density matrices. As implied, these matrices have `6` rows and `16` columns, hence, in total, `96` available channels, each.
 
 Each channel has identical properties but unique names. The properties of the channels can be manipulated via calling them individually, as a group or as a whole slot. The naming of the channels follows a general pattern. In particular, here for the model `3730` which has no `bank`, the names starts with the slot number, then the row number and finally follows the cloumn number which should always be two characters. For example, `1101` represents the channel at `Slot 1`, `Row 1` and `Column 1`. For other models, users should refer to the corresponding instrument manual.
 
@@ -171,7 +171,7 @@ In certain cases manual deduction of the name of the channel could be more effic
 smatrix.get_channels()
 ```
 
-The `get_channels()` function returns an array of strings each being the name of an available channel in all occupied slots. The return type being `string` is intentional as the instrument accepts the channel names as strings and not integers during any manipulation. Thus, any element(s) of this list can be safely passed as an argument to another function which specifies a channel property. 
+The `get_channels()` function returns an array of strings each being the name of an available channel in all occupied slots. The return type being `string` is intentional as the instrument accepts the channel names as strings and not integers during any manipulation. Thus, any element(s) of this list can be safely passed as an argument to another function which specifies a channel property.
 
 If desired, the available channels in a given slot can be queried, as well.
 
@@ -183,7 +183,7 @@ smatrix.get_channels_by_slot(1)
 
 +++
 
-Each matrix has typically six analog backplane relays which can be associated which a channel(s). The naming scheme of the relays are similar to that of the channels. Each name start with the slot number, continues with `9`, which is the unique backplane number, and then finishes with backplane relay identifier which can take the values `11`, `12`, ..., `16`. That is, we can select the backplane relay `12` on `Slot 3` via `3912`. 
+Each matrix has typically six analog backplane relays which can be associated which a channel(s). The naming scheme of the relays are similar to that of the channels. Each name start with the slot number, continues with `9`, which is the unique backplane number, and then finishes with backplane relay identifier which can take the values `11`, `12`, ..., `16`. That is, we can select the backplane relay `12` on `Slot 3` via `3912`.
 
 Unless a backplane is associated with a channel, the instrument does not return the names of the relays. This is overcomed within the QCoDeS driver, so that user can list the available analog backplane relays.
 
@@ -195,7 +195,7 @@ smatrix.get_analog_backplane_specifiers()
 
 +++
 
-The switch channels as well as the analog backplane relays can be controlled via a set of well defined functions. 
+The switch channels as well as the analog backplane relays can be controlled via a set of well defined functions.
 First, a channel can be opened and closed, as expected.
 
 ```{code-cell} ipython3
@@ -254,7 +254,7 @@ smatrix.get_closed_channels("allslots")
 smatrix.get_closed_channels("slot2")
 ```
 
-We can exclusively close channels, as well. In one of the two ways to achieve exclusive close of channels, we specify channels to be closed in such a way that any presently closed channels in all slots open if they are not included to list. 
+We can exclusively close channels, as well. In one of the two ways to achieve exclusive close of channels, we specify channels to be closed in such a way that any presently closed channels in all slots open if they are not included to list.
 
 Currently we know that the channels `1101`, `2111` and `3216` are closed. Now, let us close the channel `3101` exclusively and then query close channels. We expect to only see the latter and the former channels should be opened.
 
@@ -406,9 +406,9 @@ smatrix.reset_channel("allslots")
 smatrix.get_delay("allslots")
 ```
 
-We can, conveniently, connect (disconnect) given rows (columns) of a slot to a column (row) of the same slot via the functions `connect_or_disconnect_row_to_columns()` and `connect_or_disconnect_column_to_rows()`. Each function takes an action as its first argument. The action should be either `connect` or `disconnect`. The slot id is provided as the second argument. The `connect_or_disconnect_row_to_columns()` takes the row number as the third argument to which the desired cloumns, specified by the final argument as a list, will be connected. Likewise, the `connect_or_disconnect_column_to_rows()` takes the column number as the third argument to which the desired rows, specified by the final argument as a list, will be connected.   
+We can, conveniently, connect (disconnect) given rows (columns) of a slot to a column (row) of the same slot via the functions `connect_or_disconnect_row_to_columns()` and `connect_or_disconnect_column_to_rows()`. Each function takes an action as its first argument. The action should be either `connect` or `disconnect`. The slot id is provided as the second argument. The `connect_or_disconnect_row_to_columns()` takes the row number as the third argument to which the desired cloumns, specified by the final argument as a list, will be connected. Likewise, the `connect_or_disconnect_column_to_rows()` takes the column number as the third argument to which the desired rows, specified by the final argument as a list, will be connected.
 
-Both functions opens (closes) the formed channels automatically and returns their list which can be used for later use, if desired. Let us, first, connect `1`, `2` and `13` columns of `slot2` to the row `3` of the same slot.  
+Both functions opens (closes) the formed channels automatically and returns their list which can be used for later use, if desired. Let us, first, connect `1`, `2` and `13` columns of `slot2` to the row `3` of the same slot.
 
 ```{code-cell} ipython3
 channels = smatrix.connect_or_disconnect_row_to_columns("connect", 2, 3, [1, 2, 13])
@@ -475,7 +475,7 @@ smatrix.get_backplane("slot1")
 
 +++
 
-The instrument itself does not return any error messages if it encounters an exception, but, rather silently handles such situations. Thus, QCoDeS driver is equipped with validation and exception handling with informative error messages for probable scenerios. 
+The instrument itself does not return any error messages if it encounters an exception, but, rather silently handles such situations. Thus, QCoDeS driver is equipped with validation and exception handling with informative error messages for probable scenerios.
 
 Here, we note some important cases where errors are generated if:
 

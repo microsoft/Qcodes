@@ -204,7 +204,7 @@ colorbar.set_label('Correct science label')
 
 ### Customisations
 
-In addition to tweaking the returned axes and colorbars, it is possible to customise the plot directly via the call to the `plot_dataset`. This is done by the `plot_dataset` via passing on the keyword arguments to the corresponding `matplotlib` function that runs under the hood. 
+In addition to tweaking the returned axes and colorbars, it is possible to customise the plot directly via the call to the `plot_dataset`. This is done by the `plot_dataset` via passing on the keyword arguments to the corresponding `matplotlib` function that runs under the hood.
 
 A few examples:
 
@@ -276,7 +276,7 @@ def no_x(xv):
         return True
     else:
         return False
-    
+
 def no_t(tv):
     if tv > 0 and tv < 450:
         return True

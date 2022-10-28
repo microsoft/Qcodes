@@ -19,7 +19,7 @@ This notebooks explains how to use the `InstrumentGroup` driver.
 The goal of the `InstrumentGroup` driver is to combine several instruments as submodules into one instrument. Typically, this is meant to be used with the `DelegateInstrument` driver. An example usage of this is to create an abstraction for devices on a chip.
 
 ## Usage
-The way it's used is mainly by specifying an entry in the station YAML. For instance, to create a Chip that has one or more Devices on it that point to different source parameters. The example below shows three devices, each of which is initialised in one of the supported ways. Device1 has only DelegateParameters, while device2 and device3 have both DelegateParameters and channels added. Device3 adds its channels using a custom channel wrapper class. 
+The way it's used is mainly by specifying an entry in the station YAML. For instance, to create a Chip that has one or more Devices on it that point to different source parameters. The example below shows three devices, each of which is initialised in one of the supported ways. Device1 has only DelegateParameters, while device2 and device3 have both DelegateParameters and channels added. Device3 adds its channels using a custom channel wrapper class.
 
 ```{code-cell} ipython3
 %%writefile example.yaml

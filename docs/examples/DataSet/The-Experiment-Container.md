@@ -49,9 +49,9 @@ Not surprisingly, our new database is empty.
 
 We now introduce a term that we call the **default experiment**. In short, it is the experiment that will be used for a QCoDeS `DataSet`, if the user do not explicitly pass an experiment into objects that create that `DataSet`. In another word, that `DataSet` will be belong to the default experiment. We do not want to go into the details of `DataSet` here, and refer to the [DataSet notebook](https://qcodes.github.io/Qcodes/examples/DataSet/DataSet-class-walkthrough.html) and [Performing measurements using qcodes parameters and dataset](https://qcodes.github.io/Qcodes/examples/DataSet/Performing-measurements-using-qcodes-parameters-and-dataset.html) for what we mean from `DataSet` and how we can pass an experiment explicitly.
 
-By default, the last experiment in the database is the default experiment. The default experiment can be changed if another experiment in the database is created or loaded. We will explore this in this notebook. 
+By default, the last experiment in the database is the default experiment. The default experiment can be changed if another experiment in the database is created or loaded. We will explore this in this notebook.
 
-Users should not worry about checking the default experiment in their normal workflow, but in this notebook, we show how it works to let them have an idea what the default experiment is and how it changes.  
+Users should not worry about checking the default experiment in their normal workflow, but in this notebook, we show how it works to let them have an idea what the default experiment is and how it changes.
 
 +++
 
@@ -166,7 +166,7 @@ get_default_experiment_id(conn)
 Now, we reset the default experiment and expect to see the last experiment (`exp_id`=3) is the default one:
 
 ```{code-cell} ipython3
-reset_default_experiment_id() # the explicit database connection can be used as an optional argument 
+reset_default_experiment_id() # the explicit database connection can be used as an optional argument
 ```
 
 ```{code-cell} ipython3

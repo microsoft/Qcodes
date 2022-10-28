@@ -123,7 +123,7 @@ As shown in the latter figure, the time to setup and and close the experiment is
 
 +++
 
-### Case2: Long experiment time 
+### Case2: Long experiment time
 
 ```{code-cell} ipython3
 sizes = [1,500,1000,2000,3000,4000,5000]
@@ -162,14 +162,14 @@ However, as we increase the length of the experiment, as seen here by repeating 
 
 +++
 
-## Loading the data 
+## Loading the data
 
 ```{code-cell} ipython3
 from qcodes.dataset.data_set import load_by_id
 ```
 
 As usual you can load the data by using the ``load_by_id`` function but you will notice that the different storage methods
-are reflected in shape of the data as it is retrieved. 
+are reflected in shape of the data as it is retrieved.
 
 ```{code-cell} ipython3
 run_id_n = t_numeric_run_ids[0]

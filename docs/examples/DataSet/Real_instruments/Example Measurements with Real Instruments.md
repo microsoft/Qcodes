@@ -90,7 +90,7 @@ with meas.run() as datasaver:
         R = sr830.R()
         datasaver.add_result((key.ch1.frequency, freq),
                              (sr830.R, R))
-        
+
     run_id = datasaver.run_id
 
 plot = plot_by_id(run_id)
@@ -109,12 +109,12 @@ meas.add_after_run(teardown, args=())
 
 
 with meas.run() as datasaver:
-    
+
     run_id = datasaver.run_id
-    
+
     taus = [0.001, 0.003, 0.01, 0.03]
     freqs = np.linspace(7.5e3, 12.5e3, 250)
-    
+
     for tau in taus:
         sr830.time_constant(tau)
         for freq in freqs:
@@ -124,7 +124,7 @@ with meas.run() as datasaver:
             datasaver.add_result((sr830.time_constant, tau),
                                  (key.ch1.frequency, freq),
                                  (sr830.R, R))
-            
+
 plot = plot_by_id(run_id)
 ```
 
@@ -144,10 +144,10 @@ meas.add_after_run(teardown, args=())
 
 with meas.run() as datasaver:
     run_id = datasaver.run_id
-    
+
     taus = [0.001, 0.003, 0.01, 0.03]
     freqs = np.linspace(7.5e3, 12.5e3, 250)
-    
+
     for tau in taus:
         sr830.time_constant(tau)
         for freq in freqs:
@@ -157,7 +157,7 @@ with meas.run() as datasaver:
             datasaver.add_result(('log_tau', np.log10(tau)),
                                  (key.ch1.frequency, freq),
                                  (sr830.R, R))
-            
+
 plot = plot_by_id(run_id)
 ```
 
@@ -191,9 +191,9 @@ def scope_setup():
     mso.trigger_edge_slope('positive')
     mso.ch1.trigger_level(0.1)
     mso.trigger_sweep('single')
-    
+
     mso.ch1.trace.prepare_curvedata()
-    
+
     mso.write('run')
 
 def keysight_setup():
@@ -203,7 +203,7 @@ def keysight_setup():
     key.ch2.frequency(1.3e2)
     key.ch2.burst_state('OFF')
     key.ch2.output('ON')
-    
+
 def keysight_teardown():
     key.ch2.output('OFF')
 ```
@@ -211,7 +211,7 @@ def keysight_teardown():
 ```{code-cell} ipython3
 meas = Measurement()
 meas.register_parameter(key.ch2.frequency)
-meas.register_parameter(mso.ch1.trace, setpoints=(key.ch2.frequency,)) 
+meas.register_parameter(mso.ch1.trace, setpoints=(key.ch2.frequency,))
 # the setpoints of the arrayparameter are registered automatically
 
 meas.add_before_run(scope_setup, args=())
@@ -226,6 +226,6 @@ with meas.run() as datasaver:
         trace = mso.ch1.trace.get()
         datasaver.add_result((key.ch2.frequency, freq),
                              (mso.ch1.trace, trace))
-        
+
 plot = plot_by_id(datasaver.run_id)
 ```

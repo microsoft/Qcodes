@@ -40,7 +40,7 @@ if simulation:
 else:
     from qcodes.instrument_drivers.Lakeshore.Model_372 import Model_372
     #                               put visa address here, see e.g. NI Max
-    #                               or look up the IP address on 
+    #                               or look up the IP address on
     #                               the instrument itself
     ls = Model_372('lakeshore_372', 'TCPIP::192.168.0.160::7777::SOCKET')
 ```
@@ -169,7 +169,7 @@ from matplotlib import pyplot as plt
 def live_plot_temperature_reading(channel_to_read, read_period=0.2, n_reads=1000):
     """
     Live plot the temperature reading from a Lakeshore sensor channel
-    
+
     Args:
         channel_to_read
             Lakeshore channel object to read the temperature from

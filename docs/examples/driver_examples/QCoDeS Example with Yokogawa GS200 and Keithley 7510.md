@@ -193,7 +193,7 @@ The DMM7510 digitize functions make fast, predictably spaced measurements. The s
 
 +++
 
-To set the digitize function to measure voltage, and the range. 
+To set the digitize function to measure voltage, and the range.
 
 ```{code-cell} ipython3
 dmm.digi_sense_function('voltage')
@@ -374,7 +374,7 @@ meas.register_parameter(buffer.data)
 with meas.run() as datasaver:
     data = buffer.data
     datasaver.add_result((buffer.data, data()))
-    
+
     dataid = datasaver.run_id
 ```
 
@@ -434,7 +434,7 @@ meas.register_parameter(buffer.data)
 with meas.run() as datasaver:
     data = buffer.data
     datasaver.add_result((buffer.data, data()))
-    
+
     dataid = datasaver.run_id
 ```
 
@@ -458,7 +458,7 @@ meas.register_parameter(buffer.data, paramtype="array")  # remember to set param
 with meas.run() as datasaver:
     data = buffer.data
     datasaver.add_result((buffer.data, data()))
-    
+
     dataid = datasaver.run_id
 ```
 

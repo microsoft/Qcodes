@@ -56,7 +56,7 @@ with meas.run() as datasaver:
 
     configurations = ['open', 'outer chamber closed',
                       'pumping', 'closed']
-    
+
     for configuration in configurations:
         datasaver.add_result((fridge_config, configuration),
                              (voltage, np.random.rand()))
@@ -73,7 +73,7 @@ with meas.run() as datasaver:
 
     configurations = ['open', 'outer chamber closed',
                       'pumping', 'closed']
-    
+
     for configuration in configurations:
         datasaver.add_result((fridge_config, configuration),
                              (voltage, np.random.rand()))
@@ -81,7 +81,7 @@ with meas.run() as datasaver:
 
     datasaver.add_result((fridge_config, 'open'),
                          (voltage, np.random.rand()))
-        
+
 dataset = datasaver.dataset
 
 _ = plot_dataset(dataset)
@@ -121,10 +121,10 @@ with meas.run() as datasaver:
             resp = 'Good'
         else:
             resp = 'Excellent'
-            
+
         datasaver.add_result((voltage, volt),
                              (response, resp))
-            
+
 dataset = datasaver.dataset
 ```
 
@@ -158,7 +158,7 @@ with meas.run() as datasaver:
 
     features = ['superconducting', 'qubit',
                 'clean states', 'high bandwidth']
-    
+
     for samp in ['Nanowire', 'Silicon Chip', 'SQUID', 'Membrane']:
 
         feats = np.random.randint(1, 5)
@@ -166,8 +166,8 @@ with meas.run() as datasaver:
 
             datasaver.add_result((sample, samp),
                                  (feature, features[np.random.randint(0, 4)]))
-    
-dataset = datasaver.dataset 
+
+dataset = datasaver.dataset
 ```
 
 ```{code-cell} ipython3
@@ -208,16 +208,16 @@ meas.register_parameter(conductance, setpoints=(sample, gate_voltage))
 
 
 with meas.run() as datasaver:
-    
+
     for samp in ['Nanowire', 'Silicon Chip', 'SQUID', 'Membrane']:
 
         gate_vs = np.linspace(0, 0.075, 75)
-        
+
         for gate_v in gate_vs:
             datasaver.add_result((sample, samp),
                                  (gate_voltage, gate_v),
                                  (conductance, len(samp)*gate_v))
-    
+
 dataset = datasaver.dataset
 ```
 
@@ -253,16 +253,16 @@ meas.register_parameter(conductance, setpoints=(gate_voltage, sample))
 
 
 with meas.run() as datasaver:
-    
+
     for samp in ['Nanowire', 'Silicon Chip', 'SQUID', 'Membrane']:
 
         gate_vs = np.linspace(0, 0.01, 75)
-        
+
         for gate_v in gate_vs:
             datasaver.add_result((sample, samp),
                                  (gate_voltage, gate_v),
                                  (conductance, len(samp)*gate_v))
-    
+
 dataset = datasaver.dataset
 ```
 
@@ -314,13 +314,13 @@ def get_usefulness(x, y):
     return 'Good'
 
 with meas.run() as datasaver:
-    
+
     for bias_v in np.linspace(0, 3, 100):
         for gate_v in np.linspace(-1, 1, 75):
             datasaver.add_result((bias_voltage, bias_v),
                                  (gate_voltage, gate_v),
                                  (useful, get_usefulness(bias_v, gate_v)))
-    
+
 dataset = datasaver.dataset
 ```
 
@@ -368,13 +368,13 @@ def get_usefulness(x, y):
     return 'Good'
 
 with meas.run() as datasaver:
-    
+
     for bias_v in 3*(np.random.rand(100)):
         for gate_v in 2*(np.random.rand(75)-0.5):
             datasaver.add_result((bias_voltage, bias_v),
                                  (gate_voltage, gate_v),
                                  (useful, get_usefulness(bias_v, gate_v)))
-    
+
 dataset = datasaver.dataset
 ```
 
@@ -423,13 +423,13 @@ def get_usefulness(x, y):
     return 'Good'
 
 with meas.run() as datasaver:
-    
+
     for samp in samples:
         for gate_v in np.linspace(-1, 1, 75):
             datasaver.add_result((sample, samp),
                                  (gate_voltage, gate_v),
                                  (useful, get_usefulness(samp, gate_v)))
-    
+
 dataset = datasaver.dataset
 ```
 
@@ -474,13 +474,13 @@ def get_usefulness(x, y):
     return 'Good'
 
 with meas.run() as datasaver:
-    
+
     for samp in samples:
         for gate_v in 2*(np.random.rand(75)-0.5):
             datasaver.add_result((sample, samp),
                                  (gate_voltage, gate_v),
                                  (useful, get_usefulness(samp, gate_v)))
-    
+
 dataset = datasaver.dataset
 ```
 

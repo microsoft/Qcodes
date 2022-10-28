@@ -23,7 +23,7 @@ import qcodes.instrument.parameter as parameter
 import qcodes.instrument_drivers.AlazarTech.ATS9360 as ATSdriver
 import qcodes.instrument_drivers.AlazarTech.ATS_acquisition_controllers as ats_contr
 from qcodes.utils.dataset import doNd
-from qcodes.dataset.plotting import plot_by_id 
+from qcodes.dataset.plotting import plot_by_id
 ```
 
 ### Setting up Alazar and performing an acquisition
@@ -76,18 +76,18 @@ with ats_inst.syncing():
     ats_inst.trigger_delay(0)
     ats_inst.aux_io_mode('AUX_IN_AUXILIARY') # AUX_IN_TRIGGER_ENABLE for seq mode on
     ats_inst.aux_io_param('NONE') # TRIG_SLOPE_POSITIVE for seq mode on
-    
+
     # Note that we set this parameter to a non-0 value for demonstration purposes - doing so allows
     # to perform an acquisition using just the Alazar card without any additional hardware.
     # Read Alazar SDK manual about `AlazarSetTriggerTimeOut` function for more information.
     ats_inst.timeout_ticks(0)
 ```
 
-The alazar qcodes driver is only for setting and/ or getting parameters defined in the manual of the card. Other acquisition functionalities at the moment are available in the module called ATS_acquisition_controllers. So, we instantiate this module with the already instantiated Alazar driver: 
+The alazar qcodes driver is only for setting and/ or getting parameters defined in the manual of the card. Other acquisition functionalities at the moment are available in the module called ATS_acquisition_controllers. So, we instantiate this module with the already instantiated Alazar driver:
 
 ```{code-cell} ipython3
-acquisition_controller = ats_contr.Demodulation_AcquisitionController(name='acquisition_controller', 
-                                                                      demodulation_frequency=10e6, 
+acquisition_controller = ats_contr.Demodulation_AcquisitionController(name='acquisition_controller',
+                                                                      demodulation_frequency=10e6,
                                                                       alazar_name='Alazar1')
 ```
 

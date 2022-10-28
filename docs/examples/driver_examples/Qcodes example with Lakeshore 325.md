@@ -13,7 +13,7 @@ kernelspec:
 
 # QCoDeS Example with Lakeshore 325
 
-Here provided is an example session with model 325 of the Lakeshore temperature controller 
+Here provided is an example session with model 325 of the Lakeshore temperature controller
 
 ```{code-cell} ipython3
 %matplotlib notebook
@@ -33,12 +33,12 @@ lake = Model_325("lake", "GPIB0::12::INSTR")
 ## Sensor commands
 
 ```{code-cell} ipython3
-# Check that the sensor is in the correct status 
+# Check that the sensor is in the correct status
 lake.sensor_A.status()
 ```
 
 ```{code-cell} ipython3
-# What temperature is it reading? 
+# What temperature is it reading?
 lake.sensor_A.temperature()
 ```
 
@@ -51,10 +51,10 @@ lake.sensor_A.temperature.unit
 assert lake.sensor_A is lake.sensor[0]
 ```
 
-## Heater commands 
+## Heater commands
 
 ```{code-cell} ipython3
-# In a closed loop configuration, heater 1 reads from... 
+# In a closed loop configuration, heater 1 reads from...
 lake.heater_1.input_channel()
 ```
 
@@ -63,14 +63,14 @@ lake.heater_1.unit()
 ```
 
 ```{code-cell} ipython3
-# Get the PID values 
+# Get the PID values
 print("P = ", lake.heater_1.P())
 print("I = ", lake.heater_1.I())
 print("D = ", lake.heater_1.D())
 ```
 
 ```{code-cell} ipython3
-# Is the heater on? 
+# Is the heater on?
 lake.heater_1.output_range()
 ```
 
@@ -150,7 +150,7 @@ from matplotlib import pyplot as plt
 def live_plot_temperature_reading(channel_to_read, read_period=0.2, n_reads=1000):
     """
     Live plot the temperature reading from a Lakeshore sensor channel
-    
+
     Args:
         channel_to_read
             Lakeshore channel object to read the temperature from
@@ -196,11 +196,11 @@ lake.heater_1.I(40)
 lake.heater_1.D(10)
 
 
-lake.heater_1.setpoint(15.0)  # <- temperature 
+lake.heater_1.setpoint(15.0)  # <- temperature
 live_plot_temperature_reading(lake.sensor_a, n_reads=400)
 ```
 
-## Querying the resistance and heater output 
+## Querying the resistance and heater output
 
 ```{code-cell} ipython3
 # to get the resistance of the system (25 or 50 Ohm)

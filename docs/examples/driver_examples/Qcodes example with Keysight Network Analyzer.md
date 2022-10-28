@@ -121,7 +121,7 @@ We can also read multiple traces off the PNA at once. For example if the PNA is 
  - Trace 2 is S12
  - Trace 3 is S21
  - Trace 4 is S22
- 
+
 we can read these off simultaneously as follows:
 
 ```{code-cell} ipython3

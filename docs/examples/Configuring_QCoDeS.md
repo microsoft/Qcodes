@@ -13,11 +13,11 @@ kernelspec:
 
 # QCoDeS config
 
-The QCoDeS config module uses JSON files to store QCoDeS configuration modeled after the module structure with some high-level switches. 
+The QCoDeS config module uses JSON files to store QCoDeS configuration modeled after the module structure with some high-level switches.
 
-The config file controls various options to QCoDeS such as the default path and name of the database in which your data is stored and logging level of the debug output. QCoDeS is shipped with a default configuration. As we describe below, you may overwrite these default values to customize QCoDeS for your nanoelectronics research. 
+The config file controls various options to QCoDeS such as the default path and name of the database in which your data is stored and logging level of the debug output. QCoDeS is shipped with a default configuration. As we describe below, you may overwrite these default values to customize QCoDeS for your nanoelectronics research.
 
-You may want to do something as simple as changing the default path of your database to something complex as including your own configuration variables. In this example notebook, we will explore some of the configuration variables, demonstrate how configuration values may be changed at runtime and saved to files, and explore using custom configuration values to suit your own needs.   
+You may want to do something as simple as changing the default path of your database to something complex as including your own configuration variables. In this example notebook, we will explore some of the configuration variables, demonstrate how configuration values may be changed at runtime and saved to files, and explore using custom configuration values to suit your own needs.
 
 +++
 
@@ -40,7 +40,7 @@ The config files are read in the following order:
 * QCODES_CONFIG environment variable
 * Current working directory
 
-Meaning that any value set in a config file in the package default is overwritten by the same value in the users home dir and so on. 
+Meaning that any value set in a config file in the package default is overwritten by the same value in the users home dir and so on.
 
 Note: A change in the configuration requires reimporting the package, or restarting the notebook kernel.
 
@@ -67,7 +67,7 @@ Defaults are the settings that are shipped with the package, which you can overw
 +++
 
 A way to customize QCoDeS is to write your own JSON files, they are expected to be in the directories printed below and documented above.
-One will be empty because one needs to define first the environment variable in the OS. 
+One will be empty because one needs to define first the environment variable in the OS.
 
 They are ordered by "weight", meaning that the last file always wins if it's overwriting any preconfigured defaults or values in the other files.
 
@@ -90,7 +90,7 @@ The new entry is saved in the 'user' part of the configuration.
 print(qc.config.describe('user.base_location'))
 ```
 
-You can also manually update the configuration from a specific file by supplying the path of the directory as the argument of `qc.config.update_config` method as follows: 
+You can also manually update the configuration from a specific file by supplying the path of the directory as the argument of `qc.config.update_config` method as follows:
 
 ```{code-cell} ipython3
 qc.config.update_config(path="C:\\Users\\jenielse\\")
@@ -130,13 +130,13 @@ qc.config.current_config
 +++
 
 One can change the core values at runtime, but there is no guarantee that they are going to be valid.
-Since user configuration shadows the default one that comes with QCoDeS, apply care when changing the values under `core` section. This section is, primarily, meant for the settings that are determined by QCoDeS core developers. 
+Since user configuration shadows the default one that comes with QCoDeS, apply care when changing the values under `core` section. This section is, primarily, meant for the settings that are determined by QCoDeS core developers.
 
 ```{code-cell} ipython3
 qc.config.current_config.core.loglevel = 'INFO'
 ```
 
-But one can manually validate via 
+But one can manually validate via
 
 ```{code-cell} ipython3
 qc.config.validate()
@@ -147,5 +147,5 @@ Which will raise an exception in case of bad inputs
 ```{code-cell} ipython3
 qc.config.current_config.core.loglevel = 'YOLO'
 qc.config.validate()
-# NOTE that you how have a broken config! 
+# NOTE that you how have a broken config!
 ```

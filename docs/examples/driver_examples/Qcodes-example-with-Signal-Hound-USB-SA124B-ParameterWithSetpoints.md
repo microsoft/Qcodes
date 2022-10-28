@@ -47,7 +47,7 @@ meas.register_parameter(mysa.freq_sweep)
 with meas.run() as datasaver:
     datasaver.add_result((mysa.frequency_axis, mysa.frequency_axis.get()),
                          (mysa.freq_sweep, mysa.freq_sweep.get(),))
-    
+
     dataid = datasaver.run_id
 plot_by_id(dataid)
 ```
@@ -59,7 +59,7 @@ meas.register_parameter(mysa.freq_sweep)
 with meas.run() as datasaver:
     datasaver.add_result((mysa.frequency_axis, mysa.frequency_axis.get()),
                          (mysa.freq_sweep, mysa.freq_sweep.get(),))
-    
+
     dataid = datasaver.run_id
 plot_by_id(dataid)
 ```
@@ -71,7 +71,7 @@ meas.register_parameter(mysa.freq_sweep)
 with meas.run() as datasaver:
     datasaver.add_result((mysa.frequency_axis, mysa.frequency_axis.get()),
                          (mysa.freq_sweep, mysa.freq_sweep.get(),))
-    
+
     dataid = datasaver.run_id
 plot_by_id(dataid)
 ```

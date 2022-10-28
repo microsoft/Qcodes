@@ -51,7 +51,7 @@ print(qdac.ch01.i.get(), qdac.ch01.i.unit)
 ```{code-cell} ipython3
 # The current range can be either 0 to 1 μA or 0 to 100 μA
 print(qdac.ch01.irange.get())
-# This is set with either 0 (0 to 1 μA) or 1 (0 to 100 μA) 
+# This is set with either 0 (0 to 1 μA) or 1 (0 to 100 μA)
 qdac.ch01.irange.set(1)
 ```
 

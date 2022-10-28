@@ -15,7 +15,7 @@ kernelspec:
 
 +++
 
-This notebooks explains an alternative way of measuring where the raw data is not written directly to a sqlite database file but only kept in memory with the ability to export the data after the measurement is completed. This may significantly speed up measurements where a lot of data is acquired but there is no protection against any data lose that may happen during a measurement. (Power loss, computer crash etc.) However, there may be situations where this trade-off is worthwhile. Please do only use the in memory dataset for measurements if you understand the risks. 
+This notebooks explains an alternative way of measuring where the raw data is not written directly to a sqlite database file but only kept in memory with the ability to export the data after the measurement is completed. This may significantly speed up measurements where a lot of data is acquired but there is no protection against any data lose that may happen during a measurement. (Power loss, computer crash etc.) However, there may be situations where this trade-off is worthwhile. Please do only use the in memory dataset for measurements if you understand the risks.
 
 ```{code-cell} ipython3
 %matplotlib inline
@@ -55,7 +55,7 @@ initialise_or_create_database_at("./in_mem_example.db")
 exp = load_or_create_experiment(experiment_name="in_mem_exp", sample_name="no sample")
 ```
 
-And run a standard experiment writing data to the database: 
+And run a standard experiment writing data to the database:
 
 ```{code-cell} ipython3
 meas = Measurement(exp=exp)
@@ -119,7 +119,7 @@ As expected we can see this file in the current directory.
 !dir
 ```
 
-Note that you can interact with the dataset via the `cache` attribute of the dataset in the same way as you can with a regular dataset. However the in memory dataset does not implement methods that provide direct access to the data from the dataset object it self (get_parameter_data etc.) since these read data from the database. 
+Note that you can interact with the dataset via the `cache` attribute of the dataset in the same way as you can with a regular dataset. However the in memory dataset does not implement methods that provide direct access to the data from the dataset object it self (get_parameter_data etc.) since these read data from the database.
 
 +++
 

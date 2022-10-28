@@ -58,31 +58,31 @@ Setting/ getting attributes/ methods of a mode ('VOLT' or 'CURR') is only possib
 try:
     gs.voltage(0.1) # Set the voltage
     print("Something has gone wrong.")
-except: 
+except:
     print("Exception correctly raised.")
-    
+
 try:
     gs.voltage() # Get the voltage
     print("Something has gone wrong.")
-except: 
+except:
     print("Exception correctly raised.")
-    
+
 try:
     gs.voltage_range(10) # Set the voltage_range
     print("Something has gone wrong.")
-except: 
+except:
     print("Exception correctly raised.")
-    
+
 try:
     gs.voltage_range() # Get the voltage_range
     print("Something has gone wrong.")
-except: 
+except:
     print("Exception correctly raised.")
-    
+
 try:
     gs.ramp_voltage(5, 1, 1) # Get the voltage_range
     print("Something has gone wrong.")
-except: 
+except:
     print("Exception correctly raised.")
 ```
 
@@ -116,11 +116,11 @@ try:
     print("The current value is withing the present current_range")
 except:
     print("Exception incorrectly raised.")
-    
+
 try:
     gs.current(0.1)
     print("Something has gone wrong.")
-except: 
+except:
     print(f"Exception is correctly raised. The value is out of the present "
           f"range of {gs.current_range()} A.")
 ```
@@ -180,7 +180,7 @@ try:
 except:
     print("Exception is correctly raised. Ramping is stopped at {} A because the"
           " range is exceeded".format(gs.current()))
-    
+
 ```
 
 Now, we switch to the 'VOLT' mode and test a few things:

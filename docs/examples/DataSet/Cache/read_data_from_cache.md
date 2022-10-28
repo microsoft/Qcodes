@@ -20,7 +20,7 @@ import time
 
 This notebook is meant to be used together with [Write data to cache](./write_for_caching.ipynb) to demonstate the use of the datasets cache interactively from another process. It demonstrates how data can be read gradually into the cache as the data is written by the other notebook. This is intended to be useful for plotting or other monitoring of the data as it is written. In the line below insert the ``captured_run_id`` of the dataset being captured in the other notebook.
 
-The cache has the same format as the data read from `dataset.get_parameter_data` 
+The cache has the same format as the data read from `dataset.get_parameter_data`
 
 ```{code-cell} ipython3
 dataset_run_id = 170

@@ -73,7 +73,7 @@ with meas.run() as datasaver:
             datasaver.add_result((dac.ch1, v1),
                                  (dac.ch2, v2),
                                  (dmm.v2, val))
-            
+
 dataset1 = datasaver.dataset
 ```
 
@@ -94,8 +94,8 @@ with meas.run() as datasaver:
 dataset2 = datasaver.dataset
 ```
 
-Two methods exists for extracting data to pandas dataframes. `to_pandas_dataframe` exports all the data from the dataset into a single dataframe. 
-`to_pandas_dataframe_dict` returns the data as a dict from measured (dependent) parameters to DataFrames. 
+Two methods exists for extracting data to pandas dataframes. `to_pandas_dataframe` exports all the data from the dataset into a single dataframe.
+`to_pandas_dataframe_dict` returns the data as a dict from measured (dependent) parameters to DataFrames.
 
 Please note that the `to_pandas_dataframe` is only intended to be used when all dependent parameters have the same setpoint. If this is not the case for the DataSet then `to_pandas_dataframe_dict` should be used.
 
@@ -156,7 +156,7 @@ df.loc[(slice(-1, -0.95), slice(-1, -0.97)), :]
 
 +++
 
-In many cases when working with data on rectangular grids it may be more convenient to export the data to a [XArray](http://xarray.pydata.org) Dataset or DataArray. This is especially true when working in multi-dimentional parameter space. 
+In many cases when working with data on rectangular grids it may be more convenient to export the data to a [XArray](http://xarray.pydata.org) Dataset or DataArray. This is especially true when working in multi-dimentional parameter space.
 
 Let's setup and rerun the above measurment with the added dependent parameter `dmm.v1`.
 
@@ -179,7 +179,7 @@ with meas.run() as datasaver:
                                  (dac.ch2, v2),
                                  (dmm.v1, val1),
                                  (dmm.v2, val2))
-            
+
 dataset3 = datasaver.dataset
 ```
 

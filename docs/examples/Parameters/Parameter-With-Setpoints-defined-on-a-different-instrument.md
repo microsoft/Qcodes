@@ -13,9 +13,9 @@ kernelspec:
 
 # ParameterWithSetpoints with setpoints defined on another instrument.
 
-This notebook provides an example for writing a ParameterWithSetpoints that 
-gets it setpoints from a different instrument. 
-This is meant as an extension [Simple Example of ParameterWithSetpoints](Simple-Example-of-ParameterWithSetpoints.ipynb) which you should read before reading this notebook. 
+This notebook provides an example for writing a ParameterWithSetpoints that
+gets it setpoints from a different instrument.
+This is meant as an extension [Simple Example of ParameterWithSetpoints](Simple-Example-of-ParameterWithSetpoints.ipynb) which you should read before reading this notebook.
 
 This is meant for the situation where an instrument has the capability to capture data into a buffer. This could be either by measuring a time series or by capturing each datapoint in the buffer via an external trigger. Such an instrument could capture the data into a ParameterWithSetpoints that user the time or the index of the buffer as setpoints. However, this is typically not very useful as the setpoints that are relevant for your experiment are often set by another instrument that is being swept as you read data into the buffer of the first instrument. This notebook shows an example of how you can generate the setpoints from the sweep settings of another instrument.
 
@@ -41,7 +41,7 @@ from qcodes.dataset.experiment_container import load_or_create_experiment
 from qcodes.instrument.parameter import ParameterWithSetpoints, Parameter, DelegateParameter
 ```
 
-First, we define a dummy instrument that returns something like a current measurement buffer starting from a DelegateParameter given by `sweep_start` to one given by `sweep_stop` in `n_points` steps. 
+First, we define a dummy instrument that returns something like a current measurement buffer starting from a DelegateParameter given by `sweep_start` to one given by `sweep_stop` in `n_points` steps.
 
 A function is added that allows you to set the parameters that `sweep_start` and `sweep_stop` delegates to.
 
@@ -62,20 +62,20 @@ class GeneratedSetPoints(Parameter):
                               self._numpointsparam())
 
 
-    
+
 class DummyArray(ParameterWithSetpoints):
-    
+
     def get_raw(self):
         npoints = self.root_instrument.sweep_n_points.get_latest()
         return np.random.rand(npoints)
-    
+
 
 class DummyBufferedDMM(Instrument):
-    
+
     def __init__(self, name, **kwargs):
-        
+
         super().__init__(name, **kwargs)
-            
+
 
         self.add_parameter('sweep_start',
                            source=None,
@@ -91,14 +91,14 @@ class DummyBufferedDMM(Instrument):
                            vals=Numbers(1,1e3),
                            get_cmd=None,
                            set_cmd=None)
-        
+
         self.add_parameter('setpoints',
                            parameter_class=GeneratedSetPoints,
                            startparam=self.sweep_start,
                            stopparam=self.sweep_stop,
                            numpointsparam=self.sweep_n_points,
                            vals=Arrays(shape=(self.sweep_n_points.get_latest,)))
-                           
+
         self.add_parameter('current',
                            get_cmd=self._get_current_data,
                            unit='A',
@@ -123,7 +123,7 @@ class DummyBufferedDMM(Instrument):
 
 
 class DummyWaveformGenerator(Instrument):
-    
+
     def __init__(self, name, **kwargs):
 
         super().__init__(name, **kwargs)
@@ -157,7 +157,7 @@ dmm = DummyBufferedDMM('dmm')
 wg = DummyWaveformGenerator('wg')
 ```
 
-First, we assume that we have wired up our instruments such that the current buffer will 
+First, we assume that we have wired up our instruments such that the current buffer will
 correspond to a voltage sweep from `v_start` to `v_stop`
 
 For a real world experiment this would probably be wired such that the DMM is triggered at the start of the voltage sweep and then automatically measures `sweep_n_points` in the time that it takes the waveform generator to sweep to `v_stop`
@@ -187,7 +187,7 @@ len(sp_axis)
 sp_axis[:10]
 ```
 
-As expected we get a result wit 501 points as we asked for an axis with 501 points. 
+As expected we get a result wit 501 points as we asked for an axis with 501 points.
 
 ```{code-cell} ipython3
 dmm.setpoints.validate(dmm.setpoints.get())
@@ -226,7 +226,7 @@ meas.register_parameter(dmm.current)
 
 with meas.run() as datasaver:
     datasaver.add_result((dmm.current, dmm.current()))
-    
+
     dataid = datasaver.run_id
 plot_dataset(datasaver.dataset)
 ```
@@ -241,7 +241,7 @@ meas.register_parameter(dmm.current)
 
 with meas.run() as datasaver:
     datasaver.add_result((dmm.current, dmm.current()))
-    
+
     dataid = datasaver.run_id
 plot_dataset(datasaver.dataset)
 ```
@@ -254,7 +254,7 @@ class DummyMagnetPS(Instrument):
     We assume this is a powersupply for an magnet that allows
     you to set the magnetic field.
     """
-    
+
     def __init__(self, name, **kwargs):
 
         super().__init__(name, **kwargs)
@@ -290,7 +290,7 @@ meas.register_parameter(dmm.current)
 
 with meas.run() as datasaver:
     datasaver.add_result((dmm.current, dmm.current()))
-    
+
     dataid = datasaver.run_id
 plot_dataset(datasaver.dataset)
 ```

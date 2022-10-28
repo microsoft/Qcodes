@@ -67,7 +67,7 @@ pprint(a_sweep.snapshot())
 ## Loop/Measurement snapshot
 
 ```{code-cell} ipython3
-# All this is of course nice since a snapshot is saved every time a measurement is 
+# All this is of course nice since a snapshot is saved every time a measurement is
 # performed. Let's see this in action with a Loop.
 
 # This is a qc.loop, sweeping a dac gate and reading a dmm voltage
@@ -79,12 +79,12 @@ pprint(lp.snapshot())
 ```
 
 ```{code-cell} ipython3
-# After the loop has run, the dataset contains more information, in particular the 
+# After the loop has run, the dataset contains more information, in particular the
 # snapshots for ALL parameters off ALL instruments in the station
 data = lp.run('data/dataset')
 pprint(data.snapshot())
 
-# This is the snapshot that get's saved to disk alongside your data. 
+# This is the snapshot that get's saved to disk alongside your data.
 # It's worthwhile familiarising yourself with it, so that you may retrieve
 # valuable information down the line!
 ```

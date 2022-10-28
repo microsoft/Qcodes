@@ -128,7 +128,7 @@ The Switch matrix has two *connection rules*:
     - each input port can be connected to only one output port
     - and each output port can be connected to only one input port.
     - existing connection to a port will be disconnected when a new connection is made.
-    
+
 **Note: when switching from *free* to *single* mode, 1-to-multiple connections will not be changed until the connection is changed!!**
 
 +++
@@ -157,7 +157,7 @@ print(switch_matrix.connections()) # {(2, 33), (2, 12)}
 # ! DANGER ZONE !
 # Connecting multiple inputs to the same output: This can cause damage if there
 # two sources on the input pins as they will be short circuited
-# 
+#
 # Uncomment and set to `True` if you know what you're doing:
 # I_know_what_I_am_doing = False
 # I_have_checked_there_are_no_two_sources_on_Input_5_and_6 = False
@@ -167,10 +167,10 @@ print(switch_matrix.connections()) # {None}
 try:
     assert I_know_what_I_am_doing
     assert I_have_checked_there_are_no_two_sources_on_Input_5_and_6
-    
+
     switch_matrix.connect(5, 14)
     print(switch_matrix.connections()) # {(5, 14)}
-    
+
     switch_matrix.connect(6, 14) # Input 5 and 6 are now both connected to Output 14
     print(switch_matrix.connections()) # {(5, 14), (6, 14)}
 
@@ -195,13 +195,13 @@ print(switch_matrix.connections()) # {(2, 48)}
 switch_matrix.connect(5, 9)
 print(switch_matrix.connections()) # {(2, 48), (5, 9)}
 
-# The following command will implicitly release the 2->48 connection because 
+# The following command will implicitly release the 2->48 connection because
 # input 2 will be used to connect to output 48
 switch_matrix.connect(2, 12)
 print(switch_matrix.connections()) # {(2, 12), (5, 9)}
 ```
 
-**Note that even though a connection like {2->33, 2->12} or {5->14, 6->14} would be impossible 
+**Note that even though a connection like {2->33, 2->12} or {5->14, 6->14} would be impossible
 to *create* in *Single Route* Mode it can still exist if it was created previously in *Free Route* mode!**
 
 The reason is if the connection was made in *Free Route* mode and after that *Single Route* was activated the connections will **persist**. The following example illustrates this:
@@ -216,7 +216,7 @@ switch_matrix.connect(2,44) # Connections: {(2, 18), (2, 44)}
 switch_matrix.connect(2,45) # Connections: {(2, 18), (2, 44), (2, 45)}
 
 switch_matrix.connection_rule('single') # *Single Route* Mode is activated
-# Still multiple Outputs connected to Input 2! 
+# Still multiple Outputs connected to Input 2!
 print(switch_matrix.connections()) # Connections: {(2, 18), (2, 44), (2, 45)}
 
 # The following command will only implcitly release the 2->45 connection:
@@ -331,8 +331,8 @@ In general designating an input port as *ground input* **does not automatically 
 The **exception to this are input 12 and 13**, both have special internal circuitry. If *ground mode* is set to *ON* and
   - If Input 12 is selected as *ground input*, then the inner conductor of the BNC connector is **left floating** and the **internal inner conductor is connected to GND**
   - If Input 13 is selected as *ground input*, then the **inner conductor of the BNC connector AND the internal inner conductor is connected to GND**
-  
-So for both Input 12 and 13 no external Short Circuit Connector Cap is required. 
+
+So for both Input 12 and 13 no external Short Circuit Connector Cap is required.
 
 **Note: For Input 13 care must be taken that no source is connected to the input as otherwise it will be shorted to GND which might cause damage**.
 
@@ -345,7 +345,7 @@ print("The Ground Input Port is: ", switch_matrix.gnd_input_port())
 # I_have_made_sure_that_there_is_no_source_connected_to_input_13 = False
 try:
     assert I_have_made_sure_that_there_is_no_source_connected_to_input_13
-    
+
     # Changing the ground input port can be done so:
     switch_matrix.gnd_input_port(13)
 except:
@@ -405,7 +405,7 @@ switch_matrix.gnd_enable_output(33)
 # Now
 #  - Ground enabled inputs are [5,6,7,8]
 #  - Ground enabled Outputs are [12, 33]
-# 
+#
 # They are not connected to ground yet because Ground Mode is still OFF!
 ```
 
@@ -414,7 +414,7 @@ switch_matrix.gnd_mode(True)
 
 # Now Inputs [5,6,7,8], and Outputs [12, 13] are connected to ground
 # (because they are not connected to anything else)
-# 
+#
 # All other inputs and outputs are still floating
 
 print(switch_matrix.connections()) # {(12, 12), (12, 33)} # (Only lists connections of output ports!)
@@ -492,7 +492,7 @@ print(switch_matrix.connections())
 ```{code-cell} ipython3
 switch_matrix.bias_mode(True)
 # Now all outputs besides Outputs [15, 17] are connected to bias input port (Port 10 by default)
-# 
+#
 # Only Outputs [15, 17] will be left floating
 print(switch_matrix.connections()) # {(10, 37), (10, 11), (10, 42), (10, 48), (10, 6), (10, 21), (10, 46), (10, 26), (10, 3), (10, 34), (10, 8), (10, 30), (10, 43), (10, 7), (10, 38), (10, 12), (10, 18), (10, 47), (10, 27), (10, 22), (10, 35), (10, 9), (10, 31), (10, 40), (10, 4), (10, 39), (10, 13), (10, 19), (10, 44), (10, 24), (10, 1), (10, 23), (10, 32), (10, 28), (10, 41), (10, 5), (10, 36), (10, 10), (10, 16), (10, 45), (10, 25), (10, 14), (10, 20), (10, 33), (10, 29), (10, 2)}
 
@@ -517,7 +517,7 @@ print((4, 11) in switch_matrix.connections()) # False => connection (4, 11) was 
 ```
 
 ```{code-cell} ipython3
-# JUst as with GND mode, in bias mode you cannot use the bias input port in the 
+# JUst as with GND mode, in bias mode you cannot use the bias input port in the
 # `connect`and `disconnect` commandsto make an explicit connection manually to the bias input:
 
 switch_matrix.connect(10, 17) # Try to make an connection to input port 10 with bias-disabled port 17
@@ -552,9 +552,9 @@ When making the connections always keep these rule in mind:
     - e.g. Input `6` will connect to `2`, `6`, or `34`
     - Input `6` will never connect to `1`, `9`, `21`
   - In a pair the **odd** port is always the lower port number.
-    - When `(7,8)` are coupled and sending the command `switch_matrix.connect(7, 24)` the switch matrix 
+    - When `(7,8)` are coupled and sending the command `switch_matrix.connect(7, 24)` the switch matrix
       - will make the following connection: `7->23`, `8->24`
-      - It will **NOT** make `7->24`, `8->25` or `7->24`, `8->23` or 
+      - It will **NOT** make `7->24`, `8->25` or `7->24`, `8->23` or
 
 Because of the above rules it us usually easiest if you always work with the **lower, odd number** in the commands. So for pair `(3,4)` use `3` in the commands.
 
@@ -625,11 +625,11 @@ A very nice feature is that couple ports can also  be autodetected. This assumes
 Setup: connect
  - `SMU +F` to input 3
  - `SMU +S` to input 4
- - `SMU -F` to input 7 
- - `SMU -S` to input 8 
+ - `SMU -F` to input 7
+ - `SMU -S` to input 8
 
 ```{code-cell} ipython3
-switch_matrix.couple_port_autodetect() 
+switch_matrix.couple_port_autodetect()
 print("after autodetecting couple ports: ", switch_matrix.connections())
 # Will recognize SMU Kelvin connection on Port pairs (3,4) and  (7,8) and enable couple mode for these ports.
 ```
@@ -643,7 +643,7 @@ Just for illustration a **bad example**: Connect the SMU as follows:
  - `SMU -S` to input 8  -  **Switch matrix will not detect this**
 
 ```{code-cell} ipython3
-switch_matrix.couple_port_autodetect() 
+switch_matrix.couple_port_autodetect()
 print("after autodetecting couple ports: ", switch_matrix.connections())
 
 # Since the Kelvin pairs are not connected to pairs of couple ports, the Switch

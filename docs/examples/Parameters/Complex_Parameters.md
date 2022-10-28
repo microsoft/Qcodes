@@ -92,7 +92,7 @@ try:
     amps_val_strict.validate(np.array([1, 2, 3, 4, 5]))
 except TypeError:
     print('Sorry, but integers are not strictly complex')
-    
+
 try:
     amps_val_strict.validate(np.array([1.0, 2.0, 3.0, 4.0, 5.0]))
 except TypeError:

@@ -16,7 +16,7 @@ kernelspec:
 In this example we will setup a number of [four-wire measurements](https://en.wikipedia.org/wiki/Four-terminal_sensing) with the 2540 source meter. We attach a variable resistor to the front terminals and determine if we can measure the correct resistance.
 
 ```{code-cell} ipython3
-import qcodes as qc 
+import qcodes as qc
 from qcodes.instrument_drivers.tektronix.Keithley_2450 import Keithley2450
 from qcodes.dataset import initialise_database, Measurement, new_experiment
 from qcodes.dataset.plotting import plot_dataset
@@ -31,16 +31,16 @@ keithley = Keithley2450("keithley", "GPIB0::18::INSTR")
 keithley.reset()
 ```
 
-## Single point measurements 
+## Single point measurements
 
 +++
 
-Attach a variable resistor to the front and source a current 
+Attach a variable resistor to the front and source a current
 
 ```{code-cell} ipython3
 keithley.terminals("front")
 keithley.source.function("current")
-keithley.source.current(1E-6)  # Put 1uA through the resistor 
+keithley.source.current(1E-6)  # Put 1uA through the resistor
 current_setpoint = keithley.source.current()
 
 voltage = keithley.sense.function("voltage")
@@ -63,32 +63,32 @@ print(f"Measured resistance: ",  resistance)
 In 'current' mode, we cannot set/get a voltage and vice versa
 
 ```{code-cell} ipython3
-try: 
+try:
     keithley.source.voltage()
-except AttributeError as err: 
+except AttributeError as err:
     function = keithley.source.function()
     print(f"In the '{function}' source mode the source module does not have a 'voltage' attribute")
 ```
 
-This goes for both the source and sense subsystems 
+This goes for both the source and sense subsystems
 
 ```{code-cell} ipython3
-try: 
+try:
     keithley.sense.current()
 except AttributeError as err:
     function = keithley.sense.function()
     print(f"In the '{function}' sense mode the sense module does not have a 'current' attribute")
 ```
 
-We also need to make sure the output is enabled for use the measure (or 'sense') a current or voltage 
+We also need to make sure the output is enabled for use the measure (or 'sense') a current or voltage
 
 +++
 
-## Sweeping measurements 
+## Sweeping measurements
 
 +++
 
-The instrument has a build-in sweep system. For the first measurement, we drive a current through the resistor and measure the voltage accross it. 
+The instrument has a build-in sweep system. For the first measurement, we drive a current through the resistor and measure the voltage accross it.
 
 ```{code-cell} ipython3
 initialise_database()
@@ -122,7 +122,7 @@ with meas.run() as datasaver:
 plot_dataset(datasaver.dataset)
 ```
 
-Sweep the voltage from 10mV in 10 steps and measure current 
+Sweep the voltage from 10mV in 10 steps and measure current
 
 ```{code-cell} ipython3
 keithley.sense.function("current")
@@ -240,5 +240,5 @@ try:
     buffer.elements(['dates'])
 except ValueError as err:
     print(err)
-    
+
 ```

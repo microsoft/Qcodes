@@ -15,7 +15,7 @@ kernelspec:
 
 +++
 
-This notebook demonstrates how we can export QCoDeS datasets to other file formats. 
+This notebook demonstrates how we can export QCoDeS datasets to other file formats.
 
 +++
 
@@ -130,7 +130,7 @@ Looking at the signature of export we can see that in addition to the file forma
 
 +++
 
-Datasets may also be exported automatically using the configuration options given in dataset config section. 
+Datasets may also be exported automatically using the configuration options given in dataset config section.
 Here you can toggle if a dataset should be exported automatically using the `export_automatic` option as well as set the default type, prefix, elements in the name, and path. See [the table here](https://qcodes.github.io/Qcodes/user/configuration.html) for the relevant configuration options.
 
 For more information about how to configure QCoDeS datasets see [the page about configuration](https://qcodes.github.io/Qcodes/user/configuration.html)  in the QCoDeS docs.
@@ -147,7 +147,7 @@ The above dataset has been created in the following database
 qc.config.core.db_location
 ```
 
-Now lets imagine that we move the exported dataset to a different computer. To emulate this we will create a new database file and set it as the active database. 
+Now lets imagine that we move the exported dataset to a different computer. To emulate this we will create a new database file and set it as the active database.
 
 ```{code-cell} ipython3
 initialise_or_create_database_at("./reimport_example.db")
@@ -158,7 +158,7 @@ qc.config.core.db_location
 ```
 
 We can then reload the dataset from the netcdf file as a DataSetInMem. This is a class that closely matches the regular DataSet class however its metadata may or may not be written to a database file and its data is not written to a database file. See more in [
-In memory dataset](./InMemoryDataSet.ipynb) . Concretely this means that the data captured in the dataset can be acceced via `dataset.cache.data` etc. and not via the methods directly on the dataset (`dataset.get_parameter_data` ...) 
+In memory dataset](./InMemoryDataSet.ipynb) . Concretely this means that the data captured in the dataset can be acceced via `dataset.cache.data` etc. and not via the methods directly on the dataset (`dataset.get_parameter_data` ...)
 
 Note that it is currently only possible to reload a dataset from a netcdf export and not from a csv export. This is due to the fact that a csv export only contains the raw data and not the metadata needed to recreate a dataset.
 
@@ -189,7 +189,7 @@ captured_run_id = loaded_ds.captured_run_id
 captured_run_id
 ```
 
-But do note that the `run_id` and `counter` are in general not preserved since they represent the datasets number in a given db file. 
+But do note that the `run_id` and `counter` are in general not preserved since they represent the datasets number in a given db file.
 
 ```{code-cell} ipython3
 loaded_ds.run_id
@@ -218,9 +218,9 @@ plot_dataset(reloaded_ds)
 Note that loading a dataset from the database will also load the raw data into `dataset.cache` provided that the `netcdf` file is still in the location where file was when the metadata was written to the database. Load_by_runspec and related functions will load data into a regular `DataSet` provided that the data can be found in the database otherwise it will be loaded into a `DataSetInMem`
 
 
-If the netcdf file cannot be found the dataset will load with a warning and the raw data will not be accessible from the dataset. 
+If the netcdf file cannot be found the dataset will load with a warning and the raw data will not be accessible from the dataset.
 
-If this happens because you have moved the location of a netcdf file you can use the method ``set_netcdf_location`` to set a new location for the the netcdf file in the dataset and database file. 
+If this happens because you have moved the location of a netcdf file you can use the method ``set_netcdf_location`` to set a new location for the the netcdf file in the dataset and database file.
 Here we demonstrate this by copying the netcdf file and changing the location using this method.
 
 ```{code-cell} ipython3

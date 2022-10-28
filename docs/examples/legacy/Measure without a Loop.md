@@ -30,11 +30,11 @@ dac1 = DummyInstrument(name="dac")
 dac2 = DummyChannelInstrument(name="dac2")
 
 
-# the default dummy instrument returns always a constant value, in the following line we make it random 
+# the default dummy instrument returns always a constant value, in the following line we make it random
 # just for the looks 💅
 dac2.A.dummy_array_parameter.get =  lambda: np.random.randint(0, 100, size=5)
 
-# The station is a container for all instruments that makes it easy 
+# The station is a container for all instruments that makes it easy
 # to log meta-data
 station = qc.Station(dac1, dac2)
 ```

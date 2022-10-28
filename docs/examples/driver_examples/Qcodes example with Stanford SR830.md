@@ -60,7 +60,7 @@ from pprint import pprint
 pprint(list(sr.SNAP_PARAMETERS.keys()))
 ```
 
-Method `snap` can be used in the following manner. 
+Method `snap` can be used in the following manner.
 
 ```{code-cell} ipython3
 sr.snap('x','y','phase')
@@ -80,7 +80,7 @@ sr.autorange(max_changes=2)
 
 The SR830 has two internal data buffers corresponding to the displays of channel 1 and channel 2.
 Here we present a simple way to use the buffers.
-The buffer can be filled either at a constant sampling rate or by sending an trigger. 
+The buffer can be filled either at a constant sampling rate or by sending an trigger.
 Each buffer can hold 16383 points. The buffers are filled simultaneously. The QCoDeS driver always pulls the entire buffer, so make sure to reset (clear) the buffer of old data before starting and acquisition.
 
 We setup channel 1 and the buffer to be filled at a constant sampling rate:
@@ -108,7 +108,7 @@ doNd.do0d(sr.ch1_datatrace, do_plot=True)
 ```
 
 ### Software trigger
-Below we will illustrate how a software trigger can be sent to fill the buffer on the instrument. For Illustrative purposes, we define a Dummy Generator, that we wish to set before each measurement. 
+Below we will illustrate how a software trigger can be sent to fill the buffer on the instrument. For Illustrative purposes, we define a Dummy Generator, that we wish to set before each measurement.
 
 ```{code-cell} ipython3
 class DummyGenerator(Instrument):
@@ -132,7 +132,7 @@ class DummyGenerator(Instrument):
                            vals=Numbers(1,1e3),
                            get_cmd=None,
                            set_cmd=None)
-        
+
         self.add_parameter('v_gen',
                            initial_value=0,
                            unit='V',
@@ -146,7 +146,7 @@ class DummyGenerator(Instrument):
 gen = DummyGenerator('gen')
 ```
 
-We can now setup the lock-in to use the trigger 
+We can now setup the lock-in to use the trigger
 
 ```{code-cell} ipython3
 sr.ch1_ratio('none')
@@ -176,7 +176,7 @@ for v in sr.sweep_setpoints.get():
 doNd.do0d(sr.ch1_datatrace, do_plot=True)
 ```
 
-We are not restricted to sample on an equally spaced grid. We can set the sweep_array directly.  
+We are not restricted to sample on an equally spaced grid. We can set the sweep_array directly.
 
 ```{code-cell} ipython3
 grid_sample = np.concatenate((np.linspace(0, 0.5, 5),np.linspace(0.51, 1, 50)))

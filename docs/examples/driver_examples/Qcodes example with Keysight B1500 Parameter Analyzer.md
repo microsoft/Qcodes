@@ -29,7 +29,7 @@ Here a short introduction on how the B1500 measurement system is composed is giv
 The Keysight B1500 Semiconductor Parameter Analyzer consists of a *Mainframe* and can be equipped with various instrument *Modules*. 10 *Slots* are available in which up to 10 *modules* can be installed (some *modules* occupy two *slots*). Each *module* can have one or two *channels*.
 
 ### Logical grouping
-The measurements are typically done in one of the 20 measurement modes. The modes can be roughly subdivided into 
+The measurements are typically done in one of the 20 measurement modes. The modes can be roughly subdivided into
   - Spot measurements
       - **High Speed Spot Measurements**
   - Pulsed Spot measurement
@@ -44,7 +44,7 @@ With the exception of the *High Speed Spot Measurement Mode*, the other modes ha
 
 ## Qcodes driver info
 As can be seen already from the instrument short info, the instrument is very versatile, but also very complex. Hence the driver will eventually consist of two layers:
-  - The Low Level interface allows one to utilize all functions of the driver by offering a thin wrapper around the FLEX command set that the B1500 understands. 
+  - The Low Level interface allows one to utilize all functions of the driver by offering a thin wrapper around the FLEX command set that the B1500 understands.
   - A Higher Level interface that provides a convenient access to the more frequently used features. Not all features are available via the high level interface.
 
 The two driver levels can be used at the same time, so even if some functionality is not yet implemented in the high-level interface, the user can send a corresponding low-level command.
@@ -88,7 +88,7 @@ station = qc.Station() # Create a station to hold all the instruments
 ```
 
 ```{code-cell} ipython3
-#Note: If there is no physical instrument connected 
+#Note: If there is no physical instrument connected
 #the following code will try to load a simulated instrument
 
 try:
@@ -213,7 +213,7 @@ b1500.enable_channels([1])
 b1500.enable_channels([1, 2])
 
 # disable multiple channels
-b1500.disable_channels([1, 2]) 
+b1500.disable_channels([1, 2])
 
 # disable all channels
 b1500.disable_channels()
@@ -231,32 +231,32 @@ b1500.self_calibration()
 
 +++
 
-This section outlines steps to perform sampling measurement. 
+This section outlines steps to perform sampling measurement.
 
 +++
 
-Set a sample rate and number of samples. 
+Set a sample rate and number of samples.
 
 ```{code-cell} ipython3
-# Number of spot measurments made per second and stored in a buffer. 
+# Number of spot measurments made per second and stored in a buffer.
 sample_rate = 0.02
-# Total number of spot measurements. 
+# Total number of spot measurements.
 nsamples = 100
 ```
 
-Assign timing parameters to SMU. 
+Assign timing parameters to SMU.
 
 ```{code-cell} ipython3
 b1500.smu1.timing_parameters(0, sample_rate, nsamples)
 ```
 
-Autozero is generally disabled for sampling measurement. 
+Autozero is generally disabled for sampling measurement.
 
 ```{code-cell} ipython3
 b1500.autozero_enabled(False)
 ```
 
-Set SMU to sampling mode. 
+Set SMU to sampling mode.
 
 ```{code-cell} ipython3
 b1500.smu1.measurement_mode(constants.MM.Mode.SAMPLING)
@@ -266,13 +266,13 @@ SMU is configured with by assigning voltage output range, input output range and
 
 ```{code-cell} ipython3
 b1500.smu1.source_config(output_range=constants.VOutputRange.AUTO,
-                       compliance=1e-7, 
-                       compl_polarity=None, 
+                       compliance=1e-7,
+                       compl_polarity=None,
                        min_compliance_range=constants.IOutputRange.AUTO
                       )
 ```
 
-Set the averaging to 1 otherwise the measurement takes 10 times more time. 
+Set the averaging to 1 otherwise the measurement takes 10 times more time.
 
 ```{code-cell} ipython3
 b1500.use_nplc_for_high_speed_adc(n=1)
@@ -285,7 +285,7 @@ b1500.smu1.enable_outputs()
 b1500.smu1.voltage(1e-6)
 ```
 
-We are now ready to start the sampling measurement. We first initialize the database and create-new/load-old experiment. Then we register our dependent and independent parameters and start the measurement. 
+We are now ready to start the sampling measurement. We first initialize the database and create-new/load-old experiment. Then we register our dependent and independent parameters and start the measurement.
 
 **Note** that the default values of label and units are not defined for the parameter sampling measurement trace. Hence we first set them according to what is being measured: in this case we will measure current in A. It is important to set the label and the unit before the measurement in order to have this information when looking at the acquired data, for example when plotting it with `plot_dataset` as shown below.
 
@@ -326,7 +326,7 @@ plt.xlabel('Measurements')
 _ = plt.ylabel('Compliance status')
 ```
 
-The channel number of the measured data can be obtained in the following way. 
+The channel number of the measured data can be obtained in the following way.
 
 ```{code-cell} ipython3
 data_channel = b1500.smu1.sampling_measurement_trace.data.channel
@@ -363,7 +363,7 @@ constants.MeasurementStatus.C
 
 MFCMU has two modes of measurement. The first is spot measurement and this here is sweep measurement. As the name suggest sweep measurement execute the measurement once for the whole list of voltages and saves the output in the buffer untill measurment is completed.
 
-The function below sets up properly the parameters to run the sweep measurements. Look at the docstring of ``setup_staircase_cv`` to know more about each argument of the function. 
+The function below sets up properly the parameters to run the sweep measurements. Look at the docstring of ``setup_staircase_cv`` to know more about each argument of the function.
 
 ```{code-cell} ipython3
 b1500.cmu1.enable_outputs()
@@ -392,7 +392,7 @@ b1500.cmu1.setup_staircase_cv(
     volt_monitor=False)
 ```
 
-If the setup function does not output any error then we are ready for the measurement. 
+If the setup function does not output any error then we are ready for the measurement.
 
 ```{code-cell} ipython3
 initialise_database()
@@ -405,11 +405,11 @@ meas = Measurement(exp=exp)
 meas.register_parameter(b1500.cmu1.run_sweep)
 
 with meas.run() as datasaver:
-    res = b1500.cmu1.run_sweep() 
+    res = b1500.cmu1.run_sweep()
     datasaver.add_result((b1500.cmu1.run_sweep,res))
 ```
 
-The ouput of the ``run_sweep`` is a primary parameter (Capacitance) and a secondary parameter (Dissipation). The type of primary and secondary parameter  depends on the impedance model set in the ``setup_staircase_cv`` function (or via the corresponding ``impedance_model`` parameter). The setpoints of both the parameters are the same voltage values as defined by ``setup_staircase_cv`` (behind the scenes, those values are available in the ``cv_sweep_voltages`` parameter). 
+The ouput of the ``run_sweep`` is a primary parameter (Capacitance) and a secondary parameter (Dissipation). The type of primary and secondary parameter  depends on the impedance model set in the ``setup_staircase_cv`` function (or via the corresponding ``impedance_model`` parameter). The setpoints of both the parameters are the same voltage values as defined by ``setup_staircase_cv`` (behind the scenes, those values are available in the ``cv_sweep_voltages`` parameter).
 
 ```{code-cell} ipython3
 plot_dataset(datasaver.dataset)
@@ -423,11 +423,11 @@ b1500.cmu1.run_sweep.status_summary()
 
 +++
 
-This section explains the IV Staircase sweep measurements. 
+This section explains the IV Staircase sweep measurements.
 
 +++
 
-Enable the channels. 
+Enable the channels.
 
 ```{code-cell} ipython3
 b1500.smu1.enable_outputs()
@@ -490,7 +490,7 @@ exp = load_or_create_experiment(
 )
 meas = Measurement(exp=exp)
 
-# As per user needs, names and labels of the parameters inside the 
+# As per user needs, names and labels of the parameters inside the
 # MultiParameter can be adjusted to reflect what is actually being
 # measured using the convenient `set_names_labels_and_units` method.
 # The setpoint name/label/unit (the independent sweep 'parameter')
@@ -508,7 +508,7 @@ b1500.run_iv_staircase_sweep.set_names_labels_and_units(
 meas.register_parameter(b1500.run_iv_staircase_sweep)
 
 with meas.run() as datasaver:
-    res = b1500.run_iv_staircase_sweep() 
+    res = b1500.run_iv_staircase_sweep()
     datasaver.add_result((b1500.run_iv_staircase_sweep, res))
 
 # In production code, remeber to revert the names/labels of the
@@ -529,13 +529,13 @@ b1500.run_iv_staircase_sweep.status_summary()
 
 The phase compensation is performed to adjust the phase zero.
 
-One must take care of two things before executing the phase compensation. First, make sure that all the channel outputs are enabled else instrument throws an error. 
+One must take care of two things before executing the phase compensation. First, make sure that all the channel outputs are enabled else instrument throws an error.
 
 ```{code-cell} ipython3
 b1500.run_iv_staircase_sweep.measurement_status()
 ```
 
-Second, the phase compensation mode must be set to manual.  
+Second, the phase compensation mode must be set to manual.
 
 ```{code-cell} ipython3
 b1500.cmu1.phase_compensation_mode(constants.ADJ.Mode.MANUAL)
@@ -718,12 +718,12 @@ b1500.use_nplc_for_high_resolution_adc(n=5)
 And then use the following methods on the SMU instances to use particular ADC for the particular SMU:
 
 ```{code-cell} ipython3
-# Use high-speed ADC 
+# Use high-speed ADC
 # with the settings defined above
 # for the SMU 1
 b1500.smu1.use_high_speed_adc()
 
-# Use high-resoultion ADC 
+# Use high-resoultion ADC
 # with the settings defined above
 # for the SMU 2
 b1500.smu2.use_high_resolution_adc()
@@ -737,7 +737,7 @@ The error messages from the instrument can be read using the following method. T
 b1500.error_message()
 ```
 
-Here, the response message contains an error number and an error message. In some cases the error message may also contain the additional information such as the slot number. They are separated by a semicolon (;). For example, if the error 305 occurs on the slot 1, this method returns the following response. 305,"Excess current in HPSMU.; SLOT1" 
+Here, the response message contains an error number and an error message. In some cases the error message may also contain the additional information such as the slot number. They are separated by a semicolon (;). For example, if the error 305 occurs on the slot 1, this method returns the following response. 305,"Excess current in HPSMU.; SLOT1"
 
 If no error occurred, this command returns 0,"No Error".
 
@@ -745,7 +745,7 @@ If no error occurred, this command returns 0,"No Error".
 
 ## Low Level Interface
 
-The Low Level Interface provides a wrapper around the FLEX command set. Multiple commands can be assembled in a sequence. Finally, the command sequence is compiled into a command string, which then can be sent to the instrument. 
+The Low Level Interface provides a wrapper around the FLEX command set. Multiple commands can be assembled in a sequence. Finally, the command sequence is compiled into a command string, which then can be sent to the instrument.
 
 Only some very minimal checks are done to the command string. For example some commands have to be the *last* command in a sequence of commands because the fill the output queue. Adding additional commands after that is not allowed.
 

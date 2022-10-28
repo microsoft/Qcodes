@@ -22,16 +22,16 @@ from qcodes.instrument_drivers.QDevil.QDevil_QDAC import Mode
 ```
 
 ## Initialisation
-When initialised, the driver will read in the state of the QDAC to the extend spossible. This means that initialisation does not change any outputs, implying that any ongoing ramping is continuing undisturbed. The initialisation is, however, **not** able to figure out if any **slopes** have been assigned to channels, see later. So these will have to be set again by the user. 
+When initialised, the driver will read in the state of the QDAC to the extend spossible. This means that initialisation does not change any outputs, implying that any ongoing ramping is continuing undisturbed. The initialisation is, however, **not** able to figure out if any **slopes** have been assigned to channels, see later. So these will have to be set again by the user.
 
-During the initialisation all channels are queried in order to update the parmeter cache. However, as the current query is very slow due to the long current sensor integration time, it is optional to update currents. They are only read at startup if the **update_currents** flag is set to True.  
+During the initialisation all channels are queried in order to update the parmeter cache. However, as the current query is very slow due to the long current sensor integration time, it is optional to update currents. They are only read at startup if the **update_currents** flag is set to True.
 
 NOTE: After switching the QDAC off and back on the driver has to be re-initialised, OR the reset() command has to be executed.
 
 ```{code-cell} ipython3
 # Connect to the instrument
 # By default the initialisation skips reading the current sensors on all channels
-# as this takes some 0.2-0.5 secs per channel due to the sensor settling time. 
+# as this takes some 0.2-0.5 secs per channel due to the sensor settling time.
 # You can force reading the current sensors at startup by specifiying "update_currents=True" in the call.
 
 qdac = QDac.QDac(name='qdac', address='ASRL2::INSTR', update_currents=False)
@@ -45,20 +45,20 @@ The QDevil_QDAC driver supports controlling each individual BNC output channel. 
   * i: Current out (read-only)
   * mode: the combined voltage output and current sensor range: Mode.vhigh_ihigh, Mode.vhigh_ilow, Mode.vlow_ilow
   * slope: Maximum ramp rate for an output channel when changing teh DC voltage,v.
-  * sync: Sync output assigned to a channel 
-  * sync_delay: Sync pulse delay  
+  * sync: Sync output assigned to a channel
+  * sync_delay: Sync pulse delay
   * sync_duration: Sync pulse duration
-  
+
 The slope is the (maximal) slope in V/s that the channel will allow its voltage to change by. By default, all channels have a slope of "Inf". The slope can be changed dynamically, but no more than 8 channels can be ramped simultaneously.
 
 In addition this driver supports:
-   * Reset the QDAC to start up conditions. Allows continuing operation after the QDAC has been 
+   * Reset the QDAC to start up conditions. Allows continuing operation after the QDAC has been
      powered off/on without restarting teh driver
    * Simultaneous ramping of up to 8 channels
    * 2D ramping of two groups of channels (slow and fast channels, up to 8 in total)
    * Override of protection against mode change for non-zero output voltages
-   * Reading the internal temperature sensors 
-   * Pretty printing the state of all channels, of assigned sync outputs and of assigned slopes 
+   * Reading the internal temperature sensors
+   * Pretty printing the state of all channels, of assigned sync outputs and of assigned slopes
 
 +++
 
@@ -79,7 +79,7 @@ print('Channel 1 voltage: {} {}'.format(qdac.ch01.v(), qdac.ch01.v.unit))
 ```
 
 ```{code-cell} ipython3
-# Reading the current output of a channel  
+# Reading the current output of a channel
 print(qdac.ch01.i(), qdac.ch01.i.unit)
 ```
 
@@ -111,11 +111,11 @@ qdac.print_slopes()
 
 ### Addressing multiple channels
 Multiple channels can be addressed simultaneously via the 'channels' list, by use of slicing.
-Note that numbering goes from 0 to N-1, where N is the number of channels. 
+Note that numbering goes from 0 to N-1, where N is the number of channels.
 
 ```{code-cell} ipython3
-# This will query voltages of all channels of a 24 channel QDAC 
-# Note that index 0 refer to channel 01, and so on 
+# This will query voltages of all channels of a 24 channel QDAC
+# Note that index 0 refer to channel 01, and so on
 print(qdac.channels[0:8].v())
 ```
 
@@ -131,7 +131,7 @@ The QDAC can output a puls one one of the SYNC outputs when a channel is ramped,
 # To each channel one may assign a SYNC output
 # SYNC output 1 will fire a 10 ms 5 V pulse when ch02 initiates a ramp
 # ch will ramp when setting a voltage while a slope is assinged, or when using "ramp_voltages"
-qdac.ch02.sync(1)  
+qdac.ch02.sync(1)
 # note that a pulse is still fired even if no visible ramp is performed
 # e.g if ramping from 1 V to 1 V
 
@@ -156,8 +156,8 @@ qdac.ch02.v(1)
 qdac.ch02.sync(0)
 ```
 
-## Ramp one or more channels simultaneously 
-Setting several channels simutaneously is only possible using "ramp_voltages". Note that 
+## Ramp one or more channels simultaneously
+Setting several channels simutaneously is only possible using "ramp_voltages". Note that
 
 ```{code-cell} ipython3
 # Here we ramp channels 1, 2, 3, and 7 from there current values to zero, in 0.2 seconds
@@ -166,7 +166,7 @@ sleep(duration+0.05)
 ```
 
 ```{code-cell} ipython3
-# As it takes tens of milliseconds to read the channels' current voltage, it is faster 
+# As it takes tens of milliseconds to read the channels' current voltage, it is faster
 # if their previous voltages are known:
 duration = qdac.ramp_voltages([1,2,3,7],[0,0,0,0],[1,2,3,4],0.2)
 sleep(duration+0.05)
@@ -176,7 +176,7 @@ sleep(duration+0.05)
 
 ```{code-cell} ipython3
 # Perform a 1D scan of the QDAC ch01 and record the current on
-# the same channel also using the QDAC. 
+# the same channel also using the QDAC.
 # Replace the QDAC current measurement by a DMM to do a typical physical measurement
 
 from qcodes.dataset.plotting import plot_by_id
@@ -201,7 +201,7 @@ myplot = plot_by_id(dataset.run_id)
 qc.dataset.plotting.plt.show()      # Sometimes it is necessasry to out-comment this line in Jupyter....
 ```
 
-## 2D scan 
+## 2D scan
 It is possible to ramp two groups of channels simultaneously. This is useful for a 2D data acquisition setup
 Note! The slope definitions are not used during the 2D scan.
 
@@ -243,7 +243,7 @@ qdac.ch02.v.set(0)
 qdac.ch03.v.set(0)
 ```
 
-## The "mode" parameter: controlling voltage and current ranges: 
+## The "mode" parameter: controlling voltage and current ranges:
 The "mode" parameter is controlling the output voltage range (by an attenuator) and the current sensor range. Only certain combinations of the two are allowed, which is why they are conrolled by a single parameter. The mode parameter is allowed values are:
 
 Mode.vhigh_ihigh : high voltage output range / high current sensing range
@@ -253,7 +253,7 @@ Mode.vhigh_ilow  : high voltage output range / low current sensing range
 Mode.vlow_ilow   : low voltage output range / low current sensing range
 
 ```{code-cell} ipython3
-# The "QDac.Mode" enum class is used for setting and reading the mode. 
+# The "QDac.Mode" enum class is used for setting and reading the mode.
 
 # This will set the voltage output range to low, and the current sensor range to low
 qdac.ch01.mode(Mode.vlow_ilow)
@@ -266,14 +266,14 @@ print(qdac.ch01.mode.cache().get_label())
 
 ### When "mode" change results in change of voltage range
 
-When changing "mode" so that the voltage range is changed the attenuator is switched immidiately. The driver will re-adjust the output voltage in order to keep it constant, but a spike will always occur if the voltage is non-zero. If the set voltage is outside the range of the low range and the transition is from high to low range, the output will be clipped. 
+When changing "mode" so that the voltage range is changed the attenuator is switched immidiately. The driver will re-adjust the output voltage in order to keep it constant, but a spike will always occur if the voltage is non-zero. If the set voltage is outside the range of the low range and the transition is from high to low range, the output will be clipped.
 
 To avoid spikes, the driver by default **does not allow changing the voltage range (mode)** when the output is non-zero. To over-ride this protection, set qdac.mode_force(True).
 
 ```{code-cell} ipython3
 # Here is a small example showing demonstrating the behavior - if posible hook up an oscilloscope on ch01
 #
-qdac.ch01.slope('Inf')                # Make sure that we are not fooled by a slow changing ch01   
+qdac.ch01.slope('Inf')                # Make sure that we are not fooled by a slow changing ch01
 qdac.ch01.mode(Mode.vhigh_ihigh)      # Attenuation OFF (the default), high voltage range
 qdac.ch01.v(1.5)                      # Set the voltage to outside the low voltage range (but inside present range)
 ```

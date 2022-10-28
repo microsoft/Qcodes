@@ -123,7 +123,7 @@ If you average in continuous acquisition mode, you get a running average of the 
 
 rto.num_acquisitions(1000)
 rto.ch1.arithmetics('AVERAGE')  # other options: 'ENVELOPE' and 'OFF'
-rto.run_single()  # and perform a single run. 
+rto.run_single()  # and perform a single run.
 ```
 
 ```{code-cell} ipython3
@@ -228,17 +228,17 @@ def do_measurement(rto, nr_measurements, nr_samples):
         rto.submodules['meas{}'.format(meas_ch)].clear()
     rto.opc()
     rto.run_continues()
-    
+
     # Check if measurement is running
     if(rto.is_acquiring() == False):
         raise RuntimeError('Cannot start measuremet; scope is not trigged')
-        
+
     # Wait for the scope to be ready
     while rto.submodules['meas{}'.format(nr_measurements)].event_count() < 10:
         time.sleep(0.1)
-    rto.opc() 
+    rto.opc()
 
-    ## Actual measurement 
+    ## Actual measurement
     for meas_ch in range(1, nr_measurements + 1):
         rto.submodules['meas{}'.format(meas_ch)].clear()
     while rto.submodules['meas{}'.format(nr_measurements)].event_count() < nr_samples:
@@ -247,10 +247,10 @@ def do_measurement(rto, nr_measurements, nr_samples):
 ```
 
 ```{code-cell} ipython3
-rto.timebase_range(1.5 * (1/100e3)) # Need a bit more than 1 period 
+rto.timebase_range(1.5 * (1/100e3)) # Need a bit more than 1 period
 rto.ch1.range(0.11) # Need a bit more the 100mV
 
-# Configure measurement 1 to determine frequency 
+# Configure measurement 1 to determine frequency
 rto.meas1.enable("ON")
 rto.meas1.source("C1W1") # See rto.meas1.sources for more options
 rto.meas1.category("AMPTime") # See rto.meas1.categories for more options

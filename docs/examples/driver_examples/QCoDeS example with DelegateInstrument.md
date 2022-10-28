@@ -184,7 +184,7 @@ instruments:
     type: qcodes.tests.instrument_mocks.MockLockin
 
   dac:
-    type: qcodes.tests.instrument_mocks.MockDAC   
+    type: qcodes.tests.instrument_mocks.MockDAC
 
   device:
     type: qcodes.instrument.delegate.DelegateInstrument
@@ -230,7 +230,7 @@ instruments:
     type: qcodes.tests.instrument_mocks.MockLockin
 
   dac:
-    type: qcodes.tests.instrument_mocks.MockDAC   
+    type: qcodes.tests.instrument_mocks.MockDAC
 
   device:
     type: qcodes.instrument.delegate.DelegateInstrument
@@ -239,7 +239,7 @@ instruments:
         readout: lockin.X
       channels:
         type: qcodes.tests.instrument_mocks.MockCustomChannel
-        gate_1: 
+        gate_1:
           channel: dac.ch01
           current_valid_range: [-0.5, 0]
       set_initial_values_on_load: true

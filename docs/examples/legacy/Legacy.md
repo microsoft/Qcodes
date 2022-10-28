@@ -12,7 +12,7 @@ kernelspec:
 ---
 
 # Legacy features
-This section describes legacy features from early implementations of QCoDeS. As new features often use similar (or identical) names and achieve similar goals, these older implementations have been laid to rest in these example notebooks. The intent of preserving this data is twofold: first to preserve documentation for users still relient on these systems, and second to better understand these older implementations should their code be revisted. 
+This section describes legacy features from early implementations of QCoDeS. As new features often use similar (or identical) names and achieve similar goals, these older implementations have been laid to rest in these example notebooks. The intent of preserving this data is twofold: first to preserve documentation for users still relient on these systems, and second to better understand these older implementations should their code be revisted.
 
 In addition to the information here, we aim to provide links to sections of documentation where updated information can be found, this is intended to assist early users in transitioning to newer features.
 
@@ -43,7 +43,7 @@ The key loop running conditions are:
 
 - creating the dataset that will be needed to store its data
 - where and how to save the data to disk
-- generating all the metadata for the DataSet. 
+- generating all the metadata for the DataSet.
 
 > Metadata is intended to describe the system and software configuration to give it context, help reproduce and troubleshoot the experiment, and to aid searching and datamining later. The Loop generates its own metadata, regarding when and how it was run and the Parameters and other actions involved, as well as asking all the Instruments, via a qcodes.station if possible, for their own metadata and including it.
 

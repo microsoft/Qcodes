@@ -246,7 +246,7 @@ with meas.run() as datasaver:
 ax, cbax = plot_by_id(datasaver.run_id)
 ```
 
-We can also capture db Traces for all channels in one QCoDeS measurement. Notice how start/stop number of points and number of averages can be set globally for all channels. 
+We can also capture db Traces for all channels in one QCoDeS measurement. Notice how start/stop number of points and number of averages can be set globally for all channels.
 
 ```{code-cell} ipython3
 vna.channels.start(9e3)

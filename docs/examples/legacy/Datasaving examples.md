@@ -37,7 +37,7 @@ handler = logging.StreamHandler(sys.stderr)
 formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
 
-# Set STDERR handler as the only handler 
+# Set STDERR handler as the only handler
 logger.handlers = [handler]
 ```
 
@@ -47,7 +47,7 @@ reload(hdf5_format)
 h5fmt = hdf5_format.HDF5Format()
 ```
 
-## Start a loop and generate data from dummy instruments 
+## Start a loop and generate data from dummy instruments
 
 ```{code-cell} ipython3
 station = qc.station.Station()

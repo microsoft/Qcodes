@@ -15,7 +15,7 @@ kernelspec:
 
 +++
 
-This notebook shows some ways of performing different measurements using 
+This notebook shows some ways of performing different measurements using
 QCoDeS parameters and the [DataSet](DataSet-class-walkthrough.ipynb) via a powerful ``Measurement`` context manager. Here, it is assumed that the reader has some degree of familiarity with fundamental objects and methods of QCoDeS.
 
 +++
@@ -44,7 +44,7 @@ from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measuremen
 qc.logger.start_all_logging()
 ```
 
-In what follows, we shall define some utility functions as well as declare our dummy instruments. We, then, add these instruments to a ``Station`` object. 
+In what follows, we shall define some utility functions as well as declare our dummy instruments. We, then, add these instruments to a ``Station`` object.
 
 The dummy dmm is setup to generate an output depending on the values set on the dummy dac simulating a real experiment.
 
@@ -65,7 +65,7 @@ def veryfirst():
 
 def numbertwo(inst1, inst2):
     print('Doing stuff with the following two instruments: {}, {}'.format(inst1, inst2))
-    
+
 def thelast():
     print('End of experiment')
 ```
@@ -104,13 +104,13 @@ meas.add_after_run(thelast, ())  # add a tear-down action
 
 meas.write_period = 0.5
 
-with meas.run() as datasaver:             
+with meas.run() as datasaver:
     for set_v in np.linspace(0, 25, 10):
         dac.ch1.set(set_v)
         get_v = dmm.v1.get()
         datasaver.add_result((dac.ch1, set_v),
                              (dmm.v1, get_v))
-    
+
     dataset1D = datasaver.dataset  # convenient to have for data access and plotting
 ```
 
@@ -118,7 +118,7 @@ with meas.run() as datasaver:
 ax, cbax = plot_dataset(dataset1D)
 ```
 
-And let's add an example of a 2D measurement. For the 2D, we'll need a new batch of parameters, notably one with two 
+And let's add an example of a 2D measurement. For the 2D, we'll need a new batch of parameters, notably one with two
 other parameters as setpoints. We therefore define a new Measurement with new parameters.
 
 ```{code-cell} ipython3
@@ -141,7 +141,7 @@ with meas.run() as datasaver:
             datasaver.add_result((dac.ch1, v1),
                                  (dac.ch2, v2),
                                  (dmm.v2, val))
-            
+
     dataset2D = datasaver.dataset
 ```
 
@@ -179,7 +179,7 @@ For more details about accessing data of a given `DataSet`, see [Accessing data 
 
 +++
 
-The data can also be exported as one or more [Pandas](https://pandas.pydata.org/) DataFrames. 
+The data can also be exported as one or more [Pandas](https://pandas.pydata.org/) DataFrames.
 The DataFrames cane be returned either as a single dataframe or as a dictionary from measured parameters to DataFrames.
 If you measure all parameters as a function of the same set of parameters you probably want to export to a single dataframe.
 
@@ -187,7 +187,7 @@ If you measure all parameters as a function of the same set of parameters you pr
 dataset1D.to_pandas_dataframe()
 ```
 
-However, there may be cases where the data within a dataset cannot be put into a single dataframe. 
+However, there may be cases where the data within a dataset cannot be put into a single dataframe.
 In those cases you can use the other method to export the dataset to a dictionary from name of the measured parameter to Pandas dataframes.
 
 ```{code-cell} ipython3
@@ -222,7 +222,7 @@ It is also possible to export the datasets directly to various file formats see 
 
 +++
 
-To load existing datasets QCoDeS provides several functions. The most useful and generic function is called `load_by_run_spec`. 
+To load existing datasets QCoDeS provides several functions. The most useful and generic function is called `load_by_run_spec`.
 This function takes one or more pieces of information about a dataset and will either, if the dataset is uniquely identifiable by the information, load the dataset or print information about all the datasets that match the supplied information allowing you to provide more information to uniquely identify the dataset.
 
 +++
@@ -250,7 +250,7 @@ As long as you are working within one database file the dataset should be unique
 +++
 
 Internally each dataset is refereed too by a Globally Unique Identifier (GUID) that ensures that the dataset uniquely identified even if datasets from several databases with potentially identical captured_run_id, experiment and sample names.
-A dataset can always be reloaded from the GUID if known. 
+A dataset can always be reloaded from the GUID if known.
 
 ```{code-cell} ipython3
 print(f"Dataset GUID is: {dataset1D.guid}")
@@ -267,7 +267,7 @@ loaded_ds.the_same_dataset_as(dataset1D)
 ## Specifying shape of measurement
 As the context manager allows you to store data of any shape (with the only restriction being that you supply values for both dependent and independent parameters together), it cannot know if the data is being measured on a grid. As a consequence, the Numpy array of data loaded from the dataset may not be of the shape that you expect. `plot_dataset`, `DataSet.to_pandas...` and `DataSet.to_xarray...` contain logic that can detect the shape of the data measured at load time. However, if you know the shape of the measurement that you are going to perform up front, you can choose to specify it before initializing the measurement using ``Measurement.set_shapes`` method.
 
-`dataset.get_parameter_data` and `dataset.cache.data` automatically makes use of this information to return shaped data when loaded from the database. Note that these two methods behave slightly different when loading data on a partially completed dataset. `dataset.get_parameter_data` will only reshape the data if the number of points measured matches the number of points expected according to the metadata. `dataset.cache.data` will however return a dataset with empty placeholders (either NaN, zeros or empty strings depending on the datatypes) for missing values in a partially filled dataset. 
+`dataset.get_parameter_data` and `dataset.cache.data` automatically makes use of this information to return shaped data when loaded from the database. Note that these two methods behave slightly different when loading data on a partially completed dataset. `dataset.get_parameter_data` will only reshape the data if the number of points measured matches the number of points expected according to the metadata. `dataset.cache.data` will however return a dataset with empty placeholders (either NaN, zeros or empty strings depending on the datatypes) for missing values in a partially filled dataset.
 
 Note that if you use the doNd functions demonstrated in [Using doNd functions in comparison to Measurement context manager for performing measurements](Using_doNd_functions_in_comparison_to_Measurement_context_manager_for_performing_measurements.ipynb) the shape information will be detected and stored automatically.
 
@@ -294,7 +294,7 @@ with meas_with_shape.run() as datasaver:
             datasaver.add_result((dac.ch1, v1),
                                  (dac.ch2, v2),
                                  (dmm.v2, val))
-            
+
     dataset = datasaver.dataset  # convenient to have for plotting
 ```
 
@@ -313,12 +313,12 @@ It is possible to perform two or more measurements at the same time. This may be
 ```{code-cell} ipython3
 # setup two measurements
 meas1 = Measurement(exp=exp, name='multi_measurement_1')
-meas1.register_parameter(dac.ch1)  
-meas1.register_parameter(dac.ch2)  
+meas1.register_parameter(dac.ch1)
+meas1.register_parameter(dac.ch2)
 meas1.register_parameter(dmm.v1, setpoints=(dac.ch1, dac.ch2))
 
 meas2 = Measurement(exp=exp, name='multi_measurement_2')
-meas2.register_parameter(dac.ch1)  
+meas2.register_parameter(dac.ch1)
 meas2.register_parameter(dac.ch2)
 meas2.register_parameter(dmm.v2, setpoints=(dac.ch1, dac.ch2))
 
@@ -330,7 +330,7 @@ with meas1.run() as datasaver1, meas2.run() as datasaver2:
     v2points = np.concatenate((np.linspace(-2, -0.25, 10),
                                np.linspace(-0.26, 0.5, 200),
                                np.linspace(0.51, 2, 10)))
-    
+
     for v1 in v1points:
         for v2 in v2points:
             dac.ch1(v1)
@@ -356,7 +356,7 @@ ax, cbax = plot_dataset(datasaver2.dataset)
 ## Interrupting measurements early
 
 There may be cases where you do not want to complete a measurement. Currently QCoDeS is designed to allow the user
-to interrupt the measurements with a standard KeyBoardInterrupt. KeyBoardInterrupts can be raised with either a Ctrl-C keyboard shortcut or using the interrupt button in Juypter / Spyder which is typically in the form of a Square stop button. QCoDeS is designed such that KeyboardInterrupts are delayed around critical parts of the code and the measurement is stopped when its safe to do so. 
+to interrupt the measurements with a standard KeyBoardInterrupt. KeyBoardInterrupts can be raised with either a Ctrl-C keyboard shortcut or using the interrupt button in Juypter / Spyder which is typically in the form of a Square stop button. QCoDeS is designed such that KeyboardInterrupts are delayed around critical parts of the code and the measurement is stopped when its safe to do so.
 
 +++
 
@@ -364,7 +364,7 @@ to interrupt the measurements with a standard KeyBoardInterrupt. KeyBoardInterru
 
 +++
 
-The ``Measurement`` object supports automatic handling of ``Array`` and ``MultiParameters``. When registering these parameters 
+The ``Measurement`` object supports automatic handling of ``Array`` and ``MultiParameters``. When registering these parameters
 the individual components are unpacked and added to the dataset as if they were separate parameters. Lets consider a ``MultiParamter`` with array components as the most general case.
 
 First lets use a dummy instrument that produces data as ``Array`` and ``MultiParameters``.
@@ -398,7 +398,7 @@ meas.register_parameter(mydummy.A.dummy_2d_multi_parameter)
 meas.parameters
 ```
 
-When adding the MultiParameter to the measurement we can see that we add each of the individual components as a 
+When adding the MultiParameter to the measurement we can see that we add each of the individual components as a
 separate parameter.
 
 ```{code-cell} ipython3
@@ -446,7 +446,7 @@ This new form is so free that we may easily do thing impossible with the old Loo
 
 +++
 
-Say, that from the plot of the above 1D measurement, 
+Say, that from the plot of the above 1D measurement,
 we decide that a voltage below 1 V is uninteresting,
 so we stop the sweep at that point, thus,
 we do not know in advance how many points we'll measure.
@@ -457,16 +457,16 @@ meas.register_parameter(dac.ch1)  # register the first independent parameter
 meas.register_parameter(dmm.v1, setpoints=(dac.ch1,))  # now register the dependent oone
 
 with meas.run() as datasaver:
-        
+
     for set_v in np.linspace(0, 25, 100):
         dac.ch1.set(set_v)
-        get_v = dmm.v1.get()        
+        get_v = dmm.v1.get()
         datasaver.add_result((dac.ch1, set_v),
                              (dmm.v1, get_v))
 
         if get_v < 1:
             break
-    
+
     dataset = datasaver.dataset
 ```
 
@@ -481,20 +481,20 @@ randomly sampling the region between 0 V and 10 V (for the setpoint axis).
 from time import monotonic, sleep
 
 with meas.run() as datasaver:
-    
+
     t_start = monotonic()
-    
+
     while monotonic() - t_start < 3:
         set_v = 10/2*(np.random.rand() + 1)
         dac.ch1.set(set_v)
-        
+
         # some sleep to not get too many points (or to let the system settle)
         sleep(0.04)
-        
-        get_v = dmm.v1.get()        
+
+        get_v = dmm.v1.get()
         datasaver.add_result((dac.ch1, set_v),
                              (dmm.v1, get_v))
-    
+
     dataset = datasaver.dataset  # convenient to have for plotting
 ```
 
@@ -529,7 +529,7 @@ with meas.run() as datasaver:
     v2points = np.concatenate((np.linspace(-1, -0.25, 5),
                                np.linspace(-0.26, 0.5, 200),
                                np.linspace(0.51, 1, 5)))
-    
+
     for v1 in v1points:
         for v2 in v2points:
             dac.ch1(v1)
@@ -563,7 +563,7 @@ threshold = 0.25
 
 with meas.run() as datasaver:
     # Do normal sweeping until the peak is detected
-    
+
     for v2ind, v2 in enumerate(v2_points):
         for v1ind, v1 in enumerate(v1_points):
             dac.ch1(v1)
@@ -577,10 +577,10 @@ with meas.run() as datasaver:
         else:
             continue
         break
-        
+
     print(v1ind, v2ind, val)
     print('-'*10)
-        
+
     # now be more clever, meandering back and forth over the peak
     doneyet = False
     rowdone = False
@@ -603,7 +603,7 @@ with meas.run() as datasaver:
             else:
                 v1ind += v1_step
                 rowdone = False
-                
+
 dataset = datasaver.dataset  # convenient to have for plotting
 ```
 
@@ -611,7 +611,7 @@ dataset = datasaver.dataset  # convenient to have for plotting
 ax, cbax = plot_dataset(dataset)
 ```
 
-### Random sampling 
+### Random sampling
 
 +++
 
@@ -619,7 +619,7 @@ We may also chose to sample completely randomly across the phase space
 
 ```{code-cell} ipython3
 meas2 = Measurement(exp=exp, name='random_sampling_measurement')
-meas2.register_parameter(dac.ch1)  
+meas2.register_parameter(dac.ch1)
 meas2.register_parameter(dac.ch2)
 meas2.register_parameter(dmm.v2, setpoints=(dac.ch1, dac.ch2))
 
@@ -648,7 +648,7 @@ ax, cbax = plot_dataset(dataset)
 datasaver.dataset.to_pandas_dataframe()[0:10]
 ```
 
-Unlike the data measured above, which lies on a grid, here, all the measured data points have an unique combination of the two dependent parameters. When exporting to XArray NaN's will therefore replace all the missing combinations of `dac_ch1` and `dac_ch2` and the data is unlikely to be useful in this format. 
+Unlike the data measured above, which lies on a grid, here, all the measured data points have an unique combination of the two dependent parameters. When exporting to XArray NaN's will therefore replace all the missing combinations of `dac_ch1` and `dac_ch2` and the data is unlikely to be useful in this format.
 
 ```{code-cell} ipython3
 datasaver.dataset.to_xarray_dataset()
@@ -680,14 +680,14 @@ with meas.run() as datasaver:
         datasaver.add_result((dac.ch1, xk[0]),
                              (dac.ch2, xk[1]),
                              (dmm.v2, dmm.v2.cache.get()))
-    
+
     res = minimize(lambda x: -set_and_measure(*x),
                    x0,
                    method='Nelder-Mead',
-                   tol=1e-10, 
+                   tol=1e-10,
                    callback=mycallback,
                    options={'fatol': noise})
-    
+
     dataset = datasaver.dataset  # convenient to have for plotting
 ```
 
@@ -718,8 +718,8 @@ def print_which_step(results_list, length, state):
     prints how many results we have added to the database
     """
     print(f'The run now holds {length} rows')
-    
-    
+
+
 meas = Measurement(exp=exp)
 meas.register_parameter(dac.ch1)
 meas.register_parameter(dmm.v1, setpoints=(dac.ch1,))

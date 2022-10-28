@@ -52,12 +52,12 @@ SA = DummyInstrument('SA')
 # some array-like data types
 
 class Spectrum(ArrayParameter):
-    
+
     def __init__(self, name, instrument):
-        
+
         self.N = 7
         setpoints = (np.linspace(0, 1, self.N),)
-    
+
         super().__init__(name=name,
                          instrument=instrument,
                          setpoints=setpoints,
@@ -66,13 +66,13 @@ class Spectrum(ArrayParameter):
                          unit='V/sqrt(Hz)',
                          setpoint_names=('Frequency',),
                          setpoint_units=('Hz',))
-        
+
     def get_raw(self):
         return np.random.randn(self.N)
-    
+
 
 class MultiDimSpectrum(ArrayParameter):
-    
+
     def __init__(self, name, instrument):
         self.start = 0
         self.stop = 1
@@ -100,7 +100,7 @@ class MultiDimSpectrum(ArrayParameter):
         b = self.npts[1]
         c = self.npts[2]
         return np.reshape(np.arange(a*b*c), (a, b, c))
-    
+
 # a string-valued parameter
 def dac1_too_high():
     return 'Too high' if dac.ch1() > 5 else 'OK'
@@ -139,7 +139,7 @@ with meas.run() as datasaver:
 t1 = time.perf_counter()
 
 print(f'Finished run in {(t1-t0):.3f} s')
-        
+
 dataset1 = datasaver.dataset
 ```
 
@@ -174,7 +174,7 @@ with meas.run() as datasaver:
 t1 = time.perf_counter()
 
 print(f'Finished run in {(t1-t0):.3f} s')
-        
+
 dataset2 = datasaver.dataset
 ```
 

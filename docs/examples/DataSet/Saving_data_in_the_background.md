@@ -17,7 +17,7 @@ The QCoDeS Measurement allows for the actual data saving to take place in a back
 
 ## Can I haz speedup?
 
-If the time you spend actually writing the data to disk is comparable to the time it takes you to acquire the data (e.g. by waiting for a lock-in amplifier to integrate or an algorithm to return a result), then you can indeed expect a speedup of up to a factor of 2. If your measurement time is clearly dominated by either the acquisition or the writing to the DB file, then writing the data in the background won't offer you much of a speedup. 
+If the time you spend actually writing the data to disk is comparable to the time it takes you to acquire the data (e.g. by waiting for a lock-in amplifier to integrate or an algorithm to return a result), then you can indeed expect a speedup of up to a factor of 2. If your measurement time is clearly dominated by either the acquisition or the writing to the DB file, then writing the data in the background won't offer you much of a speedup.
 
 +++
 
@@ -137,7 +137,7 @@ generation_time = 0
 # ONLY DIFFERENCE IN THE NEXT LINE
 with meas.run(write_in_background=True) as datasaver:  # <---- THIS LINE DIFFERENT
     # THE PREVIOUS LINE CHANGED
-    
+
     init_time = time.perf_counter() - t0
 
     for volt in np.sin(np.linspace(-np.pi, np.pi, M)):

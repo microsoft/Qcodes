@@ -49,25 +49,25 @@ def timetrace(npts: int, dt: float) -> np.ndarray:
 
 
 class TimeTrace(ParameterWithSetpoints):
-    
+
     def get_raw(self):
         npts = self.root_instrument.npts()
         dt = self.root_instrument.dt()
-        
+
         return timetrace(npts, dt)
-    
+
 
 class Periodogram(ParameterWithSetpoints):
-    
+
     def get_raw(self):
         npts = self.root_instrument.npts()
         dt = self.root_instrument.dt()
-        
+
         tt = self.root_instrument.trace()
-        
+
         return np.abs(np.fft.fft(tt))**2
-        
-        
+
+
 class TimeAxis(Parameter):
 
     def get_raw(self):
@@ -75,54 +75,54 @@ class TimeAxis(Parameter):
         dt = self.root_instrument.dt()
         return np.linspace(0, dt*npts, npts, endpoint=False)
 
-    
+
 class FrequencyAxis(Parameter):
-    
+
     def get_raw(self):
         npts = self.root_instrument.npts()
         dt = self.root_instrument.dt()
 
         return np.linspace(0, 1/dt, npts)
-    
-        
+
+
 class OzzyLowScope(Instrument):
-    
+
     def __init__(self, name, **kwargs):
-        
+
         super().__init__(name, **kwargs)
-        
+
         self.add_parameter(name='npts',
                            initial_value=500,
                            label='Number of points',
                            get_cmd=None,
                            set_cmd=None)
-        
+
         self.add_parameter(name='dt',
                            initial_value=1e-3,
                            label='Time resolution',
                            unit='s',
                            get_cmd=None,
                            set_cmd=None)
-        
+
         self.add_parameter(name='time_axis',
                            label='Time',
                            unit='s',
                            vals=vals.Arrays(shape=(self.npts,)),
                            parameter_class=TimeAxis)
-        
+
         self.add_parameter(name='freq_axis',
                            label='Frequency',
                            unit='Hz',
                            vals=vals.Arrays(shape=(self.npts,)),
                            parameter_class=FrequencyAxis)
-        
+
         self.add_parameter(name='trace',
                            label='Signal',
                            unit='V',
                            vals=vals.Arrays(shape=(self.npts,)),
                            setpoints=(self.time_axis,),
                            parameter_class=TimeTrace)
-        
+
         self.add_parameter(name='periodogram',
                            label='Periodogram',
                            unit='V^2/Hz',
@@ -151,7 +151,7 @@ osc.dt(0.001)
 
 with timemeas.run() as datasaver:
     datasaver.add_result((osc.trace, osc.trace.get()))
-    
+
 dataset = datasaver.dataset
 ```
 
@@ -164,7 +164,7 @@ osc.dt(0.01)  # make the trace 10 times longer
 
 with timemeas.run() as datasaver:
     datasaver.add_result((osc.trace, osc.trace.get()))
-    
+
 dataset = datasaver.dataset
 ```
 
@@ -182,7 +182,7 @@ osc.dt(0.01)
 
 with freqmeas.run() as datasaver:
     datasaver.add_result((osc.periodogram, osc.periodogram.get()))
-    
+
 dataid = datasaver.dataset
 ```
 
@@ -198,12 +198,12 @@ Just for the fun of it, let's make a measurement with the averaged periodogram.
 no_of_avgs = 100
 
 with freqmeas.run() as datasaver:
-    
+
     temp_per = osc.periodogram()
-    
+
     for _ in range(no_of_avgs-1):
         temp_per += osc.periodogram()
-        
+
     datasaver.add_result((osc.periodogram, temp_per/no_of_avgs),
                          (osc.freq_axis, osc.freq_axis.get()))
 
@@ -226,12 +226,12 @@ meas.register_parameter(osc.trace, setpoints=[osc.npts], paramtype='numeric')
 with meas.run() as datasaver:
 
     osc.dt(0.001)
-    
+
     for npts in [200, 400, 600, 800, 1000, 1200]:
         osc.npts(npts)
         datasaver.add_result((osc.trace, osc.trace.get()),
                              (osc.npts, osc.npts()))
-        
+
 dataset = datasaver.dataset
 ```
 

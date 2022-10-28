@@ -39,7 +39,7 @@ The concept of a station, in essence, is a programmatical representation of such
 
 A station can be configured from a text file which simplifies the initialisation of the instruments. In particular, in this tutorial, we shall provide an example configuration of a station by using a YAML file.
 
-A special use case of a station in an experiment would be the capturing of the state of an experimental setup, known as a snapshot. We shall devote a subsection for the concept of a snapshot. 
+A special use case of a station in an experiment would be the capturing of the state of an experimental setup, known as a snapshot. We shall devote a subsection for the concept of a snapshot.
 
 +++
 
@@ -63,7 +63,7 @@ instr.gain(42)
 
 +++
 
-We create a ``Station`` object and add previously defined parameter and instrument as its components as follows: 
+We create a ``Station`` object and add previously defined parameter and instrument as its components as follows:
 
 ```{code-cell} ipython3
 station = Station()
@@ -92,7 +92,7 @@ station = Station(p, instr)
 Now that the components have been added to the station, it is possible to access them as its attributes (by using the "dot" notation). With this feature, users can use tab-completion to find the instrument in the station they'd like to access.
 
 ```{code-cell} ipython3
-# Let's confirm that station's `p` is 
+# Let's confirm that station's `p` is
 # actually the `p` parameter defined above
 assert station.p is p
 ```
@@ -170,7 +170,7 @@ We also note that in the exponential represantations of numbers, it is required 
 ```yaml
 # Example YAML Station configuration file
 #
-# This file gets snapshotted and can be read back from the JSON 
+# This file gets snapshotted and can be read back from the JSON
 # snapshot for every experiment run.
 #
 # All fields are optional unless explicitly mentioned otherwise.
@@ -180,7 +180,7 @@ We also note that in the exponential represantations of numbers, it is required 
 #
 # The file starts with a list of loadable instruments instances,
 # i.e. there can be two entries for two instruments of the same
-# type if you want to specify two different use cases 
+# type if you want to specify two different use cases
 # e.g. "dmm1-readout" and "dmm1-calibration".
 #
 instruments:
@@ -190,7 +190,7 @@ instruments:
   # Simulated instruments can also be specified here, just put
   # the path to the similation .yaml file as the value of the
   # "init"->"visalib" field (see below for an example of the
-  # "init" section as well as an example of specifying 
+  # "init" section as well as an example of specifying
   # a simulated instrument).
   qdac:
     # Full import path to the python class of the instrument
@@ -198,7 +198,7 @@ instruments:
     type: qcodes.instrument_drivers.QDev.QDac_channels.QDac
     # Visa address of the instrument.
     # Note that this field can also be specified in the
-    # "init" section (see below) but the address specified 
+    # "init" section (see below) but the address specified
     # here will overrule the address from the "init" section.
     # Essentially, specifying address here allows avoiding
     # the "init" section completely when address is the only
@@ -207,7 +207,7 @@ instruments:
     # instruments.
     address: ASRL4::INSTR
     # If an instrument with this name is already instantiated,
-    # and this field is true, then the existing instrument 
+    # and this field is true, then the existing instrument
     # instance will be closed before instantiating this new one.
     # If this field is false, or left out, closing will not
     # happen.
@@ -227,10 +227,10 @@ instruments:
     parameters:
       # Each parameter is specified by its name from the
       # instrument driver class.
-      # Note that "dot: notation can be used to specify 
+      # Note that "dot: notation can be used to specify
       # parameters in (sub)channels and submodules.
       ch01.v:
-        # If an alias is specified, the paramater becomes  
+        # If an alias is specified, the paramater becomes
         # accessible under another name, so that you can write
         # `qdac.cutter_gate(0.2)` instead of `qdac.ch01.v(0.2)`.
         # Note that the parameter instance does not get copied,
@@ -248,7 +248,7 @@ instruments:
         inter_delay: 0.01
         # Set new step.
         step: 1e-4
-        # If this field is given, and contains an array of two 
+        # If this field is given, and contains an array of two
         # numbers like here, then the parameter
         # gets a new `Numbers` validator with these values as
         # lower and upper limits, respectively (in this case, it
@@ -262,10 +262,10 @@ instruments:
         initial_value: 0.01
         # In case this values equals to true, upon loading this
         # instrument from this configuration this parameter will
-        # be appended to the list of parameters that are 
+        # be appended to the list of parameters that are
         # displayed in QCoDeS `Monitor`.
         monitor: true
-      # As in all YAML files a one-line notation can also be 
+      # As in all YAML files a one-line notation can also be
       # used, here is an example.
       ch02.v: {scale: 0.01, limits: [0.0, 1.5e+3] , label: my label}
       ch04.v: {alias: Q1lplg1, monitor: true}
@@ -276,10 +276,10 @@ instruments:
     # of the `DelegateParameter` class.
     add_parameters:
       # For example, here we define a parameter that represents
-      # magnetic field control. Setting and getting this 
+      # magnetic field control. Setting and getting this
       # parameter will actually set/get a specific DAC channel.
       # So this new magnetic field parameter is playing a role
-      # of a convenient proxy - it is much more convenient to 
+      # of a convenient proxy - it is much more convenient to
       # perform a measurement where "Bx" is changed in tesla as
       # opposed to where some channel of some DAC is changed in
       # volts and one has to clutter the measurement code with
@@ -287,7 +287,7 @@ instruments:
       # Every new parameter definition starts with a name of
       # the new parameter.
       Bx:
-        # This field specifies the parameter which "getter" and 
+        # This field specifies the parameter which "getter" and
         # "setter" will be used when calling `get`/`set` on this
         # new parameter.
         # Required field.

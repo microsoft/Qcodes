@@ -42,7 +42,7 @@ load_or_create_experiment('tutorial', 'no_sample')
 We'll measure some Brownian motion. We set up a parameter for the noise.
 
 ```{code-cell} ipython3
-noise = Parameter('noise', 
+noise = Parameter('noise',
                   label='Position',
                   unit='m',
                   get_cmd=lambda: np.random.randn())
@@ -63,7 +63,7 @@ with meas.run() as datasaver:
         pos += noise()
         now = time()
         datasaver.add_result((noise, pos), (time, now))
-        
+
 dataset = datasaver.dataset
 ```
 

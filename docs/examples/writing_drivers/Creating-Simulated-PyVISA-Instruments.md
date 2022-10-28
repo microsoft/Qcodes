@@ -13,7 +13,7 @@ kernelspec:
 
 # Creating Simulated PyVISA Instruments
 
-When developing stuff in a large codebase like QCoDeS, it is often uncanningly easy to submit a change that breaks stuff. Therefore, _continuous integration_ is performed in the form of automated tests that run before new code is allowed into the codebase. The many tests of QCoDeS can be found in `qcodes.tests`. 
+When developing stuff in a large codebase like QCoDeS, it is often uncanningly easy to submit a change that breaks stuff. Therefore, _continuous integration_ is performed in the form of automated tests that run before new code is allowed into the codebase. The many tests of QCoDeS can be found in `qcodes.tests`.
 
 But how about drivers? They constitute the majority of the codebase, but how can we test them? Wouldn't that require a physical copy each instrument to be present on the California server where we run our tests? It used to be so, but not anymore! For drivers utilising PyVISA (i.e. `VisaInstrument` drivers), we may create simulated instruments to which the drivers may connect.
 
@@ -30,15 +30,15 @@ It is not feasible to simulate any but the most trivial features of the instrume
 
   * Do we wait sufficiently long for this oscilloscope's trace to be acquired?
   * Does our driver handle overlapping commands of this AWG correctly?
-  
+
 ## How?
 
 The basic scheme goes as follows:
 
   * Write a `.yaml` file for the simulated instrument. The instructions for that may be found here: https://pyvisa-sim.readthedocs.io/en/latest/ and specifically here: https://pyvisa-sim.readthedocs.io/en/latest/definitions.html#definitions
-  * Then write a test for your instrument and put it in `qcodes/tests/drivers`. The file should have the name `test_<nameofyourdriver>.py`. 
+  * Then write a test for your instrument and put it in `qcodes/tests/drivers`. The file should have the name `test_<nameofyourdriver>.py`.
   * Check that all is well by running `$ pytest test_<nameofyourdriver>.py`.
-  
+
 Below is an example.
 
 +++
@@ -91,9 +91,9 @@ devices:
     dialogues:
       - q: "*IDN?"
         r: "QCoDeS, Weinschel 8320 (Simulated), 1337, 0.0.01"
-            
 
-resources:  
+
+resources:
   GPIB::1::INSTR:
     device: device 1
 ```
@@ -135,29 +135,29 @@ visalib = sims.__file__.replace('__init__.py', 'Weinschel_8320.yaml@sim')
 @pytest.fixture(scope='function')
 def driver():
     wein_sim = Weinschel8320('wein_sim',
-                              address='GPIB::1::65535::INSTR',  
+                              address='GPIB::1::65535::INSTR',
                               visalib=visalib
                               )
     yield wein_sim
-    
+
     wein_sim.close()
-    
-    
+
+
 def test_init(driver):
     """
     Test that simple initialisation works
     """
-    
+
     # There is not that much to do, really.
     # We can check that the IDN string reads back correctly
-    
+
     idn_dict = driver.IDN()
-    
+
     assert idn_dict['vendor'] == 'QCoDeS'
-    
+
 ```
 
-Save the test as `qcodes/tests/drivers/test_weinschel_8320.py`. 
+Save the test as `qcodes/tests/drivers/test_weinschel_8320.py`.
 
 +++
 
@@ -210,9 +210,9 @@ devices:
           q: "ATTN? 1"  # the set/get commands have to simply be copied over from the driver
           r: "{:02.0f}"
         setter:
-          q: "ATTN ALL {:02.0f}"          
+          q: "ATTN ALL {:02.0f}"
 
-resources:  
+resources:
   GPIB::1::INSTR:
     device: device 1
 ```
@@ -239,38 +239,38 @@ visalib = sims.__file__.replace('__init__.py', 'Weinschel_8320.yaml@sim')
 @pytest.fixture(scope='function')
 def driver():
     wein_sim = Weinschel8320('wein_sim',
-                              address='GPIB::1::INSTR',  
+                              address='GPIB::1::INSTR',
                               visalib=visalib
                               )
     yield wein_sim
-    
+
     wein_sim.close()
-    
-    
+
+
 def test_init(driver):
     """
     Test that simple initialisation works
     """
-    
+
     # There is not that much to do, really.
     # We can check that the IDN string reads back correctly
-    
+
     idn_dict = driver.IDN()
-    
+
     assert idn_dict['vendor'] == 'QCoDeS'
-    
-    
+
+
 def test_attenuation_validation(driver):
     """
     Test that incorrect values are rejected
     """
-    
+
     bad_values = [-1, 1, 1.5]
-    
+
     for bv in bad_values:
         with pytest.raises(ValueError):
             driver.attenuation(bv)
-    
+
 ```
 
 Open a command line/console/terminal, navigate to the `qcodes/tests/drivers/` folder and run

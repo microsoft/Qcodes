@@ -15,7 +15,7 @@ kernelspec:
 
 ```{code-cell} ipython3
 import qcodes as qc
-from qcodes.instrument_drivers.Keysight.KeysightAgilent_33XXX import WaveformGenerator_33XXX 
+from qcodes.instrument_drivers.Keysight.KeysightAgilent_33XXX import WaveformGenerator_33XXX
 ```
 
 ```{code-cell} ipython3
@@ -62,7 +62,7 @@ In burst mode, the instrument starts running a task (e.g. a waveform generation)
 
 # Can be 'EXT' (external), 'IMM' (immediate, internal),
 # 'BUS' (software trigger), 'TIM' (timed)
-ks.ch1.trigger_source('EXT')  
+ks.ch1.trigger_source('EXT')
 
 ks.ch1.trigger_count(1)
 ks.ch1.trigger_delay(0)  # seconds

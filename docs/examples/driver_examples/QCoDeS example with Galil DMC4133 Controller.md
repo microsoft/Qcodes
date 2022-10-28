@@ -19,7 +19,7 @@ Purpose of this notebook is to demonstrate how Galil DMC4133 Controller driver a
 
 1. Make sure that you have `gclib` package installed in your environment. If not, then follow the instructions [here](https://www.galil.com/sw/pub/all/doc/gclib/html/python.html) for installation.
 2. Make sure that the controller is connected to your PC through an Ethernet cable and the configuration is set as according to these instructions on Windows operating system.
-    
+
         a. Go to Control Panel -> Network and Internet -> Network Connections and select the appropriate network adapter.
         b. Next go to the Properties of that adapter, and then Properties for Internet Protocol Version 4 (TCP/IPv4).
         c. Select "Use the following IP address" and add an IP address and Subnet. (If the Galil has an IP address of 10.10.10.100 burned in, you would need a PC IP address of something like 10.10.10.1 with a subnet of 255.255.255.0.)
@@ -60,7 +60,7 @@ controller.define_position_as_origin()
 controller.tell_error()
 ```
 
-`stop` method can be used to stop motion of all motors simultaneously. On this call, the motors will decelerate to a stop. 
+`stop` method can be used to stop motion of all motors simultaneously. On this call, the motors will decelerate to a stop.
 
 ```{code-cell} ipython3
 controller.stop()
@@ -164,7 +164,7 @@ Each motor can be set to turn off when an error occurs with the following parame
 A.off_when_error_occurs("disable")  # possible arguments are: "disable",
                                     #                         "enable for position, amp error or abort"
                                     #                         "enable for hw limit switch"
-                                    #                         "enable for all" 
+                                    #                         "enable for all"
 ```
 
 Error magnitude can be checked on each motor with following method.
@@ -224,7 +224,7 @@ BC.clear_sequence('S')
 Our tour of the `DMC4133Controller` class ends here. Lets move on to `Arm` Class. But before moving forward, keep in mind the following assumptions:
 
     1. Needle arm head is assumed to be rectangular in shape with one or more rows and each row with one or more needles.
-    2. Chip to be probed is assumed to be rectangular as well with number of rows in it to be multiple of number of rows in the needle head and number of pads in each row to be a multiple of number of needles in each row of the needle head.  
+    2. Chip to be probed is assumed to be rectangular as well with number of rows in it to be multiple of number of rows in the needle head and number of pads in each row to be a multiple of number of needles in each row of the needle head.
 
 +++
 
@@ -437,7 +437,7 @@ arm.move_to_row(1)
 arm.move_to_pad(3)
 ```
 
-Once this motion is complete, you can use individual motors commands for minor adjustments. 
+Once this motion is complete, you can use individual motors commands for minor adjustments.
 
 ```{code-cell} ipython3
 arm.move_motor_a_by(distance=15)

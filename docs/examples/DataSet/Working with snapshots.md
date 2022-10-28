@@ -120,7 +120,7 @@ station = Station()
 
 station.add_component(p)
 station.add_component(instr)
-# Note that it is also possible to add components 
+# Note that it is also possible to add components
 # to a station via arguments of its constructor, like this:
 #     station = Station(p, instr)
 ```
@@ -162,9 +162,9 @@ measurement.register_parameter(instr.output, setpoints=[instr.input])
 with measurement.run() as data_saver:
     input_value = 111
     instr.input.set(input_value)
-    
+
     instr.output.set(222)  # assuming that the instrument measured this value on the output
-    
+
     data_saver.add_result((instr.input, input_value),
                           (instr.output, instr.output()))
 
@@ -229,9 +229,9 @@ instr.gain(400) # Oops!
 with measurement.run() as data_saver:
     input_value = 111
     instr.input.set(input_value)
-    
+
     instr.output.set(222)  # assuming that the instrument measured this value on the output
-    
+
     data_saver.add_result((instr.input, input_value),
                           (instr.output, instr.output()))
 

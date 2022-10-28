@@ -103,7 +103,7 @@ Now let us use the `do1d` function to perform the above measurement.
 do1d(dac.ch1, 0, 1, 10, 0.01, dmm.v1, dmm.v2, show_progress=True)
 ```
 
-By comparing `do1d` to a measurement implemented using the `Measurement` context manager, we notice that the `do1d` is significantly shorter, and much less typing is required to perform a basic measurement. This does however come at the cost of loss of flexibility. The `doNd` functions are therefore great for simple 0d, 1d, and 2d measurements but if you need to implement a more complicated type of measurement, the `Measurement` context manager is more well suited. However, the general `dond` function, which will be explained later in the notebook, is slightly more flexible than the rest of specific-dimensional ones, i.e., `do0d`, `do1d`, and `do2d`. 
+By comparing `do1d` to a measurement implemented using the `Measurement` context manager, we notice that the `do1d` is significantly shorter, and much less typing is required to perform a basic measurement. This does however come at the cost of loss of flexibility. The `doNd` functions are therefore great for simple 0d, 1d, and 2d measurements but if you need to implement a more complicated type of measurement, the `Measurement` context manager is more well suited. However, the general `dond` function, which will be explained later in the notebook, is slightly more flexible than the rest of specific-dimensional ones, i.e., `do0d`, `do1d`, and `do2d`.
 
 By default, the `doNd` functions will not generate a plot of the output. This can be changed in one of two ways. For each individual call to `doNd`, one can set the value of the keyword argument `do_plot` to True. Alternatively, one can globally set the value of the setting `dataset.dond_plot` in the `qcodesrc.json` configuration file. In the examples below, we will often set `do_plot` to True to illustrate how the functions work and see the output figures right away. Note that this setting will be resulting to save the output as `png` and `pdf`.
 
@@ -285,9 +285,9 @@ Note that by default this means that we will create one or more datasets where t
 +++
 
 Sometimes this may not be what you want but rather you are performing two or more measurements independently and want the datasets to reflect this.
-E.g. imagine that you are performing experiments on two different physical systems where you know that `dmm.v1` only depends on `dac.ch1` and `dmm.v2` only depends on `dac.ch2`. 
-In these cases it is possible to use the argument `dataset_dependencies` to tell `do_nd` how the dependent parameters map to independent parameters as in the example below. Note that there is no way 
-for QCoDeS to verify these dependencies are correct for your physical system and is is your responsibility to ensure that they are. 
+E.g. imagine that you are performing experiments on two different physical systems where you know that `dmm.v1` only depends on `dac.ch1` and `dmm.v2` only depends on `dac.ch2`.
+In these cases it is possible to use the argument `dataset_dependencies` to tell `do_nd` how the dependent parameters map to independent parameters as in the example below. Note that there is no way
+for QCoDeS to verify these dependencies are correct for your physical system and is is your responsibility to ensure that they are.
 
 ```{code-cell} ipython3
 result = dond(
@@ -297,7 +297,7 @@ result = dond(
     do_plot=True,
     show_progress=True,
     dataset_dependencies={
-        "ds1": (dac.ch1, dmm.v1), 
+        "ds1": (dac.ch1, dmm.v1),
         "ds2": (dac.ch2, dmm.v2),
     }
 )

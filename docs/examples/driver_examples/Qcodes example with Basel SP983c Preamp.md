@@ -140,7 +140,7 @@ dmm.close()
 
 +++
 
-Remote Control SP983a connects with the Basel SP983c Preamp and provides user friendly computer interface for the preamp. While remote is connected to the basel preamp, knobs for gain and fcut on basel preamp needs to be set to remote position. When you are using remote with the basel preamp, QCoDeS provided driver for remote control can be used directly and it can be imported in your scripts as follows. 
+Remote Control SP983a connects with the Basel SP983c Preamp and provides user friendly computer interface for the preamp. While remote is connected to the basel preamp, knobs for gain and fcut on basel preamp needs to be set to remote position. When you are using remote with the basel preamp, QCoDeS provided driver for remote control can be used directly and it can be imported in your scripts as follows.
 
 ```{code-cell} ipython3
 from qcodes.instrument_drivers.basel.sp983c_remote import SP983A

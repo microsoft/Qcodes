@@ -42,7 +42,7 @@ Now we can create a dataset. Note two things:
 
     - if we don't specfiy a exp_id, but we have an experiment in the experiment container the dataset will go into that one.
     - dataset can be created from the experiment object
-    
+
 
 ```{code-cell} ipython3
 dataSet = new_data_set("benchmark_data", exp_id=exp.exp_id)

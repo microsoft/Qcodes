@@ -12,7 +12,7 @@ kernelspec:
 ---
 
 ## MultiParameter
-Return multiple items at once, where each item can be a single value or an array. 
+Return multiple items at once, where each item can be a single value or an array.
 
 > Note: Most of the kwarg names here are the plural of those used in `Parameter` and `ArrayParameter`. In particular, `MultiParameter` is the ONLY one that uses `units`, all the others use `unit`.
 
@@ -38,7 +38,7 @@ class SingleIQPair(MultiParameter):
                          setpoints=((), ()),
                          docstring='param that returns two single values, I and Q')
         self._scale_param = scale_param
-    
+
     def get_raw(self):
         scale_val = self._scale_param()
         return (scale_val, scale_val / 2)
@@ -53,7 +53,7 @@ print('simple get:', iq())
 ```{code-cell} ipython3
 class IQArray(MultiParameter):
     def __init__(self, scale_param):
-        # names, labels, and units are the same 
+        # names, labels, and units are the same
         super().__init__('iq_array', names=('I', 'Q'), shapes=((5,), (5,)),
                          labels=('In phase amplitude', 'Quadrature amplitude'),
                          units=('V', 'V'),

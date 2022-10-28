@@ -62,7 +62,7 @@ camp = ithaco.Ithaco_1211('camp')
 
 +++
 
-We set Ampere per Volt Sensitivity here, which match with the setting on the instrument panel (the rest of the setting are set according to their default values in the driver): 
+We set Ampere per Volt Sensitivity here, which match with the setting on the instrument panel (the rest of the setting are set according to their default values in the driver):
 
 ```{code-cell} ipython3
 camp.sens.set(1e-4)
@@ -137,7 +137,7 @@ t2 = time.time()
 print(f'Measurement took {t2-t1} seconds')
 ```
 
-As expected, the measurement took around 20 seconds. Now, we want to plot our measured dataset. We use qcodes to find the dataset that we want to plot in the database, and tweak plotting axes for showing it in a scatter plot. 
+As expected, the measurement took around 20 seconds. Now, we want to plot our measured dataset. We use qcodes to find the dataset that we want to plot in the database, and tweak plotting axes for showing it in a scatter plot.
 
 ```{code-cell} ipython3
 exp.data_set

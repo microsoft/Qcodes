@@ -101,7 +101,7 @@ User should chose one function from the follow list, for example "**E4980AMeasur
     "YTR": "Absolute value of admittance - Theta in radiant",
     "VDID": "DC voltage - DC current"
 
-Note: 
+Note:
 1. CP vs CS: ***P*** means measured using parallel equivalent circuit model, and ***S*** means measured using series equivalent circuit model.
 2. Same for LP and LS
 3. RP vs RS: Equivalent ***p***arallel/***s***eries resistance

@@ -19,7 +19,7 @@ from qcodes.plots.qcmatplotlib import MatPlot
 from qcodes.loops import Loop
 ```
 
-Plotting data in QCoDeS can be done using either MatPlot or QTPlot, with matplotlib and pyqtgraph as backends, respectively. 
+Plotting data in QCoDeS can be done using either MatPlot or QTPlot, with matplotlib and pyqtgraph as backends, respectively.
 MatPlot and QTPlot tailor these plotting backends to QCoDeS, providing many features.
 For example, when plotting a DataArray in a DataSet, the corresponding ticks, labels, etc. are automatically added to the plot.
 Both MatPlot and QTPlot support live plotting while a measurement is running.
@@ -176,7 +176,7 @@ loop.run()
 In the example above, the colorbar can be accessed via `plot[1].qcodes_colorbar`.
 This can be useful when you want to modify the colorbar (e.g. change the color limits `clim`).
 
-Note that the above plot was updated every time an inner loop was completed. 
+Note that the above plot was updated every time an inner loop was completed.
 This is because the update method was attached to the outer loop.
 If you instead want it to update within an outer loop, you have to attach it to an inner loop: `loop[0].with_bg_task(plot.update)` (`loop[0]` is the first action of the outer loop, which is the inner loop).
 
@@ -200,7 +200,7 @@ loop.with_bg_task(plot.update)
 loop.run()
 ```
 
-To use the matplotlib api, we need access to the matplotlib Figure and Axis objects. 
+To use the matplotlib api, we need access to the matplotlib Figure and Axis objects.
 Each subplot has its correspond Axis object, which are grouped together into a single Figure object.
 A subplot Axis can be accessed via its index. As an example, we will modify the title of the first axis:
 
@@ -254,7 +254,7 @@ As an example, we can attach a trivial function to occur when the plot object is
 ```{code-cell} ipython3
 def handle_close(event):
     print('Plot closed')
-    
+
 plot = MatPlot()
 plot.fig.canvas.mpl_connect('close_event', handle_close);
 ```
