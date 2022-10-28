@@ -79,6 +79,7 @@ extensions = [
     "autodocsumm",
     "sphinx_issues",
     "sphinx-favicon",
+    "myst_nb",
 ]
 
 # include special __xxx__ that DO have a docstring
@@ -471,3 +472,8 @@ towncrier_draft_include_empty = True
 towncrier_draft_working_directory = ".."
 
 issues_github_path = "QCoDeS/Qcodes"
+
+# myst-nb configuration
+nb_execution_mode = "cache"
+nb_execution_timeout = 180
+nb_execution_fail_on_error = True
