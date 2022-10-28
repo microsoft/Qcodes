@@ -1,4 +1,0 @@
-QCoDeS 0.35.1 (2022-10-05)
-==========================
-
-QCoDeS 0.35.1 has been yanked due to an incorrect tag.
