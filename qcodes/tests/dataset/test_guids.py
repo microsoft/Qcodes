@@ -210,6 +210,7 @@ def test_filter_guid(locs, stats, smpls):
 
 
 def test_validation():
+    time.sleep(10)
     valid_guid = str(uuid4())
     validate_guid_format(valid_guid)
 
