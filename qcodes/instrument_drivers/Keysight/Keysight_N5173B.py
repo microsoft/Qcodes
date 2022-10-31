@@ -5,8 +5,7 @@ class KeysightN5173B(N5183B):
     pass  # N5173B has the same interface as N5183B
 
 
-class N5183B(KeysightN5173B):
+class N5173B(KeysightN5173B):
     """
     Alias for backwards compatibility
-
     """
