@@ -1,7 +1,7 @@
 alabaster~=0.7.12
 argon2-cffi~=21.3.0
 argon2-cffi-bindings~=21.2.0
-asttokens~=2.0.8
+asttokens~=2.1.0
 attrs~=22.1.0
 autodocsumm~=0.2.9
 azure-core~=1.26.0
