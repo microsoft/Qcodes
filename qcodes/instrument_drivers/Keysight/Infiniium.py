@@ -88,7 +88,7 @@ class DSOTraceParam(ParameterWithSetpoints):
     def __init__(
         self,
         name: str,
-        instrument: Union["InfiniiumChannel", "InfiniiumFunction"],
+        instrument: Union["KeysightInfiniiumChannel", "KeysightInfiniiumFunction"],
         channel: str,
         **kwargs: Any,
     ):
@@ -111,14 +111,14 @@ class DSOTraceParam(ParameterWithSetpoints):
         Overwrite setpoint parameter to update setpoints if auto_digitize is true
         """
         instrument = self.instrument
-        if isinstance(instrument, InfiniiumChannel):
-            root_instrument: "Infiniium"
+        if isinstance(instrument, KeysightInfiniiumChannel):
+            root_instrument: "KeysightInfiniium"
             root_instrument = self.root_instrument  # type: ignore[assignment]
             cache_setpoints = root_instrument.cache_setpoints()
             if not cache_setpoints:
                 self.update_setpoints()
             return (instrument.time_axis,)
-        elif isinstance(instrument, InfiniiumFunction):
+        elif isinstance(instrument, KeysightInfiniiumFunction):
             if instrument.function().startswith("FFT"):
                 self.update_fft_setpoints()
                 return (instrument.frequency_axis,)
@@ -168,7 +168,7 @@ class DSOTraceParam(ParameterWithSetpoints):
         Update waveform parameters. Must be called before data
         acquisition if instr.cache_setpoints is False
         """
-        instrument: Union[InfiniiumChannel, InfiniiumFunction]
+        instrument: Union[KeysightInfiniiumChannel, KeysightInfiniiumFunction]
         instrument = self.instrument  # type: ignore[assignment]
         if preamble is None:
             instrument.write(f":WAV:SOUR {self._channel}")
@@ -186,7 +186,7 @@ class DSOTraceParam(ParameterWithSetpoints):
         """
         Update waveform parameters for an FFT.
         """
-        instrument: InfiniiumFunction = self.instrument  # type: ignore[assignment]
+        instrument: KeysightInfiniiumFunction = self.instrument  # type: ignore[assignment]
         instrument.write(f":WAV:SOUR {self._channel}")
         preamble = instrument.ask(":WAV:PRE?").strip().split(",")
         self.update_setpoints(preamble)
@@ -200,7 +200,7 @@ class DSOTraceParam(ParameterWithSetpoints):
         """
         if self.instrument is None:
             raise RuntimeError("Cannot get data without instrument")
-        root_instr: "Infiniium" = self.root_instrument  # type: ignore[assignment]
+        root_instr: "KeysightInfiniium" = self.root_instrument  # type: ignore[assignment]
         # Check if we can use cached trace parameters
         if not root_instr.cache_setpoints():
             self.update_setpoints()
@@ -452,10 +452,10 @@ class AbstractMeasurementSubsystem(InstrumentModule):
         return f":MEAS:{cmd}? {pre_cmd}{chan_str}{post_cmd}".strip()
 
 
-class BoundMeasurement(AbstractMeasurementSubsystem):
+class KeysightInfiniiumBoundMeasurement(AbstractMeasurementSubsystem):
     def __init__(
         self,
-        parent: Union["InfiniiumChannel", "InfiniiumFunction"],
+        parent: Union["KeysightInfiniiumChannel", "KeysightInfiniiumFunction"],
         name: str,
         **kwargs: Any,
     ):
@@ -469,8 +469,14 @@ class BoundMeasurement(AbstractMeasurementSubsystem):
         super().__init__(parent, name, **kwargs)
 
 
-class UnboundMeasurement(AbstractMeasurementSubsystem):
-    def __init__(self, parent: "Infiniium", name: str, **kwargs: Any):
+BoundMeasurement = KeysightInfiniiumBoundMeasurement
+"""
+Alias for backwards compatibility
+"""
+
+
+class KeysightInfiniiumUnboundMeasurement(AbstractMeasurementSubsystem):
+    def __init__(self, parent: "KeysightInfiniium", name: str, **kwargs: Any):
         """
         Initialize measurement subsystem where target is set by the parameter `source`.
         """
@@ -538,8 +544,16 @@ class UnboundMeasurement(AbstractMeasurementSubsystem):
         return self._channel
 
 
-class InfiniiumFunction(InstrumentChannel):
-    def __init__(self, parent: "Infiniium", name: str, channel: int, **kwargs: Any):
+UnboundMeasurement = KeysightInfiniiumUnboundMeasurement
+"""
+Alias for backwards compatibility
+"""
+
+
+class KeysightInfiniiumFunction(InstrumentChannel):
+    def __init__(
+        self, parent: "KeysightInfiniium", name: str, channel: int, **kwargs: Any
+    ):
         """
         Initialize an infiniium channel.
         """
@@ -610,7 +624,9 @@ class InfiniiumFunction(InstrumentChannel):
         )
 
         # Measurement subsystem
-        self.add_submodule("measure", BoundMeasurement(self, "measure"))
+        self.add_submodule(
+            "measure", KeysightInfiniiumBoundMeasurement(self, "measure")
+        )
 
     @property
     def channel(self) -> int:
@@ -646,8 +662,16 @@ class InfiniiumFunction(InstrumentChannel):
             self.write(":SYST:HEAD OFF")
 
 
-class InfiniiumChannel(InstrumentChannel):
-    def __init__(self, parent: "Infiniium", name: str, channel: int, **kwargs: Any):
+InfiniiumFunction = KeysightInfiniiumFunction
+"""
+Alias for backwards compatibility
+"""
+
+
+class KeysightInfiniiumChannel(InstrumentChannel):
+    def __init__(
+        self, parent: "KeysightInfiniium", name: str, channel: int, **kwargs: Any
+    ):
         """
         Initialize an infiniium channel.
         """
@@ -720,7 +744,9 @@ class InfiniiumChannel(InstrumentChannel):
         )
 
         # Measurement subsystem
-        self.add_submodule("measure", BoundMeasurement(self, "measure"))
+        self.add_submodule(
+            "measure", KeysightInfiniiumBoundMeasurement(self, "measure")
+        )
 
     @property
     def channel(self) -> int:
@@ -739,7 +765,13 @@ class InfiniiumChannel(InstrumentChannel):
         self.trace.update_setpoints()
 
 
-class Infiniium(VisaInstrument):
+InfiniiumChannel = KeysightInfiniiumChannel
+"""
+Alias for backwards compatibility
+"""
+
+
+class KeysightInfiniium(VisaInstrument):
     """
     This is the QCoDeS driver for the Keysight Infiniium oscilloscopes
     """
@@ -992,19 +1024,21 @@ class Infiniium(VisaInstrument):
         )
 
         # Channels
-        _channels = ChannelList(self, "channels", InfiniiumChannel, snapshotable=False)
+        _channels = ChannelList(
+            self, "channels", KeysightInfiniiumChannel, snapshotable=False
+        )
         for i in range(1, self.no_channels + 1):
-            channel = InfiniiumChannel(self, f"chan{i}", i)
+            channel = KeysightInfiniiumChannel(self, f"chan{i}", i)
             _channels.append(channel)
             self.add_submodule(f"ch{i}", channel)
         self.add_submodule("channels", _channels.to_channel_tuple())
 
         # Functions
         _functions = ChannelList(
-            self, "functions", InfiniiumFunction, snapshotable=False
+            self, "functions", KeysightInfiniiumFunction, snapshotable=False
         )
         for i in range(1, 16 + 1):
-            function = InfiniiumFunction(self, f"func{i}", i)
+            function = KeysightInfiniiumFunction(self, f"func{i}", i)
             _functions.append(function)
             self.add_submodule(f"func{i}", function)
         # Have to call channel list "funcs" here as functions is a
@@ -1012,7 +1046,7 @@ class Infiniium(VisaInstrument):
         self.add_submodule("funcs", _functions.to_channel_tuple())
 
         # Submodules
-        meassubsys = UnboundMeasurement(self, "measure")
+        meassubsys = KeysightInfiniiumUnboundMeasurement(self, "measure")
         self.add_submodule("measure", meassubsys)
 
     def _query_capabilities(self) -> None:
@@ -1176,3 +1210,9 @@ class Infiniium(VisaInstrument):
             self.device_clear()
             if timeout is not None:
                 self.visa_handle.timeout = old_timeout
+
+
+Infiniium = KeysightInfiniium
+"""
+Alias for backwards compatibility
+"""

@@ -1,3 +1,10 @@
+from .Infiniium import (
+    KeysightInfiniium,
+    KeysightInfiniiumBoundMeasurement,
+    KeysightInfiniiumChannel,
+    KeysightInfiniiumFunction,
+    KeysightInfiniiumUnboundMeasurement,
+)
 from .Keysight_33210a import Keysight33210A
 from .Keysight_33250a import Keysight33250A
 from .Keysight_33511b import Keysight33511B
@@ -61,6 +68,11 @@ __all__ = [
     "KeysightE4980ACorrection",
     "KeysightE4980AMeasurementPair",
     "KeysightE4980AMeasurements",
+    "KeysightInfiniium",
+    "KeysightInfiniiumBoundMeasurement",
+    "KeysightInfiniiumChannel",
+    "KeysightInfiniiumFunction",
+    "KeysightInfiniiumUnboundMeasurement",
     "KeysightN5173B",
     "KeysightN5183B",
     "KeysightN5222B",
