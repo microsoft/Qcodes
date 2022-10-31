@@ -6,13 +6,15 @@ from qcodes.instrument_drivers.Keysight.keysightb1500.constants import (
     IMeasRange,
     IOutputRange,
 )
-from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1511B import B1511B
+from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1511B import (
+    KeysightB1511B,
+)
 
 
 @pytest.fixture(name="smu")
 def _make_smu(mainframe):
     slot_nr = 1
-    smu = B1511B(parent=mainframe, name='B1511B', slot_nr=slot_nr)
+    smu = KeysightB1511B(parent=mainframe, name="B1511B", slot_nr=slot_nr)
     yield smu
 
 

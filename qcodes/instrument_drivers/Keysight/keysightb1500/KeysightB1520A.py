@@ -26,14 +26,16 @@ from .KeysightB1500_module import (
 from .message_builder import MessageBuilder
 
 if TYPE_CHECKING:
-    import qcodes.instrument_drivers.Keysight.keysightb1500
+    from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_base import (
+        KeysightB1500,
+    )
 
 _pattern = re.compile(r"((?P<status>\w)(?P<chnr>\w)(?P<dtype>\w))?"
                       r"(?P<value>[+-]\d{1,3}\.\d{3,6}E[+-]\d{2})")
 
 
-class CVSweeper(InstrumentChannel):
-    def __init__(self, parent: 'B1520A', name: str, **kwargs: Any):
+class KeysightB1500CVSweeper(InstrumentChannel):
+    def __init__(self, parent: "KeysightB1520A", name: str, **kwargs: Any):
         super().__init__(parent, name, **kwargs)
 
         self.add_parameter(name='sweep_auto_abort',
@@ -302,7 +304,14 @@ class CVSweeper(InstrumentChannel):
         return int(resp_dict['output_after_sweep'])
 
 
-class B1520A(B1500Module):
+
+CVSweeper = KeysightB1500CVSweeper
+"""
+Alias for backwards compatibility
+"""
+
+
+class KeysightB1520A(B1500Module):
     """
     Driver for Keysight B1520A Capacitance Measurement Unit module for B1500
     Semiconductor Parameter Analyzer.
@@ -319,7 +328,7 @@ class B1520A(B1500Module):
 
     def __init__(
         self,
-        parent: "qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500",
+        parent: "KeysightB1500",
         name: Optional[str],
         slot_nr: int,
         **kwargs: Any,
@@ -356,7 +365,7 @@ class B1520A(B1500Module):
                            get_cmd=self._get_capacitance,
                            snapshot_value=False)
 
-        self.add_submodule('correction', Correction(self, 'correction'))
+        self.add_submodule("correction", KeysightB1500Correction(self, "correction"))
 
         self.add_parameter(name="phase_compensation_mode",
                            set_cmd=self._set_phase_compensation_mode,
@@ -379,7 +388,7 @@ class B1520A(B1500Module):
             before every measurement. It is useful when there are wide load
             fluctuations by changing the bias and so on."""))
 
-        self.add_submodule('cv_sweep', CVSweeper(self, 'cv_sweep'))
+        self.add_submodule("cv_sweep", KeysightB1500CVSweeper(self, "cv_sweep"))
 
         self.add_parameter(name='adc_coef',
                            initial_value=1,
@@ -494,9 +503,11 @@ class B1520A(B1500Module):
             sweep_mode method is used to decide which mode to use.
                            """))
 
-        self.add_parameter(name='run_sweep',
-                           parameter_class=CVSweepMeasurement,
-                           docstring=textwrap.dedent("""
+        self.add_parameter(
+            name="run_sweep",
+            parameter_class=KeysightB1500CVSweepMeasurement,
+            docstring=textwrap.dedent(
+                """
             This is MultiParameter. Running the sweep runs the measurement
             on the list of values of cv_sweep_voltages. The output is a
             primary parameter (for ex Capacitance) and a secondary
@@ -504,7 +515,9 @@ class B1520A(B1500Module):
             setpoint cv_sweep_voltages. The impedance_model defines exactly
             what will be the primary and secondary parameter. The default
             case is Capacitance and Dissipation.
-                           """))
+                           """
+            ),
+        )
 
     def _cv_sweep_voltages(self) -> Tuple[float, ...]:
         sign = lambda s: s and (1, -1)[s < 0]
@@ -844,7 +857,13 @@ class B1520A(B1500Module):
         self.setup_fnc_already_run = True
 
 
-class CVSweepMeasurement(MultiParameter, StatusMixin):
+B1520A = KeysightB1520A
+"""
+Alias for backwards compatiblitly
+"""
+
+
+class KeysightB1500CVSweepMeasurement(MultiParameter, StatusMixin):
     """
     CV sweep measurement outputs a list of primary (capacitance) and secondary
     parameter (disipation).
@@ -854,7 +873,7 @@ class CVSweepMeasurement(MultiParameter, StatusMixin):
         instrument: Instrument to which this parameter communicates to.
     """
 
-    def __init__(self, name: str, instrument: B1520A, **kwargs: Any):
+    def __init__(self, name: str, instrument: KeysightB1520A, **kwargs: Any):
         super().__init__(
             name,
             names=('', ''),
@@ -867,8 +886,8 @@ class CVSweepMeasurement(MultiParameter, StatusMixin):
             instrument=instrument,
             **kwargs)
 
-        self.instrument: "B1520A"
-        self.root_instrument: "qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500"
+        self.instrument: "KeysightB1520A"
+        self.root_instrument: "KeysightB1500"
 
         self.update_name_label_unit_from_impedance_model()
 
@@ -938,18 +957,25 @@ class CVSweepMeasurement(MultiParameter, StatusMixin):
             model
         )
 
+CVSweepMeasurement = KeysightB1500CVSweepMeasurement
+"""
+Alias for backwards compatibility
+"""
 
-class Correction(InstrumentChannel):
+
+class KeysightB1500Correction(InstrumentChannel):
     """
     A Keysight B1520A CMU submodule for performing open/short/load corrections.
     """
 
-    def __init__(self, parent: 'B1520A', name: str, **kwargs: Any):
+    def __init__(self, parent: "KeysightB1520A", name: str, **kwargs: Any):
         super().__init__(parent=parent, name=name, **kwargs)
         self._chnum = parent.channels[0]
 
-        self.add_submodule('frequency_list',
-                           FrequencyList(self, 'frequency_list', self._chnum))
+        self.add_submodule(
+            "frequency_list",
+            KeysightB1500FrequencyList(self, "frequency_list", self._chnum),
+        )
 
     def enable(self, corr: constants.CalibrationType) -> None:
         """
@@ -1099,13 +1125,20 @@ class Correction(InstrumentChannel):
         return response_out
 
 
-class FrequencyList(InstrumentChannel):
+Correction = KeysightB1500Correction
+"""
+Alias for backwards compatibility
+"""
+
+
+class KeysightB1500FrequencyList(InstrumentChannel):
     """
     A frequency list for open/short/load correction for Keysight B1520A CMU.
     """
 
-    def __init__(self, parent: 'Correction', name: str,
-                 chnum: int, **kwargs: Any):
+    def __init__(
+        self, parent: "KeysightB1500Correction", name: str, chnum: int, **kwargs: Any
+    ):
         super().__init__(parent=parent, name=name, **kwargs)
         self._chnum = chnum
 
@@ -1151,3 +1184,9 @@ class FrequencyList(InstrumentChannel):
                                            index=index)
         response = self.ask(msg.message)
         return float(response)
+
+
+FrequencyList = KeysightB1500FrequencyList
+"""
+Alias for backwards compatibility
+"""

@@ -1,13 +1,13 @@
 from typing import TYPE_CHECKING, Any, List, Optional
 
 from .constants import IMeasRange, IOutputRange
-from .KeysightB1517A import B1517A
+from .KeysightB1517A import KeysightB1517A
 
 if TYPE_CHECKING:
     import qcodes.instrument_drivers.Keysight.keysightb1500
 
 
-class B1511B(B1517A):
+class KeysightB1511B(KeysightB1517A):
     """
     Driver for Keysight B1511B Source/Monitor Unit module for B1500
     Semiconductor Parameter Analyzer.
@@ -86,3 +86,9 @@ class B1511B(B1517A):
                 set(self._valid_i_output_ranges) -
                 set(self._asu_valid_i_output_ranges)
             )
+
+
+B1511B = KeysightB1511B
+"""
+Alias for backwards compatibility
+"""

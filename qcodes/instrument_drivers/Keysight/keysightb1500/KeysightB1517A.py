@@ -39,7 +39,9 @@ from .KeysightB1500_sampling_measurement import SamplingMeasurement
 from .message_builder import MessageBuilder
 
 if TYPE_CHECKING:
-    import qcodes.instrument_drivers.Keysight.keysightb1500
+    from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_base import (
+        KeysightB1500,
+    )
 
 
 class SweepSteps(TypedDict):
@@ -58,9 +60,8 @@ class SweepSteps(TypedDict):
     power_compliance: Optional[float]
 
 
-class IVSweeper(InstrumentChannel):
-    def __init__(self, parent: 'B1517A',
-                 name: str, **kwargs: Any):
+class KeysightB1500IVSweeper(InstrumentChannel):
+    def __init__(self, parent: "KeysightB1517A", name: str, **kwargs: Any):
         super().__init__(parent, name, **kwargs)
         self._sweep_step_parameters: SweepSteps = \
             {"sweep_mode": constants.SweepMode.LINEAR,
@@ -522,6 +523,12 @@ class IVSweeper(InstrumentChannel):
         return out_dict
 
 
+IVSweeper = KeysightB1500IVSweeper
+"""
+Alias for backwards compatibility
+"""
+
+
 class _ParameterWithStatus(Parameter):
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
@@ -547,7 +554,7 @@ class _ParameterWithStatus(Parameter):
 
 class _SpotMeasurementVoltageParameter(_ParameterWithStatus):
     def set_raw(self, value: ParamRawDataType) -> None:
-        smu = cast("B1517A", self.instrument)
+        smu = cast("KeysightB1517A", self.instrument)
 
         if smu._source_config["output_range"] is None:
             smu._source_config["output_range"] = constants.VOutputRange.AUTO
@@ -573,7 +580,7 @@ class _SpotMeasurementVoltageParameter(_ParameterWithStatus):
         )
 
     def get_raw(self) -> ParamRawDataType:
-        smu = cast("B1517A", self.instrument)
+        smu = cast("KeysightB1517A", self.instrument)
 
         msg = MessageBuilder().tv(
             chnum=smu.channels[0],
@@ -590,7 +597,7 @@ class _SpotMeasurementVoltageParameter(_ParameterWithStatus):
 
 class _SpotMeasurementCurrentParameter(_ParameterWithStatus):
     def set_raw(self, value: ParamRawDataType) -> None:
-        smu = cast("B1517A", self.instrument)
+        smu = cast("KeysightB1517A", self.instrument)
 
         if smu._source_config["output_range"] is None:
             smu._source_config["output_range"] = constants.IOutputRange.AUTO
@@ -616,7 +623,7 @@ class _SpotMeasurementCurrentParameter(_ParameterWithStatus):
         )
 
     def get_raw(self) -> ParamRawDataType:
-        smu = cast("B1517A", self.instrument)
+        smu = cast("KeysightB1517A", self.instrument)
 
         msg = MessageBuilder().ti(
             chnum=smu.channels[0],
@@ -631,7 +638,7 @@ class _SpotMeasurementCurrentParameter(_ParameterWithStatus):
         return parsed["value"]
 
 
-class B1517A(B1500Module):
+class KeysightB1517A(B1500Module):
     """
     Driver for Keysight B1517A Source/Monitor Unit module for B1500
     Semiconductor Parameter Analyzer.
@@ -648,7 +655,7 @@ class B1517A(B1500Module):
 
     def __init__(
         self,
-        parent: "qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500",
+        parent: "KeysightB1500",
         name: Optional[str],
         slot_nr: int,
         **kwargs: Any,
@@ -667,7 +674,7 @@ class B1517A(B1500Module):
         self._meta_attrs += ['_measure_config', '_source_config',
                              '_timing_parameters']
 
-        self.add_submodule('iv_sweep', IVSweeper(self, 'iv_sweep'))
+        self.add_submodule("iv_sweep", KeysightB1500IVSweeper(self, "iv_sweep"))
         self.setup_fnc_already_run: bool = False
         self.power_line_frequency: int = 50
         self._average_coefficient: int = 1
@@ -1169,3 +1176,9 @@ class B1517A(B1500Module):
         self.root_instrument.clear_timer_count()
 
         self.setup_fnc_already_run = True
+
+
+B1517A = KeysightB1517A
+"""
+Alias for backwards compatibility
+"""
