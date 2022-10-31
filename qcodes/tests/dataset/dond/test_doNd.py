@@ -34,6 +34,50 @@ from qcodes.tests.instrument_mocks import (
 from qcodes.validators import Ints
 
 
+class TrackingParameter(Parameter):
+    """Parameter that keeps track of number of get and set operations"""
+
+    def __init__(self, *args, **kwargs):
+        self.set_count = 0
+        self.get_count = 0
+        super().__init__(*args, **kwargs)
+
+    def set_raw(self, value):
+        self.set_count += 1
+        self.cache._set_from_raw_value(value)
+
+    def get_raw(self):
+        self.get_count += 1
+        return self.cache.raw_value
+
+    def reset_count(self) -> None:
+        self.get_count = 0
+        self.set_count = 0
+
+
+class GetReturnsCountParameter(Parameter):
+    """Parameter that keeps track of number of get and set operations
+    Allows you to set a value but returns the get count rather
+    than the value"""
+
+    def __init__(self, *args, **kwargs):
+        self.set_count = 0
+        self.get_count = 0
+        super().__init__(*args, **kwargs)
+
+    def set_raw(self, value):
+        self.set_count += 1
+        self.cache._set_from_raw_value(value)
+
+    def get_raw(self):
+        self.get_count += 1
+        return self.get_count
+
+    def reset_count(self) -> None:
+        self.get_count = 0
+        self.set_count = 0
+
+
 def test_linear_sweep_get_setpoints(_param):
     start = 0
     stop = 1
@@ -1589,3 +1633,77 @@ def test_default_log_info(caplog):
         dond(LinSweep(param_1, 0, 10, 10), param_2)
 
     assert "Using 'qcodes.dataset.dond'" in caplog.text
+
+
+def test_dond_get_after_set(_param_set, _param_set_2, _param):
+
+    n_points = 10
+
+    a = TrackingParameter("a", initial_value=0)
+    b = TrackingParameter("b", initial_value=0)
+
+    a.reset_count()
+    b.reset_count()
+
+    assert a.get_count == 0
+    assert a.set_count == 0
+    assert b.get_count == 0
+    assert b.set_count == 0
+
+    dond(LinSweep(a, 0, 10, n_points, get_after_set=True), b)
+
+    assert a.get_count == n_points
+    assert a.set_count == n_points
+    assert b.get_count == n_points
+    assert b.set_count == 0
+
+
+def test_dond_no_get_after_set(_param_set, _param_set_2, _param):
+
+    n_points = 10
+
+    a = TrackingParameter("a", initial_value=0)
+    b = TrackingParameter("b", initial_value=0)
+
+    a.reset_count()
+    b.reset_count()
+
+    assert a.get_count == 0
+    assert a.set_count == 0
+    assert b.get_count == 0
+    assert b.set_count == 0
+
+    dond(LinSweep(a, 0, 10, n_points, get_after_set=False), b)
+
+    assert a.get_count == 0
+    assert a.set_count == n_points
+    assert b.get_count == n_points
+    assert b.set_count == 0
+
+
+def test_dond_get_after_set_stores_get_value(_param_set, _param_set_2, _param):
+
+    n_points = 11
+
+    a = GetReturnsCountParameter("a", initial_value=0)
+    b = TrackingParameter("b", initial_value=0)
+
+    a.reset_count()
+    b.reset_count()
+
+    assert a.get_count == 0
+    assert a.set_count == 0
+    assert b.get_count == 0
+    assert b.set_count == 0
+
+    ds, _, _ = dond(LinSweep(a, -10, -20, n_points, get_after_set=True), b)
+
+    # since we are using the GetReturnsCountParameter the sweep should be count e.g. 0, 1, ... 11
+    # not the set parameters -10, .. - 20
+    np.testing.assert_array_equal(
+        ds.get_parameter_data()["b"]["a"], np.linspace(1, 11, n_points)
+    )
+    assert a.get_count == n_points
+    assert a.set_count == n_points
+    assert b.get_count == n_points
+    assert b.set_count == 0
