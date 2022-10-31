@@ -23,7 +23,9 @@ def setup_dmm(dmm: Instrument) -> None:
 
 
 def save_calibration(smu: Keithley_2600) -> None:
+    calibration_date = int(time.time())
     for smu_channel in smu.channels:
+        smu.write(f"{smu_channel.channel}.cal.adjustdate = {calibration_date}")
         smu.write(f"{smu_channel.channel}.cal.save()")
 
 
