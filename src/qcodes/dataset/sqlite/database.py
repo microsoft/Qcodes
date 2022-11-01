@@ -121,7 +121,7 @@ def _adapt_complex(value: complex | np.complexfloating) -> sqlite3.Binary:
 
 
 def connect(
-    name: str | Path, debug: bool = False, version: int = -1
+    name: str | Path, debug: bool = False, version: int = -1, read_only: bool = False
 ) -> AtomicConnection:
     """
     Connect or create  database. If debug the queries will be echoed back.
@@ -133,6 +133,7 @@ def connect(
         debug: should tracing be turned on.
         version: which version to create. We count from 0. -1 means 'latest'.
             Should always be left at -1 except when testing.
+        read_only: Should the database be opened in read only mode.
 
     Returns:
         connection object to the database (note, it is
@@ -144,10 +145,16 @@ def connect(
     # register binary(TEXT) -> numpy converter
     sqlite3.register_converter("array", _convert_array)
 
+    path = f"file:{name!s}"
+
+    if read_only:
+        path = path + "?mode=ro"
+
     conn = sqlite3.connect(
-        name,
+        path,
         detect_types=sqlite3.PARSE_DECLTYPES,
         check_same_thread=True,
+        uri=True,
         factory=AtomicConnection,
     )
 
