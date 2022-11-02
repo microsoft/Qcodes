@@ -3,7 +3,9 @@ import logging
 import os
 from typing import TYPE_CHECKING
 
-import h5py
+import lazy_loader
+
+h5py = lazy_loader.load("h5py")
 import numpy as np
 
 import qcodes as qc
