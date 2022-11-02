@@ -3,7 +3,7 @@ import logging
 import os
 from typing import TYPE_CHECKING
 
-import lazy_loader
+import lazy_loader  # type: ignore[import]
 
 h5py = lazy_loader.load("h5py")
 import numpy as np
