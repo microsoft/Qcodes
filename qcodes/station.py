@@ -40,6 +40,7 @@ import qcodes
 from qcodes import validators
 from qcodes.instrument.base import Instrument, InstrumentBase
 from qcodes.instrument.channel import ChannelTuple
+from qcodes.instrument.sims import sims_visalib
 from qcodes.metadatable import Metadatable
 from qcodes.monitor.monitor import Monitor
 from qcodes.parameters import (
@@ -499,6 +500,8 @@ class Station(Metadatable, DelegateAttributes):
             init_kwargs['address'] = instr_cfg['address']
         if 'port' in instr_cfg:
             init_kwargs['port'] = instr_cfg['port']
+        sim_visa_file = instr_cfg.get("virtual_instrument_yaml_file", None)
+
         # make explicitly passed arguments overide the ones from the config
         # file.
         # We are mutating the dict below
@@ -524,7 +527,18 @@ class Station(Metadatable, DelegateAttributes):
             instr_class_name = instr_cfg['type'].split('.')[-1]
         module = importlib.import_module(module_name)
         instr_class = getattr(module, instr_class_name)
-        instr = instr_class(name=name, **instr_kwargs)
+
+        if sim_visa_file is not None:
+            if "visalib" in instr_kwargs:
+                raise ValueError(
+                    f"Instrument {name} has both visalib and "
+                    "virtual_instrument_yaml_file in its config. "
+                    "This is not supported."
+                )
+            with sims_visalib(sim_visa_file) as visalib:
+                instr = instr_class(name=name, visalib=visalib, **instr_kwargs)
+        else:
+            instr = instr_class(name=name, **instr_kwargs)
 
         def resolve_instrument_identifier(
             instrument: ChannelOrInstrumentBase,

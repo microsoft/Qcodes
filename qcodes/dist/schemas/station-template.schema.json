@@ -51,6 +51,9 @@
                         "init": {
                             "type": "object"
                         },
+                        "virtual_instrument_yaml_file": {
+                            "type": "string"
+                        },
                         "add_parameters": {
                             "type": "object",
                             "patternProperties": {
