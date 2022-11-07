@@ -3,18 +3,17 @@ from collections import Counter
 import numpy as np
 import pytest
 
-import qcodes.instrument.sims as sims
 from qcodes.instrument_drivers.Keithley import (
     Keithley2600MeasurementStatus,
     Keithley2614B,
 )
 
-visalib = sims.__file__.replace('__init__.py', 'Keithley_2600.yaml@sim')
-
 
 @pytest.fixture(scope="function", name="driver")
 def _make_driver():
-    driver = Keithley2614B("Keithley_2600", address="GPIB::1::INSTR", visalib=visalib)
+    driver = Keithley2614B(
+        "Keithley_2600", address="GPIB::1::INSTR", pyvisa_sim_file="Keithley_2600.yaml"
+    )
 
     yield driver
     driver.close()
