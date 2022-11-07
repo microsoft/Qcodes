@@ -4,11 +4,9 @@ import sys
 from typing import Any
 
 if sys.version_info >= (3, 9):
-    from importlib.abc import Traversable
     from importlib.resources import as_file, files
 else:
     from importlib_resources import as_file, files
-    from importlib_resources.abc import Traversable
 
 import qcodes.validators as vals
 from qcodes.instrument_drivers.american_magnetics.AMI430 import AMI430

@@ -4,11 +4,9 @@ from __future__ import annotations
 import sys
 
 if sys.version_info >= (3, 9):
-    from importlib.abc import Traversable
     from importlib.resources import as_file, files
 else:
     from importlib_resources import as_file, files
-    from importlib_resources.abc import Traversable
 
 import logging
 from collections.abc import Sequence

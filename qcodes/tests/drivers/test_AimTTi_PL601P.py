@@ -3,8 +3,8 @@ import pytest
 from qcodes.instrument_drivers.AimTTi import AimTTiPL601
 
 
-@pytest.fixture(scope='function')
-def driver():
+@pytest.fixture(scope="function", name="driver")
+def _make_driver():
     driver = AimTTiPL601(
         "AimTTi", address="GPIB::1::INSTR", pyvisa_sim_file="AimTTi_PL601P.yaml"
     )
