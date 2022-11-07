@@ -11,7 +11,6 @@ import pytest
 from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import floats, tuples
 
-import qcodes.instrument.sims as sims
 from qcodes.instrument import Instrument
 from qcodes.instrument.ip_to_visa import AMI430_VISA
 from qcodes.instrument_drivers.american_magnetics.AMI430 import (
@@ -36,9 +35,6 @@ field_limit = [
     lambda x, y, z: np.linalg.norm([x, y, z]) < 2
 ]
 
-# path to the .yaml file containing the simulated instrument
-visalib = sims.__file__.replace('__init__.py', 'AMI430.yaml@sim')
-
 LOG_NAME = "qcodes.instrument.instrument_base"
 
 
@@ -48,12 +44,27 @@ def magnet_axes_instances():
     Start three mock instruments representing current drivers for the x, y,
     and z directions.
     """
-    mag_x = AMI430_VISA('x', address='GPIB::1::INSTR', visalib=visalib,
-                        terminator='\n', port=1)
-    mag_y = AMI430_VISA('y', address='GPIB::2::INSTR', visalib=visalib,
-                        terminator='\n', port=1)
-    mag_z = AMI430_VISA('z', address='GPIB::3::INSTR', visalib=visalib,
-                        terminator='\n', port=1)
+    mag_x = AMI430_VISA(
+        "x",
+        address="GPIB::1::INSTR",
+        pyvisa_sim_file="AMI430.yaml",
+        terminator="\n",
+        port=1,
+    )
+    mag_y = AMI430_VISA(
+        "y",
+        address="GPIB::2::INSTR",
+        pyvisa_sim_file="AMI430.yaml",
+        terminator="\n",
+        port=1,
+    )
+    mag_z = AMI430_VISA(
+        "z",
+        address="GPIB::3::INSTR",
+        pyvisa_sim_file="AMI430.yaml",
+        terminator="\n",
+        port=1,
+    )
 
     yield mag_x, mag_y, mag_z
 
@@ -79,8 +90,13 @@ def _make_current_driver(magnet_axes_instances):
 
 @pytest.fixture(scope="function", name="ami430")
 def _make_ami430():
-    mag = AMI430_VISA('ami430', address='GPIB::1::INSTR', visalib=visalib,
-                      terminator='\n', port=1)
+    mag = AMI430_VISA(
+        "ami430",
+        address="GPIB::1::INSTR",
+        pyvisa_sim_file="AMI430.yaml",
+        terminator="\n",
+        port=1,
+    )
     yield mag
     mag.close()
 
