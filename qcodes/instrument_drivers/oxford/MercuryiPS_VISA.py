@@ -235,15 +235,17 @@ class MercuryiPS(VisaInstrument):
                              'function from (x, y, z) -> Bool. Received '
                              f'{type(field_limits)} instead.')
 
-        if visalib:
-            visabackend = visalib.split('@')[1]
-        else:
-            visabackend = 'NI'
-
+        pyvisa_sim_file = kwargs.get("pyvisa_sim_file", None)
         # ensure that a socket is used unless we are in simulation mode
-        if not address.endswith('SOCKET') and visabackend != 'sim':
-            raise ValueError('Incorrect VISA resource name. Must be of type '
-                             'TCPIP0::XXX.XXX.XXX.XXX::7020::SOCKET.')
+        if (
+            not address.endswith("SOCKET")
+            and not address.endswith("@sim")
+            and not pyvisa_sim_file
+        ):
+            raise ValueError(
+                "Incorrect VISA resource name. Must be of type "
+                "TCPIP0::XXX.XXX.XXX.XXX::7020::SOCKET."
+            )
 
         super().__init__(name, address, terminator='\n', visalib=visalib,
                          **kwargs)
