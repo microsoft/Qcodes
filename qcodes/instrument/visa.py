@@ -90,9 +90,9 @@ class VisaInstrument(Instrument):
         if pyvisa_sim_file is not None:
             traversable_handle = files("qcodes.instrument.sims") / pyvisa_sim_file
             with as_file(traversable_handle) as sim_visalib_path:
-                sim_visalib = f"{str(sim_visalib_path)}@sim"
+                visalib = f"{str(sim_visalib_path)}@sim"
                 visa_handle, visabackend = self._connect_and_handle_error(
-                    address, sim_visalib
+                    address, visalib
                 )
         else:
             visa_handle, visabackend = self._connect_and_handle_error(address, visalib)
