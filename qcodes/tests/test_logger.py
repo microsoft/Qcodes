@@ -6,7 +6,6 @@ import os
 from copy import copy
 
 import pytest
-from packaging import version
 
 import qcodes as qc
 import qcodes.logger as logger
@@ -14,13 +13,7 @@ from qcodes.logger.log_analysis import capture_dataframe
 
 TEST_LOG_MESSAGE = 'test log message'
 
-pytest_version = version.parse(pytest.__version__)
-assert isinstance(pytest_version, version.Version)
-
-if pytest_version.major >= 6:
-    NUM_PYTEST_LOGGERS = 2
-else:
-    NUM_PYTEST_LOGGERS = 1
+NUM_PYTEST_LOGGERS = 2
 
 
 @pytest.fixture
