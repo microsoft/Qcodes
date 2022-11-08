@@ -1846,8 +1846,6 @@ class Sweep(BaseSweep):
     2 args:
     - Sweep(parameter, [1,2,3])
         : sweep "parameter" over sequence [1,2,3]
-    - Sweep(parameter, stop_val)
-        : sweep "parameter" from current value to "stop_val"
     - Sweep([1,2,3], "name")
         : sweep over sequence [1,2,3] with sweep array name "name"
     3 args:
@@ -1951,8 +1949,6 @@ class Sweep(BaseSweep):
         2 args:
         - Sweep(parameter, [1,2,3])
           : sweep "parameter" over sequence [1,2,3]
-        - Sweep(parameter, stop_val)
-          : sweep "parameter" from current value to "stop_val"
         - Sweep([1,2,3], "name")
           : sweep over sequence [1,2,3] with sweep array name "name"
         3 args:
@@ -1989,12 +1985,10 @@ class Sweep(BaseSweep):
             if isinstance(args[0], _BaseParameter):  # Sweep(parameter, [1,2,3])
                 if isinstance(args[1], Iterable):
                     kwargs["parameter"], kwargs["sequence"] = args
-                elif isinstance(args[1], (int, float)):
-                    kwargs["parameter"], kwargs["stop"] = args
                 else:
                     raise SyntaxError(
                         "Sweep with Parameter arg and second arg should have second arg"
-                        " be either a sequence or a target value"
+                        " be a sequence"
                     )
             elif isinstance(args[0], Iterable):  # Sweep([1,2,3], "name")
                 assert isinstance(args[1], str)
