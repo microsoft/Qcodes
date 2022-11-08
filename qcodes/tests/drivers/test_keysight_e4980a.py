@@ -2,17 +2,14 @@ import re
 
 import pytest
 
-import qcodes.instrument.sims as sims
 import qcodes.instrument_drivers.Keysight.keysight_e4980a as E4980A
-
-VISALIB = sims.__file__.replace('__init__.py', 'Keysight_E4980A.yaml@sim')
 
 
 @pytest.fixture(name="driver")
 def _make_driver():
-    instr = E4980A.KeysightE4980A('E4980A',
-                                  address="GPIB::1::INSTR",
-                                  visalib=VISALIB)
+    instr = E4980A.KeysightE4980A(
+        "E4980A", address="GPIB::1::INSTR", pyvisa_sim_file="Keysight_E4980A.yaml"
+    )
     yield instr
     instr.close()
 

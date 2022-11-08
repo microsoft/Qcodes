@@ -2,7 +2,6 @@ import logging
 import time
 from typing import Dict
 
-import qcodes.instrument.sims as sims
 from qcodes.instrument import InstrumentBase
 from qcodes.instrument_drivers.Lakeshore.Model_336 import Model_336
 
@@ -199,9 +198,11 @@ class Model_336_Mock(MockVisaInstrument, Model_336):
 
 @instrument_fixture(scope="function")
 def lakeshore_336():
-    visalib = sims.__file__.replace("__init__.py", "lakeshore_model336.yaml@sim")
     return Model_336_Mock(
-        "lakeshore_336_fixture", "GPIB::2::INSTR", visalib=visalib, device_clear=False
+        "lakeshore_336_fixture",
+        "GPIB::2::INSTR",
+        pyvisa_sim_file="lakeshore_model336.yaml",
+        device_clear=False,
     )
 
 

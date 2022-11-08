@@ -1,18 +1,17 @@
 import pytest
 
-import qcodes.instrument.sims as sims
 from qcodes.instrument_drivers.Keysight.N9030B import (
     N9030B,
     PhaseNoiseMode,
     SpectrumAnalyzerMode,
 )
 
-VISALIB = sims.__file__.replace('__init__.py', 'Keysight_N9030B.yaml@sim')
-
 
 @pytest.fixture(name="driver")
 def _make_driver():
-    driver = N9030B('n9030B_sim', address="GPIB::1::INSTR", visalib=VISALIB)
+    driver = N9030B(
+        "n9030B_sim", address="GPIB::1::INSTR", pyvisa_sim_file="Keysight_N9030B.yaml"
+    )
     yield driver
     driver.close()
 

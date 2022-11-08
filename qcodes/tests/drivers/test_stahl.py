@@ -2,7 +2,6 @@ import logging
 
 import pytest
 
-import qcodes.instrument.sims as sims
 from qcodes.instrument_drivers.stahl import Stahl
 
 LOG_NAME = "qcodes.instrument.instrument_base"
@@ -10,12 +9,8 @@ LOG_NAME = "qcodes.instrument.instrument_base"
 
 @pytest.fixture(scope="function")
 def stahl_instrument():
-    visa_lib = sims.__file__.replace(
-        '__init__.py',
-        'stahl.yaml@sim'
-    )
 
-    inst = Stahl('Stahl', 'ASRL3', visalib=visa_lib)
+    inst = Stahl("Stahl", "ASRL3", pyvisa_sim_file="stahl.yaml")
 
     try:
         yield inst

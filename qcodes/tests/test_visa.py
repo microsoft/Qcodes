@@ -1,3 +1,6 @@
+import re
+from pathlib import Path
+
 import pytest
 import pyvisa as visa
 
@@ -175,3 +178,79 @@ def test_visa_instr_metadata(request):
     mv = MockVisa('Joe', 'none_adress', metadata=metadatadict)
     request.addfinalizer(mv.close)
     assert mv.metadata == metadatadict
+
+
+def test_both_visahandle_and_pyvisa_sim_file_raises():
+
+    with pytest.raises(
+        RuntimeError,
+        match=re.escape(
+            "It's an error to supply both visalib and pyvisa_sim_file as arguments to a VISA instrument"
+        ),
+    ):
+        MockVisa(
+            name="mock",
+            address="nowhere",
+            visalib="myfile.yaml@sim",
+            pyvisa_sim_file="myfile.yaml",
+        )
+
+
+def test_load_pyvisa_sim_file_implict_module(request):
+    from qcodes.instrument_drivers.AimTTi import AimTTiPL601
+
+    driver = AimTTiPL601(
+        "AimTTi", address="GPIB::1::INSTR", pyvisa_sim_file="AimTTi_PL601P.yaml"
+    )
+    request.addfinalizer(driver.close)
+    assert driver.visabackend == "sim"
+    path_str, backend = driver.visalib.split("@")
+    assert backend == "sim"
+    path = Path(path_str)
+    assert path.match("qcodes/instrument/sims/AimTTi_PL601P.yaml")
+
+
+def test_load_pyvisa_sim_file_explicit_module(request):
+    from qcodes.instrument_drivers.AimTTi import AimTTiPL601
+
+    driver = AimTTiPL601(
+        "AimTTi",
+        address="GPIB::1::INSTR",
+        pyvisa_sim_file="qcodes.instrument.sims:AimTTi_PL601P.yaml",
+    )
+    request.addfinalizer(driver.close)
+    assert driver.visabackend == "sim"
+    path_str, backend = driver.visalib.split("@")
+    assert backend == "sim"
+    path = Path(path_str)
+    assert path.match("qcodes/instrument/sims/AimTTi_PL601P.yaml")
+
+
+def test_load_pyvisa_sim_file_invalid_file_raises(request):
+    from qcodes.instrument_drivers.AimTTi import AimTTiPL601
+
+    with pytest.raises(
+        FileNotFoundError,
+        match=re.escape(
+            "Pyvisa-sim yaml file could not be found. Trying to load file notafile.yaml from module: qcodes.instrument.sims"
+        ),
+    ):
+        AimTTiPL601(
+            "AimTTi",
+            address="GPIB::1::INSTR",
+            pyvisa_sim_file="qcodes.instrument.sims:notafile.yaml",
+        )
+
+
+def test_load_pyvisa_sim_file_invalid_module_raises(request):
+    from qcodes.instrument_drivers.AimTTi import AimTTiPL601
+
+    with pytest.raises(
+        ModuleNotFoundError,
+        match=re.escape("No module named 'qcodes.instrument.not_a_module'"),
+    ):
+        AimTTiPL601(
+            "AimTTi",
+            address="GPIB::1::INSTR",
+            pyvisa_sim_file="qcodes.instrument.not_a_module:AimTTi_PL601P.yaml",
+        )

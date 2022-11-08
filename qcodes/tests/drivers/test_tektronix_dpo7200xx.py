@@ -3,10 +3,7 @@ import timeit
 
 import pytest
 
-import qcodes.instrument.sims as sims
 from qcodes.instrument_drivers.tektronix.DPO7200xx import TektronixDPO7000xx
-
-visalib = sims.__file__.replace('__init__.py', 'Tektronix_DPO7200xx.yaml@sim')
 
 
 @pytest.fixture(scope='module')
@@ -15,7 +12,10 @@ def tektronix_dpo():
     A six channel-per-relay instrument
     """
     driver = TektronixDPO7000xx(
-        'dpo', address='TCPIP0::0.0.0.0::inst0::INSTR', visalib=visalib)
+        "dpo",
+        address="TCPIP0::0.0.0.0::inst0::INSTR",
+        pyvisa_sim_file="Tektronix_DPO7200xx.yaml",
+    )
 
     yield driver
     driver.close()

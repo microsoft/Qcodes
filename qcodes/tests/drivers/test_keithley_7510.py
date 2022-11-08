@@ -3,17 +3,16 @@ import hypothesis.strategies as st
 import pytest
 from hypothesis import given, settings
 
-import qcodes.instrument.sims as sims
 from qcodes.instrument_drivers.Keithley import Keithley7510
-
-VISALIB = sims.__file__.replace('__init__.py', 'keithley_7510.yaml@sim')
 
 
 @pytest.fixture(scope="module")
 def dmm_7510_driver():
-    inst = Keithley7510('Keithley_7510_sim',
-                        address='GPIB::1::INSTR',
-                        visalib=VISALIB)
+    inst = Keithley7510(
+        "Keithley_7510_sim",
+        address="GPIB::1::INSTR",
+        pyvisa_sim_file="keithley_7510.yaml",
+    )
 
     try:
         yield inst
