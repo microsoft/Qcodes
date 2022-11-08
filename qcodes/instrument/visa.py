@@ -86,7 +86,11 @@ class VisaInstrument(Instrument):
                 "arguments to a VISA instrument"
             )
         if pyvisa_sim_file is not None:
-            traversable_handle = files("qcodes.instrument.sims") / pyvisa_sim_file
+            if ":" in pyvisa_sim_file:
+                module, pyvisa_sim_file = pyvisa_sim_file.split(":")
+            else:
+                module = "qcodes.instrument.sims"
+            traversable_handle = files(module) / pyvisa_sim_file
             with as_file(traversable_handle) as sim_visalib_path:
                 visalib = f"{str(sim_visalib_path)}@sim"
                 visa_handle, visabackend = self._connect_and_handle_error(
