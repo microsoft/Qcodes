@@ -224,3 +224,16 @@ def test_load_pyvisa_sim_file_explicit_module(request):
     assert backend == "sim"
     path = Path(path_str)
     assert path.match("qcodes/instrument/sims/AimTTi_PL601P.yaml")
+
+
+def test_load_pyvisa_sim_file_invalid_location_raises(request):
+    from qcodes.instrument_drivers.AimTTi import AimTTiPL601
+
+    with pytest.raises(
+        FileNotFoundError, match="Pyvisa-sim yaml file could not be found at location"
+    ):
+        AimTTiPL601(
+            "AimTTi",
+            address="GPIB::1::INSTR",
+            pyvisa_sim_file="qcodes.instrument.sims:notafile.yaml",
+        )

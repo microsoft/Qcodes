@@ -99,6 +99,11 @@ class VisaInstrument(Instrument):
                 module = "qcodes.instrument.sims"
             traversable_handle = files(module) / pyvisa_sim_file
             with as_file(traversable_handle) as sim_visalib_path:
+                if not sim_visalib_path.exists():
+                    raise FileNotFoundError(
+                        "Pyvisa-sim yaml file "
+                        f"could not be found at location {sim_visalib_path}"
+                    )
                 visalib = f"{str(sim_visalib_path)}@sim"
                 visa_handle, visabackend = self._connect_and_handle_error(
                     address, visalib
