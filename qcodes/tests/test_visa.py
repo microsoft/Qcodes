@@ -1,4 +1,5 @@
 import re
+from pathlib import Path
 
 import pytest
 import pyvisa as visa
@@ -193,3 +194,17 @@ def test_both_visahandle_and_pyvisa_sim_file_raises():
             visalib="myfile.yaml@sim",
             pyvisa_sim_file="myfile.yaml",
         )
+
+
+def test_load_pyvisa_sim_file_implict_module(request):
+    from qcodes.instrument_drivers.AimTTi import AimTTiPL601
+
+    driver = AimTTiPL601(
+        "AimTTi", address="GPIB::1::INSTR", pyvisa_sim_file="AimTTi_PL601P.yaml"
+    )
+    request.addfinalizer(driver.close)
+    assert driver.visabackend == "sim"
+    path_str, backend = driver.visalib.split("@")
+    assert backend == "sim"
+    path = Path(path_str)
+    assert path.match("qcodes/instrument/sims/AimTTi_PL601P.yaml")
