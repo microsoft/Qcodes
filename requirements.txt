@@ -66,7 +66,7 @@ matplotlib-inline~=0.1.6
 mistune~=2.0.4
 msal~=1.20.0
 msal-extensions~=1.0.0
-mypy==0.982
+mypy==0.990
 mypy-extensions~=0.4.3
 nbclient~=0.7.0
 nbconvert~=7.2.2
@@ -115,7 +115,7 @@ python-dateutil~=2.8.2
 pytz~=2022.5
 PyVISA~=1.12.0
 PyVISA-sim~=0.5.1
-pywin32==304; sys_platform == 'win32'
+pywin32==305; sys_platform == 'win32'
 pywinpty~=2.0.8; sys_platform == 'win32'
 PyYAML~=6.0
 pyzmq~=24.0.1

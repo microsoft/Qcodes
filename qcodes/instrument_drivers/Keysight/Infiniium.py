@@ -15,6 +15,7 @@ from qcodes.instrument import (
 )
 from qcodes.parameters import (
     Parameter,
+    ParameterBase,
     ParameterWithSetpoints,
     create_on_off_val_mapping,
 )
@@ -105,7 +106,7 @@ class DSOTraceParam(ParameterWithSetpoints):
         self._unit = 0
 
     @property
-    def setpoints(self) -> Sequence[Parameter]:
+    def setpoints(self) -> Sequence[ParameterBase]:
         """
         Overwrite setpoint parameter to update setpoints if auto_digitize is true
         """
