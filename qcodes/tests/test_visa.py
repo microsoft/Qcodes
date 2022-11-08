@@ -230,7 +230,10 @@ def test_load_pyvisa_sim_file_invalid_location_raises(request):
     from qcodes.instrument_drivers.AimTTi import AimTTiPL601
 
     with pytest.raises(
-        FileNotFoundError, match="Pyvisa-sim yaml file could not be found at location"
+        FileNotFoundError,
+        match=re.escape(
+            "Pyvisa-sim yaml file could not be found. Trying to load file notafile.yaml from module: qcodes.instrument.sims"
+        ),
     ):
         AimTTiPL601(
             "AimTTi",
