@@ -51,6 +51,13 @@ class VisaInstrument(Instrument):
             http://pyvisa.readthedocs.org/en/stable/names.html
         metadata: additional static metadata to add to this
             instrument's JSON snapshot.
+        pyvisa_sim_file: Name of a pyvisa-sim yaml file used to simulate the instrument.
+            The file is expected to be loaded from a python module.
+            The file can be given either as only the file name in which case it is loaded
+            from ``qcodes.instruments.sims`` or in the format ``module:filename`` e.g.
+            ``qcodes.instruments.sims:AimTTi_PL601P.yaml`` in which case it is loaded
+            from the supplied module. Note that it is an error to pass both
+            ``pyvisa_sim_file`` and ``visalib``.
 
     See help for :class:`.Instrument` for additional information on writing
     instrument subclasses.
