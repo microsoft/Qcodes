@@ -1,3 +1,5 @@
+import re
+
 import pytest
 import pyvisa as visa
 
@@ -175,3 +177,19 @@ def test_visa_instr_metadata(request):
     mv = MockVisa('Joe', 'none_adress', metadata=metadatadict)
     request.addfinalizer(mv.close)
     assert mv.metadata == metadatadict
+
+
+def test_both_visahandle_and_pyvisa_sim_file_raises():
+
+    with pytest.raises(
+        RuntimeError,
+        match=re.escape(
+            "It's an error to supply both visalib and pyvisa_sim_file as arguments to a VISA instrument"
+        ),
+    ):
+        MockVisa(
+            name="mock",
+            address="nowhere",
+            visalib="myfile.yaml@sim",
+            pyvisa_sim_file="myfile.yaml",
+        )
