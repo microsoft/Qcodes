@@ -226,7 +226,7 @@ def test_load_pyvisa_sim_file_explicit_module(request):
     assert path.match("qcodes/instrument/sims/AimTTi_PL601P.yaml")
 
 
-def test_load_pyvisa_sim_file_invalid_location_raises(request):
+def test_load_pyvisa_sim_file_invalid_file_raises(request):
     from qcodes.instrument_drivers.AimTTi import AimTTiPL601
 
     with pytest.raises(
@@ -239,4 +239,18 @@ def test_load_pyvisa_sim_file_invalid_location_raises(request):
             "AimTTi",
             address="GPIB::1::INSTR",
             pyvisa_sim_file="qcodes.instrument.sims:notafile.yaml",
+        )
+
+
+def test_load_pyvisa_sim_file_invalid_module_raises(request):
+    from qcodes.instrument_drivers.AimTTi import AimTTiPL601
+
+    with pytest.raises(
+        ModuleNotFoundError,
+        match=re.escape("No module named 'qcodes.instrument.not_a_module'"),
+    ):
+        AimTTiPL601(
+            "AimTTi",
+            address="GPIB::1::INSTR",
+            pyvisa_sim_file="qcodes.instrument.not_a_module:AimTTi_PL601P.yaml",
         )
