@@ -34,7 +34,6 @@ from typing import (
 )
 
 import jsonschema
-import ruamel.yaml
 
 import qcodes
 from qcodes import validators
@@ -418,6 +417,8 @@ class Station(Metadatable, DelegateAttributes):
 
         # Load template schema, and thereby don't fail on instruments that are
         # not included in the user schema.
+        import ruamel.yaml  # lazy import
+
         yaml = ruamel.yaml.YAML().load(config)
         with open(SCHEMA_TEMPLATE_PATH) as f:
             schema = json.load(f)
@@ -795,6 +796,7 @@ def _merge_yamls(*yamls: Union[str, Path]) -> str:
     Returns:
         Full yaml file stored in the memory.
     """
+    import ruamel.yaml  # lazy import
 
     if len(yamls) == 1:
         with open(yamls[0]) as file:

@@ -59,6 +59,7 @@ jupyter-core~=4.11.2
 jupyterlab-pygments~=0.2.2
 jupyterlab-widgets~=3.0.3
 kiwisolver~=1.4.4
+lazy_loader~=0.1
 lxml~=4.9.1
 MarkupSafe~=2.1.1
 matplotlib~=3.6.1
