@@ -102,7 +102,8 @@ class VisaInstrument(Instrument):
                 if not sim_visalib_path.exists():
                     raise FileNotFoundError(
                         "Pyvisa-sim yaml file "
-                        f"could not be found at location {sim_visalib_path}"
+                        "could not be found. Trying to load "
+                        f"file {pyvisa_sim_file} from module: {module} "
                     )
                 visalib = f"{str(sim_visalib_path)}@sim"
                 visa_handle, visabackend = self._connect_and_handle_error(
