@@ -2,9 +2,9 @@ def _get_version() -> str:
     import sys
 
     if sys.version_info >= (3, 9):
-        from importlib.resources import as_file, files
+        from importlib.resources import files
     else:
-        from importlib_resources import as_file, files
+        from importlib_resources import files
 
     import versioningit
 
