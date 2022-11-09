@@ -1,5 +1,12 @@
 from __future__ import annotations
 
+import sys
+
+if sys.version_info >= (3, 9):
+    from importlib.resources import files
+else:
+    from importlib_resources import files
+
 import copy
 import json
 import logging
@@ -40,14 +47,14 @@ class Config:
     schema_file_name = "qcodesrc_schema.json"
     """Name of schema file"""
     # get abs path of packge config file
-    default_file_name = str(Path(__file__).parent / config_file_name)
+    default_file_name = str(files("qcodes.configuration") / config_file_name)
     """Filename of default config"""
     current_config_path = default_file_name
     """Path of the last loaded config file"""
     _loaded_config_files = [default_file_name]
 
     # get abs path of schema  file
-    schema_default_file_name = str(Path(__file__).parent / schema_file_name)
+    schema_default_file_name = str(files("qcodes.configuration") / schema_file_name)
     """Filename of default schema"""
 
     # home dir, os independent
