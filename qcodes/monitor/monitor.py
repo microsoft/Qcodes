@@ -273,7 +273,9 @@ def main() -> None:
 
     # If this file is run, create a simple webserver that serves a simple
     # website that can be used to view monitored parameters.
-    static_dir = files("qcodes.monitor.dist")
+    parent_module = ".".join(__loader__.name.split(".")[:-1])
+
+    static_dir = files(parent_module).joinpath("dist")
     try:
         with as_file(static_dir) as extracted_dir:
             os.chdir(extracted_dir)

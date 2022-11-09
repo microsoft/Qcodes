@@ -8,7 +8,9 @@ def _get_version() -> str:
 
     import versioningit
 
-    qcodes_path = files("qcodes")
+    root_module = __loader__.name.split(".")[0]
+
+    qcodes_path = files(root_module)
     return versioningit.get_version(project_dir=qcodes_path.parent)
 
 
