@@ -37,7 +37,6 @@ jobs:
         submodules: true
     - name: setup ubuntu-latest xvfb
       uses: ./.github/actions/setup-ubuntu-latest-xvfb
-      if: runner.os == 'Linux'
     # install libhdf5-dev untill we have wheels for python 3.11
     - name: install libhdf5
       run: sudo apt install libhdf5-dev
@@ -63,7 +62,8 @@ jobs:
       run: |
         pytest -m "not serial" --cov=qcodes --cov-report xml --hypothesis-profile ci qcodes --csv test_durations.csv --csv-columns name,duration
 # a subset of the tests fails when run in parallel on Windows so run those in serial here
-    - name: Compare test duration time
+    - name: Compare test duration time on linux py311 
+      if: $${{ runner.os == 'Linux' &&  matrix.python-version == "3.11"}}
       uses: actions/upload-artifact@v3
       with:
         name: blueracer
