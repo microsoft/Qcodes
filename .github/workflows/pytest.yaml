@@ -37,6 +37,7 @@ jobs:
         submodules: true
     - name: setup ubuntu-latest xvfb
       uses: ./.github/actions/setup-ubuntu-latest-xvfb
+      if: runner.os == 'Linux'
     # install libhdf5-dev untill we have wheels for python 3.11
     - name: install libhdf5
       run: sudo apt install libhdf5-dev
