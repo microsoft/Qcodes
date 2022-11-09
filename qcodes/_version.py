@@ -1,11 +1,14 @@
 def _get_version() -> str:
-    from pathlib import Path
+    import sys
+
+    if sys.version_info >= (3, 9):
+        from importlib.resources import as_file, files
+    else:
+        from importlib_resources import as_file, files
 
     import versioningit
 
-    import qcodes
-
-    qcodes_path = Path(qcodes.__file__).parent
+    qcodes_path = files("qcodes")
     return versioningit.get_version(project_dir=qcodes_path.parent)
 
 
