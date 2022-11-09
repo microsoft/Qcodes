@@ -19,6 +19,13 @@ list of parameters to monitor:
 """
 from __future__ import annotations
 
+import sys
+
+if sys.version_info >= (3, 9):
+    from importlib.resources import as_file, files
+else:
+    from importlib_resources import as_file, files
+
 import asyncio
 import json
 import logging
@@ -266,15 +273,17 @@ def main() -> None:
 
     # If this file is run, create a simple webserver that serves a simple
     # website that can be used to view monitored parameters.
-    static_dir = os.path.join(os.path.dirname(__file__), "dist")
-    os.chdir(static_dir)
+    static_dir = files("qcodes.monitor.dist")
     try:
-        log.info("Starting HTTP Server at http://localhost:%i", SERVER_PORT)
-        with socketserver.TCPServer(("", SERVER_PORT),
-                                    http.server.SimpleHTTPRequestHandler) as httpd:
-            log.debug("serving directory %s", static_dir)
-            webbrowser.open(f"http://localhost:{SERVER_PORT}")
-            httpd.serve_forever()
+        with as_file(static_dir) as extracted_dir:
+            os.chdir(extracted_dir)
+            log.info("Starting HTTP Server at http://localhost:%i", SERVER_PORT)
+            with socketserver.TCPServer(
+                ("", SERVER_PORT), http.server.SimpleHTTPRequestHandler
+            ) as httpd:
+                log.debug("serving directory %s", static_dir)
+                webbrowser.open(f"http://localhost:{SERVER_PORT}")
+                httpd.serve_forever()
     except KeyboardInterrupt:
         log.info("Shutting Down HTTP Server")
 
