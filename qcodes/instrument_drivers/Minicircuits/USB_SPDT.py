@@ -70,7 +70,7 @@ class USB_SPDT(SPDT_Base):
             )
         try:
             import mcl_RF_Switch_Controller64 as mw_driver  # pyright: ignore[reportMissingImports]
-        except:
+        except ImportError:
             import mcl_RF_Switch_Controller_NET45 as mw_driver  # pyright: ignore[reportMissingImports]
 
         self.switch = mw_driver.USB_RF_SwitchBox()
