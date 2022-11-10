@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from contextlib import contextmanager
 from typing import (
     TYPE_CHECKING,
@@ -23,6 +24,8 @@ from qcodes.parameters import MultiParameter, ParameterBase
 
 if TYPE_CHECKING:
     from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
+
+log = logging.getLogger(__name__)
 
 ActionsT = Sequence[Callable[[], None]]
 BreakConditionT = Callable[[], bool]
@@ -102,7 +105,9 @@ def _handle_plotting(
         res = data, [None], [None]
 
     if interrupted:
-        raise interrupted
+        log.warning(
+            f"Measurement has been interrupted, data may be incomplete: {interrupted}"
+        )
 
     return res
 
