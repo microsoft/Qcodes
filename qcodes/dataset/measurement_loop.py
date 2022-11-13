@@ -2025,7 +2025,7 @@ class Sweep(BaseSweep):
             # Update kwargs with sweep_defaults from parameter
             if hasattr(kwargs["parameter"], "sweep_defaults"):
                 for key, val in kwargs["parameter"].sweep_defaults.items():
-                    if key == 'num' and 'step' in kwargs:
+                    if key == 'num' and kwargs.get('step') is not None:
                         continue
                     if kwargs.get(key) is None:
                         kwargs[key] = val
