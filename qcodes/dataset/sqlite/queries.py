@@ -398,7 +398,7 @@ def _get_data_for_one_param_tree(
     start: int | None,
     end: int | None,
     callback: Callable[[float], None] | None = None,
-) -> tuple[list[list[Any]], list[ParamSpecBase], int]:
+) -> tuple[list[tuple[Any, ...]], list[ParamSpecBase], int]:
     output_param_spec = interdeps._id_to_paramspec[output_param]
     # find all the dependencies of this param
 
@@ -543,16 +543,22 @@ def get_parameter_tree_values(
         res = many_many(cursor, *columns)
 
     # Request if callback
-    if isinstance(offset, np.ndarray) and callback is not None:
+    elif isinstance(offset, np.ndarray) and callback is not None:
 
-        res = []
+        # 0
         progress = 0.
         callback(progress)
-        for i in range(len(offset)-1):
 
+        # 1
+        cursor.execute(sql, (limit, offset[0]))
+        res  = many_many(cursor, *columns)
+        progress += iteration
+        callback(progress)
+
+        # others
+        for i in range(1, len(offset)-1):
             cursor.execute(sql, (limit, offset[i]))
-            for j in many_many(cursor, *columns):
-                res.append(j)
+            res.extend(many_many(cursor, *columns))
             progress += iteration
             callback(progress)
 
