@@ -47,7 +47,7 @@ def warn_units(class_name: str, instance: object) -> None:
 import builtins
 import sys
 import time
-from pprint import pprint
+import pprint
 
 import numpy as np
 

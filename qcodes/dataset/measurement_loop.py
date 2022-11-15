@@ -1,3 +1,5 @@
+import builtins
+import json
 import logging
 import threading
 import traceback
@@ -29,6 +31,7 @@ from qcodes.parameters import ParameterBase
 from qcodes.station import Station
 from qcodes.utils.dataset.doNd import AbstractSweep, ActionsT
 from qcodes.utils.helpers import PerformanceTimer
+from qcodes.utils import NumpyJSONEncoder
 
 RAW_VALUE_TYPES = (
     float,
@@ -502,13 +505,9 @@ class MeasurementLoop:
                     measurement_loop=self, name=self.name
                 )
 
-                # TODO incorporate metadata
-                # self._initialize_metadata(self.dataset)
-                # with self.timings.record(["dataset", "save_metadata"]):
-                #     self.dataset.save_metadata()
-
-                #     if hasattr(self.dataset, "save_config"):
-                #         self.dataset.save_config()
+                # Add metadata
+                self._t_start = datetime.now()
+                self._initialize_metadata(self.dataset)
 
                 # Initialize attributes
                 self.loop_shape = ()
@@ -516,8 +515,6 @@ class MeasurementLoop:
                 self.action_indices = (0,)
                 self.data_arrays = {}
                 self.set_arrays = {}
-
-                # self.log(f"Measurement started {self.dataset.location}")
 
             else:
                 if threading.current_thread() is not MeasurementLoop.measurement_thread:
@@ -596,10 +593,13 @@ class MeasurementLoop:
                 except Exception:
                     self.log("Could not notify", level="error")
 
-            # TODO include metadata
-            # t_stop = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            # self.data_handler.add_metadata({"t_stop": t_stop})
-            # self.data_handler.add_metadata({"timings": self.timings})
+            # include final metadata
+            t_stop = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            self.dataset.add_metadata("t_stop", t_stop)
+            self.dataset.add_metadata(
+                "timings",
+                json.dumps(dict(self.timings.timings), cls=NumpyJSONEncoder)
+            )
             self.data_handler.finalize()
 
             self.log("Measurement finished")
@@ -607,41 +607,32 @@ class MeasurementLoop:
             msmt.step_out(reduce_dimension=False)
 
         self.is_context_manager = False
-        self._t_start = datetime.now()
 
-    # TODO Needs to be implemented
-    # def _initialize_metadata(self, dataset):
-    #     """Initialize dataset metadata"""
-    #     if dataset is None:
-    #         dataset = self.dataset
+    def _initialize_metadata(self, dataset):
+        """Initialize dataset metadata"""
+        if dataset is None:
+            dataset = self.dataset
 
-    #     config = qcodes_config
-    #     dataset.add_metadata({"config": config})
+        # Save config to metadata
+        try:
+            from qcodes import config
 
-    #     dataset.add_metadata({"measurement_type": "Measurement"})
+            config_str = json.dumps(dict(config), cls=NumpyJSONEncoder)
+            self.dataset.add_metadata('config', config_str)
+        except Exception as e:
+            warn(f'Could not save config due to error {e}')
 
-    #     # Add instrument information
-    #     if Station.default is not None:
-    #         dataset.add_metadata({"station": Station.default.snapshot()})
+        dataset.add_metadata("measurement_type", "MeasurementLoop")
+        dataset.add_metadata("t_start", self._t_start.strftime("%Y-%m-%d %H:%M:%S"))
 
-    #     if using_ipython():
-    #         measurement_cell = get_last_input_cells(1)[0]
-
-    #         measurement_code = measurement_cell
-    #         # If the code is run from a measurement thread, there is some
-    #         # initial code that should be stripped
-    #         init_string = "get_ipython().run_cell_magic("new_job", ", "
-    #         if measurement_code.startswith(init_string):
-    #             measurement_code = measurement_code[len(init_string) + 1 : -4]
-
-    #         dataset.add_metadata(
-    #             {
-    #                 "measurement_cell": measurement_cell,
-    #                 "measurement_code": measurement_code,
-    #                 "last_input_cells": get_last_input_cells(20),
-    #                 "t_start": self._t_start.strftime("%Y-%m-%d %H:%M:%S")
-    #             }
-    #         )
+        # Save latest IPython cells
+        from IPython import get_ipython
+        shell = get_ipython()
+        if shell is not None and "In" in shell.ns_table["user_global"]:
+            num_cells = 20  # Number of cells to save
+            last_input_cells = shell.ns_table["user_global"]['In'][-num_cells:]
+            dataset.add_metadata("measurement_code", last_input_cells[-1])
+            dataset.add_metadata("last_input_cells", str(last_input_cells))
 
     def _verify_action(
         self, action: Callable, name: str, add_if_new: bool = True
