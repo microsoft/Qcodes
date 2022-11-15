@@ -444,6 +444,101 @@ def get_values(
     return res
 
 
+def get_parameter_db_row(conn: ConnectionPlus,
+                         table_name: str,
+                         param_name: str) -> int:
+    """
+    Get the total number of not-null values of a parameter
+
+    Args:
+        conn: Connection to the database
+        table_name: Name of the table that holds the data
+        param_name: Name of the parameter to get the setpoints of
+
+    Returns:
+        The total number of not-null values
+    """
+    sql = f"""
+           SELECT COUNT({param_name}) FROM "{table_name}"
+           WHERE {param_name} IS NOT NULL
+           """
+    c = atomic_transaction(conn, sql)
+
+    return one(c, 0)
+
+
+def get_table_max_id(conn: ConnectionPlus,
+                     table_name: str) -> int:
+    """
+    Get the max id of a table
+
+    Args:
+        conn: Connection to the database
+        table_name: Name of the table that holds the data
+
+    Returns:
+        The max id of a table
+    """
+    sql = f"""
+           SELECT MAX(id)
+           FROM "{table_name}"
+           """
+    c = atomic_transaction(conn, sql)
+
+    return one(c, 0)
+
+
+def _get_offset_limit_for_callback(conn: ConnectionPlus,
+                                   table_name: str,
+                                   param_name: str) -> tuple[np.ndarray, int]:
+    """
+    Since sqlite3 does not allow to keep track of the data loading progress,
+    we compute how many sqlite request correspond to a progress of
+    config.dataset.callback_percent.
+    This function return a list of offset and a integer value of limit to
+    be used to run such SQL requests.
+
+    Args:
+        conn: Connection to the database
+        table_name: Name of the table that holds the data
+        param_name: Name of the parameter to get the setpoints of
+
+    Returns:
+        offset: list of SQL offset corresponding to a progress of
+            config.dataset.callback_percent
+        limit: SQL limit corresponding to a progress of
+            config.dataset.callback_percent
+    """
+
+    # First, we get the number of row to be downloaded for the wanted
+    # dependent parameter
+    nb_row = get_parameter_db_row(conn,
+                                  table_name,
+                                  param_name)
+
+    # Second, we get the max id of the table
+    max_id = get_table_max_id(conn,
+                              table_name)
+
+    # Third, we create a list of offset corresponding to a progress of
+    # config.dataset.callback_percent
+    if nb_row>=100:
+
+        limit = int(max_id/100*config.dataset.callback_percent/2)
+        offset = np.arange(0, nb_row, limit)
+
+        # Ensure that the last call gets all the points
+        if offset[-1]!=nb_row:
+            offset = np.append(offset, nb_row)
+    else:
+        # If there is less than 100 row to be downloaded, we overwrite the
+        # config.dataset.callback_percent to avoid many calls for small download
+        offset = np.array([0, nb_row])
+        limit = nb_row
+
+    return offset, limit
+
+
 def get_parameter_tree_values(
     conn: ConnectionPlus,
     result_table_name: str,
@@ -481,7 +576,6 @@ def get_parameter_tree_values(
     """
 
     cursor = conn.cursor()
-
     offset: int | np.ndarray
 
     offset = max((start - 1), 0) if start is not None else 0
@@ -492,41 +586,9 @@ def get_parameter_tree_values(
 
     # start and end currently not working with callback
     if start is None and end is None and callback is not None:
-
-        # Since sqlite3 does not allow to keep track of the data loading
-        # progress, we compute how many sqlite request correspond to
-        # a progress of config.dataset.callback_percent
-
-        # First, we get the number of dependent parameters
-        rd = get_rundescriber_from_result_table_name(conn, result_table_name)._to_dict()
-        # New qcodes
-        if 'interdependencies_' in rd.keys():
-            nb_param_dependent = len(rd['interdependencies_']['dependencies'])
-        # Old qcodes
-        else:
-            nb_param_dependent = len([i for i in rd['interdependencies']['paramspecs'] if i['name']==toplevel_param_name][0]['depends_on'])
-
-        # Second, we get the number of points
-        sql_callback = f"""
-                        SELECT MAX(id)
-                        FROM "{result_table_name}"
-                        """
-        cursor.execute(sql_callback, ())
-        rows = cursor.fetchall()
-        max_id = int(rows[0][0])
-        nb_point = int(max_id/nb_param_dependent)
-
-        # Third, we get the number of rows corresponding to a download of
-        # config.dataset.callback_percent
-        if nb_point>=100:
-            limit = int(max_id/100*config.dataset.callback_percent/2)
-
-            offset = np.arange(0, nb_point, limit)
-            # Ensure that the last call gets all the points
-            if offset[-1]!=nb_point:
-                offset = np.append(offset, nb_point)
-
-            iteration = 100/(len(offset)-1)
+        offset, limit = _get_offset_limit_for_callback(conn,
+                                                       result_table_name,
+                                                       toplevel_param_name)
 
     # Create the base sql query
     columns = [toplevel_param_name] + list(other_param_names)
@@ -537,13 +599,14 @@ def get_parameter_tree_values(
            """
 
     # Request if no callback
-    if isinstance(offset, int) and callback is None:
+    if callback is None:
 
         cursor.execute(sql, (limit, offset))
         res = many_many(cursor, *columns)
 
     # Request if callback
-    elif isinstance(offset, np.ndarray) and callback is not None:
+    elif callback is not None:
+        assert isinstance(offset, np.ndarray)
 
         # 0
         progress = 0.
@@ -552,14 +615,14 @@ def get_parameter_tree_values(
         # 1
         cursor.execute(sql, (limit, offset[0]))
         res  = many_many(cursor, *columns)
-        progress += iteration
+        progress += config.dataset.callback_percent
         callback(progress)
 
         # others
         for i in range(1, len(offset)-1):
             cursor.execute(sql, (limit, offset[i]))
             res.extend(many_many(cursor, *columns))
-            progress += iteration
+            progress += config.dataset.callback_percent
             callback(progress)
 
     return res
