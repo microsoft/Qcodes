@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import itertools
 import sqlite3
-from typing import Any, List, Mapping, Sequence, Tuple, Union
+from typing import Any, List, Mapping, Sequence, Union
 
 import numpy as np
 from numpy import ndarray
