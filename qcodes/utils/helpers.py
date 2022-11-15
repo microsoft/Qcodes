@@ -45,9 +45,9 @@ def warn_units(class_name: str, instance: object) -> None:
 
 # TODO these functions need a place
 import builtins
+import pprint
 import sys
 import time
-import pprint
 
 import numpy as np
 

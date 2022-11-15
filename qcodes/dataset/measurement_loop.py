@@ -29,9 +29,9 @@ from qcodes.instrument import (
 from qcodes.instrument.parameter import _BaseParameter
 from qcodes.parameters import ParameterBase
 from qcodes.station import Station
+from qcodes.utils import NumpyJSONEncoder
 from qcodes.utils.dataset.doNd import AbstractSweep, ActionsT
 from qcodes.utils.helpers import PerformanceTimer
-from qcodes.utils import NumpyJSONEncoder
 
 RAW_VALUE_TYPES = (
     float,
