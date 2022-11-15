@@ -3,6 +3,7 @@ Module left for backwards compatibility.
 Please do not import from this in any new code
 """
 import logging
+from contextlib import contextmanager
 from typing import Any, Dict, Hashable, Optional, Tuple
 
 # for backwards compatibility since this module used
@@ -40,6 +41,114 @@ from .spyder_utils import add_to_spyder_UMR_excludelist
 def warn_units(class_name: str, instance: object) -> None:
     logging.warning('`units` is deprecated for the `' + class_name +
                     '` class, use `unit` instead. ' + repr(instance))
+
+
+# TODO these functions need a place
+import builtins
+import pprint
+import sys
+import time
+
+import numpy as np
+
+from qcodes.configuration.config import DotDict
+
+
+def get_exponent_prefactor(val: float) -> Tuple[int, str]:
+    """Get the exponent and unit prefactor of a number
+
+    Currently lower bounded at atto
+
+    Args:
+        val: value for which to get exponent and prefactor
+
+    Returns:
+        Exponent corresponding to prefactor
+        Prefactor
+
+    Examples:
+        ```
+        get_exponent_prefactor(1.82e-8)
+        >>> -9, "n"  # i.e. 18.2*10**-9 n{unit}
+        ```
+
+
+    """
+    prefactors = [
+        (9, "G"),
+        (6, "M"),
+        (3, "k"),
+        (0, ""),
+        (-3, "m"),
+        (-6, "u"),
+        (-9, "n"),
+        (-12, "p"),
+        (-15, "f"),
+        (-18, "a"),
+    ]
+    for exponent, prefactor in prefactors:
+        if val >= np.power(10.0, exponent):
+            return exponent, prefactor
+
+    return prefactors[-1]
+
+
+class PerformanceTimer:
+    max_records = 100
+
+    def __init__(self):
+        self.timings = DotDict()
+
+    def __getitem__(self, key: str) -> str:
+        val = self.timings.__getitem__(key)
+        return self._timing_to_str(val)
+
+    def __repr__(self):
+        return pprint.pformat(self._timings_to_str(self.timings), indent=2)
+
+    def clear(self) -> None:
+        self.timings.clear()
+
+    def _timing_to_str(self, val: float) -> str:
+        mean_val = np.mean(val)
+        exponent, prefactor = get_exponent_prefactor(mean_val)
+        factor = np.power(10.0, exponent)
+
+        return f"{mean_val / factor:.3g}+-{np.abs(np.std(val))/factor:.3g} {prefactor}s"
+
+    def _timings_to_str(self, d: dict) -> str:
+
+        timings_str = DotDict()
+        for key, val in d.items():
+            if isinstance(val, dict):
+                timings_str[key] = self._timings_to_str(val)
+            else:
+                timings_str[key] = self._timing_to_str(val)
+
+        return timings_str
+
+    @contextmanager
+    def record(self, key: str, val: Any = None) -> None:
+        if isinstance(key, str):
+            timing_list = self.timings.setdefault(key, [])
+        elif isinstance(key, (list)):
+            *parent_keys, subkey = key
+            d = self.timings.create_dicts(*parent_keys)
+            timing_list = d.setdefault(subkey, [])
+        else:
+            raise ValueError("Key must be str or list/tuple")
+
+        if val is not None:
+            timing_list.append(val)
+        else:
+            t0 = time.perf_counter()
+            yield
+            t1 = time.perf_counter()
+            timing_list.append(t1 - t0)
+
+        # Optionally remove oldest elements
+        for _ in range(len(timing_list) - self.max_records):
+            timing_list.pop(0)
 
 
 @deprecate("Internal function no longer part of the public qcodes api")

@@ -512,6 +512,7 @@ class Runner:
         shapes: Shapes | None = None,
         in_memory_cache: bool = True,
         dataset_class: DataSetType = DataSetType.DataSet,
+        allow_empty_dataset: bool = False,
     ) -> None:
 
         self._dataset_class = dataset_class
@@ -534,6 +535,7 @@ class Runner:
         self._extra_log_info = extra_log_info
         self._write_in_background = write_in_background
         self._in_memory_cache = in_memory_cache
+        self.allow_empty_dataset = allow_empty_dataset
         self.ds: DataSetProtocol
 
     @staticmethod
@@ -610,6 +612,7 @@ class Runner:
             write_in_background=self._write_in_background,
             shapes=self._shapes,
             parent_datasets=self._parent_datasets,
+            allow_empty_dataset=self.allow_empty_dataset,
         )
 
         # register all subscribers
@@ -1228,6 +1231,7 @@ class Measurement:
         write_in_background: bool | None = None,
         in_memory_cache: bool = True,
         dataset_class: DataSetType = DataSetType.DataSet,
+        allow_empty_dataset: bool = False,
     ) -> Runner:
         """
         Returns the context manager for the experimental run
@@ -1261,4 +1265,5 @@ class Measurement:
             shapes=self._shapes,
             in_memory_cache=in_memory_cache,
             dataset_class=dataset_class,
+            allow_empty_dataset=allow_empty_dataset,
         )

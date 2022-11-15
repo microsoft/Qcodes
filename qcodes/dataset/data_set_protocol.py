@@ -98,6 +98,7 @@ class DataSetProtocol(Protocol, Sized):
         shapes: Shapes | None = None,
         parent_datasets: Sequence[Mapping[Any, Any]] = (),
         write_in_background: bool = False,
+        allow_empty_dataset: bool = False,
     ) -> None:
         pass
 
