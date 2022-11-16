@@ -1,15 +1,15 @@
-import logging
 import binascii
-from typing import Any, Tuple, Union, Dict
-from typing_extensions import TypedDict
+import logging
+from functools import partial
+from typing import Any, Tuple
 
 import numpy as np
 from pyvisa.errors import VisaIOError
-from functools import partial
+from typing_extensions import TypedDict
 
-from qcodes import VisaInstrument, validators as vals
-from qcodes import InstrumentChannel, ChannelList
-from qcodes.instrument.parameter import ArrayParameter, ParamRawDataType
+from qcodes import validators as vals
+from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
+from qcodes.parameters import ArrayParameter, ParamRawDataType
 
 log = logging.getLogger(__name__)
 
@@ -37,22 +37,29 @@ class OutputDict(TypedDict):
 
 
 class ScopeArray(ArrayParameter):
-    def __init__(self, name: str,
-                 instrument: "TPS2012Channel",
-                 channel: int):
-        super().__init__(name=name,
-                         shape=(2500,),
-                         label='Voltage',
-                         unit='V ',
-                         setpoint_names=('Time', ),
-                         setpoint_labels=('Time', ),
-                         setpoint_units=('s',),
-                         docstring='holds an array from scope',
-                         instrument=instrument)
+    def __init__(
+        self,
+        name: str,
+        instrument: "TektronixTPS2012Channel",
+        channel: int,
+        **kwargs: Any,
+    ):
+        super().__init__(
+            name=name,
+            shape=(2500,),
+            label="Voltage",
+            unit="V ",
+            setpoint_names=("Time",),
+            setpoint_labels=("Time",),
+            setpoint_units=("s",),
+            docstring="holds an array from scope",
+            instrument=instrument,
+            **kwargs,
+        )
         self.channel = channel
 
     def calc_set_points(self) -> Tuple[np.ndarray, int]:
-        assert isinstance(self.instrument, TPS2012Channel)
+        assert isinstance(self.instrument, TektronixTPS2012Channel)
         message = self.instrument.ask('WFMPre?')
         preamble = self._preambleparser(message)
         xstart = preamble['x_zero']
@@ -68,8 +75,8 @@ class ScopeArray(ArrayParameter):
         # To calculate set points, we must have the full preamble
         # For the instrument to return the full preamble, the channel
         # in question must be displayed
-        assert isinstance(self.instrument, TPS2012Channel)
-        assert isinstance(self.root_instrument, TPS2012)
+        assert isinstance(self.instrument, TektronixTPS2012Channel)
+        assert isinstance(self.root_instrument, TektronixTPS2012)
         self.instrument.parameters['state'].set('ON')
         self.root_instrument.data_source(f'CH{self.channel}')
 
@@ -80,7 +87,7 @@ class ScopeArray(ArrayParameter):
         self.root_instrument.trace_ready = True
 
     def get_raw(self) -> ParamRawDataType:
-        assert isinstance(self.root_instrument, TPS2012)
+        assert isinstance(self.root_instrument, TektronixTPS2012)
         if not self.root_instrument.trace_ready:
             raise TraceNotReady('Please run prepare_curvedata to prepare '
                                 'the scope for giving a trace.')
@@ -95,7 +102,7 @@ class ScopeArray(ArrayParameter):
         return ydata
 
     def _curveasker(self, ch: int) -> str:
-        assert isinstance(self.instrument, TPS2012Channel)
+        assert isinstance(self.instrument, TektronixTPS2012Channel)
         self.instrument.write(f'DATa:SOURce CH{ch}')
         message = self.instrument.ask('WAVFrm?')
         self.instrument.write('*WAI')
@@ -205,10 +212,11 @@ class ScopeArray(ArrayParameter):
         return xdata, ydata, preamble['no_of_points']
 
 
-class TPS2012Channel(InstrumentChannel):
-
-    def __init__(self, parent: "TPS2012", name: str, channel: int):
-        super().__init__(parent, name)
+class TektronixTPS2012Channel(InstrumentChannel):
+    def __init__(
+        self, parent: "TektronixTPS2012", name: str, channel: int, **kwargs: Any
+    ):
+        super().__init__(parent, name, **kwargs)
 
         self.add_parameter('scale',
                            label=f'Channel {channel} Scale',
@@ -248,7 +256,10 @@ class TPS2012Channel(InstrumentChannel):
         return state
 
 
-class TPS2012(VisaInstrument):
+TPS2012Channel = TektronixTPS2012Channel
+
+
+class TektronixTPS2012(VisaInstrument):
     """
     This is the QCoDeS driver for the Tektronix 2012B oscilloscope.
     """
@@ -329,14 +340,15 @@ class TPS2012(VisaInstrument):
                                           1, 2.5, 5, 10, 25, 50))
 
         # channel-specific parameters
-        channels = ChannelList(self, "ScopeChannels", TPS2012Channel, snapshotable=False)
+        channels = ChannelList(
+            self, "ScopeChannels", TektronixTPS2012Channel, snapshotable=False
+        )
         for ch_num in range(1, 3):
             ch_name = f"ch{ch_num}"
-            channel = TPS2012Channel(self, ch_name, ch_num)
+            channel = TektronixTPS2012Channel(self, ch_name, ch_num)
             channels.append(channel)
             self.add_submodule(ch_name, channel)
-        channels.lock()
-        self.add_submodule("channels", channels)
+        self.add_submodule("channels", channels.to_channel_tuple())
 
         # Necessary settings for parsing the binary curve data
         self.visa_handle.encoding = 'latin-1'
@@ -364,7 +376,7 @@ class TPS2012(VisaInstrument):
     def clear_message_queue(self, verbose: bool = False) -> None:
         """
         Function to clear up (flush) the VISA message queue of the AWG
-        instrument. Reads all messages in the the queue.
+        instrument. Reads all messages in the queue.
 
         Args:
             verbose: If True, the read messages are printed.
@@ -381,3 +393,11 @@ class TPS2012(VisaInstrument):
             except VisaIOError:
                 gotexception = True
         self.visa_handle.timeout = original_timeout
+
+
+class TPS2012(TektronixTPS2012):
+    """
+    Deprecated alias for ``TektronixTPS2012``
+    """
+
+    pass

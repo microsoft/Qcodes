@@ -1,8 +1,8 @@
 import pytest
 
-from qcodes.instrument.parameter import MultiParameter
-from .conftest import named_instrument, blank_instruments
+from qcodes.parameters import MultiParameter
 
+from .conftest import blank_instruments, named_instrument
 
 
 class SimpleMultiParam(MultiParameter):

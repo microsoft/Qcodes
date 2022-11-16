@@ -1,7 +1,10 @@
-import importlib
-from typing import TYPE_CHECKING, Any, List, Mapping
+from __future__ import annotations
 
-from qcodes.instrument.base import InstrumentBase
+import importlib
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any
+
+from ..instrument_base import InstrumentBase
 
 if TYPE_CHECKING:
     from qcodes.station import Station
@@ -28,9 +31,9 @@ class InstrumentGroup(InstrumentBase):
     def __init__(
         self,
         name: str,
-        station: "Station",
+        station: Station,
         submodules_type: str,
-        submodules: Mapping[str, Mapping[str, List[str]]],
+        submodules: Mapping[str, Mapping[str, list[str]]],
         initial_values: Mapping[str, Mapping[str, Any]],
         set_initial_values_on_load: bool = False,
         **kwargs: Any

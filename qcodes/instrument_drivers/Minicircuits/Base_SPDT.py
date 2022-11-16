@@ -1,11 +1,12 @@
+from __future__ import annotations
+
 import logging
 import re
 import warnings
-from typing import Dict, Optional, Type, Hashable, Any
+from typing import Any
 
-from qcodes.instrument.base import Instrument
-from qcodes.instrument.channel import ChannelList, InstrumentChannel
-from qcodes.utils.validators import Ints
+from qcodes.instrument import ChannelList, Instrument, InstrumentChannel
+from qcodes.validators import Ints
 
 log = logging.getLogger(__name__)
 
@@ -31,7 +32,7 @@ class SwitchChannelBase(InstrumentChannel):
             get_cmd=self._get_switch,
             vals=Ints(1, 2))
 
-    def __call__(self, *args: int) -> Optional[int]:
+    def __call__(self, *args: int) -> int | None:
         if len(args) == 1:
             self.switch(args[0])
             return None
@@ -50,14 +51,14 @@ class SwitchChannelBase(InstrumentChannel):
 
 class SPDT_Base(Instrument):
 
-    CHANNEL_CLASS: Type[SwitchChannelBase]
+    CHANNEL_CLASS: type[SwitchChannelBase]
 
     def add_channels(self) -> None:
         channels = ChannelList(
             self, "Channels", self.CHANNEL_CLASS, snapshotable=False)
 
         _chanlist = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
-        self._deprecated_attributes: Dict[str, str] = {
+        self._deprecated_attributes: dict[str, str] = {
             f'channel_{k}': k
             for k in _chanlist
         }
@@ -72,8 +73,7 @@ class SPDT_Base(Instrument):
             self.add_submodule(attribute_name, channel)
             self.add_submodule(c, channel)
             self._deprecated_attributes[attribute_name] = c
-        channels.lock()
-        self.add_submodule('channels', channels)
+        self.add_submodule("channels", channels.to_channel_tuple())
 
     def all(self, switch_to: int) -> None:
         for c in self.channels:

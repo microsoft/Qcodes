@@ -1,13 +1,15 @@
-import collections
+import collections.abc
 import logging
 import numbers
 import time
 import warnings
 from collections import defaultdict
+from contextlib import ExitStack
 from functools import partial
 from typing import (
     Any,
     Callable,
+    Dict,
     Iterable,
     List,
     Optional,
@@ -15,15 +17,15 @@ from typing import (
     Tuple,
     TypeVar,
     Union,
-    cast,
 )
 
 import numpy as np
 
-from qcodes import Instrument, InstrumentChannel, IPInstrument, Parameter
-from qcodes.math_utils.field_vector import FieldVector
-from qcodes.utils.deprecate import QCoDeSDeprecationWarning
-from qcodes.utils.validators import Anything, Bool, Enum, Ints, Numbers
+from qcodes.instrument import Instrument, InstrumentChannel, IPInstrument
+from qcodes.math_utils import FieldVector
+from qcodes.parameters import Parameter
+from qcodes.utils import QCoDeSDeprecationWarning
+from qcodes.validators import Anything, Bool, Enum, Ints, Numbers
 
 log = logging.getLogger(__name__)
 
@@ -107,7 +109,7 @@ class AMI430SwitchHeater(InstrumentChannel):
         self._enabled = True
 
     def check_enabled(self) -> bool:
-        return bool(self.ask('PS:INST?').strip())
+        return bool(int(self.ask('PS:INST?').strip()))
 
     @_Decorators.check_enabled
     def on(self) -> None:
@@ -123,7 +125,7 @@ class AMI430SwitchHeater(InstrumentChannel):
 
     @_Decorators.check_enabled
     def check_state(self) -> bool:
-        return bool(self.ask("PS?").strip())
+        return bool(int(self.ask("PS?").strip()))
 
 
 class AMI430(IPInstrument):
@@ -528,7 +530,7 @@ class AMI430_3D(Instrument):
             found_ami430 = AMI430.find_instrument(
                 name=ami430_name, instrument_class=AMI430
             )
-            return cast(AMI430, found_ami430)
+            return found_ami430
 
         self._instrument_x = (
             instrument_x if isinstance(instrument_x, AMI430)
@@ -755,6 +757,12 @@ class AMI430_3D(Instrument):
         )
         """Ramp rate along a line (vector) in 3D field space"""
 
+        self._exit_stack = ExitStack()
+
+    def get_idn(self) -> Dict[str, Optional[str]]:
+        idparts = ["American Magnetics", self.name, None, None]
+        return dict(zip(("vendor", "model", "serial", "firmware"), idparts))
+
     def _set_vector_ramp_rate_units(self, val: float) -> float:
         _, common_ramp_rate_units = self._raise_if_not_same_field_and_ramp_rate_units()
         self.vector_ramp_rate.unit = common_ramp_rate_units
@@ -771,6 +779,13 @@ class AMI430_3D(Instrument):
 
         If ``block_during_ramp`` parameter is ``True``, the method will block
         until all axes finished ramping.
+
+        If ``block_during_ramp`` parameter is ``True``, the ramp rates of
+        individual magnet axes will be restored after the end of the
+        ramp to their original values before the call of this method. If
+        ``block_during_ramp`` parameter is ``False``, call the
+        ``wait_while_all_axes_ramping`` method when needed to restore the
+        ramp rates of the individual magnet axes.
 
         It is required for all axis instruments to have the same units for
         ramp rate and field, otherwise an exception is raised. The given
@@ -887,7 +902,7 @@ class AMI430_3D(Instrument):
             setpoint_values: Tuple[float, float, float]
     ) -> bool:
         if isinstance(self._field_limit, (int, float)):
-            return np.linalg.norm(setpoint_values) < self._field_limit
+            return bool(np.linalg.norm(setpoint_values) < self._field_limit)
 
         answer = any([limit_function(*setpoint_values) for
                       limit_function in self._field_limit])
@@ -951,6 +966,8 @@ class AMI430_3D(Instrument):
             )
 
     def _perform_simultaneous_ramp(self, values: Tuple[float, float, float]) -> None:
+        self._prepare_to_restore_individual_axes_ramp_rates()
+
         self._update_individual_axes_ramp_rates(values)
 
         axes = (self._instrument_x, self._instrument_y, self._instrument_z)
@@ -978,6 +995,8 @@ class AMI430_3D(Instrument):
         if self.block_during_ramp() is True:
             self.log.debug(f"Simultaneous ramp: blocking until ramp is finished")
             self.wait_while_all_axes_ramping()
+        else:
+            self.log.debug("Simultaneous ramp: not blocking until ramp is finished")
 
         self.log.debug(f"Simultaneous ramp: returning from the ramp call")
 
@@ -1004,10 +1023,25 @@ class AMI430_3D(Instrument):
                 instrument.set_field(value, perform_safety_check=False,
                                      block=self.block_during_ramp.get())
 
+    def _prepare_to_restore_individual_axes_ramp_rates(self) -> None:
+        for instrument in (self._instrument_x, self._instrument_y, self._instrument_z):
+            self._exit_stack.enter_context(instrument.ramp_rate.restore_at_exit())
+        self._exit_stack.callback(
+            self.log.debug,
+            "Restoring individual axes ramp rates",
+        )
+
     def wait_while_all_axes_ramping(self) -> None:
-        """ Wait and blocks as long as any magnet axis is ramping. """
+        """
+        Wait and blocks as long as any magnet axis is ramping. After the
+        ramping is finished, also resets the individual ramp rates of the
+        magnet axes if those were made to be restored, e.g. by using
+        ``simultaneous`` ramp mode.
+        """
         while self.any_axis_is_ramping():
             self._instrument_x._sleep(self.ramping_state_check_interval.get())
+
+        self._exit_stack.close()
 
     def any_axis_is_ramping(self) -> bool:
         """

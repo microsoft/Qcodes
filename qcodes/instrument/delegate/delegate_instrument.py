@@ -1,29 +1,25 @@
+from __future__ import annotations
+
 import importlib
 import logging
 from collections import abc
+from collections.abc import Callable, Mapping, MutableMapping, Sequence
 from functools import partial
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Mapping,
-    MutableMapping,
-    Optional,
-    Sequence,
-    Type,
-    Union,
-)
+from typing import TYPE_CHECKING, Any
 
-from qcodes.instrument.base import InstrumentBase
-from qcodes.instrument.channel import InstrumentChannel
-from qcodes.instrument.delegate.grouped_parameter import (
+from qcodes.parameters import (
     DelegateGroup,
     DelegateGroupParameter,
     GroupedParameter,
+    Parameter,
 )
-from qcodes.instrument.parameter import Parameter
-from qcodes.station import Station
+
+from ..channel import InstrumentChannel
+from ..instrument_base import InstrumentBase
+
+if TYPE_CHECKING:
+    from qcodes.station import Station
+
 
 _log = logging.getLogger(__name__)
 
@@ -110,17 +106,13 @@ class DelegateInstrument(InstrumentBase):
         self,
         name: str,
         station: Station,
-        parameters: Optional[
-            Union[Mapping[str, Sequence[str]], Mapping[str, str]]
-        ] = None,
-        channels: Optional[
-            Union[Mapping[str, Mapping[str, Any]], Mapping[str, str]]
-        ] = None,
-        initial_values: Optional[Mapping[str, Any]] = None,
+        parameters: None | (Mapping[str, Sequence[str]] | Mapping[str, str]) = None,
+        channels: None | (Mapping[str, Mapping[str, Any]] | Mapping[str, str]) = None,
+        initial_values: Mapping[str, Any] | None = None,
         set_initial_values_on_load: bool = False,
-        setters: Optional[Mapping[str, MutableMapping[str, Any]]] = None,
-        units: Optional[Mapping[str, str]] = None,
-        metadata: Optional[Mapping[Any, Any]] = None,
+        setters: Mapping[str, MutableMapping[str, Any]] | None = None,
+        units: Mapping[str, str] | None = None,
+        metadata: Mapping[Any, Any] | None = None,
     ):
         super().__init__(name=name, metadata=metadata)
         if parameters is not None:
@@ -143,7 +135,7 @@ class DelegateInstrument(InstrumentBase):
 
     @staticmethod
     def parse_instrument_path(
-        parent: Union[Station, InstrumentBase],
+        parent: Station | InstrumentBase,
         path: str,
     ) -> Any:
         """Parse a string path and return the object relative to a station or
@@ -195,7 +187,7 @@ class DelegateInstrument(InstrumentBase):
     def _create_and_add_parameters(
         self,
         station: Station,
-        parameters: Union[Mapping[str, Sequence[str]], Mapping[str, str]],
+        parameters: Mapping[str, Sequence[str]] | Mapping[str, str],
         setters: Mapping[str, MutableMapping[str, Any]],
         units: Mapping[str, str],
     ) -> None:
@@ -222,7 +214,7 @@ class DelegateInstrument(InstrumentBase):
             )
 
     @staticmethod
-    def _parameter_names(parameters: Sequence[Parameter]) -> List[str]:
+    def _parameter_names(parameters: Sequence[Parameter]) -> list[str]:
         """Get the endpoint names"""
         parameter_names = [_e.name for _e in parameters]
         if len(parameter_names) != len(set(parameter_names)):
@@ -256,10 +248,10 @@ class DelegateInstrument(InstrumentBase):
         group_name: str,
         station: Station,
         paths: Sequence[str],
-        setter: Optional[MutableMapping[str, Any]] = None,
-        getter: Optional[Callable[..., Any]] = None,
-        formatter: Optional[Callable[..., Any]] = None,
-        unit: Optional[str] = None,
+        setter: MutableMapping[str, Any] | None = None,
+        getter: Callable[..., Any] | None = None,
+        formatter: Callable[..., Any] | None = None,
+        unit: str | None = None,
         **kwargs: Any
     ) -> None:
         """Create delegate parameter that links to a given set of paths
@@ -301,11 +293,11 @@ class DelegateInstrument(InstrumentBase):
     def _create_and_add_channels(
         self,
         station: Station,
-        channels: Mapping[str, Union[str, Mapping[str, Any]]],
+        channels: Mapping[str, str | Mapping[str, Any]],
     ) -> None:
         """Add channels to the instrument."""
         channel_wrapper = None
-        chnnls_dict: Dict[str, Union[str, Mapping[str, Any]]] = dict(channels)
+        chnnls_dict: dict[str, str | Mapping[str, Any]] = dict(channels)
         channel_type_global = chnnls_dict.pop("type", None)
         if channel_type_global is not None and \
            not isinstance(channel_type_global, str):
@@ -339,8 +331,8 @@ class DelegateInstrument(InstrumentBase):
         self,
         channel_name: str,
         station: Station,
-        input_params: Union[str, Mapping[str, Any]],
-        channel_wrapper: Optional[Type[InstrumentChannel]],
+        input_params: str | Mapping[str, Any],
+        channel_wrapper: type[InstrumentChannel] | None,
         **kwargs: Any,
     ) -> None:
         """Adds a channel to the instrument."""
@@ -378,8 +370,8 @@ class DelegateInstrument(InstrumentBase):
 
 
 def _get_channel_wrapper_class(
-    channel_type: Optional[str],
-) -> Optional[Type[InstrumentChannel]]:
+    channel_type: str | None,
+) -> type[InstrumentChannel] | None:
     """Get channel class from string specified in yaml."""
     if channel_type is None:
         return None

@@ -1,5 +1,6 @@
 import pytest
-from qcodes.utils.validators import Ints, Lists
+
+from qcodes.validators import Ints, Lists
 
 
 def test_type():

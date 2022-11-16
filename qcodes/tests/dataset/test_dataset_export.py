@@ -5,12 +5,27 @@ import pytest
 import xarray as xr
 
 import qcodes
-from qcodes import new_data_set
+from qcodes.dataset import load_from_netcdf, new_data_set
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.descriptions.versioning import serialization as serial
 from qcodes.dataset.export_config import DataExportType
 from qcodes.dataset.linked_datasets.links import links_to_str
+
+
+@pytest.mark.usefixtures("experiment")
+@pytest.fixture(name="mock_empty_dataset")
+def _make_mock_empty_dataset():
+    dataset = new_data_set("dataset")
+    xparam = ParamSpecBase("x", "numeric")
+    yparam = ParamSpecBase("y", "numeric")
+    zparam = ParamSpecBase("z", "numeric")
+    idps = InterDependencies_(dependencies={yparam: (xparam,), zparam: (xparam,)})
+    dataset.set_interdependencies(idps)
+
+    dataset.mark_started()
+    dataset.mark_completed()
+    return dataset
 
 
 @pytest.mark.usefixtures('experiment')
@@ -78,6 +93,34 @@ def _make_mock_dataset_complex():
     dataset.mark_started()
     results = [{"x": 0, "y": 1 + 1j}]
     dataset.add_results(results)
+    dataset.mark_completed()
+    return dataset
+
+
+@pytest.mark.usefixtures("experiment")
+@pytest.fixture(name="mock_dataset_inverted_coords")
+def _make_mock_dataset_inverted_coords():
+    # this dataset is constructed such
+    # that the two z parameters have inverted
+    # coordinates. You almost certainly
+    # don't want to do this in a real dataset
+    # but it enables the test to check that
+    # the order is preserved.
+    dataset = new_data_set("dataset")
+    xparam = ParamSpecBase("x", "numeric")
+    yparam = ParamSpecBase("y", "numeric")
+    z1param = ParamSpecBase("z1", "numeric")
+    z2param = ParamSpecBase("z2", "numeric")
+    idps = InterDependencies_(
+        dependencies={z1param: (xparam, yparam), z2param: (yparam, xparam)}
+    )
+    dataset.set_interdependencies(idps)
+
+    dataset.mark_started()
+    for x in range(10):
+        for y in range(20, 25):
+            results = [{"x": x, "y": y, "z1": x + y, "z2": x - y}]
+            dataset.add_results(results)
     dataset.mark_completed()
     return dataset
 
@@ -164,6 +207,8 @@ def test_export_csv(tmp_path_factory, mock_dataset):
     path = str(tmp_path)
     mock_dataset.export(export_type="csv", path=path, prefix="qcodes_")
 
+    mock_dataset.add_metadata("metadata_added_after_export", 69)
+
     expected_path = f"qcodes_{mock_dataset.captured_run_id}_{mock_dataset.guid}.csv"
     expected_full_path = os.path.join(path, expected_path)
     assert mock_dataset.export_info.export_paths["csv"] == expected_full_path
@@ -177,6 +222,8 @@ def test_export_netcdf(tmp_path_factory, mock_dataset):
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
     path = str(tmp_path)
     mock_dataset.export(export_type="netcdf", path=path, prefix="qcodes_")
+    mock_dataset.add_metadata("metadata_added_after_export", 69)
+
     expected_path = f"qcodes_{mock_dataset.captured_run_id}_{mock_dataset.guid}.nc"
     assert os.listdir(path) == [expected_path]
     file_path = os.path.join(path, expected_path)
@@ -186,12 +233,17 @@ def test_export_netcdf(tmp_path_factory, mock_dataset):
     assert df.index.values.tolist() == [0.]
     assert df.y.values.tolist() == [1.0]
     assert df.z.values.tolist() == [2.0]
+    expected_attrs = mock_dataset.metadata.copy()
+    expected_attrs.pop("export_info")
+    for attr, val in expected_attrs.items():
+        assert ds.attrs[attr] == val
 
     assert mock_dataset.export_info.export_paths["nc"] == file_path
 
 
 @pytest.mark.usefixtures("experiment")
 def test_export_netcdf_csv(tmp_path_factory, mock_dataset):
+
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
     path = str(tmp_path)
     csv_path = os.path.join(
@@ -204,20 +256,36 @@ def test_export_netcdf_csv(tmp_path_factory, mock_dataset):
     mock_dataset.export(export_type="netcdf", path=path, prefix="qcodes_")
     mock_dataset.export(export_type="csv", path=path, prefix="qcodes_")
 
+    mock_dataset.add_metadata("metadata_added_after_export", 69)
+
     assert mock_dataset.export_info.export_paths["nc"] == nc_path
     assert mock_dataset.export_info.export_paths["csv"] == csv_path
 
+    loaded_xr_ds = xr.open_dataset(nc_path)
+    assert loaded_xr_ds.attrs["metadata_added_after_export"] == 69
+
     mock_dataset.export(export_type="netcdf", path=path, prefix="foobar_")
-    nc_path = os.path.join(
+    new_nc_path = os.path.join(
         path, f"foobar_{mock_dataset.captured_run_id}_{mock_dataset.guid}.nc"
     )
 
-    assert mock_dataset.export_info.export_paths["nc"] == nc_path
+    mock_dataset.add_metadata("metadata_added_after_export_2", 696)
+
+    assert mock_dataset.export_info.export_paths["nc"] == new_nc_path
     assert mock_dataset.export_info.export_paths["csv"] == csv_path
+
+    loaded_xr_ds = xr.open_dataset(nc_path)
+    assert loaded_xr_ds.attrs["metadata_added_after_export"] == 69
+    assert "metadata_added_after_export_2" not in loaded_xr_ds.attrs
+
+    loaded_new_xr_ds = xr.open_dataset(new_nc_path)
+    assert loaded_new_xr_ds.attrs["metadata_added_after_export"] == 69
+    assert loaded_new_xr_ds.attrs["metadata_added_after_export_2"] == 696
 
 
 @pytest.mark.usefixtures("experiment")
 def test_export_netcdf_complex_data(tmp_path_factory, mock_dataset_complex):
+
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
     path = str(tmp_path)
     mock_dataset_complex.export(export_type="netcdf", path=path, prefix="qcodes_")
@@ -301,6 +369,23 @@ def test_same_setpoint_warning_for_df_and_xarray(different_setpoint_dataset):
         different_setpoint_dataset.cache.to_xarray_dataset()
 
 
+def test_export_to_xarray_dataset_empty_ds(mock_empty_dataset):
+    ds = mock_empty_dataset.to_xarray_dataset()
+    assert len(ds) == 2
+    assert len(ds.coords) == 1
+    assert "x" in ds.coords
+    _assert_xarray_metadata_is_as_expected(ds, mock_empty_dataset)
+
+
+def test_export_to_xarray_dataarray_empty_ds(mock_empty_dataset):
+    dad = mock_empty_dataset.to_xarray_dataarray_dict()
+    assert len(dad) == 2
+    assert len(dad["y"].coords) == 1
+    assert "x" in dad["y"].coords
+    assert len(dad["z"].coords) == 1
+    assert "x" in dad["z"].coords
+
+
 def test_export_to_xarray(mock_dataset):
     ds = mock_dataset.to_xarray_dataset()
     assert len(ds) == 2
@@ -342,7 +427,7 @@ def test_export_to_xarray_ds_dict_extra_metadata(mock_dataset):
         _assert_xarray_metadata_is_as_expected(datarray, mock_dataset)
 
 
-def test_export_to_xarray_extra_metadate_can_be_stored(mock_dataset, tmp_path):
+def test_export_to_xarray_extra_metadata_can_be_stored(mock_dataset, tmp_path):
 
     nt_metadata = {
         "foo": {
@@ -354,6 +439,9 @@ def test_export_to_xarray_extra_metadate_can_be_stored(mock_dataset, tmp_path):
     }
     mock_dataset.add_metadata("foo_metadata", json.dumps(nt_metadata))
     mock_dataset.export(export_type="netcdf", path=str(tmp_path))
+
+    mock_dataset.add_metadata("metadata_added_after_export", 69)
+
     data_as_xarray = mock_dataset.to_xarray_dataset()
 
     loaded_data = xr.load_dataset(
@@ -370,6 +458,7 @@ def test_export_to_xarray_extra_metadate_can_be_stored(mock_dataset, tmp_path):
             assert mock_dataset.metadata[key] == loaded_data.attrs[key]
     # check that the added metadata roundtrip correctly
     assert loaded_data.attrs["foo_metadata"] == json.dumps(nt_metadata)
+    assert loaded_data.attrs["metadata_added_after_export"] == 69
     # check that all attrs roundtrip correctly within the xarray ds
     data_as_xarray.attrs.pop("export_info")
     assert loaded_data.attrs == data_as_xarray.attrs
@@ -401,6 +490,32 @@ def test_to_xarray_da_dict_paramspec_metadata_is_preserved(mock_dataset_label_un
         )
         for spec_name, spec_value in expected_param_spec_attrs.items():
             assert xr_da.attrs[spec_name] == spec_value
+
+
+def test_inverted_coords_perserved_on_netcdf_roundtrip(
+    tmp_path_factory, mock_dataset_inverted_coords
+):
+    tmp_path = tmp_path_factory.mktemp("export_netcdf")
+    path = str(tmp_path)
+    mock_dataset_inverted_coords.export(
+        export_type="netcdf", path=tmp_path, prefix="qcodes_"
+    )
+
+    xr_ds = mock_dataset_inverted_coords.to_xarray_dataset()
+    assert xr_ds["z1"].dims == ("x", "y")
+    assert xr_ds["z2"].dims == ("y", "x")
+
+    expected_path = f"qcodes_{mock_dataset_inverted_coords.captured_run_id}_{mock_dataset_inverted_coords.guid}.nc"
+    assert os.listdir(path) == [expected_path]
+    file_path = os.path.join(path, expected_path)
+    ds = load_from_netcdf(file_path)
+
+    with pytest.warns(UserWarning):
+        xr_ds_reimported = ds.to_xarray_dataset()
+
+    assert xr_ds_reimported["z1"].dims == ("x", "y")
+    assert xr_ds_reimported["z2"].dims == ("y", "x")
+    assert xr_ds.identical(xr_ds_reimported)
 
 
 def _get_expected_param_spec_attrs(dataset, dim):

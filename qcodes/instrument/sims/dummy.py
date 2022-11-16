@@ -4,8 +4,8 @@
 #               terminator='\n', device_clear=False)
 from typing import Any
 
+import qcodes.validators as vals
 from qcodes.instrument.visa import VisaInstrument
-import qcodes.utils.validators as vals
 
 
 class Dummy(VisaInstrument):

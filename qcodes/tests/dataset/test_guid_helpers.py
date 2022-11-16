@@ -14,7 +14,7 @@ from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.sqlite.connection import ConnectionPlus
 from qcodes.dataset.sqlite.database import initialised_database_at
 from qcodes.dataset.sqlite.queries import get_guids_from_multiple_run_ids
-from qcodes.instrument.parameter import Parameter
+from qcodes.parameters import Parameter
 
 
 def test_guids_from_dir(tmp_path: Path) -> None:

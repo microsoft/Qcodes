@@ -1,7 +1,8 @@
 from typing import Any, Dict, Optional
 
-from qcodes import VisaInstrument
-from qcodes.utils.validators import Numbers
+from qcodes.instrument import VisaInstrument
+from qcodes.parameters import create_on_off_val_mapping
+from qcodes.validators import Numbers
 
 
 class N51x1(VisaInstrument):
@@ -13,6 +14,27 @@ class N51x1(VisaInstrument):
     def __init__(self, name: str, address: str, min_power: int = -144, max_power: int = 19, **kwargs: Any):
         super().__init__(name, address, terminator='\n', **kwargs)
 
+        self._options = self.ask("*OPT?")
+        # Determine installed frequency option
+        freq_dict = {
+            "501": 1e9,
+            "503": 3e9,
+            "506": 6e9,
+            "513": 13e9,
+            "520": 20e9,
+            "532": 31.8e9,
+            "540": 40e9,
+        }
+
+        frequency_option = None
+        for f_option in freq_dict.keys():
+            if f_option in self._options:
+                frequency_option = f_option
+        if frequency_option is None:
+            raise RuntimeError("Could not determine the frequency option")
+
+        max_freq = freq_dict[frequency_option]
+
         self.add_parameter('power',
                            label='Power',
                            get_cmd='SOUR:POW?',
@@ -21,10 +43,6 @@ class N51x1(VisaInstrument):
                            unit='dBm',
                            vals=Numbers(min_value=min_power,max_value=max_power))
 
-        # Query the instrument to see what frequency range was purchased
-        freq_dict = {'501':1e9, '503':3e9, '506':6e9, '513': 13e9, '520':20e9, '532': 31.8e9, '540': 40e9}
-
-        max_freq = freq_dict[self.ask('*OPT?')]  # TODO: use .split(',') to detect other options
         self.add_parameter('frequency',
                            label='Frequency',
                            get_cmd='SOUR:FREQ?',
@@ -41,10 +59,19 @@ class N51x1(VisaInstrument):
                            unit='rad'
                            )
 
-        self.add_parameter('rf_output',
-                           get_cmd='OUTP:STAT?',
-                           set_cmd='OUTP:STAT {}',
-                           val_mapping={'on': 1, 'off': 0})
+        self.add_parameter(
+            "auto_freq_ref",
+            get_cmd=":ROSC:SOUR:AUTO?",
+            set_cmd=":ROSC:SOUR:AUTO {}",
+            val_mapping=create_on_off_val_mapping(on_val=1, off_val=0),
+        )
+
+        self.add_parameter(
+            "rf_output",
+            get_cmd="OUTP:STAT?",
+            set_cmd="OUTP:STAT {}",
+            val_mapping=create_on_off_val_mapping(on_val=1, off_val=0),
+        )
 
         self.connect_message()
 

@@ -13,14 +13,9 @@ from typing import Any, Dict, Optional, Sequence, Tuple, Union
 import pyvisa as visa
 from pyvisa.resources.serial import SerialInstrument
 
-from qcodes.instrument.channel import (
-    ChannelList,
-    InstrumentChannel,
-    MultiChannelInstrumentParameter,
-)
-from qcodes.instrument.parameter import ParamRawDataType
-from qcodes.instrument.visa import VisaInstrument
-from qcodes.utils import validators as vals
+from qcodes import validators as vals
+from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
+from qcodes.parameters import MultiChannelInstrumentParameter, ParamRawDataType
 
 LOG = logging.getLogger(__name__)
 
@@ -237,7 +232,7 @@ class QDac(VisaInstrument):
 
         assert isinstance(handle, SerialInstrument)
         # Communication setup + firmware check
-        handle.baud_rate = 480600
+        handle.baud_rate = 460800
         handle.parity = visa.constants.Parity(0)
         handle.data_bits = 8
         self.set_terminator('\n')
@@ -268,9 +263,8 @@ class QDac(VisaInstrument):
         for i in self._chan_range:
             channel = QDacChannel(self, f'chan{i:02}', i)
             channels.append(channel)
-            self.add_submodule(f'ch{i:02}', channel)
-        channels.lock()
-        self.add_submodule('channels', channels)
+            self.add_submodule(f"ch{i:02}", channel)
+        self.add_submodule("channels", channels.to_channel_tuple())
 
         # Updatechannel  sync port validator according to number of boards
         self._num_syns = max(num_boards-1, 1)
@@ -389,7 +383,7 @@ class QDac(VisaInstrument):
 
                 self._assigned_fgs[chan] = Generator(fg)
                 self._assigned_fgs[chan].t_end = time_end
-                if trigger != 0:
+                if int(trigger) != 0:
                     self._assigned_triggers[fg] = int(trigger)
                 for syn in range(1, self._num_syns+1):
                     self.write(f'syn {syn}')

@@ -1,20 +1,19 @@
 import logging
-import numpy as np
 from functools import partial
-from typing import Optional, Any, Tuple
+from typing import Any, Optional, Tuple
 
-from qcodes import VisaInstrument, Instrument
-from qcodes import ChannelList, InstrumentChannel
-from qcodes.utils import validators as vals
-from qcodes.instrument.parameter import (
-    MultiParameter,
-    ManualParameter,
+import numpy as np
+
+import qcodes.validators as vals
+from qcodes.instrument import ChannelList, Instrument, InstrumentChannel, VisaInstrument
+from qcodes.parameters import (
     ArrayParameter,
+    ManualParameter,
+    MultiParameter,
     ParamRawDataType,
+    create_on_off_val_mapping,
 )
-from qcodes.utils.helpers import create_on_off_val_mapping
-from qcodes.utils.deprecate import deprecate
-
+from qcodes.utils import deprecate
 
 log = logging.getLogger(__name__)
 
@@ -30,7 +29,7 @@ class FixedFrequencyTraceIQ(MultiParameter):
     """
 
     def __init__(
-        self, name: str, instrument: "ZNBChannel", npts: int, bandwidth: int
+        self, name: str, instrument: "RohdeSchwarzZNBChannel", npts: int, bandwidth: int
     ) -> None:
         super().__init__(
             name,
@@ -75,7 +74,7 @@ class FixedFrequencyTraceIQ(MultiParameter):
         `cw_check_sweep_first` is set to `True` then at the cost of a few ms
         overhead checks if the vna is setup correctly.
         """
-        assert isinstance(self.instrument, ZNBChannel)
+        assert isinstance(self.instrument, RohdeSchwarzZNBChannel)
         i, q = self.instrument._get_cw_data()
         return i, q
 
@@ -96,7 +95,7 @@ class FixedFrequencyPointIQ(MultiParameter):
         instrument: instrument the parameter belongs to
     """
 
-    def __init__(self, name: str, instrument: "ZNBChannel") -> None:
+    def __init__(self, name: str, instrument: "RohdeSchwarzZNBChannel") -> None:
         super().__init__(
             name,
             instrument=instrument,
@@ -113,7 +112,7 @@ class FixedFrequencyPointIQ(MultiParameter):
         parameter `cw_check_sweep_first` is set to `True` then at the cost of a
         few ms overhead checks if the vna is setup correctly.
         """
-        assert isinstance(self.instrument, ZNBChannel)
+        assert isinstance(self.instrument, RohdeSchwarzZNBChannel)
         i, q = self.instrument._get_cw_data()
         return float(np.mean(i)), float(np.mean(q))
 
@@ -132,7 +131,7 @@ class FixedFrequencyPointMagPhase(MultiParameter):
         instrument: instrument the parameter belongs to
     """
 
-    def __init__(self, name: str, instrument: "ZNBChannel") -> None:
+    def __init__(self, name: str, instrument: "RohdeSchwarzZNBChannel") -> None:
         super().__init__(
             name,
             instrument=instrument,
@@ -153,7 +152,7 @@ class FixedFrequencyPointMagPhase(MultiParameter):
         `True` for the instrument then at the cost of a few ms overhead
         checks if the vna is setup correctly.
         """
-        assert isinstance(self.instrument, ZNBChannel)
+        assert isinstance(self.instrument, RohdeSchwarzZNBChannel)
         i, q = self.instrument._get_cw_data()
         s = np.mean(i) + 1j * np.mean(q)
         return np.abs(s), np.angle(s)
@@ -167,7 +166,7 @@ class FrequencySweepMagPhase(MultiParameter):
     def __init__(
         self,
         name: str,
-        instrument: "ZNBChannel",
+        instrument: "RohdeSchwarzZNBChannel",
         start: float,
         stop: float,
         npts: int,
@@ -204,10 +203,62 @@ class FrequencySweepMagPhase(MultiParameter):
         self.shapes = ((npts,), (npts,))
 
     def get_raw(self) -> Tuple[ParamRawDataType, ...]:
-        assert isinstance(self.instrument, ZNBChannel)
+        assert isinstance(self.instrument, RohdeSchwarzZNBChannel)
         with self.instrument.format.set_to("Complex"):
             data = self.instrument._get_sweep_data(force_polar=True)
         return abs(data), np.angle(data)
+
+
+
+class FrequencySweepDBPhase(MultiParameter):
+    """
+    Sweep that return magnitude in decibel (dB) and phase in radians.
+    """
+
+    def __init__(
+        self,
+        name: str,
+        instrument: "RohdeSchwarzZNBChannel",
+        start: float,
+        stop: float,
+        npts: int,
+        channel: int,
+    ) -> None:
+        super().__init__(
+            name,
+            instrument=instrument,
+            names=("magnitude", "phase"),
+            labels=(
+                f"{instrument.short_name} magnitude",
+                f"{instrument.short_name} phase",
+            ),
+            units=("dB", "rad"),
+            setpoint_units=(("Hz",), ("Hz",)),
+            setpoint_labels=(
+                (f"{instrument.short_name} frequency",),
+                (f"{instrument.short_name} frequency",),
+            ),
+            setpoint_names=(
+                (f"{instrument.short_name}_frequency",),
+                (f"{instrument.short_name}_frequency",),
+            ),
+            shapes=((npts,), (npts,),),
+        )
+        self.set_sweep(start, stop, npts)
+        self._channel = channel
+
+    def set_sweep(self, start: float, stop: float, npts: int) -> None:
+        # Needed to update config of the software parameter on sweep change
+        # frequency setpoints tuple as needs to be hashable for look up.
+        f = tuple(np.linspace(int(start), int(stop), num=npts))
+        self.setpoints = ((f,), (f,))
+        self.shapes = ((npts,), (npts,))
+
+    def get_raw(self) -> Tuple[ParamRawDataType, ...]:
+        assert isinstance(self.instrument, RohdeSchwarzZNBChannel)
+        with self.instrument.format.set_to("Complex"):
+            data = self.instrument._get_sweep_data(force_polar=True)
+        return 20*np.log10(np.abs(data)), np.angle(data)
 
 
 class FrequencySweep(ArrayParameter):
@@ -269,11 +320,11 @@ class FrequencySweep(ArrayParameter):
         self.shape = (npts,)
 
     def get_raw(self) -> ParamRawDataType:
-        assert isinstance(self.instrument, ZNBChannel)
+        assert isinstance(self.instrument, RohdeSchwarzZNBChannel)
         return self.instrument._get_sweep_data()
 
 
-class ZNBChannel(InstrumentChannel):
+class RohdeSchwarzZNBChannel(InstrumentChannel):
     def __init__(
         self,
         parent: "ZNB",
@@ -460,6 +511,15 @@ class ZNBChannel(InstrumentChannel):
             npts=self.npts(),
             channel=n,
             parameter_class=FrequencySweepMagPhase,
+        )
+
+        self.add_parameter(
+            name="trace_db_phase",
+            start=self.start(),
+            stop=self.stop(),
+            npts=self.npts(),
+            channel=n,
+            parameter_class=FrequencySweepDBPhase,
         )
         self.add_parameter(
             name="trace",
@@ -705,7 +765,7 @@ class ZNBChannel(InstrumentChannel):
         stop = self.stop()
         npts = self.npts()
         for _, parameter in self.parameters.items():
-            if isinstance(parameter, (FrequencySweep, FrequencySweepMagPhase)):
+            if isinstance(parameter, (FrequencySweep, FrequencySweepMagPhase, FrequencySweepDBPhase)):
                 try:
                     parameter.set_sweep(start, stop, npts)
                 except AttributeError:
@@ -862,6 +922,9 @@ class ZNBChannel(InstrumentChannel):
         return i, q
 
 
+ZNBChannel = RohdeSchwarzZNBChannel
+
+
 class ZNB(VisaInstrument):
     """
     QCoDeS driver for the Rohde & Schwarz ZNB8 and ZNB20
@@ -963,7 +1026,6 @@ class ZNB(VisaInstrument):
                 for j in range(1, num_ports + 1):
                     ch_name = "S" + str(i) + str(j)
                     self.add_channel(ch_name)
-            self.channels.lock()
             self.display_sij_split()
             self.channels.autoscale()
 
@@ -1002,6 +1064,4 @@ class ZNB(VisaInstrument):
         self.write("CALCulate:PARameter:DELete:ALL")
         for submodule in self.submodules.values():
             if isinstance(submodule, ChannelList):
-                submodule._channels = []
-                submodule._channel_mapping = {}
-                submodule._locked = False
+                submodule.clear()

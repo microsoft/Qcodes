@@ -1,14 +1,13 @@
 import configparser
+import logging
 import re
 from functools import partial
-import logging
-from traceback import format_exc
-from typing import Optional, Any, Union, List, Dict
-
-from qcodes import IPInstrument
-from qcodes.utils.validators import Enum, Ints
-
 from time import sleep
+from traceback import format_exc
+from typing import Any, Dict, List, Optional, Union
+
+from qcodes.instrument import IPInstrument
+from qcodes.validators import Enum, Ints
 
 
 class Triton(IPInstrument):

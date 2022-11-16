@@ -3,7 +3,8 @@ from typing import Any, List
 
 import numpy as np
 import pytest
-from qcodes.utils.validators import Numbers
+
+from qcodes.validators import Numbers
 
 from .conftest import AClass, a_func
 

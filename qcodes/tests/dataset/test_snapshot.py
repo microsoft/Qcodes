@@ -3,10 +3,10 @@ import json
 import numpy
 import pytest
 
-from qcodes.instrument.parameter import ManualParameter
-from qcodes.tests.instrument_mocks import DummyInstrument
 from qcodes.dataset.measurements import Measurement
+from qcodes.parameters import ManualParameter
 from qcodes.station import Station
+from qcodes.tests.instrument_mocks import DummyInstrument
 
 # pylint: disable=unused-import
 from qcodes.tests.test_station import set_default_station_to_none

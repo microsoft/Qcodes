@@ -1,5 +1,5 @@
 """
-Test suite for instument.base.*
+Test suite for Instrument and InstrumentBase
 """
 import contextlib
 import io
@@ -8,24 +8,38 @@ import weakref
 
 import pytest
 
-from qcodes.instrument.base import Instrument, InstrumentBase, find_or_create_instrument
-from qcodes.instrument.function import Function
-from qcodes.instrument.parameter import Parameter
+from qcodes.instrument import Instrument, InstrumentBase, find_or_create_instrument
+from qcodes.metadatable import Metadatable
+from qcodes.parameters import Function, Parameter
 
-from .instrument_mocks import DummyInstrument, MockMetaParabola, MockParabola
+from .instrument_mocks import (
+    DummyChannelInstrument,
+    DummyFailingInstrument,
+    DummyInstrument,
+    MockMetaParabola,
+    MockParabola,
+)
 
 
-@pytest.fixture(name='testdummy', scope='function')
+@pytest.fixture(name="testdummy", scope="function")
 def _dummy_dac():
-    instrument = DummyInstrument(
-        name='testdummy', gates=['dac1', 'dac2', 'dac3'])
+    instrument = DummyInstrument(name="testdummy", gates=["dac1", "dac2", "dac3"])
     try:
         yield instrument
     finally:
         instrument.close()
 
 
-@pytest.fixture(name='parabola', scope='function')
+@pytest.fixture(name="testdummychannelinstr", scope="function")
+def _dummy_channel_instr():
+    instrument = DummyChannelInstrument(name="testdummy")
+    try:
+        yield instrument
+    finally:
+        instrument.close()
+
+
+@pytest.fixture(name="parabola", scope="function")
 def _dummy_parabola():
     instrument = MockParabola("parabola")
     try:
@@ -61,6 +75,74 @@ def test_check_instances(testdummy):
     assert testdummy.instances() == [testdummy]
 
 
+def test_instrument_fail(close_before_and_after):
+    with pytest.raises(RuntimeError, match="Failed to create instrument"):
+        DummyFailingInstrument(name="failinginstrument")
+
+    assert Instrument.instances() == []
+    assert DummyFailingInstrument.instances() == []
+    assert Instrument._all_instruments == {}
+
+
+def test_instrument_on_invalid_identifier(close_before_and_after):
+    # Check if warning and error raised when invalid identifer name given
+    with pytest.warns(
+        UserWarning, match="Changed !-name to !_name for instrument identifier"
+    ):
+        with pytest.raises(ValueError, match="!_name invalid instrument identifier"):
+            DummyInstrument(name="!-name")
+
+    assert Instrument.instances() == []
+    assert DummyInstrument.instances() == []
+    assert Instrument._all_instruments == {}
+
+
+def test_instrument_warns_on_hyphen_in_name(close_before_and_after):
+    # Check if warning is raised and name is valid
+    # identifier when dashes '-' are converted to underscores '_'
+    with pytest.warns(
+        UserWarning, match="Changed -name to _name for instrument identifier"
+    ):
+        instr = DummyInstrument(name="-name")
+
+    assert instr.name == "_name"
+    assert Instrument.instances() == []
+    assert DummyInstrument.instances() == [instr]
+    assert Instrument._all_instruments != {}
+
+
+def test_instrument_allows_channel_name_starting_with_number(close_before_and_after):
+    instr = DummyChannelInstrument(name="foo", channel_names=["1", "2", "3"])
+
+    for chan in instr.channels:
+        assert chan.short_name.isidentifier() is False
+        assert chan.full_name.isidentifier() is True
+    assert Instrument.instances() == []
+    assert DummyChannelInstrument.instances() == [instr]
+    assert Instrument._all_instruments != {}
+
+
+def test_instrument_channel_name_raise_on_invalid(close_before_and_after):
+    with pytest.raises(ValueError, match="foo_☃ invalid instrument identifier"):
+        DummyChannelInstrument(name="foo", channel_names=["☃"])
+    assert Instrument.instances() == []
+    assert DummyChannelInstrument.instances() == []
+    assert Instrument._all_instruments == {}
+
+
+def test_instrument_retry_with_same_name(close_before_and_after):
+    with pytest.raises(RuntimeError, match="Failed to create instrument"):
+        DummyFailingInstrument(name="failinginstrument")
+    instr = DummyFailingInstrument(name="failinginstrument", fail=False)
+
+    # Check that the instrument is successfully registered after failing first
+    assert Instrument.instances() == []
+    assert DummyFailingInstrument.instances() == [instr]
+    expected_dict = weakref.WeakValueDictionary()
+    expected_dict["failinginstrument"] = instr
+    assert Instrument._all_instruments == expected_dict
+
+
 def test_attr_access(testdummy):
 
     # test the instrument works
@@ -76,16 +158,52 @@ def test_attr_access(testdummy):
     assert testdummy.name == 'testdummy'
 
     # make sure we can still print the instrument
-    assert 'testdummy' in testdummy.__repr__()
-    assert 'testdummy' in str(testdummy)
+    assert "testdummy" in testdummy.__repr__()
+    assert "testdummy" in str(testdummy)
 
     # make sure the gate is removed
-    assert not hasattr(testdummy, 'dac1')
+    assert not hasattr(testdummy, "dac1")
+
+
+def test_attr_access_channels(testdummychannelinstr):
+    instr = testdummychannelinstr
+
+    channel = instr.channels[0]
+    # close the instrument
+    instr.close()
+
+    # make sure the name property still exists
+    assert hasattr(instr, "name")
+    assert instr.name == "testdummy"
+    assert instr.full_name == "testdummy"
+    assert instr.short_name == "testdummy"
+
+    # make sure we can still print the instrument
+    assert "testdummy" in instr.__repr__()
+    assert "testdummy" in str(instr)
+
+    # make sure the submodules, parameters, and functions are removed
+    assert not hasattr(instr, "parameters")
+    assert not hasattr(instr, "submodules")
+    assert not hasattr(instr, "instrument_modules")
+    assert not hasattr(instr, "functions")
+
+    assert channel.name == "testdummy_ChanA"
+    assert channel.full_name == "testdummy_ChanA"
+    assert channel.short_name == "ChanA"
+    assert not hasattr(channel, "parameters")
+    assert not hasattr(channel, "submodules")
+    assert not hasattr(channel, "instrument_modules")
+    assert not hasattr(channel, "functions")
 
 
 def test_get_idn(testdummy):
-    idn = dict(zip(('vendor', 'model', 'serial', 'firmware'),
-                   [None, testdummy.name, None, None]))
+    idn = {
+        "vendor": "QCoDeS",
+        "model": str(testdummy.__class__),
+        "seral": "NA",
+        "firmware": "NA",
+    }
     assert testdummy.get_idn() == idn
 
 
@@ -244,7 +362,6 @@ def test_recreate(close_before_and_after, request):
     instr = DummyInstrument(
         name='instr', gates=['dac1', 'dac2', 'dac3'])
     request.addfinalizer(instr.close)
-    instr_ref = weakref.ref(instr)
 
     assert ['instr'] == list(Instrument._all_instruments.keys())
 
@@ -253,12 +370,11 @@ def test_recreate(close_before_and_after, request):
         recreate=True
     )
     request.addfinalizer(instr_2.close)
-    instr_2_ref = weakref.ref(instr_2)
 
     assert ['instr'] == list(Instrument._all_instruments.keys())
 
-    assert instr_2_ref in Instrument._all_instruments.values()
-    assert instr_ref not in Instrument._all_instruments.values()
+    assert instr_2 in Instrument._all_instruments.values()
+    assert instr not in Instrument._all_instruments.values()
 
 
 def test_instrument_metadata(request):
@@ -275,19 +391,87 @@ def test_instrumentbase_metadata():
     assert instrument.metadata == metadatadict
 
 
+@pytest.mark.parametrize("cls", [(InstrumentBase), (Instrument)])
+def test_instrument_label(cls):
+    """Instrument uses nicely formatted label if available."""
+    instrument = cls(name="name")
+    assert instrument.label == "name"
+
+    random_ascii = "~!@#$%^&*()_-+=`{}[];'\":,./<>?|\\ äöüß"
+    instrument.label = random_ascii
+    assert instrument.label == random_ascii
+
+    label = "Nicely-formatted label"
+    instrument = cls(name="name1", label=label)
+    assert instrument.label == label
+
+
 def test_snapshot_and_meta_attrs():
     """Test snapshot of InstrumentBase contains _meta_attrs attributes"""
-    instr = InstrumentBase('instr')
+    instr = InstrumentBase("instr", label="Label")
 
     assert instr.name == 'instr'
 
-    assert hasattr(instr, '_meta_attrs')
-    assert instr._meta_attrs == ['name']
+    assert hasattr(instr, "_meta_attrs")
+    assert instr._meta_attrs == ["name", "label"]
 
     snapshot = instr.snapshot()
 
     assert 'name' in snapshot
     assert 'instr' == snapshot['name']
 
+    assert "label" in snapshot
+    assert "Label" == snapshot["label"]
+
     assert '__class__' in snapshot
     assert 'InstrumentBase' in snapshot['__class__']
+
+
+class TestSnapshotType(Metadatable):
+
+    __test__ = False
+
+    def __init__(self, sample_value: int) -> None:
+        super().__init__()
+        self.sample_value = sample_value
+
+    def snapshot_base(self, update=True, params_to_skip_update=None):
+        return {"sample_key": self.sample_value}
+
+
+class TestInstrument(InstrumentBase):
+
+    __test__ = False
+
+    def __init__(self, name, label) -> None:
+        super().__init__(name, label=label)
+        self._meta_attrs.extend(["test_attribute"])
+        self._test_attribute = TestSnapshotType(12)
+
+    @property
+    def test_attribute(self) -> TestSnapshotType:
+        return self._test_attribute
+
+
+def test_snapshot_and_meta_attrs2():
+    """Test snapshot of child of InstrumentBase which contains _meta_attrs attribute that is itself Metadatable"""
+    instr = TestInstrument("instr", label="Label")
+
+    assert instr.name == "instr"
+
+    assert hasattr(instr, "_meta_attrs")
+    assert instr._meta_attrs == ["name", "label", "test_attribute"]
+
+    snapshot = instr.snapshot()
+
+    assert "name" in snapshot
+    assert "instr" == snapshot["name"]
+
+    assert "label" in snapshot
+    assert "Label" == snapshot["label"]
+
+    assert "__class__" in snapshot
+    assert "TestInstrument" in snapshot["__class__"]
+
+    assert "test_attribute" in snapshot
+    assert {"sample_key": 12} == snapshot["test_attribute"]

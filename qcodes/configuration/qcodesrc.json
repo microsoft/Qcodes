@@ -1,7 +1,7 @@
 {
     "core":{
         "default_fmt": "data/{date}/#{counter}_{name}_{time}",
-        "register_magic": true,
+        "register_magic": false,
         "import_legacy_api": false,
         "db_location": "~/experiments.db",
         "db_debug": false,
@@ -59,6 +59,7 @@
         "use_monitor": false
     },
     "GUID_components": {
+        "GUID_type": "explicit_sample",
         "location": 0,
         "work_station": 0,
         "sample": 0

@@ -1,23 +1,16 @@
-from unittest.mock import MagicMock
 import re
 
 import pytest
 
-from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1511B import \
-    B1511B
-from qcodes.instrument_drivers.Keysight.keysightb1500.constants import \
-    IOutputRange, IMeasRange
-
-# pylint: disable=redefined-outer-name
-
-
-@pytest.fixture
-def mainframe():
-    yield MagicMock()
+from qcodes.instrument_drivers.Keysight.keysightb1500.constants import (
+    IMeasRange,
+    IOutputRange,
+)
+from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1511B import B1511B
 
 
-@pytest.fixture
-def smu(mainframe):
+@pytest.fixture(name="smu")
+def _make_smu(mainframe):
     slot_nr = 1
     smu = B1511B(parent=mainframe, name='B1511B', slot_nr=slot_nr)
     yield smu

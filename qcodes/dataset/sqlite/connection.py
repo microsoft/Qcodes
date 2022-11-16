@@ -3,14 +3,17 @@ This module provides a wrapper class :class:`ConnectionPlus` around
 :class:`sqlite3.Connection` together with functions around it which allow
 performing nested atomic transactions on an SQLite database.
 """
+from __future__ import annotations
+
 import logging
 import sqlite3
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Union, Any, Iterator
+from typing import Any
 
 import wrapt
 
-from qcodes.utils.delaykeyboardinterrupt import DelayedKeyboardInterrupt
+from qcodes.utils import DelayedKeyboardInterrupt
 
 log = logging.getLogger(__name__)
 
@@ -24,14 +27,19 @@ class ConnectionPlus(wrapt.ObjectProxy):
     It is not allowed to instantiate a new `ConnectionPlus` object from a
     `ConnectionPlus` object.
 
-    Attributes:
-        atomic_in_progress: a bool describing whether the connection is
-            currently in the middle of an atomic block of transactions, thus
-            allowing to nest `atomic` context managers
-        path_to_dbfile: Path to the database file of the connection.
+    It is recommended to create a ConnectionPlus using the function :func:`connect`
+
     """
     atomic_in_progress: bool = False
-    path_to_dbfile = ''
+    """
+    a bool describing whether the connection is
+    currently in the middle of an atomic block of transactions, thus
+    allowing to nest `atomic` context managers
+    """
+    path_to_dbfile: str = ""
+    """
+    Path to the database file of the connection.
+    """
 
     def __init__(self, sqlite3_connection: sqlite3.Connection):
         super().__init__(sqlite3_connection)
@@ -43,8 +51,9 @@ class ConnectionPlus(wrapt.ObjectProxy):
         self.path_to_dbfile = path_to_dbfile(sqlite3_connection)
 
 
-def make_connection_plus_from(conn: Union[sqlite3.Connection, ConnectionPlus]
-                              ) -> ConnectionPlus:
+def make_connection_plus_from(
+    conn: sqlite3.Connection | ConnectionPlus,
+) -> ConnectionPlus:
     """
     Makes a ConnectionPlus connection object out of a given argument.
 
@@ -160,7 +169,7 @@ def atomic_transaction(conn: ConnectionPlus,
     return c
 
 
-def path_to_dbfile(conn: Union[ConnectionPlus, sqlite3.Connection]) -> str:
+def path_to_dbfile(conn: ConnectionPlus | sqlite3.Connection) -> str:
     """
     Return the path of the database file that the conn object is connected to
     """

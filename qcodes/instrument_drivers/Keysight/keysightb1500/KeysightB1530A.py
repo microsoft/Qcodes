@@ -1,9 +1,10 @@
-from typing import Optional, TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional
 
+from .constants import ChNr, ModuleKind
 from .KeysightB1500_module import B1500Module
-from .constants import ModuleKind, ChNr
+
 if TYPE_CHECKING:
-    from .KeysightB1500_base import KeysightB1500
+    import qcodes.instrument_drivers.Keysight.keysightb1500
 
 
 class B1530A(B1500Module):
@@ -23,9 +24,13 @@ class B1530A(B1500Module):
     """
     MODULE_KIND = ModuleKind.WGFMU
 
-    def __init__(self, parent: 'KeysightB1500', name: Optional[str],
-                 slot_nr: int,
-                 **kwargs: Any):
+    def __init__(
+        self,
+        parent: "qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500",
+        name: Optional[str],
+        slot_nr: int,
+        **kwargs: Any,
+    ):
         super().__init__(parent, name, slot_nr, **kwargs)
 
         self.channels = (ChNr(slot_nr), ChNr(int(f"{slot_nr:d}02")))

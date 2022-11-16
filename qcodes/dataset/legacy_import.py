@@ -1,16 +1,19 @@
-from typing import List, Optional
+from __future__ import annotations
+
 import json
 
-from qcodes.data.data_array import DataArray
-from qcodes.dataset.measurements import Measurement, DataSaver
-from qcodes.data.data_set import load_data
-from qcodes.dataset.experiment_container import Experiment
-from qcodes.data.data_set import DataSet as OldDataSet
 import numpy as np
 
+from qcodes.data.data_array import DataArray
+from qcodes.data.data_set import DataSet as OldDataSet
+from qcodes.data.data_set import load_data
+from qcodes.dataset.experiment_container import Experiment
+from qcodes.dataset.measurements import DataSaver, Measurement
 
-def setup_measurement(dataset: OldDataSet,
-                      exp: Optional['Experiment'] = None) -> Measurement:
+
+def setup_measurement(
+    dataset: OldDataSet, exp: Experiment | None = None
+) -> Measurement:
     """
     Register parameters for all :class:.`DataArrays` in a given QCoDeS legacy dataset
 
@@ -21,7 +24,7 @@ def setup_measurement(dataset: OldDataSet,
         dataset: Legacy dataset to register parameters from.
         exp: experiment that the legacy dataset should be bound to. If
             None the default experiment is used. See the
-            docs of :class:`.Measurement` for more details.
+            docs of :class:`qcodes.dataset.Measurement` for more details.
     """
     meas = Measurement(exp=exp)
     for arrayname, array in dataset.arrays.items():
@@ -74,16 +77,16 @@ def store_array_to_database_alt(meas: Measurement, array: DataArray) -> int:
     return datasaver.run_id
 
 
-def import_dat_file(location: str,
-                    exp: Optional[Experiment] = None) -> List[int]:
+def import_dat_file(location: str, exp: Experiment | None = None) -> list[int]:
     """
-    This imports a QCoDeS legacy :class:.`DataSet` into the database.
+    This imports a QCoDeS legacy :class:`qcodes.data.data_set.DataSet`
+    into the database.
 
     Args:
         location: Path to file containing legacy dataset
         exp: Specify the experiment to store data to.
             If None the default one is used. See the
-            docs of :class:`.Measurement` for more details.
+            docs of :class:`qcodes.dataset.Measurement` for more details.
     """
 
 

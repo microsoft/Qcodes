@@ -3,15 +3,16 @@
 # flake8: noqa (we don't need the "<...> imported but unused" error)
 
 # config
+import warnings
 from typing import Any
 
+import qcodes._version
 import qcodes.configuration as qcconfig
 from qcodes.logger.logger import conditionally_start_all_logging
-from qcodes.utils.helpers import add_to_spyder_UMR_excludelist
+from qcodes.utils.spyder_utils import add_to_spyder_UMR_excludelist
 
-from . import _version
+__version__ = qcodes._version.__version__
 
-__version__ = _version.get_versions()["version"]
 
 config: qcconfig.Config = qcconfig.Config()
 
@@ -21,103 +22,85 @@ conditionally_start_all_logging()
 # instrument list and running monitor
 add_to_spyder_UMR_excludelist('qcodes')
 
-if config.core.import_legacy_api:
-    plotlib = config.gui.plotlib
-    if plotlib in {'QT', 'all'}:
-        try:
-            from qcodes.plots.pyqtgraph import QtPlot
-        except Exception:
-            print('pyqtgraph plotting not supported, '
-                  'try "from qcodes.plots.pyqtgraph import QtPlot" '
-                  'to see the full error')
 
-    if plotlib in {'matplotlib', 'all'}:
-        try:
-            from qcodes.plots.qcmatplotlib import MatPlot
-        except Exception:
-            print('matplotlib plotting not supported, '
-                  'try "from qcodes.plots.qcmatplotlib import MatPlot" '
-                  'to see the full error')
-    from qcodes.loops import Loop, active_loop, active_data_set
-    from qcodes.measure import Measure
-    from qcodes.data.data_set import DataSet, new_data, load_data
-    from qcodes.actions import Task, Wait, BreakIf
-    from qcodes.data.location import FormatLocation
-    from qcodes.data.data_array import DataArray
-    from qcodes.data.format import Formatter
-    from qcodes.data.gnuplot_format import GNUPlotFormat
-    from qcodes.data.hdf5_format import HDF5Format
-    from qcodes.data.io import DiskIO
+import atexit
 
-from qcodes.station import Station
-
-haswebsockets = True
-try:
-    import websockets
-except ImportError:
-    haswebsockets = False
-if haswebsockets:
-    from qcodes.monitor.monitor import Monitor
-
-from qcodes.dataset.data_set import (
+import qcodes.validators
+from qcodes.dataset import (
+    Measurement,
+    ParamSpec,
+    SQLiteSettings,
+    experiments,
+    get_guids_by_run_spec,
+    initialise_database,
+    initialise_or_create_database_at,
+    initialised_database_at,
     load_by_counter,
     load_by_guid,
     load_by_id,
     load_by_run_spec,
-    new_data_set,
-)
-from qcodes.dataset.descriptions.param_spec import ParamSpec
-from qcodes.dataset.experiment_container import (
-    experiments,
     load_experiment,
     load_experiment_by_name,
     load_last_experiment,
     load_or_create_experiment,
+    new_data_set,
     new_experiment,
 )
-from qcodes.dataset.measurements import Measurement
-from qcodes.dataset.sqlite.database import (
-    initialise_database,
-    initialise_or_create_database_at,
+from qcodes.instrument import (
+    ChannelList,
+    ChannelTuple,
+    Instrument,
+    InstrumentChannel,
+    IPInstrument,
+    VisaInstrument,
+    find_or_create_instrument,
 )
-from qcodes.dataset.sqlite.settings import SQLiteSettings
-from qcodes.instrument.base import Instrument, find_or_create_instrument
-from qcodes.instrument.channel import ChannelList, InstrumentChannel
-from qcodes.instrument.function import Function
-from qcodes.instrument.ip import IPInstrument
-from qcodes.instrument.parameter import (
+from qcodes.monitor import Monitor
+from qcodes.parameters import (
     ArrayParameter,
     CombinedParameter,
     DelegateParameter,
+    Function,
     ManualParameter,
     MultiParameter,
     Parameter,
     ParameterWithSetpoints,
     ScaledParameter,
+    SweepFixedValues,
+    SweepValues,
     combine,
 )
-from qcodes.instrument.sweep_values import SweepFixedValues, SweepValues
-from qcodes.instrument.visa import VisaInstrument
-from qcodes.instrument_drivers.test import test_instrument, test_instruments
-from qcodes.utils import validators
+from qcodes.station import Station
+
+# ensure to close all instruments when interpreter is closed
+atexit.register(Instrument.close_all)
+
+if config.core.import_legacy_api:
+    from qcodes.utils import QCoDeSDeprecationWarning
+
+    warnings.warn(
+        "`core.import_legacy_api` and `gui.plotlib` config option has no effect "
+        "and will be removed in the future. "
+        "Please avoid setting this in your `qcodesrc.json` config file.",
+        QCoDeSDeprecationWarning,
+    )
+
 
 try:
-    # Check if we are in iPython
-    get_ipython()  # type: ignore[name-defined]
-    from qcodes.utils.magic import register_magic_class
     _register_magic = config.core.get('register_magic', False)
     if _register_magic is not False:
-        register_magic_class(magic_commands=_register_magic)
-except NameError:
+        from IPython import get_ipython
+
+        # Check if we are in IPython
+        ip = get_ipython()
+        if ip is not None:
+            from qcodes.utils.magic import register_magic_class
+
+            register_magic_class(magic_commands=_register_magic)
+except ImportError:
     pass
 except RuntimeError as e:
     print(e)
-
-# ensure to close all instruments when interpreter is closed
-import atexit
-import logging
-
-atexit.register(Instrument.close_all)
 
 
 def test(**kwargs: Any) -> int:

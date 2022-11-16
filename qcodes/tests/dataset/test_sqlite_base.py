@@ -1,6 +1,7 @@
 # Since all other tests of data_set and measurements will inevitably also
 # test the sqlite module, we mainly test exceptions and small helper
 # functions here
+import re
 import time
 import unicodedata
 from contextlib import contextmanager
@@ -14,8 +15,9 @@ from hypothesis import given
 import qcodes.dataset.descriptions.versioning.serialization as serial
 from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
-from qcodes.dataset.descriptions.param_spec import ParamSpec
+from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
+from qcodes.dataset.experiment_container import load_or_create_experiment
 from qcodes.dataset.guids import generate_guid
 
 # mut: module under test
@@ -23,9 +25,10 @@ from qcodes.dataset.sqlite import connection as mut_conn
 from qcodes.dataset.sqlite import database as mut_db
 from qcodes.dataset.sqlite import queries as mut_queries
 from qcodes.dataset.sqlite import query_helpers as mut_help
-from qcodes.dataset.sqlite.connection import path_to_dbfile
+from qcodes.dataset.sqlite.connection import atomic_transaction, path_to_dbfile
 from qcodes.dataset.sqlite.database import get_DB_location
 from qcodes.tests.common import error_caused_by
+from qcodes.utils import QCoDeSDeprecationWarning
 
 from .helper_functions import verify_data_dict
 
@@ -43,6 +46,19 @@ def shadow_conn(path_to_db: str):
     conn.close()
 
 
+@pytest.fixture(name="simple_run_describer")
+def _make_simple_run_describer():
+    x = ParamSpecBase("x", "numeric")
+    t = ParamSpecBase("t", "numeric")
+    y = ParamSpecBase("y", "numeric")
+
+    paramtree = {y: (x, t)}
+
+    interdependencies = InterDependencies_(dependencies=paramtree)
+    rundescriber = RunDescriber(interdependencies)
+    yield rundescriber
+
+
 def test_path_to_dbfile(tmp_path):
 
     tempdb = str(tmp_path / 'database.db')
@@ -54,11 +70,86 @@ def test_path_to_dbfile(tmp_path):
         conn.close()
 
 
-def test_one_raises(experiment):
+def test_one_raises_on_no_results(experiment):
     conn = experiment.conn
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(RuntimeError, match="Expected one row"):
         mut_queries.one(conn.cursor(), column='Something_you_dont_have')
+
+
+def test_one_raises_on_more_than_one_result(experiment):
+    conn = experiment.conn
+
+    # create another experiment with so that the query below returns
+    # MORE THAN ONE experiment id
+    load_or_create_experiment(experiment.name + "2", experiment.sample_name)
+
+    query = f"""
+    SELECT exp_id
+    FROM experiments
+    """
+    cur = atomic_transaction(conn, query)
+
+    with pytest.raises(RuntimeError, match="Expected only one row"):
+        mut_queries.one(cur, column="exp_id")
+
+
+def test_one_raises_on_wrong_column_name(experiment):
+    conn = experiment.conn
+
+    query = f"""
+    SELECT exp_id
+    FROM experiments
+    """
+    cur = atomic_transaction(conn, query)
+
+    with pytest.raises(RuntimeError, match=re.escape("no such column: eXP_id")):
+        mut_queries.one(cur, column="eXP_id")
+
+
+def test_one_raises_on_wrong_column_index(experiment):
+    conn = experiment.conn
+
+    query = f"""
+    SELECT exp_id
+    FROM experiments
+    """
+    cur = atomic_transaction(conn, query)
+
+    with pytest.raises(IndexError):
+        mut_queries.one(cur, column=1)
+
+
+def test_one_works_if_given_column_index(experiment):
+    # This test relies on the fact that there's only one experiment in the
+    # given database
+    conn = experiment.conn
+
+    query = f"""
+    SELECT exp_id
+    FROM experiments
+    """
+    cur = atomic_transaction(conn, query)
+
+    exp_id = mut_queries.one(cur, column=0)
+
+    assert exp_id == experiment.exp_id
+
+
+def test_one_works_if_given_column_name(experiment):
+    # This test relies on the fact that there's only one experiment in the
+    # given database
+    conn = experiment.conn
+
+    query = f"""
+    SELECT exp_id
+    FROM experiments
+    """
+    cur = atomic_transaction(conn, query)
+
+    exp_id = mut_queries.one(cur, column="exp_id")
+
+    assert exp_id == experiment.exp_id
 
 
 def test_atomic_transaction_raises(experiment):
@@ -112,17 +203,15 @@ def test__validate_table_raises(table_name):
         assert mut_queries._validate_table_name(table_name)
 
 
-def test_get_dependents(experiment):
-    x = ParamSpec('x', 'numeric')
-    t = ParamSpec('t', 'numeric')
-    y = ParamSpec('y', 'numeric', depends_on=['x', 't'])
+def test_get_dependents_simple(experiment, simple_run_describer):
 
-    # Make a dataset
-    (_, run_id, _) = mut_queries.create_run(experiment.conn,
-                                            experiment.exp_id,
-                                            name='testrun',
-                                            guid=generate_guid(),
-                                            parameters=[x, t, y])
+    (_, run_id, _) = mut_queries.create_run(
+        experiment.conn,
+        experiment.exp_id,
+        name="testrun",
+        guid=generate_guid(),
+        description=simple_run_describer,
+    )
 
     deps = mut_queries._get_dependents(experiment.conn, run_id)
 
@@ -130,18 +219,30 @@ def test_get_dependents(experiment):
 
     assert deps == [layout_id]
 
+
+def test_get_dependents(experiment):
     # more parameters, more complicated dependencies
+    x = ParamSpecBase("x", "numeric")
+    t = ParamSpecBase("t", "numeric")
+    y = ParamSpecBase("y", "numeric")
 
-    x_raw = ParamSpec('x_raw', 'numeric')
-    x_cooked = ParamSpec('x_cooked', 'numeric', inferred_from=['x_raw'])
-    z = ParamSpec('z', 'numeric', depends_on=['x_cooked'])
+    x_raw = ParamSpecBase("x_raw", "numeric")
+    x_cooked = ParamSpecBase("x_cooked", "numeric")
+    z = ParamSpecBase("z", "numeric")
 
-    (_, run_id, _) = mut_queries.create_run(experiment.conn,
-                                            experiment.exp_id,
-                                            name='testrun',
-                                            guid=generate_guid(),
-                                            parameters=[x, t, x_raw,
-                                                        x_cooked, y, z])
+    deps_param_tree = {y: (x, t), z: (x_cooked,)}
+    inferred_param_tree = {x_cooked: (x_raw,)}
+    interdeps = InterDependencies_(
+        dependencies=deps_param_tree, inferences=inferred_param_tree
+    )
+    description = RunDescriber(interdeps=interdeps)
+    (_, run_id, _) = mut_queries.create_run(
+        experiment.conn,
+        experiment.exp_id,
+        name="testrun",
+        guid=generate_guid(),
+        description=description,
+    )
 
     deps = mut_queries._get_dependents(experiment.conn, run_id)
 
@@ -203,19 +304,20 @@ def test_runs_table_columns(empty_temp_db):
     colnames = list(mut_queries.RUNS_TABLE_COLUMNS)
     conn = mut_db.connect(get_DB_location())
     query = "PRAGMA table_info(runs)"
-    cursor = conn.cursor()
-    for row in cursor.execute(query):
-        colnames.remove(row['name'])
+    cursor = conn.execute(query)
+    description = mut_help.get_description_map(cursor)
+    for row in cursor.fetchall():
+        colnames.remove(row[description["name"]])
 
     assert colnames == []
 
 
 def test_get_data_no_columns(scalar_dataset):
     ds = scalar_dataset
-    with pytest.warns(None) as record:
+    with pytest.warns(QCoDeSDeprecationWarning) as record:
         ref = mut_queries.get_data(ds.conn, ds.table_name, [])
 
-    assert ref == [[]]
+    assert ref == [tuple()]
     assert len(record) == 2
     assert str(record[0].message).startswith("The function <get_data>")
     assert str(record[1].message).startswith("get_data")
@@ -294,7 +396,7 @@ def test_is_run_id_in_db(empty_temp_db):
     assert expected_dict == acquired_dict
 
 
-def test_atomic_creation(experiment):
+def test_atomic_creation(experiment, simple_run_describer):
     """"
     Test that dataset creation is atomic. Test for
     https://github.com/QCoDeS/Qcodes/issues/1444
@@ -309,9 +411,7 @@ def test_atomic_creation(experiment):
     with patch(
         "qcodes.dataset.sqlite.queries.add_data_to_dynamic_columns", new=just_throw
     ):
-        x = ParamSpec("x", "numeric")
-        t = ParamSpec("t", "numeric")
-        y = ParamSpec("y", "numeric", depends_on=["x", "t"])
+
         with pytest.raises(
             RuntimeError, match="Rolling back due to unhandled exception"
         ) as e:
@@ -320,7 +420,7 @@ def test_atomic_creation(experiment):
                 experiment.exp_id,
                 name="testrun",
                 guid=generate_guid(),
-                parameters=[x, t, y],
+                description=simple_run_describer,
                 metadata={"a": 1},
             )
     assert error_caused_by(e, "This breaks adding metadata")
@@ -336,12 +436,14 @@ def test_atomic_creation(experiment):
 
     # if the above was not correctly rolled back we
     # expect the next creation of a run to fail
-    mut_queries.create_run(experiment.conn,
-                           experiment.exp_id,
-                           name='testrun',
-                           guid=generate_guid(),
-                           parameters=[x, t, y],
-                           metadata={'a': 1})
+    mut_queries.create_run(
+        experiment.conn,
+        experiment.exp_id,
+        name="testrun",
+        guid=generate_guid(),
+        description=simple_run_describer,
+        metadata={"a": 1},
+    )
 
     runs = mut_conn.transaction(experiment.conn,
                                 'SELECT run_id FROM runs').fetchall()

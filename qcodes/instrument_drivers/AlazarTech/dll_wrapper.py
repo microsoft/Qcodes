@@ -5,20 +5,22 @@ This module provides infrastructure for wrapping DLL libraries, loaded using
 from the DLL library with mostly python types in mind, and conveniently
 specify their signatures in terms of :mod:`ctypes` types.
 """
+from __future__ import annotations
 
+import concurrent
+import concurrent.futures
 import ctypes
 import logging
-from typing import Type, Dict, NamedTuple, Sequence, NewType, List, Any, TypeVar, Callable, Tuple
-from threading import Lock
-import concurrent
+from collections.abc import Callable, Sequence
 from functools import partial
+from threading import Lock
+from typing import Any, NamedTuple, NewType, TypeVar
 from weakref import WeakValueDictionary
 
-from qcodes.instrument.parameter import _BaseParameter
-from .utils import TraceParameter
-from .constants import API_SUCCESS, API_DMA_IN_PROGRESS, ERROR_CODES, \
-    ReturnCode
+from qcodes.parameters import ParameterBase
 
+from .constants import API_DMA_IN_PROGRESS, API_SUCCESS, ERROR_CODES, ReturnCode
+from .utils import TraceParameter
 
 logger = logging.getLogger(__name__)
 
@@ -41,10 +43,10 @@ def _api_call_task(
     return retval
 
 
-def _normalize_params(*args: T) -> List[T]:
-    args_out: List[T] = []
+def _normalize_params(*args: T) -> list[T]:
+    args_out: list[T] = []
     for arg in args:
-        if isinstance(arg, _BaseParameter):
+        if isinstance(arg, ParameterBase):
             args_out.append(arg.raw_value)
         else:
             args_out.append(arg)
@@ -58,10 +60,8 @@ def _mark_params_as_updated(*args: Any) -> None:
 
 
 def _check_error_code(
-        return_code: int,
-        func: Callable[..., Any],
-        arguments: Tuple[Any, ...]
-) -> Tuple[Any, ...]:
+    return_code: int, func: Callable[..., Any], arguments: tuple[Any, ...]
+) -> tuple[Any, ...]:
     if (return_code != API_SUCCESS) and (return_code != API_DMA_IN_PROGRESS):
         argrepr = repr(arguments)
         if len(argrepr) > 100:
@@ -85,9 +85,7 @@ def _check_error_code(
 
 
 def _convert_bytes_to_str(
-        output: bytes,
-        func: Callable[..., Any],
-        arguments: Tuple[Any, ...]
+    output: bytes, func: Callable[..., Any], arguments: tuple[Any, ...]
 ) -> str:
     return output.decode()
 
@@ -96,28 +94,17 @@ def _convert_bytes_to_str(
 
 
 class Signature(NamedTuple):
-    return_type: Type[Any] = RETURN_CODE
-    argument_types: Sequence[Type[Any]] = ()
+    return_type: type[Any] = RETURN_CODE
+    argument_types: Sequence[type[Any]] = ()
 
 
 class DllWrapperMeta(type):
     """DLL-path-based 'singleton' metaclass for DLL wrapper classes"""
 
     # Only allow a single instance per DLL path.
-    _instances: "WeakValueDictionary[str, Any]" = WeakValueDictionary()
+    _instances: WeakValueDictionary[str, Any] = WeakValueDictionary()
 
-    # Note: without the 'type: ignore' for the ``__call__`` method below, mypy
-    # generates 'Signature of "__call__" incompatible with supertype "type"'
-    # error, which is an indicator of Liskov principle violation - subtypes
-    # should not change the method signatures, but we need it here in order to
-    # use the ``dll_path`` argument which the ``type`` superclass obviously
-    # does not have in its ``__call__`` method.
-    def __call__(  # type: ignore[override]
-            cls,
-            dll_path: str,
-            *args: Any,
-            **kwargs: Any
-    ) -> Any:
+    def __call__(cls, dll_path: str, *args: Any, **kwargs: Any) -> Any:
         api = cls._instances.get(dll_path, None)
         if api is not None:
             logger.debug(
@@ -157,13 +144,12 @@ class WrappedDll(metaclass=DllWrapperMeta):
         dll_path: Path to the DLL library to load and wrap
     """
 
-    signatures: Dict[str, Signature] = {}
+    signatures: dict[str, Signature] = {}
     """
     Signatures for loaded DLL functions;
     It is to be filled with :class:`Signature` instances for the DLL
     functions of interest in a subclass.
     """
-
 
     # This is the DLL library instance.
     _dll: ctypes.CDLL

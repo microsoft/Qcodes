@@ -2,13 +2,13 @@ import logging
 import select
 import socket
 import sys
+
 if sys.platform == "win32":
-    from msvcrt import kbhit, getch
+    from msvcrt import getch, kbhit
 else:
     raise RuntimeError("Dynacool server only supported on Windows")
 
-from qcodes.instrument_drivers.QuantumDesign.\
-    DynaCoolPPMS.private.commandhandler import CommandHandler
+from .commandhandler import CommandHandler
 
 assert sys.platform == 'win32'
 
@@ -21,7 +21,8 @@ PORT = 5000
 ADDRESS = ''
 LINE_TERM = '\r\n'
 
-if __name__ == '__main__':
+
+def run_server() -> None:
 
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -89,5 +90,8 @@ if __name__ == '__main__':
                     response = command_handler(command)
                     sock.send(bytes(f'{response}{LINE_TERM}', 'utf-8'))
 
-
     server_socket.close()
+
+
+if __name__ == "__main__":
+    run_server()

@@ -1,5 +1,6 @@
-from qcodes import VisaInstrument, InstrumentChannel
-from typing import Union, List, Tuple, Optional
+from typing import List, Optional, Tuple, Union
+
+from qcodes.instrument import InstrumentChannel, VisaInstrument
 
 
 class KeysightSubModule(InstrumentChannel):

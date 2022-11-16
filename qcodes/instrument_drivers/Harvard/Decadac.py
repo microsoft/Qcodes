@@ -2,8 +2,8 @@ from functools import partial
 from time import time
 from typing import Union, cast
 
-from qcodes import ChannelList, InstrumentChannel, VisaInstrument
-from qcodes.utils import validators as vals
+import qcodes.validators as vals
+from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
 
 number = Union[float, int]
 
@@ -463,10 +463,8 @@ class Decadac(VisaInstrument, DacReader):
             slot_channels = slots[i].channels
             slot_channels = cast(ChannelList, slot_channels)
             channels.extend(slot_channels)
-        slots.lock()
-        channels.lock()
-        self.add_submodule("slots", slots)
-        self.add_submodule("channels", channels)
+        self.add_submodule("slots", slots.to_channel_tuple())
+        self.add_submodule("channels", channels.to_channel_tuple())
 
         self.connect_message()
 

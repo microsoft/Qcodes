@@ -6,7 +6,7 @@ from time import sleep
 
 import pytest
 
-from qcodes.instrument.specialized_parameters import ElapsedTimeParameter
+from qcodes.parameters import ElapsedTimeParameter
 
 
 def test_elapsed_time_parameter_init():

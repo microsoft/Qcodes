@@ -1,10 +1,15 @@
 import warnings
+
 import pytest
 
-
 from qcodes.utils.deprecate import (
-    deprecate, issue_deprecation_warning, _catch_deprecation_warnings,
-    assert_not_deprecated, assert_deprecated, QCoDeSDeprecationWarning)
+    QCoDeSDeprecationWarning,
+    _catch_deprecation_warnings,
+    assert_deprecated,
+    assert_not_deprecated,
+    deprecate,
+    issue_deprecation_warning,
+)
 
 
 def test_assert_deprecated_raises():
@@ -147,6 +152,7 @@ def test_static_method_raises(self):
         assert c.static_method(1) == 2
 
 
+@pytest.mark.xfail(reason="This is not implemented yet.")
 def test_class_method_uninhibited():
     with pytest.warns(expected_warning=QCoDeSDeprecationWarning):
         assert C.class_method(1) == 2

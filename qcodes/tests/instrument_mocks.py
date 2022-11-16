@@ -5,22 +5,31 @@ from typing import Any, Dict, List, Optional, Sequence, Union
 
 import numpy as np
 
-from qcodes.instrument.base import Instrument, InstrumentBase
-from qcodes.instrument.channel import ChannelList, InstrumentChannel
-from qcodes.instrument.parameter import (
+from qcodes.instrument import ChannelList, Instrument, InstrumentBase, InstrumentChannel
+from qcodes.parameters import (
     ArrayParameter,
     MultiParameter,
     Parameter,
     ParameterWithSetpoints,
 )
-from qcodes.utils.validators import Arrays, ComplexNumbers, Numbers, OnOff
-from qcodes.utils.validators import Sequence as ValidatorSequence
-from qcodes.utils.validators import Strings
+from qcodes.validators import Arrays, ComplexNumbers, Numbers, OnOff
+from qcodes.validators import Sequence as ValidatorSequence
+from qcodes.validators import Strings
 
 log = logging.getLogger(__name__)
 
 
-class MockParabola(Instrument):
+class DummyBase(Instrument):
+    def get_idn(self):
+        return {
+            "vendor": "QCoDeS",
+            "model": str(self.__class__),
+            "seral": "NA",
+            "firmware": "NA",
+        }
+
+
+class MockParabola(DummyBase):
     """
     Holds dummy parameters which are get and set able as well as provides
     some basic functions that depends on these parameters for testing
@@ -107,7 +116,7 @@ class MockMetaParabola(InstrumentBase):
         return val*self.gain.get()
 
 
-class DummyInstrument(Instrument):
+class DummyInstrument(DummyBase):
 
     def __init__(self, name: str = 'dummy',
                  gates: Sequence[str] = ('dac1', 'dac2', 'dac3'), **kwargs):
@@ -136,7 +145,24 @@ class DummyInstrument(Instrument):
             )
 
 
-class DummyAttrInstrument(Instrument):
+class DummyFailingInstrument(DummyBase):
+    def __init__(self, name: str = "dummy", fail: bool = True, **kwargs):
+
+        """
+        Create a dummy instrument that fails on initialization
+        that can be used for testing
+
+        Args:
+            name: name for the instrument
+            fail: if true, instrument will throw a runtime error on creation.
+        """
+        super().__init__(name, **kwargs)
+
+        if fail:
+            raise RuntimeError("Failed to create instrument")
+
+
+class DummyAttrInstrument(DummyBase):
     def __init__(self, name: str = "dummy", **kwargs: Any):
 
         """
@@ -181,8 +207,13 @@ class DmmExponentialParameter(Parameter):
         provide a ``get`` method on the parameter instance.
         """
         dac = self.root_instrument._setter_instr
-        val = self._ed.send(dac.ch1())
+        val = self._ed.send(dac.ch1.cache.get())
         next(self._ed)
+        if self.root_instrument is not None:
+            mylogger = self.root_instrument.log
+        else:
+            mylogger = log
+        mylogger.debug("Getting raw value of parameter: %s as %s", self.full_name, val)
         return val
 
     @staticmethod
@@ -212,8 +243,13 @@ class DmmGaussParameter(Parameter):
         provide a ``get`` method on the parameter instance.
         """
         dac = self.root_instrument._setter_instr
-        val = self._gauss.send((dac.ch1.get(), dac.ch2.get()))
+        val = self._gauss.send((dac.ch1.cache.get(), dac.ch2.cache.get()))
         next(self._gauss)
+        if self.root_instrument is not None:
+            mylogger = self.root_instrument.log
+        else:
+            mylogger = log
+        mylogger.debug("Getting raw value of parameter: %s as %s", self.full_name, val)
         return val
 
     def _gauss_model(self):
@@ -228,7 +264,7 @@ class DmmGaussParameter(Parameter):
             yield model + noise
 
 
-class DummyInstrumentWithMeasurement(Instrument):
+class DummyInstrumentWithMeasurement(DummyBase):
 
     def __init__(
             self,
@@ -258,8 +294,8 @@ class DummyChannel(InstrumentChannel):
     A single dummy channel implementation
     """
 
-    def __init__(self, parent, name, channel):
-        super().__init__(parent, name)
+    def __init__(self, parent, name, channel, **kwargs):
+        super().__init__(parent, name, **kwargs)
 
         self._channel = channel
 
@@ -298,18 +334,24 @@ class DummyChannel(InstrumentChannel):
                            get_cmd=None,
                            set_cmd=None)
 
-        self.add_parameter('dummy_stop',
-                           unit='some unit',
-                           label='f stop',
-                           vals=Numbers(1, 1e3),
-                           get_cmd=None,
-                           set_cmd=None)
+        self.add_parameter(
+            "dummy_stop",
+            initial_value=100,
+            unit="some unit",
+            label="f stop",
+            vals=Numbers(1, 1e3),
+            get_cmd=None,
+            set_cmd=None,
+        )
 
-        self.add_parameter('dummy_n_points',
-                           unit='',
-                           vals=Numbers(1, 1e3),
-                           get_cmd=None,
-                           set_cmd=None)
+        self.add_parameter(
+            "dummy_n_points",
+            initial_value=101,
+            unit="",
+            vals=Numbers(1, 1e3),
+            get_cmd=None,
+            set_cmd=None,
+        )
 
         self.add_parameter('dummy_start_2',
                            initial_value=0,
@@ -319,18 +361,24 @@ class DummyChannel(InstrumentChannel):
                            get_cmd=None,
                            set_cmd=None)
 
-        self.add_parameter('dummy_stop_2',
-                           unit='some unit',
-                           label='f stop',
-                           vals=Numbers(1, 1e3),
-                           get_cmd=None,
-                           set_cmd=None)
+        self.add_parameter(
+            "dummy_stop_2",
+            initial_value=100,
+            unit="some unit",
+            label="f stop",
+            vals=Numbers(1, 1e3),
+            get_cmd=None,
+            set_cmd=None,
+        )
 
-        self.add_parameter('dummy_n_points_2',
-                           unit='',
-                           vals=Numbers(1, 1e3),
-                           get_cmd=None,
-                           set_cmd=None)
+        self.add_parameter(
+            "dummy_n_points_2",
+            initial_value=101,
+            unit="",
+            vals=Numbers(1, 1e3),
+            get_cmd=None,
+            set_cmd=None,
+        )
 
         self.add_parameter('dummy_sp_axis',
                            unit='some unit',
@@ -389,21 +437,30 @@ class DummyChannel(InstrumentChannel):
         self.add_function(name='log_my_name',
                           call_cmd=partial(log.debug, f'{name}'))
 
+    def turn_on(self) -> None:
+        pass
+
 
 class DummyChannelInstrument(Instrument):
     """
     Dummy instrument with channels
     """
 
-    def __init__(self, name, **kwargs):
+    def __init__(self, name, channel_names=None, **kwargs):
         super().__init__(name, **kwargs)
 
         channels = ChannelList(self, "TempSensors", DummyChannel, snapshotable=False)
-        for chan_name in ('A', 'B', 'C', 'D', 'E', 'F'):
-            channel = DummyChannel(self, f'Chan{chan_name}', chan_name)
+
+        if channel_names is None:
+            channel_ids = ("A", "B", "C", "D", "E", "F")
+            channel_names = tuple(f"Chan{chan_name}" for chan_name in channel_ids)
+        else:
+            channel_ids = channel_names
+        for chan_name, chan_id in zip(channel_names, channel_ids):
+            channel = DummyChannel(self, chan_name, chan_id)
             channels.append(channel)
-            self.add_submodule(chan_name, channel)
-        self.add_submodule("channels", channels)
+            self.add_submodule(chan_id, channel)
+        self.add_submodule("channels", channels.to_channel_tuple())
 
 
 class MultiGetter(MultiParameter):
@@ -744,7 +801,7 @@ def setpoint_generator(*sp_bases):
     return tuple(setpoints)
 
 
-class SnapShotTestInstrument(Instrument):
+class SnapShotTestInstrument(DummyBase):
     """
     A highly specialized dummy instrument for testing the snapshot. Used by
     test_snapshot.py
@@ -793,7 +850,7 @@ class SnapShotTestInstrument(Instrument):
         return snap
 
 
-class MockField(Instrument):
+class MockField(DummyBase):
 
     def __init__(
             self,
@@ -874,7 +931,7 @@ class MockField(Instrument):
             yield float(self._field_ramp_fcn(_time))
 
 
-class MockLockin(Instrument):
+class MockLockin(DummyBase):
 
     def __init__(
             self,
@@ -954,13 +1011,8 @@ class MockDACChannel(InstrumentChannel):
         return self._num
 
 
-class MockDAC(Instrument):
-
-    def __init__(
-        self,
-        name: str = 'mdac',
-        num_channels: int = 10,
-        **kwargs):
+class MockDAC(DummyBase):
+    def __init__(self, name: str = "mdac", num_channels: int = 10, **kwargs):
 
         """
         Create a dummy instrument that can be used for testing
@@ -980,7 +1032,7 @@ class MockDAC(Instrument):
             channel = MockDACChannel(parent=self, name=chan_name, num=num)
             channels.append(channel)
             self.add_submodule(chan_name, channel)
-        self.add_submodule("channels", channels)
+        self.add_submodule("channels", channels.to_channel_tuple())
 
 
 class MockCustomChannel(InstrumentChannel):

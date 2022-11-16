@@ -1,4 +1,4 @@
-from typing import Optional
+from __future__ import annotations
 
 from qcodes.dataset.data_set_protocol import DataSetProtocol
 from qcodes.dataset.descriptions.versioning.converters import new_to_old
@@ -16,15 +16,7 @@ def _add_run_to_runs_table(
     target_conn: ConnectionPlus,
     target_exp_id: int,
     create_run_table: bool = True,
-) -> Optional[str]:
-    if dataset._parameters is not None:
-        param_names = dataset._parameters.split(",")
-    else:
-        param_names = []
-    parspecs_dict = {
-        p.name: p for p in new_to_old(dataset.description.interdeps).paramspecs
-    }
-    parspecs = [parspecs_dict[p] for p in param_names]
+) -> str | None:
     metadata = dataset.metadata
     snapshot_raw = dataset._snapshot_raw
     captured_run_id = dataset.captured_run_id
@@ -35,13 +27,13 @@ def _add_run_to_runs_table(
         target_exp_id,
         name=dataset.name,
         guid=dataset.guid,
-        parameters=parspecs,
         metadata=metadata,
         captured_run_id=captured_run_id,
         captured_counter=captured_counter,
         parent_dataset_links=parent_dataset_links,
         create_run_table=create_run_table,
         snapshot_raw=snapshot_raw,
+        description=dataset.description,
     )
     mark_run_complete(target_conn, target_run_id)
     _rewrite_timestamps(

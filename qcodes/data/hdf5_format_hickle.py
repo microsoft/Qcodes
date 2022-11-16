@@ -1,11 +1,14 @@
 import logging
-from .hdf5_format import HDF5Format
-import hickle
-from qcodes.utils.helpers import deep_update
-
 from typing import TYPE_CHECKING
+
+import hickle
+
+from qcodes.utils import deep_update
+
+from .hdf5_format import HDF5Format
+
 if TYPE_CHECKING:
-    from .data_set import DataSet
+    import qcodes.data.data_set
 
 
 #%%
@@ -18,7 +21,14 @@ class HDF5FormatHickle(HDF5Format):
     _metadata_file = 'snapshot.hickle'
     _format_tag = 'hdf5-hickle'
 
-    def write_metadata(self, data_set: 'DataSet', io_manager=None, location=None, read_first=False, **kwargs):
+    def write_metadata(
+        self,
+        data_set: "qcodes.data.data_set.DataSet",
+        io_manager=None,
+        location=None,
+        read_first=False,
+        **kwargs
+    ):
         """
         Write all metadata in this DataSet to storage.
 
@@ -54,8 +64,8 @@ class HDF5FormatHickle(HDF5Format):
         with io_manager.open(fn, 'w', encoding='utf8') as snap_file:
             hickle.dump(data_set.metadata, snap_file)
 
-    def read_metadata(self, data_set: 'DataSet'):
-        """ Reads in the metadata
+    def read_metadata(self, data_set: "qcodes.data.data_set.DataSet"):
+        """Reads in the metadata
 
         Args:
             data_set: Dataset object to read the metadata into

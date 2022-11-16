@@ -29,26 +29,42 @@ The names of the functions in this module follow the "to_*"/"from_*"
 convention where "*" stands for the storage format. Also note the
 "as_version", "for_storage", and "to_current" suffixes.
 """
+from __future__ import annotations
+
 import io
 import json
-from typing import Callable, Dict, Tuple, cast, Any
-
-from qcodes.utils.helpers import YAML
+from collections.abc import Callable
+from typing import Any, cast
 
 from .. import rundescriber as current
-from .converters import (v0_to_v1, v0_to_v2, v0_to_v3, v1_to_v0, v1_to_v2,
-                         v1_to_v3, v2_to_v0, v2_to_v1, v2_to_v3, v3_to_v0,
-                         v3_to_v1, v3_to_v2)
-from .rundescribertypes import (RunDescriberDicts, RunDescriberV0Dict,
-                                RunDescriberV1Dict, RunDescriberV2Dict,
-                                RunDescriberV3Dict)
+from .converters import (
+    v0_to_v1,
+    v0_to_v2,
+    v0_to_v3,
+    v1_to_v0,
+    v1_to_v2,
+    v1_to_v3,
+    v2_to_v0,
+    v2_to_v1,
+    v2_to_v3,
+    v3_to_v0,
+    v3_to_v1,
+    v3_to_v2,
+)
+from .rundescribertypes import (
+    RunDescriberDicts,
+    RunDescriberV0Dict,
+    RunDescriberV1Dict,
+    RunDescriberV2Dict,
+    RunDescriberV3Dict,
+)
 
 STORAGE_VERSION = 3
 # the version of :class:`RunDescriber` object that is used by the data storage
 # infrastructure of :mod:`qcodes`
 
 # keys: (from_version, to_version)
-_converters: Dict[Tuple[int, int], Callable[..., Any]] = {
+_converters: dict[tuple[int, int], Callable[..., Any]] = {
     (0, 0): lambda x: x,
     (0, 1): v0_to_v1,
     (0, 2): v0_to_v2,
@@ -129,7 +145,17 @@ def from_json_to_current(json_str: str) -> current.RunDescriber:
     """
     Deserialize a JSON string into a RunDescriber of the current version
     """
-    return from_dict_to_current(json.loads(json_str))
+
+    data = json.loads(json_str)
+    # json maps both list and tuple to list
+    # since we always expects shapes to be a tuple
+    # convert it back to a tuple here
+    shapes = data.get("shapes", None)
+    if shapes is not None:
+        for name, shapelist in shapes.items():
+            shapes[name] = tuple(shapelist)
+
+    return from_dict_to_current(data)
 
 
 # YAML
@@ -140,7 +166,9 @@ def to_yaml_for_storage(desc: current.RunDescriber) -> str:
     Serialize the given RunDescriber to YAML as a RunDescriber of the
     version for storage
     """
-    yaml = YAML()
+    import ruamel.yaml  # lazy import
+
+    yaml = ruamel.yaml.YAML()
     with io.StringIO() as stream:
         yaml.dump(to_dict_for_storage(desc), stream=stream)
         output = stream.getvalue()
@@ -152,7 +180,9 @@ def from_yaml_to_current(yaml_str: str) -> current.RunDescriber:
     """
     Deserialize a YAML string into a RunDescriber of the current version
     """
-    yaml = YAML()
+    import ruamel.yaml  # lazy import
+
+    yaml = ruamel.yaml.YAML()
     # yaml.load returns an OrderedDict, but we need a dict
     ser = cast(RunDescriberDicts, dict(yaml.load(yaml_str)))
     return from_dict_to_current(ser)

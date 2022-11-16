@@ -26,8 +26,26 @@ clean:
 # generate api docs for instruments automatically
 genapi:
 	sphinx-apidoc  -o  _auto  -d 10 ../qcodes \
+		../qcodes/instrument_drivers/american_magnetics\* \
+		../qcodes/instrument_drivers/agilent \
+		../qcodes/instrument_drivers/AimTTi \
+		../qcodes/instrument_drivers/AlazarTech \
+		../qcodes/instrument_drivers/basel \
+		../qcodes/instrument_drivers/HP \
+		../qcodes/instrument_drivers/ithaco \
+		../qcodes/instrument_drivers/Keithley \
 		../qcodes/instrument_drivers/keysight \
-		../qcodes/instrument_drivers/QuantumDesign/DynaCoolPPMS/private/*
+		../qcodes/instrument_drivers/Lakeshore \
+		../qcodes/instrument_drivers/QDev/* \
+		../qcodes/instrument_drivers/QuantumDesign/* \
+		../qcodes/instrument_drivers/rigol/* \
+		../qcodes/instrument_drivers/rohde_schwarz/* \
+		../qcodes/instrument_drivers/stahl/*\
+		../qcodes/instrument_drivers/stanford_research/* \
+		../qcodes/instrument_drivers/signal_hound/* \
+		../qcodes/instrument_drivers/tektronix/* \
+		../qcodes/instrument_drivers/weinschel/* \
+		../qcodes/instrument_drivers/yokogawa
 	mkdir -p api/generated/
 	cp _auto/qcodes.instrument_drivers.* api/generated/
 

@@ -16,15 +16,21 @@ QCoDeS API
    :maxdepth: 4
    :includehidden:
 
+   calibrations/index
    configuration/index
    dataset/index
+   extensions/index
    instrument/index
-   parameters/index
+   interactive_widget
    logger/index
    math_utils/index
+   metadatable/index
    monitor/index
+   parameters/index
+   plotting/index
    station
    utils/index
+   validators/index
 
 Legacy API
 ----------
@@ -37,4 +43,6 @@ Legacy API
    actions
    measure
    data/index
+   extensions/slack
    plots/index
+   utils/magic

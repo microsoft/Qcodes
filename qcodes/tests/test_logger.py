@@ -6,7 +6,6 @@ import os
 from copy import copy
 
 import pytest
-from packaging import version
 
 import qcodes as qc
 import qcodes.logger as logger
@@ -14,13 +13,7 @@ from qcodes.logger.log_analysis import capture_dataframe
 
 TEST_LOG_MESSAGE = 'test log message'
 
-pytest_version = version.parse(pytest.__version__)
-assert isinstance(pytest_version, version.Version)
-
-if pytest_version.major >= 6:
-    NUM_PYTEST_LOGGERS = 2
-else:
-    NUM_PYTEST_LOGGERS = 1
+NUM_PYTEST_LOGGERS = 2
 
 
 @pytest.fixture
@@ -36,17 +29,13 @@ def remove_root_handlers():
 
 @pytest.fixture
 def awg5208():
-
-    import qcodes.instrument.sims as sims
     from qcodes.instrument_drivers.tektronix.AWG5208 import AWG5208
-    visalib = sims.__file__.replace('__init__.py',
-                                    'Tektronix_AWG5208.yaml@sim')
 
     logger.start_logger()
 
-    inst = AWG5208('awg_sim',
-                   address='GPIB0::1::INSTR',
-                   visalib=visalib)
+    inst = AWG5208(
+        "awg_sim", address="GPIB0::1::INSTR", pyvisa_sim_file="Tektronix_AWG5208.yaml"
+    )
 
     try:
         yield inst
@@ -56,18 +45,18 @@ def awg5208():
 
 @pytest.fixture
 def model372():
-    import qcodes.instrument.sims as sims
     from qcodes.tests.drivers.test_lakeshore import Model_372_Mock
 
     logger.LOGGING_SEPARATOR = ' - '
 
     logger.start_logger()
 
-    visalib = sims.__file__.replace('__init__.py',
-                                    'lakeshore_model372.yaml@sim')
-
-    inst = Model_372_Mock('lakeshore_372', 'GPIB::3::INSTR',
-                          visalib=visalib, device_clear=False)
+    inst = Model_372_Mock(
+        "lakeshore_372",
+        "GPIB::3::INSTR",
+        pyvisa_sim_file="lakeshore_model372.yaml",
+        device_clear=False,
+    )
     inst.sample_heater.range_limits([0, 0.25, 0.5, 1, 2, 3, 4, 7])
     inst.warmup_heater.range_limits([0, 0.25, 0.5, 1, 2, 3, 4, 7])
     try:
@@ -80,21 +69,35 @@ def model372():
 def AMI430_3D():
     import numpy as np
 
-    import qcodes.instrument.sims as sims
     from qcodes.instrument.ip_to_visa import AMI430_VISA
     from qcodes.instrument_drivers.american_magnetics.AMI430 import AMI430_3D
-    visalib = sims.__file__.replace('__init__.py', 'AMI430.yaml@sim')
-    mag_x = AMI430_VISA('x', address='GPIB::1::INSTR', visalib=visalib,
-                        terminator='\n', port=1)
-    mag_y = AMI430_VISA('y', address='GPIB::2::INSTR', visalib=visalib,
-                        terminator='\n', port=1)
-    mag_z = AMI430_VISA('z', address='GPIB::3::INSTR', visalib=visalib,
-                        terminator='\n', port=1)
+
+    mag_x = AMI430_VISA(
+        "x",
+        address="GPIB::1::INSTR",
+        pyvisa_sim_file="AMI430.yaml",
+        terminator="\n",
+        port=1,
+    )
+    mag_y = AMI430_VISA(
+        "y",
+        address="GPIB::2::INSTR",
+        pyvisa_sim_file="AMI430.yaml",
+        terminator="\n",
+        port=1,
+    )
+    mag_z = AMI430_VISA(
+        "z",
+        address="GPIB::3::INSTR",
+        pyvisa_sim_file="AMI430.yaml",
+        terminator="\n",
+        port=1,
+    )
     field_limit = [
         lambda x, y, z: x == 0 and y == 0 and z < 3,
         lambda x, y, z: np.linalg.norm([x, y, z]) < 2
     ]
-    driver = AMI430_3D("AMI430-3D", mag_x, mag_y, mag_z, field_limit)
+    driver = AMI430_3D("AMI430_3D", mag_x, mag_y, mag_z, field_limit)
     try:
         yield driver, mag_x, mag_y, mag_z
     finally:
@@ -309,7 +312,6 @@ def test_installation_info_logging():
     with open(logger.get_log_file_name()) as f:
         lines = f.readlines()
 
-    assert "QCoDeS version:" in lines[-4]
-    assert "QCoDeS installed in editable mode:" in lines[-3]
-    assert "QCoDeS requirements versions:" in lines[-2]
+    assert "QCoDeS version:" in lines[-3]
+    assert "QCoDeS installed in editable mode:" in lines[-2]
     assert "All installed package versions:" in lines[-1]

@@ -1,12 +1,8 @@
 import logging
+
 import pytest
 
-from qcodes.instrument_drivers.tektronix.Keithley_s46 import (
-    S46, LockAcquisitionError
-)
-
-import qcodes.instrument.sims as sims
-visalib = sims.__file__.replace('__init__.py', 'Keithley_s46.yaml@sim')
+from qcodes.instrument_drivers.tektronix.Keithley_s46 import S46, LockAcquisitionError
 
 
 def test_aliases_dict():
@@ -31,7 +27,9 @@ def s46_six():
     """
     A six channel-per-relay instrument
     """
-    driver = S46('s46_six', address='GPIB::2::INSTR', visalib=visalib)
+    driver = S46(
+        "s46_six", address="GPIB::2::INSTR", pyvisa_sim_file="Keithley_s46.yaml"
+    )
 
     try:
         yield driver
@@ -44,7 +42,9 @@ def s46_four():
     """
     A four channel-per-relay instrument
     """
-    driver = S46('s46_four', address='GPIB::3::INSTR', visalib=visalib)
+    driver = S46(
+        "s46_four", address="GPIB::3::INSTR", pyvisa_sim_file="Keithley_s46.yaml"
+    )
 
     try:
         yield driver
@@ -64,7 +64,11 @@ def test_runtime_error_on_bad_init(request):
         RuntimeError,
         match="The driver is initialized from an undesirable instrument state"
     ):
-        S46('s46_bad_state', address='GPIB::1::INSTR', visalib=visalib)
+        S46(
+            "s46_bad_state",
+            address="GPIB::1::INSTR",
+            pyvisa_sim_file="Keithley_s46.yaml",
+        )
 
 
 def test_query_close_once_at_init(caplog):
@@ -72,7 +76,11 @@ def test_query_close_once_at_init(caplog):
     Test that, during initialisation, we query the closed channels only once
     """
     with caplog.at_level(logging.DEBUG):
-        inst = S46('s46_test_query_once', address='GPIB::2::INSTR', visalib=visalib)
+        inst = S46(
+            "s46_test_query_once",
+            address="GPIB::2::INSTR",
+            pyvisa_sim_file="Keithley_s46.yaml",
+        )
         assert caplog.text.count(":CLOS?") == 1
         inst.close()
 

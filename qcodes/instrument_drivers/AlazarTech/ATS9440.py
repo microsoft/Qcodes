@@ -1,11 +1,12 @@
 from typing import Any
 
+from qcodes import validators
+
 from .ATS import AlazarTech_ATS
 from .utils import TraceParameter
-from qcodes.utils import validators
 
 
-class AlazarTech_ATS9440(AlazarTech_ATS):
+class AlazarTechATS9440(AlazarTech_ATS):
     """
     This class is the driver for the ATS9440 board
     it inherits from the ATS base class
@@ -234,11 +235,11 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
                                         'C': 4,
                                         'AC': 5,
                                         'BC': 6,
-                                        'D': 7,
-                                        'AD': 8,
-                                        'BD': 9,
-                                        'CD': 10,
-                                        'ABCD': 11})
+                                        'D': 8,
+                                        'AD': 9,
+                                        'BD': 10,
+                                        'CD': 12,
+                                        'ABCD': 15})
         self.add_parameter(name='transfer_offset',
                            label='Transfer Offset',
                            unit='Samples',
@@ -299,3 +300,11 @@ class AlazarTech_ATS9440(AlazarTech_ATS):
                            set_cmd=None,
                            initial_value=1000,
                            vals=validators.Ints(min_value=0))
+
+
+class AlazarTech_ATS9440(AlazarTechATS9440):
+    """
+    Alias for backwards compatibility. Will eventually be deprecated and removed
+    """
+
+    pass

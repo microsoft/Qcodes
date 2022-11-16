@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from typing_extensions import TypedDict
 
@@ -22,15 +24,15 @@ class RunAttributesDict(TypedDict):
     captured_counter: int
     experiment: ExperimentAttributeDict
     name: str
-    run_timestamp: Optional[str]
-    completed_timestamp: Optional[str]
-    metadata: Dict[str, Any]
-    parent_dataset_links: List[Link]
+    run_timestamp: str | None
+    completed_timestamp: str | None
+    metadata: dict[str, Any]
+    parent_dataset_links: list[Link]
     run_description: RunDescriber
-    snapshot: Optional[Dict[str, Any]]
+    snapshot: dict[str, Any] | None
 
 
-def get_run_attributes(conn: ConnectionPlus, guid: str) -> Optional[RunAttributesDict]:
+def get_run_attributes(conn: ConnectionPlus, guid: str) -> RunAttributesDict | None:
     """
     Look up all information and metadata about a given dataset captured
     in the database.

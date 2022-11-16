@@ -1,7 +1,8 @@
-from typing import Union, Optional, Callable, Dict, Any
 from datetime import datetime, timedelta
+from typing import Any, Callable, Dict, Optional, Union
 
-from qcodes.instrument.parameter import Parameter
+from qcodes.parameters import Parameter
+
 from .conftest import NOT_PASSED
 
 
@@ -18,13 +19,13 @@ def create_parameter(snapshot_get: bool,
     if offset != NOT_PASSED:
         kwargs.update(offset=offset)
 
-    if snapshot_get != NOT_PASSED:
+    if snapshot_get != NOT_PASSED:  # type: ignore[comparison-overlap]
         kwargs.update(snapshot_get=snapshot_get)
 
-    if snapshot_value != NOT_PASSED:
+    if snapshot_value != NOT_PASSED:  # type: ignore[comparison-overlap]
         kwargs.update(snapshot_value=snapshot_value)
 
-    if get_cmd != NOT_PASSED:
+    if get_cmd != NOT_PASSED:  # type: ignore[comparison-overlap]
         kwargs.update(get_cmd=get_cmd)
 
     p = Parameter('p', **kwargs)
@@ -72,8 +73,8 @@ def test_snapshot_contains_parameter_attributes(
     # TODO: test for parameter with metadata
     assert 'metadata' not in s
 
-    assert s['__class__'] == 'qcodes.instrument.parameter.Parameter'
-    assert s['full_name'] == 'p'
+    assert s["__class__"] == "qcodes.parameters.parameter.Parameter"
+    assert s["full_name"] == "p"
 
     # The following is because the parameter does not belong to an instrument
     # TODO: test for a parameter that is attached to instrument

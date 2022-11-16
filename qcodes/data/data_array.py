@@ -1,11 +1,16 @@
-import collections
-from typing import Any, Dict, Optional
+import collections.abc
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 import numpy as np
-import xarray as xr
 
-from qcodes.utils.helpers import DelegateAttributes, full_class, warn_units
+if TYPE_CHECKING:
+    import xarray as xr
 
+import logging
+
+from qcodes.utils import DelegateAttributes, full_class
+
+_LOG = logging.getLogger(__name__)
 
 class DataArray(DelegateAttributes):
 
@@ -120,7 +125,10 @@ class DataArray(DelegateAttributes):
         self.label = label
         self.shape = shape
         if units is not None:
-            warn_units('DataArray', self)
+            _LOG.warning(
+                f"`units` is deprecated for the "
+                f"`DataArray` class, use `unit` instead. {self!r}"
+            )
             if unit is None:
                 unit = units
         self.unit = unit
@@ -528,24 +536,22 @@ class DataArray(DelegateAttributes):
 
         return (last_index + 1) / self.ndarray.size
 
-    @property
-    def units(self):
-        warn_units('DataArray', self)
-        return self.unit
-
-    def to_xarray(self) -> xr.DataArray:
+    def to_xarray(self) -> "xr.DataArray":
         """ Return this DataArray as an xarray dataarray
 
         Returns:
             DataArray in xarray format
         """
+        import xarray as xr
         xarray_dictionary = data_array_to_xarray_dictionary(self)
         xarray_dataarray = xr.DataArray.from_dict(xarray_dictionary)
         return xarray_dataarray
 
     @classmethod
-    def from_xarray(cls, xarray_dataarray: xr.DataArray, array_id: Optional[str] = None) -> 'DataArray':
-        """ Create a DataArray from an xarray DataArray
+    def from_xarray(
+        cls, xarray_dataarray: "xr.DataArray", array_id: Optional[str] = None
+    ) -> "DataArray":
+        """Create a DataArray from an xarray DataArray
 
         Args:
             array_id: Array id for the new DataArray. If None, then use the first data variable from the argument
@@ -568,12 +574,12 @@ def data_array_to_xarray_dictionary(data_array: DataArray) -> Dict[str, Any]:
     Returns:
         dict: A dictionary containing the data in xarray format.
     """
-    key_mapping = {"unit": "unit", "name": "name", "label": "label"}
+    key_mapping = {"unit": "units", "name": "name", "label": "long_name"}
 
-    data_dictionary = {
+    data_dictionary: Dict[str, Any] = {"name": data_array.array_id}
+    data_dictionary["attrs"] = {
         target_key: getattr(data_array, key) for key, target_key in key_mapping.items()
     }
-    data_dictionary['long_name'] = data_array.name
     if data_array.is_setpoint:
         data_dictionary["dims"] = tuple([data_array.array_id])
         data_dictionary["depends_on"] = data_dictionary["dims"]
@@ -609,12 +615,12 @@ def xarray_data_array_dictionary_to_data_array(
         preset_data = np.array(array_dictionary["data"])
     array_name = array_dictionary.get("name", array_id)
 
-    array_full_name = array_dictionary.get("long_name", array_name)
+    array_full_name = array_dictionary["attrs"].get("long_name", array_name)
     data_array = DataArray(
         name=array_name,
         full_name=array_full_name,
-        label=array_dictionary.get("label", ""),
-        unit=array_dictionary.get("unit", None),
+        label=array_dictionary["attrs"].get("long_name", ""),
+        unit=array_dictionary["attrs"].get("units", None),
         is_setpoint=is_setpoint,
         shape=preset_data.shape,
         array_id=array_id,

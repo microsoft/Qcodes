@@ -1,6 +1,6 @@
 import pytest
 
-from qcodes.instrument.parameter import InstrumentRefParameter
+from qcodes.parameters import InstrumentRefParameter
 from qcodes.tests.instrument_mocks import DummyInstrument
 
 

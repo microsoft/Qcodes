@@ -1,12 +1,11 @@
-from functools import partial
 import logging
-from typing import Union, Any
+from functools import partial
+from typing import Any, Union
 
-from qcodes import VisaInstrument, validators as vals
-from qcodes.instrument.channel import InstrumentChannel
-from qcodes.instrument.base import Instrument
-from qcodes.instrument_drivers.Keysight.private.error_handling import \
-    KeysightErrorQueueMixin
+from qcodes import validators as vals
+from qcodes.instrument import Instrument, InstrumentChannel, VisaInstrument
+
+from .private.error_handling import KeysightErrorQueueMixin
 
 log = logging.getLogger(__name__)
 

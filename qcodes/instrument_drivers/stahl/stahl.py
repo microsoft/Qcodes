@@ -2,17 +2,17 @@
 This is a driver for the Stahl power supplies
 """
 
-from typing import Dict, Optional, Any, Callable, Iterable
-import re
-import numpy as np
 import logging
+import re
 from collections import OrderedDict
 from functools import partial
+from typing import Any, Callable, Dict, Iterable, Optional
 
+import numpy as np
 from pyvisa.resources.serial import SerialInstrument
 
-from qcodes import VisaInstrument, InstrumentChannel, ChannelList
-from qcodes.utils.validators import Numbers
+from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
+from qcodes.validators import Numbers
 
 logger = logging.getLogger()
 

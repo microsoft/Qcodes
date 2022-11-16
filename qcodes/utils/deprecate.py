@@ -1,13 +1,16 @@
-import warnings
 import types
+import warnings
 from contextlib import contextmanager
-from typing import Optional, Callable, Any, cast, Iterator, List
+from typing import Any, Callable, Iterator, List, Optional, cast
 
 import wrapt
 
 
 class QCoDeSDeprecationWarning(RuntimeWarning):
-    """Fix for `DeprecationWarning` being suppressed by default."""
+    """
+    A DeprecationWarning used internally in QCoDeS. This
+    fixes `DeprecationWarning` being suppressed by default.
+    """
 
 
 def deprecation_message(
@@ -28,8 +31,11 @@ def issue_deprecation_warning(
     what: str,
     reason: Optional[str] = None,
     alternative: Optional[str] = None,
-    stacklevel: int = 2
+    stacklevel: int = 2,
 ) -> None:
+    """
+    Issue a `QCoDeSDeprecationWarning` with a consistently formatted message
+    """
     warnings.warn(
         deprecation_message(what, reason, alternative),
         QCoDeSDeprecationWarning,
@@ -51,12 +57,15 @@ def deprecate(
     """
 
     @wrapt.decorator  # type: ignore[misc]
-    def decorate_callable(func: Callable[..., Any],
-                          instance: object, args: Any, kwargs: Any) -> Any:
-        t, n = (('class', instance.__class__.__name__)
-                if func.__name__ == '__init__'
-                else ('function', func.__name__))
-        issue_deprecation_warning(f'{t} <{n}>', reason, alternative)
+    def decorate_callable(
+        func: Callable[..., Any], instance: object, args: Any, kwargs: Any
+    ) -> Any:
+        t, n = (
+            ("class", instance.__class__.__name__)
+            if func.__name__ == "__init__"
+            else ("function", func.__name__)
+        )
+        issue_deprecation_warning(f"{t} <{n}>", reason, alternative, stacklevel=3)
         return func(*args, **kwargs)
 
     def actual_decorator(obj: Any) -> Any:
@@ -74,7 +83,11 @@ def deprecate(
                     # by wrapt.
                     # if anyone reading this knows how the following line
                     # works please let me know.
-                    if isinstance(obj.__dict__.get(m_name, None), staticmethod):
+                    # wrapt cannot wrap class methods in 3.11.0
+                    # see https://github.com/python/cpython/issues/63272
+                    if isinstance(
+                        obj.__dict__.get(m_name, None), (staticmethod, classmethod)
+                    ):
                         continue
                     # pylint: disable=no-value-for-parameter
                     setattr(obj, m_name, decorate_callable(m))

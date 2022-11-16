@@ -19,14 +19,18 @@ from contextlib import contextmanager
 from copy import copy
 from datetime import datetime
 from types import TracebackType
-from typing import Dict, Iterator, Optional, Sequence, Type, Union
+from typing import TYPE_CHECKING, Dict, Iterator, Optional, Sequence, Type, Union
 
-from opencensus.ext.azure.common.protocol import Envelope
-from opencensus.ext.azure.log_exporter import AzureLogHandler
+if TYPE_CHECKING:
+    from opencensus.ext.azure.common.protocol import Envelope
+    from opencensus.ext.azure.log_exporter import AzureLogHandler
 
 import qcodes as qc
-import qcodes.utils.installation_info as ii
-from qcodes.utils.helpers import get_qcodes_user_path
+from qcodes.utils import (
+    get_all_installed_package_versions,
+    get_qcodes_user_path,
+    is_qcodes_installed_editably,
+)
 
 log: logging.Logger = logging.getLogger(__name__)
 
@@ -57,7 +61,7 @@ FORMAT_STRING_DICT = OrderedDict([
 # console hander.
 console_handler: Optional[logging.Handler] = None
 file_handler: Optional[logging.Handler] = None
-telemetry_handler: Optional[AzureLogHandler] = None
+telemetry_handler: Optional["AzureLogHandler"] = None
 
 
 _opencensus_filter = logging.Filter(name="opencensus")
@@ -185,10 +189,11 @@ def flush_telemetry_traces() -> None:
         telemetry_handler.flush()
 
 
-def _create_telemetry_handler() -> AzureLogHandler:
+def _create_telemetry_handler() -> "AzureLogHandler":
     """
     Configure, create, and return the telemetry handler
     """
+    from opencensus.ext.azure.log_exporter import AzureLogHandler
     global telemetry_handler
 
     # The default_custom_dimensions will appear in the "customDimensions"
@@ -213,7 +218,7 @@ def _create_telemetry_handler() -> AzureLogHandler:
             """
             cdim = self.custom_dimensions.copy()
             cdim.update(getattr(record, "custom_dimensions", {}))
-            record.custom_dimensions = cdim  # type: ignore[attr-defined]
+            record.custom_dimensions = cdim
 
             return True
 
@@ -225,7 +230,7 @@ def _create_telemetry_handler() -> AzureLogHandler:
     loc = qc.config.GUID_components.location
     stat = qc.config.GUID_components.work_station
 
-    def callback_function(envelope: Envelope) -> bool:
+    def callback_function(envelope: "Envelope") -> bool:
         envelope.tags["ai.user.accountId"] = platform.node()
         envelope.tags["ai.user.id"] = f"{loc:02x}-{stat:06x}"
         return True
@@ -338,14 +343,12 @@ def log_qcodes_versions(logger: logging.Logger) -> None:
     versions of all installed packages.
     """
 
-    qc_version = ii.get_qcodes_version()
-    qc_e_inst = ii.is_qcodes_installed_editably()
-    qc_req_vs = ii.get_qcodes_requirements_versions()
-    ipvs = ii.get_all_installed_package_versions()
+    qc_version = qc.__version__
+    qc_e_inst = is_qcodes_installed_editably()
+    ipvs = get_all_installed_package_versions()
 
     logger.info(f"QCoDeS version: {qc_version}")
     logger.info(f"QCoDeS installed in editable mode: {qc_e_inst}")
-    logger.info(f"QCoDeS requirements versions: {qc_req_vs}")
     logger.info(f"All installed package versions: {json.dumps(ipvs)}")
 
 
@@ -385,10 +388,10 @@ def conditionally_start_all_logging() -> None:
             return False
         elif config.logger.start_logging_on_import == 'if_telemetry_set_up':
             return (
-                config.GUID_components.location != 0 and
-                config.GUID_components.work_station != 0 and
-                config.telemetry.instrumentation_key != \
-                    "00000000-0000-0000-0000-000000000000"
+                config.GUID_components.location != 0
+                and config.GUID_components.work_station != 0
+                and config.telemetry.instrumentation_key
+                != "00000000-0000-0000-0000-000000000000"
             )
         else:
             raise RuntimeError('Error in qcodesrc validation.')

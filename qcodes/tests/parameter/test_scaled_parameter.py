@@ -1,7 +1,7 @@
 import pytest
 
+from qcodes.parameters import ManualParameter, ScaledParameter
 from qcodes.tests.instrument_mocks import DummyInstrument
-from qcodes.instrument.parameter import ScaledParameter, ManualParameter
 
 
 @pytest.fixture()

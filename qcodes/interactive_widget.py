@@ -1,18 +1,17 @@
 """This file contains functions to displays an interactive widget
-with information about `qcodes.experiments()`."""
+with information about :func:`qcodes.dataset.experiments`."""
 
 from __future__ import annotations
 
 import io
 import operator
 import traceback
+from collections.abc import Callable, Iterable, Sequence
 from datetime import datetime
 from functools import partial, reduce
-from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Literal
 
-import matplotlib.pyplot as plt
-from IPython.core.display import display
-from IPython.display import clear_output
+from IPython.display import clear_output, display
 from ipywidgets import (
     HTML,
     Box,
@@ -27,12 +26,10 @@ from ipywidgets import (
     VBox,
 )
 from ruamel.yaml import YAML
-from typing_extensions import Literal
 
 import qcodes
-from qcodes.dataset import initialise_or_create_database_at
+from qcodes.dataset import experiments, initialise_or_create_database_at, plot_dataset
 from qcodes.dataset.data_set_protocol import DataSetProtocol
-from qcodes.dataset.plotting import plot_dataset
 
 if TYPE_CHECKING:
     from qcodes.dataset.descriptions.param_spec import ParamSpecBase
@@ -40,18 +37,18 @@ if TYPE_CHECKING:
 _META_DATA_KEY = "widget_notes"
 
 
-def _get_in(nested_keys: Sequence[str], dct: Dict[str, Any]) -> Dict[str, Any]:
+def _get_in(nested_keys: Sequence[str], dct: dict[str, Any]) -> dict[str, Any]:
     """ Returns dct[i0][i1]...[iX] where [i0, i1, ..., iX]==nested_keys."""
     return reduce(operator.getitem, nested_keys, dct)
 
 
 def button(
     description: str,
-    button_style: Optional[str] = None,
-    on_click: Optional[Callable[[Any], None]] = None,
-    tooltip: Optional[str] = None,
-    layout_kwargs: Optional[Dict[str, Any]] = None,
-    button_kwargs: Optional[Dict[str, Any]] = None,
+    button_style: str | None = None,
+    on_click: Callable[[Any], None] | None = None,
+    tooltip: str | None = None,
+    layout_kwargs: dict[str, Any] | None = None,
+    button_kwargs: dict[str, Any] | None = None,
 ) -> Button:
     """Returns a `ipywidgets.Button`."""
     layout_kwargs = layout_kwargs or {}
@@ -118,7 +115,7 @@ def label(description: str) -> Label:
 
 
 def _update_nested_dict_browser(
-    nested_keys: Sequence[str], nested_dict: Dict[Any, Any], box: Box
+    nested_keys: Sequence[str], nested_dict: dict[Any, Any], box: Box
 ) -> Callable[[Button], None]:
     def update_box(_: Button) -> None:
         box.children = (_nested_dict_browser(nested_keys, nested_dict, box),)
@@ -128,7 +125,7 @@ def _update_nested_dict_browser(
 
 def _nested_dict_browser(
     nested_keys: Sequence[str],
-    nested_dict: Dict[Any, Any],
+    nested_dict: dict[Any, Any],
     box: Box,
     max_nrows: int = 30,
 ) -> GridspecLayout:
@@ -208,7 +205,7 @@ def _nested_dict_browser(
 
 
 def nested_dict_browser(
-    nested_dict: Dict[Any, Any], nested_keys: Sequence[str] = ()
+    nested_dict: dict[Any, Any], nested_keys: Sequence[str] = ()
 ) -> Box:
     """Returns a widget to interactive browse a nested dictionary."""
     box = Box([])
@@ -217,6 +214,8 @@ def nested_dict_browser(
 
 
 def _plot_ds(ds: DataSetProtocol) -> None:
+    import matplotlib.pyplot as plt
+
     plot_dataset(ds)  # might fail
     plt.show()
 
@@ -349,17 +348,17 @@ def editable_metadata(ds: DataSetProtocol) -> Box:
     return box
 
 
-def _yaml_dump(dct: Dict[str, Any]) -> str:
+def _yaml_dump(dct: dict[str, Any]) -> str:
     with io.StringIO() as f:
         YAML().dump(dct, f)
         return f.getvalue()
 
 
-def _get_parameters(ds: DataSetProtocol) -> Dict[str, Dict[str, Any]]:
+def _get_parameters(ds: DataSetProtocol) -> dict[str, dict[str, Any]]:
     independent = {}
     dependent = {}
 
-    def _get_attr(p: ParamSpecBase) -> Dict[str, Any]:
+    def _get_attr(p: ParamSpecBase) -> dict[str, Any]:
         return {
             "unit": p.unit,
             "label": p.label,
@@ -390,12 +389,14 @@ def _get_experiment_button(ds: DataSetProtocol) -> Box:
 
 
 def _get_timestamp_button(ds: DataSetProtocol) -> Box:
-    try:
+    start_timestamp = ds.run_timestamp_raw
+    end_timestamp = ds.completed_timestamp_raw
+    if start_timestamp is not None and end_timestamp is not None:
         total_time = str(
-            datetime.fromtimestamp(ds.run_timestamp_raw)  # type: ignore
-            - datetime.fromtimestamp(ds.completed_timestamp_raw)  # type: ignore
+            datetime.fromtimestamp(end_timestamp)
+            - datetime.fromtimestamp(start_timestamp)
         )
-    except TypeError:
+    else:
         total_time = "?"
     start = ds.run_timestamp()
     body = _yaml_dump(
@@ -490,23 +491,23 @@ def _experiment_widget(
 
 
 def experiments_widget(
-    db: Optional[str] = None,
-    data_sets: Optional[Sequence[DataSetProtocol]] = None,
+    db: str | None = None,
+    data_sets: Sequence[DataSetProtocol] | None = None,
     *,
-    sort_by: Optional[Literal["timestamp", "run_id"]] = "run_id",
+    sort_by: Literal["timestamp", "run_id"] | None = "run_id",
 ) -> VBox:
-    r"""Displays an interactive widget that shows the ``qcodes.experiments()``.
+    r"""Displays an interactive widget that shows the :func:`qcodes.dataset.experiments`.
 
-    With the edit button in the column "Notes" one can make persistent
-    changes to the `~qcodes.dataset.data_set.DataSet`\s attribute
+    With the edit button in the column ``Notes`` one can make persistent
+    changes to the :class:`qcodes.dataset.DataSetProtocol`\s attribute
     ``metadata`` in the key "widget_notes".
     Expanding the coordinates or variables buttons, reveals more options, such
     as plotting or the ability to easily browse
-    the `~qcodes.dataset.data_set.DataSet`\s snapshot.
+    the :class:`qcodes.dataset.DataSetProtocol`\s snapshot.
 
-    Args
+    Args:
         db: Optionally pass a database file, if no database has been loaded.
-        data_sets: Sequence of `~qcodes.dataset.data_set.DataSet`s.
+        data_sets: Sequence of :class:`qcodes.dataset.DataSetProtocol`\s.
             If datasets are explicitly provided via this argument, the ``db``
             argument has no effect.
         sort_by: Sort datasets in widget by either "timestamp" (newest first),
@@ -515,9 +516,7 @@ def experiments_widget(
     if data_sets is None:
         if db is not None:
             initialise_or_create_database_at(db)
-        data_sets = [
-            ds for exp in qcodes.experiments() for ds in exp.data_sets()
-        ]
+        data_sets = [ds for exp in experiments() for ds in exp.data_sets()]
     if sort_by == "run_id":
         data_sets = sorted(data_sets, key=lambda ds: ds.run_id)
     elif sort_by == "timestamp":
@@ -531,3 +530,6 @@ def experiments_widget(
     tab = create_tab(do_display=False)
     grid = _experiment_widget(data_sets, tab)
     return VBox([title, tab, grid])
+
+
+__all__ = ["experiments_widget", "nested_dict_browser"]

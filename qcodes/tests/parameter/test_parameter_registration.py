@@ -1,8 +1,8 @@
 import pytest
 
-from qcodes.instrument.parameter import Parameter
+from qcodes.parameters import Parameter
 from qcodes.tests.instrument_mocks import DummyAttrInstrument
-from qcodes.utils.deprecate import QCoDeSDeprecationWarning
+from qcodes.utils import QCoDeSDeprecationWarning
 
 
 class BrokenParameter(Parameter):
@@ -17,7 +17,7 @@ class BrokenParameter(Parameter):
 
 
 class BrokenParameter2(Parameter):
-    """A parameter that does not pass kwargs to the _BaseParameter class"""
+    """A parameter that does not pass kwargs to the ParameterBase class"""
 
     def __init__(self, name, instrument, set_cmd, get_cmd):
         super().__init__(name=name, instrument=instrument)

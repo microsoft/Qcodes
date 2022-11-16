@@ -1,18 +1,19 @@
-from typing import Union, Dict, Sequence, List, Optional
+from __future__ import annotations
 
-import time
+import random
 import re
-
+import time
+import warnings
+from collections.abc import Sequence
 
 import numpy as np
-import qcodes as qc
 
+import qcodes as qc
 
 _guid_pattern = re.compile(r'^[\da-f]{8}-([\da-f]{4}-){3}[\da-f]{12}$')
 
 
-def generate_guid(timeint: Union[int, None]=None,
-                  sampleint: Union[int, None]=None) -> str:
+def generate_guid(timeint: int | None = None, sampleint: int | None = None) -> str:
     """
     Generate a guid string to go into the GUID column of the runs table.
     The GUID is based on the GUID-components in the qcodesrc file.
@@ -31,21 +32,48 @@ def generate_guid(timeint: Union[int, None]=None,
 
     try:
         guid_comp = cfg['GUID_components']
-    except KeyError:
-        raise RuntimeError('Invalid QCoDeS config file! No GUID_components '
-                           'specified. Can not proceed.')
-
+    except KeyError as err:
+        raise RuntimeError(
+            "Invalid QCoDeS config file! No GUID_components "
+            "specified. Can not proceed."
+        ) from err
+    try:
+        guid_type = guid_comp["GUID_type"]
+    except KeyError as err:
+        raise RuntimeError(
+            "Invalid QCoDeS config file! No GUID_type specified. Can not proceed."
+        ) from err
     location = guid_comp['location']
     station = guid_comp['work_station']
 
     if timeint is None:
-        # ms resolution, checked on windows
+        # ms resolution, checked on Windows
         timeint = int(np.round(time.time()*1000))
     if sampleint is None:
         sampleint = guid_comp['sample']
 
-    if sampleint == 0:
-        sampleint = int('a'*8, base=16)
+    default_sample_ids = (0, 0xAA_AAA_AAA)
+
+    if sampleint not in default_sample_ids and guid_type == "random_sample":
+        raise RuntimeError(
+            "QCoDeS is configured to disregard GUID_components.sample from config file but this "
+            f"is set to a non default value of {sampleint} which is therefore unused."
+        )
+
+    if sampleint not in default_sample_ids:
+        warnings.warn(
+            "Setting a non default GUID_components.sample is deprecated. "
+            "The sample part of the GUID will be replaced by a random string "
+            "in a future release. To opt in to the new format now "
+            "set GUID_type to `random_sample` in your qcodesrc.json config file. "
+            "If you rely on this feature please get in touch.",
+            stacklevel=2,
+        )
+
+    if guid_type == "random_sample":
+        sampleint = random.randint(1, 0xFF_FFF_FFF)
+    elif sampleint == 0:
+        sampleint = 0xAA_AAA_AAA
 
     loc_str = f'{location:02x}'
     stat_str = f'{station:06x}'
@@ -58,7 +86,7 @@ def generate_guid(timeint: Union[int, None]=None,
     return guid
 
 
-def parse_guid(guid: str) -> Dict[str, int]:
+def parse_guid(guid: str) -> dict[str, int]:
     """
     Parse a guid back to its four constituents
 
@@ -130,10 +158,12 @@ def set_guid_work_station_code() -> None:
     cfg.save_to_home()
 
 
-def filter_guids_by_parts(guids: Sequence[str],
-                          location: Optional[int] = None,
-                          sample_id: Optional[int] = None,
-                          work_station: Optional[int] = None) -> List[str]:
+def filter_guids_by_parts(
+    guids: Sequence[str],
+    location: int | None = None,
+    sample_id: int | None = None,
+    work_station: int | None = None,
+) -> list[str]:
     """
     Filter a sequence of GUIDs by location, sample_id and/or work_station.
 
@@ -172,6 +202,6 @@ def validate_guid_format(guid: str) -> None:
     future)
     """
     if _guid_pattern.match(guid):
-            return
+        return
     else:
         raise ValueError(f'Did not receive a valid guid. Got {guid}')

@@ -1,7 +1,7 @@
 from typing import Any, List, Sequence, Tuple
 
-from qcodes import ChannelList, InstrumentChannel, VisaInstrument
 from qcodes import validators as vals
+from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
 
 
 class RigolDP8xxChannel(InstrumentChannel):
@@ -160,8 +160,7 @@ class _RigolDP8xx(VisaInstrument):
             )
             channels.append(channel)
             self.add_submodule(ch_name, channel)
-        channels.lock()
-        self.add_submodule("channels", channels)
+        self.add_submodule("channels", channels.to_channel_tuple())
 
         self.connect_message()
 

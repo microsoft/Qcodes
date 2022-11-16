@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import logging
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
+from collections.abc import Sequence
+from typing import Any, cast
 
 import numpy as np
 from typing_extensions import TypedDict
@@ -7,8 +10,7 @@ from typing_extensions import TypedDict
 from qcodes.dataset.data_set import load_by_id
 from qcodes.dataset.data_set_protocol import DataSetProtocol
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
-from qcodes.utils.deprecate import deprecate
-from qcodes.utils.numpy_utils import list_of_data_to_maybe_ragged_nd_array
+from qcodes.utils import deprecate, list_of_data_to_maybe_ragged_nd_array
 
 log = logging.getLogger(__name__)
 
@@ -21,12 +23,13 @@ class DSPlotData(TypedDict):
     unit: str
     label: str
     data: np.ndarray
-    shape: Optional[Tuple[int, ...]]
+    shape: tuple[int, ...] | None
 
 
 @deprecate(alternative="ndarray.flatten()")
-def flatten_1D_data_for_plot(rawdata: Union[Sequence[Sequence[Any]],
-                                            np.ndarray]) -> np.ndarray:
+def flatten_1D_data_for_plot(
+    rawdata: Sequence[Sequence[Any]] | np.ndarray,
+) -> np.ndarray:
     """
     Cast the return value of the database query to
     a 1D numpy array
@@ -43,7 +46,7 @@ def flatten_1D_data_for_plot(rawdata: Union[Sequence[Sequence[Any]],
 
 
 @deprecate(alternative="dataset.get_parameter_data")
-def get_data_by_id(run_id: int) -> List[List[DSPlotData]]:
+def get_data_by_id(run_id: int) -> list[list[DSPlotData]]:
     """
     Load data from database and reshapes into 1D arrays with minimal
     name, unit and label metadata.
@@ -86,8 +89,8 @@ def get_data_by_id(run_id: int) -> List[List[DSPlotData]]:
     return output
 
 
-def _get_data_from_ds(ds: DataSetProtocol) -> List[List[DSPlotData]]:
-    dependent_parameters: Tuple[ParamSpecBase, ...] = tuple(
+def _get_data_from_ds(ds: DataSetProtocol) -> list[list[DSPlotData]]:
+    dependent_parameters: tuple[ParamSpecBase, ...] = tuple(
         ds.description.interdeps.dependencies.keys()
     )
 
@@ -134,7 +137,7 @@ def _all_steps_multiples_of_min_step(rows: np.ndarray) -> bool:
         The answer to the question
     """
 
-    steps_list: List[np.ndarray] = []
+    steps_list: list[np.ndarray] = []
     for row in rows:
         # TODO: What is an appropriate precision?
         steps_list += list(np.unique(np.diff(row).round(decimals=15)))
@@ -382,8 +385,9 @@ def datatype_from_setpoints_2d(xpoints: np.ndarray,
     return '2D_unknown'
 
 
-def reshape_2D_data(x: np.ndarray, y: np.ndarray, z: np.ndarray
-                    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def reshape_2D_data(
+    x: np.ndarray, y: np.ndarray, z: np.ndarray
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     xrow = np.array(_rows_from_datapoints(x)[0])
     yrow = np.array(_rows_from_datapoints(y)[0])
     nx = len(xrow)
@@ -409,9 +413,7 @@ def reshape_2D_data(x: np.ndarray, y: np.ndarray, z: np.ndarray
 
 
 @deprecate(alternative="dataset.get_parameter_data")
-def get_shaped_data_by_runid(
-        run_id: int
-) -> List[List[Dict[str, Union[str, np.ndarray]]]]:
+def get_shaped_data_by_runid(run_id: int) -> list[list[dict[str, str | np.ndarray]]]:
     """
     Get data for a given run ID, but shaped according to its nature
 

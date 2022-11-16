@@ -1,5 +1,6 @@
 import pytest
-from qcodes.utils.validators import Callable
+
+from qcodes.validators import Callable
 
 
 def test_callable():

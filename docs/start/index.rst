@@ -76,12 +76,11 @@ Finally we install QCoDeS into this environment.
 
 Installing QCoDeS from GitHub
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Clone the QCoDeS repository from GitHub from https://github.com/QCoDeS/Qcodes
+Clone the QCoDeS repository and submodules from GitHub from https://github.com/QCoDeS/Qcodes
 
 .. code:: bash
 
-    conda create qcodesdev python=3.9
-    conda activate qcodesdev
+    git clone --recurse-submodules https://github.com/QCoDeS/Qcodes <path-to-repository>
 
 Finally install QCoDeS add the repository via
 
@@ -241,8 +240,9 @@ the QCoDeS environment in the program, then you could be able to run the package
 in that environment. The reason is because by default, *Anaconda Navigator* starts with the
 ``base(root)`` environment.
 
-Getting started
----------------
+Working example notebooks
+-------------------------
 
-Have a look at `15 minutes to Qcodes <../examples/15_minutes_to_QCoDeS.ipynb>`__, and or browse
-`the examples notebooks <../examples/index.rst>`__.
+For a more hands-on approach to learning about QCoDeS, have a look at `15 minutes to Qcodes <../examples/15_minutes_to_QCoDeS.ipynb>`__.
+
+We also have a library of `examples notebooks <../examples/index.rst>`__ that detail more specific features of the software suite.

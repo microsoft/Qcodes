@@ -2,14 +2,14 @@
 Test properties of the coordinate transforms in the field vector module to
 test if everything has been correctly implemented.
 """
-import numpy as np
 import json
+
+import numpy as np
 from hypothesis import given, settings
-from hypothesis.strategies import floats
-from hypothesis.strategies import tuples
+from hypothesis.strategies import floats, tuples
 
 from qcodes.math_utils.field_vector import FieldVector
-from qcodes.utils.helpers import NumpyJSONEncoder
+from qcodes.utils import NumpyJSONEncoder
 
 random_coordinates = {
     "cartesian": tuples(

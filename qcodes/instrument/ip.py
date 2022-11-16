@@ -1,8 +1,11 @@
 """Ethernet instrument driver class based on sockets."""
-import socket
+from __future__ import annotations
+
 import logging
-from typing import Dict, Sequence, Optional, Any, Type
+import socket
+from collections.abc import Sequence
 from types import TracebackType
+from typing import Any
 
 from .base import Instrument
 
@@ -40,14 +43,17 @@ class IPInstrument(Instrument):
     instrument subclasses.
     """
 
-    def __init__(self, name: str,
-                 address: Optional[str] = None,
-                 port: Optional[int] = None,
-                 timeout: float = 5,
-                 terminator: str = '\n',
-                 persistent: bool = True,
-                 write_confirmation: bool = True,
-                 **kwargs: Any):
+    def __init__(
+        self,
+        name: str,
+        address: str | None = None,
+        port: int | None = None,
+        timeout: float = 5,
+        terminator: str = "\n",
+        persistent: bool = True,
+        write_confirmation: bool = True,
+        **kwargs: Any,
+    ):
         super().__init__(name, **kwargs)
 
         self._address = address
@@ -59,12 +65,11 @@ class IPInstrument(Instrument):
         self._ensure_connection = EnsureConnection(self)
         self._buffer_size = 1400
 
-        self._socket: Optional[socket.socket] = None
+        self._socket: socket.socket | None = None
 
         self.set_persistent(persistent)
 
-    def set_address(self, address: Optional[str] = None,
-                    port: Optional[int] = None) -> None:
+    def set_address(self, address: str | None = None, port: int | None = None) -> None:
         """
         Change the IP address and/or port of this instrument.
 
@@ -201,13 +206,15 @@ class IPInstrument(Instrument):
             self._send(cmd)
             return self._recv()
 
-    def snapshot_base(self, update: Optional[bool] = False,
-                      params_to_skip_update: Optional[Sequence[str]] = None
-                      ) -> Dict[Any, Any]:
+    def snapshot_base(
+        self,
+        update: bool | None = False,
+        params_to_skip_update: Sequence[str] | None = None,
+    ) -> dict[Any, Any]:
         """
         State of the instrument as a JSON-compatible dict (everything that
         the custom JSON encoder class
-        :class:`qcodes.utils.helpers.NumpyJSONEncoder`
+        :class:`.NumpyJSONEncoder`
         supports).
 
         Args:
@@ -260,10 +267,12 @@ class EnsureConnection:
         if not self.instrument._persistent or self.instrument._socket is None:
             self.instrument._connect()
 
-    def __exit__(self,
-                 exc_type: Optional[Type[BaseException]],
-                 exc_value: Optional[BaseException],
-                 traceback: Optional[TracebackType]) -> None:
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
         """Possibly disconnect on exiting the context."""
         if not self.instrument._persistent:
             self.instrument._disconnect()

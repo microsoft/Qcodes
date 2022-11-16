@@ -10,16 +10,13 @@ from typing import Any, Callable, Union, cast
 
 import numpy as np
 
-from qcodes import (
-    ChannelList,
-    Instrument,
-    InstrumentChannel,
+from qcodes.instrument import ChannelList, Instrument, InstrumentChannel, VisaInstrument
+from qcodes.parameters import (
     Parameter,
     ParameterWithSetpoints,
-    VisaInstrument,
+    create_on_off_val_mapping,
 )
-from qcodes.utils.helpers import create_on_off_val_mapping
-from qcodes.utils.validators import Arrays, Enum
+from qcodes.validators import Arrays, Enum
 
 
 def strip_quotes(string: str) -> str:
@@ -30,12 +27,18 @@ def strip_quotes(string: str) -> str:
     return string.strip('"')
 
 
-class ModeError(Exception):
+class TektronixDPOModeError(Exception):
     """
     Raise this exception if we are in a wrong mode to
     perform an action
     """
     pass
+
+
+ModeError = TektronixDPOModeError
+"""
+Alias for backwards compatibility
+"""
 
 
 class TektronixDPO7000xx(VisaInstrument):
@@ -312,7 +315,7 @@ class TekronixDPOWaveform(InstrumentChannel):
 
         return inner
 
-    def _get_trace_data(self)  -> np.ndarray:
+    def _get_trace_data(self) -> np.ndarray:
 
         self.root_instrument.data.source(self._identifier)
         waveform = self.root_instrument.waveform
@@ -601,7 +604,7 @@ class TektronixDPOHorizontal(InstrumentChannel):
 
     def _set_record_length(self, value: int) -> None:
         if self.mode() != "manual":
-            raise ModeError(
+            raise TektronixDPOModeError(
                 "The record length can only be changed in manual mode"
             )
 
@@ -609,9 +612,7 @@ class TektronixDPOHorizontal(InstrumentChannel):
 
     def _set_scale(self, value: float) -> None:
         if self.mode() == "manual":
-            raise ModeError(
-                "The scale cannot be changed in manual mode"
-            )
+            raise TektronixDPOModeError("The scale cannot be changed in manual mode")
 
         self.write(f"HORizontal:MODE:SCAle {value}")
 
@@ -628,7 +629,7 @@ class TekronixDPOTrigger(InstrumentChannel):
     trigger conditions are met.
 
     A and B triggers can (and typically do) have separate sources.
-    The B trigger condition is based on a time delay or a speciﬁed
+    The B trigger condition is based on a time delay or a specified
     number of events.
 
     See page75, Using A (Main) and B (Delayed) triggers.

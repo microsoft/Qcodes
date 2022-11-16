@@ -1,40 +1,279 @@
 [build-system]
 requires = [
-    "setuptools >= 48",
+    "setuptools >= 61.2",
     "wheel >= 0.29.0",
+    "versioningit ~= 2.0.1",
 ]
 build-backend = 'setuptools.build_meta'
-[tool.isort]
-profile = "black"
+
+[project]
+name = "qcodes"
+maintainers = [{name = "QCoDeS Core Developers", email = "qcodes-support@microsoft.com"}]
+description = "Python-based data acquisition framework developed by the Copenhagen / Delft / Sydney / Microsoft quantum computing consortium"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering",
+]
+license = {text = "MIT"}
+requires-python = ">=3.8"
+dependencies = [
+    "broadbean>=0.9.1",
+    "h5netcdf>=0.10.0,!=0.14.0",
+    # see https://github.com/h5netcdf/h5netcdf/issues/154
+    "h5py>=3.0.0",
+    "importlib-metadata>=4.4; python_version < '3.10'",
+    "importlib-resources>=2.0.0; python_version < '3.9'",
+    "ipywidgets>=7.5.0,<9.0.0",
+    "jsonschema>=3.0.0",
+    "lazy_loader>=0.1",
+    "matplotlib>=3.3.0",
+    "numpy>=1.21.0",
+    "opencensus>=0.7.10",
+    "opencensus-ext-azure>=1.0.4, <2.0.0",
+    "packaging>=20.0",
+    "pandas>=1.0.0",
+    "pyvisa>=1.11.0, <1.13.0",
+    "ruamel.yaml>=0.16.0,!=0.16.6",
+    "tabulate>=0.8.0",
+    "typing_extensions>=3.10.0",
+    "tqdm>=4.32.2",
+    "uncertainties>=3.1.4",
+    "versioningit>=2.0.1",
+    "websockets>=9.0",
+    "wrapt>=1.10.4",
+    "xarray>=0.18.0",
+    # transitive dependencies. We list these explicitly to",
+    # ensure that we always use versions that do not have",
+    # known security vulnerabilities",
+    "ipython>=7.31.1,!=8.0.0",
+    "pillow>=9.0.0",
+    "rsa>=4.7",
+]
+
+dynamic = ["version"]
+
+[project.readme]
+file = "README.rst"
+content-type = "text/x-rst"
+
+[project.urls]
+Homepage = "https://github.com/QCoDeS/Qcodes"
+Documentation = "https://qcodes.github.io/Qcodes/"
+Source = "https://github.com/qcodes/qcodes"
+Tracker = "https://github.com/QCoDeS/Qcodes/issues"
+Changelog = "https://qcodes.github.io/Qcodes/changes/index.html"
+
+[project.optional-dependencies]
+qtplot = ["pyqtgraph>=0.11.0"]
+slack = ["slack-sdk>=3.4.2"]
+zurichinstruments = ["zhinst-qcodes>=0.3"]
+test = [
+    "coverage[toml]>=6.0.0",
+    "deepdiff>=5.0.2",
+    "hypothesis>=5.49.0",
+    "lxml>=4.4.1",
+    "lxml-stubs>=0.4.0",
+    "mypy>=0.971",
+    "pandas-stubs>=1.2.0.1",
+    "pytest>=6.1.0",
+    "pytest-asyncio>=0.19.0",
+    "pytest-cov>=3.0.0",
+    "pytest-csv>=3.0.0",
+    "pytest-mock>=3.0.0",
+    "pytest-rerunfailures>=10.0",
+    "pytest-xdist>=2.0.0",
+    "pyqtgraph>=0.11.0", # pyqtgraph tests
+    "PyQt5>=5.15.0", # pyqtgraph tests
+    "PyVisa-sim>=0.4.0",
+    "slack-sdk>=3.4.2", # needed to typecheck slack extension
+    "sphinx>=4.5.0",  # sphinx extension tests
+    "types-jsonschema>=4.16.0",
+    "types_requests>=0.1.8",
+    "types-setuptools>=57.0.0",
+    "types-tabulate>=0.1.0",
+    "types-tqdm>=4.64.6",
+]
+docs = [
+    "autodocsumm>=0.2.9",
+    "nbsphinx>=0.8.9",
+    "PyQt5>=5.15.0", # pyqtgraph examples
+    "pyqtgraph>=0.11.0", # pyqtgraph examples
+    "PyVisa-sim>=0.4.0",
+    "sphinx>=4.5.0",
+    "sphinx-favicon>=0.2",
+    "sphinx-issues>=3.0.1",
+    "sphinx-jsonschema>=1.19.1",
+    "sphinx-rtd-theme>=1.0.0",
+    "sphinxcontrib-towncrier>=0.3.0a0",
+    "towncrier>=22.8.0",
+    "scipy>=1.7.0", # examples using scipy
+    "slack-sdk>=3.4.2", # slack example notebook
+]
+
+[project.scripts]
+qcodes-monitor = "qcodes.monitor.monitor:main"
+qcodes-dynacool-server = "qcodes.instrument_drivers.QuantumDesign.DynaCoolPPMS.private.server:run_server"
+
+[tool.coverage.run]
+omit = [
+    "qcodes/__init__.py",
+    "*/__init__.py",
+    "qcodes/tests/*",
+    "qcodes/instrument_drivers/test.py"
+]
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+]
+
 [tool.darker]
 isort = true
+
+[tool.isort]
+profile = "black"
+
+[tool.mypy]
+strict_optional = true
+show_column_numbers = true
+plugins = "numpy.typing.mypy_plugin"
+show_error_codes = true
+enable_error_code = "ignore-without-code"
+# strict confic. Eventually we would like to
+# turn all of these on. These are all setings
+# turned on by strict as of mypy 0.971
+warn_unused_configs = true
+# waiting for variadic generics so we
+# can type numpy array constructors
+disallow_any_generics = false
+# we subclass non typed classes (from ipython / wrapt)
+disallow_subclassing_any = false
+# we are calling into untyped code from 3th parties
+disallow_untyped_calls = false
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+# triggers warnings in untyped code
+check_untyped_defs = false
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+# this triggers failures due to returning
+# values from untyped 3th party libs
+warn_return_any = false
+no_implicit_reexport = true
+strict_equality = true
+strict_concatenate = true
+
+[[tool.mypy.overrides]]
+module = [
+    "qcodes.actions.*",
+    "qcodes.data.*",
+    "qcodes.instrument.mockers.ami430",
+    "qcodes.instrument_drivers.Harvard.*",
+    "qcodes.instrument_drivers.Keysight.keysightb1500.message_builder.*",
+    "qcodes.instrument_drivers.oxford.mercuryiPS",
+    "qcodes.instrument_drivers.test",
+    "qcodes.loops",
+    "qcodes.math_utils.*",
+    "qcodes.measure",
+    "qcodes.plots.*",
+    "qcodes.tests.*",
+    "qcodes.utils.magic",
+    "qcodes.extensions.slack",
+
+]
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+
+# these are packages that we import
+# but either don't have stubs or we
+# dont have them installed.
+[[tool.mypy.overrides]]
+module = [
+    "clr",
+    "deepdiff",
+    "gclib",
+    "IPython.*",
+    "ipywidgets",
+    "h5py",
+    "h5netcdf",
+    "hickle",
+    "lomentum.tools",
+    "matplotlib.*",
+    "mcl_RF_Switch_Controller64",
+    "opencensus.ext.azure.*",
+    "pythoncom",
+    "pyqtgraph.*",
+    "pywinusb.*",
+    "ruamel",
+    "spyder.utils.site",
+    "spyder_kernels.customize",
+    "System.IO",
+    "uncertainties",
+    "win32com.*",
+    "win32con",
+    "win32gui",
+    "wrapt",
+    "zhinst.qcodes",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+junit_family = "legacy"
+
+addopts = "-n auto --dist=loadfile"
+
+markers = "serial"
+
+# warnings triggered by xarray and hdf5netcdf using deprecated apis
+filterwarnings = [
+    "ignore:The distutils package is deprecated and slated for removal in Python 3.12:DeprecationWarning",
+    "ignore:distutils Version classes are deprecated:DeprecationWarning",
+    "ignore:SelectableGroups dict interface is deprecated:DeprecationWarning"
+]
+
 [tool.towncrier]
 package = "qcodes"
 name = "QCoDeS"
 directory = "docs/changes/newsfragments"
-single_file = true
+single_file = false
 filename = "docs/changes/{version}.rst"
-[[tool.towncrier.type]]
-directory = "breaking"
+issue_format = ":pr:`{issue}`"
+
+[tool.towncrier.fragment.breaking]
 name = "Breaking Changes:"
-showcontent = true
-[[tool.towncrier.type]]
-directory = "new"
+[tool.towncrier.fragment.new]
 name = "New:"
-showcontent = true
-[[tool.towncrier.type]]
-directory = "improved"
+[tool.towncrier.fragment.improved]
 name = "Improved:"
-showcontent = true
-[[tool.towncrier.type]]
-directory = "new_driver"
+[tool.towncrier.fragment.new_driver]
 name = "New Drivers:"
-showcontent = true
-[[tool.towncrier.type]]
-directory = "improved_driver"
+[tool.towncrier.fragment.improved_driver]
 name = "Improved Drivers:"
-showcontent = true
-[[tool.towncrier.type]]
-directory = "underthehood"
+[tool.towncrier.fragment.underthehood]
 name = "Under the hood:"
-showcontent = true
+
+[tool.versioningit]
+default-version = "0.0"
+
+[tool.versioningit.format]
+distance = "{next_version}.dev{distance}+{branch}.{vcs}{rev}"
+dirty = "{next_version}.dev{distance}+{branch}.{vcs}{rev}.dirty"
+distance-dirty = "{next_version}.dev{distance}+{branch}.{vcs}{rev}.dirty"
+
+[tool.versioningit.vcs]
+method = "git"
+match = ["v*"]
+
+[tool.versioningit.onbuild]
+source-file = "qcodes/_version.py"
+build-file = "qcodes/_version.py"

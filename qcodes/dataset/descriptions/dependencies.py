@@ -3,9 +3,13 @@ This module holds the objects that describe the intra-run relationships
 between the parameters of that run. Most importantly, the information about
 which parameters depend on each other is handled here.
 """
+from __future__ import annotations
+
+from collections.abc import Iterable, Sequence
 from copy import deepcopy
-from typing import (Any, Dict, FrozenSet, Iterable, List, Optional, Sequence,
-                    Set, Tuple, Type)
+from typing import Any, Dict, Tuple, Type
+
+import numpy as np
 
 from .param_spec import ParamSpec, ParamSpecBase
 from .versioning.rundescribertypes import InterDependencies_Dict
@@ -16,10 +20,7 @@ ErrorTuple = Tuple[Type[Exception], str]
 
 
 class DependencyError(Exception):
-    def __init__(self,
-                 param_name: str,
-                 missing_params: Set[str],
-                 *args: Any):
+    def __init__(self, param_name: str, missing_params: set[str], *args: Any):
         super().__init__(*args)
         self._param_name = param_name
         self._missing_params = missing_params
@@ -30,10 +31,7 @@ class DependencyError(Exception):
 
 
 class InferenceError(Exception):
-    def __init__(self,
-                 param_name: str,
-                 missing_params: Set[str],
-                 *args: Any):
+    def __init__(self, param_name: str, missing_params: set[str], *args: Any):
         super().__init__(*args)
         self._param_name = param_name
         self._missing_params = missing_params
@@ -49,23 +47,29 @@ class InterDependencies_:
     internal relations to each other
     """
 
-    def __init__(self,
-                 dependencies: Optional[ParamSpecTree] = None,
-                 inferences: Optional[ParamSpecTree] = None,
-                 standalones: Tuple[ParamSpecBase, ...] = ()):
+    def __init__(
+        self,
+        dependencies: ParamSpecTree | None = None,
+        inferences: ParamSpecTree | None = None,
+        standalones: tuple[ParamSpecBase, ...] = (),
+    ):
 
         dependencies = dependencies or {}
         inferences = inferences or {}
 
         deps_error = self.validate_paramspectree(dependencies)
         if deps_error is not None:
-            old_error = deps_error[0](deps_error[1])
-            raise ValueError('Invalid dependencies') from old_error
+            try:
+                raise deps_error[0](deps_error[1])
+            except Exception as old_error:
+                raise ValueError("Invalid dependencies") from old_error
 
         inffs_error = self.validate_paramspectree(inferences)
         if inffs_error is not None:
-            old_error = inffs_error[0](inffs_error[1])
-            raise ValueError('Invalid inferences') from old_error
+            try:
+                raise inffs_error[0](inffs_error[1])
+            except Exception as old_error:
+                raise ValueError("Invalid inferences") from old_error
 
         link_error = self._validate_double_links(dependencies, inferences)
         if link_error is not None:
@@ -74,22 +78,22 @@ class InterDependencies_:
 
         for ps in standalones:
             if not isinstance(ps, ParamSpecBase):
-                base_error = TypeError('Standalones must be a sequence of '
-                                       'ParamSpecs')
-
-                raise ValueError('Invalid standalones') from base_error
+                try:
+                    raise TypeError("Standalones must be a sequence of ParamSpecs")
+                except TypeError as base_error:
+                    raise ValueError("Invalid standalones") from base_error
 
         self._remove_duplicates(dependencies)
         self._remove_duplicates(inferences)
 
         self.dependencies: ParamSpecTree = dependencies
         self.inferences: ParamSpecTree = inferences
-        self.standalones: FrozenSet[ParamSpecBase] = frozenset(standalones)
+        self.standalones: frozenset[ParamSpecBase] = frozenset(standalones)
 
         # The object is now complete, but for convenience, we form some more
         # private attributes for easy look-up
 
-        self._id_to_paramspec: Dict[str, ParamSpecBase] = {}
+        self._id_to_paramspec: dict[str, ParamSpecBase] = {}
         for tree in (self.dependencies, self.inferences):
             for ps, ps_tup in tree.items():
                 self._id_to_paramspec.update({ps.name: ps})
@@ -130,7 +134,7 @@ class InterDependencies_:
         Helper function to invert a ParamSpecTree. Will turn {A: (B, C)} into
         {B: (A,), C: (A,)}
         """
-        indeps: Set[ParamSpecBase] = set()
+        indeps: set[ParamSpecBase] = set()
         for indep_tup in tree.values():
             indeps.update(indep_tup)
 
@@ -148,15 +152,14 @@ class InterDependencies_:
         preserving order. Will turn {A: (B, B, C)} into {A: (B, C)}
         """
         for ps, tup in tree.items():
-            specs: List[ParamSpecBase] = []
+            specs: list[ParamSpecBase] = []
             for p in tup:
                 if p not in specs:
                     specs.append(p)
             tree[ps] = tuple(specs)
 
     @staticmethod
-    def validate_paramspectree(
-            paramspectree: ParamSpecTree) -> Optional[ErrorTuple]:
+    def validate_paramspectree(paramspectree: ParamSpecTree) -> ErrorTuple | None:
         """
         Validate a ParamSpecTree. Apart from adhering to the type, a
         ParamSpecTree must not have any cycles.
@@ -193,8 +196,9 @@ class InterDependencies_:
         return None
 
     @staticmethod
-    def _validate_double_links(tree1: ParamSpecTree,
-                               tree2: ParamSpecTree) -> Optional[ErrorTuple]:
+    def _validate_double_links(
+        tree1: ParamSpecTree, tree2: ParamSpecTree
+    ) -> ErrorTuple | None:
         """
         Validate that two trees do not contain double links. A double link
         is a link between two nodes that exists in both trees. E.g. if the
@@ -209,7 +213,7 @@ class InterDependencies_:
 
         return None
 
-    def what_depends_on(self, ps: ParamSpecBase) -> Tuple[ParamSpecBase, ...]:
+    def what_depends_on(self, ps: ParamSpecBase) -> tuple[ParamSpecBase, ...]:
         """
         Return a tuple of the parameters that depend on the given parameter.
         Returns an empty tuple if nothing depends on the given parameter
@@ -224,8 +228,7 @@ class InterDependencies_:
             raise ValueError(f'Unknown parameter: {ps}')
         return self._dependencies_inv.get(ps, ())
 
-    def what_is_inferred_from(self,
-                              ps: ParamSpecBase) -> Tuple[ParamSpecBase, ...]:
+    def what_is_inferred_from(self, ps: ParamSpecBase) -> tuple[ParamSpecBase, ...]:
         """
         Return a tuple of the parameters thatare inferred from the given
         parameter. Returns an empty tuple if nothing is inferred from the given
@@ -257,7 +260,27 @@ class InterDependencies_:
                                           "standalones": standalones}
         return output
 
-    def _construct_subdict(self, treename: str) -> Dict[str, Any]:
+    def _empty_data_dict(self) -> dict[str, dict[str, np.ndarray]]:
+        """
+        Create an dictionary with empty numpy arrays as values
+        matching the expected output of ``DataSet``'s ``get_parameter_data`` /
+        ``cache.data`` so that the order of keys in the returned dictionary
+        is the same as the order of parameters in the interdependencies
+        in this class.
+        """
+
+        output: dict[str, dict[str, np.ndarray]] = {}
+        for dependent, independents in self.dependencies.items():
+            dependent_name = dependent.name
+            output[dependent_name] = {dependent_name: np.array([])}
+            for independent in independents:
+                output[dependent_name][independent.name] = np.array([])
+        for standalone in (ps.name for ps in self.standalones):
+            output[standalone] = {}
+            output[standalone][standalone] = np.array([])
+        return output
+
+    def _construct_subdict(self, treename: str) -> dict[str, Any]:
         output = {}
         for key, value in getattr(self, treename).items():
             ps_id = self._paramspec_to_id[key]
@@ -266,14 +289,14 @@ class InterDependencies_:
         return output
 
     @property
-    def paramspecs(self) -> Tuple[ParamSpecBase, ...]:
+    def paramspecs(self) -> tuple[ParamSpecBase, ...]:
         """
         Return the ParamSpecBase objects of this instance
         """
         return tuple(self._paramspec_to_id.keys())
 
     @property
-    def non_dependencies(self) -> Tuple[ParamSpecBase, ...]:
+    def non_dependencies(self) -> tuple[ParamSpecBase, ...]:
         """
         Return all parameters that are not dependencies of other parameters,
         i.e. return the top level parameters. Returned tuple is sorted by
@@ -286,13 +309,13 @@ class InterDependencies_:
         return non_dependencies_sorted_by_name
 
     @property
-    def names(self) -> Tuple[str, ...]:
+    def names(self) -> tuple[str, ...]:
         """
         Return all the names of the parameters of this instance
         """
         return tuple(self._id_to_paramspec.keys())
 
-    def _extend_with_paramspec(self, ps: ParamSpec) -> 'InterDependencies_':
+    def _extend_with_paramspec(self, ps: ParamSpec) -> InterDependencies_:
         """
         Create a new InterDependencies_ object extended with the provided
         ParamSpec. A helper function for DataSet's add_parameter function.
@@ -303,7 +326,7 @@ class InterDependencies_:
         base_ps = ps.base_version()
 
         old_standalones = set(self.standalones.copy())
-        new_standalones: Tuple[ParamSpecBase, ...]
+        new_standalones: tuple[ParamSpecBase, ...]
 
         if len(ps.depends_on_) > 0:
             deps_list = [self._id_to_paramspec[name] for name in ps.depends_on_]
@@ -337,10 +360,11 @@ class InterDependencies_:
         return new_idps
 
     def extend(
-            self,
-            dependencies: Optional[ParamSpecTree] = None,
-            inferences: Optional[ParamSpecTree] = None,
-            standalones: Tuple[ParamSpecBase, ...] = ()) -> 'InterDependencies_':
+        self,
+        dependencies: ParamSpecTree | None = None,
+        inferences: ParamSpecTree | None = None,
+        standalones: tuple[ParamSpecBase, ...] = (),
+    ) -> InterDependencies_:
         """
         Create a new InterDependencies_ object that is an extension of this
         instance with the provided input
@@ -385,7 +409,7 @@ class InterDependencies_:
 
         return new_idps
 
-    def remove(self, parameter: ParamSpecBase) -> 'InterDependencies_':
+    def remove(self, parameter: ParamSpecBase) -> InterDependencies_:
         """
         Create a new InterDependencies_ object that is similar to this
         instance, but has the given parameter removed.
@@ -466,7 +490,7 @@ class InterDependencies_:
                 raise InferenceError(param, missing_inffs)
 
     @classmethod
-    def _from_dict(cls, ser: InterDependencies_Dict) -> 'InterDependencies_':
+    def _from_dict(cls, ser: InterDependencies_Dict) -> InterDependencies_:
         """
         Construct an InterDependencies_ object from a dictionary
         representation of such an object
@@ -513,7 +537,7 @@ class InterDependencies_:
 
     def __eq__(self, other: Any) -> bool:
 
-        def sorter(inp: Iterable['ParamSpecBase']) -> List['ParamSpecBase']:
+        def sorter(inp: Iterable[ParamSpecBase]) -> list[ParamSpecBase]:
             return sorted(inp, key=lambda ps: ps.name)
 
         if not isinstance(other, InterDependencies_):

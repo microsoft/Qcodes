@@ -1,3 +1,4 @@
+import io
 import random
 import re
 from copy import copy
@@ -9,25 +10,26 @@ import pytest
 from hypothesis import HealthCheck, given, settings
 
 import qcodes as qc
-from qcodes import (
+from qcodes.dataset import (
     experiments,
     load_by_counter,
     load_by_id,
     new_data_set,
     new_experiment,
 )
-from qcodes.dataset.data_set import CompletedError, DataSet
+from qcodes.dataset.data_set import DataSet
+from qcodes.dataset.data_set_protocol import CompletedError
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.guids import parse_guid
-from qcodes.dataset.sqlite.connection import path_to_dbfile
-from qcodes.dataset.sqlite.database import get_DB_location
-from qcodes.dataset.sqlite.queries import _unicode_categories
+from qcodes.dataset.sqlite.connection import atomic, path_to_dbfile
+from qcodes.dataset.sqlite.database import _convert_array, get_DB_location
+from qcodes.dataset.sqlite.queries import _rewrite_timestamps, _unicode_categories
 from qcodes.tests.common import error_caused_by
 from qcodes.tests.dataset.helper_functions import verify_data_dict
 from qcodes.tests.dataset.test_links import generate_some_links
-from qcodes.utils.types import numpy_floats, numpy_ints
+from qcodes.utils.types import complex_types, numpy_complex, numpy_floats, numpy_ints
 
 n_experiments = 0
 
@@ -198,6 +200,22 @@ def test_timestamps_are_none():
     assert isinstance(ds.run_timestamp(), str)
 
 
+@pytest.mark.usefixtures('experiment')
+def test_integer_timestamps_in_database_are_supported():
+    ds = DataSet()
+
+    ds.mark_started()
+    ds.mark_completed()
+
+    with atomic(ds.conn) as conn:
+        _rewrite_timestamps(conn, ds.run_id, 42, 69)
+
+    assert isinstance(ds.run_timestamp_raw, float)
+    assert isinstance(ds.completed_timestamp_raw, float)
+    assert isinstance(ds.run_timestamp(), str)
+    assert isinstance(ds.completed_timestamp(), str)
+
+
 def test_dataset_read_only_properties(dataset):
     read_only_props = ['run_id', 'path_to_db', 'name', 'table_name', 'guid',
                        'number_of_results', 'counter', 'parameters',
@@ -206,8 +224,12 @@ def test_dataset_read_only_properties(dataset):
                        'snapshot', 'snapshot_raw', 'dependent_parameters']
 
     # It is not expected to be possible to set readonly properties
+    # the error message changed in python 3.11
+    # from 'can't set ...' to 'has no setter ...'
     for prop in read_only_props:
-        with pytest.raises(AttributeError, match="can't set attribute"):
+        with pytest.raises(
+            AttributeError, match="(can't set attribute|object has no setter)"
+        ):
             setattr(dataset, prop, True)
 
 
@@ -256,8 +278,10 @@ def test_load_by_id_for_none():
        dataset_name=hst.text(hst.characters(whitelist_categories=_unicode_categories),
                              min_size=1))
 @pytest.mark.usefixtures("empty_temp_db")
-def test_add_experiments(experiment_name,
-                         sample_name, dataset_name):
+@pytest.mark.usefixtures("reset_config_on_exit")
+def test_add_experiments(experiment_name, sample_name, dataset_name):
+    qc.config.GUID_components.GUID_type = "random_sample"
+
     global n_experiments
     n_experiments += 1
 
@@ -543,6 +567,22 @@ def test_numpy_floats(dataset):
     assert np.allclose(data, expected_result, atol=1E-8)
 
 
+def test_numpy_complex(dataset):
+    """
+    Test that we can insert numpy complex in the data set
+    """
+    xparam = ParamSpecBase("x", "complex")
+    idps = InterDependencies_(standalones=(xparam,))
+    dataset.set_interdependencies(idps)
+    dataset.mark_started()
+
+    results = [{"x": tp(2.0 + 3.0j)} for tp in numpy_complex]
+    dataset.add_results(results)
+    expected_result = np.array([tp(2.0 + 3.0j) for tp in numpy_complex])
+    result = dataset.get_parameter_data()
+    np.testing.assert_array_equal(result["x"]["x"], expected_result)
+
+
 def test_numpy_nan(dataset):
     parameter_m = ParamSpecBase("m", "numeric")
     idps = InterDependencies_(standalones=(parameter_m,))
@@ -568,6 +608,15 @@ def test_numpy_inf(dataset):
     dataset.add_results(data_dict)
     retrieved = dataset.get_parameter_data()["m"]["m"]
     assert np.isinf(retrieved).all()
+
+
+def test_backward_compat__adapt_array_v0_33():
+    for dtype in numpy_floats + complex_types:
+        arr = np.asarray([1.0], dtype=np.dtype(dtype))
+        out = io.BytesIO()
+        np.save(out, arr)
+        out.seek(0)
+        assert arr == _convert_array(out.read())
 
 
 def test_missing_keys(dataset):
@@ -812,15 +861,10 @@ class TestGetData:
             (2, 4, xdata[(2-1):4]),
         ],
     )
-    def test_get_data_with_start_and_end_args(self, ds_with_vals,
-                                              start, end, expected):
-        data = ds_with_vals.get_parameter_data(
-            self.x, start=start, end=end)['x']
-        if len(expected) == 0:
-            assert data == {}
-        else:
-            data = data['x']
-            np.testing.assert_array_equal(data, expected)
+    def test_get_data_with_start_and_end_args(self, ds_with_vals, start, end, expected):
+        data = ds_with_vals.get_parameter_data(self.x, start=start, end=end)["x"]
+        data = data["x"]
+        np.testing.assert_array_equal(data, expected)
 
 
 @settings(deadline=600, suppress_health_check=(HealthCheck.function_scoped_fixture,))
@@ -1250,7 +1294,6 @@ def limit_data_to_start_end(start, end, input_names, expected_names,
             end = expected_shapes[input_names[0]][0][0]
         if end < start:
             for name in input_names:
-                expected_names[name] = []
                 expected_shapes[name] = ()
                 expected_values[name] = {}
         else:

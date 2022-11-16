@@ -1,21 +1,24 @@
 """DataSet class and factory functions."""
+from __future__ import annotations
 
 import logging
 import time
 from collections import OrderedDict
 from copy import deepcopy
 from traceback import format_exc
-from typing import Any, Callable, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict
 
 import numpy as np
-import xarray as xr
+
+if TYPE_CHECKING:
+    import xarray as xr
 
 from qcodes.data.data_array import (
     DataArray,
     data_array_to_xarray_dictionary,
     xarray_data_array_dictionary_to_data_array,
 )
-from qcodes.utils.helpers import DelegateAttributes, deep_update, full_class
+from qcodes.utils import DelegateAttributes, deep_update, full_class
 
 from .gnuplot_format import GNUPlotFormat
 from .io import DiskIO
@@ -165,7 +168,7 @@ class DataSet(DelegateAttributes):
     default_formatter = GNUPlotFormat()
     location_provider = FormatLocation()
 
-    background_functions: Dict[str, Callable[..., Any]] = OrderedDict()
+    background_functions: dict[str, Callable[..., Any]] = OrderedDict()
     """
     The value ``fn`` is a callable accepting no
     arguments, and ``key`` is a name to identify the function and help
@@ -423,7 +426,7 @@ class DataSet(DelegateAttributes):
         # else:
         #     log.debug('.store method: This is not the right time to write')
 
-    def default_parameter_name(self, paramname: Optional[str] = None) -> Optional[str]:
+    def default_parameter_name(self, paramname: str | None = None) -> str | None:
         """Return name of default parameter for plotting
 
         The default parameter is determined by looking into
@@ -694,7 +697,7 @@ class DataSet(DelegateAttributes):
         return qcodes_dataset_to_xarray_dataset(self)
 
     @classmethod
-    def from_xarray(cls, xarray_dataset: xr.Dataset) -> 'DataSet':
+    def from_xarray(cls, xarray_dataset: xr.Dataset) -> DataSet:
         """ Convert the dataset to an xarray DataSet """
         return xarray_dataset_to_qcodes_dataset(xarray_dataset)
 
@@ -718,7 +721,7 @@ class _PrettyPrintDict(Dict[Any, Any]):
 
 def dataset_to_xarray_dictionary(
     data_set: DataSet, include_metadata: bool = True
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Convert QcodesDataSet to dictionary.
 
     Args:
@@ -729,7 +732,7 @@ def dataset_to_xarray_dictionary(
     Returns:
         Dictionary containing the serialized data.
     """
-    data_dictionary: Dict[str, Any] = {
+    data_dictionary: dict[str, Any] = {
         "dims": {},
         "attrs": {},
         "coords": {},
@@ -763,13 +766,15 @@ def qcodes_dataset_to_xarray_dataset(
     data_set: DataSet,
 ) -> xr.Dataset:
     """ Convert QCoDeS gridded dataset to xarray dataset """
+    import xarray as xr
+
     xarray_dictionary = dataset_to_xarray_dictionary(data_set)
     xarray_dataset = xr.Dataset.from_dict(xarray_dictionary)
     return xarray_dataset
 
 
 def xarray_dictionary_to_dataset(
-    xarray_dictionary: Dict[str, Any],
+    xarray_dictionary: dict[str, Any],
 ) -> DataSet:
     """Convert xarray dictionary to Qcodes DataSet.
 
@@ -782,9 +787,18 @@ def xarray_dictionary_to_dataset(
     dataset = new_data()
     dataset.metadata.update(xarray_dictionary["attrs"])
 
-    grid_coords: List[Any] = []
+    grid_coords: list[Any] = []
     set_array_names = []
-    for array_key, coord_dictionary in xarray_dictionary["coords"].items():
+
+    coordinate_names = list(xarray_dictionary["data_vars"].values())[0]["dims"]
+
+    assert set(coordinate_names) == set(xarray_dictionary["coords"]), (
+        "conversion to qcodes requires all coordinates"
+        + " to match data variable coordinates"
+    )
+
+    for array_key in coordinate_names:
+        coord_dictionary = xarray_dictionary["coords"][array_key]
         preset_data = np.array(coord_dictionary["data"])
 
         tiled_preset_data = np.tile(preset_data, [g.size for g in grid_coords] + [1])

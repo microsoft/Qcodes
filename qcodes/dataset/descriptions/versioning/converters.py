@@ -5,12 +5,16 @@ This module contains functions which implement conversion between different
 
 
 """
-from typing import Dict, List
+from __future__ import annotations
 
 from ..dependencies import InterDependencies_
 from ..param_spec import ParamSpec, ParamSpecBase
-from .rundescribertypes import (RunDescriberV0Dict, RunDescriberV1Dict,
-                                RunDescriberV2Dict, RunDescriberV3Dict)
+from .rundescribertypes import (
+    RunDescriberV0Dict,
+    RunDescriberV1Dict,
+    RunDescriberV2Dict,
+    RunDescriberV3Dict,
+)
 from .v0 import InterDependencies
 
 
@@ -20,12 +24,12 @@ def old_to_new(idps: InterDependencies) -> InterDependencies_:
     InterDependencies object (old style). Leaves the original object unchanged.
     Incidentally, this function can serve as a validator of the original object
     """
-    namedict: Dict[str, ParamSpec] = {ps.name: ps for ps in idps.paramspecs}
+    namedict: dict[str, ParamSpec] = {ps.name: ps for ps in idps.paramspecs}
 
     dependencies = {}
     inferences = {}
     standalones_mut = []
-    root_paramspecs: List[ParamSpecBase] = []
+    root_paramspecs: list[ParamSpecBase] = []
 
     for ps in idps.paramspecs:
         deps = tuple(namedict[n].base_version() for n in ps.depends_on_)
@@ -55,28 +59,47 @@ def new_to_old(idps: InterDependencies_) -> InterDependencies:
     until we update sqlite module to forget about ParamSpecs
     """
 
-    paramspecs: Dict[str, ParamSpec] = {}
+    paramspecs: dict[str, ParamSpec] = {}
+
 
     # first the independent parameters
     for indeps in idps.dependencies.values():
         for indep in indeps:
-            paramspecs.update({indep.name: ParamSpec(name=indep.name,
-                                                     paramtype=indep.type,
-                                                     label=indep.label,
-                                                     unit=indep.unit)})
+            paramspecs.update(
+                {
+                    indep.name: ParamSpec(
+                        name=indep.name,
+                        paramtype=indep.type,
+                        label=indep.label,
+                        unit=indep.unit,
+                    )
+                }
+            )
 
     for inffs in idps.inferences.values():
         for inff in inffs:
-            paramspecs.update({inff.name: ParamSpec(name=inff.name,
-                                                    paramtype=inff.type,
-                                                    label=inff.label,
-                                                    unit=inff.unit)})
+            paramspecs.update(
+                {
+                    inff.name: ParamSpec(
+                        name=inff.name,
+                        paramtype=inff.type,
+                        label=inff.label,
+                        unit=inff.unit,
+                    )
+                }
+            )
 
     for ps_base in idps._paramspec_to_id.keys():
-        paramspecs.update({ps_base.name: ParamSpec(name=ps_base.name,
-                                                   paramtype=ps_base.type,
-                                                   label=ps_base.label,
-                                                   unit=ps_base.unit)})
+        paramspecs.update(
+            {
+                ps_base.name: ParamSpec(
+                    name=ps_base.name,
+                    paramtype=ps_base.type,
+                    label=ps_base.label,
+                    unit=ps_base.unit,
+                )
+            }
+        )
 
     for ps, indeps in idps.dependencies.items():
         for indep in indeps:

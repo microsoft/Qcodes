@@ -1,26 +1,45 @@
 import re
 import textwrap
-from typing import Optional, Dict, Any, Union, TYPE_CHECKING, List, Tuple, \
-    cast, Sequence
-from typing_extensions import TypedDict, Literal, overload
-import numpy as np
-import qcodes.utils.validators as vals
-from qcodes.instrument.parameter import Parameter, ParamRawDataType
-from qcodes.instrument.channel import InstrumentChannel
-from qcodes.instrument.group_parameter import GroupParameter, Group
-from qcodes.utils.validators import Arrays
-from qcodes.utils.deprecate import deprecate
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    cast,
+    overload,
+)
 
-from .KeysightB1500_sampling_measurement import SamplingMeasurement
-from .KeysightB1500_module import B1500Module, \
-    parse_spot_measurement_response
-from .message_builder import MessageBuilder
+import numpy as np
+from typing_extensions import TypedDict
+
+import qcodes.validators as vals
+from qcodes.instrument import InstrumentChannel
+from qcodes.parameters import Group, GroupParameter, Parameter, ParamRawDataType
+from qcodes.utils import deprecate
+
 from . import constants
-from .constants import ModuleKind, ChNr, AAD, MM, MeasurementStatus, \
-    VMeasRange, IMeasRange, VOutputRange, IOutputRange
+from .constants import (
+    AAD,
+    MM,
+    ChNr,
+    IMeasRange,
+    IOutputRange,
+    MeasurementStatus,
+    ModuleKind,
+    VMeasRange,
+    VOutputRange,
+)
+from .KeysightB1500_module import B1500Module, parse_spot_measurement_response
+from .KeysightB1500_sampling_measurement import SamplingMeasurement
+from .message_builder import MessageBuilder
 
 if TYPE_CHECKING:
-    from .KeysightB1500_base import KeysightB1500
+    import qcodes.instrument_drivers.Keysight.keysightb1500
 
 
 class SweepSteps(TypedDict, total=False):
@@ -621,8 +640,13 @@ class B1517A(B1500Module):
     MODULE_KIND = ModuleKind.SMU
     _interval_validator = vals.Numbers(0.0001, 65.535)
 
-    def __init__(self, parent: 'KeysightB1500', name: Optional[str],
-                 slot_nr: int, **kwargs: Any):
+    def __init__(
+        self,
+        parent: "qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500",
+        name: Optional[str],
+        slot_nr: int,
+        **kwargs: Any,
+    ):
         super().__init__(parent, name, slot_nr, **kwargs)
         self.channels = (ChNr(slot_nr),)
         self._measure_config: Dict[str, Optional[Any]] = {
@@ -741,7 +765,7 @@ class B1517A(B1500Module):
         self.add_parameter(
             name="time_axis",
             get_cmd=self._get_time_axis,
-            vals=Arrays(shape=(self._get_number_of_samples,)),
+            vals=vals.Arrays(shape=(self._get_number_of_samples,)),
             snapshot_value=False,
             label='Time',
             unit='s'
@@ -750,7 +774,7 @@ class B1517A(B1500Module):
         self.add_parameter(
             name="sampling_measurement_trace",
             parameter_class=SamplingMeasurement,
-            vals=Arrays(shape=(self._get_number_of_samples,)),
+            vals=vals.Arrays(shape=(self._get_number_of_samples,)),
             setpoints=(self.time_axis,)
         )
 
@@ -796,7 +820,7 @@ class B1517A(B1500Module):
     def _get_time_axis(self) -> np.ndarray:
         sample_rate = self._timing_parameters['interval']
         total_time = self._total_measurement_time()
-        time_xaxis = np.arange(0, total_time, sample_rate)
+        time_xaxis: np.ndarray = np.arange(0, total_time, sample_rate)
         return time_xaxis
 
     def _total_measurement_time(self) -> float:

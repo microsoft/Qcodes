@@ -1,21 +1,23 @@
-from functools import partial
-from typing import Dict, Optional, Union, cast, Any, List
 import warnings
+from functools import partial
 from time import sleep
+from typing import Any, Dict, List, Optional, Union, cast
 
-from pyvisa import VisaIOError
 import numpy as np
+from pyvisa import VisaIOError
 
-from qcodes.instrument.visa import VisaInstrument
-import qcodes.utils.validators as vals
+import qcodes.validators as vals
+from qcodes.instrument import VisaInstrument
 
 
 class DynaCool(VisaInstrument):
     """
     Class to represent the DynaCoolPPMS
 
-    Note that this driver assumes the server.py (from the 'private' folder)
+    Note that this driver assumes the server
     to be running on the DynaCool dedicated control PC.
+    The server can be launched using `qcodes-dynacool-server.exe`
+    or by executing server.py (from the 'private' folder)
 
     Args:
         name: The name used internally by QCoDeS for this driver

@@ -1,18 +1,17 @@
-import pytest
 import itertools
 
-from qcodes.instrument_drivers.tektronix.Keithley_3706A\
-    import Keithley_3706A
+import pytest
 
-import qcodes.instrument.sims as sims
-visalib = sims.__file__.replace('__init__.py', 'Keithley_3706A.yaml@sim')
+from qcodes.instrument_drivers.tektronix.Keithley_3706A import Keithley_3706A
 
 
-@pytest.fixture(scope='function')
-def driver():
-    driver = Keithley_3706A('Keithley_3706A',
-                            address='GPIB::11::INSTR',
-                            visalib=visalib)
+@pytest.fixture(scope="function", name="driver")
+def _make_driver():
+    driver = Keithley_3706A(
+        "Keithley_3706A",
+        address="GPIB::11::INSTR",
+        pyvisa_sim_file="Keithley_3706A.yaml",
+    )
     yield driver
     driver.close()
 
@@ -80,12 +79,12 @@ def test_slot_names(driver):
 
 
 def test_get_interlock_state(driver):
-    dict_list = []
-    for i in ['1', '2', '3']:
-        dictionary = {'slot_no': i,
-                      'state': 'Interlock is disengaged'}
-        dict_list.append(dictionary)
-    assert tuple(dict_list) == driver.get_interlock_state()
+    dict_list = (
+        {'slot_no': '1', 'state': 'Interlock is disengaged'},
+        {'slot_no': '2', 'state': 'Interlock is disengaged'},
+        {'slot_no': '3', 'state': 'Interlock is engaged'},
+    )
+    assert dict_list == driver.get_interlock_state()
 
 
 def test_get_number_of_rows(driver):

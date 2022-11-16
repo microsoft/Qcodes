@@ -1,8 +1,7 @@
 from typing import Dict, Optional
 
-from qcodes import IPInstrument
-from qcodes.instrument.channel import ChannelList, InstrumentChannel
-from qcodes.utils import validators as vals
+from qcodes import validators as vals
+from qcodes.instrument import ChannelList, InstrumentChannel, IPInstrument
 
 
 class MC_channel(InstrumentChannel):
@@ -61,9 +60,8 @@ class RC_SPDT(IPInstrument):
         for c in _chanlist:
             channel = MC_channel(self, f'channel_{c}', c)
             channels.append(channel)
-            self.add_submodule(f'channel_{c}', channel)
-        channels.lock()
-        self.add_submodule('channels', channels)
+            self.add_submodule(f"channel_{c}", channel)
+        self.add_submodule("channels", channels.to_channel_tuple())
 
         self.connect_message()
 

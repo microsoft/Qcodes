@@ -1,8 +1,8 @@
-from typing import Dict, Any, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
-from qcodes.instrument.base import Instrument
-from qcodes.instrument.parameter import MultiParameter, Parameter, ParamRawDataType
-from qcodes.utils.validators import Enum, Bool
+from qcodes.instrument import Instrument
+from qcodes.parameters import MultiParameter, Parameter, ParamRawDataType
+from qcodes.validators import Bool, Enum
 
 
 class CurrentParameter(MultiParameter):
@@ -44,8 +44,8 @@ class CurrentParameter(MultiParameter):
 
         self._measured_param = measured_param
 
-        p_label = getattr(measured_param, 'label', None)
-        p_unit = getattr(measured_param, 'unit', None)
+        p_label = getattr(measured_param, "label", "")
+        p_unit = getattr(measured_param, "unit", "")
 
         self.labels = (p_label, 'Current')
         self.units = (p_unit, 'A')
@@ -63,9 +63,9 @@ class CurrentParameter(MultiParameter):
         return value
 
 
-class Ithaco_1211(Instrument):
+class Ithaco1211(Instrument):
     """
-    This is the qcodes driver for the Ithaco 1211 Current-preamplifier.
+    QCoDeS driver for the Ithaco 1211 Current-preamplifier.
 
     This is a virtual driver only and will not talk to your instrument.
     """
@@ -116,3 +116,9 @@ class Ithaco_1211(Instrument):
         firmware = None
         return {'vendor': vendor, 'model': model,
                 'serial': serial, 'firmware': firmware}
+
+
+class Ithaco_1211(Ithaco1211):
+    """
+    Old alias for Itaco1211. Will eventually be deprecated and removed.
+    """

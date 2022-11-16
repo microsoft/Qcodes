@@ -2,14 +2,15 @@ from typing import Any
 
 import numpy as np
 
-from qcodes.instrument.parameter import Parameter
-from qcodes.instrument.visa import VisaInstrument
-from qcodes.utils import validators as vals
+from qcodes import validators as vals
+from qcodes.instrument import VisaInstrument
+from qcodes.parameters import Parameter
 
 
-class Weinschel_8320(VisaInstrument):
+class Weinschel8320(VisaInstrument):
     """
-    QCodes driver for the stepped attenuator
+    QCodes driver for the Weinschel 8320 stepped attenuator.
+
     Weinschel is formerly known as Aeroflex/Weinschel
     """
 
@@ -27,3 +28,9 @@ class Weinschel_8320(VisaInstrument):
         """Control the attenuation"""
 
         self.connect_message()
+
+
+class Weinschel_8320(Weinschel8320):
+    """
+    Alias for Weinschel8320 will eventually be deprecated and removed.
+    """

@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
-from qcodes.utils.validators import PermissiveInts
+
+from qcodes.validators import PermissiveInts
 
 
 def test_close_to_ints():

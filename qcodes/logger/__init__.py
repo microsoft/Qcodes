@@ -9,10 +9,45 @@ and functions to extract log messages to :class:`pandas.DataFrame` s
 
 """
 
+from .instrument_logger import filter_instrument, get_instrument_logger
+from .log_analysis import (
+    capture_dataframe,
+    log_to_dataframe,
+    logfile_to_dataframe,
+    time_difference,
+)
+from .logger import (
+    LogCapture,
+    console_level,
+    flush_telemetry_traces,
+    get_console_handler,
+    get_file_handler,
+    get_level_code,
+    get_level_name,
+    get_log_file_name,
+    handler_level,
+    start_all_logging,
+    start_command_history_logger,
+    start_logger,
+)
 
-from .logger import (flush_telemetry_traces,
-                     get_console_handler, get_file_handler, get_level_name,
-                     get_level_code, get_log_file_name, start_logger,
-                     start_command_history_logger, start_all_logging,
-                     handler_level, console_level, LogCapture)
-from .instrument_logger import filter_instrument
+__all__ = [
+    "LogCapture",
+    "capture_dataframe",
+    "console_level",
+    "filter_instrument",
+    "flush_telemetry_traces",
+    "get_console_handler",
+    "get_file_handler",
+    "get_instrument_logger",
+    "get_level_code",
+    "get_level_name",
+    "get_log_file_name",
+    "handler_level",
+    "log_to_dataframe",
+    "logfile_to_dataframe",
+    "start_all_logging",
+    "start_command_history_logger",
+    "start_logger",
+    "time_difference",
+]

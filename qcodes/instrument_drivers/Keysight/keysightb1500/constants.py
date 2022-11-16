@@ -1,5 +1,5 @@
 from enum import Enum, IntEnum, IntFlag
-from typing import Union, Sequence
+from typing import Sequence, Union
 
 
 class StrEnum(str, Enum):

@@ -1,5 +1,5 @@
-from typing import Tuple
 from itertools import product
+from typing import Tuple
 
 import numpy as np
 

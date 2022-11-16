@@ -20,31 +20,40 @@ from pathlib import Path
 from types import ModuleType
 from typing import IO, Any, AnyStr
 from typing import Deque as Tdeque
-from typing import Dict, Iterable, List, Optional, Sequence, Tuple, Union, cast
+from typing import (
+    Dict,
+    Iterable,
+    List,
+    NoReturn,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    cast,
+    overload,
+)
 
 import jsonschema
-import ruamel.yaml
 
 import qcodes
-import qcodes.utils.validators as validators
+from qcodes import validators
 from qcodes.instrument.base import Instrument, InstrumentBase
-from qcodes.instrument.channel import ChannelList
-from qcodes.instrument.parameter import (
+from qcodes.instrument.channel import ChannelTuple
+from qcodes.metadatable import Metadatable
+from qcodes.monitor.monitor import Monitor
+from qcodes.parameters import (
     DelegateParameter,
     ManualParameter,
     Parameter,
-    _BaseParameter,
+    ParameterBase,
 )
-from qcodes.monitor.monitor import Monitor
-from qcodes.utils.deprecate import issue_deprecation_warning
-from qcodes.utils.helpers import (
-    YAML,
+from qcodes.utils import (
     DelegateAttributes,
     checked_getattr,
     get_qcodes_path,
     get_qcodes_user_path,
+    issue_deprecation_warning,
 )
-from qcodes.utils.metadata import Metadatable
 
 log = logging.getLogger(__name__)
 
@@ -74,7 +83,7 @@ def get_config_use_monitor() -> Optional[str]:
     return qcodes.config["station"]["use_monitor"]
 
 
-ChannelOrInstrumentBase = Union[InstrumentBase, ChannelList]
+ChannelOrInstrumentBase = Union[InstrumentBase, ChannelTuple]
 
 
 class ValidationWarning(Warning):
@@ -165,7 +174,7 @@ class Station(Metadatable, DelegateAttributes):
                       ) -> Dict[Any, Any]:
         """
         State of the station as a JSON-compatible dictionary (everything that
-        the custom JSON encoder class :class:`qcodes.utils.helpers.NumpyJSONEncoder`
+        the custom JSON encoder class :class:`.NumpyJSONEncoder`
         supports).
 
         Note: If the station contains an instrument that has already been
@@ -408,7 +417,9 @@ class Station(Metadatable, DelegateAttributes):
 
         # Load template schema, and thereby don't fail on instruments that are
         # not included in the user schema.
-        yaml = YAML().load(config)
+        import ruamel.yaml  # lazy import
+
+        yaml = ruamel.yaml.YAML().load(config)
         with open(SCHEMA_TEMPLATE_PATH) as f:
             schema = json.load(f)
         try:
@@ -529,8 +540,8 @@ class Station(Metadatable, DelegateAttributes):
             try:
                 for level in identifier.split('.'):
                     instrument = checked_getattr(
-                        instrument, level,
-                        (InstrumentBase, ChannelList))
+                        instrument, level, (InstrumentBase, ChannelTuple)
+                    )
             except TypeError:
                 raise RuntimeError(
                     f'Cannot resolve `{level}` in {identifier} to an '
@@ -541,22 +552,21 @@ class Station(Metadatable, DelegateAttributes):
         def resolve_parameter_identifier(
             instrument: ChannelOrInstrumentBase,
             identifier: str
-        ) -> _BaseParameter:
+        ) -> ParameterBase:
             parts = identifier.split('.')
             if len(parts) > 1:
                 instrument = resolve_instrument_identifier(
                     instrument,
                     '.'.join(parts[:-1]))
             try:
-                return checked_getattr(instrument, parts[-1], _BaseParameter)
+                return checked_getattr(instrument, parts[-1], ParameterBase)
             except TypeError:
                 raise RuntimeError(
                     f'Cannot resolve parameter identifier `{identifier}` to '
                     f'a parameter on instrument {instrument!r}.')
 
         def setup_parameter_from_dict(
-            parameter: _BaseParameter,
-            options: Dict[str, Any]
+            parameter: ParameterBase, options: Dict[str, Any]
         ) -> None:
             for attr, val in options.items():
                 if attr in PARAMETER_ATTRIBUTES:
@@ -603,7 +613,7 @@ class Station(Metadatable, DelegateAttributes):
         ) -> None:
             # keep the original dictionray intact for snapshot
             options = copy(options)
-            param_type: type = _BaseParameter
+            param_type: type = ParameterBase
             kwargs = {}
             if 'source' in options:
                 param_type = DelegateParameter
@@ -632,6 +642,38 @@ class Station(Metadatable, DelegateAttributes):
         self.add_component(instr)
         update_monitor()
         return instr
+
+    @overload
+    def load_all_instruments(
+        self,
+        only_names: None,
+        only_types: Iterable[str],
+    ) -> Tuple[str, ...]:
+        ...
+
+    @overload
+    def load_all_instruments(
+        self,
+        only_names: Iterable[str],
+        only_types: None,
+    ) -> Tuple[str, ...]:
+        ...
+
+    @overload
+    def load_all_instruments(
+        self,
+        only_names: None,
+        only_types: None,
+    ) -> Tuple[str, ...]:
+        ...
+
+    @overload
+    def load_all_instruments(
+        self,
+        only_names: Iterable[str],
+        only_types: Iterable[str],
+    ) -> NoReturn:
+        ...
 
     def load_all_instruments(self,
                              only_names: Optional[Iterable[str]] = None,
@@ -703,9 +745,7 @@ def update_config_schema(
     """
 
     def instrument_names_from_module(module: ModuleType) -> Tuple[str, ...]:
-        submodules = list(pkgutil.walk_packages(
-            module.__path__,  # type: ignore[attr-defined]  # mypy issue #1422
-            module.__name__ + '.'))
+        submodules = list(pkgutil.walk_packages(module.__path__, module.__name__ + "."))
         res = set()
         for s in submodules:
             with suppress(Exception):
@@ -756,6 +796,7 @@ def _merge_yamls(*yamls: Union[str, Path]) -> str:
     Returns:
         Full yaml file stored in the memory.
     """
+    import ruamel.yaml  # lazy import
 
     if len(yamls) == 1:
         with open(yamls[0]) as file:

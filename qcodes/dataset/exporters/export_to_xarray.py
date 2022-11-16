@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Dict, Hashable, Mapping, Union, cast
+from collections.abc import Hashable, Mapping
+from pathlib import Path
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 
@@ -17,16 +19,15 @@ from .export_to_pandas import (
 if TYPE_CHECKING:
     import xarray as xr
 
-    from qcodes.dataset.data_set import ParameterData
-    from qcodes.dataset.data_set_protocol import DataSetProtocol
+    from qcodes.dataset.data_set_protocol import DataSetProtocol, ParameterData
 
 
 def _load_to_xarray_dataarray_dict_no_metadata(
     dataset: DataSetProtocol, datadict: Mapping[str, Mapping[str, np.ndarray]]
-) -> Dict[str, xr.DataArray]:
+) -> dict[str, xr.DataArray]:
     import xarray as xr
 
-    data_xrdarray_dict: Dict[str, xr.DataArray] = {}
+    data_xrdarray_dict: dict[str, xr.DataArray] = {}
 
     for name, subdict in datadict.items():
         index = _generate_pandas_index(subdict)
@@ -35,8 +36,9 @@ def _load_to_xarray_dataarray_dict_no_metadata(
                 data_xrdarray_dict[_name] = _data_to_dataframe(
                     subdict, index).reset_index().to_xarray()[_name]
         else:
-            xrdarray: xr.DataArray = _data_to_dataframe(
-                subdict, index).to_xarray()[name]
+            xrdarray: xr.DataArray = (
+                _data_to_dataframe(subdict, index).to_xarray().get(name, xr.DataArray())
+            )
             data_xrdarray_dict[name] = xrdarray
 
     return data_xrdarray_dict
@@ -44,7 +46,7 @@ def _load_to_xarray_dataarray_dict_no_metadata(
 
 def load_to_xarray_dataarray_dict(
     dataset: DataSetProtocol, datadict: Mapping[str, Mapping[str, np.ndarray]]
-) -> Dict[str, xr.DataArray]:
+) -> dict[str, xr.DataArray]:
     dataarrays = _load_to_xarray_dataarray_dict_no_metadata(dataset, datadict)
 
     for dataname, dataarray in dataarrays.items():
@@ -57,7 +59,7 @@ def load_to_xarray_dataarray_dict(
 
 
 def _add_metadata_to_xarray(
-    dataset: DataSetProtocol, xrdataset: Union[xr.Dataset, xr.DataArray]
+    dataset: DataSetProtocol, xrdataset: xr.Dataset | xr.DataArray
 ) -> None:
     xrdataset.attrs.update(
         {
@@ -100,8 +102,7 @@ def load_to_xarray_dataset(dataset: DataSetProtocol, data: ParameterData) -> xr.
 
     # Casting Hashable for the key type until python/mypy#1114
     # and python/typing#445 are resolved.
-    xrdataset = xr.Dataset(
-        cast(Dict[Hashable, xr.DataArray], data_xrdarray_dict))
+    xrdataset = xr.Dataset(cast("dict[Hashable, xr.DataArray]", data_xrdarray_dict))
 
     _add_param_spec_to_xarray_coords(dataset, xrdataset)
     _add_param_spec_to_xarray_data_vars(dataset, xrdataset)
@@ -111,7 +112,7 @@ def load_to_xarray_dataset(dataset: DataSetProtocol, data: ParameterData) -> xr.
 
 
 def _add_param_spec_to_xarray_coords(
-    dataset: DataSetProtocol, xrdataset: Union[xr.Dataset, xr.DataArray]
+    dataset: DataSetProtocol, xrdataset: xr.Dataset | xr.DataArray
 ) -> None:
     for coord in xrdataset.coords:
         if coord != "index":
@@ -129,7 +130,7 @@ def _add_param_spec_to_xarray_data_vars(
 
 def _paramspec_dict_with_extras(
     dataset: DataSetProtocol, dim_name: str
-) -> Dict[str, object]:
+) -> dict[str, object]:
     paramspec_dict = dict(dataset.paramspecs[str(dim_name)]._to_dict())
     # units and long_name have special meaning in xarray that closely
     # matches how qcodes uses unit and label so we copy these attributes
@@ -137,3 +138,30 @@ def _paramspec_dict_with_extras(
     paramspec_dict["units"] = paramspec_dict.get("unit", "")
     paramspec_dict["long_name"] = paramspec_dict.get("label", "")
     return paramspec_dict
+
+
+def xarray_to_h5netcdf_with_complex_numbers(
+    xarray_dataset: xr.Dataset, file_path: str | Path
+) -> None:
+    data_var_kinds = [
+        xarray_dataset.data_vars[data_var].dtype.kind
+        for data_var in xarray_dataset.data_vars
+    ]
+    coord_kinds = [
+        xarray_dataset.coords[coord].dtype.kind for coord in xarray_dataset.coords
+    ]
+    if "c" in data_var_kinds or "c" in coord_kinds:
+        # see http://xarray.pydata.org/en/stable/howdoi.html
+        # for how to export complex numbers
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                module="h5netcdf",
+                message="You are writing invalid netcdf features",
+                category=UserWarning,
+            )
+            xarray_dataset.to_netcdf(
+                path=file_path, engine="h5netcdf", invalid_netcdf=True
+            )
+    else:
+        xarray_dataset.to_netcdf(path=file_path, engine="h5netcdf")

@@ -1,15 +1,15 @@
-import pytest
-from typing import Dict, Callable, Any
 import logging
-from functools import wraps
-from contextlib import suppress
 import time
+from contextlib import suppress
+from functools import wraps
+from typing import Any, Callable, Dict
 
-from qcodes.instrument.base import InstrumentBase
-from qcodes.logger.instrument_logger import get_instrument_logger
-from qcodes.instrument_drivers.Lakeshore.Model_372 import Model_372
-import qcodes.instrument.sims as sims
+import pytest
+
+from qcodes.instrument import InstrumentBase
 from qcodes.instrument_drivers.Lakeshore.lakeshore_base import BaseSensorChannel
+from qcodes.instrument_drivers.Lakeshore.Model_372 import Model_372
+from qcodes.logger import get_instrument_logger
 
 log = logging.getLogger(__name__)
 
@@ -22,11 +22,8 @@ class MockVisaInstrument:
     instrument.
     """
     def __init__(self, *args, **kwargs) -> None:
-        # ignore this line in mypy: Mypy does not support mixins yet
-        # and seen by itself with this class definition it does not make sense
-        # to call __init__ on the super()
-        super().__init__(*args, **kwargs)  # type: ignore[call-arg]
-        self.visa_log = get_instrument_logger(self, VISA_LOGGER)
+        super().__init__(*args, **kwargs)
+        self.visa_log = get_instrument_logger(self, VISA_LOGGER)  # type: ignore[arg-type]
 
         # This base class mixin holds two dictionaries associated with the
         # pyvisa_instrument.write()
@@ -270,9 +267,9 @@ class Model_372_Mock(MockVisaInstrument, Model_372):
         return f'{chan.T}'
 
 
-def instrument_fixture(scope='function'):
+def instrument_fixture(scope="function", name=None):
     def wrapper(func):
-        @pytest.fixture(scope=scope)
+        @pytest.fixture(scope=scope, name=name)
         def wrapped_fixture():
             inst = func()
             try:
@@ -285,10 +282,12 @@ def instrument_fixture(scope='function'):
 
 @instrument_fixture(scope='function')
 def lakeshore_372():
-    visalib = sims.__file__.replace('__init__.py',
-                                    'lakeshore_model372.yaml@sim')
-    return Model_372_Mock('lakeshore_372_fixture', 'GPIB::3::INSTR',
-                          visalib=visalib, device_clear=False)
+    return Model_372_Mock(
+        "lakeshore_372_fixture",
+        "GPIB::3::INSTR",
+        pyvisa_sim_file="lakeshore_model372.yaml",
+        device_clear=False,
+    )
 
 
 def test_pid_set(lakeshore_372):

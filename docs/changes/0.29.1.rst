@@ -6,4 +6,4 @@ ______
 
 This is a patch release to support the latest version of OpenCensus
 to help resolve issues where pip is unable to pick the correct set
-of dependencies. (#3426)
+of dependencies. (:pr:`3426`)

@@ -1,16 +1,25 @@
-from typing import Optional, Any
+from __future__ import annotations
 
-from qcodes.instrument.base import Instrument
-from qcodes.instrument.ip import IPInstrument
+import sys
+from typing import Any
+
+if sys.version_info >= (3, 9):
+    from importlib.resources import as_file, files
+else:
+    from importlib_resources import as_file, files
+
+import qcodes.validators as vals
+from qcodes.instrument_drivers.american_magnetics.AMI430 import AMI430
+from qcodes.logger import get_instrument_logger
+from qcodes.utils import strip_attrs
+
+from .instrument import Instrument
+from .ip import IPInstrument
+
 # previous to introducing the `InstrumentLoggerAdapter` the IPToVisa instrument
 # was logging in the name of the `VisaInstrument`. To maintain that behaviour
 # import the `instrument.visa.log` and log to this one.
-from qcodes.instrument.visa import VisaInstrument, VISA_LOGGER
-from qcodes.instrument_drivers.american_magnetics.AMI430 import AMI430
-from qcodes.utils.helpers import strip_attrs
-from qcodes.logger.instrument_logger import get_instrument_logger
-import qcodes.utils.validators as vals
-
+from .visa import VISA_LOGGER, VisaInstrument
 
 # This module provides a class to make an IPInstrument behave like a
 # VisaInstrument. This is only meant for use with the PyVISA-sim backend
@@ -38,13 +47,17 @@ class IPToVisa(VisaInstrument, IPInstrument):  # type: ignore[misc]
     nasty surprises.
     """
 
-    def __init__(self, name: str, address: str,
-                 port: Optional[int],
-                 visalib: str,
-                 device_clear: bool = False,
-                 terminator: str = '\n',
-                 timeout: float = 3,
-                 **kwargs: Any):
+    def __init__(
+        self,
+        name: str,
+        address: str,
+        port: int | None,
+        pyvisa_sim_file: str,
+        device_clear: bool = False,
+        terminator: str = "\n",
+        timeout: float = 3,
+        **kwargs: Any,
+    ):
 
         # remove IPInstrument-specific kwargs
         ipkwargs = ['write_confirmation']
@@ -64,11 +77,11 @@ class IPToVisa(VisaInstrument, IPInstrument):  # type: ignore[misc]
                            vals=vals.MultiType(vals.Numbers(min_value=0),
                                                vals.Enum(None)))
 
-        # auxiliary VISA library to use for mocking
-        self.visalib = visalib
-        self.visabackend = ''
+        traversable_handle = files("qcodes.instrument.sims") / pyvisa_sim_file
+        with as_file(traversable_handle) as sim_visalib_path:
+            self.visalib = f"{str(sim_visalib_path)}@sim"
+            self.set_address(address=address)
 
-        self.set_address(address)
         if device_clear:
             self.device_clear()
 

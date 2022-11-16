@@ -1,10 +1,9 @@
-import pytest
+import sys
 import timeit
 
-import qcodes.instrument.sims as sims
-from qcodes.instrument_drivers.tektronix.DPO7200xx import TektronixDPO7000xx
+import pytest
 
-visalib = sims.__file__.replace('__init__.py', 'Tektronix_DPO7200xx.yaml@sim')
+from qcodes.instrument_drivers.tektronix.DPO7200xx import TektronixDPO7000xx
 
 
 @pytest.fixture(scope='module')
@@ -13,12 +12,17 @@ def tektronix_dpo():
     A six channel-per-relay instrument
     """
     driver = TektronixDPO7000xx(
-        'dpo', address='TCPIP0::0.0.0.0::inst0::INSTR', visalib=visalib)
+        "dpo",
+        address="TCPIP0::0.0.0.0::inst0::INSTR",
+        pyvisa_sim_file="Tektronix_DPO7200xx.yaml",
+    )
 
     yield driver
     driver.close()
 
-
+@pytest.mark.xfail(
+    condition=sys.platform == "win32", reason="Time resolution is too low on windows"
+)
 def test_adjust_timer(tektronix_dpo):
     """
     After adjusting the type of the measurement or the source of the

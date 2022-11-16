@@ -3,27 +3,24 @@ from collections import Counter
 import numpy as np
 import pytest
 
-import qcodes.instrument.sims as sims
-from qcodes.instrument_drivers.tektronix.Keithley_2600_channels import (
-    Keithley_2600,
-    MeasurementStatus,
+from qcodes.instrument_drivers.Keithley import (
+    Keithley2600MeasurementStatus,
+    Keithley2614B,
 )
 
-visalib = sims.__file__.replace('__init__.py', 'Keithley_2600.yaml@sim')
 
-
-@pytest.fixture(scope='function')
-def driver():
-    driver = Keithley_2600('Keithley_2600',
-                           address='GPIB::1::INSTR',
-                           visalib=visalib)
+@pytest.fixture(scope="function", name="driver")
+def _make_driver():
+    driver = Keithley2614B(
+        "Keithley_2600", address="GPIB::1::INSTR", pyvisa_sim_file="Keithley_2600.yaml"
+    )
 
     yield driver
     driver.close()
 
 
-@pytest.fixture(scope='function')
-def smus(driver):
+@pytest.fixture(scope="function", name="smus")
+def _make_smus(driver):
     smu_names = {'smua', 'smub'}
     assert smu_names == set(list(driver.submodules.keys()))
 
@@ -48,13 +45,13 @@ def test_smu_channels_and_their_parameters(driver):
         assert smu.volt.measurement_status == None
 
         assert 1.0 == smu.volt()
-        assert smu.volt.measurement_status == MeasurementStatus.NORMAL
+        assert smu.volt.measurement_status == Keithley2600MeasurementStatus.NORMAL
 
         smu.curr(1.0)
         assert smu.volt.measurement_status == None
 
         assert 1.0 == smu.curr()
-        assert smu.curr.measurement_status == MeasurementStatus.NORMAL
+        assert smu.curr.measurement_status == Keithley2600MeasurementStatus.NORMAL
 
         assert 0.0 == smu.res()
 

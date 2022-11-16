@@ -4,17 +4,14 @@
 import logging
 import time
 import warnings
-from distutils.version import LooseVersion
 from typing import Any, Optional
 
 import numpy as np
+from packaging import version
 
-from qcodes import Instrument
-from qcodes.instrument.channel import InstrumentChannel
-from qcodes.instrument.parameter import ArrayParameter
-from qcodes.instrument.visa import VisaInstrument
-from qcodes.utils import validators as vals
-from qcodes.utils.helpers import create_on_off_val_mapping
+import qcodes.validators as vals
+from qcodes.instrument import Instrument, InstrumentChannel, VisaInstrument
+from qcodes.parameters import ArrayParameter, create_on_off_val_mapping
 
 log = logging.getLogger(__name__)
 
@@ -122,10 +119,9 @@ class ScopeTrace(ArrayParameter):
         dataformat = instr.dataformat.get_latest()
 
         if dataformat == 'INT,8':
-            int_vals = np.fromstring(raw_vals, dtype=np.int8, count=no_points)
+            int_vals = np.frombuffer(raw_vals, dtype=np.int8, count=no_points)
         else:
-            int_vals = np.fromstring(raw_vals, dtype=np.int16,
-                                     count=no_points//2)
+            int_vals = np.frombuffer(raw_vals, dtype=np.int16, count=no_points // 2)
 
         # now the integer values must be converted to physical
         # values
@@ -141,7 +137,7 @@ class ScopeTrace(ArrayParameter):
         return output
 
 
-class ScopeMeasurement(InstrumentChannel):
+class RohdeSchwarzRTO1000ScopeMeasurement(InstrumentChannel):
     """
     Class to hold a measurement of the scope.
     """
@@ -294,7 +290,10 @@ class ScopeMeasurement(InstrumentChannel):
                                      ' results.')
 
 
-class ScopeChannel(InstrumentChannel):
+ScopeMeasurement = RohdeSchwarzRTO1000ScopeMeasurement
+
+
+class RohdeSchwarzRTO1000ScopeChannel(InstrumentChannel):
     """
     Class to hold an input channel of the scope.
 
@@ -436,7 +435,10 @@ class ScopeChannel(InstrumentChannel):
         self._parent.write(f'CHANnel{self.channum}:SCALe {value}')
 
 
-class RTO1000(VisaInstrument):
+ScopeChannel = RohdeSchwarzRTO1000ScopeChannel
+
+
+class RohdeSchwarzRTO1000(VisaInstrument):
     """
     QCoDeS Instrument driver for the
     Rohde-Schwarz RTO1000 series oscilloscopes.
@@ -467,13 +469,18 @@ class RTO1000(VisaInstrument):
         # model number can NOT be queried from the instrument
         # (at least fails with RTO1024, fw 2.52.1.1), so in that case
         # the user must provide the model manually.
-        firmware_version = self.get_idn()['firmware']
+        firmware_version_str = self.get_idn()["firmware"]
+        if firmware_version_str is None:
+            raise RuntimeError("Could not determine firmware version of RTO1000.")
+        firmware_version = version.parse(firmware_version_str)
 
-        if LooseVersion(firmware_version) < LooseVersion('3'):
-            log.warning('Old firmware version detected. This driver may '
-                        'not be compatible. Please upgrade your firmware.')
+        if firmware_version < version.parse("3"):
+            log.warning(
+                "Old firmware version detected. This driver may "
+                "not be compatible. Please upgrade your firmware."
+            )
 
-        if LooseVersion(firmware_version) >= LooseVersion('3.65'):
+        if firmware_version >= version.parse("3.65"):
             # strip just in case there is a newline character at the end
             self.model = self.ask('DIAGnostic:SERVice:WFAModel?').strip()
             if model is not None and model != self.model:
@@ -683,13 +690,15 @@ class RTO1000(VisaInstrument):
                            get_parser=str)
 
         # Add the channels to the instrument
-        for ch in range(1, self.num_chans+1):
-            chan = ScopeChannel(self, f'channel{ch}', ch)
-            self.add_submodule(f'ch{ch}', chan)
+        for ch in range(1, self.num_chans + 1):
+            chan = RohdeSchwarzRTO1000ScopeChannel(self, f"channel{ch}", ch)
+            self.add_submodule(f"ch{ch}", chan)
 
-        for measId in range(1, self.num_meas+1):
-            measCh = ScopeMeasurement(self, f'measurement{measId}', measId)
-            self.add_submodule(f'meas{measId}', measCh)
+        for measId in range(1, self.num_meas + 1):
+            measCh = RohdeSchwarzRTO1000ScopeMeasurement(
+                self, f"measurement{measId}", measId
+            )
+            self.add_submodule(f"meas{measId}", measCh)
 
         self.add_function('stop', call_cmd='STOP')
         self.add_function('reset', call_cmd='*RST')
@@ -804,3 +813,11 @@ class RTO1000(VisaInstrument):
         val = self.ask(f'TRIGger1:LEVel{source}?')
 
         return float(val.strip())
+
+
+class RTO1000(RohdeSchwarzRTO1000):
+    """
+    Backwards compatibility alias for RohdeSchwarzRTO1000
+    """
+
+    pass

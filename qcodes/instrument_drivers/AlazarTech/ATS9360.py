@@ -1,15 +1,15 @@
-from distutils.version import LooseVersion
 from typing import Any
 
 import numpy as np
+from packaging import version
 
-from qcodes.utils import validators
+from qcodes import validators
 
 from .ATS import AlazarTech_ATS
 from .utils import TraceParameter
 
 
-class AlazarTech_ATS9360(AlazarTech_ATS):
+class AlazarTechATS9360(AlazarTech_ATS):
     """
     This class is the driver for the ATS9360 board
     it inherits from the ATS base class
@@ -326,8 +326,9 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
     def _get_trigger_holdoff(self) -> bool:
         fwversion = self.get_idn()['firmware']
 
-        if not isinstance(fwversion, str) or LooseVersion(fwversion) < \
-                LooseVersion(self._trigger_holdoff_min_fw_version):
+        if not isinstance(fwversion, str) or version.parse(fwversion) < version.parse(
+            self._trigger_holdoff_min_fw_version
+        ):
             return False
 
         # we want to check if the 26h bit (zero indexed) is high or not
@@ -344,13 +345,16 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
         return bool(bin(output)[-27])
 
     def _set_trigger_holdoff(self, value: bool) -> None:
-        fwversion = self.get_idn()['firmware']
-        if not isinstance(fwversion, str) or  LooseVersion(fwversion) < \
-                LooseVersion(self._trigger_holdoff_min_fw_version):
-            raise RuntimeError(f"Alazar 9360 requires at least firmware "
-                               f"version {self._trigger_holdoff_min_fw_version}"
-                               f" for trigger holdoff support. "
-                               f"You have version {fwversion}")
+        fwversion = self.get_idn()["firmware"]
+        if not isinstance(fwversion, str) or version.parse(fwversion) < version.parse(
+            self._trigger_holdoff_min_fw_version
+        ):
+            raise RuntimeError(
+                f"Alazar 9360 requires at least firmware "
+                f"version {self._trigger_holdoff_min_fw_version}"
+                f" for trigger holdoff support. "
+                f"You have version {fwversion}"
+            )
         current_value = self._read_register(58)
 
         if value is True:
@@ -369,3 +373,11 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
             disable_mask = ~np.uint32(1 << 26)
             new_value = current_value & disable_mask
         self._write_register(58, int(new_value))
+
+
+class AlazarTech_ATS9360(AlazarTechATS9360):
+    """
+    Alias for backwards compatibility. Will eventually be deprecated and removed
+    """
+
+    pass

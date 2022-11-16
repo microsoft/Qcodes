@@ -2,7 +2,8 @@ import math
 
 import numpy as np
 import pytest
-from qcodes.utils.validators import Ints
+
+from qcodes.validators import Ints
 
 from .conftest import AClass, a_func
 

@@ -1,14 +1,13 @@
 import pytest
 
-import qcodes.utils.validators as vals
-from qcodes.instrument.function import Function
-from qcodes.instrument.parameter import Parameter, _BaseParameter
+import qcodes.validators as vals
+from qcodes.parameters import Function, Parameter, ParameterBase
 
 from .conftest import (
     GettableParam,
     VirtualParameter,
     blank_instruments,
-    named_instrument
+    named_instrument,
 )
 
 
@@ -175,12 +174,10 @@ def test_set_via_function():
 
 def test_unknown_args_to_baseparameter_raises():
     """
-    Passing an unknown kwarg to _BaseParameter should trigger a TypeError
+    Passing an unknown kwarg to ParameterBase should trigger a TypeError
     """
     with pytest.raises(TypeError):
-        _ = _BaseParameter(name='Foo',
-                           instrument=None,
-                           snapshotable=False)
+        _ = ParameterBase(name="Foo", instrument=None, snapshotable=False)
 
 
 def test_underlying_instrument_for_virtual_parameter():
@@ -189,3 +186,17 @@ def test_underlying_instrument_for_virtual_parameter():
     vp = VirtualParameter('test_param', param=p)
 
     assert vp.underlying_instrument is named_instrument
+
+
+def test_get_cmd_str_no_instrument_raises():
+    with pytest.raises(
+        TypeError, match="Cannot use a str get_cmd without binding to an instrument."
+    ):
+        Parameter(name="test", instrument=None, get_cmd="get_me")
+
+
+def test_set_cmd_str_no_instrument_raises():
+    with pytest.raises(
+        TypeError, match="Cannot use a str set_cmd without binding to an instrument."
+    ):
+        Parameter(name="test", instrument=None, set_cmd="set_me")

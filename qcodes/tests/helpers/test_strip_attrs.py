@@ -1,8 +1,8 @@
-import pytest
-
 from typing import Any, Dict
 
-from qcodes.utils.helpers import strip_attrs
+import pytest
+
+from qcodes.utils import strip_attrs
 
 
 class A:

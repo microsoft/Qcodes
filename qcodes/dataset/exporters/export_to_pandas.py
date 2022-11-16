@@ -1,17 +1,18 @@
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Dict, Iterator, Mapping, Union
+from collections.abc import Iterator, Mapping
+from typing import TYPE_CHECKING
 
 import numpy as np
 
 if TYPE_CHECKING:
     import pandas as pd
 
-    from qcodes.dataset.data_set import ParameterData
+    from qcodes.dataset.data_set_protocol import ParameterData
 
 
-def load_to_dataframe_dict(datadict: ParameterData) -> Dict[str, pd.DataFrame]:
+def load_to_dataframe_dict(datadict: ParameterData) -> dict[str, pd.DataFrame]:
     dfs = {}
     for name, subdict in datadict.items():
         index = _generate_pandas_index(subdict)
@@ -20,7 +21,7 @@ def load_to_dataframe_dict(datadict: ParameterData) -> Dict[str, pd.DataFrame]:
 
 
 def load_to_concatenated_dataframe(datadict: ParameterData) -> pd.DataFrame:
-    import pandas as pd
+    import pandas as pd  # pylint: disable=import-outside-toplevel
 
     if not _same_setpoints(datadict):
         warnings.warn(
@@ -37,9 +38,9 @@ def load_to_concatenated_dataframe(datadict: ParameterData) -> pd.DataFrame:
 
 
 def _data_to_dataframe(
-    data: Mapping[str, np.ndarray], index: Union[pd.Index, pd.MultiIndex]
+    data: Mapping[str, np.ndarray], index: pd.Index | pd.MultiIndex | None
 ) -> pd.DataFrame:
-    import pandas as pd
+    import pandas as pd  # pylint: disable=import-outside-toplevel
     if len(data) == 0:
         return pd.DataFrame()
     dependent_col_name = list(data.keys())[0]
@@ -59,10 +60,10 @@ def _data_to_dataframe(
 
 def _generate_pandas_index(
     data: Mapping[str, np.ndarray]
-) -> Union[pd.Index, pd.MultiIndex]:
+) -> pd.Index | pd.MultiIndex | None:
     # the first element in the dict given by parameter_tree is always the dependent
     # parameter and the index is therefore formed from the rest
-    import pandas as pd
+    import pandas as pd  # pylint: disable=import-outside-toplevel
     keys = list(data.keys())
     if len(data) <= 1:
         index = None
@@ -93,7 +94,7 @@ def _parameter_data_identical(
 
 def _same_setpoints(datadict: ParameterData) -> bool:
 
-    def _get_setpoints(dd: ParameterData) -> Iterator[Dict[str, np.ndarray]]:
+    def _get_setpoints(dd: ParameterData) -> Iterator[dict[str, np.ndarray]]:
 
         for dep_name, param_dict in dd.items():
             out = {
