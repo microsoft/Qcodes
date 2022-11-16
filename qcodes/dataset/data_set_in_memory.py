@@ -216,10 +216,6 @@ class DataSetInMem(BaseDataSet):
         Returns:
             The loaded dataset.
         """
-        # in the code below floats and ints loaded from attributes are explicitly casted
-        # this is due to some older versions of qcodes writing them with a different backend
-        # reading them back results in a numpy array of one element
-
         import xarray as xr
 
         loaded_data = xr.load_dataset(path, engine="h5netcdf")
