@@ -1,9 +1,13 @@
+import sys
 from enum import Enum, IntEnum, IntFlag
 from typing import Sequence, Union
 
+if sys.version_info >= (3, 11):
+    from enum import StrEnum
+else:
 
-class StrEnum(str, Enum):
-    pass
+    class StrEnum(str, Enum):
+        pass
 
 class ChannelName(StrEnum):
     A = 'CH1'
