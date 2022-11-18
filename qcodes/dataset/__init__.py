@@ -14,7 +14,7 @@ from .data_set_in_memory import load_from_netcdf
 from .data_set_protocol import DataSetProtocol, DataSetType
 from .database_extract_runs import extract_runs_into_db
 from .descriptions.param_spec import ParamSpec
-from .descriptions.versioning.serialization import from_json_to_current
+from .descriptions.versioning.serialization import rundescriber_from_json
 from .dond.do_0d import do0d
 from .dond.do_1d import do1d
 from .dond.do_2d import do2d
@@ -68,7 +68,6 @@ __all__ = [
     "dond",
     "experiments",
     "extract_runs_into_db",
-    "from_json_to_current",
     "get_default_experiment_id",
     "get_guids_by_run_spec",
     "import_dat_file",
@@ -89,4 +88,5 @@ __all__ = [
     "plot_by_id",
     "plot_dataset",
     "reset_default_experiment_id",
+    "rundescriber_from_json",
 ]
