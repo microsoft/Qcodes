@@ -1,0 +1,2 @@
+Add ``from_json_to_current`` to dataset public API
+for materializing ``RunDescriber`` objects from json strings
