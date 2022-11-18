@@ -158,6 +158,9 @@ def from_json_to_current(json_str: str) -> current.RunDescriber:
     return from_dict_to_current(data)
 
 
+rundescriber_from_json = from_json_to_current
+
+
 # YAML
 
 
