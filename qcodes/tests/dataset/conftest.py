@@ -3,7 +3,7 @@ import os
 import shutil
 import tempfile
 from contextlib import contextmanager
-from typing import Iterator
+from typing import Generator, Iterator
 
 import numpy as np
 import pytest
@@ -26,7 +26,7 @@ from qcodes.validators import Arrays, ComplexNumbers, Numbers
 
 
 @pytest.fixture(scope="function", name="non_created_db")
-def _make_non_created_db(tmp_path):
+def _make_non_created_db(tmp_path) -> Generator[None, None, None]:
     # set db location to a non existing file
     try:
         qc.config["core"]["db_location"] = str(tmp_path / "temp.db")

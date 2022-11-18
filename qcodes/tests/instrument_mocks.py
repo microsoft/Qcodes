@@ -228,7 +228,7 @@ class DmmExponentialParameter(Parameter):
 
 
 class DmmGaussParameter(Parameter):
-    def __init__(self, name, **kwargs):
+    def __init__(self, name: str, **kwargs: Any):
         super().__init__(name, **kwargs)
         self.x0 = 0.1
         self.y0 = 0.2

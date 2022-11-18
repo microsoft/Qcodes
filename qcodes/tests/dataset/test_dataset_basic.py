@@ -314,7 +314,7 @@ def test_add_experiments(experiment_name, sample_name, dataset_name):
 
 
 @pytest.mark.usefixtures("experiment")
-def test_dependent_parameters():
+def test_dependent_parameters() -> None:
 
     pss: List[ParamSpecBase] = []
 

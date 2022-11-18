@@ -5,7 +5,17 @@ import tempfile
 from contextlib import contextmanager
 from functools import wraps
 from time import sleep
-from typing import TYPE_CHECKING, Any, Callable, Dict, Hashable, Optional, Tuple, Type
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Generator,
+    Hashable,
+    Optional,
+    Tuple,
+    Type,
+)
 
 import pytest
 
@@ -216,7 +226,7 @@ def default_config(user_config: Optional[str] = None):
 
 @deprecate(reason="Unused internally", alternative="reset_config_on_exit fixture")
 @contextmanager
-def reset_config_on_exit():
+def reset_config_on_exit() -> Generator[None, None, None]:
     """
     Context manager to clean any modification of the in memory config on exit
 
