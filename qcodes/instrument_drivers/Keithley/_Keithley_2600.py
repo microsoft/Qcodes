@@ -1,5 +1,6 @@
 import logging
 import struct
+import sys
 import warnings
 from enum import Enum
 from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple
@@ -17,6 +18,13 @@ from qcodes.parameters import (
     ParamRawDataType,
     create_on_off_val_mapping,
 )
+
+if sys.version_info >= (3, 11):
+    from enum import StrEnum
+else:
+
+    class StrEnum(str, Enum):
+        pass
 
 log = logging.getLogger(__name__)
 
@@ -198,10 +206,6 @@ class TimeAxis(Parameter):
         npts = self.instrument.timetrace_npts()
         dt = self.instrument.timetrace_dt()
         return np.linspace(0, dt * npts, npts, endpoint=False)
-
-
-class StrEnum(str, Enum):
-    pass
 
 
 class Keithley2600MeasurementStatus(StrEnum):
