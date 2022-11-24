@@ -364,7 +364,7 @@ def test_load_by_run_spec(empty_temp_db, some_interdeps):
 
 
 def test_callback(scalar_dataset: DataSet) -> None:
-    called_progress = []
+    called_progress: list[float] = []
 
     def callback_closure(called_progress: list[float]):
         def callback(progress: float) -> None:
