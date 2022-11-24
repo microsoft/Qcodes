@@ -1,14 +1,13 @@
 import pytest
 
-import qcodes.instrument.sims as sims
 from qcodes.instrument_drivers.AimTTi import AimTTiPL601
 
-visalib = sims.__file__.replace('__init__.py', 'AimTTi_PL601P.yaml@sim')
 
-
-@pytest.fixture(scope='function')
-def driver():
-    driver = AimTTiPL601("AimTTi", address="GPIB::1::INSTR", visalib=visalib)
+@pytest.fixture(scope="function", name="driver")
+def _make_driver():
+    driver = AimTTiPL601(
+        "AimTTi", address="GPIB::1::INSTR", pyvisa_sim_file="AimTTi_PL601P.yaml"
+    )
 
     yield driver
     driver.close()

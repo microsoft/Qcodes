@@ -13,7 +13,10 @@ from .data_set import (
 from .data_set_in_memory import load_from_netcdf
 from .data_set_protocol import DataSetProtocol, DataSetType
 from .database_extract_runs import extract_runs_into_db
+from .descriptions.dependencies import InterDependencies_, ParamSpecTree
 from .descriptions.param_spec import ParamSpec
+from .descriptions.rundescriber import RunDescriber
+from .descriptions.versioning.serialization import rundescriber_from_json
 from .dond.do_0d import do0d
 from .dond.do_1d import do1d
 from .dond.do_2d import do2d
@@ -51,11 +54,14 @@ __all__ = [
     "ConnectionPlus",
     "DataSetProtocol",
     "DataSetType",
+    "InterDependencies_",
     "LinSweep",
     "LogSweep",
     "Measurement",
     "TogetherSweep",
     "ParamSpec",
+    "ParamSpecTree",
+    "RunDescriber",
     "SQLiteSettings",
     "SequentialParamsCaller",
     "ThreadPoolParamsCaller",
@@ -87,4 +93,5 @@ __all__ = [
     "plot_by_id",
     "plot_dataset",
     "reset_default_experiment_id",
+    "rundescriber_from_json",
 ]

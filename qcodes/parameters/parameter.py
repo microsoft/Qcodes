@@ -13,6 +13,7 @@ from .sweep_values import SweepFixedValues
 
 if TYPE_CHECKING:
     from qcodes.instrument.base import InstrumentBase
+    from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
     from qcodes.validators import Validator
 
 
@@ -180,7 +181,13 @@ class Parameter(ParameterBase):
         **kwargs: Any,
     ) -> None:
         def _get_manual_parameter() -> ParamRawDataType:
-            log.debug(
+            if self.root_instrument is not None:
+                mylogger: InstrumentLoggerAdapter | logging.Logger = (
+                    self.root_instrument.log
+                )
+            else:
+                mylogger = log
+            mylogger.debug(
                 "Getting raw value of parameter: %s as %s",
                 self.full_name,
                 self.cache.raw_value,
@@ -188,7 +195,15 @@ class Parameter(ParameterBase):
             return self.cache.raw_value
 
         def _set_manual_parameter(x: ParamRawDataType) -> ParamRawDataType:
-            log.debug("Setting raw value of parameter: %s to %s", self.full_name, x)
+            if self.root_instrument is not None:
+                mylogger: InstrumentLoggerAdapter | logging.Logger = (
+                    self.root_instrument.log
+                )
+            else:
+                mylogger = log
+            mylogger.debug(
+                "Setting raw value of parameter: %s to %s", self.full_name, x
+            )
             return x
 
         if instrument is not None and bind_to_instrument:

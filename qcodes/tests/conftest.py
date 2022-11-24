@@ -5,7 +5,7 @@ import gc
 import os
 import sys
 import tempfile
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Generator
 
 import pytest
 from hypothesis import settings
@@ -52,7 +52,7 @@ def disable_telemetry():
 
 
 @pytest.fixture(scope="function")
-def default_config(tmp_path):
+def default_config(tmp_path) -> Generator[None, None, None]:
     """
     Fixture to temporarily establish default config settings.
     This is achieved by overwriting the config paths of the user-,
@@ -95,7 +95,7 @@ def default_config(tmp_path):
 
 
 @pytest.fixture(scope="function")
-def reset_config_on_exit():
+def reset_config_on_exit() -> Generator[None, None, None]:
 
     """
     Fixture to clean any modification of the in memory config on exit

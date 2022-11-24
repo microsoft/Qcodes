@@ -1,0 +1,2 @@
+All public methods avilable in ``qcodes.dataset`` that takes a
+path to a db or data file now accepts a ``pathlib.Path`` object in addition to a ``str``.

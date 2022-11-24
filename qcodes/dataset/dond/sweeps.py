@@ -57,6 +57,17 @@ class AbstractSweep(ABC, Generic[T]):
         """
         pass
 
+    @property
+    def get_after_set(self) -> bool:
+        """
+        Should we perform a call to get on the parameter after setting it
+        and store that rather than the setpoint value in the dataset?
+
+        This defaults to False for backwards compatibility
+        but subclasses should overwrite this to implement if correctly.
+        """
+        return False
+
 
 class LinSweep(AbstractSweep[np.float64]):
     """
@@ -67,7 +78,10 @@ class LinSweep(AbstractSweep[np.float64]):
         start: Sweep start value.
         stop: Sweep end value.
         num_points: Number of sweep points.
-        delay: Time in seconds between two consecutive sweep points
+        delay: Time in seconds between two consecutive sweep points.
+        post_actions: Actions to do after each sweep point.
+        get_after_set: Should we perform a get on the parameter after setting it
+            and store the value returned by get rather than the set value in the dataset.
     """
 
     def __init__(
@@ -78,6 +92,7 @@ class LinSweep(AbstractSweep[np.float64]):
         num_points: int,
         delay: float = 0,
         post_actions: ActionsT = (),
+        get_after_set: bool = False,
     ):
         self._param = param
         self._start = start
@@ -85,6 +100,7 @@ class LinSweep(AbstractSweep[np.float64]):
         self._num_points = num_points
         self._delay = delay
         self._post_actions = post_actions
+        self._get_after_set = get_after_set
 
     def get_setpoints(self) -> npt.NDArray[np.float64]:
         """
@@ -109,6 +125,10 @@ class LinSweep(AbstractSweep[np.float64]):
     def post_actions(self) -> ActionsT:
         return self._post_actions
 
+    @property
+    def get_after_set(self) -> bool:
+        return self._get_after_set
+
 
 class LogSweep(AbstractSweep[np.float64]):
     """
@@ -120,6 +140,9 @@ class LogSweep(AbstractSweep[np.float64]):
         stop: Sweep end value.
         num_points: Number of sweep points.
         delay: Time in seconds between two consecutive sweep points.
+        post_actions: Actions to do after each sweep point.
+        get_after_set: Should we perform a get on the parameter after setting it
+            and store the value returned by get rather than the set value in the dataset.
     """
 
     def __init__(
@@ -130,6 +153,7 @@ class LogSweep(AbstractSweep[np.float64]):
         num_points: int,
         delay: float = 0,
         post_actions: ActionsT = (),
+        get_after_set: bool = False,
     ):
         self._param = param
         self._start = start
@@ -137,6 +161,7 @@ class LogSweep(AbstractSweep[np.float64]):
         self._num_points = num_points
         self._delay = delay
         self._post_actions = post_actions
+        self._get_after_set = get_after_set
 
     def get_setpoints(self) -> npt.NDArray[np.float64]:
         """
@@ -161,6 +186,10 @@ class LogSweep(AbstractSweep[np.float64]):
     def post_actions(self) -> ActionsT:
         return self._post_actions
 
+    @property
+    def get_after_set(self) -> bool:
+        return self._get_after_set
+
 
 class ArraySweep(AbstractSweep, Generic[T]):
     """
@@ -171,6 +200,8 @@ class ArraySweep(AbstractSweep, Generic[T]):
         array: array with values to sweep.
         delay: Time in seconds between two consecutive sweep points.
         post_actions: Actions to do after each sweep point.
+        get_after_set: Should we perform a get on the parameter after setting it
+            and store the value returned by get rather than the set value in the dataset.
     """
 
     def __init__(
@@ -179,11 +210,13 @@ class ArraySweep(AbstractSweep, Generic[T]):
         array: Sequence[Any] | npt.NDArray[T],
         delay: float = 0,
         post_actions: ActionsT = (),
+        get_after_set: bool = False,
     ):
         self._param = param
         self._array = np.array(array)
         self._delay = delay
         self._post_actions = post_actions
+        self._get_after_set = get_after_set
 
     def get_setpoints(self) -> npt.NDArray[T]:
         return self._array
@@ -203,6 +236,10 @@ class ArraySweep(AbstractSweep, Generic[T]):
     @property
     def post_actions(self) -> ActionsT:
         return self._post_actions
+
+    @property
+    def get_after_set(self) -> bool:
+        return self._get_after_set
 
 
 class TogetherSweep:

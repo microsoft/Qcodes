@@ -13,14 +13,11 @@ def uut():
     except (ValueError, VisaIOError):
         # Either there is no VISA lib installed or there was no real
         # instrument found at the specified address => use simulated instrument
-        import qcodes.instrument.sims as sims
-        path_to_yaml = sims.__file__.replace('__init__.py',
-                                             'keysight_b220x.yaml')
-
-        instance = KeysightB220X('switch_matrix',
-                                 address='GPIB::1::INSTR',
-                                 visalib=path_to_yaml + '@sim'
-                                 )
+        instance = KeysightB220X(
+            "switch_matrix",
+            address="GPIB::1::INSTR",
+            pyvisa_sim_file="keysight_b220x.yaml",
+        )
 
     instance.get_status()
     instance.clear_status()

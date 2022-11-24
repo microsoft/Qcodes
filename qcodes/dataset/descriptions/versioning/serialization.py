@@ -36,8 +36,6 @@ import json
 from collections.abc import Callable
 from typing import Any, cast
 
-from ruamel.yaml import YAML
-
 from .. import rundescriber as current
 from .converters import (
     v0_to_v1,
@@ -160,6 +158,9 @@ def from_json_to_current(json_str: str) -> current.RunDescriber:
     return from_dict_to_current(data)
 
 
+rundescriber_from_json = from_json_to_current
+
+
 # YAML
 
 
@@ -168,7 +169,9 @@ def to_yaml_for_storage(desc: current.RunDescriber) -> str:
     Serialize the given RunDescriber to YAML as a RunDescriber of the
     version for storage
     """
-    yaml = YAML()
+    import ruamel.yaml  # lazy import
+
+    yaml = ruamel.yaml.YAML()
     with io.StringIO() as stream:
         yaml.dump(to_dict_for_storage(desc), stream=stream)
         output = stream.getvalue()
@@ -180,7 +183,9 @@ def from_yaml_to_current(yaml_str: str) -> current.RunDescriber:
     """
     Deserialize a YAML string into a RunDescriber of the current version
     """
-    yaml = YAML()
+    import ruamel.yaml  # lazy import
+
+    yaml = ruamel.yaml.YAML()
     # yaml.load returns an OrderedDict, but we need a dict
     ser = cast(RunDescriberDicts, dict(yaml.load(yaml_str)))
     return from_dict_to_current(ser)

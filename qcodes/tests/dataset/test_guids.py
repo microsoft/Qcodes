@@ -1,3 +1,5 @@
+import random
+import re
 import time
 from uuid import uuid4
 
@@ -17,10 +19,23 @@ from qcodes.dataset.guids import (
 )
 
 
+@pytest.fixture(name="seed_random")
+def _make_seed_random():
+    state = random.getstate()
+    random.seed(a=0)
+    try:
+        yield
+    finally:
+        random.setstate(state)
+
+
 @pytest.mark.usefixtures("default_config")
 @settings(max_examples=50, deadline=1000)
-@given(loc=hst.integers(0, 255), stat=hst.integers(0, 65535),
-       smpl=hst.integers(0, 4294967295))
+@given(
+    loc=hst.integers(0, 0xFF),
+    stat=hst.integers(0, 0xFFFF),
+    smpl=hst.integers(0, 0xFF_FFF_FFF),
+)
 def test_generate_guid(loc, stat, smpl):
     # update config to generate a particular guid. Read it back to verify
     cfg = qc.config
@@ -28,13 +43,21 @@ def test_generate_guid(loc, stat, smpl):
     cfg["GUID_components"]["work_station"] = stat
     cfg["GUID_components"]["sample"] = smpl
 
-    guid = generate_guid()
+    if smpl in (0, 0xAA_AAA_AAA):
+        guid = generate_guid()
+    else:
+        with pytest.warns(
+            expected_warning=Warning,
+            match=re.escape("Setting a non default GUID_components.sample"),
+        ):
+            guid = generate_guid()
+
     gen_time = int(np.round(time.time() * 1000))
 
     comps = parse_guid(guid)
 
     if smpl == 0:
-        smpl = int("a" * 8, base=16)
+        smpl = 0xAA_AAA_AAA
 
     assert comps["location"] == loc
     assert comps["work_station"] == stat
@@ -82,21 +105,26 @@ def test_set_guid_workstation_code(ws, monkeypatch):
 
 @pytest.mark.usefixtures("default_config")
 @settings(max_examples=50, deadline=1000)
-@given(locs=hst.lists(hst.integers(0, 255), min_size=2, max_size=2,
-                      unique=True),
-       stats=hst.lists(hst.integers(0, 65535), min_size=2, max_size=2,
-                       unique=True),
-       smpls=hst.lists(hst.integers(0, 4294967295), min_size=2, max_size=2,
-                       unique=True),
-       )
+@given(
+    locs=hst.lists(hst.integers(0, 0xFF), min_size=2, max_size=2, unique=True),
+    stats=hst.lists(hst.integers(0, 0xFFFF), min_size=2, max_size=2, unique=True),
+    smpls=hst.lists(hst.integers(0, 0xFF_FFF_FFF), min_size=2, max_size=2, unique=True),
+)
 def test_filter_guid(locs, stats, smpls):
-
     def make_test_guid(cfg, loc: int, smpl: int, stat: int):
-        cfg['GUID_components']['location'] = loc
-        cfg['GUID_components']['work_station'] = stat
-        cfg['GUID_components']['sample'] = smpl
+        cfg["GUID_components"]["location"] = loc
+        cfg["GUID_components"]["work_station"] = stat
+        cfg["GUID_components"]["sample"] = smpl
 
-        guid = generate_guid()
+        if smpl in (0, 0xAAAAAAAA):
+            guid = generate_guid()
+        else:
+            with pytest.warns(
+                expected_warning=Warning,
+                match=re.escape("Setting a non default GUID_components.sample"),
+            ):
+                guid = generate_guid()
+
         gen_time = int(np.round(time.time() * 1000))
 
         comps = parse_guid(guid)
@@ -187,3 +215,40 @@ def test_validation():
 
     with pytest.raises(ValueError):
         validate_guid_format(valid_guid[1:])
+
+
+@pytest.mark.usefixtures("seed_random")
+@pytest.mark.usefixtures("default_config")
+def test_random_sample_guid():
+
+    cfg = qc.config
+    cfg["GUID_components"]["GUID_type"] = "random_sample"
+
+    expected_guid_prefixes = ["d82c07ce", "629f6fbf", "c2094cad"]
+    for expected_guid_prefix in expected_guid_prefixes:
+        guid = generate_guid()
+        assert guid.split("-")[0] == expected_guid_prefix
+
+
+@pytest.mark.usefixtures("default_config")
+def test_random_sample_and_sample_int_in_guid_raises():
+
+    cfg = qc.config
+    cfg["GUID_components"]["GUID_type"] = "random_sample"
+
+    with pytest.raises(
+        RuntimeError,
+        match=re.escape(
+            "QCoDeS is configured to disregard GUID_components.sample from config"
+        ),
+    ):
+        generate_guid(sampleint=10)
+
+
+@pytest.mark.usefixtures("default_config")
+def test_sample_int_in_guid_warns():
+    with pytest.warns(
+        expected_warning=Warning,
+        match=re.escape("Setting a non default GUID_components.sample"),
+    ):
+        generate_guid(sampleint=10)

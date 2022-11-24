@@ -1,6 +1,13 @@
 """Visa instrument driver based on pyvisa."""
 from __future__ import annotations
 
+import sys
+
+if sys.version_info >= (3, 9):
+    from importlib.resources import as_file, files
+else:
+    from importlib_resources import as_file, files
+
 import logging
 from collections.abc import Sequence
 from typing import Any
@@ -44,6 +51,13 @@ class VisaInstrument(Instrument):
             http://pyvisa.readthedocs.org/en/stable/names.html
         metadata: additional static metadata to add to this
             instrument's JSON snapshot.
+        pyvisa_sim_file: Name of a pyvisa-sim yaml file used to simulate the instrument.
+            The file is expected to be loaded from a python module.
+            The file can be given either as only the file name in which case it is loaded
+            from ``qcodes.instruments.sims`` or in the format ``module:filename`` e.g.
+            ``qcodes.instruments.sims:AimTTi_PL601P.yaml`` in which case it is loaded
+            from the supplied module. Note that it is an error to pass both
+            ``pyvisa_sim_file`` and ``visalib``.
 
     See help for :class:`.Instrument` for additional information on writing
     instrument subclasses.
@@ -58,25 +72,45 @@ class VisaInstrument(Instrument):
         terminator: str | None = None,
         device_clear: bool = True,
         visalib: str | None = None,
+        pyvisa_sim_file: str | None = None,
         **kwargs: Any,
     ):
 
         super().__init__(name, **kwargs)
         self.visa_log = get_instrument_logger(self, VISA_LOGGER)
 
-        self.add_parameter('timeout',
-                           get_cmd=self._get_visa_timeout,
-                           set_cmd=self._set_visa_timeout,
-                           unit='s',
-                           vals=vals.MultiType(vals.Numbers(min_value=0),
-                                               vals.Enum(None)))
+        self.add_parameter(
+            "timeout",
+            get_cmd=self._get_visa_timeout,
+            set_cmd=self._set_visa_timeout,
+            unit="s",
+            vals=vals.MultiType(vals.Numbers(min_value=0), vals.Enum(None)),
+        )
 
-        try:
-            visa_handle, visabackend = self._open_resource(address, visalib)
-        except Exception as e:
-            self.visa_log.exception(f"Could not connect at {address}")
-            self.close()
-            raise e
+        if visalib is not None and pyvisa_sim_file is not None:
+            raise RuntimeError(
+                "It's an error to supply both visalib and pyvisa_sim_file as "
+                "arguments to a VISA instrument"
+            )
+        if pyvisa_sim_file is not None:
+            if ":" in pyvisa_sim_file:
+                module, pyvisa_sim_file = pyvisa_sim_file.split(":")
+            else:
+                module = "qcodes.instrument.sims"
+            traversable_handle = files(module) / pyvisa_sim_file
+            with as_file(traversable_handle) as sim_visalib_path:
+                if not sim_visalib_path.exists():
+                    raise FileNotFoundError(
+                        "Pyvisa-sim yaml file "
+                        "could not be found. Trying to load "
+                        f"file {pyvisa_sim_file} from module: {module}"
+                    )
+                visalib = f"{str(sim_visalib_path)}@sim"
+                visa_handle, visabackend = self._connect_and_handle_error(
+                    address, visalib
+                )
+        else:
+            visa_handle, visabackend = self._connect_and_handle_error(address, visalib)
 
         self.visabackend: str = visabackend
         self.visa_handle: pyvisa.resources.MessageBasedResource = visa_handle
@@ -91,6 +125,17 @@ class VisaInstrument(Instrument):
 
         self.set_terminator(terminator)
         self.timeout.set(timeout)
+
+    def _connect_and_handle_error(
+        self, address: str, visalib: str | None
+    ) -> tuple[pyvisa.resources.MessageBasedResource, str]:
+        try:
+            visa_handle, visabackend = self._open_resource(address, visalib)
+        except Exception as e:
+            self.visa_log.exception(f"Could not connect at {address}")
+            self.close()
+            raise e
+        return visa_handle, visabackend
 
     def _open_resource(
         self, address: str, visalib: str | None

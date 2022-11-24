@@ -11,7 +11,6 @@ import pytest
 from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import floats, tuples
 
-import qcodes.instrument.sims as sims
 from qcodes.instrument import Instrument
 from qcodes.instrument_drivers.american_magnetics import (
     AMI430Warning,
@@ -36,9 +35,6 @@ field_limit = [
     lambda x, y, z: np.linalg.norm([x, y, z]) < 2,
 ]
 
-# path to the .yaml file containing the simulated instrument
-visalib = sims.__file__.replace("__init__.py", "AMI430.yaml@sim")
-
 LOG_NAME = "qcodes.instrument.instrument_base"
 
 
@@ -48,9 +44,15 @@ def magnet_axes_instances():
     Start three mock instruments representing current drivers for the x, y,
     and z directions.
     """
-    mag_x = AMIModel430("x", address="GPIB::1::INSTR", visalib=visalib, terminator="\n")
-    mag_y = AMIModel430("y", address="GPIB::2::INSTR", visalib=visalib, terminator="\n")
-    mag_z = AMIModel430("z", address="GPIB::3::INSTR", visalib=visalib, terminator="\n")
+    mag_x = AMIModel430(
+        "x", address="GPIB::1::INSTR", pyvisa_sim_file="AMI430.yaml", terminator="\n"
+    )
+    mag_y = AMIModel430(
+        "y", address="GPIB::2::INSTR", pyvisa_sim_file="AMI430.yaml", terminator="\n"
+    )
+    mag_z = AMIModel430(
+        "z", address="GPIB::3::INSTR", pyvisa_sim_file="AMI430.yaml", terminator="\n"
+    )
 
     yield mag_x, mag_y, mag_z
 
@@ -77,7 +79,10 @@ def _make_current_driver(magnet_axes_instances):
 @pytest.fixture(scope="function", name="ami430")
 def _make_ami430():
     mag = AMIModel430(
-        "ami430", address="GPIB::1::INSTR", visalib=visalib, terminator="\n"
+        "ami430",
+        address="GPIB::1::INSTR",
+        pyvisa_sim_file="AMI430.yaml",
+        terminator="\n",
     )
     yield mag
     mag.close()
@@ -137,9 +142,15 @@ def test_instantiation_compat_classes(request):
     """
     request.addfinalizer(AMIModel4303D.close_all)
     request.addfinalizer(AMI430_3D.close_all)
-    mag_x = AMI430("x", address="GPIB::1::INSTR", visalib=visalib, terminator="\n")
-    mag_y = AMI430("y", address="GPIB::2::INSTR", visalib=visalib, terminator="\n")
-    mag_z = AMI430("z", address="GPIB::3::INSTR", visalib=visalib, terminator="\n")
+    mag_x = AMI430(
+        "x", address="GPIB::1::INSTR", pyvisa_sim_file="AMI430.yaml", terminator="\n"
+    )
+    mag_y = AMI430(
+        "y", address="GPIB::2::INSTR", pyvisa_sim_file="AMI430.yaml", terminator="\n"
+    )
+    mag_z = AMI430(
+        "z", address="GPIB::3::INSTR", pyvisa_sim_file="AMI430.yaml", terminator="\n"
+    )
 
     driver = AMI430_3D("AMI430_3D", mag_x.name, mag_y.name, mag_z.name, field_limit)
 

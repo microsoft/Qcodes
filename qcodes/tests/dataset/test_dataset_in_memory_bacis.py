@@ -62,7 +62,7 @@ def test_no_interdeps_raises_in_prepare(experiment):
         ds.prepare(interdeps=InterDependencies_(), snapshot={})
 
 
-def test_prepare_twice_raises(experiment):
+def test_prepare_twice_raises(experiment) -> None:
     ds = DataSetInMem._create_new_run(name="foo")
 
     pss: List[ParamSpecBase] = []
@@ -78,7 +78,7 @@ def test_prepare_twice_raises(experiment):
         ds.prepare(interdeps=idps, snapshot={})
 
 
-def test_timestamps(experiment):
+def test_timestamps(experiment) -> None:
     ds = DataSetInMem._create_new_run(name="foo")
 
     assert ds.run_timestamp() is None

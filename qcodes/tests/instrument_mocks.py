@@ -209,7 +209,11 @@ class DmmExponentialParameter(Parameter):
         dac = self.root_instrument._setter_instr
         val = self._ed.send(dac.ch1.cache.get())
         next(self._ed)
-        log.debug("Getting raw value of parameter: %s as %s", self.full_name, val)
+        if self.root_instrument is not None:
+            mylogger = self.root_instrument.log
+        else:
+            mylogger = log
+        mylogger.debug("Getting raw value of parameter: %s as %s", self.full_name, val)
         return val
 
     @staticmethod
@@ -224,7 +228,7 @@ class DmmExponentialParameter(Parameter):
 
 
 class DmmGaussParameter(Parameter):
-    def __init__(self, name, **kwargs):
+    def __init__(self, name: str, **kwargs: Any):
         super().__init__(name, **kwargs)
         self.x0 = 0.1
         self.y0 = 0.2
@@ -241,7 +245,11 @@ class DmmGaussParameter(Parameter):
         dac = self.root_instrument._setter_instr
         val = self._gauss.send((dac.ch1.cache.get(), dac.ch2.cache.get()))
         next(self._gauss)
-        log.debug("Getting raw value of parameter: %s as %s", self.full_name, val)
+        if self.root_instrument is not None:
+            mylogger = self.root_instrument.log
+        else:
+            mylogger = log
+        mylogger.debug("Getting raw value of parameter: %s as %s", self.full_name, val)
         return val
 
     def _gauss_model(self):

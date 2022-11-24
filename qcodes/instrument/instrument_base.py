@@ -16,6 +16,7 @@ from qcodes.utils import DelegateAttributes, full_class
 
 if TYPE_CHECKING:
     from qcodes.instrument.channel import ChannelTuple, InstrumentModule
+    from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
 
 from qcodes.utils import QCoDeSDeprecationWarning
 
@@ -82,7 +83,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         # This is needed for snapshot method to work
         self._meta_attrs = ["name", "label"]
 
-        self.log = get_instrument_logger(self, __name__)
+        self.log: InstrumentLoggerAdapter = get_instrument_logger(self, __name__)
 
     @property
     def label(self) -> str:
