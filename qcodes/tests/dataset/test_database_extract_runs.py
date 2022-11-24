@@ -209,6 +209,32 @@ def test_real_dataset_1d(two_empty_temp_db_connections, inst):
         assert_array_equal(source_data, target_data)
 
 
+def test_real_dataset_1d_pathlib_path(two_empty_temp_db_connections, inst):
+    source_conn, target_conn = two_empty_temp_db_connections
+
+    source_path = Path(path_to_dbfile(source_conn))
+    target_path = Path(path_to_dbfile(target_conn))
+
+    source_exp = load_or_create_experiment(experiment_name="myexp", conn=source_conn)
+
+    source_dataset, _, _ = do1d(inst.back, 0, 1, 10, 0, inst.plunger, exp=source_exp)
+
+    extract_runs_into_db(source_path, target_path, source_dataset.run_id)
+
+    target_dataset = load_by_guid(source_dataset.guid, conn=target_conn)
+
+    assert source_dataset.the_same_dataset_as(target_dataset)
+    # explicit regression  test for https://github.com/QCoDeS/Qcodes/issues/3953
+    assert source_dataset.description.shapes == {"extract_run_inst_plunger": (10,)}
+    assert source_dataset.description.shapes == target_dataset.description.shapes
+
+    source_data = source_dataset.get_parameter_data()["extract_run_inst_plunger"]
+    target_data = target_dataset.get_parameter_data()["extract_run_inst_plunger"]
+
+    for source_data, target_data in zip(source_data.values(), target_data.values()):
+        assert_array_equal(source_data, target_data)
+
+
 def test_real_dataset_2d(two_empty_temp_db_connections, inst):
     source_conn, target_conn = two_empty_temp_db_connections
 

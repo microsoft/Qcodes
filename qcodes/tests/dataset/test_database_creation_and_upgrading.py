@@ -110,6 +110,16 @@ def test_initialise_database_at_for_nonexisting_db(tmp_path):
     assert qc.config["core"]["db_location"] == db_location
 
 
+def test_initialise_database_at_for_nonexisting_db_pathlib_path(tmp_path):
+    db_location = tmp_path / "temp.db"
+    assert not db_location.exists()
+
+    initialise_or_create_database_at(db_location)
+
+    assert db_location.exists()
+    assert qc.config["core"]["db_location"] == str(db_location)
+
+
 def test_initialise_database_at_for_existing_db(tmp_path):
     # Define DB location
     db_location = str(tmp_path / 'temp.db')

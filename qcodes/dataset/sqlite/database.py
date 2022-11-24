@@ -170,7 +170,9 @@ def connect(name: str | Path, debug: bool = False, version: int = -1) -> Connect
     return conn
 
 
-def get_db_version_and_newest_available_version(path_to_db: str) -> tuple[int, int]:
+def get_db_version_and_newest_available_version(
+    path_to_db: str | Path,
+) -> tuple[int, int]:
     """
     Connect to a DB without performing any upgrades and get the version of
     that database file along with the newest available version (the one that
@@ -240,7 +242,7 @@ def set_journal_mode(conn: ConnectionPlus, journal_mode: JournalMode) -> None:
 
 
 def initialise_or_create_database_at(
-    db_file_with_abs_path: str, journal_mode: JournalMode | None = "WAL"
+    db_file_with_abs_path: str | Path, journal_mode: JournalMode | None = "WAL"
 ) -> None:
     """
     This function sets up QCoDeS to refer to the given database file. If the
@@ -254,12 +256,12 @@ def initialise_or_create_database_at(
             Options are DELETE, TRUNCATE, PERSIST, MEMORY, WAL and OFF. If set to None
             no changes are made.
     """
-    qcodes.config.core.db_location = db_file_with_abs_path
+    qcodes.config.core.db_location = str(db_file_with_abs_path)
     initialise_database(journal_mode)
 
 
 @contextmanager
-def initialised_database_at(db_file_with_abs_path: str) -> Iterator[None]:
+def initialised_database_at(db_file_with_abs_path: str | Path) -> Iterator[None]:
     """
     Initializes or creates a database and restores the 'db_location' afterwards.
 
@@ -277,7 +279,7 @@ def initialised_database_at(db_file_with_abs_path: str) -> Iterator[None]:
 
 
 def conn_from_dbpath_or_conn(
-    conn: ConnectionPlus | None, path_to_db: str | None
+    conn: ConnectionPlus | None, path_to_db: str | Path | None
 ) -> ConnectionPlus:
     """
     A small helper function to abstract the logic needed for functions
