@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import sys
 import time
 from math import floor
 
+import numpy as np
 import pytest
 
 from qcodes.dataset.data_set import (
@@ -358,3 +361,17 @@ def test_load_by_run_spec(empty_temp_db, some_interdeps):
 
     empty_guid_list = get_guids_by_run_spec(conn=conn, experiment_name="nosuchexp")
     assert empty_guid_list == []
+
+
+def test_callback(scalar_dataset: DataSet) -> None:
+    called_progress = []
+
+    def callback_closure(called_progress: list[float]):
+        def callback(progress: float) -> None:
+            called_progress.append(progress)
+
+        return callback
+
+    scalar_dataset.get_parameter_data(callback=callback_closure(called_progress))
+    # TODO this should only be called upto 100.0 not 200.0
+    assert called_progress == list(np.arange(0.0, 201.0, 5.0))
