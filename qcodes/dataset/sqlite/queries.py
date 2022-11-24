@@ -213,13 +213,8 @@ def get_parameter_data(
     # loop over all the requested parameters
     for output_param in columns:
         output[output_param] = get_shaped_parameter_data_for_one_paramtree(
-            conn,
-            table_name,
-            rundescriber,
-            output_param,
-            start,
-            end,
-            callback)
+            conn, table_name, rundescriber, output_param, start, end, callback
+        )
     return output
 
 
@@ -242,13 +237,7 @@ def get_shaped_parameter_data_for_one_paramtree(
     """
 
     one_param_output, _ = get_parameter_data_for_one_paramtree(
-        conn,
-        table_name,
-        rundescriber,
-        output_param,
-        start,
-        end,
-        callback
+        conn, table_name, rundescriber, output_param, start, end, callback
     )
     if rundescriber.shapes is not None:
         shape = rundescriber.shapes.get(output_param)
@@ -405,13 +394,15 @@ def _get_data_for_one_param_tree(
     dependency_params = list(interdeps.dependencies.get(output_param_spec, ()))
     dependency_names = [param.name for param in dependency_params]
     paramspecs = [output_param_spec] + dependency_params
-    res = get_parameter_tree_values(conn,
-                                    table_name,
-                                    output_param,
-                                    *dependency_names,
-                                    start=start,
-                                    end=end,
-                                    callback=callback)
+    res = get_parameter_tree_values(
+        conn,
+        table_name,
+        output_param,
+        *dependency_names,
+        start=start,
+        end=end,
+        callback=callback,
+    )
     n_rows = len(res)
     return res, paramspecs, n_rows
 
@@ -444,9 +435,7 @@ def get_values(
     return res
 
 
-def get_parameter_db_row(conn: ConnectionPlus,
-                         table_name: str,
-                         param_name: str) -> int:
+def get_parameter_db_row(conn: ConnectionPlus, table_name: str, param_name: str) -> int:
     """
     Get the total number of not-null values of a parameter
 
@@ -467,8 +456,7 @@ def get_parameter_db_row(conn: ConnectionPlus,
     return one(c, 0)
 
 
-def get_table_max_id(conn: ConnectionPlus,
-                     table_name: str) -> int:
+def get_table_max_id(conn: ConnectionPlus, table_name: str) -> int:
     """
     Get the max id of a table
 
@@ -488,9 +476,9 @@ def get_table_max_id(conn: ConnectionPlus,
     return one(c, 0)
 
 
-def _get_offset_limit_for_callback(conn: ConnectionPlus,
-                                   table_name: str,
-                                   param_name: str) -> tuple[np.ndarray, int]:
+def _get_offset_limit_for_callback(
+    conn: ConnectionPlus, table_name: str, param_name: str
+) -> tuple[np.ndarray, int]:
     """
     Since sqlite3 does not allow to keep track of the data loading progress,
     we compute how many sqlite request correspond to a progress of
@@ -512,23 +500,20 @@ def _get_offset_limit_for_callback(conn: ConnectionPlus,
 
     # First, we get the number of row to be downloaded for the wanted
     # dependent parameter
-    nb_row = get_parameter_db_row(conn,
-                                  table_name,
-                                  param_name)
+    nb_row = get_parameter_db_row(conn, table_name, param_name)
 
     # Second, we get the max id of the table
-    max_id = get_table_max_id(conn,
-                              table_name)
+    max_id = get_table_max_id(conn, table_name)
 
     # Third, we create a list of offset corresponding to a progress of
     # config.dataset.callback_percent
-    if nb_row>=100:
+    if nb_row >= 100:
 
-        limit = int(max_id/100*config.dataset.callback_percent/2)
+        limit = int(max_id / 100 * config.dataset.callback_percent / 2)
         offset = np.arange(0, nb_row, limit)
 
         # Ensure that the last call gets all the points
-        if offset[-1]!=nb_row:
+        if offset[-1] != nb_row:
             offset = np.append(offset, nb_row)
     else:
         # If there is less than 100 row to be downloaded, we overwrite the
@@ -586,9 +571,9 @@ def get_parameter_tree_values(
 
     # start and end currently not working with callback
     if start is None and end is None and callback is not None:
-        offset, limit = _get_offset_limit_for_callback(conn,
-                                                       result_table_name,
-                                                       toplevel_param_name)
+        offset, limit = _get_offset_limit_for_callback(
+            conn, result_table_name, toplevel_param_name
+        )
 
     # Create the base sql query
     columns = [toplevel_param_name] + list(other_param_names)
@@ -609,17 +594,17 @@ def get_parameter_tree_values(
         assert isinstance(offset, np.ndarray)
 
         # 0
-        progress = 0.
+        progress = 0.0
         callback(progress)
 
         # 1
         cursor.execute(sql, (limit, offset[0]))
-        res  = many_many(cursor, *columns)
+        res = many_many(cursor, *columns)
         progress += config.dataset.callback_percent
         callback(progress)
 
         # others
-        for i in range(1, len(offset)-1):
+        for i in range(1, len(offset) - 1):
             cursor.execute(sql, (limit, offset[i]))
             res.extend(many_many(cursor, *columns))
             progress += config.dataset.callback_percent

@@ -815,8 +815,9 @@ class DataSet(BaseDataSet):
                                  for ps in self._rundescriber.interdeps.non_dependencies]
         else:
             valid_param_names = self._validate_parameters(*params)
-        return get_parameter_data(self.conn, self.table_name,
-                                  valid_param_names, start, end, callback)
+        return get_parameter_data(
+            self.conn, self.table_name, valid_param_names, start, end, callback
+        )
 
     def to_pandas_dataframe_dict(
         self,
