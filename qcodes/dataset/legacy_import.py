@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import numpy as np
 
@@ -77,7 +78,7 @@ def store_array_to_database_alt(meas: Measurement, array: DataArray) -> int:
     return datasaver.run_id
 
 
-def import_dat_file(location: str, exp: Experiment | None = None) -> list[int]:
+def import_dat_file(location: str | Path, exp: Experiment | None = None) -> list[int]:
     """
     This imports a QCoDeS legacy :class:`qcodes.data.data_set.DataSet`
     into the database.
@@ -90,7 +91,7 @@ def import_dat_file(location: str, exp: Experiment | None = None) -> list[int]:
     """
 
 
-    loaded_data = load_data(location)
+    loaded_data = load_data(str(location))
     meas = setup_measurement(loaded_data,
                              exp=exp)
     run_ids = []
