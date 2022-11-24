@@ -374,4 +374,4 @@ def test_callback(scalar_dataset: DataSet) -> None:
 
     scalar_dataset.get_parameter_data(callback=callback_closure(called_progress))
     # TODO this should only be called upto 100.0 not 200.0
-    assert called_progress == list(np.arange(0.0, 201.0, 5.0))
+    assert called_progress == list(np.arange(0.0, 101.0, 5.0))

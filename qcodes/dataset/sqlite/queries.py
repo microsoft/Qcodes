@@ -509,7 +509,7 @@ def _get_offset_limit_for_callback(
     # config.dataset.callback_percent
     if nb_row >= 100:
 
-        limit = int(max_id / 100 * config.dataset.callback_percent / 2)
+        limit = int(max_id / 100 * config.dataset.callback_percent * max_id / nb_row)
         offset = np.arange(0, nb_row, limit)
 
         # Ensure that the last call gets all the points
