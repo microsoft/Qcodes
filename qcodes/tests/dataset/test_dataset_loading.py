@@ -378,4 +378,4 @@ def test_callback(scalar_datasets_parameterized: DataSet) -> None:
     if len(scalar_datasets_parameterized) > 100:
         assert called_progress == list(np.arange(0.0, 101.0, 5.0))
     else:
-        assert called_progress == [0.0, 5.0]
+        assert called_progress == [0.0, 50.0, 100.0]

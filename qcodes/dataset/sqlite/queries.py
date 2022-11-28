@@ -478,7 +478,7 @@ def get_table_max_id(conn: ConnectionPlus, table_name: str) -> int:
 
 def _get_offset_limit_for_callback(
     conn: ConnectionPlus, table_name: str, param_name: str
-) -> tuple[np.ndarray, int]:
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Since sqlite3 does not allow to keep track of the data loading progress,
     we compute how many sqlite request correspond to a progress of
@@ -509,17 +509,20 @@ def _get_offset_limit_for_callback(
     # config.dataset.callback_percent
     if nb_row >= 100:
 
-        limit = int(max_id / 100 * config.dataset.callback_percent * max_id / nb_row)
-        offset = np.arange(0, nb_row, limit)
+        # Using linspace with dtype=int ensure of having an array finishing
+        # by max_id
+        offset = np.linspace(
+            0, max_id, int(100 / config.dataset.callback_percent) + 1, dtype=int
+        )
 
-        # Ensure that the last call gets all the points
-        if offset[-1] != nb_row:
-            offset = np.append(offset, nb_row)
     else:
         # If there is less than 100 row to be downloaded, we overwrite the
         # config.dataset.callback_percent to avoid many calls for small download
-        offset = np.array([0, nb_row])
-        limit = nb_row
+        offset = np.array([0, nb_row // 2, nb_row])
+
+    # The number of row downloaded between two iterations may vary
+    # We compute the limit corresponding to each offset
+    limit = offset[1:] - offset[:-1]
 
     return offset, limit
 
@@ -561,7 +564,11 @@ def get_parameter_tree_values(
     """
 
     cursor = conn.cursor()
+
+    # Without callback: int
+    # With callback: np.ndarray
     offset: int | np.ndarray
+    limit: int | np.ndarray
 
     offset = max((start - 1), 0) if start is not None else 0
     limit = max((end - offset), 0) if end is not None else -1
@@ -592,23 +599,25 @@ def get_parameter_tree_values(
     # Request if callback
     elif callback is not None:
         assert isinstance(offset, np.ndarray)
+        assert isinstance(limit, np.ndarray)
+        progress_current = 100 / len(limit)
 
         # 0
-        progress = 0.0
-        callback(progress)
+        progress_total = 0.0
+        callback(progress_total)
 
         # 1
-        cursor.execute(sql, (limit, offset[0]))
+        cursor.execute(sql, (limit[0], offset[0]))
         res = many_many(cursor, *columns)
-        progress += config.dataset.callback_percent
-        callback(progress)
+        progress_total += progress_current
+        callback(progress_total)
 
         # others
         for i in range(1, len(offset) - 1):
-            cursor.execute(sql, (limit, offset[i]))
+            cursor.execute(sql, (limit[i], offset[i]))
             res.extend(many_many(cursor, *columns))
-            progress += config.dataset.callback_percent
-            callback(progress)
+            progress_total += progress_current
+            callback(progress_total)
 
     return res
 
