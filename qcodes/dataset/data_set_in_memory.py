@@ -8,7 +8,7 @@ import time
 import warnings
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Callable
 
 import numpy as np
 
@@ -844,6 +844,7 @@ class DataSetInMem(BaseDataSet):
         *params: str | ParamSpec | ParameterBase,
         start: int | None = None,
         end: int | None = None,
+        callback: Callable[[float], None] | None = None,
     ) -> ParameterData:
         self._warn_if_set(*params, start=start, end=end)
         return self.cache.data()

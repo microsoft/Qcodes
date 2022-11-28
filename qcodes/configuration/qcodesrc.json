@@ -70,6 +70,7 @@
         "use_threads": false,
         "dond_plot": false,
         "dond_show_progress": false,
+        "callback_percent" : 5.0,
         "export_automatic": false,
         "export_type": null,
         "export_prefix": "qcodes_",

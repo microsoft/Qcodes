@@ -328,6 +328,11 @@
                     "default": false,
                     "description": "Should dond functions show a progress bar during the measurement"
                 },
+                "callback_percent": {
+                    "type": "number",
+                    "default": 5.0,
+                    "description": "If user wants to callback a function while loading data, the callback is done every callback_percent"
+                },
                 "export_automatic": {
                     "type": "boolean",
                     "default": false,
