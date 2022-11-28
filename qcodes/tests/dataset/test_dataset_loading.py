@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import sys
 import time
 from math import floor
 
@@ -363,7 +362,8 @@ def test_load_by_run_spec(empty_temp_db, some_interdeps):
     assert empty_guid_list == []
 
 
-def test_callback(scalar_dataset: DataSet) -> None:
+def test_callback(scalar_datasets_parameterized: DataSet) -> None:
+
     called_progress: list[float] = []
 
     def callback_closure(called_progress: list[float]):
@@ -372,6 +372,10 @@ def test_callback(scalar_dataset: DataSet) -> None:
 
         return callback
 
-    scalar_dataset.get_parameter_data(callback=callback_closure(called_progress))
-    # TODO this should only be called upto 100.0 not 200.0
-    assert called_progress == list(np.arange(0.0, 101.0, 5.0))
+    scalar_datasets_parameterized.get_parameter_data(
+        callback=callback_closure(called_progress)
+    )
+    if len(scalar_datasets_parameterized) > 100:
+        assert called_progress == list(np.arange(0.0, 101.0, 5.0))
+    else:
+        assert called_progress == [0.0, 5.0]
