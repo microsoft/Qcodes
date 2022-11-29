@@ -78,7 +78,7 @@ mypy-extensions~=0.4.3
 nbclient==0.7.0
 nbconvert~=7.2.2
 nbformat~=5.7.0
-nbsphinx==0.8.9
+nbsphinx==0.8.10
 nest-asyncio~=1.5.6
 notebook~=6.5.1
 numpy~=1.23.4
