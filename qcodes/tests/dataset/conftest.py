@@ -3,7 +3,7 @@ import os
 import shutil
 import tempfile
 from contextlib import contextmanager
-from typing import Iterator
+from typing import Generator, Iterator
 
 import numpy as np
 import pytest
@@ -26,7 +26,7 @@ from qcodes.validators import Arrays, ComplexNumbers, Numbers
 
 
 @pytest.fixture(scope="function", name="non_created_db")
-def _make_non_created_db(tmp_path):
+def _make_non_created_db(tmp_path) -> Generator[None, None, None]:
     # set db location to a non existing file
     try:
         qc.config["core"]["db_location"] = str(tmp_path / "temp.db")
@@ -113,10 +113,40 @@ def temporarily_copied_DB(filepath: str, **kwargs):
             conn.close()
 
 
-@pytest.fixture
-def scalar_dataset(dataset):
+@pytest.fixture(name="scalar_dataset")
+def _make_scalar_dataset(dataset):
     n_params = 3
     n_rows = 10**3
+    params_indep = [
+        ParamSpecBase(f"param_{i}", "numeric", label=f"param_{i}", unit="V")
+        for i in range(n_params)
+    ]
+    param_dep = ParamSpecBase(
+        f"param_{n_params}", "numeric", label=f"param_{n_params}", unit="Ohm"
+    )
+
+    all_params = params_indep + [param_dep]
+
+    idps = InterDependencies_(dependencies={param_dep: tuple(params_indep)})
+
+    dataset.set_interdependencies(idps)
+    dataset.mark_started()
+    dataset.add_results(
+        [
+            {p.name: int(n_rows * 10 * pn + i) for pn, p in enumerate(all_params)}
+            for i in range(n_rows)
+        ]
+    )
+    dataset.mark_completed()
+    yield dataset
+
+
+@pytest.fixture(
+    name="scalar_datasets_parameterized", params=((3, 10**3), (5, 10**3), (10, 50))
+)
+def _make_scalar_datasets_parameterized(dataset, request):
+    n_params = request.param[0]
+    n_rows = request.param[1]
     params_indep = [ParamSpecBase(f'param_{i}',
                                   'numeric',
                                   label=f'param_{i}',

@@ -1,4 +1,5 @@
 from qcodes.parameters import Parameter
+
 from .conftest import ParameterMemory
 
 

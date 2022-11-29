@@ -1,23 +1,15 @@
+from __future__ import annotations
+
 import importlib
 import json
 import logging
 import time
 import uuid
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from queue import Queue
 from threading import Thread
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Set,
-    Union,
-)
+from typing import TYPE_CHECKING, Any
 
 import numpy
 
@@ -134,7 +126,7 @@ class _BackgroundWriter(Thread):
     Write the results from the DataSet's dataqueue in a new thread
     """
 
-    def __init__(self, queue: "Queue[Any]", conn: ConnectionPlus):
+    def __init__(self, queue: Queue[Any], conn: ConnectionPlus):
         super().__init__(daemon=True)
         self.queue = queue
         self.path = conn.path_to_dbfile
@@ -157,9 +149,9 @@ class _BackgroundWriter(Thread):
                     item['keys'], item['values'], item['table_name'])
             self.queue.task_done()
 
-    def write_results(self, keys: Sequence[str],
-                      values: Sequence[List[Any]],
-                      table_name: str) -> None:
+    def write_results(
+        self, keys: Sequence[str], values: Sequence[list[Any]], table_name: str
+    ) -> None:
         insert_many_values(self.conn, table_name, keys, values)
 
     def shutdown(self) -> None:
@@ -177,13 +169,13 @@ class _BackgroundWriter(Thread):
 
 @dataclass
 class _WriterStatus:
-    bg_writer: Optional[_BackgroundWriter]
-    write_in_background: Optional[bool]
-    data_write_queue: "Queue[Any]"
-    active_datasets: Set[int]
+    bg_writer: _BackgroundWriter | None
+    write_in_background: bool | None
+    data_write_queue: Queue[Any]
+    active_datasets: set[int]
 
 
-_WRITERS: Dict[str, _WriterStatus] = {}
+_WRITERS: dict[str, _WriterStatus] = {}
 
 
 class DataSet(BaseDataSet):
@@ -199,16 +191,19 @@ class DataSet(BaseDataSet):
                          'captured_run_id', 'captured_counter')
     background_sleep_time = 1e-3
 
-    def __init__(self, path_to_db: Optional[str] = None,
-                 run_id: Optional[int] = None,
-                 conn: Optional[ConnectionPlus] = None,
-                 exp_id: Optional[int] = None,
-                 name: Optional[str] = None,
-                 specs: Optional[SpecsOrInterDeps] = None,
-                 values: Optional[VALUES] = None,
-                 metadata: Optional[Mapping[str, Any]] = None,
-                 shapes: Optional[Shapes] = None,
-                 in_memory_cache: bool = True) -> None:
+    def __init__(
+        self,
+        path_to_db: str | None = None,
+        run_id: int | None = None,
+        conn: ConnectionPlus | None = None,
+        exp_id: int | None = None,
+        name: str | None = None,
+        specs: SpecsOrInterDeps | None = None,
+        values: VALUES | None = None,
+        metadata: Mapping[str, Any] | None = None,
+        shapes: Shapes | None = None,
+        in_memory_cache: bool = True,
+    ) -> None:
         """
         Create a new :class:`.DataSet` object. The object can either hold a new run or
         an already existing run. If a ``run_id`` is provided, then an old run is
@@ -245,11 +240,11 @@ class DataSet(BaseDataSet):
         self.conn = conn_from_dbpath_or_conn(conn, path_to_db)
 
         self._debug = False
-        self.subscribers: Dict[str, _Subscriber] = {}
-        self._parent_dataset_links: List[Link]
+        self.subscribers: dict[str, _Subscriber] = {}
+        self._parent_dataset_links: list[Link]
         #: In memory representation of the data in the dataset.
         self._cache: DataSetCacheWithDBBackend = DataSetCacheWithDBBackend(self)
-        self._results: List[Dict[str, VALUE]] = []
+        self._results: list[dict[str, VALUE]] = []
         self._in_memory_cache = in_memory_cache
 
         if run_id is not None:
@@ -302,7 +297,7 @@ class DataSet(BaseDataSet):
             self._export_info = ExportInfo({})
         assert self.path_to_db is not None
         if _WRITERS.get(self.path_to_db) is None:
-            queue: "Queue[Any]" = Queue()
+            queue: Queue[Any] = Queue()
             ws: _WriterStatus = _WriterStatus(
                 bg_writer=None,
                 write_in_background=None,
@@ -315,7 +310,7 @@ class DataSet(BaseDataSet):
         *,
         snapshot: Mapping[Any, Any],
         interdeps: InterDependencies_,
-        shapes: Shapes = None,
+        shapes: Shapes | None = None,
         parent_datasets: Sequence[Mapping[Any, Any]] = (),
         write_in_background: bool = False,
     ) -> None:
@@ -347,7 +342,7 @@ class DataSet(BaseDataSet):
         return run_id
 
     @property
-    def path_to_db(self) -> Optional[str]:
+    def path_to_db(self) -> str | None:
         return self.conn.path_to_dbfile
 
     @property
@@ -371,7 +366,7 @@ class DataSet(BaseDataSet):
         return guid
 
     @property
-    def snapshot(self) -> Optional[Dict[str, Any]]:
+    def snapshot(self) -> dict[str, Any] | None:
         """Snapshot of the run as dictionary (or None)"""
         snapshot_json = self.snapshot_raw
         if snapshot_json is not None:
@@ -380,7 +375,7 @@ class DataSet(BaseDataSet):
             return None
 
     @property
-    def _snapshot_raw(self) -> Optional[str]:
+    def _snapshot_raw(self) -> str | None:
         """Snapshot of the run as a JSON-formatted string (or None)"""
         snapshot_raw = select_one_where(
             self.conn, "runs", "snapshot", "run_id", self.run_id
@@ -389,7 +384,7 @@ class DataSet(BaseDataSet):
         return snapshot_raw
 
     @property
-    def snapshot_raw(self) -> Optional[str]:
+    def snapshot_raw(self) -> str | None:
         """Snapshot of the run as a JSON-formatted string (or None)"""
         return self._snapshot_raw
 
@@ -416,7 +411,7 @@ class DataSet(BaseDataSet):
         return captured_counter
 
     @property
-    def _parameters(self) -> Optional[str]:
+    def _parameters(self) -> str | None:
         if self.pristine:
             psnames = [ps.name for ps in self.description.interdeps.paramspecs]
             if len(psnames) > 0:
@@ -431,11 +426,11 @@ class DataSet(BaseDataSet):
             return parameters
 
     @property
-    def parameters(self) -> Optional[str]:
+    def parameters(self) -> str | None:
         return self._parameters
 
     @property
-    def paramspecs(self) -> Dict[str, ParamSpec]:
+    def paramspecs(self) -> dict[str, ParamSpec]:
         return {ps.name: ps
                 for ps in self.get_parameters()}
 
@@ -454,7 +449,7 @@ class DataSet(BaseDataSet):
         return get_sample_name_from_experiment_id(self.conn, self.exp_id)
 
     @property
-    def run_timestamp_raw(self) -> Optional[float]:
+    def run_timestamp_raw(self) -> float | None:
         """
         Returns run timestamp as number of seconds since the Epoch
 
@@ -468,11 +463,11 @@ class DataSet(BaseDataSet):
         return self._rundescriber
 
     @property
-    def metadata(self) -> Dict[str, Any]:
+    def metadata(self) -> dict[str, Any]:
         return self._metadata
 
     @property
-    def parent_dataset_links(self) -> List[Link]:
+    def parent_dataset_links(self) -> list[Link]:
         """
         Return a list of Link objects. Each Link object describes a link from
         this dataset to one of its parent datasets
@@ -480,7 +475,7 @@ class DataSet(BaseDataSet):
         return self._parent_dataset_links
 
     @parent_dataset_links.setter
-    def parent_dataset_links(self, links: List[Link]) -> None:
+    def parent_dataset_links(self, links: list[Link]) -> None:
         """
         Assign one or more links to parent datasets to this dataset. It is an
         error to assign links to a non-pristine dataset
@@ -509,7 +504,7 @@ class DataSet(BaseDataSet):
         return _WRITERS[self.path_to_db]
 
     @property
-    def completed_timestamp_raw(self) -> Optional[float]:
+    def completed_timestamp_raw(self) -> float | None:
         """
         Returns timestamp when measurement run was completed
         as number of seconds since the Epoch
@@ -536,9 +531,9 @@ class DataSet(BaseDataSet):
         self.conn.close()
         self.conn = connect(path_to_db, self._debug)
 
-    def set_interdependencies(self,
-                              interdeps: InterDependencies_,
-                              shapes: Shapes = None) -> None:
+    def set_interdependencies(
+        self, interdeps: InterDependencies_, shapes: Shapes | None = None
+    ) -> None:
         """
         Set the interdependencies object (which holds all added
         parameters and their relationships) of this dataset and
@@ -764,9 +759,10 @@ class DataSet(BaseDataSet):
 
     def get_parameter_data(
         self,
-        *params: Union[str, ParamSpec, "ParameterBase"],
-        start: Optional[int] = None,
-        end: Optional[int] = None,
+        *params: str | ParamSpec | ParameterBase,
+        start: int | None = None,
+        end: int | None = None,
+        callback: Callable[[float], None] | None = None,
     ) -> ParameterData:
         """
         Returns the values stored in the :class:`.DataSet` for the specified parameters
@@ -806,6 +802,8 @@ class DataSet(BaseDataSet):
                 if None
             end: end value of selection range (by results count); ignored if
                 None
+            callback: Function called during the data loading every
+                config.dataset.callback_percent.
 
         Returns:
             Dictionary from requested parameters to Dict of parameter names
@@ -817,15 +815,16 @@ class DataSet(BaseDataSet):
                                  for ps in self._rundescriber.interdeps.non_dependencies]
         else:
             valid_param_names = self._validate_parameters(*params)
-        return get_parameter_data(self.conn, self.table_name,
-                                  valid_param_names, start, end)
+        return get_parameter_data(
+            self.conn, self.table_name, valid_param_names, start, end, callback
+        )
 
     def to_pandas_dataframe_dict(
         self,
-        *params: Union[str, ParamSpec, "ParameterBase"],
-        start: Optional[int] = None,
-        end: Optional[int] = None,
-    ) -> Dict[str, "pd.DataFrame"]:
+        *params: str | ParamSpec | ParameterBase,
+        start: int | None = None,
+        end: int | None = None,
+    ) -> dict[str, pd.DataFrame]:
         """
         Returns the values stored in the :class:`.DataSet` for the specified parameters
         and their dependencies as a dict of :py:class:`pandas.DataFrame` s
@@ -876,10 +875,10 @@ class DataSet(BaseDataSet):
     )
     def get_data_as_pandas_dataframe(
         self,
-        *params: Union[str, ParamSpec, "ParameterBase"],
-        start: Optional[int] = None,
-        end: Optional[int] = None,
-    ) -> Dict[str, "pd.DataFrame"]:
+        *params: str | ParamSpec | ParameterBase,
+        start: int | None = None,
+        end: int | None = None,
+    ) -> dict[str, pd.DataFrame]:
         """
         Returns the values stored in the :class:`.DataSet` for the specified parameters
         and their dependencies as a dict of :py:class:`pandas.DataFrame` s
@@ -920,10 +919,10 @@ class DataSet(BaseDataSet):
 
     def to_pandas_dataframe(
         self,
-        *params: Union[str, ParamSpec, "ParameterBase"],
-        start: Optional[int] = None,
-        end: Optional[int] = None,
-    ) -> "pd.DataFrame":
+        *params: str | ParamSpec | ParameterBase,
+        start: int | None = None,
+        end: int | None = None,
+    ) -> pd.DataFrame:
         """
         Returns the values stored in the :class:`.DataSet` for the specified parameters
         and their dependencies as a concatenated :py:class:`pandas.DataFrame` s
@@ -969,10 +968,10 @@ class DataSet(BaseDataSet):
 
     def to_xarray_dataarray_dict(
         self,
-        *params: Union[str, ParamSpec, "ParameterBase"],
-        start: Optional[int] = None,
-        end: Optional[int] = None,
-    ) -> Dict[str, "xr.DataArray"]:
+        *params: str | ParamSpec | ParameterBase,
+        start: int | None = None,
+        end: int | None = None,
+    ) -> dict[str, xr.DataArray]:
         """
         Returns the values stored in the :class:`.DataSet` for the specified parameters
         and their dependencies as a dict of :py:class:`xr.DataArray` s
@@ -1023,10 +1022,10 @@ class DataSet(BaseDataSet):
 
     def to_xarray_dataset(
         self,
-        *params: Union[str, ParamSpec, "ParameterBase"],
-        start: Optional[int] = None,
-        end: Optional[int] = None,
-    ) -> "xr.Dataset":
+        *params: str | ParamSpec | ParameterBase,
+        start: int | None = None,
+        end: int | None = None,
+    ) -> xr.Dataset:
         """
         Returns the values stored in the :class:`.DataSet` for the specified parameters
         and their dependencies as a :py:class:`xr.Dataset` object.
@@ -1071,9 +1070,9 @@ class DataSet(BaseDataSet):
 
         return load_to_xarray_dataset(self, data)
 
-    def write_data_to_text_file(self, path: str,
-                                single_file: bool = False,
-                                single_file_name: Optional[str] = None) -> None:
+    def write_data_to_text_file(
+        self, path: str, single_file: bool = False, single_file_name: str | None = None
+    ) -> None:
         """
         An auxiliary function to export data to a text file. When the data with more
         than one dependent variables, say "y(x)" and "z(x)", is concatenated to a single file
@@ -1117,13 +1116,14 @@ class DataSet(BaseDataSet):
             single_file_name=single_file_name,
         )
 
-    def subscribe(self,
-                  callback: Callable[[Any, int, Optional[Any]], None],
-                  min_wait: int = 0,
-                  min_count: int = 1,
-                  state: Optional[Any] = None,
-                  callback_kwargs: Optional[Mapping[str, Any]] = None
-                  ) -> str:
+    def subscribe(
+        self,
+        callback: Callable[[Any, int, Any | None], None],
+        min_wait: int = 0,
+        min_count: int = 1,
+        state: Any | None = None,
+        callback_kwargs: Mapping[str, Any] | None = None,
+    ) -> str:
         subscriber_id = uuid.uuid4().hex
         subscriber = _Subscriber(self, subscriber_id, callback, state,
                                  min_wait, min_count, callback_kwargs)
@@ -1178,17 +1178,20 @@ class DataSet(BaseDataSet):
         """
         Remove all subscribers
         """
-        sql = "select * from sqlite_master where type = 'trigger';"
+        sql = """
+        SELECT name FROM sqlite_master
+        WHERE type = 'trigger'
+        """
         triggers = atomic_transaction(self.conn, sql).fetchall()
         with atomic(self.conn) as conn:
-            for trigger in triggers:
-                remove_trigger(conn, trigger['name'])
+            for (trigger,) in triggers:
+                remove_trigger(conn, trigger)
             for sub in self.subscribers.values():
                 sub.schedule_stop()
                 sub.join()
             self.subscribers.clear()
 
-    def get_metadata(self, tag: str) -> Optional[VALUE]:
+    def get_metadata(self, tag: str) -> VALUE | None:
         """Get metadata by tag. Returns None if no metadata is stored under that tag"""
         return get_data_by_tag_and_table_name(self.conn, tag, self.table_name)
 
@@ -1227,7 +1230,7 @@ class DataSet(BaseDataSet):
         toplevel_params = (set(interdeps.dependencies)
                            .intersection(set(result_dict)))
         if self._in_memory_cache:
-            new_results: Dict[str, Dict[str, numpy.ndarray]] = {}
+            new_results: dict[str, dict[str, numpy.ndarray]] = {}
         for toplevel_param in toplevel_params:
             inff_params = set(interdeps.inferences.get(toplevel_param, ()))
             deps_params = set(interdeps.dependencies.get(toplevel_param, ()))
@@ -1256,7 +1259,9 @@ class DataSet(BaseDataSet):
                     result_dict, toplevel_param,
                     inff_params, deps_params)
             else:
-                res_dict: Dict[str, VALUE] = {ps.name: result_dict[ps] for ps in all_params}
+                res_dict: dict[str, VALUE] = {
+                    ps.name: result_dict[ps] for ps in all_params
+                }
                 res_list = [res_dict]
             self._results += res_list
 
@@ -1279,8 +1284,8 @@ class DataSet(BaseDataSet):
 
     @staticmethod
     def _finalize_res_dict_array(
-            result_dict: Mapping[ParamSpecBase, values_type],
-            all_params: Set[ParamSpecBase]) -> List[Dict[str, VALUE]]:
+        result_dict: Mapping[ParamSpecBase, values_type], all_params: set[ParamSpecBase]
+    ) -> list[dict[str, VALUE]]:
         """
         Make a list of res_dicts out of the results for a 'array' type
         parameter. The results are assumed to already have been validated for
@@ -1311,10 +1316,11 @@ class DataSet(BaseDataSet):
 
     @staticmethod
     def _finalize_res_dict_numeric_text_or_complex(
-            result_dict: Mapping[ParamSpecBase, numpy.ndarray],
-            toplevel_param: ParamSpecBase,
-            inff_params: Set[ParamSpecBase],
-            deps_params: Set[ParamSpecBase]) -> List[Dict[str, VALUE]]:
+        result_dict: Mapping[ParamSpecBase, numpy.ndarray],
+        toplevel_param: ParamSpecBase,
+        inff_params: set[ParamSpecBase],
+        deps_params: set[ParamSpecBase],
+    ) -> list[dict[str, VALUE]]:
         """
         Make a res_dict in the format expected by DataSet.add_results out
         of the results for a 'numeric' or text type parameter. This includes
@@ -1322,7 +1328,7 @@ class DataSet(BaseDataSet):
         case of np.array(1) kind of values
         """
 
-        res_list: List[Dict[str, VALUE]] = []
+        res_list: list[dict[str, VALUE]] = []
         all_params = inff_params.union(deps_params).union({toplevel_param})
 
         t_map = {'numeric': float, 'text': str, 'complex': complex}
@@ -1335,7 +1341,7 @@ class DataSet(BaseDataSet):
         else:
             # We first massage all values into np.arrays of the same
             # shape
-            flat_results: Dict[str, numpy.ndarray] = {}
+            flat_results: dict[str, numpy.ndarray] = {}
 
             toplevel_val = result_dict[toplevel_param]
             flat_results[toplevel_param.name] = toplevel_val.ravel()
@@ -1361,11 +1367,11 @@ class DataSet(BaseDataSet):
     @staticmethod
     def _finalize_res_dict_standalones(
             result_dict: Mapping[ParamSpecBase, numpy.ndarray]
-    ) -> List[Dict[str, VALUE]]:
+    ) -> list[dict[str, VALUE]]:
         """
         Massage all standalone parameters into the correct shape
         """
-        res_list: List[Dict[str, VALUE]] = []
+        res_list: list[dict[str, VALUE]] = []
         for param, value in result_dict.items():
             if param.type == 'text':
                 if value.shape:
@@ -1422,7 +1428,7 @@ class DataSet(BaseDataSet):
             writer_status.data_write_queue.join()
 
     @property
-    def export_path(self) -> Optional[str]:
+    def export_path(self) -> str | None:
         issue_deprecation_warning("method export_path", alternative="export_info")
         known_export_paths = list(self.export_info.export_paths.values())
         if len(known_export_paths) > 0:
@@ -1447,9 +1453,9 @@ class DataSet(BaseDataSet):
 
     @staticmethod
     def _warn_if_set(
-        *params: Union[str, ParamSpec, "ParameterBase"],
-        start: Optional[int] = None,
-        end: Optional[int],
+        *params: str | ParamSpec | ParameterBase,
+        start: int | None = None,
+        end: int | None,
     ) -> None:
         if len(params) > 0 or start is not None or end is not None:
             QCoDeSDeprecationWarning(
@@ -1463,15 +1469,15 @@ class DataSet(BaseDataSet):
 # public api
 def load_by_run_spec(
     *,
-    captured_run_id: Optional[int] = None,
-    captured_counter: Optional[int] = None,
-    experiment_name: Optional[str] = None,
-    sample_name: Optional[str] = None,
+    captured_run_id: int | None = None,
+    captured_counter: int | None = None,
+    experiment_name: str | None = None,
+    sample_name: str | None = None,
     # guid parts
-    sample_id: Optional[int] = None,
-    location: Optional[int] = None,
-    work_station: Optional[int] = None,
-    conn: Optional[ConnectionPlus] = None,
+    sample_id: int | None = None,
+    location: int | None = None,
+    work_station: int | None = None,
+    conn: ConnectionPlus | None = None,
 ) -> DataSetProtocol:
     """
     Load a run from one or more pieces of runs specification. All
@@ -1506,7 +1512,7 @@ def load_by_run_spec(
         specification.
     """
     internal_conn = conn or connect(get_DB_location())
-    d: Optional[DataSetProtocol] = None
+    d: DataSetProtocol | None = None
     try:
         guids = get_guids_by_run_spec(
             captured_run_id=captured_run_id,
@@ -1540,16 +1546,16 @@ def load_by_run_spec(
 
 def get_guids_by_run_spec(
     *,
-    captured_run_id: Optional[int] = None,
-    captured_counter: Optional[int] = None,
-    experiment_name: Optional[str] = None,
-    sample_name: Optional[str] = None,
+    captured_run_id: int | None = None,
+    captured_counter: int | None = None,
+    experiment_name: str | None = None,
+    sample_name: str | None = None,
     # guid parts
-    sample_id: Optional[int] = None,
-    location: Optional[int] = None,
-    work_station: Optional[int] = None,
-    conn: Optional[ConnectionPlus] = None,
-) -> List[str]:
+    sample_id: int | None = None,
+    location: int | None = None,
+    work_station: int | None = None,
+    conn: ConnectionPlus | None = None,
+) -> list[str]:
     """
     Get a list of matching guids from one or more pieces of runs specification. All
     fields are optional.
@@ -1589,7 +1595,7 @@ def get_guids_by_run_spec(
     return matched_guids
 
 
-def load_by_id(run_id: int, conn: Optional[ConnectionPlus] = None) -> DataSetProtocol:
+def load_by_id(run_id: int, conn: ConnectionPlus | None = None) -> DataSetProtocol:
     """
     Load a dataset by run id
 
@@ -1615,7 +1621,7 @@ def load_by_id(run_id: int, conn: Optional[ConnectionPlus] = None) -> DataSetPro
     if run_id is None:
         raise ValueError("run_id has to be a positive integer, not None.")
     internal_conn = conn or connect(get_DB_location())
-    d: Optional[DataSetProtocol] = None
+    d: DataSetProtocol | None = None
 
     try:
         guid = get_guid_from_run_id(internal_conn, run_id)
@@ -1630,7 +1636,7 @@ def load_by_id(run_id: int, conn: Optional[ConnectionPlus] = None) -> DataSetPro
     return d
 
 
-def load_by_guid(guid: str, conn: Optional[ConnectionPlus] = None) -> DataSetProtocol:
+def load_by_guid(guid: str, conn: ConnectionPlus | None = None) -> DataSetProtocol:
     """
     Load a dataset by its GUID
 
@@ -1654,7 +1660,7 @@ def load_by_guid(guid: str, conn: Optional[ConnectionPlus] = None) -> DataSetPro
         RuntimeError: if several runs with the given GUID are found
     """
     internal_conn = conn or connect(get_DB_location())
-    d: Optional[DataSetProtocol] = None
+    d: DataSetProtocol | None = None
 
     # this function raises a RuntimeError if more than one run matches the GUID
     try:
@@ -1668,7 +1674,7 @@ def load_by_guid(guid: str, conn: Optional[ConnectionPlus] = None) -> DataSetPro
 
 
 def load_by_counter(
-    counter: int, exp_id: int, conn: Optional[ConnectionPlus] = None
+    counter: int, exp_id: int, conn: ConnectionPlus | None = None
 ) -> DataSetProtocol:
     """
     Load a dataset given its counter in a given experiment
@@ -1695,7 +1701,7 @@ def load_by_counter(
         the given experiment
     """
     internal_conn = conn or connect(get_DB_location())
-    d: Optional[DataSetProtocol] = None
+    d: DataSetProtocol | None = None
 
     # this function raises a RuntimeError if more than one run matches the GUID
     try:
@@ -1721,14 +1727,15 @@ def _get_datasetprotocol_from_guid(guid: str, conn: ConnectionPlus) -> DataSetPr
     return d
 
 
-def new_data_set(name: str,
-                 exp_id: Optional[int] = None,
-                 specs: Optional[SPECS] = None,
-                 values: Optional[VALUES] = None,
-                 metadata: Optional[Any] = None,
-                 conn: Optional[ConnectionPlus] = None,
-                 in_memory_cache: bool = True,
-                 ) -> DataSet:
+def new_data_set(
+    name: str,
+    exp_id: int | None = None,
+    specs: SPECS | None = None,
+    values: VALUES | None = None,
+    metadata: Any | None = None,
+    conn: ConnectionPlus | None = None,
+    in_memory_cache: bool = True,
+) -> DataSet:
     """
     Create a new dataset in the currently active/selected database.
 
@@ -1756,8 +1763,9 @@ def new_data_set(name: str,
     return d
 
 
-def generate_dataset_table(guids: Sequence[str],
-                           conn: Optional[ConnectionPlus] = None) -> str:
+def generate_dataset_table(
+    guids: Sequence[str], conn: ConnectionPlus | None = None
+) -> str:
     """
     Generate an ASCII art table of information about the runs attached to the
     supplied guids.
@@ -1769,15 +1777,27 @@ def generate_dataset_table(guids: Sequence[str],
     Returns: ASCII art table of information about the supplied guids.
     """
     from tabulate import tabulate
-    headers = ["captured_run_id", "captured_counter", "experiment_name",
-               "sample_name",
-               "sample_id", "location", "work_station"]
+
+    headers = (
+        "captured_run_id",
+        "captured_counter",
+        "experiment_name",
+        "sample_name",
+        "location",
+        "work_station",
+    )
     table = []
     for guid in guids:
         ds = load_by_guid(guid, conn=conn)
         parsed_guid = parse_guid(guid)
-        table.append([ds.captured_run_id, ds.captured_counter, ds.exp_name,
-                      ds.sample_name,
-                      parsed_guid['sample'], parsed_guid['location'],
-                      parsed_guid['work_station']])
+        table.append(
+            [
+                ds.captured_run_id,
+                ds.captured_counter,
+                ds.exp_name,
+                ds.sample_name,
+                parsed_guid["location"],
+                parsed_guid["work_station"],
+            ]
+        )
     return tabulate(table, headers=headers)

@@ -8,7 +8,7 @@ from time import sleep
 import hypothesis.strategies as hst
 import numpy as np
 import pytest
-import xarray
+import xarray as xr
 from hypothesis import HealthCheck, given, settings
 from numpy.testing import assert_allclose, assert_array_equal
 
@@ -318,36 +318,36 @@ def test_setting_write_period(wp):
 @given(wp=hst.one_of(hst.integers(), hst.floats(allow_nan=False),
                      hst.text()))
 @pytest.mark.usefixtures("experiment")
+@pytest.mark.usefixtures("reset_config_on_exit")
 def test_setting_write_period_from_config(wp):
-    with reset_config_on_exit():
-        qc.config.dataset.write_period = wp
+    qc.config.dataset.write_period = wp
 
-        if isinstance(wp, str):
-            with pytest.raises(ValueError):
-                Measurement()
-        elif wp < 1e-3:
-            with pytest.raises(ValueError):
-                Measurement()
-        else:
-            meas = Measurement()
-            assert meas.write_period == float(wp)
-            meas.register_custom_parameter(name='dummy')
-            with meas.run() as datasaver:
-                assert datasaver.write_period == float(wp)
+    if isinstance(wp, str):
+        with pytest.raises(ValueError):
+            Measurement()
+    elif wp < 1e-3:
+        with pytest.raises(ValueError):
+            Measurement()
+    else:
+        meas = Measurement()
+        assert meas.write_period == float(wp)
+        meas.register_custom_parameter(name="dummy")
+        with meas.run() as datasaver:
+            assert datasaver.write_period == float(wp)
 
 
 @pytest.mark.parametrize("write_in_background", [True, False])
 @pytest.mark.usefixtures("experiment")
+@pytest.mark.usefixtures("reset_config_on_exit")
 def test_setting_write_in_background_from_config(write_in_background):
-    with reset_config_on_exit():
-        qc.config.dataset.write_in_background = write_in_background
+    qc.config.dataset.write_in_background = write_in_background
 
-        meas = Measurement()
-        meas.register_custom_parameter(name='dummy')
-        with meas.run() as datasaver:
-            ds = datasaver.dataset
-            assert isinstance(ds, DataSet)
-            assert ds._writer_status.write_in_background is write_in_background
+    meas = Measurement()
+    meas.register_custom_parameter(name="dummy")
+    with meas.run() as datasaver:
+        ds = datasaver.dataset
+        assert isinstance(ds, DataSet)
+        assert ds._writer_status.write_in_background is write_in_background
 
 
 @pytest.mark.usefixtures("experiment")
@@ -1708,7 +1708,8 @@ def test_datasaver_export(
         assert os.listdir(path) == [expected_filename]
 
         if export_type == DataExportType.NETCDF:
-            xr_ds = xarray.open_dataset(os.path.join(path, expected_filename))
+
+            xr_ds = xr.open_dataset(os.path.join(path, expected_filename))
             assert xr_ds.attrs["metadata_added_after_export"] == 69
     else:
         assert os.listdir(path) == []

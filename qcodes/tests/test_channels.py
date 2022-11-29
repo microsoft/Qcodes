@@ -7,9 +7,8 @@ import pytest
 from hypothesis import HealthCheck, given, settings
 from numpy.testing import assert_allclose, assert_array_equal
 
-from qcodes import Instrument
 from qcodes.data.location import FormatLocation
-from qcodes.instrument import ChannelList, ChannelTuple, InstrumentChannel
+from qcodes.instrument import ChannelList, ChannelTuple, Instrument, InstrumentChannel
 from qcodes.loops import Loop
 from qcodes.parameters import Parameter
 from qcodes.tests.instrument_mocks import DummyChannel, DummyChannelInstrument
@@ -58,6 +57,17 @@ def _make_empty_instrument():
 
 class EmptyChannel(InstrumentChannel):
     pass
+
+
+def test_instrument_channel_label():
+    dci = DummyChannelInstrument(name="dci_with_labels", label="Instrument Label")
+    channel = DummyChannel(dci, "A_with_label", "A_wl", label="A with f@ncy label")
+    dci.add_submodule("A_with_label", channel)
+    channel = EmptyChannel(dci, "B_with_label", label="B with f@ncy label")
+    dci.add_submodule("B_with_label", channel)
+    assert dci.label == "Instrument Label"
+    assert dci.A_with_label.label == "A with f@ncy label"
+    assert dci.B_with_label.label == "B with f@ncy label"
 
 
 def test_channels_call_function(dci, caplog):
@@ -438,7 +448,7 @@ def test_access_channels_by_slice(dci, start, stop, step):
         assert chan.name == f'dci_Chan{exp_chan}'
 
 
-@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,), deadline=1000)
 @given(myindexs=hst.lists(elements=hst.integers(-8, 7), min_size=1))
 def test_access_channels_by_tuple(dci, myindexs):
     names = ('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H')
@@ -518,7 +528,7 @@ def test_set_element_locked_raises(dci_with_list):
     assert dci_with_list.channels[0] is not dci_with_list.channels[1]
 
 
-@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,), deadline=1000)
 @given(myindexs=hst.lists(elements=hst.integers(0, 7), min_size=2))
 def test_access_channels_by_name(dci, myindexs):
     names = ("A", "B", "C", "D", "E", "F", "G", "H")

@@ -11,13 +11,13 @@ import pytest
 from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import floats, tuples
 
-import qcodes.instrument.sims as sims
 from qcodes.instrument import Instrument
-from qcodes.instrument_drivers.american_magnetics.AMI430_visa import (
-    AMI430,
-    AMI430_3D,
+from qcodes.instrument_drivers.american_magnetics import (
     AMI430Warning,
+    AMIModel430,
+    AMIModel4303D,
 )
+from qcodes.instrument_drivers.american_magnetics.AMI430_visa import AMI430, AMI430_3D
 from qcodes.math_utils import FieldVector
 from qcodes.utils.types import (
     numpy_concrete_floats,
@@ -35,9 +35,6 @@ field_limit = [
     lambda x, y, z: np.linalg.norm([x, y, z]) < 2,
 ]
 
-# path to the .yaml file containing the simulated instrument
-visalib = sims.__file__.replace("__init__.py", "AMI430.yaml@sim")
-
 LOG_NAME = "qcodes.instrument.instrument_base"
 
 
@@ -47,9 +44,15 @@ def magnet_axes_instances():
     Start three mock instruments representing current drivers for the x, y,
     and z directions.
     """
-    mag_x = AMI430("x", address="GPIB::1::INSTR", visalib=visalib, terminator="\n")
-    mag_y = AMI430("y", address="GPIB::2::INSTR", visalib=visalib, terminator="\n")
-    mag_z = AMI430("z", address="GPIB::3::INSTR", visalib=visalib, terminator="\n")
+    mag_x = AMIModel430(
+        "x", address="GPIB::1::INSTR", pyvisa_sim_file="AMI430.yaml", terminator="\n"
+    )
+    mag_y = AMIModel430(
+        "y", address="GPIB::2::INSTR", pyvisa_sim_file="AMI430.yaml", terminator="\n"
+    )
+    mag_z = AMIModel430(
+        "z", address="GPIB::3::INSTR", pyvisa_sim_file="AMI430.yaml", terminator="\n"
+    )
 
     yield mag_x, mag_y, mag_z
 
@@ -66,7 +69,7 @@ def _make_current_driver(magnet_axes_instances):
     """
     mag_x, mag_y, mag_z = magnet_axes_instances
 
-    driver = AMI430_3D("AMI430_3D", mag_x, mag_y, mag_z, field_limit)
+    driver = AMIModel4303D("AMI430_3D", mag_x, mag_y, mag_z, field_limit)
 
     yield driver
 
@@ -75,7 +78,12 @@ def _make_current_driver(magnet_axes_instances):
 
 @pytest.fixture(scope="function", name="ami430")
 def _make_ami430():
-    mag = AMI430("ami430", address="GPIB::1::INSTR", visalib=visalib, terminator="\n")
+    mag = AMIModel430(
+        "ami430",
+        address="GPIB::1::INSTR",
+        pyvisa_sim_file="AMI430.yaml",
+        terminator="\n",
+    )
     yield mag
     mag.close()
 
@@ -119,7 +127,30 @@ def test_instantiation_from_names(magnet_axes_instances, request):
     names as opposed from their instances.
     """
     mag_x, mag_y, mag_z = magnet_axes_instances
+    request.addfinalizer(AMIModel4303D.close_all)
+
+    driver = AMIModel4303D("AMI430_3D", mag_x.name, mag_y.name, mag_z.name, field_limit)
+
+    assert driver._instrument_x is mag_x
+    assert driver._instrument_y is mag_y
+    assert driver._instrument_z is mag_z
+
+
+def test_instantiation_compat_classes(request):
+    """
+    Test that we can instantiate drivers using the old names
+    """
+    request.addfinalizer(AMIModel4303D.close_all)
     request.addfinalizer(AMI430_3D.close_all)
+    mag_x = AMI430(
+        "x", address="GPIB::1::INSTR", pyvisa_sim_file="AMI430.yaml", terminator="\n"
+    )
+    mag_y = AMI430(
+        "y", address="GPIB::2::INSTR", pyvisa_sim_file="AMI430.yaml", terminator="\n"
+    )
+    mag_z = AMI430(
+        "z", address="GPIB::3::INSTR", pyvisa_sim_file="AMI430.yaml", terminator="\n"
+    )
 
     driver = AMI430_3D("AMI430_3D", mag_x.name, mag_y.name, mag_z.name, field_limit)
 
@@ -132,14 +163,14 @@ def test_instantiation_from_name_of_nonexistent_ami_instrument(
     magnet_axes_instances, request
 ):
     mag_x, mag_y, mag_z = magnet_axes_instances
-    request.addfinalizer(AMI430_3D.close_all)
+    request.addfinalizer(AMIModel4303D.close_all)
 
     non_existent_instrument = mag_y.name + "foo"
 
     with pytest.raises(
         KeyError, match=f"with name {non_existent_instrument} does not exist"
     ):
-        AMI430_3D(
+        AMIModel4303D(
             "AMI430_3D", mag_x.name, non_existent_instrument, mag_z.name, field_limit
         )
 
@@ -148,7 +179,7 @@ def test_instantiation_from_name_of_existing_non_ami_instrument(
     magnet_axes_instances, request
 ):
     mag_x, mag_y, mag_z = magnet_axes_instances
-    request.addfinalizer(AMI430_3D.close_all)
+    request.addfinalizer(AMIModel4303D.close_all)
 
     non_ami_existing_instrument = Instrument("foo")
 
@@ -156,11 +187,11 @@ def test_instantiation_from_name_of_existing_non_ami_instrument(
         TypeError,
         match=re.escape(
             f"Instrument {non_ami_existing_instrument.name} is "
-            f"{type(non_ami_existing_instrument)} but {AMI430} "
+            f"{type(non_ami_existing_instrument)} but {AMIModel430} "
             f"was requested"
         ),
     ):
-        AMI430_3D(
+        AMIModel4303D(
             "AMI430_3D",
             mag_x.name,
             non_ami_existing_instrument.name,
@@ -171,12 +202,12 @@ def test_instantiation_from_name_of_existing_non_ami_instrument(
 
 def test_instantiation_from_badly_typed_argument(magnet_axes_instances, request):
     mag_x, mag_y, mag_z = magnet_axes_instances
-    request.addfinalizer(AMI430_3D.close_all)
+    request.addfinalizer(AMIModel4303D.close_all)
 
     badly_typed_instrument_z_argument = 123
 
     with pytest.raises(ValueError, match="instrument_z argument is neither of those"):
-        AMI430_3D(
+        AMIModel4303D(
             "AMI430_3D",
             mag_x.name,
             mag_y,
@@ -774,8 +805,8 @@ def test_blocking_ramp_parameter(current_driver, caplog):
         current_driver.cartesian((0, 0, 1))
 
         messages = [record.message for record in caplog.records]
-        assert messages[-1] == "[z(AMI430)] Finished blocking ramp"
-        assert messages[-6] == "[z(AMI430)] Starting blocking ramp of z to 1.0"
+        assert messages[-1] == "[z(AMIModel430)] Finished blocking ramp"
+        assert messages[-6] == "[z(AMIModel430)] Starting blocking ramp of z to 1.0"
 
         caplog.clear()
         current_driver.block_during_ramp(False)
@@ -1035,7 +1066,7 @@ def _parametrization_kwargs():
 @pytest.mark.parametrize("field_limit", **_parametrization_kwargs())
 def test_numeric_field_limit(magnet_axes_instances, field_limit, request):
     mag_x, mag_y, mag_z = magnet_axes_instances
-    ami = AMI430_3D("AMI430_3D", mag_x, mag_y, mag_z, field_limit)
+    ami = AMIModel4303D("AMI430_3D", mag_x, mag_y, mag_z, field_limit)
     request.addfinalizer(ami.close)
 
     assert isinstance(ami._field_limit, float)

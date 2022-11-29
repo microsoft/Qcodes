@@ -3,18 +3,11 @@ This module implements a :class:`.Group` intended to hold multiple
 parameters that are to be gotten and set by the same command. The parameters
 should be of type :class:`GroupParameter`
 """
+from __future__ import annotations
 
 from collections import OrderedDict
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    Mapping,
-    Optional,
-    Sequence,
-    Union,
-)
+from collections.abc import Callable, Mapping, Sequence
+from typing import TYPE_CHECKING, Any
 
 from .parameter import Parameter
 from .parameter_base import ParamDataType, ParamRawDataType
@@ -54,8 +47,8 @@ class GroupParameter(Parameter):
     def __init__(
         self,
         name: str,
-        instrument: Optional["InstrumentBase"] = None,
-        initial_value: Union[float, int, str, None] = None,
+        instrument: InstrumentBase | None = None,
+        initial_value: float | int | str | None = None,
         **kwargs: Any,
     ) -> None:
 
@@ -64,12 +57,12 @@ class GroupParameter(Parameter):
                 "A GroupParameter does not use 'set_cmd' or " "'get_cmd' kwarg"
             )
 
-        self._group: Union[Group, None] = None
+        self._group: Group | None = None
         self._initial_value = initial_value
         super().__init__(name, instrument=instrument, **kwargs)
 
     @property
-    def group(self) -> Optional["Group"]:
+    def group(self) -> Group | None:
         """
         The group that this parameter belongs to.
         """
@@ -171,9 +164,9 @@ class Group:
     def __init__(
         self,
         parameters: Sequence[GroupParameter],
-        set_cmd: Optional[str] = None,
-        get_cmd: Optional[str] = None,
-        get_parser: Union[Callable[[str], Mapping[str, Any]], None] = None,
+        set_cmd: str | None = None,
+        get_cmd: str | None = None,
+        get_parser: Callable[[str], Mapping[str, Any]] | None = None,
         separator: str = ",",
         single_instrument: bool = True,
     ) -> None:
@@ -227,10 +220,10 @@ class Group:
 
     def _separator_parser(
         self, separator: str
-    ) -> Callable[[str], Dict[str, ParamRawDataType]]:
+    ) -> Callable[[str], dict[str, ParamRawDataType]]:
         """A default separator-based string parser"""
 
-        def parser(ret_str: str) -> Dict[str, Any]:
+        def parser(ret_str: str) -> dict[str, Any]:
             keys = self.parameters.keys()
             values = ret_str.split(separator)
             return dict(zip(keys, values))
@@ -316,7 +309,7 @@ class Group:
             p.cache._set_from_raw_value(ret[name])
 
     @property
-    def parameters(self) -> "OrderedDict[str, GroupParameter]":
+    def parameters(self) -> OrderedDict[str, GroupParameter]:
         """
         All parameters in this group as a dict from parameter name to
         :class:`.Parameter`
@@ -324,7 +317,7 @@ class Group:
         return self._parameters
 
     @property
-    def instrument(self) -> Optional["InstrumentBase"]:
+    def instrument(self) -> InstrumentBase | None:
         """
         The ``root_instrument`` that this parameter belongs to.
         """

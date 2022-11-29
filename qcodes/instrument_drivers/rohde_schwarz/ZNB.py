@@ -29,7 +29,7 @@ class FixedFrequencyTraceIQ(MultiParameter):
     """
 
     def __init__(
-        self, name: str, instrument: "ZNBChannel", npts: int, bandwidth: int
+        self, name: str, instrument: "RohdeSchwarzZNBChannel", npts: int, bandwidth: int
     ) -> None:
         super().__init__(
             name,
@@ -74,7 +74,7 @@ class FixedFrequencyTraceIQ(MultiParameter):
         `cw_check_sweep_first` is set to `True` then at the cost of a few ms
         overhead checks if the vna is setup correctly.
         """
-        assert isinstance(self.instrument, ZNBChannel)
+        assert isinstance(self.instrument, RohdeSchwarzZNBChannel)
         i, q = self.instrument._get_cw_data()
         return i, q
 
@@ -95,7 +95,7 @@ class FixedFrequencyPointIQ(MultiParameter):
         instrument: instrument the parameter belongs to
     """
 
-    def __init__(self, name: str, instrument: "ZNBChannel") -> None:
+    def __init__(self, name: str, instrument: "RohdeSchwarzZNBChannel") -> None:
         super().__init__(
             name,
             instrument=instrument,
@@ -112,7 +112,7 @@ class FixedFrequencyPointIQ(MultiParameter):
         parameter `cw_check_sweep_first` is set to `True` then at the cost of a
         few ms overhead checks if the vna is setup correctly.
         """
-        assert isinstance(self.instrument, ZNBChannel)
+        assert isinstance(self.instrument, RohdeSchwarzZNBChannel)
         i, q = self.instrument._get_cw_data()
         return float(np.mean(i)), float(np.mean(q))
 
@@ -131,7 +131,7 @@ class FixedFrequencyPointMagPhase(MultiParameter):
         instrument: instrument the parameter belongs to
     """
 
-    def __init__(self, name: str, instrument: "ZNBChannel") -> None:
+    def __init__(self, name: str, instrument: "RohdeSchwarzZNBChannel") -> None:
         super().__init__(
             name,
             instrument=instrument,
@@ -152,7 +152,7 @@ class FixedFrequencyPointMagPhase(MultiParameter):
         `True` for the instrument then at the cost of a few ms overhead
         checks if the vna is setup correctly.
         """
-        assert isinstance(self.instrument, ZNBChannel)
+        assert isinstance(self.instrument, RohdeSchwarzZNBChannel)
         i, q = self.instrument._get_cw_data()
         s = np.mean(i) + 1j * np.mean(q)
         return np.abs(s), np.angle(s)
@@ -166,7 +166,7 @@ class FrequencySweepMagPhase(MultiParameter):
     def __init__(
         self,
         name: str,
-        instrument: "ZNBChannel",
+        instrument: "RohdeSchwarzZNBChannel",
         start: float,
         stop: float,
         npts: int,
@@ -203,7 +203,7 @@ class FrequencySweepMagPhase(MultiParameter):
         self.shapes = ((npts,), (npts,))
 
     def get_raw(self) -> Tuple[ParamRawDataType, ...]:
-        assert isinstance(self.instrument, ZNBChannel)
+        assert isinstance(self.instrument, RohdeSchwarzZNBChannel)
         with self.instrument.format.set_to("Complex"):
             data = self.instrument._get_sweep_data(force_polar=True)
         return abs(data), np.angle(data)
@@ -218,7 +218,7 @@ class FrequencySweepDBPhase(MultiParameter):
     def __init__(
         self,
         name: str,
-        instrument: "ZNBChannel",
+        instrument: "RohdeSchwarzZNBChannel",
         start: float,
         stop: float,
         npts: int,
@@ -255,7 +255,7 @@ class FrequencySweepDBPhase(MultiParameter):
         self.shapes = ((npts,), (npts,))
 
     def get_raw(self) -> Tuple[ParamRawDataType, ...]:
-        assert isinstance(self.instrument, ZNBChannel)
+        assert isinstance(self.instrument, RohdeSchwarzZNBChannel)
         with self.instrument.format.set_to("Complex"):
             data = self.instrument._get_sweep_data(force_polar=True)
         return 20*np.log10(np.abs(data)), np.angle(data)
@@ -320,11 +320,11 @@ class FrequencySweep(ArrayParameter):
         self.shape = (npts,)
 
     def get_raw(self) -> ParamRawDataType:
-        assert isinstance(self.instrument, ZNBChannel)
+        assert isinstance(self.instrument, RohdeSchwarzZNBChannel)
         return self.instrument._get_sweep_data()
 
 
-class ZNBChannel(InstrumentChannel):
+class RohdeSchwarzZNBChannel(InstrumentChannel):
     def __init__(
         self,
         parent: "ZNB",
@@ -920,6 +920,9 @@ class ZNBChannel(InstrumentChannel):
             q = data[1::2]
 
         return i, q
+
+
+ZNBChannel = RohdeSchwarzZNBChannel
 
 
 class ZNB(VisaInstrument):

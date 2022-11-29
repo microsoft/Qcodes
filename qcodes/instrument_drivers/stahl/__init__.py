@@ -1,1 +1,3 @@
-from .stahl import Stahl
+from .stahl import Stahl, StahlChannel
+
+__all__ = ["Stahl", "StahlChannel"]

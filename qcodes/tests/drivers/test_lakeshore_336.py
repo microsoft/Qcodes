@@ -2,9 +2,8 @@ import logging
 import time
 from typing import Dict
 
-import qcodes.instrument.sims as sims
 from qcodes.instrument import InstrumentBase
-from qcodes.instrument_drivers.Lakeshore.Model_336 import Model_336
+from qcodes.instrument_drivers.Lakeshore import LakeshoreModel336
 
 from .test_lakeshore import (
     DictClass,
@@ -20,7 +19,7 @@ log = logging.getLogger(__name__)
 VISA_LOGGER = '.'.join((InstrumentBase.__module__, 'com', 'visa'))
 
 
-class Model_336_Mock(MockVisaInstrument, Model_336):
+class LakeshoreModel336Mock(MockVisaInstrument, LakeshoreModel336):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
@@ -165,12 +164,14 @@ class Model_336_Mock(MockVisaInstrument, Model_336):
         return f'{chan.T}'
 
 
-@instrument_fixture(scope='function')
-def lakeshore_336():
-    visalib = sims.__file__.replace('__init__.py',
-                                    'lakeshore_model336.yaml@sim')
-    return Model_336_Mock('lakeshore_336_fixture', 'GPIB::2::INSTR',
-                          visalib=visalib, device_clear=False)
+@instrument_fixture(scope="function", name="lakeshore_336")
+def _make_lakeshore_336():
+    return LakeshoreModel336Mock(
+        "lakeshore_336_fixture",
+        "GPIB::2::INSTR",
+        pyvisa_sim_file="lakeshore_model336.yaml",
+        device_clear=False,
+    )
 
 
 def test_pid_set(lakeshore_336):

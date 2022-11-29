@@ -207,8 +207,13 @@ class DmmExponentialParameter(Parameter):
         provide a ``get`` method on the parameter instance.
         """
         dac = self.root_instrument._setter_instr
-        val = self._ed.send(dac.ch1())
+        val = self._ed.send(dac.ch1.cache.get())
         next(self._ed)
+        if self.root_instrument is not None:
+            mylogger = self.root_instrument.log
+        else:
+            mylogger = log
+        mylogger.debug("Getting raw value of parameter: %s as %s", self.full_name, val)
         return val
 
     @staticmethod
@@ -223,7 +228,7 @@ class DmmExponentialParameter(Parameter):
 
 
 class DmmGaussParameter(Parameter):
-    def __init__(self, name, **kwargs):
+    def __init__(self, name: str, **kwargs: Any):
         super().__init__(name, **kwargs)
         self.x0 = 0.1
         self.y0 = 0.2
@@ -238,8 +243,13 @@ class DmmGaussParameter(Parameter):
         provide a ``get`` method on the parameter instance.
         """
         dac = self.root_instrument._setter_instr
-        val = self._gauss.send((dac.ch1.get(), dac.ch2.get()))
+        val = self._gauss.send((dac.ch1.cache.get(), dac.ch2.cache.get()))
         next(self._gauss)
+        if self.root_instrument is not None:
+            mylogger = self.root_instrument.log
+        else:
+            mylogger = log
+        mylogger.debug("Getting raw value of parameter: %s as %s", self.full_name, val)
         return val
 
     def _gauss_model(self):
@@ -284,8 +294,8 @@ class DummyChannel(InstrumentChannel):
     A single dummy channel implementation
     """
 
-    def __init__(self, parent, name, channel):
-        super().__init__(parent, name)
+    def __init__(self, parent, name, channel, **kwargs):
+        super().__init__(parent, name, **kwargs)
 
         self._channel = channel
 

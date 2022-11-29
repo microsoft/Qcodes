@@ -4,7 +4,7 @@ Live plotting using pyqtgraph
 import logging
 import warnings
 from collections import deque, namedtuple
-from typing import Deque, Dict, List, Optional, Union, cast
+from typing import Deque, Dict, List, Optional, Tuple, Union, cast
 
 import numpy as np
 import pyqtgraph as pg
@@ -66,10 +66,19 @@ class QtPlot(BasePlot):
     max_len = cast(int, max_len)
     plots: Deque['QtPlot'] = deque(maxlen=max_len)
 
-    def __init__(self, *args, figsize=(1000, 600), interval=0.25,
-                 window_title='', theme=((60, 60, 60), 'w'), show_window=True,
-                 remote=True, fig_x_position=None, fig_y_position=None,
-                 **kwargs):
+    def __init__(
+        self,
+        *args,
+        figsize: Tuple[int, int] = (1000, 600),
+        interval=0.25,
+        window_title="",
+        theme=((60, 60, 60), "w"),
+        show_window=True,
+        remote=True,
+        fig_x_position=None,
+        fig_y_position=None,
+        **kwargs,
+    ):
         super().__init__(interval)
 
         if 'windowTitle' in kwargs.keys():
@@ -88,6 +97,8 @@ class QtPlot(BasePlot):
             self.rpg = pg
             self.qc_helpers = qcodes.utils.qt_helpers
         try:
+            # _init_qt will set self.rpg so it cannot be None here
+            assert self.rpg is not None
             self.win = self.rpg.GraphicsLayoutWidget(title=window_title)
             self.win.show()
         except (ClosedError, ConnectionResetError) as err:
@@ -97,6 +108,8 @@ class QtPlot(BasePlot):
                 log.warning("Remote plot responded with {} \n"
                             "Restarting remote plot".format(err))
                 self._init_qt()
+                # _init_qt will set self.rpg so it cannot be None here
+                assert self.rpg is not None
                 self.win = self.rpg.GraphicsLayoutWidget(title=window_title)
                 self.win.show()
             else:
@@ -139,14 +152,14 @@ class QtPlot(BasePlot):
         cls.rpg = cls.proc._import("pyqtgraph")
         cls.qc_helpers = cls.proc._import("qcodes.utils.qt_helpers")
 
-    def clear(self):
+    def clear(self) -> None:
         """
         Clears the plot window and removes all subplots and traces
         so that the window can be reused.
         """
         self.win.clear()
         self.traces = []
-        self.subplots: List[Union[PlotItem, ObjectProxy]] = []
+        self.subplots = []
 
     def add_subplot(self):
         subplot_object = self.win.addPlot()
@@ -208,10 +221,9 @@ class QtPlot(BasePlot):
         if any([('symbol' in key) for key in kwargs]):
             if 'symbolPen' not in kwargs:
                 symbol_pen_width = 0.5 if antialias else 1.0
-                kwargs['symbolPen'] = self.rpg.mkPen('444',
-                                                     width=symbol_pen_width)
-            if 'symbolBrush' not in kwargs:
-                kwargs['symbolBrush'] = color
+                kwargs["symbolPen"] = self.rpg.mkPen("#444", width=symbol_pen_width)
+            if "symbolBrush" not in kwargs:
+                kwargs["symbolBrush"] = color
 
         # suppress warnings when there are only NaN to plot
         with warnings.catch_warnings():

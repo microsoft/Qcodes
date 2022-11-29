@@ -1,8 +1,12 @@
+from __future__ import annotations
+
 import time
 from math import floor
 
+import numpy as np
 import pytest
 
+import qcodes as qc
 from qcodes.dataset.data_set import (
     DataSet,
     get_guids_by_run_spec,
@@ -25,7 +29,9 @@ from qcodes.utils import QCoDeSDeprecationWarning
 
 
 @pytest.mark.usefixtures("experiment")
+@pytest.mark.usefixtures("reset_config_on_exit")
 def test_load_by_id():
+    qc.config.GUID_components.GUID_type = "random_sample"
     ds = new_data_set("test-dataset")
     run_id = ds.run_id
     ds.mark_started()
@@ -354,3 +360,22 @@ def test_load_by_run_spec(empty_temp_db, some_interdeps):
 
     empty_guid_list = get_guids_by_run_spec(conn=conn, experiment_name="nosuchexp")
     assert empty_guid_list == []
+
+
+def test_callback(scalar_datasets_parameterized: DataSet) -> None:
+
+    called_progress: list[float] = []
+
+    def callback_closure(called_progress: list[float]):
+        def callback(progress: float) -> None:
+            called_progress.append(progress)
+
+        return callback
+
+    scalar_datasets_parameterized.get_parameter_data(
+        callback=callback_closure(called_progress)
+    )
+    if len(scalar_datasets_parameterized) > 100:
+        assert called_progress == list(np.arange(0.0, 101.0, 5.0))
+    else:
+        assert called_progress == [0.0, 50.0, 100.0]

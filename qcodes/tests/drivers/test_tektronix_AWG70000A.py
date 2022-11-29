@@ -1,21 +1,17 @@
-from io import StringIO, BytesIO
 import logging
 import zipfile
+from io import BytesIO, StringIO
 
-import pytest
-import numpy as np
-from hypothesis import given, settings
 import hypothesis.strategies as hst
+import numpy as np
+import pytest
+from broadbean.sequence import InvalidForgedSequenceError
+from hypothesis import given, settings
 from lxml import etree
 
-from qcodes.instrument_drivers.tektronix.AWG70002A import AWG70002A
-from qcodes.instrument_drivers.tektronix.AWG70000A import AWG70000A
-import qcodes.instrument.sims as sims
 import qcodes.tests.drivers.auxiliary_files as auxfiles
-
-from broadbean.sequence import InvalidForgedSequenceError
-
-visalib = sims.__file__.replace('__init__.py', 'Tektronix_AWG70000A.yaml@sim')
+from qcodes.instrument_drivers.tektronix.AWG70000A import AWG70000A
+from qcodes.instrument_drivers.tektronix.AWG70002A import AWG70002A
 
 
 def strip_outer_tags(sml: str) -> str:
@@ -37,9 +33,11 @@ def strip_outer_tags(sml: str) -> str:
 
 @pytest.fixture(scope='function')
 def awg2():
-    awg2_sim = AWG70002A('awg2_sim',
-                         address='GPIB0::2::INSTR',
-                         visalib=visalib)
+    awg2_sim = AWG70002A(
+        "awg2_sim",
+        address="GPIB0::2::INSTR",
+        pyvisa_sim_file="Tektronix_AWG70000A.yaml",
+    )
     yield awg2_sim
 
     awg2_sim.close()

@@ -1,12 +1,18 @@
+from __future__ import annotations
+
+import copy
 import gc
 import os
 import sys
+import tempfile
+from typing import TYPE_CHECKING, Generator
 
 import pytest
 from hypothesis import settings
 
 import qcodes as qc
-from qcodes import initialise_database, new_data_set
+from qcodes.configuration import Config
+from qcodes.dataset import initialise_database, new_data_set
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.experiment_container import new_experiment
@@ -15,6 +21,8 @@ settings.register_profile("ci", deadline=1000)
 
 n_experiments = 0
 
+if TYPE_CHECKING:
+    from qcodes.configuration import DotDict
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "win32: tests that only run under windows")
@@ -41,6 +49,64 @@ def disable_telemetry():
         yield
     finally:
         qc.config.telemetry.enabled = original_state
+
+
+@pytest.fixture(scope="function")
+def default_config(tmp_path) -> Generator[None, None, None]:
+    """
+    Fixture to temporarily establish default config settings.
+    This is achieved by overwriting the config paths of the user-,
+    environment-, and current directory-config files with the path of the
+    config file in the qcodes repository,
+    additionally the current config object `qcodes.config` gets copied and
+    reestablished.
+    """
+    home_file_name = Config.home_file_name
+    schema_home_file_name = Config.schema_home_file_name
+    env_file_name = Config.env_file_name
+    schema_env_file_name = Config.schema_env_file_name
+    cwd_file_name = Config.cwd_file_name
+    schema_cwd_file_name = Config.schema_cwd_file_name
+
+    file_name = str(tmp_path / "user_config.json")
+    file_name_schema = str(tmp_path / "user_config_schema.json")
+
+    Config.home_file_name = file_name
+    Config.schema_home_file_name = file_name_schema
+    Config.env_file_name = ""
+    Config.schema_env_file_name = ""
+    Config.cwd_file_name = ""
+    Config.schema_cwd_file_name = ""
+
+    default_config_obj: DotDict | None = copy.deepcopy(qc.config.current_config)
+    qc.config = Config()
+
+    try:
+        yield
+    finally:
+        Config.home_file_name = home_file_name
+        Config.schema_home_file_name = schema_home_file_name
+        Config.env_file_name = env_file_name
+        Config.schema_env_file_name = schema_env_file_name
+        Config.cwd_file_name = cwd_file_name
+        Config.schema_cwd_file_name = schema_cwd_file_name
+
+        qc.config.current_config = default_config_obj
+
+
+@pytest.fixture(scope="function")
+def reset_config_on_exit() -> Generator[None, None, None]:
+
+    """
+    Fixture to clean any modification of the in memory config on exit
+
+    """
+    default_config_obj: DotDict | None = copy.deepcopy(qc.config.current_config)
+
+    try:
+        yield
+    finally:
+        qc.config.current_config = default_config_obj
 
 
 @pytest.fixture(scope="session", autouse=True)

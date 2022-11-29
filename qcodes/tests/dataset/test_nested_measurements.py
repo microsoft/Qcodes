@@ -1,16 +1,15 @@
-from typing import List, Tuple, Dict, Union
+from typing import Dict, List, Tuple, Union
 
-import pytest
-import numpy as np
-from numpy.testing import assert_allclose
 import hypothesis.strategies as hst
+import numpy as np
+import pytest
 from hypothesis import given, settings
+from numpy.testing import assert_allclose
 
-from qcodes import new_data_set
-from qcodes.dataset.measurements import Measurement
-from qcodes.dataset.sqlite.connection import atomic_transaction
-from qcodes.dataset.descriptions.param_spec import ParamSpecBase
+from qcodes.dataset import Measurement, new_data_set
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
+from qcodes.dataset.descriptions.param_spec import ParamSpecBase
+from qcodes.dataset.sqlite.connection import atomic_transaction
 from qcodes.tests.common import retry_until_does_not_throw
 
 VALUE = Union[str, float, List, np.ndarray, bool]

@@ -13,7 +13,7 @@ from qcodes.dataset.database_fix_functions import (
 from qcodes.dataset.descriptions.param_spec import ParamSpec
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning.converters import old_to_new
-from qcodes.dataset.sqlite.db_upgrades import get_user_version
+from qcodes.dataset.sqlite.db_upgrades.version import get_user_version
 from qcodes.dataset.sqlite.queries import get_run_description
 from qcodes.tests.common import skip_if_no_fixtures
 from qcodes.tests.dataset.conftest import temporarily_copied_DB

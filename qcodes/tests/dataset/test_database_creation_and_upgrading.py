@@ -9,24 +9,27 @@ import pytest
 import qcodes as qc
 import qcodes.dataset.descriptions.versioning.serialization as serial
 import qcodes.tests.dataset
-from qcodes import new_data_set, new_experiment
-from qcodes.dataset.data_set import load_by_counter, load_by_id, load_by_run_spec
+from qcodes.dataset import (
+    ConnectionPlus,
+    connect,
+    initialise_database,
+    initialise_or_create_database_at,
+    load_by_counter,
+    load_by_id,
+    load_by_run_spec,
+    new_data_set,
+    new_experiment,
+)
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
 from qcodes.dataset.guids import parse_guid
-from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic_transaction
-from qcodes.dataset.sqlite.database import (
-    connect,
-    get_db_version_and_newest_available_version,
-    initialise_database,
-    initialise_or_create_database_at,
-)
+from qcodes.dataset.sqlite.connection import atomic_transaction
+from qcodes.dataset.sqlite.database import get_db_version_and_newest_available_version
 
 # pylint: disable=unused-import
 from qcodes.dataset.sqlite.db_upgrades import (
     _latest_available_version,
-    get_user_version,
     perform_db_upgrade,
     perform_db_upgrade_0_to_1,
     perform_db_upgrade_1_to_2,
@@ -37,10 +40,14 @@ from qcodes.dataset.sqlite.db_upgrades import (
     perform_db_upgrade_6_to_7,
     perform_db_upgrade_7_to_8,
     perform_db_upgrade_8_to_9,
-    set_user_version,
 )
+from qcodes.dataset.sqlite.db_upgrades.version import get_user_version, set_user_version
 from qcodes.dataset.sqlite.queries import get_run_description, update_GUIDs
-from qcodes.dataset.sqlite.query_helpers import is_column_in_table, one
+from qcodes.dataset.sqlite.query_helpers import (
+    get_description_map,
+    is_column_in_table,
+    one,
+)
 from qcodes.tests.common import error_caused_by, skip_if_no_fixtures
 from qcodes.tests.dataset.conftest import temporarily_copied_DB
 
@@ -77,16 +84,19 @@ def test_connect_upgrades_user_version(ver):
 
 @pytest.mark.parametrize('version', VERSIONS + (LATEST_VERSION_ARG,))
 def test_tables_exist(empty_temp_db, version):
-    conn = connect(qc.config["core"]["db_location"],
-                   qc.config["core"]["db_debug"],
-                   version=version)
-    cursor = conn.execute("select sql from sqlite_master"
-                          " where type = 'table'")
-    expected_tables = ['experiments', 'runs', 'layouts', 'dependencies']
+    conn = connect(
+        qc.config["core"]["db_location"], qc.config["core"]["db_debug"], version=version
+    )
+    query = """
+    SELECT sql FROM sqlite_master
+    WHERE type = 'table'
+    """
+    cursor = conn.execute(query)
+    expected_tables = ["experiments", "runs", "layouts", "dependencies"]
     rows = [row for row in cursor]
     assert len(rows) == len(expected_tables)
-    for row, expected_table in zip(rows, expected_tables):
-        assert expected_table in row['sql']
+    for (sql,), expected_table in zip(rows, expected_tables):
+        assert expected_table in sql
     conn.close()
 
 
@@ -98,6 +108,16 @@ def test_initialise_database_at_for_nonexisting_db(tmp_path):
 
     assert os.path.exists(db_location)
     assert qc.config["core"]["db_location"] == db_location
+
+
+def test_initialise_database_at_for_nonexisting_db_pathlib_path(tmp_path):
+    db_location = tmp_path / "temp.db"
+    assert not db_location.exists()
+
+    initialise_or_create_database_at(db_location)
+
+    assert db_location.exists()
+    assert qc.config["core"]["db_location"] == str(db_location)
 
 
 def test_initialise_database_at_for_existing_db(tmp_path):
@@ -704,8 +724,10 @@ def test_perform_actual_upgrade_6_to_7():
             atomic_transaction(conn, no_of_runs_query), 'max(run_id)')
         assert no_of_runs == 10
 
-        columns = atomic_transaction(conn, "PRAGMA table_info(runs)").fetchall()
-        col_names = [col['name'] for col in columns]
+        c = atomic_transaction(conn, "PRAGMA table_info(runs)")
+        description = get_description_map(c)
+        columns = c.fetchall()
+        col_names = [col[description["name"]] for col in columns]
 
         assert 'captured_run_id' in col_names
         assert 'captured_counter' in col_names

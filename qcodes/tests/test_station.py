@@ -16,7 +16,6 @@ from qcodes.instrument import Instrument
 from qcodes.monitor import Monitor
 from qcodes.parameters import DelegateParameter, Parameter
 from qcodes.station import SCHEMA_PATH, Station, ValidationWarning, update_config_schema
-from qcodes.tests.common import default_config
 from qcodes.tests.instrument_mocks import DummyInstrument
 from qcodes.utils import NumpyJSONEncoder, QCoDeSDeprecationWarning, get_qcodes_path
 from qcodes.utils.deprecate import deprecation_message
@@ -25,9 +24,9 @@ from .common import DumyPar
 
 
 @pytest.fixture(autouse=True)
+@pytest.mark.usefixtures("default_config")
 def use_default_config():
-    with default_config():
-        yield
+    yield
 
 
 @pytest.fixture(autouse=True)

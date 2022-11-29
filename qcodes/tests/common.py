@@ -5,13 +5,24 @@ import tempfile
 from contextlib import contextmanager
 from functools import wraps
 from time import sleep
-from typing import TYPE_CHECKING, Any, Callable, Dict, Hashable, Optional, Tuple, Type
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Generator,
+    Hashable,
+    Optional,
+    Tuple,
+    Type,
+)
 
 import pytest
 
 import qcodes
 from qcodes.configuration import Config, DotDict
 from qcodes.metadatable import Metadatable
+from qcodes.utils import deprecate
 
 if TYPE_CHECKING:
     from pytest import ExceptionInfo
@@ -160,6 +171,7 @@ class DumyPar(Metadatable):
         return value
 
 
+@deprecate(reason="Unused internally", alternative="default_config fixture")
 @contextmanager
 def default_config(user_config: Optional[str] = None):
     """
@@ -212,13 +224,13 @@ def default_config(user_config: Optional[str] = None):
             qcodes.config.current_config = default_config_obj
 
 
+@deprecate(reason="Unused internally", alternative="reset_config_on_exit fixture")
 @contextmanager
-def reset_config_on_exit():
+def reset_config_on_exit() -> Generator[None, None, None]:
     """
-    Context manager to clean any modefication of the in memory config on exit
+    Context manager to clean any modification of the in memory config on exit
 
     """
-
     default_config_obj: Optional[DotDict] = copy.deepcopy(
         qcodes.config.current_config
     )

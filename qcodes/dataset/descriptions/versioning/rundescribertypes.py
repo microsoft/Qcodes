@@ -13,7 +13,9 @@ instance of InterDependencies (which contains ParamSpecs) and
 interdependencies_, which is an instance of InterDependencies_
 (which contains ParamSpecBases)
 """
-from typing import Dict, List, Optional, Tuple, Union
+from __future__ import annotations
+
+from typing import Dict, Optional, Tuple, Union
 
 from typing_extensions import TypedDict
 
@@ -21,35 +23,35 @@ from ..param_spec import ParamSpecBaseDict, ParamSpecDict
 
 
 class InterDependenciesDict(TypedDict):
-    paramspecs: Tuple[ParamSpecDict, ...]
+    paramspecs: tuple[ParamSpecDict, ...]
 
 
 class InterDependencies_Dict(TypedDict):
-    parameters: Dict[str, ParamSpecBaseDict]
-    dependencies: Dict[str, List[str]]
-    inferences: Dict[str, List[str]]
-    standalones: List[str]
+    parameters: dict[str, ParamSpecBaseDict]
+    dependencies: dict[str, list[str]]
+    inferences: dict[str, list[str]]
+    standalones: list[str]
 
 
-Shapes = Optional[Dict[str, Tuple[int, ...]]]
+Shapes = Dict[str, Tuple[int, ...]]
 
 
 class RunDescriberV0Dict(TypedDict):
     version: int
-    interdependencies: "InterDependenciesDict"
+    interdependencies: InterDependenciesDict
 
 
 class RunDescriberV1Dict(TypedDict):
     version: int
-    interdependencies: "InterDependencies_Dict"
+    interdependencies: InterDependencies_Dict
 
 
 class RunDescriberV2Dict(RunDescriberV0Dict):
-    interdependencies_: "InterDependencies_Dict"
+    interdependencies_: InterDependencies_Dict
 
 
 class RunDescriberV3Dict(RunDescriberV2Dict):
-    shapes: Shapes
+    shapes: Shapes | None
     # dict from dependent to dict from depenency to num points in grid
 
 

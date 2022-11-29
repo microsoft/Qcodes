@@ -6,7 +6,6 @@ from typing import Any, Callable, Dict
 
 import pytest
 
-import qcodes.instrument.sims as sims
 from qcodes.instrument import InstrumentBase
 from qcodes.instrument_drivers.Lakeshore.lakeshore_base import BaseSensorChannel
 from qcodes.instrument_drivers.Lakeshore.Model_372 import Model_372
@@ -268,9 +267,9 @@ class Model_372_Mock(MockVisaInstrument, Model_372):
         return f'{chan.T}'
 
 
-def instrument_fixture(scope='function'):
+def instrument_fixture(scope="function", name=None):
     def wrapper(func):
-        @pytest.fixture(scope=scope)
+        @pytest.fixture(scope=scope, name=name)
         def wrapped_fixture():
             inst = func()
             try:
@@ -283,10 +282,12 @@ def instrument_fixture(scope='function'):
 
 @instrument_fixture(scope='function')
 def lakeshore_372():
-    visalib = sims.__file__.replace('__init__.py',
-                                    'lakeshore_model372.yaml@sim')
-    return Model_372_Mock('lakeshore_372_fixture', 'GPIB::3::INSTR',
-                          visalib=visalib, device_clear=False)
+    return Model_372_Mock(
+        "lakeshore_372_fixture",
+        "GPIB::3::INSTR",
+        pyvisa_sim_file="lakeshore_model372.yaml",
+        device_clear=False,
+    )
 
 
 def test_pid_set(lakeshore_372):

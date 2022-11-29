@@ -6,11 +6,11 @@ from __future__ import annotations
 import io
 import operator
 import traceback
+from collections.abc import Callable, Iterable, Sequence
 from datetime import datetime
 from functools import partial, reduce
-from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Literal
 
-import matplotlib.pyplot as plt
 from IPython.display import clear_output, display
 from ipywidgets import (
     HTML,
@@ -26,12 +26,10 @@ from ipywidgets import (
     VBox,
 )
 from ruamel.yaml import YAML
-from typing_extensions import Literal
 
 import qcodes
-from qcodes.dataset import initialise_or_create_database_at
+from qcodes.dataset import experiments, initialise_or_create_database_at, plot_dataset
 from qcodes.dataset.data_set_protocol import DataSetProtocol
-from qcodes.dataset.plotting import plot_dataset
 
 if TYPE_CHECKING:
     from qcodes.dataset.descriptions.param_spec import ParamSpecBase
@@ -39,18 +37,18 @@ if TYPE_CHECKING:
 _META_DATA_KEY = "widget_notes"
 
 
-def _get_in(nested_keys: Sequence[str], dct: Dict[str, Any]) -> Dict[str, Any]:
+def _get_in(nested_keys: Sequence[str], dct: dict[str, Any]) -> dict[str, Any]:
     """ Returns dct[i0][i1]...[iX] where [i0, i1, ..., iX]==nested_keys."""
     return reduce(operator.getitem, nested_keys, dct)
 
 
 def button(
     description: str,
-    button_style: Optional[str] = None,
-    on_click: Optional[Callable[[Any], None]] = None,
-    tooltip: Optional[str] = None,
-    layout_kwargs: Optional[Dict[str, Any]] = None,
-    button_kwargs: Optional[Dict[str, Any]] = None,
+    button_style: str | None = None,
+    on_click: Callable[[Any], None] | None = None,
+    tooltip: str | None = None,
+    layout_kwargs: dict[str, Any] | None = None,
+    button_kwargs: dict[str, Any] | None = None,
 ) -> Button:
     """Returns a `ipywidgets.Button`."""
     layout_kwargs = layout_kwargs or {}
@@ -117,7 +115,7 @@ def label(description: str) -> Label:
 
 
 def _update_nested_dict_browser(
-    nested_keys: Sequence[str], nested_dict: Dict[Any, Any], box: Box
+    nested_keys: Sequence[str], nested_dict: dict[Any, Any], box: Box
 ) -> Callable[[Button], None]:
     def update_box(_: Button) -> None:
         box.children = (_nested_dict_browser(nested_keys, nested_dict, box),)
@@ -127,7 +125,7 @@ def _update_nested_dict_browser(
 
 def _nested_dict_browser(
     nested_keys: Sequence[str],
-    nested_dict: Dict[Any, Any],
+    nested_dict: dict[Any, Any],
     box: Box,
     max_nrows: int = 30,
 ) -> GridspecLayout:
@@ -207,7 +205,7 @@ def _nested_dict_browser(
 
 
 def nested_dict_browser(
-    nested_dict: Dict[Any, Any], nested_keys: Sequence[str] = ()
+    nested_dict: dict[Any, Any], nested_keys: Sequence[str] = ()
 ) -> Box:
     """Returns a widget to interactive browse a nested dictionary."""
     box = Box([])
@@ -216,6 +214,8 @@ def nested_dict_browser(
 
 
 def _plot_ds(ds: DataSetProtocol) -> None:
+    import matplotlib.pyplot as plt
+
     plot_dataset(ds)  # might fail
     plt.show()
 
@@ -348,17 +348,17 @@ def editable_metadata(ds: DataSetProtocol) -> Box:
     return box
 
 
-def _yaml_dump(dct: Dict[str, Any]) -> str:
+def _yaml_dump(dct: dict[str, Any]) -> str:
     with io.StringIO() as f:
         YAML().dump(dct, f)
         return f.getvalue()
 
 
-def _get_parameters(ds: DataSetProtocol) -> Dict[str, Dict[str, Any]]:
+def _get_parameters(ds: DataSetProtocol) -> dict[str, dict[str, Any]]:
     independent = {}
     dependent = {}
 
-    def _get_attr(p: ParamSpecBase) -> Dict[str, Any]:
+    def _get_attr(p: ParamSpecBase) -> dict[str, Any]:
         return {
             "unit": p.unit,
             "label": p.label,
@@ -491,10 +491,10 @@ def _experiment_widget(
 
 
 def experiments_widget(
-    db: Optional[str] = None,
-    data_sets: Optional[Sequence[DataSetProtocol]] = None,
+    db: str | None = None,
+    data_sets: Sequence[DataSetProtocol] | None = None,
     *,
-    sort_by: Optional[Literal["timestamp", "run_id"]] = "run_id",
+    sort_by: Literal["timestamp", "run_id"] | None = "run_id",
 ) -> VBox:
     r"""Displays an interactive widget that shows the :func:`qcodes.dataset.experiments`.
 
@@ -516,9 +516,7 @@ def experiments_widget(
     if data_sets is None:
         if db is not None:
             initialise_or_create_database_at(db)
-        data_sets = [
-            ds for exp in qcodes.experiments() for ds in exp.data_sets()
-        ]
+        data_sets = [ds for exp in experiments() for ds in exp.data_sets()]
     if sort_by == "run_id":
         data_sets = sorted(data_sets, key=lambda ds: ds.run_id)
     elif sort_by == "timestamp":

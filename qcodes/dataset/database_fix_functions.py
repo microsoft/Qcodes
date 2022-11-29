@@ -2,6 +2,8 @@
 Sometimes it happens that databases are put into inconsistent/corrupt states.
 This module contains functions to remedy known issues.
 """
+from __future__ import annotations
+
 import json
 import logging
 from typing import Any, Dict, Sequence, cast
@@ -12,21 +14,21 @@ import qcodes.dataset.descriptions.versioning.serialization as serial
 import qcodes.dataset.descriptions.versioning.v0 as v0
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning.converters import old_to_new
-from qcodes.dataset.descriptions.versioning.rundescribertypes import \
-    RunDescriberV1Dict
-from qcodes.dataset.sqlite.connection import (ConnectionPlus, atomic,
-                                              atomic_transaction)
-from qcodes.dataset.sqlite.db_upgrades import get_user_version
-from qcodes.dataset.sqlite.queries import (_get_parameters,
-                                           _update_run_description,
-                                           get_run_description,
-                                           update_run_description)
+from qcodes.dataset.descriptions.versioning.rundescribertypes import RunDescriberV1Dict
+from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic, atomic_transaction
+from qcodes.dataset.sqlite.db_upgrades.version import get_user_version
+from qcodes.dataset.sqlite.queries import (
+    _get_parameters,
+    _update_run_description,
+    get_run_description,
+    update_run_description,
+)
 from qcodes.dataset.sqlite.query_helpers import one, select_one_where
 
 log = logging.getLogger(__name__)
 
 
-def fix_version_4a_run_description_bug(conn: ConnectionPlus) -> Dict[str, int]:
+def fix_version_4a_run_description_bug(conn: ConnectionPlus) -> dict[str, int]:
     """
     Fix function to fix a bug where the RunDescriber accidentally wrote itself
     to string using the (new) InterDependencies_ object instead of the (old)
@@ -89,7 +91,8 @@ def fix_version_4a_run_description_bug(conn: ConnectionPlus) -> Dict[str, int]:
 
 
 def _convert_run_describer_v1_like_dict_to_v0_like_dict(
-        new_desc_dict: RunDescriberV1Dict) -> Dict[str, Any]:
+    new_desc_dict: RunDescriberV1Dict,
+) -> dict[str, Any]:
     """
     This function takes the given dict which is expected to be
     representation of `RunDescriber` with `InterDependencies_` (underscore!)

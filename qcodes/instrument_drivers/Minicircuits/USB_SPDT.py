@@ -1,9 +1,11 @@
 import os
-from typing import Optional, Any, Dict
+from typing import Any, Dict, Optional
 
 # QCoDeS imports
 from qcodes.instrument_drivers.Minicircuits.Base_SPDT import (
-    SPDT_Base, SwitchChannelBase)
+    SPDT_Base,
+    SwitchChannelBase,
+)
 
 try:
     import clr

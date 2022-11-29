@@ -1,0 +1,25 @@
+spec: "1.0"
+devices:
+  device 1:
+    eom:
+      GPIB INSTR:
+        q: "\r"  # MAKE SURE! that this matches the terminator of the driver!
+        r: "\r"
+    error: ERROR
+    dialogues:
+      - q: "*IDN?"
+        r: "QCoDeS, Weinschel 8320 (Simulated), 1337, 0.0.01"
+
+    properties:
+
+      attenuation:
+        default: 0
+        getter:
+          q: "ATTN? 1"  # the set/get commands have to simply be copied over from the driver
+          r: "{:02.0f}"
+        setter:
+          q: "ATTN ALL {:02.0f}"
+
+resources:
+  GPIB::1::INSTR:
+    device: device 1

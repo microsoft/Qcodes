@@ -1,4 +1,5 @@
 import pytest
+
 from qcodes.validators import Strings
 
 from .conftest import AClass, a_func

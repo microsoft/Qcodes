@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import os
+from pathlib import Path
 from warnings import warn
 
 import numpy as np
@@ -20,10 +23,13 @@ from qcodes.dataset.sqlite.queries import (
 )
 
 
-def extract_runs_into_db(source_db_path: str,
-                         target_db_path: str, *run_ids: int,
-                         upgrade_source_db: bool = False,
-                         upgrade_target_db: bool = False) -> None:
+def extract_runs_into_db(
+    source_db_path: str | Path,
+    target_db_path: str | Path,
+    *run_ids: int,
+    upgrade_source_db: bool = False,
+    upgrade_target_db: bool = False,
+) -> None:
     """
     Extract a selection of runs into another DB file. All runs must come from
     the same experiment. They will be added to an experiment with the same name

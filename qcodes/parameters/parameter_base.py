@@ -1,25 +1,14 @@
+from __future__ import annotations
+
 import collections.abc
 import logging
 import time
 import warnings
+from collections.abc import Callable, Iterable, Mapping, Sequence, Sized
 from datetime import datetime
 from functools import wraps
 from types import TracebackType
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Sized,
-    Type,
-    Union,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, overload
 
 from qcodes.metadatable import Metadatable
 from qcodes.utils import DelegateAttributes, full_class, qcodes_abstractmethod
@@ -55,15 +44,15 @@ class _SetParamContext:
 
     def __init__(
         self,
-        parameter: "ParameterBase",
+        parameter: ParameterBase,
         value: ParamDataType,
         allow_changes: bool = False,
     ):
-        self._parameter: "ParameterBase" = parameter
+        self._parameter: ParameterBase = parameter
         self._value = value
         self._allow_changes = allow_changes
         self._original_value = None
-        self._original_settable: Optional[bool] = None
+        self._original_settable: bool | None = None
 
     def __enter__(self) -> None:
         self._original_value = self._parameter.cache()
@@ -77,9 +66,9 @@ class _SetParamContext:
 
     def __exit__(
         self,
-        typ: Optional[Type[BaseException]],
-        value: Optional[BaseException],
-        traceback: Optional[TracebackType],
+        typ: type[BaseException] | None,
+        value: BaseException | None,
+        traceback: TracebackType | None,
     ) -> None:
         if not self._allow_changes:
             assert self._original_settable is not None
@@ -89,7 +78,7 @@ class _SetParamContext:
             self._parameter.set(self._original_value)
 
 
-def invert_val_mapping(val_mapping: Mapping[Any, Any]) -> Dict[Any, Any]:
+def invert_val_mapping(val_mapping: Mapping[Any, Any]) -> dict[Any, Any]:
     """Inverts the value mapping dictionary for allowed parameter values"""
     return {v: k for k, v in val_mapping.items()}
 
@@ -189,22 +178,22 @@ class ParameterBase(Metadatable):
     def __init__(
         self,
         name: str,
-        instrument: Optional["InstrumentBase"],
+        instrument: InstrumentBase | None,
         snapshot_get: bool = True,
-        metadata: Optional[Mapping[Any, Any]] = None,
-        step: Optional[float] = None,
-        scale: Optional[Union[float, Iterable[float]]] = None,
-        offset: Optional[Union[float, Iterable[float]]] = None,
+        metadata: Mapping[Any, Any] | None = None,
+        step: float | None = None,
+        scale: float | Iterable[float] | None = None,
+        offset: float | Iterable[float] | None = None,
         inter_delay: float = 0,
         post_delay: float = 0,
-        val_mapping: Optional[Mapping[Any, Any]] = None,
-        get_parser: Optional[Callable[..., Any]] = None,
-        set_parser: Optional[Callable[..., Any]] = None,
+        val_mapping: Mapping[Any, Any] | None = None,
+        get_parser: Callable[..., Any] | None = None,
+        set_parser: Callable[..., Any] | None = None,
         snapshot_value: bool = True,
         snapshot_exclude: bool = False,
-        max_val_age: Optional[float] = None,
-        vals: Optional[Validator[Any]] = None,
-        abstract: Optional[bool] = False,
+        max_val_age: float | None = None,
+        vals: Validator[Any] | None = None,
+        abstract: bool | None = False,
         bind_to_instrument: bool = True,
     ) -> None:
         super().__init__(metadata)
@@ -373,7 +362,7 @@ class ParameterBase(Metadatable):
     def __call__(self, *args: Any, **kwargs: Any) -> None:
         pass
 
-    def __call__(self, *args: Any, **kwargs: Any) -> Optional[ParamDataType]:
+    def __call__(self, *args: Any, **kwargs: Any) -> ParamDataType | None:
         if len(args) == 0 and len(kwargs) == 0:
             if self.gettable:
                 return self.get()
@@ -392,9 +381,9 @@ class ParameterBase(Metadatable):
 
     def snapshot_base(
         self,
-        update: Optional[bool] = True,
-        params_to_skip_update: Optional[Sequence[str]] = None,
-    ) -> Dict[Any, Any]:
+        update: bool | None = True,
+        params_to_skip_update: Sequence[str] | None = None,
+    ) -> dict[Any, Any]:
         """
         State of the parameter as a JSON-compatible dict (everything that
         the custom JSON encoder class
@@ -422,7 +411,7 @@ class ParameterBase(Metadatable):
                 stacklevel=2,
             )
 
-        state: Dict[str, Any] = {"__class__": full_class(self), "full_name": str(self)}
+        state: dict[str, Any] = {"__class__": full_class(self), "full_name": str(self)}
 
         if self._snapshot_value:
             has_get = self.gettable
@@ -462,6 +451,8 @@ class ParameterBase(Metadatable):
                     attr_strip = attr.lstrip("_")  # strip leading underscores
                     if isinstance(val, Validator):
                         state[attr_strip] = repr(val)
+                    elif isinstance(val, Metadatable):
+                        state[attr_strip] = val.snapshot(update=update)
                     else:
                         state[attr_strip] = val
 
@@ -649,8 +640,8 @@ class ParameterBase(Metadatable):
         return set_wrapper
 
     def get_ramp_values(
-        self, value: Union[float, Sized], step: Optional[float] = None
-    ) -> Sequence[Union[float, Sized]]:
+        self, value: float | Sized, step: float | None = None
+    ) -> Sequence[float | Sized]:
         """
         Return values to sweep from current value to target value.
         This method can be overridden to have a custom sweep behaviour.
@@ -717,7 +708,7 @@ class ParameterBase(Metadatable):
             self.vals.validate(value, "Parameter: " + context)
 
     @property
-    def step(self) -> Optional[float]:
+    def step(self) -> float | None:
         """
         Stepsize that this Parameter uses during set operation.
         Stepsize must be a positive number or None.
@@ -740,9 +731,9 @@ class ParameterBase(Metadatable):
         return self._step
 
     @step.setter
-    def step(self, step: Optional[float]) -> None:
+    def step(self, step: float | None) -> None:
         if step is None:
-            self._step: Optional[float] = step
+            self._step: float | None = step
         elif not getattr(self.vals, "is_numeric", True):
             raise TypeError("you can only step numeric parameters")
         elif not isinstance(step, (int, float)):
@@ -837,7 +828,7 @@ class ParameterBase(Metadatable):
         return "_".join(self.name_parts)
 
     @property
-    def instrument(self) -> Optional["InstrumentBase"]:
+    def instrument(self) -> InstrumentBase | None:
         """
         Return the first instrument that this parameter is bound to.
         E.g if this is bound to a channel it will return the channel
@@ -847,7 +838,7 @@ class ParameterBase(Metadatable):
         return self._instrument
 
     @property
-    def root_instrument(self) -> Optional["InstrumentBase"]:
+    def root_instrument(self) -> InstrumentBase | None:
         """
         Return the fundamental instrument that this parameter belongs too.
         E.g if the parameter is bound to a channel this will return the
@@ -907,7 +898,7 @@ class ParameterBase(Metadatable):
         return self.set_to(self.cache(), allow_changes=allow_changes)
 
     @property
-    def name_parts(self) -> List[str]:
+    def name_parts(self) -> list[str]:
         """
         List of the parts that make up the full name of this parameter
         """
@@ -941,7 +932,7 @@ class ParameterBase(Metadatable):
         return self._settable
 
     @property
-    def underlying_instrument(self) -> Optional["InstrumentBase"]:
+    def underlying_instrument(self) -> InstrumentBase | None:
         """
         Returns an instance of the underlying hardware instrument that this
         parameter communicates with, per this parameter's implementation.
@@ -962,7 +953,7 @@ class ParameterBase(Metadatable):
         return self.root_instrument
 
     @property
-    def abstract(self) -> Optional[bool]:
+    def abstract(self) -> bool | None:
         return self._abstract
 
 
@@ -1008,7 +999,7 @@ class GetLatest(DelegateAttributes):
         """
         return self.parameter.cache.get()
 
-    def get_timestamp(self) -> Optional[datetime]:
+    def get_timestamp(self) -> datetime | None:
         """
         Return the age of the latest parameter value.
 
@@ -1016,7 +1007,7 @@ class GetLatest(DelegateAttributes):
         """
         return self.cache.timestamp
 
-    def get_raw_value(self) -> Optional[ParamRawDataType]:
+    def get_raw_value(self) -> ParamRawDataType | None:
         """
         Return latest raw value of the parameter.
 

@@ -18,54 +18,63 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python-version: ["3.7", "3.8", "3.9", "3.10"]
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
         exclude:
-          - os: windows-latest
-            python-version: "3.7"
           - os: windows-latest
             python-version: "3.8"
           - os: windows-latest
             python-version: "3.9"
+          - os: windows-latest
+            python-version: "3.11"
     env:
       DISPLAY: ':99.0'
       OS: ${{ matrix.os }}
       PYTHON: ${{ matrix.python-version }}
+      RUN_BLUERACER: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11' }}
 
     steps:
-    - uses: actions/checkout@v3.0.2
+    - uses: actions/checkout@v3.1.0
       with:
         submodules: true
     - name: setup ubuntu-latest xvfb
       uses: ./.github/actions/setup-ubuntu-latest-xvfb
       if: runner.os == 'Linux'
+    # install libhdf5-dev untill we have wheels for python 3.11
+    - name: install libhdf5
+      run: sudo apt install libhdf5-dev
+      shell: bash
+      if: runner.os == 'Linux'
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4.2.0
+      uses: actions/setup-python@v4.3.0
       with:
         python-version: ${{ matrix.python-version }}
-    - name: prepare pip cache
-      id: prepare-cache-pip
-      uses: ./.github/actions/prepare-cache-pip
-    - name: pip cache
-      uses: actions/cache@v3.0.5
-      with:
-        path: ${{ steps.prepare-cache-pip.outputs.cache-dir }}
-        key: ${{ runner.os }}-${{ matrix.python-version }}-pip-${{ hashFiles('**/requirements.txt') }}-${{ hashFiles('**/pyproject.toml') }}
-        restore-keys: |
-          ${{ runner.os }}-${{ matrix.python-version }}-pip-
+        cache: 'pip'
+        cache-dependency-path: |
+          pyproject.toml
+          requirements.txt
+    - name: upgrade pip setuptools wheel
+      run: python -m pip install --upgrade pip setuptools wheel
+      shell: bash
     - name: install qcodes
       run: |
         pip install .[test] -c requirements.txt
     - name: Run Mypy
-      run: mypy qcodes
+      run: mypy -p qcodes
     - name: Run parallel tests
       run: |
-        pytest -m "not serial" --cov=qcodes --cov-report xml --hypothesis-profile ci qcodes
-# a subset of the tests fails when run in parallel on windows so run those in serial here
+        pytest -m "not serial" --cov=qcodes --cov-report xml --hypothesis-profile ci qcodes --csv test_durations.csv --csv-columns name,duration
+# a subset of the tests fails when run in parallel on Windows so run those in serial here
+    - name: Compare test duration time on linux py311
+      uses: actions/upload-artifact@v3
+      with:
+        name: blueracer
+        path: test_durations.csv
+      if: ${{ fromJSON(env.RUN_BLUERACER) }}
     - name: Run serial tests
       run: |
         pytest -m "serial" -n 0 --dist no --cov=qcodes --cov-report xml --cov-append --hypothesis-profile ci qcodes
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3.1.0
+      uses: codecov/codecov-action@v3.1.1
       with:
         file: ./coverage.xml
         env_vars: OS,PYTHON

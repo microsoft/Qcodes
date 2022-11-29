@@ -4,11 +4,10 @@ from typing import List
 import pytest
 
 import qcodes as qc
-from qcodes import load_by_guid, load_or_create_experiment
+from qcodes.dataset import connect, load_by_guid, load_or_create_experiment
 from qcodes.dataset.data_set_in_memory import DataSetInMem
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
-from qcodes.dataset.sqlite.database import connect
 
 
 def test_create_dataset_in_memory_explicit_db(empty_temp_db):
@@ -63,7 +62,7 @@ def test_no_interdeps_raises_in_prepare(experiment):
         ds.prepare(interdeps=InterDependencies_(), snapshot={})
 
 
-def test_prepare_twice_raises(experiment):
+def test_prepare_twice_raises(experiment) -> None:
     ds = DataSetInMem._create_new_run(name="foo")
 
     pss: List[ParamSpecBase] = []
@@ -79,7 +78,7 @@ def test_prepare_twice_raises(experiment):
         ds.prepare(interdeps=idps, snapshot={})
 
 
-def test_timestamps(experiment):
+def test_timestamps(experiment) -> None:
     ds = DataSetInMem._create_new_run(name="foo")
 
     assert ds.run_timestamp() is None

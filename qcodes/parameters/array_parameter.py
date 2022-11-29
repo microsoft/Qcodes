@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import collections.abc
 import os
-from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence, Type
+from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
@@ -102,18 +105,18 @@ class ArrayParameter(ParameterBase):
         self,
         name: str,
         shape: Sequence[int],
-        instrument: Optional["InstrumentBase"] = None,
-        label: Optional[str] = None,
-        unit: Optional[str] = None,
-        setpoints: Optional[Sequence[Any]] = None,
-        setpoint_names: Optional[Sequence[str]] = None,
-        setpoint_labels: Optional[Sequence[str]] = None,
-        setpoint_units: Optional[Sequence[str]] = None,
-        docstring: Optional[str] = None,
+        instrument: InstrumentBase | None = None,
+        label: str | None = None,
+        unit: str | None = None,
+        setpoints: Sequence[Any] | None = None,
+        setpoint_names: Sequence[str] | None = None,
+        setpoint_labels: Sequence[str] | None = None,
+        setpoint_units: Sequence[str] | None = None,
+        docstring: str | None = None,
         snapshot_get: bool = True,
         snapshot_value: bool = False,
         snapshot_exclude: bool = False,
-        metadata: Optional[Mapping[Any, Any]] = None,
+        metadata: Mapping[Any, Any] | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(
@@ -137,7 +140,7 @@ class ArrayParameter(ParameterBase):
         self.label = name if label is None else label
         self.unit = unit if unit is not None else ""
 
-        nt: Type[None] = type(None)
+        nt: type[None] = type(None)
 
         if not is_sequence_of(shape, int):
             raise ValueError("shapes must be a tuple of ints, not " + repr(shape))
@@ -193,7 +196,7 @@ class ArrayParameter(ParameterBase):
             raise AttributeError("ArrayParameter must have a get, set or both")
 
     @property
-    def setpoint_full_names(self) -> Optional[Sequence[str]]:
+    def setpoint_full_names(self) -> Sequence[str] | None:
         """
         Full names of setpoints including instrument names if available
         """

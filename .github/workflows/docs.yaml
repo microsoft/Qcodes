@@ -18,27 +18,39 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python-version: [3.7, 3.9, "3.10"]
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
         exclude:
           - os: windows-latest
             python-version: 3.9
           - os: windows-latest
             python-version: 3.10
+          - os: windows-latest
+            python-version: 3.11
           - os: ubuntu-latest
-            python-version: 3.7
+            python-version: 3.8
     env:
       DISPLAY: ':99.0'
       OS: ${{ matrix.os }}
-      UPLOAD_TO_GHPAGES: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == '3.9' && github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+      UPLOAD_TO_GHPAGES: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == '3.10' && github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+      # we expect no warnings from Sphinx in 3.10
+      # The std-lib docstring of IntEnum in 3.11.0 is not valid
+      # causing errors like in the docstring of from_bytes (from Int)
+      # WARNING: Inline interpreted text or phrase reference start-string without end-string.
+      SPHINX_WARNINGS_AS_ERROR: ${{ matrix.python-version == '3.10' }}
+      SPHINX_OPTS: "-v"
     steps:
-    - uses: actions/checkout@v3.0.2
+    - uses: actions/checkout@v3.1.0
       with:
         fetch-depth: '0'
         # if we upload to ghpages we need the full
         # history to generate correct version info
       if: ${{ fromJSON(env.UPLOAD_TO_GHPAGES) }}
-    - uses: actions/checkout@v3.0.2
+    - uses: actions/checkout@v3.1.0
       if: ${{ !fromJSON(env.UPLOAD_TO_GHPAGES) }}
+    - name: set-sphinx-opts
+      run: |
+        echo "SPHIX_OPTS=-W -v" >> $GITHUB_ENV
+      if: ${{ fromJSON(env.SPHINX_WARNINGS_AS_ERROR) }}
     - name: setup ubuntu-latest xvfb
       uses: ./.github/actions/setup-ubuntu-latest-xvfb
       if: runner.os == 'Linux'
@@ -46,7 +58,7 @@ jobs:
       run: sudo apt install pandoc
       if: runner.os == 'Linux'
     - name: Install pandoc on windows
-      uses: Wandalen/wretry.action@v1.0.27
+      uses: Wandalen/wretry.action@v1.0.36
       with:
         action: crazy-max/ghaction-chocolatey@v1.6.0
         with: |
@@ -54,41 +66,43 @@ jobs:
         attempt_limit: 5
         attempt_delay: 1000
       if: runner.os == 'Windows'
+    # install libhdf5-dev untill we have wheels for python 3.11
+    - name: install libhdf5
+      run: sudo apt install libhdf5-dev
+      shell: bash
+      if: runner.os == 'Linux'
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4.2.0
+      uses: actions/setup-python@v4.3.0
       with:
         python-version: ${{ matrix.python-version }}
-    - name: prepare pip cache
-      id: prepare-cache-pip
-      uses: ./.github/actions/prepare-cache-pip
-    - name: pip cache
-      uses: actions/cache@v3.0.5
-      with:
-        path: ${{ steps.prepare-cache-pip.outputs.cache-dir }}
-        key: ${{ runner.os }}-${{ matrix.python-version }}-pip-${{ hashFiles('**/requirements.txt') }}-${{ hashFiles('**/pyproject.toml') }}
-        restore-keys: |
-          ${{ runner.os }}-${{ matrix.python-version }}-pip-
+        cache: 'pip'
+        cache-dependency-path: |
+          pyproject.toml
+          requirements.txt
+    - name: upgrade pip setuptools wheel
+      run: python -m pip install --upgrade pip setuptools wheel
+      shell: bash
     - name: install qcodes
       run: pip install -c requirements.txt .[docs]
     - name: Build docs on linux
       run: |
         cd docs
-        export SPHINXOPTS="-W -v"
+        export SPHINXOPTS="${{ env.SPHINX_OPTS }}"
         make html
       if: runner.os == 'Linux'
     - name: Build docs on windows
       run: |
         cd docs
-        $env:SPHINXOPTS = "-W -v"
+        $env:SPHINXOPTS = "${{ env.SPHINX_OPTS }}"
         ./make.bat html
       if: runner.os == 'Windows'
     - name: Upload build docs
-      uses: actions/upload-artifact@v3.1.0
+      uses: actions/upload-artifact@v3.1.1
       with:
         name: docs_${{ matrix.python-version }}_${{ matrix.os }}
         path: ${{ github.workspace }}/docs/_build/html
     - name: Deploy to gh pages
-      uses: JamesIves/github-pages-deploy-action@v4.4.0
+      uses: JamesIves/github-pages-deploy-action@v4.4.1
       with:
         branch: gh-pages
         folder: ${{ github.workspace }}/docs/_build/html

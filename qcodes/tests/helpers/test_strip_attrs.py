@@ -1,6 +1,6 @@
-import pytest
-
 from typing import Any, Dict
+
+import pytest
 
 from qcodes.utils import strip_attrs
 

@@ -1,6 +1,7 @@
-from typing import Any, Callable, Generic, Optional, TypeVar, Union
+from __future__ import annotations
 
-from typing_extensions import Literal
+from collections.abc import Callable
+from typing import Any, Generic, Literal, TypeVar
 
 from qcodes.utils import is_function
 
@@ -18,27 +19,27 @@ class Command(Generic[Output, ParsedOutput]):
     Create a callable command from a string or function.
 
     Args:
-        arg_count (int): The number of arguments to the command.
+        arg_count: The number of arguments to the command.
 
-        cmd (Optional[Union[str, Callable]]): If a function, it will be
+        cmd: If a function, it will be
             called directly when the command is invoked. If a string,
             it should contain positional fields to ``.format`` like ``'{}'``
             or ``'{0}'``, and it will be passed on to ``exec_str`` after
             formatting.
 
-        exec_str (Optional[Callable]): If provided, should be a callable
+        exec_str: If provided, should be a callable
             taking one parameter, the ``cmd`` string after parameters
             are inserted. If not provided, ``cmd`` must not be a string.
 
-        input_parser (Optional[Callable]): Transform the input arg(s) before
+        input_parser: Transform the input arg(s) before
             sending them to the command. If there are multiple arguments, this
             function should accept all the arguments in order, and
             return a tuple of values.
 
-        output_parser (Optional[Callable]): Transform the return value of the
+        output_parser: Transform the return value of the
             command.
 
-        no_cmd_function (Optional[Callable]): If provided and we cannot
+        no_cmd_function: If provided, and we cannot
             create a command to return, we won't throw an error on constructing
             the command. Instead, we call this function when the command is
             invoked, and it should probably throw an error of its own (eg
@@ -56,11 +57,11 @@ class Command(Generic[Output, ParsedOutput]):
     def __init__(
         self,
         arg_count: int,
-        cmd: Optional[Union[str, Callable[..., Output]]] = None,
-        exec_str: Optional[Callable[[str], Output]] = None,
-        input_parser: Optional[Callable] = None,
-        output_parser: Optional[Callable[[Output], ParsedOutput]] = None,
-        no_cmd_function: Optional[Callable] = None,
+        cmd: str | Callable[..., Output] | None = None,
+        exec_str: Callable[[str], Output] | None = None,
+        input_parser: Callable | None = None,
+        output_parser: Callable[[Output], ParsedOutput] | None = None,
+        no_cmd_function: Callable | None = None,
     ):
 
         self.arg_count = arg_count
@@ -73,7 +74,7 @@ class Command(Generic[Output, ParsedOutput]):
             )
 
         if input_parser is None:
-            parse_input: Union[bool, Literal["multi"]] = False
+            parse_input: bool | Literal["multi"] = False
         elif is_function(input_parser, arg_count):
             parse_input = True if arg_count == 1 else "multi"
             self.input_parser = input_parser
@@ -196,7 +197,7 @@ class Command(Generic[Output, ParsedOutput]):
         """Execute a function with multi-arg input & output parsing."""
         return self.output_parser(self._cmd(*self.input_parser(*args)))
 
-    def __call__(self, *args: Any) -> Union[Output, ParsedOutput]:
+    def __call__(self, *args: Any) -> Output | ParsedOutput:
         """Invoke the command."""
         if len(args) != self.arg_count:
             raise TypeError(f"command takes exactly {self.arg_count} args")

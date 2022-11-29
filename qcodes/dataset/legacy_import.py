@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import json
-from typing import List, Optional
+from pathlib import Path
 
 import numpy as np
 
@@ -10,8 +12,9 @@ from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.measurements import DataSaver, Measurement
 
 
-def setup_measurement(dataset: OldDataSet,
-                      exp: Optional['Experiment'] = None) -> Measurement:
+def setup_measurement(
+    dataset: OldDataSet, exp: Experiment | None = None
+) -> Measurement:
     """
     Register parameters for all :class:.`DataArrays` in a given QCoDeS legacy dataset
 
@@ -75,8 +78,7 @@ def store_array_to_database_alt(meas: Measurement, array: DataArray) -> int:
     return datasaver.run_id
 
 
-def import_dat_file(location: str,
-                    exp: Optional[Experiment] = None) -> List[int]:
+def import_dat_file(location: str | Path, exp: Experiment | None = None) -> list[int]:
     """
     This imports a QCoDeS legacy :class:`qcodes.data.data_set.DataSet`
     into the database.
@@ -89,7 +91,7 @@ def import_dat_file(location: str,
     """
 
 
-    loaded_data = load_data(location)
+    loaded_data = load_data(str(location))
     meas = setup_measurement(loaded_data,
                              exp=exp)
     run_ids = []

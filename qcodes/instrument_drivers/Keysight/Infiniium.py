@@ -1,10 +1,9 @@
 import re
-from typing import Any, Optional, Sequence, Union
+from typing import Any, Literal, Optional, Sequence, Union
 
 import numpy as np
 from pyvisa import VisaIOError
 from pyvisa.constants import StatusCode
-from typing_extensions import Literal
 
 import qcodes.validators as vals
 from qcodes.instrument import (
@@ -16,6 +15,7 @@ from qcodes.instrument import (
 )
 from qcodes.parameters import (
     Parameter,
+    ParameterBase,
     ParameterWithSetpoints,
     create_on_off_val_mapping,
 )
@@ -106,7 +106,7 @@ class DSOTraceParam(ParameterWithSetpoints):
         self._unit = 0
 
     @property
-    def setpoints(self) -> Sequence[Parameter]:
+    def setpoints(self) -> Sequence[ParameterBase]:
         """
         Overwrite setpoint parameter to update setpoints if auto_digitize is true
         """

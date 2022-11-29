@@ -1,18 +1,18 @@
 # pylint: disable=redefined-outer-name
-import pytest
 import logging
 
-from qcodes.instrument_drivers.Keysight.keysight_34980a import Keysight34980A
-import qcodes.instrument.sims as sims
+import pytest
 
-VISALIB = sims.__file__.replace('__init__.py', 'keysight_34980A.yaml@sim')
+from qcodes.instrument_drivers.Keysight.keysight_34980a import Keysight34980A
 
 
 @pytest.fixture(scope="module")
 def switch_driver():
-    inst = Keysight34980A('keysight_34980A_sim',
-                          address='GPIB::1::INSTR',
-                          visalib=VISALIB)
+    inst = Keysight34980A(
+        "keysight_34980A_sim",
+        address="GPIB::1::INSTR",
+        pyvisa_sim_file="keysight_34980A.yaml",
+    )
 
     try:
         yield inst

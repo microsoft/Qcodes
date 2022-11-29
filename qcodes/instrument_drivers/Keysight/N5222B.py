@@ -2,6 +2,7 @@ from typing import Any
 
 from . import N52xx
 
+
 class N5222B(N52xx.PNABase):
     def __init__(self, name: str, address: str, **kwargs: Any):
         """Driver for Keysight PNA N5222B."""

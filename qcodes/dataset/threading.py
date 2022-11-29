@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 # Instead of async, since there are really a very small set of things
 # we want to happen simultaneously within one process (namely getting
 # several parameters in parallel), we can parallelize them with threads.
@@ -12,26 +14,22 @@ from types import TracebackType
 from typing import (
     TYPE_CHECKING,
     Callable,
-    Dict,
     List,
-    Optional,
+    Protocol,
     Sequence,
     Tuple,
-    Type,
     TypeVar,
     Union,
 )
 
-from typing_extensions import Protocol
-
 from qcodes.utils import RespondingThread
 
 if TYPE_CHECKING:
-    from qcodes.dataset.measurements import res_type
+    from qcodes.dataset.data_set_protocol import res_type, values_type
     from qcodes.parameters import ParamDataType, ParameterBase
 
 ParamMeasT = Union["ParameterBase", Callable[[], None]]
-OutType = List["res_type"]
+OutType = List[Tuple["ParameterBase", "values_type"]]
 
 T = TypeVar("T")
 
@@ -39,11 +37,11 @@ _LOG = logging.getLogger(__name__)
 
 
 class _ParamCaller:
-    def __init__(self, *parameters: "ParameterBase"):
+    def __init__(self, *parameters: ParameterBase):
 
         self._parameters = parameters
 
-    def __call__(self) -> Tuple[Tuple["ParameterBase", "ParamDataType"], ...]:
+    def __call__(self) -> tuple[tuple[ParameterBase, ParamDataType], ...]:
         output = []
         for param in self._parameters:
             output.append((param, param.get()))
@@ -56,12 +54,12 @@ class _ParamCaller:
 
 def _instrument_to_param(
     params: Sequence[ParamMeasT],
-) -> Dict[Optional[str], Tuple["ParameterBase", ...]]:
+) -> dict[str | None, tuple[ParameterBase, ...]]:
     from qcodes.parameters import ParameterBase
 
     real_parameters = [param for param in params if isinstance(param, ParameterBase)]
 
-    output: Dict[Optional[str], Tuple["ParameterBase", ...]] = defaultdict(tuple)
+    output: dict[str | None, tuple[ParameterBase, ...]] = defaultdict(tuple)
     for param in real_parameters:
         if param.underlying_instrument:
             output[param.underlying_instrument.full_name] += (param,)
@@ -116,7 +114,7 @@ def _call_params(param_meas: Sequence[ParamMeasT]) -> OutType:
 
 
 def process_params_meas(
-    param_meas: Sequence[ParamMeasT], use_threads: Optional[bool] = None
+    param_meas: Sequence[ParamMeasT], use_threads: bool | None = None
 ) -> OutType:
     from qcodes import config
 
@@ -135,9 +133,9 @@ class _ParamsCallerProtocol(Protocol):
 
     def __exit__(
         self,
-        exc_type: Optional[Type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
     ) -> None:
         pass
 
@@ -151,9 +149,9 @@ class SequentialParamsCaller(_ParamsCallerProtocol):
 
     def __exit__(
         self,
-        exc_type: Optional[Type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
     ) -> None:
         return None
 
@@ -185,7 +183,7 @@ class ThreadPoolParamsCaller(_ParamsCallerProtocol):
             unique "underlying instruments"
     """
 
-    def __init__(self, *param_meas: ParamMeasT, max_workers: Optional[int] = None):
+    def __init__(self, *param_meas: ParamMeasT, max_workers: int | None = None):
         self._param_callers = tuple(
             _ParamCaller(*param_list)
             for param_list in _instrument_to_param(param_meas).values()
@@ -220,14 +218,14 @@ class ThreadPoolParamsCaller(_ParamsCallerProtocol):
 
         return output
 
-    def __enter__(self) -> "ThreadPoolParamsCaller":
+    def __enter__(self) -> ThreadPoolParamsCaller:
         self._thread_pool.__enter__()
         return self
 
     def __exit__(
         self,
-        exc_type: Optional[Type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
     ) -> None:
         self._thread_pool.__exit__(exc_type, exc_val, exc_tb)

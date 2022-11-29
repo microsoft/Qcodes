@@ -9,6 +9,7 @@ import weakref
 import pytest
 
 from qcodes.instrument import Instrument, InstrumentBase, find_or_create_instrument
+from qcodes.metadatable import Metadatable
 from qcodes.parameters import Function, Parameter
 
 from .instrument_mocks import (
@@ -390,19 +391,87 @@ def test_instrumentbase_metadata():
     assert instrument.metadata == metadatadict
 
 
+@pytest.mark.parametrize("cls", [(InstrumentBase), (Instrument)])
+def test_instrument_label(cls):
+    """Instrument uses nicely formatted label if available."""
+    instrument = cls(name="name")
+    assert instrument.label == "name"
+
+    random_ascii = "~!@#$%^&*()_-+=`{}[];'\":,./<>?|\\ äöüß"
+    instrument.label = random_ascii
+    assert instrument.label == random_ascii
+
+    label = "Nicely-formatted label"
+    instrument = cls(name="name1", label=label)
+    assert instrument.label == label
+
+
 def test_snapshot_and_meta_attrs():
     """Test snapshot of InstrumentBase contains _meta_attrs attributes"""
-    instr = InstrumentBase('instr')
+    instr = InstrumentBase("instr", label="Label")
 
     assert instr.name == 'instr'
 
-    assert hasattr(instr, '_meta_attrs')
-    assert instr._meta_attrs == ['name']
+    assert hasattr(instr, "_meta_attrs")
+    assert instr._meta_attrs == ["name", "label"]
 
     snapshot = instr.snapshot()
 
     assert 'name' in snapshot
     assert 'instr' == snapshot['name']
 
+    assert "label" in snapshot
+    assert "Label" == snapshot["label"]
+
     assert '__class__' in snapshot
     assert 'InstrumentBase' in snapshot['__class__']
+
+
+class TestSnapshotType(Metadatable):
+
+    __test__ = False
+
+    def __init__(self, sample_value: int) -> None:
+        super().__init__()
+        self.sample_value = sample_value
+
+    def snapshot_base(self, update=True, params_to_skip_update=None):
+        return {"sample_key": self.sample_value}
+
+
+class TestInstrument(InstrumentBase):
+
+    __test__ = False
+
+    def __init__(self, name, label) -> None:
+        super().__init__(name, label=label)
+        self._meta_attrs.extend(["test_attribute"])
+        self._test_attribute = TestSnapshotType(12)
+
+    @property
+    def test_attribute(self) -> TestSnapshotType:
+        return self._test_attribute
+
+
+def test_snapshot_and_meta_attrs2():
+    """Test snapshot of child of InstrumentBase which contains _meta_attrs attribute that is itself Metadatable"""
+    instr = TestInstrument("instr", label="Label")
+
+    assert instr.name == "instr"
+
+    assert hasattr(instr, "_meta_attrs")
+    assert instr._meta_attrs == ["name", "label", "test_attribute"]
+
+    snapshot = instr.snapshot()
+
+    assert "name" in snapshot
+    assert "instr" == snapshot["name"]
+
+    assert "label" in snapshot
+    assert "Label" == snapshot["label"]
+
+    assert "__class__" in snapshot
+    assert "TestInstrument" in snapshot["__class__"]
+
+    assert "test_attribute" in snapshot
+    assert {"sample_key": 12} == snapshot["test_attribute"]

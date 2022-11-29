@@ -6,10 +6,10 @@ jobs:
   lint-with-darker:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3.0.2
+      - uses: actions/checkout@v3.1.0
         with:
           fetch-depth: 0
-      - uses: akaihola/darker@1.5.0
+      - uses: akaihola/darker@1.5.1
         with:
           options: "--check --diff"
           src: "./qcodes"

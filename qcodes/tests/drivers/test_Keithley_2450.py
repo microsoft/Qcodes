@@ -1,11 +1,9 @@
 import logging
-import pytest
+
 import numpy as np
+import pytest
 
-from qcodes.instrument_drivers.tektronix.Keithley_2450 import Keithley2450
-
-import qcodes.instrument.sims as sims
-visalib = sims.__file__.replace('__init__.py', 'Keithley_2450.yaml@sim')
+from qcodes.instrument_drivers.Keithley import Keithley2450
 
 
 @pytest.fixture(scope='function')
@@ -13,7 +11,9 @@ def k2450():
     """
     Create a Keithley 2450 instrument
     """
-    driver = Keithley2450('k2450', address='GPIB::2::INSTR', visalib=visalib)
+    driver = Keithley2450(
+        "k2450", address="GPIB::2::INSTR", pyvisa_sim_file="Keithley_2450.yaml"
+    )
     yield driver
     driver.close()
 
@@ -25,7 +25,9 @@ def test_wrong_mode(caplog):
     are created by the Instrument and VisaInstrument parent classes
     """
     with caplog.at_level(logging.WARNING):
-        instrument = Keithley2450('wrong_mode', address='GPIB::1::INSTR', visalib=visalib)
+        instrument = Keithley2450(
+            "wrong_mode", address="GPIB::1::INSTR", pyvisa_sim_file="Keithley_2450.yaml"
+        )
         assert "The instrument is in an unsupported language mode." in caplog.text
         assert list(instrument.parameters.keys()) == ["IDN", "timeout"]
         instrument.close()

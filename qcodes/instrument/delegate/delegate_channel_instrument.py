@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence
+from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING, Any
 
 from .delegate_instrument import DelegateInstrument
 
@@ -69,7 +70,7 @@ class DelegateChannelInstrument(DelegateInstrument):
         station: Station,
         channels: str,
         parameters: Mapping[str, Sequence[str]],
-        initial_values: Optional[Mapping[str, Any]] = None,
+        initial_values: Mapping[str, Any] | None = None,
         set_initial_values_on_load: bool = False,
         **kwargs: Any):
         _channels = self.parse_instrument_path(parent=station, path=channels)

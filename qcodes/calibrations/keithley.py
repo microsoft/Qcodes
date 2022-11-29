@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from typing import TYPE_CHECKING, Optional, Dict
+from typing import TYPE_CHECKING
 
 from qcodes.instrument import Instrument
 from qcodes.parameters import Parameter
@@ -23,7 +23,9 @@ def setup_dmm(dmm: Instrument) -> None:
 
 
 def save_calibration(smu: Keithley_2600) -> None:
+    calibration_date = int(time.time())
     for smu_channel in smu.channels:
+        smu.write(f"{smu_channel.channel}.cal.adjustdate = {calibration_date}")
         smu.write(f"{smu_channel.channel}.cal.save()")
 
 
@@ -33,7 +35,7 @@ def calibrate_keithley_smu_v(
     src_Z: float = 1e-30,
     time_delay: float = 3.0,
     save_calibrations: bool = False,
-    dmm_range_per_smu_range_mapping: Optional[Dict[str, float]] = None
+    dmm_range_per_smu_range_mapping: dict[str, float] | None = None,
 ) -> None:
     if dmm_range_per_smu_range_mapping is None:
         dmm_range_per_smu_range_mapping = {

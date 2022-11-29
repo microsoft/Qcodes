@@ -1,18 +1,17 @@
-import pytest
 import itertools
 
-from qcodes.instrument_drivers.tektronix.Keithley_3706A\
-    import Keithley_3706A
+import pytest
 
-import qcodes.instrument.sims as sims
-visalib = sims.__file__.replace('__init__.py', 'Keithley_3706A.yaml@sim')
+from qcodes.instrument_drivers.tektronix.Keithley_3706A import Keithley_3706A
 
 
-@pytest.fixture(scope='function')
-def driver():
-    driver = Keithley_3706A('Keithley_3706A',
-                            address='GPIB::11::INSTR',
-                            visalib=visalib)
+@pytest.fixture(scope="function", name="driver")
+def _make_driver():
+    driver = Keithley_3706A(
+        "Keithley_3706A",
+        address="GPIB::11::INSTR",
+        pyvisa_sim_file="Keithley_3706A.yaml",
+    )
     yield driver
     driver.close()
 

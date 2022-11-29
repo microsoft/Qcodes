@@ -1,19 +1,19 @@
 # TODO (alexcjohnson) update this with the real duck-typing requirements or
 # create an ABC for Parameter and MultiParameter - or just remove this statement
 # if everyone is happy to use these classes.
+from __future__ import annotations
 
 import logging
 import os
-from typing import TYPE_CHECKING, Any, Callable, Optional, Union
-
-from typing_extensions import Literal
+from typing import TYPE_CHECKING, Any, Callable, Literal
 
 from .command import Command
-from .parameter_base import ParamDataType, ParameterBase
+from .parameter_base import ParamDataType, ParameterBase, ParamRawDataType
 from .sweep_values import SweepFixedValues
 
 if TYPE_CHECKING:
     from qcodes.instrument.base import InstrumentBase
+    from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
     from qcodes.validators import Validator
 
 
@@ -167,19 +167,45 @@ class Parameter(ParameterBase):
     def __init__(
         self,
         name: str,
-        instrument: Optional["InstrumentBase"] = None,
-        label: Optional[str] = None,
-        unit: Optional[str] = None,
-        get_cmd: Optional[Union[str, Callable[..., Any], Literal[False]]] = None,
-        set_cmd: Optional[Union[str, Callable[..., Any], Literal[False]]] = False,
-        initial_value: Optional[Union[float, str]] = None,
-        max_val_age: Optional[float] = None,
-        vals: Optional["Validator[Any]"] = None,
-        docstring: Optional[str] = None,
-        initial_cache_value: Optional[Union[float, str]] = None,
+        instrument: InstrumentBase | None = None,
+        label: str | None = None,
+        unit: str | None = None,
+        get_cmd: str | Callable[..., Any] | Literal[False] | None = None,
+        set_cmd: str | Callable[..., Any] | Literal[False] | None = False,
+        initial_value: float | str | None = None,
+        max_val_age: float | None = None,
+        vals: Validator[Any] | None = None,
+        docstring: str | None = None,
+        initial_cache_value: float | str | None = None,
         bind_to_instrument: bool = True,
         **kwargs: Any,
     ) -> None:
+        def _get_manual_parameter() -> ParamRawDataType:
+            if self.root_instrument is not None:
+                mylogger: InstrumentLoggerAdapter | logging.Logger = (
+                    self.root_instrument.log
+                )
+            else:
+                mylogger = log
+            mylogger.debug(
+                "Getting raw value of parameter: %s as %s",
+                self.full_name,
+                self.cache.raw_value,
+            )
+            return self.cache.raw_value
+
+        def _set_manual_parameter(x: ParamRawDataType) -> ParamRawDataType:
+            if self.root_instrument is not None:
+                mylogger: InstrumentLoggerAdapter | logging.Logger = (
+                    self.root_instrument.log
+                )
+            else:
+                mylogger = log
+            mylogger.debug(
+                "Setting raw value of parameter: %s to %s", self.full_name, x
+            )
+            return x
+
         if instrument is not None and bind_to_instrument:
             existing_parameter = instrument.parameters.get(name, None)
 
@@ -237,7 +263,7 @@ class Parameter(ParameterBase):
             )
         elif not self.gettable and get_cmd is not False:
             if get_cmd is None:
-                self.get_raw = lambda: self.cache.raw_value  # type: ignore[assignment]
+                self.get_raw: Callable[[], Any] = _get_manual_parameter
             else:
                 if isinstance(get_cmd, str) and instrument is None:
                     raise TypeError(
@@ -248,7 +274,7 @@ class Parameter(ParameterBase):
 
                 exec_str_ask = getattr(instrument, "ask", None) if instrument else None
 
-                self.get_raw = Command(  # type: ignore[assignment]
+                self.get_raw = Command(
                     arg_count=0,
                     cmd=get_cmd,
                     exec_str=exec_str_ask,
@@ -264,7 +290,7 @@ class Parameter(ParameterBase):
             )
         elif not self.settable and set_cmd is not False:
             if set_cmd is None:
-                self.set_raw: Callable[..., Any] = lambda x: x
+                self.set_raw: Callable[..., Any] = _set_manual_parameter
             else:
                 if isinstance(set_cmd, str) and instrument is None:
                     raise TypeError(
@@ -341,7 +367,7 @@ class Parameter(ParameterBase):
     def label(self, label: str) -> None:
         self._label = label
 
-    def __getitem__(self, keys: Any) -> "SweepFixedValues":
+    def __getitem__(self, keys: Any) -> SweepFixedValues:
         """
         Slice a Parameter to get a SweepValues object
         to iterate over during a sweep
@@ -360,8 +386,8 @@ class Parameter(ParameterBase):
         self,
         start: float,
         stop: float,
-        step: Optional[float] = None,
-        num: Optional[int] = None,
+        step: float | None = None,
+        num: int | None = None,
     ) -> SweepFixedValues:
         """
         Create a collection of parameter values to be iterated over.
@@ -393,7 +419,7 @@ class ManualParameter(Parameter):
     def __init__(
         self,
         name: str,
-        instrument: Optional["InstrumentBase"] = None,
+        instrument: InstrumentBase | None = None,
         initial_value: Any = None,
         **kwargs: Any,
     ):

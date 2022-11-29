@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import logging
 from collections.abc import Sized
-from typing import Any, List, Optional, Union
+from typing import Any
 from warnings import warn
 
 from qcodes.dataset.data_set import DataSet, load_by_id, new_data_set
@@ -31,12 +33,15 @@ log = logging.getLogger(__name__)
 
 
 class Experiment(Sized):
-    def __init__(self, path_to_db: Optional[str] = None,
-                 exp_id: Optional[int] = None,
-                 name: Optional[str] = None,
-                 sample_name: Optional[str] = None,
-                 format_string: str = "{}-{}-{}",
-                 conn: Optional[ConnectionPlus] = None) -> None:
+    def __init__(
+        self,
+        path_to_db: str | None = None,
+        exp_id: int | None = None,
+        name: str | None = None,
+        sample_name: str | None = None,
+        format_string: str = "{}-{}-{}",
+        conn: ConnectionPlus | None = None,
+    ) -> None:
         """
         Create or load an experiment. If exp_id is None, a new experiment is
         created. If exp_id is not None, an experiment is loaded.
@@ -113,7 +118,7 @@ class Experiment(Sized):
         return start_time
 
     @property
-    def finished_at(self) -> Optional[float]:
+    def finished_at(self) -> float | None:
         finish_time = select_one_where(
             self.conn, "experiments", "end_time", "exp_id", self.exp_id
         )
@@ -128,10 +133,13 @@ class Experiment(Sized):
         assert isinstance(format_str, str)
         return format_str
 
-    def new_data_set(self, name: str,
-                     specs: Optional[SPECS] = None,
-                     values: Optional[VALUES] = None,
-                     metadata: Optional[Any] = None) -> DataSet:
+    def new_data_set(
+        self,
+        name: str,
+        specs: SPECS | None = None,
+        values: VALUES | None = None,
+        metadata: Any | None = None,
+    ) -> DataSet:
         """
         Create a new dataset in this experiment
 
@@ -159,10 +167,12 @@ class Experiment(Sized):
                                                   counter)
         return DataSet(run_id=run_id, conn=self.conn)
 
-    def data_sets(self) -> List[DataSetProtocol]:
+    def data_sets(self) -> list[DataSetProtocol]:
         """Get all the datasets of this experiment"""
-        runs = get_runs(self.conn, self.exp_id)
-        return [load_by_id(run['run_id'], conn=self.conn) for run in runs]
+        return [
+            load_by_id(run_id, conn=self.conn)
+            for run_id in get_runs(self.conn, self.exp_id)
+        ]
 
     def last_data_set(self) -> DataSetProtocol:
         """Get the last dataset of this experiment"""
@@ -195,7 +205,7 @@ class Experiment(Sized):
 
 # public api
 
-def experiments(conn: Optional[ConnectionPlus] = None) -> List[Experiment]:
+def experiments(conn: ConnectionPlus | None = None) -> list[Experiment]:
     """
     List all the experiments in the container (database file from config)
 
@@ -208,14 +218,15 @@ def experiments(conn: Optional[ConnectionPlus] = None) -> List[Experiment]:
     """
     conn = conn_from_dbpath_or_conn(conn=conn, path_to_db=None)
     log.info(f"loading experiments from {conn.path_to_dbfile}")
-    rows = get_experiments(conn)
-    return [load_experiment(row['exp_id'], conn) for row in rows]
+    return [load_experiment(exp_id, conn) for exp_id in get_experiments(conn)]
 
 
-def new_experiment(name: str,
-                   sample_name: Optional[str],
-                   format_string: str = "{}-{}-{}",
-                   conn: Optional[ConnectionPlus] = None) -> Experiment:
+def new_experiment(
+    name: str,
+    sample_name: str | None,
+    format_string: str = "{}-{}-{}",
+    conn: ConnectionPlus | None = None,
+) -> Experiment:
     """
     Create a new experiment (in the database file from config)
 
@@ -244,8 +255,7 @@ def new_experiment(name: str,
     return experiment
 
 
-def load_experiment(exp_id: int,
-                    conn: Optional[ConnectionPlus] = None) -> Experiment:
+def load_experiment(exp_id: int, conn: ConnectionPlus | None = None) -> Experiment:
     """
     Load experiment with the specified id (from database file from config)
 
@@ -287,8 +297,8 @@ def load_last_experiment() -> Experiment:
 
 def load_experiment_by_name(
     name: str,
-    sample: Optional[str] = None,
-    conn: Optional[ConnectionPlus] = None,
+    sample: str | None = None,
+    conn: ConnectionPlus | None = None,
     load_last_duplicate: bool = False,
 ) -> Experiment:
     """
@@ -347,8 +357,8 @@ def load_experiment_by_name(
 
 def load_or_create_experiment(
     experiment_name: str,
-    sample_name: Optional[str] = None,
-    conn: Optional[ConnectionPlus] = None,
+    sample_name: str | None = None,
+    conn: ConnectionPlus | None = None,
     load_last_duplicate: bool = False,
 ) -> Experiment:
     """
@@ -393,7 +403,7 @@ def _create_exp_if_needed(
     sample_name: str,
     fmt_str: str,
     start_time: float,
-    end_time: Union[float, None],
+    end_time: float | None,
 ) -> int:
     """
     Look up in the database whether an experiment already exists and create

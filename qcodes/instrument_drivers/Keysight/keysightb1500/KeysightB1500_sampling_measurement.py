@@ -4,16 +4,21 @@ from typing import TYPE_CHECKING, Any, List
 import numpy
 
 from qcodes.parameters import ParameterWithSetpoints
-from .message_builder import MessageBuilder
+
 from . import constants
-from .KeysightB1500_module import fmt_response_base_parser, _FMTResponse, \
-    MeasurementNotTaken, convert_dummy_val_to_nan
+from .KeysightB1500_module import (
+    MeasurementNotTaken,
+    _FMTResponse,
+    convert_dummy_val_to_nan,
+    fmt_response_base_parser,
+)
+from .message_builder import MessageBuilder
 
 if TYPE_CHECKING:
-    from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1517A \
-        import B1517A
-    from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_base \
-        import KeysightB1500
+    from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_base import (
+        KeysightB1500,
+    )
+    from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1517A import B1517A
 
 
 class SamplingMeasurement(ParameterWithSetpoints):

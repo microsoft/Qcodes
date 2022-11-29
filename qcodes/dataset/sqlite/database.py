@@ -3,25 +3,28 @@ This module provides means of connecting to a QCoDeS database file and
 initialising it. Note that connecting/initialisation take into account
 database version and possibly perform database upgrades.
 """
+from __future__ import annotations
+
 import io
+import math
 import sqlite3
 import sys
+from collections.abc import Iterator
 from contextlib import contextmanager
 from os.path import expanduser, normpath
 from pathlib import Path
-from typing import Iterator, Optional, Tuple, Union
+from typing import Literal
 
 import numpy as np
-from typing_extensions import Literal
 
 import qcodes
 from qcodes.dataset.experiment_settings import reset_default_experiment_id
 from qcodes.dataset.sqlite.connection import ConnectionPlus
 from qcodes.dataset.sqlite.db_upgrades import (
     _latest_available_version,
-    get_user_version,
     perform_db_upgrade,
 )
+from qcodes.dataset.sqlite.db_upgrades.version import get_user_version
 from qcodes.dataset.sqlite.initial_schema import init_db
 from qcodes.utils.types import complex_types, numpy_floats, numpy_ints
 
@@ -35,15 +38,20 @@ def _adapt_array(arr: np.ndarray) -> sqlite3.Binary:
     https://stackoverflow.com/questions/3425320/sqlite3-programmingerror-you-must-not-use-8-bit-bytestrings-unless-you-use-a-te
     """
     out = io.BytesIO()
-    np.save(out, arr)
+    # Directly use np.lib.format.write_array instead of np.save, force version to be
+    # 3.0 (when reading, version 1.0 and 2.0 can result in a slow clean up step to
+    # ensure backward compatibility with python 2) and disable pickle (slow and
+    # insecure)
+    np.lib.format.write_array(out, arr, version=(3, 0), allow_pickle=False)
     out.seek(0)
     return sqlite3.Binary(out.read())
 
 
 def _convert_array(text: bytes) -> np.ndarray:
-    out = io.BytesIO(text)
-    out.seek(0)
-    return np.load(out)
+    # Using np.lib.format.read_array (counterpart of np.lib.format.write_array)
+    # npy format version 3.0 is 3 times faster than previous verions (no clean up step
+    # for python 2 backward compatibility)
+    return np.lib.format.read_array(io.BytesIO(text), allow_pickle=False)
 
 
 def _convert_complex(text: bytes) -> np.complexfloating:
@@ -55,7 +63,7 @@ def _convert_complex(text: bytes) -> np.complexfloating:
 this_session_default_encoding = sys.getdefaultencoding()
 
 
-def _convert_numeric(value: bytes) -> Union[float, int, str]:
+def _convert_numeric(value: bytes) -> float | int | str:
     """
     This is a converter for sqlite3 'numeric' type class.
 
@@ -73,49 +81,41 @@ def _convert_numeric(value: bytes) -> Union[float, int, str]:
     try:
         # First, try to convert bytes to float
         numeric = float(value)
-    except ValueError as e:
-        # If an exception has been raised, we first need to find out
-        # if the reason was the conversion to float, and, if so, we are sure
-        # that we need to return a string
-        if "could not convert string to float" in str(e):
-            return str(value, encoding=this_session_default_encoding)
-        else:
-            # otherwise, the exception is forwarded up the stack
-            raise e
+    except ValueError:
+        # Let string casting fail if bytes encoding is invalid
+        return str(value, encoding=this_session_default_encoding)
 
-    # If that worked, e.g. did not raise an exception, then we check if the
-    # outcome is 'nan'
-    if np.isnan(numeric):
+    # If that worked, e.g. did not raise an exception, then we check if the outcome is
+    # either an infinity or a NaN
+    # For a single value, math.isfinite is 10 times faster than np.isinfinite (or
+    # combining np.isnan and np.isinf)
+    if not math.isfinite(numeric):
         return numeric
 
-    # Then we check if the outcome is 'inf', includes +inf and -inf
-    if np.isinf(numeric):
-        return numeric
-
-    # If it is not 'nan' and not 'inf', then we need to see if the value is
-    # really an integer or with floating point digits
+    # If it is not 'nan' and not 'inf', then we need to see if the value is really an
+    # integer or with floating point digits
     numeric_int = int(numeric)
     if numeric != numeric_int:
         return numeric
     else:
         return numeric_int
 
-
-def _adapt_float(fl: float) -> Union[float, str]:
-    if np.isnan(fl):
+def _adapt_float(fl: float) -> float | str:
+    # For a single value, math.isnan is 10 times faster than np.isnan
+    # Overall, saving floats with numeric format is 2 times faster with math.isnan
+    if math.isnan(fl):
         return "nan"
     return float(fl)
 
 
-def _adapt_complex(value: Union[complex, np.complexfloating]) -> sqlite3.Binary:
+def _adapt_complex(value: complex | np.complexfloating) -> sqlite3.Binary:
     out = io.BytesIO()
     np.save(out, np.array([value]))
     out.seek(0)
     return sqlite3.Binary(out.read())
 
 
-def connect(name: Union[str, Path], debug: bool = False,
-            version: int = -1) -> ConnectionPlus:
+def connect(name: str | Path, debug: bool = False, version: int = -1) -> ConnectionPlus:
     """
     Connect or create  database. If debug the queries will be echoed back.
     This function takes care of registering the numpy/sqlite type
@@ -123,13 +123,13 @@ def connect(name: Union[str, Path], debug: bool = False,
 
     Args:
         name: name or path to the sqlite file
-        debug: whether or not to turn on tracing
+        debug: should tracing be turned on.
         version: which version to create. We count from 0. -1 means 'latest'.
             Should always be left at -1 except when testing.
 
     Returns:
-        conn: connection object to the database (note, it is
-            `ConnectionPlus`, not `sqlite3.Connection`
+        connection object to the database (note, it is
+        :class:`ConnectionPlus`, not :class:`sqlite3.Connection`)
 
     """
     # register numpy->binary(TEXT) adapter
@@ -148,9 +148,6 @@ def connect(name: Union[str, Path], debug: bool = False,
         raise RuntimeError(f"Database {name} is version {db_version} but this "
                            f"version of QCoDeS supports up to "
                            f"version {latest_supported_version}")
-
-    # sqlite3 options
-    conn.row_factory = sqlite3.Row
 
     # Make sure numpy ints and floats types are inserted properly
     for numpy_int in numpy_ints:
@@ -173,8 +170,9 @@ def connect(name: Union[str, Path], debug: bool = False,
     return conn
 
 
-def get_db_version_and_newest_available_version(path_to_db: str) -> Tuple[int,
-                                                                          int]:
+def get_db_version_and_newest_available_version(
+    path_to_db: str | Path,
+) -> tuple[int, int]:
     """
     Connect to a DB without performing any upgrades and get the version of
     that database file along with the newest available version (the one that
@@ -201,7 +199,7 @@ def get_DB_debug() -> bool:
     return bool(qcodes.config["core"]["db_debug"])
 
 
-def initialise_database(journal_mode: Optional[JournalMode] = "WAL") -> None:
+def initialise_database(journal_mode: JournalMode | None = "WAL") -> None:
     """
     Initialise a database in the location specified by the config object
     and set ``atomic commit and rollback mode`` of the db. The db is created
@@ -244,7 +242,7 @@ def set_journal_mode(conn: ConnectionPlus, journal_mode: JournalMode) -> None:
 
 
 def initialise_or_create_database_at(
-    db_file_with_abs_path: str, journal_mode: Optional[JournalMode] = "WAL"
+    db_file_with_abs_path: str | Path, journal_mode: JournalMode | None = "WAL"
 ) -> None:
     """
     This function sets up QCoDeS to refer to the given database file. If the
@@ -258,12 +256,12 @@ def initialise_or_create_database_at(
             Options are DELETE, TRUNCATE, PERSIST, MEMORY, WAL and OFF. If set to None
             no changes are made.
     """
-    qcodes.config.core.db_location = db_file_with_abs_path
+    qcodes.config.core.db_location = str(db_file_with_abs_path)
     initialise_database(journal_mode)
 
 
 @contextmanager
-def initialised_database_at(db_file_with_abs_path: str) -> Iterator[None]:
+def initialised_database_at(db_file_with_abs_path: str | Path) -> Iterator[None]:
     """
     Initializes or creates a database and restores the 'db_location' afterwards.
 
@@ -281,7 +279,7 @@ def initialised_database_at(db_file_with_abs_path: str) -> Iterator[None]:
 
 
 def conn_from_dbpath_or_conn(
-    conn: Optional[ConnectionPlus], path_to_db: Optional[str]
+    conn: ConnectionPlus | None, path_to_db: str | Path | None
 ) -> ConnectionPlus:
     """
     A small helper function to abstract the logic needed for functions
