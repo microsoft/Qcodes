@@ -7,7 +7,7 @@
 alabaster==0.7.12
 argon2-cffi~=21.3.0
 argon2-cffi-bindings~=21.2.0
-asttokens~=2.1.0
+asttokens~=2.2.0
 attrs~=22.1.0
 autodocsumm==0.2.9
 azure-core~=1.26.0
@@ -75,7 +75,7 @@ msal~=1.20.0
 msal-extensions~=1.0.0
 mypy==0.991
 mypy-extensions~=0.4.3
-nbclient==0.7.0
+nbclient==0.7.1
 nbconvert~=7.2.2
 nbformat~=5.7.0
 nbsphinx==0.8.9
@@ -112,11 +112,11 @@ PyQt5-sip~=12.11.0
 pyqtgraph==0.13.1
 pyrsistent==0.19.1
 pytest~=7.2.0
-pytest-asyncio==0.20.1
+pytest-asyncio==0.20.2
 pytest-cov~=4.0.0
 pytest-forked~=1.4.0
 pytest-mock~=3.10.0
-pytest-rerunfailures==10.2
+pytest-rerunfailures==10.3
 pytest-xdist~=3.0.2
 python-dateutil~=2.8.2
 pytz~=2022.5
@@ -159,7 +159,7 @@ tomli~=2.0.1
 tornado~=6.2
 towncrier~=22.8.0
 tqdm~=4.64.1
-traitlets~=5.5.0
+traitlets~=5.6.0
 types-requests~=2.28.11
 types-setuptools~=65.6.0
 types-tabulate~=0.9.0
