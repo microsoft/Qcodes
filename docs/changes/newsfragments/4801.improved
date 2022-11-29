@@ -1,2 +1,0 @@
-dond functions now return the dataset after `KeyboardInterrupt` or `BreakConditionInterrupt`.
-Instead of raising the interrupts, they are now logged as warning.

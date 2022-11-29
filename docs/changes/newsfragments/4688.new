@@ -1,6 +1,0 @@
-Add a callback to ``dataset.get_parameter_data``.
-This is usefull to track the progress of the data download.
-Since sqlite3 does not allow to keep track of the data loading progress,
-we compute how many sqlite requests correspond to a certain percentage of
-progress which is dictated by a config parameter "callback_percent".
-Then we perform x sql request instead of one, running the callback everytime.

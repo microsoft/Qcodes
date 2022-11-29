@@ -1,5 +1,0 @@
-Explicitly setting a sample id in the `qcodesrc.json` config file has been deprecated. This feature is
-expected to be very lightly used. Please do get in touch if you rely on it. This will eventually
-be replaced by a random string. For the same reason `load_by_run_spec` will no longer print
-`sample_id` as part of the output when more than one potential match is found.
-Note that this is different from the sample_name set as part of an experiment which is still supported.
