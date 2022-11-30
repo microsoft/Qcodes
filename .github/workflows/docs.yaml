@@ -49,7 +49,7 @@ jobs:
       if: ${{ !fromJSON(env.UPLOAD_TO_GHPAGES) }}
     - name: set-sphinx-opts
       run: |
-        echo "SPHIX_OPTS=-W -v" >> $GITHUB_ENV
+        echo "SPHINX_OPTS=-W -v" >> $GITHUB_ENV
       if: ${{ fromJSON(env.SPHINX_WARNINGS_AS_ERROR) }}
     - name: setup ubuntu-latest xvfb
       uses: ./.github/actions/setup-ubuntu-latest-xvfb

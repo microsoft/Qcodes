@@ -366,8 +366,8 @@ class InterDependencies_:
         standalones: tuple[ParamSpecBase, ...] = (),
     ) -> InterDependencies_:
         """
-        Create a new InterDependencies_ object that is an extension of this
-        instance with the provided input
+        Create a new :class:`InterDependencies_` object
+        that is an extension of this instance with the provided input
         """
 
         dependencies = {} if dependencies is None else dependencies
@@ -411,8 +411,8 @@ class InterDependencies_:
 
     def remove(self, parameter: ParamSpecBase) -> InterDependencies_:
         """
-        Create a new InterDependencies_ object that is similar to this
-        instance, but has the given parameter removed.
+        Create a new :class:`InterDependencies_` object that is similar
+        to this instance, but has the given parameter removed.
         """
         if parameter not in self:
             raise ValueError(f'Unknown parameter: {parameter}.')
