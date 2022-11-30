@@ -1,3 +1,0 @@
-Visa insturments have gained the ``pyvisa_sim_file`` argument. This allows easier instantiation of
-simulated visainstrments in tests (both in QCoDeS and external) as well as use of simulated instruments in
-station yaml files.

@@ -30,7 +30,6 @@ jobs:
       DISPLAY: ':99.0'
       OS: ${{ matrix.os }}
       PYTHON: ${{ matrix.python-version }}
-      RUN_BLUERACER: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11' }}
 
     steps:
     - uses: actions/checkout@v3.1.0
@@ -62,14 +61,8 @@ jobs:
       run: mypy -p qcodes
     - name: Run parallel tests
       run: |
-        pytest -m "not serial" --cov=qcodes --cov-report xml --hypothesis-profile ci qcodes --csv test_durations.csv --csv-columns name,duration
+        pytest -m "not serial" --cov=qcodes --cov-report xml --hypothesis-profile ci  --durations=20 qcodes
 # a subset of the tests fails when run in parallel on Windows so run those in serial here
-    - name: Compare test duration time on linux py311
-      uses: actions/upload-artifact@v3
-      with:
-        name: blueracer
-        path: test_durations.csv
-      if: ${{ fromJSON(env.RUN_BLUERACER) }}
     - name: Run serial tests
       run: |
         pytest -m "serial" -n 0 --dist no --cov=qcodes --cov-report xml --cov-append --hypothesis-profile ci qcodes

@@ -1,4 +1,0 @@
-The `test_intrument` and `test_intruments` functions are no longer available
-from the toplevel qcodes namespace.
-If you require these functions they must be imported from
-`qcodes.instrument_drivers.test`.

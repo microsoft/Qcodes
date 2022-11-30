@@ -1,2 +1,0 @@
-Add ``rundescriber_from_json`` to dataset public API
-for materializing ``RunDescriber`` objects from json strings

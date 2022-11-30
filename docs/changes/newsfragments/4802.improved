@@ -1,2 +1,0 @@
-The function ``qcodes.dataset.load_from_netcdf`` now always perservers order of the dependent coordinates
-when loading a netcdf file into memory.
