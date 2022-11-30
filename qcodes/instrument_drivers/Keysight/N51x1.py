@@ -43,13 +43,15 @@ class N51x1(VisaInstrument):
                            unit='dBm',
                            vals=Numbers(min_value=min_power,max_value=max_power))
 
-        self.add_parameter('frequency',
-                           label='Frequency',
-                           get_cmd='SOUR:FREQ?',
-                           get_parser=float,
-                           set_cmd='SOUR:FREQ {:.2f}',
-                           unit='Hz',
-                           vals=Numbers(min_value=9e3,max_value=max_freq))
+        self.add_parameter(
+            "frequency",
+            label="Frequency",
+            get_cmd="SOUR:FREQ?",
+            get_parser=float,
+            set_cmd="SOUR:FREQ {:.2f}",
+            unit="Hz",
+            vals=Numbers(min_value=9e3, max_value=max_freq),
+        )
 
         self.add_parameter('phase_offset',
                            label='Phase Offset',
@@ -72,6 +74,21 @@ class N51x1(VisaInstrument):
             set_cmd="OUTP:STAT {}",
             val_mapping=create_on_off_val_mapping(on_val=1, off_val=0),
         )
+
+        if "UNW" in self._options:
+            self.add_parameter(
+                "pulse_modulation",
+                get_cmd="PULM:STAT?",
+                set_cmd="PULM:STAT {}",
+                val_mapping=create_on_off_val_mapping(on_val=1, off_val=0),
+            )
+
+            self.add_parameter(
+                "pulse_modulation_source",
+                get_cmd="PULM:SOUR?",
+                set_cmd="PULM:SOUR {}",
+                val_mapping={"internal": "INT", "external": "EXT"},
+            )
 
         self.connect_message()
 
