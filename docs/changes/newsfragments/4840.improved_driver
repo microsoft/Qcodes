@@ -1,0 +1,7 @@
+Two parameters are added to the `Keysight.N51x1` class, conditioned on it having the 'UNW' option:
+    1. Having the pulse modulation status on or off.
+    2. Setting it to 'internal' or 'external'.
+
+From the Keysight manual:
+    1. This command enables or disables pulse modulation for the selected path.
+    2. This command sets the source of the pulse modulation.
