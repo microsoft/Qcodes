@@ -61,7 +61,7 @@ jobs:
       run: mypy -p qcodes
     - name: Run parallel tests
       run: |
-        pytest -m "not serial" --cov=qcodes --cov-report xml --hypothesis-profile ci qcodes
+        pytest -m "not serial" --cov=qcodes --cov-report xml --hypothesis-profile ci  --durations=20 qcodes
 # a subset of the tests fails when run in parallel on Windows so run those in serial here
     - name: Run serial tests
       run: |
