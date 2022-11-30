@@ -1,2 +1,0 @@
-The sweeps used by doNd has gained the ability to perform a get call after setting the parameter and storing
-that value in the dataset rather than the value set.
