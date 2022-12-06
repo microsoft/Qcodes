@@ -120,6 +120,9 @@ docs = [
 qcodes-monitor = "qcodes.monitor.monitor:main"
 qcodes-dynacool-server = "qcodes.instrument_drivers.QuantumDesign.DynaCoolPPMS.private.server:run_server"
 
+[project.entry-points."qcodes.dataset.on_export"]
+print_exported_ds = "qcodes.extensions:print_dataset_export_info"
+
 [tool.coverage.run]
 omit = [
     "qcodes/__init__.py",
