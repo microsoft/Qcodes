@@ -7,9 +7,10 @@ from datetime import datetime
 from time import perf_counter, sleep
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 from warnings import warn
+from matplotlib import pyplot as plt
 
 import numpy as np
-from tqdm.auto import tqdm
+from tqdm import tqdm
 
 from qcodes.dataset.data_set_protocol import DataSetProtocol
 from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
@@ -37,7 +38,6 @@ RAW_VALUE_TYPES = (
     float,
     int,
     bool,
-    np.ndarray,
     np.integer,
     np.floating,
     np.bool_,
@@ -256,11 +256,10 @@ class _DatasetHandler:
                 f"{measurement_info['parameter'].name}"
             )
 
-        # Store result
-        setpoints = [
-            self.setpoint_list[action_indices]["latest_value"]
-            for action_indices in measurement_info["setpoints_action_indices"]
-        ]
+        # Get setpoints corresponding to measurement
+        setpoints = self.get_result_setpoints(result, action_indices=action_indices)
+
+        # Store results
         parameters = (
             *measurement_info["setpoint_parameters"],
             measurement_info["dataset_parameter"],
@@ -270,6 +269,32 @@ class _DatasetHandler:
 
         # Also store in measurement_info
         measurement_info["latest_value"] = result
+
+    def get_result_setpoints(self, result, action_indices):
+        # Check if result is an array
+        if np.ndim(result) > 0:
+            measurement_info = self.measurement_list[action_indices]
+            setpoints = []
+
+            for k, setpoint_indices in enumerate(measurement_info["setpoints_action_indices"]):
+                setpoint_info = self.setpoint_list[setpoint_indices]
+                if k < len(measurement_info["setpoints_action_indices"]) - 1:
+                    # Inner setpoints, repeat value by length of array
+                    latest_value = setpoint_info["latest_value"]
+                    sweep_arr = np.repeat(latest_value, len(result))
+                else:
+                    # Innermost loop, get sequence
+                    sweep_arr = setpoint_info["sweep"].sequence
+                    assert len(sweep_arr) == len(result)
+
+                setpoints.append(sweep_arr)
+        else:
+            setpoints = [
+                self.setpoint_list[action_indices]["latest_value"]
+                for action_indices in measurement_info["setpoints_action_indices"]
+            ]
+        
+        return setpoints
 
     def _update_interdependencies(self) -> None:
         """Updates dataset after instantiation to include new setpoint/measurement parameter
@@ -394,7 +419,7 @@ class MeasurementLoop:
 
         # Data handler is created during `with Measurement("name")`
         # Used to control dataset(s)
-        self.data_handler: DataSaver = None
+        self.data_handler: _DatasetHandler = None
 
         # Total dimensionality of loop
         self.loop_shape: Union[Tuple[int], None] = None
@@ -937,6 +962,41 @@ class MeasurementLoop:
 
         return results
 
+    def _measure_array(
+        self,
+        array: Union[list, np.ndarray],
+        name: str,
+        label: str = None,
+        unit: str = None,
+        setpoints: 'Sweep' = None
+    ):
+        # Ensure setpoints is a Sweep
+        if setpoints is None:
+            setpoints_sequence = range(len(array))
+            setpoints = Sweep(setpoints_sequence, name='setpoint_idx', label='Setpoint index')
+        elif isinstance(setpoints, (list, np.ndarray)):
+            # Convert sequence to Sweep
+            setpoints = Sweep(setpoints, name='setpoint_idx', label='Setpoint index')
+        elif not isinstance(setpoints, Sweep):
+            raise SyntaxError('Cannot measure because array setpoints not understood')
+
+        # Enter sweep
+        iter(setpoints)
+
+        # Ensure measuring array matches the current action_indices
+        self._verify_action(action=None, name=name, add_if_new=True)
+
+        self.data_handler.add_measurement_result(
+            action_indices=self.action_indices,
+            result=array,
+            parameter=None,
+            name=name,
+            label=label,
+            unit=unit,
+        )
+
+        setpoints.exit_sweep()
+        
     def _measure_dict(self, value: dict, name: str) -> Dict[str, Any]:
         """Store dictionary results
 
@@ -997,16 +1057,15 @@ class MeasurementLoop:
         elif isinstance(value, (bool, np.bool_)):
             value = int(value)
 
-        result = value
         self.data_handler.add_measurement_result(
             action_indices=self.action_indices,
-            result=result,
+            result=value,
             parameter=parameter,
             name=name,
             label=label,
             unit=unit,
         )
-        return result
+        return value
 
     def measure(
         self,
@@ -1017,6 +1076,7 @@ class MeasurementLoop:
         *,  # Everything after here must be a kwarg
         label: Optional[str] = None,
         unit: Optional[str] = None,
+        setpoints: Optional[Union['Sweep', Sequence]] = None,
         timestamp: bool = False,
         **kwargs,
     ) -> Any:
@@ -1037,6 +1097,7 @@ class MeasurementLoop:
                 Otherwise, the default name is used.
             label: Optional label, is ignored if measurable is a Parameter or callable
             unit: Optional unit, is ignored if measurable is a Parameter or callable
+            setpoints: Optional setpoints if measuring an array, can be sequence or Sweep
             timestamp: If True, the timestamps immediately before and after this
                        measurement are recorded
 
@@ -1099,6 +1160,8 @@ class MeasurementLoop:
             result = self._measure_callable(measurable, name=name, **kwargs)
         elif isinstance(measurable, dict):
             result = self._measure_dict(measurable, name=name)
+        elif isinstance(measurable, (list, np.ndarray)):
+            result = self._measure_array(measurable, name=name, setpoints=setpoints)
         elif isinstance(measurable, RAW_VALUE_TYPES):
             result = self._measure_value(
                 measurable, name=name, label=label, unit=unit, **kwargs
@@ -1627,6 +1690,7 @@ class BaseSweep(AbstractSweep):
                     # TODO: Check what other iterators might be able to be masked
                     pass
             self.exit_sweep()
+            raise StopIteration
 
         # Set parameter if passed along
         if self.parameter is not None and self.parameter.settable:
@@ -1699,6 +1763,7 @@ class BaseSweep(AbstractSweep):
                 )
 
         setpoint_info = {
+            "sweep": self,
             "parameter": self.parameter,
             "latest_value": None,
             "registered": False,
@@ -1717,7 +1782,6 @@ class BaseSweep(AbstractSweep):
         """Exits sweep, stepping out of the current `Measurement.action_indices`"""
         msmt = running_measurement()
         msmt.step_out(reduce_dimension=True)
-        raise StopIteration
 
     def execute(
         self,
@@ -1789,6 +1853,7 @@ class BaseSweep(AbstractSweep):
 
         if plot and Sweep.plot_function is not None and MeasurementLoop.running_measurement is None:
             Sweep.plot_function(msmt.dataset)
+            plt.show()
 
         return msmt.dataset
 

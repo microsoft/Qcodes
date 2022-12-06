@@ -214,51 +214,137 @@ def test_measurement_no_parameter():
     assert np.allclose(data_arrays["p1_set"], np.linspace(0, 1, 11))
 
 
-with MeasurementLoop("test") as msmt:
-    print(f'Before Sweep')
-    print(f'{msmt.action_indices=}, {msmt.loop_indices=}, {msmt.loop_shape=}')
-    for k, val in enumerate(Sweep(np.linspace(0, 1, 10), "p1_set")):
-        print(f'\n')
-        print(f'\nBefore first measurement')
+def test_measurement_fraction_complete():
+    with MeasurementLoop("test") as msmt:
+        print(f'Before Sweep')
         print(f'{msmt.action_indices=}, {msmt.loop_indices=}, {msmt.loop_shape=}')
-        print(f'{msmt.fraction_complete(silent=False)=}')
-        assert msmt.fraction_complete() == round(0.1*k, 3)
+        for k, val in enumerate(Sweep(np.linspace(0, 1, 10), "p1_set")):
+            print(f'\n')
+            print(f'\nBefore first measurement')
+            print(f'{msmt.action_indices=}, {msmt.loop_indices=}, {msmt.loop_shape=}')
+            print(f'{msmt.fraction_complete(silent=False)=}')
+            assert msmt.fraction_complete() == round(0.1*k, 3)
 
-        msmt.measure(val+1, name="p1_get")
-        print(f'\nBetween first and second measurement')
-        print(f'{msmt.action_indices=}, {msmt.loop_indices=}, {msmt.loop_shape=}')
-        print(f'{msmt.fraction_complete(silent=False)=}')
-        if not k:
-            assert msmt.fraction_complete() == 0.1
-        else:
-            assert msmt.fraction_complete() == round(0.1*k+0.05, 3)
+            msmt.measure(val+1, name="p1_get")
+            print(f'\nBetween first and second measurement')
+            print(f'{msmt.action_indices=}, {msmt.loop_indices=}, {msmt.loop_shape=}')
+            print(f'{msmt.fraction_complete(silent=False)=}')
+            if not k:
+                assert msmt.fraction_complete() == 0.1
+            else:
+                assert msmt.fraction_complete() == round(0.1*k+0.05, 3)
 
-        msmt.measure(val+1, name="p1_get")
-        print(f'\nAfter second measurement')
-        print(f'{msmt.action_indices=}, {msmt.loop_indices=}, {msmt.loop_shape=}')
-        # print(f'{msmt.fraction_complete(silent=False)=}')
-        print(f'{msmt.fraction_complete(silent=False)=}')
-        assert msmt.fraction_complete() == round(0.1 * (k+1), 3)
+            msmt.measure(val+1, name="p1_get")
+            print(f'\nAfter second measurement')
+            print(f'{msmt.action_indices=}, {msmt.loop_indices=}, {msmt.loop_shape=}')
+            # print(f'{msmt.fraction_complete(silent=False)=}')
+            print(f'{msmt.fraction_complete(silent=False)=}')
+            assert msmt.fraction_complete() == round(0.1 * (k+1), 3)
 
-    for k, val in enumerate(Sweep(np.linspace(0, 1, 10), "p1_set")):
-        print(f'\n')
-        print(f'\nBefore first measurement')
-        print(f'{msmt.action_indices=}, {msmt.loop_indices=}, {msmt.loop_shape=}')
-        print(f'{msmt.fraction_complete(silent=-1)=}')
-        assert msmt.fraction_complete() == round(0.5 + 0.05*k, 3)
+        for k, val in enumerate(Sweep(np.linspace(0, 1, 10), "p1_set")):
+            print(f'\n')
+            print(f'\nBefore first measurement')
+            print(f'{msmt.action_indices=}, {msmt.loop_indices=}, {msmt.loop_shape=}')
+            print(f'{msmt.fraction_complete(silent=-1)=}')
+            assert msmt.fraction_complete() == round(0.5 + 0.05*k, 3)
 
-        msmt.measure(val+1, name="p1_get")
-        print(f'\nBetween first and second measurement')
-        print(f'{msmt.action_indices=}, {msmt.loop_indices=}, {msmt.loop_shape=}')
-        print(f'{msmt.fraction_complete(silent=-1)=}')
-        if not k:
-            assert msmt.fraction_complete() == 0.55
-        else:
-            assert msmt.fraction_complete() == round(0.525 + 0.05*k, 3)
+            msmt.measure(val+1, name="p1_get")
+            print(f'\nBetween first and second measurement')
+            print(f'{msmt.action_indices=}, {msmt.loop_indices=}, {msmt.loop_shape=}')
+            print(f'{msmt.fraction_complete(silent=-1)=}')
+            if not k:
+                assert msmt.fraction_complete() == 0.55
+            else:
+                assert msmt.fraction_complete() == round(0.525 + 0.05*k, 3)
 
-        msmt.measure(val+1, name="p1_get")
-        print(f'\nAfter second measurement')
-        print(f'{msmt.action_indices=}, {msmt.loop_indices=}, {msmt.loop_shape=}')
-        # print(f'{msmt.fraction_complete(silent=False)=}')
-        print(f'{msmt.fraction_complete(silent=-1)=}')
-        assert msmt.fraction_complete() == round(0.5 + 0.05 * (k+1), 3)
+            msmt.measure(val+1, name="p1_get")
+            print(f'\nAfter second measurement')
+            print(f'{msmt.action_indices=}, {msmt.loop_indices=}, {msmt.loop_shape=}')
+            # print(f'{msmt.fraction_complete(silent=False)=}')
+            print(f'{msmt.fraction_complete(silent=-1)=}')
+            assert msmt.fraction_complete() == round(0.5 + 0.05 * (k+1), 3)
+
+
+def test_save_array_0D():
+    with MeasurementLoop('array_0D') as msmt:
+        msmt.measure([1,2,3], 'array')
+
+    # Verify results
+    data = msmt.dataset.get_parameter_data('array')['array']
+    assert 'array' in data
+    assert 'setpoint_idx' in data
+    assert list(data['array']) == [1,2,3]
+    assert list(data['setpoint_idx']) == [0, 1, 2]
+
+
+def test_save_array_0D_custom_setpoint_list():
+    with MeasurementLoop('array_0D') as msmt:
+        msmt.measure([1,2,3], 'array', setpoints=[3,4,5])
+
+    # Verify results
+    data = msmt.dataset.get_parameter_data('array')['array']
+    assert 'array' in data
+    assert 'setpoint_idx' in data
+    assert list(data['array']) == [1,2,3]
+    assert list(data['setpoint_idx']) == [3, 4, 5]
+
+
+def test_save_array_0D_custom_setpoint_sweep():
+    with MeasurementLoop('array_0D') as msmt:
+        msmt.measure(
+            [1,2,3], 'array', 
+            setpoints=Sweep([2,3,4], 'my_sweep'))
+
+    # Verify results
+    data = msmt.dataset.get_parameter_data('array')['array']
+    assert 'array' in data
+    assert 'my_sweep' in data
+    assert list(data['array']) == [1,2,3]
+    assert list(data['my_sweep']) == [2, 3, 4]
+    
+
+def test_save_array_1D():
+    with MeasurementLoop('array_0D') as msmt:
+        for k in Sweep([5, 6], 'outer_sweep'):
+            msmt.measure([1,2,3], 'array')
+
+    # Verify results
+    data = msmt.dataset.get_parameter_data('array')['array']
+    assert 'array' in data
+    assert 'outer_sweep' in data
+    assert 'setpoint_idx' in data
+    np.testing.assert_array_equal(data['array'], [[1,2,3], [1,2,3]])
+    np.testing.assert_array_equal(data['outer_sweep'], [[5,5,5], [6,6,6]])
+    np.testing.assert_array_equal(data['setpoint_idx'], [[0,1,2], [0,1,2]])
+
+
+def test_save_array_1D_custom_setpoint_list():
+    with MeasurementLoop('array_0D') as msmt:
+        for k in Sweep([5, 6], 'outer_sweep'):
+            msmt.measure([1,2,3], 'array', setpoints=[3,4,5])
+
+    # Verify results
+    data = msmt.dataset.get_parameter_data('array')['array']
+    assert 'array' in data
+    assert 'outer_sweep' in data
+    assert 'setpoint_idx' in data
+    np.testing.assert_array_equal(data['array'], [[1,2,3], [1,2,3]])
+    np.testing.assert_array_equal(data['outer_sweep'], [[5,5,5], [6,6,6]])
+    np.testing.assert_array_equal(data['setpoint_idx'], [[3,4,5], [3,4,5]])
+
+
+def test_save_array_1D_custom_setpoint_sweep():
+    with MeasurementLoop('array_0D') as msmt:
+        for k in Sweep([5, 6], 'outer_sweep'):
+            msmt.measure(
+                [1,2,3], 'array', 
+                setpoints=Sweep([2,3,4], 'my_sweep', unit='V'))
+
+    # Verify results
+    data = msmt.dataset.get_parameter_data('array')['array']
+    assert 'array' in data
+    assert 'outer_sweep' in data
+    assert 'my_sweep' in data
+    np.testing.assert_array_equal(data['array'], [[1,2,3], [1,2,3]])
+    np.testing.assert_array_equal(data['outer_sweep'], [[5,5,5], [6,6,6]])
+    np.testing.assert_array_equal(data['my_sweep'], [[2,3,4], [2,3,4]])

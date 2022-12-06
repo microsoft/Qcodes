@@ -13,6 +13,7 @@ from typing import Any, Dict, Optional, Sequence, Tuple, Union
 import pyvisa as visa
 from pyvisa.resources.serial import SerialInstrument
 
+from qcodes.utils.delaykeyboardinterrupt import DelayedKeyboardInterrupt
 from qcodes import validators as vals
 from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
 from qcodes.parameters import MultiChannelInstrumentParameter, ParamRawDataType
@@ -783,9 +784,12 @@ class QDac(VisaInstrument):
         """
 
         LOG.debug(f"Writing to instrument {self.name}: {cmd}")
-        self.visa_handle.write(cmd)
-        for _ in range(cmd.count(';')+1):
-            self._write_response = self.visa_handle.read()
+
+        with DelayedKeyboardInterrupt():
+            self.visa_handle.write(cmd)
+            for _ in range(cmd.count(';')+1):
+                self._write_response = self.visa_handle.read()
+
 
     def read(self) -> str:
         return self.visa_handle.read()
