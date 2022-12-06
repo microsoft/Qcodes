@@ -1085,6 +1085,7 @@ class MeasurementLoop:
         *,  # Everything after here must be a kwarg
         label: Optional[str] = None,
         unit: Optional[str] = None,
+        setpoints: Optional[Union['Sweep', Sequence]] = None,
         timestamp: bool = False,
         **kwargs,
     ) -> Any:
@@ -1105,6 +1106,7 @@ class MeasurementLoop:
                 Otherwise, the default name is used.
             label: Optional label, is ignored if measurable is a Parameter or callable
             unit: Optional unit, is ignored if measurable is a Parameter or callable
+            setpoints: Optional setpoints if measuring an array, can be sequence or Sweep
             timestamp: If True, the timestamps immediately before and after this
                        measurement are recorded
 
@@ -1168,7 +1170,7 @@ class MeasurementLoop:
         elif isinstance(measurable, dict):
             result = self._measure_dict(measurable, name=name)
         elif isinstance(measurable, (list, np.ndarray)):
-            result = self._measure_array(measurable, name=name, setpoints=kwargs.get("setpoints"))
+            result = self._measure_array(measurable, name=name, setpoints=setpoints)
         elif isinstance(measurable, RAW_VALUE_TYPES):
             result = self._measure_value(
                 measurable, name=name, label=label, unit=unit, **kwargs

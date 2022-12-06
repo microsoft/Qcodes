@@ -265,9 +265,86 @@ def test_measurement_fraction_complete():
             assert msmt.fraction_complete() == round(0.5 + 0.05 * (k+1), 3)
 
 
-
 def test_save_array_0D():
     with MeasurementLoop('array_0D') as msmt:
         msmt.measure([1,2,3], 'array')
 
+    # Verify results
+    data = msmt.dataset.get_parameter_data('array')['array']
+    assert 'array' in data
+    assert 'setpoint_idx' in data
+    assert list(data['array']) == [1,2,3]
+    assert list(data['setpoint_idx']) == [0, 1, 2]
+
+
+def test_save_array_0D_custom_setpoint_list():
+    with MeasurementLoop('array_0D') as msmt:
+        msmt.measure([1,2,3], 'array', setpoints=[3,4,5])
+
+    # Verify results
+    data = msmt.dataset.get_parameter_data('array')['array']
+    assert 'array' in data
+    assert 'setpoint_idx' in data
+    assert list(data['array']) == [1,2,3]
+    assert list(data['setpoint_idx']) == [3, 4, 5]
+
+
+def test_save_array_0D_custom_setpoint_sweep():
+    with MeasurementLoop('array_0D') as msmt:
+        msmt.measure(
+            [1,2,3], 'array', 
+            setpoints=Sweep([2,3,4], 'my_sweep'))
+
+    # Verify results
+    data = msmt.dataset.get_parameter_data('array')['array']
+    assert 'array' in data
+    assert 'my_sweep' in data
+    assert list(data['array']) == [1,2,3]
+    assert list(data['my_sweep']) == [2, 3, 4]
     
+
+def test_save_array_1D():
+    with MeasurementLoop('array_0D') as msmt:
+        for k in Sweep([5, 6], 'outer_sweep'):
+            msmt.measure([1,2,3], 'array')
+
+    # Verify results
+    data = msmt.dataset.get_parameter_data('array')['array']
+    assert 'array' in data
+    assert 'outer_sweep' in data
+    assert 'setpoint_idx' in data
+    np.testing.assert_array_equal(data['array'], [[1,2,3], [1,2,3]])
+    np.testing.assert_array_equal(data['outer_sweep'], [[5,5,5], [6,6,6]])
+    np.testing.assert_array_equal(data['setpoint_idx'], [[0,1,2], [0,1,2]])
+
+
+def test_save_array_1D_custom_setpoint_list():
+    with MeasurementLoop('array_0D') as msmt:
+        for k in Sweep([5, 6], 'outer_sweep'):
+            msmt.measure([1,2,3], 'array', setpoints=[3,4,5])
+
+    # Verify results
+    data = msmt.dataset.get_parameter_data('array')['array']
+    assert 'array' in data
+    assert 'outer_sweep' in data
+    assert 'setpoint_idx' in data
+    np.testing.assert_array_equal(data['array'], [[1,2,3], [1,2,3]])
+    np.testing.assert_array_equal(data['outer_sweep'], [[5,5,5], [6,6,6]])
+    np.testing.assert_array_equal(data['setpoint_idx'], [[3,4,5], [3,4,5]])
+
+
+def test_save_array_1D_custom_setpoint_sweep():
+    with MeasurementLoop('array_0D') as msmt:
+        for k in Sweep([5, 6], 'outer_sweep'):
+            msmt.measure(
+                [1,2,3], 'array', 
+                setpoints=Sweep([2,3,4], 'my_sweep', unit='V'))
+
+    # Verify results
+    data = msmt.dataset.get_parameter_data('array')['array']
+    assert 'array' in data
+    assert 'outer_sweep' in data
+    assert 'my_sweep' in data
+    np.testing.assert_array_equal(data['array'], [[1,2,3], [1,2,3]])
+    np.testing.assert_array_equal(data['outer_sweep'], [[5,5,5], [6,6,6]])
+    np.testing.assert_array_equal(data['my_sweep'], [[2,3,4], [2,3,4]])
