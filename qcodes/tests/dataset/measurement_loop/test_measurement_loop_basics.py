@@ -214,54 +214,55 @@ def test_measurement_no_parameter():
     assert np.allclose(data_arrays["p1_set"], np.linspace(0, 1, 11))
 
 
-with MeasurementLoop("test") as msmt:
-    print(f'Before Sweep')
-    print(f'{msmt.action_indices=}, {msmt.loop_indices=}, {msmt.loop_shape=}')
-    for k, val in enumerate(Sweep(np.linspace(0, 1, 10), "p1_set")):
-        print(f'\n')
-        print(f'\nBefore first measurement')
+def test_measurement_fraction_complete():
+    with MeasurementLoop("test") as msmt:
+        print(f'Before Sweep')
         print(f'{msmt.action_indices=}, {msmt.loop_indices=}, {msmt.loop_shape=}')
-        print(f'{msmt.fraction_complete(silent=False)=}')
-        assert msmt.fraction_complete() == round(0.1*k, 3)
+        for k, val in enumerate(Sweep(np.linspace(0, 1, 10), "p1_set")):
+            print(f'\n')
+            print(f'\nBefore first measurement')
+            print(f'{msmt.action_indices=}, {msmt.loop_indices=}, {msmt.loop_shape=}')
+            print(f'{msmt.fraction_complete(silent=False)=}')
+            assert msmt.fraction_complete() == round(0.1*k, 3)
 
-        msmt.measure(val+1, name="p1_get")
-        print(f'\nBetween first and second measurement')
-        print(f'{msmt.action_indices=}, {msmt.loop_indices=}, {msmt.loop_shape=}')
-        print(f'{msmt.fraction_complete(silent=False)=}')
-        if not k:
-            assert msmt.fraction_complete() == 0.1
-        else:
-            assert msmt.fraction_complete() == round(0.1*k+0.05, 3)
+            msmt.measure(val+1, name="p1_get")
+            print(f'\nBetween first and second measurement')
+            print(f'{msmt.action_indices=}, {msmt.loop_indices=}, {msmt.loop_shape=}')
+            print(f'{msmt.fraction_complete(silent=False)=}')
+            if not k:
+                assert msmt.fraction_complete() == 0.1
+            else:
+                assert msmt.fraction_complete() == round(0.1*k+0.05, 3)
 
-        msmt.measure(val+1, name="p1_get")
-        print(f'\nAfter second measurement')
-        print(f'{msmt.action_indices=}, {msmt.loop_indices=}, {msmt.loop_shape=}')
-        # print(f'{msmt.fraction_complete(silent=False)=}')
-        print(f'{msmt.fraction_complete(silent=False)=}')
-        assert msmt.fraction_complete() == round(0.1 * (k+1), 3)
+            msmt.measure(val+1, name="p1_get")
+            print(f'\nAfter second measurement')
+            print(f'{msmt.action_indices=}, {msmt.loop_indices=}, {msmt.loop_shape=}')
+            # print(f'{msmt.fraction_complete(silent=False)=}')
+            print(f'{msmt.fraction_complete(silent=False)=}')
+            assert msmt.fraction_complete() == round(0.1 * (k+1), 3)
 
-    for k, val in enumerate(Sweep(np.linspace(0, 1, 10), "p1_set")):
-        print(f'\n')
-        print(f'\nBefore first measurement')
-        print(f'{msmt.action_indices=}, {msmt.loop_indices=}, {msmt.loop_shape=}')
-        print(f'{msmt.fraction_complete(silent=-1)=}')
-        assert msmt.fraction_complete() == round(0.5 + 0.05*k, 3)
+        for k, val in enumerate(Sweep(np.linspace(0, 1, 10), "p1_set")):
+            print(f'\n')
+            print(f'\nBefore first measurement')
+            print(f'{msmt.action_indices=}, {msmt.loop_indices=}, {msmt.loop_shape=}')
+            print(f'{msmt.fraction_complete(silent=-1)=}')
+            assert msmt.fraction_complete() == round(0.5 + 0.05*k, 3)
 
-        msmt.measure(val+1, name="p1_get")
-        print(f'\nBetween first and second measurement')
-        print(f'{msmt.action_indices=}, {msmt.loop_indices=}, {msmt.loop_shape=}')
-        print(f'{msmt.fraction_complete(silent=-1)=}')
-        if not k:
-            assert msmt.fraction_complete() == 0.55
-        else:
-            assert msmt.fraction_complete() == round(0.525 + 0.05*k, 3)
+            msmt.measure(val+1, name="p1_get")
+            print(f'\nBetween first and second measurement')
+            print(f'{msmt.action_indices=}, {msmt.loop_indices=}, {msmt.loop_shape=}')
+            print(f'{msmt.fraction_complete(silent=-1)=}')
+            if not k:
+                assert msmt.fraction_complete() == 0.55
+            else:
+                assert msmt.fraction_complete() == round(0.525 + 0.05*k, 3)
 
-        msmt.measure(val+1, name="p1_get")
-        print(f'\nAfter second measurement')
-        print(f'{msmt.action_indices=}, {msmt.loop_indices=}, {msmt.loop_shape=}')
-        # print(f'{msmt.fraction_complete(silent=False)=}')
-        print(f'{msmt.fraction_complete(silent=-1)=}')
-        assert msmt.fraction_complete() == round(0.5 + 0.05 * (k+1), 3)
+            msmt.measure(val+1, name="p1_get")
+            print(f'\nAfter second measurement')
+            print(f'{msmt.action_indices=}, {msmt.loop_indices=}, {msmt.loop_shape=}')
+            # print(f'{msmt.fraction_complete(silent=False)=}')
+            print(f'{msmt.fraction_complete(silent=-1)=}')
+            assert msmt.fraction_complete() == round(0.5 + 0.05 * (k+1), 3)
 
 
 def test_save_array_0D():
