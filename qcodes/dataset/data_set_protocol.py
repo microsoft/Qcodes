@@ -1,5 +1,16 @@
 from __future__ import annotations
 
+import sys
+
+if sys.version_info >= (3, 10):
+    # distribution.name used below became part of the
+    # official api in 3.10
+    from importlib.metadata import entry_points
+else:
+    # 3.9 and earlier
+    from importlib_metadata import entry_points
+
+import logging
 import os
 import warnings
 from collections.abc import Mapping, Sized
@@ -63,6 +74,7 @@ SPECS: TypeAlias = List[ParamSpec]
 SpecsOrInterDeps: TypeAlias = Union[SPECS, InterDependencies_]
 ParameterData: TypeAlias = Dict[str, Dict[str, np.ndarray]]
 
+LOG = logging.getLogger(__name__)
 
 class CompletedError(RuntimeError):
     pass
@@ -414,16 +426,30 @@ class BaseDataSet(DataSetProtocol):
             file_name = self._export_file_name(
                 prefix=prefix, export_type=DataExportType.NETCDF
             )
-            return self._export_as_netcdf(path=path, file_name=file_name)
+            export_path = self._export_as_netcdf(path=path, file_name=file_name)
 
         elif DataExportType.CSV == export_type:
             file_name = self._export_file_name(
                 prefix=prefix, export_type=DataExportType.CSV
             )
-            return self._export_as_csv(path=path, file_name=file_name)
+            export_path = self._export_as_csv(path=path, file_name=file_name)
 
         else:
-            return None
+            export_path = None
+
+        # for unknown reason entrypoints registered in pyproct.toml shows up
+        # twice here
+        export_callbacks = set(entry_points(group="qcodes.dataset.on_export"))
+
+        if len(export_callbacks) == 0:
+            LOG.info("No export callbacks defined")
+
+        for export_callback in export_callbacks:
+            export_callback_function = export_callback.load()
+            LOG.info("Executing on_export callback {export_callback.name}")
+            export_callback_function(export_path)
+
+        return export_path
 
     def _export_file_name(self, prefix: str, export_type: DataExportType) -> str:
         """Get export file name"""
