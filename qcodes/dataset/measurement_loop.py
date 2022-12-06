@@ -221,7 +221,6 @@ class _DatasetHandler:
         name: Optional[str] = None,
         label: Optional[str] = None,
         unit: Optional[str] = None,
-        setpoints: Optional[Iterable] = None,
     ) -> None:
         """Store single measurement result
 
@@ -254,12 +253,10 @@ class _DatasetHandler:
                 f"{measurement_info['parameter'].name}"
             )
 
-        # Store result
-        if setpoints is None:
-            setpoints = [
-                self.setpoint_list[action_indices]["latest_value"]
-                for action_indices in measurement_info["setpoints_action_indices"]
-            ]
+        # Get setpoints corresponding to measurement
+        setpoints = self.get_result_setpoints(result, action_indices=action_indices)
+
+        # Store results
         parameters = (
             *measurement_info["setpoint_parameters"],
             measurement_info["dataset_parameter"],
@@ -270,40 +267,31 @@ class _DatasetHandler:
         # Also store in measurement_info
         measurement_info["latest_value"] = result
 
-    def add_measurement_result_array(
-        self,
-        action_indices: Tuple[int],
-        result: Union[float, int, bool],
-        parameter: _BaseParameter = None,
-        name: Optional[str] = None,
-        label: Optional[str] = None,
-        unit: Optional[str] = None,
-    ) -> None:
-        assert np.ndim(result) == 1, "Currently only able to handle 1D array"
+    def get_result_setpoints(self, result, action_indices):
+        # Check if result is an array
+        if np.ndim(result) > 0:
+            measurement_info = self.measurement_list[action_indices]
+            setpoints = []
 
-        # Determine setpoints
-        setpoint_info = self.setpoint_list[action_indices]
-        setpoints = []
-        for k, sweep in enumerate(setpoint_info['setpoint_parameters']):
-            if k < len(setpoint_info['setpoint_parameters']) - 1:
-                # Inner setpoints, repeat value by length of array
-                latest_value = self.setpoint_list[action_indices]["latest_value"]
-                sweep_arr = np.repeat(latest_value, len(result))
-            else:
-                # Innermost loop, get sequence
-                sweep_arr = sweep.sequence
-                assert len(sweep_arr) == len(result)
-            setpoints.append(sweep_arr)
+            for k, setpoint_indices in enumerate(measurement_info["setpoints_action_indices"]):
+                setpoint_info = self.setpoint_list[setpoint_indices]
+                if k < len(measurement_info["setpoints_action_indices"]) - 1:
+                    # Inner setpoints, repeat value by length of array
+                    latest_value = setpoint_info["latest_value"]
+                    sweep_arr = np.repeat(latest_value, len(result))
+                else:
+                    # Innermost loop, get sequence
+                    sweep_arr = setpoint_info["sweep"].sequence
+                    assert len(sweep_arr) == len(result)
 
-        self.add_measurement_result(
-            action_indices=action_indices,
-            result=result,
-            parameter=parameter,
-            name=name,
-            label=label,
-            unit=unit,
-            setpoints=setpoints
-        )
+                setpoints.append(sweep_arr)
+        else:
+            setpoints = [
+                self.setpoint_list[action_indices]["latest_value"]
+                for action_indices in measurement_info["setpoints_action_indices"]
+            ]
+        
+        return setpoints
 
     def _update_interdependencies(self) -> None:
         """Updates dataset after instantiation to include new setpoint/measurement parameter
@@ -428,7 +416,7 @@ class MeasurementLoop:
 
         # Data handler is created during `with Measurement("name")`
         # Used to control dataset(s)
-        self.data_handler: DataSaver = None
+        self.data_handler: _DatasetHandler = None
 
         # Total dimensionality of loop
         self.loop_shape: Union[Tuple[int], None] = None
@@ -1007,7 +995,7 @@ class MeasurementLoop:
         # Ensure measuring array matches the current action_indices
         self._verify_action(action=None, name=name, add_if_new=True)
 
-        self.data_handler.add_measurement_result_array(
+        self.data_handler.add_measurement_result(
             action_indices=self.action_indices,
             result=array,
             parameter=None,
@@ -1709,6 +1697,7 @@ class BaseSweep(AbstractSweep):
                     # TODO: Check what other iterators might be able to be masked
                     pass
             self.exit_sweep()
+            raise StopIteration
 
         # Set parameter if passed along
         if self.parameter is not None and self.parameter.settable:
@@ -1781,6 +1770,7 @@ class BaseSweep(AbstractSweep):
                 )
 
         setpoint_info = {
+            "sweep": self,
             "parameter": self.parameter,
             "latest_value": None,
             "registered": False,
@@ -1799,7 +1789,6 @@ class BaseSweep(AbstractSweep):
         """Exits sweep, stepping out of the current `Measurement.action_indices`"""
         msmt = running_measurement()
         msmt.step_out(reduce_dimension=True)
-        raise StopIteration
 
     def execute(
         self,

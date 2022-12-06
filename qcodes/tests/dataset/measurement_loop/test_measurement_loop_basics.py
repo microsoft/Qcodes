@@ -265,6 +265,9 @@ def test_measurement_fraction_complete():
             assert msmt.fraction_complete() == round(0.5 + 0.05 * (k+1), 3)
 
 
+
 def test_save_array_0D():
     with MeasurementLoop('array_0D') as msmt:
         msmt.measure([1,2,3], 'array')
+
+    
