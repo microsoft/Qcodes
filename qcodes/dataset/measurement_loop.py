@@ -35,7 +35,6 @@ RAW_VALUE_TYPES = (
     float,
     int,
     bool,
-    np.ndarray,
     np.integer,
     np.floating,
     np.bool_,
@@ -222,6 +221,7 @@ class _DatasetHandler:
         name: Optional[str] = None,
         label: Optional[str] = None,
         unit: Optional[str] = None,
+        setpoints: Optional[Iterable] = None,
     ) -> None:
         """Store single measurement result
 
@@ -255,10 +255,11 @@ class _DatasetHandler:
             )
 
         # Store result
-        setpoints = [
-            self.setpoint_list[action_indices]["latest_value"]
-            for action_indices in measurement_info["setpoints_action_indices"]
-        ]
+        if setpoints is None:
+            setpoints = [
+                self.setpoint_list[action_indices]["latest_value"]
+                for action_indices in measurement_info["setpoints_action_indices"]
+            ]
         parameters = (
             *measurement_info["setpoint_parameters"],
             measurement_info["dataset_parameter"],
@@ -268,6 +269,41 @@ class _DatasetHandler:
 
         # Also store in measurement_info
         measurement_info["latest_value"] = result
+
+    def add_measurement_result_array(
+        self,
+        action_indices: Tuple[int],
+        result: Union[float, int, bool],
+        parameter: _BaseParameter = None,
+        name: Optional[str] = None,
+        label: Optional[str] = None,
+        unit: Optional[str] = None,
+    ) -> None:
+        assert np.ndim(result) == 1, "Currently only able to handle 1D array"
+
+        # Determine setpoints
+        setpoint_info = self.setpoint_list[action_indices]
+        setpoints = []
+        for k, sweep in enumerate(setpoint_info['setpoint_parameters']):
+            if k < len(setpoint_info['setpoint_parameters']) - 1:
+                # Inner setpoints, repeat value by length of array
+                latest_value = self.setpoint_list[action_indices]["latest_value"]
+                sweep_arr = np.repeat(latest_value, len(result))
+            else:
+                # Innermost loop, get sequence
+                sweep_arr = sweep.sequence
+                assert len(sweep_arr) == len(result)
+            setpoints.append(sweep_arr)
+
+        self.add_measurement_result(
+            action_indices=action_indices,
+            result=result,
+            parameter=parameter,
+            name=name,
+            label=label,
+            unit=unit,
+            setpoints=setpoints
+        )
 
     def _update_interdependencies(self) -> None:
         """Updates dataset after instantiation to include new setpoint/measurement parameter
@@ -947,6 +983,41 @@ class MeasurementLoop:
 
         return results
 
+    def _measure_array(
+        self,
+        array: Union[list, np.ndarray],
+        name: str,
+        label: str = None,
+        unit: str = None,
+        setpoints: 'Sweep' = None
+    ):
+        # Ensure setpoints is a Sweep
+        if setpoints is None:
+            setpoints_sequence = range(len(array))
+            setpoints = Sweep(setpoints_sequence, name='setpoint_idx', label='Setpoint index')
+        elif isinstance(setpoints, (list, np.ndarray)):
+            # Convert sequence to Sweep
+            setpoints = Sweep(setpoints, name='setpoint_idx', label='Setpoint index')
+        elif not isinstance(setpoints, Sweep):
+            raise SyntaxError('Cannot measure because array setpoints not understood')
+
+        # Enter sweep
+        iter(setpoints)
+
+        # Ensure measuring array matches the current action_indices
+        self._verify_action(action=None, name=name, add_if_new=True)
+
+        self.data_handler.add_measurement_result_array(
+            action_indices=self.action_indices,
+            result=array,
+            parameter=None,
+            name=name,
+            label=label,
+            unit=unit,
+        )
+
+        setpoints.exit_sweep()
+        
     def _measure_dict(self, value: dict, name: str) -> Dict[str, Any]:
         """Store dictionary results
 
@@ -1007,16 +1078,15 @@ class MeasurementLoop:
         elif isinstance(value, (bool, np.bool_)):
             value = int(value)
 
-        result = value
         self.data_handler.add_measurement_result(
             action_indices=self.action_indices,
-            result=result,
+            result=value,
             parameter=parameter,
             name=name,
             label=label,
             unit=unit,
         )
-        return result
+        return value
 
     def measure(
         self,
@@ -1109,6 +1179,8 @@ class MeasurementLoop:
             result = self._measure_callable(measurable, name=name, **kwargs)
         elif isinstance(measurable, dict):
             result = self._measure_dict(measurable, name=name)
+        elif isinstance(measurable, (list, np.ndarray)):
+            result = self._measure_array(measurable, name=name, setpoints=kwargs.get("setpoints"))
         elif isinstance(measurable, RAW_VALUE_TYPES):
             result = self._measure_value(
                 measurable, name=name, label=label, unit=unit, **kwargs
