@@ -2213,3 +2213,52 @@ def measure_sweeps(
 
         for measure_param in measure_params:
             msmt.measure(measure_param)
+
+
+class Iterate(Sweep):
+    """Variant of Sweep that is used to iterate outside a MeasurementLoop"""
+    def __iter__(self) -> Iterable:
+        # Determine sweep parameter
+        if self.parameter is None:
+            if isinstance(self.sequence, _IterateDondSweep):
+                # sweep is a doNd sweep that already has a parameter
+                self.parameter = self.sequence.parameter
+            else:
+                # Need to create a parameter
+                self.parameter = Parameter(
+                    name=self.name, label=self.label, unit=self.unit
+                )
+
+        # We use this to revert back in the end
+        self.original_value = self.parameter.get()
+
+        self.loop_index = 0
+        self.dimension = 1
+        self.iterator = iter(self.sequence)
+
+        return self
+
+    def __next__(self) -> Any:
+        try:  # Perform loop action
+            sweep_value = next(self.iterator)
+        except StopIteration:  # Reached end of iteration
+            if self.revert:
+                try:
+                    self.parameter(self.original_value)
+                except Exception:
+                    warn(f'Could not revert {self.parameter} to {self.original_value}')
+            raise StopIteration
+
+        # Set parameter if passed along
+        if self.parameter is not None and self.parameter.settable:
+            self.parameter(sweep_value)
+
+        # Optional wait after settings value
+        if self.initial_delay and self.loop_index == 0:
+            sleep(self.initial_delay)
+        if self.delay:
+            sleep(self.delay)
+
+        self.loop_index += 1
+
+        return sweep_value

@@ -29,7 +29,7 @@ from .experiment_container import (
 )
 from .experiment_settings import get_default_experiment_id, reset_default_experiment_id
 from .legacy_import import import_dat_file
-from .measurement_loop import MeasurementLoop, Sweep
+from .measurement_loop import MeasurementLoop, Sweep, Iterate
 from .measurements import Measurement
 from .plotting import plot_by_id, plot_dataset
 from .sqlite.connection import ConnectionPlus

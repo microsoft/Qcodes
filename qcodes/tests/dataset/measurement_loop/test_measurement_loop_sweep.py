@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from qcodes.dataset import LinSweep, MeasurementLoop, Sweep, dond
+from qcodes.dataset import LinSweep, MeasurementLoop, Sweep, dond, Iterate
 from qcodes.instrument import ManualParameter, Parameter
 
 
@@ -197,3 +197,13 @@ def test_sweep_reverting():
 
         param(41)
     assert param() == 41
+
+
+def test_iterate():
+    param = ManualParameter('param', initial_value=42)
+
+    expected_vals = np.linspace(37, 47, 21)
+    for k, val in enumerate(Iterate(param, around=5, num=21)):
+        assert val == expected_vals[k]
+
+    assert param() == 42
