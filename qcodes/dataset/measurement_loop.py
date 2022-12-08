@@ -272,9 +272,9 @@ class _DatasetHandler:
         measurement_info["latest_value"] = result
 
     def get_result_setpoints(self, result, action_indices):
+        measurement_info = self.measurement_list[action_indices]
         # Check if result is an array
         if np.ndim(result) > 0:
-            measurement_info = self.measurement_list[action_indices]
             setpoints = []
 
             for k, setpoint_indices in enumerate(measurement_info["setpoints_action_indices"]):
