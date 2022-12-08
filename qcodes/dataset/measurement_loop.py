@@ -1356,6 +1356,7 @@ class MeasurementLoop:
         unmask_type: Optional[str] = None,
         value: Optional[Any] = None,
         raise_exception: bool = True,
+        remove_from_list: bool = True,
         **kwargs,  # Add kwargs because original_value may be None
     ) -> None:
         """Unmasks a previously masked object, i.e. revert value back to original
@@ -1367,6 +1368,8 @@ class MeasurementLoop:
             type: can be 'key', 'attr', 'parameter' if not explicitly provided by kwarg
             value: Optional masked value, only used for logging
             raise_exception: Whether to raise exception if unmasking fails
+            remove_from_list: Whether to remove the masked property from the list
+                msmt._masked_properties. This ensures we don't unmask twice.
         """
         if "original_value" not in kwargs:
             # No masked property passed. We collect all the masked properties
@@ -1386,7 +1389,8 @@ class MeasurementLoop:
             for unmask_property in reversed(unmask_properties):
                 self.unmask(**unmask_property)
 
-            self._masked_properties = remaining_masked_properties
+            if remove_from_list:
+                self._masked_properties = remaining_masked_properties
         else:
             # A masked property has been passed, which we unmask here
             try:
@@ -1407,6 +1411,20 @@ class MeasurementLoop:
                     obj(original_value)
                 else:
                     raise SyntaxError(f"Unmask type {unmask_type} not understood")
+
+                # Try to find masked property and remove from list
+                if remove_from_list:
+                    for masked_property in reversed(self._masked_properties):
+                        if masked_property["obj"] != obj:
+                            continue
+                        elif attr is not None and masked_property.get("attr") != attr:
+                            continue
+                        elif key is not None and masked_property.get("key") != key:
+                            continue
+                        else:
+                            self._masked_properties.remove(masked_property)
+                            break
+
             except Exception as e:
                 self.log(
                     f"Could not unmask {obj} {unmask_type} from masked value {value} "
@@ -1688,12 +1706,6 @@ class BaseSweep(AbstractSweep):
             action_indices[-1] = 0
             msmt.action_indices = tuple(action_indices)
         except StopIteration:  # Reached end of iteration
-            if self.revert:
-                if isinstance(self.sequence, SweepValues):
-                    msmt.unmask(self.sequence.parameter)
-                else:
-                    # TODO: Check what other iterators might be able to be masked
-                    pass
             self.exit_sweep()
             raise StopIteration
 
@@ -1786,6 +1798,11 @@ class BaseSweep(AbstractSweep):
     def exit_sweep(self) -> None:
         """Exits sweep, stepping out of the current `Measurement.action_indices`"""
         msmt = running_measurement()
+        if self.revert:
+            if isinstance(self.sequence, SweepValues):
+                msmt.unmask(self.sequence.parameter)
+            elif self.parameter is not None:
+                msmt.unmask(self.parameter)
         msmt.step_out(reduce_dimension=True)
 
     def execute(
@@ -2167,3 +2184,32 @@ class Sweep(BaseSweep):
             )
 
         return sequence
+
+
+def measure_sweeps(
+    sweeps: List[BaseSweep],
+    measure_params: List[_BaseParameter],
+    msmt: "MeasurementLoop" = None,
+) -> None:
+    """Recursively iterate over Sweep objects, measuring measure_params in innermost loop
+
+    This method is used to perform arbitrary-dimension by passing a list of sweeps,
+    it can be compared to `dond`
+
+    Args:
+        sweeps: list of BaseSweep objects to sweep over
+        measure_params: list of parameters to measure in innermost loop
+    """
+
+    if sweeps:
+        outer_sweep, *inner_sweeps = sweeps
+
+        for _ in outer_sweep:
+            measure_sweeps(inner_sweeps, measure_params, msmt=msmt)
+
+    else:
+        if msmt is None:
+            msmt = running_measurement()
+
+        for measure_param in measure_params:
+            msmt.measure(measure_param)

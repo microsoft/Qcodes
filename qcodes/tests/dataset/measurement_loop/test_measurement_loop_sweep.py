@@ -183,3 +183,17 @@ def test_sweep_execute_sweep_args():
     arr = dataset.get_parameter_data("get_param")["get_param"]["get_param"]
     assert np.allclose(arr, [[2, 3, 4], [3, 4, 5], [4, 5, 6]])
     print(dataset)
+
+
+def test_sweep_reverting():
+    param = ManualParameter('param', initial_value=42)
+    with MeasurementLoop('test_revert') as msmt:
+        for val in Sweep(param, range(5), revert=True):
+            msmt.measure(val, 'value')
+
+        print(msmt._masked_properties)
+
+        assert param() == 42
+
+        param(41)
+    assert param() == 41
