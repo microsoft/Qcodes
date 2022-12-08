@@ -11,6 +11,7 @@ from matplotlib import pyplot as plt
 
 import numpy as np
 from tqdm import tqdm
+from tqdm.notebook import tqdm as tqdm_notebook
 
 from qcodes.dataset.data_set_protocol import DataSetProtocol
 from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
@@ -717,7 +718,11 @@ class MeasurementLoop:
     def _update_progress_bar(self, action_indices, description=None, create_if_new=True):
         # Register new progress bar
         if action_indices not in self.progress_bars:
-            if create_if_new:
+            # Do not create progress bar if one already exists and it's not a widget
+            # Otherwise stdout gets spammed
+            if not isinstance(tqdm, tqdm_notebook) and self.progress_bars:
+                return
+            elif create_if_new:
                 self.progress_bars[action_indices] = tqdm(
                     total=np.prod(self.loop_shape),
                     desc=description,
