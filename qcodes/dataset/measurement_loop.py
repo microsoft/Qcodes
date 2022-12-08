@@ -2023,9 +2023,10 @@ class Sweep(BaseSweep):
         """
         if len(args) == 1:  # Sweep([1,2,3], name="name")
             if isinstance(args[0], Iterable):
-                assert (
-                    kwargs.get("name") is not None
-                ), "Must provide name if sweeping iterable"
+                if kwargs.get("name") is None:
+                    kwargs["name"] = "iteration"
+                if kwargs.get("label") is None:
+                    kwargs["label"] = "Iteration"
                 (kwargs["sequence"],) = args
             elif isinstance(args[0], _BaseParameter):
                 assert (
@@ -2166,59 +2167,3 @@ class Sweep(BaseSweep):
             )
 
         return sequence
-
-
-class RepetitionSweep(BaseSweep):
-    """Basic sweep to repeat something multiple times
-    Its functionality is comparable to range(N)
-
-    Args:
-        repetitions: Number of times to loop over
-        start: Starting index
-        name: Sweep name, defaults to "repetition"
-        label: Sweep label, defaults to "Repetition"
-        unit: Optional sweep unit
-    """
-
-    def __init__(
-        self,
-        repetitions: int,
-        start: int = 0,
-        name: str = "repetition",
-        label: str = "Repetition",
-        unit: Optional[str] = None,
-    ):
-        self.start = start
-        self.repetitions = repetitions
-        sequence = start + np.arange(repetitions)
-
-        super().__init__(sequence, name, label, unit)
-
-
-def measure_sweeps(
-    sweeps: List[BaseSweep],
-    measure_params: List[_BaseParameter],
-    msmt: "MeasurementLoop" = None,
-) -> None:
-    """Recursively iterate over Sweep objects, measuring measure_params in innermost loop
-
-    This method is used to perform arbitrary-dimension by passing a list of sweeps,
-    it can be compared to `dond`
-
-    Args:
-        sweeps: list of BaseSweep objects to sweep over
-        measure_params: list of parameters to measure in innermost loop
-    """
-
-    if sweeps:
-        outer_sweep, *inner_sweeps = sweeps
-
-        for _ in outer_sweep:
-            measure_sweeps(inner_sweeps, measure_params, msmt=msmt)
-
-    else:
-        if msmt is None:
-            msmt = running_measurement()
-
-        for measure_param in measure_params:
-            msmt.measure(measure_param)

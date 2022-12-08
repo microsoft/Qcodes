@@ -52,26 +52,27 @@ def test_sweep_2_args_parameter_stop():
 
     # No initial value
     with pytest.raises(ValueError):
-        sweep = Sweep(sweep_parameter, 10)
+        sweep = Sweep(sweep_parameter, stop=10)
     with pytest.raises(ValueError):
-        sweep = Sweep(sweep_parameter, 10, num=21)
+        sweep = Sweep(sweep_parameter, stop=10, num=21)
 
     sweep_parameter(0)
     with pytest.raises(SyntaxError):
         sweep = Sweep(sweep_parameter, 10)
 
-    sweep = Sweep(sweep_parameter, 10, num=21)
+    sweep = Sweep(sweep_parameter, stop=10, num=21)
     assert np.allclose(sweep.sequence, np.linspace(0, 10, 21))
 
     sweep_parameter.sweep_defaults = {"num": 21}
-    sweep = Sweep(sweep_parameter, 10)
+    sweep = Sweep(sweep_parameter, stop=10)
     assert np.allclose(sweep.sequence, np.linspace(0, 10, 21))
 
 
 def test_sweep_2_args_sequence_name():
     sweep_values = [1, 2, 3]
-    with pytest.raises(AssertionError):
-        sweep = Sweep(sweep_values)
+    sweep = Sweep(sweep_values)
+    assert sweep.name == 'iteration'
+    assert sweep.label == 'Iteration'
 
     sweep = Sweep(sweep_values, "sweep_values")
     assert np.allclose(sweep.sequence, sweep_values)
@@ -87,8 +88,9 @@ def test_sweep_3_args_parameter_start_stop():
     assert np.allclose(sweep.sequence, np.linspace(0, 10, 21))
 
     sweep_values = [1, 2, 3]
-    with pytest.raises(AssertionError):
-        sweep = Sweep(sweep_values)
+    sweep = Sweep(sweep_values)
+    assert sweep.name == 'iteration'
+    assert sweep.label == 'Iteration'
 
     sweep = Sweep(sweep_values, "sweep_values")
     assert np.allclose(sweep.sequence, sweep_values)
