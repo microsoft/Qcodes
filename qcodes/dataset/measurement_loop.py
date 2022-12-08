@@ -1229,7 +1229,7 @@ class MeasurementLoop:
 
         self._masked_properties.append(
             {
-                "type": "attr",
+                "unmask_type": "attr",
                 "obj": obj,
                 "attr": attr,
                 "original_value": original_value,
@@ -1257,7 +1257,7 @@ class MeasurementLoop:
 
         self._masked_properties.append(
             {
-                "type": "parameter",
+                "unmask_type": "parameter",
                 "obj": param,
                 "original_value": original_value,
                 "value": value,
@@ -1285,7 +1285,7 @@ class MeasurementLoop:
 
         self._masked_properties.append(
             {
-                "type": "key",
+                "unmask_type": "key",
                 "obj": obj,
                 "key": key,
                 "original_value": original_value,
