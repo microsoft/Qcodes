@@ -23,7 +23,7 @@ repos:
     - id: pyupgrade
       args: ['--py38-plus']
   - repo: https://github.com/akaihola/darker
-    rev: 1.5.1
+    rev: e3c210b5c1b91400c3f317b2474c10ab23bec1cf
     hooks:
       -   id: darker
           args: [-i]
