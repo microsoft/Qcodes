@@ -58,6 +58,10 @@ if TYPE_CHECKING:
 
     from .data_set_cache import DataSetCache
 
+# for unknown reason entrypoints registered in pyproct.toml shows up
+# twice here convert to set to ensure no duplication.
+_EXPORT_CALLBACKS = set(entry_points(group="qcodes.dataset.on_export"))
+
 # even with from __future__ import annotations
 # type aliases must use the old format until we drop 3.8/3.9
 array_like_types = (tuple, list, np.ndarray)
@@ -437,14 +441,7 @@ class BaseDataSet(DataSetProtocol):
         else:
             export_path = None
 
-        # for unknown reason entrypoints registered in pyproct.toml shows up
-        # twice here
-        export_callbacks = set(entry_points(group="qcodes.dataset.on_export"))
-
-        if len(export_callbacks) == 0:
-            LOG.info("No export callbacks defined")
-
-        for export_callback in export_callbacks:
+        for export_callback in _EXPORT_CALLBACKS:
             export_callback_function = export_callback.load()
             LOG.info("Executing on_export callback {export_callback.name}")
             export_callback_function(export_path)
