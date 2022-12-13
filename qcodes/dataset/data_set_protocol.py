@@ -444,7 +444,7 @@ class BaseDataSet(DataSetProtocol):
         for export_callback in _EXPORT_CALLBACKS:
             try:
                 export_callback_function = export_callback.load()
-                LOG.info("Executing on_export callback {export_callback.name}")
+                LOG.info(f"Executing on_export callback {export_callback.name}")
                 export_callback_function(export_path)
             except Exception as exp:
                 LOG.exception("Exception during export callback function")
