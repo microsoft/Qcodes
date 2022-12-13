@@ -14,16 +14,16 @@ repos:
     - id: mixed-line-ending
       args: ['--fix=no']
   - repo: https://github.com/pycqa/isort
-    rev: 5.10.1
+    rev: 5.11.1
     hooks:
       - id: isort
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.3.0
+    rev: v3.3.1
     hooks:
     - id: pyupgrade
       args: ['--py38-plus']
   - repo: https://github.com/akaihola/darker
-    rev: e3c210b5c1b91400c3f317b2474c10ab23bec1cf
+    rev: 1.5.1
     hooks:
       -   id: darker
           args: [-i]
