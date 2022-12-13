@@ -3,8 +3,7 @@ from __future__ import annotations
 import sys
 
 if sys.version_info >= (3, 10):
-    # distribution.name used below became part of the
-    # official api in 3.10
+    # new entrypoints api was added in 3.10
     from importlib.metadata import entry_points
 else:
     # 3.9 and earlier
@@ -15,6 +14,7 @@ import os
 import warnings
 from collections.abc import Mapping, Sized
 from enum import Enum
+from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -400,7 +400,7 @@ class BaseDataSet(DataSetProtocol):
         export_type: DataExportType,
         path: str | None = None,
         prefix: str | None = None,
-    ) -> str | None:
+    ) -> Path | None:
         """Export data to disk with file name `{prefix}{name_elements}.{ext}`.
         Name elements are names of dataset object attributes that are taken
         from the dataset and inserted into the name of the export file, for
@@ -426,13 +426,13 @@ class BaseDataSet(DataSetProtocol):
             file_name = self._export_file_name(
                 prefix=prefix, export_type=DataExportType.NETCDF
             )
-            export_path = self._export_as_netcdf(path=path, file_name=file_name)
+            export_path = Path(self._export_as_netcdf(path=path, file_name=file_name))
 
         elif DataExportType.CSV == export_type:
             file_name = self._export_file_name(
                 prefix=prefix, export_type=DataExportType.CSV
             )
-            export_path = self._export_as_csv(path=path, file_name=file_name)
+            export_path = Path(self._export_as_csv(path=path, file_name=file_name))
 
         else:
             export_path = None
