@@ -442,9 +442,12 @@ class BaseDataSet(DataSetProtocol):
             export_path = None
 
         for export_callback in _EXPORT_CALLBACKS:
-            export_callback_function = export_callback.load()
-            LOG.info("Executing on_export callback {export_callback.name}")
-            export_callback_function(export_path)
+            try:
+                export_callback_function = export_callback.load()
+                LOG.info("Executing on_export callback {export_callback.name}")
+                export_callback_function(export_path)
+            except Exception as exp:
+                LOG.exception("Exception during export callback function")
 
         return export_path
 
