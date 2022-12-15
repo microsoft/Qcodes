@@ -8,6 +8,7 @@ import pytest
 from hypothesis import given
 
 from qcodes.parameters import DelegateParameter, Parameter, ParamRawDataType
+import qcodes.validators as vals
 
 from .conftest import BetterGettableParam
 
@@ -512,3 +513,27 @@ def test_underlying_instrument_property_for_delegate_parameter():
 
     d = DelegateParameter('delegate_parameter_without_source', source=None)
     assert d.underlying_instrument is None
+
+def test_value_validation():
+    source_param = Parameter("source", set_cmd=None, get_cmd=None)
+    delegate_param = DelegateParameter("delegate", source=source_param)
+
+    delegate_param.vals = vals.Numbers(-10, 10)
+    source_param.vals = None
+    delegate_param.validate(1)
+    with pytest.raises(ValueError):
+        delegate_param.validate(11)
+
+    delegate_param.vals = None
+    source_param.vals = vals.Numbers(-5, 5)
+    delegate_param.validate(1)
+    with pytest.raises(ValueError):
+        delegate_param.validate(6)
+
+    delegate_param.vals = vals.Numbers(-10, 10)
+    source_param.vals = vals.Numbers(-5, 5)
+    delegate_param.validate(1)
+    with pytest.raises(ValueError):
+        delegate_param.validate(6)
+    with pytest.raises(ValueError):
+        delegate_param.validate(11)
