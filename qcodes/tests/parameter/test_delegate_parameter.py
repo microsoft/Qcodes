@@ -7,8 +7,8 @@ import hypothesis.strategies as hst
 import pytest
 from hypothesis import given
 
-from qcodes.parameters import DelegateParameter, Parameter, ParamRawDataType
 import qcodes.validators as vals
+from qcodes.parameters import DelegateParameter, Parameter, ParamRawDataType
 
 from .conftest import BetterGettableParam
 
