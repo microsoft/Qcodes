@@ -275,20 +275,38 @@ class _DatasetHandler:
         measurement_info = self.measurement_list[action_indices]
         # Check if result is an array
         if np.ndim(result) > 0:
-            setpoints = []
+            if len(measurement_info["setpoints_action_indices"]) < np.ndim(result):
+                raise ValueError(
+                    f"Number of setpoints {len(measurement_info['setpoints_action_indices'])} "
+                    f"is less than array dimensionality {np.ndim(result)}"
+                )
 
-            for k, setpoint_indices in enumerate(measurement_info["setpoints_action_indices"]):
+            # Pick the last N sweeps, where N is the array dimensionality
+            setpoints_action_indices = measurement_info["setpoints_action_indices"]
+            repeat_setpoints_action_indices = setpoints_action_indices[:-np.ndim(result)]
+            mesh_setpoints_action_indices = setpoints_action_indices[-np.ndim(result):]
+
+            # Create repetitions of outer setpoints
+            repeat_setpoint_arrs = []
+            for k, setpoint_indices in enumerate(repeat_setpoints_action_indices):
+                latest_value = self.setpoint_list[setpoint_indices]["latest_value"]
+                setpoint_arr = np.tile(latest_value, np.shape(result))
+                repeat_setpoint_arrs.append(setpoint_arr)
+
+            # Create mesh from last N setpoints matching 
+            mesh_setpoint_arrs = []
+            for k, setpoint_indices in enumerate(mesh_setpoints_action_indices):
                 setpoint_info = self.setpoint_list[setpoint_indices]
-                if k < len(measurement_info["setpoints_action_indices"]) - 1:
-                    # Inner setpoints, repeat value by length of array
-                    latest_value = setpoint_info["latest_value"]
-                    sweep_arr = np.repeat(latest_value, len(result))
-                else:
-                    # Innermost loop, get sequence
-                    sweep_arr = setpoint_info["sweep"].sequence
-                    assert len(sweep_arr) == len(result)
+                sequence = setpoint_info["sweep"].sequence
+                mesh_setpoint_arrs.append(sequence)
+                if len(sequence) != np.shape(result)[k]:
+                    raise ValueError(
+                        f'Setpoint {k} {setpoint_info["sweep"].name} length differs '
+                        f'from dimension {k} of array: {len(sequence)=} != {np.shape(result)[k]=}'
+                    )
 
-                setpoints.append(sweep_arr)
+            # Convert all 1D setpoint arrays to an N-D meshgrid
+            setpoints = repeat_setpoint_arrs + list(np.meshgrid(*mesh_setpoint_arrs, indexing='ij'))
         else:
             setpoints = [
                 self.setpoint_list[action_indices]["latest_value"]
@@ -975,18 +993,38 @@ class MeasurementLoop:
         unit: str = None,
         setpoints: 'Sweep' = None
     ):
+        # Determine 
+        ndim = np.ndim(array)
+
+        setpoints_list = []
+
         # Ensure setpoints is a Sweep
         if setpoints is None:
-            setpoints_sequence = range(len(array))
-            setpoints = Sweep(setpoints_sequence, name='setpoint_idx', label='Setpoint index')
+            # Create setpoints for each dimension
+            for dim, num in enumerate(np.shape(array)):
+                sweep = Sweep(
+                    range(num), 
+                    name='setpoint_idx' + (f'_{dim}' if np.ndim(array) > 1 else ''), 
+                    label='Setpoint index' + (f' dim_{dim}' if np.ndim(array) > 1 else '')
+                )
+                setpoints_list.append(sweep)
+        elif isinstance(setpoints, Sweep):
+            # Setpoints is a single Sweep
+            assert ndim == 1
+            assert len(setpoints) == len(array)
+            setpoints_list = [setpoints]
         elif isinstance(setpoints, (list, np.ndarray)):
-            # Convert sequence to Sweep
-            setpoints = Sweep(setpoints, name='setpoint_idx', label='Setpoint index')
-        elif not isinstance(setpoints, Sweep):
+            if isinstance(setpoints[0], Sweep):
+                setpoints_list = setpoints
+            else:
+                # Convert sequence to Sweep
+                setpoints_list = [Sweep(setpoints, name='setpoint_idx', label='Setpoint index')]
+        else:
             raise SyntaxError('Cannot measure because array setpoints not understood')
 
         # Enter sweep
-        iter(setpoints)
+        for setpoints in setpoints_list:
+            iter(setpoints)
 
         # Ensure measuring array matches the current action_indices
         self._verify_action(action=None, name=name, add_if_new=True)
@@ -1000,7 +1038,8 @@ class MeasurementLoop:
             unit=unit,
         )
 
-        setpoints.exit_sweep()
+        for setpoints in reversed(setpoints_list):
+            setpoints.exit_sweep()
         
     def _measure_dict(self, value: dict, name: str) -> Dict[str, Any]:
         """Store dictionary results
