@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import warnings
-from typing import Any, Optional, Sequence
+from collections.abc import Sequence
+from typing import Any
 
 import numpy as np
 from numpy import VisibleDeprecationWarning
@@ -7,7 +10,7 @@ from numpy import VisibleDeprecationWarning
 
 def list_of_data_to_maybe_ragged_nd_array(
     column_data: Sequence[Any],
-    dtype: Optional[type] = None,
+    dtype: type | None = None,
 ) -> np.ndarray:
     """
     Convert a (nested) Sequence of data to numpy arrays. Handle that
