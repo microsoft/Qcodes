@@ -640,10 +640,6 @@ class MeasurementLoop:
             # include final metadata
             t_stop = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             self.dataset.add_metadata("t_stop", t_stop)
-            self.dataset.add_metadata(
-                "timings",
-                json.dumps(dict(self.timings.timings), cls=NumpyJSONEncoder)
-            )
             self.data_handler.finalize()
 
             self.log("Measurement finished")
@@ -960,13 +956,17 @@ class MeasurementLoop:
                 action_indices_str = "_".join(str(idx) for idx in self.action_indices)
                 name = f"data_group_{action_indices_str}"
 
-        # Ensure measuring callable matches the current action_indices
-        self._verify_action(action=measurable_function, name=name, add_if_new=True)
-
         # Record action_indices before the callable is called
         action_indices = self.action_indices
 
         results = measurable_function(**kwargs)
+
+        if self.action_indices != action_indices:
+            # Measurements have been performed in this function, don't measure anymore
+            return
+
+        # Ensure measuring callable matches the current action_indices
+        self._verify_action(action=measurable_function, name=name, add_if_new=True)
 
         # Check if the callable already performed a nested measurement
         # In this case, the nested measurement is stored as a data_group, and
