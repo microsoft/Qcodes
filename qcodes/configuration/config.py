@@ -403,13 +403,18 @@ class Config:
 
         return doc
 
-    def __getitem__(self, name: str) -> Any:
-        val = self.current_config
-        for key in name.split('.'):
-            if val is None:
-                raise KeyError(f"{name} not found in current config")
-            val = val[key]
-        return val
+    def __getitem__(self, name: Union[int,str]) -> Any:
+        if isinstance(name, int):
+            # Integer requested, likely a consequence of "if 'string' in config"
+            # Return key corresponding to index
+            return list(self.current_config.keys())[name]
+        else:
+            val = self.current_config
+            for key in name.split('.'):
+                if val is None:
+                    raise KeyError(f"{name} not found in current config")
+                val = val[key]
+            return val
 
     def __getattr__(self, name: str) -> Any:
         return getattr(self.current_config, name)
@@ -422,22 +427,21 @@ class Config:
         return output
 
 
-class DotDict(Dict[str, Any]):
+class DotDict(dict):
     """
     Wrapper dict that allows to get dotted attributes
-
-    Requires keys to be strings.
     """
-
-    def __init__(self, value: Mapping[str, Any] | None = None):
+    exclude_from_dict = []
+    def __init__(self, value=None):
         if value is None:
             pass
         else:
             for key in value:
                 self.__setitem__(key, value[key])
 
-    def __setitem__(self, key: str, value: Any) -> None:
-        if '.' in key:
+    def __setitem__(self, key, value):
+        # string type must be checked, as key could be other datatype
+        if type(key)==str and '.' in key:
             myKey, restOfKey = key.split('.', 1)
             target = self.setdefault(myKey, DotDict())
             target[restOfKey] = value
@@ -446,36 +450,77 @@ class DotDict(Dict[str, Any]):
                 value = DotDict(value)
             dict.__setitem__(self, key, value)
 
-    def __getitem__(self, key: str) -> Any:
-        if '.' not in key:
+    def __getitem__(self, key):
+        if type(key) != str or '.' not in key:
             return dict.__getitem__(self, key)
         myKey, restOfKey = key.split('.', 1)
         target = dict.__getitem__(self, myKey)
         return target[restOfKey]
 
-    def __contains__(self, key: object) -> bool:
-        if not isinstance(key, str):
-            return False
-        if '.' not in key:
-            return super().__contains__(key)
+    def __contains__(self, key):
+        if not isinstance(key, str) or '.' not in key:
+            return dict.__contains__(self, key)
         myKey, restOfKey = key.split('.', 1)
-        target = dict.__getitem__(self, myKey)
-        return restOfKey in target
 
-    def __deepcopy__(self, memo: dict[Any, Any] | None) -> DotDict:
+        if myKey not in self:
+            return False
+        else:
+            target = dict.__getitem__(self, myKey)
+            return restOfKey in target
+
+    def __deepcopy__(self, memo):
         return DotDict(copy.deepcopy(dict(self)))
 
-    def __getattr__(self, name: str) -> Any:
-        """
-        Overwrite ``__getattr__`` to provide dot access
-        """
-        return self.__getitem__(name)
+    # dot acces baby
+    def __setattr__(self, key, val):
+        if key in self.exclude_from_dict:
+            self.__dict__[key] = val
+        else:
+            self.__setitem__(key, val)
 
-    def __setattr__(self, key: str, value: Any) -> None:
+    def __getattr__(self, key):
+        try:
+            return self.__getitem__(key)
+        except KeyError:
+            raise AttributeError(f'Attribute {key} not found')
+
+    def __dir__(self):
+        # Add keys to dir, used for auto-completion
+        items = super().__dir__()
+        items.extend(self.keys())
+        return items
+
+    def setdefault(self, key, default=None):
+        """Set value of a key if it does not yet exist"""
+        d = self
+        if isinstance(key, str):
+            *parent_keys, key = key.split('.')
+            for subkey in parent_keys:
+                d = dict.setdefault(d, subkey, DotDict())
+
+        return dict.setdefault(d, key, default)
+
+    def create_dicts(self, *keys):
+        """Create nested dict structure
+        Args:
+            *keys: Sequence of key strings. Empty DotDicts will be created if
+                each key does not yet exist
+        Returns:
+            Most inner dict, newly created if it does not yet exist
+        Examples:
+            d = DotDict()
+            d.create_dicts('a', 'b', 'c')
+            print(d.a.b.c)
+            >>> {}
         """
-        Overwrite ``__setattr__`` to provide dot access
-        """
-        self.__setitem__(key, value)
+        d = self
+        for key in keys:
+            if key in self:
+                assert isinstance(d[key], dict)
+
+            d.setdefault(key, DotDict())
+            d = d[key]
+        return d
 
 
 def update(d: dict[Any, Any], u: Mapping[Any, Any]) -> dict[Any, Any]:
