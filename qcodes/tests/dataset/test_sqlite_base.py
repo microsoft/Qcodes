@@ -1,6 +1,7 @@
 # Since all other tests of data_set and measurements will inevitably also
 # test the sqlite module, we mainly test exceptions and small helper
 # functions here
+import logging
 import re
 import time
 import unicodedata
@@ -510,6 +511,44 @@ def test_mark_run_complete(dataset):
     assert dataset.run_timestamp_raw is not None
     assert dataset.completed_timestamp_raw is not None
     assert dataset.completed_timestamp_raw > time_now
+
+
+def test_mark_run_complete_twice(dataset, caplog):
+    assert dataset.run_timestamp_raw is None
+    assert dataset.completed_timestamp_raw is None
+
+    time_now = time.time()
+    mut_queries.set_run_timestamp(dataset.conn, dataset.run_id)
+    assert dataset.run_timestamp_raw is not None
+    assert dataset.completed_timestamp_raw is None
+    time.sleep(1)  # for slower test platforms
+    mut_queries.mark_run_complete(dataset.conn, dataset.run_id)
+    assert dataset.run_timestamp_raw is not None
+    assert dataset.completed_timestamp_raw is not None
+    completed_time = dataset.completed_timestamp_raw
+    assert completed_time > time_now
+
+    # now wait a sec and mark the run complted again
+    # this should not update the completed time
+    # since the run is already complted
+    time.sleep(1)  # for slower test platforms
+    caplog.clear()
+    with caplog.at_level(logging.WARNING):
+        mut_queries.mark_run_complete(dataset.conn, dataset.run_id)
+    assert (
+        caplog.records[0].msg
+        == "Trying to mark a run completed that was already completed."
+    )
+    assert caplog.records[0].levelname == "WARNING"
+    assert dataset.run_timestamp_raw is not None
+    assert dataset.completed_timestamp_raw is not None
+    assert dataset.completed_timestamp_raw == completed_time
+
+    # however we can force an update with override
+    mut_queries.mark_run_complete(dataset.conn, dataset.run_id, override=True)
+    assert dataset.run_timestamp_raw is not None
+    assert dataset.completed_timestamp_raw is not None
+    assert dataset.completed_timestamp_raw > completed_time
 
 
 def test_mark_run_complete_explicit_time(dataset):
