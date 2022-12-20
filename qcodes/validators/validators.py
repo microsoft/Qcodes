@@ -176,7 +176,7 @@ class Bool(Validator[bool]):
         Raises:
             TypeError: IF not a boolean.
         """
-        if not isinstance(value, bool) and not isinstance(value, np.bool8):
+        if not isinstance(value, bool) and not isinstance(value, np.bool_):
             raise TypeError(f"{repr(value)} is not Boolean; {context}")
 
     def __repr__(self) -> str:
