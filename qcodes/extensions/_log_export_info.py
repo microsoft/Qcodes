@@ -7,4 +7,4 @@ LOG = logging.getLogger(__name__)
 
 
 def log_dataset_export_info(path: Path | None) -> None:
-    LOG.info(f"Dataset has been exported to: {path}")
+    LOG.info("Dataset has been exported to: %s", path)
