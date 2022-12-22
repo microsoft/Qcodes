@@ -539,8 +539,10 @@ class Station(Metadatable, DelegateAttributes):
 
             E.g: 'dac.ch1' will return the instance of ch1.
             """
+            levels = identifier.split(".")
+            level = levels[0]
             try:
-                for level in identifier.split('.'):
+                for level in levels:
                     instrument = checked_getattr(
                         instrument, level, (InstrumentBase, ChannelTuple)
                     )
