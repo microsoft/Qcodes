@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Tuple, cast
 
 if TYPE_CHECKING:
     import matplotlib
+    import matplotlib.colorbar
 
 import numpy as np
 
@@ -91,6 +92,7 @@ def apply_color_scale_limits(
     if data_lim is None:
         if data_array is None:
             data_array = colorbar.mappable.get_array()
+        assert data_array is not None
         data_lim = np.nanmin(data_array), np.nanmax(data_array)
     else:
         if data_array is not None:
@@ -160,6 +162,7 @@ def apply_auto_color_scale(
         if not isinstance(colorbar.mappable, matplotlib.collections.QuadMesh):
             raise RuntimeError("Can only scale mesh data.")
         data_array = colorbar.mappable.get_array()
+    assert data_array is not None
     new_lim = auto_range_iqr(data_array, cutoff_percentile)
     apply_color_scale_limits(
         colorbar,
