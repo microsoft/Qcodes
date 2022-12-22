@@ -541,8 +541,12 @@ def test_value_validation():
 
 
 def test_value_validation_with_offset_and_scale():
-    source_param = Parameter("source", set_cmd=None, get_cmd=None, vals=vals.Numbers(-5, 5))
-    delegate_param = DelegateParameter("delegate", source=source_param, vals=vals.Numbers(-10, 10))
+    source_param = Parameter(
+        "source", set_cmd=None, get_cmd=None, vals=vals.Numbers(-5, 5)
+    )
+    delegate_param = DelegateParameter(
+        "delegate", source=source_param, vals=vals.Numbers(-10, 10)
+    )
 
     source_param.offset = 100
     source_param.scale = None
