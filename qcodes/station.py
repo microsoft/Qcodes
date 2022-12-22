@@ -752,10 +752,12 @@ def update_config_schema(
         submodules = list(pkgutil.walk_packages(module.__path__, module.__name__ + "."))
         res = set()
         for s in submodules:
-            with suppress(Exception):
+            try:
                 ms = inspect.getmembers(
                     importlib.import_module(s.name),
                     inspect.isclass)
+            except Exception:
+                ms = []
             new_members = [
                 f"{instr[1].__module__}.{instr[1].__name__}"
                 for instr in ms
