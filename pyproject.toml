@@ -238,6 +238,7 @@ ignore = [
     "qcodes/actions.py",
     "qcodes/data",
     "qcodes/loops.py",
+    "qcodes/measure.py",
     "qcodes/plots/pyqtgraph.py",
     ]
 
