@@ -800,10 +800,13 @@ def _merge_yamls(*yamls: Union[str, Path]) -> str:
     Args:
         yamls: string or Path to yaml files separated by comma.
     Returns:
-        Full yaml file stored in the memory.
+        Full yaml file stored in the memory. Returns an empty string
+        if no files are given.
     """
     import ruamel.yaml  # lazy import
 
+    if len(yamls) == 0:
+        return ""
     if len(yamls) == 1:
         with open(yamls[0]) as file:
             content = file.read()
@@ -819,6 +822,7 @@ def _merge_yamls(*yamls: Union[str, Path]) -> str:
         with open(filepath) as file_pointer:
             deq.append(yaml.load(file_pointer))
 
+    data1 = None
     # Add the top key entries from filepath n to filepath n-1 to
     # ... filepath 1.
     while len(deq) > 1:
@@ -832,6 +836,7 @@ def _merge_yamls(*yamls: Union[str, Path]) -> str:
                     f"{ ','.join(map(str, yamls))}"
                 )
         deq.popleft()
+    assert data1 is not None
 
     with StringIO() as merged_yaml_stream:
         yaml.dump(data1, merged_yaml_stream)
