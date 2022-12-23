@@ -547,12 +547,16 @@ def test_value_validation_with_offset_and_scale():
     source_param.offset = 100
     source_param.scale = None
     source_param.validate(0)  # raw_value = 100
+    source_param.set(0)
     delegate_param.validate(0)  # raw_value = 0
+    delegate_param.set(0)
 
     source_param.offset = None
     source_param.scale = 100
     source_param.validate(1)  # raw_value = 100
+    source_param.set(1)
     delegate_param.validate(1)  # raw_value = 1
+    delegate_param.set(1)
 
     source_param.offset = None
     source_param.scale = None
@@ -560,9 +564,17 @@ def test_value_validation_with_offset_and_scale():
     delegate_param.offset = 100
     delegate_param.scale = None
     source_param.validate(0)  # raw_value = 0
-    delegate_param.validate(0)  # raw_value = 100
+    source_param.set(0)
+    with pytest.raises(ValueError):
+        delegate_param.validate(0)  # raw_value = 100
+    with pytest.raises(ValueError):
+        delegate_param.set(0)
 
     delegate_param.offset = None
     delegate_param.scale = 100
     source_param.validate(1)  # raw_value = 1
-    delegate_param.validate(1)  # raw_value = 100
+    source_param.set(1)
+    with pytest.raises(ValueError):
+        delegate_param.validate(1)  # raw_value = 100
+    with pytest.raises(ValueError):
+        delegate_param.set(1)

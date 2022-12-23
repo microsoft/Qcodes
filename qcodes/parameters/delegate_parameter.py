@@ -272,4 +272,4 @@ class DelegateParameter(Parameter):
         """
         super().validate(value)
         if self.source is not None:
-            self.source.validate(value)
+            self.source.validate(self._from_value_to_raw_value(value))
