@@ -17,6 +17,7 @@ from typing import (
     Tuple,
     TypeVar,
     Union,
+    cast,
 )
 
 import numpy as np
@@ -481,14 +482,15 @@ class AMI430(IPInstrument):
 
 
 class AMI430_3D(Instrument):
-    def __init__(self,
-                 name: str,
-                 instrument_x: Union[AMI430, str],
-                 instrument_y: Union[AMI430, str],
-                 instrument_z: Union[AMI430, str],
-                 field_limit: Union[numbers.Real,
-                                    Iterable[CartesianFieldLimitFunction]],
-                 **kwargs: Any):
+    def __init__(
+        self,
+        name: str,
+        instrument_x: Union[AMI430, str],
+        instrument_y: Union[AMI430, str],
+        instrument_z: Union[AMI430, str],
+        field_limit: Union[float, Iterable[CartesianFieldLimitFunction]],
+        **kwargs: Any,
+    ):
         """
         Driver for controlling three American Magnetics Model 430 magnet power
         supplies simultaneously for setting magnetic field vectors.
@@ -1062,8 +1064,7 @@ class AMI430_3D(Instrument):
         for axis_instrument in (self._instrument_x, self._instrument_y, self._instrument_z):
             axis_instrument.pause()
 
-    def _request_field_change(self, instrument: AMI430,
-                              value: numbers.Real) -> None:
+    def _request_field_change(self, instrument: AMI430, value: float) -> None:
         """
         This method is called by the child x/y/z magnets if they are set
         individually. It results in additional safety checks being
@@ -1086,10 +1087,7 @@ class AMI430_3D(Instrument):
             z=self._instrument_z.field(),
         )
 
-    def _get_measured(
-            self,
-            *names: str
-    ) -> Union[numbers.Real, List[numbers.Real]]:
+    def _get_measured(self, *names: str) -> Union[float, List[float]]:
         measured_field_vector = self._get_measured_field_vector()
 
         measured_values = measured_field_vector.get_components(*names)
@@ -1107,11 +1105,7 @@ class AMI430_3D(Instrument):
 
         return return_value
 
-    def _get_setpoints(
-            self,
-            names: Sequence[str]
-    ) -> Union[numbers.Real, List[numbers.Real]]:
-
+    def _get_setpoints(self, names: Sequence[str]) -> Union[float, List[float]]:
         measured_values = self._set_point.get_components(*names)
 
         # Convert angles from radians to degrees
@@ -1141,8 +1135,9 @@ class AMI430_3D(Instrument):
         else:
             set_point.set_component(**kwargs)
 
-        self._adjust_child_instruments(
-            set_point.get_components("x", "y", "z")
+        setpoint_values = cast(
+            Tuple[float, float, float], set_point.get_components("x", "y", "z")
         )
+        self._adjust_child_instruments(setpoint_values)
 
         self._set_point = set_point
