@@ -1,9 +1,20 @@
 from __future__ import annotations
 
+import sys
+
+if sys.version_info >= (3, 10):
+    # new entrypoints api was added in 3.10
+    from importlib.metadata import entry_points
+else:
+    # 3.9 and earlier
+    from importlib_metadata import entry_points
+
+import logging
 import os
 import warnings
 from collections.abc import Mapping, Sized
 from enum import Enum
+from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -47,6 +58,10 @@ if TYPE_CHECKING:
 
     from .data_set_cache import DataSetCache
 
+# for unknown reason entrypoints registered in pyproct.toml shows up
+# twice here convert to set to ensure no duplication.
+_EXPORT_CALLBACKS = set(entry_points(group="qcodes.dataset.on_export"))
+
 # even with from __future__ import annotations
 # type aliases must use the old format until we drop 3.8/3.9
 array_like_types = (tuple, list, np.ndarray)
@@ -63,6 +78,7 @@ SPECS: TypeAlias = List[ParamSpec]
 SpecsOrInterDeps: TypeAlias = Union[SPECS, InterDependencies_]
 ParameterData: TypeAlias = Dict[str, Dict[str, np.ndarray]]
 
+LOG = logging.getLogger(__name__)
 
 class CompletedError(RuntimeError):
     pass
@@ -388,7 +404,7 @@ class BaseDataSet(DataSetProtocol):
         export_type: DataExportType,
         path: str | None = None,
         prefix: str | None = None,
-    ) -> str | None:
+    ) -> Path | None:
         """Export data to disk with file name `{prefix}{name_elements}.{ext}`.
         Name elements are names of dataset object attributes that are taken
         from the dataset and inserted into the name of the export file, for
@@ -414,16 +430,26 @@ class BaseDataSet(DataSetProtocol):
             file_name = self._export_file_name(
                 prefix=prefix, export_type=DataExportType.NETCDF
             )
-            return self._export_as_netcdf(path=path, file_name=file_name)
+            export_path = Path(self._export_as_netcdf(path=path, file_name=file_name))
 
         elif DataExportType.CSV == export_type:
             file_name = self._export_file_name(
                 prefix=prefix, export_type=DataExportType.CSV
             )
-            return self._export_as_csv(path=path, file_name=file_name)
+            export_path = Path(self._export_as_csv(path=path, file_name=file_name))
 
         else:
-            return None
+            export_path = None
+
+        for export_callback in _EXPORT_CALLBACKS:
+            try:
+                export_callback_function = export_callback.load()
+                LOG.info("Executing on_export callback %s", export_callback.name)
+                export_callback_function(export_path)
+            except Exception:
+                LOG.exception("Exception during export callback function")
+
+        return export_path
 
     def _export_file_name(self, prefix: str, export_type: DataExportType) -> str:
         """Get export file name"""

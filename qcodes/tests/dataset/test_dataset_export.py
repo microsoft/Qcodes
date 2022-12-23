@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 
 import pytest
@@ -202,10 +203,14 @@ def test_write_data_to_text_file_name_exception(tmp_path, mock_dataset):
 
 
 @pytest.mark.usefixtures('experiment')
-def test_export_csv(tmp_path_factory, mock_dataset):
+def test_export_csv(tmp_path_factory, mock_dataset, caplog):
     tmp_path = tmp_path_factory.mktemp("export_csv")
     path = str(tmp_path)
-    mock_dataset.export(export_type="csv", path=path, prefix="qcodes_")
+    with caplog.at_level(logging.INFO):
+        mock_dataset.export(export_type="csv", path=path, prefix="qcodes_")
+
+    assert "Executing on_export callback log_exported_ds" in caplog.messages
+    assert any("Dataset has been exported to" in mes for mes in caplog.messages)
 
     mock_dataset.add_metadata("metadata_added_after_export", 69)
 
@@ -218,10 +223,15 @@ def test_export_csv(tmp_path_factory, mock_dataset):
 
 
 @pytest.mark.usefixtures('experiment')
-def test_export_netcdf(tmp_path_factory, mock_dataset):
+def test_export_netcdf(tmp_path_factory, mock_dataset, caplog):
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
     path = str(tmp_path)
-    mock_dataset.export(export_type="netcdf", path=path, prefix="qcodes_")
+    with caplog.at_level(logging.INFO):
+        mock_dataset.export(export_type="netcdf", path=path, prefix="qcodes_")
+
+    assert "Executing on_export callback log_exported_ds" in caplog.messages
+    assert any("Dataset has been exported to" in mes for mes in caplog.messages)
+
     mock_dataset.add_metadata("metadata_added_after_export", 69)
 
     expected_path = f"qcodes_{mock_dataset.captured_run_id}_{mock_dataset.guid}.nc"

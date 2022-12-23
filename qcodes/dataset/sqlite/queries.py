@@ -976,7 +976,10 @@ def new_experiment(
 # TODO(WilliamHPNielsen): we should remove the redundant
 # is_completed
 def mark_run_complete(
-    conn: ConnectionPlus, run_id: int, timestamp: float | None = None
+    conn: ConnectionPlus,
+    run_id: int,
+    timestamp: float | None = None,
+    override: bool = False,
 ) -> None:
     """Mark run complete
 
@@ -985,7 +988,16 @@ def mark_run_complete(
         run_id: id of the run to mark complete
         timestamp: time stamp for completion. If None the function will
             automatically get the current time.
+        override: Mark already completed run complted again and override completed
+            timestamp with new value. If False marking an already completed run completed
+            is a noop.
+
     """
+    if override is False:
+        if completed(conn=conn, run_id=run_id):
+            log.warning("Trying to mark a run completed that was already completed.")
+            return
+
     query = """
     UPDATE
         runs
