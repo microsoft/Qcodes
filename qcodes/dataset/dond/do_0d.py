@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from qcodes import config
 from qcodes.parameters import ParameterBase
@@ -54,7 +54,7 @@ def do0d(
         The QCoDeS dataset.
     """
     if do_plot is None:
-        do_plot = config.dataset.dond_plot
+        do_plot = cast(bool, config.dataset.dond_plot)
     meas = Measurement(name=measurement_name, exp=exp)
     if log_info is not None:
         meas._extra_log_info = log_info
