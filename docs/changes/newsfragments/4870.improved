@@ -1,4 +1,2 @@
-Prior to this change, DelegateParameter.validate only uses its own validator, ignoring the source parameter.
-This change adds:
-- an extra layer of validation in DelegateParameter.validate by using the source parameter's validator
-- two test methods in 'test_delegate_parameter.py'
+``validate`` method of ``DelegateParameter`` now also validates the given value
+against the validator of the source parameter (if source parameter is present).
