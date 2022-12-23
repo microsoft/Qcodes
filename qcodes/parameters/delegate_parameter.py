@@ -270,7 +270,6 @@ class DelegateParameter(Parameter):
             ValueError: If the value is outside the bounds specified by the
                validator.
         """
-        if self.vals is not None:
-            super().validate(value)
+        super().validate(value)
         if self.source is not None:
             self.source.validate(value)
