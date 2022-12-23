@@ -59,7 +59,7 @@ class B1511B(B1517A):
         self._asu_valid_i_output_ranges: List[IOutputRange] = [
             IOutputRange.MIN_1pA, IOutputRange.MIN_10pA, IOutputRange.MIN_100pA]
 
-        self.asu_present: bool = False
+        self.asu_present = False
 
     @property
     def asu_present(self) -> bool:
