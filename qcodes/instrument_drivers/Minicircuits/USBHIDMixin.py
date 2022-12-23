@@ -8,10 +8,12 @@ from typing import Any, List, Optional
 
 try:
     import pywinusb.hid as hid
+
+    imported_hid = True
 except ImportError:
     # We will raise a proper error when we attempt to instantiate a driver.
     # Raising an exception here will cause CI to fail under Linux
-    hid = None
+    imported_hid = False
 
 from qcodes.instrument.base import Instrument
 
@@ -34,7 +36,7 @@ class USBHIDMixin(Instrument):
         if os.name != 'nt':
             raise ImportError("This driver only works on Windows.")
 
-        if hid is None:
+        if imported_hid is False:
             raise ImportError(
                 "pywinusb is not installed. Please install it by typing "
                 "'pip install pywinusb' in a qcodes environment terminal"
