@@ -688,6 +688,7 @@ def dond(
         else SequentialParamsCaller(*measurements.measured_all)
     )
 
+    datasavers = []
     try:
         with _catch_interrupts() as interrupted, ExitStack() as stack, params_meas_caller as call_params_meas:
             datasavers = [
