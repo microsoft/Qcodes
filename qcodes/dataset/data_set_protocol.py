@@ -310,7 +310,7 @@ class DataSetProtocol(Protocol, Sized):
         ...
 
 
-class BaseDataSet(DataSetProtocol):
+class BaseDataSet(DataSetProtocol, Protocol):
 
     # shared methods between all implementations of the dataset
 
