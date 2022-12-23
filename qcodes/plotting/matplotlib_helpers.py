@@ -91,8 +91,7 @@ def apply_color_scale_limits(
         )
     if data_lim is None:
         if data_array is None:
-            data_array = colorbar.mappable.get_array()
-        assert data_array is not None
+            data_array = cast(np.ndarray, colorbar.mappable.get_array())
         data_lim = np.nanmin(data_array), np.nanmax(data_array)
     else:
         if data_array is not None:
@@ -161,7 +160,7 @@ def apply_auto_color_scale(
     if data_array is None:
         if not isinstance(colorbar.mappable, matplotlib.collections.QuadMesh):
             raise RuntimeError("Can only scale mesh data.")
-        data_array = colorbar.mappable.get_array()
+        data_array = cast(np.ndarray, colorbar.mappable.get_array())
     assert data_array is not None
     new_lim = auto_range_iqr(data_array, cutoff_percentile)
     apply_color_scale_limits(
