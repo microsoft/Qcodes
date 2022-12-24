@@ -105,7 +105,8 @@ class Command(Generic[Output, ParsedOutput]):
             if is_function(exec_str, 1):
                 # (parse_input, parse_output)
                 exec_mapping: dict[
-                    tuple[bool | Literal["multi"], bool], Any
+                    tuple[bool | Literal["multi"], bool],
+                    Callable[..., Output | ParsedOutput],
                 ] = {  # (parse_input, parse_output)
                     (False, False): self.call_by_str,
                     (False, True): self.call_by_str_parsed_out,
@@ -205,4 +206,4 @@ class Command(Generic[Output, ParsedOutput]):
         """Invoke the command."""
         if len(args) != self.arg_count:
             raise TypeError(f"command takes exactly {self.arg_count} args")
-        return self.exec_function(*args)  # type: ignore[operator]
+        return self.exec_function(*args)
