@@ -1229,8 +1229,9 @@ class DataSet(BaseDataSet):
 
         toplevel_params = (set(interdeps.dependencies)
                            .intersection(set(result_dict)))
-        if self._in_memory_cache:
-            new_results: dict[str, dict[str, numpy.ndarray]] = {}
+
+        new_results: dict[str, dict[str, numpy.ndarray]] = {}
+
         for toplevel_param in toplevel_params:
             inff_params = set(interdeps.inferences.get(toplevel_param, ()))
             deps_params = set(interdeps.dependencies.get(toplevel_param, ()))
