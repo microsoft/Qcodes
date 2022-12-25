@@ -240,6 +240,7 @@ ignore = [
     "qcodes/loops.py",
     "qcodes/measure.py",
     "qcodes/plots/pyqtgraph.py",
+    "qcodes/plots/qcmatplotlib.py"
     ]
 
 
