@@ -1354,7 +1354,7 @@ class DataSet(BaseDataSet):
                     flat_results[dep.name] = result_dict[dep].ravel()
             for inff in inff_params:
                 if numpy.shape(result_dict[inff]) == ():
-                    flat_results[inff.name] = numpy.repeat(result_dict[dep], N)
+                    flat_results[inff.name] = numpy.repeat(result_dict[inff], N)
                 else:
                     flat_results[inff.name] = result_dict[inff].ravel()
 
