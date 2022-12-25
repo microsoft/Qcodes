@@ -16,6 +16,7 @@ import numpy as np
 
 if TYPE_CHECKING:
     import matplotlib
+    import matplotlib.ticker
     from matplotlib.axes import Axes
     from matplotlib.colorbar import Colorbar
 
@@ -35,7 +36,7 @@ from .data_export import (
 
 log = logging.getLogger(__name__)
 DB = qc.config["core"]["db_location"]
-
+_DEFAULT_COLORMAP = "viridis"
 # NamedData is the structure _get_data_from_ds returns and that plot_by_id
 # uses internally
 NamedData = List[List[DSPlotData]]
@@ -87,7 +88,7 @@ def _appropriate_kwargs(plottype: str, colorbar_present: bool, **kwargs: Any) ->
 def plot_dataset(
     dataset: DataSetProtocol,
     axes: Axes | Sequence[Axes] | None = None,
-    colorbars: Colorbar | Sequence[Colorbar] | None = None,
+    colorbars: Colorbar | Sequence[Colorbar] | Sequence[None] | None = None,
     rescale_axes: bool = True,
     auto_color_scale: bool | None = None,
     cutoff_percentile: tuple[float, float] | float | None = None,
@@ -227,7 +228,7 @@ def plot_dataset(
 
     if colorbars is None:
         colorbars = len(axeslist) * [None]
-    new_colorbars: list[Colorbar] = []
+    new_colorbars: list[Colorbar | None] = []
 
     for data, ax, colorbar in zip(alldata, axeslist, colorbars):
 
@@ -548,7 +549,7 @@ def plot_2d_scatterplot(
     y: np.ndarray,
     z: np.ndarray,
     ax: Axes,
-    colorbar: Colorbar = None,
+    colorbar: Colorbar | None = None,
     **kwargs: Any,
 ) -> AxesTuple:
     """
@@ -568,6 +569,7 @@ def plot_2d_scatterplot(
         The matplotlib axis handles for plot and colorbar
     """
     import matplotlib
+    import matplotlib.cm
 
     if "rasterized" in kwargs.keys():
         rasterized = kwargs.pop("rasterized")
@@ -577,13 +579,15 @@ def plot_2d_scatterplot(
     z_is_stringy = isinstance(z[0], str)
 
     if z_is_stringy:
-        z_strings = np.unique(z)
+        z_strings = [str(elem) for elem in np.unique(z)]
         z = _strings_as_ints(z)
+    else:
+        z_strings = []
 
-    cmap = kwargs.pop("cmap") if "cmap" in kwargs else None
+    cmap = kwargs.pop("cmap") if "cmap" in kwargs else _DEFAULT_COLORMAP
 
     if z_is_stringy:
-        name = cmap.name if hasattr(cmap, "name") else "viridis"
+        name = getattr(cmap, "name", _DEFAULT_COLORMAP)
         cmap = matplotlib.cm.get_cmap(name, len(z_strings))
 
     mappable = ax.scatter(x=x, y=y, c=z, rasterized=rasterized, cmap=cmap, **kwargs)
@@ -596,8 +600,7 @@ def plot_2d_scatterplot(
     if z_is_stringy:
         N = len(z_strings)
         f = (N - 1) / N
-        colorbar.set_ticks([(n + 0.5) * f for n in range(N)])
-        colorbar.set_ticklabels(z_strings)
+        colorbar.set_ticks([(n + 0.5) * f for n in range(N)], labels=z_strings)
 
     return ax, colorbar
 
@@ -607,7 +610,7 @@ def plot_on_a_plain_grid(
     y: np.ndarray,
     z: np.ndarray,
     ax: Axes,
-    colorbar: Colorbar = None,
+    colorbar: Colorbar | None = None,
     **kwargs: Any,
 ) -> AxesTuple:
     """
@@ -633,6 +636,7 @@ def plot_on_a_plain_grid(
         The matplotlib axes handle for plot and colorbar
     """
     import matplotlib
+    import matplotlib.cm
 
     log.debug(f"Got kwargs: {kwargs}")
 
@@ -643,14 +647,20 @@ def plot_on_a_plain_grid(
     if x_is_stringy:
         x_strings = np.unique(x)
         x = _strings_as_ints(x)
+    else:
+        x_strings = []
 
     if y_is_stringy:
         y_strings = np.unique(y)
         y = _strings_as_ints(y)
+    else:
+        y_strings = []
 
     if z_is_stringy:
-        z_strings = np.unique(z)
+        z_strings = [str(elem) for elem in np.unique(z)]
         z = _strings_as_ints(z)
+    else:
+        z_strings = []
 
     if x.ndim == 2 and y.ndim == 2 and z.ndim == 2:
         if not np.logical_or(np.any(np.isnan(x)), np.any(np.isnan(y))):
@@ -671,10 +681,10 @@ def plot_on_a_plain_grid(
     else:
         rasterized = num_points > qc.config.plotting.rasterize_threshold
 
-    cmap = kwargs.pop("cmap") if "cmap" in kwargs else None
+    cmap = kwargs.pop("cmap") if "cmap" in kwargs else _DEFAULT_COLORMAP
 
     if z_is_stringy:
-        name = cmap.name if hasattr(cmap, "name") else "viridis"
+        name = getattr(cmap, "name", _DEFAULT_COLORMAP)
         cmap = matplotlib.cm.get_cmap(name, len(z_strings))
 
     colormesh = ax.pcolormesh(
@@ -688,8 +698,7 @@ def plot_on_a_plain_grid(
     )
 
     if x_is_stringy:
-        ax.set_xticks(np.arange(len(np.unique(x_strings))))
-        ax.set_xticklabels(x_strings)
+        ax.set_xticks(np.arange(len(np.unique(x_strings))), labels=x_strings)
 
     if y_is_stringy:
         ax.set_yticks(np.arange(len(np.unique(y_strings))))
@@ -703,8 +712,7 @@ def plot_on_a_plain_grid(
     if z_is_stringy:
         N = len(z_strings)
         f = (N - 1) / N
-        colorbar.set_ticks([(n + 0.5) * f for n in range(N)])
-        colorbar.set_ticklabels(z_strings)
+        colorbar.set_ticks([(n + 0.5) * f for n in range(N)], labels=z_strings)
 
     return ax, colorbar
 
