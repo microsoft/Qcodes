@@ -242,7 +242,7 @@ ignore = [
     "qcodes/plots/pyqtgraph.py",
     "qcodes/plots/qcmatplotlib.py"
     ]
-
+reportMissingTypeStubs = true
 
 [tool.pytest.ini_options]
 minversion = "6.0"
