@@ -42,7 +42,9 @@ def setup_measurement(
 
 
 def store_array_to_database(datasaver: DataSaver, array: DataArray) -> int:
+    assert array.shape is not None
     dims = len(array.shape)
+    assert array.array_id is not None
     if dims == 2:
         for index1, i in enumerate(array.set_arrays[0]):
             for index2, j in enumerate(array.set_arrays[1][index1]):
@@ -59,9 +61,13 @@ def store_array_to_database(datasaver: DataSaver, array: DataArray) -> int:
 
 
 def store_array_to_database_alt(meas: Measurement, array: DataArray) -> int:
+    assert array.shape is not None
     dims = len(array.shape)
+    assert array.array_id is not None
     if dims == 2:
-        outer_data = np.empty(array.shape[1])
+        outer_data = np.empty(
+            array.shape[1]
+        )  # pyright: ignore[reportGeneralTypeIssues]
         with meas.run() as datasaver:
             for index1, i in enumerate(array.set_arrays[0]):
                 outer_data[:] = i
