@@ -155,7 +155,7 @@ class FixedFrequencyPointMagPhase(MultiParameter):
         assert isinstance(self.instrument, RohdeSchwarzZNBChannel)
         i, q = self.instrument._get_cw_data()
         s = np.mean(i) + 1j * np.mean(q)
-        return np.abs(s), np.angle(s)
+        return float(np.abs(s)), float(np.angle(s))
 
 
 class FrequencySweepMagPhase(MultiParameter):
