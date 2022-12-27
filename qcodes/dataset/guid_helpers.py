@@ -26,13 +26,15 @@ def guids_from_dbs(
     """
     dbdict = {}
     for p in db_paths:
+        conn = None
         try:
             conn = connect(str(p))
             dbdict[p] = get_guids_by_run_spec(conn=conn)
         except (RuntimeError, DatabaseError) as e:
             print(e)
         finally:
-            conn.close()
+            if conn is not None:
+                conn.close()
             gc.collect()
     guiddict = {}
     for dbpath, guids in dbdict.items():
