@@ -5,7 +5,8 @@ import time
 from functools import partial
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
-import pyvisa as visa
+import pyvisa
+import pyvisa.constants
 from pyvisa.resources.serial import SerialInstrument
 
 from qcodes import validators as vals
@@ -198,7 +199,7 @@ class QDevQDac(VisaInstrument):
         # This is the baud rate on power-up. It can be changed later but
         # you must start out with this value.
         handle.baud_rate = 460800
-        handle.parity = visa.constants.Parity(0)
+        handle.parity = pyvisa.constants.Parity(0)
         handle.data_bits = 8
         self.set_terminator('\n')
         # TODO: do we want a method for write termination too?
