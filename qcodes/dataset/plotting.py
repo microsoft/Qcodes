@@ -325,7 +325,7 @@ def plot_dataset(
 
 def plot_and_save_image(
     data: DataSetProtocol, save_pdf: bool = True, save_png: bool = True
-) -> tuple[DataSetProtocol, list[Axes], list[Colorbar | None],]:
+) -> tuple[DataSetProtocol, tuple[Axes, ...], tuple[Colorbar | None, ...],]:
     """
     The utility function to plot results and save the figures either in pdf or
     png or both formats.
@@ -355,7 +355,7 @@ def plot_and_save_image(
         if save_png:
             full_path = os.path.join(png_dir, f"{dataid}_{i}.png")
             ax.figure.savefig(full_path, dpi=500, bbox_inches="tight")
-    res = data, axes, cbs
+    res = data, tuple(axes), tuple(cbs)
     return res
 
 
