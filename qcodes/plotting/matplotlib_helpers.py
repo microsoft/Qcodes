@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import copy
 import logging
-from typing import TYPE_CHECKING, Any, Tuple, cast
+from typing import TYPE_CHECKING, Any, Literal, Tuple, cast
 
 if TYPE_CHECKING:
     import matplotlib
@@ -18,7 +18,10 @@ DEFAULT_COLOR_UNDER = "Cyan"
 _LOG = logging.getLogger(__name__)
 
 
-def _set_colorbar_extend(colorbar: matplotlib.colorbar.Colorbar, extend: str) -> None:
+def _set_colorbar_extend(
+    colorbar: matplotlib.colorbar.Colorbar,
+    extend: Literal["neither", "both", "min", "max"],
+) -> None:
     """
     Workaround for a missing setter for the extend property of a matplotlib
     colorbar.
@@ -42,7 +45,7 @@ def _set_colorbar_extend(colorbar: matplotlib.colorbar.Colorbar, extend: str) ->
         "min": slice(1, None),
         "max": slice(0, -1),
     }
-    colorbar._inside = _slice_dict[extend]
+    colorbar._inside = _slice_dict[extend]  # pyright: ignore[reportGeneralTypeIssues]
 
 
 def apply_color_scale_limits(
@@ -50,8 +53,8 @@ def apply_color_scale_limits(
     new_lim: tuple[float | None, float | None],
     data_lim: tuple[float, float] | None = None,
     data_array: np.ndarray | None = None,
-    color_over: Any | None = DEFAULT_COLOR_OVER,
-    color_under: Any | None = DEFAULT_COLOR_UNDER,
+    color_over: Any = DEFAULT_COLOR_OVER,
+    color_under: Any = DEFAULT_COLOR_UNDER,
 ) -> None:
     """
     Applies limits to colorscale and updates extend.
@@ -122,7 +125,7 @@ def apply_color_scale_limits(
     cmap.set_over(color_over)
     cmap.set_under(color_under)
     colorbar.mappable.set_cmap(cmap)
-    colorbar.mappable.set_clim(vlim)
+    colorbar.mappable.set_clim(*vlim)
 
 
 def apply_auto_color_scale(
@@ -157,6 +160,7 @@ def apply_auto_color_scale(
     Raises:
         RuntimeError: If not mesh data.
     """
+    import matplotlib.collections
     if data_array is None:
         if not isinstance(colorbar.mappable, matplotlib.collections.QuadMesh):
             raise RuntimeError("Can only scale mesh data.")
