@@ -85,7 +85,7 @@ class CompletedError(RuntimeError):
 
 
 @runtime_checkable
-class DataSetProtocol(Protocol, Sized):
+class DataSetProtocol(Protocol):
 
     # the "persistent traits" are the attributes/properties of the DataSet
     # that are NOT tied to the representation of the DataSet in any particular
@@ -307,6 +307,9 @@ class DataSetProtocol(Protocol, Sized):
         ...
 
     def _set_export_info(self, export_info: ExportInfo) -> None:
+        ...
+
+    def __len__(self) -> int:
         ...
 
 
