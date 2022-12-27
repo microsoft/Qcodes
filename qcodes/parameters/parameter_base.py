@@ -6,7 +6,7 @@ import time
 import warnings
 from collections.abc import Callable, Iterable, Mapping, Sequence, Sized
 from datetime import datetime
-from functools import wraps
+from functools import cached_property, wraps
 from types import TracebackType
 from typing import TYPE_CHECKING, Any, overload
 
@@ -681,6 +681,22 @@ class ParameterBase(Metadatable):
             # drop the initial value, we're already there
             return permissive_range(start_value, value, step)[1:] + [value]
 
+    @cached_property
+    def _validate_context(self) -> str:
+        # return string describing the context for a validator
+        if self._instrument:
+            context = (
+                (
+                    getattr(self._instrument, "name", "")
+                    or str(self._instrument.__class__)
+                )
+                + "."
+                + self.name
+            )
+        else:
+            context = self.name
+        return "Parameter: " + context
+
     def validate(self, value: ParamDataType) -> None:
         """
         Validate the value supplied.
@@ -694,18 +710,7 @@ class ParameterBase(Metadatable):
                validator.
         """
         if self.vals is not None:
-            if self._instrument:
-                context = (
-                    (
-                        getattr(self._instrument, "name", "")
-                        or str(self._instrument.__class__)
-                    )
-                    + "."
-                    + self.name
-                )
-            else:
-                context = self.name
-            self.vals.validate(value, "Parameter: " + context)
+            self.vals.validate(value, self._validate_context)
 
     @property
     def step(self) -> float | None:

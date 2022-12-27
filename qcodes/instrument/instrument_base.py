@@ -419,8 +419,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         A list of all the parts of the instrument name from :meth:`root_instrument`
         to the current :class:`InstrumentModule`.
         """
-        name_parts = [self.short_name]
-        return name_parts
+        return [self.short_name]
 
     @property
     def full_name(self) -> str:
