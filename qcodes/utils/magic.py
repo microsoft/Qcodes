@@ -90,6 +90,7 @@ class QCoDeSMagic(Magics):
 
         contents = f'import qcodes\n{loop_name} = '
         previous_level = 0
+        k = None
         for k, line in enumerate(lines):
             line, level = line.lstrip(), int((len(line)-len(line.lstrip())) / 4)
 
@@ -132,9 +133,9 @@ class QCoDeSMagic(Magics):
         contents += "{} = {}.get_data_set(name='{}')".format(data_name,
                                                              loop_name,
                                                              msmt_name)
-
-        for line in lines[k+1:]:
-            contents += '\n' + line
+        if k is not None:
+            for line in lines[k + 1 :]:
+                contents += "\n" + line
 
         if 'p' in options:
             print(contents)
