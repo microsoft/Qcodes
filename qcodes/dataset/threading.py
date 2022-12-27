@@ -129,7 +129,7 @@ def process_params_meas(
 
 class _ParamsCallerProtocol(Protocol):
     def __enter__(self) -> Callable[[], OutType]:
-        pass
+        ...
 
     def __exit__(
         self,
