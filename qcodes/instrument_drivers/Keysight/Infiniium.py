@@ -1148,8 +1148,8 @@ class Infiniium(VisaInstrument):
         acquisitions either use Keysight/NI Visa or set timeout to be longer than
         the expected acquisition time.
         """
+        old_timeout = self.visa_handle.timeout
         if timeout is not None:
-            old_timeout = self.visa_handle.timeout
             self.visa_handle.timeout = timeout  # 1 second timeout
         try:
             self.visa_handle.write(":DIGITIZE;*OPC?")
