@@ -268,7 +268,7 @@ class QDevQDac(VisaInstrument):
         self.verbose.set(False)
         self.connect_message()
         log.info('[*] Querying all channels for voltages and currents...')
-        self._update_cache(readcurrents=update_currents)
+        self.version = self._update_cache(readcurrents=update_currents)
         self._update_currents = update_currents
         log.info('[+] Done')
 
@@ -408,7 +408,7 @@ class QDevQDac(VisaInstrument):
         """
         return 1e-6*self._num_verbose(s)
 
-    def _update_cache(self, readcurrents: bool = False) -> None:
+    def _update_cache(self, readcurrents: bool = False) -> str:
         r"""
         Function to query the instrument and get the status of all channels,
         e.g. voltage (``v``), voltage range (``vrange``), and current range (``irange``)
@@ -430,12 +430,13 @@ class QDevQDac(VisaInstrument):
         0-based, ie chan1 is out[0]
         """
 
-        def validate_version(version_line: str) -> None:
-            if version_line.startswith('Software Version: '):
-                self.version = version_line.strip().split(': ')[1]
+        def validate_version(version_line: str) -> str:
+            if version_line.startswith("Software Version: "):
+                version = version_line.strip().split(": ")[1]
             else:
                 self._wait_and_clear()
                 raise ValueError('unrecognized version line: ' + version_line)
+            return version
 
         def validate_header(header_line: str) -> None:
             headers = header_line.lower().strip('\r\n').split('\t')
@@ -455,7 +456,7 @@ class QDevQDac(VisaInstrument):
             i_range = i_range_trans[i_range_str.strip()]
             return chan, i_range, v_range, v_dac
 
-        validate_version(self.ask('status'))
+        version = validate_version(self.ask("status"))
         validate_header(self.read())
 
         chans_left = set(self.chan_range)
@@ -475,6 +476,7 @@ class QDevQDac(VisaInstrument):
 
         if readcurrents:
             self._read_currents()
+        return version
 
     def _read_currents(self) -> None:
         for chan in range(1, self.num_chans + 1):
