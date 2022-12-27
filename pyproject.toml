@@ -232,6 +232,7 @@ ignore_missing_imports = true
 include = ["qcodes"]
 ignore = [
     "qcodes/tests",
+    "qcodes/instrument_drivers/test.py",
     "qcodes/instrument_drivers/zurich_instruments",
     "qcodes/instrument_drivers/Harvard/Decadac.py",
     "qcodes/instrument_drivers/oxford/mercuryiPS.py",
@@ -240,7 +241,8 @@ ignore = [
     "qcodes/loops.py",
     "qcodes/measure.py",
     "qcodes/plots/pyqtgraph.py",
-    "qcodes/plots/qcmatplotlib.py"
+    "qcodes/plots/qcmatplotlib.py",
+    "qcodes/plots/base.py"
     ]
 reportMissingTypeStubs = true
 
