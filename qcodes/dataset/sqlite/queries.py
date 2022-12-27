@@ -356,6 +356,7 @@ def _expand_data_to_arrays(
                     for i, array in enumerate(row)
                 )
 
+        row_shape = None
         for i_row, row in enumerate(data):
             # now expand all one element arrays to match the expected size
             # one element arrays are introduced if scalar values are stored
@@ -371,6 +372,7 @@ def _expand_data_to_arrays(
                     max_size, row_shape = array.size, array.shape
 
             if max_size > 1:
+                assert row_shape is not None
                 data[i_row] = tuple(
                     np.full(row_shape, array, dtype=array.dtype)
                     if array.size == 1
@@ -1516,6 +1518,7 @@ def _get_paramspec(conn: ConnectionPlus,
     """
     c = c.execute(sql)
     description = get_description_map(c)
+    param_type = None
     for row in c.fetchall():
         if row[description["name"]] == param_name:
             param_type = row[description["type"]]
@@ -1553,6 +1556,7 @@ def _get_paramspec(conn: ConnectionPlus,
             c = conn.execute(sql, (dp,))
             depends_on.append(one(c, 'parameter'))
 
+    assert param_type is not None
     parspec = ParamSpec(param_name, param_type, label, unit,
                         inferred_from,
                         depends_on)
