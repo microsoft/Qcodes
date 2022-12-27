@@ -1376,21 +1376,28 @@ class DataSet(BaseDataSet):
         for param, value in result_dict.items():
             if param.type == 'text':
                 if value.shape:
-                    res_list += [{param.name: str(val)} for val in value]
+                    new_res: list[dict[str, VALUE]] = [
+                        {param.name: str(val)} for val in value
+                    ]
+                    res_list += new_res
                 else:
-                    res_list += [{param.name: str(value)}]
+                    new_res = [{param.name: str(value)}]
+                    res_list += new_res
             elif param.type == 'numeric':
                 if value.shape:
                     res_list += [{param.name: number} for number in value]
                 else:
-                    res_list += [{param.name: float(value)}]
+                    new_res = [{param.name: float(value)}]
+                    res_list += new_res
             elif param.type == 'complex':
                 if value.shape:
                     res_list += [{param.name: number} for number in value]
                 else:
-                    res_list += [{param.name: complex(value)}]
+                    new_res = [{param.name: complex(value)}]
+                    res_list += new_res
             else:
-                res_list += [{param.name: value}]
+                new_res = [{param.name: value}]
+                res_list += new_res
 
         return res_list
 
