@@ -146,7 +146,9 @@ def extract_code_as_repr(
             and isinstance(obj2.children[1], parso.tree.Leaf)
         ):
             name = obj2.children[1].value
-            code = " ".join(rhs.get_code().strip().split())
+            code_str = rhs.get_code()
+            assert code_str is not None
+            code = " ".join(code_str.strip().split())
             pp = ParameterProxy(code)
             return name, pp
         else:
