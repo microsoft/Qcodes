@@ -43,8 +43,8 @@ AxesTupleListWithDataSet = Tuple[
 ]
 MultiAxesTupleListWithDataSet = Tuple[
     Tuple[DataSetProtocol, ...],
-    Tuple[List["matplotlib.axes.Axes"], ...],
-    Tuple[List[Optional["matplotlib.colorbar.Colorbar"]], ...],
+    Tuple[Tuple["matplotlib.axes.Axes", ...], ...],
+    Tuple[Tuple[Optional["matplotlib.colorbar.Colorbar"], ...], ...],
 ]
 
 
