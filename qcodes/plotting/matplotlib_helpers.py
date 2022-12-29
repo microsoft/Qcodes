@@ -17,10 +17,11 @@ DEFAULT_COLOR_UNDER = "Cyan"
 
 _LOG = logging.getLogger(__name__)
 
+_EXTEND_TYPE = Literal["neither", "both", "min", "max"]
 
 def _set_colorbar_extend(
     colorbar: matplotlib.colorbar.Colorbar,
-    extend: Literal["neither", "both", "min", "max"],
+    extend: _EXTEND_TYPE,
 ) -> None:
     """
     Workaround for a missing setter for the extend property of a matplotlib
@@ -113,7 +114,7 @@ def apply_color_scale_limits(
     # detect exceeding colorscale and apply new limits
     exceeds_min, exceeds_max = (data_lim[0] < vlim[0], data_lim[1] > vlim[1])
     if exceeds_min and exceeds_max:
-        extend = "both"
+        extend: _EXTEND_TYPE = "both"
     elif exceeds_min:
         extend = "min"
     elif exceeds_max:
