@@ -392,7 +392,7 @@ class TimeTrace(ParameterWithSetpoints): # pylint: disable=abstract-method
             self.instrument.trigger.force()
             data = self.instrument.fetch()
 
-        return data
+        return data  # pyright: ignore[reportUnboundVariable]
 
     def get_raw(self) -> np.ndarray:  # pylint: disable=method-hidden
 
