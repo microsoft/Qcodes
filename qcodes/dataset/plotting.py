@@ -727,10 +727,11 @@ def _clip_nan_from_shaped_data(
         """
         x_row = x_data[:, 0:1]
         y_row = y_data[0:1, :]
-        return (
-            np.nanmax(np.abs(x_data - x_row)) == 0
-            and np.nanmax(np.abs(y_data - y_row)) == 0
-        )
+        # we know that the data here is of a dtype where - operation is defined
+        # but its more trouble than its worthy to explain that to pyright
+        x_diff = np.abs(x_data - x_row)  # pyright: ignore[reportGeneralTypeIssues]
+        y_diff = np.abs(y_data - y_row)  # pyright: ignore[reportGeneralTypeIssues]
+        return np.nanmax(x_diff) == 0 and np.nanmax(y_diff) == 0
 
     if _on_rectilinear_grid_except_nan(x, y):
         # clip any row or column where there are nans in the first row
