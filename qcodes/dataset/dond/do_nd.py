@@ -689,6 +689,7 @@ def dond(
     )
 
     datasavers = []
+    interrupted = lambda: None
     try:
         with _catch_interrupts() as interrupted, ExitStack() as stack, params_meas_caller as call_params_meas:
             datasavers = [
