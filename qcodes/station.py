@@ -642,6 +642,8 @@ class Station(Metadatable, DelegateAttributes):
             local_instr = (
                 instr if len(parts) < 2 else
                 resolve_instrument_identifier(instr, '.'.join(parts[:-1])))
+            if isinstance(local_instr, ChannelTuple):
+                raise RuntimeError("A parameter cannot be added to an ChannelTuple")
             add_parameter_from_dict(local_instr, parts[-1], options)
         self.add_component(instr)
         update_monitor()
