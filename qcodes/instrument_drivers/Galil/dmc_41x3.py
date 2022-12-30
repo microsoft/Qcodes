@@ -6,12 +6,13 @@ Colloquially known as the "stepper motors".
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
+import numpy.typing as npt
 
 from qcodes.instrument import Instrument, InstrumentChannel
 from qcodes.validators import Enum, Ints, Multiples
 
 try:
-    import gclib
+    import gclib  # pyright: ignore[reportMissingImports]
 except ImportError as e:
     raise ImportError(
         "Cannot find gclib library. Download gclib installer from "
@@ -710,17 +711,21 @@ class Arm:
         ):
             return
 
-        a = np.asarray(self._right_top_position) - np.asarray(
+        right_top_position: npt.NDArray[np.int32] = np.asarray(self._right_top_position)
+        left_bottom_position: npt.NDArray[np.int32] = np.asarray(
             self._left_bottom_position
         )
+        left_top_position: npt.NDArray[np.int32] = np.asarray(self._left_top_position)
+
+        a = right_top_position - left_bottom_position
         self.norm_a = float(np.linalg.norm(a))
         self._a = a / self.norm_a
 
-        b = np.asarray(self._left_top_position) - np.asarray(self._left_bottom_position)
+        b = left_top_position - left_bottom_position
         self.norm_b = float(np.linalg.norm(b))
         self._b = b / self.norm_b
 
-        c = np.asarray(self._right_top_position) - np.asarray(self._left_top_position)
+        c = right_top_position - left_top_position
         self.norm_c = float(np.linalg.norm(c))
         self._c = c / self.norm_c
 
