@@ -66,8 +66,8 @@ def store_array_to_database_alt(meas: Measurement, array: DataArray) -> int:
     assert array.array_id is not None
     if dims == 2:
         outer_data = np.empty(
-            array.shape[1]
-        )  # pyright: ignore[reportGeneralTypeIssues]
+            array.shape[1]  # pyright: ignore[reportGeneralTypeIssues]
+        )
         with meas.run() as datasaver:
             for index1, i in enumerate(array.set_arrays[0]):
                 outer_data[:] = i
