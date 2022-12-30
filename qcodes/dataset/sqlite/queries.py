@@ -14,6 +14,7 @@ from itertools import zip_longest
 from typing import Any, List, cast
 
 import numpy as np
+import numpy.typing as npt
 from typing_extensions import TypedDict
 
 import qcodes as qc
@@ -520,7 +521,7 @@ def _get_offset_limit_for_callback(
     else:
         # If there is less than 100 row to be downloaded, we overwrite the
         # config.dataset.callback_percent to avoid many calls for small download
-        offset = np.array([0, nb_row // 2, nb_row])
+        offset: npt.NDArray[np.int32] = np.array([0, nb_row // 2, nb_row])
 
     # The number of row downloaded between two iterations may vary
     # We compute the limit corresponding to each offset
