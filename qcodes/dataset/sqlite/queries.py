@@ -514,14 +514,14 @@ def _get_offset_limit_for_callback(
 
         # Using linspace with dtype=int ensure of having an array finishing
         # by max_id
-        offset = np.linspace(
+        offset: npt.NDArray[np.int32] = np.linspace(
             0, max_id, int(100 / config.dataset.callback_percent) + 1, dtype=int
         )
 
     else:
         # If there is less than 100 row to be downloaded, we overwrite the
         # config.dataset.callback_percent to avoid many calls for small download
-        offset: npt.NDArray[np.int32] = np.array([0, nb_row // 2, nb_row])
+        offset = np.array([0, nb_row // 2, nb_row])
 
     # The number of row downloaded between two iterations may vary
     # We compute the limit corresponding to each offset
