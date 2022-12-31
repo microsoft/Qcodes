@@ -242,7 +242,8 @@ ignore = [
     "qcodes/measure.py",
     "qcodes/plots/pyqtgraph.py",
     "qcodes/plots/qcmatplotlib.py",
-    "qcodes/plots/base.py"
+    "qcodes/plots/base.py",
+    "qcodes/extensions/slack.py"
     ]
 reportMissingTypeStubs = true
 
