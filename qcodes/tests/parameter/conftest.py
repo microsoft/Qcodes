@@ -1,5 +1,5 @@
 from collections import namedtuple
-from typing import Any, Optional
+from typing import Any, Generator, Optional
 
 import pytest
 
@@ -12,37 +12,37 @@ NOT_PASSED = 'NOT_PASSED'
 
 
 @pytest.fixture(params=(True, False, NOT_PASSED))
-def snapshot_get(request):
+def snapshot_get(request: pytest.FixtureRequest) -> Any:
     return request.param
 
 
 @pytest.fixture(params=(True, False, NOT_PASSED))
-def snapshot_value(request):
+def snapshot_value(request: pytest.FixtureRequest) -> Any:
     return request.param
 
 
 @pytest.fixture(params=(None, False, NOT_PASSED))
-def get_cmd(request):
+def get_cmd(request: pytest.FixtureRequest) -> Any:
     return request.param
 
 
 @pytest.fixture(params=(True, False, NOT_PASSED))
-def get_if_invalid(request):
+def get_if_invalid(request: pytest.FixtureRequest) -> Any:
     return request.param
 
 
 @pytest.fixture(params=(True, False, None, NOT_PASSED))
-def update(request):
+def update(request: pytest.FixtureRequest) -> Any:
     return request.param
 
 
 @pytest.fixture(params=(True, False))
-def cache_is_valid(request):
+def cache_is_valid(request: pytest.FixtureRequest) -> Any:
     return request.param
 
 
 @pytest.fixture(name="dummy_instrument")
-def _make_dummy_instrument():
+def _make_dummy_instrument() -> Generator[DummyChannelInstrument, None, None]:
     instr = DummyChannelInstrument("dummy")
     yield instr
     instr.close()
@@ -66,9 +66,9 @@ class BetterGettableParam(Parameter):
         super().__init__(*args, **kwargs)
         self._get_count = 0
 
-    def get_raw(self):
+    def get_raw(self) -> Any:
         self._get_count += 1
-        return self.cache._raw_value
+        return self.cache.raw_value
 
 
 class SettableParam(Parameter):
