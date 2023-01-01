@@ -148,9 +148,11 @@ def _make_empty_temp_db(tmp_path: Path) -> Generator[None, None, None]:
         gc.collect()
 
 
-@pytest.mark.usefixtures("empty_temp_db")
+# note that you cannot use mark.usefixtures in a fixture
+# so empty_temp_db needs to be passed to this fixture
+# even if unused https://github.com/pytest-dev/pytest/issues/3664
 @pytest.fixture(scope="function", name="experiment")
-def _make_experiment() -> Generator[Experiment, None, None]:
+def _make_experiment(empty_temp_db: None) -> Generator[Experiment, None, None]:
     e = new_experiment("test-experiment", sample_name="test-sample")
     try:
         yield e
