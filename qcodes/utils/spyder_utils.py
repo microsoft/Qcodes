@@ -29,9 +29,9 @@ def add_to_spyder_UMR_excludelist(modulename: str) -> None:
             sitecustomize_found = True
         if sitecustomize_found is False:
             try:
-                from spyder_kernels.customize import (
-                    spydercustomize as sitecustomize,  # pyright: ignore
-                )
+                from spyder_kernels.customize import spydercustomize  # pyright: ignore
+
+                sitecustomize = spydercustomize
             except ImportError:
                 pass
             else:
