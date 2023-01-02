@@ -26,7 +26,7 @@ click-default-group~=1.2.2
 colorama==0.4.5
 contextlib2~=21.6.0
 coverage~=7.0.0
-cryptography~=38.0.1
+cryptography~=39.0.0
 cycler==0.11.0
 debugpy~=1.6.3
 decorator~=5.1.1
@@ -103,14 +103,14 @@ py~=1.11.0
 pyasn1==0.4.8
 pyasn1-modules==0.2.8
 pycparser==2.21
-Pygments~=2.13.0
+Pygments~=2.14.0
 PyJWT~=2.6.0
 pyparsing~=3.0.9
 PyQt5~=5.15.7
 PyQt5-Qt5~=5.15.2
 PyQt5-sip~=12.11.0
 pyqtgraph==0.13.1
-pyrsistent==0.19.2
+pyrsistent==0.19.3
 pytest~=7.2.0
 pytest-asyncio==0.20.3
 pytest-cov~=4.0.0
