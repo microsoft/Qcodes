@@ -8,7 +8,7 @@ from collections import defaultdict
 from collections.abc import Iterable, Sequence
 from contextlib import ExitStack
 from functools import partial
-from typing import Any, Callable, TypeVar, cast
+from typing import Any, Callable, Tuple, TypeVar, cast
 
 import numpy as np
 from pyvisa import VisaIOError
@@ -1189,7 +1189,7 @@ class AMIModel4303D(Instrument):
             set_point.set_component(**kwargs)
 
         setpoint_values = cast(
-            tuple[float, float, float], set_point.get_components("x", "y", "z")
+            Tuple[float, float, float], set_point.get_components("x", "y", "z")
         )
         self._adjust_child_instruments(setpoint_values)
 
