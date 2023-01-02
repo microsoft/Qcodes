@@ -317,8 +317,11 @@ class QtPlot(BasePlot):
 
         if scales_changed:
             img.resetTransform()
-            img.translate(scales['x'].translate, scales['y'].translate)
-            img.scale(scales['x'].scale, scales['y'].scale)
+            tr = QtGui.QTransform.fromTranslate(
+                scales["x"].translate, scales["y"].translate
+            )
+            tr_scale = QtGui.QTransform.fromScale(scales["x"].scale, scales["y"].scale)
+            img.setTransform(tr_scale * tr)
 
     def _update_cmap(self, plot_object):
         gradient = plot_object['hist'].gradient
