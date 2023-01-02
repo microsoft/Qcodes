@@ -120,7 +120,7 @@ pytest-rerunfailures==10.3
 pytest-xdist~=3.1.0
 python-dateutil~=2.8.2
 pytz~=2022.5
-PyVISA~=1.12.0
+PyVISA~=1.13.0
 PyVISA-sim==0.5.1
 pywin32==305; sys_platform == 'win32'
 pywinpty~=2.0.8; sys_platform == 'win32'
