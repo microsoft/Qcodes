@@ -8,7 +8,7 @@ from qcodes.instrument_drivers.Minicircuits.Base_SPDT import (
 )
 
 try:
-    import clr  # pyright: ignore[reportMissingTypeStubs]
+    import clr  # pyright: ignore[reportMissingTypeStubs,reportMissingImports]
 except ImportError:
     raise ImportError("""Module clr not found. Please obtain it by
                          running 'pip install pythonnet'
