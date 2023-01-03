@@ -455,7 +455,7 @@ class ComplexNumbers(Validator[Union[complex, "np.complexfloating[Any,Any]"]]):
         Raises:
             TypeError: If not a complex number.
         """
-        # for some reason pyright does not thing numpy complex
+        # for some reason pyright does not think numpy complex
         # types as valid types here
         if not isinstance(value, self.validtypes):  # pyright: ignore
             raise TypeError(f"{repr(value)} is not complex; {context}")
