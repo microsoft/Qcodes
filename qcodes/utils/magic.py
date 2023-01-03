@@ -142,6 +142,7 @@ class QCoDeSMagic(Magics):
 
         if 'x' not in options:
             # Execute contents
+            assert self.shell is not None
             self.shell.run_cell(contents, store_history=True, silent=True)
 
 
@@ -161,6 +162,7 @@ def register_magic_class(cls=QCoDeSMagic, magic_commands=True):
         raise RuntimeError("No IPython shell found")
     else:
         if magic_commands is not True:
+            assert cls.magics is not None
             # filter out any magic commands that are not in magic_commands
             cls.magics = {line_cell: {key: val for key, val in magics.items()
                                       if key in magic_commands}
