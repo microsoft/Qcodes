@@ -1,4 +1,6 @@
-from IPython import get_ipython
+# get_ipython is part of the public api but IPython does
+# not use __all__ to mark this
+from IPython import get_ipython  # type: ignore[attr-defined]
 from IPython.core.magic import Magics, line_cell_magic, magics_class
 
 
