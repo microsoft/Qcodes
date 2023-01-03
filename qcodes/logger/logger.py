@@ -319,7 +319,9 @@ def start_command_history_logger(log_dir: Optional[str] = None) -> None:
         log_dir: directory where log shall be stored to. If left out, defaults
             to ``~/.qcodes/logs/command_history.log``
     """
-    from IPython import get_ipython
+    # get_ipython is part of the public api but IPython does
+    # not use __all__ to mark this
+    from IPython import get_ipython  # type: ignore[attr-defined]
     ipython = get_ipython()
     if ipython is None:
         log.warning("Command history can't be saved"

@@ -89,7 +89,9 @@ if config.core.import_legacy_api:
 try:
     _register_magic = config.core.get('register_magic', False)
     if _register_magic is not False:
-        from IPython import get_ipython
+        # get_ipython is part of the public api but IPython does
+        # not use __all__ to mark this
+        from IPython import get_ipython  # type: ignore[attr-defined]
 
         # Check if we are in IPython
         ip = get_ipython()
