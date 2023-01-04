@@ -89,13 +89,22 @@ def get_data_export_automatic() -> bool:
     return export_automatic
 
 
+def _expand_export_path(export_path: str) -> str:
+    db_location = config["core"]["db_location"]
+    expanded_export_folder = db_location.replace(".", "_")
+
+    return export_path.replace("{db_location}", expanded_export_folder)
+
+
 def get_data_export_path() -> str:
     """Get the path to export data to at the end of a measurement from config
 
     Returns:
         Path
     """
-    return normpath(expanduser(config[DATASET_CONFIG_SECTION][EXPORT_PATH]))
+    return normpath(
+        expanduser(_expand_export_path(config[DATASET_CONFIG_SECTION][EXPORT_PATH]))
+    )
 
 
 def set_data_export_prefix(export_prefix: str) -> None:
