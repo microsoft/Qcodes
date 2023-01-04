@@ -72,6 +72,11 @@ def make_sweep(
         num_steps = steps_lo + 1
     elif num is not None:
         num_steps = num
+    else:
+        raise ValueError(
+            "If you really want to go from `start` to "
+            "`stop` in one step, specify `num=2`."
+        )
 
     output_list = np.linspace(start, stop, num=num_steps).tolist()
     return cast(List[float], output_list)

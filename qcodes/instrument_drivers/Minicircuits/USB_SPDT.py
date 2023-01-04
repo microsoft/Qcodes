@@ -8,7 +8,7 @@ from qcodes.instrument_drivers.Minicircuits.Base_SPDT import (
 )
 
 try:
-    import clr
+    import clr  # pyright: ignore[reportMissingTypeStubs,reportMissingImports]
 except ImportError:
     raise ImportError("""Module clr not found. Please obtain it by
                          running 'pip install pythonnet'
@@ -49,7 +49,9 @@ class USB_SPDT(SPDT_Base):
         # we keep this import local so that the module can be imported
         # without a working .net install
         clr.AddReference('System.IO')
-        from System.IO import FileNotFoundException
+        from System.IO import (  # pyright: ignore[reportMissingImports]
+            FileNotFoundException,
+        )
         super().__init__(name, **kwargs)
         if os.name != 'nt':
             raise ImportError("""This driver only works in Windows.""")
@@ -66,7 +68,7 @@ class USB_SPDT(SPDT_Base):
                 the dll to open properties and check the 'unblock' checkmark
                 in the bottom. Check that your python installation is 64bit."""
             )
-        import mcl_RF_Switch_Controller64
+        import mcl_RF_Switch_Controller64  # pyright: ignore[reportMissingImports]
         self.switch = mcl_RF_Switch_Controller64.USB_RF_SwitchBox()
 
         if not self.switch.Connect(serial_number):

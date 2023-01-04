@@ -26,7 +26,10 @@ from qcodes.instrument import VisaInstrument
 
 # conditionally import lomentum for support of lomentum type sequences
 try:
-    from lomentum.tools import get_element_channel_ids, is_subsequence
+    from lomentum.tools import (  # pyright: ignore[reportMissingImports]
+        get_element_channel_ids,
+        is_subsequence,
+    )
     USE_LOMENTUM = True
 except ImportError:
     USE_LOMENTUM = False

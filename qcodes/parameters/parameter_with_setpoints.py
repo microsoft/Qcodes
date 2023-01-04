@@ -59,7 +59,7 @@ class ParameterWithSetpoints(Parameter):
             **kwargs,
         )
         if setpoints is None:
-            self.setpoints: Sequence[ParameterBase] = []
+            self.setpoints = []
         else:
             self.setpoints = setpoints
 

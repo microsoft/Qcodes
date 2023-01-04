@@ -8,7 +8,7 @@ from collections import defaultdict
 from collections.abc import Iterable, Sequence
 from contextlib import ExitStack
 from functools import partial
-from typing import Any, Callable, TypeVar
+from typing import Any, Callable, Tuple, TypeVar, cast
 
 import numpy as np
 from pyvisa import VisaIOError
@@ -563,7 +563,7 @@ class AMIModel4303D(Instrument):
         instrument_x: AMIModel430 | str,
         instrument_y: AMIModel430 | str,
         instrument_z: AMIModel430 | str,
-        field_limit: numbers.Real | Iterable[CartesianFieldLimitFunction],
+        field_limit: float | Iterable[CartesianFieldLimitFunction],
         **kwargs: Any,
     ):
         """
@@ -1143,7 +1143,7 @@ class AMIModel4303D(Instrument):
             z=self._instrument_z.field(),
         )
 
-    def _get_measured(self, *names: str) -> numbers.Real | list[numbers.Real]:
+    def _get_measured(self, *names: str) -> float | list[float]:
         measured_field_vector = self._get_measured_field_vector()
 
         measured_values = measured_field_vector.get_components(*names)
@@ -1161,7 +1161,7 @@ class AMIModel4303D(Instrument):
 
         return return_value
 
-    def _get_setpoints(self, names: Sequence[str]) -> numbers.Real | list[numbers.Real]:
+    def _get_setpoints(self, names: Sequence[str]) -> float | list[float]:
 
         measured_values = self._set_point.get_components(*names)
 
@@ -1188,7 +1188,10 @@ class AMIModel4303D(Instrument):
         else:
             set_point.set_component(**kwargs)
 
-        self._adjust_child_instruments(set_point.get_components("x", "y", "z"))
+        setpoint_values = cast(
+            Tuple[float, float, float], set_point.get_components("x", "y", "z")
+        )
+        self._adjust_child_instruments(setpoint_values)
 
         self._set_point = set_point
 

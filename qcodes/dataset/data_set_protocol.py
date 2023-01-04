@@ -85,7 +85,7 @@ class CompletedError(RuntimeError):
 
 
 @runtime_checkable
-class DataSetProtocol(Protocol, Sized):
+class DataSetProtocol(Protocol):
 
     # the "persistent traits" are the attributes/properties of the DataSet
     # that are NOT tied to the representation of the DataSet in any particular
@@ -116,114 +116,114 @@ class DataSetProtocol(Protocol, Sized):
         parent_datasets: Sequence[Mapping[Any, Any]] = (),
         write_in_background: bool = False,
     ) -> None:
-        pass
+        ...
 
     @property
     def pristine(self) -> bool:
-        pass
+        ...
 
     @property
     def running(self) -> bool:
-        pass
+        ...
 
     @property
     def completed(self) -> bool:
-        pass
+        ...
 
     def mark_completed(self) -> None:
-        pass
+        ...
 
     # dataset attributes
 
     @property
     def run_id(self) -> int:
-        pass
+        ...
 
     @property
     def captured_run_id(self) -> int:
-        pass
+        ...
 
     @property
     def counter(self) -> int:
-        pass
+        ...
 
     @property
     def captured_counter(self) -> int:
-        pass
+        ...
 
     @property
     def guid(self) -> str:
-        pass
+        ...
 
     @property
     def number_of_results(self) -> int:
-        pass
+        ...
 
     @property
     def name(self) -> str:
-        pass
+        ...
 
     @property
     def exp_name(self) -> str:
-        pass
+        ...
 
     @property
     def exp_id(self) -> int:
-        pass
+        ...
 
     @property
     def sample_name(self) -> str:
-        pass
+        ...
 
     def run_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S") -> str | None:
-        pass
+        ...
 
     @property
     def run_timestamp_raw(self) -> float | None:
-        pass
+        ...
 
     def completed_timestamp(self, fmt: str = "%Y-%m-%d %H:%M:%S") -> str | None:
-        pass
+        ...
 
     @property
     def completed_timestamp_raw(self) -> float | None:
-        pass
+        ...
 
     # snapshot and metadata
     @property
     def snapshot(self) -> dict[str, Any] | None:
-        pass
+        ...
 
     def add_snapshot(self, snapshot: str, overwrite: bool = False) -> None:
-        pass
+        ...
 
     @property
     def _snapshot_raw(self) -> str | None:
-        pass
+        ...
 
     def add_metadata(self, tag: str, metadata: Any) -> None:
-        pass
+        ...
 
     @property
     def metadata(self) -> dict[str, Any]:
-        pass
+        ...
 
     @property
     def path_to_db(self) -> str | None:
-        pass
+        ...
 
     # dataset description and links
     @property
     def paramspecs(self) -> dict[str, ParamSpec]:
-        pass
+        ...
 
     @property
     def description(self) -> RunDescriber:
-        pass
+        ...
 
     @property
     def parent_dataset_links(self) -> list[Link]:
-        pass
+        ...
 
     # data related members
 
@@ -233,15 +233,15 @@ class DataSetProtocol(Protocol, Sized):
         path: str | None = None,
         prefix: str | None = None,
     ) -> None:
-        pass
+        ...
 
     @property
     def export_info(self) -> ExportInfo:
-        pass
+        ...
 
     @property
     def cache(self) -> DataSetCache[DataSetProtocol]:
-        pass
+        ...
 
     def get_parameter_data(
         self,
@@ -250,15 +250,15 @@ class DataSetProtocol(Protocol, Sized):
         end: int | None = None,
         callback: Callable[[float], None] | None = None,
     ) -> ParameterData:
-        pass
+        ...
 
     def get_parameters(self) -> SPECS:
         # used by plottr
-        pass
+        ...
 
     @property
     def dependent_parameters(self) -> tuple[ParamSpecBase, ...]:
-        pass
+        ...
 
     # exporters to other in memory formats
 
@@ -268,7 +268,7 @@ class DataSetProtocol(Protocol, Sized):
         start: int | None = None,
         end: int | None = None,
     ) -> dict[str, xr.DataArray]:
-        pass
+        ...
 
     def to_xarray_dataset(
         self,
@@ -276,7 +276,7 @@ class DataSetProtocol(Protocol, Sized):
         start: int | None = None,
         end: int | None = None,
     ) -> xr.Dataset:
-        pass
+        ...
 
     def to_pandas_dataframe_dict(
         self,
@@ -284,7 +284,7 @@ class DataSetProtocol(Protocol, Sized):
         start: int | None = None,
         end: int | None = None,
     ) -> dict[str, pd.DataFrame]:
-        pass
+        ...
 
     def to_pandas_dataframe(
         self,
@@ -292,25 +292,28 @@ class DataSetProtocol(Protocol, Sized):
         start: int | None = None,
         end: int | None = None,
     ) -> pd.DataFrame:
-        pass
+        ...
 
     # private members called by various other parts or the api
 
     def _enqueue_results(self, result_dict: Mapping[ParamSpecBase, np.ndarray]) -> None:
-        pass
+        ...
 
     def _flush_data_to_database(self, block: bool = False) -> None:
-        pass
+        ...
 
     @property
     def _parameters(self) -> str | None:
-        pass
+        ...
 
     def _set_export_info(self, export_info: ExportInfo) -> None:
-        pass
+        ...
+
+    def __len__(self) -> int:
+        ...
 
 
-class BaseDataSet(DataSetProtocol):
+class BaseDataSet(DataSetProtocol, Protocol):
 
     # shared methods between all implementations of the dataset
 

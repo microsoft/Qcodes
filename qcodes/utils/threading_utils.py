@@ -1,13 +1,13 @@
 import logging
 import threading
-from typing import Any, Callable, Dict, List, Optional, Sequence, TypeVar
+from typing import Any, Callable, Dict, Generic, List, Optional, Sequence, TypeVar
 
 _LOG = logging.getLogger(__name__)
 
 T = TypeVar("T")
 
 
-class RespondingThread(threading.Thread):
+class RespondingThread(threading.Thread, Generic[T]):
     """
     Thread subclass for parallelizing execution. Behaves like a
     regular thread but returns a value from target, and propagates

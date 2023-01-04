@@ -88,9 +88,9 @@ class Instrument(InstrumentBase, metaclass=InstrumentMeta):
         idstr = ""  # in case self.ask fails
         try:
             idstr = self.ask("*IDN?")
+            idparts: list[str | None] = []
             # form is supposed to be comma-separated, but we've seen
             # other separators occasionally
-            idparts: list[str | None]
             for separator in ",;:":
                 # split into no more than 4 parts, so we don't lose info
                 idparts = [p.strip() for p in idstr.split(separator, 3)]

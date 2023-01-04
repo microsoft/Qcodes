@@ -10,7 +10,8 @@ from enum import Enum
 from functools import partial
 from typing import Any, Dict, Optional, Sequence, Tuple, Union
 
-import pyvisa as visa
+import pyvisa
+import pyvisa.constants
 from pyvisa.resources.serial import SerialInstrument
 
 from qcodes import validators as vals
@@ -233,7 +234,7 @@ class QDac(VisaInstrument):
         assert isinstance(handle, SerialInstrument)
         # Communication setup + firmware check
         handle.baud_rate = 460800
-        handle.parity = visa.constants.Parity(0)
+        handle.parity = pyvisa.constants.Parity(0)
         handle.data_bits = 8
         self.set_terminator('\n')
         handle.write_termination = '\n'

@@ -103,15 +103,19 @@ class Command(Generic[Output, ParsedOutput]):
             self.exec_str = exec_str
 
             if is_function(exec_str, 1):
-                self.exec_function = {  # (parse_input, parse_output)
+                # (parse_input, parse_output)
+                exec_mapping: dict[
+                    tuple[bool | Literal["multi"], bool],
+                    Callable[..., Output | ParsedOutput],
+                ] = {  # (parse_input, parse_output)
                     (False, False): self.call_by_str,
                     (False, True): self.call_by_str_parsed_out,
                     (True, False): self.call_by_str_parsed_in,
                     (True, True): self.call_by_str_parsed_in_out,
                     ("multi", False): self.call_by_str_parsed_in2,
                     ("multi", True): self.call_by_str_parsed_in2_out,
-                }[(parse_input, parse_output)]
-
+                }
+                self.exec_function = exec_mapping[(parse_input, parse_output)]
             elif exec_str is not None:
                 raise TypeError(
                     f"exec_str must be a function with one arg, not {exec_str!r}"
@@ -120,14 +124,15 @@ class Command(Generic[Output, ParsedOutput]):
         elif is_function(cmd, arg_count):
             assert cmd is not None
             self._cmd = cmd
-            self.exec_function = {  # (parse_input, parse_output)
+            exec_mapping = {
                 (False, False): cmd,
                 (False, True): self.call_cmd_parsed_out,
                 (True, False): self.call_cmd_parsed_in,
                 (True, True): self.call_cmd_parsed_in_out,
                 ("multi", False): self.call_cmd_parsed_in2,
                 ("multi", True): self.call_cmd_parsed_in2_out,
-            }[(parse_input, parse_output)]
+            }
+            self.exec_function = exec_mapping[(parse_input, parse_output)]
 
         elif cmd is None:
             if no_cmd_function is not None:
@@ -201,4 +206,4 @@ class Command(Generic[Output, ParsedOutput]):
         """Invoke the command."""
         if len(args) != self.arg_count:
             raise TypeError(f"command takes exactly {self.arg_count} args")
-        return self.exec_function(*args)  # type: ignore[operator]
+        return self.exec_function(*args)

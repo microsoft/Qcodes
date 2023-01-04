@@ -931,10 +931,12 @@ class CVSweepMeasurement(MultiParameter, StatusMixin):
 
         if model is None:
             model = self.instrument.impedance_model()
-
-        self.names, self.labels, self.units = \
-            get_name_label_unit_of_impedance_model(model)
-
+        # pyright does not seem to understand the type
+        # narrowing above
+        assert model is not None
+        self.names, self.labels, self.units = get_name_label_unit_of_impedance_model(
+            model
+        )
 
 
 class Correction(InstrumentChannel):

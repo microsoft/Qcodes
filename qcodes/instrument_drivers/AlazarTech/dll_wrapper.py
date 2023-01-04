@@ -179,7 +179,9 @@ class WrappedDll(metaclass=DllWrapperMeta):
 
             ret_type = signature.return_type
             if ret_type is RETURN_CODE:
-                ret_type = ret_type.__supertype__
+                ret_type = (
+                    ret_type.__supertype__  # pyright: ignore[reportGeneralTypeIssues]
+                )
                 c_func.errcheck = _check_error_code
             elif ret_type in (ctypes.c_char_p, ctypes.c_char,
                               ctypes.c_wchar, ctypes.c_wchar_p):

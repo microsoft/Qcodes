@@ -476,8 +476,9 @@ class AWG70000A(VisaInstrument):
                                         'Waiting for trigger': '1',
                                         'Running': '2'})
 
+        add_channel_list = self.num_channels > 2
         # We deem 2 channels too few for a channel list
-        if self.num_channels > 2:
+        if add_channel_list:
             chanlist = ChannelList(
                 self, "Channels", Tektronix70000AWGChannel, snapshotable=False
             )
@@ -486,11 +487,16 @@ class AWG70000A(VisaInstrument):
             ch_name = f'ch{ch_num}'
             channel = Tektronix70000AWGChannel(self, ch_name, ch_num)
             self.add_submodule(ch_name, channel)
-            if self.num_channels > 2:
-                chanlist.append(channel)
+            if add_channel_list:
+                # pyright does not seem to understand
+                # that this code can only run iff chanliss is created
+                chanlist.append(channel)  # pyright: ignore[reportUnboundVariable]
 
-        if self.num_channels > 2:
-            self.add_submodule("channels", chanlist.to_channel_tuple())
+        if add_channel_list:
+            self.add_submodule(
+                "channels",
+                chanlist.to_channel_tuple(),  # pyright: ignore[reportUnboundVariable]
+            )
 
         # Folder on the AWG where to files are uplaoded by default
         self.wfmxFileFolder = "\\Users\\OEM\\Documents"

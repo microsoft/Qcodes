@@ -286,6 +286,7 @@ class HP8753D(VisaInstrument):
         """
         get_cmd for the s_parameter parameter
         """
+        cmd = ""
         for cmd in ["S11?", "S12?", "S21?", "S22?"]:
             resp = self.ask(cmd)
             if resp in ["1", "1\n"]:
@@ -334,6 +335,7 @@ class HP8753D(VisaInstrument):
             "SWR": "SWR",
         }
 
+        cmd = ""
         # keep asking until we find the currently used format
         for cmd in val_mapping.keys():
             resp = self.ask(f"{cmd}?")

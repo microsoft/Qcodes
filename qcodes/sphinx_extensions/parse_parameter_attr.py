@@ -45,7 +45,10 @@ def find_class(
     """Find all classes in a given Parso node named ``classname``."""
     nodes = []
     for child in node.children:
-        if isinstance(child, parso.python.tree.Class) and child.name.value == classname:
+        if (
+            isinstance(child, parso.python.tree.Class)
+            and child.name.value == classname  # pyright: ignore
+        ):
             nodes.append(child)
         elif isinstance(child, parso.tree.Node):
             nodes.extend(find_class(child, classname))
@@ -60,7 +63,8 @@ def find_init_func(
     for child in node.children:
         if (
             isinstance(child, parso.python.tree.Function)
-            and child.name.value == "__init__"
+            and child.name.value  # pyright: ignore[reportGeneralTypeIssues]
+            == "__init__"
         ):
             nodes.append(child)
         elif isinstance(child, parso.tree.Node):
@@ -142,7 +146,9 @@ def extract_code_as_repr(
             and isinstance(obj2.children[1], parso.tree.Leaf)
         ):
             name = obj2.children[1].value
-            code = " ".join(rhs.get_code().strip().split())
+            code_str = rhs.get_code()
+            assert code_str is not None
+            code = " ".join(code_str.strip().split())
             pp = ParameterProxy(code)
             return name, pp
         else:

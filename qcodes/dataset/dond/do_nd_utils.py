@@ -38,13 +38,13 @@ AxesTupleList = Tuple[
 ]
 AxesTupleListWithDataSet = Tuple[
     DataSetProtocol,
-    List["matplotlib.axes.Axes"],
-    List[Optional["matplotlib.colorbar.Colorbar"]],
+    Tuple[Optional["matplotlib.axes.Axes"], ...],
+    Tuple[Optional["matplotlib.colorbar.Colorbar"], ...],
 ]
 MultiAxesTupleListWithDataSet = Tuple[
     Tuple[DataSetProtocol, ...],
-    Tuple[List["matplotlib.axes.Axes"], ...],
-    Tuple[List[Optional["matplotlib.colorbar.Colorbar"]], ...],
+    Tuple[Tuple["matplotlib.axes.Axes", ...], ...],
+    Tuple[Tuple[Optional["matplotlib.colorbar.Colorbar"], ...], ...],
 ]
 
 
@@ -99,10 +99,11 @@ def _handle_plotting(
         do_plot: Should a plot be produced
 
     """
+    res: AxesTupleListWithDataSet
     if do_plot:
         res = plot_and_save_image(data)
     else:
-        res = data, [None], [None]
+        res = data, (None,), (None,)
 
     if interrupted:
         log.warning(

@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 def _is_nested_sequence_or_none(
     obj: Any,
-    types: type[object] | tuple[type[object], ...] | None,
+    types: type[object | None] | tuple[type[object | None], ...] | None,
     shapes: Sequence[Sequence[int | None]],
 ) -> bool:
     """Validator for MultiParameter setpoints/names/labels"""

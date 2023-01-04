@@ -20,15 +20,18 @@ def add_to_spyder_UMR_excludelist(modulename: str) -> None:
 
         sitecustomize_found = False
         try:
-            from spyder.utils.site import sitecustomize
+            from spyder.utils.site import (  # pyright: ignore[reportMissingImports]
+                sitecustomize,
+            )
         except ImportError:
             pass
         else:
             sitecustomize_found = True
         if sitecustomize_found is False:
             try:
-                from spyder_kernels.customize import spydercustomize as sitecustomize
+                from spyder_kernels.customize import spydercustomize  # pyright: ignore
 
+                sitecustomize = spydercustomize
             except ImportError:
                 pass
             else:
@@ -41,7 +44,7 @@ def add_to_spyder_UMR_excludelist(modulename: str) -> None:
         if modulename not in excludednamelist:
             _LOG.info(f"adding {modulename} to excluded modules")
             excludednamelist.append(modulename)
-            sitecustomize.__umr__ = sitecustomize.UserModuleReloader(
+            sitecustomize.__umr__ = sitecustomize.UserModuleReloader(  # pyright: ignore[reportUnboundVariable]
                 namelist=excludednamelist
             )
             os.environ["SPY_UMR_NAMELIST"] = ",".join(excludednamelist)

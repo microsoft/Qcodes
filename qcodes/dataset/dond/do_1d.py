@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import sys
 import time
-from typing import TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING, Sequence, cast
 
 import numpy as np
 from tqdm.auto import tqdm
@@ -101,7 +101,7 @@ def do1d(
         The QCoDeS dataset.
     """
     if do_plot is None:
-        do_plot = config.dataset.dond_plot
+        do_plot = cast(bool, config.dataset.dond_plot)
     if show_progress is None:
         show_progress = config.dataset.dond_show_progress
 

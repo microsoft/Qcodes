@@ -21,7 +21,7 @@ def is_sequence(obj: Any) -> bool:
 
 def is_sequence_of(
     obj: Any,
-    types: type[object] | tuple[type[object], ...] | None = None,
+    types: type[object | None] | tuple[type[object | None], ...] | None = None,
     depth: int | None = None,
     shape: Sequence[int] | None = None,
 ) -> bool:

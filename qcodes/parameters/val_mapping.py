@@ -28,5 +28,5 @@ def create_on_off_val_mapping(
     # the list of `ons` and `offs` values.
     ons = ons_ + (True,)
     offs = offs_ + (False,)
-
-    return OrderedDict([(on, on_val) for on in ons] + [(off, off_val) for off in offs])
+    all_vals_tuples = [(on, on_val) for on in ons] + [(off, off_val) for off in offs]
+    return OrderedDict(all_vals_tuples)

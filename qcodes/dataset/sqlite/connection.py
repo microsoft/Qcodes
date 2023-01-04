@@ -104,9 +104,9 @@ def atomic(conn: ConnectionPlus) -> Iterator[ConnectionPlus]:
         old_atomic_in_progress = conn.atomic_in_progress
         conn.atomic_in_progress = True
 
+        old_level = conn.isolation_level
         try:
             if is_outmost:
-                old_level = conn.isolation_level
                 conn.isolation_level = None
                 conn.cursor().execute('BEGIN')
             yield conn
