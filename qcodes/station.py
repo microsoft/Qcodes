@@ -19,16 +19,14 @@ from functools import partial
 from io import StringIO
 from pathlib import Path
 from types import ModuleType
-from typing import IO, Any, AnyStr
-from typing import Deque as Tdeque
 from typing import (
+    IO,
+    Any,
+    AnyStr,
     Dict,
     Iterable,
-    List,
     NoReturn,
-    Optional,
     Sequence,
-    Tuple,
     Union,
     cast,
     overload,
@@ -823,7 +821,7 @@ def _merge_yamls(*yamls: str | Path) -> str:
     top_key = "instruments"
     yaml = ruamel.yaml.YAML()
 
-    deq: Tdeque[Any] = deque()
+    deq: deque[Any] = deque()
 
     # Load the yaml files and add to deque in reverse entry order
     for filepath in yamls[::-1]:
