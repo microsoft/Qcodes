@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import enum
 import logging
-from os.path import exists, expanduser, normpath
+from os.path import exists
+from pathlib import Path
 
 from qcodes import config
 
@@ -44,20 +45,20 @@ def set_data_export_type(export_type: str) -> None:
         )
 
 
-def set_data_export_path(export_path: str) -> None:
-    """Set path to export data to at the end of a measurement
+def set_data_export_path(export_path: str | Path) -> None:
+    """
+    Set path to export data to at the end of a measurement.
+    The directory is automatically created if it doesn't already
+    exist.
 
     Args:
         export_path: An existing file path on disk
 
-    Raises:
-        ValueError: If the path does not exist, this raises an error
     """
-    if not exists(export_path):
-        raise ValueError(
-            f"Cannot set export path to '{export_path}' because it does not exist."
-        )
-    config[DATASET_CONFIG_SECTION][EXPORT_AUTOMATIC] = export_path
+    if isinstance(export_path, str):
+        export_path = Path(export_path)
+    export_path.mkdir(exist_ok=True)
+    config[DATASET_CONFIG_SECTION][EXPORT_AUTOMATIC] = str(export_path)
 
 
 def get_data_export_type(
@@ -96,14 +97,16 @@ def _expand_export_path(export_path: str) -> str:
     return export_path.replace("{db_location}", expanded_export_folder)
 
 
-def get_data_export_path() -> str:
+def get_data_export_path() -> Path:
     """Get the path to export data to at the end of a measurement from config
 
     Returns:
         Path
     """
-    return normpath(
-        expanduser(_expand_export_path(config[DATASET_CONFIG_SECTION][EXPORT_PATH]))
+    return (
+        Path(_expand_export_path(config[DATASET_CONFIG_SECTION][EXPORT_PATH]))
+        .expanduser()
+        .absolute()
     )
 
 

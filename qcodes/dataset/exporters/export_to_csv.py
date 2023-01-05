@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from collections.abc import Mapping
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -18,7 +19,7 @@ class DataPathException(Exception):
 
 def dataframe_to_csv(
     dfdict: Mapping[str, pd.DataFrame],
-    path: str,
+    path: str | Path,
     single_file: bool = False,
     single_file_name: str | None = None,
 ) -> None:
