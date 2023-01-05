@@ -31,6 +31,7 @@ from .experiment_container import (
     new_experiment,
 )
 from .experiment_settings import get_default_experiment_id, reset_default_experiment_id
+from .export_config import get_data_export_path
 from .legacy_import import import_dat_file
 from .measurements import Measurement
 from .plotting import plot_by_id, plot_dataset
@@ -73,6 +74,7 @@ __all__ = [
     "dond",
     "experiments",
     "extract_runs_into_db",
+    "get_data_export_path",
     "get_default_experiment_id",
     "get_guids_by_run_spec",
     "import_dat_file",
