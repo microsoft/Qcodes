@@ -7,6 +7,7 @@ import hypothesis.strategies as hst
 import pytest
 from hypothesis import given
 
+import qcodes.validators as vals
 from qcodes.parameters import DelegateParameter, Parameter, ParamRawDataType
 
 from .conftest import BetterGettableParam
@@ -512,3 +513,72 @@ def test_underlying_instrument_property_for_delegate_parameter():
 
     d = DelegateParameter('delegate_parameter_without_source', source=None)
     assert d.underlying_instrument is None
+
+
+def test_value_validation():
+    source_param = Parameter("source", set_cmd=None, get_cmd=None)
+    delegate_param = DelegateParameter("delegate", source=source_param)
+
+    delegate_param.vals = vals.Numbers(-10, 10)
+    source_param.vals = None
+    delegate_param.validate(1)
+    with pytest.raises(ValueError):
+        delegate_param.validate(11)
+
+    delegate_param.vals = None
+    source_param.vals = vals.Numbers(-5, 5)
+    delegate_param.validate(1)
+    with pytest.raises(ValueError):
+        delegate_param.validate(6)
+
+    delegate_param.vals = vals.Numbers(-10, 10)
+    source_param.vals = vals.Numbers(-5, 5)
+    delegate_param.validate(1)
+    with pytest.raises(ValueError):
+        delegate_param.validate(6)
+    with pytest.raises(ValueError):
+        delegate_param.validate(11)
+
+
+def test_value_validation_with_offset_and_scale():
+    source_param = Parameter(
+        "source", set_cmd=None, get_cmd=None, vals=vals.Numbers(-5, 5)
+    )
+    delegate_param = DelegateParameter(
+        "delegate", source=source_param, vals=vals.Numbers(-10, 10)
+    )
+
+    source_param.offset = 100
+    source_param.scale = None
+    source_param.validate(0)  # raw_value = 100
+    source_param.set(0)
+    delegate_param.validate(0)  # raw_value = 0
+    delegate_param.set(0)
+
+    source_param.offset = None
+    source_param.scale = 100
+    source_param.validate(1)  # raw_value = 100
+    source_param.set(1)
+    delegate_param.validate(1)  # raw_value = 1
+    delegate_param.set(1)
+
+    source_param.offset = None
+    source_param.scale = None
+
+    delegate_param.offset = 100
+    delegate_param.scale = None
+    source_param.validate(0)  # raw_value = 0
+    source_param.set(0)
+    with pytest.raises(ValueError):
+        delegate_param.validate(0)  # raw_value = 100
+    with pytest.raises(ValueError):
+        delegate_param.set(0)
+
+    delegate_param.offset = None
+    delegate_param.scale = 100
+    source_param.validate(1)  # raw_value = 1
+    source_param.set(1)
+    with pytest.raises(ValueError):
+        delegate_param.validate(1)  # raw_value = 100
+    with pytest.raises(ValueError):
+        delegate_param.set(1)

@@ -1,0 +1,2 @@
+``validate`` method of ``DelegateParameter`` now also validates the given value
+against the validator of the source parameter (if source parameter is present).

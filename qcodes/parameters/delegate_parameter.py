@@ -256,3 +256,20 @@ class DelegateParameter(Parameter):
         )
         snapshot.update({"source_parameter": source_parameter_snapshot})
         return snapshot
+
+    def validate(self, value: ParamDataType) -> None:
+        """
+        Validate the supplied value.
+        If it has a source parameter, validate the value as well with the source validator.
+
+        Args:
+            value: value to validate
+
+        Raises:
+            TypeError: If the value is of the wrong type.
+            ValueError: If the value is outside the bounds specified by the
+               validator.
+        """
+        super().validate(value)
+        if self.source is not None:
+            self.source.validate(self._from_value_to_raw_value(value))
