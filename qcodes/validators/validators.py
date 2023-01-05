@@ -455,7 +455,9 @@ class ComplexNumbers(Validator[Union[complex, "np.complexfloating[Any,Any]"]]):
         Raises:
             TypeError: If not a complex number.
         """
-        if not isinstance(value, self.validtypes):
+        # for some reason pyright does not think numpy complex
+        # types as valid types here
+        if not isinstance(value, self.validtypes):  # pyright: ignore
             raise TypeError(f"{repr(value)} is not complex; {context}")
 
     is_numeric = False  # there is no meaningful way to sweep a complex number
@@ -702,7 +704,7 @@ class MultiType(Validator[Any]):
                 self.is_numeric = True
 
         self._validators = tuple(validators)
-        self._combiner = combiner
+        self._combiner: Literal["OR", "AND"] = combiner
         self._valid_values = tuple(
             vval for v in self._validators for vval in v._valid_values
         )

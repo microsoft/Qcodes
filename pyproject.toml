@@ -39,10 +39,10 @@ dependencies = [
     "opencensus-ext-azure>=1.0.4, <2.0.0",
     "packaging>=20.0",
     "pandas>=1.0.0",
-    "pyvisa>=1.11.0, <1.13.0",
+    "pyvisa>=1.11.0, <1.14.0",
     "ruamel.yaml>=0.16.0,!=0.16.6",
     "tabulate>=0.8.0",
-    "typing_extensions>=3.10.0",
+    "typing_extensions>=4.0.0",
     "tqdm>=4.32.2",
     "uncertainties>=3.1.4",
     "versioningit>=2.0.1",
@@ -227,6 +227,25 @@ module = [
     "zhinst.qcodes",
 ]
 ignore_missing_imports = true
+
+[tool.pyright]
+include = ["qcodes"]
+ignore = [
+    "qcodes/tests",
+    "qcodes/instrument_drivers/test.py",
+    "qcodes/instrument_drivers/zurich_instruments",
+    "qcodes/instrument_drivers/Harvard/Decadac.py",
+    "qcodes/instrument_drivers/oxford/mercuryiPS.py",
+    "qcodes/actions.py",
+    "qcodes/data",
+    "qcodes/loops.py",
+    "qcodes/measure.py",
+    "qcodes/plots/pyqtgraph.py",
+    "qcodes/plots/qcmatplotlib.py",
+    "qcodes/plots/base.py",
+    "qcodes/extensions/slack.py"
+    ]
+reportMissingTypeStubs = true
 
 [tool.pytest.ini_options]
 minversion = "6.0"

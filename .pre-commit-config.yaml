@@ -14,7 +14,7 @@ repos:
     - id: mixed-line-ending
       args: ['--fix=no']
   - repo: https://github.com/pycqa/isort
-    rev: v5.11.3
+    rev: 5.11.4
     hooks:
       - id: isort
   - repo: https://github.com/asottile/pyupgrade
@@ -23,12 +23,20 @@ repos:
     - id: pyupgrade
       args: ['--py38-plus']
   - repo: https://github.com/akaihola/darker
-    rev: 1.6.0
+    rev: 1.6.1
     hooks:
-      -   id: darker
-          args: [-i]
-          additional_dependencies: [isort]
+      - id: darker
+        args: [-i]
+        additional_dependencies: [isort]
   - repo: https://github.com/abravalheri/validate-pyproject
     rev: v0.10.1
     hooks:
       - id: validate-pyproject
+  - repo: https://github.com/nbQA-dev/nbQA
+    rev: 1.6.0
+    hooks:
+        - id: nbqa-pyupgrade
+          args: ['--py38-plus']
+          additional_dependencies: [pyupgrade]
+        - id: nbqa-isort
+          additional_dependencies: [isort]

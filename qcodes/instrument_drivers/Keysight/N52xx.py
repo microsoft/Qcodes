@@ -105,13 +105,14 @@ class FormattedSweep(ParameterWithSetpoints):
         """
         return
 
-    def get_raw(self) -> Sequence[float]:
+    def get_raw(self) -> np.ndarray:
         if self.instrument is None:
             raise RuntimeError("Cannot get data without instrument")
         root_instr = self.instrument.root_instrument
         # Check if we should run a new sweep
-        if root_instr.auto_sweep():
-            prev_mode = self.instrument.run_sweep()
+        auto_sweep = root_instr.auto_sweep()
+
+        prev_mode = self.instrument.run_sweep()
         # Ask for data, setting the format to the requested form
         self.instrument.format(self.sweep_format)
         data = root_instr.visa_handle.query_binary_values('CALC:DATA? FDATA',
@@ -119,7 +120,7 @@ class FormattedSweep(ParameterWithSetpoints):
                                                           is_big_endian=True)
         data = np.array(data)
         # Restore previous state if it was changed
-        if root_instr.auto_sweep():
+        if auto_sweep:
             root_instr.sweep_mode(prev_mode)
 
         return data

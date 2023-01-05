@@ -4,6 +4,7 @@ from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Union, cast
 
 import numpy as np
+import numpy.typing as npt
 from packaging import version
 
 from qcodes.instrument.channel import InstrumentChannel
@@ -445,9 +446,13 @@ class MercuryiPS(VisaInstrument):
         Ramp all three fields to their target using the 'first-down-then-up'
         sequential ramping procedure. This function is BLOCKING.
         """
-        meas_vals = self._get_measured(['x', 'y', 'z'])
-        targ_vals = self._target_vector.get_components('x', 'y', 'z')
-        order = np.argsort(np.abs(np.array(targ_vals) - np.array(meas_vals)))
+        meas_vals: npt.NDArray[np.floating] = np.array(
+            self._get_measured(["x", "y", "z"])
+        )
+        targ_vals: npt.NDArray[np.floating] = np.array(
+            self._target_vector.get_components("x", "y", "z")
+        )
+        order = np.argsort(np.abs(targ_vals - meas_vals))
 
         for worker in np.array(list(self.submodules.values()))[order]:
             worker.ramp_to_target()

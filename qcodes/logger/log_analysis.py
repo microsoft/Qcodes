@@ -12,6 +12,8 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING, Callable, Iterator, Sequence
 
 if TYPE_CHECKING:
+    import numpy.typing as npt
+    import numpy as np
     import pandas as pd
 
 from .logger import (
@@ -133,7 +135,9 @@ def time_difference(
 
     t0s = nfirsttimes.astype("datetime64[ns]")
     t1s = nsecondtimes.astype("datetime64[ns]")
-    timedeltas = (t1s.to_numpy() - t0s.to_numpy()).astype("float") * 1e-9
+    t1s_np: npt.NDArray[np.datetime64] = t1s.to_numpy()
+    t0s_np: npt.NDArray[np.datetime64] = t0s.to_numpy()
+    timedeltas = (t1s_np - t0s_np).astype("float") * 1e-9
 
     if use_first_series_labels:
         output = pd.Series(timedeltas, index=nfirsttimes.index)

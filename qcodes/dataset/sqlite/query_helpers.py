@@ -290,6 +290,7 @@ def insert_many_values(conn: ConnectionPlus,
     start = 0
     stop = 0
 
+    return_value = None
     with atomic(conn) as conn:
         for ii, chunk in enumerate(chunks):
             _values_x_params = ",".join([_values] * chunk)

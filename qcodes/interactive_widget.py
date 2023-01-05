@@ -116,8 +116,8 @@ def label(description: str) -> Label:
 
 def _update_nested_dict_browser(
     nested_keys: Sequence[str], nested_dict: dict[Any, Any], box: Box
-) -> Callable[[Button], None]:
-    def update_box(_: Button) -> None:
+) -> Callable[[Button | None], None]:
+    def update_box(_: Button | None) -> None:
         box.children = (_nested_dict_browser(nested_keys, nested_dict, box),)
 
     return update_box
@@ -421,7 +421,7 @@ def _get_run_id_button(ds: DataSetProtocol) -> Box:
     return button_to_text(title, body)
 
 
-def _get_parameters_button(ds: DataSetProtocol) -> VBox:
+def _get_parameters_button(ds: DataSetProtocol) -> Box:
     parameters = _get_parameters(ds)
     title = ds._parameters or ""
     return button_to_text(title, _yaml_dump(parameters))

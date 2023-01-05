@@ -2,7 +2,7 @@
 # This module parses an awg file using THREE sub-parser. This code could
 # probably be streamlined somewhat.
 import struct
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 
@@ -409,7 +409,7 @@ def _parser1(
     instdict = {}
     waveformlist: List[List[Any]] = [[], []]
     sequencelist: List[List[Any]] = [[], []]
-    wfmlen: int
+    wfmlen: Optional[int] = None
 
     with open(awgfilepath, 'rb') as fid:
 
@@ -431,8 +431,12 @@ def _parser1(
                 lookupname = name[:namestop+1]
 
                 if 'DATA' in name:
-                    fmtstr = f'{wfmlen}H'
-                    AWG_FILE_FORMAT_WAV['WAVEFORM_DATA'] = fmtstr
+                    if wfmlen is None:
+                        raise ValueError(
+                            "Found DATA before LENGTH: this is unexpected."
+                        )
+                    fmtstr = f"{wfmlen}H"
+                    AWG_FILE_FORMAT_WAV["WAVEFORM_DATA"] = fmtstr
 
                 file_format = AWG_FILE_FORMAT_WAV[lookupname]
                 assert file_format is not None
@@ -483,11 +487,14 @@ def _parser2(waveformlist: List[List[Any]]) -> Dict[str, Dict[str, np.ndarray]]:
     """
 
     outdict = {}
+    name: Optional[Any] = None
 
     for (fieldname, fieldvalue) in zip(waveformlist[0], waveformlist[1]):
         if 'NAME' in fieldname:
             name = fieldvalue
         if 'DATA' in fieldname:
+            if name is None:
+                raise ValueError("Found DATA before NAME: this is unexpected.")
             value = _unpacker(fieldvalue)
             outdict.update({name: {'m1': value[1], 'm2': value[2],
                                    'wfm': value[0]}})

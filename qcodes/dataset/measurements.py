@@ -550,7 +550,7 @@ class Runner:
         if write_in_background:
             return 0.0
         if write_period is None:
-            write_period = qc.config.dataset.write_period
+            write_period = cast(float, qc.config.dataset.write_period)
         return float(write_period)
 
     def __enter__(self) -> DataSaver:
@@ -712,7 +712,7 @@ class Measurement:
         self.experiment = exp
         self.station = station
         self.name = name
-        self.write_period: float = qc.config.dataset.write_period
+        self.write_period = qc.config.dataset.write_period
         self._interdeps = InterDependencies_()
         self._shapes: Shapes | None = None
         self._parent_datasets: list[dict[str, str]] = []
@@ -1245,7 +1245,7 @@ class Measurement:
                 with.
         """
         if write_in_background is None:
-            write_in_background = qc.config.dataset.write_in_background
+            write_in_background = cast(bool, qc.config.dataset.write_in_background)
         return Runner(
             self.enteractions,
             self.exitactions,

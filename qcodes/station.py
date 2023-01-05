@@ -34,8 +34,10 @@ from typing import (
 )
 
 import jsonschema
+import jsonschema.exceptions
 
 import qcodes
+import qcodes.instrument_drivers
 from qcodes import validators
 from qcodes.instrument.base import Instrument, InstrumentBase
 from qcodes.instrument.channel import ChannelTuple
@@ -537,8 +539,10 @@ class Station(Metadatable, DelegateAttributes):
 
             E.g: 'dac.ch1' will return the instance of ch1.
             """
+            levels = identifier.split(".")
+            level = levels[0]
             try:
-                for level in identifier.split('.'):
+                for level in levels:
                     instrument = checked_getattr(
                         instrument, level, (InstrumentBase, ChannelTuple)
                     )
@@ -638,6 +642,8 @@ class Station(Metadatable, DelegateAttributes):
             local_instr = (
                 instr if len(parts) < 2 else
                 resolve_instrument_identifier(instr, '.'.join(parts[:-1])))
+            if isinstance(local_instr, ChannelTuple):
+                raise RuntimeError("A parameter cannot be added to an ChannelTuple")
             add_parameter_from_dict(local_instr, parts[-1], options)
         self.add_component(instr)
         update_monitor()
@@ -748,10 +754,12 @@ def update_config_schema(
         submodules = list(pkgutil.walk_packages(module.__path__, module.__name__ + "."))
         res = set()
         for s in submodules:
-            with suppress(Exception):
+            try:
                 ms = inspect.getmembers(
                     importlib.import_module(s.name),
                     inspect.isclass)
+            except Exception:
+                ms = []
             new_members = [
                 f"{instr[1].__module__}.{instr[1].__name__}"
                 for instr in ms
@@ -794,10 +802,13 @@ def _merge_yamls(*yamls: Union[str, Path]) -> str:
     Args:
         yamls: string or Path to yaml files separated by comma.
     Returns:
-        Full yaml file stored in the memory.
+        Full yaml file stored in the memory. Returns an empty string
+        if no files are given.
     """
     import ruamel.yaml  # lazy import
 
+    if len(yamls) == 0:
+        return ""
     if len(yamls) == 1:
         with open(yamls[0]) as file:
             content = file.read()
@@ -813,6 +824,7 @@ def _merge_yamls(*yamls: Union[str, Path]) -> str:
         with open(filepath) as file_pointer:
             deq.append(yaml.load(file_pointer))
 
+    data1 = None
     # Add the top key entries from filepath n to filepath n-1 to
     # ... filepath 1.
     while len(deq) > 1:
@@ -826,6 +838,7 @@ def _merge_yamls(*yamls: Union[str, Path]) -> str:
                     f"{ ','.join(map(str, yamls))}"
                 )
         deq.popleft()
+    assert data1 is not None
 
     with StringIO() as merged_yaml_stream:
         yaml.dump(data1, merged_yaml_stream)

@@ -5,7 +5,7 @@ import logging
 import time
 from contextlib import ExitStack
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Mapping, Sequence, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Mapping, Sequence, Tuple, Union, cast
 
 import numpy as np
 from tqdm.auto import tqdm
@@ -646,7 +646,7 @@ def dond(
         the supplied groups.
     """
     if do_plot is None:
-        do_plot = config.dataset.dond_plot
+        do_plot = cast(bool, config.dataset.dond_plot)
     if show_progress is None:
         show_progress = config.dataset.dond_show_progress
 
@@ -688,6 +688,10 @@ def dond(
         else SequentialParamsCaller(*measurements.measured_all)
     )
 
+    datasavers = []
+    interrupted: Callable[
+        [], KeyboardInterrupt | BreakConditionInterrupt | None
+    ] = lambda: None
     try:
         with _catch_interrupts() as interrupted, ExitStack() as stack, params_meas_caller as call_params_meas:
             datasavers = [

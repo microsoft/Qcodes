@@ -25,7 +25,7 @@ def foreground_qt_window(window: "QMainWindow") -> None:
         # use the idea from
         # https://stackoverflow.com/questions/12118939/how-to-make-a-pyqt4-window-jump-to-the-front
         SetWindowPos(
-            window.winId(),
+            window.winId(),  # pyright: ignore[reportGeneralTypeIssues]
             win32con.HWND_TOPMOST,  # = always on top. only reliable way to bring it to the front on windows
             0,
             0,
@@ -34,7 +34,7 @@ def foreground_qt_window(window: "QMainWindow") -> None:
             win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_SHOWWINDOW,
         )
         SetWindowPos(
-            window.winId(),
+            window.winId(),  # pyright: ignore[reportGeneralTypeIssues]
             win32con.HWND_NOTOPMOST,  # disable the always on top, but leave window at its top position
             0,
             0,

@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import copy
 import logging
-from typing import TYPE_CHECKING, Any, Tuple, cast
+from typing import TYPE_CHECKING, Any, Literal, Tuple, cast
 
 if TYPE_CHECKING:
     import matplotlib
+    import matplotlib.colorbar
 
 import numpy as np
 
@@ -16,8 +17,12 @@ DEFAULT_COLOR_UNDER = "Cyan"
 
 _LOG = logging.getLogger(__name__)
 
+_EXTEND_TYPE = Literal["neither", "both", "min", "max"]
 
-def _set_colorbar_extend(colorbar: matplotlib.colorbar.Colorbar, extend: str) -> None:
+def _set_colorbar_extend(
+    colorbar: matplotlib.colorbar.Colorbar,
+    extend: _EXTEND_TYPE,
+) -> None:
     """
     Workaround for a missing setter for the extend property of a matplotlib
     colorbar.
@@ -41,7 +46,7 @@ def _set_colorbar_extend(colorbar: matplotlib.colorbar.Colorbar, extend: str) ->
         "min": slice(1, None),
         "max": slice(0, -1),
     }
-    colorbar._inside = _slice_dict[extend]
+    colorbar._inside = _slice_dict[extend]  # pyright: ignore[reportGeneralTypeIssues]
 
 
 def apply_color_scale_limits(
@@ -49,8 +54,8 @@ def apply_color_scale_limits(
     new_lim: tuple[float | None, float | None],
     data_lim: tuple[float, float] | None = None,
     data_array: np.ndarray | None = None,
-    color_over: Any | None = DEFAULT_COLOR_OVER,
-    color_under: Any | None = DEFAULT_COLOR_UNDER,
+    color_over: Any = DEFAULT_COLOR_OVER,
+    color_under: Any = DEFAULT_COLOR_UNDER,
 ) -> None:
     """
     Applies limits to colorscale and updates extend.
@@ -90,7 +95,7 @@ def apply_color_scale_limits(
         )
     if data_lim is None:
         if data_array is None:
-            data_array = colorbar.mappable.get_array()
+            data_array = cast(np.ndarray, colorbar.mappable.get_array())
         data_lim = np.nanmin(data_array), np.nanmax(data_array)
     else:
         if data_array is not None:
@@ -109,7 +114,7 @@ def apply_color_scale_limits(
     # detect exceeding colorscale and apply new limits
     exceeds_min, exceeds_max = (data_lim[0] < vlim[0], data_lim[1] > vlim[1])
     if exceeds_min and exceeds_max:
-        extend = "both"
+        extend: _EXTEND_TYPE = "both"
     elif exceeds_min:
         extend = "min"
     elif exceeds_max:
@@ -121,7 +126,7 @@ def apply_color_scale_limits(
     cmap.set_over(color_over)
     cmap.set_under(color_under)
     colorbar.mappable.set_cmap(cmap)
-    colorbar.mappable.set_clim(vlim)
+    colorbar.mappable.set_clim(*vlim)
 
 
 def apply_auto_color_scale(
@@ -156,10 +161,12 @@ def apply_auto_color_scale(
     Raises:
         RuntimeError: If not mesh data.
     """
+    import matplotlib.collections
     if data_array is None:
         if not isinstance(colorbar.mappable, matplotlib.collections.QuadMesh):
             raise RuntimeError("Can only scale mesh data.")
-        data_array = colorbar.mappable.get_array()
+        data_array = cast(np.ndarray, colorbar.mappable.get_array())
+    assert data_array is not None
     new_lim = auto_range_iqr(data_array, cutoff_percentile)
     apply_color_scale_limits(
         colorbar,

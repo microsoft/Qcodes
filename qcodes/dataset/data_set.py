@@ -1229,8 +1229,9 @@ class DataSet(BaseDataSet):
 
         toplevel_params = (set(interdeps.dependencies)
                            .intersection(set(result_dict)))
-        if self._in_memory_cache:
-            new_results: dict[str, dict[str, numpy.ndarray]] = {}
+
+        new_results: dict[str, dict[str, numpy.ndarray]] = {}
+
         for toplevel_param in toplevel_params:
             inff_params = set(interdeps.inferences.get(toplevel_param, ()))
             deps_params = set(interdeps.dependencies.get(toplevel_param, ()))
@@ -1353,7 +1354,7 @@ class DataSet(BaseDataSet):
                     flat_results[dep.name] = result_dict[dep].ravel()
             for inff in inff_params:
                 if numpy.shape(result_dict[inff]) == ():
-                    flat_results[inff.name] = numpy.repeat(result_dict[dep], N)
+                    flat_results[inff.name] = numpy.repeat(result_dict[inff], N)
                 else:
                     flat_results[inff.name] = result_dict[inff].ravel()
 
@@ -1375,21 +1376,28 @@ class DataSet(BaseDataSet):
         for param, value in result_dict.items():
             if param.type == 'text':
                 if value.shape:
-                    res_list += [{param.name: str(val)} for val in value]
+                    new_res: list[dict[str, VALUE]] = [
+                        {param.name: str(val)} for val in value
+                    ]
+                    res_list += new_res
                 else:
-                    res_list += [{param.name: str(value)}]
+                    new_res = [{param.name: str(value)}]
+                    res_list += new_res
             elif param.type == 'numeric':
                 if value.shape:
                     res_list += [{param.name: number} for number in value]
                 else:
-                    res_list += [{param.name: float(value)}]
+                    new_res = [{param.name: float(value)}]
+                    res_list += new_res
             elif param.type == 'complex':
                 if value.shape:
                     res_list += [{param.name: number} for number in value]
                 else:
-                    res_list += [{param.name: complex(value)}]
+                    new_res = [{param.name: complex(value)}]
+                    res_list += new_res
             else:
-                res_list += [{param.name: value}]
+                new_res = [{param.name: value}]
+                res_list += new_res
 
         return res_list
 

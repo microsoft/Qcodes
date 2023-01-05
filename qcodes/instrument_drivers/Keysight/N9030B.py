@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Any, Dict, Tuple, Union
 
 import numpy as np
@@ -40,8 +42,8 @@ class Trace(ParameterWithSetpoints):
 
     def __init__(self, number: int, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.instrument: Union["SpectrumAnalyzerMode", "PhaseNoiseMode"]
-        self.root_instrument: "N9030B"
+        self.instrument: SpectrumAnalyzerMode | PhaseNoiseMode
+        self.root_instrument: N9030B
 
         self.number = number
 
@@ -54,19 +56,22 @@ class SpectrumAnalyzerMode(InstrumentChannel):
     Spectrum Analyzer Mode for Keysight N9030B instrument.
     """
 
-    def __init__(self, parent: "N9030B", name: str, *arg: Any, **kwargs: Any):
+    def __init__(self, parent: N9030B, name: str, *arg: Any, **kwargs: Any):
         super().__init__(parent, name, *arg, **kwargs)
 
         self._min_freq = -8e7
-        self._valid_max_freq: Dict[str, float] = {"503": 3.7e9,
-                                                  "508": 8.5e9,
-                                                  "513": 13.8e9,
-                                                  "526": 27e9,
-                                                  "544": 44.5e9}
-        opt: str
+        self._valid_max_freq: dict[str, float] = {
+            "503": 3.7e9,
+            "508": 8.5e9,
+            "513": 13.8e9,
+            "526": 27e9,
+            "544": 44.5e9,
+        }
+        opt: str | None = None
         for hw_opt_for_max_freq in self._valid_max_freq.keys():
             if hw_opt_for_max_freq in self.root_instrument._options():
                 opt = hw_opt_for_max_freq
+        assert opt is not None
         self._max_freq = self._valid_max_freq[opt]
 
         self.add_parameter(
@@ -314,19 +319,22 @@ class PhaseNoiseMode(InstrumentChannel):
     Phase Noise Mode for Keysight N9030B instrument.
     """
 
-    def __init__(self, parent: "N9030B", name: str, *arg: Any, **kwargs: Any):
+    def __init__(self, parent: N9030B, name: str, *arg: Any, **kwargs: Any):
         super().__init__(parent, name, *arg, **kwargs)
 
         self._min_freq = 1
-        self._valid_max_freq: Dict[str, float] = {"503": 3699999995,
-                                                  "508": 8499999995,
-                                                  "513": 13799999995,
-                                                  "526": 26999999995,
-                                                  "544": 44499999995}
-        opt: str
+        self._valid_max_freq: dict[str, float] = {
+            "503": 3699999995,
+            "508": 8499999995,
+            "513": 13799999995,
+            "526": 26999999995,
+            "544": 44499999995,
+        }
+        opt: str | None = None
         for hw_opt_for_max_freq in self._valid_max_freq.keys():
             if hw_opt_for_max_freq in self.root_instrument._options():
                 opt = hw_opt_for_max_freq
+        assert opt is not None
         self._max_freq = self._valid_max_freq[opt]
 
         self.add_parameter(
@@ -565,13 +573,13 @@ class N9030B(VisaInstrument):
                           "instrument.")
         self.connect_message()
 
-    def _available_modes(self) -> Tuple[str, ...]:
+    def _available_modes(self) -> tuple[str, ...]:
         """
         Returns present and licensed modes for the instrument.
         """
         available_modes = self.ask(":INSTrument:CATalog?")
         av_modes = available_modes[1:-1].split(',')
-        modes: Tuple[str, ...] = ()
+        modes: tuple[str, ...] = ()
         for i, mode in enumerate(av_modes):
             if i == 0:
                 modes = modes + (mode.split(' ')[0], )
@@ -579,13 +587,13 @@ class N9030B(VisaInstrument):
                 modes = modes + (mode.split(' ')[1], )
         return modes
 
-    def _available_meas(self) -> Tuple[str, ...]:
+    def _available_meas(self) -> tuple[str, ...]:
         """
         Gives available measurement with a given mode for the instrument
         """
         available_meas = self.ask(":CONFigure:CATalog?")
         av_meas = available_meas[1:-1].split(',')
-        measurements: Tuple[str, ...] = ()
+        measurements: tuple[str, ...] = ()
         for i, meas in enumerate(av_meas):
             if i == 0:
                 measurements = measurements + (meas, )
@@ -599,7 +607,7 @@ class N9030B(VisaInstrument):
         """
         self.write(f":INITiate:CONTinuous {val}")
 
-    def _options(self) -> Tuple[str, ...]:
+    def _options(self) -> tuple[str, ...]:
         """
         Returns installed options numbers.
         """

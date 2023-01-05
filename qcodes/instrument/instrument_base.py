@@ -390,7 +390,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         return None
 
     @property
-    def ancestors(self) -> list[InstrumentBase]:
+    def ancestors(self) -> tuple[InstrumentBase, ...]:
         """
         Ancestors in the form of a list of :class:`InstrumentBase`
 
@@ -399,9 +399,9 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         until the root instrument is reached.
         """
         if self.parent is not None:
-            return [self] + self.parent.ancestors
+            return (self,) + self.parent.ancestors
         else:
-            return [self]
+            return (self,)
 
     @property
     def root_instrument(self) -> InstrumentBase:
@@ -419,8 +419,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         A list of all the parts of the instrument name from :meth:`root_instrument`
         to the current :class:`InstrumentModule`.
         """
-        name_parts = [self.short_name]
-        return name_parts
+        return [self.short_name]
 
     @property
     def full_name(self) -> str:

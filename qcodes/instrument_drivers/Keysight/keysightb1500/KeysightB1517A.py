@@ -15,7 +15,7 @@ from typing import (
 )
 
 import numpy as np
-from typing_extensions import TypedDict
+from typing_extensions import NotRequired, TypedDict
 
 import qcodes.validators as vals
 from qcodes.instrument import InstrumentChannel
@@ -42,12 +42,13 @@ if TYPE_CHECKING:
     import qcodes.instrument_drivers.Keysight.keysightb1500
 
 
-class SweepSteps(TypedDict, total=False):
+class SweepSteps(TypedDict):
     """
     A dictionary holding all the parameters that specifies the staircase
     sweep (WV).
     """
-    chan: Union[int, constants.ChNr]
+
+    chan: NotRequired[Union[int, constants.ChNr]]
     sweep_mode: Union[constants.SweepMode, int]
     sweep_range: Union[constants.VOutputRange, int]
     sweep_start: float
@@ -472,12 +473,14 @@ class IVSweeper(InstrumentChannel):
         cmd = msg.message
         response = self.ask(cmd)
         out_dict = self._get_sweep_steps_parser(response)
-        if out_dict['chan'] != self.parent.channels[0]:
-            raise ValueError('Sweep parameters (WV) such as '
-                             'sweep_mode, sweep_range, sweep_start, '
-                             'sweep_end, sweep_steps etc are not set for '
-                             'this SMU.')
-        return out_dict[name]
+        if out_dict.get("chan") != self.parent.channels[0]:
+            raise ValueError(
+                "Sweep parameters (WV) such as "
+                "sweep_mode, sweep_range, sweep_start, "
+                "sweep_end, sweep_steps etc are not set for "
+                "this SMU."
+            )
+        return out_dict.get(name)
 
     @staticmethod
     def _get_sweep_steps_parser(response: str) -> SweepSteps:
@@ -494,25 +497,28 @@ class IVSweeper(InstrumentChannel):
         if not match:
             raise ValueError('Sweep steps (WV) not found.')
 
-        out_dict: SweepSteps = {}
         resp_dict = match.groupdict()
 
-        out_dict['chan'] = int(resp_dict['chan'])
-        out_dict['sweep_mode'] = int(resp_dict['sweep_mode'])
-        out_dict['sweep_range'] = int(resp_dict['sweep_range'])
-        out_dict['sweep_start'] = float(resp_dict['sweep_start'])
-        out_dict['sweep_end'] = float(resp_dict['sweep_end'])
-        out_dict['sweep_steps'] = int(resp_dict['sweep_steps'])
-        if resp_dict['current_compliance'] is not None:
-            out_dict['current_compliance'] = float(
-                resp_dict['current_compliance'])
+        if resp_dict["current_compliance"] is not None:
+            current_output = float(resp_dict["current_compliance"])
         else:
-            out_dict['current_compliance'] = None
-        if resp_dict['power_compliance'] is not None:
-            out_dict['power_compliance'] = float(
-                resp_dict['power_compliance'])
+            current_output = None
+
+        if resp_dict["power_compliance"] is not None:
+            power_compliance = float(resp_dict["power_compliance"])
         else:
-            out_dict['power_compliance'] = None
+            power_compliance = None
+
+        out_dict: SweepSteps = {
+            "chan": int(resp_dict["chan"]),
+            "sweep_mode": int(resp_dict["sweep_mode"]),
+            "sweep_range": int(resp_dict["sweep_range"]),
+            "sweep_start": float(resp_dict["sweep_start"]),
+            "sweep_end": float(resp_dict["sweep_end"]),
+            "sweep_steps": int(resp_dict["sweep_steps"]),
+            "current_compliance": current_output,
+            "power_compliance": power_compliance,
+        }
         return out_dict
 
 

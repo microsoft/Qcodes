@@ -14,6 +14,7 @@ from itertools import zip_longest
 from typing import Any, List, cast
 
 import numpy as np
+import numpy.typing as npt
 from typing_extensions import TypedDict
 
 import qcodes as qc
@@ -356,6 +357,7 @@ def _expand_data_to_arrays(
                     for i, array in enumerate(row)
                 )
 
+        row_shape = None
         for i_row, row in enumerate(data):
             # now expand all one element arrays to match the expected size
             # one element arrays are introduced if scalar values are stored
@@ -371,6 +373,7 @@ def _expand_data_to_arrays(
                     max_size, row_shape = array.size, array.shape
 
             if max_size > 1:
+                assert row_shape is not None
                 data[i_row] = tuple(
                     np.full(row_shape, array, dtype=array.dtype)
                     if array.size == 1
@@ -511,7 +514,7 @@ def _get_offset_limit_for_callback(
 
         # Using linspace with dtype=int ensure of having an array finishing
         # by max_id
-        offset = np.linspace(
+        offset: npt.NDArray[np.int32] = np.linspace(
             0, max_id, int(100 / config.dataset.callback_percent) + 1, dtype=int
         )
 
@@ -1516,6 +1519,7 @@ def _get_paramspec(conn: ConnectionPlus,
     """
     c = c.execute(sql)
     description = get_description_map(c)
+    param_type = None
     for row in c.fetchall():
         if row[description["name"]] == param_name:
             param_type = row[description["type"]]
@@ -1553,6 +1557,7 @@ def _get_paramspec(conn: ConnectionPlus,
             c = conn.execute(sql, (dp,))
             depends_on.append(one(c, 'parameter'))
 
+    assert param_type is not None
     parspec = ParamSpec(param_name, param_type, label, unit,
                         inferred_from,
                         depends_on)

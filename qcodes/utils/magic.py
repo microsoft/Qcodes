@@ -1,4 +1,6 @@
-from IPython import get_ipython
+# get_ipython is part of the public api but IPython does
+# not use __all__ to mark this
+from IPython import get_ipython  # type: ignore[attr-defined]
 from IPython.core.magic import Magics, line_cell_magic, magics_class
 
 
@@ -88,6 +90,7 @@ class QCoDeSMagic(Magics):
 
         contents = f'import qcodes\n{loop_name} = '
         previous_level = 0
+        k = None
         for k, line in enumerate(lines):
             line, level = line.lstrip(), int((len(line)-len(line.lstrip())) / 4)
 
@@ -130,15 +133,16 @@ class QCoDeSMagic(Magics):
         contents += "{} = {}.get_data_set(name='{}')".format(data_name,
                                                              loop_name,
                                                              msmt_name)
-
-        for line in lines[k+1:]:
-            contents += '\n' + line
+        if k is not None:
+            for line in lines[k + 1 :]:
+                contents += "\n" + line
 
         if 'p' in options:
             print(contents)
 
         if 'x' not in options:
             # Execute contents
+            assert self.shell is not None
             self.shell.run_cell(contents, store_history=True, silent=True)
 
 
@@ -158,6 +162,7 @@ def register_magic_class(cls=QCoDeSMagic, magic_commands=True):
         raise RuntimeError("No IPython shell found")
     else:
         if magic_commands is not True:
+            assert cls.magics is not None
             # filter out any magic commands that are not in magic_commands
             cls.magics = {line_cell: {key: val for key, val in magics.items()
                                       if key in magic_commands}

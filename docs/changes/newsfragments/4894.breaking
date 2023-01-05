@@ -1,0 +1,5 @@
+``InstrumentBase.ancestors`` now returns a tuple of ancestors
+to the current Instrument, InstrumentChannel or InstrumentModule and not a list.
+
+``dond ``, ``do1d`` etc. now returns tuples of Matplotlib axes and colorbars
+when plotting and not lists.

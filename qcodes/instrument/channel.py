@@ -588,10 +588,10 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentModuleType]):  # type:
         # update mapping
         # asserts added to work around https://github.com/python/mypy/issues/7858
         if isinstance(index, int):
-            assert isinstance(value, InstrumentChannel)
+            assert isinstance(value, InstrumentModule)
             self._channels[index] = value
         else:
-            assert not isinstance(value, InstrumentChannel)
+            assert not isinstance(value, InstrumentModule)
             self._channels[index] = value
         self._channel_mapping = {
             channel.short_name: channel for channel in self._channels

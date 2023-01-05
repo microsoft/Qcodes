@@ -392,7 +392,7 @@ class TimeTrace(ParameterWithSetpoints): # pylint: disable=abstract-method
             self.instrument.trigger.force()
             data = self.instrument.fetch()
 
-        return data
+        return data  # pyright: ignore[reportUnboundVariable]
 
     def get_raw(self) -> np.ndarray:  # pylint: disable=method-hidden
 
@@ -639,6 +639,8 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
                             '34411A': [20e-6, 0.83],
                             '34465A': [0.3e-3, 1.67],
                             '34470A': [0.3e-3, 1.67]}
+            else:
+                raise RuntimeError("line_frequency must be either 50 or 60 Hz")
             if self.has_DIG:
                 apt_times['34465A'][0] = 20e-6
                 apt_times['34470A'][0] = 20e-6
