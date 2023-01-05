@@ -25,10 +25,18 @@ repos:
   - repo: https://github.com/akaihola/darker
     rev: 1.6.1
     hooks:
-      -   id: darker
-          args: [-i]
-          additional_dependencies: [isort]
+      - id: darker
+        args: [-i]
+        additional_dependencies: [isort]
   - repo: https://github.com/abravalheri/validate-pyproject
     rev: v0.10.1
     hooks:
       - id: validate-pyproject
+  - repo: https://github.com/nbQA-dev/nbQA
+    rev: 1.6.0
+    hooks:
+        - id: nbqa-pyupgrade
+          args: ['--py38-plus']
+          additional_dependencies: [pyupgrade]
+        - id: nbqa-isort
+          additional_dependencies: [isort]
