@@ -38,3 +38,5 @@ repos:
         - id: nbqa-pyupgrade
           args: ['--py38-plus']
           additional_dependencies: [pyupgrade]
+        - id: nbqa-isort
+          additional_dependencies: [isort]
