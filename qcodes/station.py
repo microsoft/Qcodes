@@ -2,6 +2,7 @@
 Station objects - collect all the equipment you use to do an experiment.
 """
 
+from __future__ import annotations
 
 import importlib
 import inspect
@@ -18,16 +19,14 @@ from functools import partial
 from io import StringIO
 from pathlib import Path
 from types import ModuleType
-from typing import IO, Any, AnyStr
-from typing import Deque as Tdeque
 from typing import (
+    IO,
+    Any,
+    AnyStr,
     Dict,
     Iterable,
-    List,
     NoReturn,
-    Optional,
     Sequence,
-    Tuple,
     Union,
     cast,
     overload,
@@ -73,15 +72,15 @@ def get_config_enable_forced_reconnect() -> bool:
     return qcodes.config["station"]["enable_forced_reconnect"]
 
 
-def get_config_default_folder() -> Optional[str]:
+def get_config_default_folder() -> str | None:
     return qcodes.config["station"]["default_folder"]
 
 
-def get_config_default_file() -> Optional[str]:
+def get_config_default_file() -> str | None:
     return qcodes.config["station"]["default_file"]
 
 
-def get_config_use_monitor() -> Optional[str]:
+def get_config_use_monitor() -> str | None:
     return qcodes.config["station"]["use_monitor"]
 
 
@@ -95,7 +94,7 @@ class ValidationWarning(Warning):
 
 
 class StationConfig(Dict[Any, Any]):
-    def snapshot(self, update: bool = True) -> 'StationConfig':
+    def snapshot(self, update: bool = True) -> StationConfig:
         return self
 
 
@@ -124,7 +123,7 @@ class Station(Metadatable, DelegateAttributes):
 
     """
 
-    default: Optional['Station'] = None
+    default: Station | None = None
     "Class attribute to store the default station."
 
     delegate_attr_dicts = ['components']
@@ -134,14 +133,19 @@ class Station(Metadatable, DelegateAttributes):
     whose keys should be treated as attributes of ``self``.
     """
 
-    config: Optional[StationConfig] = None
+    config: StationConfig | None = None
     """
     A user dict representing the YAML file that the station was loaded from"""
 
-    def __init__(self, *components: Metadatable,
-                 config_file: Optional[Union[str, Sequence[str]]] = None,
-                 use_monitor: Optional[bool] = None, default: bool = True,
-                 update_snapshot: bool = True, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        *components: Metadatable,
+        config_file: str | Sequence[str] | None = None,
+        use_monitor: bool | None = None,
+        default: bool = True,
+        update_snapshot: bool = True,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(**kwargs)
 
         # when a new station is defined, store it in a class variable
@@ -153,14 +157,14 @@ class Station(Metadatable, DelegateAttributes):
         if default:
             Station.default = self
 
-        self.components: Dict[str, Metadatable] = {}
+        self.components: dict[str, Metadatable] = {}
         for item in components:
             self.add_component(item, update_snapshot=update_snapshot)
 
         self.use_monitor = use_monitor
 
-        self._added_methods: List[str] = []
-        self._monitor_parameters: List[Parameter] = []
+        self._added_methods: list[str] = []
+        self._monitor_parameters: list[Parameter] = []
 
         if config_file is None:
             self.config_file = []
@@ -171,9 +175,11 @@ class Station(Metadatable, DelegateAttributes):
 
         self.load_config_files(*self.config_file)
 
-    def snapshot_base(self, update: Optional[bool] = True,
-                      params_to_skip_update: Optional[Sequence[str]] = None
-                      ) -> Dict[Any, Any]:
+    def snapshot_base(
+        self,
+        update: bool | None = True,
+        params_to_skip_update: Sequence[str] | None = None,
+    ) -> dict[Any, Any]:
         """
         State of the station as a JSON-compatible dictionary (everything that
         the custom JSON encoder class :class:`.NumpyJSONEncoder`
@@ -195,7 +201,7 @@ class Station(Metadatable, DelegateAttributes):
         Returns:
             dict: Base snapshot.
         """
-        snap: Dict[str, Any] = {
+        snap: dict[str, Any] = {
             'instruments': {},
             'parameters': {},
             'components': {},
@@ -226,8 +232,12 @@ class Station(Metadatable, DelegateAttributes):
 
         return snap
 
-    def add_component(self, component: Metadatable, name: Optional[str] = None,
-                      update_snapshot: bool = True) -> str:
+    def add_component(
+        self,
+        component: Metadatable,
+        name: str | None = None,
+        update_snapshot: bool = True,
+    ) -> str:
         """
         Record one component as part of this Station.
 
@@ -257,7 +267,7 @@ class Station(Metadatable, DelegateAttributes):
         self.components[namestr] = component
         return namestr
 
-    def remove_component(self, name: str) -> Optional[Metadatable]:
+    def remove_component(self, name: str) -> Metadatable | None:
         """
         Remove a component with a given name from this Station.
 
@@ -300,8 +310,7 @@ class Station(Metadatable, DelegateAttributes):
                 self.close_and_remove_instrument(c)
 
     @staticmethod
-    def _get_config_file_path(
-            filename: Optional[str] = None) -> Optional[str]:
+    def _get_config_file_path(filename: str | None = None) -> str | None:
         """
         Methods to get complete path of a provided file. If not able to find
         path then returns None.
@@ -319,7 +328,7 @@ class Station(Metadatable, DelegateAttributes):
                 return p
         return None
 
-    def load_config_file(self, filename: Optional[str] = None) -> None:
+    def load_config_file(self, filename: str | None = None) -> None:
         """
         Loads a configuration from a YAML file. If `filename` is not specified
         the default file name from the qcodes configuration will be used.
@@ -380,7 +389,7 @@ class Station(Metadatable, DelegateAttributes):
             yamls = _merge_yamls(*paths)
             self.load_config(yamls)
 
-    def load_config(self, config: Union[str, IO[AnyStr]]) -> None:
+    def load_config(self, config: str | IO[AnyStr]) -> None:
         """
         Loads a configuration from a supplied string or file/stream handle.
         The string or file/stream is expected to be YAML formatted
@@ -436,9 +445,7 @@ class Station(Metadatable, DelegateAttributes):
         update_station_configuration_snapshot()
         update_load_instrument_methods()
 
-    def close_and_remove_instrument(self,
-                                    instrument: Union[Instrument, str]
-                                    ) -> None:
+    def close_and_remove_instrument(self, instrument: Instrument | str) -> None:
         """
         Safely close instrument and remove from station and monitor list.
         """
@@ -570,7 +577,7 @@ class Station(Metadatable, DelegateAttributes):
                     f'a parameter on instrument {instrument!r}.')
 
         def setup_parameter_from_dict(
-            parameter: ParameterBase, options: Dict[str, Any]
+            parameter: ParameterBase, options: dict[str, Any]
         ) -> None:
             for attr, val in options.items():
                 if attr in PARAMETER_ATTRIBUTES:
@@ -611,9 +618,7 @@ class Station(Metadatable, DelegateAttributes):
                 parameter.set(options['initial_value'])
 
         def add_parameter_from_dict(
-            instr: InstrumentBase,
-            name: str,
-            options: Dict[str, Any]
+            instr: InstrumentBase, name: str, options: dict[str, Any]
         ) -> None:
             # keep the original dictionray intact for snapshot
             options = copy(options)
@@ -654,7 +659,7 @@ class Station(Metadatable, DelegateAttributes):
         self,
         only_names: None,
         only_types: Iterable[str],
-    ) -> Tuple[str, ...]:
+    ) -> tuple[str, ...]:
         ...
 
     @overload
@@ -662,7 +667,7 @@ class Station(Metadatable, DelegateAttributes):
         self,
         only_names: Iterable[str],
         only_types: None,
-    ) -> Tuple[str, ...]:
+    ) -> tuple[str, ...]:
         ...
 
     @overload
@@ -670,7 +675,7 @@ class Station(Metadatable, DelegateAttributes):
         self,
         only_names: None,
         only_types: None,
-    ) -> Tuple[str, ...]:
+    ) -> tuple[str, ...]:
         ...
 
     @overload
@@ -681,10 +686,11 @@ class Station(Metadatable, DelegateAttributes):
     ) -> NoReturn:
         ...
 
-    def load_all_instruments(self,
-                             only_names: Optional[Iterable[str]] = None,
-                             only_types: Optional[Iterable[str]] = None,
-                             ) -> Tuple[str, ...]:
+    def load_all_instruments(
+        self,
+        only_names: Iterable[str] | None = None,
+        only_types: Iterable[str] | None = None,
+    ) -> tuple[str, ...]:
         """
         Load all instruments specified in the loaded YAML station
         configuration.
@@ -737,7 +743,7 @@ class Station(Metadatable, DelegateAttributes):
 
 
 def update_config_schema(
-    additional_instrument_modules: Optional[List[ModuleType]] = None
+    additional_instrument_modules: list[ModuleType] | None = None,
 ) -> None:
     """Update the json schema file 'station.schema.json'.
 
@@ -750,7 +756,7 @@ def update_config_schema(
 
     """
 
-    def instrument_names_from_module(module: ModuleType) -> Tuple[str, ...]:
+    def instrument_names_from_module(module: ModuleType) -> tuple[str, ...]:
         submodules = list(pkgutil.walk_packages(module.__path__, module.__name__ + "."))
         res = set()
         for s in submodules:
@@ -770,9 +776,7 @@ def update_config_schema(
         return tuple(res)
 
     def update_schema_file(
-        template_path: str,
-        output_path: str,
-        instrument_names: Tuple[str, ...]
+        template_path: str, output_path: str, instrument_names: tuple[str, ...]
     ) -> None:
         with open(template_path, 'r+') as f:
             data = json.load(f)
@@ -795,7 +799,7 @@ def update_config_schema(
     )
 
 
-def _merge_yamls(*yamls: Union[str, Path]) -> str:
+def _merge_yamls(*yamls: str | Path) -> str:
     """
     Merge multiple station yamls files into one and stores it in the memory.
 
@@ -817,7 +821,7 @@ def _merge_yamls(*yamls: Union[str, Path]) -> str:
     top_key = "instruments"
     yaml = ruamel.yaml.YAML()
 
-    deq: Tdeque[Any] = deque()
+    deq: deque[Any] = deque()
 
     # Load the yaml files and add to deque in reverse entry order
     for filepath in yamls[::-1]:
