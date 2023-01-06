@@ -90,10 +90,11 @@ def get_data_export_automatic() -> bool:
 
 
 def _expand_export_path(export_path: str) -> str:
-    db_location = qcodes.config["core"]["db_location"]
-    expanded_export_folder = db_location.replace(".", "_")
-
-    return export_path.replace("{db_location}", expanded_export_folder)
+    db_location = Path(qcodes.config["core"]["db_location"]).expanduser().absolute()
+    expanded_export_folder = db_location.parent / "_".join(
+        (db_location.stem, db_location.suffix.replace(".", ""))
+    )
+    return export_path.replace("{db_location}", str(expanded_export_folder))
 
 
 def get_data_export_path() -> Path:
