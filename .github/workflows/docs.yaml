@@ -39,13 +39,13 @@ jobs:
       SPHINX_WARNINGS_AS_ERROR: ${{ matrix.python-version == '3.10' }}
       SPHINX_OPTS: "-v"
     steps:
-    - uses: actions/checkout@v3.2.0
+    - uses: actions/checkout@v3.3.0
       with:
         fetch-depth: '0'
         # if we upload to ghpages we need the full
         # history to generate correct version info
       if: ${{ fromJSON(env.UPLOAD_TO_GHPAGES) }}
-    - uses: actions/checkout@v3.2.0
+    - uses: actions/checkout@v3.3.0
       if: ${{ !fromJSON(env.UPLOAD_TO_GHPAGES) }}
     - name: set-sphinx-opts
       run: |
