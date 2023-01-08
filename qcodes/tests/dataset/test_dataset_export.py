@@ -329,7 +329,7 @@ def test_export_from_config(tmp_path_factory, mock_dataset, mocker):
     mock_type = mocker.patch("qcodes.dataset.data_set_protocol.get_data_export_type")
     mock_path = mocker.patch("qcodes.dataset.data_set_protocol.get_data_export_path")
     mock_type.return_value = DataExportType.CSV
-    mock_path.return_value = path
+    mock_path.return_value = tmp_path
     mock_dataset.export()
     assert os.listdir(path) == [
         f"qcodes_{mock_dataset.captured_run_id}_{mock_dataset.guid}.csv"
@@ -345,7 +345,7 @@ def test_export_from_config_set_name_elements(tmp_path_factory, mock_dataset, mo
         "qcodes.dataset.data_set_protocol.get_data_export_name_elements"
     )
     mock_type.return_value = DataExportType.CSV
-    mock_path.return_value = path
+    mock_path.return_value = tmp_path
     mock_name_elements.return_value = [
         "captured_run_id",
         "guid",

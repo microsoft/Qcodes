@@ -1691,7 +1691,7 @@ def test_datasaver_export(
     )
 
     mock_type.return_value = export_type
-    mock_path.return_value = path
+    mock_path.return_value = tmp_path
     mock_automatic.return_value = export
     with meas.run(write_in_background=bg_writing) as datasaver:
         datasaver.add_result(
