@@ -5,7 +5,7 @@ import logging
 from os.path import exists
 from pathlib import Path
 
-from qcodes import config
+import qcodes
 
 _log = logging.getLogger(__name__)
 
@@ -33,10 +33,10 @@ def set_data_export_type(export_type: str) -> None:
     """
     # disable file export
     if export_type is None:
-        config[DATASET_CONFIG_SECTION][EXPORT_TYPE] = None
+        qcodes.config[DATASET_CONFIG_SECTION][EXPORT_TYPE] = None
 
     elif hasattr(DataExportType, export_type.upper()):
-        config[DATASET_CONFIG_SECTION][EXPORT_TYPE] = export_type.upper()
+        qcodes.config[DATASET_CONFIG_SECTION][EXPORT_TYPE] = export_type.upper()
 
     else:
         _log.warning(
@@ -58,7 +58,7 @@ def set_data_export_path(export_path: str | Path) -> None:
     if isinstance(export_path, str):
         export_path = Path(export_path)
     export_path.mkdir(exist_ok=True)
-    config[DATASET_CONFIG_SECTION][EXPORT_AUTOMATIC] = str(export_path)
+    qcodes.config[DATASET_CONFIG_SECTION][EXPORT_AUTOMATIC] = str(export_path)
 
 
 def get_data_export_type(
@@ -74,7 +74,7 @@ def get_data_export_type(
         Data export type
     """
     # If export_type is None, get value from config
-    export_type = export_type or config[DATASET_CONFIG_SECTION][EXPORT_TYPE]
+    export_type = export_type or qcodes.config[DATASET_CONFIG_SECTION][EXPORT_TYPE]
 
     if isinstance(export_type, DataExportType):
         return export_type
@@ -86,12 +86,12 @@ def get_data_export_type(
 
 def get_data_export_automatic() -> bool:
     """Should the data be exported automatically?"""
-    export_automatic = config[DATASET_CONFIG_SECTION][EXPORT_AUTOMATIC]
+    export_automatic = qcodes.config[DATASET_CONFIG_SECTION][EXPORT_AUTOMATIC]
     return export_automatic
 
 
 def _expand_export_path(export_path: str) -> str:
-    db_location = config["core"]["db_location"]
+    db_location = qcodes.config["core"]["db_location"]
     expanded_export_folder = db_location.replace(".", "_")
 
     return export_path.replace("{db_location}", expanded_export_folder)
@@ -104,7 +104,7 @@ def get_data_export_path() -> Path:
         Path
     """
     return (
-        Path(_expand_export_path(config[DATASET_CONFIG_SECTION][EXPORT_PATH]))
+        Path(_expand_export_path(qcodes.config[DATASET_CONFIG_SECTION][EXPORT_PATH]))
         .expanduser()
         .absolute()
     )
@@ -117,7 +117,7 @@ def set_data_export_prefix(export_prefix: str) -> None:
     Args:
         export_prefix: Prefix, e.g. "qcodes_"
     """
-    config[DATASET_CONFIG_SECTION][EXPORT_PREFIX] = export_prefix
+    qcodes.config[DATASET_CONFIG_SECTION][EXPORT_PREFIX] = export_prefix
 
 
 def get_data_export_prefix() -> str:
@@ -127,9 +127,9 @@ def get_data_export_prefix() -> str:
     Returns:
         Prefix, e.g. "qcodes_"
     """
-    return config[DATASET_CONFIG_SECTION][EXPORT_PREFIX]
+    return qcodes.config[DATASET_CONFIG_SECTION][EXPORT_PREFIX]
 
 
 def get_data_export_name_elements() -> list[str]:
     """Get the elements to include in the export name."""
-    return config[DATASET_CONFIG_SECTION][EXPORT_NAME_ELEMENTS]
+    return qcodes.config[DATASET_CONFIG_SECTION][EXPORT_NAME_ELEMENTS]
