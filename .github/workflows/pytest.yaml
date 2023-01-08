@@ -40,7 +40,9 @@ jobs:
       if: runner.os == 'Linux'
     # install libhdf5-dev untill we have wheels for python 3.11
     - name: install libhdf5
-      run: sudo apt install libhdf5-dev
+      run: |
+        sudo apt update
+        sudo apt install libhdf5-dev
       shell: bash
       if: runner.os == 'Linux'
     - name: Set up Python ${{ matrix.python-version }}
