@@ -54,7 +54,7 @@ def disable_telemetry() -> Generator[None, None, None]:
         qc.config.telemetry.enabled = original_state
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="function", autouse=True)
 def default_config(tmp_path: Path) -> Generator[None, None, None]:
     """
     Fixture to temporarily establish default config settings.
