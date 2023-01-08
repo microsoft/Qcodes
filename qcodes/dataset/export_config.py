@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import enum
 import logging
-from os.path import exists
 from pathlib import Path
 
 import qcodes
