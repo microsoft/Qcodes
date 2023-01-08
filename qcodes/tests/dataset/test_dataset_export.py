@@ -242,15 +242,15 @@ def test_export_netcdf(tmp_path_factory, mock_dataset, caplog):
 
 
 def test_export_netcdf_default_dir(tmp_path_factory, mock_dataset):
+    qcodes.config.dataset.export_path = "{db_location}"
     mock_dataset.export(export_type="netcdf", prefix="qcodes_")
-
-    assert qcodes.config.dataset.export_path == "{db_location}"
     export_path = Path(mock_dataset.export_info.export_paths["nc"])
     exported_dir = export_path.parent
     export_dir_stem = exported_dir.stem
     database_path = Path(qcodes.config.core.db_location)
     database_file_name = database_path.name
     database_dir = Path(qcodes.config.core.db_location).parent
+    assert qcodes.config.dataset.export_path == "{db_location}"
     assert exported_dir.parent == database_dir
     assert export_dir_stem == database_file_name.replace(".", "_")
     assert exported_dir == get_data_export_path()
