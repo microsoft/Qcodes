@@ -163,6 +163,7 @@ def test_do0d_explicit_name(_param):
     assert data1[0].name == "my measurement"
 
 
+@pytest.mark.usefixtures("experiment")
 def test_do0d_parameter_with_setpoints_2d(dummyinstrument):
     dummyinstrument.A.dummy_start(0)
     dummyinstrument.A.dummy_stop(10)
