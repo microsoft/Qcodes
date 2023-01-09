@@ -1,0 +1,3 @@
+Datasets are now exported to a folder next to the database by default rather then to the users home folder.
+Note that if you had specifically configured this in a local config file this should be updated too for the
+change to take effect.
