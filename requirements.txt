@@ -42,7 +42,7 @@ fonttools~=4.38.0
 future==0.18.2
 google-api-core~=2.11.0
 google-auth~=2.15.0
-googleapis-common-protos~=1.57.0
+googleapis-common-protos~=1.58.0
 h5netcdf~=1.1.0
 h5py~=3.7.0
 hypothesis~=6.62.0
