@@ -51,6 +51,8 @@ from .keysightb1500.KeysightB1520A import (
     KeysightB1520A,
 )
 from .keysightb1500.KeysightB1530A import KeysigthB1530A
+from .KtM960x import KeysightM960x
+from .KtMAwg import KeysightM9336A, KeysightM9336AAWGChannel
 from .N52xx import KeysightPNAPort, KeysightPNATrace
 
 __all__ = [
@@ -80,7 +82,6 @@ __all__ = [
     "KeysightB1511B",
     "KeysightB1517A",
     "KeysightB1520A",
-    "KeysigthB1530A",
     "KeysightB2200",
     "KeysightB2201",
     "KeysightB2962A",
@@ -94,6 +95,9 @@ __all__ = [
     "KeysightInfiniiumChannel",
     "KeysightInfiniiumFunction",
     "KeysightInfiniiumUnboundMeasurement",
+    "KeysightM9336A",
+    "KeysightM9336AAWGChannel",
+    "KeysightM960x",
     "KeysightN5173B",
     "KeysightN5183B",
     "KeysightN5222B",
