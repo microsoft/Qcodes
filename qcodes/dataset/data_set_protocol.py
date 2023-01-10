@@ -356,7 +356,7 @@ class BaseDataSet(DataSetProtocol, Protocol):
     def export(
         self,
         export_type: DataExportType | str | None = None,
-        path: str | None = None,
+        path: str | Path | None = None,
         prefix: str | None = None,
     ) -> None:
         """Export data to disk with file name `{prefix}{name_elements}.{ext}`.
@@ -377,6 +377,9 @@ class BaseDataSet(DataSetProtocol, Protocol):
             ValueError: If the export data type is not specified or unknown,
                 raise an error
         """
+        if isinstance(path, str):
+            path = Path(path)
+
         parsed_export_type = get_data_export_type(export_type)
 
         if parsed_export_type is None and export_type is None:
@@ -405,7 +408,7 @@ class BaseDataSet(DataSetProtocol, Protocol):
     def _export_data(
         self,
         export_type: DataExportType,
-        path: str | None = None,
+        path: Path | None = None,
         prefix: str | None = None,
     ) -> Path | None:
         """Export data to disk with file name `{prefix}{name_elements}.{ext}`.
@@ -427,6 +430,7 @@ class BaseDataSet(DataSetProtocol, Protocol):
         # Set defaults to values in config if the value was not set
         # (defaults to None)
         path = path if path is not None else get_data_export_path()
+        path.mkdir(exist_ok=True, parents=True)
         prefix = prefix if prefix is not None else get_data_export_prefix()
 
         if DataExportType.NETCDF == export_type:
@@ -461,14 +465,14 @@ class BaseDataSet(DataSetProtocol, Protocol):
         post_fix = "_".join([str(getattr(self, name)) for name in name_elements])
         return f"{prefix}{post_fix}.{extension}"
 
-    def _export_as_netcdf(self, path: str, file_name: str) -> str:
+    def _export_as_netcdf(self, path: Path, file_name: str) -> Path:
         """Export data as netcdf to a given path with file prefix"""
-        file_path = os.path.join(path, file_name)
+        file_path = path / file_name
         xarr_dataset = self.to_xarray_dataset()
         xarray_to_h5netcdf_with_complex_numbers(xarr_dataset, file_path)
         return file_path
 
-    def _export_as_csv(self, path: str, file_name: str) -> str:
+    def _export_as_csv(self, path: Path, file_name: str) -> Path:
         """Export data as csv to a given path with file prefix."""
         dfdict = self.to_pandas_dataframe_dict()
         dataframe_to_csv(
@@ -477,7 +481,7 @@ class BaseDataSet(DataSetProtocol, Protocol):
             single_file=True,
             single_file_name=file_name,
         )
-        return os.path.join(path, file_name)
+        return path / file_name
 
     def _add_metadata_to_netcdf_if_nc_exported(self, tag: str, data: Any) -> None:
         export_paths = self.export_info.export_paths

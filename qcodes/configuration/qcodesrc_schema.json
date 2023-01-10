@@ -346,8 +346,8 @@
                 },
                 "export_path": {
                     "type": "string",
-                    "default": "~",
-                    "description": "Data export path for exporting datasets to disk after a measurement finishes. Only activated if export_type is set"
+                    "default": "{db_location}",
+                    "description": "Data export path for exporting datasets to disk after a measurement finishes. Only activated if export_type is set. {db_location} is a directory in the same folder as the .db file with a matching name i.e. for  ~\\experiments.db will netcdf files will be exported to ~\\experiments_db"
                 },
                 "export_prefix": {
                     "type": "string",

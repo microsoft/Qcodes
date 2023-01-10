@@ -1,12 +1,13 @@
 import json
 import logging
 import os
+from pathlib import Path
 
 import pytest
 import xarray as xr
 
 import qcodes
-from qcodes.dataset import load_from_netcdf, new_data_set
+from qcodes.dataset import get_data_export_path, load_from_netcdf, new_data_set
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.descriptions.versioning import serialization as serial
@@ -240,6 +241,21 @@ def test_export_netcdf(tmp_path_factory, mock_dataset, caplog):
     assert mock_dataset.export_info.export_paths["nc"] == file_path
 
 
+def test_export_netcdf_default_dir(tmp_path_factory, mock_dataset):
+    qcodes.config.dataset.export_path = "{db_location}"
+    mock_dataset.export(export_type="netcdf", prefix="qcodes_")
+    export_path = Path(mock_dataset.export_info.export_paths["nc"])
+    exported_dir = export_path.parent
+    export_dir_stem = exported_dir.stem
+    database_path = Path(qcodes.config.core.db_location)
+    database_file_name = database_path.name
+    database_dir = Path(qcodes.config.core.db_location).parent
+    assert qcodes.config.dataset.export_path == "{db_location}"
+    assert exported_dir.parent == database_dir
+    assert export_dir_stem == database_file_name.replace(".", "_")
+    assert exported_dir == get_data_export_path()
+
+
 def test_export_netcdf_csv(tmp_path_factory, mock_dataset):
 
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
@@ -313,7 +329,7 @@ def test_export_from_config(tmp_path_factory, mock_dataset, mocker):
     mock_type = mocker.patch("qcodes.dataset.data_set_protocol.get_data_export_type")
     mock_path = mocker.patch("qcodes.dataset.data_set_protocol.get_data_export_path")
     mock_type.return_value = DataExportType.CSV
-    mock_path.return_value = path
+    mock_path.return_value = tmp_path
     mock_dataset.export()
     assert os.listdir(path) == [
         f"qcodes_{mock_dataset.captured_run_id}_{mock_dataset.guid}.csv"
@@ -329,7 +345,7 @@ def test_export_from_config_set_name_elements(tmp_path_factory, mock_dataset, mo
         "qcodes.dataset.data_set_protocol.get_data_export_name_elements"
     )
     mock_type.return_value = DataExportType.CSV
-    mock_path.return_value = path
+    mock_path.return_value = tmp_path
     mock_name_elements.return_value = [
         "captured_run_id",
         "guid",
