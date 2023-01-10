@@ -430,7 +430,7 @@ class BaseDataSet(DataSetProtocol, Protocol):
         # Set defaults to values in config if the value was not set
         # (defaults to None)
         path = path if path is not None else get_data_export_path()
-        os.makedirs(path, exist_ok=True)
+        path.mkdir(exist_ok=True, parents=True)
         prefix = prefix if prefix is not None else get_data_export_prefix()
 
         if DataExportType.NETCDF == export_type:
