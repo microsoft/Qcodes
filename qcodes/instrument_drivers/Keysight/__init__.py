@@ -50,7 +50,7 @@ from .keysightb1500.KeysightB1520A import (
     KeysightB1500FrequencyList,
     KeysightB1520A,
 )
-from .keysightb1500.KeysightB1530A import KeysigthB1530A
+from .keysightb1500.KeysightB1530A import KeysightB1530A
 from .KtM960x import KeysightM960x
 from .KtMAwg import KeysightM9336A, KeysightM9336AAWGChannel
 from .N52xx import KeysightPNAPort, KeysightPNATrace
@@ -82,6 +82,7 @@ __all__ = [
     "KeysightB1511B",
     "KeysightB1517A",
     "KeysightB1520A",
+    "KeysightB1530A",
     "KeysightB2200",
     "KeysightB2201",
     "KeysightB2962A",

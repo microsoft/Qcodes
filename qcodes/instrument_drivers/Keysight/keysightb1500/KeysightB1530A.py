@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     )
 
 
-class KeysigthB1530A(B1500Module):
+class KeysightB1530A(B1500Module):
     """
     Driver for Keysight B1530A Waveform Generator/Fast Measurement Unit
     module for B1500 Semiconductor Parameter Analyzer.
@@ -38,7 +38,7 @@ class KeysigthB1530A(B1500Module):
         self.channels = (ChNr(slot_nr), ChNr(int(f"{slot_nr:d}02")))
 
 
-B1530A = KeysigthB1530A
+B1530A = KeysightB1530A
 """
 Alias for backwards compatibility
 """

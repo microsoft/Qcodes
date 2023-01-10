@@ -19,7 +19,7 @@ from .KeysightB1500_module import (
 from .KeysightB1511B import KeysightB1511B
 from .KeysightB1517A import KeysightB1517A, _ParameterWithStatus
 from .KeysightB1520A import KeysightB1520A
-from .KeysightB1530A import KeysigthB1530A
+from .KeysightB1530A import KeysightB1530A
 from .message_builder import MessageBuilder
 
 
@@ -143,7 +143,7 @@ class KeysightB1500(VisaInstrument):
         elif model == "B1520A":
             return KeysightB1520A(slot_nr=slot_nr, parent=parent, name=name)
         elif model == "B1530A":
-            return KeysigthB1530A(slot_nr=slot_nr, parent=parent, name=name)
+            return KeysightB1530A(slot_nr=slot_nr, parent=parent, name=name)
         else:
             raise NotImplementedError(f"Module type {model} in slot"
                                       f" {slot_nr} not yet supported.")

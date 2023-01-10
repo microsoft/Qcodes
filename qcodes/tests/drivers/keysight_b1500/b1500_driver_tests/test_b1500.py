@@ -22,7 +22,7 @@ from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1520A import (
     KeysightB1520A,
 )
 from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1530A import (
-    KeysigthB1530A,
+    KeysightB1530A,
 )
 
 
@@ -45,7 +45,7 @@ def test_make_module_from_model_name(mainframe):
     wgfmu = KeysightB1500.from_model_name(model='B1530A', slot_nr=3,
                                           parent=mainframe)
 
-    assert isinstance(wgfmu, KeysigthB1530A)
+    assert isinstance(wgfmu, KeysightB1530A)
 
     smu = KeysightB1500.from_model_name(model='B1511B', slot_nr=4,
                                         parent=mainframe, name='dummy2')
