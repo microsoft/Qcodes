@@ -13,7 +13,7 @@ QCoDeS API
 ----------
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 2
    :includehidden:
 
    calibrations/index
@@ -36,7 +36,7 @@ Legacy API
 ----------
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 2
    :includehidden:
 
    loops
