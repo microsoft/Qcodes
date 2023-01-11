@@ -1,3 +1,5 @@
+from typing import Union
+
 from ._Keithley_2600 import Keithley2600MeasurementStatus
 from .Keithley_2000 import Keithley2000
 from .Keithley_2400 import Keithley2400
@@ -35,6 +37,22 @@ from .Keithley_s46 import (
     KeithleyS46RelayLock,
 )
 
+Keithley26xx = Union[
+    Keithley2601B,
+    Keithley2602A,
+    Keithley2602B,
+    Keithley2604B,
+    Keithley2611B,
+    Keithley2612B,
+    Keithley2614B,
+    Keithley2634B,
+    Keithley2635B,
+    Keithley2636B,
+]
+"""
+All Keithley 26xx SMUs supported by QCoDeS.
+"""
+
 __all__ = [
     "Keithley2000",
     "Keithley2400",
@@ -43,6 +61,7 @@ __all__ = [
     "Keithley2450Sense",
     "Keithley2450Source",
     "Keithley2600MeasurementStatus",
+    "Keithley26xx",
     "Keithley2601B",
     "Keithley2602A",
     "Keithley2602B",
