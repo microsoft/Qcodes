@@ -357,8 +357,7 @@ class KeysightPNATrace(InstrumentChannel):
         self.write(f"CALC:PAR:MOD:EXT \"{val}\"")
 
 
-
-# PNATrace =KeysightPNATrace
+PNATrace = KeysightPNATrace
 "Alias for backwards compatiblitly"
 
 
