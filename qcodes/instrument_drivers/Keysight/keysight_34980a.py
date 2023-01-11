@@ -8,7 +8,7 @@ from qcodes import validators as vals
 from qcodes.instrument import VisaInstrument
 
 from .keysight_34934a import Keysight34934A
-from .keysight_34980a_submodules import KeysightSubModule
+from .keysight_34980a_submodules import Keysight34980ASwitchMatrixSubModule
 
 KEYSIGHT_MODELS = {'34934A': Keysight34934A}
 
@@ -124,10 +124,10 @@ class Keysight34980A(VisaInstrument):
                     self.add_submodule(sub_module_name, sub_module)
                     break
             if self.module[slot] is None:
-                sub_module_name = f'slot_{slot}_{model_string}_no_driver'
-                sub_module_no_driver = KeysightSubModule(self,
-                                                         sub_module_name,
-                                                         slot)
+                sub_module_name = f"slot_{slot}_{model_string}_no_driver"
+                sub_module_no_driver = Keysight34980ASwitchMatrixSubModule(
+                    self, sub_module_name, slot
+                )
                 self.module[slot] = sub_module_no_driver
                 self.add_submodule(sub_module_name, sub_module_no_driver)
                 logging.warning(f'can not find driver for {model_string}'

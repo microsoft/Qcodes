@@ -14,7 +14,7 @@ from .KtM960xDefs import *
 
 
 class Measure(MultiParameter):
-    def __init__(self, name: str, instrument: "KtM960x") -> None:
+    def __init__(self, name: str, instrument: "KeysightM960x") -> None:
         super().__init__(name=name,
                          names=("voltage", "current", "resistance", "status",
                                 "timestamp", "source"),
@@ -23,13 +23,13 @@ class Measure(MultiParameter):
                          instrument=instrument,
                          labels="Measurement Data",
                          docstring="param that returns measurement values")
-        self.instrument: "KtM960x"
+        self.instrument: "KeysightM960x"
 
     def get_raw(self) -> Tuple[ParamRawDataType, ...]:
         return self.instrument._measure()
 
 
-class KtM960x(Instrument):
+class KeysightM960x(Instrument):
     """
     Provide a wrapper for the Keysight KtM960x DAC. This driver provides an
     interface into the IVI-C driver provided by Keysight. The .dll is installed
@@ -261,3 +261,7 @@ class KtM960x(Instrument):
     def close(self) -> None:
         self._dll.KtM960x_close(self._session)
         super().close()
+
+
+KtM960x = KeysightM960x
+"Alias for backwards compatibility"

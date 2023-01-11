@@ -15,14 +15,16 @@ from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_module impor
     get_name_label_unit_of_impedance_model,
     parse_module_query_response,
 )
-from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1517A import B1517A
+from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1517A import (
+    KeysightB1517A,
+)
 
 
 def test_is_enabled():
     mainframe = MagicMock()
 
     # Use concrete subclass because B1500Module does not assign channels
-    smu = B1517A(parent=mainframe, name='B1517A', slot_nr=1)
+    smu = KeysightB1517A(parent=mainframe, name="B1517A", slot_nr=1)
 
     mainframe.ask.return_value = 'CN 1,2,4,8'
     assert smu.is_enabled()
@@ -44,7 +46,7 @@ def test_enable_outputs():
 
     slot_nr = 1
     # Use concrete subclass because B1500Module does not assign channels
-    smu = B1517A(parent=mainframe, name='B1517A', slot_nr=slot_nr)
+    smu = KeysightB1517A(parent=mainframe, name="B1517A", slot_nr=slot_nr)
 
     smu.enable_outputs()
     mainframe.write.assert_called_once_with(f'CN {slot_nr}')
@@ -55,7 +57,7 @@ def test_disable_outputs():
 
     slot_nr = 1
     # Use concrete subclass because B1500Module does not assign channels
-    smu = B1517A(parent=mainframe, name='B1517A', slot_nr=slot_nr)
+    smu = KeysightB1517A(parent=mainframe, name="B1517A", slot_nr=slot_nr)
 
     smu.disable_outputs()
     mainframe.write.assert_called_once_with(f'CL {slot_nr}')

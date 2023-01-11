@@ -18,7 +18,9 @@ if TYPE_CHECKING:
     from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_base import (
         KeysightB1500,
     )
-    from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1517A import B1517A
+    from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1517A import (
+        KeysightB1517A,
+    )
 
 
 class SamplingMeasurement(ParameterWithSetpoints):
@@ -35,7 +37,7 @@ class SamplingMeasurement(ParameterWithSetpoints):
     def __init__(self, name: str, **kwargs: Any):
         super().__init__(name, **kwargs)
 
-        self.instrument: "B1517A"
+        self.instrument: "KeysightB1517A"
         self.root_instrument: "KeysightB1500"
 
         self.data = _FMTResponse(None, None, None, None)

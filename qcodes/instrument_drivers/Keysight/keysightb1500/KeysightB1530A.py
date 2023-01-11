@@ -4,10 +4,12 @@ from .constants import ChNr, ModuleKind
 from .KeysightB1500_module import B1500Module
 
 if TYPE_CHECKING:
-    import qcodes.instrument_drivers.Keysight.keysightb1500
+    from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_base import (
+        KeysightB1500,
+    )
 
 
-class B1530A(B1500Module):
+class KeysightB1530A(B1500Module):
     """
     Driver for Keysight B1530A Waveform Generator/Fast Measurement Unit
     module for B1500 Semiconductor Parameter Analyzer.
@@ -26,7 +28,7 @@ class B1530A(B1500Module):
 
     def __init__(
         self,
-        parent: "qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500",
+        parent: "KeysightB1500",
         name: Optional[str],
         slot_nr: int,
         **kwargs: Any,
@@ -34,3 +36,9 @@ class B1530A(B1500Module):
         super().__init__(parent, name, slot_nr, **kwargs)
 
         self.channels = (ChNr(slot_nr), ChNr(int(f"{slot_nr:d}02")))
+
+
+B1530A = KeysightB1530A
+"""
+Alias for backwards compatibility
+"""

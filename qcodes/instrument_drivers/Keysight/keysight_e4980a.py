@@ -16,7 +16,7 @@ from qcodes.utils import convert_legacy_version_to_supported_version
 from qcodes.validators import Bool, Enum, Ints, Numbers
 
 
-class MeasurementPair(MultiParameter):
+class KeysightE4980AMeasurementPair(MultiParameter):
     """
     Data class for E4980A measurement, which will always return two items
     at once.
@@ -29,7 +29,7 @@ class MeasurementPair(MultiParameter):
         To create a measurement data with capacitance=1.2, and
         dissipation_factor=3.4.
 
-        >>> data = MeasurementPair(name="CPD",
+        >>> data = KeysightE4980AMeasurementPair(name="CPD",
                                     names=("capacitance", "dissipation_factor"),
                                     units=("F", ""))
         >>> data.set((1.2, 3.4))
@@ -63,80 +63,83 @@ class MeasurementPair(MultiParameter):
         return self.value
 
 
-class E4980AMeasurements:
+MeasurementPair = KeysightE4980AMeasurementPair
+"Alias for backwards compatibility"
+
+
+class KeysightE4980AMeasurements:
     """
     All the measurement function for E4980A LCR meter. See user's guide P353
     https://literature.cdn.keysight.com/litweb/pdf/E4980-90230.pdf?id=789356
     """
-    CPD = MeasurementPair(
+
+    CPD = KeysightE4980AMeasurementPair(
         "CPD", ("capacitance", "dissipation_factor"), ("F", "")
     )
-    CPQ = MeasurementPair(
+    CPQ = KeysightE4980AMeasurementPair(
         "CPQ", ("capacitance", "quality_factor"), ("F", "")
     )
-    CPG = MeasurementPair(
+    CPG = KeysightE4980AMeasurementPair(
         "CPG", ("capacitance", "conductance"), ("F", "S")
     )
-    CPRP = MeasurementPair(
+    CPRP = KeysightE4980AMeasurementPair(
         "CPRP", ("capacitance", "resistance"), ("F", "Ohm")
     )
-    CSD = MeasurementPair(
+    CSD = KeysightE4980AMeasurementPair(
         "CSD", ("capacitance", "dissipation_factor"), ("F", "")
     )
-    CSQ = MeasurementPair(
+    CSQ = KeysightE4980AMeasurementPair(
         'CSQ', ("capacitance", "quality_factor"), ("F", "")
     )
-    CSRS = MeasurementPair(
+    CSRS = KeysightE4980AMeasurementPair(
         "CSRS", ("capacitance", "resistance"), ("F", "Ohm")
     )
-    LPD = MeasurementPair(
+    LPD = KeysightE4980AMeasurementPair(
         "LPD", ("inductance", "dissipation_factor"), ("H", "")
     )
-    LPQ = MeasurementPair(
+    LPQ = KeysightE4980AMeasurementPair(
         "LPQ", ("inductance", "quality_factor"), ("H", "")
     )
-    LPG = MeasurementPair(
+    LPG = KeysightE4980AMeasurementPair(
         "LPG", ("inductance", "conductance"), ("H", "S")
     )
-    LPRP = MeasurementPair(
+    LPRP = KeysightE4980AMeasurementPair(
         "LPRP", ("inductance", "resistance"), ("H", "Ohm")
     )
-    LSD = MeasurementPair(
+    LSD = KeysightE4980AMeasurementPair(
         "LSD", ("inductance", "dissipation_factor"), ("H", "")
     )
-    LSQ = MeasurementPair(
+    LSQ = KeysightE4980AMeasurementPair(
         "LSQ", ("inductance", "quality_factor"), ("H", "")
     )
-    LSRS = MeasurementPair(
+    LSRS = KeysightE4980AMeasurementPair(
         "LSRS", ("inductance", "resistance"), ("H", "Ohm")
     )
-    LSRD = MeasurementPair(
+    LSRD = KeysightE4980AMeasurementPair(
         "LSRD", ("inductance", "resistance"), ("H", "Ohm")
     )
-    RX = MeasurementPair(
+    RX = KeysightE4980AMeasurementPair(
         "RX", ("resistance", "reactance"), ("Ohm", "Ohm")
     )
-    ZTD = MeasurementPair(
+    ZTD = KeysightE4980AMeasurementPair(
         "ZTD", ("impedance", "theta"), ("Ohm", "Degree")
     )
-    ZTR = MeasurementPair(
+    ZTR = KeysightE4980AMeasurementPair(
         "ZTR", ("impedance", "theta"), ("Ohm", "Radiant")
     )
-    GB = MeasurementPair(
-        "GB", ("conductance", "susceptance"), ("S", "S")
-    )
-    YTD = MeasurementPair(
-        "YTD", ("admittance", "theta"), ("Y", "Degree")
-    )
-    YTR = MeasurementPair(
+    GB = KeysightE4980AMeasurementPair("GB", ("conductance", "susceptance"), ("S", "S"))
+    YTD = KeysightE4980AMeasurementPair("YTD", ("admittance", "theta"), ("Y", "Degree"))
+    YTR = KeysightE4980AMeasurementPair(
         "YTR", ("admittance", "theta"), ("Y", "Radiant")
     )
-    VDID = MeasurementPair(
-        "VDID", ("voltage", "current"), ("V", "A")
-    )
+    VDID = KeysightE4980AMeasurementPair("VDID", ("voltage", "current"), ("V", "A"))
 
 
-class Correction4980A(InstrumentChannel):
+E4980AMeasurements = KeysightE4980AMeasurements
+"Alias for backwards compatibility"
+
+
+class KeysightE4980ACorrection(InstrumentChannel):
     """
     Module for correction settings.
     """
@@ -174,6 +177,10 @@ class Correction4980A(InstrumentChannel):
             val_mapping=create_on_off_val_mapping(on_val="1", off_val="0"),
             docstring="Enables or disable SHORT correction."
         )
+
+
+Correction4980A = KeysightE4980ACorrection
+"Alias for backwards compatibility"
 
 
 class KeysightE4980A(VisaInstrument):
@@ -215,7 +222,7 @@ class KeysightE4980A(VisaInstrument):
                                    100000)
             self._dc_bias_v_level_range = Enum(0, 1.5, 2)
 
-        self._measurement_pair = MeasurementPair(
+        self._measurement_pair = KeysightE4980AMeasurementPair(
             "CPD",
             ("capacitance", "dissipation_factor"),
             ("F", "")
@@ -340,38 +347,35 @@ class KeysightE4980A(VisaInstrument):
                       "set."
         )
 
-        self.add_submodule(
-            "_correction",
-            Correction4980A(self, "correction")
-        )
+        self.add_submodule("_correction", KeysightE4980ACorrection(self, "correction"))
         self._set_signal_mode_on_driver_initialization()
         self.connect_message()
 
     @property
-    def correction(self) -> Correction4980A:
+    def correction(self) -> KeysightE4980ACorrection:
         submodule = self.submodules['_correction']
-        return cast(Correction4980A, submodule)
+        return cast(KeysightE4980ACorrection, submodule)
 
     @property
-    def measure_impedance(self) -> MeasurementPair:
+    def measure_impedance(self) -> KeysightE4980AMeasurementPair:
         return self._get_complex_impedance()
 
     @property
-    def measurement(self) -> MeasurementPair:
+    def measurement(self) -> KeysightE4980AMeasurementPair:
         return self._measurement()
 
     def _set_range(self, val: str) -> None:
         self.write(f":FUNCtion:IMPedance:RANGe {val}")
         self.imp_autorange_enabled.get()
 
-    def _get_complex_impedance(self) -> MeasurementPair:
+    def _get_complex_impedance(self) -> KeysightE4980AMeasurementPair:
         """
         Returns the impedance in the format of (R, X), where R is the
         resistance, and X is the reactance.
         """
         measurement = self.ask(":FETCH:IMPedance:CORRected?")
         r, x = (float(n) for n in measurement.split(","))
-        measurement_pair = MeasurementPair(
+        measurement_pair = KeysightE4980AMeasurementPair(
             name="RX",
             names=("resistance", "reactance"),
             units=("Ohm", "Ohm")
@@ -379,13 +383,13 @@ class KeysightE4980A(VisaInstrument):
         measurement_pair.set((r, x))
         return measurement_pair
 
-    def _measurement(self) -> MeasurementPair:
+    def _measurement(self) -> KeysightE4980AMeasurementPair:
         """
         Returns a measurement result with the selected measurement function.
         """
         measurement = self.ask(":FETCH:IMPedance:FORMatted?")
         val1, val2, _ = (float(n) for n in measurement.split(","))
-        measurement_pair = MeasurementPair(
+        measurement_pair = KeysightE4980AMeasurementPair(
             name=self._measurement_pair.name,
             names=self._measurement_pair.names,
             units=self._measurement_pair.units
@@ -393,8 +397,7 @@ class KeysightE4980A(VisaInstrument):
         measurement_pair.set((val1, val2))
         return measurement_pair
 
-    def _set_measurement(self,
-                         measurement_pair: MeasurementPair) -> None:
+    def _set_measurement(self, measurement_pair: KeysightE4980AMeasurementPair) -> None:
         """
         Selects the measurement function.
         """

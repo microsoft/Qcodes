@@ -126,7 +126,7 @@ class FormattedSweep(ParameterWithSetpoints):
         return data
 
 
-class PNAPort(InstrumentChannel):
+class KeysightPNAPort(InstrumentChannel):
     """
     Allow operations on individual PNA ports.
     Note: This can be expanded to include a large number of extra parameters...
@@ -167,7 +167,11 @@ class PNAPort(InstrumentChannel):
                                          max_value=max_power)
 
 
-class PNATrace(InstrumentChannel):
+PNAPort = KeysightPNAPort
+"Alis for backwards compatibility"
+
+
+class KeysightPNATrace(InstrumentChannel):
     """
     Allow operations on individual PNA traces.
     """
@@ -353,6 +357,10 @@ class PNATrace(InstrumentChannel):
         self.write(f"CALC:PAR:MOD:EXT \"{val}\"")
 
 
+PNATrace = KeysightPNATrace
+"Alias for backwards compatiblitly"
+
+
 class PNABase(VisaInstrument):
     """
     Base qcodes driver for Agilent/Keysight series PNAs
@@ -380,10 +388,11 @@ class PNABase(VisaInstrument):
                       name, min_power, max_power, min_freq, max_freq)
 
         #Ports
-        ports = ChannelList(self, "PNAPorts", PNAPort)
-        for port_num in range(1, nports+1):
-            port = PNAPort(self, f"port{port_num}", port_num,
-                           min_power, max_power)
+        ports = ChannelList(self, "PNAPorts", KeysightPNAPort)
+        for port_num in range(1, nports + 1):
+            port = KeysightPNAPort(
+                self, f"port{port_num}", port_num, min_power, max_power
+            )
             ports.append(port)
             self.add_submodule(f"port{port_num}", port)
         self.add_submodule("ports", ports.to_channel_tuple())
@@ -557,7 +566,7 @@ class PNABase(VisaInstrument):
                            vals=Numbers(min_value=1, max_value=24))
         # Note: Traces will be accessed through the traces property which
         # updates the channellist to include only active trace numbers
-        self._traces = ChannelList(self, "PNATraces", PNATrace)
+        self._traces = ChannelList(self, "PNATraces", KeysightPNATrace)
         self.add_submodule("traces", self._traces)
         # Add shortcuts to first trace
         trace1 = self.traces[0]
@@ -612,8 +621,7 @@ class PNABase(VisaInstrument):
         self._traces.clear()
         for trace_name in parlist[::2]:
             trace_num = self.select_trace_by_name(trace_name)
-            pna_trace = PNATrace(self, f"tr{trace_num}",
-                                 trace_name, trace_num)
+            pna_trace = KeysightPNATrace(self, f"tr{trace_num}", trace_name, trace_num)
             self._traces.append(pna_trace)
 
         # Restore the active trace if there was one

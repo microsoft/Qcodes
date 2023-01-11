@@ -5,13 +5,15 @@ import numpy as np
 import pytest
 
 from qcodes.instrument_drivers.Keysight.keysightb1500 import constants
-from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1520A import B1520A
+from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1520A import (
+    KeysightB1520A,
+)
 
 
 @pytest.fixture(name="cmu")
 def _make_cmu(mainframe):
     slot_nr = 3
-    cmu = B1520A(parent=mainframe, name='B1520A', slot_nr=slot_nr)
+    cmu = KeysightB1520A(parent=mainframe, name="B1520A", slot_nr=slot_nr)
     # GroupParameter with initial values write at the init so reset the mock
     # to not count those write
     mainframe.reset_mock()

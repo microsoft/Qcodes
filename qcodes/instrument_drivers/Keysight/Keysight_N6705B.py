@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 from qcodes.instrument import Instrument, InstrumentChannel, VisaInstrument
 
 
-class N6705BChannel(InstrumentChannel):
+class KeysightN6705BChannel(InstrumentChannel):
     def __init__(self, parent: Instrument, name: str, chan: int) -> None:
         if chan not in [1, 2, 3, 4]:
             raise ValueError('Invalid channel specified')
@@ -57,13 +57,17 @@ class N6705BChannel(InstrumentChannel):
         self.ch_name = name
 
 
-class N6705B(VisaInstrument):
+N6705BChannel = KeysightN6705BChannel
+"""Alias for backwards compatibility"""
+
+
+class KeysightN6705B(VisaInstrument):
     def __init__(self, name: str, address: str, **kwargs: Any) -> None:
-        super().__init__(name, address, terminator='\n', **kwargs)
-        self.channels:  List[N6705BChannel] = []
+        super().__init__(name, address, terminator="\n", **kwargs)
+        self.channels: List[KeysightN6705BChannel] = []
         for ch_num in [1, 2, 3, 4]:
             ch_name = f"ch{ch_num}"
-            channel = N6705BChannel(self, ch_name, ch_num)
+            channel = KeysightN6705BChannel(self, ch_name, ch_num)
             self.add_submodule(ch_name, channel)
             self.channels.append(channel)
 
@@ -75,3 +79,9 @@ class N6705B(VisaInstrument):
         IDN: Dict[str, Optional[str]] = {'vendor': vendor, 'model': model,
                                          'serial': serial, 'firmware': firmware}
         return IDN
+
+
+class N6705B(KeysightN6705B):
+    """
+    Alias for backwards compatibility.
+    """

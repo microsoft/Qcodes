@@ -16,10 +16,10 @@ from .KeysightB1500_module import (
     parse_module_query_response,
     parse_spot_measurement_response,
 )
-from .KeysightB1511B import B1511B
-from .KeysightB1517A import B1517A, _ParameterWithStatus
-from .KeysightB1520A import B1520A
-from .KeysightB1530A import B1530A
+from .KeysightB1511B import KeysightB1511B
+from .KeysightB1517A import KeysightB1517A, _ParameterWithStatus
+from .KeysightB1520A import KeysightB1520A
+from .KeysightB1530A import KeysightB1530A
 from .message_builder import MessageBuilder
 
 
@@ -137,13 +137,13 @@ class KeysightB1500(VisaInstrument):
             A specific instance of :class:`.B1500Module`
         """
         if model == "B1511B":
-            return B1511B(slot_nr=slot_nr, parent=parent, name=name)
+            return KeysightB1511B(slot_nr=slot_nr, parent=parent, name=name)
         elif model == "B1517A":
-            return B1517A(slot_nr=slot_nr, parent=parent, name=name)
+            return KeysightB1517A(slot_nr=slot_nr, parent=parent, name=name)
         elif model == "B1520A":
-            return B1520A(slot_nr=slot_nr, parent=parent, name=name)
+            return KeysightB1520A(slot_nr=slot_nr, parent=parent, name=name)
         elif model == "B1530A":
-            return B1530A(slot_nr=slot_nr, parent=parent, name=name)
+            return KeysightB1530A(slot_nr=slot_nr, parent=parent, name=name)
         else:
             raise NotImplementedError(f"Module type {model} in slot"
                                       f" {slot_nr} not yet supported.")
@@ -449,7 +449,7 @@ class IVSweepMeasurement(MultiParameter, StatusMixin):
         instrument: Instrument to which this parameter communicates to.
     """
 
-    def __init__(self, name: str, instrument: B1517A, **kwargs: Any):
+    def __init__(self, name: str, instrument: KeysightB1517A, **kwargs: Any):
         super().__init__(
             name,
             names=tuple(['param1', 'param2']),
@@ -462,7 +462,7 @@ class IVSweepMeasurement(MultiParameter, StatusMixin):
             instrument=instrument,
             **kwargs)
 
-        self.instrument: B1517A
+        self.instrument: KeysightB1517A
         self.root_instrument: KeysightB1500
 
         self.param1 = _FMTResponse(None, None, None, None)

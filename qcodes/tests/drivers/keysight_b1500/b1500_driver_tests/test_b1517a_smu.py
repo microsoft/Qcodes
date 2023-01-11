@@ -13,13 +13,15 @@ from qcodes.instrument_drivers.Keysight.keysightb1500.constants import (
     VMeasRange,
     VOutputRange,
 )
-from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1517A import B1517A
+from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1517A import (
+    KeysightB1517A,
+)
 
 
 @pytest.fixture(name="smu")
 def _make_smu(mainframe):
     slot_nr = 1
-    smu = B1517A(parent=mainframe, name='B1517A', slot_nr=slot_nr)
+    smu = KeysightB1517A(parent=mainframe, name="B1517A", slot_nr=slot_nr)
     yield smu
 
 
@@ -31,7 +33,7 @@ def test_snapshot():
     mainframe = InstrumentBase(name='mainframe')
     mainframe.write = MagicMock()
     slot_nr = 1
-    smu = B1517A(parent=mainframe, name='B1517A', slot_nr=slot_nr)
+    smu = KeysightB1517A(parent=mainframe, name="B1517A", slot_nr=slot_nr)
 
     smu.use_high_speed_adc()
     smu.source_config(output_range=VOutputRange.AUTO)
