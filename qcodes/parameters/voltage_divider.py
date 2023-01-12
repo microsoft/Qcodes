@@ -1,13 +1,15 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING
 
 from qcodes.parameters import Parameter
+from qcodes.utils import deprecate
 
 if TYPE_CHECKING:
     from qcodes.instrument import Instrument
 
 
+@deprecate(alternative="DelegateParameter")
 class VoltageDivider(Parameter):
     """
     Resitive voltage divider
