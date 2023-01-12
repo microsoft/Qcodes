@@ -7,6 +7,7 @@ from qcodes.parameters import Parameter
 if TYPE_CHECKING:
     from qcodes.instrument import Instrument
 
+
 class VoltageDivider(Parameter):
     """
     Resitive voltage divider
@@ -72,7 +73,8 @@ class VoltageDivider(Parameter):
             instrument=instrument,
             label=self.label,
             unit=self.v1.unit,
-            metadata=self.v1.metadata)
+            metadata=self.v1.metadata,
+        )
 
         # extend metadata
         self._meta_attrs.extend(["division_value"])
