@@ -24,7 +24,7 @@ class DacReader:
         resp = resp.strip()
         if resp[-1] != "!":
             raise HarvardDecadacException(
-                f"Unexpected terminator on response: {resp}. " f'Should end with "!"'
+                f"Unexpected terminator on response: {resp}. Should end with '!'"
             )
         return resp.strip()[1:-1]
 
@@ -45,9 +45,10 @@ class DacReader:
         # extra check to be absolutely sure that the instrument does nothing
         # receive an out-of-bounds value
         if val > 65535 or val < 0:
-            raise ValueError('Voltage ({} V) resulted in the voltage code {}'
-                             ', which is not within the allowed range.'
-                             ''.format(volt, val))
+            raise ValueError(
+                f"Voltage ({volt} V) resulted in the voltage code {val}"
+                ", which is not within the allowed range."
+            )
         return val
 
     def _dac_code_to_v(self, code):
