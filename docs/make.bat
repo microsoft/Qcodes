@@ -42,6 +42,7 @@ sphinx-apidoc  -o  _auto  -d 10 ..\qcodes ^
     ..\qcodes\instrument_drivers\AlazarTech ^
     ..\qcodes\instrument_drivers\american_magnetics\* ^
     ..\qcodes\instrument_drivers\basel ^
+    ..\qcodes\instrument_drivers\Galil ^
     ..\qcodes\instrument_drivers\HP ^
     ..\qcodes\instrument_drivers\ithaco ^
     ..\qcodes\instrument_drivers\Keithley ^

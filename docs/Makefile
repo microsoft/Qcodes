@@ -31,6 +31,7 @@ genapi:
 		../qcodes/instrument_drivers/AimTTi \
 		../qcodes/instrument_drivers/AlazarTech \
 		../qcodes/instrument_drivers/basel \
+		../qcodes/instrument_drivers/Galil \
 		../qcodes/instrument_drivers/HP \
 		../qcodes/instrument_drivers/ithaco \
 		../qcodes/instrument_drivers/Keithley \
