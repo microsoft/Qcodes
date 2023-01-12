@@ -1,8 +1,11 @@
-from typing import Optional, Union
+from __future__ import annotations
 
-from qcodes.instrument import Instrument
+from typing import TYPE_CHECKING, Optional, Union
+
 from qcodes.parameters import Parameter
 
+if TYPE_CHECKING:
+    from qcodes.instrument import Instrument
 
 class VoltageDivider(Parameter):
     """
@@ -44,12 +47,14 @@ class VoltageDivider(Parameter):
             but attaches _attenuated
     """
 
-    def __init__(self,
-                 v1: Parameter,
-                 division_value: Union[int, float],
-                 name: Optional[str] = None,
-                 label: Optional[str] = None,
-                 instrument: Union[None, Instrument] = None) -> None:
+    def __init__(
+        self,
+        v1: Parameter,
+        division_value: int | float,
+        name: str | None = None,
+        label: str | None = None,
+        instrument: None | Instrument = None,
+    ) -> None:
         self.v1 = v1
         self.division_value = division_value
         if label:
@@ -72,11 +77,11 @@ class VoltageDivider(Parameter):
         # extend metadata
         self._meta_attrs.extend(["division_value"])
 
-    def set_raw(self, value: Union[int, float]) -> None:
+    def set_raw(self, value: int | float) -> None:
         instrument_value = value * self.division_value
         self.v1.set(instrument_value)
 
-    def get_raw(self) -> Union[int, float]:
+    def get_raw(self) -> int | float:
         """
         Returns:
             value at which was set at the sample
@@ -84,7 +89,7 @@ class VoltageDivider(Parameter):
         value = self.v1.get() / self.division_value
         return value
 
-    def get_instrument_value(self) -> Union[int, float]:
+    def get_instrument_value(self) -> int | float:
         """
         Returns:
             value at which the attached parameter is (i.e. does
