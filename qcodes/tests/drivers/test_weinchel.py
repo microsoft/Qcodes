@@ -1,5 +1,5 @@
-from qcodes.instrument_drivers.test import DriverTestCase
 from qcodes.instrument_drivers.weinschel import Weinschel8320
+from qcodes.tests.driver_test_case import DriverTestCase
 
 
 class TestWeinschel8320(DriverTestCase):
