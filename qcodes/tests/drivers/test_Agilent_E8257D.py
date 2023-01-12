@@ -1,5 +1,5 @@
 from qcodes.instrument_drivers.agilent import AgilentE8257D
-from qcodes.instrument_drivers.test import DriverTestCase
+from qcodes.tests.driver_test_case import DriverTestCase
 
 
 class TestAgilentE8257D(DriverTestCase):
