@@ -172,8 +172,8 @@ class DacReader:
         self.ask_raw(f"{write_command}{val};")   # type: ignore[attr-defined]
         # Check the write was successful
         if (
-            int(self._dac_parse(self.ask_raw(query_command))) != val
-        ):  # type: ignore[attr-defined]
+            int(self._dac_parse(self.ask_raw(query_command))) != val  # type: ignore[attr-defined]
+        ):
             raise HarvardDecadacException(
                 f"Failed to write value ({val}) to " f"address {addr}."
             )
