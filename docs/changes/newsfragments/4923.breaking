@@ -1,0 +1,3 @@
+`qcodes.instrument_drivers.VoltageDivider` and `qcodes.instrument_drivers.devices.VoltageDivider` has
+been deprecated. Its functionality is better implemented in `qcodes.parameters.DelegateParameter` which
+is also significantly better tested and more general.
