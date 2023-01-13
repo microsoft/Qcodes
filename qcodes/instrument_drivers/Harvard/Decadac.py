@@ -175,7 +175,7 @@ class DacReader:
             int(self._dac_parse(self.ask_raw(query_command))) != val  # type: ignore[attr-defined]
         ):
             raise HarvardDecadacException(
-                f"Failed to write value ({val}) to " f"address {addr}."
+                f"Failed to write value ({val}) to address {addr}."
             )
 
 
