@@ -33,6 +33,7 @@ genapi:
 		../qcodes/instrument_drivers/basel \
 		../qcodes/instrument_drivers/Galil \
 		../qcodes/instrument_drivers/HP \
+		../qcodes/instrument_drivers/Harvard \
 		../qcodes/instrument_drivers/ithaco \
 		../qcodes/instrument_drivers/Keithley \
 		../qcodes/instrument_drivers/keysight \

@@ -8,9 +8,11 @@ from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
 number = Union[float, int]
 
 
-class DACException(Exception):
+class HarvardDecadacException(Exception):
     pass
 
+
+DACException = HarvardDecadacException
 
 class DacReader:
     @staticmethod
@@ -21,8 +23,9 @@ class DacReader:
         """
         resp = resp.strip()
         if resp[-1] != "!":
-            raise DACException(f'Unexpected terminator on response: {resp}. '
-                               f'Should end with "!"')
+            raise HarvardDecadacException(
+                f"Unexpected terminator on response: {resp}. Should end with '!'"
+            )
         return resp.strip()[1:-1]
 
     def _dac_v_to_code(self, volt):
@@ -42,9 +45,10 @@ class DacReader:
         # extra check to be absolutely sure that the instrument does nothing
         # receive an out-of-bounds value
         if val > 65535 or val < 0:
-            raise ValueError('Voltage ({} V) resulted in the voltage code {}'
-                             ', which is not within the allowed range.'
-                             ''.format(volt, val))
+            raise ValueError(
+                f"Voltage ({volt} V) resulted in the voltage code {val}"
+                ", which is not within the allowed range."
+            )
         return val
 
     def _dac_code_to_v(self, code):
@@ -62,8 +66,10 @@ class DacReader:
         """
         resp = self.ask_raw(f"B{self._slot};")
         if int(self._dac_parse(resp)) != self._slot:
-            raise DACException("Unexpected return from DAC when setting slot: "
-                               f"{resp}. DAC slot may not have been set.")
+            raise HarvardDecadacException(
+                "Unexpected return from DAC when setting slot: "
+                f"{resp}. DAC slot may not have been set."
+            )
 
     def _set_channel(self):
         """
@@ -71,9 +77,11 @@ class DacReader:
         """
         resp = self.ask_raw(f"B{self._slot};C{self._channel};")
         if resp.strip() != f"B{self._slot}!C{self._channel}!":
-            raise DACException(f"Unexpected return from DAC when setting "
-                               f"channel: {resp}. DAC channel may not have "
-                               f"been set.")
+            raise HarvardDecadacException(
+                f"Unexpected return from DAC when setting "
+                f"channel: {resp}. DAC channel may not have "
+                f"been set."
+            )
 
     def _query_address(self, addr: int, count: int=1,
                        versa_eeprom: bool=False):
@@ -95,7 +103,7 @@ class DacReader:
         # Validate address
         addr = int(addr)
         if addr < 0 or addr > 1107296266:
-            raise DACException(f"Invalid address {addr}.")
+            raise HarvardDecadacException(f"Invalid address {addr}.")
 
         # Choose a poke command depending on whether we are querying a
         # VERSADAC eeprom or main memory
@@ -113,7 +121,7 @@ class DacReader:
             ret = int(self._dac_parse(
                 self.ask_raw(f"A{addr};")))  # type: ignore[attr-defined]
             if ret != addr:
-                raise DACException(f"Failed to set EEPROM address {addr}.")
+                raise HarvardDecadacException(f"Failed to set EEPROM address {addr}.")
             val += int(self._dac_parse(self.ask_raw(  # type: ignore[attr-defined]
                 query_command))) << (32*(count-i-1))
             addr += 1
@@ -136,13 +144,14 @@ class DacReader:
         # Validate address
         addr = int(addr)
         if addr < 0 or addr > 1107296266:
-            raise DACException(f"Invalid address {addr}.")
+            raise HarvardDecadacException(f"Invalid address {addr}.")
 
         # Validate value
         val = int(val)
         if val < 0 or val >= 2**32:
-            raise DACException(f"Writing invalid value "
-                               f"({val}) to address {addr}.")
+            raise HarvardDecadacException(
+                f"Writing invalid value " f"({val}) to address {addr}."
+            )
 
         # Choose a poke command depending on whether we are querying a
         # VERSADAC eeprom or main memory. If we are writing to a versadac
@@ -159,16 +168,18 @@ class DacReader:
         # Set DAC to point to address
         ret = int(self._dac_parse(self.ask_raw(f"A{addr};")))   # type: ignore[attr-defined]
         if ret != addr:
-            raise DACException(f"Failed to set EEPROM address {addr}.")
+            raise HarvardDecadacException(f"Failed to set EEPROM address {addr}.")
         self.ask_raw(f"{write_command}{val};")   # type: ignore[attr-defined]
         # Check the write was successful
-        if int(self._dac_parse(
-                self.ask_raw(query_command))) != val:   # type: ignore[attr-defined]
-            raise DACException(f"Failed to write value ({val}) to "
-                               f"address {addr}.")
+        if (
+            int(self._dac_parse(self.ask_raw(query_command))) != val  # type: ignore[attr-defined]
+        ):
+            raise HarvardDecadacException(
+                f"Failed to write value ({val}) to address {addr}."
+            )
 
 
-class DacChannel(InstrumentChannel, DacReader):
+class HarvardDecadacChannel(InstrumentChannel, DacReader):
     """
     A single DAC channel of the DECADAC
     """
@@ -341,7 +352,10 @@ class DacChannel(InstrumentChannel, DacReader):
         return self.ask_raw(cmd)
 
 
-class DacSlot(InstrumentChannel, DacReader):
+DacChannel = HarvardDecadacChannel
+
+
+class HarvardDecadacSlot(InstrumentChannel, DacReader):
     """
     A single DAC Slot of the DECADAC
     """
@@ -404,12 +418,14 @@ class DacSlot(InstrumentChannel, DacReader):
         self._set_slot()
         return self.ask_raw(cmd)
 
+DacSlot = HarvardDecadacSlot
 
-class Decadac(VisaInstrument, DacReader):
+
+class HarvardDecadac(VisaInstrument, DacReader):
     """
     The qcodes driver for the Decadac.
 
-    Tested with a Decadec firmware revion number 14081 (Decadac 139).
+    Tested with a Decadac firmware revion number 14081 (Decadac 139).
 
     The message strategy is the following: always keep the queue empty, so
     that self.visa_handle.ask(XXX) will return the answer to XXX and not
@@ -422,8 +438,9 @@ class Decadac(VisaInstrument, DacReader):
 
         _ramp_time (int): The ramp time in ms. Default 100 ms.
     """
-    DAC_CHANNEL_CLASS = DacChannel
-    DAC_SLOT_CLASS = DacSlot
+
+    DAC_CHANNEL_CLASS = HarvardDecadacChannel
+    DAC_SLOT_CLASS = HarvardDecadacSlot
 
     def __init__(self, name: str, address: str,
                  min_val: number=-5, max_val: number=5,
@@ -547,7 +564,7 @@ class Decadac(VisaInstrument, DacReader):
                 self._EEPROM_available = True
             else:
                 self._EEPROM_available = False
-        except DACException:
+        except HarvardDecadacException:
             self._EEPROM_available = False
 
         # Check whether we can set startup values for the DAC.
@@ -563,14 +580,14 @@ class Decadac(VisaInstrument, DacReader):
             self._slot = 0
             self._query_address(6, versa_eeprom=True)
             del self._slot
-        except DACException:
+        except HarvardDecadacException:
             pass
 
         # Check whether calibration is supported
         try:
             if self._dac_parse(self.ask("k;")):
                 self._cal_supported = True
-        except DACException:
+        except HarvardDecadacException:
             self._cal_supported = False
 
         # Finally try and read the DAC version and S/N.
@@ -589,3 +606,6 @@ class Decadac(VisaInstrument, DacReader):
         all writes must also read a response.
         """
         return self.ask(cmd)
+
+
+Decadac = HarvardDecadac
