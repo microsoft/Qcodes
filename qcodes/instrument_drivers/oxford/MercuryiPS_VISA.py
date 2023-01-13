@@ -52,9 +52,9 @@ def _signal_parser(our_scaling: float, response: str) -> float:
     return float(digits)*their_scaling*our_scaling
 
 
-class MercuryWorkerPS(InstrumentChannel):
+class OxfordMercuryWorkerPS(InstrumentChannel):
     """
-    Class to hold a worker power supply for the MercuryiPS
+    Class to hold a worker power supply for the Oxford MercuryiPS
     """
 
     def __init__(self, parent: VisaInstrument, name: str, UID: str) -> None:
@@ -207,7 +207,13 @@ class MercuryWorkerPS(InstrumentChannel):
         #  the intended value
 
 
-class MercuryiPS(VisaInstrument):
+MercuryWorkerPS = OxfordMercuryWorkerPS
+"""
+Alias for backwards compatibility
+"""
+
+
+class OxfordMercuryiPS(VisaInstrument):
     """
     Driver class for the QCoDeS Oxford Instruments MercuryiPS magnet power
     supply
@@ -259,7 +265,7 @@ class MercuryiPS(VisaInstrument):
         # TODO: Query instrument to ensure which PSUs are actually present
         for grp in ['GRPX', 'GRPY', 'GRPZ']:
             psu_name = grp
-            psu = MercuryWorkerPS(self, psu_name, grp)
+            psu = OxfordMercuryWorkerPS(self, psu_name, grp)
             self.add_submodule(psu_name, psu)
 
         self._field_limits = (field_limits if field_limits else
@@ -387,7 +393,7 @@ class MercuryiPS(VisaInstrument):
         # actually assign the target on the workers
         cartesian_targ = self._target_vector.get_components('x', 'y', 'z')
         for targ, worker in zip(cartesian_targ, self.submodules.values()):
-            if not isinstance(worker, MercuryWorkerPS):
+            if not isinstance(worker, OxfordMercuryWorkerPS):
                 raise RuntimeError(f"Expected a MercuryWorkerPS but got "
                                    f"{type(worker)}")
             worker.field_target(targ)
@@ -418,7 +424,7 @@ class MercuryiPS(VisaInstrument):
         out of your safe region. Use with care.
         """
         for worker in self.submodules.values():
-            if not isinstance(worker, MercuryWorkerPS):
+            if not isinstance(worker, OxfordMercuryWorkerPS):
                 raise RuntimeError(f"Expected a MercuryWorkerPS but got "
                                    f"{type(worker)}")
             worker.ramp_to_target()
@@ -432,7 +438,7 @@ class MercuryiPS(VisaInstrument):
         self._ramp_simultaneously()
 
         for worker in self.submodules.values():
-            if not isinstance(worker, MercuryWorkerPS):
+            if not isinstance(worker, OxfordMercuryWorkerPS):
                 raise RuntimeError(f"Expected a MercuryWorkerPS but got "
                                    f"{type(worker)}")
             # wait for the ramp to finish, we don't care about the order
@@ -527,7 +533,7 @@ class MercuryiPS(VisaInstrument):
         meas_vals = cast(List[float], meas_vals)
 
         for cur, worker in zip(meas_vals, self.submodules.values()):
-            if not isinstance(worker, MercuryWorkerPS):
+            if not isinstance(worker, OxfordMercuryWorkerPS):
                 raise RuntimeError(f"Expected a MercuryWorkerPS but got "
                                    f"{type(worker)}")
             if worker.field_target() != cur:
@@ -575,3 +581,7 @@ class MercuryiPS(VisaInstrument):
             base_resp = resp.replace(f'STAT:{base_cmd}', '')
 
         return base_resp
+
+
+MercuryiPS = OxfordMercuryiPS
+"""Alias for backwards compatibility"""

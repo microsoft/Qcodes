@@ -37,6 +37,7 @@ genapi:
 		../qcodes/instrument_drivers/Keithley \
 		../qcodes/instrument_drivers/keysight \
 		../qcodes/instrument_drivers/Keysight \
+		../qcodes/instrument_drivers/oxford \
 		../qcodes/instrument_drivers/Lakeshore \
 		../qcodes/instrument_drivers/QDev/* \
 		../qcodes/instrument_drivers/QuantumDesign/* \
