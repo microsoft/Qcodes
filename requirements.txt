@@ -4,7 +4,7 @@
 # This should contain all post 1.0.0 packages constrained to a minor version e.g. with ~=
 # and all pre 1.0.0 pacakges and packages not using a
 # 3 part version number to an exact version using ==
-alabaster==0.7.12
+alabaster==0.7.13
 argon2-cffi~=21.3.0
 argon2-cffi-bindings~=21.2.0
 asttokens~=2.2.0
@@ -168,7 +168,7 @@ typing_extensions~=4.4.0
 uncertainties~=3.1.7
 urllib3~=1.26.12
 versioningit~=2.1.0
-wcwidth==0.2.5
+wcwidth==0.2.6
 webencodings==0.5.1
 websockets~=10.3
 widgetsnbextension~=4.0.3
