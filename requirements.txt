@@ -4,7 +4,7 @@
 # This should contain all post 1.0.0 packages constrained to a minor version e.g. with ~=
 # and all pre 1.0.0 pacakges and packages not using a
 # 3 part version number to an exact version using ==
-alabaster==0.7.12
+alabaster==0.7.13
 argon2-cffi~=21.3.0
 argon2-cffi-bindings~=21.2.0
 asttokens~=2.2.0
