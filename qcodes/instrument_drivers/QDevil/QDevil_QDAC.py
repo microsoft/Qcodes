@@ -17,6 +17,7 @@ from pyvisa.resources.serial import SerialInstrument
 from qcodes import validators as vals
 from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
 from qcodes.parameters import MultiChannelInstrumentParameter, ParamRawDataType
+from qcodes.utils import deprecate
 
 LOG = logging.getLogger(__name__)
 
@@ -188,6 +189,7 @@ class QDacMultiChannelParameter(MultiChannelInstrumentParameter):
         return output
 
 
+@deprecate(alternative="QDevil QDAC 1 driver in qcodes_contrib_drivers.")
 class QDac(VisaInstrument):
     """
     Channelised driver for the QDevil QDAC voltage source.
