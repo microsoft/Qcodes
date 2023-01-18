@@ -1,0 +1,1 @@
+The Minicircuits USB SPDT driver now supports running with the more modern version of the driver DLL `mcl_RF_Switch_Controller_NET45.dll`

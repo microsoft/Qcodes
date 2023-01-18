@@ -37,7 +37,8 @@ class USB_SPDT(SPDT_Base):
     """
 
     CHANNEL_CLASS = SwitchChannelUSB
-    PATH_TO_DRIVER = r'mcl_RF_Switch_Controller64'
+    PATH_TO_DRIVER = r"mcl_RF_Switch_Controller64"
+    PATH_TO_DRIVER_45 = r"mcl_RF_Switch_Controller_NET45"
 
     def __init__(self, name: str, driver_path: Optional[str] = None,
                  serial_number: Optional[str] = None, **kwargs: Any):
@@ -57,19 +58,26 @@ class USB_SPDT(SPDT_Base):
             raise ImportError("""This driver only works in Windows.""")
         try:
             if driver_path is None:
-                clr.AddReference(self.PATH_TO_DRIVER)
+                try:
+                    clr.AddReference(self.PATH_TO_DRIVER)
+                except FileNotFoundError:
+                    clr.AddReference(self.PATH_TO_DRIVER_45)
             else:
                 clr.AddReference(driver_path)
 
         except (ImportError, FileNotFoundException):
             raise ImportError(
-                """Load of mcl_RF_Switch_Controller64.dll not possible. Make sure
-                the dll file is not blocked by Windows. To unblock right-click
-                the dll to open properties and check the 'unblock' checkmark
+                """Load of mcl_RF_Switch_Controller64.dll or mcl_RF_Switch_Controller_NET45.dll
+                not possible. Make sure the dll file is not blocked by Windows.
+                To unblock right-click the dll to open properties and check the 'unblock' checkmark
                 in the bottom. Check that your python installation is 64bit."""
             )
-        import mcl_RF_Switch_Controller64  # pyright: ignore[reportMissingImports]
-        self.switch = mcl_RF_Switch_Controller64.USB_RF_SwitchBox()
+        try:
+            import mcl_RF_Switch_Controller64 as mw_driver  # pyright: ignore[reportMissingImports]
+        except ImportError:
+            import mcl_RF_Switch_Controller_NET45 as mw_driver  # pyright: ignore[reportMissingImports]
+
+        self.switch = mw_driver.USB_RF_SwitchBox()
 
         if not self.switch.Connect(serial_number):
             raise RuntimeError('Could not connect to device')
