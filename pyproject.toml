@@ -211,6 +211,7 @@ module = [
     "lomentum.tools",
     "matplotlib.*",
     "mcl_RF_Switch_Controller64",
+    "mcl_RF_Switch_Controller_NET45",
     "opencensus.ext.azure.*",
     "pythoncom",
     "pyqtgraph.*",
