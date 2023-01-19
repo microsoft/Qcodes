@@ -1,0 +1,4 @@
+Remove deprecated Mercury iPS driver
+``qcodes.instrument_drivers.oxford.mercuryiPS.MercuryiPS``,
+use ``qcodes.instrument_drivers.oxford.OxfordMercuryiPS``
+instead.
