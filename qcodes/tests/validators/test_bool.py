@@ -15,7 +15,7 @@ NOTBOOLS = [0, 1, 10, -1, 100, 1000000, int(-1e15), int(1e15),
             AClass, AClass(), a_func]
 
 
-def test_bool():
+def test_bool() -> None:
     b = Bool()
 
     for v in BOOLS:
@@ -28,7 +28,7 @@ def test_bool():
         assert repr(b) == '<Boolean>'
 
 
-def test_valid_bool_values():
+def test_valid_bool_values() -> None:
     val = Bool()
     for vval in val.valid_values:
         val.validate(vval)
