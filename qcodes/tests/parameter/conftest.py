@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections import namedtuple
 from typing import Any, Generator, Optional
 
@@ -159,7 +161,7 @@ class VirtualParameter(Parameter):
         super().__init__(name=name, **kwargs)
 
     @property
-    def underlying_instrument(self) -> Optional[InstrumentBase]:
+    def underlying_instrument(self) -> InstrumentBase | None:
         return self._param.instrument
 
     def get_raw(self):

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import time
 from functools import partial
@@ -838,7 +840,7 @@ def setpoint_generator(
     Returns:
 
     """
-    setpoints: List[np.ndarray | Sequence[float]] = []
+    setpoints: list[np.ndarray | Sequence[float]] = []
     for i, sp_base in enumerate(sp_bases):
         if i == 0:
             setpoints.append(sp_base)
@@ -889,9 +891,11 @@ class SnapShotTestInstrument(DummyBase):
         self._get_calls[name] += 1
         return val
 
-    def snapshot_base(self, update: Optional[bool] = True,
-                      params_to_skip_update: Optional[Sequence[str]] = None
-                      ) -> Dict[Any, Any]:
+    def snapshot_base(
+        self,
+        update: bool | None = True,
+        params_to_skip_update: Sequence[str] | None = None,
+    ) -> dict[Any, Any]:
         if params_to_skip_update is None:
             params_to_skip_update = self._params_to_skip
         snap = super().snapshot_base(
@@ -926,8 +930,8 @@ class MockField(DummyBase):
                            initial_value=0.1,
                            unit='T/min',
                            get_cmd=None, set_cmd=None)
-        self._ramp_start_time: Optional[float] = None
-        self._wait_time: Optional[float] = None
+        self._ramp_start_time: float | None = None
+        self._wait_time: float | None = None
         self._fr = self._field_ramp()
         next(self._fr)
 
@@ -1084,8 +1088,8 @@ class MockCustomChannel(InstrumentChannel):
         self,
         parent: InstrumentBase,
         name: str,
-        channel: Union[str, InstrumentChannel],
-        current_valid_range: Optional[Sequence[float]] = None,
+        channel: str | InstrumentChannel,
+        current_valid_range: Sequence[float] | None = None,
     ) -> None:
         """
         A custom instrument channel emulating an existing channel.
