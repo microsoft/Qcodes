@@ -59,6 +59,7 @@ jobs:
     - name: install qcodes
       run: |
         pip install .[test] -c requirements.txt
+    - uses: jakebailey/pyright-action@v1.4.2
     - name: Run Mypy
       run: mypy -p qcodes
     - name: Run parallel tests
