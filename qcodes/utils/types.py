@@ -5,6 +5,11 @@ from typing import Tuple, Union
 
 import numpy as np
 
+complex_type_union = Union[
+    np.complex64, np.complex128, np.complex_, np.complexfloating, complex
+]
+
+
 numpy_concrete_ints = (np.int8, np.int16, np.int32, np.int64,
                        np.uint8, np.uint16, np.uint32, np.uint64)
 """
@@ -66,7 +71,7 @@ numpy_non_concrete_complex_instantiable = (np.complex_, )
 Default complex types. The size may be platform dependent.
 """
 
-numpy_complex = (
+numpy_complex: tuple[type[complex_type_union], ...] = (
         numpy_concrete_complex +
         numpy_c_complex +
         numpy_non_concrete_complex_instantiable
@@ -81,8 +86,3 @@ complex_types = (
         numpy_non_concrete_complex_instantiable +
         (complex,)
 )
-
-# These are the same types as a above unfortunately there does not seem to be
-# a good way to convert a tuple of types to a Union
-complex_type_union = Union[np.complex64, np.complex128,
-                           np.complex_, np.complexfloating, complex]
