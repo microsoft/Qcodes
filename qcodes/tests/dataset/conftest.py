@@ -9,6 +9,7 @@ import numpy as np
 import pytest
 
 import qcodes as qc
+from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 from qcodes.dataset.measurements import Measurement
@@ -203,6 +204,7 @@ def array_dataset(experiment, request):
     try:
         yield datasaver.dataset
     finally:
+        assert isinstance(datasaver.dataset, DataSet)
         datasaver.dataset.conn.close()
 
 
@@ -235,6 +237,7 @@ def array_dataset_with_nulls(experiment, request):
     try:
         yield datasaver.dataset
     finally:
+        assert isinstance(datasaver.dataset, DataSet)
         datasaver.dataset.conn.close()
 
 
@@ -251,6 +254,7 @@ def multi_dataset(experiment, request):
     try:
         yield datasaver.dataset
     finally:
+        assert isinstance(datasaver.dataset, DataSet)
         datasaver.dataset.conn.close()
 
 
@@ -267,6 +271,7 @@ def different_setpoint_dataset(experiment, request):
     try:
         yield datasaver.dataset
     finally:
+        assert isinstance(datasaver.dataset, DataSet)
         datasaver.dataset.conn.close()
 
 
@@ -287,6 +292,7 @@ def array_in_scalar_dataset(experiment):
     try:
         yield datasaver.dataset
     finally:
+        assert isinstance(datasaver.dataset, DataSet)
         datasaver.dataset.conn.close()
 
 
@@ -308,6 +314,7 @@ def varlen_array_in_scalar_dataset(experiment):
     try:
         yield datasaver.dataset
     finally:
+        assert isinstance(datasaver.dataset, DataSet)
         datasaver.dataset.conn.close()
 
 
@@ -334,6 +341,7 @@ def array_in_scalar_dataset_unrolled(experiment):
     try:
         yield datasaver.dataset
     finally:
+        assert isinstance(datasaver.dataset, DataSet)
         datasaver.dataset.conn.close()
 
 
@@ -355,6 +363,7 @@ def array_in_str_dataset(experiment, request):
     try:
         yield datasaver.dataset
     finally:
+        assert isinstance(datasaver.dataset, DataSet)
         datasaver.dataset.conn.close()
 
 
@@ -690,6 +699,7 @@ class ArrayshapedParam(Parameter):
         super().__init__(*args, **kwargs)
 
     def get_raw(self):
+        assert isinstance(self.vals, Arrays)
         shape = self.vals.shape
 
         return np.random.rand(*shape)
