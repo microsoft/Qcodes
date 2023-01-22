@@ -483,11 +483,13 @@ def complex_num_instrument():
     class MyParam(Parameter):
 
         def get_raw(self):
+            assert self.instrument is not None
             return self.instrument.setpoint() + 1j*self.instrument.setpoint()
 
     class RealPartParam(Parameter):
 
         def get_raw(self):
+            assert self.instrument is not None
             return self.instrument.complex_setpoint().real
 
     dummyinst = DummyInstrument('dummy_channel_inst', gates=())
