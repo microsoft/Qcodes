@@ -237,14 +237,14 @@ class _ParameterWithStatus(Parameter):
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
 
-        self._measurement_status: Optional[MeasurementStatus] = None
+        self._measurement_status: Optional[Keithley2600MeasurementStatus] = None
 
     @property
-    def measurement_status(self) -> Optional[MeasurementStatus]:
+    def measurement_status(self) -> Optional[Keithley2600MeasurementStatus]:
         return self._measurement_status
 
     @staticmethod
-    def _parse_response(data: str) -> Tuple[float, MeasurementStatus]:
+    def _parse_response(data: str) -> Tuple[float, Keithley2600MeasurementStatus]:
         value, meas_status = data.split("\t")
 
         status_bits = [
