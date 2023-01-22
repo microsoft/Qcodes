@@ -212,7 +212,6 @@ class DmmExponentialParameter(Parameter):
         assert isinstance(self.root_instrument, DummyInstrumentWithMeasurement)
         dac = self.root_instrument._setter_instr
         val = self._ed.send(dac.ch1.cache.get())
-        next(self._ed)
         if self.root_instrument is not None:
             mylogger = self.root_instrument.log
         else:
@@ -248,7 +247,6 @@ class DmmGaussParameter(Parameter):
         assert isinstance(self.root_instrument, DummyInstrumentWithMeasurement)
         dac = self.root_instrument._setter_instr
         val = self._gauss.send((dac.ch1.cache.get(), dac.ch2.cache.get()))
-        # next(self._gauss)
         if self.root_instrument is not None:
             mylogger = self.root_instrument.log
         else:
@@ -941,7 +939,6 @@ class MockField(DummyBase):
         if self._ramp_start_time:
             _time_since_start = time.time() - self._ramp_start_time
             val = self._fr.send(_time_since_start)
-            next(self._fr)
             self._field = val
         return self._field
 
