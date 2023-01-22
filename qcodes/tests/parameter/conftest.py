@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import namedtuple
-from typing import Any, Generator, Optional
+from typing import Any, Generator
 
 import pytest
 
