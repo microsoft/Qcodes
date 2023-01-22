@@ -826,7 +826,7 @@ class DummyParameterWithSetpointsComplex(ParameterWithSetpoints):
 
 
 def setpoint_generator(
-    *sp_bases: Sequence[float],
+    *sp_bases: Sequence[float] | np.ndarray,
 ) -> tuple[np.ndarray | Sequence[float], ...]:
     """
     Helper function to generate setpoints in the format that ArrayParameter
