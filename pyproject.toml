@@ -181,8 +181,6 @@ module = [
     "qcodes.instrument.mockers.ami430",
     "qcodes.instrument_drivers.Harvard.*",
     "qcodes.instrument_drivers.Keysight.keysightb1500.message_builder.*",
-    "qcodes.instrument_drivers.oxford.mercuryiPS",
-    "qcodes.instrument_drivers.test",
     "qcodes.loops",
     "qcodes.math_utils.*",
     "qcodes.measure",
@@ -233,10 +231,8 @@ ignore_missing_imports = true
 include = ["qcodes"]
 ignore = [
     "qcodes/tests",
-    "qcodes/instrument_drivers/test.py",
     "qcodes/instrument_drivers/zurich_instruments",
     "qcodes/instrument_drivers/Harvard/Decadac.py",
-    "qcodes/instrument_drivers/oxford/mercuryiPS.py",
     "qcodes/actions.py",
     "qcodes/data",
     "qcodes/loops.py",

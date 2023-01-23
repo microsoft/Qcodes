@@ -5,7 +5,7 @@ import logging
 import time
 import weakref
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, Protocol, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Protocol, TypeVar, cast, overload
 
 from qcodes.utils import strip_attrs
 from qcodes.validators import Anything
@@ -258,6 +258,16 @@ class Instrument(InstrumentBase, metaclass=InstrumentMeta):
         for name, ref in list(all_ins.items()):
             if ref is instance:
                 del all_ins[name]
+
+    @overload
+    @classmethod
+    def find_instrument(cls, name: str, instrument_class: None = None) -> Instrument:
+        ...
+
+    @overload
+    @classmethod
+    def find_instrument(cls, name: str, instrument_class: type[T]) -> T:
+        ...
 
     @classmethod
     def find_instrument(cls, name: str, instrument_class: type[T] | None = None) -> T:
