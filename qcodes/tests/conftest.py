@@ -4,7 +4,7 @@ import copy
 import gc
 import os
 import sys
-import tempfile
+from pathlib import Path
 from typing import TYPE_CHECKING, Generator
 
 import pytest
@@ -13,9 +13,10 @@ from hypothesis import settings
 import qcodes as qc
 from qcodes.configuration import Config
 from qcodes.dataset import initialise_database, new_data_set
+from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
-from qcodes.dataset.experiment_container import new_experiment
+from qcodes.dataset.experiment_container import Experiment, new_experiment
 
 settings.register_profile("ci", deadline=1000)
 
@@ -24,11 +25,11 @@ n_experiments = 0
 if TYPE_CHECKING:
     from qcodes.configuration import DotDict
 
-def pytest_configure(config):
+def pytest_configure(config: pytest.Config) -> None:
     config.addinivalue_line("markers", "win32: tests that only run under windows")
 
 
-def pytest_runtest_setup(item):
+def pytest_runtest_setup(item: pytest.Item) -> None:
     ALL = set("darwin linux win32".split())
     supported_platforms = ALL.intersection(mark.name for mark in item.iter_markers())
     if supported_platforms and sys.platform not in supported_platforms:
@@ -36,7 +37,7 @@ def pytest_runtest_setup(item):
 
 
 @pytest.fixture(scope="session", autouse=True)
-def disable_telemetry():
+def disable_telemetry() -> Generator[None, None, None]:
     """
     We do not want the tests to send up telemetric information, so we disable
     that with this fixture.
@@ -52,7 +53,7 @@ def disable_telemetry():
 
 
 @pytest.fixture(scope="function")
-def default_config(tmp_path) -> Generator[None, None, None]:
+def default_config(tmp_path: Path) -> Generator[None, None, None]:
     """
     Fixture to temporarily establish default config settings.
     This is achieved by overwriting the config paths of the user-,
@@ -110,7 +111,7 @@ def reset_config_on_exit() -> Generator[None, None, None]:
 
 
 @pytest.fixture(scope="session", autouse=True)
-def disable_config_subscriber():
+def disable_config_subscriber() -> Generator[None, None, None]:
     """
     We do not want the tests to send generate subscription events unless specifically
     enabled in the test. So disable any default subscriber defined.
@@ -126,7 +127,7 @@ def disable_config_subscriber():
 
 
 @pytest.fixture(scope="function", name="empty_temp_db")
-def _make_empty_temp_db(tmp_path):
+def _make_empty_temp_db(tmp_path: Path) -> Generator[None, None, None]:
     global n_experiments
     n_experiments = 0
     # create a temp database for testing
@@ -147,8 +148,11 @@ def _make_empty_temp_db(tmp_path):
         gc.collect()
 
 
+# note that you cannot use mark.usefixtures in a fixture
+# so empty_temp_db needs to be passed to this fixture
+# even if unused https://github.com/pytest-dev/pytest/issues/3664
 @pytest.fixture(scope="function", name="experiment")
-def _make_experiment(empty_temp_db):
+def _make_experiment(empty_temp_db: None) -> Generator[Experiment, None, None]:
     e = new_experiment("test-experiment", sample_name="test-sample")
     try:
         yield e
@@ -157,7 +161,7 @@ def _make_experiment(empty_temp_db):
 
 
 @pytest.fixture(scope="function", name="dataset")
-def _make_dataset(experiment):
+def _make_dataset(experiment: Experiment) -> Generator[DataSet, None, None]:
     dataset = new_data_set("test-dataset")
     try:
         yield dataset
@@ -167,7 +171,9 @@ def _make_dataset(experiment):
 
 
 @pytest.fixture(name="standalone_parameters_dataset")
-def _make_standalone_parameters_dataset(dataset):
+def _make_standalone_parameters_dataset(
+    dataset: DataSet,
+) -> Generator[DataSet, None, None]:
     n_params = 3
     n_rows = 10 ** 3
     params_indep = [

@@ -52,6 +52,7 @@ sphinx-apidoc  -o  _auto  -d 10 ..\qcodes ^
     ..\qcodes\instrument_drivers\oxford ^
     ..\qcodes\instrument_drivers\QuantumDesign\* ^
     ..\qcodes\instrument_drivers\QDev\* ^
+    ..\qcodes\instrument_drivers\QDevil\* ^
     ..\qcodes\instrument_drivers\rigol\* ^
     ..\qcodes\instrument_drivers\rohde_schwarz\* ^
     ..\qcodes\instrument_drivers\stahl\* ^

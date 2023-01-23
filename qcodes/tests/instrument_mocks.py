@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import logging
 import time
 from functools import partial
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import Any, Generator, Sequence, Union
 
 import numpy as np
 
@@ -11,6 +13,7 @@ from qcodes.parameters import (
     MultiParameter,
     Parameter,
     ParameterWithSetpoints,
+    ParamRawDataType,
 )
 from qcodes.validators import Arrays, ComplexNumbers, Numbers, OnOff
 from qcodes.validators import Sequence as ValidatorSequence
@@ -20,7 +23,7 @@ log = logging.getLogger(__name__)
 
 
 class DummyBase(Instrument):
-    def get_idn(self):
+    def get_idn(self) -> dict[str, str | None]:
         return {
             "vendor": "QCoDeS",
             "model": str(self.__class__),
@@ -43,7 +46,7 @@ class MockParabola(DummyBase):
     testing of numerical optimizations.
     """
 
-    def __init__(self, name, **kw):
+    def __init__(self, name: str, **kw: Any):
         super().__init__(name, **kw)
 
         # Instrument parameters
@@ -64,11 +67,11 @@ class MockParabola(DummyBase):
         self.add_parameter('skewed_parabola', unit='a.u.',
                            get_cmd=self._measure_skewed_parabola)
 
-    def _measure_parabola(self):
+    def _measure_parabola(self) -> float:
         return (self.x.get()**2 + self.y.get()**2 + self.z.get()**2 +
                 self.noise.get()*np.random.rand(1))
 
-    def _measure_skewed_parabola(self):
+    def _measure_skewed_parabola(self) -> float:
         """
         Adds an -x term to add a corelation between the parameters.
         """
@@ -88,7 +91,7 @@ class MockMetaParabola(InstrumentBase):
     snapshottable in a station.
     """
 
-    def __init__(self, name, mock_parabola_inst, **kw):
+    def __init__(self, name: str, mock_parabola_inst: MockParabola, **kw: Any):
         """
         Create a new MockMetaParabola, connected to an existing MockParabola instance.
         """
@@ -107,20 +110,22 @@ class MockMetaParabola(InstrumentBase):
         self.add_parameter('skewed_parabola', unit='a.u.',
                            get_cmd=self._get_skew_parabola)
 
-    def _get_parabola(self):
+    def _get_parabola(self) -> float:
         val = self.mock_parabola_inst.parabola.get()
         return val*self.gain.get()
 
-    def _get_skew_parabola(self):
+    def _get_skew_parabola(self) -> float:
         val = self.mock_parabola_inst.skewed_parabola.get()
         return val*self.gain.get()
 
 
 class DummyInstrument(DummyBase):
-
-    def __init__(self, name: str = 'dummy',
-                 gates: Sequence[str] = ('dac1', 'dac2', 'dac3'), **kwargs):
-
+    def __init__(
+        self,
+        name: str = "dummy",
+        gates: Sequence[str] = ("dac1", "dac2", "dac3"),
+        **kwargs: Any,
+    ):
         """
         Create a dummy instrument that can be used for testing
 
@@ -146,7 +151,7 @@ class DummyInstrument(DummyBase):
 
 
 class DummyFailingInstrument(DummyBase):
-    def __init__(self, name: str = "dummy", fail: bool = True, **kwargs):
+    def __init__(self, name: str = "dummy", fail: bool = True, **kwargs: Any):
 
         """
         Create a dummy instrument that fails on initialization
@@ -196,19 +201,19 @@ class DummyAttrInstrument(DummyBase):
 
 
 class DmmExponentialParameter(Parameter):
-    def __init__(self, name, **kwargs):
+    def __init__(self, name: str, **kwargs: Any):
         super().__init__(name, **kwargs)
         self._ed = self._exponential_decay(5, 0.2)
         next(self._ed)
 
-    def get_raw(self):
+    def get_raw(self) -> ParamRawDataType:
         """
         This method is automatically wrapped to
         provide a ``get`` method on the parameter instance.
         """
+        assert isinstance(self.root_instrument, DummyInstrumentWithMeasurement)
         dac = self.root_instrument._setter_instr
         val = self._ed.send(dac.ch1.cache.get())
-        next(self._ed)
         if self.root_instrument is not None:
             mylogger = self.root_instrument.log
         else:
@@ -217,14 +222,13 @@ class DmmExponentialParameter(Parameter):
         return val
 
     @staticmethod
-    def _exponential_decay(a: float, b: float):
+    def _exponential_decay(a: float, b: float) -> Generator[float, float, None]:
         """
         Yields a*exp(-b*x) where x is put in
         """
-        x = 0
+        x = 0.0
         while True:
-            x = yield
-            yield a * np.exp(-b * x) + 0.02 * a * np.random.randn()
+            x = yield a * np.exp(-b * x) + 0.02 * a * np.random.randn()
 
 
 class DmmGaussParameter(Parameter):
@@ -237,14 +241,14 @@ class DmmGaussParameter(Parameter):
         self._gauss = self._gauss_model()
         next(self._gauss)
 
-    def get_raw(self):
+    def get_raw(self) -> ParamRawDataType:
         """
         This method is automatically wrapped to
         provide a ``get`` method on the parameter instance.
         """
+        assert isinstance(self.root_instrument, DummyInstrumentWithMeasurement)
         dac = self.root_instrument._setter_instr
         val = self._gauss.send((dac.ch1.cache.get(), dac.ch2.cache.get()))
-        next(self._gauss)
         if self.root_instrument is not None:
             mylogger = self.root_instrument.log
         else:
@@ -252,25 +256,26 @@ class DmmGaussParameter(Parameter):
         mylogger.debug("Getting raw value of parameter: %s as %s", self.full_name, val)
         return val
 
-    def _gauss_model(self):
+    def _gauss_model(self) -> Generator[float, tuple[float, float], None]:
         """
         Returns a generator sampling a gaussian. The gaussian is
         normalised such that its maximal value is simply 1
         """
+
+        def gauss_2d(x: float, y: float) -> np.floating:
+            return np.exp(
+                -((self.x0 - x) ** 2 + (self.y0 - y) ** 2) / 2 / self.sigma**2
+            ) * np.exp(2 * self.sigma**2)
+
+        x = 0.0
+        y = 0.0
         while True:
-            (x, y) = yield
-            model = np.exp(-((self.x0-x)**2+(self.y0-y)**2)/2/self.sigma**2)*np.exp(2*self.sigma**2)
-            noise = np.random.randn()*self.noise
-            yield model + noise
+            noise = np.random.randn() * self.noise
+            (x, y) = yield float(gauss_2d(x, y) + noise)
 
 
 class DummyInstrumentWithMeasurement(DummyBase):
-
-    def __init__(
-            self,
-            name: str,
-            setter_instr: DummyInstrument,
-            **kwargs):
+    def __init__(self, name: str, setter_instr: DummyInstrument, **kwargs: Any):
         super().__init__(name=name, **kwargs)
         self._setter_instr = setter_instr
         self.add_parameter('v1',
@@ -294,7 +299,7 @@ class DummyChannel(InstrumentChannel):
     A single dummy channel implementation
     """
 
-    def __init__(self, parent, name, channel, **kwargs):
+    def __init__(self, parent: Instrument, name: str, channel: str, **kwargs: Any):
         super().__init__(parent, name, **kwargs)
 
         self._channel = channel
@@ -446,13 +451,15 @@ class DummyChannelInstrument(Instrument):
     Dummy instrument with channels
     """
 
-    def __init__(self, name, channel_names=None, **kwargs):
+    def __init__(
+        self, name: str, channel_names: Sequence[str] | None = None, **kwargs: Any
+    ):
         super().__init__(name, **kwargs)
 
         channels = ChannelList(self, "TempSensors", DummyChannel, snapshotable=False)
 
         if channel_names is None:
-            channel_ids = ("A", "B", "C", "D", "E", "F")
+            channel_ids: Sequence[str] = ("A", "B", "C", "D", "E", "F")
             channel_names = tuple(f"Chan{chan_name}" for chan_name in channel_ids)
         else:
             channel_ids = channel_names
@@ -478,13 +485,14 @@ class MultiGetter(MultiParameter):
         MultiGetter(one=1, onetwo=(1, 2))
 
     """
-    def __init__(self, **kwargs):
+
+    def __init__(self, **kwargs: Any):
         names = tuple(sorted(kwargs.keys()))
         self._return = tuple(kwargs[k] for k in names)
         shapes = tuple(np.shape(v) for v in self._return)
         super().__init__(name='multigetter', names=names, shapes=shapes)
 
-    def get_raw(self):
+    def get_raw(self) -> ParamRawDataType:
         return self._return
 
 
@@ -494,7 +502,12 @@ class MultiSetPointParam(MultiParameter):
     and so on are copied correctly to the individual arrays in the datarray.
     """
 
-    def __init__(self, instrument=None, name="multi_setpoint_param", **kwargs):
+    def __init__(
+        self,
+        instrument: InstrumentBase | None = None,
+        name: str = "multi_setpoint_param",
+        **kwargs: Any,
+    ):
         shapes = ((5,), (5,))
         names = ('multi_setpoint_param_this', 'multi_setpoint_param_that')
         labels = ('this label', 'that label')
@@ -521,7 +534,7 @@ class MultiSetPointParam(MultiParameter):
             **kwargs,
         )
 
-    def get_raw(self):
+    def get_raw(self) -> ParamRawDataType:
         items = (np.zeros(5), np.ones(5))
         return items
 
@@ -532,7 +545,12 @@ class Multi2DSetPointParam(MultiParameter):
     and so on are copied correctly to the individual arrays in the datarray.
     """
 
-    def __init__(self, instrument=None, name="multi_2d_setpoint_param", **kwargs):
+    def __init__(
+        self,
+        instrument: InstrumentBase | None = None,
+        name: str = "multi_2d_setpoint_param",
+        **kwargs: Any,
+    ):
         shapes = ((5, 3), (5, 3))
         names = ('this', 'that')
         labels = ('this label', 'that label')
@@ -573,7 +591,7 @@ class Multi2DSetPointParam(MultiParameter):
             **kwargs,
         )
 
-    def get_raw(self):
+    def get_raw(self) -> ParamRawDataType:
         items = (np.zeros((5, 3)), np.ones((5, 3)))
         return items
 
@@ -585,7 +603,12 @@ class Multi2DSetPointParam2Sizes(MultiParameter):
     shapes.
     """
 
-    def __init__(self, instrument=None, name="multi_2d_setpoint_param", **kwargs):
+    def __init__(
+        self,
+        instrument: InstrumentBase | None = None,
+        name: str = "multi_2d_setpoint_param",
+        **kwargs: Any,
+    ):
         shapes = ((5, 3), (2, 7))
         names = ('this_5_3', 'this_2_7')
         labels = ('this label', 'that label')
@@ -629,7 +652,7 @@ class Multi2DSetPointParam2Sizes(MultiParameter):
             **kwargs,
         )
 
-    def get_raw(self):
+    def get_raw(self) -> ParamRawDataType:
         items = (np.zeros((5, 3)), np.ones((2, 7)))
         return items
 
@@ -640,7 +663,12 @@ class MultiScalarParam(MultiParameter):
     Parameter with no setpoints etc.
     """
 
-    def __init__(self, instrument=None, name="multiscalarparameter", **kwargs):
+    def __init__(
+        self,
+        instrument: InstrumentBase | None = None,
+        name: str = "multiscalarparameter",
+        **kwargs: Any,
+    ):
         shapes = ((), ())
         names = ('thisparam', 'thatparam')
         labels = ('thisparam label', 'thatparam label')
@@ -657,7 +685,7 @@ class MultiScalarParam(MultiParameter):
             **kwargs,
         )
 
-    def get_raw(self):
+    def get_raw(self) -> ParamRawDataType:
         items = (0, 1)
         return items
 
@@ -668,7 +696,12 @@ class ArraySetPointParam(ArrayParameter):
     and so on are copied correctly to the individual arrays in the datarray.
     """
 
-    def __init__(self, instrument=None, name="array_setpoint_param", **kwargs):
+    def __init__(
+        self,
+        instrument: InstrumentBase | None = None,
+        name: str = "array_setpoint_param",
+        **kwargs: Any,
+    ):
         shape = (5,)
         label = 'this label'
         unit = 'this unit'
@@ -690,7 +723,7 @@ class ArraySetPointParam(ArrayParameter):
             **kwargs,
         )
 
-    def get_raw(self):
+    def get_raw(self) -> ParamRawDataType:
         item = np.ones(5) + 1
         return item
 
@@ -700,7 +733,12 @@ class ComplexArraySetPointParam(ArrayParameter):
     Arrayparameter that returns complex numbers
     """
 
-    def __init__(self, instrument=None, name="testparameter", **kwargs):
+    def __init__(
+        self,
+        instrument: InstrumentBase | None = None,
+        name: str = "testparameter",
+        **kwargs: Any,
+    ):
         shape = (5,)
         label = 'this label'
         unit = 'this unit'
@@ -722,7 +760,7 @@ class ComplexArraySetPointParam(ArrayParameter):
             **kwargs,
         )
 
-    def get_raw(self):
+    def get_raw(self) -> ParamRawDataType:
         item = np.arange(5) - 1j*np.arange(5)
         return item
 
@@ -732,13 +770,21 @@ class GeneratedSetPoints(Parameter):
     A parameter that generates a setpoint array from start, stop and num points
     parameters.
     """
-    def __init__(self, startparam, stopparam, numpointsparam, *args, **kwargs):
+
+    def __init__(
+        self,
+        startparam: Parameter,
+        stopparam: Parameter,
+        numpointsparam: Parameter,
+        *args: Any,
+        **kwargs: Any,
+    ):
         super().__init__(*args, **kwargs)
         self._startparam = startparam
         self._stopparam = stopparam
         self._numpointsparam = numpointsparam
 
-    def get_raw(self):
+    def get_raw(self) -> ParamRawDataType:
         return np.linspace(self._startparam(), self._stopparam(),
                               self._numpointsparam())
 
@@ -749,7 +795,8 @@ class DummyParameterWithSetpoints1D(ParameterWithSetpoints):
     `dummy_n_points` parameter in the instrument.
     """
 
-    def get_raw(self):
+    def get_raw(self) -> ParamRawDataType:
+        assert isinstance(self.instrument, DummyChannel)
         npoints = self.instrument.dummy_n_points()
         return np.random.rand(npoints)
 
@@ -760,7 +807,8 @@ class DummyParameterWithSetpoints2D(ParameterWithSetpoints):
     `dummy_n_points` and `dummy_n_points_2` parameters in the instrument.
     """
 
-    def get_raw(self):
+    def get_raw(self) -> ParamRawDataType:
+        assert isinstance(self.instrument, DummyChannel)
         npoints = self.instrument.dummy_n_points()
         npoints_2 = self.instrument.dummy_n_points_2()
         return np.random.rand(npoints, npoints_2)
@@ -773,12 +821,15 @@ class DummyParameterWithSetpointsComplex(ParameterWithSetpoints):
     `dummy_n_points` parameter in the instrument. Returns Complex values
     """
 
-    def get_raw(self):
+    def get_raw(self) -> ParamRawDataType:
+        assert isinstance(self.instrument, DummyChannel)
         npoints = self.instrument.dummy_n_points()
         return np.random.rand(npoints) + 1j*np.random.rand(npoints)
 
 
-def setpoint_generator(*sp_bases):
+def setpoint_generator(
+    *sp_bases: Sequence[float] | np.ndarray,
+) -> tuple[np.ndarray | Sequence[float], ...]:
     """
     Helper function to generate setpoints in the format that ArrayParameter
     (and MultiParameter) expects
@@ -789,7 +840,7 @@ def setpoint_generator(*sp_bases):
     Returns:
 
     """
-    setpoints = []
+    setpoints: list[np.ndarray | Sequence[float]] = []
     for i, sp_base in enumerate(sp_bases):
         if i == 0:
             setpoints.append(sp_base)
@@ -835,14 +886,16 @@ class SnapShotTestInstrument(DummyBase):
                                set_cmd=None,
                                get_cmd=partial(self._getter, p_name))
 
-    def _getter(self, name: str):
+    def _getter(self, name: str) -> ParamRawDataType:
         val = self.parameters[name].cache.get(get_if_invalid=False)
         self._get_calls[name] += 1
         return val
 
-    def snapshot_base(self, update: Optional[bool] = True,
-                      params_to_skip_update: Optional[Sequence[str]] = None
-                      ) -> Dict[Any, Any]:
+    def snapshot_base(
+        self,
+        update: bool | None = True,
+        params_to_skip_update: Sequence[str] | None = None,
+    ) -> dict[Any, Any]:
         if params_to_skip_update is None:
             params_to_skip_update = self._params_to_skip
         snap = super().snapshot_base(
@@ -853,10 +906,11 @@ class SnapShotTestInstrument(DummyBase):
 class MockField(DummyBase):
 
     def __init__(
-            self,
-            name: str,
-            vals: Numbers = Numbers(min_value=-1., max_value=1.),
-            **kwargs):
+        self,
+        name: str,
+        vals: Numbers = Numbers(min_value=-1.0, max_value=1.0),
+        **kwargs: Any,
+    ):
         """Mock instrument for emulating a magnetic field axis
 
         Args:
@@ -876,12 +930,12 @@ class MockField(DummyBase):
                            initial_value=0.1,
                            unit='T/min',
                            get_cmd=None, set_cmd=None)
-        self._ramp_start_time: Optional[float] = None
-        self._wait_time: Optional[float] = None
+        self._ramp_start_time: float | None = None
+        self._wait_time: float | None = None
         self._fr = self._field_ramp()
         next(self._fr)
 
-    def get_field(self):
+    def get_field(self) -> float:
         """
         This method is automatically wrapped to
         provide a ``get`` method on the parameter instance.
@@ -889,11 +943,10 @@ class MockField(DummyBase):
         if self._ramp_start_time:
             _time_since_start = time.time() - self._ramp_start_time
             val = self._fr.send(_time_since_start)
-            next(self._fr)
             self._field = val
         return self._field
 
-    def set_field(self, value, block: bool = True):
+    def set_field(self, value: float, block: bool = True) -> None | float:
         if self._field == value:
             return value
 
@@ -908,8 +961,10 @@ class MockField(DummyBase):
             time.sleep(wait_time)
             self._field = value
             return value
+        else:
+            return None
 
-    def _field_ramp_fcn(self, _time: float):
+    def _field_ramp_fcn(self, _time: float) -> float:
         if self._wait_time is None:
             return self._field
         elif _time <= 0.0:
@@ -919,24 +974,17 @@ class MockField(DummyBase):
         dfield = self.ramp_rate() * _time / 60.0
         return self._start_field + self._sign * dfield
 
-    def _field_ramp(self):
+    def _field_ramp(self) -> Generator[float, float, None]:
         """
         Yields field for a given point in time
         """
+        time = 0.0
         while True:
-            _time = yield
-            if _time is None:
-                _time = 0.0
-
-            yield float(self._field_ramp_fcn(_time))
+            time = yield float(self._field_ramp_fcn(time))
 
 
 class MockLockin(DummyBase):
-
-    def __init__(
-            self,
-            name: str,
-            **kwargs):
+    def __init__(self, name: str, **kwargs: Any):
         super().__init__(name=name, **kwargs)
         self.add_parameter("X",
                            parameter_class=Parameter,
@@ -975,7 +1023,7 @@ class MockDACChannel(InstrumentChannel):
     A single dummy channel implementation
     """
 
-    def __init__(self, parent, name, num):
+    def __init__(self, parent: InstrumentBase, name: str, num: str):
         super().__init__(parent, name)
 
         self._num = num
@@ -1007,12 +1055,12 @@ class MockDACChannel(InstrumentChannel):
                            vals=OnOff(),
                            get_cmd=None, set_cmd=None)
 
-    def channel_number(self):
+    def channel_number(self) -> str:
         return self._num
 
 
 class MockDAC(DummyBase):
-    def __init__(self, name: str = "mdac", num_channels: int = 10, **kwargs):
+    def __init__(self, name: str = "mdac", num_channels: int = 10, **kwargs: Any):
 
         """
         Create a dummy instrument that can be used for testing
@@ -1040,8 +1088,8 @@ class MockCustomChannel(InstrumentChannel):
         self,
         parent: InstrumentBase,
         name: str,
-        channel: Union[str, InstrumentChannel],
-        current_valid_range: Optional[List[float]] = None,
+        channel: str | InstrumentChannel,
+        current_valid_range: Sequence[float] | None = None,
     ) -> None:
         """
         A custom instrument channel emulating an existing channel.
