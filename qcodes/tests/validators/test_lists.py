@@ -1,29 +1,32 @@
+from typing import Any, List, Union
+
+import numpy as np
 import pytest
 
 from qcodes.validators import Ints, Lists
 
 
-def test_type():
-    l = Lists()
+def test_type() -> None:
+    l: Lists[Any] = Lists()
     v1 = ['a', 'b', 5]
     l.validate(v1)
 
     v2 = 234
     with pytest.raises(TypeError):
-        l.validate(v2)
+        l.validate(v2)  # type: ignore[arg-type]
 
 
-def test_elt_vals():
+def test_elt_vals() -> None:
     l = Lists(Ints(max_value=10))
-    v1 = [0, 1, 5]
+    v1: List[Union[int, np.integer, bool]] = [0, 1, 5]
     l.validate(v1)
 
     v2 = [0, 1, 11]
     with pytest.raises(ValueError):
-        l.validate(v2)
+        l.validate(v2)  # type: ignore[arg-type]
 
 
-def test_valid_values():
+def test_valid_values() -> None:
     val = Lists(Ints(max_value=10))
     for vval in val.valid_values:
         val.validate(vval)

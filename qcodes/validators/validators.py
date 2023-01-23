@@ -1028,7 +1028,7 @@ class Arrays(Validator[np.ndarray]):
         return float(self._max_value) if self._max_value is not None else None
 
 
-class Lists(Validator[typing.List[Any]]):
+class Lists(Validator[typing.List[T]]):
     """
     Validator for lists
 
@@ -1036,7 +1036,7 @@ class Lists(Validator[typing.List[Any]]):
         elt_validator: Used to validate the individual elements of the list.
     """
 
-    def __init__(self, elt_validator: Validator[Any] = Anything()) -> None:
+    def __init__(self, elt_validator: Validator[T] = Anything()) -> None:
         self._elt_validator = elt_validator
         self._valid_values = ([vval for vval in elt_validator._valid_values],)
 
@@ -1045,7 +1045,7 @@ class Lists(Validator[typing.List[Any]]):
         msg += self._elt_validator.__repr__() + ">"
         return msg
 
-    def validate(self, value: list[Anything], context: str = "") -> None:
+    def validate(self, value: list[T], context: str = "") -> None:
         """
         Validate if list else raises error.
 
