@@ -326,7 +326,7 @@ class Numbers(Validator[numbertypes]):
         return float(self._max_value)
 
 
-class Ints(Validator[Union[int, "np.integer[Any]"]]):
+class Ints(Validator[Union[int, "np.integer[Any]", bool]]):
     """
     Requires an integer.
     Optional parameters min_value and max_value, enforce
