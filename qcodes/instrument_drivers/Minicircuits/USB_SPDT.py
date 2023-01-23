@@ -15,7 +15,7 @@ except ImportError:
                          in a qcodes environment terminal""")
 
 
-class SwitchChannelUSB(SwitchChannelBase):
+class MiniCircuitsSwitchChannelUsb(SwitchChannelBase):
     def _set_switch(self, switch: int) -> None:
         self._parent.switch.Set_Switch(self.channel_letter, switch - 1)
 
@@ -24,7 +24,12 @@ class SwitchChannelUSB(SwitchChannelBase):
         return int(f"{status:04b}"[-1 - self.channel_number]) + 1
 
 
-class USB_SPDT(SPDT_Base):
+SwitchChannelUSB = MiniCircuitsSwitchChannelUsb
+"""
+Alias for backwards compatibility"""
+
+
+class MiniCircuitsUsbSPDT(SPDT_Base):
     """
     Mini-Circuits SPDT RF switch
 
@@ -36,7 +41,7 @@ class USB_SPDT(SPDT_Base):
             kwargs: kwargs to be passed to Instrument class.
     """
 
-    CHANNEL_CLASS = SwitchChannelUSB
+    CHANNEL_CLASS = MiniCircuitsSwitchChannelUsb
     PATH_TO_DRIVER = r"mcl_RF_Switch_Controller64"
     PATH_TO_DRIVER_45 = r"mcl_RF_Switch_Controller_NET45"
 
@@ -100,3 +105,7 @@ class USB_SPDT(SPDT_Base):
             'vendor': 'Mini-Circuits'
         }
         return id_dict
+
+
+USB_SPDT = MiniCircuitsUsbSPDT
+"""Alias for backwards compatibility"""

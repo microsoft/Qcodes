@@ -63,6 +63,15 @@ class RUDAT_13G_90(Instrument):
                 'firmware': firmware}
 
 
-class RUDAT_13G_90_USB(MiniCircuitsHIDMixin, RUDAT_13G_90):
+class MiniCircuitsRudat13G90Usb(MiniCircuitsHIDMixin, RUDAT_13G_90):
+    """
+    Driver for the Minicircuits RUDAT-13G-90
+    90 dB Programmable Attenuator
+    """
+
     vendor_id = 0x20ce
     product_id = 0x0023
+
+
+RUDAT_13G_90_USB = MiniCircuitsRudat13G90Usb
+"""Alias for backwards compatibility."""
