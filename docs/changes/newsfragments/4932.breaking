@@ -1,0 +1,2 @@
+The QDevil QDAC 1 driver has been migrated to qcodes_contrib_drivers and is included from version
+0.18.0. The driver in QCoDeS is deprecated and will be removed in a future release.
