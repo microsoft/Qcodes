@@ -306,9 +306,9 @@ Our required checks consists of a number of jobs that performs the following act
 on Linux and on Windows.
 
 - Run our test suite using pytest as described above.
-- Perform type checking of the code in QCoDeS using MyPy. For many of the modules we enforce that the code must be
+- Perform type checking of the code in QCoDeS using MyPy and Pyright. For many of the modules we enforce that the code must be
   type annotated. We encourage all contributors to type annotate any contribution to QCoDeS. If you need help with this
-  please feel free to reach out.
+  please feel free to reach out. Pyright typechecks can be performed inline within VC-code using the Pylance extension.
 - Build the documentation using Sphinx with Sphinx warnings as errors. This includes execution of all example notebooks
   that are not explicitly marked as not to be executed. Please see here_ for information on how to disable execution of a
   notebook.
