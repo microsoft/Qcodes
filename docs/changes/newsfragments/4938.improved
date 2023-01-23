@@ -1,0 +1,2 @@
+QcoDeS is now typechecked with Pyright in addition to mypy. This should give a significantly
+better user experience when working in VS Code.
