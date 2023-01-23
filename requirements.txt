@@ -45,7 +45,7 @@ google-auth~=2.16.0
 googleapis-common-protos~=1.58.0
 h5netcdf~=1.1.0
 h5py~=3.7.0
-hypothesis~=6.62.0
+hypothesis~=6.64.0
 idna==3.4
 imagesize~=1.4.1
 importlib-metadata~=5.0.0; python_version < '3.10'
