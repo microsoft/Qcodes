@@ -1,6 +1,9 @@
-from ._minicircuits_usb_spdt import MiniCircuitsSwitchChannelUsb, MiniCircuitsUsbSPDT
+from ._minicircuits_usb_spdt import (
+    MiniCircuitsUsbSPDT,
+    MiniCircuitsUsbSPDTSwitchChannel,
+)
 
-SwitchChannelUSB = MiniCircuitsSwitchChannelUsb
+SwitchChannelUSB = MiniCircuitsUsbSPDTSwitchChannel
 """
 Alias for backwards compatibility"""
 
