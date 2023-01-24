@@ -42,7 +42,6 @@ Documentation
    community/index
    dataset/index
    api/index
-   api/generated/qcodes.instrument_drivers
    drivers_api/index
    changes/index
    help
