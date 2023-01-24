@@ -56,7 +56,3 @@ class MiniCircuitsRudat13G90Usb(MiniCircuitsHIDMixin, MiniCircuitsRudat13G90Base
 
     vendor_id = 0x20CE
     product_id = 0x0023
-
-
-RUDAT_13G_90_USB = MiniCircuitsRudat13G90Usb
-"""Alias for backwards compatibility."""

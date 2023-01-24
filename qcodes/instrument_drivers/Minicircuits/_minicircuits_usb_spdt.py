@@ -26,11 +26,6 @@ class MiniCircuitsSwitchChannelUsb(SwitchChannelBase):
         return int(f"{status:04b}"[-1 - self.channel_number]) + 1
 
 
-SwitchChannelUSB = MiniCircuitsSwitchChannelUsb
-"""
-Alias for backwards compatibility"""
-
-
 class MiniCircuitsUsbSPDT(SPDT_Base):
     """
     Mini-Circuits SPDT RF switch
@@ -108,7 +103,3 @@ class MiniCircuitsUsbSPDT(SPDT_Base):
 
         id_dict = {"firmware": fw, "model": MN, "serial": SN, "vendor": "Mini-Circuits"}
         return id_dict
-
-
-USB_SPDT = MiniCircuitsUsbSPDT
-"""Alias for backwards compatibility"""

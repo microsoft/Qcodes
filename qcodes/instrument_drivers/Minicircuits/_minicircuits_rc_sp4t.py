@@ -58,12 +58,6 @@ class MiniCircuitsRCSP4TChannel(InstrumentChannel):
         return ret
 
 
-MC_channel = MiniCircuitsRCSP4TChannel
-"""
-Alias for backwards compatibility
-"""
-
-
 class MiniCircuitsRCSP4T(IPInstrument):
     """
     Driver for MiniCircuits RC-SP4T RF switch connected via ethernet.
@@ -111,9 +105,3 @@ class MiniCircuitsRCSP4T(IPInstrument):
             "vendor": "Mini-Circuits",
         }
         return id_dict
-
-
-RC_SP4T = MiniCircuitsRCSP4T
-"""
-Alias for backwards compatibility
-"""
