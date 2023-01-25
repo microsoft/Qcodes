@@ -225,7 +225,7 @@ class Instrument(InstrumentBase, metaclass=InstrumentMeta):
         cls._instances.add(instance)
 
     @classmethod
-    def instances(cls) -> list[Instrument]:
+    def instances(cls: type[T]) -> list[T]:
         """
         Get all currently defined instances of this instrument class.
 
