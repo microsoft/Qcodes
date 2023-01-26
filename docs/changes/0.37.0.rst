@@ -27,6 +27,10 @@ Breaking Changes:
 Improved:
 ---------
 
+- When a dataset is exported an optional user supplied entry point is called. See
+  `here <../examples/DataSet/Exporting-data-to-other-file-formats.html#Automatically-post-process-exported-datasets.>`__
+  for more details. (:pr:`4857`)
+- PyVISA ``1.13`` is now supported. (:pr:`4895`)
 - ``validate`` method of ``DelegateParameter`` now also validates the given value
   against the validator of the source parameter (if source parameter is present). (:pr:`4870`)
 - The dataset logic has been updated to ensure that if you set an already completed
