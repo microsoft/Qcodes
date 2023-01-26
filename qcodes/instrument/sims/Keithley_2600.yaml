@@ -189,3 +189,6 @@ devices:
 resources:
   GPIB::1::INSTR:
     device: Keithley
+
+  GPIB::2::INSTR:
+    device: Keithley
