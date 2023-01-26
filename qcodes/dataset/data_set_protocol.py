@@ -232,6 +232,7 @@ class DataSetProtocol(Protocol):
         export_type: DataExportType | str | None = None,
         path: str | None = None,
         prefix: str | None = None,
+        automatic_export: bool = False,
     ) -> None:
         ...
 
@@ -358,6 +359,7 @@ class BaseDataSet(DataSetProtocol, Protocol):
         export_type: DataExportType | str | None = None,
         path: str | Path | None = None,
         prefix: str | None = None,
+        automatic_export: bool = False,
     ) -> None:
         """Export data to disk with file name `{prefix}{name_elements}.{ext}`.
         Name elements are names of dataset object attributes that are taken
@@ -395,7 +397,10 @@ class BaseDataSet(DataSetProtocol, Protocol):
             )
 
         export_path = self._export_data(
-            export_type=parsed_export_type, path=path, prefix=prefix
+            export_type=parsed_export_type,
+            path=path,
+            prefix=prefix,
+            automatic_export=automatic_export,
         )
         export_info = self.export_info
         if export_path is not None:
@@ -410,6 +415,7 @@ class BaseDataSet(DataSetProtocol, Protocol):
         export_type: DataExportType,
         path: Path | None = None,
         prefix: str | None = None,
+        automatic_export: bool = False,
     ) -> Path | None:
         """Export data to disk with file name `{prefix}{name_elements}.{ext}`.
         Name elements are names of dataset object attributes that are taken
@@ -452,7 +458,7 @@ class BaseDataSet(DataSetProtocol, Protocol):
             try:
                 export_callback_function = export_callback.load()
                 LOG.info("Executing on_export callback %s", export_callback.name)
-                export_callback_function(export_path)
+                export_callback_function(export_path, automatic_export=automatic_export)
             except Exception:
                 LOG.exception("Exception during export callback function")
 

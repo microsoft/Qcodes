@@ -202,6 +202,7 @@ def test_export_csv(tmp_path_factory, mock_dataset, caplog):
 
     assert "Executing on_export callback log_exported_ds" in caplog.messages
     assert any("Dataset has been exported to" in mes for mes in caplog.messages)
+    assert any("this was triggered manually" in mes for mes in caplog.messages)
 
     mock_dataset.add_metadata("metadata_added_after_export", 69)
 
@@ -221,6 +222,7 @@ def test_export_netcdf(tmp_path_factory, mock_dataset, caplog):
 
     assert "Executing on_export callback log_exported_ds" in caplog.messages
     assert any("Dataset has been exported to" in mes for mes in caplog.messages)
+    assert any("this was triggered manually" in mes for mes in caplog.messages)
 
     mock_dataset.add_metadata("metadata_added_after_export", 69)
 
