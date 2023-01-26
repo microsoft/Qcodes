@@ -469,7 +469,7 @@ class DataSaver:
         """Export data at end of measurement as per export_type
         specification in "dataset" section of qcodes config
         """
-        self.dataset.export()
+        self.dataset.export(automatic_export=True)
 
     @property
     def run_id(self) -> int:
