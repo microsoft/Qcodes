@@ -48,10 +48,11 @@ from qcodes.dataset.descriptions.dependencies import (
     InterDependencies_,
 )
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
-from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
-from qcodes.dataset.experiment_container import Experiment
+from qcodes.dataset.experiment_container import Experiment, load_experiment
+from qcodes.dataset.experiment_settings import get_default_experiment_id
 from qcodes.dataset.export_config import get_data_export_automatic
+from qcodes.dataset.sqlite.database import conn_from_dbpath_or_conn
 from qcodes.dataset.sqlite.query_helpers import VALUE
 from qcodes.parameters import (
     ArrayParameter,
@@ -709,6 +710,8 @@ class Measurement:
         self.enteractions: list[ActionType] = []
         self.subscribers: list[SubscriberType] = []
 
+        if not exp:
+            exp = load_experiment(get_default_experiment_id(conn_from_dbpath_or_conn(None, None)))
         self.experiment = exp
         self.station = station
         self.name = name
