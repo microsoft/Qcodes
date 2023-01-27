@@ -60,7 +60,7 @@ jedi~=0.18.1
 Jinja2~=3.1.2
 jsonpointer==2.3
 jsonschema~=4.17.0
-jupyter-client~=7.4.3
+jupyter-client~=8.0.1
 jupyter-core~=5.1.0
 jupyterlab-pygments==0.2.2
 jupyterlab-widgets~=3.0.3
