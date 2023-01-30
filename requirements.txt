@@ -175,4 +175,4 @@ widgetsnbextension~=4.0.3
 wincertstore==0.2
 wrapt~=1.14.1
 xarray~=2023.1.0
-zipp~=3.11.0
+zipp~=3.12.0
