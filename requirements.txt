@@ -53,7 +53,7 @@ importlib-resources~=5.9.0; python_version < '3.9'
 incremental~=22.10.0
 iniconfig~=2.0.0
 ipykernel~=6.20.1
-ipython~=8.8.0
+ipython~=8.9.0
 ipython-genutils==0.2.0
 ipywidgets~=8.0.2
 jedi~=0.18.1
