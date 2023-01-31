@@ -631,7 +631,7 @@ class Keithley2600Channel(InstrumentChannel):
                 'VIfourprobe' (current sweep four probe setup)
         """
         try:
-            from qcodes.measure import Measure
+            from qcodes_loop.measure import Measure
         except ImportError as e:
             raise ImportError(
                 "The doFastSweep method requires the "

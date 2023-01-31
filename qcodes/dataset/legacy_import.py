@@ -11,8 +11,7 @@ from qcodes.dataset.measurements import DataSaver, Measurement
 
 if TYPE_CHECKING:
     from qcodes_loop.data.data_array import DataArray
-
-    from qcodes.data.data_set import DataSet as OldDataSet
+    from qcodes_loop.data.data_set import DataSet as OldDataSet
 
 
 def setup_measurement(

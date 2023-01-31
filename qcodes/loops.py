@@ -8,8 +8,6 @@ from typing import Dict, Optional, Sequence
 
 import numpy as np
 
-from qcodes.data.data_array import DataArray
-from qcodes.data.data_set import new_data
 from qcodes.metadatable import Metadatable
 from qcodes.station import Station
 from qcodes.utils import full_class, issue_deprecation_warning
@@ -24,6 +22,8 @@ try:
         _Nest,
         _QcodesBreak,
     )
+    from qcodes_loop.data.data_array import DataArray
+    from qcodes_loop.data.data_set import new_data
     from qcodes_loop.loops import (
         ActiveLoop,
         Loop,
