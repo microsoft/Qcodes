@@ -3,14 +3,12 @@ import struct
 import sys
 import warnings
 from enum import Enum
-from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Sequence, Tuple
 
 import numpy as np
 
 import qcodes.validators as vals
-from qcodes.data.data_set import DataSet
 from qcodes.instrument import Instrument, InstrumentChannel, VisaInstrument
-from qcodes.measure import Measure
 from qcodes.parameters import (
     ArrayParameter,
     Parameter,
@@ -18,6 +16,10 @@ from qcodes.parameters import (
     ParamRawDataType,
     create_on_off_val_mapping,
 )
+
+if TYPE_CHECKING:
+    from qcodes_loop.data.data_set import DataSet
+
 
 if sys.version_info >= (3, 11):
     from enum import StrEnum
@@ -626,6 +628,13 @@ class Keithley2600Channel(InstrumentChannel):
                 'VI' (current sweep two probe setup) or
                 'VIfourprobe' (current sweep four probe setup)
         """
+        try:
+            from qcodes.measure import Measure
+        except ImportError as e:
+            raise ImportError(
+                "The doFastSweep method requires the "
+                "qcodes_loop package to be installed."
+            )
         # prepare setpoints, units, name
         self.fastsweep.prepareSweep(start, stop, steps, mode)
 
