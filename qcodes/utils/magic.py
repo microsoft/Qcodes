@@ -6,7 +6,7 @@ from IPython.core.magic import Magics, line_cell_magic, magics_class
 from qcodes.utils import issue_deprecation_warning
 
 try:
-    from qcodes_loop.utils.magic import QCoDeSMagic
+    from qcodes_loop.utils.magic import QCoDeSMagic, register_magic_class
 except ImportError as e:
     raise ImportError(
         "qcodes.utils.magic is deprecated and has moved to "
