@@ -181,7 +181,7 @@ class MultiParameter(ParameterBase):
         self.shapes = shapes
 
         if has_loop:
-            sp_types = (
+            sp_types: tuple[type, ...] = (
                 nt,
                 DataArray,
                 Sequence,

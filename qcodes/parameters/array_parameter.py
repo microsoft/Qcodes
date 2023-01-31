@@ -155,7 +155,7 @@ class ArrayParameter(ParameterBase):
         sp_shape = (len(shape),)
 
         if has_loop:
-            sp_types = (
+            sp_types: tuple[type, ...] = (
                 nt,
                 DataArray,
                 collections.abc.Sequence,
