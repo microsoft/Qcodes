@@ -390,30 +390,32 @@ class TestLoop(TestCase):
         self.check_snap_ts(loopmeta['actions'][0], 'ts', (ts1, ts2))
         del p1snap['ts'], p2snap['ts'], p3snap['ts']
 
-        self.assertEqual(data.metadata, {
-            'station': {
-                'instruments': {},
-                'parameters': {},
-                'components': {},
-                'config': None,
-            },
-            'loop': {
-                'use_threads': False,
-                '__class__': 'qcodes.loops.ActiveLoop',
-                'sweep_values': {
-                    'parameter': p1snap,
-                    'values': [{'first': 1, 'last': 5, 'num': 5,
-                               'type': 'linear'}]
+        self.assertEqual(
+            data.metadata,
+            {
+                "station": {
+                    "instruments": {},
+                    "parameters": {},
+                    "components": {},
+                    "config": None,
                 },
-                'delay': 0,
-                'actions': [p1snap, breaker.snapshot()],
-                'then_actions': [
-                    {'type': 'Task', 'func': repr(self.p1.set)},
-                    {'type': 'Wait', 'delay': 0.01},
-                    {'type': 'Task', 'func': repr(f)}
-                ]
-            }
-        })
+                "loop": {
+                    "use_threads": False,
+                    "__class__": "qcodes_loop.loops.ActiveLoop",
+                    "sweep_values": {
+                        "parameter": p1snap,
+                        "values": [{"first": 1, "last": 5, "num": 5, "type": "linear"}],
+                    },
+                    "delay": 0,
+                    "actions": [p1snap, breaker.snapshot()],
+                    "then_actions": [
+                        {"type": "Task", "func": repr(self.p1.set)},
+                        {"type": "Wait", "delay": 0.01},
+                        {"type": "Task", "func": repr(f)},
+                    ],
+                },
+            },
+        )
 
         # now test a nested loop with .then inside and outside
         f_calls[:] = []
@@ -490,10 +492,10 @@ class TestMetaData(TestCase):
 
         # not sure why you'd do it, but you *can* snapshot a Loop
         expected = {
-            '__class__': 'qcodes.loops.Loop',
-            'sweep_values': sv.snapshot(),
-            'delay': 0,
-            'then_actions': []
+            "__class__": "qcodes_loop.loops.Loop",
+            "sweep_values": sv.snapshot(),
+            "delay": 0,
+            "then_actions": [],
         }
         self.assertEqual(loop.snapshot(), expected)
         loop = loop.then(Task(p1.set, 0), Wait(0.123))
@@ -504,9 +506,9 @@ class TestMetaData(TestCase):
 
         # then test snapshot on an ActiveLoop
         breaker = BreakIf(lambda: p1.get_latest() > 3)
-        self.assertEqual(breaker.snapshot()['type'], 'BreakIf')
+        self.assertEqual(breaker.snapshot()["type"], "BreakIf")
         loop = loop.each(p1, breaker)
-        expected['__class__'] = 'qcodes.loops.ActiveLoop'
-        expected['actions'] = [p1.snapshot(), breaker.snapshot()]
+        expected["__class__"] = "qcodes_loop.loops.ActiveLoop"
+        expected["actions"] = [p1.snapshot(), breaker.snapshot()]
 
         self.assertEqual(loop.snapshot(), expected)

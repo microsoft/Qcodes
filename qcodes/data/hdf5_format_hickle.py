@@ -13,5 +13,6 @@ except ImportError as e:
         "with `pip install qcodes[loop]"
     ) from e
 issue_deprecation_warning(
-    "qcodes.data.hdf5_format_hickle", alternative="qcodes_loop.data.hdf5_format_hickle"
+    "qcodes.data.hdf5_format_hickle module",
+    alternative="qcodes_loop.data.hdf5_format_hickle",
 )

@@ -16,4 +16,6 @@ except ImportError as e:
         "the package `qcodes_loop`. Please install qcodes_loop directly or "
         "with `pip install qcodes[loop]"
     ) from e
-issue_deprecation_warning("qcodes.data.format", alternative="qcodes_loop.data.format")
+issue_deprecation_warning(
+    "qcodes.data.format module", alternative="qcodes_loop.data.format"
+)

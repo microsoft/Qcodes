@@ -3,8 +3,6 @@ import time
 
 from qcodes.utils import is_function, issue_deprecation_warning, thread_map
 
-issue_deprecation_warning("qcodes.actions", alternative="qcodes_loop.actions")
-
 try:
     from qcodes_loop.actions import (
         BreakIf,
@@ -23,3 +21,5 @@ except ImportError as e:
         "the package `qcodes_loop`. Please install qcodes_loop directly or "
         "with `pip install qcodes[loop]"
     ) from e
+
+issue_deprecation_warning("qcodes.actions module", alternative="qcodes_loop.actions")

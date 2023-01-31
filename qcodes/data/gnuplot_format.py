@@ -19,5 +19,5 @@ except ImportError as e:
         "with `pip install qcodes[loop]"
     ) from e
 issue_deprecation_warning(
-    "qcodes.data.gunplot_format", alternative="qcodes_loop.data.gunplot_format"
+    "qcodes.data.gunplot_format module", alternative="qcodes_loop.data.gunplot_format"
 )

@@ -16,5 +16,5 @@ except ImportError as e:
         "with `pip install qcodes[loop]"
     ) from e
 issue_deprecation_warning(
-    "qcodes.data.location", alternative="qcodes_loop.data.location"
+    "qcodes.data.location module", alternative="qcodes_loop.data.location"
 )

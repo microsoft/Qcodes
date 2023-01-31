@@ -330,10 +330,10 @@ class TestDataSetMetaData(TestCase):
     def test_snapshot(self):
         data = new_data(location=False)
         expected_snap = {
-            '__class__': 'qcodes.data.data_set.DataSet',
-            'location': False,
-            'arrays': {},
-            'formatter': 'qcodes.data.gnuplot_format.GNUPlotFormat',
+            "__class__": "qcodes_loop.data.data_set.DataSet",
+            "location": False,
+            "arrays": {},
+            "formatter": "qcodes_loop.data.gnuplot_format.GNUPlotFormat",
         }
         snap = strip_qc(data.snapshot())
 

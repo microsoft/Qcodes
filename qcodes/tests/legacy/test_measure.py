@@ -24,10 +24,10 @@ class TestMeasure(TestCase):
 
         self.assertNotIn('loop', data.metadata)
 
-        meta = data.metadata['measurement']
-        self.assertEqual(meta['__class__'], 'qcodes.measure.Measure')
-        self.assertEqual(len(meta['actions']), 1)
-        self.assertFalse(meta['use_threads'])
+        meta = data.metadata["measurement"]
+        self.assertEqual(meta["__class__"], "qcodes_loop.measure.Measure")
+        self.assertEqual(len(meta["actions"]), 1)
+        self.assertFalse(meta["use_threads"])
 
         ts_start = datetime.strptime(meta['ts_start'], '%Y-%m-%d %H:%M:%S')
         ts_end = datetime.strptime(meta['ts_end'], '%Y-%m-%d %H:%M:%S')

@@ -15,4 +15,4 @@ except ImportError as e:
         "the package `qcodes_loop`. Please install qcodes_loop directly or "
         "with `pip install qcodes[loop]"
     ) from e
-issue_deprecation_warning("qcodes.measure", alternative="qcodes_loop.measure")
+issue_deprecation_warning("qcodes.measure module", alternative="qcodes_loop.measure")
