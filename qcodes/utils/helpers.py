@@ -10,7 +10,6 @@ from typing import Any, Dict, Hashable, Optional, Tuple
 # libraries.
 from ruamel.yaml import YAML
 
-from qcodes.loops import tprint, wait_secs
 from qcodes.parameters.named_repr import named_repr
 from qcodes.parameters.permissive_range import permissive_range
 from qcodes.parameters.sequence_helpers import is_sequence, is_sequence_of
