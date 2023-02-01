@@ -30,7 +30,6 @@ from .function_helpers import is_function
 from .json_utils import NumpyJSONEncoder
 from .partial_utils import partial_with_docstring
 from .path_helpers import QCODES_USER_PATH_ENV, get_qcodes_path, get_qcodes_user_path
-from .qt_helpers import foreground_qt_window
 from .spyder_utils import add_to_spyder_UMR_excludelist
 
 
