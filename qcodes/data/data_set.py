@@ -44,5 +44,5 @@ except ImportError as e:
     ) from e
 
 issue_deprecation_warning(
-    "qcodes.data.data_set", alternative="qcodes_loop.data.data_set"
+    "qcodes.data.data_set module", alternative="qcodes_loop.data.data_set"
 )

@@ -14,4 +14,4 @@ except ImportError as e:
         "the package `qcodes_loop`. Please install qcodes_loop directly or "
         "with `pip install qcodes[loop]"
     ) from e
-issue_deprecation_warning("qcodes.data.io", alternative="qcodes_loop.data.io")
+issue_deprecation_warning("qcodes.data.io module", alternative="qcodes_loop.data.io")

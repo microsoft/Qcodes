@@ -11,4 +11,4 @@ from qcodes_loop.data.location import FormatLocation
 
 from qcodes.utils import issue_deprecation_warning
 
-issue_deprecation_warning("qcodes.data", alternative="qcodes_loop.data")
+issue_deprecation_warning("qcodes.data module", alternative="qcodes_loop.data")

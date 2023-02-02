@@ -26,5 +26,5 @@ except ImportError as e:
     ) from e
 
 issue_deprecation_warning(
-    "qcodes.data.data_array", alternative="qcodes_loop.data.data_array"
+    "qcodes.data.data_array module", alternative="qcodes_loop.data.data_array"
 )
