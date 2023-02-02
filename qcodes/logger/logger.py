@@ -68,7 +68,7 @@ _opencensus_filter = logging.Filter(name="opencensus")
 _urllib3_connection_filter = logging.Filter(name="urllib3.connection")
 
 
-def filter_out_telemetry_log_records(record: logging.LogRecord) -> int:
+def filter_out_telemetry_log_records(record: logging.LogRecord) -> bool:
     """
     here we filter any message that is likely to be thrown from
     opencensus so it is not shown in the user console
