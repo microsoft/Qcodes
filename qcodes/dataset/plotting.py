@@ -478,8 +478,8 @@ def _convert_complex_to_real(
             "mag_and_phase": lambda x: (np.abs(x), np.angle(x, deg=degrees)),
         },
         "labels": {
-            "real_and_imag": lambda l: (l + " [real]", l + " [imag]"),
-            "mag_and_phase": lambda l: (l + " [mag]", l + " [phase]"),
+            "real_and_imag": lambda label: (label + " [real]", label + " [imag]"),
+            "mag_and_phase": lambda label: (label + " [mag]", label + " [phase]"),
         },
         "units": {
             "real_and_imag": lambda u: (u, u),
