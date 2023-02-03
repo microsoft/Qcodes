@@ -561,8 +561,6 @@ class Runner:
         for func, args in self.enteractions:
             func(*args)
 
-        dataset_class: type[DataSetProtocol]
-
         # next set up the "datasaver"
         if self.experiment is not None:
             exp_id: int | None = self.experiment.exp_id
