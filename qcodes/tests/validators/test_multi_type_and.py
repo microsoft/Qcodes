@@ -5,7 +5,7 @@ from qcodes.validators import Enum, MultiTypeAnd, Numbers, PermissiveMultiples, 
 from .conftest import AClass, a_func
 
 
-def test_good():
+def test_good() -> None:
     m = MultiTypeAnd(
         Numbers(min_value=2e-3, max_value=5e4), PermissiveMultiples(divisor=1e-3)
     )
@@ -14,7 +14,7 @@ def test_good():
         m.validate(v)
 
     # in py True == 1, so valid in this construction
-    for v in [
+    for vv in [
         0,
         0.001,
         50000.1,
@@ -31,17 +31,17 @@ def test_good():
         False,
     ]:
         with pytest.raises(ValueError):
-            m.validate(v)
+            m.validate(vv)
 
     assert (
-        repr(m)
-        == "<MultiTypeAnd: Numbers 0.002<=v<=50000.0, PermissiveMultiples, Multiples of 0.001 to within 1e-09>"
+        repr(m) == "<MultiTypeAnd: Numbers 0.002<=v<=50000.0, "
+        "PermissiveMultiples, Multiples of 0.001 to within 1e-09>"
     )
     assert m.is_numeric
     assert not MultiTypeAnd(Strings(), Enum(1, 2)).is_numeric
 
 
-def test_bad():
-    for args in [[], [1], [Strings(), True]]:
+def test_bad() -> None:
+    for args in ([], [1], [Strings(), True]):
         with pytest.raises(TypeError):
-            MultiTypeAnd(*args)
+            MultiTypeAnd(*args)  # type: ignore[misc]
