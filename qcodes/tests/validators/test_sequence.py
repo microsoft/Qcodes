@@ -3,7 +3,7 @@ import pytest
 from qcodes.validators import Ints, Sequence
 
 
-def test_type():
+def test_type() -> None:
     l = Sequence()
     v1 = ['a', 'b', 5]
     l.validate(v1)
@@ -12,10 +12,10 @@ def test_type():
 
     v2 = 234
     with pytest.raises(TypeError):
-        l.validate(v2)
+        l.validate(v2)  # type: ignore[arg-type]
 
 
-def test_elt_vals():
+def test_elt_vals() -> None:
     l = Sequence(Ints(max_value=10))
     v1 = [0, 1, 5]
     l.validate(v1)
@@ -25,13 +25,13 @@ def test_elt_vals():
         l.validate(v2)
 
 
-def test_valid_values():
+def test_valid_values() -> None:
     val = Sequence(Ints(max_value=10))
     for vval in val.valid_values:
         val.validate(vval)
 
 
-def test_length():
+def test_length() -> None:
     l = Sequence(length=3)
     v1 = [0, 1, 5]
     l.validate(v1)
@@ -45,7 +45,7 @@ def test_length():
         l.validate(v3)
 
 
-def test_sorted():
+def test_sorted() -> None:
     l = Sequence(length=3, require_sorted=True)
 
     v1 = [0, 1, 5]
