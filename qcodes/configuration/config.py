@@ -379,7 +379,7 @@ class Config:
         """
         val = self.current_config
         if val is None:
-            raise RuntimeError(f"Config is empty, cannot describe entry.")
+            raise RuntimeError("Config is empty, cannot describe entry.")
         if self.current_schema is None:
             raise RuntimeError("No schema found, cannot describe entry.")
         sch = self.current_schema["properties"]

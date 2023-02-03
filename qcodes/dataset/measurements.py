@@ -48,7 +48,6 @@ from qcodes.dataset.descriptions.dependencies import (
     InterDependencies_,
 )
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
-from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.export_config import get_data_export_automatic
@@ -447,11 +446,13 @@ class DataSaver:
         allowed_kinds = {'numeric': 'iuf', 'text': 'SU', 'array': 'iufcSUmM',
                          'complex': 'c'}
 
-        for ps, vals in results_dict.items():
-                if vals.dtype.kind not in allowed_kinds[ps.type]:
-                    raise ValueError(f'Parameter {ps.name} is of type '
-                                     f'"{ps.type}", but got a result of '
-                                     f'type {vals.dtype} ({vals}).')
+        for ps, values in results_dict.items():
+            if values.dtype.kind not in allowed_kinds[ps.type]:
+                raise ValueError(
+                    f"Parameter {ps.name} is of type "
+                    f'"{ps.type}", but got a result of '
+                    f"type {values.dtype} ({values})."
+                )
 
     def flush_data_to_database(self, block: bool = False) -> None:
         """

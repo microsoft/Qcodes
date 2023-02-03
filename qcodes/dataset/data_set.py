@@ -1419,9 +1419,9 @@ class DataSet(BaseDataSet):
 
                 self.add_results(self._results)
                 if writer_status.write_in_background:
-                    log.debug(f"Succesfully enqueued result for write thread")
+                    log.debug("Successfully enqueued result for write thread")
                 else:
-                    log.debug(f'Successfully wrote result to disk')
+                    log.debug("Successfully wrote result to disk")
                 self._results = []
             except Exception as e:
                 if writer_status.write_in_background:
@@ -1432,7 +1432,7 @@ class DataSet(BaseDataSet):
             log.debug('No results to flush')
 
         if writer_status.write_in_background and block:
-            log.debug(f"Waiting for write queue to empty.")
+            log.debug("Waiting for write queue to empty.")
             writer_status.data_write_queue.join()
 
     @property
