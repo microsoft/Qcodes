@@ -74,7 +74,7 @@ Changelog = "https://qcodes.github.io/Qcodes/changes/index.html"
 qtplot = ["pyqtgraph>=0.11.0"]
 slack = ["slack-sdk>=3.4.2"]
 zurichinstruments = ["zhinst-qcodes>=0.3"]
-loop = ["qcodes_loop>=0.1.0"]
+loop = ["qcodes_loop>=0.1.1"]
 test = [
     "coverage[toml]>=6.0.0",
     "deepdiff>=5.0.2",
@@ -100,7 +100,7 @@ test = [
     "types-tabulate>=0.1.0",
     "types-tqdm>=4.64.6",
     "types_pywin32>=305.0.0.7",
-    "qcodes_loop>=0.1.0",
+    "qcodes_loop>=0.1.1",
 ]
 docs = [
     "autodocsumm>=0.2.9",
