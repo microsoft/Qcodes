@@ -176,7 +176,7 @@ class AimTTiChannel(InstrumentChannel):
         A bound function that saves the output setup to the internal
         store specified by the numbers 0-9.
         """
-        if not slot in self.set_up_store_slots:
+        if slot not in self.set_up_store_slots:
             raise RuntimeError("Slote number should be an integer between" "0 adn 9.")
 
         channel_id = self.channel
@@ -187,7 +187,7 @@ class AimTTiChannel(InstrumentChannel):
         A bound function that loadss the output setup from the internal
         store specified by the numbers 0-9.
         """
-        if not slot in self.set_up_store_slots:
+        if slot not in self.set_up_store_slots:
             raise RuntimeError("Slote number should be an integer between" "0 adn 9.")
 
         channel_id = self.channel
@@ -199,7 +199,7 @@ class AimTTiChannel(InstrumentChannel):
         """
         Sets the current meter measurement averaging on and off.
         """
-        if not val in [0, 1]:
+        if val not in [0, 1]:
             raise RuntimeError(
                 "To 'turn on' and 'turn off' the averaging, "
                 "use '1' and '0', respectively."
@@ -235,7 +235,7 @@ class AimTTi(VisaInstrument):
             "PL303QMT-P": 3,
         }
 
-        if (not _model in _numOutputChannels.keys()) or (_model is None):
+        if (_model not in _numOutputChannels.keys()) or (_model is None):
             raise NotKnownModel("Unknown model, connection cannot be " "established.")
 
         self.numOfChannels = _numOutputChannels[_model]
@@ -303,7 +303,7 @@ class AimTTi(VisaInstrument):
         Go to local mode until the next remote command is recieved. This
         function does not release any active interface lock.
         """
-        self.write(f"LOCAL")
+        self.write("LOCAL")
 
     def is_interface_locked(self) -> int:
         """
