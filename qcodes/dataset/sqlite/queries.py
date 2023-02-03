@@ -1481,7 +1481,7 @@ def _get_parameters(conn: ConnectionPlus, run_id: int) -> list[ParamSpec]:
         A list of param specs for this run
     """
 
-    sql = f"""
+    sql = """
     SELECT parameter FROM layouts
     WHERE run_id = ?
     """
@@ -1506,7 +1506,7 @@ def _get_paramspec(conn: ConnectionPlus,
     """
 
     # get table name
-    sql = f"""
+    sql = """
     SELECT result_table_name FROM runs
     WHERE run_id = ?
     """
@@ -1527,7 +1527,7 @@ def _get_paramspec(conn: ConnectionPlus,
 
     # get everything else
 
-    sql = f"""
+    sql = """
     SELECT layout_id, run_id, parameter, label, unit, inferred_from FROM layouts
     WHERE parameter = ? and run_id = ?
     """
@@ -1550,7 +1550,7 @@ def _get_paramspec(conn: ConnectionPlus,
         ax_nums: list[int] = [dp[1] for dp in deps]
         depends_on = []
         for _, dp in sorted(zip(ax_nums, dps)):
-            sql = f"""
+            sql = """
             SELECT parameter FROM layouts
             WHERE layout_id = ?
             """
@@ -1682,7 +1682,7 @@ def add_parameter(
                 insert_column(conn, formatted_name, p.name, p.type)
             p_names.append(p.name)
         # get old parameters column from run table
-        sql = f"""
+        sql = """
         SELECT parameters FROM runs
         WHERE run_id=?
         """
@@ -2119,7 +2119,7 @@ def update_GUIDs(conn: ConnectionPlus) -> None:
                     'the GUIDs.')
         return
 
-    query = f"select MAX(run_id) from runs"
+    query = "select MAX(run_id) from runs"
     c = atomic_transaction(conn, query)
     no_of_runs = c.fetchall()[0][0]
 
@@ -2145,7 +2145,7 @@ def update_GUIDs(conn: ConnectionPlus) -> None:
             timeint=guid_comps["time"], sampleint=guid_comps["sample"]
         )
         with atomic(conn) as conn:
-            sql = f"""
+            sql = """
                    UPDATE runs
                    SET guid = ?
                    WHERE run_id = ?
