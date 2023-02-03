@@ -328,7 +328,7 @@ def perform_db_upgrade_6_to_7(
                 sql = "ALTER TABLE runs ADD COLUMN captured_counter"
                 transaction(conn, sql)
 
-                sql = f"""
+                sql = """
                         UPDATE runs
                         SET captured_run_id = run_id,
                             captured_counter = result_counter
