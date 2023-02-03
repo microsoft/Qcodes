@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections import abc
 from collections.abc import Sequence, Sized
 from numbers import Integral
 from typing import Any
