@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from qcodes.dataset.data_set_protocol import DataSetProtocol
-from qcodes.dataset.descriptions.versioning.converters import new_to_old
 from qcodes.dataset.linked_datasets.links import links_to_str
 from qcodes.dataset.sqlite.connection import ConnectionPlus
 from qcodes.dataset.sqlite.queries import (
