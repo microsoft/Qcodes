@@ -1,37 +1,40 @@
 from collections import OrderedDict
+from typing import Generator
 
 import hypothesis.strategies as hst
 import numpy as np
 import pytest
 from hypothesis import HealthCheck, given, settings
+from pytest_mock import MockerFixture
 
-from qcodes.parameters import combine
+from qcodes.parameters import ManualParameter, combine
 from qcodes.utils import full_class
 
 from ..common import DumyPar
 
 
 @pytest.fixture()
-def parameters():
-    parameters = [DumyPar(name) for name in ["X", "Y", "Z"]]
+def parameters() -> Generator[list[ManualParameter], None, None]:
+    parameters = [ManualParameter(name) for name in ["X", "Y", "Z"]]
     yield parameters
 
 
-def testCombine(parameters):
+def testCombine(parameters: list[ManualParameter]) -> None:
+    # DumyPar is not actually a parameter
+    # but it implements enough for this test
     multipar = combine(*parameters, name="combined")
     assert multipar.dimensionality == len(parameters)
 
 
-def testSweepBadSetpoints(parameters):
+def testSweepBadSetpoints(parameters: list[ManualParameter]) -> None:
     with pytest.raises(ValueError):
         combine(*parameters, name="fail").sweep(np.array([[1, 2]]))
 
 
-def testSweep(parameters):
+def testSweep(parameters: list[ManualParameter]) -> None:
     setpoints = np.array([[1, 1, 1], [1, 1, 1]])
 
-    sweep_values = combine(*parameters,
-                           name="combined").sweep(setpoints)
+    sweep_values = combine(*parameters, name="combined").sweep(setpoints)
 
     res = []
     for i in sweep_values:
@@ -44,31 +47,38 @@ def testSweep(parameters):
     assert res == expected
 
 
-def testSet(parameters, mocker):
+def testSet(parameters: list[ManualParameter], mocker: MockerFixture) -> None:
     setpoints = np.array([[1, 1, 1], [1, 1, 1]])
 
-    sweep_values = combine(*parameters,
-                           name="combined").sweep(setpoints)
+    sweep_values = combine(*parameters, name="combined").sweep(setpoints)
 
     mock_method = mocker.patch.object(sweep_values, 'set')
     for i in sweep_values:
         sweep_values.set(i)
 
-    mock_method.assert_has_calls([
-                mocker.call(0), mocker.call(1)
-            ]
-        )
+    mock_method.assert_has_calls([mocker.call(0), mocker.call(1)])  # pyright: ignore
 
 
 @settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(
     npoints=hst.integers(1, 100),
-    x_start_stop=hst.lists(hst.integers(), min_size=2, max_size=2).map(sorted),  # type: ignore[arg-type]
-    y_start_stop=hst.lists(hst.integers(), min_size=2, max_size=2).map(sorted),  # type: ignore[arg-type]
-    z_start_stop=hst.lists(hst.integers(), min_size=2, max_size=2).map(sorted),  # type: ignore[arg-type]
+    x_start_stop=hst.lists(hst.integers(), min_size=2, max_size=2).map(
+        sorted  # type: ignore[arg-type]
+    ),
+    y_start_stop=hst.lists(hst.integers(), min_size=2, max_size=2).map(
+        sorted  # type: ignore[arg-type]
+    ),
+    z_start_stop=hst.lists(hst.integers(), min_size=2, max_size=2).map(
+        sorted  # type: ignore[arg-type]
+    ),
 )
-def testAggregator(parameters, npoints, x_start_stop, y_start_stop, z_start_stop):
-
+def testAggregator(
+    parameters: list[ManualParameter],
+    npoints: int,
+    x_start_stop: list[int],
+    y_start_stop: list[int],
+    z_start_stop: list[int],
+) -> None:
     x_set = np.linspace(x_start_stop[0], x_start_stop[1], npoints).reshape(npoints, 1)
     y_set = np.linspace(y_start_stop[0], y_start_stop[1], npoints).reshape(npoints, 1)
     z_set = np.linspace(z_start_stop[0], z_start_stop[1], npoints).reshape(npoints, 1)
@@ -86,7 +96,7 @@ def testAggregator(parameters, npoints, x_start_stop, y_start_stop, z_start_stop
     assert results == expected_results
 
 
-def testMeta(parameters):
+def testMeta(parameters: list[ManualParameter]) -> None:
     name = "combined"
     label = "Linear Combination"
     unit = "a.u"
@@ -105,11 +115,11 @@ def testMeta(parameters):
     out["full_name"] = name
     out["aggregator"] = repr(linear)
     for param in sweep_values.parameters:
-        out[param.full_name] = {}
+        out[param.full_name] = {}  # type: ignore[assignment]
     assert out == snap
 
 
-def testMutable(parameters):
+def testMutable(parameters: list[ManualParameter]) -> None:
     setpoints = np.array([[1, 1, 1], [1, 1, 1]])
 
     sweep_values = combine(*parameters,
@@ -120,7 +130,7 @@ def testMutable(parameters):
     assert a != b
 
 
-def testArrays(parameters):
+def testArrays(parameters: list[ManualParameter]) -> None:
     x_vals = np.linspace(1, 1, 2)
     y_vals = np.linspace(1, 1, 2)
     z_vals = np.linspace(1, 1, 2)
@@ -138,7 +148,7 @@ def testArrays(parameters):
     assert res == expected
 
 
-def testWrongLen(parameters):
+def testWrongLen(parameters: list[ManualParameter]) -> None:
     x_vals = np.linspace(1, 1, 2)
     y_vals = np.linspace(1, 1, 2)
     z_vals = np.linspace(1, 1, 3)
@@ -147,7 +157,7 @@ def testWrongLen(parameters):
                 name="combined").sweep(x_vals, y_vals, z_vals)
 
 
-def testInvalidName(parameters):
+def testInvalidName(parameters: list[ManualParameter]) -> None:
     x_vals = np.linspace(1, 1, 2)
     y_vals = np.linspace(1, 1, 2)
     z_vals = np.linspace(1, 1, 2)
@@ -156,7 +166,7 @@ def testInvalidName(parameters):
                 name="combined with spaces").sweep(x_vals, y_vals, z_vals)
 
 
-def testLen(parameters):
+def testLen(parameters: list[ManualParameter]) -> None:
     x_vals = np.linspace(1, 1, 2)
     y_vals = np.linspace(1, 1, 2)
     z_vals = np.linspace(1, 0, 2)
@@ -165,5 +175,5 @@ def testLen(parameters):
     assert len(x_vals) == len(sweep_values.setpoints)
 
 
-def linear(x, y, z):
+def linear(x: float, y: float, z: float) -> float:
     return x+y+z
