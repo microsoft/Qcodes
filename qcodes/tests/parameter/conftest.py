@@ -12,7 +12,7 @@ from qcodes.tests.instrument_mocks import DummyChannelInstrument
 
 T = TypeVar("T")
 
-NOT_PASSED = 'NOT_PASSED'
+NOT_PASSED: Literal["NOT_PASSED"] = "NOT_PASSED"
 
 
 @pytest.fixture(params=(True, False, NOT_PASSED))
