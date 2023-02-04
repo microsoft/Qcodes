@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from collections import OrderedDict
-from typing import Any
+from typing import TypeVar
 
+T = TypeVar("T")
 
 def create_on_off_val_mapping(
-    on_val: Any = True, off_val: Any = False
-) -> dict[str | bool, Any]:
+    on_val: T | bool = True, off_val: T | bool = False
+) -> OrderedDict[str | bool, T | bool]:
     """
     Returns a value mapping which maps inputs which reasonably mean "on"/"off"
     to the specified ``on_val``/``off_val`` which are to be sent to the
