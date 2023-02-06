@@ -1,7 +1,9 @@
 """
 Useful collections of types used around QCoDeS
 """
-from typing import Tuple, Union
+from __future__ import annotations
+
+from typing import Union
 
 import numpy as np
 
@@ -26,7 +28,7 @@ numpy_non_concrete_ints_instantiable = (np.int_, np.uint)
 Default integer types. The size may be platform dependent.
 """
 
-numpy_ints: Tuple[type, ...] = (
+numpy_ints: tuple[type, ...] = (
         numpy_concrete_ints +
         numpy_c_ints +
         numpy_non_concrete_ints_instantiable
@@ -49,7 +51,7 @@ numpy_non_concrete_floats_instantiable = (np.float_, )
 Default floating point types. The size may be platform dependent.
 """
 
-numpy_floats: Tuple[type, ...] = (
+numpy_floats: tuple[type, ...] = (
         numpy_concrete_floats +
         numpy_c_floats +
         numpy_non_concrete_floats_instantiable
