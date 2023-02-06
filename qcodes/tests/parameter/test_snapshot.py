@@ -118,7 +118,6 @@ def test_snapshot_timestamp_of_non_gettable_depends_only_on_cache_validity(
     p = create_parameter(snapshot_get, snapshot_value, cache_is_valid, get_cmd=False)
 
     t0 = p.cache.timestamp
-    assert t0 is not None
 
     if update != NOT_PASSED:
         s = p.snapshot(update=update)
@@ -126,10 +125,12 @@ def test_snapshot_timestamp_of_non_gettable_depends_only_on_cache_validity(
         s = p.snapshot()
 
     if cache_is_valid:
+        assert t0 is not None
         ts = datetime.strptime(s['ts'], '%Y-%m-%d %H:%M:%S')
         t0_up_to_seconds = t0.replace(microsecond=0)
         assert ts >= t0_up_to_seconds
     else:
+        assert t0 is None
         assert s['ts'] is None
 
 
