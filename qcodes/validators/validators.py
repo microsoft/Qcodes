@@ -160,7 +160,7 @@ class Nothing(Validator[Any]):
         self._reason = reason
 
 
-class Bool(Validator[bool | np.bool_]):
+class Bool(Validator[Union[bool, np.bool_]]):
     """
     Requires a boolean.
     """
