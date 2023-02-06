@@ -19,17 +19,17 @@ def parameters() -> Generator[list[ManualParameter], None, None]:
     yield parameters
 
 
-def testCombine(parameters: list[ManualParameter]) -> None:
+def test_combine(parameters: list[ManualParameter]) -> None:
     multipar = combine(*parameters, name="combined")
     assert multipar.dimensionality == len(parameters)
 
 
-def testSweepBadSetpoints(parameters: list[ManualParameter]) -> None:
+def test_sweep_bad_setpoints(parameters: list[ManualParameter]) -> None:
     with pytest.raises(ValueError):
         combine(*parameters, name="fail").sweep(np.array([[1, 2]]))
 
 
-def testSweep(parameters: list[ManualParameter]) -> None:
+def test_sweep(parameters: list[ManualParameter]) -> None:
     setpoints = np.array([[1, 1, 1], [1, 1, 1]])
 
     sweep_values = combine(*parameters, name="combined").sweep(setpoints)
@@ -45,7 +45,7 @@ def testSweep(parameters: list[ManualParameter]) -> None:
     assert res == expected
 
 
-def testSet(parameters: list[ManualParameter], mocker: MockerFixture) -> None:
+def test_set(parameters: list[ManualParameter], mocker: MockerFixture) -> None:
     setpoints = np.array([[1, 1, 1], [1, 1, 1]])
 
     sweep_values = combine(*parameters, name="combined").sweep(setpoints)
@@ -70,7 +70,7 @@ def testSet(parameters: list[ManualParameter], mocker: MockerFixture) -> None:
         sorted  # type: ignore[arg-type]
     ),
 )
-def testAggregator(
+def test_aggregator(
     parameters: list[ManualParameter],
     npoints: int,
     x_start_stop: list[int],
@@ -94,7 +94,7 @@ def testAggregator(
     assert results == expected_results
 
 
-def testMeta(parameters: list[ManualParameter]) -> None:
+def test_meta(parameters: list[ManualParameter]) -> None:
     name = "combined"
     label = "Linear Combination"
     unit = "a.u"
@@ -117,7 +117,7 @@ def testMeta(parameters: list[ManualParameter]) -> None:
     assert out == snap
 
 
-def testMutable(parameters: list[ManualParameter]) -> None:
+def test_mutable(parameters: list[ManualParameter]) -> None:
     setpoints = np.array([[1, 1, 1], [1, 1, 1]])
 
     sweep_values = combine(*parameters,
@@ -128,7 +128,7 @@ def testMutable(parameters: list[ManualParameter]) -> None:
     assert a != b
 
 
-def testArrays(parameters: list[ManualParameter]) -> None:
+def test_arrays(parameters: list[ManualParameter]) -> None:
     x_vals = np.linspace(1, 1, 2)
     y_vals = np.linspace(1, 1, 2)
     z_vals = np.linspace(1, 1, 2)
@@ -146,7 +146,7 @@ def testArrays(parameters: list[ManualParameter]) -> None:
     assert res == expected
 
 
-def testWrongLen(parameters: list[ManualParameter]) -> None:
+def test_wrong_len(parameters: list[ManualParameter]) -> None:
     x_vals = np.linspace(1, 1, 2)
     y_vals = np.linspace(1, 1, 2)
     z_vals = np.linspace(1, 1, 3)
@@ -155,7 +155,7 @@ def testWrongLen(parameters: list[ManualParameter]) -> None:
                 name="combined").sweep(x_vals, y_vals, z_vals)
 
 
-def testInvalidName(parameters: list[ManualParameter]) -> None:
+def test_invalid_name(parameters: list[ManualParameter]) -> None:
     x_vals = np.linspace(1, 1, 2)
     y_vals = np.linspace(1, 1, 2)
     z_vals = np.linspace(1, 1, 2)
@@ -164,7 +164,7 @@ def testInvalidName(parameters: list[ManualParameter]) -> None:
                 name="combined with spaces").sweep(x_vals, y_vals, z_vals)
 
 
-def testLen(parameters: list[ManualParameter]) -> None:
+def test_len(parameters: list[ManualParameter]) -> None:
     x_vals = np.linspace(1, 1, 2)
     y_vals = np.linspace(1, 1, 2)
     z_vals = np.linspace(1, 0, 2)
