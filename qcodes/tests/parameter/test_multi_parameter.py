@@ -2,7 +2,7 @@ from typing import Any
 
 import pytest
 
-from qcodes.parameters import MultiParameter
+from qcodes.parameters import MultiParameter, ParamRawDataType
 
 from .conftest import blank_instruments, named_instrument
 
@@ -13,13 +13,13 @@ class SimpleMultiParam(MultiParameter):
         self._get_count = 0
         super().__init__(*args, **kwargs)
 
-    def get_raw(self) -> Any:
+    def get_raw(self) -> ParamRawDataType:
         self._get_count += 1
         return self._return_val
 
 
 class SettableMulti(SimpleMultiParam):
-    def set_raw(self, value: Any) -> None:
+    def set_raw(self, value: ParamRawDataType) -> None:
         print("Calling set")
         self._return_val = value
 

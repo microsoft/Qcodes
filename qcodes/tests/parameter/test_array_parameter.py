@@ -2,18 +2,18 @@ from typing import Any
 
 import pytest
 
-from qcodes.parameters import ArrayParameter
+from qcodes.parameters import ArrayParameter, ParamRawDataType
 
 from .conftest import blank_instruments, named_instrument
 
 
 class SimpleArrayParam(ArrayParameter):
-    def __init__(self, return_val: Any, *args: Any, **kwargs: Any):
+    def __init__(self, return_val: ParamRawDataType, *args: Any, **kwargs: Any):
         self._return_val = return_val
         self._get_count = 0
         super().__init__(*args, **kwargs)
 
-    def get_raw(self) -> Any:
+    def get_raw(self) -> ParamRawDataType:
         self._get_count += 1
         return self._return_val
 

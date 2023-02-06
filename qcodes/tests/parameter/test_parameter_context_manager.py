@@ -3,7 +3,7 @@ from typing import Any, Generator
 import pytest
 
 import qcodes.validators as vals
-from qcodes.parameters import Parameter
+from qcodes.parameters import Parameter, ParamRawDataType
 from qcodes.tests.instrument_mocks import DummyInstrument
 
 
@@ -51,16 +51,16 @@ class DummyTrackingInstrument(DummyInstrument):
     def _vp_setter(self, value: str) -> None:
         self._vp_value = value
 
-    def _pp_getter(self) -> Any:
+    def _pp_getter(self) -> ParamRawDataType:
         return self._pp_value
 
-    def _pp_setter(self, value: Any) -> None:
+    def _pp_setter(self, value: ParamRawDataType) -> None:
         self._pp_value = value
 
-    def _cp_setter(self, value: Any) -> None:
+    def _cp_setter(self, value: ParamRawDataType) -> None:
         self._cp_counter += 1
 
-    def _cp_getter(self) -> Any:
+    def _cp_getter(self) -> ParamRawDataType:
         self._cp_get_counter += 1
         return self.counting_parameter.cache._value
 

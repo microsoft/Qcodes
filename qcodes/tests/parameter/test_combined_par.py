@@ -20,8 +20,6 @@ def parameters() -> Generator[list[ManualParameter], None, None]:
 
 
 def testCombine(parameters: list[ManualParameter]) -> None:
-    # DumyPar is not actually a parameter
-    # but it implements enough for this test
     multipar = combine(*parameters, name="combined")
     assert multipar.dimensionality == len(parameters)
 

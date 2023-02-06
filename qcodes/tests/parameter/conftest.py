@@ -7,7 +7,7 @@ import pytest
 
 import qcodes.validators as vals
 from qcodes.instrument import InstrumentBase
-from qcodes.parameters import Parameter
+from qcodes.parameters import ParamDataType, Parameter, ParamRawDataType
 from qcodes.tests.instrument_mocks import DummyChannelInstrument
 
 T = TypeVar("T")
@@ -118,10 +118,10 @@ class GetSetRawParameter(Parameter):
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
 
-    def get_raw(self) -> Any:
+    def get_raw(self) -> ParamRawDataType:
         return self.cache.raw_value
 
-    def set_raw(self, value: Any) -> None:
+    def set_raw(self, value: ParamRawDataType) -> None:
         pass
 
 
@@ -147,11 +147,13 @@ class MemoryParameter(Parameter):
         super().__init__(set_cmd=self.add_set_value,
                          get_cmd=self.create_get_func(get_cmd), **kwargs)
 
-    def add_set_value(self, value: Any) -> None:
+    def add_set_value(self, value: ParamDataType) -> None:
         self.set_values.append(value)
 
-    def create_get_func(self, func: None | Callable[[], Any]) -> Callable[[], Any]:
-        def get_func() -> Any:
+    def create_get_func(
+        self, func: None | Callable[[], ParamDataType]
+    ) -> Callable[[], ParamDataType]:
+        def get_func() -> ParamDataType:
             if func is not None:
                 val = func()
             else:
@@ -170,7 +172,7 @@ class VirtualParameter(Parameter):
     def underlying_instrument(self) -> InstrumentBase | None:
         return self._param.instrument
 
-    def get_raw(self) -> Any:
+    def get_raw(self) -> ParamRawDataType:
         return self._param.get()
 
 
@@ -187,10 +189,10 @@ class ParameterMemory:
     def __init__(self) -> None:
         self._value: Any | None = None
 
-    def get(self) -> Any:
+    def get(self) -> ParamDataType:
         return self._value
 
-    def set(self, value: Any) -> None:
+    def set(self, value: ParamDataType) -> None:
         self._value = value
 
     def set_p_prefixed(self, val: int) -> None:
