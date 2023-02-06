@@ -12,8 +12,6 @@ from pytest_mock import MockerFixture
 from qcodes.parameters import ManualParameter, combine
 from qcodes.utils import full_class
 
-from ..common import DumyPar
-
 
 @pytest.fixture()
 def parameters() -> Generator[list[ManualParameter], None, None]:
@@ -115,7 +113,7 @@ def testMeta(parameters: list[ManualParameter]) -> None:
     out["full_name"] = name
     out["aggregator"] = repr(linear)
     for param in sweep_values.parameters:
-        out[param.full_name] = {}  # type: ignore[assignment]
+        out[param.full_name] = param.snapshot()
     assert out == snap
 
 
