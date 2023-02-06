@@ -52,6 +52,17 @@ Go to the directory ``docs`` and
 This generate a webpage, index.html, in ``docs/_build/html`` with the
 rendered html.
 
+QCoDeS Loop
+===========
+
+The modules ``qcodes.data``, ``qcodes.plots``, ``qcodes.actions``,
+``qcodes.loops``, ``qcodes.measure``, ``qcodes.extensions.slack``
+and ``qcodes.utils.magic`` that were part of QCoDeS until version 0.37.0.
+have been moved into an independent package called qcodes_loop.
+Please see it's `repository <https://github.com/QCoDeS/Qcodes_loop`_ and
+`documentation <https://qcodes.github.io/Qcodes_loop/>`_ for more information.
+
+
 Code of Conduct
 ===============
 
