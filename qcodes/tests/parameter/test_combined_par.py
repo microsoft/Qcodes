@@ -114,7 +114,7 @@ def test_meta(parameters: list[ManualParameter]) -> None:
     out["full_name"] = name
     out["aggregator"] = repr(linear)
     for param in sweep_values.parameters:
-        out[param.full_name] = param.snapshot()
+        out[param.full_name] = param.snapshot()  # type: ignore[assignment]
     assert out == snap
 
 
