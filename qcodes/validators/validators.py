@@ -7,7 +7,6 @@ from __future__ import annotations
 import math
 import typing
 from collections import abc
-
 from typing import (
     Any,
     Generic,
