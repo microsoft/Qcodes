@@ -8,8 +8,6 @@ import math
 import typing
 from collections import abc
 
-# rename on import since this file implements its own classes
-# with these names.
 from typing import (
     Any,
     Generic,
