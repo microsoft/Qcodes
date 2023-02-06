@@ -1,13 +1,15 @@
+from typing import Any, Generator
+
 import pytest
 
 import qcodes.validators as vals
-from qcodes.parameters import Parameter
+from qcodes.parameters import Parameter, ParamRawDataType
 from qcodes.tests.instrument_mocks import DummyInstrument
 
 
 class DummyTrackingInstrument(DummyInstrument):
 
-    def __init__(self, name):
+    def __init__(self, name: str):
         super().__init__(name)
         self.add_parameter("a",
                            set_cmd=None,
@@ -43,28 +45,28 @@ class DummyTrackingInstrument(DummyInstrument):
         self._cp_counter = 0
         self._cp_get_counter = 0
 
-    def _vp_getter(self):
+    def _vp_getter(self) -> str:
         return self._vp_value
 
-    def _vp_setter(self, value):
+    def _vp_setter(self, value: str) -> None:
         self._vp_value = value
 
-    def _pp_getter(self):
+    def _pp_getter(self) -> ParamRawDataType:
         return self._pp_value
 
-    def _pp_setter(self, value):
+    def _pp_setter(self, value: ParamRawDataType) -> None:
         self._pp_value = value
 
-    def _cp_setter(self, value):
+    def _cp_setter(self, value: ParamRawDataType) -> None:
         self._cp_counter += 1
 
-    def _cp_getter(self):
+    def _cp_getter(self) -> ParamRawDataType:
         self._cp_get_counter += 1
         return self.counting_parameter.cache._value
 
 
-@pytest.fixture()
-def instrument():
+@pytest.fixture(name="instrument")
+def _make_instrument() -> Generator[DummyTrackingInstrument, None, None]:
     instrument = DummyTrackingInstrument('dummy_holder')
     try:
         yield instrument
@@ -72,7 +74,9 @@ def instrument():
         instrument.close()
 
 
-def test_set_to_none_when_parameter_is_not_captured_yet(instrument):
+def test_set_to_none_when_parameter_is_not_captured_yet(
+    instrument: DummyTrackingInstrument,
+) -> None:
     counting_parameter = instrument.counting_parameter
     # Pre-conditions:
     assert instrument._cp_counter == 0
@@ -100,12 +104,12 @@ def test_set_to_none_when_parameter_is_not_captured_yet(instrument):
     assert instrument._cp_get_counter == 1
 
 
-def test_set_to_none_for_not_captured_parameter_but_instrument_has_value():
+def test_set_to_none_for_not_captured_parameter_but_instrument_has_value() -> None:
     # representing instrument here
     instr_value = 'something'
     set_counter = 0
 
-    def set_instr_value(value):
+    def set_instr_value(value: Any) -> None:
         nonlocal instr_value, set_counter
         instr_value = value
         set_counter += 1
@@ -115,28 +119,28 @@ def test_set_to_none_for_not_captured_parameter_but_instrument_has_value():
                   val_mapping={'foo': 'something', None: 'nothing'})
 
     # pre-conditions
-    assert p.cache._value is None
-    assert p.cache._raw_value is None
+    assert p.cache._value is None  # type: ignore[attr-defined]
+    assert p.cache.raw_value is None
     assert p.cache.timestamp is None
     assert set_counter == 0
 
     with p.set_to(None):
         # assertions after entering the context
         assert set_counter == 1
-        assert instr_value == 'nothing'
-        assert p.cache._value is None
-        assert p.cache._raw_value == 'nothing'
+        assert instr_value == "nothing"
+        assert p.cache._value is None  # type: ignore[attr-defined]
+        assert p.cache.raw_value == "nothing"
         assert p.cache.timestamp is not None
 
     # assertions after exiting the context
     assert set_counter == 2
-    assert instr_value == 'something'
-    assert p.cache._value == 'foo'
-    assert p.cache._raw_value == 'something'
+    assert instr_value == "something"
+    assert p.cache._value == "foo"  # pyright: ignore
+    assert p.cache.raw_value == "something"
     assert p.cache.timestamp is not None
 
 
-def test_none_value(instrument):
+def test_none_value(instrument: DummyTrackingInstrument) -> None:
     with instrument.a.set_to(3):
         assert instrument.a.get_latest.get_timestamp() is not None
         assert instrument.a.get() == 3
@@ -144,7 +148,7 @@ def test_none_value(instrument):
     assert instrument.a.get_latest.get_timestamp() is not None
 
 
-def test_context(instrument):
+def test_context(instrument: DummyTrackingInstrument) -> None:
     instrument.a.set(2)
 
     with instrument.a.set_to(3):
@@ -152,7 +156,7 @@ def test_context(instrument):
     assert instrument.a.get() == 2
 
 
-def test_validated_param(instrument):
+def test_validated_param(instrument: DummyTrackingInstrument) -> None:
     assert instrument.parsed_param.cache._value is None
     assert instrument.validated_param.get_latest() == "foo"
     with instrument.validated_param.set_to("bar"):
@@ -161,7 +165,7 @@ def test_validated_param(instrument):
     assert instrument.validated_param.get() == "foo"
 
 
-def test_parsed_param(instrument):
+def test_parsed_param(instrument: DummyTrackingInstrument) -> None:
     assert instrument.parsed_param.cache._value is None
     assert instrument.parsed_param.get_latest() == 42
     with instrument.parsed_param.set_to(1):
@@ -170,7 +174,7 @@ def test_parsed_param(instrument):
     assert instrument.parsed_param.get() == 42
 
 
-def test_number_of_set_calls(instrument):
+def test_number_of_set_calls(instrument: DummyTrackingInstrument) -> None:
     """
     Test that with param.set_to(X) does not perform any calls to set if
     the parameter already had the value X
@@ -188,7 +192,9 @@ def test_number_of_set_calls(instrument):
     assert instrument._cp_counter == 3
 
 
-def test_value_modified_between_context_create_and_enter(instrument):
+def test_value_modified_between_context_create_and_enter(
+    instrument: DummyTrackingInstrument,
+) -> None:
     p = instrument.a
     p.set(2)
     ctx = p.set_to(5)
@@ -200,7 +206,7 @@ def test_value_modified_between_context_create_and_enter(instrument):
     assert p() == 3
 
 
-def test_disallow_changes(instrument):
+def test_disallow_changes(instrument: DummyTrackingInstrument) -> None:
     instrument.a.set(2)
 
     with instrument.a.set_to(3, allow_changes=False):
@@ -213,7 +219,7 @@ def test_disallow_changes(instrument):
     assert instrument.a() == 2
 
 
-def test_allow_changes(instrument):
+def test_allow_changes(instrument: DummyTrackingInstrument) -> None:
     p = instrument.a
     p.set(2)
     with p.set_to(3, allow_changes=True):
@@ -236,7 +242,7 @@ def test_allow_changes(instrument):
     assert p() == 2
 
 
-def test_reset_at_exit(instrument):
+def test_reset_at_exit(instrument: DummyTrackingInstrument) -> None:
     p = instrument.a
     p.set(2)
     with p.restore_at_exit():
@@ -244,7 +250,9 @@ def test_reset_at_exit(instrument):
     assert p() == 2
 
 
-def test_reset_at_exit_with_allow_changes_false(instrument):
+def test_reset_at_exit_with_allow_changes_false(
+    instrument: DummyTrackingInstrument,
+) -> None:
     p = instrument.a
     p.set(2)
     with p.restore_at_exit(allow_changes=False):

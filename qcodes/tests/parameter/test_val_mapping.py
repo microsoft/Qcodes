@@ -1,3 +1,5 @@
+from typing import Generator
+
 import pytest
 
 import qcodes.validators as vals
@@ -8,7 +10,7 @@ from .conftest import ParameterMemory
 
 
 @pytest.fixture(name="dummyinst")
-def _make_dummy_inst():
+def _make_dummy_inst() -> Generator[DummyInstrument, None, None]:
     inst = DummyInstrument('dummy_holder')
     try:
         yield inst
@@ -16,7 +18,7 @@ def _make_dummy_inst():
         inst.close()
 
 
-def test_val_mapping_basic():
+def test_val_mapping_basic() -> None:
     # We store value external to cache
     # to allow testing of interaction with cache
     mem = ParameterMemory()
@@ -53,7 +55,7 @@ def test_val_mapping_basic():
     assert p.get_latest() == 'on'
 
 
-def test_val_mapping_with_parsers():
+def test_val_mapping_with_parsers() -> None:
     # We store value external to cache
     # to allow testing of interaction with cache
     mem = ParameterMemory()
@@ -90,7 +92,7 @@ def test_val_mapping_with_parsers():
     assert p.cache.get() == 'on'
 
 
-def test_on_off_val_mapping():
+def test_on_off_val_mapping() -> None:
     instrument_value_for_on = 'on_'
     instrument_value_for_off = 'off_'
 
@@ -124,7 +126,7 @@ def test_on_off_val_mapping():
             assert p() == parameter_return_value
 
 
-def test_val_mapping_on_instrument(dummyinst):
+def test_val_mapping_on_instrument(dummyinst: DummyInstrument) -> None:
 
     dummyinst.add_parameter('myparameter', set_cmd=None, get_cmd=None,
                             val_mapping={'A': 0, 'B': 1})

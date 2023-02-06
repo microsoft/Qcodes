@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Any, Callable, Literal
+
 import pytest
 
 from qcodes.parameters import Parameter, ParameterBase
@@ -10,7 +14,7 @@ from .conftest import (
 )
 
 
-def test_parameter_with_overwritten_get_raises():
+def test_parameter_with_overwritten_get_raises() -> None:
     """
     Test that creating a parameter that overwrites get and set raises runtime errors
     """
@@ -22,7 +26,7 @@ def test_parameter_with_overwritten_get_raises():
     )
 
 
-def test_parameter_with_overwritten_set_raises():
+def test_parameter_with_overwritten_set_raises() -> None:
     """
     Test that creating a parameter that overwrites get and set raises runtime errors
     """
@@ -33,12 +37,20 @@ def test_parameter_with_overwritten_set_raises():
     )
 
 
-@pytest.mark.parametrize("get_cmd, set_cmd", [(False, False), (False, None), (None, None), (None, False),
-                                              (lambda: 1, lambda x: x)])
-def test_gettable_settable_attributes_with_get_set_cmd(get_cmd, set_cmd):
-    a = Parameter(name='foo',
-                  get_cmd=get_cmd,
-                  set_cmd=set_cmd)
+@pytest.mark.parametrize(
+    "get_cmd, set_cmd",
+    [
+        (False, False),
+        (False, None),
+        (None, None),
+        (None, False),
+        (lambda: 1, lambda x: x),
+    ],
+)
+def test_gettable_settable_attributes_with_get_set_cmd(
+    get_cmd: Literal[False] | None | Callable, set_cmd: Literal[False] | None | Callable
+) -> None:
+    a = Parameter(name="foo", get_cmd=get_cmd, set_cmd=set_cmd)
     expected_gettable = get_cmd is not False
     expected_settable = set_cmd is not False
 
@@ -47,19 +59,21 @@ def test_gettable_settable_attributes_with_get_set_cmd(get_cmd, set_cmd):
 
 
 @pytest.mark.parametrize("baseclass", [ParameterBase, Parameter])
-def test_gettable_settable_attributes_with_get_set_raw(baseclass):
+def test_gettable_settable_attributes_with_get_set_raw(
+    baseclass: type[ParameterBase],
+) -> None:
     """Test that parameters that have get_raw,set_raw are
     listed as gettable/settable and reverse."""
 
-    class GetSetParam(baseclass):
-        def __init__(self, *args, initial_value=None, **kwargs):
+    class GetSetParam(baseclass):  # type: ignore[valid-type,misc]
+        def __init__(self, *args: Any, initial_value: Any = None, **kwargs: Any):
             self._value = initial_value
             super().__init__(*args, **kwargs)
 
-        def get_raw(self):
+        def get_raw(self) -> Any:
             return self._value
 
-        def set_raw(self, value):
+        def set_raw(self, value: Any) -> Any:
             self._value = value
 
     a = GetSetParam('foo', instrument=None, initial_value=1)
@@ -75,32 +89,42 @@ def test_gettable_settable_attributes_with_get_set_raw(baseclass):
 
 @pytest.mark.parametrize("working_get_cmd", (False, None))
 @pytest.mark.parametrize("working_set_cmd", (False, None))
-def test_get_raw_and_get_cmd_raises(working_get_cmd, working_set_cmd):
+def test_get_raw_and_get_cmd_raises(
+    working_get_cmd: Literal[False] | None, working_set_cmd: Literal[False] | None
+) -> None:
     with pytest.raises(TypeError, match="get_raw"):
-        GetSetRawParameter(name="param1", get_cmd="GiveMeTheValue", set_cmd=working_set_cmd)
+        GetSetRawParameter(
+            name="param1", get_cmd="GiveMeTheValue", set_cmd=working_set_cmd
+        )
     with pytest.raises(TypeError, match="set_raw"):
-        GetSetRawParameter(name="param2", set_cmd="HereIsTheValue {}", get_cmd=working_get_cmd)
+        GetSetRawParameter(
+            name="param2", set_cmd="HereIsTheValue {}", get_cmd=working_get_cmd
+        )
     GetSetRawParameter("param3", get_cmd=working_get_cmd, set_cmd=working_set_cmd)
 
 
-def test_get_on_parameter_marked_as_non_gettable_raises():
+def test_get_on_parameter_marked_as_non_gettable_raises() -> None:
     a = Parameter("param")
     a._gettable = False
-    with pytest.raises(TypeError, match="Trying to get a parameter that is not gettable."):
+    with pytest.raises(
+        TypeError, match="Trying to get a parameter that is not gettable."
+    ):
         a.get()
 
 
-def test_set_on_parameter_marked_as_non_settable_raises():
+def test_set_on_parameter_marked_as_non_settable_raises() -> None:
     a = Parameter("param", set_cmd=None)
     a.set(2)
     assert a.get() == 2
     a._settable = False
-    with pytest.raises(TypeError, match="Trying to set a parameter that is not settable."):
+    with pytest.raises(
+        TypeError, match="Trying to set a parameter that is not settable."
+    ):
         a.set(1)
     assert a.get() == 2
 
 
-def test_settable():
+def test_settable() -> None:
     mem = ParameterMemory()
 
     p = Parameter('p', set_cmd=mem.set, get_cmd=False)
@@ -121,7 +145,7 @@ def test_settable():
     assert p.get_latest() == 7
 
 
-def test_gettable():
+def test_gettable() -> None:
     mem = ParameterMemory()
     p = Parameter('p', get_cmd=mem.get)
     mem.set(21)

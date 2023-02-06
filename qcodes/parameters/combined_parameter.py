@@ -23,7 +23,7 @@ def combine(
     label: str | None = None,
     unit: str | None = None,
     units: str | None = None,
-    aggregator: Callable[[Sequence[Any]], Any] | None = None,
+    aggregator: Callable[..., Any] | None = None,
 ) -> CombinedParameter:
     """
     Combine parameters into one sweepable parameter

@@ -1,11 +1,13 @@
+from typing import Generator
+
 import pytest
 
 from qcodes.parameters import InstrumentRefParameter
 from qcodes.tests.instrument_mocks import DummyInstrument
 
 
-@pytest.fixture()
-def instrument_a():
+@pytest.fixture(name="instrument_a")
+def _make_instrument_a() -> Generator[DummyInstrument, None, None]:
     a = DummyInstrument('dummy_holder')
     try:
         yield a
@@ -13,8 +15,8 @@ def instrument_a():
         a.close()
 
 
-@pytest.fixture()
-def instrument_d():
+@pytest.fixture(name="instrument_d")
+def _make_instrument_d() -> Generator[DummyInstrument, None, None]:
     d = DummyInstrument('dummy')
     try:
         yield d
@@ -22,8 +24,10 @@ def instrument_d():
         d.close()
 
 
-def test_get_instr(instrument_a, instrument_d):
-    instrument_a.add_parameter('test', parameter_class=InstrumentRefParameter)
+def test_get_instr(
+    instrument_a: DummyInstrument, instrument_d: DummyInstrument
+) -> None:
+    instrument_a.add_parameter("test", parameter_class=InstrumentRefParameter)
 
     instrument_a.test.set(instrument_d.name)
 

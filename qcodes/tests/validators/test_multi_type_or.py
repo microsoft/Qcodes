@@ -5,7 +5,7 @@ from qcodes.validators import Enum, Ints, Lists, MultiTypeOr, Strings
 from .conftest import AClass, a_func
 
 
-def test_good():
+def test_good() -> None:
     m = MultiTypeOr(Strings(2, 4), Ints(10, 1000))
 
     for v in [10, 11, 123, 1000, "aa", "mop", "FRED"]:
@@ -35,13 +35,13 @@ def test_good():
     assert not MultiTypeOr(Strings(), Enum(1, 2)).is_numeric
 
 
-def test_bad():
-    for args in [[], [1], [Strings(), True]]:
+def test_bad() -> None:
+    for args in ([], [1], [Strings(), True]):
         with pytest.raises(TypeError):
-            MultiTypeOr(*args)
+            MultiTypeOr(*args)  # type: ignore[misc]
 
 
-def test_valid_values():
+def test_valid_values() -> None:
     ms = [
         MultiTypeOr(Strings(2, 4), Ints(10, 32)),
         MultiTypeOr(Ints(), Lists(Ints())),

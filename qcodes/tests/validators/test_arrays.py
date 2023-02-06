@@ -15,25 +15,25 @@ from qcodes.utils.types import (
 from qcodes.validators import Arrays
 
 
-def test_type():
+def test_type() -> None:
     m = Arrays(min_value=0.0, max_value=3.2, shape=(2, 2))
     for v in ['somestring', 4, 2, [[2, 0], [1, 2]]]:
         with pytest.raises(TypeError):
-            m.validate(v)
+            m.validate(v)  # type: ignore[arg-type]
 
 
-def test_complex_min_max_raises():
+def test_complex_min_max_raises() -> None:
     """
     Min max is not implemented for complex types
     """
     with pytest.raises(TypeError, match=r"min_value must be a real number\."
                                         r" It is \(1\+1j\) of type "
                                         r"<class 'complex'>"):
-        Arrays(min_value=1 + 1j)
+        Arrays(min_value=1 + 1j)  # type: ignore[arg-type]
     with pytest.raises(TypeError, match=r"max_value must be a real number. "
                                         r"It is \(1\+1j\) of type "
                                         r"<class 'complex'>"):
-        Arrays(max_value=1 + 1j)
+        Arrays(max_value=1 + 1j)  # type: ignore[arg-type]
     with pytest.raises(TypeError, match=r'Setting min_value or max_value is '
                                         r'not supported for complex '
                                         r'validators'):
@@ -41,12 +41,12 @@ def test_complex_min_max_raises():
 
 
 @given(dtype=complex_number_dtypes())
-def test_complex(dtype):
+def test_complex(dtype: np.dtype) -> None:
     a = Arrays(valid_types=(np.complexfloating,))
     a.validate(np.arange(10, dtype=dtype))
 
 
-def test_complex_subtypes():
+def test_complex_subtypes() -> None:
     """Test that specifying a specific complex subtype works as expected"""
     a = Arrays(valid_types=(np.complex64,))
 
@@ -64,7 +64,7 @@ def test_complex_subtypes():
         a.validate(np.arange(10, dtype=np.complex64))
 
 
-def test_min_max_real_ints_raises():
+def test_min_max_real_ints_raises() -> None:
     with pytest.raises(TypeError, match="min_value must be an instance "
                                         "of valid_types."):
         Arrays(valid_types=(np.integer,), min_value=1.0)
@@ -73,7 +73,7 @@ def test_min_max_real_ints_raises():
         Arrays(valid_types=(np.integer,), max_value=6.0)
 
 
-def test_min_max_ints_real_raises():
+def test_min_max_ints_real_raises() -> None:
     with pytest.raises(TypeError, match="min_value must be an instance "
                                         "of valid_types."):
         Arrays(valid_types=(np.floating,), min_value=1)
@@ -82,7 +82,7 @@ def test_min_max_ints_real_raises():
         Arrays(valid_types=(np.floating,), max_value=6)
 
 
-def test_real_subtypes():
+def test_real_subtypes() -> None:
     """
     Test that validating a concrete real type into an array that
     only support other concrete types raises as expected
@@ -98,7 +98,7 @@ def test_real_subtypes():
         a.validate(np.arange(10, dtype=mytype))
 
 
-def test_complex_default_raises():
+def test_complex_default_raises() -> None:
     """Complex types should not validate by default"""
     a = Arrays()
     for dtype in concrete_complex_types:
@@ -109,7 +109,7 @@ def test_complex_default_raises():
             a.validate(np.arange(10, dtype=dtype))
 
 
-def test_text_type_raises():
+def test_text_type_raises() -> None:
     """Text types are not supported """
     with pytest.raises(TypeError, match="Arrays validator only supports "
                                         "numeric types: <class "
@@ -117,7 +117,7 @@ def test_text_type_raises():
         Arrays(valid_types=(np.dtype('<U5').type,))
 
 
-def test_text_array_raises():
+def test_text_array_raises() -> None:
     """Test that an array of text raises"""
     a = Arrays()
     with pytest.raises(TypeError,
@@ -127,7 +127,7 @@ def test_text_array_raises():
         a.validate(np.array(['A', 'BC', 'CDF']))
 
 
-def test_default_types():
+def test_default_types() -> None:
     """Arrays constructed with all concrete and abstract real number
     types should validate by default"""
     a = Arrays()
@@ -148,7 +148,7 @@ def test_default_types():
         a.validate(np.arange(10, dtype=mytype))
 
 
-def test_min_max():
+def test_min_max() -> None:
     m = Arrays(min_value=-5, max_value=50, shape=(2, 2))
     v = np.array([[2, 0], [1, 2]])
     m.validate(v)
@@ -164,13 +164,13 @@ def test_min_max():
     m.validate(v * 100)
 
 
-def test_max_smaller_min_raises():
+def test_max_smaller_min_raises() -> None:
     with pytest.raises(TypeError, match='max_value must be '
                                         'bigger than min_value'):
         Arrays(min_value=10, max_value=-10)
 
 
-def test_shape():
+def test_shape() -> None:
     m = Arrays(min_value=-5, max_value=50, shape=(2, 2))
 
     v1 = np.array([[2, 0], [1, 2]])
@@ -186,7 +186,7 @@ def test_shape():
     m.validate(v2)
 
 
-def test_shape_defered():
+def test_shape_defered() -> None:
     m = Arrays(min_value=-5, max_value=50, shape=(lambda: 2, lambda: 2))
     v1 = np.array([[2, 5], [3, 7]])
     m.validate(v1)
@@ -195,26 +195,26 @@ def test_shape_defered():
         m.validate(v2)
 
 
-def test_valid_values_with_shape():
+def test_valid_values_with_shape() -> None:
     val = Arrays(min_value=-5, max_value=50, shape=(2, 2))
     for vval in val.valid_values:
         val.validate(vval)
 
 
-def test_valid_values():
+def test_valid_values() -> None:
     val = Arrays(min_value=-5, max_value=50)
     for vval in val.valid_values:
         val.validate(vval)
 
 
-def test_shape_non_sequence_raises():
+def test_shape_non_sequence_raises() -> None:
     with pytest.raises(ValueError):
-        _ = Arrays(shape=5)
+        _ = Arrays(shape=5)  # type: ignore[arg-type]
     with pytest.raises(ValueError):
-        _ = Arrays(shape=lambda: 10)
+        _ = Arrays(shape=lambda: 10)  # type: ignore[arg-type]
 
 
-def test_repr():
+def test_repr() -> None:
     a = Arrays()
     assert str(a) == '<Arrays, shape: None>'
     b = Arrays(min_value=1, max_value=2)

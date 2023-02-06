@@ -1,20 +1,24 @@
+from __future__ import annotations
+
+from typing import Any
+
 import pytest
 
-from qcodes.validators import Enum
+import qcodes.validators as vals
 
-enums = [
+enums: list[list[Any]] = [
     [True, False],
     [1, 2, 3],
     [True, None, 1, 2.3, 'Hi!', b'free', (1, 2), float("inf")]
 ]
 
 # enum items must be immutable - tuple OK, list bad.
-not_enums = [[], [[1, 2], [3, 4]]]
+not_enums: list[list[list[int]]] = [[], [[1, 2], [3, 4]]]
 
 
-def test_good():
+def test_good() -> None:
     for enum in enums:
-        e = Enum(*enum)
+        e = vals.Enum(*enum)
 
         for v in enum:
             e.validate(v)
@@ -30,14 +34,14 @@ def test_good():
         assert not e.is_numeric
 
 
-def test_bad():
+def test_bad() -> None:
     for enum in not_enums:
         with pytest.raises(TypeError):
-            Enum(*enum)
+            vals.Enum(*enum)  # type: ignore[arg-type]
 
 
-def test_valid_values():
+def test_valid_values() -> None:
     for enum in enums:
-        e = Enum(*enum)
+        e = vals.Enum(*enum)
         for val in e._valid_values:
             e.validate(val)
