@@ -1,17 +1,18 @@
 from __future__ import annotations
 
 from collections import OrderedDict
-from typing import Generator
+from typing import TYPE_CHECKING, Generator
 
 import hypothesis.strategies as hst
 import numpy as np
 import pytest
 from hypothesis import HealthCheck, given, settings
-from pytest_mock import MockerFixture
 
 from qcodes.parameters import ManualParameter, combine
 from qcodes.utils import full_class
 
+if TYPE_CHECKING:
+    from pytest_mock import MockerFixture
 
 @pytest.fixture()
 def parameters() -> Generator[list[ManualParameter], None, None]:

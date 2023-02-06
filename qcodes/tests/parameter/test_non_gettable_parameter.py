@@ -1,8 +1,13 @@
+from __future__ import annotations
+
 import logging
+from typing import TYPE_CHECKING
 
 import numpy as np
 from numpy.testing import assert_array_almost_equal
-from pytest import LogCaptureFixture
+
+if TYPE_CHECKING:
+    from pytest import LogCaptureFixture
 
 from qcodes.parameters import Parameter
 
