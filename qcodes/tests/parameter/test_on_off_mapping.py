@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pytest
 
 from qcodes.parameters import create_on_off_val_mapping, invert_val_mapping
