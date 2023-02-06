@@ -1065,7 +1065,7 @@ class Lists(Validator[typing.List[T]]):
         return self._elt_validator
 
 
-class Sequence(Validator[abc.Sequence[Any]]):
+class Sequence(Validator[typing.Sequence[Any]]):
     """
     Validator for Sequences.
 
