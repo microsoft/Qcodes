@@ -98,6 +98,7 @@ test = [
     "types-setuptools>=57.0.0",
     "types-tabulate>=0.1.0",
     "types-tqdm>=4.64.6",
+    "types_pywin32>=305.0.0.7"
 ]
 docs = [
     "autodocsumm>=0.2.9",
@@ -211,7 +212,6 @@ module = [
     "mcl_RF_Switch_Controller64",
     "mcl_RF_Switch_Controller_NET45",
     "opencensus.ext.azure.*",
-    "pythoncom",
     "pyqtgraph.*",
     "pywinusb.*",
     "ruamel",
@@ -219,9 +219,6 @@ module = [
     "spyder_kernels.customize",
     "System.IO",
     "uncertainties",
-    "win32com.*",
-    "win32con",
-    "win32gui",
     "wrapt",
     "zhinst.qcodes",
 ]
