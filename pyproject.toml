@@ -212,7 +212,6 @@ module = [
     "mcl_RF_Switch_Controller64",
     "mcl_RF_Switch_Controller_NET45",
     "opencensus.ext.azure.*",
-    "pythoncom",
     "pyqtgraph.*",
     "pywinusb.*",
     "ruamel",
@@ -220,9 +219,6 @@ module = [
     "spyder_kernels.customize",
     "System.IO",
     "uncertainties",
-    "win32com.*",
-    "win32con",
-    "win32gui",
     "wrapt",
     "zhinst.qcodes",
 ]
