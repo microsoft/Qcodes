@@ -19,8 +19,8 @@ def foreground_qt_window(window: "QMainWindow") -> None:
         >>> Qtplot.qt_helpers.foreground_qt_window(plot.win)
     """
     try:
-        import win32con
-        from win32gui import SetWindowPos
+        import win32con  # pyright: ignore[reportMissingModuleSource]
+        from win32gui import SetWindowPos  # pyright: ignore[reportMissingModuleSource]
 
         # use the idea from
         # https://stackoverflow.com/questions/12118939/how-to-make-a-pyqt4-window-jump-to-the-front
