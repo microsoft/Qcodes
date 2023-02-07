@@ -117,7 +117,7 @@ docs = [
     "towncrier>=22.8.0",
     "scipy>=1.7.0", # examples using scipy
     "slack-sdk>=3.4.2", # slack example notebook
-    "qcodes_loop>=0.1.1", # leacy import examples
+    "qcodes_loop>=0.1.1", # legacy dataset import examples
 ]
 
 [project.scripts]
