@@ -62,6 +62,8 @@ have been moved into an independent package called qcodes_loop.
 Please see it's `repository <https://github.com/QCoDeS/Qcodes_loop`_ and
 `documentation <https://qcodes.github.io/Qcodes_loop/>`_ for more information.
 
+For the time being it is possible to automatically install the qcodes_loop
+package when installing qcodes by executing ``pip install qcodes[loop]``.
 
 Code of Conduct
 ===============
