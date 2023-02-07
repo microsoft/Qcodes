@@ -98,6 +98,7 @@ test = [
     "types-setuptools>=57.0.0",
     "types-tabulate>=0.1.0",
     "types-tqdm>=4.64.6",
+    "types_pywin32>=305.0.0.7"
 ]
 docs = [
     "autodocsumm>=0.2.9",
