@@ -74,7 +74,7 @@ reports, contributing code, style, and testing.
 License
 =======
 
-See `License <https://github.com/QCoDeS/Qcodes/tree/master/LICENSE.rst>`__.
+See `License <https://github.com/QCoDeS/Qcodes/tree/master/LICENSE>`__.
 
 .. |Build Status Github| image:: https://github.com/QCoDeS/Qcodes/workflows/Run%20mypy%20and%20pytest/badge.svg
     :target: https://github.com/QCoDeS/Qcodes/actions?query=workflow%3A%22Run+mypy+and+pytest%22
