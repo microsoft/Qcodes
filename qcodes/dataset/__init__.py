@@ -32,6 +32,7 @@ from .experiment_container import (
 )
 from .experiment_settings import get_default_experiment_id, reset_default_experiment_id
 from .export_config import get_data_export_path
+from .guid_helpers import guids_from_dbs, guids_from_dir, guids_from_list_str
 from .legacy_import import import_dat_file
 from .measurements import Measurement
 from .plotting import plot_by_id, plot_dataset
@@ -59,13 +60,13 @@ __all__ = [
     "LinSweep",
     "LogSweep",
     "Measurement",
-    "TogetherSweep",
     "ParamSpec",
     "ParamSpecTree",
     "RunDescriber",
     "SQLiteSettings",
     "SequentialParamsCaller",
     "ThreadPoolParamsCaller",
+    "TogetherSweep",
     "call_params_threaded",
     "connect",
     "do0d",
@@ -77,6 +78,9 @@ __all__ = [
     "get_data_export_path",
     "get_default_experiment_id",
     "get_guids_by_run_spec",
+    "guids_from_dbs",
+    "guids_from_dir",
+    "guids_from_list_str",
     "import_dat_file",
     "initialise_database",
     "initialise_or_create_database_at",
