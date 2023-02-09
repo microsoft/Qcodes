@@ -280,6 +280,7 @@ ignore = ["E501"]
 "qcodes/plots/pyqtgraph.py" = ["F401"]
 "qcodes/plots/qcmatplotlib.py" = ["F401"]
 "qcodes/loops.py" = ["F401"]
+"qcodes/measure.py" = ["F401"]
 "qcodes/plots/base.py" = ["F401"]
 "qcodes/plots/colors.py" = ["F401"]
 "qcodes/utils/validators.py" = ["F401"]
@@ -305,8 +306,12 @@ ignore = ["E501"]
 "qcodes/instrument_drivers/rigol/DG1062.py" = ["F401"]
 "qcodes/instrument_drivers/devices.py" = ["F401"]
 "qcodes/instrument_drivers/basel/sp983c_remote.py" = ["F401"]
+"qcodes/instrument_drivers/Lakeshore/Model_325.py" = ["F401"]
+"qcodes/instrument_drivers/Lakeshore/Model_336.py" = ["F401"]
+"qcodes/instrument_drivers/Lakeshore/Model_372.py" = ["F401"]
 
-
+"qcodes/instrument_drivers/Keysight/KtM960x.py" = ["F405"]
+"qcodes/instrument_drivers/Keysight/KtMAwg.py" = ["F405"]
 
 [tool.towncrier]
 package = "qcodes"
