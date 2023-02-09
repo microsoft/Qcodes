@@ -51,10 +51,11 @@ def alazar_api():
 
 
 def test_alazar_api_singleton_behavior(caplog):
-    using_msg = lambda dll_path: (
-        f"Using existing instance for DLL path {dll_path}.")
-    creating_msg = lambda dll_path: (
-        f"Creating new instance for DLL path {dll_path}.")
+    def using_msg(dll_path):
+        return f"Using existing instance for DLL path {dll_path}."
+
+    def creating_msg(dll_path):
+        return f"Creating new instance for DLL path {dll_path}."
 
     assert DllWrapperMeta._instances == {}
 

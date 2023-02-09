@@ -188,15 +188,15 @@ def test_validation_no_validator():
                             vals=vals.Arrays(shape=(n_points_1,)))
     # output does not have a validator
 
-    with pytest.raises(ValueError, match=r"A ParameterWithSetpoints must have "
-                                         r"an Arrays validator got "
-                                         r"<class 'NoneType'>"):
-        param_without_validator = ParameterWithSetpoints('param_3',
-                                                         get_cmd=lambda:
-                                                         rand(n_points_1()),
-                                                         setpoints=(
-                                                         setpoints_1,))
-
+    with pytest.raises(
+        ValueError,
+        match=r"A ParameterWithSetpoints must have "
+        r"an Arrays validator got "
+        r"<class 'NoneType'>",
+    ):
+        ParameterWithSetpoints(
+            "param_3", get_cmd=lambda: rand(n_points_1()), setpoints=(setpoints_1,)
+        )
 
 
 def test_validation_sp_no_validator():
@@ -234,16 +234,23 @@ def test_validation_without_shape():
     n_points_1 = Parameter('n_points_1', set_cmd=None, vals=vals.Ints())
 
     n_points_1.set(10)
-    setpoints_1 = Parameter('setpoints_1', get_cmd=lambda: rand(n_points_1()),
-                            vals=vals.Arrays(shape=(n_points_1,)))
-    with pytest.raises(RuntimeError, match=r"A ParameterWithSetpoints must "
-                                           r"have a shape defined "
-                                           r"for its validator."):
-        param_without_shape = ParameterWithSetpoints('param_5',
-                                                     get_cmd=lambda:
-                                                     rand(n_points_1()),
-                                                     setpoints=(setpoints_1,),
-                                                     vals=vals.Arrays())
+    setpoints_1 = Parameter(
+        "setpoints_1",
+        get_cmd=lambda: rand(n_points_1()),
+        vals=vals.Arrays(shape=(n_points_1,)),
+    )
+    with pytest.raises(
+        RuntimeError,
+        match=r"A ParameterWithSetpoints must "
+        r"have a shape defined "
+        r"for its validator.",
+    ):
+        ParameterWithSetpoints(
+            "param_5",
+            get_cmd=lambda: rand(n_points_1()),
+            setpoints=(setpoints_1,),
+            vals=vals.Arrays(),
+        )
 
 
 def test_validation_without_sp_shape():

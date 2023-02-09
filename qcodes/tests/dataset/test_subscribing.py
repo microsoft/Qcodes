@@ -37,10 +37,11 @@ class MockSubscriber():
         state[length] = results
 
 
-def config_subscriber_factory(ds, l):
+def config_subscriber_factory(ds, log):
     def config_subscriber(results, length, state):
         state[length] = results
-        log.debug(f'got log {l} and dataset {ds.completed}.')
+        log.debug(f"got log {log} and dataset {ds.completed}.")
+
     return config_subscriber
 
 
@@ -212,4 +213,4 @@ def test_subscription_from_config_wrong_name(dataset):
     """
     assert "test_subscriber" not in qcodes.config.subscription.subscribers
     with pytest.raises(RuntimeError):
-        sub_id_c = dataset.subscribe_from_config("test_subscriber")
+        dataset.subscribe_from_config("test_subscriber")

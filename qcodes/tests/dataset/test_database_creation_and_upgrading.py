@@ -258,7 +258,7 @@ def test_perform_actual_upgrade_2_to_3_some_runs():
 
         # retrieve the json string and recreate the object
 
-        sql = f"""
+        sql = """
               SELECT run_description
               FROM runs
               WHERE run_id == 1
@@ -340,7 +340,7 @@ def test_perform_upgrade_v2_v3_to_v4_fixes():
 
         assert get_user_version(conn) == 3
 
-        sql = f"""
+        sql = """
               SELECT run_description
               FROM runs
               WHERE run_id == 1
@@ -483,7 +483,7 @@ def test_perform_upgrade_v3_to_v4():
 
         assert get_user_version(conn) == 3
 
-        sql = f"""
+        sql = """
               SELECT run_description
               FROM runs
               WHERE run_id == 1

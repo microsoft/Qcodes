@@ -1,5 +1,3 @@
-from typing import List
-
 import hypothesis.strategies as st
 from hypothesis import given
 

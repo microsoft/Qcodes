@@ -14,10 +14,11 @@ pytestmark = pytest.mark.skipif(
 
 
 def test_wrapped_dll_singleton_behavior(caplog):
-    using_msg = lambda dll_path: (
-        f"Using existing instance for DLL path {dll_path}.")
-    creating_msg = lambda dll_path: (
-        f"Creating new instance for DLL path {dll_path}.")
+    def using_msg(dll_path):
+        return f"Using existing instance for DLL path {dll_path}."
+
+    def creating_msg(dll_path):
+        return f"Creating new instance for DLL path {dll_path}."
     dll_path_1 = 'ntdll.dll'
     dll_path_3 = 'kernel32.dll'
 

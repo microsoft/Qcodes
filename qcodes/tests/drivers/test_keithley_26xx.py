@@ -42,13 +42,13 @@ def test_smu_channels_and_their_parameters(driver):
         smu = getattr(driver, smu_name)
 
         smu.volt(1.0)
-        assert smu.volt.measurement_status == None
+        assert smu.volt.measurement_status is None
 
         assert 1.0 == smu.volt()
         assert smu.volt.measurement_status == Keithley2600MeasurementStatus.NORMAL
 
         smu.curr(1.0)
-        assert smu.volt.measurement_status == None
+        assert smu.volt.measurement_status is None
 
         assert 1.0 == smu.curr()
         assert smu.curr.measurement_status == Keithley2600MeasurementStatus.NORMAL

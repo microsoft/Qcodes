@@ -8,9 +8,6 @@ from qcodes.parameters import ManualParameter
 from qcodes.station import Station
 from qcodes.tests.instrument_mocks import DummyInstrument
 
-# pylint: disable=unused-import
-from qcodes.tests.test_station import set_default_station_to_none
-
 
 @pytest.fixture  # scope is "function" per default
 def dac():

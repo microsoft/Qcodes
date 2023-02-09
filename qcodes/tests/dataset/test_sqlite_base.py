@@ -85,7 +85,7 @@ def test_one_raises_on_more_than_one_result(experiment):
     # MORE THAN ONE experiment id
     load_or_create_experiment(experiment.name + "2", experiment.sample_name)
 
-    query = f"""
+    query = """
     SELECT exp_id
     FROM experiments
     """
@@ -98,7 +98,7 @@ def test_one_raises_on_more_than_one_result(experiment):
 def test_one_raises_on_wrong_column_name(experiment):
     conn = experiment.conn
 
-    query = f"""
+    query = """
     SELECT exp_id
     FROM experiments
     """
@@ -111,7 +111,7 @@ def test_one_raises_on_wrong_column_name(experiment):
 def test_one_raises_on_wrong_column_index(experiment):
     conn = experiment.conn
 
-    query = f"""
+    query = """
     SELECT exp_id
     FROM experiments
     """
@@ -126,7 +126,7 @@ def test_one_works_if_given_column_index(experiment):
     # given database
     conn = experiment.conn
 
-    query = f"""
+    query = """
     SELECT exp_id
     FROM experiments
     """
@@ -142,7 +142,7 @@ def test_one_works_if_given_column_name(experiment):
     # given database
     conn = experiment.conn
 
-    query = f"""
+    query = """
     SELECT exp_id
     FROM experiments
     """
@@ -382,7 +382,7 @@ def test_is_run_id_in_db(empty_temp_db):
     mut_queries.new_experiment(conn, 'test_exp', 'no_sample')
 
     for _ in range(5):
-        ds = DataSet(conn=conn, run_id=None)
+        DataSet(conn=conn, run_id=None)
 
     # there should now be run_ids 1, 2, 3, 4, 5 in the database
     good_ids = [1, 2, 3, 4, 5]

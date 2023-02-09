@@ -1,5 +1,4 @@
 import unittest
-from typing import Optional
 
 """
 This module defines:

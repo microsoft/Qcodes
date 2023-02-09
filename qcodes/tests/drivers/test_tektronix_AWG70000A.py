@@ -246,6 +246,6 @@ def test_makeSEQXFile(awg2, random_wfm_m1_m2_package):
     amplitudes = [0.5]*chans
     seqname = "testseq"
 
-    seqxfile = awg2.makeSEQXFile(trig_waits, nreps, event_jumps,
-                                 event_jump_to, go_to, wfms,
-                                 amplitudes, seqname)
+    awg2.makeSEQXFile(
+        trig_waits, nreps, event_jumps, event_jump_to, go_to, wfms, amplitudes, seqname
+    )

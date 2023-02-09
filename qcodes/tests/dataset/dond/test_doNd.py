@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 from hypothesis import HealthCheck, given, settings
-from numpy.testing import assert_array_equal
 
 from qcodes import config, validators
 from qcodes.dataset import (
@@ -1352,7 +1351,7 @@ def test_dond_together_sweep_sweeper_wrong_sp_in_dataset_dependencies():
     sweepB = LinSweep(b, 5, 7, 10)
     sweepC = LinSweep(c, 8, 12, 10)
 
-    with pytest.raises(ValueError, match=f"not among the expected groups of setpoints"):
+    with pytest.raises(ValueError, match="not among the expected groups of setpoints"):
         datasets, _, _ = dond(
             TogetherSweep(sweepA, sweepB),
             sweepC,

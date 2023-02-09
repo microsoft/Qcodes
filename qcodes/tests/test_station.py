@@ -30,7 +30,7 @@ def use_default_config():
 
 
 @pytest.fixture(autouse=True)
-def set_default_station_to_none():
+def set_default_station_to_none_automatically():
     """Makes sure that after startup and teardown there is no default station"""
     Station.default = None
     yield
@@ -888,7 +888,7 @@ def test_load_all_instruments_without_config_raises():
 
 def test_station_config_created_with_multiple_config_files():
 
-    test_config1 = f"""
+    test_config1 = """
         instruments:
           mock_dac1:
             type: qcodes.tests.instrument_mocks.DummyInstrument
@@ -899,7 +899,7 @@ def test_station_config_created_with_multiple_config_files():
               ch1:
                 monitor: true
     """
-    test_config2 = f"""
+    test_config2 = """
         instruments:
           mock_dac2:
             type: qcodes.tests.instrument_mocks.DummyInstrument
