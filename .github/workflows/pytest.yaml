@@ -8,8 +8,11 @@ on:
     branches:
       - 'master'
       - 'release/*'
+      # bors
       - 'staging'
       - 'trying'
+      # work around for https://github.com/community/community/discussions/46757#discussioncomment-4908050
+      - 'gh-readonly-queue/master/*'
     tags:
       - 'v*'
   pull_request:
