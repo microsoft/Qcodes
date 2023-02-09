@@ -1,7 +1,6 @@
 import collections
 import json
 import numbers
-import warnings
 from typing import Any
 
 import numpy as np
@@ -28,9 +27,10 @@ class NumpyJSONEncoder(json.JSONEncoder):
           converted to a dictionary with fields ``re`` and ``im`` containing floating
           numbers for the real and imaginary parts respectively, and a field
           ``__dtype__`` containing value ``complex``.
-        * Numbers with uncertainties  (numbers that conforms to ``uncertainties.UFloat``) get
-          converted to a dictionary with fields ``nominal_value`` and ``std_dev`` containing floating
-          numbers for the nominal and uncertainty parts respectively, and a field
+        * Numbers with uncertainties  (numbers that conforms to
+          ``uncertainties.UFloat``) get converted to a dictionary with fields
+          ``nominal_value`` and ``std_dev`` containing floating numbers for the
+          nominal and uncertainty parts respectively, and a field
           ``__dtype__`` containing value ``UFloat``.
         * Object with a ``_JSONEncoder`` method get converted the return value of
           that method.

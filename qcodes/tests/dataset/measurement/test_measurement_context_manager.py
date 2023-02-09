@@ -1,4 +1,3 @@
-import json
 import logging
 import os
 import re
@@ -21,10 +20,7 @@ from qcodes.dataset.export_config import DataExportType
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.sqlite.connection import atomic_transaction
 from qcodes.parameters import Parameter, expand_setpoints_helper
-from qcodes.tests.common import reset_config_on_exit, retry_until_does_not_throw
-
-# pylint: disable=unused-import
-from qcodes.tests.test_station import set_default_station_to_none
+from qcodes.tests.common import retry_until_does_not_throw
 
 
 def test_log_messages(caplog, meas_with_registered_param):
@@ -164,7 +160,7 @@ def test_register_custom_parameter(DAC):
                                    basis=('strange_dac',))
 
     assert len(meas.parameters) == 4
-    parspec = meas.parameters[name]
+    meas.parameters[name]
 
     with pytest.raises(ValueError):
         meas.register_custom_parameter('double dependence',
@@ -352,7 +348,7 @@ def test_setting_write_in_background_from_config(write_in_background):
 
 @pytest.mark.usefixtures("experiment")
 def test_method_chaining(DAC):
-    meas = (
+    (
         Measurement()
             .register_parameter(DAC.ch1)
             .register_custom_parameter(name='freqax',
@@ -1617,8 +1613,7 @@ def test_datasaver_multidim_array(experiment, bg_writing):  # noqa: F811
     size1 = 10
     size2 = 15
 
-    data_mapping = {name: i for i, name in
-                    zip(range(4), ['x1', 'x2', 'y1', 'y2'])}
+    {name: i for i, name in zip(range(4), ["x1", "x2", "y1", "y2"])}
 
     x1 = qc.ManualParameter('x1')
     x2 = qc.ManualParameter('x2')
@@ -1728,8 +1723,7 @@ def test_datasaver_multidim_numeric(experiment, bg_writing):
     y1 = qc.ManualParameter('y1')
     y2 = qc.ManualParameter('y2')
 
-    data_mapping = {name: i for i, name in
-                    zip(range(4), ['x1', 'x2', 'y1', 'y2'])}
+    {name: i for i, name in zip(range(4), ["x1", "x2", "y1", "y2"])}
 
     meas.register_parameter(x1, paramtype='numeric')
     meas.register_parameter(x2, paramtype='numeric')
@@ -1806,7 +1800,6 @@ def test_datasaver_multidimarrayparameter_as_numeric(SpectrumAnalyzer,
     array_param = SpectrumAnalyzer.multidimspectrum
     meas = Measurement()
     meas.register_parameter(array_param, paramtype='numeric')
-    expected_shape = array_param.shape
     dims = len(array_param.shape)
     assert len(meas.parameters) == dims + 1
 
@@ -2098,9 +2091,7 @@ def test_save_and_reload_complex_standalone(complex_num_instrument,
                                             bg_writing):
     param = complex_num_instrument.complex_num
     complex_num_instrument.setpoint(1)
-    p = Parameter(
-        "test", set_cmd=None, get_cmd=lambda: 1 + 1j, vals=vals.ComplexNumbers()
-    )
+    Parameter("test", set_cmd=None, get_cmd=lambda: 1 + 1j, vals=vals.ComplexNumbers())
     meas = qc.dataset.measurements.Measurement()
     meas.register_parameter(param)
     pval = param.get()

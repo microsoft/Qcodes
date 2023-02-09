@@ -38,10 +38,7 @@ from qcodes.dataset.sqlite.database import (
     connect,
     get_DB_location,
 )
-from qcodes.dataset.sqlite.queries import (
-    get_guids_from_run_spec,  # for backwards compatibility
-)
-from qcodes.dataset.sqlite.queries import (
+from qcodes.dataset.sqlite.queries import (  # noqa: F401 for backwards compatibility
     _check_if_table_found,
     _get_result_table_name_by_guid,
     _query_guids_from_run_spec,
@@ -54,6 +51,7 @@ from qcodes.dataset.sqlite.queries import (
     get_experiment_name_from_experiment_id,
     get_guid_from_expid_and_counter,
     get_guid_from_run_id,
+    get_guids_from_run_spec,
     get_metadata_from_run_id,
     get_parameter_data,
     get_parent_dataset_links,
@@ -1419,9 +1417,9 @@ class DataSet(BaseDataSet):
 
                 self.add_results(self._results)
                 if writer_status.write_in_background:
-                    log.debug(f"Succesfully enqueued result for write thread")
+                    log.debug("Successfully enqueued result for write thread")
                 else:
-                    log.debug(f'Successfully wrote result to disk')
+                    log.debug("Successfully wrote result to disk")
                 self._results = []
             except Exception as e:
                 if writer_status.write_in_background:
@@ -1432,7 +1430,7 @@ class DataSet(BaseDataSet):
             log.debug('No results to flush')
 
         if writer_status.write_in_background and block:
-            log.debug(f"Waiting for write queue to empty.")
+            log.debug("Waiting for write queue to empty.")
             writer_status.data_write_queue.join()
 
     @property

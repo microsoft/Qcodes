@@ -5,12 +5,10 @@ import hypothesis.strategies as hst
 import numpy as np
 import pytest
 from hypothesis import HealthCheck, given, settings
-from numpy.testing import assert_allclose, assert_array_equal
+from numpy.testing import assert_array_equal
 
 from qcodes.instrument import ChannelList, ChannelTuple, Instrument, InstrumentChannel
-from qcodes.parameters import Parameter
 from qcodes.tests.instrument_mocks import DummyChannel, DummyChannelInstrument
-from qcodes.validators import Numbers
 
 
 @pytest.fixture(scope='function', name='dci')
@@ -605,7 +603,7 @@ def test_names(dci):
         assert chan.temperature.name_parts == [ex_inst_name, ex_chan_name,
                                                ex_param_name]
 
-        ex_subchan_name = f"subchannel"
+        ex_subchan_name = "subchannel"
         ex_subchan_full_name = f"{ex_chan_full_name}_{ex_subchan_name}"
 
         assert chan.somesubchannel.short_name == ex_subchan_name

@@ -86,7 +86,7 @@ def upgrade_3_to_4(conn: ConnectionPlus, show_progress_bar: bool = True) -> None
                                  InterDependencies()._to_dict()}
                 json_str = json.dumps(desc_dict)
 
-            sql = f"""
+            sql = """
                    UPDATE runs
                    SET run_description = ?
                    WHERE run_id == ?

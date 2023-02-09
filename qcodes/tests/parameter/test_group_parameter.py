@@ -165,7 +165,7 @@ def test_raise_on_not_all_initial_values():
                         r'should have an initial value. Found initial values '
                         r'for \[.*\] but not for \[.*\].')
     with pytest.raises(ValueError, match=expected_err_msg):
-        dummy = Dummy("dummy", initial_a=42)
+        Dummy("dummy", initial_a=42)
 
 
 def test_update_group_parameter_reflected_in_cache_of_all_params():

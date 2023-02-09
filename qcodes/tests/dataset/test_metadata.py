@@ -1,6 +1,3 @@
-import pytest
-
-
 def test_get_metadata_from_dataset(dataset):
     dataset.add_metadata('something', 123)
     something = dataset.get_metadata('something')

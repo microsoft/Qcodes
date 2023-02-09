@@ -929,6 +929,7 @@ def _prepare_setpoints_1d(DAC, channel_array_instrument, n_points, setpoints_typ
         setpoints_values = np.linspace(-1, 1, n_points)
     else:
         setpoints_param = channel_array_instrument.A.dummy_text
-        setpoints_values = [l*(i+1) for i, l in
-                            enumerate(ascii_uppercase*(n_points//26+1))][0:n_points]
+        setpoints_values = [
+            j * (i + 1) for i, j in enumerate(ascii_uppercase * (n_points // 26 + 1))
+        ][0:n_points]
     return setpoints_param, setpoints_values

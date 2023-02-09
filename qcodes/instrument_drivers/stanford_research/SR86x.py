@@ -576,15 +576,16 @@ class SR86xDataChannel(InstrumentChannel):
         self._cmd_id_name = cmd_id_name
         self._color = color
 
-        self.add_parameter(f'assigned_parameter',
-                           label=f'Data channel {cmd_id} parameter',
-                           docstring=f'Allows to set and get the '
-                                     f'parameter that is assigned to data '
-                                     f'channel {cmd_id}',
-                           set_cmd=f'CDSP {cmd_id}, {{}}',
-                           get_cmd=f'CDSP? {cmd_id}',
-                           val_mapping=self.parent.PARAMETER_NAMES
-                           )
+        self.add_parameter(
+            "assigned_parameter",
+            label=f"Data channel {cmd_id} parameter",
+            docstring=f"Allows to set and get the "
+            f"parameter that is assigned to data "
+            f"channel {cmd_id}",
+            set_cmd=f"CDSP {cmd_id}, {{}}",
+            get_cmd=f"CDSP? {cmd_id}",
+            val_mapping=self.parent.PARAMETER_NAMES,
+        )
 
     @property
     def cmd_id(self) -> str:

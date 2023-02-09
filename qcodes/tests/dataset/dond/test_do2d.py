@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 from hypothesis import HealthCheck, given, settings
-from numpy.testing import assert_array_equal
 
 from qcodes import config
 from qcodes.dataset import do2d, new_experiment

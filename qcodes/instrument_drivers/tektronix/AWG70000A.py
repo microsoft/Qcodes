@@ -714,8 +714,8 @@ class AWG70000A(VisaInstrument):
             self.visa_handle.write(f'MMEMory:DELete "{filename}"')
             # if the file does not exist,
             # an error code -256 is put in the error queue
-            resp = self.visa_handle.query(f'SYSTem:ERRor:CODE?')
-            self.log.debug(f'Pre-deletion finished with return code {resp}')
+            resp = self.visa_handle.query("SYSTem:ERRor:CODE?")
+            self.log.debug(f"Pre-deletion finished with return code {resp}")
 
         self.visa_handle.write_raw(msg)
 

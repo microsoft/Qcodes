@@ -4,7 +4,7 @@ import ast
 import gc
 from pathlib import Path
 from sqlite3 import DatabaseError
-from typing import Dict, Iterable, List, Optional, Tuple, Union, cast
+from typing import Iterable, Tuple, cast
 
 from qcodes.dataset.data_set import get_guids_by_run_spec
 from qcodes.dataset.guids import validate_guid_format

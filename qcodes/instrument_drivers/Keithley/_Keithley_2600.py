@@ -5,7 +5,7 @@ import struct
 import sys
 import warnings
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Any, Literal, Sequence
 
 import numpy as np
 
@@ -636,7 +636,7 @@ class Keithley2600Channel(InstrumentChannel):
             raise ImportError(
                 "The doFastSweep method requires the "
                 "qcodes_loop package to be installed."
-            )
+            ) from e
         # prepare setpoints, units, name
         self.fastsweep.prepareSweep(start, stop, steps, mode)
 

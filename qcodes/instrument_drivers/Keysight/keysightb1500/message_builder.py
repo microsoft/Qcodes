@@ -390,7 +390,7 @@ class MessageBuilder:
         This command returns the operation type of the high-resolution ADC
         that is set by the AITM command.
         """
-        cmd = f'AITM?'
+        cmd = "AITM?"
 
         self._msg.append(cmd)
         return self
@@ -1547,8 +1547,8 @@ class MessageBuilder:
         return self
 
     @final_command
-    def ercmaa_query(self) -> 'MessageBuilder':
-        cmd = f'ERCMAA?'
+    def ercmaa_query(self) -> "MessageBuilder":
+        cmd = "ERCMAA?"
 
         self._msg.append(cmd)
         return self
@@ -1572,9 +1572,8 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def ercmaio(self, cmhl=None, acgs=None, bias=None, corr=None
-                ) -> 'MessageBuilder':
-        cmd = f'ERCMAIO'
+    def ercmaio(self, cmhl=None, acgs=None, bias=None, corr=None) -> "MessageBuilder":
+        cmd = "ERCMAIO"
 
         if cmhl is not None:
             cmd += f' {cmhl}'
@@ -1756,8 +1755,8 @@ class MessageBuilder:
         return self
 
     @final_command
-    def erhvs_query(self) -> 'MessageBuilder':
-        cmd = f'ERHVS?'
+    def erhvs_query(self) -> "MessageBuilder":
+        cmd = "ERHVS?"
 
         self._msg.append(cmd)
         return self
@@ -2055,7 +2054,7 @@ class MessageBuilder:
     def in_(self, channels: Optional[constants.ChannelList] = None
             ) -> 'MessageBuilder':
         if channels is None:
-            cmd = f'IN'
+            cmd = "IN"
         elif len(channels) > 15:
             raise ValueError("A maximum of 15 channels can be set.")
         else:
@@ -2241,7 +2240,7 @@ class MessageBuilder:
     def mcc(self, channels: Optional[constants.ChannelList] = None
             ) -> 'MessageBuilder':
         if channels is None:
-            cmd = f'MCC'
+            cmd = "MCC"
         elif len(channels) > 15:
             raise ValueError("A maximum of 15 channels can be set.")
         else:
@@ -3436,8 +3435,8 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def tsr(self, chnum: Optional[int] = None) -> 'MessageBuilder':
-        cmd = f'TSR' if chnum is None else f'TSR {chnum}'
+    def tsr(self, chnum: Optional[int] = None) -> "MessageBuilder":
+        cmd = "TSR" if chnum is None else f"TSR {chnum}"
 
         self._msg.append(cmd)
         return self
@@ -3680,8 +3679,9 @@ class MessageBuilder:
         elif isinstance(abort, constants.Abort):
             _abort = abort
         else:
-            raise TypeError(f"`abort` argument has to be of type `bool` or "
-                            f"`constants.Abort`.")
+            raise TypeError(
+                "`abort` argument has to be of type `bool` or " "`constants.Abort`."
+            )
 
         cmd = f'WM {_abort}'
 
@@ -3701,8 +3701,9 @@ class MessageBuilder:
         elif isinstance(abort, constants.Abort):
             _abort = abort
         else:
-            raise TypeError(f"`abort` argument has to be of type `bool` or "
-                            f"`constants.Abort`.")
+            raise TypeError(
+                "`abort` argument has to be of type `bool` or " "`constants.Abort`."
+            )
 
         cmd = f'WMACV {_abort}'
 
@@ -3749,8 +3750,9 @@ class MessageBuilder:
         elif isinstance(abort, constants.Abort):
             _abort = abort
         else:
-            raise TypeError(f"`abort` argument has to be of type `bool` or "
-                            f"`constants.Abort`.")
+            raise TypeError(
+                "`abort` argument has to be of type `bool` or " "`constants.Abort`."
+            )
 
         cmd = f'WMDCV {_abort}'
 
@@ -3770,8 +3772,9 @@ class MessageBuilder:
         elif isinstance(abort, constants.Abort):
             _abort = abort
         else:
-            raise TypeError(f"`abort` argument has to be of type `bool` or "
-                            f"`constants.Abort`.")
+            raise TypeError(
+                "`abort` argument has to be of type `bool` or " "`constants.Abort`."
+            )
 
         cmd = f'WMFC {_abort}'
 

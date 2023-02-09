@@ -259,6 +259,60 @@ filterwarnings = [
     "ignore:SelectableGroups dict interface is deprecated:DeprecationWarning"
 ]
 
+[tool.ruff]
+# darker will fix this as code is
+# reformatted when it is changed.
+ignore = ["E501"]
+
+[tool.ruff.per-file-ignores]
+# deprecated modules left
+# for backwards compatibility
+"qcodes/actions.py" = ["F401"]
+"qcodes/data/__init__.py" = ["F401"]
+"qcodes/data/data_array.py" = ["F401"]
+"qcodes/data/data_set.py" = ["F401"]
+"qcodes/data/format.py" = ["F401"]
+"qcodes/data/gnuplot_format.py" = ["F401"]
+"qcodes/data/hdf5_format.py" = ["F401"]
+"qcodes/data/hdf5_format_hickle.py" = ["F401"]
+"qcodes/data/io.py" = ["F401"]
+"qcodes/data/location.py" = ["F401"]
+"qcodes/plots/pyqtgraph.py" = ["F401"]
+"qcodes/plots/qcmatplotlib.py" = ["F401"]
+"qcodes/loops.py" = ["F401"]
+"qcodes/measure.py" = ["F401"]
+"qcodes/plots/base.py" = ["F401"]
+"qcodes/plots/colors.py" = ["F401"]
+"qcodes/utils/validators.py" = ["F401"]
+"qcodes/utils/threading.py" = ["F401"]
+"qcodes/utils/qt_helpers.py" = ["F401"]
+"qcodes/utils/plotting.py" = ["F401"]
+"qcodes/utils/metadata.py" = ["F401"]
+"qcodes/utils/magic.py" = ["F401"]
+"qcodes/utils/helpers.py" = ["F401"]
+"qcodes/extensions/slack.py" = ["F401"]
+"qcodes/instrument_drivers/tektronix/Keithley_6500.py" = ["F401"]
+"qcodes/instrument_drivers/tektronix/Keithley_2600_channels.py" = ["F401"]
+"qcodes/instrument_drivers/tektronix/Keithley_2450.py" = ["F401"]
+"qcodes/instrument_drivers/tektronix/keithley_7510.py" = ["F401"]
+"qcodes/instrument_drivers/signal_hound/USB_SA124B.py" = ["F401"]
+"qcodes/instrument_drivers/rohde_schwarz/RTE1000.py" = ["F401"]
+"qcodes/instrument_drivers/rigol/DS4000.py" = ["F401"]
+"qcodes/instrument_drivers/rigol/DG4000.py" = ["F401"]
+"qcodes/instrument_drivers/rigol/DP832.py" = ["F401"]
+"qcodes/instrument_drivers/rigol/DP831.py" = ["F401"]
+"qcodes/instrument_drivers/rigol/DP821.py" = ["F401"]
+"qcodes/instrument_drivers/rigol/DS1074Z.py" = ["F401"]
+"qcodes/instrument_drivers/rigol/DG1062.py" = ["F401"]
+"qcodes/instrument_drivers/devices.py" = ["F401"]
+"qcodes/instrument_drivers/basel/sp983c_remote.py" = ["F401"]
+"qcodes/instrument_drivers/Lakeshore/Model_325.py" = ["F401"]
+"qcodes/instrument_drivers/Lakeshore/Model_336.py" = ["F401"]
+"qcodes/instrument_drivers/Lakeshore/Model_372.py" = ["F401"]
+
+"qcodes/instrument_drivers/Keysight/KtM960x.py" = ["F405"]
+"qcodes/instrument_drivers/Keysight/KtMAwg.py" = ["F405"]
+
 [tool.towncrier]
 package = "qcodes"
 name = "QCoDeS"

@@ -8,19 +8,7 @@ from contextlib import contextmanager
 from functools import wraps
 from pathlib import Path
 from time import sleep
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    Generator,
-    Hashable,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    TypeVar,
-)
+from typing import TYPE_CHECKING, Any, Callable, Generator, Hashable, Sequence, TypeVar
 
 import pytest
 from typing_extensions import ParamSpec

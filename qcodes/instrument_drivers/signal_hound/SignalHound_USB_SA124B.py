@@ -129,8 +129,8 @@ class FrequencySweep(ArrayParameter):
             unit="dBm",
             label="Magnitude",
             setpoint_units=("Hz",),
-            setpoint_labels=(f"Frequency",),
-            setpoint_names=(f"frequency",),
+            setpoint_labels=("Frequency",),
+            setpoint_names=("frequency",),
             **kwargs,
         )
         self.set_sweep(sweep_len, start_freq, stepsize)

@@ -73,7 +73,7 @@ def test_valid(c0):
     assert list(c0_sv) == [1]
     assert c0_sv[0] == 1
     assert 1 in c0_sv
-    assert not (2 in c0_sv)
+    assert 2 not in c0_sv
 
     # in-place and copying addition
     c0_sv += c0[1.5:1.8:0.1]
@@ -110,7 +110,7 @@ def test_valid(c0):
     c0_sv7 = c0_sv6.copy()
     assert list(c0_sv6) == [1, 3, 4]
     assert list(c0_sv7) == [1, 3, 4]
-    assert not (c0_sv6 is c0_sv7)
+    assert c0_sv6 is not c0_sv7
 
 
 def test_base():

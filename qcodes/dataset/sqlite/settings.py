@@ -4,7 +4,6 @@ This module takes care of the SQLite settings.
 from __future__ import annotations
 
 import sqlite3
-from typing import Dict, Optional, Tuple, Union
 
 
 def _read_settings() -> tuple[dict[str, str | int], dict[str, bool | int | str]]:

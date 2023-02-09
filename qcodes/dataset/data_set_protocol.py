@@ -12,7 +12,7 @@ else:
 import logging
 import os
 import warnings
-from collections.abc import Mapping, Sized
+from collections.abc import Mapping
 from enum import Enum
 from pathlib import Path
 from typing import (

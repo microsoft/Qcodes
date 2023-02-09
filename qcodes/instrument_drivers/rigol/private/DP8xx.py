@@ -22,7 +22,9 @@ class RigolDP8xxChannel(InstrumentChannel):
         self.ocp_range = ocp_range
 
         select_cmd = f":INSTrument:NSELect {channel};"
-        strstrip = lambda s: str(s).strip()
+
+        def strstrip(s: str) -> str:
+            return str(s).strip()
 
         self.add_parameter("set_voltage",
                            label='Target voltage output',

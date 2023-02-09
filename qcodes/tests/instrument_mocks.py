@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import time
 from functools import partial
-from typing import Any, Generator, Sequence, Union
+from typing import Any, Generator, Sequence
 
 import numpy as np
 
