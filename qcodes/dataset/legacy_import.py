@@ -2,14 +2,16 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import numpy as np
 
-from qcodes.data.data_array import DataArray
-from qcodes.data.data_set import DataSet as OldDataSet
-from qcodes.data.data_set import load_data
 from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.measurements import DataSaver, Measurement
+
+if TYPE_CHECKING:
+    from qcodes_loop.data.data_array import DataArray
+    from qcodes_loop.data.data_set import DataSet as OldDataSet
 
 
 def setup_measurement(
@@ -95,6 +97,12 @@ def import_dat_file(location: str | Path, exp: Experiment | None = None) -> list
             If None the default one is used. See the
             docs of :class:`qcodes.dataset.Measurement` for more details.
     """
+    try:
+        from qcodes_loop.data.data_set import load_data
+    except ImportError as e:
+        raise ImportError(
+            "The legacy importer requires qcodes_loop to be installed."
+        ) from e
 
 
     loaded_data = load_data(str(location))

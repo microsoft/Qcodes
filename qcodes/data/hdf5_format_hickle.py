@@ -1,80 +1,18 @@
 import logging
 from typing import TYPE_CHECKING
 
-import hickle
+from qcodes.utils import deep_update, issue_deprecation_warning
 
-from qcodes.utils import deep_update
-
-from .hdf5_format import HDF5Format
-
-if TYPE_CHECKING:
-    import qcodes.data.data_set
-
-
-#%%
-
-log = logging.getLogger(__name__)
-
-
-class HDF5FormatHickle(HDF5Format):
-
-    _metadata_file = 'snapshot.hickle'
-    _format_tag = 'hdf5-hickle'
-
-    def write_metadata(
-        self,
-        data_set: "qcodes.data.data_set.DataSet",
-        io_manager=None,
-        location=None,
-        read_first=False,
-        **kwargs
-    ):
-        """
-        Write all metadata in this DataSet to storage.
-
-        Args:
-            data_set: the data we're storing
-
-            io_manager (io_manager): the base location to write to
-
-            location (str): the file location within io_manager
-
-            read_first (Optional[bool]): read previously saved metadata before
-                writing? The current metadata will still be the used if
-                there are changes, but if the saved metadata has information
-                not present in the current metadata, it will be retained.
-                Default True.
-        """
-
-        # this statement is here to make the linter happy
-        if io_manager is None or location is None:
-            raise Exception('please set io_manager and location arguments ')
-
-        if read_first:
-            # In case the saved file has more metadata than we have here,
-            # read it in first. But any changes to the in-memory copy should
-            # override the saved file data.
-            memory_metadata = data_set.metadata
-            data_set.metadata = {}
-            self.read_metadata(data_set)
-            deep_update(data_set.metadata, memory_metadata)
-
-        log.info('writing metadata to file %s' % self._metadata_file)
-        fn = io_manager.join(location, self._metadata_file)
-        with io_manager.open(fn, 'w', encoding='utf8') as snap_file:
-            hickle.dump(data_set.metadata, snap_file)
-
-    def read_metadata(self, data_set: "qcodes.data.data_set.DataSet"):
-        """Reads in the metadata
-
-        Args:
-            data_set: Dataset object to read the metadata into
-        """
-        io_manager = data_set.io
-        location = data_set.location
-        fn = io_manager.join(location, self._metadata_file)
-        if io_manager.list(fn):
-            log.info('reading metadata from file %s' % self._metadata_file)
-            with io_manager.open(fn, 'r') as snap_file:
-                metadata = hickle.load(snap_file)
-            data_set.metadata.update(metadata)
+try:
+    from qcodes_loop.data.hdf5_format import HDF5Format
+    from qcodes_loop.data.hdf5_format_hickle import HDF5FormatHickle
+except ImportError as e:
+    raise ImportError(
+        "qcodes.data.hdf5_format_hickle is deprecated and has moved to "
+        "the package `qcodes_loop`. Please install qcodes_loop directly or "
+        "with `pip install qcodes[loop]"
+    ) from e
+issue_deprecation_warning(
+    "qcodes.data.hdf5_format_hickle module",
+    alternative="qcodes_loop.data.hdf5_format_hickle",
+)

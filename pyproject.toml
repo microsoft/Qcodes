@@ -74,6 +74,7 @@ Changelog = "https://qcodes.github.io/Qcodes/changes/index.html"
 qtplot = ["pyqtgraph>=0.11.0"]
 slack = ["slack-sdk>=3.4.2"]
 zurichinstruments = ["zhinst-qcodes>=0.3"]
+loop = ["qcodes_loop>=0.1.1"]
 test = [
     "coverage[toml]>=6.0.0",
     "deepdiff>=5.0.2",
@@ -98,7 +99,8 @@ test = [
     "types-setuptools>=57.0.0",
     "types-tabulate>=0.1.0",
     "types-tqdm>=4.64.6",
-    "types_pywin32>=305.0.0.7"
+    "types_pywin32>=305.0.0.7",
+    "qcodes_loop>=0.1.1",
 ]
 docs = [
     "autodocsumm>=0.2.9",
@@ -115,6 +117,7 @@ docs = [
     "towncrier>=22.8.0",
     "scipy>=1.7.0", # examples using scipy
     "slack-sdk>=3.4.2", # slack example notebook
+    "qcodes_loop>=0.1.1", # legacy dataset import examples
 ]
 
 [project.scripts]

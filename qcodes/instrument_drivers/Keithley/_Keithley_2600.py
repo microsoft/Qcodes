@@ -1,16 +1,16 @@
+from __future__ import annotations
+
 import logging
 import struct
 import sys
 import warnings
 from enum import Enum
-from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Sequence, Tuple
 
 import numpy as np
 
 import qcodes.validators as vals
-from qcodes.data.data_set import DataSet
 from qcodes.instrument import Instrument, InstrumentChannel, VisaInstrument
-from qcodes.measure import Measure
 from qcodes.parameters import (
     ArrayParameter,
     Parameter,
@@ -18,6 +18,10 @@ from qcodes.parameters import (
     ParamRawDataType,
     create_on_off_val_mapping,
 )
+
+if TYPE_CHECKING:
+    from qcodes_loop.data.data_set import DataSet
+
 
 if sys.version_info >= (3, 11):
     from enum import StrEnum
@@ -237,14 +241,14 @@ class _ParameterWithStatus(Parameter):
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
 
-        self._measurement_status: Optional[Keithley2600MeasurementStatus] = None
+        self._measurement_status: Keithley2600MeasurementStatus | None = None
 
     @property
-    def measurement_status(self) -> Optional[Keithley2600MeasurementStatus]:
+    def measurement_status(self) -> Keithley2600MeasurementStatus | None:
         return self._measurement_status
 
     @staticmethod
-    def _parse_response(data: str) -> Tuple[float, Keithley2600MeasurementStatus]:
+    def _parse_response(data: str) -> tuple[float, Keithley2600MeasurementStatus]:
         value, meas_status = data.split("\t")
 
         status_bits = [
@@ -260,9 +264,9 @@ class _ParameterWithStatus(Parameter):
 
     def snapshot_base(
         self,
-        update: Optional[bool] = True,
-        params_to_skip_update: Optional[Sequence[str]] = None,
-    ) -> Dict[Any, Any]:
+        update: bool | None = True,
+        params_to_skip_update: Sequence[str] | None = None,
+    ) -> dict[Any, Any]:
         snapshot = super().snapshot_base(
             update=update, params_to_skip_update=params_to_skip_update
         )
@@ -626,6 +630,13 @@ class Keithley2600Channel(InstrumentChannel):
                 'VI' (current sweep two probe setup) or
                 'VIfourprobe' (current sweep four probe setup)
         """
+        try:
+            from qcodes_loop.measure import Measure
+        except ImportError as e:
+            raise ImportError(
+                "The doFastSweep method requires the "
+                "qcodes_loop package to be installed."
+            )
         # prepare setpoints, units, name
         self.fastsweep.prepareSweep(start, stop, steps, mode)
 
@@ -704,7 +715,7 @@ class Keithley2600Channel(InstrumentChannel):
 
         return self._execute_lua(script, steps)
 
-    def _execute_lua(self, _script: List[str], steps: int) -> np.ndarray:
+    def _execute_lua(self, _script: list[str], steps: int) -> np.ndarray:
         """
         This is the function that sends the Lua script to be executed and
         returns the corresponding data from the buffer.
@@ -891,7 +902,7 @@ class Keithley2600(VisaInstrument):
             "2636B": [100e-12, 1.5],
         }
         # Add the channel to the instrument
-        self.channels: List[Keithley2600Channel] = []
+        self.channels: list[Keithley2600Channel] = []
         for ch in ["a", "b"]:
             ch_name = f"smu{ch}"
             channel = Keithley2600Channel(self, ch_name, ch_name)
@@ -908,12 +919,12 @@ class Keithley2600(VisaInstrument):
     def _display_settext(self, text: str) -> None:
         self.visa_handle.write(f'display.settext("{text}")')
 
-    def get_idn(self) -> Dict[str, Optional[str]]:
+    def get_idn(self) -> dict[str, str | None]:
         IDNstr = self.ask_raw("*IDN?")
         vendor, model, serial, firmware = map(str.strip, IDNstr.split(","))
         model = model[6:]
 
-        IDN: Dict[str, Optional[str]] = {
+        IDN: dict[str, str | None] = {
             "vendor": vendor,
             "model": model,
             "serial": serial,
@@ -958,7 +969,7 @@ class Keithley2600(VisaInstrument):
         return super().ask(f"print({cmd:s})")
 
     @staticmethod
-    def _scriptwrapper(program: List[str], debug: bool = False) -> str:
+    def _scriptwrapper(program: list[str], debug: bool = False) -> str:
         """
         wraps a program so that the output can be put into
         visa_handle.write and run.
