@@ -23,7 +23,7 @@ class RigolDP8xxChannel(InstrumentChannel):
 
         select_cmd = f":INSTrument:NSELect {channel};"
 
-        def strstrip(s):
+        def strstrip(s: str) -> str:
             return str(s).strip()
 
         self.add_parameter("set_voltage",
