@@ -816,10 +816,8 @@ class QDac(VisaInstrument):
         """
         self.write('version')
         fw_str = self._write_response
-        if ((not ("Unrecognized command" in fw_str))
-                and ("Software Version: " in fw_str)):
-            fw_version = float(
-                self._write_response.replace("Software Version: ", ""))
+        if ("Unrecognized command" not in fw_str) and ("Software Version: " in fw_str):
+            fw_version = float(self._write_response.replace("Software Version: ", ""))
         else:
             fw_version = 0.0
         return fw_version
@@ -1026,7 +1024,7 @@ class QDac(VisaInstrument):
             if chan not in range(1, self.num_chans+1):
                 raise ValueError(
                         f'Channel number must be 1-{self.num_chans}.')
-            if not (chan in self._assigned_fgs):
+            if chan not in self._assigned_fgs:
                 self._get_functiongenerator(chan)
 
         # Voltage validation

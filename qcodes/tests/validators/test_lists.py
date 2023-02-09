@@ -7,23 +7,23 @@ from qcodes.validators import Ints, Lists
 
 
 def test_type() -> None:
-    l: Lists[Any] = Lists()
+    list_validator: Lists[Any] = Lists()
     v1 = ['a', 'b', 5]
-    l.validate(v1)
+    list_validator.validate(v1)
 
     v2 = 234
     with pytest.raises(TypeError):
-        l.validate(v2)  # type: ignore[arg-type]
+        list_validator.validate(v2)  # type: ignore[arg-type]
 
 
 def test_elt_vals() -> None:
-    l = Lists(Ints(max_value=10))
+    list_validator = Lists(Ints(max_value=10))
     v1: List[Union[int, np.integer, bool]] = [0, 1, 5]
-    l.validate(v1)
+    list_validator.validate(v1)
 
     v2 = [0, 1, 11]
     with pytest.raises(ValueError):
-        l.validate(v2)  # type: ignore[arg-type]
+        list_validator.validate(v2)  # type: ignore[arg-type]
 
 
 def test_valid_values() -> None:

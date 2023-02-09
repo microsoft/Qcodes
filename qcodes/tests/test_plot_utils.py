@@ -3,17 +3,17 @@ Tests for `qcodes.utils.plotting`.
 """
 import matplotlib
 import pytest
-
-# set matplotlib backend before importing pyplot
-matplotlib.use("Agg")
-
-from matplotlib import pyplot as plt
 from pytest import fixture
 
 import qcodes
 from qcodes.dataset.plotting import plot_by_id
 
 from .dataset_generators import dataset_with_outliers_generator
+
+# set matplotlib backend before importing pyplot
+matplotlib.use("Agg")
+
+from matplotlib import pyplot as plt  # noqa E402
 
 
 @fixture(scope='function')

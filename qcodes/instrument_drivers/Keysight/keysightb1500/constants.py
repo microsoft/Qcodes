@@ -10,17 +10,17 @@ else:
         pass
 
 class ChannelName(StrEnum):
-    A = 'CH1'
-    B = 'CH2'
-    C = 'CH3'
-    D = 'CH4'
-    E = 'CH5'
-    F = 'CH6'
-    G = 'CH7'
-    H = 'CH8'
-    I = 'CH9'
-    J = 'CH10'
-    Z = 'XDATA'
+    A = "CH1"
+    B = "CH2"
+    C = "CH3"
+    D = "CH4"
+    E = "CH5"
+    F = "CH6"
+    G = "CH7"
+    H = "CH8"
+    I = "CH9"  # noqa E741
+    J = "CH10"
+    Z = "XDATA"
 
 
 class MeasurementError(IntEnum):

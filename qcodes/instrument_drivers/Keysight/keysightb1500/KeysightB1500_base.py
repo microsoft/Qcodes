@@ -4,7 +4,7 @@ from collections import defaultdict
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 from qcodes.instrument import VisaInstrument
-from qcodes.parameters import MultiParameter, Parameter, create_on_off_val_mapping
+from qcodes.parameters import MultiParameter, create_on_off_val_mapping
 
 from . import constants
 from .KeysightB1500_module import (

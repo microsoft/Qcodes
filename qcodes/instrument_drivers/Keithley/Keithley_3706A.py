@@ -828,7 +828,7 @@ class Keithley3706A(VisaInstrument):
         if val is not None:
             self.write(f"setup.save('{val}')")
         else:
-            self.write(f"setup.save()")
+            self.write("setup.save()")
 
     def load_setup(self, val: Union[int, str]) -> None:
         """

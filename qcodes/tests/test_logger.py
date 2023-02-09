@@ -249,10 +249,12 @@ def test_channels(model372):
                                      handler=logs_filtered.string_handler):
         inst.sample_heater.set_range_from_temperature(0.1)
 
-    logs_filtered = [l for l in logs_filtered.value.splitlines()
-                        if '[lakeshore' in l]
-    logs_unfiltered = [l for l in logs_unfiltered.value.splitlines()
-                        if '[lakeshore' in l]
+    logs_filtered = [
+        log for log in logs_filtered.value.splitlines() if "[lakeshore" in log
+    ]
+    logs_unfiltered = [
+        log for log in logs_unfiltered.value.splitlines() if "[lakeshore" in log
+    ]
 
     for f, u in zip(logs_filtered, logs_unfiltered):
         assert f == u
@@ -271,8 +273,7 @@ def test_channels_nomessages(model372):
     with logger.LogCapture(level=logging.DEBUG) as logs,\
             logger.filter_instrument(mock, handler=logs.string_handler):
         inst.sample_heater.set_range_from_temperature(0.1)
-    logs = [l for l in logs.value.splitlines()
-            if '[lakeshore' in l]
+    logs = [log for log in logs.value.splitlines() if "[lakeshore" in log]
     assert len(logs) == 0
     mock.close()
 

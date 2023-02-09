@@ -529,7 +529,7 @@ class Keithley7510Sense(InstrumentChannel):
 
         self.add_parameter(
             "auto_zero_once",
-            set_cmd=f":SENSe:AZERo:ONCE",
+            set_cmd=":SENSe:AZERo:ONCE",
             docstring="Cause the instrument to refresh the reference and "
             "zero measurements once",
         )

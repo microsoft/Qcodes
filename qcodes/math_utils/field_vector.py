@@ -4,7 +4,7 @@ coordinate systems.
 """
 
 
-from typing import Any, List, Literal, Optional, Sequence, Type, TypeVar, Union
+from typing import Any, Literal, Optional, Sequence, Type, TypeVar, Union
 
 import numpy as np
 
