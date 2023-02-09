@@ -10,7 +10,7 @@ try:
     from qcodes_loop.data.data_array import DataArray
 
     has_loop = True
-except ImportError as e:
+except ImportError:
     has_loop = False
 
 
