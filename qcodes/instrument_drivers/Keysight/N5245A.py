@@ -1,5 +1,3 @@
-from typing import Any
-
 from .Keysight_N5245A import KeysightN5245A
 
 

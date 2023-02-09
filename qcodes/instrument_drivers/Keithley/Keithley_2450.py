@@ -549,11 +549,11 @@ class Keithley2450(VisaInstrument):
 
         if not self._has_correct_language_mode():
             self.log.warning(
-                f"The instrument is in an unsupported language mode. "
-                f"Please run `instrument.set_correct_language()` and try to "
-                f"initialize the driver again after an instrument power cycle. "
-                f"No parameters/sub modules will be available on this driver "
-                f"instance"
+                "The instrument is in an unsupported language mode. "
+                "Please run `instrument.set_correct_language()` and try to "
+                "initialize the driver again after an instrument power cycle. "
+                "No parameters/sub modules will be available on this driver "
+                "instance"
             )
             return
 

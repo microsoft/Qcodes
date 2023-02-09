@@ -360,7 +360,7 @@ class AMI430(IPInstrument):
         # Otherwise, wait until no longer ramping
         self.log.debug(f'Starting blocking ramp of {self.name} to {value}')
         exit_state = self.wait_while_ramping()
-        self.log.debug(f'Finished blocking ramp')
+        self.log.debug("Finished blocking ramp")
         # If we are now holding, it was successful
         if exit_state != 'holding':
             msg = '_set_field({}) failed with state: {}'
@@ -995,12 +995,12 @@ class AMI430_3D(Instrument):
             axis_instrument.set_field(value, perform_safety_check=False, block=False)
 
         if self.block_during_ramp() is True:
-            self.log.debug(f"Simultaneous ramp: blocking until ramp is finished")
+            self.log.debug("Simultaneous ramp: blocking until ramp is finished")
             self.wait_while_all_axes_ramping()
         else:
             self.log.debug("Simultaneous ramp: not blocking until ramp is finished")
 
-        self.log.debug(f"Simultaneous ramp: returning from the ramp call")
+        self.log.debug("Simultaneous ramp: returning from the ramp call")
 
     def _perform_default_ramp(self, values: Tuple[float, float, float]) -> None:
         operators: Tuple[Callable[[Any, Any], bool], ...] = (np.less, np.greater)

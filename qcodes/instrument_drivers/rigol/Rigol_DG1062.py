@@ -304,7 +304,7 @@ class RigolDG1062Channel(InstrumentChannel):
         """
         Apply a waveform with values given in a dictionary.
         """
-        if not "waveform" in params_dict:
+        if "waveform" not in params_dict:
             raise ValueError("At least 'waveform' argument needed")
 
         waveform = str(params_dict["waveform"])

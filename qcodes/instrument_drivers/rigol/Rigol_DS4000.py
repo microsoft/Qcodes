@@ -178,7 +178,9 @@ class ScopeArray(ArrayParameter):
                 "yreference",
             ],
         )
-        conv = lambda x: int(x) if x.isdigit() else float(x)
+
+        def conv(x):
+            return int(x) if x.isdigit() else float(x)
 
         preamble_raw = self.instrument.ask(":WAVeform:PREamble?")
         preamble_num = [conv(x) for x in preamble_raw.strip().split(",")]
