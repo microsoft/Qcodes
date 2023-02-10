@@ -35,7 +35,6 @@ jobs:
           - os: ubuntu-latest
             python-version: 3.8
     env:
-      DISPLAY: ':99.0'
       OS: ${{ matrix.os }}
       UPLOAD_TO_GHPAGES: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == '3.10' && github.event_name == 'push' && github.ref == 'refs/heads/master' }}
       # we expect no warnings from Sphinx in 3.10
@@ -57,9 +56,6 @@ jobs:
       run: |
         echo "SPHINX_OPTS=-W -v" >> $GITHUB_ENV
       if: ${{ fromJSON(env.SPHINX_WARNINGS_AS_ERROR) }}
-    - name: setup ubuntu-latest xvfb
-      uses: ./.github/actions/setup-ubuntu-latest-xvfb
-      if: runner.os == 'Linux'
     - name: install pandoc linux
       run: |
         sudo apt update
@@ -74,13 +70,6 @@ jobs:
         attempt_limit: 5
         attempt_delay: 1000
       if: runner.os == 'Windows'
-    # install libhdf5-dev untill we have wheels for python 3.11
-    - name: install libhdf5
-      run: |
-        sudo apt update
-        sudo apt install libhdf5-dev
-      shell: bash
-      if: runner.os == 'Linux'
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4.3.1
       with:

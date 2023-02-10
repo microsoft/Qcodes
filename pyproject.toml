@@ -32,7 +32,6 @@ dependencies = [
     "importlib-resources>=2.0.0; python_version < '3.9'",
     "ipywidgets>=7.5.0,<9.0.0",
     "jsonschema>=3.0.0",
-    "lazy_loader>=0.1",
     "matplotlib>=3.3.0",
     "numpy>=1.21.0",
     "opencensus>=0.7.10",
@@ -72,7 +71,9 @@ Changelog = "https://qcodes.github.io/Qcodes/changes/index.html"
 
 [project.optional-dependencies]
 qtplot = ["pyqtgraph>=0.11.0"]
+# can be removed once deprecated pyqtgraph module is removed
 slack = ["slack-sdk>=3.4.2"]
+# can be removed once deprecated slack are removed
 zurichinstruments = ["zhinst-qcodes>=0.3"]
 loop = ["qcodes_loop>=0.1.1"]
 test = [
@@ -89,10 +90,8 @@ test = [
     "pytest-mock>=3.0.0",
     "pytest-rerunfailures>=10.0",
     "pytest-xdist>=2.0.0",
-    "pyqtgraph>=0.11.0", # pyqtgraph tests
-    "PyQt5>=5.15.0", # pyqtgraph tests
     "PyVisa-sim>=0.4.0",
-    "slack-sdk>=3.4.2", # needed to typecheck slack extension
+    "slack-sdk>=3.4.2", # can be dropped when deprecated slack ext is deleted
     "sphinx>=4.5.0",  # sphinx extension tests
     "types-jsonschema>=4.16.0",
     "types_requests>=0.1.8",
@@ -105,8 +104,6 @@ test = [
 docs = [
     "autodocsumm>=0.2.9",
     "nbsphinx>=0.8.9",
-    "PyQt5>=5.15.0", # pyqtgraph examples
-    "pyqtgraph>=0.11.0", # pyqtgraph examples
     "PyVisa-sim>=0.4.0",
     "sphinx>=4.5.0",
     "sphinx-favicon>=0.2",
@@ -116,7 +113,6 @@ docs = [
     "sphinxcontrib-towncrier>=0.3.0a0",
     "towncrier>=22.8.0",
     "scipy>=1.7.0", # examples using scipy
-    "slack-sdk>=3.4.2", # slack example notebook
     "qcodes_loop>=0.1.1", # legacy dataset import examples
 ]
 
