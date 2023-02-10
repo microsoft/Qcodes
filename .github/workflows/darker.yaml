@@ -1,6 +1,11 @@
 name: Lint with Darker
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - 'master'
+      - 'release/*'
+  pull_request:
 
 jobs:
   lint-with-darker:
