@@ -256,9 +256,8 @@ filterwarnings = [
 ]
 
 [tool.ruff]
-# initially enable this single
-# error code.
-select = ["PT025"]
+# Enable Pyflakes `E` and `F` codes by default.
+select = ["E", "F", "PT025"]
 # darker will fix this as code is
 # reformatted when it is changed.
 ignore = ["E501"]
