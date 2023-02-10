@@ -35,7 +35,6 @@ jobs:
           - os: ubuntu-latest
             python-version: 3.8
     env:
-      DISPLAY: ':99.0'
       OS: ${{ matrix.os }}
       UPLOAD_TO_GHPAGES: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == '3.10' && github.event_name == 'push' && github.ref == 'refs/heads/master' }}
       # we expect no warnings from Sphinx in 3.10
@@ -57,9 +56,6 @@ jobs:
       run: |
         echo "SPHINX_OPTS=-W -v" >> $GITHUB_ENV
       if: ${{ fromJSON(env.SPHINX_WARNINGS_AS_ERROR) }}
-    - name: setup ubuntu-latest xvfb
-      uses: ./.github/actions/setup-ubuntu-latest-xvfb
-      if: runner.os == 'Linux'
     - name: install pandoc linux
       run: |
         sudo apt update
