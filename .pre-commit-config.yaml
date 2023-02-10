@@ -40,3 +40,8 @@ repos:
           additional_dependencies: [pyupgrade]
         - id: nbqa-isort
           additional_dependencies: [isort]
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    # Ruff version.
+    rev: 'v0.0.244'
+    hooks:
+      - id: ruff
