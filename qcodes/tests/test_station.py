@@ -24,8 +24,7 @@ from .common import DumyPar
 
 
 @pytest.fixture(autouse=True)
-@pytest.mark.usefixtures("default_config")
-def use_default_config():
+def use_default_config(default_config):
     yield
 
 
