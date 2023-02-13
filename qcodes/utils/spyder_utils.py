@@ -31,7 +31,7 @@ def add_to_spyder_UMR_excludelist(modulename: str) -> None:
             try:
                 from spyder_kernels.customize import spydercustomize  # pyright: ignore
 
-                sitecustomize = spydercustomize
+                sitecustomize = spydercustomize  # noqa F811
             except ImportError:
                 pass
             else:

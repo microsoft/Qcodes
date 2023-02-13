@@ -10,7 +10,7 @@ from qcodes.parameters import (
     create_on_off_val_mapping,
 )
 
-from .KtM960xDefs import *
+from .KtM960xDefs import *  # noqa F403
 
 
 class Measure(MultiParameter):

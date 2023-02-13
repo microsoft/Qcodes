@@ -5,9 +5,9 @@ from typing import Any, Callable, Iterable, List, Optional, TypeVar, Union, cast
 from . import constants
 
 
-def as_csv(l: Iterable[Any], sep: str = ',') -> str:
+def as_csv(comps: Iterable[Any], sep: str = ",") -> str:
     """Returns items in iterable ls as comma-separated string"""
-    return sep.join(format(x) for x in l)
+    return sep.join(format(x) for x in comps)
 
 
 MessageBuilderMethodT = TypeVar('MessageBuilderMethodT',

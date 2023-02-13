@@ -158,7 +158,7 @@ class OxfordTriton(IPInstrument):
 
         try:
             self._get_named_channels()
-        except:
+        except Exception:
             logging.warning('Ignored an error in _get_named_channels\n' +
                             format_exc())
 

@@ -165,7 +165,7 @@ class Model_372_Mock(MockVisaInstrument, Model_372):
 
     @command('PID')
     @split_args()
-    def pid(self, output, P, I, D):
+    def pid(self, output, P, I, D):  # noqa  E741
         for a, v in zip(['P', 'I', 'D'], [P, I, D]):
             setattr(self.heaters[output], a, v)
 
@@ -292,7 +292,7 @@ def lakeshore_372():
 
 def test_pid_set(lakeshore_372):
     ls = lakeshore_372
-    P, I, D = 1, 2, 3
+    P, I, D = 1, 2, 3  # noqa  E741
     for h in (ls.warmup_heater, ls.analog_heater, ls.sample_heater):
         h.P(P)
         h.I(I)

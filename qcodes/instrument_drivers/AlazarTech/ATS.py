@@ -537,7 +537,7 @@ class AlazarTech_ATS(Instrument):
         # Getting IDN is very slow so skip that
         for _, p in self.parameters.items():
             if isinstance(p, TraceParameter):
-                if p.synced_to_card == False:
+                if p.synced_to_card is False:
                     raise RuntimeError(f"TraceParameter {p} not synced to "
                                        f"Alazar card detected. Aborting. Data "
                                        f"may be corrupt")

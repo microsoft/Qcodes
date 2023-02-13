@@ -189,7 +189,7 @@ class Instrument(InstrumentBase, metaclass=InstrumentMeta):
                 inst: Instrument = cls.find_instrument(inststr)
                 log.info("Closing %s", inststr)
                 inst.close()
-            except:
+            except Exception:
                 log.exception("Failed to close %s, ignored", inststr)
 
     @classmethod

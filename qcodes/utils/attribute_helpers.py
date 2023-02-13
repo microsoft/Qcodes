@@ -106,11 +106,9 @@ def strip_attrs(obj: object, whitelist: Sequence[str] = ()) -> None:
         for key in lst:
             try:
                 del obj.__dict__[key]
-            # TODO (giulioungaretti) fix bare-except
-            except:
+            except Exception:
                 pass
-        # TODO (giulioungaretti) fix bare-except
-    except:
+    except Exception:
         pass
 
 

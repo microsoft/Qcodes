@@ -86,8 +86,8 @@ class LakeshoreModel336Mock(MockVisaInstrument, LakeshoreModel336):
 
     @command('PID')
     @split_args()
-    def pid(self, output, P, I, D):
-        for a, v in zip(['P', 'I', 'D'], [P, I, D]):
+    def pid(self, output, P, I, D):  # noqa  E741
+        for a, v in zip(["P", "I", "D"], [P, I, D]):
             setattr(self.heaters[output], a, v)
 
     @query('OUTMODE?')
@@ -176,7 +176,7 @@ def _make_lakeshore_336():
 
 def test_pid_set(lakeshore_336):
     ls = lakeshore_336
-    P, I, D = 1, 2, 3
+    P, I, D = 1, 2, 3  # noqa  E741
     # Only current source outputs/heaters have PID parameters,
     # voltages source outputs/heaters do not.
     outputs = [ls.output_1, ls.output_2]

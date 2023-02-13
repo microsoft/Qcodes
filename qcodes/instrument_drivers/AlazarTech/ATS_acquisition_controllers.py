@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional, Tuple
 
 import numpy as np
 
-from .ATS import AcquisitionController, OutputType
+from .ATS import AcquisitionController
 
 
 # DFT AcquisitionController
@@ -131,7 +131,7 @@ class DemodulationAcquisitionController(AcquisitionController[float]):
         if self.number_of_channels == 2:
             # fit channel A and channel B
             res1 = self.fit(recordA)
-            res2 = self.fit(recordB)
+            self.fit(recordB)
             #return [alazar.signal_to_volt(1, res1[0] + 127.5),
             #        alazar.signal_to_volt(2, res2[0] + 127.5),
             #        res1[1], res2[1],

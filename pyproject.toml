@@ -256,6 +256,8 @@ filterwarnings = [
 ]
 
 [tool.ruff]
+# Enable Pyflakes `E` and `F` codes by default.
+select = ["E", "F", "PT025"]
 # darker will fix this as code is
 # reformatted when it is changed.
 ignore = ["E501"]
@@ -287,6 +289,7 @@ ignore = ["E501"]
 "qcodes/utils/magic.py" = ["F401"]
 "qcodes/utils/helpers.py" = ["F401"]
 "qcodes/extensions/slack.py" = ["F401"]
+"qcodes/instrument_drivers/AimTTi/AimTTi_PL601P_channels.py" = ["F401"]
 "qcodes/instrument_drivers/tektronix/Keithley_6500.py" = ["F401"]
 "qcodes/instrument_drivers/tektronix/Keithley_2600_channels.py" = ["F401"]
 "qcodes/instrument_drivers/tektronix/Keithley_2450.py" = ["F401"]
@@ -305,6 +308,10 @@ ignore = ["E501"]
 "qcodes/instrument_drivers/Lakeshore/Model_325.py" = ["F401"]
 "qcodes/instrument_drivers/Lakeshore/Model_336.py" = ["F401"]
 "qcodes/instrument_drivers/Lakeshore/Model_372.py" = ["F401"]
+"qcodes/instrument_drivers/Minicircuits/RUDAT_13G_90.py" = ["F401"]
+"qcodes/instrument_drivers/HP/HP8133A.py" = ["F401"]
+"qcodes/instrument_drivers/HP/HP8753D.py" = ["F401"]
+"qcodes/instrument_drivers/Keysight/N9030B.py" = ["F401"]
 
 "qcodes/instrument_drivers/Keysight/KtM960x.py" = ["F405"]
 "qcodes/instrument_drivers/Keysight/KtMAwg.py" = ["F405"]

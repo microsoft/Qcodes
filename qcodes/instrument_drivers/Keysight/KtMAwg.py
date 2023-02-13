@@ -6,7 +6,7 @@ from qcodes.instrument import Instrument, InstrumentChannel
 from qcodes.parameters import create_on_off_val_mapping
 from qcodes.validators import Numbers
 
-from .KtMAwgDefs import *
+from .KtMAwgDefs import *  # noqa F403
 
 
 class KeysightM9336AAWGChannel(InstrumentChannel):

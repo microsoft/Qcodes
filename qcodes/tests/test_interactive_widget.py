@@ -5,9 +5,10 @@ import matplotlib
 import pytest
 from ipywidgets import HTML, Button, GridspecLayout, Tab, Textarea
 
+from qcodes import interactive_widget
+
 # set matplotlib backend before importing pyplot
 matplotlib.use("Agg")
-from qcodes import interactive_widget
 
 
 @pytest.fixture(name="tab", scope="function")
