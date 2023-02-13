@@ -68,7 +68,7 @@ def convert_legacy_version_to_supported_version(ver: str) -> str:
     by its ASCII code (using ``ord``). This assumes that the version number
     only uses at most a single char per level and only ASCII chars.
 
-    It also splits off anything that comes after the first ``_`` in the version str.
+    It also splits off anything that comes after the first ``-`` in the version str.
 
     This is meant to pass versions like ``'A.02.17-02.40-02.17-00.52-04-01'``
     primarily used by Keysight instruments.
