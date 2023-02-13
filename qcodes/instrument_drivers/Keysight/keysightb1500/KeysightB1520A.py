@@ -520,7 +520,7 @@ class KeysightB1520A(B1500Module):
         )
 
     def _cv_sweep_voltages(self) -> Tuple[float, ...]:
-        def sign(s):
+        def sign(s: float) -> float:
             return s and (1, -1)[s < 0]
         start_value = self.cv_sweep.sweep_start()
         end_value = self.cv_sweep.sweep_end()
