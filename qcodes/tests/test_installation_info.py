@@ -1,4 +1,5 @@
 import pytest
+from packaging import version
 
 import qcodes as qc
 import qcodes.utils.installation_info as ii
@@ -38,11 +39,28 @@ def test_get_all_installed_package_versions():
 
 
 def test_convert_legacy_version_to_supported_version():
+    def assert_version_str(legacy_verstr: str, expected_converted_ver_str: str) -> None:
+        converted_version_str = convert_legacy_version_to_supported_version(
+            legacy_verstr
+        )
+        assert converted_version_str == expected_converted_ver_str
+        version.parse(converted_version_str) == version.parse(
+            expected_converted_ver_str
+        )
+
     legacy_verstr = "a.1.4"
-    assert convert_legacy_version_to_supported_version(legacy_verstr) == "65.1.4"
+    expected_converted_ver_str = "65.1.4"
+    assert_version_str(legacy_verstr, expected_converted_ver_str)
+
 
     legacy_verstr = "10.4.7"
-    assert convert_legacy_version_to_supported_version(legacy_verstr) == "10.4.7"
+    expected_converted_ver_str = "10.4.7"
+    assert_version_str(legacy_verstr, expected_converted_ver_str)
 
     legacy_verstr = "C.2.1"
-    assert convert_legacy_version_to_supported_version(legacy_verstr) == "67.2.1"
+    expected_converted_ver_str = "67.2.1"
+    assert_version_str(legacy_verstr, expected_converted_ver_str)
+
+    legacy_verstr = "A.02.17-02.40-02.17-00.52-04-01"
+    expected_converted_ver_str = "65.02.17"
+    assert_version_str(legacy_verstr, expected_converted_ver_str)
