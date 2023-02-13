@@ -323,6 +323,7 @@ on Linux and on Windows.
     - Run `Darker <https://github.com/akaihola/darker/>`_. This will enforce `Black <https://github.com/psf/black>`_
       formatting and sorting of imports using `isort <https://pycqa.github.io/isort/>`_ on all new and changed code.
       We do not format the entire codebase to not lose change history.
+    - Run `ruff <https://github.com/charliermarsh/ruff>`_ to check for comon style issues in python code.
 
 
 Furthermore we also run our test suite with the minimum requirements stated to ensure that QCoDeS does work
