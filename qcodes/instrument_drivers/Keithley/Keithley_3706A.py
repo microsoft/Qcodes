@@ -812,7 +812,7 @@ class Keithley3706A(VisaInstrument):
         if state == "nil":
             return None
         else:
-            return int(state)
+            return int(float(state))
 
     def get_ip_address(self) -> str:
         """
