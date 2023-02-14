@@ -68,7 +68,7 @@ devices:
       - q: "print(slot[6].idn)"
         r: "Empty Slot"
       - q: "print(slot[1].interlock.state)"
-        r: 0
+        r: "nil"
         type: int
       - q: "print(slot[2].interlock.state)"
         r: 0
