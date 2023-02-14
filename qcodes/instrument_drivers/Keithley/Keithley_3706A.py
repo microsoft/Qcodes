@@ -806,7 +806,7 @@ class Keithley3706A(VisaInstrument):
             states.append({"slot_no": i, "state": interlock_status[state]})
         return tuple(states)
 
-    def get_interlock_state_by_slot(self, slot: Union[str, int]) -> int:
+    def get_interlock_state_by_slot(self, slot: Union[str, int]) -> Union[int, None]:
         state = self.ask(f"slot[{int(slot)}].interlock.state")
         if state == "nil":
             return None
