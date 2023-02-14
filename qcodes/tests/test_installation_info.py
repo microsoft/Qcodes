@@ -44,7 +44,7 @@ def test_convert_legacy_version_to_supported_version():
             legacy_verstr
         )
         assert converted_version_str == expected_converted_ver_str
-        version.parse(converted_version_str) == version.parse(
+        assert version.parse(converted_version_str) == version.parse(
             expected_converted_ver_str
         )
 
