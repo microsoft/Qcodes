@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import collections.abc
 import logging
 import numbers
@@ -6,19 +8,7 @@ import warnings
 from collections import defaultdict
 from contextlib import ExitStack
 from functools import partial
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Sequence,
-    Tuple,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import Any, Callable, Iterable, Sequence, Tuple, TypeVar, cast
 
 import numpy as np
 
@@ -30,8 +20,7 @@ from qcodes.validators import Anything, Bool, Enum, Ints, Numbers
 
 log = logging.getLogger(__name__)
 
-CartesianFieldLimitFunction = \
-    Callable[[float, float, float], bool]
+CartesianFieldLimitFunction = Callable[[float, float, float], bool]
 
 T = TypeVar('T')
 
@@ -48,14 +37,15 @@ class AMI430SwitchHeater(InstrumentChannel):
     class _Decorators:
         @classmethod
         def check_enabled(cls, f: Callable[..., T]) -> Callable[..., T]:
-            def check_enabled_decorator(self: "AMI430SwitchHeater",
-                                        *args: Any, **kwargs: Any) -> T:
+            def check_enabled_decorator(
+                self: AMI430SwitchHeater, *args: Any, **kwargs: Any
+            ) -> T:
                 if not self.check_enabled():
                     raise AMI430Exception("Switch not enabled")
                 return f(self, *args, **kwargs)
             return check_enabled_decorator
 
-    def __init__(self, parent: 'AMI430') -> None:
+    def __init__(self, parent: AMI430) -> None:
         super().__init__(parent, "SwitchHeater")
 
         # Add state parameters
@@ -148,14 +138,15 @@ class AMI430(IPInstrument):
     _DEFAULT_CURRENT_RAMP_LIMIT = 0.06  # [A/s]
 
     def __init__(
-            self,
-            name: str,
-            address: str,
-            port: Optional[int] = None,
-            reset: bool = False,
-            terminator: str = '\r\n',
-            current_ramp_limit: Optional[float] = None,
-            **kwargs: Any):
+        self,
+        name: str,
+        address: str,
+        port: int | None = None,
+        reset: bool = False,
+        terminator: str = "\r\n",
+        current_ramp_limit: float | None = None,
+        **kwargs: Any,
+    ):
         if "has_current_rating" in kwargs.keys():
             warnings.warn(
                 "'has_current_rating' kwarg to AMI430 "
@@ -413,10 +404,7 @@ class AMI430(IPInstrument):
             if self.ramp_rate() > field_ramp_limit:
                 self.ramp_rate(field_ramp_limit)
 
-    def _update_coil_constant(
-            self,
-            new_coil_constant: Optional[float] = None
-    ) -> float:
+    def _update_coil_constant(self, new_coil_constant: float | None = None) -> float:
         """
         Update the coil constant and relevant scaling factors.
         If new_coil_constant is none, query the coil constant from the
@@ -436,7 +424,7 @@ class AMI430(IPInstrument):
         return new_coil_constant
 
     def _update_units(
-        self, ramp_rate_units: Optional[int] = None, field_units: Optional[int] = None
+        self, ramp_rate_units: int | None = None, field_units: int | None = None
     ) -> None:
         # Get or set units on device
         if ramp_rate_units is None:
@@ -485,10 +473,10 @@ class AMI430_3D(Instrument):
     def __init__(
         self,
         name: str,
-        instrument_x: Union[AMI430, str],
-        instrument_y: Union[AMI430, str],
-        instrument_z: Union[AMI430, str],
-        field_limit: Union[float, Iterable[CartesianFieldLimitFunction]],
+        instrument_x: AMI430 | str,
+        instrument_y: AMI430 | str,
+        instrument_z: AMI430 | str,
+        field_limit: float | Iterable[CartesianFieldLimitFunction],
         **kwargs: Any,
     ):
         """
@@ -547,7 +535,7 @@ class AMI430_3D(Instrument):
             else find_ami430_with_name(instrument_z)
         )
 
-        self._field_limit: Union[float, Iterable[CartesianFieldLimitFunction]]
+        self._field_limit: float | Iterable[CartesianFieldLimitFunction]
         if isinstance(field_limit, collections.abc.Iterable):
             self._field_limit = field_limit
         elif isinstance(field_limit, numbers.Real):
@@ -761,7 +749,7 @@ class AMI430_3D(Instrument):
 
         self._exit_stack = ExitStack()
 
-    def get_idn(self) -> Dict[str, Optional[str]]:
+    def get_idn(self) -> dict[str, str | None]:
         idparts = ["American Magnetics", self.name, None, None]
         return dict(zip(("vendor", "model", "serial", "firmware"), idparts))
 
@@ -839,7 +827,7 @@ class AMI430_3D(Instrument):
     @staticmethod
     def calculate_axes_ramp_rates_for(
         start: FieldVector, setpoint: FieldVector, duration: float
-    ) -> Tuple[float, float, float]:
+    ) -> tuple[float, float, float]:
         """
         Given starting and setpoint fields and expected ramp time calculates
         required ramp rates for x, y, z axes (in this order) where axes are
@@ -861,12 +849,12 @@ class AMI430_3D(Instrument):
     @staticmethod
     def calculate_axes_ramp_rates_from_vector_ramp_rate(
         start: FieldVector, setpoint: FieldVector, vector_ramp_rate: float
-    ) -> Tuple[float, float, float]:
+    ) -> tuple[float, float, float]:
         delta_field = setpoint - start
         ramp_rate_3d = delta_field / delta_field.norm() * vector_ramp_rate
         return abs(ramp_rate_3d["x"]), abs(ramp_rate_3d["y"]), abs(ramp_rate_3d["z"])
 
-    def _raise_if_not_same_field_and_ramp_rate_units(self) -> Tuple[str, str]:
+    def _raise_if_not_same_field_and_ramp_rate_units(self) -> tuple[str, str]:
         instruments = (self._instrument_x, self._instrument_y, self._instrument_z)
 
         field_units_of_instruments = defaultdict(set)
@@ -900,8 +888,7 @@ class AMI430_3D(Instrument):
         return common_field_units, common_ramp_rate_units
 
     def _verify_safe_setpoint(
-            self,
-            setpoint_values: Tuple[float, float, float]
+        self, setpoint_values: tuple[float, float, float]
     ) -> bool:
         if isinstance(self._field_limit, (int, float)):
             return bool(np.linalg.norm(setpoint_values) < self._field_limit)
@@ -911,10 +898,7 @@ class AMI430_3D(Instrument):
 
         return answer
 
-    def _adjust_child_instruments(
-            self,
-            values: Tuple[float, float, float]
-    ) -> None:
+    def _adjust_child_instruments(self, values: tuple[float, float, float]) -> None:
         """
         Set the fields of the x/y/z magnets. This function is called
         whenever the field is changed and performs several safety checks
@@ -947,7 +931,7 @@ class AMI430_3D(Instrument):
             self._perform_default_ramp(values)
 
     def _update_individual_axes_ramp_rates(
-        self, values: Tuple[float, float, float]
+        self, values: tuple[float, float, float]
     ) -> None:
         if self.vector_ramp_rate() is None or self.vector_ramp_rate() == 0:
             raise ValueError('The value of the `vector_ramp_rate` Parameter is '
@@ -967,7 +951,7 @@ class AMI430_3D(Instrument):
                 f"is {new_axis_ramp_rate} {instrument.ramp_rate.unit}"
             )
 
-    def _perform_simultaneous_ramp(self, values: Tuple[float, float, float]) -> None:
+    def _perform_simultaneous_ramp(self, values: tuple[float, float, float]) -> None:
         self._prepare_to_restore_individual_axes_ramp_rates()
 
         self._update_individual_axes_ramp_rates(values)
@@ -1002,8 +986,8 @@ class AMI430_3D(Instrument):
 
         self.log.debug("Simultaneous ramp: returning from the ramp call")
 
-    def _perform_default_ramp(self, values: Tuple[float, float, float]) -> None:
-        operators: Tuple[Callable[[Any, Any], bool], ...] = (np.less, np.greater)
+    def _perform_default_ramp(self, values: tuple[float, float, float]) -> None:
+        operators: tuple[Callable[[Any, Any], bool], ...] = (np.less, np.greater)
         for operator in operators:
             # First ramp the coils that are decreasing in field strength.
             # This will ensure that we are always in a safe region as
@@ -1087,7 +1071,7 @@ class AMI430_3D(Instrument):
             z=self._instrument_z.field(),
         )
 
-    def _get_measured(self, *names: str) -> Union[float, List[float]]:
+    def _get_measured(self, *names: str) -> float | list[float]:
         measured_field_vector = self._get_measured_field_vector()
 
         measured_values = measured_field_vector.get_components(*names)
@@ -1098,25 +1082,29 @@ class AMI430_3D(Instrument):
         # Do not do "return list(d.values())", because then there is
         # no guaranty that the order in which the values are returned
         # is the same as the original intention
-        return_value = [d[name] for name in names]
+        value_list = [d[name] for name in names]
 
         if len(names) == 1:
-            return_value = return_value[0]
+            return_value: list[float] | float = value_list[0]
+        else:
+            return_value = value_list
 
         return return_value
 
-    def _get_setpoints(self, names: Sequence[str]) -> Union[float, List[float]]:
+    def _get_setpoints(self, names: Sequence[str]) -> float | list[float]:
         measured_values = self._set_point.get_components(*names)
 
         # Convert angles from radians to degrees
         d = dict(zip(names, measured_values))
-        return_value = [d[name] for name in names]
+        value_list = [d[name] for name in names]
         # Do not do "return list(d.values())", because then there is
         # no guarantee that the order in which the values are returned
         # is the same as the original intention
 
         if len(names) == 1:
-            return_value = return_value[0]
+            return_value: list[float] | float = value_list[0]
+        else:
+            return_value = value_list
 
         return return_value
 
