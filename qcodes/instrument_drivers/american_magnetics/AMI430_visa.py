@@ -1154,10 +1154,12 @@ class AMIModel4303D(Instrument):
         # Do not do "return list(d.values())", because then there is
         # no guaranty that the order in which the values are returned
         # is the same as the original intention
-        return_value = [d[name] for name in names]
+        value_list = [d[name] for name in names]
 
         if len(names) == 1:
-            return_value = return_value[0]
+            return_value: list[float] | float = value_list[0]
+        else:
+            return_value = value_list
 
         return return_value
 
@@ -1167,13 +1169,15 @@ class AMIModel4303D(Instrument):
 
         # Convert angles from radians to degrees
         d = dict(zip(names, measured_values))
-        return_value = [d[name] for name in names]
+        value_list = [d[name] for name in names]
         # Do not do "return list(d.values())", because then there is
         # no guarantee that the order in which the values are returned
         # is the same as the original intention
 
         if len(names) == 1:
-            return_value = return_value[0]
+            return_value: list[float] | float = value_list[0]
+        else:
+            return_value = value_list
 
         return return_value
 
