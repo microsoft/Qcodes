@@ -67,6 +67,11 @@ def convert_legacy_version_to_supported_version(ver: str) -> str:
     numbers to a regular version string. This is done by replacing a char
     by its ASCII code (using ``ord``). This assumes that the version number
     only uses at most a single char per level and only ASCII chars.
+
+    It also splits off anything that comes after the first ``-`` in the version str.
+
+    This is meant to pass versions like ``'A.02.17-02.40-02.17-00.52-04-01'``
+    primarily used by Keysight instruments.
     """
 
     temp_list = []
@@ -75,4 +80,5 @@ def convert_legacy_version_to_supported_version(ver: str) -> str:
             temp_list.append(str(ord(v.upper())))
         else:
             temp_list.append(v)
-    return "".join(temp_list)
+    temp_str = "".join(temp_list)
+    return temp_str.split("-")[0]
