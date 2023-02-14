@@ -100,6 +100,7 @@ test = [
     "types-tqdm>=4.64.6",
     "types_pywin32>=305.0.0.7",
     "qcodes_loop>=0.1.1",
+    "zhinst.qcodes>=0.5", # typecheck zhinst driver alias
 ]
 docs = [
     "autodocsumm>=0.2.9",
