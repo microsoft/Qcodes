@@ -14,20 +14,20 @@ from qcodes.utils import (
 # but we can at least test that they execute without errors
 
 
-def test_get_qcodes_version():
+def test_get_qcodes_version() -> None:
     with pytest.warns(QCoDeSDeprecationWarning):
         version = ii.get_qcodes_version()
 
     assert version == qc.__version__
 
 
-def test_is_qcodes_installed_editably():
+def test_is_qcodes_installed_editably() -> None:
     answer = is_qcodes_installed_editably()
 
     assert isinstance(answer, bool)
 
 
-def test_get_all_installed_package_versions():
+def test_get_all_installed_package_versions() -> None:
     ipvs = get_all_installed_package_versions()
 
     assert isinstance(ipvs, dict)
@@ -38,7 +38,7 @@ def test_get_all_installed_package_versions():
         assert isinstance(v, str)
 
 
-def test_convert_legacy_version_to_supported_version():
+def test_convert_legacy_version_to_supported_version() -> None:
     def assert_version_str(legacy_verstr: str, expected_converted_ver_str: str) -> None:
         converted_version_str = convert_legacy_version_to_supported_version(
             legacy_verstr
