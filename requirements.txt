@@ -68,7 +68,7 @@ kiwisolver~=1.4.4
 lazy_loader==0.1
 lxml~=4.9.1
 MarkupSafe~=2.1.1
-matplotlib~=3.6.1
+matplotlib~=3.7.0
 matplotlib-inline==0.1.6
 mistune~=2.0.4
 msal~=1.21.0
