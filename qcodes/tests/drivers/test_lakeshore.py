@@ -99,8 +99,20 @@ def split_args(split_char=','):
 
 class DictClass:
     def __init__(self, **kwargs):
+        # https://stackoverflow.com/questions/16237659/python-how-to-implement-getattr
+        super().__setattr__("_attrs", kwargs)
+
         for kwarg, value in kwargs.items():
-            setattr(self, kwarg, value)
+            self._attrs[kwarg] = value
+
+    def __getattr__(self, attr):
+        try:
+            return self._attrs[attr]
+        except KeyError as e:
+            raise AttributeError from e
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        self._attrs[name] = value
 
 
 class Model_372_Mock(MockVisaInstrument, Model_372):
@@ -128,18 +140,24 @@ class Model_372_Mock(MockVisaInstrument, Model_372):
                                       output_range=0,
                                       setpoint=4)
 
-        self.channel_mock = \
-            {str(i): DictClass(tlimit=i, T=4, enabled=1, # True
-                               dwell=100, pause=3,
-                               curve_number=0,
-                               temperature_coefficient=1, # 'negative',
-                               excitation_mode=0, #'voltage',
-                               excitation_range_number=1,
-                               auto_range=0,#'off',
-                               range=5,#'200 mOhm',
-                               current_source_shunted=0,#False,
-                               units=1)#'kelvin')
-             for i in range(1, 17)}
+        self.channel_mock = {
+            str(i): DictClass(
+                tlimit=i,
+                T=4,
+                enabled=1,  # True
+                dwell=100,
+                pause=3,
+                curve_number=0,
+                temperature_coefficient=1,  # 'negative',
+                excitation_mode=0,  #'voltage',
+                excitation_range_number=1,
+                auto_range=0,  #'off',
+                range=5,  #'200 mOhm',
+                current_source_shunted=0,  # False,
+                units=1,
+            )  #'kelvin')
+            for i in range(1, 17)
+        }
 
         # simulate delayed heating
         self.simulate_heating = False
@@ -356,7 +374,7 @@ def test_select_range_limits(lakeshore_372):
         h.set_range_from_temperature(i - 0.5)
         assert h.output_range() == h.INVERSE_RANGES[i]
 
-    h.set_range_from_temperature(i + 0.5)
+    h.set_range_from_temperature(ranges[-1] + 0.5)
     assert h.output_range() == h.INVERSE_RANGES[len(ranges)]
 
 
@@ -379,56 +397,39 @@ def test_blocking_t(lakeshore_372):
 def test_get_term_sum():
     available_terms = [0, 1, 2, 4, 8, 16, 32]
 
-    assert [32, 8, 2, 1] == \
-           BaseSensorChannel._get_sum_terms(available_terms,
-                                            1 + 2 + 8 + 32)
+    assert [32, 8, 2, 1] == BaseSensorChannel._get_sum_terms(
+        available_terms, 1 + 2 + 8 + 32
+    )
 
-    assert [32] == \
-           BaseSensorChannel._get_sum_terms(available_terms,
-                                            32)
+    assert [32] == BaseSensorChannel._get_sum_terms(available_terms, 32)
 
-    assert [16, 4, 1] == \
-           BaseSensorChannel._get_sum_terms(available_terms,
-                                            1 + 4 + 16)
+    assert [16, 4, 1] == BaseSensorChannel._get_sum_terms(available_terms, 1 + 4 + 16)
 
-    assert [0] == \
-           BaseSensorChannel._get_sum_terms(available_terms,
-                                            0)
+    assert [0] == BaseSensorChannel._get_sum_terms(available_terms, 0)
 
 
 def test_get_term_sum_with_some_powers_of_2_omitted():
     available_terms = [0, 16, 32]
 
-    assert [32, 16] == \
-           BaseSensorChannel._get_sum_terms(available_terms,
-                                            16 + 32)
+    assert [32, 16] == BaseSensorChannel._get_sum_terms(available_terms, 16 + 32)
 
-    assert [32] == \
-           BaseSensorChannel._get_sum_terms(available_terms,
-                                            32)
+    assert [32] == BaseSensorChannel._get_sum_terms(available_terms, 32)
 
-    assert [0] == \
-           BaseSensorChannel._get_sum_terms(available_terms,
-                                            0)
+    assert [0] == BaseSensorChannel._get_sum_terms(available_terms, 0)
 
 
 def test_get_term_sum_returns_empty_list():
     available_terms = [0, 16, 32]
 
-    assert [] == \
-           BaseSensorChannel._get_sum_terms(available_terms,
-                                            15)
+    assert [] == BaseSensorChannel._get_sum_terms(available_terms, 15)
+
 
 def test_get_term_sum_when_zero_is_not_in_available_terms():
     available_terms = [16, 32]
 
-    assert [] == \
-           BaseSensorChannel._get_sum_terms(available_terms,
-                                            3)
+    assert [] == BaseSensorChannel._get_sum_terms(available_terms, 3)
 
     # Note that `_get_sum_terms` expects '0' to be in the available_terms,
     # hence for this particular case it will still return a list with '0' in
     # it although that '0' is not part of the available_terms
-    assert [0] == \
-           BaseSensorChannel._get_sum_terms(available_terms,
-                                            0)
+    assert [0] == BaseSensorChannel._get_sum_terms(available_terms, 0)
