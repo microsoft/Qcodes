@@ -290,6 +290,57 @@ class Station(Metadatable, DelegateAttributes):
             else:
                 raise e
 
+    def get_component(self, full_name: str) -> MetadatableWithName:
+        """
+        Get a (sub)component with a given name from this Station.
+        The name may be of a component that is a sub-component of another
+        component, e.g. a parameter on an instrument, an instrument module
+        or an top-level instrument.
+
+        Args:
+            full_name: Name of the component.
+
+        Returns:
+            The component with the given name.
+
+        Raises:
+            KeyError: If a component with the given name is not part of this
+                station.
+        """
+
+        def find_component(
+            potential_top_level_name: str, remaining_name_parts: list[str]
+        ) -> tuple[MetadatableWithName, list[str]]:
+            toplevel_component = self.components.get(potential_top_level_name, None)
+            if toplevel_component is not None:
+                return toplevel_component, remaining_name_parts
+            else:
+                if len(remaining_name_parts) < 1:
+                    raise KeyError(f"Component {full_name} is not part of the station")
+                extra = remaining_name_parts.pop()
+                new_potential_name = f"{potential_top_level_name}_{extra}"
+                return find_component(new_potential_name, remaining_name_parts)
+
+        name_parts = full_name.split("_")
+        name_parts.reverse()
+
+        potential_top_level_name = name_parts.pop()
+        toplevel_component, remaining_name_parts = find_component(
+            potential_top_level_name, name_parts
+        )
+        if len(remaining_name_parts) == 0:
+            return toplevel_component
+
+        remaining_name_parts.reverse()
+        remaining_name = "_".join(remaining_name_parts)
+
+        if isinstance(toplevel_component, InstrumentBase):
+            component = toplevel_component.get_component(remaining_name)
+        else:
+            raise KeyError(f"Component {full_name} is not part of the station")
+
+        return component
+
     # station['someitem'] and station.someitem are both
     # shortcuts to station.components['someitem']
     # (assuming 'someitem' doesn't have another meaning in Station)
@@ -470,7 +521,7 @@ class Station(Metadatable, DelegateAttributes):
         loaded configuration file.
 
         Args:
-            identifier: The identfying string that is looked up in the yaml
+            identifier: The identifying string that is looked up in the yaml
                 configuration file, which identifies the instrument to be added.
             revive_instance: If ``True``, try to return an instrument with the
                 specified name instead of closing it and creating a new one.
@@ -509,12 +560,12 @@ class Station(Metadatable, DelegateAttributes):
             init_kwargs['address'] = instr_cfg['address']
         if 'port' in instr_cfg:
             init_kwargs['port'] = instr_cfg['port']
-        # make explicitly passed arguments overide the ones from the config
+        # make explicitly passed arguments override the ones from the config
         # file.
         # We are mutating the dict below
         # so make a copy to ensure that any changes
         # does not leek into the station config object
-        # specifically we may be passing non pickleable
+        # specifically we may be passing non picklable
         # instrument instances via kwargs
         instr_kwargs = deepcopy(init_kwargs)
         instr_kwargs.update(kwargs)
@@ -612,15 +663,17 @@ class Station(Metadatable, DelegateAttributes):
                     # when everything else has been set up
                     pass
                 else:
-                    log.warning(f'Attribute {attr} not recognized when '
-                                f'instatiating parameter \"{parameter.name}\"')
-            if 'initial_value' in options:
-                parameter.set(options['initial_value'])
+                    log.warning(
+                        f"Attribute {attr} not recognized when "
+                        f'instantiating parameter "{parameter.name}"'
+                    )
+            if "initial_value" in options:
+                parameter.set(options["initial_value"])
 
         def add_parameter_from_dict(
             instr: InstrumentBase, name: str, options: dict[str, Any]
         ) -> None:
-            # keep the original dictionray intact for snapshot
+            # keep the original dictionary intact for snapshot
             options = copy(options)
             param_type: type = ParameterBase
             kwargs = {}
