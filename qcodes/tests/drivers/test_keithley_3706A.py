@@ -82,8 +82,10 @@ def test_get_interlock_state(driver):
     dict_list = (
         {
             "slot_no": "1",
-            "state":("No card is installed or the installed card does "
-            "not support interlocks"),
+            "state": (
+                "No card is installed or the installed card does "
+                "not support interlocks"
+            ),
         },
         {"slot_no": "2", "state": "Interlocks 1 and 2 are disengaged on the card"},
         {
