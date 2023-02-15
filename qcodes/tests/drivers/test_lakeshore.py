@@ -2,9 +2,10 @@ import logging
 import time
 from contextlib import suppress
 from functools import wraps
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, Literal, TypeVar
 
 import pytest
+from typing_extensions import ParamSpec
 
 from qcodes.instrument import InstrumentBase
 from qcodes.instrument_drivers.Lakeshore.lakeshore_base import BaseSensorChannel
@@ -15,6 +16,8 @@ log = logging.getLogger(__name__)
 
 VISA_LOGGER = '.'.join((InstrumentBase.__module__, 'com', 'visa'))
 
+P = ParamSpec("P")
+T = TypeVar("T")
 
 class MockVisaInstrument:
     """
@@ -73,21 +76,21 @@ class MockVisaInstrument:
             super().ask_raw(query)
 
 
-def query(name=None):
-    def wrapper(func):
+def query(name: str) -> Callable[[Callable[P, T]], Callable[P, T]]:
+    def wrapper(func: Callable[P, T]) -> Callable[P, T]:
         func.query_name = name.upper()
         return func
     return wrapper
 
 
-def command(name=None):
-    def wrapper(func):
+def command(name: str) -> Callable[[Callable[P, T]], Callable[P, T]]:
+    def wrapper(func: Callable[P, T]) -> Callable[P, T]:
         func.command_name = name.upper()
         return func
     return wrapper
 
 
-def split_args(split_char=','):
+def split_args(split_char: str = ","):
     def wrapper(func):
         @wraps(func)
         def decorated_func(self, string_arg):
@@ -285,7 +288,14 @@ class Model_372_Mock(MockVisaInstrument, Model_372):
         return f'{chan.T}'
 
 
-def instrument_fixture(scope="function", name=None):
+def instrument_fixture(
+    scope: Literal["session"]
+    | Literal["package"]
+    | Literal["module"]
+    | Literal["class"]
+    | Literal["function"] = "function",
+    name=None,
+):
     def wrapper(func):
         @pytest.fixture(scope=scope, name=name)
         def wrapped_fixture():
