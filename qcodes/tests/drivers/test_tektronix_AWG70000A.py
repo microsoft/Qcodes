@@ -144,14 +144,14 @@ def test_WFMXHeader_failing(num_samples, markers_included):
         AWG70000A._makeWFMXFileHeader(num_samples, markers_included)
 
 
-def test_seqxfilefromfs_failing(forged_sequence):
+def test_seqxfilefromfs_failing(forged_sequence) -> None:
 
     # typing convenience
     make_seqx = AWG70000A.make_SEQX_from_forged_sequence
 
     # TODO: the number of channels is defined in the
     # forged_sequence fixture but used here
-    chan_map = {n: n for n in range(1, 4)}
+    chan_map: dict[int | str, int] = {n: n for n in range(1, 4)}
 
     # the input dict (first argument) is not a valid forged
     # sequence dict
@@ -165,9 +165,12 @@ def test_seqxfilefromfs_failing(forged_sequence):
 
     # wrong channel mapping keys
     with pytest.raises(ValueError):
-        make_seqx(forged_sequence, [1, 1, 1],
-                  seqname='dummyname',
-                  channel_mapping={1: None, 3: None})
+        make_seqx(
+            forged_sequence,
+            [1, 1, 1],
+            seqname="dummyname",
+            channel_mapping={1: None, 3: None},  # type: ignore[dict-item]
+        )
 
     # wrong channel mapping values
     with pytest.raises(ValueError):
