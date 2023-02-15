@@ -291,14 +291,14 @@ def test_measurement_name_set_as_argument(experiment, DAC, DMM):
 @given(wp=hst.one_of(hst.integers(), hst.floats(allow_nan=False),
                      hst.text()))
 @pytest.mark.usefixtures("empty_temp_db")
-def test_setting_write_period(wp):
+def test_setting_write_period(wp) -> None:
     new_experiment('firstexp', sample_name='no sample')
     meas = Measurement()
     meas.register_custom_parameter(name='dummy')
 
     if isinstance(wp, str):
         with pytest.raises(ValueError):
-            meas.write_period = wp
+            meas.write_period = wp  # type: ignore[assignment]
     elif wp < 1e-3:
         with pytest.raises(ValueError):
             meas.write_period = wp
@@ -648,6 +648,7 @@ def test_datasaver_inst_metadata(experiment, DAC_with_metadata, DMM):
         for set_v in range(10):
             DAC_with_metadata.ch1.set(set_v)
             datasaver.add_result((DAC_with_metadata.ch1, set_v), (DMM.v1, DMM.v1.get()))
+    assert datasaver.dataset.snapshot is not None
     station_snapshot = datasaver.dataset.snapshot['station']
     assert station_snapshot['instruments']['dummy_dac']['metadata'] == {"dac": "metadata"}
 
@@ -660,6 +661,7 @@ def test_exception_happened_during_measurement_is_stored_in_dataset_metadata(
     class SomeMeasurementException(Exception):
         pass
 
+    dataset = None
     # `pytest.raises`` is used here instead of custom try-except for convenience
     with pytest.raises(SomeMeasurementException, match='foo') as e:
 
@@ -667,7 +669,7 @@ def test_exception_happened_during_measurement_is_stored_in_dataset_metadata(
             dataset = datasaver.dataset
 
             raise SomeMeasurementException('foo')
-
+    assert dataset is not None
     metadata = dataset.metadata
     assert "measurement_exception" in metadata
 
@@ -789,6 +791,7 @@ def test_datasaver_numeric_and_array_paramtype(bg_writing, N):
     assert datasaver.points_written == 1
     ds = datasaver.dataset
     assert isinstance(ds, DataSet)
+    assert ds.parameters is not None
     data = ds.get_parameter_data(*ds.parameters.split(","))
     assert (data["numeric_1"]["numeric_1"] == np.array([3.75])).all()
     assert np.allclose(data["array_1"]["array_1"], signal)
@@ -824,6 +827,7 @@ def test_datasaver_numeric_after_array_paramtype(bg_writing):
     assert datasaver.points_written == 1
     ds = datasaver.dataset
     assert isinstance(ds, DataSet)
+    assert ds.parameters is not None
     data = ds.get_parameter_data(*ds.parameters.split(","))
     assert (data["numeric_1"]["numeric_1"] == np.array([3.75])).all()
     assert np.allclose(data["array_1"]["array_1"], signal)
@@ -1021,6 +1025,8 @@ def test_datasaver_array_parameters_channel(channel_array_instrument,
         n_points_written_expected = N * M
     elif storage_type == 'array':
         n_points_written_expected = N
+    else:
+        raise RuntimeError("Unknown storage_type")
 
     assert datasaver.points_written == n_points_written_expected
 
@@ -1076,6 +1082,8 @@ def test_datasaver_parameter_with_setpoints(channel_array_instrument,
         expected_points_written = n
     elif storage_type == 'array':
         expected_points_written = 1
+    else:
+        raise RuntimeError("Unknown storage_type")
 
     assert datasaver.points_written == expected_points_written
 
@@ -1149,6 +1157,8 @@ def test_datasaver_parameter_with_setpoints_explicitly_expanded(channel_array_in
         expected_points_written = n
     elif storage_type == 'array':
         expected_points_written = 1
+    else:
+        raise RuntimeError("Unknown storage_type")
 
     assert datasaver.points_written == expected_points_written
 
@@ -1504,6 +1514,8 @@ def test_datasaver_array_parameters_array(channel_array_instrument, DAC, N,
         expected_npoints = N*M
     elif storage_type == 'array':
         expected_npoints = N
+    else:
+        raise RuntimeError("Unknown storage_type")
 
     assert datasaver.points_written == expected_npoints
     ds = load_by_id(datasaver.run_id)
@@ -1778,10 +1790,13 @@ def test_datasaver_multidimarrayparameter_as_array(SpectrumAnalyzer,
                 # todo There should be a simpler way of doing this
                 if i == 0:
                     mydata = data[0, :, j, k]
-                if i == 1:
+                elif i == 1:
                     mydata = data[0, j, :, k]
-                if i == 2:
+                elif i == 2:
                     mydata = data[0, j, k, :]
+                else:
+                    raise RuntimeError("Unknown dim")
+
                 assert_array_equal(mydata,
                                    np.linspace(array_param.start,
                                                array_param.stop,
@@ -2092,7 +2107,7 @@ def test_save_and_reload_complex_standalone(complex_num_instrument,
     param = complex_num_instrument.complex_num
     complex_num_instrument.setpoint(1)
     Parameter("test", set_cmd=None, get_cmd=lambda: 1 + 1j, vals=vals.ComplexNumbers())
-    meas = qc.dataset.measurements.Measurement()
+    meas = Measurement()
     meas.register_parameter(param)
     pval = param.get()
     with meas.run(write_in_background=bg_writing) as datasaver:
