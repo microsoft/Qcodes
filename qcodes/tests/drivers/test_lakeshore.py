@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import logging
 import time
 from contextlib import suppress
 from functools import wraps
-from typing import Any, Callable, Dict, Literal, TypeVar
+from typing import Any, Callable, Literal, TypeVar
 
 import pytest
 from typing_extensions import ParamSpec
@@ -30,9 +32,9 @@ class MockVisaInstrument:
 
         # This base class mixin holds two dictionaries associated with the
         # pyvisa_instrument.write()
-        self.cmds: Dict[str, Callable[..., Any]] = {}
+        self.cmds: dict[str, Callable[..., Any]] = {}
         # and pyvisa_instrument.query() functions
-        self.queries: Dict[str, Callable[..., Any]] = {}
+        self.queries: dict[str, Callable[..., Any]] = {}
         # the keys are the issued VISA commands like '*IDN?' or '*OPC'
         # the values are the corresponding methods to be called on the mock
         # instrument.
@@ -123,7 +125,7 @@ class Model_372_Mock(MockVisaInstrument, Model_372):
         super().__init__(*args, **kwargs)
 
         # initial values
-        self.heaters: Dict[str, DictClass] = {}
+        self.heaters: dict[str, DictClass] = {}
         self.heaters['0'] = DictClass(P=1, I=2, D=3,
                                       mode=5, input_channel=2,
                                       powerup_enable=0, polarity=0,
