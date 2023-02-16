@@ -793,15 +793,28 @@ class Keithley3706A(VisaInstrument):
         cannot be energized.
         """
         slot_id = self._get_slot_ids()
-        interlock_status = {0: "Interlock is disengaged", 1: "Interlock is engaged"}
+        interlock_status = {
+            None: (
+                "No card is installed or the installed card does "
+                "not support interlocks"
+            ),
+            0: "Interlocks 1 and 2 are disengaged on the card",
+            1: "Interlock 1 is engaged, interlock 2 (if it exists) is disengaged",
+            2: "Interlock 2 in engaged, interlock 1 is disengaged",
+            3: "Both interlock 1 and 2 are engaged",
+        }
         states: List[Dict[str, str]] = []
         for i in slot_id:
             state = self.get_interlock_state_by_slot(i)
             states.append({"slot_no": i, "state": interlock_status[state]})
         return tuple(states)
 
-    def get_interlock_state_by_slot(self, slot: Union[str, int]) -> int:
-        return int(float(self.ask(f"slot[{int(slot)}].interlock.state")))
+    def get_interlock_state_by_slot(self, slot: Union[str, int]) -> Union[int, None]:
+        state = self.ask(f"slot[{int(slot)}].interlock.state")
+        if state == "nil":
+            return None
+        else:
+            return int(float(state))
 
     def get_ip_address(self) -> str:
         """

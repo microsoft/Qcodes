@@ -80,9 +80,18 @@ def test_slot_names(driver):
 
 def test_get_interlock_state(driver):
     dict_list = (
-        {'slot_no': '1', 'state': 'Interlock is disengaged'},
-        {'slot_no': '2', 'state': 'Interlock is disengaged'},
-        {'slot_no': '3', 'state': 'Interlock is engaged'},
+        {
+            "slot_no": "1",
+            "state": (
+                "No card is installed or the installed card does "
+                "not support interlocks"
+            ),
+        },
+        {"slot_no": "2", "state": "Interlocks 1 and 2 are disengaged on the card"},
+        {
+            "slot_no": "3",
+            "state": "Interlock 1 is engaged, interlock 2 (if it exists) is disengaged",
+        },
     )
     assert dict_list == driver.get_interlock_state()
 
