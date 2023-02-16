@@ -6,6 +6,7 @@ import re
 
 import hypothesis.strategies as hst
 import matplotlib
+import matplotlib.axes
 import matplotlib.pyplot as plt
 import numpy as np
 import pytest
@@ -14,6 +15,7 @@ from hypothesis import HealthCheck, given, settings
 from qcodes import config, validators
 from qcodes.dataset import (
     ArraySweep,
+    DataSetProtocol,
     LinSweep,
     LogSweep,
     TogetherSweep,
@@ -210,19 +212,24 @@ def test_dond_explicit_exp_meas_sample(_param, experiment):
     experiment_2 = new_experiment("new-exp", "no-sample")
 
     data1 = dond(_param, do_plot=False, exp=experiment)
-    assert data1[0].exp_name == "test-experiment"
-    assert data1[0].name == "results"
-    assert data1[0].sample_name == "test-sample"
+    dataset1 = data1[0]
+    assert isinstance(dataset1, DataSetProtocol)
+    assert dataset1.exp_name == "test-experiment"
+    assert dataset1.name == "results"
+    assert dataset1.sample_name == "test-sample"
     data2 = dond(_param, do_plot=False, exp=experiment_2, measurement_name="Meas")
-    assert data2[0].name == "Meas"
-    assert data2[0].sample_name == "no-sample"
-    assert data2[0].exp_name == "new-exp"
+    dataset2 = data2[0]
+    assert isinstance(dataset2, DataSetProtocol)
+    assert dataset2.name == "Meas"
+    assert dataset2.sample_name == "no-sample"
+    assert dataset2.exp_name == "new-exp"
     # by default the last experiment is used
     data3 = dond(_param, do_plot=False)
-
-    assert data3[0].exp_name == "new-exp"
-    assert data3[0].sample_name == "no-sample"
-    assert data3[0].name == "results"
+    dataset3 = data3[0]
+    assert isinstance(dataset3, DataSetProtocol)
+    assert dataset3.exp_name == "new-exp"
+    assert dataset3.sample_name == "no-sample"
+    assert dataset3.name == "results"
 
 
 def test_dond_multi_datasets_explicit_exp_meas_sample(
@@ -231,7 +238,9 @@ def test_dond_multi_datasets_explicit_exp_meas_sample(
     experiment_2 = new_experiment("new-exp", "no-sample")
 
     data1 = dond([_param], [_param_complex], do_plot=False, exp=experiment)
-    assert data1[0][0].exp_name == "test-experiment"
+    datasets1 = data1[0]
+    assert isinstance(datasets1, tuple)
+    assert datasets1[0].exp_name == "test-experiment"
     data2 = dond(
         [_param],
         [_param_complex],
@@ -239,16 +248,20 @@ def test_dond_multi_datasets_explicit_exp_meas_sample(
         exp=experiment_2,
         measurement_name="Meas",
     )
-    assert data2[0][0].name == "Meas"
-    assert data2[0][1].name == "Meas"
-    assert data2[0][0].sample_name == "no-sample"
-    assert data2[0][1].sample_name == "no-sample"
-    assert data2[0][0].exp_name == "new-exp"
-    assert data2[0][1].exp_name == "new-exp"
+    datasets2 = data2[0]
+    assert isinstance(datasets2, tuple)
+    assert datasets2[0].name == "Meas"
+    assert datasets2[1].name == "Meas"
+    assert datasets2[0].sample_name == "no-sample"
+    assert datasets2[1].sample_name == "no-sample"
+    assert datasets2[0].exp_name == "new-exp"
+    assert datasets2[1].exp_name == "new-exp"
     # by default the last experiment is used
     data3 = dond([_param], [_param_complex], do_plot=False)
-    assert data3[0][0].exp_name == "new-exp"
-    assert data3[0][1].exp_name == "new-exp"
+    datasets3 = data3[0]
+    assert isinstance(datasets3, tuple)
+    assert datasets3[0].exp_name == "new-exp"
+    assert datasets3[1].exp_name == "new-exp"
 
 
 def test_dond_multi_datasets_explicit_meas_names(_param, _param_complex, experiment):
@@ -260,8 +273,10 @@ def test_dond_multi_datasets_explicit_meas_names(_param, _param_complex, experim
         do_plot=False,
         exp=experiment,
     )
-    assert data1[0][0].name == "foo"
-    assert data1[0][1].name == "bar"
+    datasets1 = data1[0]
+    assert isinstance(datasets1, tuple)
+    assert datasets1[0].name == "foo"
+    assert datasets1[1].name == "bar"
 
 
 def test_dond_multi_datasets_meas_names_len_mismatch(_param, experiment):
@@ -307,7 +322,7 @@ def test_dond_0d_verify_shape(
     expected_shapes[paramwsetpoints.full_name] = (n_points_pws,)
 
     ds = results[0]
-
+    assert isinstance(ds, DataSetProtocol)
     assert ds.description.shapes == expected_shapes
 
     data = ds.get_parameter_data()
@@ -321,6 +336,7 @@ def test_dond_0d_verify_shape(
 def test_dond_0d_output_data(_param):
     exp = dond(_param)
     data = exp[0]
+    assert isinstance(data, DataSetProtocol)
     assert data.parameters == _param.name
     loaded_data = data.get_parameter_data()["simple_parameter"]["simple_parameter"]
     assert loaded_data == np.array([_param.get()])
@@ -333,7 +349,9 @@ def test_dond_0d_parameter_with_array_vals():
     )
     results = dond(param)
     expected_shapes = {"paramwitharrayval": (10,)}
-    assert results[0].description.shapes == expected_shapes
+    dataset = results[0]
+    assert isinstance(dataset, DataSetProtocol)
+    assert dataset.description.shapes == expected_shapes
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
@@ -363,7 +381,7 @@ def test_dond_0d_parameter_with_setpoints_2d(dummyinstrument):
     dummyinstrument.A.dummy_stop_2(7)
     dummyinstrument.A.dummy_n_points_2(3)
     dataset, _, _ = dond(dummyinstrument.A.dummy_parameter_with_setpoints_2d)
-
+    assert isinstance(dataset, DataSetProtocol)
     data = dataset.cache.data()[
         "dummyinstrument_ChanA_dummy_parameter_with_setpoints_2d"
     ]
@@ -385,7 +403,7 @@ def test_dond_1d_parameter_with_array_vals(_param_set):
     expected_shapes = {"paramwitharrayval": (num_points, 10)}
 
     ds = results[0]
-
+    assert isinstance(ds, DataSetProtocol)
     assert ds.description.shapes == expected_shapes
 
     data = ds.get_parameter_data()
@@ -443,7 +461,9 @@ def test_dond_1d_verify_shape(
     expected_shapes["simple_parameter"] = (num_points,)
     expected_shapes["simple_complex_parameter"] = (num_points,)
     expected_shapes[paramwsetpoints.full_name] = (num_points, n_points_pws)
-    assert results[0].description.shapes == expected_shapes
+    dataset = results[0]
+    assert isinstance(dataset, DataSetProtocol)
+    assert dataset.description.shapes == expected_shapes
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
@@ -461,7 +481,9 @@ def test_dond_1d_additional_setpoints(_param, _param_complex, _param_set):
             results = dond(
                 sweep, _param, _param_complex, additional_setpoints=additional_setpoints
             )
-            for deps in results[0].description.interdeps.dependencies.values():
+            dataset = results[0]
+            assert isinstance(dataset, DataSetProtocol)
+            for deps in dataset.description.interdeps.dependencies.values():
                 assert len(deps) == 1 + len(additional_setpoints)
             # Calling the fixture won't work here due to loop-scope.
             # Thus, we make an explicit call to close plots. This will be
@@ -499,7 +521,9 @@ def test_dond_1d_additional_setpoints_shape(_param, _param_set, num_points_p1):
         "arrayparam": (num_points_p1, 1, 1, array_shape[0]),
         "simple_parameter": (num_points_p1, 1, 1),
     }
-    assert results[0].description.shapes == expected_shapes
+    dataset = results[0]
+    assert isinstance(dataset, DataSetProtocol)
+    assert dataset.description.shapes == expected_shapes
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
@@ -527,6 +551,7 @@ def test_dond_1d_output_data(_param, _param_complex, _param_set):
 
     exp_1 = dond(sweep_1, _param, _param_complex)
     data_1 = exp_1[0]
+    assert isinstance(data_1, DataSetProtocol)
     assert data_1.parameters == (
         f"{_param_set.name},{_param.name}," f"{_param_complex.name}"
     )
@@ -621,9 +646,10 @@ def test_dond_2d_verify_shape(
         num_points_p2,
         n_points_pws,
     )
-
-    assert results[0].description.shapes == expected_shapes
     ds = results[0]
+    assert isinstance(ds, DataSetProtocol)
+
+    assert ds.description.shapes == expected_shapes
 
     data = ds.get_parameter_data()
 
@@ -661,7 +687,9 @@ def test_dond_2d_additional_setpoints(_param, _param_complex, _param_set, _param
                 _param_complex,
                 additional_setpoints=additional_setpoints,
             )
-            for deps in results[0].description.interdeps.dependencies.values():
+            dataset = results[0]
+            assert isinstance(dataset, DataSetProtocol)
+            for deps in dataset.description.interdeps.dependencies.values():
                 assert len(deps) == 2 + len(additional_setpoints)
             plt.close("all")
 
@@ -710,7 +738,9 @@ def test_dond_2d_additional_setpoints_shape(
         "simple_complex_parameter": (num_points_p1, num_points_p2, 1, 1),
         "simple_parameter": (num_points_p1, num_points_p2, 1, 1),
     }
-    assert results[0].description.shapes == expected_shapes
+    dataset = results[0]
+    assert isinstance(dataset, DataSetProtocol)
+    assert dataset.description.shapes == expected_shapes
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
@@ -749,6 +779,7 @@ def test_dond_2d_output_data(_param, _param_complex, _param_set, _param_set_2):
     sweep_2 = LinSweep(_param_set_2, 0.5, 1, 5, 0)
     exp_2 = dond(sweep_1, sweep_2, _param, _param_complex)
     data_2 = exp_2[0]
+    assert isinstance(data_2, DataSetProtocol)
     assert data_2.parameters == (
         f"{_param_set.name},{_param_set_2.name}," f"{_param.name},{_param_complex.name}"
     )
@@ -791,8 +822,10 @@ def test_dond_2d_multi_datasets_output_type(
     sweep_2 = LinSweep(_param_set_2, 0.5, 1, 2, 0)
 
     data_1 = dond(sweep_1, sweep_2, [_param], [_param_complex])
-    assert isinstance(data_1[0][0], DataSet) is True
-    assert isinstance(data_1[0][1], DataSet) is True
+    datasets = data_1[0]
+    assert isinstance(datasets, tuple)
+    assert isinstance(datasets[0], DataSet) is True
+    assert isinstance(datasets[1], DataSet) is True
 
 
 @pytest.mark.usefixtures("plot_close")
@@ -809,11 +842,13 @@ def test_dond_2d_multi_datasets_multi_exp(
     sweep_2 = LinSweep(_param_set_2, 0.5, 1, 2, 0)
 
     data_1 = dond(sweep_1, sweep_2, [_param], [_param_complex], exp=[exp1, exp2])
-    assert isinstance(data_1[0][0], DataSet) is True
-    assert isinstance(data_1[0][1], DataSet) is True
+    datasets = data_1[0]
+    assert isinstance(datasets, tuple)
+    assert isinstance(datasets[0], DataSet) is True
+    assert isinstance(datasets[1], DataSet) is True
 
-    assert data_1[0][0].exp_id == exp1.exp_id
-    assert data_1[0][1].exp_id == exp2.exp_id
+    assert datasets[0].exp_id == exp1.exp_id
+    assert datasets[1].exp_id == exp2.exp_id
 
 
 @pytest.mark.usefixtures("plot_close")
@@ -852,9 +887,11 @@ def test_dond_2d_multiple_datasets_plot(
 
     output = dond(sweep_1, sweep_2, [_param], [_param_2], do_plot=plot)
 
-    assert len(output[1]) == 2
-    assert len(output[1][0]) == 1
-    assert len(output[1][1]) == 1
+    axes = output[1]
+
+    assert len(axes) == 2
+    assert len(axes[0]) == 1
+    assert len(axes[1]) == 1
     if plot is True or plot is None and plot_config is True:
         assert isinstance(output[1][0][0], matplotlib.axes.Axes)
         assert isinstance(output[1][1][0], matplotlib.axes.Axes)
@@ -881,8 +918,10 @@ def test_dond_2d_multi_datasets_with_callable_output_data(
         [_string_callable, _param, _param_complex],
         [_string_callable, _param_2, _param_complex_2],
     )
-    data_1 = exp_1[0][0]
-    data_2 = exp_1[0][1]
+    datasets = exp_1[0]
+    assert isinstance(datasets, tuple)
+    data_1 = datasets[0]
+    data_2 = datasets[1]
 
     assert data_1.parameters == (
         f"{_param_set.name},{_param_set_2.name}," f"{_param.name},{_param_complex.name}"
@@ -970,13 +1009,14 @@ def test_dond_together_sweep(_param_set, _param_set_2, _param, _param_2):
 
     assert sweep_2.param.name == "simple_setter_parameter_2"
     assert _param_2.name == "simple_parameter_2"
-
+    datasets = output[0]
+    assert isinstance(datasets, tuple)
     assert (
-        output[0][0].parameters
+        datasets[0].parameters
         == "simple_setter_parameter,simple_setter_parameter_2,simple_parameter"
     )
     assert (
-        output[0][1].parameters
+        datasets[1].parameters
         == "simple_setter_parameter,simple_setter_parameter_2,simple_parameter_2"
     )
 
@@ -1061,6 +1101,7 @@ def test_dond_together_sweep_sweeper_combined():
             "ds3": (b, c, f),
         },
     )
+    assert isinstance(datasets, tuple)
     assert datasets[0].parameters == "a,c,d"
     assert datasets[0].name == "ds1"
     assert datasets[1].parameters == "b,c,e"
@@ -1092,6 +1133,7 @@ def test_dond_together_sweep_sweeper_combined_2_in_1():
             "ds2": (b, c, e),
         },
     )
+    assert isinstance(datasets, tuple)
     assert datasets[0].parameters == "a,c,d,f"
     assert datasets[0].name == "ds1"
     assert datasets[1].parameters == "b,c,e"
@@ -1157,6 +1199,7 @@ def test_dond_together_sweep_sweeper_combined_explict_names():
             "ds3": (b, c, f),
         },
     )
+    assert isinstance(datasets, tuple)
     assert datasets[0].parameters == "a,c,d"
     assert datasets[0].name == "ds1"
     assert datasets[1].parameters == "b,c,e"
@@ -1256,6 +1299,7 @@ def test_dond_together_sweep_sweeper_combined_lists():
             "ds3": [b, c, f],
         },
     )
+    assert isinstance(datasets, tuple)
     assert datasets[0].parameters == "a,c,d"
     assert datasets[0].name == "ds1"
     assert datasets[1].parameters == "b,c,e"
@@ -1419,11 +1463,12 @@ def test_dond_together_sweep_parameter_with_setpoints(dummyinstrument):
         [dummyinstrument.B.dummy_parameter_with_setpoints],
         do_plot=False,
     )
-
+    assert isinstance(datasets, tuple)
     assert (
         datasets[0].parameters
         == "a,b,c,dummyinstrument_ChanA_dummy_sp_axis,dummyinstrument_ChanA_dummy_parameter_with_setpoints"
     )
+    assert datasets[0].description.shapes is not None
     assert len(datasets[0].description.shapes) == 1
     assert datasets[0].description.shapes[
         "dummyinstrument_ChanA_dummy_parameter_with_setpoints"
@@ -1433,6 +1478,7 @@ def test_dond_together_sweep_parameter_with_setpoints(dummyinstrument):
         datasets[1].parameters
         == "a,b,c,dummyinstrument_ChanB_dummy_sp_axis,dummyinstrument_ChanB_dummy_parameter_with_setpoints"
     )
+    assert datasets[1].description.shapes is not None
     assert len(datasets[1].description.shapes) == 1
     assert datasets[1].description.shapes[
         "dummyinstrument_ChanB_dummy_parameter_with_setpoints"
@@ -1467,11 +1513,12 @@ def test_dond_together_sweep_parameter_with_setpoints_explicit_mapping(dummyinst
         },
         do_plot=False,
     )
-
+    assert isinstance(datasets, tuple)
     assert (
         datasets[0].parameters
         == "a,c,dummyinstrument_ChanA_dummy_sp_axis,dummyinstrument_ChanA_dummy_parameter_with_setpoints"
     )
+    assert datasets[0].description.shapes is not None
     assert len(datasets[0].description.shapes) == 1
     assert datasets[0].description.shapes[
         "dummyinstrument_ChanA_dummy_parameter_with_setpoints"
@@ -1481,6 +1528,7 @@ def test_dond_together_sweep_parameter_with_setpoints_explicit_mapping(dummyinst
         datasets[1].parameters
         == "b,c,dummyinstrument_ChanB_dummy_sp_axis,dummyinstrument_ChanB_dummy_parameter_with_setpoints"
     )
+    assert datasets[1].description.shapes is not None
     assert len(datasets[1].description.shapes) == 1
     assert datasets[1].description.shapes[
         "dummyinstrument_ChanB_dummy_parameter_with_setpoints"
@@ -1518,11 +1566,12 @@ def test_dond_together_sweep_parameter_with_setpoints_explicit_mapping_and_calla
         },
         do_plot=False,
     )
-
+    assert isinstance(datasets, tuple)
     assert (
         datasets[0].parameters
         == "a,c,dummyinstrument_ChanA_dummy_sp_axis,dummyinstrument_ChanA_dummy_parameter_with_setpoints"
     )
+    assert datasets[0].description.shapes is not None
     assert len(datasets[0].description.shapes) == 1
     assert datasets[0].description.shapes[
         "dummyinstrument_ChanA_dummy_parameter_with_setpoints"
@@ -1532,6 +1581,7 @@ def test_dond_together_sweep_parameter_with_setpoints_explicit_mapping_and_calla
         datasets[1].parameters
         == "b,c,dummyinstrument_ChanB_dummy_sp_axis,dummyinstrument_ChanB_dummy_parameter_with_setpoints"
     )
+    assert datasets[1].description.shapes is not None
     assert len(datasets[1].description.shapes) == 1
     assert datasets[1].description.shapes[
         "dummyinstrument_ChanB_dummy_parameter_with_setpoints"
@@ -1578,6 +1628,7 @@ def test_sweep_int_vs_float():
     int_param = ManualParameter("int_param", vals=Ints(0, 100))
 
     dataset, _, _ = dond(ArraySweep(int_param, [1, 2, 3]), float_param)
+    assert isinstance(dataset, DataSetProtocol)
     assert dataset.parameters == "int_param,float_param"
     assert dataset.cache.data()["float_param"]["int_param"].dtype.kind == "i"
 
@@ -1696,7 +1747,7 @@ def test_dond_get_after_set_stores_get_value(_param_set, _param_set_2, _param):
     assert b.set_count == 0
 
     ds, _, _ = dond(LinSweep(a, -10, -20, n_points, get_after_set=True), b)
-
+    assert isinstance(ds, DataSetProtocol)
     # since we are using the GetReturnsCountParameter the sweep should be count e.g. 0, 1, ... 11
     # not the set parameters -10, .. - 20
     np.testing.assert_array_equal(

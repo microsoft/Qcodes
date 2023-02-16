@@ -200,7 +200,9 @@ def test_instantiation_from_name_of_existing_non_ami_instrument(
         )
 
 
-def test_instantiation_from_badly_typed_argument(magnet_axes_instances, request):
+def test_instantiation_from_badly_typed_argument(
+    magnet_axes_instances, request
+) -> None:
     mag_x, mag_y, mag_z = magnet_axes_instances
     request.addfinalizer(AMIModel4303D.close_all)
 
@@ -211,7 +213,7 @@ def test_instantiation_from_badly_typed_argument(magnet_axes_instances, request)
             "AMI430_3D",
             mag_x.name,
             mag_y,
-            badly_typed_instrument_z_argument,
+            badly_typed_instrument_z_argument,  # type: ignore[arg-type]
             field_limit,
         )
 

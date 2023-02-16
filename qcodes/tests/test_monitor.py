@@ -61,6 +61,7 @@ def test_setup_teardown(request):
     m = monitor.Monitor()
     request.addfinalizer(m.stop)
     assert m.is_alive()
+    assert m.loop is not None
     assert m.loop.is_running()
     assert monitor.Monitor.running == m
     m.stop()
@@ -75,6 +76,7 @@ def test_monitor_replace(request):
     Check that monitors get correctly replaced
     """
     m = monitor.Monitor()
+    assert m.loop is not None
     request.addfinalizer(m.stop)
     assert monitor.Monitor.running == m
     m2 = monitor.Monitor()

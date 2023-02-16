@@ -39,10 +39,13 @@ def test_extend(dataset_with_outliers):
     # this one should clipp the upper values
     run_id = dataset_with_outliers.run_id
     _, cb = plot_by_id(run_id, auto_color_scale=False)
+    assert cb[0] is not None
     assert cb[0].extend == 'neither'
     _, cb = plot_by_id(run_id, auto_color_scale=True, cutoff_percentile=(0, 0.5))
+    assert cb[0] is not None
     assert cb[0].extend == 'min'
     _, cb = plot_by_id(run_id, auto_color_scale=True, cutoff_percentile=(0.5, 0))
+    assert cb[0] is not None
     assert cb[0].extend == 'max'
     plt.close()
 
@@ -52,10 +55,12 @@ def test_defaults(dataset_with_outliers):
     run_id = dataset_with_outliers.run_id
 
     _, cb = plot_by_id(run_id)
+    assert cb[0] is not None
     assert cb[0].extend == "neither"
 
     qcodes.config.plotting.auto_color_scale.enabled = True
 
     _, cb = plot_by_id(run_id)
+    assert cb[0] is not None
     assert cb[0].extend == "both"
     plt.close()
