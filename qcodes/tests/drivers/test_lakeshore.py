@@ -78,14 +78,14 @@ class MockVisaInstrument:
 
 def query(name: str) -> Callable[[Callable[P, T]], Callable[P, T]]:
     def wrapper(func: Callable[P, T]) -> Callable[P, T]:
-        func.query_name = name.upper()
+        func.query_name = name.upper()  # type: ignore[attr-defined]
         return func
     return wrapper
 
 
 def command(name: str) -> Callable[[Callable[P, T]], Callable[P, T]]:
     def wrapper(func: Callable[P, T]) -> Callable[P, T]:
-        func.command_name = name.upper()
+        func.command_name = name.upper()  # type: ignore[attr-defined]
         return func
     return wrapper
 
