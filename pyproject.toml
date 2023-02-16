@@ -209,6 +209,7 @@ module = [
     "mcl_RF_Switch_Controller_NET45",
     "opencensus.ext.azure.*",
     "pywinusb.*",
+    "pyqtgraph.*", # can be droped once deprecated plots module is deleted
     "ruamel",
     "spyder.utils.site",
     "spyder_kernels.customize",
