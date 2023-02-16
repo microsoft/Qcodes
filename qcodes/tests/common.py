@@ -8,7 +8,7 @@ from contextlib import contextmanager
 from functools import wraps
 from pathlib import Path
 from time import sleep
-from typing import TYPE_CHECKING, Any, Callable, Generator, Hashable, Sequence, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Generator, Mapping, Sequence, TypeVar
 
 import pytest
 from typing_extensions import ParamSpec
@@ -239,8 +239,8 @@ def reset_config_on_exit() -> Generator[None, None, None]:
 
 
 def compare_dictionaries(
-    dict_1: dict[Hashable, Any],
-    dict_2: dict[Hashable, Any],
+    dict_1: Mapping[Any, Any],
+    dict_2: Mapping[Any, Any],
     dict_1_name: str | None = "d1",
     dict_2_name: str | None = "d2",
     path: str = "",

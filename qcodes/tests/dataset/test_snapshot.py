@@ -91,6 +91,7 @@ def test_snapshot_creation_for_types_not_supported_by_builtin_json(experiment):
         pass
 
     snapshot = data_saver.dataset.snapshot
+    assert snapshot is not None
 
     assert 5 == snapshot['station']['parameters']['p_np_int32']['value']
     assert 5 == snapshot['station']['parameters']['p_np_int32']['raw_value']
