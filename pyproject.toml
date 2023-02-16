@@ -31,7 +31,7 @@ dependencies = [
     "importlib-metadata>=4.4; python_version < '3.10'",
     "importlib-resources>=2.0.0; python_version < '3.9'",
     "ipywidgets>=7.5.0,<9.0.0",
-    "jsonschema>=3.0.0",
+    "jsonschema>=3.2.0",
     "matplotlib>=3.3.0",
     "numpy>=1.21.0",
     "opencensus>=0.7.10",
@@ -41,7 +41,7 @@ dependencies = [
     "pyvisa>=1.11.0, <1.14.0",
     "ruamel.yaml>=0.16.0,!=0.16.6",
     "tabulate>=0.8.0",
-    "typing_extensions>=4.0.0",
+    "typing_extensions>=4.1.1",
     "tqdm>=4.32.2",
     "uncertainties>=3.1.4",
     "versioningit>=2.0.1",
@@ -100,6 +100,7 @@ test = [
     "types-tqdm>=4.64.6",
     "types_pywin32>=305.0.0.7",
     "qcodes_loop>=0.1.1",
+    "zhinst.qcodes>=0.5", # typecheck zhinst driver alias
 ]
 docs = [
     "autodocsumm>=0.2.9",
@@ -200,25 +201,21 @@ module = [
     "clr",
     "deepdiff",
     "gclib",
-    "IPython.*",
     "ipywidgets",
-    "h5py",
     "h5netcdf",
-    "hickle",
     "lomentum.tools",
     "matplotlib.*",
     "mcl_RF_Switch_Controller64",
     "mcl_RF_Switch_Controller_NET45",
     "opencensus.ext.azure.*",
-    "pyqtgraph.*",
     "pywinusb.*",
+    "pyqtgraph.*", # can be droped once deprecated plots module is deleted
     "ruamel",
     "spyder.utils.site",
     "spyder_kernels.customize",
     "System.IO",
     "uncertainties",
     "wrapt",
-    "zhinst.qcodes",
 ]
 ignore_missing_imports = true
 
@@ -226,7 +223,6 @@ ignore_missing_imports = true
 include = ["qcodes"]
 ignore = [
     "qcodes/tests",
-    "qcodes/instrument_drivers/zurich_instruments",
     "qcodes/instrument_drivers/Harvard/Decadac.py",
     # deprecated non typed modules
     "qcodes/actions.py",
