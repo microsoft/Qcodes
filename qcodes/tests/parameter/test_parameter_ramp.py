@@ -66,8 +66,8 @@ def test_ramp_scaled(scale, value):
     # scaling happens when setting them
     expected_steps = np.linspace(first_step+p.step,
                                  second_step,90)
-    np.testing.assert_allclose(p.get_ramp_values(second_step, p.step),
-                               expected_steps)
+    actual_steps = p.get_ramp_values(second_step, p.step)
+    np.testing.assert_allclose(np.array(actual_steps), expected_steps)
     p.set(10)
     np.testing.assert_allclose(np.array(p.set_values),
                                np.linspace(0.0*scale, 10*scale, 101))
@@ -107,8 +107,8 @@ def test_ramp_parser(value):
     # scaling happens when setting them
     expected_steps = np.linspace((first_step+p.step),
                                  second_step,90)
-    np.testing.assert_allclose(p.get_ramp_values(second_step, p.step),
-                               expected_steps)
+    actual_steps = p.get_ramp_values(second_step, p.step)
+    np.testing.assert_allclose(np.array(actual_steps), expected_steps)
     p.set(second_step)
     np.testing.assert_allclose(np.array(p.set_values),
                                np.linspace(-start_point, -second_step, 101))
@@ -143,8 +143,8 @@ def test_ramp_parsed_scaled(scale, value):
     np.testing.assert_allclose(np.array(p.set_values), expected_raw_steps)
     assert p.raw_value == - scale * first_step
     expected_steps = np.linspace(first_step+p.step, second_step, 90)
-    np.testing.assert_allclose(p.get_ramp_values(10, p.step),
-                               expected_steps)
+    actual_steps = p.get_ramp_values(10, p.step)
+    np.testing.assert_allclose(np.array(actual_steps), expected_steps)
     p.set(second_step)
     np.testing.assert_allclose(np.array(p.set_values),
                                np.linspace(-start_point*scale,
