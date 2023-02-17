@@ -278,12 +278,14 @@ Pull requests
 -  Document your changes so everyone can see that they are part of the next release:
    We are using `TownCrier <https://pypi.org/project/towncrier/>`__ to automatically
    generate a changelog from a set of individual files with one file per pull request.
-   Please create a file in the format ``number.categoryofcontribution`` in ``docs\changes\newsfragments``.
-   Here the number should either be the number of the pull request. To get the number of the pull request one must
-   first the pull request and then subsequently update the number. The category of contribution should be
-   one of ``breaking``, ``new``, ``improved``, ``new_driver`` ``improved_driver``, ``underthehood``.
-   The file should contain a small description of what is changed. If you have contributed documentation or an example
-   the file can also contain a link to this.
+   Please create a file with a name in the format ``number.categoryofcontribution`` in
+   ``docs\changes\newsfragments``. Here the number should be the number of the pull request.
+   To get the number of the pull request one must first open the pull request and then
+   subsequently take the number that GitHub assigned to the opened pull request.
+   The category of contribution should be one of ``breaking``, ``new``, ``improved``,
+   ``new_driver`` ``improved_driver``, ``underthehood``.
+   The file should contain a small description of what has changed.
+   If you have contributed documentation or an example the file can also contain a link to this.
 
 Automatic Testing (CI)
 ~~~~~~~~~~~~~~~~~~~~~~
