@@ -213,7 +213,7 @@ class AimTTi(VisaInstrument):
     This is the QCoDeS driver for the Aim TTi PL-P series power supply.
     Tested with Aim TTi PL601-P equipped with a single output channel.
     """
-    
+
     _numOutputChannels = {
         "PL068-P": 1,
         "PL155-P": 1,
