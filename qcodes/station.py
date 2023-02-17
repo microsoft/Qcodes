@@ -40,7 +40,7 @@ import qcodes.instrument_drivers
 from qcodes import validators
 from qcodes.instrument.base import Instrument, InstrumentBase
 from qcodes.instrument.channel import ChannelTuple
-from qcodes.metadatable import Metadatable
+from qcodes.metadatable import Metadatable, MetadatableWithName
 from qcodes.monitor.monitor import Monitor
 from qcodes.parameters import (
     DelegateParameter,
@@ -139,7 +139,7 @@ class Station(Metadatable, DelegateAttributes):
 
     def __init__(
         self,
-        *components: Metadatable,
+        *components: MetadatableWithName,
         config_file: str | Sequence[str] | None = None,
         use_monitor: bool | None = None,
         default: bool = True,
@@ -157,7 +157,7 @@ class Station(Metadatable, DelegateAttributes):
         if default:
             Station.default = self
 
-        self.components: dict[str, Metadatable] = {}
+        self.components: dict[str, MetadatableWithName] = {}
         for item in components:
             self.add_component(item, update_snapshot=update_snapshot)
 
@@ -234,7 +234,7 @@ class Station(Metadatable, DelegateAttributes):
 
     def add_component(
         self,
-        component: Metadatable,
+        component: MetadatableWithName,
         name: str | None = None,
         update_snapshot: bool = True,
     ) -> str:
@@ -267,7 +267,7 @@ class Station(Metadatable, DelegateAttributes):
         self.components[namestr] = component
         return namestr
 
-    def remove_component(self, name: str) -> Metadatable | None:
+    def remove_component(self, name: str) -> MetadatableWithName | None:
         """
         Remove a component with a given name from this Station.
 

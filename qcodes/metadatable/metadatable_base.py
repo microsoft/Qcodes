@@ -1,3 +1,4 @@
+from abc import abstractmethod
 from typing import Any, Dict, Mapping, Optional, Sequence
 
 from qcodes.utils import deep_update
@@ -57,3 +58,15 @@ class Metadatable:
         Override this with the primary information for a subclass.
         """
         return {}
+
+
+class MetadatableWithName(Metadatable):
+    @property
+    @abstractmethod
+    def short_name(self) -> str:
+        ...
+
+    @property
+    @abstractmethod
+    def full_name(self) -> str:
+        ...

@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 
 from qcodes.logger import get_instrument_logger
-from qcodes.metadatable import Metadatable
+from qcodes.metadatable import Metadatable, MetadatableWithName
 from qcodes.parameters import Function, Parameter, ParameterBase
 from qcodes.utils import DelegateAttributes, full_class
 
@@ -23,7 +23,7 @@ from qcodes.utils import QCoDeSDeprecationWarning
 log = logging.getLogger(__name__)
 
 
-class InstrumentBase(Metadatable, DelegateAttributes):
+class InstrumentBase(MetadatableWithName, DelegateAttributes):
     """
     Base class for all QCodes instruments and instrument channels
 

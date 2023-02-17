@@ -5,7 +5,7 @@ import sys
 from collections.abc import Callable, Iterable, Iterator
 from typing import Any, List, MutableSequence, Sequence, TypeVar, Union, cast, overload
 
-from qcodes.metadatable import Metadatable
+from qcodes.metadatable import MetadatableWithName
 from qcodes.parameters import (
     ArrayParameter,
     MultiChannelInstrumentParameter,
@@ -90,7 +90,7 @@ class InstrumentChannel(InstrumentModule):
 T = TypeVar("T", bound="ChannelTuple")
 
 
-class ChannelTuple(Metadatable, Sequence[InstrumentModuleType]):
+class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
     """
     Container for channelized parameters that allows for sweeps over
     all channels, as well as addressing of individual channels.
@@ -272,6 +272,34 @@ class ChannelTuple(Metadatable, Sequence[InstrumentModuleType]):
             list(self._channels) + list(other._channels),
             snapshotable=self._snapshotable,
         )
+
+    @property
+    def short_name(self) -> str:
+        return self._name
+
+    @property
+    def full_name(self) -> str:
+        return "_".join(self.name_parts)
+
+    @property
+    def name_parts(self) -> list[str]:
+        """
+        List of the parts that make up the full name of this function
+        """
+        if self._parent is not None:
+            name_parts = getattr(self._parent, "name_parts", [])
+            if name_parts == []:
+                # add fallback for the case where someone has bound
+                # the function to something that is not an instrument
+                # but perhaps it has a name anyway?
+                name = getattr(self._parent, "name", None)
+                if name is not None:
+                    name_parts = [name]
+        else:
+            name_parts = []
+
+        name_parts.append(self.short_name)
+        return name_parts
 
     def index(
         self, obj: InstrumentModuleType, start: int = 0, stop: int = sys.maxsize
