@@ -213,6 +213,16 @@ class AimTTi(VisaInstrument):
     This is the QCoDeS driver for the Aim TTi PL-P series power supply.
     Tested with Aim TTi PL601-P equipped with a single output channel.
     """
+    
+    _numOutputChannels = {
+        "PL068-P": 1,
+        "PL155-P": 1,
+        "PL303-P": 1,
+        "PL601-P": 1,
+        "PL303QMD-P": 2,
+        "PL303QMT-P": 3,
+        "QL355TP": 3,
+    }
 
     def __init__(self, name: str, address: str, **kwargs: Any) -> None:
         """
@@ -226,20 +236,10 @@ class AimTTi(VisaInstrument):
 
         _model = self.get_idn()["model"]
 
-        _numOutputChannels = {
-            "PL068-P": 1,
-            "PL155-P": 1,
-            "PL303-P": 1,
-            "PL601-P": 1,
-            "PL303QMD-P": 2,
-            "PL303QMT-P": 3,
-            "QL355TP": 3,
-        }
-
-        if (_model not in _numOutputChannels.keys()) or (_model is None):
+        if (_model not in self._numOutputChannels.keys()) or (_model is None):
             raise NotKnownModel("Unknown model, connection cannot be " "established.")
 
-        self.numOfChannels = _numOutputChannels[_model]
+        self.numOfChannels = self._numOutputChannels[_model]
         for i in range(1, self.numOfChannels + 1):
             channel = AimTTiChannel(self, f"ch{i}", i)
             channels.append(channel)
