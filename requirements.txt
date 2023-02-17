@@ -96,7 +96,7 @@ pluggy~=1.0.0
 portalocker~=2.7.0
 prometheus-client==0.16.0
 prompt-toolkit~=3.0.31
-protobuf~=4.21.8
+protobuf~=4.22.0
 psutil~=5.9.3
 pure-eval==0.2.2
 py~=1.11.0
