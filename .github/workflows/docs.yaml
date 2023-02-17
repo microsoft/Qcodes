@@ -8,9 +8,6 @@ on:
     branches:
       - 'master'
       - 'release/*'
-      # bors
-      - 'staging'
-      - 'trying'
     tags:
       - 'v*'
   pull_request:
