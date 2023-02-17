@@ -233,6 +233,7 @@ class AimTTi(VisaInstrument):
             "PL601-P": 1,
             "PL303QMD-P": 2,
             "PL303QMT-P": 3,
+            "QL355TP": 3,
         }
 
         if (_model not in _numOutputChannels.keys()) or (_model is None):
