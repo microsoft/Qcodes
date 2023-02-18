@@ -6,6 +6,7 @@ from pathlib import Path
 from unittest.mock import PropertyMock, mock_open
 
 import jsonschema
+import jsonschema.exceptions
 import pytest
 
 import qcodes
