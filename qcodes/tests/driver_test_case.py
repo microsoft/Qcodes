@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import unittest
 
+from qcodes.instrument import Instrument
+
 """
 This module defines:
 
@@ -29,7 +31,7 @@ Using `DriverTestCase` is pretty easy:
 
 class DriverTestCase(unittest.TestCase):
     # override this in a subclass
-    driver: type | None = None
+    driver: type[Instrument] | None = None
 
     @classmethod
     def setUpClass(cls):
@@ -71,9 +73,9 @@ def test_instruments(verbosity=1):
     import qcodes
     import qcodes.instrument_drivers as qcdrivers
 
-    driver_path = qcdrivers.__path__[0]
+    driver_path = list(qcdrivers.__path__)[0]
     suite = unittest.defaultTestLoader.discover(
-        driver_path, top_level_dir=qcodes.__path__[0]
+        driver_path, top_level_dir=list(qcodes.__path__)[0]
     )
     unittest.TextTestRunner(verbosity=verbosity).run(suite)
 
