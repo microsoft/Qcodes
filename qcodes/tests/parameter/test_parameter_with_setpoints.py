@@ -89,7 +89,7 @@ def test_setpoints_non_parameter_raises() -> None:
     n_points_1.set(10)
     n_points_2.set(20)
 
-    err_msg = r"Setpoints is of type <class 'function'> expcected a QCoDeS parameter"
+    err_msg = r"Setpoints is of type <class 'function'> expected a QCoDeS parameter"
     with pytest.raises(TypeError, match=err_msg):
         param_with_setpoints_1 = ParameterWithSetpoints(
             "param_1",
