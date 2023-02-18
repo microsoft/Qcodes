@@ -237,6 +237,7 @@ def test_select_range_limits(lakeshore_336):
         h.set_range_from_temperature(i - 0.5)
         assert h.output_range() == h.INVERSE_RANGES[i]
 
+    i = 3
     h.set_range_from_temperature(i + 0.5)
     assert h.output_range() == h.INVERSE_RANGES[len(ranges)]
 
