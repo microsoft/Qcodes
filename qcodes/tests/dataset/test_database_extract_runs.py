@@ -164,7 +164,8 @@ def test_basic_extraction(two_empty_temp_db_connections, some_interdeps):
     # the source objects?
 
     assert source_dataset.the_same_dataset_as(target_dataset)
-
+    assert source_dataset.parameters is not None
+    assert target_dataset.parameters is not None
     source_data = source_dataset.get_parameter_data(*source_dataset.parameters.split(','))
     target_data = target_dataset.get_parameter_data(*target_dataset.parameters.split(','))
 
@@ -196,7 +197,7 @@ def test_real_dataset_1d(two_empty_temp_db_connections, inst):
     extract_runs_into_db(source_path, target_path, source_dataset.run_id)
 
     target_dataset = load_by_guid(source_dataset.guid, conn=target_conn)
-
+    assert isinstance(source_dataset, DataSet)
     assert source_dataset.the_same_dataset_as(target_dataset)
     # explicit regression  test for https://github.com/QCoDeS/Qcodes/issues/3953
     assert source_dataset.description.shapes == {"extract_run_inst_plunger": (10,)}
@@ -222,7 +223,7 @@ def test_real_dataset_1d_pathlib_path(two_empty_temp_db_connections, inst):
     extract_runs_into_db(source_path, target_path, source_dataset.run_id)
 
     target_dataset = load_by_guid(source_dataset.guid, conn=target_conn)
-
+    assert isinstance(source_dataset, DataSet)
     assert source_dataset.the_same_dataset_as(target_dataset)
     # explicit regression  test for https://github.com/QCoDeS/Qcodes/issues/3953
     assert source_dataset.description.shapes == {"extract_run_inst_plunger": (10,)}
@@ -250,7 +251,7 @@ def test_real_dataset_2d(two_empty_temp_db_connections, inst):
     extract_runs_into_db(source_path, target_path, source_dataset.run_id)
 
     target_dataset = load_by_guid(source_dataset.guid, conn=target_conn)
-
+    assert isinstance(source_dataset, DataSet)
     assert source_dataset.the_same_dataset_as(target_dataset)
     # explicit regression  test for https://github.com/QCoDeS/Qcodes/issues/3953
     assert source_dataset.description.shapes == {"extract_run_inst_cutter": (10, 15)}
@@ -348,9 +349,11 @@ def test_correct_experiment_routing(two_empty_temp_db_connections,
     for run_id in exp_1_run_ids + exp_2_run_ids:
         source_ds = DataSet(conn=source_conn, run_id=run_id)
         target_ds = load_by_guid(guid=source_ds.guid, conn=target_conn)
+        assert isinstance(target_ds, DataSet)
 
         assert source_ds.the_same_dataset_as(target_ds)
-
+        assert source_ds.parameters is not None
+        assert target_ds.parameters is not None
         source_data = source_ds.get_parameter_data(*source_ds.parameters.split(','))
         target_data = target_ds.get_parameter_data(*target_ds.parameters.split(','))
 
@@ -836,7 +839,7 @@ def test_integration_station_and_measurement(two_empty_temp_db_connections,
     extract_runs_into_db(source_path, target_path, 1)
 
     target_ds = DataSet(conn=target_conn, run_id=1)
-
+    assert isinstance(datasaver.dataset, DataSet)
     assert datasaver.dataset.the_same_dataset_as(target_ds)
 
 
