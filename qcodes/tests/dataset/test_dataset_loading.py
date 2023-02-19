@@ -175,6 +175,7 @@ def test_run_timestamp():
     t_after_data_set = time.time()
 
     actual_run_timestamp_raw = ds.run_timestamp_raw
+    assert actual_run_timestamp_raw is not None
 
     assert t_before_data_set <= actual_run_timestamp_raw <= t_after_data_set
 
@@ -212,10 +213,9 @@ def test_completed_timestamp():
     t_after_complete = time.time()
 
     actual_completed_timestamp_raw = ds.completed_timestamp_raw
+    assert actual_completed_timestamp_raw is not None
 
-    assert t_before_complete \
-           <= actual_completed_timestamp_raw \
-           <= t_after_complete
+    assert t_before_complete <= actual_completed_timestamp_raw <= t_after_complete
 
 
 @pytest.mark.usefixtures("empty_temp_db")
