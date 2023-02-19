@@ -2,7 +2,8 @@ import re
 from pathlib import Path
 
 import pytest
-import pyvisa as visa
+import pyvisa
+import pyvisa.constants
 
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.validators import Numbers
@@ -20,7 +21,7 @@ class MockVisa(VisaInstrument):
         return MockVisaHandle(), visalib
 
 
-class MockVisaHandle(visa.resources.MessageBasedResource):
+class MockVisaHandle(pyvisa.resources.MessageBasedResource):
     """
     mock the API needed for a visa handle that throws lots of errors:
 
@@ -52,7 +53,7 @@ class MockVisaHandle(visa.resources.MessageBasedResource):
             raise ValueError('be more positive!')
 
         if num == 0:
-            raise visa.VisaIOError(visa.constants.VI_ERROR_TMO)
+            raise pyvisa.VisaIOError(pyvisa.constants.VI_ERROR_TMO)
 
         return len(cmd)
 
@@ -122,7 +123,7 @@ def test_ask_write_local(mock_visa):
         assert arg in str(e.value)
     assert mock_visa.state.get() == -10  # set still happened
 
-    with pytest.raises(visa.VisaIOError) as e:
+    with pytest.raises(pyvisa.VisaIOError) as e:
         mock_visa.state.set(0)
     for arg in args2:
         assert arg in str(e.value)
@@ -204,6 +205,7 @@ def test_load_pyvisa_sim_file_implict_module(request):
     )
     request.addfinalizer(driver.close)
     assert driver.visabackend == "sim"
+    assert driver.visalib is not None
     path_str, backend = driver.visalib.split("@")
     assert backend == "sim"
     path = Path(path_str)
@@ -220,6 +222,7 @@ def test_load_pyvisa_sim_file_explicit_module(request):
     )
     request.addfinalizer(driver.close)
     assert driver.visabackend == "sim"
+    assert driver.visalib is not None
     path_str, backend = driver.visalib.split("@")
     assert backend == "sim"
     path = Path(path_str)
