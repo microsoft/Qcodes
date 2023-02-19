@@ -123,8 +123,8 @@ def test_invalid_channel_type_raises(empty_instrument: Instrument) -> None:
         match="ChannelTuple can only hold instances of type InstrumentChannel",
     ):
         ChannelList(
-            parent=empty_instrument, name="empty", chan_type=int
-        )  # type: ignore[type-var]
+            parent=empty_instrument, name="empty", chan_type=int  # type: ignore[type-var]
+        )
 
 
 def test_invalid_multichan_type_raises(empty_instrument: Instrument) -> None:
