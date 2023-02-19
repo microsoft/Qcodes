@@ -5,6 +5,7 @@ from .Aim_TTi_PL303_P import AimTTiPL303P
 from .Aim_TTi_PL303QMD_P import AimTTiPL303QMDP
 from .Aim_TTi_PL303QMT_P import AimTTiPL303QMTP
 from .Aim_TTi_PL601_P import AimTTiPL601
+from .Aim_TTi_QL355_TP import AimTTiQL355TP
 
 __all__ = [
     "AimTTiChannel",
@@ -14,5 +15,6 @@ __all__ = [
     "AimTTiPL303QMDP",
     "AimTTiPL303QMTP",
     "AimTTiPL601",
+    "AimTTiQL355TP",
     "NotKnownModel",
 ]
