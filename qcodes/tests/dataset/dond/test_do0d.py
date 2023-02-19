@@ -91,7 +91,7 @@ def test_do0d_output_type_callable(_param_callable):
 def test_do0d_output_data(_param):
     exp = do0d(_param)
     data = exp[0]
-    assert data.parameters == _param.name
+    assert data.description.interdeps.names == (_param.name,)
     loaded_data = data.get_parameter_data()["simple_parameter"]["simple_parameter"]
     assert loaded_data == np.array([_param.get()])
 

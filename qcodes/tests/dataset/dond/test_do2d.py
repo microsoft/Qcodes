@@ -154,9 +154,12 @@ def test_do2d_output_data(_param, _param_complex, _param_set, _param_set_2):
     )
     data = exp[0]
 
-    assert data.parameters == (
-        f"{_param_set.name},{_param_set_2.name}," f"{_param.name},{_param_complex.name}"
-    )
+    assert set(data.description.interdeps.names) == {
+        _param.name,
+        _param_complex.name,
+        _param_set.name,
+        _param_set_2.name,
+    }
     loaded_data = data.get_parameter_data()
     expected_data_1 = np.ones(25).reshape(num_points_p1, num_points_p2)
 
