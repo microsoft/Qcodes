@@ -313,6 +313,9 @@ class DataSetProtocol(Protocol):
     def __len__(self) -> int:
         ...
 
+    def the_same_dataset_as(self, other: DataSetProtocol) -> bool:
+        ...
+
 
 class BaseDataSet(DataSetProtocol, Protocol):
 
