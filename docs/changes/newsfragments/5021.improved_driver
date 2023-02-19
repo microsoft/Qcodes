@@ -1,0 +1,2 @@
+Added support for AimTTi QL355TP power supply.
+Moved _numOutputChannels lookup table to the class body.
