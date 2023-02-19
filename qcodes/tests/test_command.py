@@ -109,7 +109,7 @@ def test_cmd_function_2() -> None:
         return a**b
 
     # input parsing
-    cmd = Command(1, abs, input_parser=lambda x: x + 1)
+    cmd: Command[float, float] = Command(1, abs, input_parser=lambda x: x + 1)
     assert cmd(-10) == 9
 
     # input *and* output parsing
