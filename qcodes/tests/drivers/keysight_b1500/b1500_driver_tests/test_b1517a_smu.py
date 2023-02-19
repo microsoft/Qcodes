@@ -33,7 +33,9 @@ def test_snapshot() -> None:
     mainframe = InstrumentBase(name='mainframe')
     mainframe.write = MagicMock()  # type: ignore[attr-defined]
     slot_nr = 1
-    smu = KeysightB1517A(parent=mainframe, name="B1517A", slot_nr=slot_nr)  # type: ignore[arg-type]
+    smu = KeysightB1517A(
+        parent=mainframe, name="B1517A", slot_nr=slot_nr  # type: ignore[arg-type]
+    )
 
     smu.use_high_speed_adc()
     smu.source_config(output_range=VOutputRange.AUTO)

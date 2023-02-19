@@ -24,7 +24,9 @@ def test_bad_calls() -> None:
         Command(0, cmd="", exec_str="not a function")  # type: ignore[arg-type]
 
     with pytest.raises(TypeError):
-        Command(0, cmd=lambda: 1, no_cmd_function="not a function")  # type: ignore[arg-type]
+        Command(
+            0, cmd=lambda: 1, no_cmd_function="not a function"  # type: ignore[arg-type]
+        )
 
 
 def test_no_cmd():

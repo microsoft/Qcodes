@@ -338,8 +338,9 @@ def test_validation_one_sp_dim_missing() -> None:
     )
     expected_err_msg = (
         r"One or more dimensions have unknown shape "
-        r"when comparing output: \(<qcodes.parameters.parameter.Parameter: n_points_1 "
-        r"at [0-9]+>, <qcodes.parameters.parameter.Parameter: n_points_2 at [0-9]+>\) to setpoints: "
+        r"when comparing output: \(<qcodes.parameters.parameter.Parameter: "
+        r"n_points_1 at [0-9]+>, <qcodes.parameters.parameter.Parameter: "
+        r"n_points_2 at [0-9]+>\) to setpoints: "
         r"\(<qcodes.parameters.parameter.Parameter: n_points_1 at [0-9]+>, None\)"
     )
     with pytest.raises(ValueError, match=expected_err_msg):
