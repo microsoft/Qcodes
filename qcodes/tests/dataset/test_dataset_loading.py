@@ -86,7 +86,8 @@ def test_load_by_counter():
 
     assert loaded_ds.pristine is True
     assert loaded_ds.running is False
-    assert loaded_ds.started is False
+    assert loaded_ds.run_timestamp() is None
+    assert loaded_ds.completed_timestamp() is None
     assert loaded_ds.completed is False
 
     ds.mark_started()
@@ -95,7 +96,8 @@ def test_load_by_counter():
     loaded_ds = load_by_counter(exp.exp_id, 1)
 
     assert loaded_ds.pristine is False
-    assert loaded_ds.started is True
+    assert loaded_ds.run_timestamp() is not None
+    assert loaded_ds.completed_timestamp() is not None
     assert loaded_ds.running is False
     assert loaded_ds.completed is True
 
