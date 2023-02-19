@@ -43,6 +43,7 @@ class TUpgraderFunction(Protocol):
     def __call__(self, conn: ConnectionPlus, show_progress_bar: bool = True) -> None:
         ...
 
+    @property
     def __name__(self) -> str:
         ...
 
