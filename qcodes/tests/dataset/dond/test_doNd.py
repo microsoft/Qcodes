@@ -894,15 +894,18 @@ def test_dond_2d_multiple_datasets_plot(
 
     axes = output[1]
 
+    assert isinstance(axes, tuple)
     assert len(axes) == 2
+    assert isinstance(axes[0], tuple)
     assert len(axes[0]) == 1
+    assert isinstance(axes[1], tuple)
     assert len(axes[1]) == 1
     if plot is True or plot is None and plot_config is True:
-        assert isinstance(output[1][0][0], matplotlib.axes.Axes)
-        assert isinstance(output[1][1][0], matplotlib.axes.Axes)
+        assert isinstance(axes[0][0], matplotlib.axes.Axes)
+        assert isinstance(axes[1][0], matplotlib.axes.Axes)
     else:
-        assert output[1][0][0] is None
-        assert output[1][1][0] is None
+        assert axes[0][0] is None
+        assert axes[1][0] is None
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
