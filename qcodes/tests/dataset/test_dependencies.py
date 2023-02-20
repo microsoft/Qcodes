@@ -55,7 +55,7 @@ def test_init(some_paramspecbases):
     assert idps.non_dependencies == (ps1, ps4)
 
 
-def test_init_validation_raises(some_paramspecbases):
+def test_init_validation_raises(some_paramspecbases) -> None:
 
     (ps1, ps2, ps3, ps4) = some_paramspecbases
 
@@ -75,32 +75,35 @@ def test_init_validation_raises(some_paramspecbases):
               "ParamSpecTree can not have cycles")
 
     for tree, cause in zip(invalid_trees, causes):
-        with pytest.raises(ValueError, match='Invalid dependencies') as ei:
-            InterDependencies_(dependencies=tree, inferences={})
+        with pytest.raises(ValueError, match="Invalid dependencies") as ei:
+            InterDependencies_(dependencies=tree, inferences={})  # type: ignore[arg-type]
 
         assert error_caused_by(ei, cause=cause)
 
     for tree, cause in zip(invalid_trees, causes):
-        with pytest.raises(ValueError, match='Invalid inferences') as ei:
-            InterDependencies_(dependencies={}, inferences=tree)
+        with pytest.raises(ValueError, match="Invalid inferences") as ei:
+            InterDependencies_(dependencies={}, inferences=tree)  # type: ignore[arg-type]
 
         assert error_caused_by(ei, cause=cause)
 
-    with pytest.raises(ValueError, match='Invalid standalones') as ei:
-        InterDependencies_(standalones=('ps1', 'ps2'))
+    with pytest.raises(ValueError, match="Invalid standalones") as ei:
+        InterDependencies_(standalones=("ps1", "ps2"))  # type: ignore[arg-type]
 
     assert error_caused_by(ei, cause='Standalones must be a sequence of '
                                      'ParamSpecs')
 
     # Now test trees that are invalid together
 
-    invalid_trees = [{'deps': {ps1: (ps2, ps3)},
-                      'inffs': {ps2: (ps4, ps1)}}]
-    for inv in invalid_trees:
-        with pytest.raises(ValueError,
-                           match=re.escape("Invalid dependencies/inferences")):
-            InterDependencies_(dependencies=inv['deps'],
-                               inferences=inv['inffs'])
+    invalid_trees_2 = [{"deps": {ps1: (ps2, ps3)}, "inffs": {ps2: (ps4, ps1)}}]
+    for inv in invalid_trees_2:
+        with pytest.raises(
+            ValueError, match=re.escape("Invalid dependencies/inferences")
+        ):
+            InterDependencies_(
+                dependencies=inv["deps"],  # type: ignore[arg-type]
+                inferences=inv["inffs"],
+            )  # type: ignore[arg-type]
+
 
 def test_to_dict(some_paramspecbases):
 
