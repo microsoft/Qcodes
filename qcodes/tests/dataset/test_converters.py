@@ -1,4 +1,4 @@
-from deepdiff import DeepDiff
+from deepdiff import DeepDiff  # pyright: ignore[reportMissingTypeStubs]
 
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning.converters import (
@@ -154,19 +154,21 @@ def test_construct_current_rundescriber_from_v3(some_interdeps):
     assert rds_upgraded._to_dict() == v3
 
 
-def test_construct_current_rundescriber_from_fake_v4(some_interdeps):
+def test_construct_current_rundescriber_from_fake_v4(some_interdeps) -> None:
     interdeps_ = some_interdeps[0]
     interdeps = new_to_old(interdeps_)
 
-    v4 = RunDescriberV3Dict(interdependencies=interdeps._to_dict(),
-                            interdependencies_=interdeps_._to_dict(),
-                            version=4,
-                            shapes=None)
-    v4['foobar'] = {"foo": ["bar"]}
+    v4 = RunDescriberV3Dict(
+        interdependencies=interdeps._to_dict(),
+        interdependencies_=interdeps_._to_dict(),
+        version=4,
+        shapes=None,
+    )
+    v4["foobar"] = {"foo": ["bar"]}  # type: ignore[typeddict-item]
     rds1 = RunDescriber._from_dict(v4)
     rds_upgraded = from_dict_to_current(v4)
     v3 = v4.copy()
-    v3.pop('foobar')
-    v3['version'] = 3
+    v3.pop("foobar")  # type: ignore[typeddict-item]
+    v3["version"] = 3
     assert rds1._to_dict() == v3
     assert rds_upgraded._to_dict() == v3
