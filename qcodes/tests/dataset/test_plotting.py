@@ -79,11 +79,12 @@ def test_rescaled_ticks_and_units(scale, unit,
         # be larger than the lowest value within the scale of interest)
         assume((scale_lower_bound < np.abs(data_array_not_nans)).any())
 
-    data_dict = {
-        'name': param_name,
-        'label': param_label,
-        'unit': unit,
-        'data': data_array
+    data_dict: DSPlotData = {
+        "name": param_name,
+        "label": param_label,
+        "unit": unit,
+        "data": data_array,
+        "shape": None,
     }
 
     ticks_formatter, label = _make_rescaled_ticks_and_units(data_dict)
