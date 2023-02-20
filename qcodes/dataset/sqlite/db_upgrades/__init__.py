@@ -36,7 +36,7 @@ log = logging.getLogger(__name__)
 
 
 # INFRASTRUCTURE FOR UPGRADE FUNCTIONS
-# use a Protocol to typo optional arguments
+# use a Protocol to type optional arguments
 # see https://mypy.readthedocs.io/en/stable/protocols.html#callback-protocols
 class TUpgraderFunction(Protocol):
 
