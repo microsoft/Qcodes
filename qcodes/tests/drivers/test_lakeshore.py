@@ -53,7 +53,7 @@ class MockVisaInstrument:
             with suppress(AttributeError):
                 self.cmds[getattr(f, 'command_name')] = f
 
-    def write_raw(self, cmd):
+    def write_raw(self, cmd) -> None:
         cmd_parts = cmd.split(' ')
         cmd_str = cmd_parts[0].upper()
         if cmd_str in self.cmds:
@@ -62,9 +62,9 @@ class MockVisaInstrument:
                       f'{cmd} for command {cmd_str} with args {args}')
             self.cmds[cmd_str](args)
         else:
-            super().write_raw(cmd)
+            super().write_raw(cmd)  # type: ignore[misc]
 
-    def ask_raw(self, query):
+    def ask_raw(self, query) -> Any:
         query_parts = query.split(' ')
         query_str = query_parts[0].upper()
         if query_str in self.queries:
@@ -75,7 +75,7 @@ class MockVisaInstrument:
             self.visa_log.debug(f"Response: {response}")
             return response
         else:
-            super().ask_raw(query)
+            super().ask_raw(query)  # type: ignore[misc]
 
 
 def query(name: str) -> Callable[[Callable[P, T]], Callable[P, T]]:

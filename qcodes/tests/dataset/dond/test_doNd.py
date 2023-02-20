@@ -1037,7 +1037,7 @@ def test_dond_together_sweep(_param_set, _param_set_2, _param, _param_2):
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-def test_dond_together_sweep_sweeper(_param_set, _param_set_2, _param):
+def test_dond_together_sweep_sweeper(_param_set, _param_set_2, _param) -> None:
 
     sweep_len = 10
 
@@ -1079,7 +1079,7 @@ def test_dond_together_sweep_sweeper(_param_set, _param_set_2, _param):
     )
 
     for output, setpoint_1, setpoint_2 in zip(
-        sweeper, sweep_1.get_setpoints(), sweep_2.get_setpoints()
+        sweeper, sweep_1.get_setpoints(), sweep_2.get_setpoints()  # type: ignore[call-overload]
     ):
         assert output[0].parameter == sweep_1.param
         assert output[0].new_value == setpoint_1

@@ -3,6 +3,7 @@ Test suite for monitor
 """
 import json
 import random
+from typing import cast
 
 import pytest
 import websockets
@@ -22,7 +23,9 @@ def _make_inst_and_monitor():
                       get_cmd=None,
                       set_cmd=None)
     param(1)
-    monitor_parameters = tuple(instr.parameters.values())[1:]
+    monitor_parameters = cast(
+        tuple[Parameter, ...], tuple(instr.parameters.values())[1:]
+    )
     my_monitor = monitor.Monitor(*monitor_parameters, param, interval=0.1)
     try:
         yield instr, my_monitor, monitor_parameters, param

@@ -111,11 +111,18 @@ def test_cmd_function_2() -> None:
         return a**b
 
     # input parsing
-    cmd: Command[float, float] = Command(1, abs, input_parser=lambda x: x + 1)
+    cmd: Command[float, float] = Command(
+        1, abs, input_parser=lambda x: x + 1
+    )  # pyright: ignore
     assert cmd(-10) == 9
 
     # input *and* output parsing
-    cmd = Command(1, abs, input_parser=lambda x: x + 2, output_parser=lambda y: 3 * y)
+    cmd = Command(
+        1,
+        abs,
+        input_parser=lambda x: x + 2,
+        output_parser=lambda y: 3 * y,  # pyright: ignore
+    )
     assert cmd(-6) == 12
 
     # multi-input parsing, no output parsing
