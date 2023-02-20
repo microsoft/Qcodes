@@ -101,9 +101,8 @@ def test_init_validation_raises(some_paramspecbases) -> None:
         ):
             InterDependencies_(
                 dependencies=inv["deps"],  # type: ignore[arg-type]
-                inferences=inv["inffs"],
-            )  # type: ignore[arg-type]
-
+                inferences=inv["inffs"],  # type: ignore[arg-type]
+            )
 
 def test_to_dict(some_paramspecbases):
 
