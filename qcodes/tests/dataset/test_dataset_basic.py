@@ -266,10 +266,10 @@ def test_load_by_id_for_nonexisting_run_id(non_existing_run_id):
 
 
 @pytest.mark.usefixtures('experiment')
-def test_load_by_id_for_none():
+def test_load_by_id_for_none() -> None:
     with pytest.raises(ValueError, match='run_id has to be a positive integer, '
                                          'not None.'):
-        _ = load_by_id(None)
+        _ = load_by_id(None)  # type: ignore[arg-type]
 
 
 @settings(deadline=None, max_examples=6)
@@ -299,6 +299,7 @@ def test_add_experiments(experiment_name, sample_name, dataset_name):
     expected_ds_counter = 1
     assert loaded_dataset.name == dataset_name
     assert loaded_dataset.counter == expected_ds_counter
+    assert isinstance(loaded_dataset, DataSet)
     assert loaded_dataset.table_name == "{}-{}-{}".format("results",
                                                           exp.exp_id,
                                                           loaded_dataset.counter)
@@ -308,6 +309,7 @@ def test_add_experiments(experiment_name, sample_name, dataset_name):
     loaded_dataset = load_by_id(dsid)
     assert loaded_dataset.name == dataset_name
     assert loaded_dataset.counter == expected_ds_counter
+    assert isinstance(loaded_dataset, DataSet)
     assert loaded_dataset.table_name == "{}-{}-{}".format("results",
                                                           exp.exp_id,
                                                           loaded_dataset.counter)
@@ -477,7 +479,7 @@ def test_adding_too_many_results():
     idps = InterDependencies_(dependencies={yparam: (xparam,)})
     dataset.set_interdependencies(idps)
     dataset.mark_started()
-    n_max = qc.SQLiteSettings.limits['MAX_VARIABLE_NUMBER']
+    n_max = int(qc.SQLiteSettings.limits["MAX_VARIABLE_NUMBER"])
 
     vals = np.linspace(0, 1, int(n_max/2)+2)
     results = [{'x': val} for val in vals]
@@ -752,7 +754,7 @@ def test_the_same_dataset_as(some_interdeps, experiment):
 
 
 @pytest.mark.usefixtures("experiment")
-def test_parent_dataset_links_invalid_input():
+def test_parent_dataset_links_invalid_input() -> None:
     """
     Test that invalid input is rejected
     """
@@ -765,7 +767,7 @@ def test_parent_dataset_links_invalid_input():
 
     match = re.escape('Invalid input. Did not receive a list of Links')
     with pytest.raises(ValueError, match=match):
-        ds.parent_dataset_links = [ds.guid]
+        ds.parent_dataset_links = [ds.guid]  # type: ignore[list-item]
 
     match = re.escape('Invalid input. All links must point to this dataset. '
                       'Got link(s) with head(s) pointing to another dataset.')
