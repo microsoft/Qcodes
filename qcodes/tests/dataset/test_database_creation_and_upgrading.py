@@ -20,6 +20,7 @@ from qcodes.dataset import (
     new_data_set,
     new_experiment,
 )
+from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
@@ -736,6 +737,7 @@ def test_perform_actual_upgrade_6_to_7():
             ds1 = load_by_id(run_id, conn)
             ds2 = load_by_run_spec(captured_run_id=run_id, conn=conn)
 
+            assert isinstance(ds1, DataSet)
             assert ds1.the_same_dataset_as(ds2)
 
             assert ds1.run_id == run_id
@@ -748,6 +750,7 @@ def test_perform_actual_upgrade_6_to_7():
             ds1 = load_by_counter(counter, exp_id, conn)
             ds2 = load_by_run_spec(captured_counter=counter, conn=conn)
 
+            assert isinstance(ds1, DataSet)
             assert ds1.the_same_dataset_as(ds2)
             assert ds1.counter == counter
             assert ds1.counter == ds1.captured_counter
@@ -819,6 +822,7 @@ def test_perform_actual_upgrade_6_to_newest_add_new_data():
             ds1 = load_by_id(run_id, conn)
             ds2 = load_by_run_spec(captured_run_id=run_id, conn=conn)
 
+            assert isinstance(ds1, DataSet)
             assert ds1.the_same_dataset_as(ds2)
 
             assert ds1.run_id == run_id
@@ -842,6 +846,7 @@ def test_perform_actual_upgrade_6_to_newest_add_new_data():
                                    experiment_name='some-exp',
                                    conn=conn)
 
+            assert isinstance(ds1, DataSet)
             assert ds1.the_same_dataset_as(ds2)
             assert ds1.counter == counter
             assert ds1.counter == ds1.captured_counter

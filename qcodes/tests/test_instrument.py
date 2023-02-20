@@ -5,6 +5,7 @@ import contextlib
 import io
 import re
 import weakref
+from typing import Iterator
 
 import pytest
 
@@ -22,7 +23,7 @@ from .instrument_mocks import (
 
 
 @pytest.fixture(name="testdummy", scope="function")
-def _dummy_dac():
+def _dummy_dac() -> Iterator[DummyInstrument]:
     instrument = DummyInstrument(name="testdummy", gates=["dac1", "dac2", "dac3"])
     try:
         yield instrument
@@ -31,7 +32,7 @@ def _dummy_dac():
 
 
 @pytest.fixture(name="testdummychannelinstr", scope="function")
-def _dummy_channel_instr():
+def _dummy_channel_instr() -> Iterator[DummyChannelInstrument]:
     instrument = DummyChannelInstrument(name="testdummy")
     try:
         yield instrument
@@ -40,7 +41,7 @@ def _dummy_channel_instr():
 
 
 @pytest.fixture(name="parabola", scope="function")
-def _dummy_parabola():
+def _dummy_parabola() -> Iterator[MockParabola]:
     instrument = MockParabola("parabola")
     try:
         yield instrument
@@ -57,7 +58,7 @@ def _close_before_and_after():
         Instrument.close_all()
 
 
-def test_validate_function(testdummy):
+def test_validate_function(testdummy: DummyInstrument):
     testdummy.validate_status()  # test the instrument has valid values
 
     testdummy.dac1.cache._value = 1000  # overrule the validator
@@ -66,7 +67,7 @@ def test_validate_function(testdummy):
         testdummy.validate_status()
 
 
-def test_check_instances(testdummy):
+def test_check_instances(testdummy: DummyInstrument):
     with pytest.raises(KeyError, match='Another instrument has the name: testdummy'):
         DummyInstrument(name='testdummy', gates=['dac1', 'dac2', 'dac3'])
 
@@ -75,7 +76,8 @@ def test_check_instances(testdummy):
     assert testdummy.instances() == [testdummy]
 
 
-def test_instrument_fail(close_before_and_after):
+@pytest.mark.usefixtures("close_before_and_after")
+def test_instrument_fail():
     with pytest.raises(RuntimeError, match="Failed to create instrument"):
         DummyFailingInstrument(name="failinginstrument")
 
@@ -84,7 +86,8 @@ def test_instrument_fail(close_before_and_after):
     assert Instrument._all_instruments == {}
 
 
-def test_instrument_on_invalid_identifier(close_before_and_after):
+@pytest.mark.usefixtures("close_before_and_after")
+def test_instrument_on_invalid_identifier():
     # Check if warning and error raised when invalid identifer name given
     with pytest.warns(
         UserWarning, match="Changed !-name to !_name for instrument identifier"
@@ -97,7 +100,8 @@ def test_instrument_on_invalid_identifier(close_before_and_after):
     assert Instrument._all_instruments == {}
 
 
-def test_instrument_warns_on_hyphen_in_name(close_before_and_after):
+@pytest.mark.usefixtures("close_before_and_after")
+def test_instrument_warns_on_hyphen_in_name():
     # Check if warning is raised and name is valid
     # identifier when dashes '-' are converted to underscores '_'
     with pytest.warns(
@@ -111,7 +115,8 @@ def test_instrument_warns_on_hyphen_in_name(close_before_and_after):
     assert Instrument._all_instruments != {}
 
 
-def test_instrument_allows_channel_name_starting_with_number(close_before_and_after):
+@pytest.mark.usefixtures("close_before_and_after")
+def test_instrument_allows_channel_name_starting_with_number():
     instr = DummyChannelInstrument(name="foo", channel_names=["1", "2", "3"])
 
     for chan in instr.channels:
@@ -122,7 +127,8 @@ def test_instrument_allows_channel_name_starting_with_number(close_before_and_af
     assert Instrument._all_instruments != {}
 
 
-def test_instrument_channel_name_raise_on_invalid(close_before_and_after):
+@pytest.mark.usefixtures("close_before_and_after")
+def test_instrument_channel_name_raise_on_invalid():
     with pytest.raises(ValueError, match="foo_☃ invalid instrument identifier"):
         DummyChannelInstrument(name="foo", channel_names=["☃"])
     assert Instrument.instances() == []
@@ -130,7 +136,8 @@ def test_instrument_channel_name_raise_on_invalid(close_before_and_after):
     assert Instrument._all_instruments == {}
 
 
-def test_instrument_retry_with_same_name(close_before_and_after):
+@pytest.mark.usefixtures("close_before_and_after")
+def test_instrument_retry_with_same_name():
     with pytest.raises(RuntimeError, match="Failed to create instrument"):
         DummyFailingInstrument(name="failinginstrument")
     instr = DummyFailingInstrument(name="failinginstrument", fail=False)
@@ -143,7 +150,7 @@ def test_instrument_retry_with_same_name(close_before_and_after):
     assert Instrument._all_instruments == expected_dict
 
 
-def test_attr_access(testdummy):
+def test_attr_access(testdummy: DummyInstrument):
 
     # test the instrument works
     testdummy.dac1.set(10)
@@ -165,7 +172,7 @@ def test_attr_access(testdummy):
     assert not hasattr(testdummy, "dac1")
 
 
-def test_attr_access_channels(testdummychannelinstr):
+def test_attr_access_channels(testdummychannelinstr: DummyChannelInstrument):
     instr = testdummychannelinstr
 
     channel = instr.channels[0]
@@ -197,7 +204,7 @@ def test_attr_access_channels(testdummychannelinstr):
     assert not hasattr(channel, "functions")
 
 
-def test_get_idn(testdummy):
+def test_get_idn(testdummy: DummyInstrument):
     idn = {
         "vendor": "QCoDeS",
         "model": str(testdummy.__class__),
@@ -207,7 +214,7 @@ def test_get_idn(testdummy):
     assert testdummy.get_idn() == idn
 
 
-def test_repr(testdummy):
+def test_repr(testdummy: DummyInstrument):
     assert repr(testdummy) == '<DummyInstrument: testdummy>'
 
 
@@ -319,7 +326,8 @@ def test_find(testdummy):
     assert instr_2.name == testdummy.name
 
 
-def test_find_same_name_but_different_class(close_before_and_after, request):
+@pytest.mark.usefixtures("close_before_and_after")
+def test_find_same_name_but_different_class(request):
     """Test finding an existing instrument with different class"""
     instr = DummyInstrument(
         name='instr', gates=['dac1', 'dac2', 'dac3'])
@@ -340,7 +348,8 @@ def test_find_same_name_but_different_class(close_before_and_after, request):
             GammyInstrument, name='instr', gates=['dac1', 'dac2', 'dac3'])
 
 
-def test_create(close_before_and_after, request):
+@pytest.mark.usefixtures("close_before_and_after")
+def test_create(request):
     """Test creating an instrument that does not yet exist"""
     instr = find_or_create_instrument(
         DummyInstrument, name='instr', gates=['dac1', 'dac2', 'dac3'])
@@ -348,16 +357,18 @@ def test_create(close_before_and_after, request):
     assert 'instr' == instr.name
 
 
-def test_other_exception(close_before_and_after):
+@pytest.mark.usefixtures("close_before_and_after")
+def test_other_exception() -> None:
     """Test an unexpected exception occurred during finding instrument"""
     with pytest.raises(TypeError, match="unhashable type: 'dict'"):
         # in order to raise an unexpected exception, and make sure it is
         # passed through the call stack, let's pass an empty dict instead
         # of a string with instrument name
-        _ = find_or_create_instrument(DummyInstrument, {})
+        _ = find_or_create_instrument(DummyInstrument, {})  #  type: ignore[arg-type]
 
 
-def test_recreate(close_before_and_after, request):
+@pytest.mark.usefixtures("close_before_and_after")
+def test_recreate(request):
     """Test the case when instrument needs to be recreated"""
     instr = DummyInstrument(
         name='instr', gates=['dac1', 'dac2', 'dac3'])
@@ -454,7 +465,8 @@ class TestInstrument(InstrumentBase):
 
 
 def test_snapshot_and_meta_attrs2():
-    """Test snapshot of child of InstrumentBase which contains _meta_attrs attribute that is itself Metadatable"""
+    """Test snapshot of child of InstrumentBase which contains
+    _meta_attrs attribute that is itself Metadatable"""
     instr = TestInstrument("instr", label="Label")
 
     assert instr.name == "instr"

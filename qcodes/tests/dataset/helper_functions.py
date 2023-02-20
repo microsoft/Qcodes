@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from functools import reduce
 from operator import mul
-from typing import TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING, Mapping, Sequence
 
 import numpy as np
 from numpy.testing import assert_array_equal
@@ -15,9 +15,9 @@ def verify_data_dict(
     data: dict[str, dict[str, np.ndarray]],
     dataframe: dict[str, pd.DataFrame] | None,
     parameter_names: Sequence[str],
-    expected_names: dict[str, Sequence[str]],
-    expected_shapes: dict[str, Sequence[tuple[int, ...]]],
-    expected_values: dict[str, Sequence[np.ndarray]],
+    expected_names: Mapping[str, Sequence[str]],
+    expected_shapes: Mapping[str, Sequence[tuple[int, ...]]],
+    expected_values: Mapping[str, Sequence[np.ndarray]],
 ) -> None:
     """
     Simple helper function to verify a dict of data. It can also optionally

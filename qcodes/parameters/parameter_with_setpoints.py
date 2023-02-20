@@ -83,7 +83,7 @@ class ParameterWithSetpoints(Parameter):
             if not isinstance(setpointarray, Parameter):
                 raise TypeError(
                     f"Setpoints is of type {type(setpointarray)}"
-                    f" expcected a QCoDeS parameter"
+                    f" expected a QCoDeS parameter"
                 )
         self._setpoints = setpoints
 

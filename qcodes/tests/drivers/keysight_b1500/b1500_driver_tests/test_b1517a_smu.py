@@ -25,15 +25,17 @@ def _make_smu(mainframe):
     yield smu
 
 
-def test_snapshot():
+def test_snapshot() -> None:
     from qcodes.instrument.base import InstrumentBase
 
     # We need to use `InstrumentBase` (not a bare mock) in order for
     # `snapshot` methods call resolution to work out
     mainframe = InstrumentBase(name='mainframe')
-    mainframe.write = MagicMock()
+    mainframe.write = MagicMock()  # type: ignore[attr-defined]
     slot_nr = 1
-    smu = KeysightB1517A(parent=mainframe, name="B1517A", slot_nr=slot_nr)
+    smu = KeysightB1517A(
+        parent=mainframe, name="B1517A", slot_nr=slot_nr  # type: ignore[arg-type]
+    )
 
     smu.use_high_speed_adc()
     smu.source_config(output_range=VOutputRange.AUTO)

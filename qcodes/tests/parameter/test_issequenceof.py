@@ -34,11 +34,11 @@ def test_simple_bad(args):
     # failing this doesn't return False, it raises an error
 
 
-def test_examples_raises():
+def test_examples_raises() -> None:
     with pytest.raises(TypeError):
-        is_sequence_of([1], 1)
+        is_sequence_of([1], 1)  # type: ignore[arg-type]
     with pytest.raises(TypeError):
-        is_sequence_of([1], (1, 2))
+        is_sequence_of([1], (1, 2))  # type: ignore[arg-type]
 
 
 good_depth = [

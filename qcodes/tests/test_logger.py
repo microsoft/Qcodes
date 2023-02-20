@@ -47,7 +47,7 @@ def awg5208():
 def model372():
     from qcodes.tests.drivers.test_lakeshore import Model_372_Mock
 
-    logger.LOGGING_SEPARATOR = ' - '
+    logger.logger.LOGGING_SEPARATOR = " - "
 
     logger.start_logger()
 
@@ -124,8 +124,12 @@ def test_start_logger():
 
     console_level = logger.get_level_code(qc.config.logger.console_level)
     file_level = logger.get_level_code(qc.config.logger.file_level)
-    assert logger.get_console_handler().level == console_level
-    assert logger.get_file_handler().level == file_level
+    console_handler = logger.get_console_handler()
+    assert console_handler is not None
+    assert console_handler.level == console_level
+    file_handler = logger.get_file_handler()
+    assert file_handler is not None
+    assert file_handler.level == file_level
 
     assert logging.getLogger().level == logger.get_level_code('DEBUG')
 

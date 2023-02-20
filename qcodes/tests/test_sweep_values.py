@@ -53,7 +53,7 @@ def test_errors(c0, c1, c2):
 
     # cannot combine SweepValues for different parameters
     with pytest.raises(TypeError):
-        c0[0.1] + c1[0.2]
+        _ = c0[0.1] + c1[0.2]
 
     # improper use of extend
     with pytest.raises(TypeError):

@@ -6,7 +6,7 @@ from qcodes.utils import strip_attrs
 
 
 class A:
-    x = 5
+    x: object = 5
     y = 6
 
 
@@ -20,10 +20,10 @@ class NoDelDict(Dict[Any, Any]):
         raise KeyError('get your hands off me!')
 
 
-def test_normal():
+def test_normal() -> None:
     a = A()
     a.x = 15
-    a.z = 25
+    a.z = 25  # type: ignore[attr-defined]
 
     strip_attrs(a)
 
@@ -32,19 +32,19 @@ def test_normal():
     assert a.y == 6
 
 
-def test_pathological():
+def test_pathological() -> None:
     # just make sure this never errors, since it's meant to be used
     # during deletion
     a = A()
     a.__dict__ = BadKeysDict()
 
-    a.fruit = 'mango'
+    a.fruit = "mango"  # type: ignore[attr-defined]
     with pytest.raises(RuntimeError):
         a.__dict__.keys()
 
     strip_attrs(a)
     # no error, but the attribute is still there
-    assert a.fruit == 'mango'
+    assert a.fruit == "mango"  # type: ignore[attr-defined]
 
     a = A()
     a.__dict__ = NoDelDict()

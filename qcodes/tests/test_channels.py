@@ -1,5 +1,6 @@
 import logging
 from collections.abc import Sequence
+from typing import Generator
 
 import hypothesis.strategies as hst
 import numpy as np
@@ -12,7 +13,7 @@ from qcodes.tests.instrument_mocks import DummyChannel, DummyChannelInstrument
 
 
 @pytest.fixture(scope='function', name='dci')
-def _make_dci():
+def _make_dci() -> Generator[DummyChannelInstrument, None, None]:
 
     dci = DummyChannelInstrument(name='dci')
     try:
@@ -22,7 +23,7 @@ def _make_dci():
 
 
 @pytest.fixture(scope="function", name="dci_with_list")
-def _make_dci_with_list():
+def _make_dci_with_list() -> Generator[Instrument, None, None]:
     for i in range(10):
         pass
 
@@ -41,7 +42,7 @@ def _make_dci_with_list():
 
 
 @pytest.fixture(scope="function", name="empty_instrument")
-def _make_empty_instrument():
+def _make_empty_instrument() -> Generator[Instrument, None, None]:
 
     instr = Instrument(name="dci")
 
@@ -115,23 +116,25 @@ def test_channel_access_is_identical(dci, value, channel):
     # as this is a multi parameter that currently does not support set.
 
 
-def test_invalid_channel_type_raises(empty_instrument):
+def test_invalid_channel_type_raises(empty_instrument: Instrument) -> None:
 
     with pytest.raises(
         ValueError,
         match="ChannelTuple can only hold instances of type InstrumentChannel",
     ):
-        ChannelList(parent=empty_instrument, name="empty", chan_type=int)
+        ChannelList(
+            parent=empty_instrument, name="empty", chan_type=int
+        )  # type: ignore[type-var]
 
 
-def test_invalid_multichan_type_raises(empty_instrument):
+def test_invalid_multichan_type_raises(empty_instrument: Instrument) -> None:
 
     with pytest.raises(ValueError, match="multichan_paramclass must be a"):
         ChannelList(
             parent=empty_instrument,
             name="empty",
             chan_type=DummyChannel,
-            multichan_paramclass=int,
+            multichan_paramclass=int,  # type: ignore[arg-type]
         )
 
 
@@ -148,7 +151,7 @@ def test_wrong_chan_type_raises(empty_instrument):
 def test_append_channel(dci_with_list):
     n_channels_pre = len(dci_with_list.channels)
     n_channels_post = n_channels_pre + 1
-    chan_num = 11
+    chan_num = "11"
     name = f"Chan{chan_num}"
 
     channel = DummyChannel(dci_with_list, name, chan_num)
@@ -402,6 +405,7 @@ def test_remove_tupled_channel(dci_with_list):
         snapshotable=False,
     )
     chan_a = channels.ChanA
+    assert isinstance(chan_a, DummyChannel)
     with pytest.raises(AttributeError):
         channels.remove(chan_a)
 
