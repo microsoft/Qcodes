@@ -53,8 +53,9 @@ class TerminateLoopException(Exception):
     * 10 ** (-3 + min(list(_ENGINEERING_PREFIXES.keys()))),
 )
 @settings(suppress_health_check=[HealthCheck.too_slow])
-def test_rescaled_ticks_and_units(scale, unit,
-                                  param_name, param_label, data_strategy):
+def test_rescaled_ticks_and_units(
+    scale, unit, param_name, param_label, data_strategy
+) -> None:
     if isinstance(data_strategy, np.ndarray):
         # No need to generate data, because it is being passed
         data_array = data_strategy
