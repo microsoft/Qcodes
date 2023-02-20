@@ -7,10 +7,11 @@ import pytest
 from hypothesis import HealthCheck, given, settings
 
 import qcodes as qc
-from qcodes.dataset import load_by_id
+from qcodes.dataset import load_by_id, new_data_set
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.measurements import DataSaver, Measurement
+from qcodes.parameters import Parameter
 
 
 def test_string_via_dataset(experiment):
@@ -90,14 +91,15 @@ def test_string_with_wrong_paramtype(experiment):
             datasaver.add_result((p, "some text"))
 
 
-def test_string_with_wrong_paramtype_via_datasaver(experiment):
+@pytest.mark.usefixtures("experiment")
+def test_string_with_wrong_paramtype_via_datasaver() -> None:
     """
     Test that it is not possible to add a string value for a non-text
     parameter via DataSaver object
     """
     p = ParamSpecBase("p", "numeric")
 
-    test_set = qc.new_data_set("test-dataset")
+    test_set = new_data_set("test-dataset")
     idps = InterDependencies_(standalones=(p,))
     test_set.set_interdependencies(idps)
     test_set.mark_started()
@@ -113,10 +115,11 @@ def test_string_with_wrong_paramtype_via_datasaver(experiment):
         with pytest.raises(ValueError, match=msg):
             data_saver.add_result(("p", "some text"))
     finally:
-        data_saver.dataset.conn.close()
+        data_saver.dataset.conn.close()  # type: ignore[attr-defined]
 
 
-def test_string_saved_and_loaded_as_numeric_via_dataset(experiment):
+@pytest.mark.usefixtures("experiment")
+def test_string_saved_and_loaded_as_numeric_via_dataset() -> None:
     """
     Test that it is possible to save a string value of a non-'text' parameter
     via DataSet API, and, importantly, to retrieve it thanks to the
@@ -124,7 +127,7 @@ def test_string_saved_and_loaded_as_numeric_via_dataset(experiment):
     """
     p = ParamSpecBase("p", "numeric")
 
-    test_set = qc.new_data_set("test-dataset")
+    test_set = new_data_set("test-dataset")
     idps = InterDependencies_(standalones=(p,))
     test_set.set_interdependencies(idps)
     test_set.mark_started()
@@ -139,15 +142,21 @@ def test_string_saved_and_loaded_as_numeric_via_dataset(experiment):
         test_set.conn.close()
 
 
-def test_list_of_strings(experiment):
+def test_list_of_strings(experiment) -> None:
     """
     Test saving list of strings via DataSaver
     """
     p_values = ["X_Y", "X_X", "X_I", "I_I"]
     list_of_strings = list(np.random.choice(p_values, (10,)))
 
-    p = qc.Parameter('p', label='String parameter', unit='', get_cmd=None,
-                     set_cmd=None, initial_value='X_Y')
+    p = Parameter(
+        "p",
+        label="String parameter",
+        unit="",
+        get_cmd=None,
+        set_cmd=None,
+        initial_value="X_Y",
+    )
 
     meas = Measurement(experiment)
     meas.register_parameter(p, paramtype='text')
@@ -162,7 +171,7 @@ def test_list_of_strings(experiment):
     try:
         np.testing.assert_array_equal(actual_data, expec_data)
     finally:
-        test_set.conn.close()
+        test_set.conn.close()  # type: ignore[attr-defined]
 
 
 @settings(suppress_health_check=(HealthCheck.function_scoped_fixture,),
