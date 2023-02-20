@@ -108,23 +108,23 @@ def test_add_component_without_specifying_name():
     assert bob == station.components['bob']
 
 
-def test_add_component_with_no_name():
+def test_add_component_with_no_name() -> None:
     """
     Test that station comes up with a name for components without 'name'
     attribute
     """
     bob = {'name', 'bob'}
     station = Station()
-    station.add_component(bob)
+    station.add_component(bob)  # type: ignore[arg-type]
 
-    assert ['component0'] == list(station.components.keys())
-    assert bob == station.components['component0']
+    assert ["component0"] == list(station.components.keys())
+    assert bob == station.components["component0"]  # type: ignore[comparison-overlap]
 
-    jay = {'name', 'jay'}
-    station.add_component(jay)
+    jay = {"name", "jay"}
+    station.add_component(jay)  # type: ignore[arg-type]
 
-    assert ['component0', 'component1'] == list(station.components.keys())
-    assert jay == station.components['component1']
+    assert ["component0", "component1"] == list(station.components.keys())
+    assert jay == station.components["component1"]  # type: ignore[comparison-overlap]
 
 
 def test_remove_component():
@@ -879,10 +879,10 @@ def test_load_all_instruments_only_names(example_station):
         assert not Instrument.exist(instrument)
 
 
-def test_load_all_instruments_without_config_raises():
+def test_load_all_instruments_without_config_raises() -> None:
     station = Station()
     with pytest.raises(ValueError, match="Station has no config"):
-        station.load_all_instruments()
+        station.load_all_instruments()  # type: ignore[call-overload]
 
 
 def test_station_config_created_with_multiple_config_files():
