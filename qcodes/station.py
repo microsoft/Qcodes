@@ -337,7 +337,10 @@ class Station(Metadatable, DelegateAttributes):
         if isinstance(toplevel_component, InstrumentBase):
             component = toplevel_component.get_component(remaining_name)
         else:
-            raise KeyError(f"Component {full_name} is not part of the station")
+            raise KeyError(
+                f"Found component {toplevel_component} but this has no "
+                f"sub-component {remaining_name}."
+            )
 
         return component
 
