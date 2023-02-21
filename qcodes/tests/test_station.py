@@ -949,6 +949,7 @@ def test_get_wrong_component_by_name_raises() -> None:
     ):
         _ = station.get_component("param_foo")
 
+
 def test_component_by_name_with_underscore_in_name() -> None:
     instr = DummyChannelInstrument(name="dum_my")
     station = Station(instr)
