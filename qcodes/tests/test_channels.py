@@ -660,6 +660,11 @@ def test_channel_tuple_call_method_called_as_expected(dci, mocker):
         channel.turn_on.assert_called_with("bar")
 
 
+def test_channel_tuple_names(dci: DummyChannelInstrument) -> None:
+    assert dci.channels.short_name == "TempSensors"
+    assert dci.channels.full_name == "dci_TempSensors"
+
+
 def _verify_multiparam_data(data):
     assert 'multi_setpoint_param_this_setpoint_set' in data.arrays.keys()
     assert_array_equal(
