@@ -292,20 +292,20 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
                 f"Found component {component.full_name} but could not match "
                 f"{'_'.join(remaining_name_parts)} part."
             )
-        else:
-            if len(remaining_name_parts) == 0:
-                raise KeyError(
-                    f"Found component {self.full_name} but could not "
-                    f"match {potential_top_level_name} part."
-                )
 
-            new_potential_top_level_name = (
-                f"{potential_top_level_name}_{remaining_name_parts.pop()}"
+        if len(remaining_name_parts) == 0:
+            raise KeyError(
+                f"Found component {self.full_name} but could not "
+                f"match {potential_top_level_name} part."
             )
-            remaining_name_parts.reverse()
-            component = self._get_component_by_name(
-                new_potential_top_level_name, remaining_name_parts
-            )
+
+        new_potential_top_level_name = (
+            f"{potential_top_level_name}_{remaining_name_parts.pop()}"
+        )
+        remaining_name_parts.reverse()
+        component = self._get_component_by_name(
+            new_potential_top_level_name, remaining_name_parts
+        )
 
         return component
 
