@@ -286,26 +286,26 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
         if component is not None:
             if len(remaining_name_parts) == 0:
                 return component
-            else:
-                remaining_name_parts.reverse()
-                raise KeyError(
+
+            remaining_name_parts.reverse()
+            raise KeyError(
                     f"Found component {component.full_name} but could not match "
                     f"{'_'.join(remaining_name_parts)} part."
-                )
+            )
         else:
             if len(remaining_name_parts) == 0:
                 raise KeyError(
                     f"Found component {self.full_name} but could not "
                     f"match {potential_top_level_name} part."
                 )
-            else:
-                new_potential_top_level_name = (
-                    f"{potential_top_level_name}_{remaining_name_parts.pop()}"
-                )
-                remaining_name_parts.reverse()
-                component = self._get_component_by_name(
-                    new_potential_top_level_name, remaining_name_parts
-                )
+
+            new_potential_top_level_name = (
+                f"{potential_top_level_name}_{remaining_name_parts.pop()}"
+            )
+            remaining_name_parts.reverse()
+            component = self._get_component_by_name(
+                new_potential_top_level_name, remaining_name_parts
+            )
 
         return component
 
