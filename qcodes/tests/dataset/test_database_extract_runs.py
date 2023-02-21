@@ -731,6 +731,7 @@ def test_old_versions_not_touched(two_empty_temp_db_connections,
                              'Run this function again with '
                              'upgrade_source_db=True to auto-upgrade '
                              'the source DB file.')
+            assert isinstance(warning[0].message, Warning)
             assert warning[0].message.args[0] == expected_mssg
 
     # Then test that we cannot use an old version as target
@@ -754,6 +755,7 @@ def test_old_versions_not_touched(two_empty_temp_db_connections,
                              'Run this function again with '
                              'upgrade_target_db=True to auto-upgrade '
                              'the target DB file.')
+            assert isinstance(warning[0].message, Warning)
             assert warning[0].message.args[0] == expected_mssg
 
 

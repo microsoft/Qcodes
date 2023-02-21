@@ -214,7 +214,7 @@ def test_export_csv(tmp_path_factory, mock_dataset, caplog):
         assert f.readlines() == ['0.0\t1.0\t2.0\n']
 
 
-def test_export_netcdf(tmp_path_factory, mock_dataset, caplog):
+def test_export_netcdf(tmp_path_factory, mock_dataset, caplog) -> None:
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
     path = str(tmp_path)
     with caplog.at_level(logging.INFO):
@@ -232,9 +232,9 @@ def test_export_netcdf(tmp_path_factory, mock_dataset, caplog):
     ds = xr.open_dataset(file_path)
     df = ds.to_dataframe()
     assert df.index.name == "x"
-    assert df.index.values.tolist() == [0.]
-    assert df.y.values.tolist() == [1.0]
-    assert df.z.values.tolist() == [2.0]
+    assert df.index.values.tolist() == [0.0]
+    assert df.y.values.tolist() == [1.0]  # type: ignore[union-attr]
+    assert df.z.values.tolist() == [2.0]  # type: ignore[union-attr]
     expected_attrs = mock_dataset.metadata.copy()
     expected_attrs.pop("export_info")
     for attr, val in expected_attrs.items():
@@ -299,7 +299,7 @@ def test_export_netcdf_csv(tmp_path_factory, mock_dataset):
     assert loaded_new_xr_ds.attrs["metadata_added_after_export_2"] == 696
 
 
-def test_export_netcdf_complex_data(tmp_path_factory, mock_dataset_complex):
+def test_export_netcdf_complex_data(tmp_path_factory, mock_dataset_complex) -> None:
 
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
     path = str(tmp_path)
@@ -314,7 +314,7 @@ def test_export_netcdf_complex_data(tmp_path_factory, mock_dataset_complex):
     df = ds.to_dataframe()
     assert df.index.name == "x"
     assert df.index.values.tolist() == [0.0]
-    assert df.y.values.tolist() == [1.0 + 1j]
+    assert df.y.values.tolist() == [1.0 + 1j]  # type: ignore[union-attr]
 
 
 def test_export_no_or_nonexistent_type_specified(tmp_path_factory, mock_dataset):

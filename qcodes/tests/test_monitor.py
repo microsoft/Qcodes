@@ -1,8 +1,11 @@
 """
 Test suite for monitor
 """
+from __future__ import annotations
+
 import json
 import random
+from typing import Tuple, cast
 
 import pytest
 import websockets
@@ -22,7 +25,9 @@ def _make_inst_and_monitor():
                       get_cmd=None,
                       set_cmd=None)
     param(1)
-    monitor_parameters = tuple(instr.parameters.values())[1:]
+    monitor_parameters = cast(
+        Tuple[Parameter, ...], tuple(instr.parameters.values())[1:]
+    )
     my_monitor = monitor.Monitor(*monitor_parameters, param, interval=0.1)
     try:
         yield instr, my_monitor, monitor_parameters, param
@@ -101,21 +106,25 @@ def test_double_join(request):
 
 @pytest.mark.usefixtures("inst_and_monitor")
 @pytest.mark.asyncio
-async def test_connection():
+async def test_connection() -> None:
     """
     Test that we can connect to a monitor instance
     """
-    async with websockets.connect(f"ws://localhost:{monitor.WEBSOCKET_PORT}"):
+    # websockets.connect is exposed via some lazy global magic
+    # that pyright/mypy cannot figure out
+    async with websockets.connect(  # type: ignore[attr-defined]
+        f"ws://localhost:{monitor.WEBSOCKET_PORT}"
+    ):
         pass
 
 
 @pytest.mark.asyncio
-async def test_instrument_update(inst_and_monitor):
+async def test_instrument_update(inst_and_monitor) -> None:
     """
     Test instrument updates
     """
     instr, my_monitor, monitor_parameters, param = inst_and_monitor
-    async with websockets.connect(
+    async with websockets.connect(  # type: ignore[attr-defined]
         f"ws://localhost:{monitor.WEBSOCKET_PORT}"
     ) as websocket:
 
@@ -158,9 +167,9 @@ async def test_instrument_update(inst_and_monitor):
 
 
 @pytest.mark.asyncio
-async def test_monitor_root_instr(channel_instr_monitor):
+async def test_monitor_root_instr(channel_instr_monitor) -> None:
     _, use_root_instrument = channel_instr_monitor
-    async with websockets.connect(
+    async with websockets.connect(  # type: ignore[attr-defined]
         f"ws://localhost:{monitor.WEBSOCKET_PORT}"
     ) as websocket:
 

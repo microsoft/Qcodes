@@ -3,7 +3,7 @@ import re
 import numpy as np
 import pytest
 
-import qcodes as qc
+from qcodes.dataset import new_data_set
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.measurements import DataSaver
@@ -47,14 +47,13 @@ def test_default_callback(bg_writing):
             'run_tables_subscription_min_wait': 1,
             'run_tables_subscription_min_count': 2}
 
-        test_set = qc.new_data_set("test-dataset")
-        test_set.add_metadata('snapshot', 'reasonable_snapshot')
-        DataSaver(dataset=test_set,
-                  write_period=0,
-                  interdeps=InterDependencies_)
+        test_set = new_data_set("test-dataset")
+        test_set.add_metadata("snapshot", "reasonable_snapshot")
+        DataSaver(dataset=test_set, write_period=0, interdeps=InterDependencies_())
         test_set.mark_started(start_bg_writer=bg_writing)
         test_set.mark_completed()
         assert CALLBACK_SNAPSHOT == 'reasonable_snapshot'
+        assert CALLBACK_RUN_ID is not None
         assert CALLBACK_RUN_ID > 0
         assert CALLBACK_COUNT > 0
     finally:
@@ -71,7 +70,7 @@ def test_numpy_types(bg_writing):
     """
 
     p = ParamSpecBase(name="p", paramtype="numeric")
-    test_set = qc.new_data_set("test-dataset")
+    test_set = new_data_set("test-dataset")
     test_set.prepare(
         snapshot={},
         interdeps=InterDependencies_(standalones=(p,)),
@@ -102,13 +101,13 @@ def test_numpy_types(bg_writing):
                          [int, float, np.int8, np.int16, np.int32, np.int64,
                           np.float16, np.float32, np.float64])
 @pytest.mark.parametrize("bg_writing", [True, False])
-def test_saving_numeric_values_as_text(numeric_type, bg_writing):
+def test_saving_numeric_values_as_text(numeric_type, bg_writing) -> None:
     """
     Test the saving numeric values into 'text' parameter raises an exception
     """
     p = ParamSpecBase("p", "text")
 
-    test_set = qc.new_data_set("test-dataset")
+    test_set = new_data_set("test-dataset")
     test_set.set_interdependencies(InterDependencies_(standalones=(p,)))
     test_set.mark_started(start_bg_writer=bg_writing)
 
@@ -129,17 +128,17 @@ def test_saving_numeric_values_as_text(numeric_type, bg_writing):
             data_saver.add_result((p.name, value))
     finally:
         data_saver.dataset.mark_completed()
-        data_saver.dataset.conn.close()
+        data_saver.dataset.conn.close()  # type: ignore[attr-defined]
 
 
 @pytest.mark.usefixtures("experiment")
-def test_duplicated_parameter_raises():
+def test_duplicated_parameter_raises() -> None:
     """
     Test that passing same parameter multiple times to ``add_result`` raises an exception
     """
     p = ParamSpecBase("p", "text")
 
-    test_set = qc.new_data_set("test-dataset")
+    test_set = new_data_set("test-dataset")
     test_set.set_interdependencies(InterDependencies_(standalones=(p,)))
     test_set.mark_started()
 
@@ -155,4 +154,4 @@ def test_duplicated_parameter_raises():
             data_saver.add_result((p.name, 1), (p.name, 1))
     finally:
         data_saver.dataset.mark_completed()
-        data_saver.dataset.conn.close()
+        data_saver.dataset.conn.close()  # type: ignore[attr-defined]

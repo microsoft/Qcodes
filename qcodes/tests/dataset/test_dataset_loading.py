@@ -86,7 +86,8 @@ def test_load_by_counter():
 
     assert loaded_ds.pristine is True
     assert loaded_ds.running is False
-    assert loaded_ds.started is False
+    assert loaded_ds.run_timestamp() is None
+    assert loaded_ds.completed_timestamp() is None
     assert loaded_ds.completed is False
 
     ds.mark_started()
@@ -95,7 +96,8 @@ def test_load_by_counter():
     loaded_ds = load_by_counter(exp.exp_id, 1)
 
     assert loaded_ds.pristine is False
-    assert loaded_ds.started is True
+    assert loaded_ds.run_timestamp() is not None
+    assert loaded_ds.completed_timestamp() is not None
     assert loaded_ds.running is False
     assert loaded_ds.completed is True
 
@@ -173,6 +175,7 @@ def test_run_timestamp():
     t_after_data_set = time.time()
 
     actual_run_timestamp_raw = ds.run_timestamp_raw
+    assert actual_run_timestamp_raw is not None
 
     assert t_before_data_set <= actual_run_timestamp_raw <= t_after_data_set
 
@@ -186,17 +189,18 @@ def test_run_timestamp_with_default_format():
     ds.mark_started()
     t_after_data_set = time.time()
 
+    run_ts = ds.run_timestamp()
+    assert run_ts is not None
     # Note that here we also test the default format of `run_timestamp`
-    actual_run_timestamp_raw = time.mktime(
-        time.strptime(ds.run_timestamp(), "%Y-%m-%d %H:%M:%S"))
+    actual_run_timestamp_raw = time.mktime(time.strptime(run_ts, "%Y-%m-%d %H:%M:%S"))
 
     # Note that because the default format precision is 1 second, we add this
     # second to the right side of the comparison
     t_before_data_set_secs = floor(t_before_data_set)
     t_after_data_set_secs = floor(t_after_data_set)
-    assert t_before_data_set_secs \
-           <= actual_run_timestamp_raw \
-           <= t_after_data_set_secs + 1
+    assert (
+        t_before_data_set_secs <= actual_run_timestamp_raw <= t_after_data_set_secs + 1
+    )
 
 
 @pytest.mark.usefixtures("empty_temp_db")
@@ -210,10 +214,9 @@ def test_completed_timestamp():
     t_after_complete = time.time()
 
     actual_completed_timestamp_raw = ds.completed_timestamp_raw
+    assert actual_completed_timestamp_raw is not None
 
-    assert t_before_complete \
-           <= actual_completed_timestamp_raw \
-           <= t_after_complete
+    assert t_before_complete <= actual_completed_timestamp_raw <= t_after_complete
 
 
 @pytest.mark.usefixtures("empty_temp_db")
@@ -241,17 +244,23 @@ def test_completed_timestamp_with_default_format():
     ds.mark_completed()
     t_after_complete = time.time()
 
+    completed_ts = ds.completed_timestamp()
+    assert completed_ts is not None
+
     # Note that here we also test the default format of `completed_timestamp`
     actual_completed_timestamp_raw = time.mktime(
-        time.strptime(ds.completed_timestamp(), "%Y-%m-%d %H:%M:%S"))
+        time.strptime(completed_ts, "%Y-%m-%d %H:%M:%S")
+    )
 
     # Note that because the default format precision is 1 second, we add this
     # second to the right side of the comparison
     t_before_complete_secs = floor(t_before_complete)
     t_after_complete_secs = floor(t_after_complete)
-    assert t_before_complete_secs \
-           <= actual_completed_timestamp_raw \
-           <= t_after_complete_secs + 1
+    assert (
+        t_before_complete_secs
+        <= actual_completed_timestamp_raw
+        <= t_after_complete_secs + 1
+    )
 
 
 @pytest.mark.usefixtures('experiment')

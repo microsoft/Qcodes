@@ -53,8 +53,9 @@ class TerminateLoopException(Exception):
     * 10 ** (-3 + min(list(_ENGINEERING_PREFIXES.keys()))),
 )
 @settings(suppress_health_check=[HealthCheck.too_slow])
-def test_rescaled_ticks_and_units(scale, unit,
-                                  param_name, param_label, data_strategy):
+def test_rescaled_ticks_and_units(
+    scale, unit, param_name, param_label, data_strategy
+) -> None:
     if isinstance(data_strategy, np.ndarray):
         # No need to generate data, because it is being passed
         data_array = data_strategy
@@ -79,11 +80,12 @@ def test_rescaled_ticks_and_units(scale, unit,
         # be larger than the lowest value within the scale of interest)
         assume((scale_lower_bound < np.abs(data_array_not_nans)).any())
 
-    data_dict = {
-        'name': param_name,
-        'label': param_label,
-        'unit': unit,
-        'data': data_array
+    data_dict: DSPlotData = {
+        "name": param_name,
+        "label": param_label,
+        "unit": unit,
+        "data": data_array,
+        "shape": None,
     }
 
     ticks_formatter, label = _make_rescaled_ticks_and_units(data_dict)

@@ -337,7 +337,7 @@ def test_dond_0d_output_data(_param):
     exp = dond(_param)
     data = exp[0]
     assert isinstance(data, DataSetProtocol)
-    assert data.parameters == _param.name
+    assert data.description.interdeps.names == (_param.name,)
     loaded_data = data.get_parameter_data()["simple_parameter"]["simple_parameter"]
     assert loaded_data == np.array([_param.get()])
 
@@ -552,9 +552,11 @@ def test_dond_1d_output_data(_param, _param_complex, _param_set):
     exp_1 = dond(sweep_1, _param, _param_complex)
     data_1 = exp_1[0]
     assert isinstance(data_1, DataSetProtocol)
-    assert data_1.parameters == (
-        f"{_param_set.name},{_param.name}," f"{_param_complex.name}"
-    )
+    assert set(data_1.description.interdeps.names) == {
+        _param_set.name,
+        _param.name,
+        _param_complex.name,
+    }
     loaded_data_1 = data_1.get_parameter_data()
 
     np.testing.assert_array_equal(
@@ -780,9 +782,12 @@ def test_dond_2d_output_data(_param, _param_complex, _param_set, _param_set_2):
     exp_2 = dond(sweep_1, sweep_2, _param, _param_complex)
     data_2 = exp_2[0]
     assert isinstance(data_2, DataSetProtocol)
-    assert data_2.parameters == (
-        f"{_param_set.name},{_param_set_2.name}," f"{_param.name},{_param_complex.name}"
-    )
+    assert set(data_2.description.interdeps.names) == {
+        _param_set.name,
+        _param_set_2.name,
+        _param.name,
+        _param_complex.name,
+    }
     loaded_data_2 = data_2.get_parameter_data()
     expected_data_2 = np.ones(25).reshape(sweep_1._num_points, sweep_2._num_points)
 
@@ -889,15 +894,18 @@ def test_dond_2d_multiple_datasets_plot(
 
     axes = output[1]
 
+    assert isinstance(axes, tuple)
     assert len(axes) == 2
+    assert isinstance(axes[0], tuple)
     assert len(axes[0]) == 1
+    assert isinstance(axes[1], tuple)
     assert len(axes[1]) == 1
     if plot is True or plot is None and plot_config is True:
-        assert isinstance(output[1][0][0], matplotlib.axes.Axes)
-        assert isinstance(output[1][1][0], matplotlib.axes.Axes)
+        assert isinstance(axes[0][0], matplotlib.axes.Axes)
+        assert isinstance(axes[1][0], matplotlib.axes.Axes)
     else:
-        assert output[1][0][0] is None
-        assert output[1][1][0] is None
+        assert axes[0][0] is None
+        assert axes[1][0] is None
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
@@ -923,13 +931,18 @@ def test_dond_2d_multi_datasets_with_callable_output_data(
     data_1 = datasets[0]
     data_2 = datasets[1]
 
-    assert data_1.parameters == (
-        f"{_param_set.name},{_param_set_2.name}," f"{_param.name},{_param_complex.name}"
-    )
-    assert data_2.parameters == (
-        f"{_param_set.name},{_param_set_2.name},"
-        f"{_param_2.name},{_param_complex_2.name}"
-    )
+    assert set(data_1.description.interdeps.names) == {
+        _param_set.name,
+        _param_set_2.name,
+        _param.name,
+        _param_complex.name,
+    }
+    assert set(data_2.description.interdeps.names) == {
+        _param_set.name,
+        _param_set_2.name,
+        _param_2.name,
+        _param_complex_2.name,
+    }
     loaded_data_1 = data_1.get_parameter_data()
     expected_data_1_1 = np.ones(25).reshape(sweep_1._num_points, sweep_2._num_points)
 
@@ -1011,18 +1024,20 @@ def test_dond_together_sweep(_param_set, _param_set_2, _param, _param_2):
     assert _param_2.name == "simple_parameter_2"
     datasets = output[0]
     assert isinstance(datasets, tuple)
-    assert (
-        datasets[0].parameters
-        == "simple_setter_parameter,simple_setter_parameter_2,simple_parameter"
-    )
-    assert (
-        datasets[1].parameters
-        == "simple_setter_parameter,simple_setter_parameter_2,simple_parameter_2"
-    )
+    assert set(datasets[0].description.interdeps.names) == {
+        "simple_setter_parameter",
+        "simple_setter_parameter_2",
+        "simple_parameter",
+    }
+    assert set(datasets[1].description.interdeps.names) == {
+        "simple_setter_parameter",
+        "simple_setter_parameter_2",
+        "simple_parameter_2",
+    }
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-def test_dond_together_sweep_sweeper(_param_set, _param_set_2, _param):
+def test_dond_together_sweep_sweeper(_param_set, _param_set_2, _param) -> None:
 
     sweep_len = 10
 
@@ -1064,7 +1079,7 @@ def test_dond_together_sweep_sweeper(_param_set, _param_set_2, _param):
     )
 
     for output, setpoint_1, setpoint_2 in zip(
-        sweeper, sweep_1.get_setpoints(), sweep_2.get_setpoints()
+        sweeper, sweep_1.get_setpoints(), sweep_2.get_setpoints()  # type: ignore[call-overload]
     ):
         assert output[0].parameter == sweep_1.param
         assert output[0].new_value == setpoint_1
@@ -1102,11 +1117,11 @@ def test_dond_together_sweep_sweeper_combined():
         },
     )
     assert isinstance(datasets, tuple)
-    assert datasets[0].parameters == "a,c,d"
+    assert set(datasets[0].description.interdeps.names) == {"a", "c", "d"}
     assert datasets[0].name == "ds1"
-    assert datasets[1].parameters == "b,c,e"
+    assert set(datasets[1].description.interdeps.names) == {"b", "c", "e"}
     assert datasets[1].name == "ds2"
-    assert datasets[2].parameters == "b,c,f"
+    assert set(datasets[2].description.interdeps.names) == {"b", "c", "f"}
     assert datasets[2].name == "ds3"
 
 
@@ -1134,9 +1149,9 @@ def test_dond_together_sweep_sweeper_combined_2_in_1():
         },
     )
     assert isinstance(datasets, tuple)
-    assert datasets[0].parameters == "a,c,d,f"
+    assert set(datasets[0].description.interdeps.names) == {"a", "c", "d", "f"}
     assert datasets[0].name == "ds1"
-    assert datasets[1].parameters == "b,c,e"
+    assert set(datasets[1].description.interdeps.names) == {"b", "c", "e"}
     assert datasets[1].name == "ds2"
 
 
@@ -1200,11 +1215,11 @@ def test_dond_together_sweep_sweeper_combined_explict_names():
         },
     )
     assert isinstance(datasets, tuple)
-    assert datasets[0].parameters == "a,c,d"
+    assert set(datasets[0].description.interdeps.names) == {"a", "c", "d"}
     assert datasets[0].name == "ds1"
-    assert datasets[1].parameters == "b,c,e"
+    assert set(datasets[1].description.interdeps.names) == {"b", "c", "e"}
     assert datasets[1].name == "ds2"
-    assert datasets[2].parameters == "b,c,f"
+    assert set(datasets[2].description.interdeps.names) == {"b", "c", "f"}
     assert datasets[2].name == "ds3"
 
 
@@ -1300,11 +1315,11 @@ def test_dond_together_sweep_sweeper_combined_lists():
         },
     )
     assert isinstance(datasets, tuple)
-    assert datasets[0].parameters == "a,c,d"
+    assert set(datasets[0].description.interdeps.names) == {"a", "c", "d"}
     assert datasets[0].name == "ds1"
-    assert datasets[1].parameters == "b,c,e"
+    assert set(datasets[1].description.interdeps.names) == {"b", "c", "e"}
     assert datasets[1].name == "ds2"
-    assert datasets[2].parameters == "b,c,f"
+    assert set(datasets[2].description.interdeps.names) == {"b", "c", "f"}
     assert datasets[2].name == "ds3"
 
 
@@ -1352,7 +1367,8 @@ def test_dond_together_sweep_more_parameters():
         f,
         do_plot=False,
     )
-    assert dataset.parameters == "a,b,c,d,e,f"
+    assert isinstance(dataset, DataSetProtocol)
+    assert set(dataset.description.interdeps.names) == {"a", "b", "c", "d", "e", "f"}
 
 
 def test_dond_together_sweep_sweeper_combined_missing_in_dataset_dependencies():
@@ -1464,20 +1480,26 @@ def test_dond_together_sweep_parameter_with_setpoints(dummyinstrument):
         do_plot=False,
     )
     assert isinstance(datasets, tuple)
-    assert (
-        datasets[0].parameters
-        == "a,b,c,dummyinstrument_ChanA_dummy_sp_axis,dummyinstrument_ChanA_dummy_parameter_with_setpoints"
-    )
+    assert set(datasets[0].description.interdeps.names) == {
+        "a",
+        "b",
+        "c",
+        "dummyinstrument_ChanA_dummy_sp_axis",
+        "dummyinstrument_ChanA_dummy_parameter_with_setpoints",
+    }
     assert datasets[0].description.shapes is not None
     assert len(datasets[0].description.shapes) == 1
     assert datasets[0].description.shapes[
         "dummyinstrument_ChanA_dummy_parameter_with_setpoints"
     ] == (outer_shape, inner_shape, n_points_a)
 
-    assert (
-        datasets[1].parameters
-        == "a,b,c,dummyinstrument_ChanB_dummy_sp_axis,dummyinstrument_ChanB_dummy_parameter_with_setpoints"
-    )
+    assert set(datasets[1].description.interdeps.names) == {
+        "a",
+        "b",
+        "c",
+        "dummyinstrument_ChanB_dummy_sp_axis",
+        "dummyinstrument_ChanB_dummy_parameter_with_setpoints",
+    }
     assert datasets[1].description.shapes is not None
     assert len(datasets[1].description.shapes) == 1
     assert datasets[1].description.shapes[
@@ -1514,20 +1536,24 @@ def test_dond_together_sweep_parameter_with_setpoints_explicit_mapping(dummyinst
         do_plot=False,
     )
     assert isinstance(datasets, tuple)
-    assert (
-        datasets[0].parameters
-        == "a,c,dummyinstrument_ChanA_dummy_sp_axis,dummyinstrument_ChanA_dummy_parameter_with_setpoints"
-    )
+    assert set(datasets[0].description.interdeps.names) == {
+        "a",
+        "c",
+        "dummyinstrument_ChanA_dummy_sp_axis",
+        "dummyinstrument_ChanA_dummy_parameter_with_setpoints",
+    }
     assert datasets[0].description.shapes is not None
     assert len(datasets[0].description.shapes) == 1
     assert datasets[0].description.shapes[
         "dummyinstrument_ChanA_dummy_parameter_with_setpoints"
     ] == (outer_shape, inner_shape, n_points_a)
 
-    assert (
-        datasets[1].parameters
-        == "b,c,dummyinstrument_ChanB_dummy_sp_axis,dummyinstrument_ChanB_dummy_parameter_with_setpoints"
-    )
+    assert set(datasets[1].description.interdeps.names) == {
+        "b",
+        "c",
+        "dummyinstrument_ChanB_dummy_sp_axis",
+        "dummyinstrument_ChanB_dummy_parameter_with_setpoints",
+    }
     assert datasets[1].description.shapes is not None
     assert len(datasets[1].description.shapes) == 1
     assert datasets[1].description.shapes[
@@ -1567,20 +1593,24 @@ def test_dond_together_sweep_parameter_with_setpoints_explicit_mapping_and_calla
         do_plot=False,
     )
     assert isinstance(datasets, tuple)
-    assert (
-        datasets[0].parameters
-        == "a,c,dummyinstrument_ChanA_dummy_sp_axis,dummyinstrument_ChanA_dummy_parameter_with_setpoints"
-    )
+    assert set(datasets[0].description.interdeps.names) == {
+        "a",
+        "c",
+        "dummyinstrument_ChanA_dummy_sp_axis",
+        "dummyinstrument_ChanA_dummy_parameter_with_setpoints",
+    }
     assert datasets[0].description.shapes is not None
     assert len(datasets[0].description.shapes) == 1
     assert datasets[0].description.shapes[
         "dummyinstrument_ChanA_dummy_parameter_with_setpoints"
     ] == (outer_shape, inner_shape, n_points_a)
 
-    assert (
-        datasets[1].parameters
-        == "b,c,dummyinstrument_ChanB_dummy_sp_axis,dummyinstrument_ChanB_dummy_parameter_with_setpoints"
-    )
+    assert set(datasets[1].description.interdeps.names) == {
+        "b",
+        "c",
+        "dummyinstrument_ChanB_dummy_sp_axis",
+        "dummyinstrument_ChanB_dummy_parameter_with_setpoints",
+    }
     assert datasets[1].description.shapes is not None
     assert len(datasets[1].description.shapes) == 1
     assert datasets[1].description.shapes[
@@ -1629,7 +1659,7 @@ def test_sweep_int_vs_float():
 
     dataset, _, _ = dond(ArraySweep(int_param, [1, 2, 3]), float_param)
     assert isinstance(dataset, DataSetProtocol)
-    assert dataset.parameters == "int_param,float_param"
+    assert set(dataset.description.interdeps.names) == {"int_param", "float_param"}
     assert dataset.cache.data()["float_param"]["int_param"].dtype.kind == "i"
 
 

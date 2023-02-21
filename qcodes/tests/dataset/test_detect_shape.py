@@ -135,6 +135,8 @@ def test_get_shape_for_param_with_array_validator_from_shape(
     param = ArrayshapedParam(name='paramwitharrayval', vals=Arrays(shape=(10,)))
 
     shapes = detect_shape_of_measurement((param,), loop_shape)
+    assert isinstance(param.vals, Arrays)
+    assert param.vals.shape is not None
     assert shapes == {"paramwitharrayval": tuple(loop_shape) + param.vals.shape}
 
 

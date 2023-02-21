@@ -75,28 +75,32 @@ def test_datasaver_multidimarrayparameter_as_array(
     for datadict_list in datadicts:
         assert len(datadict_list) == 4
         for datadict in datadict_list:
-
-            datadict['data'].shape = (np.prod(expected_shape),)
-            if datadict['name'] == "dummy_SA_Frequency0":
-                temp_data = np.linspace(array_param.start,
-                                        array_param.stop,
-                                        array_param.npts[0])
-                expected_data = np.repeat(temp_data,
-                                          expected_shape[2] * expected_shape[3])
-            if datadict['name'] == "dummy_SA_Frequency1":
-                temp_data = np.linspace(array_param.start,
-                                        array_param.stop,
-                                        array_param.npts[1])
-                expected_data = np.tile(np.repeat(temp_data, expected_shape[3]),
-                                        expected_shape[1])
-            if datadict['name'] == "dummy_SA_Frequency2":
-                temp_data = np.linspace(array_param.start,
-                                        array_param.stop,
-                                        array_param.npts[2])
-                expected_data = np.tile(temp_data,
-                                        expected_shape[1] * expected_shape[2])
-            if datadict['name'] == "dummy_SA_multidimspectrum":
+            datadict["data"].shape = (np.prod(expected_shape),)
+            if datadict["name"] == "dummy_SA_Frequency0":
+                temp_data = np.linspace(
+                    array_param.start, array_param.stop, array_param.npts[0]
+                )
+                expected_data = np.repeat(
+                    temp_data, expected_shape[2] * expected_shape[3]
+                )
+            elif datadict["name"] == "dummy_SA_Frequency1":
+                temp_data = np.linspace(
+                    array_param.start, array_param.stop, array_param.npts[1]
+                )
+                expected_data = np.tile(
+                    np.repeat(temp_data, expected_shape[3]), expected_shape[1]
+                )
+            elif datadict["name"] == "dummy_SA_Frequency2":
+                temp_data = np.linspace(
+                    array_param.start, array_param.stop, array_param.npts[2]
+                )
+                expected_data = np.tile(
+                    temp_data, expected_shape[1] * expected_shape[2]
+                )
+            elif datadict["name"] == "dummy_SA_multidimspectrum":
                 expected_data = inserted_data.ravel()
+            else:
+                raise RuntimeError(f"Unexpected datadict item {datadict['name']}")
             assert_allclose(datadict['data'], expected_data)
 
 
@@ -128,28 +132,32 @@ def test_datasaver_multidimarrayparameter_as_numeric(SpectrumAnalyzer,
     for datadict_list in datadicts:
         assert len(datadict_list) == 4
         for datadict in datadict_list:
-
-            datadict['data'].shape = (np.prod(expected_shape),)
-            if datadict['name'] == "dummy_SA_Frequency0":
-                temp_data = np.linspace(array_param.start,
-                                        array_param.stop,
-                                        array_param.npts[0])
-                expected_data = np.repeat(temp_data,
-                                          expected_shape[1] * expected_shape[2])
-            if datadict['name'] == "dummy_SA_Frequency1":
-                temp_data = np.linspace(array_param.start,
-                                        array_param.stop,
-                                        array_param.npts[1])
-                expected_data = np.tile(np.repeat(temp_data, expected_shape[2]),
-                                        expected_shape[0])
-            if datadict['name'] == "dummy_SA_Frequency2":
-                temp_data = np.linspace(array_param.start,
-                                        array_param.stop,
-                                        array_param.npts[2])
-                expected_data = np.tile(temp_data,
-                                        expected_shape[0] * expected_shape[1])
-            if datadict['name'] == "dummy_SA_multidimspectrum":
+            datadict["data"].shape = (np.prod(expected_shape),)
+            if datadict["name"] == "dummy_SA_Frequency0":
+                temp_data = np.linspace(
+                    array_param.start, array_param.stop, array_param.npts[0]
+                )
+                expected_data = np.repeat(
+                    temp_data, expected_shape[1] * expected_shape[2]
+                )
+            elif datadict["name"] == "dummy_SA_Frequency1":
+                temp_data = np.linspace(
+                    array_param.start, array_param.stop, array_param.npts[1]
+                )
+                expected_data = np.tile(
+                    np.repeat(temp_data, expected_shape[2]), expected_shape[0]
+                )
+            elif datadict["name"] == "dummy_SA_Frequency2":
+                temp_data = np.linspace(
+                    array_param.start, array_param.stop, array_param.npts[2]
+                )
+                expected_data = np.tile(
+                    temp_data, expected_shape[0] * expected_shape[1]
+                )
+            elif datadict["name"] == "dummy_SA_multidimspectrum":
                 expected_data = inserted_data.ravel()
+            else:
+                raise RuntimeError(f"Unexpected datadict item {datadict['name']}")
             assert_allclose(datadict['data'], expected_data)
 
 
@@ -223,11 +231,13 @@ def test_datasaver_array_parameters_array(channel_array_instrument, DAC, N,
     for datadict in datadicts:
         if datadict['name'] == 'dummy_dac_ch1':
             expected_data = np.repeat(dac_datapoints, M).reshape(N, M)
-        if datadict['name'] == dependency_name:
+        elif datadict["name"] == dependency_name:
             expected_data = np.tile(np.linspace(5, 9, 5), (N, 1))
-        if datadict['name'] == 'dummy_channel_inst_ChanA_dummy_array_parameter':
+        elif datadict["name"] == "dummy_channel_inst_ChanA_dummy_array_parameter":
             expected_data = np.empty((N, M))
             expected_data[:] = 2.
+        else:
+            raise RuntimeError(f"Unexpected datadict item {datadict['name']}")
         assert_allclose(datadict['data'], expected_data)
 
         assert datadict["data"].shape == (N, M)

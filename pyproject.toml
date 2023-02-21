@@ -222,7 +222,6 @@ ignore_missing_imports = true
 [tool.pyright]
 include = ["qcodes"]
 ignore = [
-    "qcodes/tests",
     "qcodes/instrument_drivers/Harvard/Decadac.py",
     # deprecated non typed modules
     "qcodes/actions.py",
