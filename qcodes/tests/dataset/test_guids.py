@@ -36,12 +36,17 @@ def _make_seed_random():
     stat=hst.integers(0, 0xFFFF),
     smpl=hst.integers(0, 0xFF_FFF_FFF),
 )
-def test_generate_guid(loc, stat, smpl) -> None:
+def test_generate_legacy_guid(loc, stat, smpl) -> None:
+    """
+    Generate a guid in the legacy format (with an assigned sample name)
+    and verify that it is parsed
+    """
     # update config to generate a particular guid. Read it back to verify
     cfg = qc.config
     cfg["GUID_components"]["location"] = loc
     cfg["GUID_components"]["work_station"] = stat
     cfg["GUID_components"]["sample"] = smpl
+    cfg["GUID_components"]["GUID_type"] = "explicit_sample"
 
     if smpl in (0, 0xAA_AAA_AAA):
         guid = generate_guid()
@@ -63,6 +68,48 @@ def test_generate_guid(loc, stat, smpl) -> None:
     assert comps["work_station"] == stat
     assert comps["sample"] == smpl
     assert comps["time"] - gen_time < 2
+
+
+@pytest.mark.usefixtures("default_config")
+@settings(max_examples=50, deadline=1000)
+@given(
+    loc=hst.integers(0, 0xFF),
+    stat=hst.integers(0, 0xFFFF),
+    smpl=hst.integers(0, 0xFF_FFF_FFF),
+)
+def test_generate_guid(loc, stat, smpl):
+    """
+    Generate a guid and verify that it is parsed or raises
+    if a sample name is given
+    """
+    # update config to generate a particular guid. Read it back to verify
+    cfg = qc.config
+    cfg["GUID_components"]["location"] = loc
+    cfg["GUID_components"]["work_station"] = stat
+    cfg["GUID_components"]["sample"] = smpl
+
+    if smpl in (0, 0xAA_AAA_AAA):
+        guid = generate_guid()
+        gen_time = int(np.round(time.time() * 1000))
+
+        comps = parse_guid(guid)
+
+        if smpl == 0:
+            smpl = 0xAA_AAA_AAA
+
+        assert comps["location"] == loc
+        assert comps["work_station"] == stat
+        # assert comps["sample"] == smpl
+        assert comps["time"] - gen_time < 2
+    else:
+        with pytest.raises(
+            RuntimeError,
+            match=re.escape(
+                "QCoDeS is configured to disregard GUID_components.sample "
+                "from config file but this"
+            ),
+        ):
+            _ = generate_guid()
 
 
 @pytest.mark.usefixtures("default_config")
