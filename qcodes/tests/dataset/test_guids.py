@@ -293,9 +293,23 @@ def test_random_sample_and_sample_int_in_guid_raises() -> None:
 
 
 @pytest.mark.usefixtures("default_config")
-def test_sample_int_in_guid_warns() -> None:
+def test_sample_int_in_guid_warns_with_old_config() -> None:
+    cfg = qc.config
+    cfg["GUID_components"]["GUID_type"] = "explicit_sample"
     with pytest.warns(
         expected_warning=Warning,
         match=re.escape("Setting a non default GUID_components.sample"),
+    ):
+        generate_guid(sampleint=10)
+
+
+@pytest.mark.usefixtures("default_config")
+def test_sample_int_in_guid_raises():
+    with pytest.raises(
+        RuntimeError,
+        match=re.escape(
+            "QCoDeS is configured to disregard GUID_components.sample "
+            "from config file but this"
+        ),
     ):
         generate_guid(sampleint=10)
