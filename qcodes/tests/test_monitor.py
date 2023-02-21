@@ -1,9 +1,11 @@
 """
 Test suite for monitor
 """
+from __future__ import annotations
+
 import json
 import random
-from typing import cast
+from typing import Tuple, cast
 
 import pytest
 import websockets
@@ -24,7 +26,7 @@ def _make_inst_and_monitor():
                       set_cmd=None)
     param(1)
     monitor_parameters = cast(
-        tuple[Parameter, ...], tuple(instr.parameters.values())[1:]
+        Tuple[Parameter, ...], tuple(instr.parameters.values())[1:]
     )
     my_monitor = monitor.Monitor(*monitor_parameters, param, interval=0.1)
     try:
