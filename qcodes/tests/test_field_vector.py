@@ -32,7 +32,7 @@ random_coordinates = {
 
 @given(random_coordinates["spherical"])
 @settings(max_examples=10)
-def test_spherical_properties(spherical0):
+def test_spherical_properties(spherical0) -> None:
     """
     If the cartesian to spherical transform has been correctly implemented
     then we expect certain symmetrical properties
@@ -74,7 +74,7 @@ def test_spherical_properties(spherical0):
 
 @given(random_coordinates["cylindrical"])
 @settings(max_examples=10)
-def test_cylindrical_properties(cylindrical0):
+def test_cylindrical_properties(cylindrical0) -> None:
     """
     If the cartesian to cylindrical transform has been correctly implemented
     then we expect certain symmetrical properties
@@ -96,7 +96,7 @@ def test_cylindrical_properties(cylindrical0):
     random_coordinates["spherical"]
 )
 @settings(max_examples=10)
-def test_triangle_inequality(cylindrical0, spherical0):
+def test_triangle_inequality(cylindrical0, spherical0) -> None:
     cylindrical0 = FieldVector(**dict(zip(["rho", "phi", "z"], cylindrical0)))
     spherical0 = FieldVector(**dict(zip(["r", "phi", "theta"], spherical0)))
 
@@ -108,7 +108,7 @@ def test_triangle_inequality(cylindrical0, spherical0):
 
 @given(random_coordinates["cartesian"])
 @settings(max_examples=10)
-def test_homogeneous_roundtrip(cartesian0):
+def test_homogeneous_roundtrip(cartesian0) -> None:
     vec = FieldVector(**dict(zip("xyz", cartesian0)))
     h_vec = 13 * vec.as_homogeneous()
 
@@ -120,7 +120,7 @@ def test_homogeneous_roundtrip(cartesian0):
 
 @given(random_coordinates["spherical"])
 @settings(max_examples=10)
-def test_json_dump(spherical0):
+def test_json_dump(spherical0) -> None:
     vec = FieldVector(**dict(zip(["r", "phi", "theta"], spherical0)))
     dump = json.dumps(vec, cls=NumpyJSONEncoder)
 
@@ -130,7 +130,7 @@ def test_json_dump(spherical0):
     }
 
 
-def test_all_attributes_are_floats():
+def test_all_attributes_are_floats() -> None:
     cartesian0 = (400, 200, 300)
     cylindrical0 = (1, 52, 0)
     spherical0 = (1, 78, 145)

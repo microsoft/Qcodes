@@ -11,11 +11,11 @@ class TestWeinschel8320(DriverTestCase):
 
     driver = Weinschel8320
 
-    def test_firmware_version(self):
+    def test_firmware_version(self) -> None:
         v = self.instrument.IDN.get()
         self.assertTrue(v.startswith('API Weinschel, 8320,'))
 
-    def test_attenuation(self):
+    def test_attenuation(self) -> None:
         curr_val = self.instrument.attenuation.get()
 
         for v in [0, 32, 60]:

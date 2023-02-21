@@ -113,7 +113,7 @@ def test_rescaled_ticks_and_units(
         assert '2.12346' == ticks_formatter(2.123456789 / (10 ** (-scale)))
 
 
-def test_plot_by_id_line_and_heatmap(experiment, request):
+def test_plot_by_id_line_and_heatmap(experiment, request) -> None:
     """
     Test that line plots and heatmaps can be plotted together
     """
@@ -144,7 +144,7 @@ def test_plot_by_id_line_and_heatmap(experiment, request):
 
 @pytest.mark.parametrize("nan_setpoints", [True, False])
 @pytest.mark.parametrize("shifted", [True, False])
-def test_plot_dataset_2d_shaped(experiment, request, nan_setpoints, shifted):
+def test_plot_dataset_2d_shaped(experiment, request, nan_setpoints, shifted) -> None:
     """
     Test plotting of preshaped data on a grid that may or may not be shifted
     with and without nans in the set points.
@@ -217,7 +217,7 @@ def test_plot_dataset_2d_shaped(experiment, request, nan_setpoints, shifted):
         assert ylims[1] < 11
 
 
-def test_appropriate_kwargs():
+def test_appropriate_kwargs() -> None:
 
     kwargs = {'cmap': 'bone'}
     check = kwargs.copy()

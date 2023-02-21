@@ -120,7 +120,7 @@ def _make_broken_subscriber_config(tmp_path, default_config):
 
 @pytest.mark.flaky(reruns=5)
 @pytest.mark.serial
-def test_basic_subscription(dataset, basic_subscriber):
+def test_basic_subscription(dataset, basic_subscriber) -> None:
     xparam = ParamSpecBase(name='x',
                            paramtype='numeric',
                            label='x parameter',
@@ -166,7 +166,7 @@ def test_basic_subscription(dataset, basic_subscriber):
 
 
 @pytest.mark.usefixtures("working_subscriber_config")
-def test_subscription_from_config(dataset, basic_subscriber):
+def test_subscription_from_config(dataset, basic_subscriber) -> None:
     """
     This test is similar to `test_basic_subscription`, with the only
     difference that another subscriber from a config file is added.
@@ -204,7 +204,7 @@ def test_subscription_from_config(dataset, basic_subscriber):
 
 
 @pytest.mark.usefixtures("broken_subscriber_config")
-def test_subscription_from_config_wrong_name(dataset):
+def test_subscription_from_config_wrong_name(dataset) -> None:
     """
     This test checks that an exception is thrown if a wrong name for a
     subscriber is passed

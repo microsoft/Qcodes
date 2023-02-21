@@ -4,7 +4,7 @@ import pytest
 from qcodes.parameters.sweep_values import make_sweep
 
 
-def test_good_calls():
+def test_good_calls() -> None:
     swp = make_sweep(1, 3, num=6)
     assert swp == [1, 1.4, 1.8, 2.2, 2.6, 3]
 
@@ -22,7 +22,7 @@ def test_good_calls():
             assert swp[-1] == 1 + r
 
 
-def test_bad_calls():
+def test_bad_calls() -> None:
     with pytest.raises(AttributeError):
         make_sweep(1, 3, num=3, step=1)
 

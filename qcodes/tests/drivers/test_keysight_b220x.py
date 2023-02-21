@@ -28,17 +28,17 @@ def uut():
     instance.close()
 
 
-def test_idn_command(uut):
+def test_idn_command(uut) -> None:
     assert "AGILENT" in uut.IDN()['vendor']
     assert 0 == uut.get_status()
 
 
-def test_connect(uut):
+def test_connect(uut) -> None:
     uut.connect(2, 48)
     assert 0 == uut.get_status()
 
 
-def test_connect_throws_at_invalid_channel_number(uut):
+def test_connect_throws_at_invalid_channel_number(uut) -> None:
     with pytest.raises(ValueError):
         uut.connect(2, 49)
     with pytest.raises(ValueError):
@@ -49,7 +49,7 @@ def test_connect_throws_at_invalid_channel_number(uut):
         uut.connect(15, 10)
 
 
-def test_connect_emits_warning_on_statusbyte_not_null(uut):
+def test_connect_emits_warning_on_statusbyte_not_null(uut) -> None:
     # some tricks are used to trigger an instrument error both in the
     # simulation as well as in the real instrument:
     # 1. with gnd mode enabled, it is illegal to connect to input channel 12,
@@ -69,7 +69,7 @@ def test_connect_emits_warning_on_statusbyte_not_null(uut):
         uut.gnd_mode(False)
 
 
-def test_disconnect_throws_at_invalid_channel_number(uut):
+def test_disconnect_throws_at_invalid_channel_number(uut) -> None:
     with pytest.raises(ValueError):
         uut.disconnect(2, 49)
     with pytest.raises(ValueError):
@@ -80,35 +80,35 @@ def test_disconnect_throws_at_invalid_channel_number(uut):
         uut.disconnect(15, 10)
 
 
-def test_connections(uut):
+def test_connections(uut) -> None:
     uut.connect(2, 48)
     uut.connect(10, 12)
     assert {(2, 48), (10, 12)} == uut.connections()
 
 
-def test_to_channel_list(uut):
+def test_to_channel_list(uut) -> None:
     assert '(@00345,01109)' == uut.to_channel_list([(3, 45), (11, 9)])
 
 
-def test_connect_paths(uut):
+def test_connect_paths(uut) -> None:
     uut.disconnect_all()
     uut.connect_paths([(3, 45), (11, 9)])
     assert 0 == uut.get_status()
 
 
-def test_disconnect_paths(uut):
+def test_disconnect_paths(uut) -> None:
     uut.connect_paths([(3, 45), (11, 9)])
     uut.disconnect_paths([(3, 45), (11, 9)])
     assert 0 == uut.get_status()
 
 
-def test_disconnect_all(uut):
+def test_disconnect_all(uut) -> None:
     uut.connect(2, 48)
     uut.disconnect_all()
     assert 0 == uut.get_status()
 
 
-def test_disconnect(uut):
+def test_disconnect(uut) -> None:
     uut.connect(2, 48)
     assert 0 == uut.get_status()
     uut.disconnect(2, 48)
@@ -118,14 +118,14 @@ def test_disconnect(uut):
 
 
 @pytest.mark.filterwarnings("ignore:When going")
-def test_connection_rule(uut):
+def test_connection_rule(uut) -> None:
     uut.connection_rule('single')
     assert 0 == uut.get_status()
     assert 'single' == uut.connection_rule()
     assert 0 == uut.get_status()
 
 
-def test_connection_rule_emits_warning_when_going_from_free_to_single(uut):
+def test_connection_rule_emits_warning_when_going_from_free_to_single(uut) -> None:
     uut.connection_rule(
         'free')  # uut should already be in free mode after reset
 
@@ -133,7 +133,7 @@ def test_connection_rule_emits_warning_when_going_from_free_to_single(uut):
         uut.connection_rule('single')
 
 
-def test_connection_sequence(uut):
+def test_connection_sequence(uut) -> None:
     assert 'bbm' == uut.connection_sequence()
     assert 0 == uut.get_status()
     uut.connection_sequence('mbb')
@@ -141,74 +141,74 @@ def test_connection_sequence(uut):
     assert 'mbb' == uut.connection_sequence()
 
 
-def test_bias_disable_all_outputs(uut):
+def test_bias_disable_all_outputs(uut) -> None:
     uut.bias_disable_all_outputs()
     assert 0 == uut.get_status()
 
 
-def test_bias_disable_ouput(uut):
+def test_bias_disable_ouput(uut) -> None:
     uut.bias_disable_output(1)
     assert 0 == uut.get_status()
 
 
-def test_bias_enable_all_outputs(uut):
+def test_bias_enable_all_outputs(uut) -> None:
     uut.bias_enable_all_outputs()
     assert 0 == uut.get_status()
 
 
-def test_bias_enable_output(uut):
+def test_bias_enable_output(uut) -> None:
     uut.bias_enable_output(1)
     assert 0 == uut.get_status()
 
 
-def test_bias_input_port(uut):
+def test_bias_input_port(uut) -> None:
     assert 10 == uut.bias_input_port()
     uut.bias_input_port(9)
     assert 9 == uut.bias_input_port()
     assert 0 == uut.get_status()
 
 
-def test_bias_mode(uut):
+def test_bias_mode(uut) -> None:
     uut.bias_mode(True)
     assert uut.bias_mode()
     assert 0 == uut.get_status()
 
 
-def test_gnd_disable_all_outputs(uut):
+def test_gnd_disable_all_outputs(uut) -> None:
     uut.gnd_disable_all_outputs()
     assert 0 == uut.get_status()
 
 
-def test_gnd_disable_output(uut):
+def test_gnd_disable_output(uut) -> None:
     uut.gnd_disable_output(1)
     assert 0 == uut.get_status()
 
 
-def test_gnd_enable_all_outputs(uut):
+def test_gnd_enable_all_outputs(uut) -> None:
     uut.gnd_enable_all_outputs()
     assert 0 == uut.get_status()
 
 
-def test_gnd_enable_output(uut):
+def test_gnd_enable_output(uut) -> None:
     uut.gnd_enable_output(1)
     assert 0 == uut.get_status()
 
 
-def test_gnd_input_port(uut):
+def test_gnd_input_port(uut) -> None:
     assert 12 == uut.gnd_input_port()
     uut.gnd_input_port(5)
     assert 5 == uut.gnd_input_port()
     assert 0 == uut.get_status()
 
 
-def test_gnd_mode(uut):
+def test_gnd_mode(uut) -> None:
     assert not uut.gnd_mode()
     uut.gnd_mode(True)
     assert uut.gnd_mode()
     assert 0 == uut.get_status()
 
 
-def test_unused_inputs(uut):
+def test_unused_inputs(uut) -> None:
     uut.unused_inputs()
     assert 0 == uut.get_status()
 
@@ -221,14 +221,14 @@ def test_unused_inputs(uut):
     assert [5, 6, 7, 8] == uut.unused_inputs()
 
 
-def test_couple_mode(uut):
+def test_couple_mode(uut) -> None:
     assert not uut.couple_mode()
     uut.couple_mode(True)
     assert uut.couple_mode()
     assert 0 == uut.get_status()
 
 
-def test_couple_ports(uut):
+def test_couple_ports(uut) -> None:
     assert not uut.couple_ports()
     assert 0 == uut.get_status()
 
@@ -246,25 +246,25 @@ def test_couple_ports(uut):
         uut.couple_ports([2, 3])
 
 
-def test_couple_port_autodetect(uut):
+def test_couple_port_autodetect(uut) -> None:
     uut.couple_port_autodetect()
     assert 0 == uut.get_status()
 
 
-def test_get_error(uut):
+def test_get_error(uut) -> None:
     uut.get_error()
     assert 0 == uut.get_status()
 
 
 class TestParseChannelList:
     @staticmethod
-    def test_parse_channel_list():
+    def test_parse_channel_list() -> None:
         channel_list = '(@10101,10202)'
         assert {(1, 1), (2, 2)} == KeysightB220X.parse_channel_list(
             channel_list)
 
     @staticmethod
-    def test_all_combinations_zero_padded():
+    def test_all_combinations_zero_padded() -> None:
         import itertools
         cards = range(5)
         inputs = range(1, 15)
@@ -278,7 +278,7 @@ class TestParseChannelList:
                 padded)
 
     @staticmethod
-    def test_all_combinations_unpadded():
+    def test_all_combinations_unpadded() -> None:
         import itertools
         cards = range(5)
         inputs = range(1, 15)

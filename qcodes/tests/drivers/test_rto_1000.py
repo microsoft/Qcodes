@@ -16,14 +16,14 @@ def driver():
     rto_sim.close()
 
 
-def test_init(driver):
+def test_init(driver) -> None:
 
     idn_dict = driver.IDN()
 
     assert idn_dict['vendor'] == 'QCoDeS'
 
 
-def test_trigger_source_level(driver):
+def test_trigger_source_level(driver) -> None:
     assert driver.trigger_source() == 'CH1'
     assert driver.trigger_level() == 0
     driver.trigger_level(1.0)

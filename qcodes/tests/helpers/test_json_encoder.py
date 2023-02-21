@@ -17,7 +17,7 @@ from qcodes.utils import NumpyJSONEncoder
 from qcodes.utils.types import numpy_complex, numpy_floats, numpy_ints
 
 
-def test_python_types():
+def test_python_types() -> None:
     e = NumpyJSONEncoder()
 
     # test basic python types
@@ -37,7 +37,7 @@ def test_python_types():
             assert v == r
 
 
-def test_complex_types():
+def test_complex_types() -> None:
     e = NumpyJSONEncoder()
     assert e.encode(complex(1, 2)) == \
            '{"__dtype__": "complex", "re": 1.0, "im": 2.0}'
@@ -46,27 +46,27 @@ def test_complex_types():
                '{"__dtype__": "complex", "re": 1.0, "im": 2.0}'
 
 
-def test_UFloat_type():
+def test_UFloat_type() -> None:
     e = NumpyJSONEncoder()
     assert e.encode(uncertainties.ufloat(1.0, 2.0)) == \
            '{"__dtype__": "UFloat", "nominal_value": 1.0, "std_dev": 2.0}'
 
 
-def test_numpy_int_types():
+def test_numpy_int_types() -> None:
     e = NumpyJSONEncoder()
 
     for int_type in numpy_ints:
         assert e.encode(int_type(3)) == '3'
 
 
-def test_numpy_float_types():
+def test_numpy_float_types() -> None:
     e = NumpyJSONEncoder()
 
     for float_type in numpy_floats:
         assert e.encode(float_type(2.5)) == '2.5'
 
 
-def test_numpy_bool_type():
+def test_numpy_bool_type() -> None:
     e = NumpyJSONEncoder()
 
     assert e.encode(np.bool_(True)) == 'true'
@@ -74,7 +74,7 @@ def test_numpy_bool_type():
     assert e.encode(np.array([8, 5]) == 5) == '[false, true]'
 
 
-def test_numpy_array():
+def test_numpy_array() -> None:
     e = NumpyJSONEncoder()
 
     assert e.encode(np.array([1, 0, 0])) == \
@@ -87,7 +87,7 @@ def test_numpy_array():
            '[[[1, 2], [1, 2]], [[3, 3], [4, 4]]]'
 
 
-def test_non_serializable():
+def test_non_serializable() -> None:
     """
     Test that non-serializable objects are serialzed to their
     string representation
@@ -102,7 +102,7 @@ def test_non_serializable():
            '"i am a dummy with \\\\ slashes /"'
 
 
-def test_object_with_serialization_method():
+def test_object_with_serialization_method() -> None:
     """
     Test that objects with `_JSONEncoder` method are serialized via
     calling that method
@@ -143,7 +143,7 @@ EXAMPLEMETADATA = {
 }
 
 
-def test_standard_encoder_fails_examplemetadata():
+def test_standard_encoder_fails_examplemetadata() -> None:
     with pytest.raises(TypeError):
         json.dumps(
             EXAMPLEMETADATA,
@@ -152,7 +152,7 @@ def test_standard_encoder_fails_examplemetadata():
             ensure_ascii=False)
 
 
-def test_numpy_encoder_examplemetadata():
+def test_numpy_encoder_examplemetadata() -> None:
     data = json.dumps(EXAMPLEMETADATA, sort_keys=True, indent=4,
                       ensure_ascii=False, cls=NumpyJSONEncoder)
     data_dict = json.loads(data)
@@ -173,7 +173,7 @@ def test_numpy_encoder_examplemetadata():
 
 
 @given(bytes_to_encode=hst.binary(max_size=100))
-def test_bytes(bytes_to_encode):
+def test_bytes(bytes_to_encode) -> None:
     e = NumpyJSONEncoder()
     v = e.encode(bytes_to_encode)
 
@@ -184,7 +184,7 @@ def test_bytes(bytes_to_encode):
 
 
 @given(bytes_to_encode=hst.binary(max_size=100))
-def test_bytes_array(bytes_to_encode):
+def test_bytes_array(bytes_to_encode) -> None:
     e = NumpyJSONEncoder()
     value = bytearray(bytes_to_encode)
     v = e.encode(value)

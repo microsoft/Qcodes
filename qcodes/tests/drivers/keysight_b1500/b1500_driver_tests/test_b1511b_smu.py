@@ -18,7 +18,7 @@ def _make_smu(mainframe):
     yield smu
 
 
-def test_force_invalid_current_output_range_when_asu_not_present(smu):
+def test_force_invalid_current_output_range_when_asu_not_present(smu) -> None:
     msg = re.escape("Invalid Source Current Output Range")
     with pytest.raises(RuntimeError, match=msg):
         smu.asu_present = True
@@ -27,7 +27,8 @@ def test_force_invalid_current_output_range_when_asu_not_present(smu):
 
 
 def test_i_measure_range_config_raises_invalid_range_error_when_asu_not_present(
-        smu):
+    smu,
+) -> None:
     msg = re.escape("8 current measurement range")
     with pytest.raises(RuntimeError, match=msg):
         smu.asu_present = True

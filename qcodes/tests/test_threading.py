@@ -57,7 +57,7 @@ def _dummy_dac2():
         instrument.close()
 
 
-def test_call_params_threaded(dummy_1, dummy_2):
+def test_call_params_threaded(dummy_1, dummy_2) -> None:
 
     params_output = call_params_threaded((dummy_1.voltage_1,
                                           dummy_1.voltage_2,
@@ -78,7 +78,7 @@ def test_call_params_threaded(dummy_1, dummy_2):
     } == expected_params_per_thread
 
 
-def test_thread_pool_params_caller(dummy_1, dummy_2):
+def test_thread_pool_params_caller(dummy_1, dummy_2) -> None:
     params = (
         dummy_1.voltage_1,
         dummy_1.voltage_2,

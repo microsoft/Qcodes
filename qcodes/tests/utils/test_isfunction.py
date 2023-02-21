@@ -5,7 +5,7 @@ import pytest
 from qcodes.utils import is_function
 
 
-def test_non_function():
+def test_non_function() -> None:
     assert not is_function(0, 0)
     assert not is_function("hello!", 0)
     assert not is_function(None, 0)

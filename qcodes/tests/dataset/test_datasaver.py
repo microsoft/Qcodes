@@ -1,4 +1,5 @@
 import re
+from typing import Callable, List
 
 import numpy as np
 import pytest
@@ -32,7 +33,7 @@ def reset_callback_globals():
 
 @pytest.mark.usefixtures("experiment")
 @pytest.mark.parametrize("bg_writing", [True, False])
-def test_default_callback(bg_writing):
+def test_default_callback(bg_writing) -> None:
     """
     The Web UI needs to know the results of an experiment with the metadata.
     So a default_callback class variable is set by the Web UI with a callback
@@ -64,7 +65,7 @@ def test_default_callback(bg_writing):
 
 @pytest.mark.usefixtures("experiment")
 @pytest.mark.parametrize("bg_writing", [True, False])
-def test_numpy_types(bg_writing):
+def test_numpy_types(bg_writing) -> None:
     """
     Test that we can save numpy types in the data set
     """
@@ -82,8 +83,15 @@ def test_numpy_types(bg_writing):
     data_saver = DataSaver(
         dataset=test_set, write_period=0, interdeps=idps)
 
-    dtypes = [np.int8, np.int16, np.int32, np.int64, np.float16, np.float32,
-              np.float64]
+    dtypes: List[Callable] = [
+        np.int8,
+        np.int16,
+        np.int32,
+        np.int64,
+        np.float16,
+        np.float32,
+        np.float64,
+    ]
 
     for dtype in dtypes:
         data_saver.add_result(("p", dtype(2)))

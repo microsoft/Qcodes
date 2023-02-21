@@ -9,15 +9,13 @@ from qcodes.dataset.descriptions.versioning import serialization as serial
 from qcodes.dataset.descriptions.versioning.converters import new_to_old
 
 
-def test_wrong_input_type_raises():
-
-    for interdeps in ['interdeps', ['p1', 'p2'], 0]:
-
+def test_wrong_input_type_raises() -> None:
+    for interdeps in ("interdeps", ["p1", "p2"], 0):
         with pytest.raises(ValueError):
-            RunDescriber(interdeps=interdeps)
+            RunDescriber(interdeps=interdeps)  # type: ignore[arg-type]
 
 
-def test_equality(some_paramspecbases):
+def test_equality(some_paramspecbases) -> None:
 
     (psb1, psb2, psb3, _) = some_paramspecbases
 
@@ -34,7 +32,7 @@ def test_equality(some_paramspecbases):
     assert desc_3 != desc_2
 
 
-def test_keys_of_result_of_to_dict(some_interdeps):
+def test_keys_of_result_of_to_dict(some_interdeps) -> None:
 
     for idps in some_interdeps:
         desc = RunDescriber(interdeps=idps)
@@ -46,7 +44,7 @@ def test_keys_of_result_of_to_dict(some_interdeps):
                                          'shapes']
 
 
-def test_to_and_from_dict_roundtrip(some_interdeps):
+def test_to_and_from_dict_roundtrip(some_interdeps) -> None:
 
     for idps in some_interdeps:
         desc = RunDescriber(interdeps=idps)
@@ -59,7 +57,7 @@ def test_to_and_from_dict_roundtrip(some_interdeps):
         assert desc == new_desc
 
 
-def test_yaml_creation_and_loading(some_interdeps):
+def test_yaml_creation_and_loading(some_interdeps) -> None:
 
     yaml = YAML()
 
@@ -79,7 +77,7 @@ def test_yaml_creation_and_loading(some_interdeps):
         assert new_desc == desc
 
 
-def test_jsonization_as_v0_for_storage(some_interdeps):
+def test_jsonization_as_v0_for_storage(some_interdeps) -> None:
     """
     Test that a RunDescriber can be json-dumped as version 0
     """
@@ -93,7 +91,7 @@ def test_jsonization_as_v0_for_storage(some_interdeps):
     assert serial.to_json_as_version(new_desc, 0) == old_json
 
 
-def test_default_jsonization_for_storage(some_interdeps):
+def test_default_jsonization_for_storage(some_interdeps) -> None:
     """
     Test that a RunDescriber is json-dumped as version 2
     """
@@ -109,7 +107,7 @@ def test_default_jsonization_for_storage(some_interdeps):
     assert serial.to_json_for_storage(new_desc) == expected_json
 
 
-def test_dictization_as_v0_for_storage(some_interdeps):
+def test_dictization_as_v0_for_storage(some_interdeps) -> None:
     """
     Test that a RunDescriber always gets converted to dict that represents
     an old style RunDescriber, even when given new style interdeps
@@ -124,7 +122,7 @@ def test_dictization_as_v0_for_storage(some_interdeps):
     assert serial.to_dict_as_version(new_desc, 0) == old_desc
 
 
-def test_default_dictization_for_storage(some_interdeps):
+def test_default_dictization_for_storage(some_interdeps) -> None:
     """
     Test that a RunDescriber always gets converted to dict that represents
     an old style RunDescriber, even when given new style interdeps
@@ -142,7 +140,7 @@ def test_default_dictization_for_storage(some_interdeps):
     assert serial.to_dict_for_storage(new_desc) == old_desc
 
 
-def test_dictization_of_current_version(some_interdeps):
+def test_dictization_of_current_version(some_interdeps) -> None:
     """
     Test conversion to dictionary of a RunDescriber
     """

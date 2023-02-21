@@ -44,7 +44,7 @@ def alazar_ctrl():
 
 
 @pytest.mark.win32
-def test_simulated_alazar(simulated_alazar, alazar_ctrl):
+def test_simulated_alazar(simulated_alazar, alazar_ctrl) -> None:
     alazar = simulated_alazar
     buffers_per_acquisition = 10
     data = alazar.acquire(

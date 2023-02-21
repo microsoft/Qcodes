@@ -8,7 +8,7 @@ from qcodes.dataset.data_set import DataSet
 
 
 @pytest.mark.usefixtures("experiment")
-def test_load_legacy_files_2d():
+def test_load_legacy_files_2d() -> None:
     full_location = (
         Path(__file__).parent.parent
         / "fixtures"
@@ -46,7 +46,7 @@ def test_load_legacy_files_2d():
 
 
 @pytest.mark.usefixtures("experiment")
-def test_load_legacy_files_1d():
+def test_load_legacy_files_1d() -> None:
     full_location = (
         Path(__file__).parent.parent
         / "fixtures"
@@ -84,7 +84,7 @@ def test_load_legacy_files_1d():
 
 
 @pytest.mark.usefixtures("experiment")
-def test_load_legacy_files_1d_pathlib_path():
+def test_load_legacy_files_1d_pathlib_path() -> None:
     full_location = (
         Path(__file__).parent.parent
         / "fixtures"

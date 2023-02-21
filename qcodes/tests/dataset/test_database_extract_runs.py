@@ -5,6 +5,7 @@ import uuid
 from contextlib import contextmanager
 from os.path import getmtime
 from pathlib import Path
+from typing import Callable, Dict
 
 import numpy as np
 import pytest
@@ -64,7 +65,7 @@ def _make_inst():
     inst.close()
 
 
-def test_missing_runs_raises(two_empty_temp_db_connections, some_interdeps):
+def test_missing_runs_raises(two_empty_temp_db_connections, some_interdeps) -> None:
     """
     Test that an error is raised if we attempt to extract a run not present in
     the source DB
@@ -103,16 +104,17 @@ def test_missing_runs_raises(two_empty_temp_db_connections, some_interdeps):
         extract_runs_into_db(source_path, target_path, *run_ids)
 
 
-def test_basic_extraction(two_empty_temp_db_connections, some_interdeps):
+def test_basic_extraction(two_empty_temp_db_connections, some_interdeps) -> None:
     source_conn, target_conn = two_empty_temp_db_connections
 
     source_path = path_to_dbfile(source_conn)
     target_path = path_to_dbfile(target_conn)
 
-    type_casters = {'numeric': float,
-                    'array': (lambda x: np.array(x) if hasattr(x, '__iter__')
-                              else np.array([x])),
-                    'text': str}
+    type_casters: Dict[str, Callable] = {
+        "numeric": float,
+        "array": (lambda x: np.array(x) if hasattr(x, "__iter__") else np.array([x])),
+        "text": str,
+    }
 
     source_exp = Experiment(conn=source_conn)
     source_dataset = DataSet(conn=source_conn, name="basic_copy_paste_name")
@@ -184,7 +186,7 @@ def test_basic_extraction(two_empty_temp_db_connections, some_interdeps):
         extract_runs_into_db(source_path, target_path, source_dataset.run_id)
 
 
-def test_real_dataset_1d(two_empty_temp_db_connections, inst):
+def test_real_dataset_1d(two_empty_temp_db_connections, inst) -> None:
     source_conn, target_conn = two_empty_temp_db_connections
 
     source_path = path_to_dbfile(source_conn)
@@ -206,11 +208,13 @@ def test_real_dataset_1d(two_empty_temp_db_connections, inst):
     source_data = source_dataset.get_parameter_data()["extract_run_inst_plunger"]
     target_data = target_dataset.get_parameter_data()["extract_run_inst_plunger"]
 
-    for source_data, target_data in zip(source_data.values(), target_data.values()):
-        assert_array_equal(source_data, target_data)
+    for source_data_vals, target_data_vals in zip(
+        source_data.values(), target_data.values()
+    ):
+        assert_array_equal(source_data_vals, target_data_vals)
 
 
-def test_real_dataset_1d_pathlib_path(two_empty_temp_db_connections, inst):
+def test_real_dataset_1d_pathlib_path(two_empty_temp_db_connections, inst) -> None:
     source_conn, target_conn = two_empty_temp_db_connections
 
     source_path = Path(path_to_dbfile(source_conn))
@@ -232,11 +236,13 @@ def test_real_dataset_1d_pathlib_path(two_empty_temp_db_connections, inst):
     source_data = source_dataset.get_parameter_data()["extract_run_inst_plunger"]
     target_data = target_dataset.get_parameter_data()["extract_run_inst_plunger"]
 
-    for source_data, target_data in zip(source_data.values(), target_data.values()):
-        assert_array_equal(source_data, target_data)
+    for source_data_vals, target_data_vals in zip(
+        source_data.values(), target_data.values()
+    ):
+        assert_array_equal(source_data_vals, target_data_vals)
 
 
-def test_real_dataset_2d(two_empty_temp_db_connections, inst):
+def test_real_dataset_2d(two_empty_temp_db_connections, inst) -> None:
     source_conn, target_conn = two_empty_temp_db_connections
 
     source_path = path_to_dbfile(source_conn)
@@ -260,12 +266,15 @@ def test_real_dataset_2d(two_empty_temp_db_connections, inst):
     source_data = source_dataset.get_parameter_data()["extract_run_inst_cutter"]
     target_data = target_dataset.get_parameter_data()["extract_run_inst_cutter"]
 
-    for source_data, target_data in zip(source_data.values(), target_data.values()):
-        assert_array_equal(source_data, target_data)
+    for source_data_vals, target_data_vals in zip(
+        source_data.values(), target_data.values()
+    ):
+        assert_array_equal(source_data_vals, target_data_vals)
 
 
-def test_correct_experiment_routing(two_empty_temp_db_connections,
-                                    some_interdeps):
+def test_correct_experiment_routing(
+    two_empty_temp_db_connections, some_interdeps
+) -> None:
     """
     Test that existing experiments are correctly identified AND that multiple
     insertions of the same runs don't matter (run insertion is idempotent)
@@ -362,8 +371,9 @@ def test_correct_experiment_routing(two_empty_temp_db_connections,
                 np.testing.assert_array_equal(inval, target_data[outkey][inkey])
 
 
-def test_runs_from_different_experiments_raises(two_empty_temp_db_connections,
-                                                some_interdeps):
+def test_runs_from_different_experiments_raises(
+    two_empty_temp_db_connections, some_interdeps
+) -> None:
     """
     Test that inserting runs from multiple experiments raises
     """
@@ -420,7 +430,7 @@ def test_runs_from_different_experiments_raises(two_empty_temp_db_connections,
         extract_runs_into_db(source_path, target_path, *run_ids)
 
 
-def test_extracting_dataless_run(two_empty_temp_db_connections):
+def test_extracting_dataless_run(two_empty_temp_db_connections) -> None:
     """
     Although contrived, it could happen that a run with no data is extracted
     """
@@ -442,8 +452,9 @@ def test_extracting_dataless_run(two_empty_temp_db_connections):
     assert loaded_ds.the_same_dataset_as(source_ds)
 
 
-def test_result_table_naming_and_run_id(two_empty_temp_db_connections,
-                                        some_interdeps):
+def test_result_table_naming_and_run_id(
+    two_empty_temp_db_connections, some_interdeps
+) -> None:
     """
     Check that a correct result table name is given and that a correct run_id
     is assigned
@@ -490,8 +501,7 @@ def test_result_table_naming_and_run_id(two_empty_temp_db_connections,
     assert target_ds.the_same_dataset_as(source_ds_2_2)
 
 
-def test_load_by_X_functions(two_empty_temp_db_connections,
-                             some_interdeps):
+def test_load_by_X_functions(two_empty_temp_db_connections, some_interdeps) -> None:
     """
     Test some different loading functions
     """
@@ -542,9 +552,9 @@ def test_load_by_X_functions(two_empty_temp_db_connections,
 
 
 @pytest.mark.usefixtures("reset_config_on_exit")
-def test_combine_runs(two_empty_temp_db_connections,
-                      empty_temp_db_connection,
-                      some_interdeps):
+def test_combine_runs(
+    two_empty_temp_db_connections, empty_temp_db_connection, some_interdeps
+) -> None:
     """
     Test that datasets that are exported in random order from 2 datasets
     can be reloaded by the original captured_run_id and the experiment
@@ -606,9 +616,9 @@ def test_combine_runs(two_empty_temp_db_connections,
     # this could be split out into its own test
     # but the test above has the useful side effect of
     # setting up datasets for this test.
-    guids = [ds.guid for ds in source_all_datasets]
+    new_guids = [ds.guid for ds in source_all_datasets]
 
-    table = generate_dataset_table(guids, conn=target_conn)
+    table = generate_dataset_table(new_guids, conn=target_conn)
     lines = table.split('\n')
     headers = re.split(r'\s+', lines[0].strip())
 
@@ -618,17 +628,18 @@ def test_combine_runs(two_empty_temp_db_connections,
     for i in range(2, len(lines)):
         split_line = re.split(r'\s+', lines[i].strip())
         mydict = {headers[j]: split_line[j] for j in range(len(split_line))}
-        ds = load_by_guid(guids[i-2], conn=target_conn)
-        assert ds.captured_run_id == int(mydict['captured_run_id'])
-        assert ds.captured_counter == int(mydict['captured_counter'])
-        assert ds.exp_name == mydict['experiment_name']
-        assert ds.sample_name == mydict['sample_name']
-        assert guid_comp['location'] == int(mydict['location'])
-        assert guid_comp['work_station'] == int(mydict['work_station'])
+        ds2 = load_by_guid(new_guids[i - 2], conn=target_conn)
+        assert ds2.captured_run_id == int(mydict["captured_run_id"])
+        assert ds2.captured_counter == int(mydict["captured_counter"])
+        assert ds2.exp_name == mydict["experiment_name"]
+        assert ds2.sample_name == mydict["sample_name"]
+        assert guid_comp["location"] == int(mydict["location"])
+        assert guid_comp["work_station"] == int(mydict["work_station"])
 
 
-def test_copy_datasets_and_add_new(two_empty_temp_db_connections,
-                                   some_interdeps):
+def test_copy_datasets_and_add_new(
+    two_empty_temp_db_connections, some_interdeps
+) -> None:
     """
     Test that new runs get the correct captured_run_id and captured_counter
     when adding on top of a dataset with partial exports
@@ -666,15 +677,17 @@ def test_copy_datasets_and_add_new(two_empty_temp_db_connections,
     expected_counter = [1, 2, 3]
     expected_captured_counter = [3, 4, 5]
 
-    for ds, eri, ecri, ec, ecc in zip(loaded_datasets,
-                                      expected_run_ids,
-                                      expected_captured_run_ids,
-                                      expected_counter,
-                                      expected_captured_counter):
-        assert ds.run_id == eri
-        assert ds.captured_run_id == ecri
-        assert ds.counter == ec
-        assert ds.captured_counter == ecc
+    for ds2, eri, ecri, ec, ecc in zip(
+        loaded_datasets,
+        expected_run_ids,
+        expected_captured_run_ids,
+        expected_counter,
+        expected_captured_counter,
+    ):
+        assert ds2.run_id == eri
+        assert ds2.captured_run_id == ecri
+        assert ds2.counter == ec
+        assert ds2.captured_counter == ecc
 
     exp = load_experiment_by_name('exp2', conn=target_conn)
 
@@ -705,9 +718,9 @@ def test_copy_datasets_and_add_new(two_empty_temp_db_connections,
         assert ds.captured_counter == ecc
 
 
-def test_old_versions_not_touched(two_empty_temp_db_connections,
-                                  some_interdeps):
-
+def test_old_versions_not_touched(
+    two_empty_temp_db_connections, some_interdeps
+) -> None:
     source_conn, target_conn = two_empty_temp_db_connections
 
     target_path = path_to_dbfile(target_conn)
@@ -759,8 +772,9 @@ def test_old_versions_not_touched(two_empty_temp_db_connections,
             assert warning[0].message.args[0] == expected_mssg
 
 
-def test_experiments_with_NULL_sample_name(two_empty_temp_db_connections,
-                                           some_interdeps):
+def test_experiments_with_NULL_sample_name(
+    two_empty_temp_db_connections, some_interdeps
+) -> None:
     """
     In older API versions (corresponding to DB version 3),
     users could get away with setting the sample name to None
@@ -811,8 +825,9 @@ def test_experiments_with_NULL_sample_name(two_empty_temp_db_connections,
     assert len(Experiment(exp_id=1, conn=target_conn)) == 5
 
 
-def test_integration_station_and_measurement(two_empty_temp_db_connections,
-                                             inst):
+def test_integration_station_and_measurement(
+    two_empty_temp_db_connections, inst
+) -> None:
     """
     An integration test where the runs in the source DB file are produced
     with the Measurement object and there is a Station as well
@@ -845,7 +860,7 @@ def test_integration_station_and_measurement(two_empty_temp_db_connections,
     assert datasaver.dataset.the_same_dataset_as(target_ds)
 
 
-def test_atomicity(two_empty_temp_db_connections, some_interdeps):
+def test_atomicity(two_empty_temp_db_connections, some_interdeps) -> None:
     """
     Test the atomicity of the transaction by extracting and inserting two
     runs where the second one is not completed. The not completed error must
@@ -881,7 +896,7 @@ def test_atomicity(two_empty_temp_db_connections, some_interdeps):
             extract_runs_into_db(source_path, target_path, 1, 2)
 
 
-def test_column_mismatch(two_empty_temp_db_connections, some_interdeps, inst):
+def test_column_mismatch(two_empty_temp_db_connections, some_interdeps, inst) -> None:
     """
     Test insertion of runs with no metadata and no snapshot into a DB already
     containing a run that has both

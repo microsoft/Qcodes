@@ -82,7 +82,7 @@ def _param_callable(_param):
     return _param_func(_param)
 
 
-def test_param_callable(_param_callable):
+def test_param_callable(_param_callable) -> None:
     _param_modified = _param_callable
     assert _param_modified.get() == 2
 

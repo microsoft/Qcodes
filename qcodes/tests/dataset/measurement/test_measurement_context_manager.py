@@ -3,6 +3,7 @@ import os
 import re
 import traceback
 from time import sleep
+from typing import Any, Dict, List, Tuple
 
 import hypothesis.strategies as hst
 import numpy as np
@@ -19,11 +20,12 @@ from qcodes.dataset.experiment_container import new_experiment
 from qcodes.dataset.export_config import DataExportType
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.sqlite.connection import atomic_transaction
-from qcodes.parameters import Parameter, expand_setpoints_helper
+from qcodes.parameters import ManualParameter, Parameter, expand_setpoints_helper
+from qcodes.station import Station
 from qcodes.tests.common import retry_until_does_not_throw
 
 
-def test_log_messages(caplog, meas_with_registered_param):
+def test_log_messages(caplog, meas_with_registered_param) -> None:
     caplog.set_level(logging.INFO)
 
     with meas_with_registered_param.run():
@@ -34,7 +36,7 @@ def test_log_messages(caplog, meas_with_registered_param):
     assert "Finished measurement with guid" in caplog.text
 
 
-def test_log_includes_extra_info(caplog, meas_with_registered_param):
+def test_log_includes_extra_info(caplog, meas_with_registered_param) -> None:
     caplog.set_level(logging.INFO)
     meas_with_registered_param._extra_log_info = "some extra info"
     with meas_with_registered_param.run():
@@ -43,19 +45,19 @@ def test_log_includes_extra_info(caplog, meas_with_registered_param):
     assert "some extra info" in caplog.text
 
 
-def test_register_parameter_numbers(DAC, DMM):
+def test_register_parameter_numbers(DAC, DMM) -> None:
     """
     Test the registration of scalar QCoDeS parameters
     """
 
     parameters = [DAC.ch1, DAC.ch2, DMM.v1, DMM.v2]
-    not_parameters = ['', 'Parameter', 0, 1.1, Measurement]
+    not_parameters = ("", "Parameter", 0, 1.1, Measurement)
 
     meas = Measurement()
 
     for not_a_parameter in not_parameters:
         with pytest.raises(ValueError):
-            meas.register_parameter(not_a_parameter)
+            meas.register_parameter(not_a_parameter)  # type: ignore[arg-type]
 
     my_param = DAC.ch1
     meas.register_parameter(my_param)
@@ -114,7 +116,7 @@ def test_register_parameter_numbers(DAC, DMM):
         meas.register_parameter(DMM.v1, setpoints=(DAC.ch2,))
 
 
-def test_register_custom_parameter(DAC):
+def test_register_custom_parameter(DAC) -> None:
     """
     Test the registration of custom parameters
     """
@@ -167,7 +169,7 @@ def test_register_custom_parameter(DAC):
                                        'label', 'unit', setpoints=(name,))
 
 
-def test_unregister_parameter(DAC, DMM):
+def test_unregister_parameter(DAC, DMM) -> None:
     """
     Test the unregistering of parameters.
     """
@@ -212,7 +214,7 @@ def test_unregister_parameter(DAC, DMM):
 
 @pytest.mark.usefixtures("experiment")
 @pytest.mark.parametrize("bg_writing", [True, False])
-def test_mixing_array_and_numeric(DAC, bg_writing):
+def test_mixing_array_and_numeric(DAC, bg_writing) -> None:
     """
     Test that mixing array and numeric types is okay
     """
@@ -225,7 +227,7 @@ def test_mixing_array_and_numeric(DAC, bg_writing):
                              (DAC.ch2, np.array([DAC.ch2(), DAC.ch1()])))
 
 
-def test_measurement_name_default(experiment, DAC, DMM):
+def test_measurement_name_default(experiment, DAC, DMM) -> None:
     fmt = experiment.format_string
     exp_id = experiment.exp_id
 
@@ -246,7 +248,7 @@ def test_measurement_name_default(experiment, DAC, DMM):
         assert ds.name == default_name
 
 
-def test_measurement_name_changed_via_attribute(experiment, DAC, DMM):
+def test_measurement_name_changed_via_attribute(experiment, DAC, DMM) -> None:
     fmt = experiment.format_string
     exp_id = experiment.exp_id
 
@@ -267,7 +269,7 @@ def test_measurement_name_changed_via_attribute(experiment, DAC, DMM):
         assert ds.name == name
 
 
-def test_measurement_name_set_as_argument(experiment, DAC, DMM):
+def test_measurement_name_set_as_argument(experiment, DAC, DMM) -> None:
     fmt = experiment.format_string
     exp_id = experiment.exp_id
 
@@ -315,7 +317,7 @@ def test_setting_write_period(wp) -> None:
                      hst.text()))
 @pytest.mark.usefixtures("experiment")
 @pytest.mark.usefixtures("reset_config_on_exit")
-def test_setting_write_period_from_config(wp):
+def test_setting_write_period_from_config(wp) -> None:
     qc.config.dataset.write_period = wp
 
     if isinstance(wp, str):
@@ -335,7 +337,7 @@ def test_setting_write_period_from_config(wp):
 @pytest.mark.parametrize("write_in_background", [True, False])
 @pytest.mark.usefixtures("experiment")
 @pytest.mark.usefixtures("reset_config_on_exit")
-def test_setting_write_in_background_from_config(write_in_background):
+def test_setting_write_in_background_from_config(write_in_background) -> None:
     qc.config.dataset.write_in_background = write_in_background
 
     meas = Measurement()
@@ -347,7 +349,7 @@ def test_setting_write_in_background_from_config(write_in_background):
 
 
 @pytest.mark.usefixtures("experiment")
-def test_method_chaining(DAC):
+def test_method_chaining(DAC) -> None:
     (
         Measurement()
             .register_parameter(DAC.ch1)
@@ -363,7 +365,7 @@ def test_method_chaining(DAC):
 @pytest.mark.usefixtures("experiment")
 @settings(deadline=None, suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(words=hst.lists(elements=hst.text(), min_size=4, max_size=10))
-def test_enter_and_exit_actions(DAC, words):
+def test_enter_and_exit_actions(DAC, words) -> None:
     # we use a list to check that the functions executed
     # in the correct order
 
@@ -373,7 +375,7 @@ def test_enter_and_exit_actions(DAC, words):
     meas = Measurement()
     meas.register_parameter(DAC.ch1)
 
-    testlist = []
+    testlist: List[str] = []
 
     splitpoint = round(len(words) / 2)
     for n in range(splitpoint):
@@ -397,7 +399,7 @@ def test_enter_and_exit_actions(DAC, words):
         meas.add_after_run(action, testlist)
 
 
-def test_subscriptions(experiment, DAC, DMM):
+def test_subscriptions(experiment, DAC, DMM) -> None:
     """
     Test that subscribers are called at the moment the data is flushed to
     database
@@ -433,8 +435,8 @@ def test_subscriptions(experiment, DAC, DMM):
 
     # key is the number of the result tuple,
     # value is the result tuple itself
-    all_results_dict = {}
-    values_larger_than_7 = []
+    all_results_dict: Dict[str, Any] = {}
+    values_larger_than_7: List[float] = []
 
     meas.add_subscriber(collect_all_results, state=all_results_dict)
     assert len(meas.subscribers) == 1
@@ -460,8 +462,9 @@ def test_subscriptions(experiment, DAC, DMM):
 
         for num in range(5):
             (dac_val, dmm_val) = dac_vals_and_dmm_vals[num]
-            values_larger_than_7__expected += \
-                [val for val in (dac_val, dmm_val) if val > 7]
+            values_larger_than_7__expected += [
+                val for val in (dac_val, dmm_val) if val > 7
+            ]
 
             datasaver.add_result((DAC.ch1, dac_val), (DMM.v1, dmm_val))
 
@@ -505,8 +508,9 @@ def test_subscriptions(experiment, DAC, DMM):
     assert len(triggers) == 0
 
 
-def test_subscribers_called_at_exiting_context_if_queue_is_not_empty(experiment,
-                                                                     DAC):
+def test_subscribers_called_at_exiting_context_if_queue_is_not_empty(
+    experiment, DAC
+) -> None:
     """
     Upon quitting the "run()" context, verify that in case the queue is
     not empty, the subscriber's callback is still called on that data.
@@ -524,7 +528,7 @@ def test_subscribers_called_at_exiting_context_if_queue_is_not_empty(experiment,
     meas = Measurement(exp=experiment)
     meas.register_parameter(DAC.ch1)
 
-    collected_x_vals = []
+    collected_x_vals: List[float] = []
 
     meas.add_subscriber(collect_x_vals, state=collected_x_vals)
 
@@ -554,7 +558,7 @@ def test_subscribers_called_at_exiting_context_if_queue_is_not_empty(experiment,
 @settings(deadline=None, max_examples=25,
           suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(N=hst.integers(min_value=2000, max_value=3000))
-def test_subscribers_called_for_all_data_points(experiment, DAC, DMM, N):
+def test_subscribers_called_for_all_data_points(experiment, DAC, DMM, N) -> None:
     def sub_get_x_vals(results, length, state):
         """
         A list of all x values
@@ -570,8 +574,8 @@ def test_subscribers_called_for_all_data_points(experiment, DAC, DMM, N):
     meas = Measurement(exp=experiment)
     meas.register_parameter(DAC.ch1)
     meas.register_parameter(DMM.v1, setpoints=(DAC.ch1,))
-    xvals = []
-    yvals = []
+    xvals: List[float] = []
+    yvals: List[float] = []
 
     meas.add_subscriber(sub_get_x_vals, state=xvals)
     meas.add_subscriber(sub_get_y_vals, state=yvals)
@@ -589,18 +593,24 @@ def test_subscribers_called_for_all_data_points(experiment, DAC, DMM, N):
 
 # There is no way around it: this test is slow. We test that write_period
 # works and hence we must wait for some time to elapse. Sorry.
-@settings(max_examples=5, deadline=None,
-          suppress_health_check=(HealthCheck.function_scoped_fixture,))
-@given(breakpoint=hst.integers(min_value=1, max_value=19),
-       write_period=hst.floats(min_value=0.1, max_value=1.5),
-       set_values=hst.lists(elements=hst.floats(), min_size=20, max_size=20),
-       get_values=hst.lists(elements=hst.floats(), min_size=20, max_size=20))
-@pytest.mark.usefixtures('set_default_station_to_none')
-def test_datasaver_scalars(experiment, DAC, DMM, set_values, get_values,
-                           breakpoint, write_period):
+@settings(
+    max_examples=5,
+    deadline=None,
+    suppress_health_check=(HealthCheck.function_scoped_fixture,),
+)
+@given(
+    breakpoint=hst.integers(min_value=1, max_value=19),
+    write_period=hst.floats(min_value=0.1, max_value=1.5),
+    set_values=hst.lists(elements=hst.floats(), min_size=20, max_size=20),
+    get_values=hst.lists(elements=hst.floats(), min_size=20, max_size=20),
+)
+@pytest.mark.usefixtures("set_default_station_to_none")
+def test_datasaver_scalars(
+    experiment, DAC, DMM, set_values, get_values, breakpoint, write_period
+) -> None:
     no_of_runs = len(experiment)
 
-    station = qc.Station(DAC, DMM)
+    station = Station(DAC, DMM)
 
     meas = Measurement(station=station)
     meas.write_period = write_period
@@ -633,12 +643,12 @@ def test_datasaver_scalars(experiment, DAC, DMM, set_values, get_values,
 
 
 @pytest.mark.usefixtures('set_default_station_to_none')
-def test_datasaver_inst_metadata(experiment, DAC_with_metadata, DMM):
+def test_datasaver_inst_metadata(experiment, DAC_with_metadata, DMM) -> None:
     """
     Check that additional instrument metadata is captured into the dataset snapshot
     """
 
-    station = qc.Station(DAC_with_metadata, DMM)
+    station = Station(DAC_with_metadata, DMM)
 
     meas = Measurement(station=station)
     meas.register_parameter(DAC_with_metadata.ch1)
@@ -654,7 +664,8 @@ def test_datasaver_inst_metadata(experiment, DAC_with_metadata, DMM):
 
 
 def test_exception_happened_during_measurement_is_stored_in_dataset_metadata(
-        experiment):
+    experiment,
+) -> None:
     meas = Measurement()
     meas.register_custom_parameter(name='nodata')
 
@@ -683,7 +694,7 @@ def test_exception_happened_during_measurement_is_stored_in_dataset_metadata(
 @settings(max_examples=10, deadline=None)
 @given(N=hst.integers(min_value=2, max_value=500))
 @pytest.mark.usefixtures("empty_temp_db")
-def test_datasaver_arrays_lists_tuples(bg_writing, N):
+def test_datasaver_arrays_lists_tuples(bg_writing, N) -> None:
     new_experiment('firstexp', sample_name='no sample')
 
     meas = Measurement()
@@ -726,11 +737,11 @@ def test_datasaver_arrays_lists_tuples(bg_writing, N):
     # save arrays
     with meas.run(write_in_background=bg_writing) as datasaver:
         freqax = np.linspace(1e6, 2e6, N)
-        signal = np.random.randn(N)
+        signal1 = np.random.randn(N)
 
-        datasaver.add_result(('freqax', freqax),
-                             ('signal', signal),
-                             ('gate_voltage', 0))
+        datasaver.add_result(
+            ("freqax", freqax), ("signal", signal1), ("gate_voltage", 0)
+        )
 
     assert datasaver.points_written == N
     ds = datasaver.dataset
@@ -739,23 +750,23 @@ def test_datasaver_arrays_lists_tuples(bg_writing, N):
 
     # save lists
     with meas.run(write_in_background=bg_writing) as datasaver:
-        freqax = list(np.linspace(1e6, 2e6, N))
-        signal = list(np.random.randn(N))
+        freqax2 = list(np.linspace(1e6, 2e6, N))
+        signal2 = list(np.random.randn(N))
 
-        datasaver.add_result(('freqax', freqax),
-                             ('signal', signal),
-                             ('gate_voltage', 0))
+        datasaver.add_result(
+            ("freqax", freqax2), ("signal", signal2), ("gate_voltage", 0)
+        )
 
     assert datasaver.points_written == N
 
     # save tuples
     with meas.run(write_in_background=bg_writing) as datasaver:
-        freqax = tuple(np.linspace(1e6, 2e6, N))
-        signal = tuple(np.random.randn(N))
+        freqax3 = tuple(np.linspace(1e6, 2e6, N))
+        signal3 = tuple(np.random.randn(N))
 
-        datasaver.add_result(('freqax', freqax),
-                             ('signal', signal),
-                             ('gate_voltage', 0))
+        datasaver.add_result(
+            ("freqax", freqax3), ("signal", signal3), ("gate_voltage", 0)
+        )
 
     assert datasaver.points_written == N
 
@@ -764,7 +775,7 @@ def test_datasaver_arrays_lists_tuples(bg_writing, N):
 @settings(max_examples=10, deadline=None)
 @given(N=hst.integers(min_value=2, max_value=500))
 @pytest.mark.usefixtures("empty_temp_db")
-def test_datasaver_numeric_and_array_paramtype(bg_writing, N):
+def test_datasaver_numeric_and_array_paramtype(bg_writing, N) -> None:
     """
     Test saving one parameter with 'numeric' paramtype and one parameter with
     'array' paramtype
@@ -799,7 +810,7 @@ def test_datasaver_numeric_and_array_paramtype(bg_writing, N):
 
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.usefixtures("empty_temp_db")
-def test_datasaver_numeric_after_array_paramtype(bg_writing):
+def test_datasaver_numeric_after_array_paramtype(bg_writing) -> None:
     """
     Test that passing values for 'array' parameter in `add_result` before
     passing values for 'numeric' parameter works.
@@ -835,19 +846,19 @@ def test_datasaver_numeric_after_array_paramtype(bg_writing):
 
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.usefixtures("experiment")
-def test_datasaver_foul_input(bg_writing):
+def test_datasaver_foul_input(bg_writing) -> None:
     meas = Measurement()
 
     meas.register_custom_parameter('foul',
                                    label='something unnatural',
                                    unit='Fahrenheit')
 
-    foul_stuff = [qc.Parameter('foul'), {1, 2, 3}]
+    foul_stuff = [Parameter("foul"), {1, 2, 3}]
 
     with meas.run(bg_writing) as datasaver:
         for ft in foul_stuff:
             with pytest.raises(ValueError):
-                datasaver.add_result(('foul', ft))
+                datasaver.add_result(("foul", ft))  # type: ignore[arg-type]
 
 
 @settings(max_examples=10, deadline=None)
@@ -855,7 +866,7 @@ def test_datasaver_foul_input(bg_writing):
 @pytest.mark.usefixtures("empty_temp_db")
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("storage_type", ['numeric', 'array'])
-def test_datasaver_unsized_arrays(N, storage_type, bg_writing):
+def test_datasaver_unsized_arrays(N, storage_type, bg_writing) -> None:
     new_experiment('firstexp', sample_name='no sample')
 
     meas = Measurement()
@@ -907,11 +918,11 @@ def test_datasaver_unsized_arrays(N, storage_type, bg_writing):
        seed=hst.integers(min_value=0, max_value=np.iinfo(np.uint32).max))
 @pytest.mark.usefixtures("experiment")
 @pytest.mark.parametrize("bg_writing", [True, False])
-@pytest.mark.parametrize("param_type", ['np_array', 'tuple', 'list'])
-@pytest.mark.parametrize("storage_type", ['numeric', 'array'])
-def test_datasaver_arrayparams(SpectrumAnalyzer, DAC, N, M,
-                               param_type, storage_type,
-                               seed, bg_writing):
+@pytest.mark.parametrize("param_type", ["np_array", "tuple", "list"])
+@pytest.mark.parametrize("storage_type", ["numeric", "array"])
+def test_datasaver_arrayparams(
+    SpectrumAnalyzer, DAC, N, M, param_type, storage_type, seed, bg_writing
+) -> None:
     """
     test that data is stored correctly for array parameters that
     return numpy arrays, lists and tuples. Stored both as arrays and
@@ -989,9 +1000,9 @@ def test_datasaver_arrayparams(SpectrumAnalyzer, DAC, N, M,
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("storage_type", ['numeric', 'array'])
 @pytest.mark.usefixtures("experiment")
-def test_datasaver_array_parameters_channel(channel_array_instrument,
-                                            DAC, N, storage_type,
-                                            bg_writing):
+def test_datasaver_array_parameters_channel(
+    channel_array_instrument, DAC, N, storage_type, bg_writing
+) -> None:
     meas = Measurement()
 
     array_param = channel_array_instrument.A.dummy_array_parameter
@@ -1038,7 +1049,7 @@ def test_datasaver_array_parameters_channel(channel_array_instrument,
     loaded_data = ds.get_parameter_data()['dummy_channel_inst_ChanA_dummy_array_parameter']
     for param in expected_params:
         if storage_type == 'array':
-            expected_shape = (N, M)
+            expected_shape: Tuple[int, ...] = (N, M)
         else:
             expected_shape = (N*M, )
         assert loaded_data[param].shape == expected_shape
@@ -1050,9 +1061,9 @@ def test_datasaver_array_parameters_channel(channel_array_instrument,
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("storage_type", ['numeric', 'array'])
 @pytest.mark.usefixtures("experiment")
-def test_datasaver_parameter_with_setpoints(channel_array_instrument,
-                                            DAC, n, storage_type,
-                                            bg_writing):
+def test_datasaver_parameter_with_setpoints(
+    channel_array_instrument, DAC, n, storage_type, bg_writing
+) -> None:
     random_seed = 1
     chan = channel_array_instrument.A
     param = chan.dummy_parameter_with_setpoints
@@ -1125,9 +1136,9 @@ def test_datasaver_parameter_with_setpoints(channel_array_instrument,
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("storage_type", ['numeric', 'array'])
 @pytest.mark.usefixtures("experiment")
-def test_datasaver_parameter_with_setpoints_explicitly_expanded(channel_array_instrument,
-                                                     DAC, n, storage_type,
-                                                     bg_writing):
+def test_datasaver_parameter_with_setpoints_explicitly_expanded(
+    channel_array_instrument, DAC, n, storage_type, bg_writing
+) -> None:
     random_seed = 1
     chan = channel_array_instrument.A
     param = chan.dummy_parameter_with_setpoints
@@ -1195,7 +1206,9 @@ def test_datasaver_parameter_with_setpoints_explicitly_expanded(channel_array_in
 
 
 @pytest.mark.usefixtures("experiment")
-def test_datasaver_parameter_with_setpoints_partially_expanded_raises(channel_array_instrument, DAC):
+def test_datasaver_parameter_with_setpoints_partially_expanded_raises(
+    channel_array_instrument, DAC
+) -> None:
     random_seed = 1
     chan = channel_array_instrument.A
     param = chan.dummy_parameter_with_setpoints_2d
@@ -1232,9 +1245,9 @@ def test_datasaver_parameter_with_setpoints_partially_expanded_raises(channel_ar
           suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(n=hst.integers(min_value=5, max_value=500))
 @pytest.mark.usefixtures("experiment")
-def test_datasaver_parameter_with_setpoints_complex(channel_array_instrument,
-                                                    DAC, n,
-                                                    bg_writing):
+def test_datasaver_parameter_with_setpoints_complex(
+    channel_array_instrument, DAC, n, bg_writing
+) -> None:
     random_seed = 1
     chan = channel_array_instrument.A
     param = chan.dummy_parameter_with_setpoints_complex
@@ -1286,9 +1299,9 @@ def test_datasaver_parameter_with_setpoints_complex(channel_array_instrument,
           suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(n=hst.integers(min_value=5, max_value=500))
 @pytest.mark.usefixtures("experiment")
-def test_datasaver_parameter_with_setpoints_complex_explicitly_expanded(channel_array_instrument,
-                                                             DAC, n,
-                                                             bg_writing):
+def test_datasaver_parameter_with_setpoints_complex_explicitly_expanded(
+    channel_array_instrument, DAC, n, bg_writing
+) -> None:
     random_seed = 1
     chan = channel_array_instrument.A
     param = chan.dummy_parameter_with_setpoints_complex
@@ -1339,9 +1352,8 @@ def test_datasaver_parameter_with_setpoints_complex_explicitly_expanded(channel_
 @pytest.mark.parametrize("storage_type", ['numeric', 'array'])
 @pytest.mark.usefixtures("experiment")
 def test_datasaver_parameter_with_setpoints_missing_reg_raises(
-        channel_array_instrument,
-        DAC, storage_type,
-        bg_writing):
+    channel_array_instrument, DAC, storage_type, bg_writing
+) -> None:
     """
     Test that if for whatever reason new setpoints are added after
     registering but before adding this raises correctly
@@ -1379,9 +1391,8 @@ def test_datasaver_parameter_with_setpoints_missing_reg_raises(
 @pytest.mark.parametrize("storage_type", ['numeric', 'array'])
 @pytest.mark.usefixtures("experiment")
 def test_datasaver_parameter_with_setpoints_reg_but_missing_validator(
-        channel_array_instrument,
-        DAC, storage_type,
-        bg_writing):
+    channel_array_instrument, DAC, storage_type, bg_writing
+) -> None:
     """
     Test that if for whatever reason the setpoints are removed between
     registering and adding this raises correctly. This tests tests that
@@ -1433,9 +1444,8 @@ def test_datasaver_parameter_with_setpoints_reg_but_missing_validator(
 @pytest.mark.parametrize("storage_type", ['numeric', 'array'])
 @pytest.mark.usefixtures("experiment")
 def test_datasaver_parameter_with_setpoints_reg_but_missing(
-        channel_array_instrument,
-        DAC, storage_type,
-        bg_writing):
+    channel_array_instrument, DAC, storage_type, bg_writing
+) -> None:
     """
     Test that if for whatever reason the setpoints of a QCoDeS parameter are
     removed between registering that parameter with the Measurement and adding
@@ -1474,9 +1484,9 @@ def test_datasaver_parameter_with_setpoints_reg_but_missing(
 @pytest.mark.usefixtures("experiment")
 @pytest.mark.parametrize("storage_type", ['numeric', 'array'])
 @pytest.mark.parametrize("bg_writing", [True, False])
-def test_datasaver_array_parameters_array(channel_array_instrument, DAC, N,
-                                          storage_type,
-                                          bg_writing):
+def test_datasaver_array_parameters_array(
+    channel_array_instrument, DAC, N, storage_type, bg_writing
+) -> None:
     """
     Test that storing array parameters inside a loop works as expected
     """
@@ -1557,9 +1567,9 @@ def test_datasaver_array_parameters_array(channel_array_instrument, DAC, N,
           suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(N=hst.integers(min_value=5, max_value=500))
 @pytest.mark.usefixtures("experiment")
-def test_datasaver_complex_array_parameters_array(channel_array_instrument,
-                                                  DAC, N,
-                                                  bg_writing):
+def test_datasaver_complex_array_parameters_array(
+    channel_array_instrument, DAC, N, bg_writing
+) -> None:
     """
     Test that storing a complex array parameters inside a loop with the sqlite
     Array type works as expected
@@ -1617,7 +1627,7 @@ def test_datasaver_complex_array_parameters_array(channel_array_instrument,
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
-def test_datasaver_multidim_array(experiment, bg_writing):  # noqa: F811
+def test_datasaver_multidim_array(experiment, bg_writing) -> None:  # noqa: F811
     """
     Test that inserting multidim parameters as arrays works as expected
     """
@@ -1627,10 +1637,10 @@ def test_datasaver_multidim_array(experiment, bg_writing):  # noqa: F811
 
     {name: i for i, name in zip(range(4), ["x1", "x2", "y1", "y2"])}
 
-    x1 = qc.ManualParameter('x1')
-    x2 = qc.ManualParameter('x2')
-    y1 = qc.ManualParameter('y1')
-    y2 = qc.ManualParameter('y2')
+    x1 = ManualParameter("x1")
+    x2 = ManualParameter("x2")
+    y1 = ManualParameter("y1")
+    y2 = ManualParameter("y2")
 
     meas.register_parameter(x1, paramtype='array')
     meas.register_parameter(x2, paramtype='array')
@@ -1665,7 +1675,7 @@ def test_datasaver_multidim_array(experiment, bg_writing):  # noqa: F811
 @pytest.mark.parametrize("export_type", [DataExportType.CSV, DataExportType.NETCDF])
 def test_datasaver_export(
     experiment, bg_writing, tmp_path_factory, export, export_type, mocker
-):
+) -> None:
     """
     Test export data to csv after measurement ends
     """
@@ -1673,10 +1683,10 @@ def test_datasaver_export(
     size1 = 10
     size2 = 15
 
-    x1 = qc.ManualParameter('x1')
-    x2 = qc.ManualParameter('x2')
-    y1 = qc.ManualParameter('y1')
-    y2 = qc.ManualParameter('y2')
+    x1 = ManualParameter("x1")
+    x2 = ManualParameter("x2")
+    y1 = ManualParameter("y1")
+    y2 = ManualParameter("y2")
 
     meas.register_parameter(x1, paramtype='array')
     meas.register_parameter(x2, paramtype='array')
@@ -1723,17 +1733,17 @@ def test_datasaver_export(
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
-def test_datasaver_multidim_numeric(experiment, bg_writing):
+def test_datasaver_multidim_numeric(experiment, bg_writing) -> None:
     """
     Test that inserting multidim parameters as numeric works as expected
     """
     meas = Measurement(experiment)
     size1 = 10
     size2 = 15
-    x1 = qc.ManualParameter('x1')
-    x2 = qc.ManualParameter('x2')
-    y1 = qc.ManualParameter('y1')
-    y2 = qc.ManualParameter('y2')
+    x1 = ManualParameter("x1")
+    x2 = ManualParameter("x2")
+    y1 = ManualParameter("y1")
+    y2 = ManualParameter("y2")
 
     {name: i for i, name in zip(range(4), ["x1", "x2", "y1", "y2"])}
 
@@ -1761,8 +1771,9 @@ def test_datasaver_multidim_numeric(experiment, bg_writing):
 
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.usefixtures("experiment")
-def test_datasaver_multidimarrayparameter_as_array(SpectrumAnalyzer,
-                                                   bg_writing):
+def test_datasaver_multidimarrayparameter_as_array(
+    SpectrumAnalyzer, bg_writing
+) -> None:
     """
     Test that inserting multidim Arrrayparameters as array works as expected
     """
@@ -1805,8 +1816,9 @@ def test_datasaver_multidimarrayparameter_as_array(SpectrumAnalyzer,
 
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.usefixtures("experiment")
-def test_datasaver_multidimarrayparameter_as_numeric(SpectrumAnalyzer,
-                                                     bg_writing):
+def test_datasaver_multidimarrayparameter_as_numeric(
+    SpectrumAnalyzer, bg_writing
+) -> None:
     """
     Test that storing a multidim Array parameter as numeric unravels the
     parameter as expected.
@@ -1850,8 +1862,9 @@ def test_datasaver_multidimarrayparameter_as_numeric(SpectrumAnalyzer,
 
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.usefixtures("experiment")
-def test_datasaver_multi_parameters_scalar(channel_array_instrument,
-                                           bg_writing):
+def test_datasaver_multi_parameters_scalar(
+    channel_array_instrument, bg_writing
+) -> None:
     """
     Test that we can register multiparameters that are scalar.
     """
@@ -1873,8 +1886,7 @@ def test_datasaver_multi_parameters_scalar(channel_array_instrument,
 
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.usefixtures("experiment")
-def test_datasaver_multi_parameters_array(channel_array_instrument,
-                                          bg_writing):
+def test_datasaver_multi_parameters_array(channel_array_instrument, bg_writing) -> None:
     """
     Test that we can register multiparameters that are array like.
     """
@@ -1910,8 +1922,9 @@ def test_datasaver_multi_parameters_array(channel_array_instrument,
 
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.usefixtures("experiment")
-def test_datasaver_2d_multi_parameters_array(channel_array_instrument,
-                                             bg_writing):
+def test_datasaver_2d_multi_parameters_array(
+    channel_array_instrument, bg_writing
+) -> None:
     """
     Test that we can register multiparameters that are array like and 2D.
     """
@@ -1946,8 +1959,12 @@ def test_datasaver_2d_multi_parameters_array(channel_array_instrument,
     ds = load_by_id(datasaver.run_id)
 
     # 30 points in each setpoint value list
-    this_sp_val = np.array(reduce(list.__add__, [[n]*3 for n in range(5, 10)], []))
-    that_sp_val = np.array(reduce(list.__add__, [[n] for n in range(9, 12)], []) * 5)
+    this_sp_val: np.ndarray = np.array(
+        reduce(list.__add__, [[n] * 3 for n in range(5, 10)], [])  # type: ignore[arg-type]
+    )
+    that_sp_val: np.ndarray = np.array(
+        reduce(list.__add__, [[n] for n in range(9, 12)], []) * 5  # type: ignore[arg-type]
+    )
 
     assert isinstance(ds, DataSet)
     np.testing.assert_array_equal(
@@ -1981,7 +1998,7 @@ def test_datasaver_2d_multi_parameters_array(channel_array_instrument,
 @pytest.mark.parametrize("storage_type", ['numeric', 'array'])
 @settings(deadline=None)
 @given(Ns=hst.lists(hst.integers(2, 10), min_size=2, max_size=5))
-def test_datasaver_arrays_of_different_length(storage_type, Ns, bg_writing):
+def test_datasaver_arrays_of_different_length(storage_type, Ns, bg_writing) -> None:
     """
     Test that we can save arrays of different length in a single call to
     datasaver.add_result
@@ -2023,7 +2040,7 @@ def test_datasaver_arrays_of_different_length(storage_type, Ns, bg_writing):
 
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.usefixtures("experiment")
-def test_save_complex_num(complex_num_instrument, bg_writing):
+def test_save_complex_num(complex_num_instrument, bg_writing) -> None:
     """
     Test that we can save various parameters mixed with complex parameters
     """
@@ -2102,8 +2119,7 @@ def test_save_complex_num(complex_num_instrument, bg_writing):
 
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.usefixtures("experiment")
-def test_save_and_reload_complex_standalone(complex_num_instrument,
-                                            bg_writing):
+def test_save_and_reload_complex_standalone(complex_num_instrument, bg_writing) -> None:
     param = complex_num_instrument.complex_num
     complex_num_instrument.setpoint(1)
     Parameter("test", set_cmd=None, get_cmd=lambda: 1 + 1j, vals=vals.ComplexNumbers())
@@ -2122,7 +2138,7 @@ def test_save_and_reload_complex_standalone(complex_num_instrument,
 
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.usefixtures("experiment")
-def test_save_complex_num_setpoints(complex_num_instrument, bg_writing):
+def test_save_complex_num_setpoints(complex_num_instrument, bg_writing) -> None:
     """
     Test that we can save a parameter with complex setpoints
     """
@@ -2151,7 +2167,7 @@ def test_save_complex_num_setpoints(complex_num_instrument, bg_writing):
 
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.usefixtures("experiment")
-def test_save_complex_num_setpoints_array(complex_num_instrument, bg_writing):
+def test_save_complex_num_setpoints_array(complex_num_instrument, bg_writing) -> None:
     """
     Test that we can save an array parameter with complex setpoints
     """
@@ -2187,7 +2203,7 @@ def test_save_complex_num_setpoints_array(complex_num_instrument, bg_writing):
 
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.usefixtures("experiment")
-def test_save_complex_as_num_raises(complex_num_instrument, bg_writing):
+def test_save_complex_as_num_raises(complex_num_instrument, bg_writing) -> None:
     setparam = complex_num_instrument.setpoint
     param = complex_num_instrument.complex_num
     meas = Measurement()
@@ -2207,7 +2223,7 @@ def test_save_complex_as_num_raises(complex_num_instrument, bg_writing):
 
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.usefixtures("experiment")
-def test_save_numeric_as_complex_raises(complex_num_instrument, bg_writing):
+def test_save_numeric_as_complex_raises(complex_num_instrument, bg_writing) -> None:
     setparam = complex_num_instrument.setpoint
     param = complex_num_instrument.complex_num
     meas = Measurement()
@@ -2224,7 +2240,7 @@ def test_save_numeric_as_complex_raises(complex_num_instrument, bg_writing):
                                  (param, setparam()))
 
 
-def test_parameter_inference(channel_array_instrument):
+def test_parameter_inference(channel_array_instrument) -> None:
     chan = channel_array_instrument.channels[0]
     # default values
     assert Measurement._infer_paramtype(chan.temperature, None) is None
@@ -2256,7 +2272,7 @@ def test_parameter_inference(channel_array_instrument):
 
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.usefixtures("experiment")
-def test_adding_parents(bg_writing, DAC):
+def test_adding_parents(bg_writing, DAC) -> None:
     """
     Test that we can register a DataSet as the parent of another DataSet
     as created by the Measurement

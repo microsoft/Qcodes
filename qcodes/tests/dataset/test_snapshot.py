@@ -68,7 +68,7 @@ def test_station_snapshot_during_measurement(
 
 
 @pytest.mark.usefixtures('set_default_station_to_none')
-def test_snapshot_creation_for_types_not_supported_by_builtin_json(experiment):
+def test_snapshot_creation_for_types_not_supported_by_builtin_json(experiment) -> None:
     """
     Test that `Measurement`/`Runner`/`DataSaver` infrastructure
     successfully dumps station snapshots in JSON format in cases when the

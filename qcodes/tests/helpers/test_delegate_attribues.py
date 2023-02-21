@@ -102,7 +102,7 @@ def test_delegate_object() -> None:
         assert dir(to_obj).count(attr) == 1
 
 
-def test_delegate_objects():
+def test_delegate_objects() -> None:
     class R1:
         a = 1
         b = 2
@@ -142,7 +142,7 @@ def test_delegate_objects():
         assert dir(to_objs).count(attr) == 1
 
 
-def test_delegate_both():
+def test_delegate_both() -> None:
     class Recipient:
         rock = 0
         paper = 1

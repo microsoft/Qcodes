@@ -6,7 +6,6 @@ import numpy as np
 import pytest
 from hypothesis import HealthCheck, given, settings
 
-import qcodes as qc
 from qcodes.dataset import load_by_id, new_data_set
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
@@ -14,13 +13,13 @@ from qcodes.dataset.measurements import DataSaver, Measurement
 from qcodes.parameters import Parameter
 
 
-def test_string_via_dataset(experiment):
+def test_string_via_dataset(experiment) -> None:
     """
     Test that we can save text into database via DataSet API
     """
     p = ParamSpecBase("p", "text")
 
-    test_set = qc.new_data_set("test-dataset")
+    test_set = new_data_set("test-dataset")
     idps = InterDependencies_(standalones=(p,))
     test_set.set_interdependencies(idps)
     test_set.mark_started()
@@ -32,13 +31,13 @@ def test_string_via_dataset(experiment):
     assert test_set.get_parameter_data()["p"]["p"] == [["some text"]]
 
 
-def test_string_via_datasaver(experiment):
+def test_string_via_datasaver(experiment) -> None:
     """
     Test that we can save text into database via DataSaver API
     """
     p = ParamSpecBase(name="p", paramtype="text")
 
-    test_set = qc.new_data_set("test-dataset")
+    test_set = new_data_set("test-dataset")
     idps = InterDependencies_(standalones=(p,))
     test_set.prepare(snapshot={}, interdeps=idps)
 
@@ -53,12 +52,18 @@ def test_string_via_datasaver(experiment):
     assert test_set.get_parameter_data()["p"]["p"] == np.array(["some text"])
 
 
-def test_string(experiment):
+def test_string(experiment) -> None:
     """
     Test that we can save text into database via Measurement API
     """
-    p = qc.Parameter('p', label='String parameter', unit='', get_cmd=None,
-                     set_cmd=None, initial_value='some text')
+    p = Parameter(
+        "p",
+        label="String parameter",
+        unit="",
+        get_cmd=None,
+        set_cmd=None,
+        initial_value="some text",
+    )
 
     meas = Measurement(experiment)
     meas.register_parameter(p, paramtype='text')
@@ -71,13 +76,19 @@ def test_string(experiment):
     assert test_set.get_parameter_data()["p"]["p"] == np.array(["some text"])
 
 
-def test_string_with_wrong_paramtype(experiment):
+def test_string_with_wrong_paramtype(experiment) -> None:
     """
     Test that an exception occurs when saving string data if when registering a
     string parameter the paramtype was not set to 'text'
     """
-    p = qc.Parameter('p', label='String parameter', unit='', get_cmd=None,
-                     set_cmd=None, initial_value='some text')
+    p = Parameter(
+        "p",
+        label="String parameter",
+        unit="",
+        get_cmd=None,
+        set_cmd=None,
+        initial_value="some text",
+    )
 
     meas = Measurement(experiment)
     # intentionally forget `paramtype='text'`, so that the default 'numeric'
@@ -187,9 +198,15 @@ def test_list_of_strings(experiment) -> None:
         shape=hypnumpy.array_shapes()
     )
 )
-def test_string_and_date_data_in_array(experiment, p_values):
-    p = qc.Parameter('p', label='String parameter', unit='', get_cmd=None,
-                     set_cmd=None, initial_value=p_values)
+def test_string_and_date_data_in_array(experiment, p_values) -> None:
+    p = Parameter(
+        "p",
+        label="String parameter",
+        unit="",
+        get_cmd=None,
+        set_cmd=None,
+        initial_value=p_values,
+    )
 
     meas = Measurement(experiment)
     meas.register_parameter(p, paramtype='array')

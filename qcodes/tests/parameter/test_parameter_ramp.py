@@ -11,7 +11,7 @@ from qcodes.validators import Numbers
 from .conftest import MemoryParameter
 
 
-def test_step_ramp(caplog):
+def test_step_ramp(caplog) -> None:
     p = MemoryParameter(name='test_step')
     p(42)
     assert p.set_values == [42]
@@ -40,7 +40,7 @@ def test_step_ramp(caplog):
 
 @given(scale=hst.integers(1, 100),
        value=hst.floats(min_value=1e-9, max_value=10))
-def test_ramp_scaled(scale, value):
+def test_ramp_scaled(scale, value) -> None:
     start_point = 0.0
     p = MemoryParameter(name='p', scale=scale,
                         initial_value=start_point)
@@ -77,7 +77,7 @@ def test_ramp_scaled(scale, value):
 
 
 @given(value=hst.floats(min_value=1e-9, max_value=10))
-def test_ramp_parser(value):
+def test_ramp_parser(value) -> None:
     start_point = 0.0
     p = MemoryParameter(name='p',
                         set_parser=lambda x: -x,
@@ -120,7 +120,7 @@ def test_ramp_parser(value):
 @given(scale=hst.integers(1, 100),
        value=hst.floats(min_value=1e-9, max_value=10))
 @settings(deadline=None)
-def test_ramp_parsed_scaled(scale, value):
+def test_ramp_parsed_scaled(scale, value) -> None:
     start_point = 0.0
     p = MemoryParameter(name='p',
                         scale=scale,
@@ -154,7 +154,7 @@ def test_ramp_parsed_scaled(scale, value):
     assert p.raw_value == -scale * value
 
 
-def test_stepping_from_invalid_starting_point():
+def test_stepping_from_invalid_starting_point() -> None:
 
     the_value = -10
 

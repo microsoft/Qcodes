@@ -1,4 +1,6 @@
-from typing import Optional
+from __future__ import annotations
+
+from typing import Any
 
 import pytest
 
@@ -16,11 +18,11 @@ class HasSnapshotBase(Metadatable):
 class HasSnapshot(Metadatable):
     # Users shouldn't do this... but we'll test its behavior
     # for completeness
-    def snapshot(self, update: Optional[bool] = False) -> Snapshot:  # type: ignore[misc]
+    def snapshot(self, update: bool | None = False) -> Snapshot:  # type: ignore[misc]
         return {"fruit": "kiwi"}
 
 
-DATASETLEFT = {
+DATASETLEFT: dict[str, dict[str, dict[str, Any]]] = {
     "station": {
         "parameters": {
             "apple": {
@@ -44,7 +46,7 @@ DATASETLEFT = {
         }
     }
 }
-DATASETRIGHT = {
+DATASETRIGHT: dict[str, dict[str, dict[str, Any]]] = {
     "station": {
         "parameters": {
             "apple": {
@@ -143,7 +145,7 @@ def test_station_diff() -> None:
         }
 
 
-def test_instrument_diff():
+def test_instrument_diff() -> None:
     left = DATASETLEFT["station"]["instruments"]["another"]
     right = DATASETRIGHT["station"]["instruments"]["another"]
 
