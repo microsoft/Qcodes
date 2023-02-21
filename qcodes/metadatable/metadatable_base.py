@@ -72,7 +72,6 @@ class MetadatableWithName(Metadatable):
         """
         Name excluding name of any parent that this object is bound to.
         """
-        ...
 
     @property
     @abstractmethod
@@ -80,4 +79,3 @@ class MetadatableWithName(Metadatable):
         """
         Name including name of any parent that this object is bound to separated by '_'.
         """
-        ...
