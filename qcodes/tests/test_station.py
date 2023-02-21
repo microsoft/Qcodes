@@ -911,17 +911,22 @@ def test_station_config_created_with_multiple_config_files():
 
 def test_get_component_by_name() -> None:
     instr = DummyChannelInstrument(name="dummy")
-    station = Station(instr)
+    param = Parameter(name="param", set_cmd=None, get_cmd=None)
+    station = Station(instr, param)
 
     assert station.get_component("dummy") is instr
     assert station.get_component("dummy_A") is instr.A
     assert station.get_component("dummy_ChanA") is instr.A
     assert station.get_component("dummy_ChanA_temperature") is instr.A.temperature
 
+    assert station.get_component("param") is param
+
 
 def test_get_wrong_component_by_name_raises() -> None:
     instr = DummyChannelInstrument(name="dummy")
-    station = Station(instr)
+    param = Parameter(name="param", set_cmd=None, get_cmd=None)
+    station = Station(instr, param)
+
     with pytest.raises(KeyError, match="Component notdummy is not part of the station"):
         _ = station.get_component("notdummy")
 
@@ -932,10 +937,17 @@ def test_get_wrong_component_by_name_raises() -> None:
 
     with pytest.raises(
         KeyError,
-        match="Found component dummy_ChanA_temperature but could not match parameter part",
+        match=(
+            "Found component dummy_ChanA_temperature but could "
+            "not match parameter part"
+        ),
     ):
         _ = station.get_component("dummy_ChanA_temperature_parameter")
 
+    with pytest.raises(
+        KeyError, match="Found component param but this has no sub-component foo."
+    ):
+        _ = station.get_component("param_foo")
 
 def test_component_by_name_with_underscore_in_name() -> None:
     instr = DummyChannelInstrument(name="dum_my")
