@@ -162,6 +162,10 @@ def test_filter_guid(locs, stats, smpls) -> None:
         cfg["GUID_components"]["location"] = loc
         cfg["GUID_components"]["work_station"] = stat
         cfg["GUID_components"]["sample"] = smpl
+        # even thou setting the sample name is no longer supported
+        # by default it makes sense to still be able to filter
+        # old dataset on that since they already exist
+        cfg["GUID_components"]["GUID_type"] = "explicit_sample"
 
         if smpl in (0, 0xAAAAAAAA):
             guid = generate_guid()
