@@ -266,10 +266,10 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
         if potential_top_level_name in self.parameters:
             component = self.parameters[potential_top_level_name]
         elif potential_top_level_name in self.functions:
-            component =  self.functions[potential_top_level_name]
+            component = self.functions[potential_top_level_name]
         elif potential_top_level_name in self.submodules:
             # recursive call on found component
-            component =  self.submodules[potential_top_level_name]
+            component = self.submodules[potential_top_level_name]
             if len(remaining_name_parts) > 0:
                 remaining_name_parts.reverse()
                 remaining_name = "_".join(remaining_name_parts)
@@ -289,8 +289,8 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
 
             remaining_name_parts.reverse()
             raise KeyError(
-                    f"Found component {component.full_name} but could not match "
-                    f"{'_'.join(remaining_name_parts)} part."
+                f"Found component {component.full_name} but could not match "
+                f"{'_'.join(remaining_name_parts)} part."
             )
         else:
             if len(remaining_name_parts) == 0:
@@ -308,7 +308,6 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
             )
 
         return component
-
 
     def snapshot_base(
         self,
