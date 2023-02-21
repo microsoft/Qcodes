@@ -61,12 +61,23 @@ class Metadatable:
 
 
 class MetadatableWithName(Metadatable):
+    """Add short_name and full_name properties to Metadatable.
+    This is used as a base class for all components in QCoDeS that
+    are members of a station to ensure that they have a name and
+    consistent interface."""
+
     @property
     @abstractmethod
     def short_name(self) -> str:
+        """
+        Name excluding name of any parent that this object is bound to.
+        """
         ...
 
     @property
     @abstractmethod
     def full_name(self) -> str:
+        """
+        Name including name of any parent that this object is bound to separated by '_'.
+        """
         ...
