@@ -943,4 +943,6 @@ def test_component_by_name_with_underscore_in_name() -> None:
     assert station.get_component("dum_my") is instr
     assert station.get_component("dum_my_A") is instr.A
     assert station.get_component("dum_my_ChanA") is instr.A
+    assert station.get_component("dum_my_A_temperature") is instr.A.temperature
     assert station.get_component("dum_my_ChanA_temperature") is instr.A.temperature
+    assert station.get_component("dum_my_ChanA_log_my_name") is instr.A.log_my_name
