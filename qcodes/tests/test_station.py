@@ -917,6 +917,7 @@ def test_get_component_by_name() -> None:
     assert station.get_component("dummy") is instr
     assert station.get_component("dummy_A") is instr.A
     assert station.get_component("dummy_ChanA") is instr.A
+    assert station.get_component("dummy_A_temperature") is instr.A.temperature
     assert station.get_component("dummy_ChanA_temperature") is instr.A.temperature
 
     assert station.get_component("param") is param
