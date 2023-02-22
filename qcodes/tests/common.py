@@ -15,7 +15,7 @@ from typing_extensions import ParamSpec
 
 import qcodes
 from qcodes.configuration import Config, DotDict
-from qcodes.metadatable import Metadatable
+from qcodes.metadatable import MetadatableWithName
 from qcodes.utils import deprecate
 
 if TYPE_CHECKING:
@@ -154,14 +154,13 @@ def skip_if_no_fixtures(dbname: str | Path) -> None:
         )
 
 
-class DumyPar(Metadatable):
+class DummyComponent(MetadatableWithName):
 
-    """Docstring for DumyPar. """
+    """Docstring for DummyComponent."""
 
     def __init__(self, name: str):
         super().__init__()
         self.name = name
-        self.full_name = name
 
     def __str__(self) -> str:
         return self.full_name
@@ -169,6 +168,14 @@ class DumyPar(Metadatable):
     def set(self, value: float) -> float:
         value = value * 2
         return value
+
+    @property
+    def short_name(self) -> str:
+        return self.name
+
+    @property
+    def full_name(self) -> str:
+        return self.full_name
 
 
 @deprecate(reason="Unused internally", alternative="default_config fixture")

@@ -20,7 +20,7 @@ from qcodes.tests.instrument_mocks import DummyChannelInstrument, DummyInstrumen
 from qcodes.utils import NumpyJSONEncoder, QCoDeSDeprecationWarning, get_qcodes_path
 from qcodes.utils.deprecate import deprecation_message
 
-from .common import DumyPar
+from .common import DummyComponent
 
 
 @pytest.fixture(autouse=True)
@@ -157,7 +157,7 @@ def test_close_all_registered_instruments():
         assert name not in Instrument._all_instruments
 
 
-def test_snapshot():
+def test_snapshot() -> None:
     station = Station()
 
     empty_snapshot = station.snapshot()
@@ -178,8 +178,8 @@ def test_snapshot():
     excluded_parameter = Parameter('excluded_parameter', snapshot_exclude=True)
     station.add_component(excluded_parameter)
 
-    component = DumyPar('component')
-    component.metadata['smth'] = 'in the way she moves'
+    component = DummyComponent("component")
+    component.metadata["smth"] = "in the way she moves"
     station.add_component(component)
     component_snapshot = component.snapshot()
 
