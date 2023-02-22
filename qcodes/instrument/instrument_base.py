@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 
 from qcodes.logger import get_instrument_logger
-from qcodes.metadatable import Metadatable
+from qcodes.metadatable import Metadatable, MetadatableWithName
 from qcodes.parameters import Function, Parameter, ParameterBase
 from qcodes.utils import DelegateAttributes, full_class
 
@@ -23,7 +23,7 @@ from qcodes.utils import QCoDeSDeprecationWarning
 log = logging.getLogger(__name__)
 
 
-class InstrumentBase(Metadatable, DelegateAttributes):
+class InstrumentBase(MetadatableWithName, DelegateAttributes):
     """
     Base class for all QCodes instruments and instrument channels
 
@@ -233,6 +233,81 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             self._channel_lists[name] = submodule
         else:
             self.instrument_modules[name] = submodule
+
+    def get_component(self, full_name: str) -> MetadatableWithName:
+        """
+        Recursively get a component of the instrument by full_name.
+
+        Args:
+            name: The name of the component to get.
+
+        Returns:
+            The component with the given name.
+
+        Raises:
+            KeyError: If the component does not exist.
+        """
+        name_parts = full_name.split("_")
+        name_parts.reverse()
+
+        component = self._get_component_by_name(name_parts.pop(), name_parts)
+        return component
+
+    def _get_component_by_name(
+        self, potential_top_level_name: str, remaining_name_parts: list[str]
+    ) -> MetadatableWithName:
+        component: MetadatableWithName | None = None
+
+        sub_component_name_map = {
+            sub_component.short_name: sub_component
+            for sub_component in self.submodules.values()
+        }
+
+        if potential_top_level_name in self.parameters:
+            component = self.parameters[potential_top_level_name]
+        elif potential_top_level_name in self.functions:
+            component = self.functions[potential_top_level_name]
+        elif potential_top_level_name in self.submodules:
+            # recursive call on found component
+            component = self.submodules[potential_top_level_name]
+            if len(remaining_name_parts) > 0:
+                remaining_name_parts.reverse()
+                remaining_name = "_".join(remaining_name_parts)
+                component = component.get_component(remaining_name)
+                remaining_name_parts = []
+        elif potential_top_level_name in sub_component_name_map:
+            component = sub_component_name_map[potential_top_level_name]
+            if len(remaining_name_parts) > 0:
+                remaining_name_parts.reverse()
+                remaining_name = "_".join(remaining_name_parts)
+                component = component.get_component(remaining_name)
+                remaining_name_parts = []
+
+        if component is not None:
+            if len(remaining_name_parts) == 0:
+                return component
+
+            remaining_name_parts.reverse()
+            raise KeyError(
+                f"Found component {component.full_name} but could not match "
+                f"{'_'.join(remaining_name_parts)} part."
+            )
+
+        if len(remaining_name_parts) == 0:
+            raise KeyError(
+                f"Found component {self.full_name} but could not "
+                f"match {potential_top_level_name} part."
+            )
+
+        new_potential_top_level_name = (
+            f"{potential_top_level_name}_{remaining_name_parts.pop()}"
+        )
+        remaining_name_parts.reverse()
+        component = self._get_component_by_name(
+            new_potential_top_level_name, remaining_name_parts
+        )
+
+        return component
 
     def snapshot_base(
         self,

@@ -16,11 +16,11 @@ from qcodes.instrument import Instrument
 from qcodes.monitor import Monitor
 from qcodes.parameters import DelegateParameter, Parameter
 from qcodes.station import SCHEMA_PATH, Station, ValidationWarning, update_config_schema
-from qcodes.tests.instrument_mocks import DummyInstrument
+from qcodes.tests.instrument_mocks import DummyChannelInstrument, DummyInstrument
 from qcodes.utils import NumpyJSONEncoder, QCoDeSDeprecationWarning, get_qcodes_path
 from qcodes.utils.deprecate import deprecation_message
 
-from .common import DumyPar
+from .common import DummyComponent
 
 
 @pytest.fixture(autouse=True)
@@ -157,7 +157,7 @@ def test_close_all_registered_instruments():
         assert name not in Instrument._all_instruments
 
 
-def test_snapshot():
+def test_snapshot() -> None:
     station = Station()
 
     empty_snapshot = station.snapshot()
@@ -178,8 +178,8 @@ def test_snapshot():
     excluded_parameter = Parameter('excluded_parameter', snapshot_exclude=True)
     station.add_component(excluded_parameter)
 
-    component = DumyPar('component')
-    component.metadata['smth'] = 'in the way she moves'
+    component = DummyComponent("component")
+    component.metadata["smth"] = "in the way she moves"
     station.add_component(component)
     component_snapshot = component.snapshot()
 
@@ -907,3 +907,56 @@ def test_station_config_created_with_multiple_config_files():
             test_config1, test_config2
     ) as file_list:
         assert station_config_has_been_loaded(Station(config_file=file_list))
+
+
+def test_get_component_by_name() -> None:
+    instr = DummyChannelInstrument(name="dummy")
+    param = Parameter(name="param", set_cmd=None, get_cmd=None)
+    station = Station(instr, param)
+
+    assert station.get_component("dummy") is instr
+    assert station.get_component("dummy_A") is instr.A
+    assert station.get_component("dummy_ChanA") is instr.A
+    assert station.get_component("dummy_A_temperature") is instr.A.temperature
+    assert station.get_component("dummy_ChanA_temperature") is instr.A.temperature
+
+    assert station.get_component("param") is param
+
+
+def test_get_wrong_component_by_name_raises() -> None:
+    instr = DummyChannelInstrument(name="dummy")
+    param = Parameter(name="param", set_cmd=None, get_cmd=None)
+    station = Station(instr, param)
+
+    with pytest.raises(KeyError, match="Component notdummy is not part of the station"):
+        _ = station.get_component("notdummy")
+
+    with pytest.raises(
+        KeyError, match="Found component dummy but could not match notachannel part"
+    ):
+        _ = station.get_component("dummy_notachannel")
+
+    with pytest.raises(
+        KeyError,
+        match=(
+            "Found component dummy_ChanA_temperature but could "
+            "not match parameter part"
+        ),
+    ):
+        _ = station.get_component("dummy_ChanA_temperature_parameter")
+
+    with pytest.raises(
+        KeyError, match="Found component param but this has no sub-component foo."
+    ):
+        _ = station.get_component("param_foo")
+
+
+def test_component_by_name_with_underscore_in_name() -> None:
+    instr = DummyChannelInstrument(name="dum_my")
+    station = Station(instr)
+    assert station.get_component("dum_my") is instr
+    assert station.get_component("dum_my_A") is instr.A
+    assert station.get_component("dum_my_ChanA") is instr.A
+    assert station.get_component("dum_my_A_temperature") is instr.A.temperature
+    assert station.get_component("dum_my_ChanA_temperature") is instr.A.temperature
+    assert station.get_component("dum_my_ChanA_log_my_name") is instr.A.log_my_name
