@@ -550,7 +550,7 @@ def test_perform_upgrade_v3_to_v4() -> None:
         assert p5.unit == "unit 5"
 
 
-@pytest.mark.usefixtures("empty_temp_db")
+@pytest.mark.usefixtures("default_config", "empty_temp_db")
 def test_update_existing_guids(caplog) -> None:
 
     old_loc = 101
