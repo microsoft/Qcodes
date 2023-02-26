@@ -8,6 +8,8 @@ import os
 from types import MethodType
 from typing import TYPE_CHECKING, Any, Literal
 
+from qcodes.utils import deprecate
+
 from .command import Command
 from .parameter_base import ParamDataType, ParameterBase, ParamRawDataType
 from .sweep_values import SweepFixedValues
@@ -390,6 +392,10 @@ class Parameter(ParameterBase):
     def label(self, label: str) -> None:
         self._label = label
 
+    @deprecate(
+        "the ability to sweep a parameter using [start:step:stop] will be removed",
+        alternative="Parameter.sweep for qcodes_loop support",
+    )
     def __getitem__(self, keys: Any) -> SweepFixedValues:
         """
         Slice a Parameter to get a SweepValues object
