@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Any, Dict, Mapping, Optional, Sequence
+from typing import Any, Dict, Mapping, Optional, Sequence, final
 
 from qcodes.utils import deep_update
 
@@ -29,6 +29,7 @@ class Metadatable:
         """
         deep_update(self.metadata, metadata)
 
+    @final
     def snapshot(self, update: Optional[bool] = False) -> Snapshot:
         """
         Decorate a snapshot dictionary with metadata.

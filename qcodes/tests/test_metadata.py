@@ -1,6 +1,9 @@
+from typing import Optional
+
 import pytest
 
 from qcodes.metadatable import Metadatable
+from qcodes.metadatable.metadatable_base import Snapshot
 from qcodes.utils import diff_param_values
 
 
@@ -13,8 +16,8 @@ class HasSnapshotBase(Metadatable):
 class HasSnapshot(Metadatable):
     # Users shouldn't do this... but we'll test its behavior
     # for completeness
-    def snapshot(self, update=False):
-        return {'fruit': 'kiwi'}
+    def snapshot(self, update: Optional[bool] = False) -> Snapshot:  # type: ignore[misc]
+        return {"fruit": "kiwi"}
 
 
 DATASETLEFT = {
