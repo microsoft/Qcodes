@@ -51,7 +51,7 @@ def treat_validation_warning_as_error():
     warnings.simplefilter("default", ValidationWarning)
 
 
-def test_station():
+def test_station() -> None:
     bob = DummyInstrument('bob', gates=['one'])
     station = Station(bob)
 
@@ -62,7 +62,7 @@ def test_station():
     assert station == Station.default
 
 
-def test_station_getitem():
+def test_station_getitem() -> None:
     bob = DummyInstrument('bob', gates=['one'])
     station = Station(bob)
 
@@ -72,7 +72,7 @@ def test_station_getitem():
         _ = station.components['bobby']
 
 
-def test_station_delegated_attributes():
+def test_station_delegated_attributes() -> None:
     bob = DummyInstrument('bob', gates=['one'])
     station = Station(bob)
 
@@ -84,7 +84,7 @@ def test_station_delegated_attributes():
         _ = station.bobby
 
 
-def test_add_component():
+def test_add_component() -> None:
     bob = DummyInstrument('bob', gates=['one'])
     station = Station()
     station.add_component(bob, 'bob')
@@ -93,7 +93,7 @@ def test_add_component():
     assert bob == station.components['bob']
 
 
-def test_add_component_without_specifying_name():
+def test_add_component_without_specifying_name() -> None:
     """
     Test that station looks for 'name' attribute in the component and uses it
     """
@@ -127,7 +127,7 @@ def test_add_component_with_no_name() -> None:
     assert jay == station.components["component1"]  # type: ignore[comparison-overlap]
 
 
-def test_remove_component():
+def test_remove_component() -> None:
     bob = DummyInstrument('bob', gates=['one'])
     station = Station()
     station.add_component(bob, 'bob')
@@ -146,7 +146,7 @@ def test_remove_component():
         _ = station.remove_component('bobby')
 
 
-def test_close_all_registered_instruments():
+def test_close_all_registered_instruments() -> None:
     names = [f'some_name_{i}' for i in range(10)]
     instrs = [Instrument(name=name) for name in names]
     st = Station(*instrs)
@@ -203,7 +203,7 @@ def test_snapshot() -> None:
     assert component_snapshot == snapshot['components']['component']
 
 
-def test_station_after_instrument_is_closed():
+def test_station_after_instrument_is_closed() -> None:
     """
     Test that station is aware of the fact that its components could be
     removed within the lifetime of the station. Here we instantiate an
@@ -244,7 +244,7 @@ def test_station_after_instrument_is_closed():
         station.remove_component('bob')
 
 
-def test_update_config_schema():
+def test_update_config_schema() -> None:
     update_config_schema()
     with open(SCHEMA_PATH) as f:
         schema = json.load(f)
@@ -301,7 +301,7 @@ instruments:
         yield filename
 
 
-def test_dynamic_reload_of_file(example_station_config):
+def test_dynamic_reload_of_file(example_station_config) -> None:
     st = Station(config_file=example_station_config)
     mock_dac = st.load_instrument('mock_dac')
     assert 'ch1' in mock_dac.parameters
@@ -330,7 +330,7 @@ def _make_example_station(example_station_config):
 
 
 # instrument loading related tests
-def test_station_config_path_resolution(example_station_config):
+def test_station_config_path_resolution(example_station_config) -> None:
     config = qcodes.config["station"]
 
     # There is no default yaml file present that defines a station
@@ -386,11 +386,11 @@ def test_station_config_path_resolution(example_station_config):
     assert station_config_has_been_loaded(Station(config_file=str(path)))
 
 
-def test_station_configuration_is_a_component_of_station(example_station):
+def test_station_configuration_is_a_component_of_station(example_station) -> None:
     assert station_config_has_been_loaded(example_station)
 
 
-def test_station_config_can_be_loaded_from_snapshot(example_station):
+def test_station_config_can_be_loaded_from_snapshot(example_station) -> None:
     assert station_config_has_been_loaded(example_station)
     # ensure that we can correctly dump config which is a subclass of UserDict
     configdump = json.dumps(example_station.config, cls=NumpyJSONEncoder)
@@ -419,7 +419,7 @@ instruments:
         """)
 
 
-def test_simple_mock_config(simple_mock_station):
+def test_simple_mock_config(simple_mock_station) -> None:
     st = simple_mock_station
     assert station_config_has_been_loaded(st)
     assert hasattr(st, 'load_mock')
@@ -429,7 +429,7 @@ def test_simple_mock_config(simple_mock_station):
     assert 'mock' in st.config['instruments']
 
 
-def test_simple_mock_load_mock(simple_mock_station):
+def test_simple_mock_load_mock(simple_mock_station) -> None:
     st = simple_mock_station
     mock = st.load_mock()
     assert isinstance(mock, DummyInstrument)
@@ -437,7 +437,7 @@ def test_simple_mock_load_mock(simple_mock_station):
     assert st.components['mock'] is mock
 
 
-def test_simple_mock_load_instrument(simple_mock_station):
+def test_simple_mock_load_instrument(simple_mock_station) -> None:
     st = simple_mock_station
     mock = st.load_instrument('mock')
     assert isinstance(mock, DummyInstrument)
@@ -493,7 +493,7 @@ instruments:
                         expect_failure=True)
 
 
-def test_revive_instance():
+def test_revive_instance() -> None:
     st = station_from_config_str("""
 instruments:
   mock:
@@ -513,7 +513,7 @@ instruments:
     assert mock3 == st.mock
 
 
-def test_init_parameters():
+def test_init_parameters() -> None:
     st = station_from_config_str(
         """
 instruments:
@@ -548,7 +548,7 @@ instruments:
     st.load_instrument('lakeshore')
 
 
-def test_name_init_kwarg(simple_mock_station):
+def test_name_init_kwarg(simple_mock_station) -> None:
     # special case of `name` as kwarg
     st = simple_mock_station
     mock = st.load_instrument('mock', name='test')
@@ -556,7 +556,7 @@ def test_name_init_kwarg(simple_mock_station):
     assert st.components['test'] is mock
 
 
-def test_name_specified_in_init_in_yaml_is_used():
+def test_name_specified_in_init_in_yaml_is_used() -> None:
     st = station_from_config_str(
         """
 instruments:
@@ -578,7 +578,7 @@ class InstrumentWithNameAsNotFirstArgument(Instrument):
         self._first_arg = first_arg
 
 
-def test_able_to_load_instrument_with_name_argument_not_being_the_first():
+def test_able_to_load_instrument_with_name_argument_not_being_the_first() -> None:
     st = station_from_config_str(
         """
 instruments:
@@ -592,7 +592,7 @@ instruments:
     assert st.components['name_goes_second'] is instr
 
 
-def test_setup_alias_parameters():
+def test_setup_alias_parameters() -> None:
     st = station_from_config_str("""
 instruments:
   mock:
@@ -613,7 +613,7 @@ instruments:
     """)
     mock = st.load_instrument('mock')
     p = getattr(mock, 'gate_a')
-    assert isinstance(p, qcodes.Parameter)
+    assert isinstance(p, Parameter)
     assert p.unit == 'mV'
     assert p.label == 'main gate'
     assert p.scale == 2
@@ -629,7 +629,7 @@ instruments:
     assert mock.ch1.raw_value == 7
 
 
-def test_setup_delegate_parameters():
+def test_setup_delegate_parameters() -> None:
     st = station_from_config_str("""
 instruments:
   mock:
@@ -680,7 +680,7 @@ instruments:
             json.dumps(p.snapshot()['source_parameter']))
 
 
-def test_channel_instrument():
+def test_channel_instrument() -> None:
     """Test that parameters from instrument's submodule also get configured correctly"""
     st = station_from_config_str("""
 instruments:
@@ -702,7 +702,7 @@ instruments:
     assert mock.A.voltage.source is mock.A.temperature
 
 
-def test_setting_channel_parameter():
+def test_setting_channel_parameter() -> None:
     st = station_from_config_str("""
 instruments:
   mock:
@@ -715,13 +715,13 @@ instruments:
     assert mock.channels.temperature() == (10,) * 6
 
 
-def test_monitor_not_loaded_by_default(example_station_config):
+def test_monitor_not_loaded_by_default(example_station_config) -> None:
     st = Station(config_file=example_station_config)
     st.load_instrument('mock_dac')
     assert Monitor.running is None
 
 
-def test_monitor_loaded_if_specified(example_station_config):
+def test_monitor_loaded_if_specified(example_station_config) -> None:
     st = Station(config_file=example_station_config, use_monitor=True)
     st.load_instrument('mock_dac')
     assert Monitor.running is not None
@@ -730,7 +730,7 @@ def test_monitor_loaded_if_specified(example_station_config):
     Monitor.running.stop()
 
 
-def test_monitor_loaded_by_default_if_in_config(example_station_config):
+def test_monitor_loaded_by_default_if_in_config(example_station_config) -> None:
     qcodes.config["station"]['use_monitor'] = True
     st = Station(config_file=example_station_config)
     st.load_instrument('mock_dac')
@@ -740,13 +740,13 @@ def test_monitor_loaded_by_default_if_in_config(example_station_config):
     Monitor.running.stop()
 
 
-def test_monitor_not_loaded_if_specified(example_station_config):
+def test_monitor_not_loaded_if_specified(example_station_config) -> None:
     st = Station(config_file=example_station_config, use_monitor=False)
     st.load_instrument('mock_dac')
     assert Monitor.running is None
 
 
-def test_deprecated_driver_keyword():
+def test_deprecated_driver_keyword() -> None:
     st = station_from_config_str("""
 instruments:
   mock:
@@ -761,7 +761,7 @@ instruments:
         st.load_instrument('mock')
 
 
-def test_deprecated_limits_keyword_as_string():
+def test_deprecated_limits_keyword_as_string() -> None:
     st = station_from_config_str("""
 instruments:
   mock:
@@ -780,7 +780,7 @@ instruments:
         st.load_instrument('mock')
 
 
-def test_config_validation_failure():
+def test_config_validation_failure() -> None:
     with pytest.raises(ValidationWarning):
         station_from_config_str("""
 instruments:
@@ -791,7 +791,7 @@ invalid_keyword:
         """)
 
 
-def test_config_validation_failure_on_file():
+def test_config_validation_failure_on_file() -> None:
     with pytest.raises(ValidationWarning):
         test_config = """
 instruments:
@@ -804,7 +804,7 @@ invalid_keyword:
             Station(config_file=filename)
 
 
-def test_config_validation_comprehensive_config():
+def test_config_validation_comprehensive_config() -> None:
     Station(config_file=os.path.join(
         get_qcodes_path(), 'dist', 'tests', 'station', 'example.station.yaml')
     )
@@ -812,7 +812,7 @@ def test_config_validation_comprehensive_config():
 
 def test_load_all_instruments_raises_on_both_only_names_and_only_types_passed(
         example_station
-):
+) -> None:
     with pytest.raises(
         ValueError,
         match="It is an error to supply both ``only_names`` "
@@ -821,7 +821,7 @@ def test_load_all_instruments_raises_on_both_only_names_and_only_types_passed(
         example_station.load_all_instruments(only_names=(), only_types=())
 
 
-def test_load_all_instruments_no_args(example_station):
+def test_load_all_instruments_no_args(example_station) -> None:
     all_instruments_in_config = {"lakeshore", "mock_dac", "mock_dac2"}
 
     loaded_instruments = example_station.load_all_instruments()
@@ -833,7 +833,7 @@ def test_load_all_instruments_no_args(example_station):
         assert Instrument.exist(instrument)
 
 
-def test_load_all_instruments_only_types(example_station):
+def test_load_all_instruments_only_types(example_station) -> None:
     all_dummy_instruments = {"mock_dac", "mock_dac2"}
 
     loaded_instruments = example_station.load_all_instruments(
@@ -856,7 +856,7 @@ def test_load_all_instruments_only_types(example_station):
         assert not Instrument.exist(instrument)
 
 
-def test_load_all_instruments_only_names(example_station):
+def test_load_all_instruments_only_names(example_station) -> None:
     instruments_to_load = {"lakeshore", "mock_dac"}
 
     loaded_instruments = example_station.load_all_instruments(
@@ -885,7 +885,7 @@ def test_load_all_instruments_without_config_raises() -> None:
         station.load_all_instruments()  # type: ignore[call-overload]
 
 
-def test_station_config_created_with_multiple_config_files():
+def test_station_config_created_with_multiple_config_files() -> None:
 
     test_config1 = """
         instruments:

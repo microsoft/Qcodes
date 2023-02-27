@@ -13,7 +13,7 @@ def _make_driver():
     driver.close()
 
 
-def test_idn(driver):
+def test_idn(driver) -> None:
     assert {'firmware': '3.05-4.06',
             'model': 'PL601-P',
             'serial': '514710',

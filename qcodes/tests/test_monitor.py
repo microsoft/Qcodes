@@ -59,7 +59,7 @@ def _make_channel_instr_monitor(channel_instr, request):
         m.stop()
 
 
-def test_setup_teardown(request):
+def test_setup_teardown(request) -> None:
     """
     Check that monitor starts up and closes correctly
     """
@@ -76,7 +76,7 @@ def test_setup_teardown(request):
     assert monitor.Monitor.running is None
 
 
-def test_monitor_replace(request):
+def test_monitor_replace(request) -> None:
     """
     Check that monitors get correctly replaced
     """
@@ -93,7 +93,7 @@ def test_monitor_replace(request):
     m2.stop()
 
 
-def test_double_join(request):
+def test_double_join(request) -> None:
     """
     Check that a double join doesn't cause a hang
     """

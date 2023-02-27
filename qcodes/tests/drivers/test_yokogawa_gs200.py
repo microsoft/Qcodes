@@ -13,13 +13,13 @@ def _make_gs200():
     gs200.close()
 
 
-def test_basic_init(gs200):
+def test_basic_init(gs200) -> None:
 
     idn = gs200.get_idn()
     assert idn["vendor"] == "QCoDeS Yokogawa Mock"
 
 
-def test_current_raises_in_voltage_mode(gs200):
+def test_current_raises_in_voltage_mode(gs200) -> None:
     gs200.source_mode("VOLT")
 
     with pytest.raises(
@@ -33,7 +33,7 @@ def test_current_raises_in_voltage_mode(gs200):
         gs200.current(1)
 
 
-def test_voltage_raises_in_current_mode(gs200):
+def test_voltage_raises_in_current_mode(gs200) -> None:
     gs200.source_mode("CURR")
 
     with pytest.raises(

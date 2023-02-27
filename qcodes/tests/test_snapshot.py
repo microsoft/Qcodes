@@ -13,7 +13,7 @@ from qcodes.tests.instrument_mocks import SnapShotTestInstrument
                           (['v1', 'v2', 'v3', 'v4'], ['v3']),
                           (['v1', 'v2', 'v3', 'v4'], ['v4']),
                           (['v1', 'v2', 'v3', 'v4'], [])])
-def test_snapshot_skip_params_update(request, params, params_to_skip):
+def test_snapshot_skip_params_update(request, params, params_to_skip) -> None:
     """
     Test that params_to_skip_update works as expected, in particular that only
     the parameters given by that variable are skipped.
@@ -52,7 +52,7 @@ def test_snapshot_skip_params_update(request, params, params_to_skip):
                           (['v1', 'v2', 'v3', 'v4'], ['v4']),
                           (['v1', 'v2', 'v3', 'v4'], ['v1', 'v2']),
                           (['v1', 'v2', 'v3', 'v4'], [])])
-def test_snapshot_exclude_params(request, params, params_to_exclude):
+def test_snapshot_exclude_params(request, params, params_to_exclude) -> None:
     """
     Test that params_to_exclude works as expected, in particular that only
     the parameters given by that variable are excluded from the snapshot.

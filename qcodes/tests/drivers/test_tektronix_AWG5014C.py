@@ -18,14 +18,14 @@ def awg():
     awg_sim.close()
 
 
-def test_init_awg(awg):
+def test_init_awg(awg) -> None:
 
     idn_dict = awg.IDN()
 
     assert idn_dict['vendor'] == 'QCoDeS'
 
 
-def test_pack_waveform(awg):
+def test_pack_waveform(awg) -> None:
 
     N = 25
 
@@ -38,7 +38,7 @@ def test_pack_waveform(awg):
     assert package is not None
 
 
-def test_make_awg_file(awg):
+def test_make_awg_file(awg) -> None:
 
     N = 25
 

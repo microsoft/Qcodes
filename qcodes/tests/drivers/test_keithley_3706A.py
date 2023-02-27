@@ -56,29 +56,29 @@ def matrix_channels():
     return m_channels
 
 
-def test_idn(driver):
+def test_idn(driver) -> None:
     assert {'firmware': '01.56a',
             'model': '3706A-SNFP',
             'serial': '04447336',
             'vendor': 'KEITHLEY INSTRUMENTS INC.'} == driver.get_idn()
 
 
-def test_switch_card_idn(driver):
+def test_switch_card_idn(driver) -> None:
     assert {'slot_no': "1", 'model': "3730",
             'mtype': "6x16 High Density Matrix",
             'firmware': "01.40h",
             'serial': "4447332"} == driver.get_switch_cards()[0]
 
 
-def test_installed_card_id(driver):
+def test_installed_card_id(driver) -> None:
     assert ['1', '2', '3'] == driver._get_slot_ids()
 
 
-def test_slot_names(driver):
+def test_slot_names(driver) -> None:
     assert ['slot1', 'slot2', 'slot3'] == driver._get_slot_names()
 
 
-def test_get_interlock_state(driver):
+def test_get_interlock_state(driver) -> None:
     dict_list = (
         {
             "slot_no": "1",
@@ -96,53 +96,53 @@ def test_get_interlock_state(driver):
     assert dict_list == driver.get_interlock_state()
 
 
-def test_get_number_of_rows(driver):
+def test_get_number_of_rows(driver) -> None:
     assert [6, 6, 6] == driver._get_number_of_rows()
 
 
-def test_get_number_of_columns(driver):
+def test_get_number_of_columns(driver) -> None:
     assert [16, 16, 16] == driver._get_number_of_columns()
 
 
 @pytest.mark.parametrize('val', [0, 1, 2])
-def test_get_rows(driver, val):
+def test_get_rows(driver, val) -> None:
     rows_in_a_slot = ['1', '2', '3', '4', '5', '6']
     assert rows_in_a_slot == driver._get_rows()[val]
 
 
 @pytest.mark.parametrize('val', [0, 1, 2])
-def test_get_columns(driver, val):
+def test_get_columns(driver, val) -> None:
     columns_in_a_slot = ['01', '02', '03', '04', '05', '06', '07', '08', '09',
                          '10', '11', '12', '13', '14', '15', '16']
     assert columns_in_a_slot == driver._get_columns()[val]
 
 
 @pytest.mark.parametrize('val', [1, 2, 3])
-def test_number_of_channels_by_slot(driver, val):
+def test_number_of_channels_by_slot(driver, val) -> None:
     assert 96 == len(driver.get_channels_by_slot(val))
 
 
-def test_total_number_of_channels(driver):
+def test_total_number_of_channels(driver) -> None:
     assert 3*96 == len(driver.get_channels())
 
 
-def test_channels_in_slot_one(driver, channels_in_slot_one):
+def test_channels_in_slot_one(driver, channels_in_slot_one) -> None:
     assert channels_in_slot_one == driver.get_channels_by_slot(1)
 
 
-def test_channels_in_slot_two(driver, channels_in_slot_two):
+def test_channels_in_slot_two(driver, channels_in_slot_two) -> None:
     assert channels_in_slot_two == driver.get_channels_by_slot(2)
 
 
-def test_channels_in_slot_three(driver, channels_in_slot_three):
+def test_channels_in_slot_three(driver, channels_in_slot_three) -> None:
     assert channels_in_slot_three == driver.get_channels_by_slot(3)
 
 
-def test_matrix_channels(driver, matrix_channels):
+def test_matrix_channels(driver, matrix_channels) -> None:
     assert matrix_channels == driver.get_channels()
 
 
-def test_analog_backplane_specifiers(driver):
+def test_analog_backplane_specifiers(driver) -> None:
     specifiers = ['1911', '1912', '1913', '1914', '1915', '1916',
                   '2911', '2912', '2913', '2914', '2915', '2916',
                   '3911', '3912', '3913', '3914', '3915', '3916']
@@ -151,11 +151,11 @@ def test_analog_backplane_specifiers(driver):
 
 @pytest.mark.parametrize('val', ['slot1', 'allslots', '3111', '3912',
                                  '2103:2116'])
-def test_validator_truth(driver, val):
+def test_validator_truth(driver, val) -> None:
     assert driver._validator(val) is True
 
 
 @pytest.mark.parametrize('val', ['slot12', 'alslots', '5111', '912', '123213',
                                  'QCoDeS'])
-def test_validator_falsehood(driver, val):
+def test_validator_falsehood(driver, val) -> None:
     assert driver._validator(val) is False

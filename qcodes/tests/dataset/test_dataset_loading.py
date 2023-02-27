@@ -30,7 +30,7 @@ from qcodes.utils import QCoDeSDeprecationWarning
 
 @pytest.mark.usefixtures("experiment")
 @pytest.mark.usefixtures("reset_config_on_exit")
-def test_load_by_id():
+def test_load_by_id() -> None:
     qc.config.GUID_components.GUID_type = "random_sample"
     ds = new_data_set("test-dataset")
     run_id = ds.run_id
@@ -63,7 +63,7 @@ def test_load_by_id():
 
 
 @pytest.mark.usefixtures("experiment")
-def test_get_guids_from_run_spec_warns():
+def test_get_guids_from_run_spec_warns() -> None:
     ds = new_data_set("test-dataset")
     run_id = ds.run_id
     ds.mark_started()
@@ -78,7 +78,7 @@ def test_get_guids_from_run_spec_warns():
 
 
 @pytest.mark.usefixtures("empty_temp_db")
-def test_load_by_counter():
+def test_load_by_counter() -> None:
     exp = new_experiment(name="for_loading", sample_name="no_sample")
     ds = new_data_set("my_first_ds")
 
@@ -156,7 +156,7 @@ def test_get_run_attributes() -> None:
 
 
 @pytest.mark.usefixtures("empty_temp_db")
-def test_experiment_info_in_dataset():
+def test_experiment_info_in_dataset() -> None:
     exp = new_experiment(name="for_loading", sample_name="no_sample")
     ds = new_data_set("my_first_ds")
 
@@ -166,7 +166,7 @@ def test_experiment_info_in_dataset():
 
 
 @pytest.mark.usefixtures("empty_temp_db")
-def test_run_timestamp():
+def test_run_timestamp() -> None:
     _ = new_experiment(name="for_loading", sample_name="no_sample")
 
     t_before_data_set = time.time()
@@ -181,7 +181,7 @@ def test_run_timestamp():
 
 
 @pytest.mark.usefixtures("empty_temp_db")
-def test_run_timestamp_with_default_format():
+def test_run_timestamp_with_default_format() -> None:
     _ = new_experiment(name="for_loading", sample_name="no_sample")
 
     t_before_data_set = time.time()
@@ -204,7 +204,7 @@ def test_run_timestamp_with_default_format():
 
 
 @pytest.mark.usefixtures("empty_temp_db")
-def test_completed_timestamp():
+def test_completed_timestamp() -> None:
     _ = new_experiment(name="for_loading", sample_name="no_sample")
     ds = new_data_set("my_first_ds")
 
@@ -220,7 +220,7 @@ def test_completed_timestamp():
 
 
 @pytest.mark.usefixtures("empty_temp_db")
-def test_completed_timestamp_for_not_completed_dataset():
+def test_completed_timestamp_for_not_completed_dataset() -> None:
     _ = new_experiment(name="for_loading", sample_name="no_sample")
     ds = new_data_set("my_first_ds")
 
@@ -235,7 +235,7 @@ def test_completed_timestamp_for_not_completed_dataset():
 
 
 @pytest.mark.usefixtures("empty_temp_db")
-def test_completed_timestamp_with_default_format():
+def test_completed_timestamp_with_default_format() -> None:
     _ = new_experiment(name="for_loading", sample_name="no_sample")
     ds = new_data_set("my_first_ds")
 
@@ -264,7 +264,7 @@ def test_completed_timestamp_with_default_format():
 
 
 @pytest.mark.usefixtures('experiment')
-def test_load_by_guid(some_interdeps):
+def test_load_by_guid(some_interdeps) -> None:
     ds = DataSet()
     ds.set_interdependencies(some_interdeps[1])
     ds.mark_started()
@@ -275,7 +275,7 @@ def test_load_by_guid(some_interdeps):
     assert loaded_ds.the_same_dataset_as(ds)
 
 
-def test_load_by_run_spec(empty_temp_db, some_interdeps):
+def test_load_by_run_spec(empty_temp_db, some_interdeps) -> None:
 
     def create_ds_with_exp_id(exp_id):
         ds = DataSet(exp_id=exp_id)

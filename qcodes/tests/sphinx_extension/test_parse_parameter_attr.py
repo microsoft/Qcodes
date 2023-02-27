@@ -70,7 +70,7 @@ class DummyDecoratedClassTestClass(InstrumentBase):
         """
 
 
-def test_extract_class_attr():
+def test_extract_class_attr() -> None:
     a = safe_getattr(DummyTestClass, "myattr")
     assert a == "ClassAttribute"
 
@@ -78,7 +78,7 @@ def test_extract_class_attr():
     assert b == "ClassAttribute"
 
 
-def test_extract_instance_attr():
+def test_extract_instance_attr() -> None:
     with pytest.raises(AttributeError):
         safe_getattr(DummyTestClass, "other_attr")
 
@@ -87,31 +87,31 @@ def test_extract_instance_attr():
     assert repr(b) == '"InstanceAttribute"'
 
 
-def test_instrument_base_get_attr():
+def test_instrument_base_get_attr() -> None:
     parameters = qcodes_parameter_attr_getter(InstrumentBase, "parameters")
     assert isinstance(parameters, ParameterProxy)
     assert repr(parameters) == "{}"
 
 
-def test_visa_instr_get_attr():
+def test_visa_instr_get_attr() -> None:
     parameters = qcodes_parameter_attr_getter(VisaInstrument, "parameters")
     assert isinstance(parameters, ParameterProxy)
     assert repr(parameters) == "{}"
 
 
-def test_decorated_init_func():
+def test_decorated_init_func() -> None:
     attr = qcodes_parameter_attr_getter(DummyDecoratedInitTestClass, "other_attr")
     assert isinstance(attr, ParameterProxy)
     assert repr(attr) == '"InstanceAttribute"'
 
 
-def test_decorated_class():
+def test_decorated_class() -> None:
     attr = qcodes_parameter_attr_getter(DummyDecoratedClassTestClass, "other_attr")
     assert isinstance(attr, ParameterProxy)
     assert repr(attr) == '"InstanceAttribute"'
 
 
-def test_no_init():
+def test_no_init() -> None:
     """Test that attribute can be found from a class without an init function."""
     attr = qcodes_parameter_attr_getter(DummyNoInitClass, "parameters")
     assert isinstance(attr, ParameterProxy)

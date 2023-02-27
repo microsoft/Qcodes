@@ -28,7 +28,7 @@ def assert_experiments_equal(exp, exp_2):
 
 
 @pytest.mark.usefixtures("empty_temp_db")
-def test_run_loaded_experiment():
+def test_run_loaded_experiment() -> None:
     """
     Test that we can resume a measurement after loading by name
     """
@@ -44,7 +44,7 @@ def test_run_loaded_experiment():
         pass
 
 
-def test_last_data_set_from_experiment(dataset):
+def test_last_data_set_from_experiment(dataset) -> None:
     experiment = load_experiment(dataset.exp_id)
     ds = experiment.last_data_set()
 
@@ -58,14 +58,14 @@ def test_last_data_set_from_experiment(dataset):
     assert experiment.path_to_db == ds.path_to_db
 
 
-def test_last_data_set_from_experiment_with_no_datasets(experiment):
+def test_last_data_set_from_experiment_with_no_datasets(experiment) -> None:
     with pytest.raises(ValueError, match='There are no runs in this '
                                          'experiment'):
         _ = experiment.last_data_set()
 
 
 @pytest.mark.usefixtures("empty_temp_db")
-def test_load_or_create_experiment_loading():
+def test_load_or_create_experiment_loading() -> None:
     """Test that an experiment is correctly loaded"""
     exp = new_experiment("experiment_name", "sample_name")
     exp_2 = load_or_create_experiment("experiment_name", "sample_name")
@@ -73,7 +73,7 @@ def test_load_or_create_experiment_loading():
 
 
 @pytest.mark.usefixtures("empty_temp_db")
-def test_load_or_create_experiment_different_sample_name():
+def test_load_or_create_experiment_different_sample_name() -> None:
     """
     Test that an experiment is created for the case when the experiment
     name is the same, but the sample name is different
@@ -89,7 +89,7 @@ def test_load_or_create_experiment_different_sample_name():
 
 
 @pytest.mark.usefixtures("empty_temp_db")
-def test_load_or_create_experiment_creating():
+def test_load_or_create_experiment_creating() -> None:
     """Test that an experiment is correctly created"""
     exp = load_or_create_experiment("experiment_name", "sample_name")
     exp_2 = load_experiment_by_name("experiment_name", "sample_name")
@@ -97,7 +97,7 @@ def test_load_or_create_experiment_creating():
 
 
 @pytest.mark.usefixtures("empty_temp_db")
-def test_load_or_create_experiment_creating_not_empty():
+def test_load_or_create_experiment_creating_not_empty() -> None:
     """Test that an experiment is correctly created when DB is not empty"""
     exp = load_or_create_experiment("experiment_name_1", "sample_name_1")
     exp_2 = load_or_create_experiment("experiment_name_2", "sample_name_2")
@@ -110,7 +110,7 @@ def test_load_or_create_experiment_creating_not_empty():
 
 
 @pytest.mark.usefixtures("empty_temp_db")
-def test_has_attributes_after_init():
+def test_has_attributes_after_init() -> None:
     """
     Ensure that all attributes are populated after __init__ in BOTH cases
     (exp_id is None / exp_id is not None)
@@ -132,7 +132,7 @@ def test_has_attributes_after_init():
             getattr(exp, attr)
 
 
-def test_experiment_read_only_properties(experiment):
+def test_experiment_read_only_properties(experiment) -> None:
     read_only_props = ['name', 'exp_id', 'sample_name', 'last_counter',
                        'path_to_db', 'started_at', 'finished_at',
                        'format_string']
@@ -149,26 +149,26 @@ def test_experiment_read_only_properties(experiment):
 
 @pytest.mark.usefixtures("empty_temp_db")
 @pytest.mark.parametrize("non_existing_id", (1, 0, -1, 'number#42'))
-def test_create_experiment_from_non_existing_id(non_existing_id):
+def test_create_experiment_from_non_existing_id(non_existing_id) -> None:
     with pytest.raises(ValueError, match="No such experiment in the database"):
         _ = Experiment(exp_id=non_existing_id)
 
 
 @pytest.mark.usefixtures("empty_temp_db")
 @pytest.mark.parametrize("non_existing_id", (1, 0, -1))
-def test_load_experiment_from_non_existing_id(non_existing_id):
+def test_load_experiment_from_non_existing_id(non_existing_id) -> None:
     with pytest.raises(ValueError, match="No such experiment in the database"):
         _ = load_experiment(non_existing_id)
 
 
 @pytest.mark.usefixtures("empty_temp_db")
 @pytest.mark.parametrize("bad_id", (None, 'number#42'))
-def test_load_experiment_from_bad_id(bad_id):
+def test_load_experiment_from_bad_id(bad_id) -> None:
     with pytest.raises(ValueError, match="Experiment ID must be an integer"):
         _ = load_experiment(bad_id)
 
 
-def test_format_string(empty_temp_db):
+def test_format_string(empty_temp_db) -> None:
     # default format string
     exp1 = Experiment(exp_id=None)
     assert "{}-{}-{}" == exp1.format_string
@@ -186,7 +186,7 @@ def test_format_string(empty_temp_db):
         _ = Experiment(exp_id=None, format_string=fmt_str)
 
 
-def test_load_experiment_by_name_defaults(empty_temp_db):
+def test_load_experiment_by_name_defaults(empty_temp_db) -> None:
     exp1 = Experiment(exp_id=None)
 
     exp2 = load_experiment_by_name('experiment_1')
@@ -196,7 +196,7 @@ def test_load_experiment_by_name_defaults(empty_temp_db):
     assert_experiments_equal(exp1, exp3)
 
 
-def test_load_experiment_by_name(empty_temp_db):
+def test_load_experiment_by_name(empty_temp_db) -> None:
     exp1 = Experiment(exp_id=None, name='myname')
 
     exp2 = load_experiment_by_name('myname')
@@ -214,7 +214,7 @@ def test_load_experiment_by_name(empty_temp_db):
     assert_experiments_equal(exp4, exp6)
 
 
-def test_load_experiment_by_name_bad_name(empty_temp_db):
+def test_load_experiment_by_name_bad_name(empty_temp_db) -> None:
     Experiment(exp_id=None, name='myname')
 
     with pytest.raises(ValueError, match='Experiment not found'):
@@ -227,7 +227,7 @@ def test_load_experiment_by_name_bad_name(empty_temp_db):
         _ = load_experiment_by_name('myname__', 'some_sample__')
 
 
-def test_load_experiment_by_name_bad_sample_name(empty_temp_db):
+def test_load_experiment_by_name_bad_sample_name(empty_temp_db) -> None:
     Experiment(exp_id=None, sample_name='mysample')
 
     with pytest.raises(ValueError, match='Experiment not found'):
@@ -240,7 +240,7 @@ def test_load_experiment_by_name_bad_sample_name(empty_temp_db):
         _ = load_experiment_by_name('experiment_1__', 'mysample__')
 
 
-def test_load_experiment_by_name_duplicate_name(empty_temp_db):
+def test_load_experiment_by_name_duplicate_name(empty_temp_db) -> None:
     exp1 = Experiment(exp_id=None, name="exp")
     exp2 = Experiment(exp_id=None, name="exp")
 
@@ -277,7 +277,7 @@ def test_load_experiment_by_name_duplicate_name(empty_temp_db):
     assert_experiments_equal(exp3, exp3_loaded)
 
 
-def test_load_experiment_by_name_duplicate_sample_name(empty_temp_db):
+def test_load_experiment_by_name_duplicate_sample_name(empty_temp_db) -> None:
     exp1 = Experiment(exp_id=None, name='exp1', sample_name='sss')
     exp2 = Experiment(exp_id=None, name='exp2', sample_name='sss')
 
@@ -294,7 +294,7 @@ def test_load_experiment_by_name_duplicate_sample_name(empty_temp_db):
     assert_experiments_equal(exp2, exp2_loaded_with_sample)
 
 
-def test_load_experiment_by_name_duplicate_name_and_sample_name(empty_temp_db):
+def test_load_experiment_by_name_duplicate_name_and_sample_name(empty_temp_db) -> None:
     exp1 = Experiment(exp_id=None, name='exp', sample_name='sss')
     exp2 = Experiment(exp_id=None, name='exp', sample_name='sss')
 
@@ -317,7 +317,7 @@ def test_load_experiment_by_name_duplicate_name_and_sample_name(empty_temp_db):
     assert last_exp.exp_id == 2
 
 
-def test_new_experiment_duplicate_name_and_sample_name(empty_temp_db, caplog):
+def test_new_experiment_duplicate_name_and_sample_name(empty_temp_db, caplog) -> None:
     """
     Test new_experiment to raise warning if it wants to create experiment
     with a duplicate experiment name and sample name.
@@ -349,7 +349,7 @@ def test_new_experiment_duplicate_name_and_sample_name(empty_temp_db, caplog):
     caplog.clear()
 
 
-def test_load_last_experiment(empty_temp_db):
+def test_load_last_experiment(empty_temp_db) -> None:
     # test in case of no experiments
     with pytest.raises(ValueError, match='There are no experiments in the '
                                          'database file'):
@@ -368,7 +368,7 @@ def test_load_last_experiment(empty_temp_db):
     assert last_exp.path_to_db == exp2.path_to_db
 
 
-def test_active_experiment(empty_temp_db):
+def test_active_experiment(empty_temp_db) -> None:
 
     conn = conn_from_dbpath_or_conn(conn=None, path_to_db=empty_temp_db)
     with pytest.raises(ValueError):

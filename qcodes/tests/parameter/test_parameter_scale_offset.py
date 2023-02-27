@@ -7,7 +7,7 @@ from hypothesis import event, given, settings
 from qcodes.parameters import Parameter
 
 
-def test_scale_raw_value():
+def test_scale_raw_value() -> None:
     p = Parameter(name='test_scale_raw_value', set_cmd=None)
     p(42)
     assert p.raw_value == 42
@@ -65,7 +65,7 @@ def iterable_or_number(draw, values, size, values_scalar, is_values):
 @given(values=iterable_or_number(TestFloats, SharedSize, ValuesScalar, True),
        offsets=iterable_or_number(TestFloats, SharedSize, ValuesScalar, False),
        scales=iterable_or_number(TestFloats, SharedSize, ValuesScalar, False))
-def test_scale_and_offset_raw_value_iterable(values, offsets, scales):
+def test_scale_and_offset_raw_value_iterable(values, offsets, scales) -> None:
     p = Parameter(name='test_scale_and_offset_raw_value', set_cmd=None)
 
     # test that scale and offset does not change the default behaviour
@@ -123,16 +123,14 @@ def test_scale_and_offset_raw_value_iterable(values, offsets, scales):
 
 @settings(max_examples=300)
 @given(
-    values=iterable_or_number(
-        TestFloats, SharedSize, ValuesScalar, True),
-    offsets=iterable_or_number(
-        TestFloats, SharedSize, ValuesScalar, False),
-    scales=iterable_or_number(
-        TestFloats, SharedSize, ValuesScalar, False))
-def test_scale_and_offset_raw_value_iterable_for_set_cache(values,
-                                                           offsets,
-                                                           scales):
-    p = Parameter(name='test_scale_and_offset_raw_value', set_cmd=None)
+    values=iterable_or_number(TestFloats, SharedSize, ValuesScalar, True),
+    offsets=iterable_or_number(TestFloats, SharedSize, ValuesScalar, False),
+    scales=iterable_or_number(TestFloats, SharedSize, ValuesScalar, False),
+)
+def test_scale_and_offset_raw_value_iterable_for_set_cache(
+    values, offsets, scales
+) -> None:
+    p = Parameter(name="test_scale_and_offset_raw_value", set_cmd=None)
 
     # test that scale and offset does not change the default behaviour
     p.cache.set(values)
@@ -187,8 +185,9 @@ def test_scale_and_offset_raw_value_iterable_for_set_cache(values,
         event('Scale is array but not offset')
 
 
-def test_numpy_array_valued_parameter_preserves_type_if_scale_and_offset_are_set():
-
+def test_numpy_array_valued_parameter_preserves_type_if_scale_and_offset_are_set() -> (
+    None
+):
     def rands():
         return np.random.randn(5)
 
@@ -204,7 +203,7 @@ def test_numpy_array_valued_parameter_preserves_type_if_scale_and_offset_are_set
     assert isinstance(values, np.ndarray)
 
 
-def test_setting_numpy_array_valued_param_if_scale_and_offset_are_not_none():
+def test_setting_numpy_array_valued_param_if_scale_and_offset_are_not_none() -> None:
 
     param = Parameter(name='test_param',
                       set_cmd=None,

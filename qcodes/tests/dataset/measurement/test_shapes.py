@@ -10,8 +10,7 @@ from qcodes.dataset.measurements import Measurement
 @given(n_points=hst.integers(min_value=1, max_value=100))
 @example(n_points=5)
 @settings(deadline=None, suppress_health_check=(HealthCheck.function_scoped_fixture,))
-def test_datasaver_1d(experiment, DAC, DMM, caplog,
-                      n_points):
+def test_datasaver_1d(experiment, DAC, DMM, caplog, n_points) -> None:
     meas = Measurement()
     meas.register_parameter(DAC.ch1)
     meas.register_parameter(DMM.v1, setpoints=(DAC.ch1,))
@@ -62,8 +61,7 @@ def test_datasaver_1d(experiment, DAC, DMM, caplog,
 @given(n_points_1=hst.integers(min_value=1, max_value=50),
        n_points_2=hst.integers(min_value=1, max_value=50))
 @example(n_points_1=5, n_points_2=10)
-def test_datasaver_2d(experiment, DAC, DMM, caplog,
-                      n_points_1, n_points_2):
+def test_datasaver_2d(experiment, DAC, DMM, caplog, n_points_1, n_points_2) -> None:
     meas = Measurement()
     meas.register_parameter(DAC.ch1)
     meas.register_parameter(DAC.ch2)

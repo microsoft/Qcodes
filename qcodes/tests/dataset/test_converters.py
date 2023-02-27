@@ -21,7 +21,7 @@ from qcodes.dataset.descriptions.versioning.serialization import from_dict_to_cu
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
 
 
-def test_convert_v0_to_newer(some_paramspecs):
+def test_convert_v0_to_newer(some_paramspecs) -> None:
     pgroup1 = some_paramspecs[1]
 
     interdeps = InterDependencies(pgroup1['ps1'],
@@ -37,7 +37,7 @@ def test_convert_v0_to_newer(some_paramspecs):
     _assert_dicts_are_related_as_expected(v0, v1, v2)
 
 
-def test_convert_v1(some_interdeps):
+def test_convert_v1(some_interdeps) -> None:
     interdeps_ = some_interdeps[0]
 
     v1 = RunDescriberV1Dict(interdependencies=interdeps_._to_dict(),
@@ -47,7 +47,7 @@ def test_convert_v1(some_interdeps):
     _assert_dicts_are_related_as_expected(v0, v1, v2)
 
 
-def test_convert_v2(some_interdeps):
+def test_convert_v2(some_interdeps) -> None:
     interdeps_ = some_interdeps[0]
     interdeps = new_to_old(interdeps_)
 
@@ -74,7 +74,7 @@ def _assert_dicts_are_related_as_expected(v0, v1, v2):
     assert len(v2) == 3
 
 
-def test_construct_current_rundescriber_from_v0(some_paramspecs):
+def test_construct_current_rundescriber_from_v0(some_paramspecs) -> None:
 
     pgroup1 = some_paramspecs[1]
 
@@ -100,7 +100,7 @@ def test_construct_current_rundescriber_from_v0(some_paramspecs):
                     ignore_order=True) == {}
 
 
-def test_construct_current_rundescriber_from_v1(some_interdeps):
+def test_construct_current_rundescriber_from_v1(some_interdeps) -> None:
     interdeps_ = some_interdeps[0]
     interdeps = new_to_old(interdeps_)
 
@@ -119,7 +119,7 @@ def test_construct_current_rundescriber_from_v1(some_interdeps):
     assert rds_upgraded._to_dict() == expected_v3_dict
 
 
-def test_construct_current_rundescriber_from_v2(some_interdeps):
+def test_construct_current_rundescriber_from_v2(some_interdeps) -> None:
     interdeps_ = some_interdeps[0]
     interdeps = new_to_old(interdeps_)
 
@@ -140,7 +140,7 @@ def test_construct_current_rundescriber_from_v2(some_interdeps):
     assert rds_upgraded._to_dict() == expected_v3_dict
 
 
-def test_construct_current_rundescriber_from_v3(some_interdeps):
+def test_construct_current_rundescriber_from_v3(some_interdeps) -> None:
     interdeps_ = some_interdeps[0]
     interdeps = new_to_old(interdeps_)
 

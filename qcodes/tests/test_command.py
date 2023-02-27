@@ -1,3 +1,5 @@
+from typing import Any, NoReturn
+
 import pytest
 
 from qcodes.parameters.command import Command, NoCommandError
@@ -29,19 +31,19 @@ def test_bad_calls() -> None:
         )
 
 
-def test_no_cmd():
+def test_no_cmd() -> None:
     with pytest.raises(NoCommandError):
         Command(0)
 
-    def no_cmd_function():
+    def no_cmd_function() -> NoReturn:
         raise CustomError('no command')
 
-    no_cmd = Command(0, no_cmd_function=no_cmd_function)
+    no_cmd: Command[Any, Any] = Command(0, no_cmd_function=no_cmd_function)
     with pytest.raises(CustomError):
         no_cmd()
 
 
-def test_cmd_str():
+def test_cmd_str() -> None:
     def f_now(x):
         return x + ' now'
 
@@ -55,17 +57,16 @@ def test_cmd_str():
         return b, a
 
     # basic exec_str
-    cmd = Command(0, 'pickles', exec_str=f_now)
-    assert cmd() == 'pickles now'
+    cmd: Command[Any, Any] = Command(0, "pickles", exec_str=f_now)
+    assert cmd() == "pickles now"
 
     # with output parsing
     cmd = Command(0, 'blue', exec_str=f_now, output_parser=upper)
     assert cmd() == 'BLUE NOW'
 
     # parameter insertion
-    cmd = Command(3, '{} is {:.2f}% better than {}', exec_str=f_now)
-    assert cmd('ice cream', 56.2, 'cake') == \
-                     'ice cream is 56.20% better than cake now'
+    cmd = Command(3, "{} is {:.2f}% better than {}", exec_str=f_now)
+    assert cmd("ice cream", 56.2, "cake") == "ice cream is 56.20% better than cake now"
     with pytest.raises(ValueError):
         cmd('cake', 'a whole lot', 'pie')
 

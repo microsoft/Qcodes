@@ -26,7 +26,7 @@ def parameters():
            setpoints_1, setpoints_2, setpoints_3)
 
 
-def test_validation_shapes():
+def test_validation_shapes() -> None:
     """
     Test that various parameters with setpoints and shape combinations
     validate correctly.
@@ -108,7 +108,7 @@ def test_setpoints_non_parameter_raises() -> None:
         param_with_setpoints_1.setpoints = (lambda x: x,)  # type: ignore[assignment]
 
 
-def test_validation_inconsistent_shape():
+def test_validation_inconsistent_shape() -> None:
     """
     Parameters with shapes inconsistent with their setpoints should not
     validate
@@ -143,7 +143,7 @@ def test_validation_inconsistent_shape():
         param_with_diff_length.validate(param_with_diff_length.get())
 
 
-def test_validation_wrong_validator():
+def test_validation_wrong_validator() -> None:
     """
     If the validator does not match the actual content the validation should
     fail
@@ -175,7 +175,7 @@ def test_validation_wrong_validator():
         param_with_wrong_validator.validate(param_with_wrong_validator())
 
 
-def test_validation_no_validator():
+def test_validation_no_validator() -> None:
     """
     If a parameter does not use array validators it cannot be validated.
     """
@@ -197,7 +197,7 @@ def test_validation_no_validator():
         )
 
 
-def test_validation_sp_no_validator():
+def test_validation_sp_no_validator() -> None:
     """
     If the setpoints do not have an Arrays validator validation
     will fail.
@@ -225,7 +225,7 @@ def test_validation_sp_no_validator():
         param_sp_without_validator.validate(param_sp_without_validator.get())
 
 
-def test_validation_without_shape():
+def test_validation_without_shape() -> None:
     """
     If the Arrays validator does not have a shape the validation will fail
     """
@@ -251,7 +251,7 @@ def test_validation_without_shape():
         )
 
 
-def test_validation_without_sp_shape():
+def test_validation_without_sp_shape() -> None:
     """
     If the setpoints validator has no shape the validation will fail
     """
@@ -349,7 +349,7 @@ def test_validation_one_sp_dim_missing() -> None:
         param_sp_without_shape.validate(param_sp_without_shape.get())
 
 
-def test_expand_setpoints_1c(parameters):
+def test_expand_setpoints_1c(parameters) -> None:
     """
     Test that the setpoints expander helper function works correctly
     """
@@ -370,7 +370,7 @@ def test_expand_setpoints_1c(parameters):
     assert len(data[0][1]) == len(data[1][1])
 
 
-def test_expand_setpoints_2d(parameters):
+def test_expand_setpoints_2d(parameters) -> None:
 
     n_points_1, n_points_2, n_points_3, \
     setpoints_1, setpoints_2, setpoints_3 = parameters
@@ -400,7 +400,7 @@ def test_expand_setpoints_2d(parameters):
         np.testing.assert_array_equal(sp2[i, :], np.arange(sp1.shape[1]))
 
 
-def test_expand_setpoints_3d(parameters):
+def test_expand_setpoints_3d(parameters) -> None:
 
     n_points_1, n_points_2, n_points_3, \
         setpoints_1, setpoints_2, setpoints_3 = parameters

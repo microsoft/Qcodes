@@ -40,15 +40,15 @@ no_sequence = [
 
 
 @pytest.mark.parametrize("val", yes_sequence)
-def test_yes(val):
+def test_yes(val) -> None:
     assert is_sequence(val)
 
 
 @pytest.mark.parametrize("val", no_sequence)
-def test_no(val):
+def test_no(val) -> None:
     assert not is_sequence(val)
 
 
-def test_open_file_is_not_sequence():
+def test_open_file_is_not_sequence() -> None:
     with open(__file__) as f:
         assert not is_sequence(f)

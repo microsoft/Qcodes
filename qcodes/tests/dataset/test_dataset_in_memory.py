@@ -20,7 +20,7 @@ from qcodes.station import Station
 
 def test_dataset_in_memory_reload_from_db(
     meas_with_registered_param, DMM, DAC, tmp_path
-):
+) -> None:
     with meas_with_registered_param.run(
         dataset_class=DataSetType.DataSetInMem
     ) as datasaver:
@@ -56,7 +56,7 @@ def test_dataset_in_memory_reload_from_db(
 )
 def test_dataset_in_memory_reload_from_db_2d(
     meas_with_registered_param_2d, DMM, DAC, tmp_path, shape1, shape2
-):
+) -> None:
     meas_with_registered_param_2d.set_shapes(
         {
             DMM.v1.full_name: (shape1, shape2),
@@ -114,7 +114,7 @@ def test_dataset_in_memory_reload_from_db_2d(
 )
 def test_dataset_in_memory_reload_from_db_3d(
     meas_with_registered_param_3d, DMM, DAC3D, tmp_path, shape1, shape2, shape3
-):
+) -> None:
     meas_with_registered_param_3d.set_shapes(
         {
             DMM.v1.full_name: (shape1, shape2, shape3),
@@ -169,7 +169,7 @@ def test_dataset_in_memory_reload_from_db_3d(
 
 def test_dataset_in_memory_without_cache_raises(
     meas_with_registered_param, DMM, DAC, tmp_path
-):
+) -> None:
 
     with pytest.raises(
         RuntimeError,
@@ -186,7 +186,7 @@ def test_dataset_in_memory_without_cache_raises(
 
 def test_dataset_in_memory_reload_from_db_complex(
     meas_with_registered_param_complex, DAC, complex_num_instrument, tmp_path
-):
+) -> None:
     with meas_with_registered_param_complex.run(
         dataset_class=DataSetType.DataSetInMem
     ) as datasaver:
@@ -210,7 +210,7 @@ def test_dataset_in_memory_reload_from_db_complex(
 
 def test_dataset_in_memory_reload_from_netcdf_complex(
     meas_with_registered_param_complex, DAC, complex_num_instrument, tmp_path
-):
+) -> None:
     with meas_with_registered_param_complex.run(
         dataset_class=DataSetType.DataSetInMem
     ) as datasaver:
@@ -236,7 +236,7 @@ def test_dataset_in_memory_reload_from_netcdf_complex(
 
 def test_dataset_in_memory_no_export_warns(
     meas_with_registered_param, DMM, DAC, tmp_path
-):
+) -> None:
     with meas_with_registered_param.run(
         dataset_class=DataSetType.DataSetInMem
     ) as datasaver:
@@ -263,7 +263,7 @@ def test_dataset_in_memory_no_export_warns(
 
 def test_dataset_in_memory_missing_file_warns(
     meas_with_registered_param, DMM, DAC, tmp_path
-):
+) -> None:
     with meas_with_registered_param.run(
         dataset_class=DataSetType.DataSetInMem
     ) as datasaver:
@@ -284,7 +284,9 @@ def test_dataset_in_memory_missing_file_warns(
     assert loaded_ds.cache.data() == {}
 
 
-def test_dataset_in_reload_from_netcdf(meas_with_registered_param, DMM, DAC, tmp_path):
+def test_dataset_in_reload_from_netcdf(
+    meas_with_registered_param, DMM, DAC, tmp_path
+) -> None:
     with meas_with_registered_param.run(
         dataset_class=DataSetType.DataSetInMem
     ) as datasaver:
@@ -310,7 +312,7 @@ def test_dataset_in_reload_from_netcdf(meas_with_registered_param, DMM, DAC, tmp
 
 def test_dataset_load_from_netcdf_and_db(
     meas_with_registered_param, DMM, DAC, tmp_path
-):
+) -> None:
     with meas_with_registered_param.run(
         dataset_class=DataSetType.DataSetInMem
     ) as datasaver:
@@ -348,7 +350,7 @@ def test_dataset_load_from_netcdf_and_db(
 
 def test_dataset_in_memory_does_not_create_runs_table(
     meas_with_registered_param, DMM, DAC, tmp_path
-):
+) -> None:
     with meas_with_registered_param.run(
         dataset_class=DataSetType.DataSetInMem
     ) as datasaver:
@@ -369,7 +371,7 @@ def test_dataset_in_memory_does_not_create_runs_table(
     assert all(ds.name not in table_name for table_name in tablenames)
 
 
-def test_load_from_netcdf_and_write_metadata_to_db(empty_temp_db):
+def test_load_from_netcdf_and_write_metadata_to_db(empty_temp_db) -> None:
     netcdf_file_path = (
         Path(__file__).parent / "fixtures" / "db_files" / "netcdf" / "qcodes_2.nc"
     )
@@ -402,7 +404,7 @@ def test_load_from_netcdf_and_write_metadata_to_db(empty_temp_db):
     compare_datasets(ds, loaded_ds)
 
 
-def test_load_from_netcdf_no_db_file(non_created_db):
+def test_load_from_netcdf_no_db_file(non_created_db) -> None:
     netcdf_file_path = (
         Path(__file__).parent / "fixtures" / "db_files" / "netcdf" / "qcodes_2.nc"
     )
@@ -417,7 +419,7 @@ def test_load_from_netcdf_no_db_file(non_created_db):
     compare_datasets(ds, loaded_ds)
 
 
-def test_load_from_db(meas_with_registered_param, DMM, DAC, tmp_path):
+def test_load_from_db(meas_with_registered_param, DMM, DAC, tmp_path) -> None:
     Station(DAC, DMM)
     with meas_with_registered_param.run(
         dataset_class=DataSetType.DataSetInMem
@@ -447,7 +449,7 @@ def test_load_from_db(meas_with_registered_param, DMM, DAC, tmp_path):
     compare_datasets(ds, loaded_ds)
 
 
-def test_load_from_netcdf_legacy_version(non_created_db):
+def test_load_from_netcdf_legacy_version(non_created_db) -> None:
     # Qcodes 0.26 exported netcdf files did not contain
     # the parent dataset links and used a different engine to write data
     # check that it still loads correctly
@@ -487,8 +489,9 @@ def compare_datasets(ds, loaded_ds):
     assert all(xds == loaded_xds)
 
 
-def test_load_from_db_dataset_moved(meas_with_registered_param, DMM, DAC, tmp_path):
-
+def test_load_from_db_dataset_moved(
+    meas_with_registered_param, DMM, DAC, tmp_path
+) -> None:
     Station(DAC, DMM)
     with meas_with_registered_param.run(
         dataset_class=DataSetType.DataSetInMem

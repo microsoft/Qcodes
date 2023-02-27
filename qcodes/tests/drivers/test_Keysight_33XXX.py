@@ -15,7 +15,7 @@ def driver():
     kw_sim.close()
 
 
-def test_init(driver):
+def test_init(driver) -> None:
 
     idn_dict = driver.IDN()
 
@@ -25,7 +25,7 @@ def test_init(driver):
     assert driver.num_channels == 2
 
 
-def test_sync(driver):
+def test_sync(driver) -> None:
 
     assert driver.sync.output() == 'OFF'
     driver.sync.output('ON')
@@ -37,14 +37,14 @@ def test_sync(driver):
     driver.sync.source(1)
     driver.sync.output('OFF')
 
-def test_channel(driver):
+def test_channel(driver) -> None:
     assert driver.ch1.function_type() == 'SIN'
     driver.ch1.function_type('SQU')
     assert driver.ch1.function_type() == 'SQU'
     driver.ch1.function_type('SIN')
 
 
-def test_burst(driver):
+def test_burst(driver) -> None:
     assert driver.ch1.burst_ncycles() == 1
     driver.ch1.burst_ncycles(10)
     assert driver.ch1.burst_ncycles() == 10

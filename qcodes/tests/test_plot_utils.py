@@ -35,7 +35,7 @@ def dataset_with_outliers(dataset):
                                            background_noise=False)
 
 
-def test_extend(dataset_with_outliers):
+def test_extend(dataset_with_outliers) -> None:
     # this one should clipp the upper values
     run_id = dataset_with_outliers.run_id
     _, cb = plot_by_id(run_id, auto_color_scale=False)
@@ -51,7 +51,7 @@ def test_extend(dataset_with_outliers):
 
 
 @pytest.mark.usefixtures("default_config")
-def test_defaults(dataset_with_outliers):
+def test_defaults(dataset_with_outliers) -> None:
     run_id = dataset_with_outliers.run_id
 
     _, cb = plot_by_id(run_id)

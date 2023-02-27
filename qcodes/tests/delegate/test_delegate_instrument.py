@@ -5,13 +5,13 @@ from numpy.testing import assert_almost_equal
 from qcodes.tests.instrument_mocks import MockField
 
 
-def test_mock_dac(dac):
+def test_mock_dac(dac) -> None:
     assert dac.ch01.voltage() == 0.
     dac.ch01.voltage(1.)
     assert dac.ch01.voltage() == 1.
 
 
-def test_mock_field_delegate(station, field_x, chip_config):
+def test_mock_field_delegate(station, field_x, chip_config) -> None:
     with patch.object(
         MockField, "set_field", wraps=field_x.set_field
     ) as mock_set_field:
@@ -35,7 +35,7 @@ def test_mock_field_delegate(station, field_x, chip_config):
         assert_almost_equal(field.ramp_X_field(), 0.0)
 
 
-def test_delegate_channel_instrument(station, chip_config):
+def test_delegate_channel_instrument(station, chip_config) -> None:
     station.load_config_file(chip_config)
     switch = station.load_switch(station=station)
 

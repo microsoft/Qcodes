@@ -16,35 +16,35 @@ def _create_tab():
     yield interactive_widget.create_tab()
 
 
-def test_snapshot_browser():
+def test_snapshot_browser() -> None:
     dct = {"a": {"b": "c", "d": {"e": "f"}}}
     interactive_widget.nested_dict_browser(dct)
     interactive_widget.nested_dict_browser(dct, ["a"])
 
 
 @pytest.mark.usefixtures("empty_temp_db")
-def test_full_widget_on_empty_db():
+def test_full_widget_on_empty_db() -> None:
     interactive_widget.experiments_widget()
 
 
 @pytest.mark.usefixtures("experiment")
-def test_full_widget_on_empty_experiment():
+def test_full_widget_on_empty_experiment() -> None:
     interactive_widget.experiments_widget()
 
 
 @pytest.mark.usefixtures("dataset")
-def test_full_widget_on_empty_dataset():
+def test_full_widget_on_empty_dataset() -> None:
     interactive_widget.experiments_widget()
 
 
 @pytest.mark.usefixtures("standalone_parameters_dataset")
-def test_full_widget_on_one_dataset():
+def test_full_widget_on_one_dataset() -> None:
     interactive_widget.experiments_widget()
 
 
 def test_button_to_text(
     standalone_parameters_dataset,
-):  # pylint: disable=redefined-outer-name
+) -> None:  # pylint: disable=redefined-outer-name
     box = interactive_widget.button_to_text("title", "body")
     (button,) = box.children
     button.click()
@@ -58,7 +58,7 @@ def test_button_to_text(
 
 def test_snapshot_button(
     tab, standalone_parameters_dataset
-):  # pylint: disable=redefined-outer-name
+) -> None:  # pylint: disable=redefined-outer-name
     ds = standalone_parameters_dataset
     snapshot_button = interactive_widget._get_snapshot_button(ds, tab)
     snapshot_button.click()
@@ -70,7 +70,7 @@ def test_snapshot_button(
 @patch("matplotlib.pyplot.show")
 def test_plot_button(
     tab, standalone_parameters_dataset
-):  # pylint: disable=redefined-outer-name
+) -> None:  # pylint: disable=redefined-outer-name
     ds = standalone_parameters_dataset
     plot_button = interactive_widget._get_plot_button(ds, tab)
     plot_button.click()
@@ -88,7 +88,7 @@ def test_plot_button(
 )
 def test_get_experiment_button(
     get_button_function, standalone_parameters_dataset,
-):  # pylint: disable=redefined-outer-name
+) -> None:  # pylint: disable=redefined-outer-name
     ds = standalone_parameters_dataset
     box = get_button_function(ds)
     snapshot_button = box.children[0]
@@ -97,7 +97,7 @@ def test_get_experiment_button(
     assert len(box.children) == 2
 
 
-def test_get_parameters(standalone_parameters_dataset):
+def test_get_parameters(standalone_parameters_dataset) -> None:
     parameters = interactive_widget._get_parameters(
         standalone_parameters_dataset
     )
@@ -107,7 +107,7 @@ def test_get_parameters(standalone_parameters_dataset):
 
 def test_editable_metadata(
     standalone_parameters_dataset,
-):  # pylint: disable=redefined-outer-name
+) -> None:  # pylint: disable=redefined-outer-name
     ds = standalone_parameters_dataset
     box = interactive_widget.editable_metadata(ds)
     button = box.children[0]
@@ -127,7 +127,7 @@ def test_editable_metadata(
     assert box.children[0].description == test_test
 
 
-def test_experiments_widget(standalone_parameters_dataset):
+def test_experiments_widget(standalone_parameters_dataset) -> None:
     dss = [standalone_parameters_dataset]
     widget = interactive_widget.experiments_widget(data_sets=dss)
     assert len(widget.children) == 3
@@ -139,7 +139,7 @@ def test_experiments_widget(standalone_parameters_dataset):
 
 
 @pytest.mark.parametrize('sort_by', [None, "run_id", "timestamp"])
-def test_experiments_widget_sorting(standalone_parameters_dataset, sort_by):
+def test_experiments_widget_sorting(standalone_parameters_dataset, sort_by) -> None:
     dss = [standalone_parameters_dataset]
     widget = interactive_widget.experiments_widget(
         data_sets=dss, sort_by=sort_by

@@ -4,7 +4,7 @@ import pytest
 from qcodes.tests.common import compare_dictionaries
 
 
-def test_same():
+def test_same() -> None:
     # NOTE(alexcjohnson): the numpy array and list compare equal,
     # even though a list and tuple would not. See TODO in
     # compare_dictionaries.
@@ -16,7 +16,7 @@ def test_same():
     assert err == ''
 
 
-def test_bad_dict():
+def test_bad_dict() -> None:
     # NOTE(alexcjohnson):
     # this is a valid dict, but not good JSON because the tuple key cannot
     # be converted into a string.
@@ -27,7 +27,7 @@ def test_bad_dict():
         compare_dictionaries(a, a)
 
 
-def test_key_diff():
+def test_key_diff() -> None:
     a = {'a': 1, 'c': 4}
     b = {'b': 1, 'c': 4}
 
@@ -45,7 +45,7 @@ def test_key_diff():
     assert 'Key b[b] not in a' in err
 
 
-def test_val_diff_simple():
+def test_val_diff_simple() -> None:
     a = {'a': 1}
     b = {'a': 2}
 
@@ -56,7 +56,7 @@ def test_val_diff_simple():
     assert '"d2[a]" ("2", type"<class \'int\'>")' in err
 
 
-def test_val_diff_seq():
+def test_val_diff_seq() -> None:
     # NOTE(alexcjohnson):
     # we don't dive recursively into lists at the moment.
     # Perhaps we want to? Seems like list equality does a deep comparison,
@@ -74,7 +74,7 @@ def test_val_diff_seq():
            err
 
 
-def test_nested_key_diff():
+def test_nested_key_diff() -> None:
     a = {'a': {'b': 'c'}}
     b = {'a': {'d': 'c'}}
 
