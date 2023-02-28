@@ -75,10 +75,10 @@ def generate_guid(timeint: int | None = None, sampleint: int | None = None) -> s
     elif sampleint == 0:
         sampleint = 0xAA_AAA_AAA
 
-    loc_str = f'{location:02x}'
-    stat_str = f'{station:06x}'
-    smpl_str = f'{sampleint:08x}'
-    time_str = f'{timeint:016x}'
+    smpl_str = f"{sampleint:08x}"
+    loc_str = f"{location:02x}"
+    stat_str = f"{station:06x}"
+    time_str = f"{timeint:016x}"
 
     guid = (f'{smpl_str}-{loc_str}{stat_str[:2]}-{stat_str[2:]}-'
             f'{time_str[:4]}-{time_str[4:]}')
@@ -105,6 +105,30 @@ def parse_guid(guid: str) -> dict[str, int]:
     components['time'] = int(guid[16:], base=16)
 
     return components
+
+
+def build_guid_from_components(components: dict[str, int]) -> str:
+    """
+    Build a guid from a dict of its components
+
+    Args:
+        components: A dict with keys 'location', 'work_station', 'sample',
+          and 'time' as integer values
+
+    Returns:
+        A valid guid string
+    """
+    work_station_hex = f'{components["work_station"]:06x}'
+
+    guid = (
+        f'{components["sample"]:08x}-'
+        f'{components["location"]:02x}'
+        f"{work_station_hex[:2]}-"
+        f"{work_station_hex[2:]}-"
+        f'{components["time"]:016x}'
+    )
+
+    return guid
 
 
 def set_guid_location_code() -> None:
