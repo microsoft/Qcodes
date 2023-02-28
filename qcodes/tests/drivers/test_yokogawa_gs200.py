@@ -45,3 +45,8 @@ def test_voltage_raises_in_current_mode(gs200) -> None:
         ValueError, match="Cannot get/set VOLT settings while in CURR mode"
     ):
         gs200.voltage(1)
+
+
+def test_get_parameters_as_components(gs200: YokogawaGS200) -> None:
+    assert gs200.get_component("voltage_range") is gs200.voltage_range
+    assert gs200.get_component("voltage") is gs200.voltage
