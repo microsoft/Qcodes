@@ -1,6 +1,7 @@
 from typing import Dict
 
-import pyvisa as visa
+import pyvisa.constants
+import pyvisa.resources
 
 from .lakeshore_base import LakeshoreBase
 from .Lakeshore_model_336 import (
@@ -54,10 +55,10 @@ class LakeshoreModel335(LakeshoreBase):
     def __init__(self, name: str, address: str, **kwargs) -> None:
         super().__init__(name, address, **kwargs)
 
-        if isinstance(self.visa_handle, visa.resources.serial.SerialInstrument):
+        if isinstance(self.visa_handle, pvisa.resources.serial.SerialInstrument):
             self.visa_handle.baud_rate = 57600
             self.visa_handle.data_bits = 7
-            self.visa_handle.parity = visa.constants.Parity(1)
+            self.visa_handle.parity = pyvisa.constants.Parity(1)
 
         self.output_1 = LakeshoreModel335CurrentSource(self, "output_1", 1)
         self.output_2 = LakeshoreModel335CurrentSource(self, "output_2", 2)
