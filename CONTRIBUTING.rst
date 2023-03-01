@@ -90,7 +90,7 @@ It's easy to install:
 
 ::
 
-    pip install -r test_requirements.txt
+    pip install .[test] -c requirements.txt
 
 Then to test and view the coverage:
 
