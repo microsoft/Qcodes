@@ -128,7 +128,7 @@ class BaseOutput(InstrumentChannel):
                                      'preferred units of the control loop '
                                      'sensor (which is set via '
                                      '`input_channel` parameter)',
-                           vals=vals.Numbers(0, 400),
+                           vals=vals.Numbers(-273.15, 400), # union of [0..400]K and [-273.15..126.85]degC
                            get_parser=float,
                            set_cmd=f'SETP {output_index}, {{}}',
                            get_cmd=f'SETP? {output_index}')
