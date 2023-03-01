@@ -1,11 +1,8 @@
-from typing import Any, ClassVar, Dict
+from typing import Dict
 
 import pyvisa as visa
 
-import qcodes.utils.validators as vals
-from qcodes.instrument.group_parameter import Group, GroupParameter
-
-from .lakeshore_base import BaseOutput, BaseSensorChannel, LakeshoreBase
+from .lakeshore_base import LakeshoreBase
 from .Lakeshore_model_336 import (
     LakeshoreModel336Channel,
     LakeshoreModel336CurrentSource,
