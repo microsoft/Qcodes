@@ -30,7 +30,7 @@ __all__ = [
     "LakeshoreModel325Status",
     "LakeshoreModel335",
     "LakeshoreModel335Channel",
-    "LakeshoreModel335CurrentSource",    
+    "LakeshoreModel335CurrentSource",
     "LakeshoreModel336",
     "LakeshoreModel336Channel",
     "LakeshoreModel336CurrentSource",
