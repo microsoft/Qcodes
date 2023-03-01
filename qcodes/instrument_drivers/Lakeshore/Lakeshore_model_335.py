@@ -1,6 +1,7 @@
 from typing import Any, ClassVar, Dict
 
-import pyvisa
+import pyvisa.constants
+import pyvisa.resources
 
 import qcodes.validators as vals
 from qcodes.parameters import Group, GroupParameter
