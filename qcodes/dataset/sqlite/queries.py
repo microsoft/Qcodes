@@ -25,7 +25,7 @@ from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning import serialization as serial
 from qcodes.dataset.descriptions.versioning import v0
 from qcodes.dataset.descriptions.versioning.converters import new_to_old, old_to_new
-from qcodes.dataset.guids import generate_guid, parse_guid
+from qcodes.dataset.guids import build_guid_from_components, parse_guid
 from qcodes.dataset.sqlite.connection import (
     ConnectionPlus,
     atomic,
@@ -2141,9 +2141,7 @@ def update_GUIDs(conn: ConnectionPlus) -> None:
     def _both_zero(
         run_id: int, conn: ConnectionPlus, guid_comps: dict[str, Any]
     ) -> None:
-        guid_str = generate_guid(
-            timeint=guid_comps["time"], sampleint=guid_comps["sample"]
-        )
+        guid_str = build_guid_from_components(guid_comps)
         with atomic(conn) as conn:
             sql = """
                    UPDATE runs
@@ -2168,11 +2166,14 @@ def update_GUIDs(conn: ConnectionPlus) -> None:
         guid_str = get_guid_from_run_id(conn, run_id)
         assert guid_str is not None
         guid_comps = parse_guid(guid_str)
-        loc = guid_comps['location']
-        ws = guid_comps['work_station']
+        old_loc = guid_comps["location"]
+        old_ws = guid_comps["work_station"]
+
+        guid_comps["location"] = location
+        guid_comps["work_station"] = work_station
 
         log.info(f'Updating run number {run_id}...')
-        actions[(loc == 0, ws == 0)](run_id, conn, guid_comps)
+        actions[(old_loc == 0, old_ws == 0)](run_id, conn, guid_comps)
 
 
 def remove_trigger(conn: ConnectionPlus, trigger_id: str) -> None:

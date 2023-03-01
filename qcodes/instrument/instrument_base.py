@@ -288,10 +288,6 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
                 return component
 
             remaining_name_parts.reverse()
-            raise KeyError(
-                f"Found component {component.full_name} but could not match "
-                f"{'_'.join(remaining_name_parts)} part."
-            )
 
         if len(remaining_name_parts) == 0:
             raise KeyError(
