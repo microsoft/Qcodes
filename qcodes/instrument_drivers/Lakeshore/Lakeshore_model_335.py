@@ -1,7 +1,6 @@
 from typing import Dict
 
-import pyvisa.constants
-import pyvisa.resources
+import pyvisa
 
 from .lakeshore_base import LakeshoreBase
 from .Lakeshore_model_336 import (
