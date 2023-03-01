@@ -939,8 +939,8 @@ def test_get_wrong_component_by_name_raises() -> None:
     with pytest.raises(
         KeyError,
         match=(
-            "Found component dummy_ChanA_temperature but could "
-            "not match parameter part"
+            "Found component dummy_ChanA but could "
+            "not match temperature_parameter part"
         ),
     ):
         _ = station.get_component("dummy_ChanA_temperature_parameter")
