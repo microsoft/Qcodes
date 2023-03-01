@@ -122,16 +122,20 @@ class BaseOutput(InstrumentChannel):
                            get_cmd=f'HTR? {output_index}',
                            set_cmd=False)
 
-        self.add_parameter('setpoint',
-                           label='Setpoint value (in sensor units)',
-                           docstring='The value of the setpoint in the '
-                                     'preferred units of the control loop '
-                                     'sensor (which is set via '
-                                     '`input_channel` parameter)',
-                           vals=vals.Numbers(-273.15, 400), # union of [0..400]K and [-273.15..126.85]degC
-                           get_parser=float,
-                           set_cmd=f'SETP {output_index}, {{}}',
-                           get_cmd=f'SETP? {output_index}')
+        self.add_parameter(
+            "setpoint",
+            label="Setpoint value (in sensor units)",
+            docstring="The value of the setpoint in the "
+            "preferred units of the control loop "
+            "sensor (which is set via "
+            "`input_channel` parameter)",
+            vals=vals.Numbers(
+                -273.15, 400
+            ),  # union of [0..400]K and [-273.15..126.85]degC
+            get_parser=float,
+            set_cmd=f"SETP {output_index}, {{}}",
+            get_cmd=f"SETP? {output_index}",
+        )
 
         # Additional non-Visa parameters
 
