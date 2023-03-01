@@ -85,12 +85,14 @@ Setup
 Running Tests
 ~~~~~~~~~~~~~
 
-We don't want to reinvent the wheel, and thus use py.test.
+We don't want to reinvent the wheel, and thus use `pytest <https://docs.pytest.org/>`_.
 It's easy to install:
 
 ::
 
     pip install .[test] -c requirements.txt
+
+(for editable install feel free to add `-e` flag to this call).
 
 Then to test and view the coverage:
 
