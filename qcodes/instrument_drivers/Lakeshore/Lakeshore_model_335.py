@@ -1,11 +1,15 @@
-from typing import ClassVar, Dict, Any
+from typing import Any, ClassVar, Dict
+
 import pyvisa as visa
 
 import qcodes.utils.validators as vals
-from qcodes.instrument.group_parameter import GroupParameter, Group
+from qcodes.instrument.group_parameter import Group, GroupParameter
 
-from .lakeshore_base import LakeshoreBase, BaseOutput, BaseSensorChannel
-from .Lakeshore_model_336 import LakeshoreModel336Channel,LakeshoreModel336CurrentSource
+from .lakeshore_base import BaseOutput, BaseSensorChannel, LakeshoreBase
+from .Lakeshore_model_336 import (
+    LakeshoreModel336Channel,
+    LakeshoreModel336CurrentSource,
+)
 
 # There are 4 sensors channels (a.k.a. measurement inputs) in Model 336.
 # Unlike other Lakeshore models, Model 336 refers to the channels using
