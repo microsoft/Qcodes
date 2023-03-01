@@ -10,8 +10,6 @@ from .Lakeshore_model_336 import (
     LakeshoreModel336CurrentSource as Output_336_CurrentSource,
 )
 
-
-
 # There are 4 sensors channels (a.k.a. measurement inputs) in Model 336.
 # Unlike other Lakeshore models, Model 336 refers to the channels using
 # letters, and not numbers
