@@ -512,5 +512,7 @@ class LakeshoreBase(VisaInstrument):
             self.add_submodule(name, channel)
         self.add_submodule("channels", channels.to_channel_tuple())
 
+        # on Model335 we need to change serial port settings
+        # before we can communicate
         if print_connect_message:
             self.connect_message()
