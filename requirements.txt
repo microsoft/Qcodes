@@ -139,7 +139,7 @@ snowballstemmer~=2.2.0
 sortedcontainers~=2.4.0
 soupsieve~=2.4
 Sphinx @ git+https://github.com/jenshnielsen/sphinx.git@fix_9884_6_1_3
-sphinx-favicon==0.2
+sphinx-favicon==1.0
 sphinx-issues~=3.0.1
 sphinx-jsonschema~=1.19.1
 sphinx-rtd-theme~=1.2.0
