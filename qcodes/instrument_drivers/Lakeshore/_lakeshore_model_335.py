@@ -8,8 +8,8 @@ from qcodes.parameters import Group, GroupParameter
 
 from .lakeshore_base import BaseOutput, BaseSensorChannel, LakeshoreBase
 
-# There are 4 sensors channels (a.k.a. measurement inputs) in Model 336.
-# Unlike other Lakeshore models, Model 336 refers to the channels using
+# There are 2 sensors channels (a.k.a. measurement inputs) in Model 335.
+# Unlike other Lakeshore models, Model 335 refers to the channels using
 # letters, and not numbers
 _channel_name_to_command_map: Dict[str, str] = {"A": "A", "B": "B"}
 
@@ -25,7 +25,7 @@ _channel_name_to_outmode_command_map: Dict[str, int] = {
 
 class LakeshoreModel335Channel(BaseSensorChannel):
     """
-    An InstrumentChannel representing a single sensor on a Lakeshore Model 336.
+    An InstrumentChannel representing a single sensor on a Lakeshore Model 335.
 
     """
 
@@ -110,9 +110,9 @@ class LakeshoreModel335Channel(BaseSensorChannel):
 
 class LakeshoreModel335CurrentSource(BaseOutput):
     """
-    InstrumentChannel for current sources on Lakeshore Model 336.
+    InstrumentChannel for current sources on Lakeshore Model 335.
 
-    Class for control outputs 1 and 2 of Lakeshore Model 336 that are variable DC current
+    Class for control outputs 1 and 2 of Lakeshore Model 335 that are variable DC current
     sources referenced to chassis ground.
     """
 
