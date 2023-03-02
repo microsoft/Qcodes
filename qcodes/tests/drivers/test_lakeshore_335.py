@@ -3,7 +3,7 @@ import time
 from typing import Dict
 
 from qcodes.instrument import InstrumentBase
-from qcodes.instrument_drivers.Lakeshore import LakeshoreModel336
+from qcodes.instrument_drivers.Lakeshore import LakeshoreModel335
 
 from .test_lakeshore import (
     DictClass,
@@ -19,7 +19,7 @@ log = logging.getLogger(__name__)
 VISA_LOGGER = ".".join((InstrumentBase.__module__, "com", "visa"))
 
 
-class LakeshoreModel335Mock(MockVisaInstrument, LakeshoreModel336):
+class LakeshoreModel335Mock(MockVisaInstrument, LakeshoreModel335):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
@@ -204,7 +204,7 @@ def test_output_mode(lakeshore_335) -> None:
     mode = "off"
     input_channel = "A"
     powerup_enable = True
-    outputs = [getattr(ls, f"output_{n}") for n in range(1, 5)]
+    outputs = [getattr(ls, f"output_{n}") for n in range(1, 3)]
     for h in outputs:  # a.k.a. heaters
         h.mode(mode)
         h.input_channel(input_channel)
@@ -217,7 +217,7 @@ def test_output_mode(lakeshore_335) -> None:
 def test_range(lakeshore_335) -> None:
     ls = lakeshore_335
     output_range = "medium"
-    outputs = [getattr(ls, f"output_{n}") for n in range(1, 5)]
+    outputs = [getattr(ls, f"output_{n}") for n in range(1, 3)]
     for h in outputs:  # a.k.a. heaters
         h.output_range(output_range)
         assert h.output_range() == output_range
@@ -234,7 +234,7 @@ def test_tlimit(lakeshore_335) -> None:
 def test_setpoint(lakeshore_335) -> None:
     ls = lakeshore_335
     setpoint = 5.1
-    outputs = [getattr(ls, f"output_{n}") for n in range(1, 5)]
+    outputs = [getattr(ls, f"output_{n}") for n in range(1, 3)]
     for h in outputs:  # a.k.a. heaters
         h.setpoint(setpoint)
         assert h.setpoint() == setpoint

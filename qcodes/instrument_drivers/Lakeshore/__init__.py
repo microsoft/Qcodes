@@ -5,7 +5,7 @@ from .Lakeshore_model_325 import (
     LakeshoreModel325Sensor,
     LakeshoreModel325Status,
 )
-from .Lakeshore_model_335 import (
+from ._lakeshore_model_335 import (
     LakeshoreModel335,
     LakeshoreModel335Channel,
     LakeshoreModel335CurrentSource,

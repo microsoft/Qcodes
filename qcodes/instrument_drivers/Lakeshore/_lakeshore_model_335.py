@@ -22,6 +22,7 @@ _channel_name_to_outmode_command_map: Dict[str, int] = {
     for num_for_cmd, ch_name in enumerate(_channel_name_to_command_map.keys())
 }
 
+
 class LakeshoreModel335Channel(BaseSensorChannel):
     """
     An InstrumentChannel representing a single sensor on a Lakeshore Model 336.
@@ -136,6 +137,7 @@ class LakeshoreModel335CurrentSource(BaseOutput):
         self.P.vals = vals.Numbers(0.1, 1000)
         self.I.vals = vals.Numbers(0.1, 1000)
         self.D.vals = vals.Numbers(0, 200)
+
 
 class LakeshoreModel335(LakeshoreBase):
     """
