@@ -1,14 +1,14 @@
+from ._lakeshore_model_335 import (
+    LakeshoreModel335,
+    LakeshoreModel335Channel,
+    LakeshoreModel335CurrentSource,
+)
 from .Lakeshore_model_325 import (
     LakeshoreModel325,
     LakeshoreModel325Curve,
     LakeshoreModel325Heater,
     LakeshoreModel325Sensor,
     LakeshoreModel325Status,
-)
-from ._lakeshore_model_335 import (
-    LakeshoreModel335,
-    LakeshoreModel335Channel,
-    LakeshoreModel335CurrentSource,
 )
 from .Lakeshore_model_336 import (
     LakeshoreModel336,
