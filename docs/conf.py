@@ -78,7 +78,7 @@ extensions = [
     "sphinxcontrib.towncrier",
     "autodocsumm",
     "sphinx_issues",
-    "sphinx-favicon",
+    "sphinx_favicon",
 ]
 
 # include special __xxx__ that DO have a docstring
