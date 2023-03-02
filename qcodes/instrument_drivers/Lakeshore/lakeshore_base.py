@@ -486,12 +486,14 @@ class LakeshoreBase(VisaInstrument):
 
     input_channel_parameter_values_to_channel_name_on_instrument: Dict[Any, str]
 
-    def __init__(self,
-                 name: str,
-                 address: str,
-                 terminator: str = '\r\n',
-                 **kwargs: Any
-                 ) -> None:
+    def __init__(
+        self,
+        name: str,
+        address: str,
+        terminator: str = "\r\n",
+        print_connect_message: bool = True,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(name, address, terminator=terminator, **kwargs)
 
         # Allow access to channels either by referring to the channel name
@@ -510,4 +512,5 @@ class LakeshoreBase(VisaInstrument):
             self.add_submodule(name, channel)
         self.add_submodule("channels", channels.to_channel_tuple())
 
-        self.connect_message()
+        if print_connect_message:
+            self.connect_message()

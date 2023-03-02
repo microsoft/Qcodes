@@ -153,7 +153,7 @@ class LakeshoreModel335(LakeshoreBase):
     )
 
     def __init__(self, name: str, address: str, **kwargs: Any) -> None:
-        super().__init__(name, address, **kwargs)
+        super().__init__(name, address, print_connect_message=False, **kwargs)
 
         if isinstance(self.visa_handle, pyvisa.resources.serial.SerialInstrument):
             self.visa_handle.baud_rate = 57600
@@ -162,3 +162,5 @@ class LakeshoreModel335(LakeshoreBase):
 
         self.output_1 = LakeshoreModel335CurrentSource(self, "output_1", 1)
         self.output_2 = LakeshoreModel335CurrentSource(self, "output_2", 2)
+
+        self.connect_message()
