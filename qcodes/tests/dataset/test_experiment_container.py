@@ -2,6 +2,7 @@ import logging
 import re
 
 import pytest
+from pytest import LogCaptureFixture
 
 from qcodes.dataset.experiment_container import (
     Experiment,
@@ -317,7 +318,9 @@ def test_load_experiment_by_name_duplicate_name_and_sample_name(empty_temp_db) -
     assert last_exp.exp_id == 2
 
 
-def test_new_experiment_duplicate_name_and_sample_name(empty_temp_db, caplog) -> None:
+def test_new_experiment_duplicate_name_and_sample_name(
+    empty_temp_db, caplog: LogCaptureFixture
+) -> None:
     """
     Test new_experiment to raise warning if it wants to create experiment
     with a duplicate experiment name and sample name.

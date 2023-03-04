@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock, PropertyMock
 
 import pytest
+from pytest import FixtureRequest
 from pyvisa import VisaIOError
 
 from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_base import (
@@ -9,7 +10,7 @@ from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_base import 
 
 
 @pytest.fixture(name="b1500")
-def _make_b1500(request):
+def _make_b1500(request: FixtureRequest):
     request.addfinalizer(KeysightB1500.close_all)
 
     try:

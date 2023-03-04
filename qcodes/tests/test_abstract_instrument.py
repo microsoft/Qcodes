@@ -1,6 +1,7 @@
 from typing import Any
 
 import pytest
+from pytest import FixtureRequest
 
 from qcodes.instrument import ChannelList, Instrument, InstrumentBase, InstrumentChannel
 
@@ -222,7 +223,7 @@ def test_abstract_channel_raises() -> None:
         VoltageAbstractChannelSource("abstract_instrument_driver_7")
 
 
-def test_non_abstract_channel_does_not_raises(request) -> None:
+def test_non_abstract_channel_does_not_raises(request: FixtureRequest) -> None:
     """
     Creating an instrument with a channel that implements the interface.
     This should not raise
@@ -242,7 +243,7 @@ def test_abstract_channellist_raises() -> None:
         VoltageAbstractChannelListSource("abstract_instrument_driver_9")
 
 
-def test_non_abstract_channellist_does_not_raises(request) -> None:
+def test_non_abstract_channellist_does_not_raises(request: FixtureRequest) -> None:
     """
     Creating an instrument with a ChannelList that contains a
     channel that implements the interface. This should not raise

@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 import pyvisa
 import pyvisa.constants
+from pytest import FixtureRequest
 
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.validators import Numbers
@@ -136,7 +137,7 @@ def test_ask_write_local(mock_visa) -> None:
         assert arg in str(eee.value)
 
 
-def test_visa_backend(mocker, request) -> None:
+def test_visa_backend(mocker, request: FixtureRequest) -> None:
 
     rm_mock = mocker.patch("qcodes.instrument.visa.pyvisa.ResourceManager")
 
@@ -174,7 +175,7 @@ def test_visa_backend(mocker, request) -> None:
     inst3.close()
 
 
-def test_visa_instr_metadata(request) -> None:
+def test_visa_instr_metadata(request: FixtureRequest) -> None:
     metadatadict = {'foo': 'bar'}
     mv = MockVisa('Joe', 'none_adress', metadata=metadatadict)
     request.addfinalizer(mv.close)
@@ -197,7 +198,7 @@ def test_both_visahandle_and_pyvisa_sim_file_raises() -> None:
         )
 
 
-def test_load_pyvisa_sim_file_implict_module(request) -> None:
+def test_load_pyvisa_sim_file_implict_module(request: FixtureRequest) -> None:
     from qcodes.instrument_drivers.AimTTi import AimTTiPL601
 
     driver = AimTTiPL601(
@@ -212,7 +213,7 @@ def test_load_pyvisa_sim_file_implict_module(request) -> None:
     assert path.match("qcodes/instrument/sims/AimTTi_PL601P.yaml")
 
 
-def test_load_pyvisa_sim_file_explicit_module(request) -> None:
+def test_load_pyvisa_sim_file_explicit_module(request: FixtureRequest) -> None:
     from qcodes.instrument_drivers.AimTTi import AimTTiPL601
 
     driver = AimTTiPL601(
@@ -229,7 +230,7 @@ def test_load_pyvisa_sim_file_explicit_module(request) -> None:
     assert path.match("qcodes/instrument/sims/AimTTi_PL601P.yaml")
 
 
-def test_load_pyvisa_sim_file_invalid_file_raises(request) -> None:
+def test_load_pyvisa_sim_file_invalid_file_raises(request: FixtureRequest) -> None:
     from qcodes.instrument_drivers.AimTTi import AimTTiPL601
 
     with pytest.raises(
@@ -245,7 +246,7 @@ def test_load_pyvisa_sim_file_invalid_file_raises(request) -> None:
         )
 
 
-def test_load_pyvisa_sim_file_invalid_module_raises(request) -> None:
+def test_load_pyvisa_sim_file_invalid_module_raises(request: FixtureRequest) -> None:
     from qcodes.instrument_drivers.AimTTi import AimTTiPL601
 
     with pytest.raises(

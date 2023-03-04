@@ -1,6 +1,7 @@
 import logging
 
 import pytest
+from pytest import LogCaptureFixture
 
 from qcodes.instrument_drivers.stahl import Stahl
 
@@ -53,7 +54,7 @@ def test_get_idn(stahl_instrument) -> None:
     assert stahl_instrument.output_type == "bipolar"
 
 
-def test_get_set_voltage(stahl_instrument, caplog) -> None:
+def test_get_set_voltage(stahl_instrument, caplog: LogCaptureFixture) -> None:
     """
     Test that we can correctly get/set voltages
     """
@@ -68,7 +69,9 @@ def test_get_set_voltage(stahl_instrument, caplog) -> None:
     )
 
 
-def test_get_set_voltage_assert_warning(stahl_instrument, caplog) -> None:
+def test_get_set_voltage_assert_warning(
+    stahl_instrument, caplog: LogCaptureFixture
+) -> None:
     """
     On channel 2 we have deliberately introduced an error in the
     visa simulation; setting a voltage does not produce an acknowledge

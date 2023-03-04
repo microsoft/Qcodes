@@ -10,6 +10,7 @@ import numpy as np
 import pytest
 from hypothesis import HealthCheck, given, settings
 from hypothesis.strategies import floats, tuples
+from pytest import FixtureRequest, LogCaptureFixture
 
 from qcodes.instrument import Instrument
 from qcodes.instrument_drivers.american_magnetics import (
@@ -120,7 +121,9 @@ random_coordinates = {
 }
 
 
-def test_instantiation_from_names(magnet_axes_instances, request) -> None:
+def test_instantiation_from_names(
+    magnet_axes_instances, request: FixtureRequest
+) -> None:
     """
     Instantiate AMI430_3D instrument from the three mock instruments
     representing current drivers for the x, y, and z directions by their
@@ -136,7 +139,7 @@ def test_instantiation_from_names(magnet_axes_instances, request) -> None:
     assert driver._instrument_z is mag_z
 
 
-def test_instantiation_compat_classes(request) -> None:
+def test_instantiation_compat_classes(request: FixtureRequest) -> None:
     """
     Test that we can instantiate drivers using the old names
     """
@@ -160,7 +163,7 @@ def test_instantiation_compat_classes(request) -> None:
 
 
 def test_instantiation_from_name_of_nonexistent_ami_instrument(
-    magnet_axes_instances, request
+    magnet_axes_instances, request: FixtureRequest
 ) -> None:
     mag_x, mag_y, mag_z = magnet_axes_instances
     request.addfinalizer(AMIModel4303D.close_all)
@@ -176,7 +179,7 @@ def test_instantiation_from_name_of_nonexistent_ami_instrument(
 
 
 def test_instantiation_from_name_of_existing_non_ami_instrument(
-    magnet_axes_instances, request
+    magnet_axes_instances, request: FixtureRequest
 ) -> None:
     mag_x, mag_y, mag_z = magnet_axes_instances
     request.addfinalizer(AMIModel4303D.close_all)
@@ -201,7 +204,7 @@ def test_instantiation_from_name_of_existing_non_ami_instrument(
 
 
 def test_instantiation_from_badly_typed_argument(
-    magnet_axes_instances, request
+    magnet_axes_instances, request: FixtureRequest
 ) -> None:
     mag_x, mag_y, mag_z = magnet_axes_instances
     request.addfinalizer(AMIModel4303D.close_all)
@@ -425,7 +428,7 @@ def get_ramp_down_order(messages: List[str]) -> List[str]:
     return order
 
 
-def test_ramp_down_first(current_driver, caplog) -> None:
+def test_ramp_down_first(current_driver, caplog: LogCaptureFixture) -> None:
     """
     To prevent quenching of the magnets, we need the driver to always
     be within the field limits. Part of the strategy of making sure
@@ -541,7 +544,7 @@ def test_ramp_rate_exception(current_driver) -> None:
 
 
 def test_simultaneous_ramp_mode_does_not_reset_individual_axis_ramp_rates_if_nonblocking_ramp(
-    current_driver, caplog, request
+    current_driver, caplog: LogCaptureFixture, request: FixtureRequest
 ) -> None:
     ami3d = current_driver
 
@@ -634,7 +637,7 @@ def test_simultaneous_ramp_mode_does_not_reset_individual_axis_ramp_rates_if_non
 
 
 def test_simultaneous_ramp_mode_resets_individual_axis_ramp_rates_if_blocking_ramp(
-    current_driver, caplog, request
+    current_driver, caplog: LogCaptureFixture, request: FixtureRequest
 ) -> None:
     ami3d = current_driver
 
@@ -797,7 +800,7 @@ def test_reducing_current_ramp_limit_keeps_a_lower_ramp_rate_as_is(ami430) -> No
     assert ami430.ramp_rate() == old_ramp_rate
 
 
-def test_blocking_ramp_parameter(current_driver, caplog) -> None:
+def test_blocking_ramp_parameter(current_driver, caplog: LogCaptureFixture) -> None:
 
     assert current_driver.block_during_ramp() is True
 
@@ -1066,7 +1069,9 @@ def _parametrization_kwargs():
 
 
 @pytest.mark.parametrize("field_limit", **_parametrization_kwargs())
-def test_numeric_field_limit(magnet_axes_instances, field_limit, request) -> None:
+def test_numeric_field_limit(
+    magnet_axes_instances, field_limit, request: FixtureRequest
+) -> None:
     mag_x, mag_y, mag_z = magnet_axes_instances
     ami = AMIModel4303D("AMI430_3D", mag_x, mag_y, mag_z, field_limit)
     request.addfinalizer(ami.close)

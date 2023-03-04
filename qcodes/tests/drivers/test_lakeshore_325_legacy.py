@@ -11,7 +11,7 @@ STATUS = Model_325.Status  # type: ignore[attr-defined]
         sorted
     )
 )
-def test_decode_sensor_status(list_of_codes):
+def test_decode_sensor_status(list_of_codes) -> None:
     """
     The sensor status is one of the status codes, or a sum thereof. Multiple
     status are possible as they are not necessarily mutually exclusive.
@@ -25,6 +25,6 @@ def test_decode_sensor_status(list_of_codes):
     assert codes_message == status_messages
 
 
-def test_decode_sensor_status_0():
+def test_decode_sensor_status_0() -> None:
     status_codes = Model_325.Model_325_Sensor.decode_sensor_status(0)
     assert status_codes == "OK"

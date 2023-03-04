@@ -77,7 +77,7 @@ def test_generate_legacy_guid(loc, stat, smpl) -> None:
     stat=hst.integers(0, 0xFFFF),
     smpl=hst.integers(0, 0xFF_FFF_FFF),
 )
-def test_generate_guid(loc, stat, smpl):
+def test_generate_guid(loc, stat, smpl) -> None:
     """
     Generate a guid and verify that it is parsed or raises
     if a sample name is given
@@ -308,7 +308,7 @@ def test_sample_int_in_guid_warns_with_old_config() -> None:
 
 
 @pytest.mark.usefixtures("default_config")
-def test_sample_int_in_guid_raises():
+def test_sample_int_in_guid_raises() -> None:
     with pytest.raises(
         RuntimeError,
         match=re.escape(

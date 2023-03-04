@@ -8,6 +8,7 @@ import hypothesis.strategies as hst
 import numpy as np
 import pytest
 from hypothesis import HealthCheck, given, settings
+from pytest import FixtureRequest
 
 import qcodes as qc
 import qcodes.dataset
@@ -697,7 +698,7 @@ def test_get_description(experiment, some_interdeps) -> None:
     assert loaded_ds.description == expected_desc
 
 
-def test_metadata(experiment, request) -> None:
+def test_metadata(experiment, request: FixtureRequest) -> None:
 
     metadata1 = {'number': 1, "string": "Once upon a time..."}
     metadata2 = {'more': 'meta'}
