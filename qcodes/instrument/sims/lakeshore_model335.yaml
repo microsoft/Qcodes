@@ -8,7 +8,7 @@ devices:
     error: ERROR
     dialogues:
       - q: "*IDN?"
-        r: "QCoDeS, m0d3l, 336, 0.0.01"
+        r: "QCoDeS, m0d3l, 335, 0.0.01"
 
     properties:
       temperature_A:
