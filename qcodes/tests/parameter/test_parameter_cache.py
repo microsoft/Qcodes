@@ -229,7 +229,7 @@ def test_no_get_max_val_age_runtime_error(
     class LocalParameter(ParameterBase):
         def __init__(self, *args: Any, **kwargs: Any):
             super().__init__(*args, **kwargs)
-            self.set_raw = lambda x: x  # type: ignore[assignment]
+            self.set_raw = lambda x: x  # type: ignore[method-assign]
             self.set = self._wrap_set(self.set_raw)
 
     local_parameter = LocalParameter('test_param',

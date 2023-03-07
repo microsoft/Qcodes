@@ -164,7 +164,7 @@ def test_construct_current_rundescriber_from_fake_v4(some_interdeps) -> None:
         version=4,
         shapes=None,
     )
-    v4["foobar"] = {"foo": ["bar"]}  # type: ignore[typeddict-item]
+    v4["foobar"] = {"foo": ["bar"]}  # type: ignore[typeddict-unknown-key]
     rds1 = RunDescriber._from_dict(v4)
     rds_upgraded = from_dict_to_current(v4)
     v3 = v4.copy()
