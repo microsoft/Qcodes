@@ -51,7 +51,7 @@ dependencies = [
     # transitive dependencies. We list these explicitly to",
     # ensure that we always use versions that do not have",
     # known security vulnerabilities",
-    "ipython>=7.31.1,!=8.0.0",
+    "ipython>=8.10.0",
     "pillow>=9.0.0",
     "rsa>=4.7",
 ]
