@@ -415,6 +415,7 @@ class Parameter(ParameterBase):
         measure_params: ParameterBase=None,
         repetitions: int = 1,
         sweep=None,
+        thread=None,
         plot: bool = None,
     ):
         """Perform a measurement by sweeping this parameter
@@ -493,6 +494,7 @@ class Parameter(ParameterBase):
             repetitions=repetitions,
             sweep=sweep,
             plot=plot,
+            thread=thread,
         )
         return dataset
 

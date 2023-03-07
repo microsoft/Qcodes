@@ -3,6 +3,7 @@ import json
 import logging
 import threading
 import traceback
+import concurrent
 from datetime import datetime
 from time import perf_counter, sleep
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Union
@@ -1008,14 +1009,21 @@ class MeasurementLoop:
                     label='Setpoint index' + (f' dim_{dim}' if np.ndim(array) > 1 else '')
                 )
                 setpoints_list.append(sweep)
-        elif isinstance(setpoints, Sweep):
+        elif isinstance(setpoints, BaseSweep):
             # Setpoints is a single Sweep
             assert ndim == 1
             assert len(setpoints) == len(array)
+            if isinstance(setpoints, Iterate):
+                setpoints = setpoints.convert_to_Sweep()
+
             setpoints_list = [setpoints]
         elif isinstance(setpoints, (list, np.ndarray)):
-            if isinstance(setpoints[0], Sweep):
-                setpoints_list = setpoints
+            if isinstance(setpoints[0], BaseSweep):
+                setpoints_list = []
+                for setpoint in setpoints:
+                    if isinstance(setpoint, Iterate):
+                        setpoint = setpoint.convert_to_Sweep()
+                    setpoints_list.append(setpoint)
             else:
                 # Convert sequence to Sweep
                 setpoints_list = [Sweep(setpoints, name='setpoint_idx', label='Setpoint index')]
@@ -1089,7 +1097,10 @@ class MeasurementLoop:
             unit: Optional unit for data array
         """
         if name is None:
-            raise RuntimeError("Must provide a name when measuring a value")
+            if  parameter is not None:
+                name = parameter.name
+            else:
+                raise RuntimeError("Must provide a name when measuring a value")
 
         # Ensure measuring callable matches the current action_indices
         self._verify_action(action=None, name=name, add_if_new=True)
@@ -1166,7 +1177,7 @@ class MeasurementLoop:
             # DataGroup in the running measurement. Delegate measurement to the
             # running measurement
             return MeasurementLoop.running_measurement.measure(
-                measurable, name=name, label=label, unit=unit, **kwargs
+                measurable, name=name, label=label, unit=unit, setpoints=setpoints, **kwargs
             )
 
         # Code from hereon is only reached by the primary measurement,
@@ -1246,6 +1257,19 @@ class MeasurementLoop:
         )
 
         return result
+
+    def measure_threaded(self, params):
+        if all(isinstance(param, Parameter) for param in params):
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                threads = [executor.submit(param) for param in params]
+
+            results = [thread.result() for thread in threads]
+            
+            for param, result in zip(params, results):
+                self.measure(result, parameter=param)
+        else:
+            results = [self.measure(param) for param in params]
+        return results
 
     # Methods related to masking of parameters/attributes/keys
     def _mask_attr(self, obj: object, attr: str, value) -> Any:
@@ -1626,6 +1650,7 @@ class BaseSweep(AbstractSweep):
         ```
     """
     plot_function = None
+    DEFAULT_MEASURE_THREADED = False
 
     def __init__(
         self,
@@ -1851,6 +1876,7 @@ class BaseSweep(AbstractSweep):
         measure_params: Union[Iterable, _BaseParameter] = None,
         repetitions: int = 1,
         sweep: Union[Iterable, "BaseSweep"] = None,
+        thread=None,
         plot: bool = False,
     ) -> DataSetProtocol:
         """Performs a measurement using this sweep
@@ -1881,6 +1907,9 @@ class BaseSweep(AbstractSweep):
                 )
             measure_params = station.measure_params
 
+        if thread is None:
+            thread = self.DEFAULT_MEASURE_THREADED
+
         # Convert measure_params to list if it is a single param
         if isinstance(measure_params, _BaseParameter):
             measure_params = [measure_params]
@@ -1910,7 +1939,7 @@ class BaseSweep(AbstractSweep):
             name = f"{dimensionality}D_sweep_" + "_".join(sweep_names)
 
         with MeasurementLoop(name) as msmt:
-            measure_sweeps(sweeps=sweeps, measure_params=measure_params, msmt=msmt)
+            measure_sweeps(sweeps=sweeps, measure_params=measure_params, msmt=msmt, thread=thread)
 
         if plot and Sweep.plot_function is not None and MeasurementLoop.running_measurement is None:
             Sweep.plot_function(msmt.dataset)
@@ -2229,6 +2258,7 @@ def measure_sweeps(
     sweeps: List[BaseSweep],
     measure_params: List[_BaseParameter],
     msmt: "MeasurementLoop" = None,
+    thread=False,
 ) -> None:
     """Recursively iterate over Sweep objects, measuring measure_params in innermost loop
 
@@ -2244,14 +2274,17 @@ def measure_sweeps(
         outer_sweep, *inner_sweeps = sweeps
 
         for _ in outer_sweep:
-            measure_sweeps(inner_sweeps, measure_params, msmt=msmt)
+            measure_sweeps(inner_sweeps, measure_params, msmt=msmt, thread=thread)
 
     else:
         if msmt is None:
             msmt = running_measurement()
 
-        for measure_param in measure_params:
-            msmt.measure(measure_param)
+        if thread:
+            msmt.measure_threaded(measure_params)
+        else:
+            for measure_param in measure_params:
+                msmt.measure(measure_param)
 
 
 class Iterate(Sweep):
@@ -2301,3 +2334,15 @@ class Iterate(Sweep):
         self.loop_index += 1
 
         return sweep_value
+
+    def convert_to_Sweep(self):
+        return BaseSweep(
+            sequence=self.sequence, 
+            name=self.name, 
+            label=self.label, 
+            unit=self.unit, 
+            parameter=self.parameter,
+            revert=self.revert,
+            delay=self.delay,
+            initial_delay=self.initial_delay
+        )
