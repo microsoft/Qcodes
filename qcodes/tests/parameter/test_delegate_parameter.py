@@ -70,7 +70,7 @@ def make_observable_parameter(
             p = Parameter(*args, **kwargs,  # type: ignore[misc]
                           set_cmd=set_cmd, get_cmd=get_cmd)
             param = cast(ObservableParam, p)
-            param.get_instr_val = get_cmd  # type: ignore[assignment]
+            param.get_instr_val = get_cmd  # type: ignore[method-assign]
         return param
     yield make_parameter
 
