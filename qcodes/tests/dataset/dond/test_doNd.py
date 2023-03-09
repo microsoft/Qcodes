@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 from hypothesis import HealthCheck, given, settings
+from pytest import FixtureRequest, LogCaptureFixture
 
 from qcodes import config, validators
 from qcodes.dataset import (
@@ -838,7 +839,7 @@ def test_dond_2d_multi_datasets_output_type(
 
 @pytest.mark.usefixtures("plot_close")
 def test_dond_2d_multi_datasets_multi_exp(
-    _param, _param_complex, _param_set, _param_set_2, request
+    _param, _param_complex, _param_set, _param_set_2, request: FixtureRequest
 ) -> None:
     exp1 = new_experiment("test-experiment-1", sample_name="test-sample-1")
     exp2 = new_experiment("test-experiment-2", sample_name="test-sample-2")
@@ -861,7 +862,7 @@ def test_dond_2d_multi_datasets_multi_exp(
 
 @pytest.mark.usefixtures("plot_close")
 def test_dond_2d_multi_datasets_multi_exp_inconsistent_raises(
-    _param, _param_complex, _param_set, _param_set_2, request
+    _param, _param_complex, _param_set, _param_set_2, request: FixtureRequest
 ) -> None:
     exp1 = new_experiment("test-experiment-1", sample_name="test-sample-1")
     exp2 = new_experiment("test-experiment-2", sample_name="test-sample-2")
@@ -1696,7 +1697,7 @@ def test_post_action(mocker) -> None:
     post_actions[0].assert_called_with()
 
 
-def test_extra_log_info(caplog) -> None:
+def test_extra_log_info(caplog: LogCaptureFixture) -> None:
 
     param_1 = ManualParameter("param_1", initial_value=0.0)
     param_2 = ManualParameter("param_2", initial_value=0.0)
@@ -1708,7 +1709,7 @@ def test_extra_log_info(caplog) -> None:
     assert log_message in caplog.text
 
 
-def test_default_log_info(caplog) -> None:
+def test_default_log_info(caplog: LogCaptureFixture) -> None:
 
     param_1 = ManualParameter("param_1", initial_value=0.0)
     param_2 = ManualParameter("param_2", initial_value=0.0)

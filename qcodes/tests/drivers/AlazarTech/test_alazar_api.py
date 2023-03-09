@@ -10,6 +10,7 @@ import os
 from weakref import WeakValueDictionary
 
 import pytest
+from pytest import LogCaptureFixture
 
 from qcodes.instrument_drivers.AlazarTech.ATS import AlazarTech_ATS
 from qcodes.instrument_drivers.AlazarTech.ats_api import AlazarATSAPI
@@ -51,7 +52,7 @@ def alazar_api():
     yield AlazarATSAPI(AlazarTech_ATS.dll_path)
 
 
-def test_alazar_api_singleton_behavior(caplog) -> None:
+def test_alazar_api_singleton_behavior(caplog: LogCaptureFixture) -> None:
     def using_msg(dll_path):
         return f"Using existing instance for DLL path {dll_path}."
 

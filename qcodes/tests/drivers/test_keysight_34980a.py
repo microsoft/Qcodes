@@ -2,6 +2,7 @@
 import logging
 
 import pytest
+from pytest import LogCaptureFixture
 
 from qcodes.instrument_drivers.Keysight.keysight_34980a import Keysight34980A
 
@@ -20,7 +21,7 @@ def switch_driver():
         inst.close()
 
 
-def test_safety_interlock_during_init(switch_driver, caplog) -> None:
+def test_safety_interlock_during_init(switch_driver, caplog: LogCaptureFixture) -> None:
     """
     to check if a warning would show when initialize the instrument with a
     module in safety interlock state. This test has to be placed first if
@@ -68,7 +69,7 @@ def test_scan_slots(switch_driver) -> None:
     }
 
 
-def test_safety_interlock(switch_driver, caplog) -> None:
+def test_safety_interlock(switch_driver, caplog: LogCaptureFixture) -> None:
     """
     to check if a warning would show when talk to a module that is in safety
     interlock state

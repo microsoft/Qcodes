@@ -5,6 +5,7 @@ from contextlib import contextmanager
 from copy import deepcopy
 
 import pytest
+from pytest import LogCaptureFixture
 
 import qcodes as qc
 import qcodes.dataset.descriptions.versioning.serialization as serial
@@ -551,7 +552,7 @@ def test_perform_upgrade_v3_to_v4() -> None:
 
 
 @pytest.mark.usefixtures("default_config", "empty_temp_db")
-def test_update_existing_guids(caplog) -> None:
+def test_update_existing_guids(caplog: LogCaptureFixture) -> None:
 
     old_loc = 101
     old_ws = 1200

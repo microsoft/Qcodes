@@ -2,6 +2,7 @@ import logging
 
 import numpy as np
 import pytest
+from pytest import LogCaptureFixture
 
 from qcodes.instrument_drivers.Keithley import Keithley2450
 
@@ -18,7 +19,7 @@ def k2450():
     driver.close()
 
 
-def test_wrong_mode(caplog) -> None:
+def test_wrong_mode(caplog: LogCaptureFixture) -> None:
     """
     Starting an instrument in the wrong mode should result in a warning. Additionally, no
     parameters should be available, other then the parameters "IDN" and "timeout" which

@@ -107,7 +107,7 @@ def test_init_validation_raises(some_paramspecbases) -> None:
 
 def test_to_dict(some_paramspecbases) -> None:
 
-    def tester(idps):
+    def tester(idps) -> None:
         ser = idps._to_dict()
         json.dumps(ser)
         idps_deser = InterDependencies_._from_dict(ser)

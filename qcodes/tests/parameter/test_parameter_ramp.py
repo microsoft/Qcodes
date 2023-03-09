@@ -4,6 +4,7 @@ import hypothesis.strategies as hst
 import numpy as np
 import pytest
 from hypothesis import given, settings
+from pytest import LogCaptureFixture
 
 from qcodes.parameters import Parameter
 from qcodes.validators import Numbers
@@ -11,7 +12,7 @@ from qcodes.validators import Numbers
 from .conftest import MemoryParameter
 
 
-def test_step_ramp(caplog) -> None:
+def test_step_ramp(caplog: LogCaptureFixture) -> None:
     p = MemoryParameter(name='test_step')
     p(42)
     assert p.set_values == [42]

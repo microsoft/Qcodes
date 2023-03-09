@@ -13,6 +13,7 @@ import hypothesis.strategies as hst
 import numpy as np
 import pytest
 from hypothesis import given
+from pytest import LogCaptureFixture
 
 import qcodes.dataset.descriptions.versioning.serialization as serial
 from qcodes.dataset.data_set import DataSet
@@ -517,7 +518,7 @@ def test_mark_run_complete(dataset) -> None:
     assert dataset.completed_timestamp_raw > time_now
 
 
-def test_mark_run_complete_twice(dataset, caplog) -> None:
+def test_mark_run_complete_twice(dataset, caplog: LogCaptureFixture) -> None:
     assert dataset.run_timestamp_raw is None
     assert dataset.completed_timestamp_raw is None
 

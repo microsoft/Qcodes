@@ -11,6 +11,7 @@ import pytest
 import xarray as xr
 from hypothesis import HealthCheck, given, settings
 from numpy.testing import assert_allclose, assert_array_equal
+from pytest import LogCaptureFixture
 
 import qcodes as qc
 import qcodes.validators as vals
@@ -25,7 +26,7 @@ from qcodes.station import Station
 from qcodes.tests.common import retry_until_does_not_throw
 
 
-def test_log_messages(caplog, meas_with_registered_param) -> None:
+def test_log_messages(caplog: LogCaptureFixture, meas_with_registered_param) -> None:
     caplog.set_level(logging.INFO)
 
     with meas_with_registered_param.run():
@@ -36,7 +37,9 @@ def test_log_messages(caplog, meas_with_registered_param) -> None:
     assert "Finished measurement with guid" in caplog.text
 
 
-def test_log_includes_extra_info(caplog, meas_with_registered_param) -> None:
+def test_log_includes_extra_info(
+    caplog: LogCaptureFixture, meas_with_registered_param
+) -> None:
     caplog.set_level(logging.INFO)
     meas_with_registered_param._extra_log_info = "some extra info"
     with meas_with_registered_param.run():

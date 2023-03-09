@@ -4,6 +4,7 @@ import hypothesis.strategies as hst
 import numpy as np
 import pytest
 from hypothesis import HealthCheck, given, settings
+from pytest import LogCaptureFixture
 
 from qcodes.instrument_drivers.oxford.MercuryiPS_VISA import MercuryiPS
 from qcodes.math_utils.field_vector import FieldVector
@@ -152,7 +153,7 @@ def get_ramp_order(caplog_records):
     y=hst.floats(min_value=-3, max_value=3),
     z=hst.floats(min_value=-3, max_value=3),
 )
-def test_ramp_safely(driver, x, y, z, caplog) -> None:
+def test_ramp_safely(driver, x, y, z, caplog: LogCaptureFixture) -> None:
     """
     Test that we get the first-down-then-up order right
     """

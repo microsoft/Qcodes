@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 from hypothesis import HealthCheck, given, settings
+from pytest import LogCaptureFixture
 
 from qcodes import config, validators
 from qcodes.dataset import do1d, new_experiment
@@ -309,7 +310,7 @@ def test_do1d_additional_setpoints_shape(
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-def test_do1d_break_condition(caplog, _param_set, _param) -> None:
+def test_do1d_break_condition(caplog: LogCaptureFixture, _param_set, _param) -> None:
 
     start = 0
     stop = 1

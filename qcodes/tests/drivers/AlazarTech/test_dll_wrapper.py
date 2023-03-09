@@ -7,6 +7,7 @@ import os
 from weakref import WeakValueDictionary
 
 import pytest
+from pytest import LogCaptureFixture
 
 from qcodes.instrument_drivers.AlazarTech.dll_wrapper import DllWrapperMeta, WrappedDll
 
@@ -14,7 +15,7 @@ pytestmark = pytest.mark.skipif(
     os.name != 'nt', reason='These tests are relevant only for Windows')
 
 
-def test_wrapped_dll_singleton_behavior(caplog) -> None:
+def test_wrapped_dll_singleton_behavior(caplog: LogCaptureFixture) -> None:
     def using_msg(dll_path):
         return f"Using existing instance for DLL path {dll_path}."
 

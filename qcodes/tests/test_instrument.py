@@ -11,6 +11,7 @@ from typing import Iterator
 from weakref import WeakValueDictionary
 
 import pytest
+from pytest import FixtureRequest
 
 from qcodes.instrument import Instrument, InstrumentBase, find_or_create_instrument
 from qcodes.metadatable import Metadatable
@@ -330,7 +331,7 @@ def test_find(testdummy) -> None:
 
 
 @pytest.mark.usefixtures("close_before_and_after")
-def test_find_same_name_but_different_class(request) -> None:
+def test_find_same_name_but_different_class(request: FixtureRequest) -> None:
     """Test finding an existing instrument with different class"""
     instr = DummyInstrument(
         name='instr', gates=['dac1', 'dac2', 'dac3'])
@@ -352,7 +353,7 @@ def test_find_same_name_but_different_class(request) -> None:
 
 
 @pytest.mark.usefixtures("close_before_and_after")
-def test_create(request) -> None:
+def test_create(request: FixtureRequest) -> None:
     """Test creating an instrument that does not yet exist"""
     instr = find_or_create_instrument(
         DummyInstrument, name='instr', gates=['dac1', 'dac2', 'dac3'])
@@ -371,7 +372,7 @@ def test_other_exception() -> None:
 
 
 @pytest.mark.usefixtures("close_before_and_after")
-def test_recreate(request) -> None:
+def test_recreate(request: FixtureRequest) -> None:
     """Test the case when instrument needs to be recreated"""
     instr = DummyInstrument(
         name='instr', gates=['dac1', 'dac2', 'dac3'])
@@ -391,7 +392,7 @@ def test_recreate(request) -> None:
     assert instr not in Instrument._all_instruments.values()
 
 
-def test_instrument_metadata(request) -> None:
+def test_instrument_metadata(request: FixtureRequest) -> None:
     metadatadict = {1: "data", "some": "data"}
     instrument = DummyInstrument(name='testdummy', gates=['dac1', 'dac2', 'dac3'],
                                  metadata=metadatadict)

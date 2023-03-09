@@ -9,6 +9,7 @@ from typing import Tuple, cast
 
 import pytest
 import websockets
+from pytest import FixtureRequest
 
 from qcodes.monitor import monitor
 from qcodes.parameters import Parameter
@@ -46,7 +47,7 @@ def _make_channel_instr():
 
 
 @pytest.fixture(name="channel_instr_monitor", params=[True, False])
-def _make_channel_instr_monitor(channel_instr, request):
+def _make_channel_instr_monitor(channel_instr, request: FixtureRequest):
 
     m = monitor.Monitor(
         channel_instr.A.dummy_start,
@@ -59,7 +60,7 @@ def _make_channel_instr_monitor(channel_instr, request):
         m.stop()
 
 
-def test_setup_teardown(request) -> None:
+def test_setup_teardown(request: FixtureRequest) -> None:
     """
     Check that monitor starts up and closes correctly
     """
@@ -76,7 +77,7 @@ def test_setup_teardown(request) -> None:
     assert monitor.Monitor.running is None
 
 
-def test_monitor_replace(request) -> None:
+def test_monitor_replace(request: FixtureRequest) -> None:
     """
     Check that monitors get correctly replaced
     """
@@ -93,7 +94,7 @@ def test_monitor_replace(request) -> None:
     m2.stop()
 
 
-def test_double_join(request) -> None:
+def test_double_join(request: FixtureRequest) -> None:
     """
     Check that a double join doesn't cause a hang
     """

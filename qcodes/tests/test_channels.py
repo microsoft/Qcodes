@@ -7,6 +7,7 @@ import numpy as np
 import pytest
 from hypothesis import HealthCheck, given, settings
 from numpy.testing import assert_array_equal
+from pytest import LogCaptureFixture
 
 from qcodes.instrument import ChannelList, ChannelTuple, Instrument, InstrumentChannel
 from qcodes.tests.instrument_mocks import DummyChannel, DummyChannelInstrument
@@ -67,7 +68,7 @@ def test_instrument_channel_label() -> None:
     assert dci.B_with_label.label == "B with f@ncy label"
 
 
-def test_channels_call_function(dci, caplog) -> None:
+def test_channels_call_function(dci, caplog: LogCaptureFixture) -> None:
     """
     Test that dci.channels.some_function() calls
     some_function on each of the channels

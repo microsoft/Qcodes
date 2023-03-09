@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 import xarray as xr
+from pytest import LogCaptureFixture
 
 import qcodes
 from qcodes.dataset import get_data_export_path, load_from_netcdf, new_data_set
@@ -198,7 +199,7 @@ def test_write_data_to_text_file_name_exception(tmp_path, mock_dataset) -> None:
                                              single_file_name=None)
 
 
-def test_export_csv(tmp_path_factory, mock_dataset, caplog) -> None:
+def test_export_csv(tmp_path_factory, mock_dataset, caplog: LogCaptureFixture) -> None:
     tmp_path = tmp_path_factory.mktemp("export_csv")
     path = str(tmp_path)
     with caplog.at_level(logging.INFO):
@@ -218,7 +219,9 @@ def test_export_csv(tmp_path_factory, mock_dataset, caplog) -> None:
         assert f.readlines() == ['0.0\t1.0\t2.0\n']
 
 
-def test_export_netcdf(tmp_path_factory, mock_dataset, caplog) -> None:
+def test_export_netcdf(
+    tmp_path_factory, mock_dataset, caplog: LogCaptureFixture
+) -> None:
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
     path = str(tmp_path)
     with caplog.at_level(logging.INFO):

@@ -5,6 +5,7 @@ import pytest
 from hypothesis import HealthCheck, assume, example, given, settings
 from hypothesis.strategies import data, floats, just, lists, one_of, sampled_from, text
 from matplotlib.collections import QuadMesh
+from pytest import FixtureRequest
 
 import qcodes as qc
 from qcodes.dataset.data_export import DSPlotData
@@ -113,7 +114,7 @@ def test_rescaled_ticks_and_units(
         assert '2.12346' == ticks_formatter(2.123456789 / (10 ** (-scale)))
 
 
-def test_plot_by_id_line_and_heatmap(experiment, request) -> None:
+def test_plot_by_id_line_and_heatmap(experiment, request: FixtureRequest) -> None:
     """
     Test that line plots and heatmaps can be plotted together
     """
@@ -144,7 +145,9 @@ def test_plot_by_id_line_and_heatmap(experiment, request) -> None:
 
 @pytest.mark.parametrize("nan_setpoints", [True, False])
 @pytest.mark.parametrize("shifted", [True, False])
-def test_plot_dataset_2d_shaped(experiment, request, nan_setpoints, shifted) -> None:
+def test_plot_dataset_2d_shaped(
+    experiment, request: FixtureRequest, nan_setpoints, shifted
+) -> None:
     """
     Test plotting of preshaped data on a grid that may or may not be shifted
     with and without nans in the set points.

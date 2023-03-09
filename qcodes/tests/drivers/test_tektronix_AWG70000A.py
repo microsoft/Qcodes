@@ -10,6 +10,7 @@ import pytest
 from broadbean.sequence import InvalidForgedSequenceError
 from hypothesis import given, settings
 from lxml import etree
+from pytest import LogCaptureFixture
 
 import qcodes.tests.drivers.auxiliary_files as auxfiles
 from qcodes.instrument_drivers.tektronix.AWG70000A import AWG70000A
@@ -181,7 +182,7 @@ def test_seqxfilefromfs_failing(forged_sequence) -> None:
                   channel_mapping={1: 10, 2: 8, 3: -1})
 
 
-def test_seqxfilefromfs_warns(forged_sequence, caplog) -> None:
+def test_seqxfilefromfs_warns(forged_sequence, caplog: LogCaptureFixture) -> None:
     """
     Test that a warning is logged when waveform is clipped
     """
