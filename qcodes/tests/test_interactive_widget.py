@@ -1,12 +1,12 @@
 import time
 from unittest.mock import patch
 
-import matplotlib
-import pytest
 # importing ipykernel has the side effect
 # of registering that as a kernel backend
 # making the tests runnable
-import ipykernel.ipkernel # noqa  F401
+import ipykernel.ipkernel  # noqa  F401
+import matplotlib
+import pytest
 from ipywidgets import HTML, Button, GridspecLayout, Tab, Textarea
 
 from qcodes import interactive_widget
