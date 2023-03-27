@@ -3,6 +3,10 @@ from unittest.mock import patch
 
 import matplotlib
 import pytest
+# importing ipykernel has the side effect
+# of registering that as a kernel backend
+# making the tests runnable
+import ipykernel.ipkernel # noqa  F401
 from ipywidgets import HTML, Button, GridspecLayout, Tab, Textarea
 
 from qcodes import interactive_widget
