@@ -112,7 +112,9 @@ class FormattedSweep(ParameterWithSetpoints):
         # Check if we should run a new sweep
         auto_sweep = root_instr.auto_sweep()
 
-        prev_mode = self.instrument.run_sweep()
+        prev_mode = ""
+        if auto_sweep:
+            prev_mode = self.instrument.run_sweep()
         # Ask for data, setting the format to the requested form
         self.instrument.format(self.sweep_format)
         data = root_instr.visa_handle.query_binary_values('CALC:DATA? FDATA',
@@ -266,20 +268,20 @@ class KeysightPNATrace(InstrumentChannel):
             "polar",
             sweep_format="POLAR",
             label="Polar",
-            unit="V",
+            unit="ratio",
             parameter_class=FormattedSweep,
             get_parser=self._parse_polar_data,
             vals=Arrays(shape=(self.parent.points,), valid_types=(complex,)),
         )
 
     @staticmethod
-    def _parse_polar_data(data: Sequence[float]) -> np.ndarray:
+    def _parse_polar_data(data: np.ndarray) -> np.ndarray:
         """
         Parse the 2*n-length flat array coming from the instrument
         and convert to n-length array of complex numbers
         """
-        pairs = np.array([data[::2], data[1::2]]).T
-        return np.array([complex(*pair) for pair in pairs])
+        data_shape = data.size
+        return data.reshape((data_shape // 2, 2)).view(dtype=np.complex128).flatten()
 
     def run_sweep(self) -> str:
         """
