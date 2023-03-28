@@ -55,7 +55,7 @@ jobs:
         pip install .[test] -c requirements.txt
     - uses: jakebailey/pyright-action@v1.5.1
       with:
-        version: 1.1.298
+        version: 1.1.300
     - name: Run Mypy
       run: mypy -p qcodes
     - name: Run parallel tests
