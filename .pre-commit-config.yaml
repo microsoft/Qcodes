@@ -23,13 +23,13 @@ repos:
     - id: pyupgrade
       args: ['--py38-plus']
   - repo: https://github.com/akaihola/darker
-    rev: 1.7.0
+    rev: 1.7.1
     hooks:
       - id: darker
         args: [-i]
         additional_dependencies: [isort]
   - repo: https://github.com/abravalheri/validate-pyproject
-    rev: v0.12.1
+    rev: v0.12.2
     hooks:
       - id: validate-pyproject
   - repo: https://github.com/nbQA-dev/nbQA
@@ -42,6 +42,6 @@ repos:
           additional_dependencies: [isort]
   - repo: https://github.com/charliermarsh/ruff-pre-commit
     # Ruff version.
-    rev: 'v0.0.257'
+    rev: 'v0.0.259'
     hooks:
       - id: ruff
