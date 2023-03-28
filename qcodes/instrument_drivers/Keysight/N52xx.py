@@ -112,7 +112,9 @@ class FormattedSweep(ParameterWithSetpoints):
         # Check if we should run a new sweep
         auto_sweep = root_instr.auto_sweep()
 
-        prev_mode = self.instrument.run_sweep()
+        prev_mode = ""
+        if auto_sweep:
+            prev_mode = self.instrument.run_sweep()
         # Ask for data, setting the format to the requested form
         self.instrument.format(self.sweep_format)
         data = root_instr.visa_handle.query_binary_values('CALC:DATA? FDATA',
