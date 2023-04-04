@@ -75,7 +75,7 @@ msal~=1.21.0
 msal-extensions~=1.0.0
 mypy~=1.1.1
 mypy-extensions~=1.0.0
-nbclient==0.7.2
+nbclient==0.7.3
 nbconvert~=7.3.0
 nbformat~=5.8.0
 nbsphinx==0.9.1
