@@ -240,8 +240,8 @@ def test_export_netcdf(
     df = ds.to_dataframe()
     assert df.index.name == "x"
     assert df.index.values.tolist() == [0.0]
-    assert df.y.values.tolist() == [1.0]  # type: ignore[union-attr]
-    assert df.z.values.tolist() == [2.0]  # type: ignore[union-attr]
+    assert df.y.values.tolist() == [1.0]
+    assert df.z.values.tolist() == [2.0]
     expected_attrs = mock_dataset.metadata.copy()
     expected_attrs.pop("export_info")
     for attr, val in expected_attrs.items():
@@ -321,7 +321,7 @@ def test_export_netcdf_complex_data(tmp_path_factory, mock_dataset_complex) -> N
     df = ds.to_dataframe()
     assert df.index.name == "x"
     assert df.index.values.tolist() == [0.0]
-    assert df.y.values.tolist() == [1.0 + 1j]  # type: ignore[union-attr]
+    assert df.y.values.tolist() == [1.0 + 1j]
 
 
 def test_export_no_or_nonexistent_type_specified(
