@@ -1,6 +1,0 @@
-Fixed a bug in interlock status querying for Keithley 3706A. Originally, not all
-potential responses from the system were accounted for when querying for interlock
-status. A dictionary is used to map the response from the system to a string describing
-the interlock status. When the system returns a response that was not accounted for, this
-resulted in a KeyError being raised. Now, this dictionary accounts for all potential responses
-from the system.
