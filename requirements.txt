@@ -138,7 +138,7 @@ slack-sdk~=3.21.0
 snowballstemmer~=2.2.0
 sortedcontainers~=2.4.0
 soupsieve~=2.4
-Sphinx @ git+https://github.com/jenshnielsen/sphinx.git@fix_9884_6_1_3
+Sphinx~=6.2.0
 sphinx-favicon==1.0.1
 sphinx-issues~=3.0.1
 sphinx-jsonschema~=1.19.1
