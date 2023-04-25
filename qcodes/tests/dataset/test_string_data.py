@@ -190,12 +190,14 @@ def test_list_of_strings(experiment) -> None:
 @given(
     p_values=hypnumpy.arrays(
         dtype=hst.sampled_from(
-            (hypnumpy.unicode_string_dtypes(),
-             hypnumpy.byte_string_dtypes(),
-             hypnumpy.timedelta64_dtypes(),
-             hypnumpy.datetime64_dtypes())
-        ),
-        shape=hypnumpy.array_shapes()
+            (
+                hypnumpy.unicode_string_dtypes(),
+                hypnumpy.byte_string_dtypes(),
+                hypnumpy.timedelta64_dtypes(),
+                hypnumpy.datetime64_dtypes(),
+            )
+        ),  # pyright: ignore[reportGeneralTypeIssues]
+        shape=hypnumpy.array_shapes(),
     )
 )
 def test_string_and_date_data_in_array(experiment, p_values) -> None:
