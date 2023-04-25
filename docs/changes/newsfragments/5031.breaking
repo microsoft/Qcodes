@@ -1,8 +1,0 @@
-The default configuration of QCoDeS dataset ``GUID_components.GUID_type`` has changed from ``explicit_sample`` to ``random_sample``.
-This means that QCoDeS GUIDs will no longer start with ``aaaaaaaa`` but with a random string. This significantly reduces the risk
-of duplicate GUIDs.
-This also means that that the ability to set a sample_id as part of the dataset GUID is disabled by default. With
-the default config its therefor an error to set ``GUID_components.sample`` to anything but the default value. The original
-behavior can be restored by setting ``GUID_components.GUID_type`` to ``explicit_sample`` in the config file but is not recommended.
-Users should make use of the ``sample_name`` attached to an experiment as an alternative. Note that if you have already created
-a local config you will need to update this for the changes to take effect.

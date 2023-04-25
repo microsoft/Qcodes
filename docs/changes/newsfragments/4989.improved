@@ -1,2 +1,0 @@
-The helper functions ``guids_from_dbs``, ``guids_from_dir``, and ``guids_from_list_str`` have been added
-to the documented dataset api at ``qcodes.dataset``.

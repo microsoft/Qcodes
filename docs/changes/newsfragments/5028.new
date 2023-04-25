@@ -1,3 +1,0 @@
-The QCoDeS ``Station`` ``Instrument`` and ``InstrumentModule`` classes gained a method ``get_component``
-which allows the user to get a component by name. Allowing the user to go from
-the full name of a component to the component itself.

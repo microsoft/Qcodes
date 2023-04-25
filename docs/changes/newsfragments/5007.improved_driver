@@ -1,2 +1,0 @@
-Fixed a bug in version parsing for Keysight 344XXA and Keysight E4980A which
-would result in incompatibility with packaging>21 under certain circumstances.
