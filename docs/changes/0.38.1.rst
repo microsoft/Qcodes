@@ -1,0 +1,7 @@
+QCoDeS 0.38.1 (2023-04-26)
+==========================
+
+Improved:
+---------
+
+- Fixed a typo in the readme preventing release to pypi (:pr:`5132`)
