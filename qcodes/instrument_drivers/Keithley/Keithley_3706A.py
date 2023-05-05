@@ -165,7 +165,10 @@ class Keithley3706A(VisaInstrument):
                 interlock_state = [
                     state for state in states if state["slot_no"] == slot
                 ][0]
-                if interlock_state["state"] == "Interlocks 1 and 2 are disengaged on the card":
+                if (
+                    interlock_state["state"]
+                    == "Interlocks 1 and 2 are disengaged on the card"
+                ):
                     warnings.warn(
                         f"The hardware interlocks in Slot "
                         f'{interlock_state["slot_no"]} are disengaged. '
