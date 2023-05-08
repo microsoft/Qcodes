@@ -137,7 +137,7 @@ class Keithley3706A(VisaInstrument):
             )
         if val in forbidden_channels.split(","):
             warnings.warn(
-                "You are attempting to close channels that are " "forbidden to close.",
+                "You are attempting to close channels that are forbidden to close.",
                 UserWarning,
                 2,
             )
@@ -165,10 +165,13 @@ class Keithley3706A(VisaInstrument):
                 interlock_state = [
                     state for state in states if state["slot_no"] == slot
                 ][0]
-                if interlock_state["state"] == "Interlock is disengaged":
+                if (
+                    interlock_state["state"]
+                    == "Interlocks 1 and 2 are disengaged on the card"
+                ):
                     warnings.warn(
-                        f"The hardware interlock in Slot "
-                        f'{interlock_state["slot_no"]} is disengaged. '
+                        f"The hardware interlocks in Slot "
+                        f'{interlock_state["slot_no"]} are disengaged. '
                         f"The analog backplane relay {channel} "
                         "cannot be energized.",
                         UserWarning,
@@ -395,10 +398,10 @@ class Keithley3706A(VisaInstrument):
         plane_specifiers = backplane.split(",")
         val_specifiers = val.split(",")
         for element in states:
-            if element["state"] == "Interlock is disengaged":
+            if element["state"] == "Interlocks 1 and 2 are disengaged on the card":
                 warnings.warn(
-                    f"The hardware interlock in Slot "
-                    f'{element["slot_no"]} is disengaged. '
+                    f"The hardware interlocks in Slot "
+                    f'{element["slot_no"]} are disengaged. '
                     "The corresponding analog backplane relays "
                     "cannot be energized.",
                     UserWarning,

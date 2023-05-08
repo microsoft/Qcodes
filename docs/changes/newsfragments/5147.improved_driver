@@ -1,0 +1,2 @@
+Fix Keithley 3706A driver to use the updated interlock status strings
+(following up on :pr:`5007`)
