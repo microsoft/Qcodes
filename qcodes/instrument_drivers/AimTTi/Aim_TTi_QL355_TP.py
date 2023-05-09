@@ -40,6 +40,7 @@ class AimTTiQL355TP(AimTTi):
             _value = channel.ask_raw(f"{command}{channel_id}?")
             _value_split = _value.split()
             return float(_value_split[1])
+        return _value_reader
 
     def trip_reset(self):
         """Clear all trip conditions on the device"""
