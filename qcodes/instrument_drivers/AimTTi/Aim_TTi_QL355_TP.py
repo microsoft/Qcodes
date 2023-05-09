@@ -18,11 +18,20 @@ class AimTTiQL355TP(AimTTi):
         for channel in [self.ch1, self.ch2]:
             channel.add_parameter(
                 "over_voltage_protection",
-                get_cmd=self._get_value_reader(channel, 'OVP'),
+                get_cmd=self._get_value_reader(channel, "OVP"),
                 get_parser=float,
                 set_cmd=f"OVP{channel.channel} {{}}",
                 label="Over voltage protection",
                 unit="V",
+            )
+
+            channel.add_parameter(
+                "over_current_protection",
+                get_cmd=self._get_value_reader(channel, "OCP"),
+                get_parser=float,
+                set_cmd=f"OCP{channel.channel} {{}}",
+                label="Over current protection",
+                unit="A",
             )
 
     def _get_value_reader(self, channel, command):
