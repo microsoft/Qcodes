@@ -32,3 +32,6 @@ class AimTTiQL355TP(AimTTi):
             _value_split = _value.split()
             return float(_value_split[1])
     
+    def trip_reset(self):
+        """Clear all trip conditions on the device"""
+        self.write("TRIPRST")
