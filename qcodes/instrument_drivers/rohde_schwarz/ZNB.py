@@ -29,7 +29,12 @@ class FixedFrequencyTraceIQ(MultiParameter):
     """
 
     def __init__(
-        self, name: str, instrument: "RohdeSchwarzZNBChannel", npts: int, bandwidth: int
+        self,
+        name: str,
+        instrument: "RohdeSchwarzZNBChannel",
+        npts: int,
+        bandwidth: int,
+        **kwargs: Any,
     ) -> None:
         super().__init__(
             name,
@@ -44,6 +49,7 @@ class FixedFrequencyTraceIQ(MultiParameter):
             setpoint_units=(("s",), ("s",)),
             setpoint_labels=(("time",), ("time",)),
             shapes=((npts,), (npts,),),
+            **kwargs,
         )
         self.set_cw_sweep(npts, bandwidth)
 
@@ -95,7 +101,9 @@ class FixedFrequencyPointIQ(MultiParameter):
         instrument: instrument the parameter belongs to
     """
 
-    def __init__(self, name: str, instrument: "RohdeSchwarzZNBChannel") -> None:
+    def __init__(
+        self, name: str, instrument: "RohdeSchwarzZNBChannel", **kwargs: Any
+    ) -> None:
         super().__init__(
             name,
             instrument=instrument,
@@ -104,6 +112,7 @@ class FixedFrequencyPointIQ(MultiParameter):
             units=("", ""),
             setpoints=((), (),),
             shapes=((), (),),
+            **kwargs,
         )
 
     def get_raw(self) -> Tuple[float, float]:
@@ -131,7 +140,9 @@ class FixedFrequencyPointMagPhase(MultiParameter):
         instrument: instrument the parameter belongs to
     """
 
-    def __init__(self, name: str, instrument: "RohdeSchwarzZNBChannel") -> None:
+    def __init__(
+        self, name: str, instrument: "RohdeSchwarzZNBChannel", **kwargs: Any
+    ) -> None:
         super().__init__(
             name,
             instrument=instrument,
@@ -143,6 +154,7 @@ class FixedFrequencyPointMagPhase(MultiParameter):
             units=("", "rad"),
             setpoints=((), (),),
             shapes=((), (),),
+            **kwargs,
         )
 
     def get_raw(self) -> Tuple[float, ...]:
@@ -171,6 +183,7 @@ class FrequencySweepMagPhase(MultiParameter):
         stop: float,
         npts: int,
         channel: int,
+        **kwargs: Any,
     ) -> None:
         super().__init__(
             name,
@@ -191,6 +204,7 @@ class FrequencySweepMagPhase(MultiParameter):
                 (f"{instrument.short_name}_frequency",),
             ),
             shapes=((npts,), (npts,),),
+            **kwargs,
         )
         self.set_sweep(start, stop, npts)
         self._channel = channel
@@ -223,6 +237,7 @@ class FrequencySweepDBPhase(MultiParameter):
         stop: float,
         npts: int,
         channel: int,
+        **kwargs: Any,
     ) -> None:
         super().__init__(
             name,
@@ -243,6 +258,7 @@ class FrequencySweepDBPhase(MultiParameter):
                 (f"{instrument.short_name}_frequency",),
             ),
             shapes=((npts,), (npts,),),
+            **kwargs,
         )
         self.set_sweep(start, stop, npts)
         self._channel = channel
@@ -288,6 +304,7 @@ class FrequencySweep(ArrayParameter):
         stop: float,
         npts: int,
         channel: int,
+        **kwargs: Any,
     ) -> None:
         super().__init__(
             name,
@@ -298,6 +315,7 @@ class FrequencySweep(ArrayParameter):
             setpoint_units=("Hz",),
             setpoint_labels=(f"{instrument.short_name} frequency",),
             setpoint_names=(f"{instrument.short_name}_frequency",),
+            **kwargs,
         )
         self.set_sweep(start, stop, npts)
         self._channel = channel
