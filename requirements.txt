@@ -11,7 +11,7 @@ asttokens~=2.2.0
 attrs~=23.1.0
 autodocsumm==0.2.11
 azure-core~=1.26.0
-azure-identity~=1.12.0
+azure-identity~=1.13.0
 Babel~=2.12.1
 backcall==0.2.0
 beautifulsoup4~=4.12.0
