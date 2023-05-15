@@ -117,7 +117,7 @@ pytest-cov~=4.0.0
 pytest-forked~=1.6.0
 pytest-mock~=3.10.0
 pytest-rerunfailures==11.1.2
-pytest-xdist~=3.2.0
+pytest-xdist~=3.3.0
 python-dateutil~=2.8.2
 pytz~=2023.2
 PyVISA~=1.13.0
