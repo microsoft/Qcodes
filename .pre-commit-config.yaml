@@ -42,6 +42,6 @@ repos:
           additional_dependencies: [isort]
   - repo: https://github.com/charliermarsh/ruff-pre-commit
     # Ruff version.
-    rev: 'v0.0.265'
+    rev: 'v0.0.267'
     hooks:
       - id: ruff
