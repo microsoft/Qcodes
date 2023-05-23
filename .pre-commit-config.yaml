@@ -29,7 +29,7 @@ repos:
         args: [-i]
         additional_dependencies: [isort]
   - repo: https://github.com/abravalheri/validate-pyproject
-    rev: v0.12.2
+    rev: v0.13
     hooks:
       - id: validate-pyproject
   - repo: https://github.com/nbQA-dev/nbQA
@@ -42,6 +42,6 @@ repos:
           additional_dependencies: [isort]
   - repo: https://github.com/charliermarsh/ruff-pre-commit
     # Ruff version.
-    rev: 'v0.0.267'
+    rev: 'v0.0.269'
     hooks:
       - id: ruff
