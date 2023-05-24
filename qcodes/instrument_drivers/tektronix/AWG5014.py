@@ -1108,9 +1108,9 @@ class TektronixAWG5014(VisaInstrument):
         self.available_channels = (self.available_waveform_channels +
                                    self.available_marker_channels)
 
-        waveforms = []
-        m1s = []
-        m2s = []
+        waveforms: List[List[Any]] = []
+        m1s: List[List[Any]] = []
+        m2s: List[List[Any]] = []
         # unfortunately the definitions of the sequence elements in terms of
         # channel and step in :meth:`make_and_send_awg_file` and the forged
         # sequence definition are transposed. Start by filling out after schema

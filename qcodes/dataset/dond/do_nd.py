@@ -707,7 +707,7 @@ def dond(
             for set_events in tqdm(sweeper, disable=not show_progress):  # type: ignore[call-overload]
                 LOG.debug("Processing set events: %s", set_events)
                 results: dict[ParameterBase, Any] = {}
-                for set_event in set_events:
+                for set_event in set_events:  # pyright: ignore[reportGeneralTypeIssues]
                     if set_event.should_set:
                         set_event.parameter(set_event.new_value)
                         for act in set_event.actions:
