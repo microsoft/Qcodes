@@ -41,7 +41,7 @@ fastjsonschema~=2.17.0
 fonttools~=4.39.0
 future==0.18.3
 google-api-core~=2.11.0
-google-auth~=2.18.0
+google-auth~=2.19.0
 googleapis-common-protos~=1.59.0
 h5netcdf~=1.1.0
 h5py~=3.8.0
