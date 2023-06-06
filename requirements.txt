@@ -10,7 +10,7 @@ argon2-cffi-bindings~=21.2.0
 asttokens~=2.2.0
 attrs~=23.1.0
 autodocsumm==0.2.11
-azure-core~=1.26.0
+azure-core~=1.27.0
 azure-identity~=1.13.0
 Babel~=2.12.1
 backcall==0.2.0
