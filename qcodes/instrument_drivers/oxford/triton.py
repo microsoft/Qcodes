@@ -149,6 +149,8 @@ class OxfordTriton(IPInstrument):
                            unit='T/min',
                            get_cmd=partial(self._get_control_B_param, 'RVST:TIME'))
 
+        self._add_pumps()
+        self._add_temp_state()
         self.chan_alias: Dict[str, str] = {}
         self.chan_temp_names: Dict[str, Dict[str, Optional[str]]] = {}
         if tmpfile is not None:
@@ -406,6 +408,42 @@ class OxfordTriton(IPInstrument):
 
     def _recv(self) -> str:
         return super()._recv().rstrip()
+    
+    def _add_pumps(self) -> None:
+        pump_list = []
+        for pump in ['TURB1', 'TURB2', 'COMP']:
+            pump_list.append(pump)
+            self.add_parameter(name=pump.lower(),
+                               get_cmd='READ:DEV:%s:PUMP:SIG:STATE' % pump,
+                               get_parser=self._get_parser_pump_state,
+                               set_cmd=partial(self._set_pump_state, pump=pump),
+                               val_mapping={'on':  'ON', 'off': 'OFF'})
+        self.pumps = set(pump_list)
+
+    def _set_pump_state(self, pump: str, state: str) -> None:
+        return 'SET:DEV:%s:PUMP:SIG:STATE:' + state % pump
+    
+    def _get_parser_pump_state(self, msg: str) -> Optional[str]:
+        if 'NOT_FOUND' in msg:
+            return None
+        return msg.split('STATE:')[-1]
+    
+    def _add_temp_state(self) -> None:
+        for i in range(1, 17):
+            chan = 'T%d' % i
+            self.add_parameter(name=chan + '_enable',
+                               get_cmd='READ:DEV:%s:TEMP:MEAS:ENAB' % chan,
+                               get_parser=self._get_parser_temp_state,
+                               set_cmd=partial(self._set_temp_state, chan=chan),
+                               val_mapping={'on':  'ON', 'off': 'OFF'})
+
+    def _set_temp_state(self, chan: str, state: str) -> None:
+        return 'SET:DEV:%s:TEMP:MEAS:ENAB:' + state % chan
+
+    def _get_parser_temp_state(self, msg: str) -> Optional[str]:
+        if 'NOT_FOUND' in msg:
+            return None
+        return msg.split('ENAB:')[-1]
 
 
 Triton = OxfordTriton
