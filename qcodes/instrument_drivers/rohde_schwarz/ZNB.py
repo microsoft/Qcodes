@@ -363,11 +363,9 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
             existing_trace_to_bind_to: Name of an existing trace on the VNA.
                 If supplied try to bind to an existing trace with this name
                 rather than creating a new trace.
-            additional_time: Additional wait before instrument timeout.
         """
         n = channel
         self._instrument_channel = channel
-        self.additional_wait = additional_wait
 
         if vna_parameter is None:
             vna_parameter = name
@@ -830,8 +828,8 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
                     data_format_command = "SDAT"
                 else:
                     data_format_command = "FDAT"
-                timeout = self.sweep_time() * 1.5 + self._additional_wait
-                with self.root_instrument.timeout.set_to(timeout):
+
+                with self.root_instrument.timeout.set_to(self._get_timeout()):
                     # instrument averages over its last 'avg' number of sweeps
                     # need to ensure averaged result is returned
                     for _ in range(self.avg()):
@@ -928,8 +926,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
             self._check_cw_sweep()
 
         with self.status.set_to(1):
-            timeout = self.sweep_time.cache.get() + self._additional_wait
-            with self.root_instrument.timeout.set_to(timeout):
+            with self.root_instrument.timeout.set_to(self._get_timeout()):
                 self.write(f"INIT{self._instrument_channel}:IMM; *WAI")
                 data_str = self.ask(f"CALC{self._instrument_channel}:DATA? "
                                     f"SDAT")
@@ -938,6 +935,11 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
             q = data[1::2]
 
         return i, q
+
+    def _get_timeout(self) -> float:
+        timeout = self.root_instrument.timeout() or float("+inf")
+        timeout = max(self.sweep_time.cache.get() * 1.5, timeout)
+        return timeout
 
 
 ZNBChannel = RohdeSchwarzZNBChannel
