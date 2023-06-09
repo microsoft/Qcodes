@@ -15,13 +15,13 @@ def _add_run_to_runs_table(
     target_conn: ConnectionPlus,
     target_exp_id: int,
     create_run_table: bool = True,
-) -> str | None:
+) -> int:
     metadata = dataset.metadata
     snapshot_raw = dataset._snapshot_raw
     captured_run_id = dataset.captured_run_id
     captured_counter = dataset.captured_counter
     parent_dataset_links = links_to_str(dataset.parent_dataset_links)
-    _, target_run_id, target_table_name = create_run(
+    _, target_run_id, _ = create_run(
         target_conn,
         target_exp_id,
         name=dataset.name,
@@ -41,4 +41,4 @@ def _add_run_to_runs_table(
         dataset.run_timestamp_raw,
         dataset.completed_timestamp_raw,
     )
-    return target_table_name
+    return target_run_id

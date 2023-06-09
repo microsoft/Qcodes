@@ -153,7 +153,10 @@ class DataSetInMem(BaseDataSet):
                     sample_name=self.sample_name,
                     load_last_duplicate=True,
                 )
-                _add_run_to_runs_table(self, aconn, exp.exp_id, create_run_table=False)
+                run_id = _add_run_to_runs_table(
+                    self, aconn, exp.exp_id, create_run_table=False
+                )
+            self._run_id = run_id
             self._path_to_db = conn.path_to_dbfile
 
     @classmethod
