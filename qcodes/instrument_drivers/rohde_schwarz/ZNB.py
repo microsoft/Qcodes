@@ -350,6 +350,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
         channel: int,
         vna_parameter: Optional[str] = None,
         existing_trace_to_bind_to: Optional[str] = None,
+        additional_wait: int = 0,
     ) -> None:
         """
         Args:
@@ -362,12 +363,11 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
             existing_trace_to_bind_to: Name of an existing trace on the VNA.
                 If supplied try to bind to an existing trace with this name
                 rather than creating a new trace.
-
+            additional_time: Additional wait before instrument timeout.
         """
         n = channel
         self._instrument_channel = channel
-        # Additional wait when adjusting instrument timeout to sweep time.
-        self._additional_wait = 1
+        self.additional_wait = additional_wait
 
         if vna_parameter is None:
             vna_parameter = name
@@ -830,7 +830,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
                     data_format_command = "SDAT"
                 else:
                     data_format_command = "FDAT"
-                timeout = self.sweep_time() + self._additional_wait
+                timeout = self.sweep_time() * 1.5 + self._additional_wait
                 with self.root_instrument.timeout.set_to(timeout):
                     # instrument averages over its last 'avg' number of sweeps
                     # need to ensure averaged result is returned
