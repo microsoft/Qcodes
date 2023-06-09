@@ -571,6 +571,7 @@ def dond(
     log_info: str | None = None,
     break_condition: BreakConditionT | None = None,
     dataset_dependencies: Mapping[str, Sequence[ParamMeasT]] | None = None,
+    in_memory_cache: bool = True,
 ) -> AxesTupleListWithDataSet | MultiAxesTupleListWithDataSet:
     """
     Perform n-dimentional scan from slowest (first) to the fastest (last), to
@@ -636,6 +637,9 @@ def dond(
             measurement names to Sequence of Parameters. Note that a dataset must
             depend on at least one parameter from each dimension but can depend
             on one or more parameters from a dimension sweeped with a TogetherSweep.
+        in_memory_cache:
+            Should be keep a cache of the data available in memory for faster
+            plotting and exporting. Useful to disable if the data is very large.
 
     Returns:
         A tuple of QCoDeS DataSet, Matplotlib axis, Matplotlib colorbar. If
@@ -695,7 +699,9 @@ def dond(
     try:
         with _catch_interrupts() as interrupted, ExitStack() as stack, params_meas_caller as call_params_meas:
             datasavers = [
-                stack.enter_context(group.measurement_cxt.run())
+                stack.enter_context(
+                    group.measurement_cxt.run(in_memory_cache=in_memory_cache)
+                )
                 for group in measurements.groups
             ]
             additional_setpoints_data = process_params_meas(additional_setpoints)
