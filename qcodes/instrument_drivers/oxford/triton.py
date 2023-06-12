@@ -7,7 +7,7 @@ from traceback import format_exc
 from typing import Any, Dict, List, Optional, Union
 
 from qcodes.instrument import IPInstrument
-from qcodes.validators import Enum, Ints
+from qcodes.validators import Enum, Ints, Numbers
 
 
 class OxfordTriton(IPInstrument):
@@ -83,6 +83,24 @@ class OxfordTriton(IPInstrument):
                            unit='K',
                            get_cmd=partial(self._get_control_param, 'TSET'),
                            set_cmd=partial(self._set_control_param, 'TSET'))
+        
+        self.add_parameter(name='pid_p',
+                           label='PID proportionality',
+                           get_cmd=partial(self._get_control_param, 'P'),
+                           set_cmd=partial(self._set_control_param, 'P'),
+                           vals=Numbers(0, 1e3))
+        
+        self.add_parameter(name='pid_i',
+                           label='PID intergral',
+                           get_cmd=partial(self._get_control_param, 'I'),
+                           set_cmd=partial(self._set_control_param, 'I'),
+                           vals=Numbers(0, 1e3))
+        
+        self.add_parameter(name='pid_d',
+                           label='PID derivative',
+                           get_cmd=partial(self._get_control_param, 'D'),
+                           set_cmd=partial(self._set_control_param, 'D'),
+                           vals=Numbers(0, 1e3))
 
         self.add_parameter(name='pid_rate',
                            label='PID ramp rate',
@@ -150,6 +168,7 @@ class OxfordTriton(IPInstrument):
                            get_cmd=partial(self._get_control_B_param, 'RVST:TIME'))
 
         self._add_pumps()
+        self._add_pump_speed()
         self._add_temp_state()
         self.chan_alias: Dict[str, str] = {}
         self.chan_temp_names: Dict[str, Dict[str, Optional[str]]] = {}
@@ -359,6 +378,7 @@ class OxfordTriton(IPInstrument):
             chan = 'T%d' % i
             chan_temps_list.append(chan)
             self.add_parameter(name=chan,
+                               label=f'T ch {i}',
                                unit='K',
                                get_cmd='READ:DEV:%s:TEMP:SIG:TEMP' % chan,
                                get_parser=self._parse_temp)
@@ -411,9 +431,14 @@ class OxfordTriton(IPInstrument):
     
     def _add_pumps(self) -> None:
         pump_list = []
+        pump_label_dict = {'TURB1': 'Turbo 1',
+                           'TURB2': 'Turbo 2',
+                           'COMP': 'Compressor'
+        }   
         for pump in ['TURB1', 'TURB2', 'COMP']:
             pump_list.append(pump)
-            self.add_parameter(name=pump.lower(),
+            self.add_parameter(name=pump.lower() + '_state',
+                               label=pump_label_dict[pump] + ' state',
                                get_cmd='READ:DEV:%s:PUMP:SIG:STATE' % pump,
                                get_parser=self._get_parser_pump_state,
                                set_cmd=partial(self._set_pump_state, pump=pump),
@@ -427,6 +452,24 @@ class OxfordTriton(IPInstrument):
         if 'NOT_FOUND' in msg:
             return None
         return msg.split('STATE:')[-1]
+    
+    def _add_pump_speed(self) -> None:
+        pump_label_dict = {'TURB1': 'Turbo 1',
+                           'TURB2': 'Turbo 2',
+                           'COMP': 'Compressor'
+        }        
+        for pump in self.pumps:
+            self.add_parameter(name=pump.lower() + '_speed',
+                               label=pump_label_dict[pump] + ' speed',
+                               unit='Hz',
+                               get_cmd='READ:DEV:%s:PUMP:SIG:SPD' % pump,
+                               get_parser=self._get_parser_pump_speed,
+            )
+    
+    def _get_parser_pump_state(self, msg: str) -> Optional[float]:
+        if 'NOT_FOUND' in msg:
+            return None
+        return float(msg.split('SPD:')[-1].strip('Hz'))
     
     def _add_temp_state(self) -> None:
         for i in range(1, 17):
@@ -444,6 +487,8 @@ class OxfordTriton(IPInstrument):
         if 'NOT_FOUND' in msg:
             return None
         return msg.split('ENAB:')[-1]
+    
+
 
 
 Triton = OxfordTriton
