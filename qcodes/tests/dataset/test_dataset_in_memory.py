@@ -261,6 +261,7 @@ def test_dataset_in_memory_no_export_warns(
     assert loaded_ds.cache.data() == {}
 
 
+@pytest.mark.usefixtures("default_config")
 def test_dataset_in_memory_missing_file_warns(
     meas_with_registered_param, DMM, DAC, tmp_path
 ) -> None:

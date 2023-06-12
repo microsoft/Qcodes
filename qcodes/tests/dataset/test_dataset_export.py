@@ -324,6 +324,7 @@ def test_export_netcdf_complex_data(tmp_path_factory, mock_dataset_complex) -> N
     assert df.y.values.tolist() == [1.0 + 1j]
 
 
+@pytest.mark.usefixtures("default_config")
 def test_export_no_or_nonexistent_type_specified(
     tmp_path_factory, mock_dataset
 ) -> None:

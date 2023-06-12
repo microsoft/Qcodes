@@ -185,6 +185,7 @@ def test_list_of_strings(experiment) -> None:
         test_set.conn.close()  # type: ignore[attr-defined]
 
 
+@pytest.mark.usefixtures("default_config")
 @settings(suppress_health_check=(HealthCheck.function_scoped_fixture,),
           deadline=None)
 @given(
