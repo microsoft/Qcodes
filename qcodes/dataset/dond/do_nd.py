@@ -571,7 +571,7 @@ def dond(
     log_info: str | None = None,
     break_condition: BreakConditionT | None = None,
     dataset_dependencies: Mapping[str, Sequence[ParamMeasT]] | None = None,
-    in_memory_cache: bool = True,
+    in_memory_cache: bool | None = None,
 ) -> AxesTupleListWithDataSet | MultiAxesTupleListWithDataSet:
     """
     Perform n-dimentional scan from slowest (first) to the fastest (last), to
@@ -640,6 +640,7 @@ def dond(
         in_memory_cache:
             Should be keep a cache of the data available in memory for faster
             plotting and exporting. Useful to disable if the data is very large.
+            If None value will be read from ``qcodesrc.json`` config file.
 
     Returns:
         A tuple of QCoDeS DataSet, Matplotlib axis, Matplotlib colorbar. If
