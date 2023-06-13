@@ -637,6 +637,7 @@ def test_combine_runs(
         assert guid_comp["work_station"] == int(mydict["work_station"])
 
 
+@pytest.mark.usefixtures("default_config")
 def test_copy_datasets_and_add_new(
     two_empty_temp_db_connections, some_interdeps
 ) -> None:

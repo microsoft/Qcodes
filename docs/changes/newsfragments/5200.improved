@@ -1,0 +1,3 @@
+The in memory cache of a dataset can now be configured both from the `qcodesrc.json` config file and when using `dond` to perform measurements.
+The Exception raised when a `dond`, `do1d` etc. measurement is interrupted (`BreakConditionInterrupt`) has been made public as part of the
+`qcodes.dataset` module so it can be intercepted and handled by the user.

@@ -511,9 +511,12 @@ class Runner:
         extra_log_info: str = "",
         write_in_background: bool = False,
         shapes: Shapes | None = None,
-        in_memory_cache: bool = True,
+        in_memory_cache: bool | None = None,
         dataset_class: DataSetType = DataSetType.DataSet,
     ) -> None:
+        if in_memory_cache is None:
+            in_memory_cache = qc.config.dataset.in_memory_cache
+            in_memory_cache = cast(bool, in_memory_cache)
 
         self._dataset_class = dataset_class
         self.write_period = self._calculate_write_period(write_in_background,
@@ -1225,7 +1228,7 @@ class Measurement:
     def run(
         self,
         write_in_background: bool | None = None,
-        in_memory_cache: bool = True,
+        in_memory_cache: bool | None = True,
         dataset_class: DataSetType = DataSetType.DataSet,
     ) -> Runner:
         """
