@@ -638,9 +638,10 @@ def dond(
             depend on at least one parameter from each dimension but can depend
             on one or more parameters from a dimension sweeped with a TogetherSweep.
         in_memory_cache:
-            Should be keep a cache of the data available in memory for faster
-            plotting and exporting. Useful to disable if the data is very large.
-            If None value will be read from ``qcodesrc.json`` config file.
+            Should a cache of the data be kept available in memory for faster
+            plotting and exporting. Useful to disable if the data is very large
+            in order to save on memory consumption.
+            If ``None``, the value for this will be read from ``qcodesrc.json`` config file.
 
     Returns:
         A tuple of QCoDeS DataSet, Matplotlib axis, Matplotlib colorbar. If

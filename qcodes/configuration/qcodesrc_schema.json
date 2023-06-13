@@ -366,7 +366,7 @@
                 "in_memory_cache": {
                     "type": "boolean",
                     "default": true,
-                    "description": "Should the data be cached in memory as it is meassured. Useful to disable for large datasets.? "
+                    "description": "Should the data be cached in memory as it is measured. Useful to disable for large datasets to save on memory consumption."
                 }
             },
             "description": "Settings related to the DataSet and Measurement Context manager",
