@@ -167,7 +167,7 @@ class OxfordTriton(IPInstrument):
                            unit='T/min',
                            get_cmd=partial(self._get_control_B_param, 'RVST:TIME'))
 
-        self._add_pumps()
+        self._add_pump_state()
         self._add_pump_speed()
         self._add_temp_state()
         self.chan_alias: Dict[str, str] = {}
@@ -378,7 +378,7 @@ class OxfordTriton(IPInstrument):
             chan = 'T%d' % i
             chan_temps_list.append(chan)
             self.add_parameter(name=chan,
-                               label=f'T ch {i}',
+                               label=f'Temperature ch{i}',
                                unit='K',
                                get_cmd='READ:DEV:%s:TEMP:SIG:TEMP' % chan,
                                get_parser=self._parse_temp)
@@ -429,7 +429,7 @@ class OxfordTriton(IPInstrument):
     def _recv(self) -> str:
         return super()._recv().rstrip()
     
-    def _add_pumps(self) -> None:
+    def _add_pump_state(self) -> None:
         pump_list = []
         pump_label_dict = {'TURB1': 'Turbo 1',
                            'TURB2': 'Turbo 2',
@@ -440,18 +440,13 @@ class OxfordTriton(IPInstrument):
             self.add_parameter(name=pump.lower() + '_state',
                                label=pump_label_dict[pump] + ' state',
                                get_cmd='READ:DEV:%s:PUMP:SIG:STATE' % pump,
-                               get_parser=self._get_parser_pump_state,
+                               get_parser=partial(self._get_parser_state, key='STATE'),
                                set_cmd=partial(self._set_pump_state, pump=pump),
                                val_mapping={'on':  'ON', 'off': 'OFF'})
         self.pumps = set(pump_list)
 
     def _set_pump_state(self, pump: str, state: str) -> None:
-        return 'SET:DEV:%s:PUMP:SIG:STATE:' + state % pump
-    
-    def _get_parser_pump_state(self, msg: str) -> Optional[str]:
-        if 'NOT_FOUND' in msg:
-            return None
-        return msg.split('STATE:')[-1]
+        self.write(f'SET:DEV:{pump}:PUMP:SIG:STATE:{state}')
     
     def _add_pump_speed(self) -> None:
         pump_label_dict = {'TURB1': 'Turbo 1',
@@ -466,7 +461,7 @@ class OxfordTriton(IPInstrument):
                                get_parser=self._get_parser_pump_speed,
             )
     
-    def _get_parser_pump_state(self, msg: str) -> Optional[float]:
+    def _get_parser_pump_speed(self, msg: str) -> Optional[float]:
         if 'NOT_FOUND' in msg:
             return None
         return float(msg.split('SPD:')[-1].strip('Hz'))
@@ -474,21 +469,21 @@ class OxfordTriton(IPInstrument):
     def _add_temp_state(self) -> None:
         for i in range(1, 17):
             chan = 'T%d' % i
-            self.add_parameter(name=chan + '_enable',
+            self.add_parameter(name=chan + '_state',
+                               label=f'Temperature ch{i} state',
                                get_cmd='READ:DEV:%s:TEMP:MEAS:ENAB' % chan,
-                               get_parser=self._get_parser_temp_state,
+                               get_parser=partial(self._get_parser_state, key='ENAB'),
                                set_cmd=partial(self._set_temp_state, chan=chan),
                                val_mapping={'on':  'ON', 'off': 'OFF'})
 
     def _set_temp_state(self, chan: str, state: str) -> None:
-        return 'SET:DEV:%s:TEMP:MEAS:ENAB:' + state % chan
-
-    def _get_parser_temp_state(self, msg: str) -> Optional[str]:
+        self.write(f'SET:DEV:{chan}:TEMP:MEAS:ENAB:{state}')
+    
+    def _get_parser_state(self, msg: str, key: str) -> Optional[str]:
         if 'NOT_FOUND' in msg:
             return None
-        return msg.split('ENAB:')[-1]
+        return msg.split(f'{key}:')[-1]
     
-
 
 
 Triton = OxfordTriton
