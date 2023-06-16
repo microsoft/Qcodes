@@ -146,7 +146,9 @@ def _extract_single_dataset_into_db(dataset: DataSet,
     if run_id is not None:
         return
 
-    target_table_name, _ = _add_run_to_runs_table(dataset, target_conn, target_exp_id)
+    _, _, target_table_name = _add_run_to_runs_table(
+        dataset, target_conn, target_exp_id
+    )
     assert target_table_name is not None
     _populate_results_table(
         source_conn, target_conn, dataset.table_name, target_table_name
