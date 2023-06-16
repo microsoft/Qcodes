@@ -153,7 +153,7 @@ class DataSetInMem(BaseDataSet):
                     sample_name=self.sample_name,
                     load_last_duplicate=True,
                 )
-                run_id = _add_run_to_runs_table(
+                _, run_id = _add_run_to_runs_table(
                     self, aconn, exp.exp_id, create_run_table=False
                 )
             self._run_id = run_id
