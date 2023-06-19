@@ -1,0 +1,3 @@
+When writing a `DataSetInMem` back to a database the exp_id, counter and run_id are correctly updated
+to reflect the sate of the new database. `write_metadata_to_db` has also been fixed to use
+the database passed to init of the `DataSetInMem` class if no path is provided.
