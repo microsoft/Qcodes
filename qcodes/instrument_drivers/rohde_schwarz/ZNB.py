@@ -350,7 +350,6 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
         channel: int,
         vna_parameter: Optional[str] = None,
         existing_trace_to_bind_to: Optional[str] = None,
-        additional_wait: int = 0,
     ) -> None:
         """
         Args:
