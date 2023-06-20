@@ -588,7 +588,7 @@ def get_parameter_tree_values(
     # Create the base sql query
     columns = [toplevel_param_name] + list(other_param_names)
     sql = f"""
-           SELECT {','.join(columns)} FROM "{result_table_name}"
+           SELECT "{'","'.join(columns)}" FROM "{result_table_name}"
            WHERE {toplevel_param_name} IS NOT NULL
            LIMIT ? OFFSET ?
            """
