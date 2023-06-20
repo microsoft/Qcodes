@@ -44,7 +44,7 @@ google-api-core~=2.11.0
 google-auth~=2.20.0
 googleapis-common-protos~=1.59.0
 h5netcdf~=1.1.0
-h5py~=3.8.0
+h5py~=3.9.0
 hypothesis~=6.79.1
 idna==3.4
 imagesize~=1.4.1
