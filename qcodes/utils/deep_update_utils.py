@@ -1,6 +1,7 @@
 from collections import abc
+from collections.abc import Hashable, Mapping, MutableMapping
 from copy import deepcopy
-from typing import Any, Hashable, Mapping, MutableMapping, TypeVar, Union, cast
+from typing import Any, TypeVar, Union, cast
 
 K = TypeVar("K", bound=Hashable)
 L = TypeVar("L", bound=Hashable)

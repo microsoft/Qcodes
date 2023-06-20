@@ -11,7 +11,7 @@ import unicodedata
 import warnings
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from itertools import zip_longest
-from typing import Any, List, cast
+from typing import Any, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -678,7 +678,7 @@ def get_setpoints(
     c = atomic_transaction(conn, sql)
     setpoint_names_temp = many_many(c, 'parameter')
     setpoint_names = [spn[0] for spn in setpoint_names_temp]
-    setpoint_names = cast(List[str], setpoint_names)
+    setpoint_names = cast(list[str], setpoint_names)
 
     # get the actual setpoint data
     output: dict[str, list[tuple[Any, ...]]] = {}

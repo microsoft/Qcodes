@@ -3,9 +3,10 @@ from __future__ import annotations
 import itertools
 import logging
 import time
+from collections.abc import Mapping, Sequence
 from contextlib import ExitStack
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Callable, Mapping, Sequence, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Union, cast
 
 import numpy as np
 from tqdm.auto import tqdm
@@ -84,7 +85,7 @@ class _Sweeper:
     ) -> tuple[tuple[tuple[SweepVarType, ...] | SweepVarType, ...], ...]:
         sweeps = tuple(sweep.get_setpoints() for sweep in self._sweeps)
         return cast(
-            Tuple[Tuple[Union[Tuple[SweepVarType, ...], SweepVarType], ...], ...],
+            tuple[tuple[Union[tuple[SweepVarType, ...], SweepVarType], ...], ...],
             tuple(itertools.product(*sweeps)),
         )
 

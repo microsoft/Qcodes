@@ -4,7 +4,7 @@ A mixin module for USB Human Interface Device instruments
 import os
 import struct
 import time
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 try:
     import pywinusb.hid as hid  # pyright: ignore[reportMissingModuleSource]
@@ -137,7 +137,7 @@ class USBHIDMixin(Instrument):
         self._device.close()
 
     @classmethod
-    def enumerate_devices(cls) -> List[str]:
+    def enumerate_devices(cls) -> list[str]:
         """
         This method returns the 'instance_id's of all connected devices for
         with the given product and vendor IDs.

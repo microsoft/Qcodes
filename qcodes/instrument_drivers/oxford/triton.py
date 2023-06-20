@@ -4,7 +4,7 @@ import re
 from functools import partial
 from time import sleep
 from traceback import format_exc
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 
 from qcodes.instrument import IPInstrument
 from qcodes.validators import Enum, Ints
@@ -149,8 +149,8 @@ class OxfordTriton(IPInstrument):
                            unit='T/min',
                            get_cmd=partial(self._get_control_B_param, 'RVST:TIME'))
 
-        self.chan_alias: Dict[str, str] = {}
-        self.chan_temp_names: Dict[str, Dict[str, Optional[str]]] = {}
+        self.chan_alias: dict[str, str] = {}
+        self.chan_temp_names: dict[str, dict[str, Optional[str]]] = {}
         if tmpfile is not None:
             self._get_temp_channel_names(tmpfile)
         self._get_temp_channels()
@@ -179,24 +179,21 @@ class OxfordTriton(IPInstrument):
     def _get_control_B_param(
             self,
             param: str
-    ) -> Optional[Union[float, str, List[float]]]:
+    ) -> Optional[Union[float, str, list[float]]]:
         cmd = f'READ:SYS:VRM:{param}'
         return self._get_response_value(self.ask(cmd))
 
     def _get_control_Bcomp_param(
             self,
             param: str
-    ) -> Optional[Union[float, str, List[float]]]:
+    ) -> Optional[Union[float, str, list[float]]]:
         cmd = f'READ:SYS:VRM:{param}'
         return self._get_response_value(self.ask(cmd[:-2]) + cmd[-2:])
 
     def _get_response(self, msg: str) -> str:
         return msg.split(':')[-1]
 
-    def _get_response_value(
-            self,
-            msg: str
-    ) -> Optional[Union[float, str, List[float]]]:
+    def _get_response_value(self, msg: str) -> Optional[Union[float, str, list[float]]]:
         msg = self._get_response(msg)
         if msg.endswith('NOT_FOUND'):
             return None
@@ -217,7 +214,7 @@ class OxfordTriton(IPInstrument):
         except Exception:
             return msg
 
-    def get_idn(self) -> Dict[str, Optional[str]]:
+    def get_idn(self) -> dict[str, Optional[str]]:
         """ Return the Instrument Identifier Message """
         idstr = self.ask('*IDN?')
         idparts = [p.strip() for p in idstr.split(':', 4)][1:]
@@ -249,7 +246,7 @@ class OxfordTriton(IPInstrument):
     def _get_control_param(
             self,
             param: str
-    ) -> Optional[Union[float, str, List[float]]]:
+    ) -> Optional[Union[float, str, list[float]]]:
         chan = self._get_control_channel()
         cmd = f'READ:DEV:T{chan}:TEMP:LOOP:{param}'
         return self._get_response_value(self.ask(cmd))

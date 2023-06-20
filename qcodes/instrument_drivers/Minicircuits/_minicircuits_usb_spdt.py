@@ -1,5 +1,5 @@
 import os
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 # QCoDeS imports
 from qcodes.instrument_drivers.Minicircuits.Base_SPDT import (
@@ -94,7 +94,7 @@ class MiniCircuitsUsbSPDT(SPDT_Base):
         self.connect_message()
         self.add_channels()
 
-    def get_idn(self) -> Dict[str, Optional[str]]:
+    def get_idn(self) -> dict[str, Optional[str]]:
         # the arguments in those functions is the serial number or none if
         # there is only one switch.
         fw = self.switch.GetFirmware()

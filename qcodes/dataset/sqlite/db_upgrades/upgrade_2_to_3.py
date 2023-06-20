@@ -4,7 +4,8 @@ import json
 import logging
 import sys
 from collections import defaultdict
-from typing import DefaultDict, Mapping, Sequence
+from collections.abc import Mapping, Sequence
+from typing import DefaultDict
 
 from tqdm import tqdm
 

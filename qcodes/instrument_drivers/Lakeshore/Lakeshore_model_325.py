@@ -1,13 +1,14 @@
+from collections.abc import Iterable
 from enum import IntFlag
 from itertools import takewhile
-from typing import Any, Dict, Iterable, List, Optional, TextIO, Tuple, cast
+from typing import Any, Optional, TextIO, cast
 
 from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
 from qcodes.parameters import Group, GroupParameter
 from qcodes.validators import Enum, Numbers
 
 
-def _read_curve_file(curve_file: TextIO) -> Dict[Any, Any]:
+def _read_curve_file(curve_file: TextIO) -> dict[Any, Any]:
     """
     Read a curve file with extension .330
     The file format of this file is shown in test_lakeshore_file_parser.py
@@ -19,24 +20,24 @@ def _read_curve_file(curve_file: TextIO) -> Dict[Any, Any]:
     curve data.
     """
 
-    def split_data_line(line: str, parser: type = str) -> List[Any]:
+    def split_data_line(line: str, parser: type = str) -> list[Any]:
         return [parser(i) for i in line.split("  ") if i != ""]
 
-    def strip(strings: Iterable[str]) -> Tuple[str, ...]:
+    def strip(strings: Iterable[str]) -> tuple[str, ...]:
         return tuple(s.strip() for s in strings)
 
     lines = iter(curve_file.readlines())
     # Meta data lines contain a colon
     metadata_lines = takewhile(lambda s: ":" in s, lines)
     # Data from the file is collected in the following dict
-    file_data: Dict[str, Dict[str, Any]] = dict()
+    file_data: dict[str, dict[str, Any]] = dict()
     # Capture meta data
     parsed_lines = [strip(line.split(":")) for line in metadata_lines]
     file_data["metadata"] = {key: value for key, value in parsed_lines}
     # After meta data we have a data header
     header_items = strip(split_data_line(next(lines)))
     # After that we have the curve data
-    data: List[List[float]] = [
+    data: list[list[float]] = [
         split_data_line(line, parser=float) for line in lines if line.strip() != ""
     ]
     file_data["data"] = dict(zip(header_items, zip(*data)))
@@ -44,7 +45,7 @@ def _read_curve_file(curve_file: TextIO) -> Dict[Any, Any]:
     return file_data
 
 
-def _get_sanitize_data(file_data: Dict[Any, Any]) -> Dict[Any, Any]:
+def _get_sanitize_data(file_data: dict[Any, Any]) -> dict[Any, Any]:
     """
     Data as found in the curve files are slightly different from
     the dictionary as expected by the 'upload_curve' method of the
@@ -125,7 +126,7 @@ class LakeshoreModel325Curve(InstrumentChannel):
             get_cmd=f"CRVHDR? {self._index}",
         )
 
-    def get_data(self) -> Dict[Any, Any]:
+    def get_data(self) -> dict[Any, Any]:
         curve = [
             float(a)
             for point_index in range(1, 200)
@@ -139,7 +140,7 @@ class LakeshoreModel325Curve(InstrumentChannel):
         return d
 
     @classmethod
-    def validate_datadict(cls, data_dict: Dict[Any, Any]) -> str:
+    def validate_datadict(cls, data_dict: dict[Any, Any]) -> str:
         """
         A data dict has two keys, one of which is 'Temperature (K)'. The other
         contains the units in which the curve is defined and must be one of:
@@ -180,7 +181,7 @@ class LakeshoreModel325Curve(InstrumentChannel):
         return sensor_unit
 
     def set_data(
-        self, data_dict: Dict[Any, Any], sensor_unit: Optional[str] = None
+        self, data_dict: dict[Any, Any], sensor_unit: Optional[str] = None
     ) -> None:
         """
         Set the curve data according to the values found the the dictionary.
@@ -481,7 +482,7 @@ class LakeshoreModel325(VisaInstrument):
         self.connect_message()
 
     def upload_curve(
-        self, index: int, name: str, serial_number: str, data_dict: Dict[Any, Any]
+        self, index: int, name: str, serial_number: str, data_dict: dict[Any, Any]
     ) -> None:
         """
         Upload a curve to the given index

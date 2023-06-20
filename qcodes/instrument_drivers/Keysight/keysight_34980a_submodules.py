@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple, Union
+from typing import Optional, Union
 
 from qcodes.instrument import InstrumentChannel, VisaInstrument
 
@@ -40,9 +40,7 @@ class Keysight34980ASwitchMatrixSubModule(KeysightSubModule):
         raise NotImplementedError("Please subclass this")
 
     def to_channel_list(
-            self,
-            paths: List[Tuple[int, int]],
-            wiring_config: Optional[str] = None
+        self, paths: list[tuple[int, int]], wiring_config: Optional[str] = None
     ) -> str:
         """
         convert the (row, column) pair to a 4-digit channel number 'sxxx', where
@@ -119,7 +117,7 @@ class Keysight34980ASwitchMatrixSubModule(KeysightSubModule):
         channel = self.to_channel_list([(row, column)])
         self.write(f'ROUT:OPEN {channel}')
 
-    def connect_paths(self, paths: List[Tuple[int, int]]) -> None:
+    def connect_paths(self, paths: list[tuple[int, int]]) -> None:
         """
         to connect/close the specified channels.
 
@@ -131,7 +129,7 @@ class Keysight34980ASwitchMatrixSubModule(KeysightSubModule):
         channel_list_str = self.to_channel_list(paths)
         self.write(f"ROUTe:CLOSe {channel_list_str}")
 
-    def disconnect_paths(self, paths: List[Tuple[int, int]]) -> None:
+    def disconnect_paths(self, paths: list[tuple[int, int]]) -> None:
         """
         to disconnect/open the specified channels.
 
@@ -143,7 +141,7 @@ class Keysight34980ASwitchMatrixSubModule(KeysightSubModule):
         channel_list_str = self.to_channel_list(paths)
         self.write(f"ROUTe:OPEN {channel_list_str}")
 
-    def are_closed(self, paths: List[Tuple[int, int]]) -> List[bool]:
+    def are_closed(self, paths: list[tuple[int, int]]) -> list[bool]:
         """
         to check if a list of channels is closed/connected
 
@@ -161,7 +159,7 @@ class Keysight34980ASwitchMatrixSubModule(KeysightSubModule):
         messages = self.ask(f"ROUTe:CLOSe? {channel_list_str}")
         return [bool(int(message)) for message in messages.split(',')]
 
-    def are_open(self, paths: List[Tuple[int, int]]) -> List[bool]:
+    def are_open(self, paths: list[tuple[int, int]]) -> list[bool]:
         """
         to check if a list of channels is open/disconnected
 

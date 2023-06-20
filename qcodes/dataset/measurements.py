@@ -10,24 +10,13 @@ import io
 import logging
 import traceback as tb_module
 import warnings
+from collections.abc import Mapping, MutableMapping, MutableSequence, Sequence
 from copy import deepcopy
 from inspect import signature
 from numbers import Number
 from time import perf_counter
 from types import TracebackType
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Mapping,
-    MutableMapping,
-    MutableSequence,
-    Sequence,
-    Tuple,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union, cast
 
 import numpy as np
 
@@ -70,10 +59,10 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 
-ActionType = Tuple[Callable[..., Any], Sequence[Any]]
-SubscriberType = Tuple[Callable[..., Any],
-                       Union[MutableSequence[Any],
-                             MutableMapping[Any, Any]]]
+ActionType = tuple[Callable[..., Any], Sequence[Any]]
+SubscriberType = tuple[
+    Callable[..., Any], Union[MutableSequence[Any], MutableMapping[Any, Any]]
+]
 
 
 class ParameterTypeError(Exception):

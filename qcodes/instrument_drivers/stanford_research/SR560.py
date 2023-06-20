@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Optional
 
 from qcodes.instrument import Instrument
 from qcodes.parameters import MultiParameter, Parameter, ParamRawDataType
@@ -48,7 +48,7 @@ class VoltageParameter(MultiParameter):
         self.labels = (p_label, 'Voltage')
         self.units = (p_unit, 'V')
 
-    def get_raw(self) -> Tuple[ParamRawDataType, ParamRawDataType]:
+    def get_raw(self) -> tuple[ParamRawDataType, ParamRawDataType]:
         volt = self._measured_param.get()
         assert isinstance(self.instrument, SR560)
         volt_amp = volt / self.instrument.gain.get()
@@ -113,7 +113,7 @@ class SR560(Instrument):
                            unit=None,
                            vals=Enum(*gains))
 
-    def get_idn(self) -> Dict[str, Optional[str]]:
+    def get_idn(self) -> dict[str, Optional[str]]:
         vendor = 'Stanford Research Systems'
         model = 'SR560'
         serial = None

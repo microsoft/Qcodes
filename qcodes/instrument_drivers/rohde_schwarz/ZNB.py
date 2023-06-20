@@ -1,6 +1,6 @@
 import logging
 from functools import partial
-from typing import Any, Optional, Tuple
+from typing import Any, Optional
 
 import numpy as np
 
@@ -74,7 +74,7 @@ class FixedFrequencyTraceIQ(MultiParameter):
         self.setpoints = ((t,), (t,))
         self.shapes = ((npts,), (npts,))
 
-    def get_raw(self) -> Tuple[np.ndarray, np.ndarray]:
+    def get_raw(self) -> tuple[np.ndarray, np.ndarray]:
         """
         Gets the raw real and imaginary part of the data. If parameter
         `cw_check_sweep_first` is set to `True` then at the cost of a few ms
@@ -115,7 +115,7 @@ class FixedFrequencyPointIQ(MultiParameter):
             **kwargs,
         )
 
-    def get_raw(self) -> Tuple[float, float]:
+    def get_raw(self) -> tuple[float, float]:
         """
         Gets the mean of the raw real and imaginary part of the data. If
         parameter `cw_check_sweep_first` is set to `True` then at the cost of a
@@ -157,7 +157,7 @@ class FixedFrequencyPointMagPhase(MultiParameter):
             **kwargs,
         )
 
-    def get_raw(self) -> Tuple[float, ...]:
+    def get_raw(self) -> tuple[float, ...]:
         """
         Gets the magnitude and phase of the mean of the raw real and imaginary
         part of the data. If the parameter `cw_check_sweep_first` is set to
@@ -216,7 +216,7 @@ class FrequencySweepMagPhase(MultiParameter):
         self.setpoints = ((f,), (f,))
         self.shapes = ((npts,), (npts,))
 
-    def get_raw(self) -> Tuple[ParamRawDataType, ...]:
+    def get_raw(self) -> tuple[ParamRawDataType, ...]:
         assert isinstance(self.instrument, RohdeSchwarzZNBChannel)
         with self.instrument.format.set_to("Complex"):
             data = self.instrument._get_sweep_data(force_polar=True)
@@ -270,7 +270,7 @@ class FrequencySweepDBPhase(MultiParameter):
         self.setpoints = ((f,), (f,))
         self.shapes = ((npts,), (npts,))
 
-    def get_raw(self) -> Tuple[ParamRawDataType, ...]:
+    def get_raw(self) -> tuple[ParamRawDataType, ...]:
         assert isinstance(self.instrument, RohdeSchwarzZNBChannel)
         with self.instrument.format.set_to("Complex"):
             data = self.instrument._get_sweep_data(force_polar=True)
@@ -918,7 +918,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
         # Cache the sweep time so it is up to date when setting timeouts
         self.sweep_time()
 
-    def _get_cw_data(self) -> Tuple[np.ndarray, np.ndarray]:
+    def _get_cw_data(self) -> tuple[np.ndarray, np.ndarray]:
         # Make the checking optional such that we can do super fast sweeps as
         # well, skipping the overhead of the other commands.
         if self.cw_check_sweep_first():

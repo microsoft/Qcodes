@@ -4,7 +4,6 @@ import re
 import time
 import warnings
 from contextlib import ExitStack
-from typing import List
 
 import numpy as np
 import pytest
@@ -410,7 +409,7 @@ def test_measured(current_driver, set_target) -> None:
     assert np.allclose(cylindrical, [cylindrical_rho, spherical_phi, cartesian_z])
 
 
-def get_ramp_down_order(messages: List[str]) -> List[str]:
+def get_ramp_down_order(messages: list[str]) -> list[str]:
     order = []
 
     for msg in messages:

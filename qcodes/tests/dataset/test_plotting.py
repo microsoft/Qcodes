@@ -1,5 +1,3 @@
-from typing import List
-
 import numpy as np
 import pytest
 from hypothesis import HealthCheck, assume, example, given, settings
@@ -252,7 +250,7 @@ def test_appropriate_kwargs() -> None:
 
 def test__complex_to_real_preparser_complex_toplevel_param() -> None:
 
-    data_in: List[List[DSPlotData]] = [
+    data_in: list[list[DSPlotData]] = [
         [
             {
                 "data": np.array([0, 1, 2]),
@@ -320,7 +318,7 @@ def test__complex_to_real_preparser_complex_toplevel_param() -> None:
 
 def test__complex_to_real_preparser_complex_setpoint() -> None:
 
-    data_in: List[List[DSPlotData]] = [
+    data_in: list[list[DSPlotData]] = [
         [
             {
                 "data": np.array([0 + 0j, 1 + 2j, -1 + 1j]),

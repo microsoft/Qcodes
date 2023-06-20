@@ -1,6 +1,6 @@
 from collections import defaultdict
 from pathlib import Path
-from typing import List, Tuple, cast
+from typing import cast
 
 import numpy as np
 import pytest
@@ -84,7 +84,7 @@ def test_many_guids_from_list_str() -> None:
 
 
 def test_get_guids_from_multiple_run_ids(tmp_path: Path) -> None:
-    def generate_local_exp(dbpath: Path) -> Tuple[List[str], ConnectionPlus]:
+    def generate_local_exp(dbpath: Path) -> tuple[list[str], ConnectionPlus]:
         with initialised_database_at(str(dbpath)):
             guids = []
             exp = load_or_create_experiment(experiment_name="test_guid")

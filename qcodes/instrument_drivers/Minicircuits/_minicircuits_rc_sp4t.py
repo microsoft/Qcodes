@@ -1,5 +1,5 @@
 import math
-from typing import Dict, Optional
+from typing import Optional
 
 from qcodes import validators as vals
 from qcodes.instrument import ChannelList, InstrumentChannel, IPInstrument
@@ -93,12 +93,12 @@ class MiniCircuitsRCSP4T(IPInstrument):
         ret = ret.strip()
         return ret
 
-    def get_idn(self) -> Dict[str, Optional[str]]:
+    def get_idn(self) -> dict[str, Optional[str]]:
         fw = self.ask("FIRMWARE?")
         MN = self.ask("MN?")
         SN = self.ask("SN?")
 
-        id_dict: Dict[str, Optional[str]] = {
+        id_dict: dict[str, Optional[str]] = {
             "firmware": fw,
             "model": MN[3:],
             "serial": SN[3:],

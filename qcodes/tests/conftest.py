@@ -4,8 +4,9 @@ import copy
 import gc
 import os
 import sys
+from collections.abc import Generator
 from pathlib import Path
-from typing import TYPE_CHECKING, Generator
+from typing import TYPE_CHECKING
 
 import pytest
 from hypothesis import settings

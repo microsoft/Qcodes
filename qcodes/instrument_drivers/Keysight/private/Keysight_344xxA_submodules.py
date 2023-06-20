@@ -1,8 +1,9 @@
 import textwrap
 from bisect import bisect_left
+from collections.abc import Sequence
 from contextlib import ExitStack
 from functools import partial
-from typing import Any, Optional, Sequence, Tuple
+from typing import Any, Optional
 
 import numpy as np
 from packaging import version
@@ -807,7 +808,7 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
             return licenses_list
         return tuple()
 
-    def _options(self) -> Tuple[str, ...]:
+    def _options(self) -> tuple[str, ...]:
         """
         Return enabled options of the DMM returned by ``*OPT?`` command.
         The 34410A and 34411A models do not have options, hence always returns

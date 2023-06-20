@@ -1,6 +1,7 @@
 import logging
 import threading
-from typing import Any, Callable, Dict, Generic, List, Optional, Sequence, TypeVar
+from collections.abc import Sequence
+from typing import Any, Callable, Generic, Optional, TypeVar
 
 _LOG = logging.getLogger(__name__)
 
@@ -28,7 +29,7 @@ class RespondingThread(threading.Thread, Generic[T]):
         self,
         target: Callable[..., T],
         args: Sequence[Any] = (),
-        kwargs: Optional[Dict[str, Any]] = None,
+        kwargs: Optional[dict[str, Any]] = None,
         *args2: Any,
         **kwargs2: Any,
     ):
@@ -64,8 +65,8 @@ class RespondingThread(threading.Thread, Generic[T]):
 def thread_map(
     callables: Sequence[Callable[..., T]],
     args: Optional[Sequence[Sequence[Any]]] = None,
-    kwargs: Optional[Sequence[Dict[str, Any]]] = None,
-) -> List[Optional[T]]:
+    kwargs: Optional[Sequence[dict[str, Any]]] = None,
+) -> list[Optional[T]]:
     """
     Evaluate a sequence of callables in separate threads, returning
     a list of their return values.
@@ -81,7 +82,7 @@ def thread_map(
     if args is None:
         args = ((),) * len(callables)
     if kwargs is None:
-        empty_dict: Dict[str, Any] = {}
+        empty_dict: dict[str, Any] = {}
         kwargs = (empty_dict,) * len(callables)
     threads = [
         RespondingThread(target=c, args=a, kwargs=k)
