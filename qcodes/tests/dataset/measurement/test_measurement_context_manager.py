@@ -3,7 +3,7 @@ import os
 import re
 import traceback
 from time import sleep
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 import hypothesis.strategies as hst
 import numpy as np
@@ -378,7 +378,7 @@ def test_enter_and_exit_actions(DAC, words) -> None:
     meas = Measurement()
     meas.register_parameter(DAC.ch1)
 
-    testlist: List[str] = []
+    testlist: list[str] = []
 
     splitpoint = round(len(words) / 2)
     for n in range(splitpoint):
@@ -438,8 +438,8 @@ def test_subscriptions(experiment, DAC, DMM) -> None:
 
     # key is the number of the result tuple,
     # value is the result tuple itself
-    all_results_dict: Dict[str, Any] = {}
-    values_larger_than_7: List[float] = []
+    all_results_dict: dict[str, Any] = {}
+    values_larger_than_7: list[float] = []
 
     meas.add_subscriber(collect_all_results, state=all_results_dict)
     assert len(meas.subscribers) == 1
@@ -531,7 +531,7 @@ def test_subscribers_called_at_exiting_context_if_queue_is_not_empty(
     meas = Measurement(exp=experiment)
     meas.register_parameter(DAC.ch1)
 
-    collected_x_vals: List[float] = []
+    collected_x_vals: list[float] = []
 
     meas.add_subscriber(collect_x_vals, state=collected_x_vals)
 
@@ -577,8 +577,8 @@ def test_subscribers_called_for_all_data_points(experiment, DAC, DMM, N) -> None
     meas = Measurement(exp=experiment)
     meas.register_parameter(DAC.ch1)
     meas.register_parameter(DMM.v1, setpoints=(DAC.ch1,))
-    xvals: List[float] = []
-    yvals: List[float] = []
+    xvals: list[float] = []
+    yvals: list[float] = []
 
     meas.add_subscriber(sub_get_x_vals, state=xvals)
     meas.add_subscriber(sub_get_y_vals, state=yvals)
@@ -1052,7 +1052,7 @@ def test_datasaver_array_parameters_channel(
     loaded_data = ds.get_parameter_data()['dummy_channel_inst_ChanA_dummy_array_parameter']
     for param in expected_params:
         if storage_type == 'array':
-            expected_shape: Tuple[int, ...] = (N, M)
+            expected_shape: tuple[int, ...] = (N, M)
         else:
             expected_shape = (N*M, )
         assert loaded_data[param].shape == expected_shape

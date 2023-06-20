@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 
@@ -10,12 +10,12 @@ class A:
     y = 6
 
 
-class BadKeysDict(Dict[Any, Any]):
+class BadKeysDict(dict[Any, Any]):
     def keys(self):
         raise RuntimeError('you can\'t have the keys!')
 
 
-class NoDelDict(Dict[Any, Any]):
+class NoDelDict(dict[Any, Any]):
     def __delitem__(self, item):
         raise KeyError('get your hands off me!')
 

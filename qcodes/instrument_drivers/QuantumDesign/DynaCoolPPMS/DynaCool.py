@@ -1,7 +1,7 @@
 import warnings
 from functools import partial
 from time import sleep
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any, Optional, Union, cast
 
 import numpy as np
 from pyvisa import VisaIOError
@@ -211,7 +211,7 @@ class DynaCool(VisaInstrument):
         """
         return parser(resp.split(', ')[which_one])
 
-    def get_idn(self) -> Dict[str, Optional[str]]:
+    def get_idn(self) -> dict[str, Optional[str]]:
         response = self.ask('*IDN?')
         # just clip out the error code
         id_parts = response[2:].split(', ')
@@ -310,7 +310,7 @@ class DynaCool(VisaInstrument):
         """
         temporary_values = list(self.parameters[p].raw_value
                                 for p in self.field_params)
-        values = cast(List[Union[int, float]], temporary_values)
+        values = cast(list[Union[int, float]], temporary_values)
         values[self.field_params.index(param)] = value
 
         self.write(f'FELD {values[0]}, {values[1]}, {values[2]}, 0')
@@ -334,7 +334,7 @@ class DynaCool(VisaInstrument):
         """
         temp_values = list(self.parameters[par].raw_value
                            for par in self.temp_params)
-        values = cast(List[Union[int, float]], temp_values)
+        values = cast(list[Union[int, float]], temp_values)
         values[self.temp_params.index(param)] = value
 
         self.write(f'TEMP {values[0]}, {values[1]}, {values[2]}')

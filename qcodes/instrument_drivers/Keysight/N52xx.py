@@ -1,6 +1,7 @@
 import re
 import time
-from typing import Any, Sequence, Union
+from collections.abc import Sequence
+from typing import Any, Union
 
 import numpy as np
 from pyvisa import constants, errors

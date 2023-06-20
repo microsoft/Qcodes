@@ -7,7 +7,7 @@ import contextlib
 import io
 import re
 import weakref
-from typing import Iterator
+from collections.abc import Iterator
 from weakref import WeakValueDictionary
 
 import pytest

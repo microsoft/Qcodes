@@ -1,6 +1,7 @@
 import time
+from collections.abc import Iterable
 from functools import partial
-from typing import Any, Iterable, Tuple, Union
+from typing import Any, Union
 
 import numpy as np
 
@@ -377,7 +378,7 @@ class SR830(VisaInstrument):
                                'on': 1,
                            })
 
-        def parse_offset_get(s: str) -> Tuple[float, int]:
+        def parse_offset_get(s: str) -> tuple[float, int]:
             parts = s.split(',')
 
             return float(parts[0]), int(parts[1])
@@ -583,7 +584,7 @@ class SR830(VisaInstrument):
           'ch2': '11'
     }
 
-    def snap(self, *parameters: str) -> Tuple[float, ...]:
+    def snap(self, *parameters: str) -> tuple[float, ...]:
         """
         Get between 2 and 6 parameters at a single instant. This provides a
         coherent snapshot of measured signals. Pick up to 6 from: X, Y, R, θ,

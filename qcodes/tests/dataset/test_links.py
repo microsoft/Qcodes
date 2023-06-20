@@ -2,7 +2,6 @@ import json
 import random
 import re
 from datetime import datetime, timedelta
-from typing import List
 
 import hypothesis.strategies as hst
 import pytest
@@ -18,7 +17,7 @@ from qcodes.dataset.linked_datasets.links import (
 )
 
 
-def generate_some_links(N: int) -> List[Link]:
+def generate_some_links(N: int) -> list[Link]:
     """
     Generate N links with the same head
     """

@@ -1,5 +1,6 @@
 from abc import abstractmethod
-from typing import Any, Dict, Mapping, Optional, Sequence, final
+from collections.abc import Mapping, Sequence
+from typing import Any, Optional, final
 
 from qcodes.utils import deep_update
 
@@ -12,12 +13,12 @@ from qcodes.utils import deep_update
 #     typing.NamedTuple and @dataclass.
 #     As those become more widely available, the weakness of this
 #     type constraint will become less of an issue.
-Snapshot = Dict[str, Any]
+Snapshot = dict[str, Any]
 
 
 class Metadatable:
     def __init__(self, metadata: Optional[Mapping[str, Any]] = None):
-        self.metadata: Dict[str, Any] = {}
+        self.metadata: dict[str, Any] = {}
         self.load_metadata(metadata or {})
 
     def load_metadata(self, metadata: Mapping[str, Any]) -> None:

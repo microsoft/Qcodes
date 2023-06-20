@@ -1,5 +1,6 @@
 import logging
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
+from collections.abc import Sequence
+from typing import Any, Callable, Optional
 
 import numpy as np
 
@@ -156,9 +157,11 @@ class SR86xBuffer(InstrumentChannel):
                 parameter_class=SR86xBufferReadout
             )
 
-    def snapshot_base(self, update: Optional[bool] = False,
-                      params_to_skip_update: Optional[Sequence[str]] = None
-                      ) -> Dict[Any, Any]:
+    def snapshot_base(
+        self,
+        update: Optional[bool] = False,
+        params_to_skip_update: Optional[Sequence[str]] = None,
+    ) -> dict[Any, Any]:
         if params_to_skip_update is None:
             params_to_skip_update = []
         # we omit count_capture_kilobytes from the snapshot because
@@ -263,7 +266,7 @@ class SR86xBuffer(InstrumentChannel):
         """Stop a capture"""
         self.write("CAPTURESTOP")
 
-    def _get_list_of_capture_variable_names(self) -> List[str]:
+    def _get_list_of_capture_variable_names(self) -> list[str]:
         """
         Retrieve the list of names of variables (readouts) that are
         set to be captured
@@ -322,7 +325,7 @@ class SR86xBuffer(InstrumentChannel):
         while n_captured_bytes < n_bytes_to_capture:
             n_captured_bytes = self.count_capture_bytes()
 
-    def get_capture_data(self, sample_count: int) -> Dict[str, np.ndarray]:
+    def get_capture_data(self, sample_count: int) -> dict[str, np.ndarray]:
         """
         Read the given number of samples of the capture data from the buffer.
 
@@ -467,7 +470,7 @@ class SR86xBuffer(InstrumentChannel):
             self,
             trigger_count: int,
             start_triggers_pulsetrain: Callable[..., Any]
-    ) -> Dict[str, np.ndarray]:
+    ) -> dict[str, np.ndarray]:
         """
         Capture one sample per each trigger, and return when the specified
         number of triggers has been received.
@@ -491,10 +494,9 @@ class SR86xBuffer(InstrumentChannel):
         self.stop_capture()
         return self.get_capture_data(trigger_count)
 
-    def capture_samples_after_trigger(self,
-                                      sample_count: int,
-                                      send_trigger: Callable[..., Any]
-                                      ) -> Dict[str, np.ndarray]:
+    def capture_samples_after_trigger(
+        self, sample_count: int, send_trigger: Callable[..., Any]
+    ) -> dict[str, np.ndarray]:
         """
         Capture a number of samples after a trigger has been received.
         Please refer to page 135 of the manual for details.
@@ -518,7 +520,7 @@ class SR86xBuffer(InstrumentChannel):
         self.stop_capture()
         return self.get_capture_data(sample_count)
 
-    def capture_samples(self, sample_count: int) -> Dict[str, np.ndarray]:
+    def capture_samples(self, sample_count: int) -> dict[str, np.ndarray]:
         """
         Capture a number of samples at a capture rate, starting immediately.
         Unlike the "continuous" capture mode, here the buffer does not get
@@ -1013,7 +1015,7 @@ class SR86x(VisaInstrument):
         else:
             return self._CURR_TO_N[s]
 
-    def get_values(self, *parameter_names: str) -> Tuple[float, ...]:
+    def get_values(self, *parameter_names: str) -> tuple[float, ...]:
         """
         Get values of 2 or 3 parameters that are measured by the lock-in
         amplifier. These values are guaranteed to come from the same
@@ -1044,7 +1046,7 @@ class SR86x(VisaInstrument):
         output = self.ask(f'SNAP? {",".join(p_ids)}')
         return tuple(float(val) for val in output.split(','))
 
-    def get_data_channels_values(self) -> Tuple[float, ...]:
+    def get_data_channels_values(self) -> tuple[float, ...]:
         """
         Queries the current values of the data channels
 
@@ -1054,8 +1056,9 @@ class SR86x(VisaInstrument):
         output = self.ask('SNAPD?')
         return tuple(float(val) for val in output.split(','))
 
-    def get_data_channels_parameters(self, query_instrument: bool = True
-                                     ) -> Tuple[str, ...]:
+    def get_data_channels_parameters(
+        self, query_instrument: bool = True
+    ) -> tuple[str, ...]:
         """
         Convenience method to query a list of parameters which the data
         channels are currently assigned to.
@@ -1079,8 +1082,7 @@ class SR86x(VisaInstrument):
             for i in range(self._N_DATA_CHANNELS)
         )
 
-    def get_data_channels_dict(self, requery_names: bool = False
-                               ) -> Dict[str, float]:
+    def get_data_channels_dict(self, requery_names: bool = False) -> dict[str, float]:
         """
         Returns a dictionary where the keys are parameter names currently
         assigned to the data channels, and values are the values of those

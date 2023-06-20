@@ -1,6 +1,7 @@
+from collections.abc import Iterable
 from functools import wraps
 from operator import xor
-from typing import Any, Callable, Iterable, List, Optional, TypeVar, Union, cast
+from typing import Any, Callable, Optional, TypeVar, Union, cast
 
 from . import constants
 
@@ -25,7 +26,7 @@ def final_command(f: MessageBuilderMethodT) -> MessageBuilderMethodT:
     return cast(MessageBuilderMethodT, wrapper)
 
 
-class CommandList(List[Any]):
+class CommandList(list[Any]):
     def __init__(self) -> None:
         super().__init__()
         self.is_final = False
@@ -1443,7 +1444,7 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def do(self, program_numbers: List[int]) -> 'MessageBuilder':
+    def do(self, program_numbers: list[int]) -> "MessageBuilder":
         if len(program_numbers) > 8:
             raise ValueError("A maximum of 8 programs can be specified.")
         else:
@@ -3301,8 +3302,9 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def tgpc(self, ports: Optional[List[constants.TriggerPort]] = None
-             ) -> 'MessageBuilder':
+    def tgpc(
+        self, ports: Optional[list[constants.TriggerPort]] = None
+    ) -> "MessageBuilder":
         if ports is None:
             cmd = 'TGPC'
         elif len(ports) > 18:

@@ -1,7 +1,8 @@
 import re
 import warnings
+from collections.abc import Sequence
 from functools import wraps
-from typing import Any, Callable, Sequence, Set, Tuple, TypeVar
+from typing import Any, Callable, TypeVar
 
 from qcodes.instrument import VisaInstrument
 from qcodes.validators import Enum, Ints, Lists, MultiType
@@ -197,12 +198,12 @@ class KeysightB220X(VisaInstrument):
         self.write(f":CLOS (@{self._card:01d}{input_ch:02d}{output_ch:02d})")
 
     @post_execution_status_poll
-    def connect_paths(self, paths: Sequence[Tuple[int, int]]) -> None:
+    def connect_paths(self, paths: Sequence[tuple[int, int]]) -> None:
         channel_list_str = self.to_channel_list(paths)
         self.write(f":CLOS {channel_list_str}")
 
     @post_execution_status_poll
-    def disconnect_paths(self, paths: Sequence[Tuple[int, int]]) -> None:
+    def disconnect_paths(self, paths: Sequence[tuple[int, int]]) -> None:
         channel_list_str = self.to_channel_list(paths)
         self.write(f":OPEN {channel_list_str}")
 
@@ -347,7 +348,7 @@ class KeysightB220X(VisaInstrument):
         return self.ask(f':CONN:RULE? {self._card}')
 
     @staticmethod
-    def parse_channel_list(channel_list: str) -> Set[Tuple[int, int]]:
+    def parse_channel_list(channel_list: str) -> set[tuple[int, int]]:
         """Generate a set of (input, output) tuples from a SCPI channel
         list string.
         """
@@ -359,7 +360,7 @@ class KeysightB220X(VisaInstrument):
             for match in re.finditer(pattern, channel_list)
         }
 
-    def to_channel_list(self, paths: Sequence[Tuple[int, int]]) -> str:
+    def to_channel_list(self, paths: Sequence[tuple[int, int]]) -> str:
         chan = [f"{self._card:01d}{i:02d}{o:02d}" for i, o in paths]
         channel_list = f"(@{','.join(chan)})"
         return channel_list

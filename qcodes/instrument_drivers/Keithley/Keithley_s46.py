@@ -3,7 +3,7 @@ Driver for the Keithley S46 RF switch
 """
 import re
 from itertools import product
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from qcodes.instrument import Instrument, VisaInstrument
 from qcodes.parameters import Parameter, ParamRawDataType
@@ -124,11 +124,11 @@ class S46Parameter(Parameter):
 
 class KeithleyS46(VisaInstrument):
 
-    relay_names: List[str] = ["A", "B", "C", "D"] + [f"R{j}" for j in range(1, 9)]
+    relay_names: list[str] = ["A", "B", "C", "D"] + [f"R{j}" for j in range(1, 9)]
 
     # Make a dictionary where keys are channel aliases (e.g. 'A1', 'B3', etc)
     # and values are corresponding channel numbers.
-    channel_numbers: Dict[str, int] = {
+    channel_numbers: dict[str, int] = {
         f"{a}{b}": count + 1
         for count, (a, b) in enumerate(product(["A", "B", "C", "D"], range(1, 7)))
     }
@@ -146,7 +146,7 @@ class KeithleyS46(VisaInstrument):
             get_parser=self._get_closed_channels_parser,
         )
 
-        self._available_channels: List[str] = []
+        self._available_channels: list[str] = []
 
         for relay_name, channel_count in zip(
             KeithleyS46.relay_names, self.relay_layout
@@ -172,7 +172,7 @@ class KeithleyS46(VisaInstrument):
                 self._available_channels.append(alias)
 
     @staticmethod
-    def _get_closed_channels_parser(reply: str) -> List[str]:
+    def _get_closed_channels_parser(reply: str) -> list[str]:
         """
         The SCPI command ":CLOS ?" returns a reply in the form
         "(@1,9)", if channels 1 and 9 are closed. Return a list of
@@ -186,7 +186,7 @@ class KeithleyS46(VisaInstrument):
             self.parameters[channel_name].set("open")
 
     @property
-    def relay_layout(self) -> List[int]:
+    def relay_layout(self) -> list[int]:
         """
         The relay layout tells us how many channels we have per relay. Note
         that we can have zero channels per relay.
@@ -194,5 +194,5 @@ class KeithleyS46(VisaInstrument):
         return [int(i) for i in self.ask(":CONF:CPOL?").split(",")]
 
     @property
-    def available_channels(self) -> List[str]:
+    def available_channels(self) -> list[str]:
         return self._available_channels

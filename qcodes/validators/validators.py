@@ -7,17 +7,8 @@ from __future__ import annotations
 import math
 import typing
 from collections import abc
-from typing import (
-    Any,
-    Generic,
-    Hashable,
-    Literal,
-    Optional,
-    Tuple,
-    TypeVar,
-    Union,
-    cast,
-)
+from collections.abc import Hashable
+from typing import Any, Generic, Literal, Optional, TypeVar, Union, cast
 
 import numpy as np
 
@@ -26,7 +17,7 @@ BIGINT = int(1e18)
 
 numbertypes = Union[float, int, np.floating, np.integer]
 shape_type = Union[int, typing.Callable[[], int]]
-shape_tuple_type = Optional[Tuple[shape_type, ...]]
+shape_tuple_type = Optional[tuple[shape_type, ...]]
 
 
 def validate_all(*args: tuple[Validator[Any], Any], context: str = "") -> None:
@@ -517,7 +508,7 @@ class OnOff(Validator[str]):
 
     def __init__(self) -> None:
         self._validator = Enum("on", "off")
-        self._valid_values = cast(Tuple[str, ...], self._validator._valid_values)
+        self._valid_values = cast(tuple[str, ...], self._validator._valid_values)
 
     def validate(self, value: str, context: str = "") -> None:
         self._validator.validate(value, context)
@@ -1025,7 +1016,7 @@ class Arrays(Validator[np.ndarray]):
         return float(self._max_value) if self._max_value is not None else None
 
 
-class Lists(Validator[typing.List[T]]):
+class Lists(Validator[list[T]]):
     """
     Validator for lists
 
@@ -1158,7 +1149,7 @@ class Callable(Validator[typing.Callable[..., Any]]):
         return "<Callable>"
 
 
-class Dict(Validator[typing.Dict[Hashable, Any]]):
+class Dict(Validator[dict[Hashable, Any]]):
     """
     Validator for dictionaries.
     """

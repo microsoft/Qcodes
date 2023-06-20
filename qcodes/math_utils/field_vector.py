@@ -4,11 +4,12 @@ coordinate systems.
 """
 from __future__ import annotations
 
-from typing import Any, Literal, Sequence, Tuple, TypeVar, Union
+from collections.abc import Sequence
+from typing import Any, Literal, TypeVar, Union
 
 import numpy as np
 
-AllCoordsType = Tuple[float, float, float, float, float, float, float]
+AllCoordsType = tuple[float, float, float, float, float, float, float]
 NormOrder = Union[None, float, Literal["fro"], Literal["nuc"]]
 T = TypeVar("T", bound="FieldVector")
 

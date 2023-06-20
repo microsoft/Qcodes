@@ -1,6 +1,5 @@
 import logging
 import time
-from typing import Dict
 
 from qcodes.instrument import InstrumentBase
 from qcodes.instrument_drivers.Lakeshore.Model_336 import Model_336
@@ -24,7 +23,7 @@ class Model_336_Mock(MockVisaInstrument, Model_336):
         super().__init__(*args, **kwargs)
 
         # initial values
-        self.heaters: Dict[str, DictClass] = {}
+        self.heaters: dict[str, DictClass] = {}
         self.heaters["1"] = DictClass(
             P=1,
             I=2,

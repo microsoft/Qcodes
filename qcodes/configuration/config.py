@@ -7,7 +7,7 @@ import os
 from collections.abc import Mapping
 from os.path import expanduser
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 import jsonschema
 
@@ -422,7 +422,7 @@ class Config:
         return output
 
 
-class DotDict(Dict[str, Any]):
+class DotDict(dict[str, Any]):
     """
     Wrapper dict that allows to get dotted attributes
 

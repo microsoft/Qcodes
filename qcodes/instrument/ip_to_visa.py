@@ -1,12 +1,7 @@
 from __future__ import annotations
 
-import sys
+from importlib.resources import as_file, files
 from typing import Any
-
-if sys.version_info >= (3, 9):
-    from importlib.resources import as_file, files
-else:
-    from importlib_resources import as_file, files
 
 import qcodes.validators as vals
 from qcodes.instrument_drivers.american_magnetics.AMI430 import AMI430

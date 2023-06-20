@@ -1,6 +1,6 @@
 import re
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import pytest
 
@@ -121,7 +121,7 @@ def test_raises_runtime_error_on_update_if_get_cmd_is_none() -> None:
 
 def test_raises_runtime_error_if_set_parameters_called_with_empty_dict() -> None:
     dummy = Dummy("dummy")
-    parameters_dict: Dict[str, Any] = {}
+    parameters_dict: dict[str, Any] = {}
     msg = ("Provide at least one group parameter and its value to be set.")
 
     with pytest.raises(RuntimeError, match=msg):

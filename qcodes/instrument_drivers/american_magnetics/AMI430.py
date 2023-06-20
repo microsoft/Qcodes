@@ -6,9 +6,10 @@ import numbers
 import time
 import warnings
 from collections import defaultdict
+from collections.abc import Iterable, Sequence
 from contextlib import ExitStack
 from functools import partial
-from typing import Any, Callable, Iterable, Sequence, Tuple, TypeVar, cast
+from typing import Any, Callable, TypeVar, cast
 
 import numpy as np
 
@@ -1124,7 +1125,7 @@ class AMI430_3D(Instrument):
             set_point.set_component(**kwargs)
 
         setpoint_values = cast(
-            Tuple[float, float, float], set_point.get_components("x", "y", "z")
+            tuple[float, float, float], set_point.get_components("x", "y", "z")
         )
         self._adjust_child_instruments(setpoint_values)
 

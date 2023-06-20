@@ -1,10 +1,10 @@
-from typing import Any, List, Tuple
+from typing import Any
 
 import pytest
 
 from qcodes.parameters.sequence_helpers import is_sequence_of
 
-simple_good: List[Tuple[Any, ...]] = [
+simple_good: list[tuple[Any, ...]] = [
     # empty lists pass without even checking that we provided a
     # valid type spec
     ([], None),

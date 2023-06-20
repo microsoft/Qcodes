@@ -1,5 +1,5 @@
 import re
-from typing import Callable, List
+from typing import Callable
 
 import numpy as np
 import pytest
@@ -83,7 +83,7 @@ def test_numpy_types(bg_writing) -> None:
     data_saver = DataSaver(
         dataset=test_set, write_period=0, interdeps=idps)
 
-    dtypes: List[Callable] = [
+    dtypes: list[Callable] = [
         np.int8,
         np.int16,
         np.int32,

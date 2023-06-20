@@ -3,9 +3,10 @@ This contains an alias of the Lakeshore Model 325 driver.
 It will eventually be deprecated and removed
 """
 
+from collections.abc import Iterable
 from enum import IntFlag
 from itertools import takewhile
-from typing import Any, Dict, Iterable, List, Optional, TextIO, Tuple, cast
+from typing import Any, Dict, List, Optional, TextIO, Tuple, cast
 
 from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
 from qcodes.parameters import Group, GroupParameter
@@ -60,8 +61,7 @@ class Model_325(VisaInstrument):
         self.connect_message()
 
     def upload_curve(
-            self, index: int, name: str,
-            serial_number: str, data_dict: Dict[Any, Any]
+        self, index: int, name: str, serial_number: str, data_dict: dict[Any, Any]
     ) -> None:
         """
         Upload a curve to the given index

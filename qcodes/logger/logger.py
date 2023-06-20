@@ -15,11 +15,12 @@ import os
 import platform
 import sys
 from collections import OrderedDict
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from copy import copy
 from datetime import datetime
 from types import TracebackType
-from typing import TYPE_CHECKING, Dict, Iterator, Optional, Sequence, Type, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 if TYPE_CHECKING:
     from opencensus.ext.azure.common.protocol import Envelope
@@ -208,7 +209,7 @@ def _create_telemetry_handler() -> "AzureLogHandler":
         AzureLogHandler records
         """
 
-        def __init__(self, custom_dimensions: Dict[str, str]):
+        def __init__(self, custom_dimensions: dict[str, str]):
             super().__init__()
             self.custom_dimensions = custom_dimensions
 
@@ -490,10 +491,12 @@ class LogCapture:
         self.logger.addHandler(self.string_handler)
         return self
 
-    def __exit__(self,
-                 exception_type: Optional[Type[BaseException]],
-                 exception_value: Optional[BaseException],
-                 traceback: Optional[TracebackType]) -> None:
+    def __exit__(
+        self,
+        exception_type: Optional[type[BaseException]],
+        exception_value: Optional[BaseException],
+        traceback: Optional[TracebackType],
+    ) -> None:
         self.logger.removeHandler(self.string_handler)
         self.value = self.log_capture.getvalue()
         self.log_capture.close()

@@ -7,7 +7,7 @@ attributes on QCoDeS instruments."""
 
 import functools
 import inspect
-from typing import Any, Dict, Optional, Tuple, Type, Union
+from typing import Any, Optional, Union
 
 import parso
 import parso.python
@@ -41,7 +41,7 @@ class ParameterProxy:
 
 def find_class(
     node: parso.tree.BaseNode, classname: str
-) -> Tuple[parso.python.tree.Class, ...]:
+) -> tuple[parso.python.tree.Class, ...]:
     """Find all classes in a given Parso node named ``classname``."""
     nodes = []
     for child in node.children:
@@ -57,7 +57,7 @@ def find_class(
 
 def find_init_func(
     node: parso.tree.BaseNode,
-) -> Tuple[parso.python.tree.Function, ...]:
+) -> tuple[parso.python.tree.Function, ...]:
     """Find all ``__init__`` functions in the supplied Parso node."""
     nodes = []
     for child in node.children:
@@ -100,7 +100,7 @@ def parse_init_function_from_str(
 
 def extract_statements_from_node(
     parso_node: parso.tree.BaseNode,
-) -> Tuple[parso.python.tree.ExprStmt, ...]:
+) -> tuple[parso.python.tree.ExprStmt, ...]:
     nodes = []
     for child in parso_node.children:
         if isinstance(child, parso.python.tree.ExprStmt):
@@ -111,7 +111,7 @@ def extract_statements_from_node(
 
 
 @functools.lru_cache(maxsize=None, typed=True)
-def eval_params_from_code(code: str, classname: str) -> Dict[str, ParameterProxy]:
+def eval_params_from_code(code: str, classname: str) -> dict[str, ParameterProxy]:
     init_func_tree = parse_init_function_from_str(code, classname)
     if init_func_tree is None:
         return {}
@@ -132,7 +132,7 @@ def eval_params_from_code(code: str, classname: str) -> Dict[str, ParameterProxy
 
 def extract_code_as_repr(
     stm: parso.python.tree.ExprStmt,
-) -> Optional[Tuple[str, ParameterProxy]]:
+) -> Optional[tuple[str, ParameterProxy]]:
     lhs = stm.children[0]
     rhs = stm.get_rhs()
 
@@ -158,7 +158,7 @@ def extract_code_as_repr(
 
 
 def qcodes_parameter_attr_getter(
-    object_to_document_attr_on: Type[object], name: str, *default: Any
+    object_to_document_attr_on: type[object], name: str, *default: Any
 ) -> Any:
     """
     Try to extract an attribute as a proxy object with a repr containing the code
@@ -211,7 +211,7 @@ def qcodes_parameter_attr_getter(
     return attr
 
 
-def setup(app: Any) -> Dict[str, Union[str, bool]]:
+def setup(app: Any) -> dict[str, Union[str, bool]]:
     """Called by sphinx to setup the extension."""
     app.setup_extension("sphinx.ext.autodoc")  # Require autodoc extension
 

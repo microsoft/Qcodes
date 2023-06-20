@@ -3,7 +3,8 @@ Module left for backwards compatibility.
 Please do not import from this in any new code
 """
 import logging
-from typing import Any, Dict, Hashable, Optional, Tuple
+from collections.abc import Hashable
+from typing import Any, Dict, Optional, Tuple
 
 # for backwards compatibility since this module used
 # to contain logic that would abstract between yaml
@@ -42,12 +43,12 @@ def warn_units(class_name: str, instance: object) -> None:
 
 @deprecate("Internal function no longer part of the public qcodes api")
 def compare_dictionaries(
-    dict_1: Dict[Hashable, Any],
-    dict_2: Dict[Hashable, Any],
+    dict_1: dict[Hashable, Any],
+    dict_2: dict[Hashable, Any],
     dict_1_name: Optional[str] = "d1",
     dict_2_name: Optional[str] = "d2",
     path: str = "",
-) -> Tuple[bool, str]:
+) -> tuple[bool, str]:
     """
     Compare two dictionaries recursively to find non matching elements.
 

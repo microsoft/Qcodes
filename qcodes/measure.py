@@ -1,5 +1,6 @@
+from collections.abc import Sequence
 from datetime import datetime
-from typing import Optional, Sequence
+from typing import Optional
 
 from qcodes.metadatable import Metadatable
 from qcodes.parameters import Parameter

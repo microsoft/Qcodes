@@ -1,6 +1,5 @@
 import logging
-from collections.abc import Sequence
-from typing import Generator
+from collections.abc import Generator, Sequence
 
 import hypothesis.strategies as hst
 import numpy as np

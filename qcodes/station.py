@@ -13,24 +13,14 @@ import os
 import pkgutil
 import warnings
 from collections import deque
+from collections.abc import Iterable, Sequence
 from contextlib import suppress
 from copy import copy, deepcopy
 from functools import partial
 from io import StringIO
 from pathlib import Path
 from types import ModuleType
-from typing import (
-    IO,
-    Any,
-    AnyStr,
-    Dict,
-    Iterable,
-    NoReturn,
-    Sequence,
-    Union,
-    cast,
-    overload,
-)
+from typing import IO, Any, AnyStr, NoReturn, Union, cast, overload
 
 import jsonschema
 import jsonschema.exceptions
@@ -93,7 +83,7 @@ class ValidationWarning(Warning):
     pass
 
 
-class StationConfig(Dict[Any, Any]):
+class StationConfig(dict[Any, Any]):
     def snapshot(self, update: bool = True) -> StationConfig:
         return self
 
