@@ -203,7 +203,6 @@ module = [
     "gclib",
     "ipywidgets",
     "h5netcdf",
-    "lomentum.tools",
     "matplotlib.*",
     "mcl_RF_Switch_Controller64",
     "mcl_RF_Switch_Controller_NET45",
