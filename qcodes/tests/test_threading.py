@@ -64,7 +64,7 @@ def test_call_params_threaded(dummy_1, dummy_2) -> None:
                                           dummy_2.voltage_1,
                                           dummy_2.voltage_2))
 
-    params_per_thread_id = defaultdict(set)
+    params_per_thread_id: defaultdict[Any, set[Any]] = defaultdict(set)
     for param, thread_id in params_output:
         assert thread_id is not None
         params_per_thread_id[thread_id].add(param)
@@ -91,7 +91,7 @@ def test_thread_pool_params_caller(dummy_1, dummy_2) -> None:
         output2 = pool_caller()
 
     for output in (output1, output2):
-        params_per_thread_id = defaultdict(set)
+        params_per_thread_id: defaultdict[Any, set[Any]] = defaultdict(set)
         for param, thread_id in output:
             assert thread_id is not None
             params_per_thread_id[thread_id].add(param)
