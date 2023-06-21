@@ -72,7 +72,7 @@ matplotlib-inline==0.1.6
 mistune~=3.0.1
 msal~=1.22.0
 msal-extensions~=1.0.0
-mypy~=1.3.0
+mypy~=1.4.0
 mypy-extensions~=1.0.0
 nbclient==0.8.0
 nbconvert~=7.6.0

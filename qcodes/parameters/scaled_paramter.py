@@ -136,12 +136,14 @@ class ScaledParameter(Parameter):
 
     # Division of the scaler
     @property
-    def division(self) -> float:  # type: ignore[return]
+    def division(self) -> float:
         value = cast(float, self._multiplier())
         if self.role == ScaledParameter.Role.DIVISION:
             return value
         elif self.role == ScaledParameter.Role.GAIN:
             return 1 / value
+        else:
+            raise ValueError(f"Unexpected role {self.role}")
 
     @division.setter
     def division(self, division: float | Parameter) -> None:
@@ -150,12 +152,14 @@ class ScaledParameter(Parameter):
 
     # Gain of the scaler
     @property
-    def gain(self) -> float:  # type: ignore[return]
+    def gain(self) -> float:
         value = cast(float, self._multiplier())
         if self.role == ScaledParameter.Role.GAIN:
             return value
         elif self.role == ScaledParameter.Role.DIVISION:
             return 1 / value
+        else:
+            raise ValueError(f"Unexpected role {self.role}")
 
     @gain.setter
     def gain(self, gain: float | Parameter) -> None:
