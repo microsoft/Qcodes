@@ -44,7 +44,7 @@ def test_guids_from_dir(tmp_path: Path) -> None:
         (tmp_path / 'subdir2' / 'dbfile1.db', 1),
         (tmp_path / 'dbfile1.db', 3),
     ]
-    guids = defaultdict(list)
+    guids: defaultdict[Path, list[str]] = defaultdict(list)
     for path, count in paths_counts:
         path.parent.mkdir(exist_ok=True, parents=True)
         for _ in range(count):
