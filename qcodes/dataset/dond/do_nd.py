@@ -236,7 +236,7 @@ class _Sweeper:
         return tuple(parameter_set_events)
 
     def __len__(self) -> int:
-        return int(np.product(self.shape))
+        return int(np.prod(self.shape))
 
 
 class _Measurements:
