@@ -4,6 +4,7 @@ import re
 import time
 import warnings
 from contextlib import ExitStack
+from typing import Any, TypedDict
 
 import numpy as np
 import pytest
@@ -1042,8 +1043,13 @@ def test_current_and_field_params_interlink__permutations_of_tests(ami430) -> No
         )
 
 
-def _parametrization_kwargs():
-    kwargs = {"argvalues": [], "ids": []}
+class PDict(TypedDict):
+    argvalues: list[Any]
+    ids: list[str]
+
+
+def _parametrization_kwargs() -> PDict:
+    kwargs: PDict = {"argvalues": [], "ids": []}
 
     for type_constructor, type_name in zip(
         (
