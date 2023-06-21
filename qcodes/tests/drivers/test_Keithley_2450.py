@@ -114,7 +114,7 @@ def test_reset_sweep_on_source_change(k2450) -> None:
     k2450.sense.function('current')
     k2450.source.function("voltage")
     k2450.source.sweep_setup(0, 1, 10)
-    assert np.alltrue(k2450.source.get_sweep_axis() == np.linspace(0, 1, 10))
+    assert np.all(k2450.source.get_sweep_axis() == np.linspace(0, 1, 10))
 
     k2450.source.function("current")
     with pytest.raises(ValueError):
