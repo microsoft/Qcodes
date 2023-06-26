@@ -42,6 +42,9 @@ class OxfordTriton(IPInstrument):
         self._heater_range_temp = [0.03, 0.1, 0.3, 1, 12, 40]
         self._heater_range_curr = [0.316, 1, 3.16, 10, 31.6, 100]
         self._control_channel = 5
+        self.pump_label_dict = {'TURB1': 'Turbo 1',
+                                'TURB2': 'Turbo 2',
+                                'COMP': 'Compressor'}
 
         self.add_parameter(name='time',
                            label='System Time',
@@ -428,34 +431,24 @@ class OxfordTriton(IPInstrument):
 
     def _recv(self) -> str:
         return super()._recv().rstrip()
-    
+
     def _add_pump_state(self) -> None:
-        pump_list = []
-        pump_label_dict = {'TURB1': 'Turbo 1',
-                           'TURB2': 'Turbo 2',
-                           'COMP': 'Compressor'
-        }   
-        for pump in ['TURB1', 'TURB2', 'COMP']:
-            pump_list.append(pump)
+        self.pumps = set(['TURB1', 'TURB2', 'COMP'])
+        for pump in self.pumps:
             self.add_parameter(name=pump.lower() + '_state',
-                               label=pump_label_dict[pump] + ' state',
+                               label=self.pump_label_dict[pump] + ' state',
                                get_cmd='READ:DEV:%s:PUMP:SIG:STATE' % pump,
                                get_parser=partial(self._get_parser_state, key='STATE'),
                                set_cmd=partial(self._set_pump_state, pump=pump),
                                val_mapping={'on':  'ON', 'off': 'OFF'})
-        self.pumps = set(pump_list)
 
     def _set_pump_state(self, pump: str, state: str) -> None:
         self.write(f'SET:DEV:{pump}:PUMP:SIG:STATE:{state}')
     
     def _add_pump_speed(self) -> None:
-        pump_label_dict = {'TURB1': 'Turbo 1',
-                           'TURB2': 'Turbo 2',
-                           'COMP': 'Compressor'
-        }        
         for pump in self.pumps:
             self.add_parameter(name=pump.lower() + '_speed',
-                               label=pump_label_dict[pump] + ' speed',
+                               label=self.pump_label_dict[pump] + ' speed',
                                unit='Hz',
                                get_cmd='READ:DEV:%s:PUMP:SIG:SPD' % pump,
                                get_parser=self._get_parser_pump_speed,
