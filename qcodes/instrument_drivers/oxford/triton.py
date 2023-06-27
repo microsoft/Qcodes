@@ -43,7 +43,7 @@ class OxfordTriton(IPInstrument):
         self._heater_range_curr = [0.316, 1, 3.16, 10, 31.6, 100]
         self._control_channel = 5
         self.pump_label_dict = {'TURB1': 'Turbo 1',
-                                'TURB2': 'Turbo 2',
+                                'FB': 'Forepump',
                                 'COMP': 'Compressor'}
 
         self.add_parameter(name='time',
@@ -433,13 +433,13 @@ class OxfordTriton(IPInstrument):
         return super()._recv().rstrip()
 
     def _add_pump_state(self) -> None:
-        self.pumps = set(['TURB1', 'TURB2', 'COMP'])
+        self.pumps = set(['TURB1', 'FB', 'COMP'])
         for pump in self.pumps:
             self.add_parameter(name=pump.lower() + '_state',
                                label=self.pump_label_dict[pump] + ' state',
                                get_cmd='READ:DEV:%s:PUMP:SIG:STATE' % pump,
-                               get_parser=partial(self._get_parser_state, key='STATE'),
-                               set_cmd=partial(self._set_pump_state, pump=pump),
+                               get_parser=partial(self._get_parser_state, 'STATE'),
+                               set_cmd=partial(self._set_pump_state, pump),
                                val_mapping={'on':  'ON', 'off': 'OFF'})
 
     def _set_pump_state(self, pump: str, state: str) -> None:
@@ -465,14 +465,14 @@ class OxfordTriton(IPInstrument):
             self.add_parameter(name=chan + '_state',
                                label=f'Temperature ch{i} state',
                                get_cmd='READ:DEV:%s:TEMP:MEAS:ENAB' % chan,
-                               get_parser=partial(self._get_parser_state, key='ENAB'),
-                               set_cmd=partial(self._set_temp_state, chan=chan),
+                               get_parser=partial(self._get_parser_state, 'ENAB'),
+                               set_cmd=partial(self._set_temp_state, chan),
                                val_mapping={'on':  'ON', 'off': 'OFF'})
 
     def _set_temp_state(self, chan: str, state: str) -> None:
         self.write(f'SET:DEV:{chan}:TEMP:MEAS:ENAB:{state}')
     
-    def _get_parser_state(self, msg: str, key: str) -> Optional[str]:
+    def _get_parser_state(self, key: str, msg: str) -> Optional[str]:
         if 'NOT_FOUND' in msg:
             return None
         return msg.split(f'{key}:')[-1]
