@@ -165,7 +165,7 @@ types-tabulate~=0.9.0
 types-urllib3~=1.26.25
 typing_extensions~=4.7.0
 uncertainties~=3.1.7
-urllib3~=1.26.15
+urllib3~=2.0.3
 versioningit~=2.2.0
 wcwidth==0.2.6
 webencodings==0.5.1
