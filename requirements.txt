@@ -94,7 +94,7 @@ pickleshare==0.7.5
 Pillow~=10.0.0
 pluggy~=1.2.0
 portalocker~=2.7.0
-prometheus-client==0.17.0
+prometheus-client==0.17.1
 prompt-toolkit~=3.0.31
 protobuf~=4.23.0
 psutil~=5.9.3
