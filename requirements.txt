@@ -174,5 +174,5 @@ websockets~=11.0
 widgetsnbextension~=4.0.3
 wincertstore==0.2
 wrapt~=1.15.0
-xarray~=2023.6.0
+xarray~=2023.7.0
 zipp~=3.16.2
