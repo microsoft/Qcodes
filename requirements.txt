@@ -48,7 +48,7 @@ h5py~=3.9.0
 hypothesis~=6.81.2
 idna==3.4
 imagesize~=1.4.1
-importlib-metadata~=5.0.0
+importlib-metadata~=6.8.0
 importlib-resources~=5.13.0
 incremental~=22.10.0
 iniconfig~=2.0.0
