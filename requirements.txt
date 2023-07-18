@@ -124,7 +124,7 @@ PyVISA~=1.13.0
 PyVISA-sim==0.5.1
 pywin32==306; sys_platform == 'win32'
 pywinpty~=2.0.8; sys_platform == 'win32'
-PyYAML==6.0
+PyYAML==6.0.1
 pyzmq~=25.1.0
 requests~=2.31.0
 rsa==4.9
