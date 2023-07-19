@@ -1,0 +1,3 @@
+Very noisy log messages from `azure.monitor.opentelemetry.exporter` are now
+by default filtered and not shown in the console logger. This matches the
+behavior of the OpenCensus exporter.
