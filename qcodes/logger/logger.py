@@ -67,15 +67,21 @@ telemetry_handler: Optional["AzureLogHandler"] = None
 
 _opencensus_filter = logging.Filter(name="opencensus")
 _urllib3_connection_filter = logging.Filter(name="urllib3.connection")
+_azure_monitor_opentelemetry_exporter_filter = logging.Filter(
+    name="azure.monitor.opentelemetry.exporter"
+)
 
 
 def filter_out_telemetry_log_records(record: logging.LogRecord) -> bool:
     """
     here we filter any message that is likely to be thrown from
-    opencensus so it is not shown in the user console
+    opencensus/opentelemetry so it is not shown in the user console
     """
-    return (not _opencensus_filter.filter(record)
-            and not _urllib3_connection_filter.filter(record))
+    return (
+        not _opencensus_filter.filter(record)
+        and not _urllib3_connection_filter.filter(record)
+        and not _azure_monitor_opentelemetry_exporter_filter
+    )
 
 
 def get_formatter() -> logging.Formatter:
