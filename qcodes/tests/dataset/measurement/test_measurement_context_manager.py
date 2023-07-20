@@ -2028,7 +2028,9 @@ def test_datasaver_arrays_of_different_length(storage_type, Ns, bg_writing) -> N
         result_sigs = list(
             (f"signal{n}", np.random.randn(Ns[n])) for n in range(no_of_signals)
         )
-        full_result = tuple(result_freqs + result_sigs + [result_t])
+        full_result: tuple[tuple[str, int | np.ndarray | str], ...] = tuple(
+            result_freqs + result_sigs + [result_t]
+        )
         datasaver.add_result(*full_result)
 
     ds = load_by_id(datasaver.run_id)
