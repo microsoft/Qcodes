@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+from collections.abc import Hashable
 from pathlib import Path
 
 import numpy as np
@@ -564,11 +565,50 @@ def test_to_xarray_da_dict_paramspec_metadata_is_preserved(
         for spec_name, spec_value in expected_param_spec_attrs.items():
             assert xr_da.attrs[spec_name] == spec_value
 
+def figure_out_index(dataframe):
+    # heavily inspired by xarray.core.dataset.from_dataframe
+    import pandas as pd
+    from xarray.core.indexes import PandasIndex, remove_unused_levels_categories
+    from xarray.core.variable import Variable, calculate_dimensions
+
+    if not dataframe.columns.is_unique:
+        raise ValueError("cannot convert DataFrame with non-unique columns")
+
+    idx = remove_unused_levels_categories(dataframe.index)
+
+    if isinstance(idx, pd.MultiIndex) and not idx.is_unique:
+        raise ValueError(
+            "cannot convert a DataFrame with a non-unique MultiIndex into xarray"
+        )
+    index_vars: dict[Hashable, Variable] = {}
+
+    if isinstance(idx, pd.MultiIndex):
+        dims = tuple(
+            name if name is not None else "level_%i" % n
+            for n, name in enumerate(idx.names)
+        )
+        for dim, lev in zip(dims, idx.levels):
+            xr_idx = PandasIndex(lev, dim)
+            index_vars.update(xr_idx.create_variables())
+    else:
+        index_name = idx.name if idx.name is not None else "index"
+        dims = (index_name,)
+        xr_idx = PandasIndex(idx, index_name)
+        index_vars.update(xr_idx.create_variables())
+
+    expanded_shape = calculate_dimensions(index_vars)
+    return expanded_shape
+
 
 def test_export_2d_dataset(tmp_path_factory, mock_dataset_grid: DataSet) -> None:
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
     path = str(tmp_path)
     mock_dataset_grid.export(export_type="netcdf", path=tmp_path, prefix="qcodes_")
+
+    pdf = mock_dataset_grid.to_pandas_dataframe()
+    dims = figure_out_index(pdf)
+    assert dims == {"x": 10, "y": 5}
+    pdf.to_xarray()
 
     xr_ds = mock_dataset_grid.to_xarray_dataset()
     assert xr_ds["z"].dims == ("x", "y")
@@ -592,6 +632,11 @@ def test_export_non_grid_dataset(
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
     path = str(tmp_path)
     mock_dataset_non_grid.export(export_type="netcdf", path=tmp_path, prefix="qcodes_")
+
+    pdf = mock_dataset_non_grid.to_pandas_dataframe()
+    dims = figure_out_index(pdf)
+    assert dims == {"x": 50, "y": 50}
+    pdf.to_xarray()
 
     xr_ds = mock_dataset_non_grid.to_xarray_dataset()
     assert xr_ds["z"].dims == ("x", "y")
