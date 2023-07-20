@@ -3,12 +3,14 @@ import logging
 import os
 from pathlib import Path
 
+import numpy as np
 import pytest
 import xarray as xr
 from pytest import LogCaptureFixture
 
 import qcodes
 from qcodes.dataset import get_data_export_path, load_from_netcdf, new_data_set
+from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.descriptions.versioning import serialization as serial
@@ -17,7 +19,7 @@ from qcodes.dataset.linked_datasets.links import links_to_str
 
 
 @pytest.fixture(name="mock_empty_dataset")
-def _make_mock_empty_dataset(experiment):
+def _make_mock_empty_dataset(experiment) -> DataSet:
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", "numeric")
     yparam = ParamSpecBase("y", "numeric")
@@ -31,7 +33,7 @@ def _make_mock_empty_dataset(experiment):
 
 
 @pytest.fixture(name="mock_dataset")
-def _make_mock_dataset(experiment):
+def _make_mock_dataset(experiment) -> DataSet:
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", 'numeric')
     yparam = ParamSpecBase("y", 'numeric')
@@ -48,7 +50,7 @@ def _make_mock_dataset(experiment):
 
 
 @pytest.fixture(name="mock_dataset_nonunique")
-def _make_mock_dataset_nonunique_index(experiment):
+def _make_mock_dataset_nonunique_index(experiment) -> DataSet:
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", 'numeric')
     yparam = ParamSpecBase("y", 'numeric')
@@ -65,7 +67,7 @@ def _make_mock_dataset_nonunique_index(experiment):
 
 
 @pytest.fixture(name="mock_dataset_label_unit")
-def _make_mock_dataset_label_unit(experiment):
+def _make_mock_dataset_label_unit(experiment) -> DataSet:
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", "numeric", label="x label", unit="x unit")
     yparam = ParamSpecBase("y", "numeric", label="y label", unit="y unit")
@@ -81,7 +83,7 @@ def _make_mock_dataset_label_unit(experiment):
 
 
 @pytest.fixture(name="mock_dataset_complex")
-def _make_mock_dataset_complex(experiment):
+def _make_mock_dataset_complex(experiment) -> DataSet:
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", "numeric")
     yparam = ParamSpecBase("y", "complex")
@@ -95,8 +97,51 @@ def _make_mock_dataset_complex(experiment):
     return dataset
 
 
+@pytest.fixture(name="mock_dataset_grid")
+def _make_mock_dataset_grid(experiment) -> DataSet:
+    dataset = new_data_set("dataset")
+    xparam = ParamSpecBase("x", "numeric")
+    yparam = ParamSpecBase("y", "numeric")
+    zparam = ParamSpecBase("z", "numeric")
+    idps = InterDependencies_(dependencies={zparam: (xparam, yparam)})
+    dataset.set_interdependencies(idps)
+
+    dataset.mark_started()
+    for x in range(10):
+        for y in range(20, 25):
+            results = [{"x": x, "y": y, "z": x + y}]
+            dataset.add_results(results)
+    dataset.mark_completed()
+    return dataset
+
+
+@pytest.fixture(name="mock_dataset_non_grid")
+def _make_mock_dataset_non_grid(experiment) -> DataSet:
+    dataset = new_data_set("dataset")
+    xparam = ParamSpecBase("x", "numeric")
+    yparam = ParamSpecBase("y", "numeric")
+    zparam = ParamSpecBase("z", "numeric")
+    idps = InterDependencies_(dependencies={zparam: (xparam, yparam)})
+    dataset.set_interdependencies(idps)
+
+    num_samples = 50
+
+    rng = np.random.default_rng()
+
+    x_vals = rng.random(num_samples) * 10
+    y_vals = 20 + rng.random(num_samples) * 5
+
+    dataset.mark_started()
+
+    for x, y in zip(x_vals, y_vals):
+        results = [{"x": x, "y": y, "z": x + y}]
+        dataset.add_results(results)
+    dataset.mark_completed()
+    return dataset
+
+
 @pytest.fixture(name="mock_dataset_inverted_coords")
-def _make_mock_dataset_inverted_coords(experiment):
+def _make_mock_dataset_inverted_coords(experiment) -> DataSet:
     # this dataset is constructed such
     # that the two z parameters have inverted
     # coordinates. You almost certainly
@@ -518,6 +563,48 @@ def test_to_xarray_da_dict_paramspec_metadata_is_preserved(
         )
         for spec_name, spec_value in expected_param_spec_attrs.items():
             assert xr_da.attrs[spec_name] == spec_value
+
+
+def test_export_2d_dataset(tmp_path_factory, mock_dataset_grid: DataSet) -> None:
+    tmp_path = tmp_path_factory.mktemp("export_netcdf")
+    path = str(tmp_path)
+    mock_dataset_grid.export(export_type="netcdf", path=tmp_path, prefix="qcodes_")
+
+    xr_ds = mock_dataset_grid.to_xarray_dataset()
+    assert xr_ds["z"].dims == ("x", "y")
+
+    expected_path = (
+        f"qcodes_{mock_dataset_grid.captured_run_id}_{mock_dataset_grid.guid}.nc"
+    )
+    assert os.listdir(path) == [expected_path]
+    file_path = os.path.join(path, expected_path)
+    ds = load_from_netcdf(file_path)
+
+    xr_ds_reimported = ds.to_xarray_dataset()
+
+    assert xr_ds_reimported["z"].dims == ("x", "y")
+    assert xr_ds.identical(xr_ds_reimported)
+
+
+def test_export_non_grid_dataset(
+    tmp_path_factory, mock_dataset_non_grid: DataSet
+) -> None:
+    tmp_path = tmp_path_factory.mktemp("export_netcdf")
+    path = str(tmp_path)
+    mock_dataset_non_grid.export(export_type="netcdf", path=tmp_path, prefix="qcodes_")
+
+    xr_ds = mock_dataset_non_grid.to_xarray_dataset()
+    assert xr_ds["z"].dims == ("x", "y")
+
+    expected_path = f"qcodes_{mock_dataset_non_grid.captured_run_id}_{mock_dataset_non_grid.guid}.nc"
+    assert os.listdir(path) == [expected_path]
+    file_path = os.path.join(path, expected_path)
+    ds = load_from_netcdf(file_path)
+
+    xr_ds_reimported = ds.to_xarray_dataset()
+
+    assert xr_ds_reimported["z"].dims == ("x", "y")
+    assert xr_ds.identical(xr_ds_reimported)
 
 
 def test_inverted_coords_perserved_on_netcdf_roundtrip(
