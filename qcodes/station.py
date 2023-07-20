@@ -797,7 +797,7 @@ def update_config_schema(
         additional_instrument_modules: python modules that contain
             :class:`qcodes.instrument.base.InstrumentBase` definitions
             (and subclasses thereof) to be included as
-            values for instrument definition in th station definition
+            values for instrument definition in the station definition
             yaml files.
 
     """
@@ -834,14 +834,20 @@ def update_config_schema(
             json.dump(data, f, indent=4)
 
     additional_instrument_modules = additional_instrument_modules or []
+    instrument_modules: set[ModuleType] = set(
+        [qcodes.instrument_drivers] + additional_instrument_modules
+    )
+
+    instrument_names = tuple(
+        itertools.chain.from_iterable(
+            instrument_names_from_module(m) for m in instrument_modules
+        )
+    )
+
     update_schema_file(
         template_path=SCHEMA_TEMPLATE_PATH,
         output_path=SCHEMA_PATH,
-        instrument_names=tuple(itertools.chain.from_iterable(
-            instrument_names_from_module(m)
-            for m in set(
-                [qcodes.instrument_drivers] + additional_instrument_modules)
-        ))
+        instrument_names=instrument_names,
     )
 
 
