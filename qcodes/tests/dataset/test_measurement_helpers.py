@@ -1,30 +1,83 @@
-set1 = Parameter("set1", get_cmd=None, set_cmd=None, initial_value=0)
-set2 = Parameter("set2", get_cmd=None, set_cmd=None, initial_value=0)
-set3 = Parameter("set3", get_cmd=None, set_cmd=None, initial_value=0)
+import pytest
+import gc
+import numpy as np
+from pathlib import Path
+from functools import partial
+from itertools import product
+import qcodes as qc
+from qcodes.dataset import connect, Measurement, LinSweep
+from qcodes.validators import Arrays
+
+from qcodes.parameters import Parameter, ParameterWithSetpoints
+from qcodes.dataset.measurement_helpers import (
+    complex_measurement_context,
+    dond_core,
+    LinSweeper,
+)
 
 
-def get_set1():
-    return set1()
+@pytest.fixture
+def default_params():
+    set1 = Parameter("set1", get_cmd=None, set_cmd=None, initial_value=0)
+    set2 = Parameter("set2", get_cmd=None, set_cmd=None, initial_value=0)
+    set3 = Parameter("set3", get_cmd=None, set_cmd=None, initial_value=0)
+
+    def get_set1():
+        return set1()
+
+    def get_sum23():
+        return set2() + set3()
+
+    def get_diff23():
+        return set2() - set3()
+
+    meas1 = Parameter("meas1", get_cmd=get_set1, set_cmd=False)
+    meas2 = Parameter("meas2", get_cmd=get_sum23, set_cmd=False)
+    meas3 = Parameter("meas3", get_cmd=get_diff23, set_cmd=False)
+
+    return set1, set2, set3, meas1, meas2, meas3
 
 
-def get_sum23():
-    return set2() + set3()
+@pytest.fixture
+def pws_params(default_params):
+    sweep_start = 0
+    sweep_stop = 10
+    sweep_points = 11
+
+    def get_pws_results():
+        setpoints_arr = np.linspace(sweep_start, sweep_stop, sweep_points)
+        return setpoints_arr**2 * set1()
+
+    setpoint_array = Parameter(
+        "setpoints",
+        get_cmd=partial(np.linspace, sweep_start, sweep_stop, sweep_points),
+        vals=Arrays(shape=(sweep_points,)),
+    )
+
+    pws1 = ParameterWithSetpoints(
+        "pws",
+        setpoints=(setpoint_array,),
+        get_cmd=get_pws_results,
+        vals=Arrays(shape=(sweep_points,)),
+    )
+    set1, set2, set3, meas1, meas2, meas3 = default_params
+    return pws1, set1
 
 
-def get_diff23():
-    return set2() - set3()
-
-
-meas1 = Parameter("meas1", get_cmd=get_set1, set_cmd=False)
-meas2 = Parameter("meas2", get_cmd=get_sum23, set_cmd=False)
-meas3 = Parameter("meas3", get_cmd=get_diff23, set_cmd=False)
-
-
-def test_context():
-    db_path = "complex.db"
+@pytest.fixture
+def default_database_and_experiment(tmp_path):
+    db_path = Path(tmp_path) / "context_tests.db"
     qc.initialise_or_create_database_at(db_path)
-    experiment = qc.load_or_create_experiment("Test")
+    experiment = qc.load_or_create_experiment("context_tests")
+    yield experiment
+    conn = connect(db_path)
+    conn.close()
+    gc.collect()
 
+
+def test_context(default_params, default_database_and_experiment):
+    experiment = default_database_and_experiment
+    set1, set2, set3, meas1, meas2, meas3 = default_params
     dataset_definition = {
         "dataset_1": {"independent": [set1], "dependent": [meas1]},
         "dataset_2": {"independent": [set1, set2, set3], "dependent": [meas2, meas3]},
@@ -49,7 +102,10 @@ def test_context():
         datasets = [datasaver.dataset for datasaver in datasavers]
 
 
-def test_dond_core():
+def test_dond_core(default_params, default_database_and_experiment):
+    experiment = default_database_and_experiment
+    set1, set2, set3, meas1, meas2, meas3 = default_params
+
     core_test_measurement = Measurement(name="core_test_1", exp=experiment)
     core_test_measurement.register_parameter(set1)
     core_test_measurement.register_parameter(meas1, setpoints=[set1])
@@ -61,13 +117,11 @@ def test_dond_core():
         dond_core(datasaver, sweep2, meas1)
 
         dataset = datasaver.dataset
-    plot_dataset(dataset, marker=".")
 
 
-def test_dond_core_and_context():
-    db_path = "complex.db"
-    qc.initialise_or_create_database_at(db_path)
-    experiment = qc.load_or_create_experiment("Test")
+def test_dond_core_and_context(default_params, default_database_and_experiment):
+    experiment = default_database_and_experiment
+    set1, set2, set3, meas1, meas2, meas3 = default_params
 
     dataset_definition = {
         "dataset_1": {"independent": [set1, set2], "dependent": [meas1, meas2]},
@@ -81,15 +135,10 @@ def test_dond_core_and_context():
             dond_core(datasavers[1], sweep2, meas1, meas3, additional_setpoints=(set1,))
         datasets = [datasaver.dataset for datasaver in datasavers]
 
-    fig, (ax, ax2) = plt.subplots(2, 2, figsize=(10, 7), tight_layout=True)
-    plot_dataset(datasets[0], axes=ax)
-    plot_dataset(datasets[1], axes=ax2)
 
-
-def test_linsweeper():
-    db_path = "complex.db"
-    qc.initialise_or_create_database_at(db_path)
-    experiment = qc.load_or_create_experiment("Test")
+def test_linsweeper(default_params, default_database_and_experiment):
+    experiment = default_database_and_experiment
+    set1, set2, set3, meas1, meas2, meas3 = default_params
 
     dataset_definition = {
         "dataset_1": {"independent": [set1, set2], "dependent": [meas1, meas2]}
@@ -102,35 +151,10 @@ def test_linsweeper():
 
         datasets = [datasaver.dataset for datasaver in datasavers]
 
-    fig, ax = plt.subplots(1, 2, figsize=(10, 4), tight_layout=True)
-    plot_dataset(datasets[0], axes=ax)
 
-
-def test_context_with_pws():
-    sweep_start = 0
-    sweep_stop = 10
-    sweep_points = 11
-
-    def get_pws_results():
-        setpoints_arr = np.linspace(sweep_start, sweep_stop, sweep_points)
-        return setpoints_arr**2 * set1()
-
-    setpoint_array = Parameter(
-        "setpoints",
-        get_cmd=partial(np.linspace, sweep_start, sweep_stop, sweep_points),
-        vals=Arrays(shape=(sweep_points,)),
-    )
-
-    pws1 = ParameterWithSetpoints(
-        "pws",
-        setpoints=(setpoint_array,),
-        get_cmd=get_pws_results,
-        vals=Arrays(shape=(sweep_points,)),
-    )
-
-    db_path = "complex.db"
-    qc.initialise_or_create_database_at(db_path)
-    experiment = qc.load_or_create_experiment("Test")
+def test_context_with_pws(pws_params, default_database_and_experiment):
+    experiment = default_database_and_experiment
+    pws1, set1 = pws_params
 
     dataset_definition = {
         "dataset_1": {"independent": [set1], "dependent": [pws1]}
@@ -140,5 +164,3 @@ def test_context_with_pws():
             dond_core(datasavers[0], pws1, additional_setpoints=(set1,))
 
         datasets = [datasaver.dataset for datasaver in datasavers]
-
-    plot_dataset(datasets[0])
