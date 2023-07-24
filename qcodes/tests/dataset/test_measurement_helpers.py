@@ -132,11 +132,13 @@ def test_context_with_pws():
     qc.initialise_or_create_database_at(db_path)
     experiment = qc.load_or_create_experiment("Test")
 
-    dataset_definition = {"dataset_1" : {"independent": [set1], "dependent": [pws1]}}#,
+    dataset_definition = {
+        "dataset_1": {"independent": [set1], "dependent": [pws1]}
+    }  # ,
     with complex_measurement_context(dataset_definition, experiment) as datasavers:
         for _ in LinSweeper(set1, 0, 10, 11, 0.001):
             dond_core(datasavers[0], pws1, additional_setpoints=(set1,))
 
-        datasets =[datasaver.dataset for datasaver in datasavers]
+        datasets = [datasaver.dataset for datasaver in datasavers]
 
-    plot_dataset(datasets[0]);
+    plot_dataset(datasets[0])
