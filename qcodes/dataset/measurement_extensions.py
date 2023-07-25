@@ -1,6 +1,6 @@
-from typing import List, Any, Dict, Generator, Sequence, TypedDict
+from typing import List, Any, Generator, Sequence
 import time
-
+from dataclasses import dataclass
 from contextlib import ExitStack, contextmanager
 
 
@@ -13,33 +13,32 @@ from qcodes.dataset.dond.do_nd import _parse_dond_arguments, _Sweeper
 from qcodes.dataset.threading import _call_params, process_params_meas
 
 
-class DataSetDefinition(TypedDict):
+@dataclass
+class DataSetDefinition:
     name: str
     independent: Sequence[ParameterBase]
     dependent: Sequence[ParameterBase]
 
 
 def setup_measurement_instances(
-    dataset_definition: DataSetDefinition, experiment: Experiment
+    dataset_definitions: Sequence[DataSetDefinition], experiment: Experiment
 ) -> List[Measurement]:
     measurements: List[Measurement] = []
-    for dataset_name in dataset_definition.keys():
-        meas = Measurement(name=dataset_name, exp=experiment)
-        indep_params = dataset_definition[dataset_name]["independent"]
-        dep_params = dataset_definition[dataset_name]["dependent"]
-        for param in indep_params:
+    for ds_def in dataset_definitions:
+        meas = Measurement(name=ds_def.name, exp=experiment)
+        for param in ds_def.independent:
             meas.register_parameter(param)
-        for param in dep_params:
-            meas.register_parameter(param, setpoints=indep_params)
+        for param in ds_def.dependent:
+            meas.register_parameter(param, setpoints=ds_def.independent)
         measurements.append(meas)
     return measurements
 
 
 @contextmanager
 def complex_measurement_context(
-    dataset_definition: Dict[str, Any], experiment: Experiment
+    dataset_definitions: Sequence[DataSetDefinition], experiment: Experiment
 ) -> Generator[list[DataSaver], Any, None]:
-    measurement_instances = setup_measurement_instances(dataset_definition, experiment)
+    measurement_instances = setup_measurement_instances(dataset_definitions, experiment)
     with _catch_interrupts() as interrupted, ExitStack() as stack:
         datasavers = [
             stack.enter_context(measurement.run())

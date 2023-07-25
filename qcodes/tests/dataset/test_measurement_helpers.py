@@ -9,10 +9,11 @@ from qcodes.dataset import connect, Measurement, LinSweep
 from qcodes.validators import Arrays
 
 from qcodes.parameters import Parameter, ParameterWithSetpoints
-from qcodes.dataset.measurement_helpers import (
+from qcodes.dataset.measurement_extensions import (
     complex_measurement_context,
     dond_core,
     LinSweeper,
+    DataSetDefinition,
 )
 
 
@@ -78,10 +79,13 @@ def default_database_and_experiment(tmp_path):
 def test_context(default_params, default_database_and_experiment):
     experiment = default_database_and_experiment
     set1, set2, set3, meas1, meas2, meas3 = default_params
-    dataset_definition = {
-        "dataset_1": {"independent": [set1], "dependent": [meas1]},
-        "dataset_2": {"independent": [set1, set2, set3], "dependent": [meas2, meas3]},
-    }
+    dataset_definition = [
+        DataSetDefinition(name="dataset_1", independent=[set1], dependent=[meas1]),
+        DataSetDefinition(
+            name="dataset_2", independent=[set1, set2, set3], dependent=[meas2, meas3]
+        ),
+    ]
+
     with complex_measurement_context(dataset_definition, experiment) as datasavers:
         for val in range(5):
             set1(val)
@@ -123,10 +127,14 @@ def test_dond_core_and_context(default_params, default_database_and_experiment):
     experiment = default_database_and_experiment
     set1, set2, set3, meas1, meas2, meas3 = default_params
 
-    dataset_definition = {
-        "dataset_1": {"independent": [set1, set2], "dependent": [meas1, meas2]},
-        "dataset_2": {"independent": [set1, set3], "dependent": [meas1, meas3]},
-    }
+    dataset_definition = [
+        DataSetDefinition(
+            name="dataset_1", independent=[set1, set2], dependent=[meas1, meas2]
+        ),
+        DataSetDefinition(
+            name="dataset_2", independent=[set1, set3], dependent=[meas1, meas3]
+        ),
+    ]
     with complex_measurement_context(dataset_definition, experiment) as datasavers:
         for _ in LinSweeper(set1, 0, 10, 11, 0.001):
             sweep1 = LinSweep(set2, 0, 10, 11, 0.001)
@@ -140,9 +148,11 @@ def test_linsweeper(default_params, default_database_and_experiment):
     experiment = default_database_and_experiment
     set1, set2, set3, meas1, meas2, meas3 = default_params
 
-    dataset_definition = {
-        "dataset_1": {"independent": [set1, set2], "dependent": [meas1, meas2]}
-    }  # ,
+    dataset_definition = [
+        DataSetDefinition(
+            name="dataset_1", independent=[set1, set2], dependent=[meas1, meas2]
+        )
+    ]
     with complex_measurement_context(dataset_definition, experiment) as datasavers:
         for _ in LinSweeper(set1, 0, 10, 11, 0.001):
             sweep1 = LinSweep(set2, 0, 10, 11, 0.001)
@@ -155,10 +165,7 @@ def test_linsweeper(default_params, default_database_and_experiment):
 def test_context_with_pws(pws_params, default_database_and_experiment):
     experiment = default_database_and_experiment
     pws1, set1 = pws_params
-
-    dataset_definition = {
-        "dataset_1": {"independent": [set1], "dependent": [pws1]}
-    }  # ,
+    dataset_definition = [DataSetDefinition("dataset_1", [set1], [pws1])]
     with complex_measurement_context(dataset_definition, experiment) as datasavers:
         for _ in LinSweeper(set1, 0, 10, 11, 0.001):
             dond_core(datasavers[0], pws1, additional_setpoints=(set1,))
