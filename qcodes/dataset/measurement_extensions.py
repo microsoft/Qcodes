@@ -1,16 +1,16 @@
-from typing import List, Any, Generator, Sequence
+from __future__ import annotations
 import time
-from dataclasses import dataclass
 from contextlib import ExitStack, contextmanager
+from dataclasses import dataclass
+from typing import Any, Generator, List, Sequence
 
-
-from qcodes.parameters.parameter_base import ParameterBase
-from qcodes.dataset.dond.do_nd_utils import _catch_interrupts
+from qcodes.dataset.dond.do_nd import _Sweeper
+from qcodes.dataset.dond.do_nd_utils import ParamMeasT, _catch_interrupts
+from qcodes.dataset.dond.sweeps import AbstractSweep, LinSweep, TogetherSweep
 from qcodes.dataset.experiment_container import Experiment
-from qcodes.dataset.measurements import Measurement, DataSaver
-from qcodes.dataset.dond.sweeps import LinSweep
-from qcodes.dataset.dond.do_nd import _parse_dond_arguments, _Sweeper
-from qcodes.dataset.threading import _call_params, process_params_meas
+from qcodes.dataset.measurements import DataSaver, Measurement
+from qcodes.dataset.threading import process_params_meas
+from qcodes.parameters.parameter_base import ParameterBase
 
 
 @dataclass
@@ -50,12 +50,33 @@ def complex_measurement_context(
             raise Exception
 
 
+def parse_dond_core_args(
+    *params: AbstractSweep | TogetherSweep | ParamMeasT | Sequence[ParamMeasT],
+) -> tuple[list[AbstractSweep], list[ParamMeasT]]:
+    """
+    Parse supplied arguments into sweep objects and measurement parameters
+    and their callables.
+    """
+    sweep_instances: list[AbstractSweep] = []
+    params_meas: list[ParamMeasT] = []
+    for par in params:
+        if isinstance(par, AbstractSweep):
+            sweep_instances.append(par)
+        elif isinstance(par, TogetherSweep):
+            raise ValueError("dond_core does not support TogetherSweeps")
+        elif isinstance(par, Sequence):
+            raise ValueError("dond_core does not support multiple datasets")
+        elif isinstance(par, ParameterBase) and par.gettable:
+            params_meas.append(par)
+    return sweep_instances, params_meas
+
+
 def dond_core(
     datasaver: DataSaver,
     *params: ParameterBase,
     additional_setpoints: Sequence[ParameterBase] = tuple(),
 ) -> None:
-    sweep_instances, params_meas = _parse_dond_arguments(*params)
+    sweep_instances, params_meas = parse_dond_core_args(*params)
     sweeper = _Sweeper(sweep_instances, additional_setpoints)
     for set_events in sweeper:
         results: dict[ParameterBase, Any] = {}
@@ -72,7 +93,7 @@ def dond_core(
             else:
                 results[set_event.parameter] = set_event.new_value
 
-        meas_value_pair = _call_params(params_meas)
+        meas_value_pair = process_params_meas(params_meas)
         for meas_param, value in meas_value_pair:
             results[meas_param] = value
 
