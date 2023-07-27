@@ -52,7 +52,7 @@ importlib-metadata~=6.8.0
 importlib-resources~=5.13.0
 incremental~=22.10.0
 iniconfig~=2.0.0
-ipykernel~=6.24.0
+ipykernel~=6.25.0
 ipython~=8.14.0
 ipython-genutils==0.2.0
 ipywidgets~=8.0.2
