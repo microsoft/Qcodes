@@ -549,106 +549,110 @@ class Runner:
         return float(write_period)
 
     def __enter__(self) -> DataSaver:
+        # We want to enter the opentelemetry span here
+        # and end it in the `__exit__` of this context manger
+        # so here we capture it in a exitstack that we keep around.
         self._span = TRACER.start_span("qcodes.dataset.Measurement.run")
         with ExitStack() as stack:
             stack.enter_context(trace.use_span(self._span, end_on_exit=True))
 
             self._exit_stack = stack.pop_all()
-            # TODO: should user actions really precede the dataset?
-            # first do whatever bootstrapping the user specified
-            for func, args in self.enteractions:
-                func(*args)
 
-            # next set up the "datasaver"
-            if self.experiment is not None:
-                exp_id: int | None = self.experiment.exp_id
-                path_to_db: str | None = self.experiment.path_to_db
-                conn: ConnectionPlus | None = self.experiment.conn
-            else:
-                exp_id = None
-                path_to_db = None
-                conn = None
+        # TODO: should user actions really precede the dataset?
+        # first do whatever bootstrapping the user specified
+        for func, args in self.enteractions:
+            func(*args)
 
-            if self._dataset_class is DataSetType.DataSet:
-                self.ds = DataSet(
-                    name=self.name,
-                    exp_id=exp_id,
-                    conn=conn,
-                    in_memory_cache=self._in_memory_cache,
+        # next set up the "datasaver"
+        if self.experiment is not None:
+            exp_id: int | None = self.experiment.exp_id
+            path_to_db: str | None = self.experiment.path_to_db
+            conn: ConnectionPlus | None = self.experiment.conn
+        else:
+            exp_id = None
+            path_to_db = None
+            conn = None
+
+        if self._dataset_class is DataSetType.DataSet:
+            self.ds = DataSet(
+                name=self.name,
+                exp_id=exp_id,
+                conn=conn,
+                in_memory_cache=self._in_memory_cache,
+            )
+        elif self._dataset_class is DataSetType.DataSetInMem:
+            if self._in_memory_cache is False:
+                raise RuntimeError(
+                    "Cannot disable the in memory cache for a "
+                    "dataset that is only in memory."
                 )
-            elif self._dataset_class is DataSetType.DataSetInMem:
-                if self._in_memory_cache is False:
-                    raise RuntimeError(
-                        "Cannot disable the in memory cache for a "
-                        "dataset that is only in memory."
-                    )
-                self.ds = DataSetInMem._create_new_run(
-                    name=self.name,
-                    exp_id=exp_id,
-                    path_to_db=path_to_db,
-                )
-            else:
-                raise RuntimeError("Does not support any other dataset classes")
-
-            # .. and give the dataset a snapshot as metadata
-            if self.station is None:
-                station = Station.default
-            else:
-                station = self.station
-
-            if station is not None:
-                snapshot = station.snapshot()
-            else:
-                snapshot = {}
-
-            self.ds.prepare(
-                snapshot=snapshot,
-                interdeps=self._interdependencies,
-                write_in_background=self._write_in_background,
-                shapes=self._shapes,
-                parent_datasets=self._parent_datasets,
+            self.ds = DataSetInMem._create_new_run(
+                name=self.name,
+                exp_id=exp_id,
+                path_to_db=path_to_db,
             )
+        else:
+            raise RuntimeError("Does not support any other dataset classes")
 
-            # register all subscribers
-            if isinstance(self.ds, DataSet):
-                for callble, state in self.subscribers:
-                    # We register with minimal waiting time.
-                    # That should make all subscribers be called when data is flushed
-                    # to the database
-                    log.debug(f"Subscribing callable {callble} with state {state}")
-                    self.ds.subscribe(callble, min_wait=0, min_count=1, state=state)
-            self._span.set_attributes(
-                {
-                    "guid": self.ds.guid,
-                    "run_id": self.ds.run_id,
-                    "captured_run_id": self.ds.captured_run_id,
-                    "exp_name": self.ds.exp_name,
-                    "sample_name": self.ds.sample_name,
-                    "ds_name": self.ds.name,
-                    "write_in_background": self._write_in_background,
-                    "extra_log_info": self._extra_log_info,
-                }
-            )
-            print(
-                f"Starting experimental run with id: {self.ds.captured_run_id}."
-                f" {self._extra_log_info}"
-            )
-            log.info(
-                f"Starting measurement with guid: {self.ds.guid}, "
-                f'sample_name: "{self.ds.sample_name}", '
-                f'exp_name: "{self.ds.exp_name}", '
-                f'ds_name: "{self.ds.name}". '
-                f"{self._extra_log_info}"
-            )
-            log.info(f"Using background writing: {self._write_in_background}")
+        # .. and give the dataset a snapshot as metadata
+        if self.station is None:
+            station = Station.default
+        else:
+            station = self.station
 
-            self.datasaver = DataSaver(
-                dataset=self.ds,
-                write_period=self.write_period,
-                interdeps=self._interdependencies,
-            )
+        if station is not None:
+            snapshot = station.snapshot()
+        else:
+            snapshot = {}
 
-            return self.datasaver
+        self.ds.prepare(
+            snapshot=snapshot,
+            interdeps=self._interdependencies,
+            write_in_background=self._write_in_background,
+            shapes=self._shapes,
+            parent_datasets=self._parent_datasets,
+        )
+
+        # register all subscribers
+        if isinstance(self.ds, DataSet):
+            for callble, state in self.subscribers:
+                # We register with minimal waiting time.
+                # That should make all subscribers be called when data is flushed
+                # to the database
+                log.debug(f"Subscribing callable {callble} with state {state}")
+                self.ds.subscribe(callble, min_wait=0, min_count=1, state=state)
+        self._span.set_attributes(
+            {
+                "guid": self.ds.guid,
+                "run_id": self.ds.run_id,
+                "captured_run_id": self.ds.captured_run_id,
+                "exp_name": self.ds.exp_name,
+                "sample_name": self.ds.sample_name,
+                "ds_name": self.ds.name,
+                "write_in_background": self._write_in_background,
+                "extra_log_info": self._extra_log_info,
+            }
+        )
+        print(
+            f"Starting experimental run with id: {self.ds.captured_run_id}."
+            f" {self._extra_log_info}"
+        )
+        log.info(
+            f"Starting measurement with guid: {self.ds.guid}, "
+            f'sample_name: "{self.ds.sample_name}", '
+            f'exp_name: "{self.ds.exp_name}", '
+            f'ds_name: "{self.ds.name}". '
+            f"{self._extra_log_info}"
+        )
+        log.info(f"Using background writing: {self._write_in_background}")
+
+        self.datasaver = DataSaver(
+            dataset=self.ds,
+            write_period=self.write_period,
+            interdeps=self._interdependencies,
+        )
+
+        return self.datasaver
 
     def __exit__(
         self,
@@ -677,7 +681,8 @@ class Runner:
                     f"{self.ds.guid};\nTraceback:\n{exception_string}"
                 )
                 self._span.set_status(trace.Status(trace.StatusCode.ERROR))
-                self._span.record_exception(exception_value)
+                if isinstance(exception_value, Exception):
+                    self._span.record_exception(exception_value)
                 self.ds.add_metadata("measurement_exception", exception_string)
 
             # and finally mark the dataset as closed, thus
