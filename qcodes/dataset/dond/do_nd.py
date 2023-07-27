@@ -568,7 +568,7 @@ class _SweepMeasGroup:
         return self._parameters
 
 
-@TRACER.start_as_current_span("dond")
+@TRACER.start_as_current_span("qcodes.dataset.dond")
 def dond(
     *params: AbstractSweep | TogetherSweep | ParamMeasT | Sequence[ParamMeasT],
     write_period: float | None = None,

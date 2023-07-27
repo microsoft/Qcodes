@@ -549,7 +549,7 @@ class Runner:
         return float(write_period)
 
     def __enter__(self) -> DataSaver:
-        self._span = TRACER.start_span("Runner")
+        self._span = TRACER.start_span("qcodes.dataset.Measurement.run")
         with ExitStack() as stack:
             stack.enter_context(trace.use_span(self._span, end_on_exit=True))
 
