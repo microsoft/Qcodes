@@ -46,12 +46,14 @@ dependencies = [
     "websockets>=9.1",
     "wrapt>=1.13.2",
     "xarray>=0.18.0",
+    "opentelemetry-api>=1.15.0",
     # transitive dependencies. We list these explicitly to",
     # ensure that we always use versions that do not have",
     # known security vulnerabilities",
     "ipython>=8.10.0",
     "pillow>=9.0.0",
     "rsa>=4.7",
+
 ]
 
 dynamic = ["version"]
