@@ -2,7 +2,7 @@ from __future__ import annotations
 import time
 from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass
-from typing import Any, Generator, List, Sequence
+from typing import Any, Generator, List, Sequence, Callable
 
 from qcodes.dataset.dond.do_nd import _Sweeper
 from qcodes.dataset.dond.do_nd_utils import ParamMeasT, _catch_interrupts
@@ -35,7 +35,7 @@ def setup_measurement_instances(
 
 
 @contextmanager
-def complex_measurement_context(
+def datasaver_builder(
     dataset_definitions: Sequence[DataSetDefinition], experiment: Experiment
 ) -> Generator[list[DataSaver], Any, None]:
     measurement_instances = setup_measurement_instances(dataset_definitions, experiment)
@@ -67,6 +67,8 @@ def parse_dond_core_args(
         elif isinstance(par, Sequence):
             raise ValueError("dond_core does not support multiple datasets")
         elif isinstance(par, ParameterBase) and par.gettable:
+            params_meas.append(par)
+        elif isinstance(par, Callable):
             params_meas.append(par)
     return sweep_instances, params_meas
 

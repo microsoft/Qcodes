@@ -5,12 +5,12 @@ from pathlib import Path
 from functools import partial
 from itertools import product
 import qcodes as qc
-from qcodes.dataset import connect, Measurement, LinSweep
+from qcodes.dataset import connect, Measurement, LinSweep, TogetherSweep
 from qcodes.validators import Arrays
 
 from qcodes.parameters import Parameter, ParameterWithSetpoints
 from qcodes.dataset.measurement_extensions import (
-    complex_measurement_context,
+    datasaver_builder,
     dond_core,
     LinSweeper,
     DataSetDefinition,
@@ -86,7 +86,7 @@ def test_context(default_params, default_database_and_experiment):
         ),
     ]
 
-    with complex_measurement_context(dataset_definition, experiment) as datasavers:
+    with datasaver_builder(dataset_definition, experiment) as datasavers:
         for val in range(5):
             set1(val)
             meas1_val = meas1()
@@ -135,7 +135,7 @@ def test_dond_core_and_context(default_params, default_database_and_experiment):
             name="dataset_2", independent=[set1, set3], dependent=[meas1, meas3]
         ),
     ]
-    with complex_measurement_context(dataset_definition, experiment) as datasavers:
+    with datasaver_builder(dataset_definition, experiment) as datasavers:
         for _ in LinSweeper(set1, 0, 10, 11, 0.001):
             sweep1 = LinSweep(set2, 0, 10, 11, 0.001)
             sweep2 = LinSweep(set3, -10, 0, 11, 0.001)
@@ -153,7 +153,7 @@ def test_linsweeper(default_params, default_database_and_experiment):
             name="dataset_1", independent=[set1, set2], dependent=[meas1, meas2]
         )
     ]
-    with complex_measurement_context(dataset_definition, experiment) as datasavers:
+    with datasaver_builder(dataset_definition, experiment) as datasavers:
         for _ in LinSweeper(set1, 0, 10, 11, 0.001):
             sweep1 = LinSweep(set2, 0, 10, 11, 0.001)
             dond_core(datasavers[0], sweep1, meas1, meas2, additional_setpoints=(set1,))
@@ -166,8 +166,65 @@ def test_context_with_pws(pws_params, default_database_and_experiment):
     experiment = default_database_and_experiment
     pws1, set1 = pws_params
     dataset_definition = [DataSetDefinition("dataset_1", [set1], [pws1])]
-    with complex_measurement_context(dataset_definition, experiment) as datasavers:
+    with datasaver_builder(dataset_definition, experiment) as datasavers:
         for _ in LinSweeper(set1, 0, 10, 11, 0.001):
             dond_core(datasavers[0], pws1, additional_setpoints=(set1,))
 
         datasets = [datasaver.dataset for datasaver in datasavers]
+
+
+def test_dond_core_with_callables(
+    default_params, default_database_and_experiment, mocker
+):
+    experiment = default_database_and_experiment
+    set1, set2, set3, meas1, meas2, meas3 = default_params
+
+    core_test_measurement = Measurement(name="core_test_1", exp=experiment)
+    core_test_measurement.register_parameter(set1)
+    core_test_measurement.register_parameter(meas1, setpoints=[set1])
+
+    internal_callable = mocker.MagicMock(return_value=None)
+
+    with core_test_measurement.run() as datasaver:
+        sweep1 = LinSweep(set1, 0, 5, 11, 0.001)
+        dond_core(datasaver, sweep1, internal_callable, meas1)
+
+        sweep2 = LinSweep(set1, 10, 20, 100, 0.001)
+        dond_core(datasaver, sweep2, internal_callable, meas1)
+
+        dataset = datasaver.dataset
+    assert internal_callable.call_count == 11 + 100
+
+
+def test_dond_core_fails_with_together_sweeps(
+    default_params, default_database_and_experiment
+):
+    experiment = default_database_and_experiment
+    set1, set2, set3, meas1, meas2, meas3 = default_params
+
+    core_test_measurement = Measurement(name="core_test_1", exp=experiment)
+    core_test_measurement.register_parameter(set1)
+    core_test_measurement.register_parameter(meas1, setpoints=[set1])
+    with pytest.raises(ValueError, match="dond_core does not support TogetherSweeps"):
+        with core_test_measurement.run() as datasaver:
+            sweep1 = LinSweep(set1, 0, 5, 11, 0.001)
+            sweep2 = LinSweep(set2, 10, 20, 11, 0.001)
+
+            dond_core(datasaver, TogetherSweep(sweep1, sweep2), meas1)
+            dataset = datasaver.dataset
+
+
+def test_dond_core_fails_with_groups(default_params, default_database_and_experiment):
+    experiment = default_database_and_experiment
+    set1, set2, set3, meas1, meas2, meas3 = default_params
+
+    core_test_measurement = Measurement(name="core_test_1", exp=experiment)
+    core_test_measurement.register_parameter(set1)
+    core_test_measurement.register_parameter(meas1, setpoints=[set1])
+    with pytest.raises(
+        ValueError, match="dond_core does not support multiple datasets"
+    ):
+        with core_test_measurement.run() as datasaver:
+            sweep1 = LinSweep(set1, 0, 5, 11, 0.001)
+            dond_core(datasaver, sweep1, [meas1], [meas2])
+            dataset = datasaver.dataset
