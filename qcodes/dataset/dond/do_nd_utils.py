@@ -126,7 +126,7 @@ def _register_actions(
 
 
 @contextmanager
-def _catch_interrupts() -> Iterator[Callable[[], MeasInterruptT]]:
+def catch_interrupts() -> Iterator[Callable[[], MeasInterruptT]]:
     interrupt_exception = None
 
     def get_interrupt_exception() -> MeasInterruptT:

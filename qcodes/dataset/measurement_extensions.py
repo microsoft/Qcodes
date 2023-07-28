@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Any, Generator, List, Sequence, Callable
 
 from qcodes.dataset.dond.do_nd import _Sweeper
-from qcodes.dataset.dond.do_nd_utils import ParamMeasT, _catch_interrupts
+from qcodes.dataset.dond.do_nd_utils import ParamMeasT, catch_interrupts
 from qcodes.dataset.dond.sweeps import AbstractSweep, LinSweep, TogetherSweep
 from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.measurements import DataSaver, Measurement
@@ -39,7 +39,7 @@ def datasaver_builder(
     dataset_definitions: Sequence[DataSetDefinition], experiment: Experiment
 ) -> Generator[list[DataSaver], Any, None]:
     measurement_instances = setup_measurement_instances(dataset_definitions, experiment)
-    with _catch_interrupts() as interrupted, ExitStack() as stack:
+    with catch_interrupts() as interrupted, ExitStack() as stack:
         datasavers = [
             stack.enter_context(measurement.run())
             for measurement in measurement_instances
