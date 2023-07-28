@@ -12,7 +12,7 @@ from qcodes import config
 from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
 from qcodes.dataset.dond.do_nd_utils import (
     BreakConditionInterrupt,
-    _catch_interrupts,
+    catch_interrupts,
     _handle_plotting,
     _register_actions,
     _register_parameters,
@@ -37,6 +37,7 @@ if TYPE_CHECKING:
         BreakConditionT,
         ParamMeasT,
     )
+
 
 def do2d(
     param_set1: ParameterBase,
@@ -165,7 +166,7 @@ def do2d(
         else SequentialParamsCaller(*param_meas)
     )
 
-    with _catch_interrupts() as interrupted, meas.run() as datasaver, param_meas_caller as call_param_meas:
+    with catch_interrupts() as interrupted, meas.run() as datasaver, param_meas_caller as call_param_meas:
         dataset = datasaver.dataset
         additional_setpoints_data = process_params_meas(additional_setpoints)
         setpoints1 = np.linspace(start1, stop1, num_points1)

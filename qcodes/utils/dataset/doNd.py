@@ -21,7 +21,7 @@ from qcodes.dataset.dond.do_nd_utils import (
     MeasInterruptT,
     MultiAxesTupleListWithDataSet,
     ParamMeasT,
-    _catch_interrupts,
+    catch_interrupts,
     _handle_plotting,
     _register_actions,
     _register_parameters,
@@ -40,6 +40,7 @@ from qcodes.dataset.plotting import plot_and_save_image as plot
 class UnsafeThreadingException(Exception):
     pass
 
+
 __all__ = [
     "AbstractSweep",
     "ActionsT",
@@ -56,7 +57,7 @@ __all__ = [
     "ParamMeasT",
     "ParameterGroup",
     "UnsafeThreadingException",
-    "_catch_interrupts",
+    "catch_interrupts",
     "_conditional_parameter_set",
     "_create_measurements",
     "_extract_paramters_by_type_and_group",

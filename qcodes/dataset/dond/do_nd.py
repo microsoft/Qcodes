@@ -15,7 +15,7 @@ from qcodes import config
 from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
 from qcodes.dataset.dond.do_nd_utils import (
     BreakConditionInterrupt,
-    _catch_interrupts,
+    catch_interrupts,
     _handle_plotting,
     _register_actions,
     _register_parameters,
@@ -700,13 +700,13 @@ def dond(
         [], KeyboardInterrupt | BreakConditionInterrupt | None
     ] = lambda: None
     try:
-        with _catch_interrupts() as interrupted, ExitStack() as stack, params_meas_caller as call_params_meas:
+        with catch_interrupts() as interrupted, ExitStack() as stack, params_meas_caller as call_params_meas:
             datasavers = [
                 stack.enter_context(group.measurement_cxt.run())
                 for group in measurements.groups
             ]
             additional_setpoints_data = process_params_meas(additional_setpoints)
-            for set_events in tqdm(sweeper, disable=not show_progress):  
+            for set_events in tqdm(sweeper, disable=not show_progress):
                 LOG.debug("Processing set events: %s", set_events)
                 results: dict[ParameterBase, Any] = {}
                 for set_event in set_events:
