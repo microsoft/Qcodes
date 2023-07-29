@@ -70,35 +70,31 @@ def model372():
 def AMI430_3D():
     import numpy as np
 
-    from qcodes.instrument.ip_to_visa import AMI430_VISA
-    from qcodes.instrument_drivers.american_magnetics.AMI430 import AMI430_3D
+    from qcodes.instrument_drivers.american_magnetics import AMIModel4303D, AMIModel430
 
-    mag_x = AMI430_VISA(
+    mag_x = AMIModel430(
         "x",
         address="GPIB::1::INSTR",
         pyvisa_sim_file="AMI430.yaml",
         terminator="\n",
-        port=1,
     )
-    mag_y = AMI430_VISA(
+    mag_y = AMIModel430(
         "y",
         address="GPIB::2::INSTR",
         pyvisa_sim_file="AMI430.yaml",
         terminator="\n",
-        port=1,
     )
-    mag_z = AMI430_VISA(
+    mag_z = AMIModel430(
         "z",
         address="GPIB::3::INSTR",
         pyvisa_sim_file="AMI430.yaml",
         terminator="\n",
-        port=1,
     )
     field_limit = [
         lambda x, y, z: x == 0 and y == 0 and z < 3,
         lambda x, y, z: np.linalg.norm([x, y, z]) < 2
     ]
-    driver = AMI430_3D("AMI430_3D", mag_x, mag_y, mag_z, field_limit)
+    driver = AMIModel4303D("AMI430_3D", mag_x, mag_y, mag_z, field_limit)
     try:
         yield driver, mag_x, mag_y, mag_z
     finally:
@@ -183,9 +179,9 @@ def test_filter_instrument(AMI430_3D) -> None:
         with logger.filter_instrument(mag_x, handler=logs.string_handler):
             driver.cartesian((0, 0, 1))
     for line in logs.value.splitlines():
-        assert '[x(AMI430_VISA)]' in line
-        assert '[y(AMI430_VISA)]' not in line
-        assert '[z(AMI430_VISA)]' not in line
+        assert '[x(AMIModel430)]' in line
+        assert '[y(AMIModel430)]' not in line
+        assert '[z(AMIModel430)]' not in line
 
     # filter multiple instruments
     driver.cartesian((0, 0, 0))
@@ -196,9 +192,9 @@ def test_filter_instrument(AMI430_3D) -> None:
     any_x = False
     any_y = False
     for line in logs.value.splitlines():
-        has_x = '[x(AMI430_VISA)]' in line
-        has_y = '[y(AMI430_VISA)]' in line
-        has_z = '[z(AMI430_VISA)]' in line
+        has_x = '[x(AMIModel430)]' in line
+        has_y = '[y(AMIModel430)]' in line
+        has_z = '[z(AMIModel430)]' in line
 
         assert has_x or has_y
         assert not has_z
