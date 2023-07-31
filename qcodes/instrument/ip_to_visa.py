@@ -94,7 +94,7 @@ class IPToVisa(VisaInstrument, IPInstrument):  # type: ignore[misc]
         if hasattr(self, 'connection') and hasattr(self.connection, 'close'):
             self.connection.close()
 
-        strip_attrs(self, whitelist=['name'])
+        strip_attrs(self, whitelist=["_short_name"])
         self.remove_instance(self)
 
 
