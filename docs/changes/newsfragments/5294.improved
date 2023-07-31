@@ -1,0 +1,3 @@
+New features: datasaver_builder and dond_core are intermediate measurement objects designed to fill a gap between 
+the low-level Measurement object and the high-level doNd functions. They allow convenient specification of parameter
+dependencies for registration and doNd-like syntax while also allowing direct access to the underlying datasaver objects.
