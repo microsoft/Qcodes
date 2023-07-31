@@ -4,6 +4,7 @@ Test suite for Instrument and InstrumentBase
 from __future__ import annotations
 
 import contextlib
+import gc
 import io
 import re
 import weakref
@@ -424,6 +425,19 @@ def test_instrument_label(cls, request: FixtureRequest) -> None:
         request.addfinalizer(instrument.close)
     assert instrument.label == label
 
+
+def test_instrument_without_ref_is_gced():
+    # When there are no active references to an instrument and it is
+    # gced there should be no live references to the instrument
+
+    def use_some_instrument() -> None:
+        _ = Instrument("SomeInstrument")
+        assert list(Instrument._all_instruments.keys()) == ["SomeInstrument"]
+
+    assert list(Instrument._all_instruments.keys()) == []
+    use_some_instrument()
+    gc.collect()
+    assert list(Instrument._all_instruments.keys()) == []
 
 def test_snapshot_and_meta_attrs() -> None:
     """Test snapshot of InstrumentBase contains _meta_attrs attributes"""
