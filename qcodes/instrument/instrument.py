@@ -5,7 +5,7 @@ import logging
 import time
 import weakref
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, Protocol, TypeVar, cast, overload
+from typing import TYPE_CHECKING, Any, Protocol, TypeVar, overload
 
 from qcodes.utils import strip_attrs
 from qcodes.validators import Anything
@@ -270,7 +270,9 @@ class Instrument(InstrumentBase, metaclass=InstrumentMeta):
         ...
 
     @classmethod
-    def find_instrument(cls, name: str, instrument_class: type[T] | None = None) -> T:
+    def find_instrument(
+        cls, name: str, instrument_class: type[T] | None = None
+    ) -> T | Instrument:
         """
         Find an existing instrument by name.
 
@@ -301,10 +303,7 @@ class Instrument(InstrumentBase, metaclass=InstrumentMeta):
                 f"Instrument {name} is {type(ins)} but "
                 f"{internal_instrument_class} was requested"
             )
-        # at this stage we have checked that the instrument is either of
-        # type instrument_class or Instrument if that is None. It is
-        # therefore safe to cast here.
-        ins = cast(T, ins)
+
         return ins
 
     @staticmethod
