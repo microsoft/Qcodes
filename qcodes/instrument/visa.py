@@ -5,6 +5,7 @@ import logging
 from collections.abc import Sequence
 from importlib.resources import as_file, files
 from typing import Any
+from weakref import finalize
 
 import pyvisa
 import pyvisa.constants as vi_const
@@ -21,6 +22,14 @@ VISA_LOGGER = '.'.join((InstrumentBase.__module__, 'com', 'visa'))
 
 log = logging.getLogger(__name__)
 
+
+def _close_visa_handle(
+    handle: pyvisa.resources.MessageBasedResource, name: str
+) -> None:
+    log.info(
+        f"Closing VISA handle to {name} as there are no non weak references to the instrument."
+    )
+    handle.close()
 
 class VisaInstrument(Instrument):
 
@@ -119,6 +128,7 @@ class VisaInstrument(Instrument):
 
         self.set_terminator(terminator)
         self.timeout.set(timeout)
+        finalize(self, _close_visa_handle, self.visa_handle, str(self.name))
 
     def _connect_and_handle_error(
         self, address: str, visalib: str | None
