@@ -5,8 +5,9 @@ import logging
 import sys
 import time
 import warnings
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
-from typing import Any, Generic, Iterator, Sequence, Type, TypeVar, Union, cast
+from typing import Any, Generic, TypeVar, Union, cast
 
 import numpy as np
 
@@ -21,11 +22,13 @@ logger = logging.getLogger(__name__)
 
 OutputType = TypeVar('OutputType')
 
-CtypesTypes = Union[Type[ctypes.c_uint8],
-                    Type[ctypes.c_uint16],
-                    Type[ctypes.c_uint32],
-                    Type[ctypes.c_int32],
-                    Type[ctypes.c_float]]
+CtypesTypes = Union[
+    type[ctypes.c_uint8],
+    type[ctypes.c_uint16],
+    type[ctypes.c_uint32],
+    type[ctypes.c_int32],
+    type[ctypes.c_float],
+]
 
 
 class AlazarTech_ATS(Instrument):
@@ -537,7 +540,7 @@ class AlazarTech_ATS(Instrument):
         # Getting IDN is very slow so skip that
         for _, p in self.parameters.items():
             if isinstance(p, TraceParameter):
-                if p.synced_to_card == False:
+                if p.synced_to_card is False:
                     raise RuntimeError(f"TraceParameter {p} not synced to "
                                        f"Alazar card detected. Aborting. Data "
                                        f"may be corrupt")

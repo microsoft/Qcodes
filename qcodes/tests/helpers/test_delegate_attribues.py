@@ -3,7 +3,7 @@ import pytest
 from qcodes.utils import DelegateAttributes
 
 
-def test_delegate_dict():
+def test_delegate_dict() -> None:
     class ToDict(DelegateAttributes):
         delegate_attr_dicts = ['d']
         apples = 'green'
@@ -17,7 +17,7 @@ def test_delegate_dict():
     assert td.apples == 'green'
 
     d = {'apples': 'red', 'oranges': 'orange'}
-    td.d = d
+    td.d = d  # type: ignore[attr-defined]
 
     # you can get the whole dict still
     assert td.d == d
@@ -43,13 +43,13 @@ def test_delegate_dict():
         assert dir(td).count(attr) == 1
 
 
-def test_delegate_dicts():
+def test_delegate_dicts() -> None:
     class ToDicts(DelegateAttributes):
         delegate_attr_dicts = ['d', 'e']
 
     td = ToDicts()
-    e = {'cats': 12, 'dogs': 3}
-    td.e = e
+    e = {"cats": 12, "dogs": 3}
+    td.e = e  # type: ignore[attr-defined]
 
     # you can still access the second one when the first doesn't exist
     with pytest.raises(AttributeError):
@@ -58,7 +58,7 @@ def test_delegate_dicts():
     assert td.cats == 12
 
     # the first beats out the second
-    td.d = {'cats': 42, 'chickens': 1000}
+    td.d = {"cats": 42, "chickens": 1000}  # type: ignore[attr-defined]
     assert td.cats == 42
 
     # but you can still access things only in the second
@@ -69,7 +69,7 @@ def test_delegate_dicts():
         assert dir(td).count(attr) == 1
 
 
-def test_delegate_object():
+def test_delegate_object() -> None:
     class Recipient:
         black = '#000'
         white = '#fff'
@@ -86,22 +86,23 @@ def test_delegate_object():
         to_obj.recipient
     assert to_obj.gray == '#888'
 
-    to_obj.recipient = recipient
+    to_obj.recipient = recipient  # type: ignore[attr-defined]
 
     # now you can access recipient through to_obj
     assert to_obj.black == '#000'
 
     # to_obj overrides but you can still access other recipient attributes
-    to_obj.black = '#444'  # "soft" black
-    assert to_obj.black == '#444'
-    assert to_obj.white == '#fff'
+    #  "soft" black
+    to_obj.black = "#444"  # type: ignore[attr-defined]
+    assert to_obj.black == "#444"
+    assert to_obj.white == "#fff"
 
     # all appropriate items are in dir() exactly once
     for attr in ['black', 'white', 'gray']:
         assert dir(to_obj).count(attr) == 1
 
 
-def test_delegate_objects():
+def test_delegate_objects() -> None:
     class R1:
         a = 1
         b = 2
@@ -141,7 +142,7 @@ def test_delegate_objects():
         assert dir(to_objs).count(attr) == 1
 
 
-def test_delegate_both():
+def test_delegate_both() -> None:
     class Recipient:
         rock = 0
         paper = 1

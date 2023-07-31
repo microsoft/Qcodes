@@ -7,7 +7,12 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from qcodes.data.data_array import DataArray
+try:
+    from qcodes_loop.data.data_array import DataArray
+
+    has_loop = True
+except ImportError:
+    has_loop = False
 
 from .parameter_base import ParameterBase
 from .sequence_helpers import is_sequence_of
@@ -149,13 +154,21 @@ class ArrayParameter(ParameterBase):
         # require one setpoint per dimension of shape
         sp_shape = (len(shape),)
 
-        sp_types = (
-            nt,
-            DataArray,
-            collections.abc.Sequence,
-            collections.abc.Iterator,
-            np.ndarray,
-        )
+        if has_loop:
+            sp_types: tuple[type, ...] = (
+                nt,
+                DataArray,
+                collections.abc.Sequence,
+                collections.abc.Iterator,
+                np.ndarray,
+            )
+        else:
+            sp_types = (
+                nt,
+                collections.abc.Sequence,
+                collections.abc.Iterator,
+                np.ndarray,
+            )
         if setpoints is not None and not is_sequence_of(
             setpoints, sp_types, shape=sp_shape
         ):

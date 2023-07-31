@@ -3,7 +3,7 @@ from qcodes.parameters import Parameter
 from .conftest import ParameterMemory
 
 
-def test_param_cmd_with_parsing():
+def test_param_cmd_with_parsing() -> None:
 
     mem = ParameterMemory()
 

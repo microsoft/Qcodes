@@ -7,7 +7,7 @@ import os
 from collections.abc import Mapping
 from os.path import expanduser
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 import jsonschema
 
@@ -379,7 +379,7 @@ class Config:
         """
         val = self.current_config
         if val is None:
-            raise RuntimeError(f"Config is empty, cannot describe entry.")
+            raise RuntimeError("Config is empty, cannot describe entry.")
         if self.current_schema is None:
             raise RuntimeError("No schema found, cannot describe entry.")
         sch = self.current_schema["properties"]
@@ -422,7 +422,7 @@ class Config:
         return output
 
 
-class DotDict(Dict[str, Any]):
+class DotDict(dict[str, Any]):
     """
     Wrapper dict that allows to get dotted attributes
 

@@ -1,6 +1,10 @@
 """Set up the main qcodes namespace."""
 
-# flake8: noqa (we don't need the "<...> imported but unused" error)
+# ruff: noqa: F401, E402
+# This module still contains a lot of short hand imports
+# since these imports are discouraged and they are officially
+# added elsewhere under their respective submodules we cannot add
+# them to __all__ here so silence the warning.
 
 # config
 import warnings
@@ -84,26 +88,6 @@ if config.core.import_legacy_api:
         "Please avoid setting this in your `qcodesrc.json` config file.",
         QCoDeSDeprecationWarning,
     )
-
-
-try:
-    _register_magic = config.core.get('register_magic', False)
-    if _register_magic is not False:
-        # get_ipython is part of the public api but IPython does
-        # not use __all__ to mark this
-        from IPython import get_ipython  # type: ignore[attr-defined]
-
-        # Check if we are in IPython
-        ip = get_ipython()
-        if ip is not None:
-            from qcodes.utils.magic import register_magic_class
-
-            register_magic_class(magic_commands=_register_magic)
-except ImportError:
-    pass
-except RuntimeError as e:
-    print(e)
-
 
 def test(**kwargs: Any) -> int:
     """

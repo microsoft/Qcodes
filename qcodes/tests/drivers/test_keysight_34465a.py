@@ -43,25 +43,25 @@ def driver_with_read_and_fetch_mocked(val_volt):
         Keysight_34465A.close_all()
 
 
-def test_init(driver):
+def test_init(driver) -> None:
     idn = driver.IDN()
     assert idn['vendor'] == 'Keysight'
     assert idn['model'] == '34465A'
 
 
-def test_has_dig_option(driver):
+def test_has_dig_option(driver) -> None:
     assert True is driver.has_DIG
 
 
-def test_model_flag(driver):
+def test_model_flag(driver) -> None:
     assert True is driver.is_34465A_34470A
 
 
-def test_reset(driver):
+def test_reset(driver) -> None:
     driver.reset()
 
 
-def test_NPLC(driver):
+def test_NPLC(driver) -> None:
     assert driver.NPLC.get() == 10.0
     driver.NPLC.set(0.2)
     assert driver.NPLC.get() == 0.2
@@ -69,19 +69,19 @@ def test_NPLC(driver):
 
 
 @pytest.mark.parametrize("val_volt", ['100.0'])
-def test_get_voltage(driver_with_read_and_fetch_mocked, val_volt):
+def test_get_voltage(driver_with_read_and_fetch_mocked, val_volt) -> None:
     voltage = driver_with_read_and_fetch_mocked.volt.get()
     assert voltage == 100.0
 
 
 @pytest.mark.parametrize("val_volt", ['9.9e37'])
-def test_get_voltage_plus_inf(driver_with_read_and_fetch_mocked, val_volt):
+def test_get_voltage_plus_inf(driver_with_read_and_fetch_mocked, val_volt) -> None:
     voltage = driver_with_read_and_fetch_mocked.volt.get()
     assert voltage == np.inf
 
 
 @pytest.mark.parametrize("val_volt", ['-9.9e37'])
-def test_get_voltage_minus_inf(driver_with_read_and_fetch_mocked, val_volt):
+def test_get_voltage_minus_inf(driver_with_read_and_fetch_mocked, val_volt) -> None:
     voltage = driver_with_read_and_fetch_mocked.volt.get()
     assert voltage == -np.inf
 
@@ -91,14 +91,14 @@ def test_get_voltage_minus_inf(driver_with_read_and_fetch_mocked, val_volt):
                                      "fail. The problem is coming from "
                                      "timetrace().")
 @pytest.mark.parametrize("val_volt", ['10, 9.9e37, -9.9e37'])
-def test_get_timetrace(driver_with_read_and_fetch_mocked, val_volt):
+def test_get_timetrace(driver_with_read_and_fetch_mocked, val_volt) -> None:
     driver_with_read_and_fetch_mocked.timetrace_npts(3)
     assert driver_with_read_and_fetch_mocked.timetrace_npts() == 3
     voltage = driver_with_read_and_fetch_mocked.timetrace()
     assert (voltage == np.array([10.0, np.inf, -np.inf])).all()
 
 
-def test_set_get_autorange(driver):
+def test_set_get_autorange(driver) -> None:
     ar = driver.autorange.get()
     assert ar == 'OFF'
     driver.autorange.set('ON')
@@ -109,7 +109,7 @@ def test_set_get_autorange(driver):
     assert ar == 'OFF'
 
 
-def test_increase_decrease_range(driver):
+def test_increase_decrease_range(driver) -> None:
     driver_range_user = driver.ranges[2]
     driver.increase_range(driver_range_user)
     assert driver.range() == driver.ranges[3]
@@ -124,7 +124,7 @@ def test_increase_decrease_range(driver):
     assert driver.range() == driver.ranges[1]
 
 
-def test_display_text(driver):
+def test_display_text(driver) -> None:
 
     original_text = driver.display.text()
     assert original_text == ""

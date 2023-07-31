@@ -4,15 +4,15 @@ import pytest
 from hypothesis import HealthCheck, given, settings
 from numpy.testing import assert_allclose
 
-import qcodes as qc
 from qcodes.dataset.data_export import _get_data_from_ds, get_data_by_id
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.measurements import Measurement
+from qcodes.parameters import ManualParameter
 from qcodes.utils import QCoDeSDeprecationWarning
 
 
-def test_get_data_by_id_order(dataset):
+def test_get_data_by_id_order(dataset) -> None:
     """
     Test that the added values of setpoints end up associated with the correct
     setpoint parameter, irrespective of the ordering of those setpoint
@@ -59,7 +59,7 @@ def test_get_data_by_id_order(dataset):
 def test_datasaver_multidimarrayparameter_as_array(
         SpectrumAnalyzer,
         bg_writing
-):
+) -> None:
     array_param = SpectrumAnalyzer.multidimspectrum
     meas = Measurement()
     meas.register_parameter(array_param, paramtype='array')
@@ -75,35 +75,40 @@ def test_datasaver_multidimarrayparameter_as_array(
     for datadict_list in datadicts:
         assert len(datadict_list) == 4
         for datadict in datadict_list:
-
-            datadict['data'].shape = (np.prod(expected_shape),)
-            if datadict['name'] == "dummy_SA_Frequency0":
-                temp_data = np.linspace(array_param.start,
-                                        array_param.stop,
-                                        array_param.npts[0])
-                expected_data = np.repeat(temp_data,
-                                          expected_shape[2] * expected_shape[3])
-            if datadict['name'] == "dummy_SA_Frequency1":
-                temp_data = np.linspace(array_param.start,
-                                        array_param.stop,
-                                        array_param.npts[1])
-                expected_data = np.tile(np.repeat(temp_data, expected_shape[3]),
-                                        expected_shape[1])
-            if datadict['name'] == "dummy_SA_Frequency2":
-                temp_data = np.linspace(array_param.start,
-                                        array_param.stop,
-                                        array_param.npts[2])
-                expected_data = np.tile(temp_data,
-                                        expected_shape[1] * expected_shape[2])
-            if datadict['name'] == "dummy_SA_multidimspectrum":
+            datadict["data"].shape = (int(np.prod(expected_shape)),)
+            if datadict["name"] == "dummy_SA_Frequency0":
+                temp_data = np.linspace(
+                    array_param.start, array_param.stop, array_param.npts[0]
+                )
+                expected_data = np.repeat(
+                    temp_data, expected_shape[2] * expected_shape[3]
+                )
+            elif datadict["name"] == "dummy_SA_Frequency1":
+                temp_data = np.linspace(
+                    array_param.start, array_param.stop, array_param.npts[1]
+                )
+                expected_data = np.tile(
+                    np.repeat(temp_data, expected_shape[3]), expected_shape[1]
+                )
+            elif datadict["name"] == "dummy_SA_Frequency2":
+                temp_data = np.linspace(
+                    array_param.start, array_param.stop, array_param.npts[2]
+                )
+                expected_data = np.tile(
+                    temp_data, expected_shape[1] * expected_shape[2]
+                )
+            elif datadict["name"] == "dummy_SA_multidimspectrum":
                 expected_data = inserted_data.ravel()
+            else:
+                raise RuntimeError(f"Unexpected datadict item {datadict['name']}")
             assert_allclose(datadict['data'], expected_data)
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.usefixtures("experiment")
-def test_datasaver_multidimarrayparameter_as_numeric(SpectrumAnalyzer,
-                                                     bg_writing):
+def test_datasaver_multidimarrayparameter_as_numeric(
+    SpectrumAnalyzer, bg_writing
+) -> None:
     """
     Test that storing a multidim Array parameter as numeric unravels the
     parameter as expected.
@@ -128,28 +133,32 @@ def test_datasaver_multidimarrayparameter_as_numeric(SpectrumAnalyzer,
     for datadict_list in datadicts:
         assert len(datadict_list) == 4
         for datadict in datadict_list:
-
-            datadict['data'].shape = (np.prod(expected_shape),)
-            if datadict['name'] == "dummy_SA_Frequency0":
-                temp_data = np.linspace(array_param.start,
-                                        array_param.stop,
-                                        array_param.npts[0])
-                expected_data = np.repeat(temp_data,
-                                          expected_shape[1] * expected_shape[2])
-            if datadict['name'] == "dummy_SA_Frequency1":
-                temp_data = np.linspace(array_param.start,
-                                        array_param.stop,
-                                        array_param.npts[1])
-                expected_data = np.tile(np.repeat(temp_data, expected_shape[2]),
-                                        expected_shape[0])
-            if datadict['name'] == "dummy_SA_Frequency2":
-                temp_data = np.linspace(array_param.start,
-                                        array_param.stop,
-                                        array_param.npts[2])
-                expected_data = np.tile(temp_data,
-                                        expected_shape[0] * expected_shape[1])
-            if datadict['name'] == "dummy_SA_multidimspectrum":
+            datadict["data"].shape = (np.prod(expected_shape),)
+            if datadict["name"] == "dummy_SA_Frequency0":
+                temp_data = np.linspace(
+                    array_param.start, array_param.stop, array_param.npts[0]
+                )
+                expected_data = np.repeat(
+                    temp_data, expected_shape[1] * expected_shape[2]
+                )
+            elif datadict["name"] == "dummy_SA_Frequency1":
+                temp_data = np.linspace(
+                    array_param.start, array_param.stop, array_param.npts[1]
+                )
+                expected_data = np.tile(
+                    np.repeat(temp_data, expected_shape[2]), expected_shape[0]
+                )
+            elif datadict["name"] == "dummy_SA_Frequency2":
+                temp_data = np.linspace(
+                    array_param.start, array_param.stop, array_param.npts[2]
+                )
+                expected_data = np.tile(
+                    temp_data, expected_shape[0] * expected_shape[1]
+                )
+            elif datadict["name"] == "dummy_SA_multidimspectrum":
                 expected_data = inserted_data.ravel()
+            else:
+                raise RuntimeError(f"Unexpected datadict item {datadict['name']}")
             assert_allclose(datadict['data'], expected_data)
 
 
@@ -159,9 +168,9 @@ def test_datasaver_multidimarrayparameter_as_numeric(SpectrumAnalyzer,
 @pytest.mark.parametrize("bg_writing", [True, False])
 @pytest.mark.parametrize("storage_type", ['numeric', 'array'])
 @pytest.mark.usefixtures("experiment")
-def test_datasaver_array_parameters_channel(channel_array_instrument,
-                                            DAC, N, storage_type,
-                                            bg_writing):
+def test_datasaver_array_parameters_channel(
+    channel_array_instrument, DAC, N, storage_type, bg_writing
+) -> None:
     array_param = channel_array_instrument.A.dummy_array_parameter
     meas = Measurement()
     meas.register_parameter(DAC.ch1)
@@ -176,9 +185,9 @@ def test_datasaver_array_parameters_channel(channel_array_instrument,
     datadicts = _get_data_from_ds(datasaver.dataset)
     # one dependent parameter
     assert len(datadicts) == 1
-    datadicts = datadicts[0]
-    assert len(datadicts) == len(meas.parameters)
-    for datadict in datadicts:
+    sub_datadicts = datadicts[0]
+    assert len(sub_datadicts) == len(meas.parameters)
+    for datadict in sub_datadicts:
         if storage_type == "array":
             assert datadict["data"].shape == (N, M)
         else:
@@ -190,8 +199,9 @@ def test_datasaver_array_parameters_channel(channel_array_instrument,
 @given(N=hst.integers(min_value=5, max_value=500))
 @pytest.mark.usefixtures("experiment")
 @pytest.mark.parametrize("bg_writing", [True, False])
-def test_datasaver_array_parameters_array(channel_array_instrument, DAC, N,
-                                          bg_writing):
+def test_datasaver_array_parameters_array(
+    channel_array_instrument, DAC, N, bg_writing
+) -> None:
     """
     Test that storing array parameters inside a loop works as expected
     """
@@ -218,23 +228,25 @@ def test_datasaver_array_parameters_array(channel_array_instrument, DAC, N,
     datadicts = _get_data_from_ds(datasaver.dataset)
     # one dependent parameter
     assert len(datadicts) == 1
-    datadicts = datadicts[0]
-    assert len(datadicts) == len(meas.parameters)
-    for datadict in datadicts:
+    sub_datadicts = datadicts[0]
+    assert len(sub_datadicts) == len(meas.parameters)
+    for datadict in sub_datadicts:
         if datadict['name'] == 'dummy_dac_ch1':
             expected_data = np.repeat(dac_datapoints, M).reshape(N, M)
-        if datadict['name'] == dependency_name:
+        elif datadict["name"] == dependency_name:
             expected_data = np.tile(np.linspace(5, 9, 5), (N, 1))
-        if datadict['name'] == 'dummy_channel_inst_ChanA_dummy_array_parameter':
+        elif datadict["name"] == "dummy_channel_inst_ChanA_dummy_array_parameter":
             expected_data = np.empty((N, M))
             expected_data[:] = 2.
+        else:
+            raise RuntimeError(f"Unexpected datadict item {datadict['name']}")
         assert_allclose(datadict['data'], expected_data)
 
         assert datadict["data"].shape == (N, M)
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
-def test_datasaver_multidim_array(experiment, bg_writing):
+def test_datasaver_multidim_array(experiment, bg_writing) -> None:
     """
     Test that inserting multidim parameters as arrays works as expected
     """
@@ -245,10 +257,10 @@ def test_datasaver_multidim_array(experiment, bg_writing):
     data_mapping = {name: i for i, name in
                     zip(range(4), ['x1', 'x2', 'y1', 'y2'])}
 
-    x1 = qc.ManualParameter('x1')
-    x2 = qc.ManualParameter('x2')
-    y1 = qc.ManualParameter('y1')
-    y2 = qc.ManualParameter('y2')
+    x1 = ManualParameter("x1")
+    x2 = ManualParameter("x2")
+    y1 = ManualParameter("y1")
+    y2 = ManualParameter("y2")
 
     meas.register_parameter(x1, paramtype='array')
     meas.register_parameter(x2, paramtype='array')
@@ -278,17 +290,17 @@ def test_datasaver_multidim_array(experiment, bg_writing):
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
-def test_datasaver_multidim_numeric(experiment, bg_writing):
+def test_datasaver_multidim_numeric(experiment, bg_writing) -> None:
     """
     Test that inserting multidim parameters as numeric works as expected
     """
     meas = Measurement(experiment)
     size1 = 10
     size2 = 15
-    x1 = qc.ManualParameter('x1')
-    x2 = qc.ManualParameter('x2')
-    y1 = qc.ManualParameter('y1')
-    y2 = qc.ManualParameter('y2')
+    x1 = ManualParameter("x1")
+    x2 = ManualParameter("x2")
+    y1 = ManualParameter("y1")
+    y2 = ManualParameter("y2")
 
     data_mapping = {name: i for i, name in
                     zip(range(4), ['x1', 'x2', 'y1', 'y2'])}

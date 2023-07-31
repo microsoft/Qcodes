@@ -1,15 +1,18 @@
 name: Run pytest with minimum requirements
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 on:
   push:
     branches:
       - 'master'
       - 'release/*'
-      - 'staging'
-      - 'trying'
     tags:
       - 'v*'
   pull_request:
+  merge_group:
+    branches: ['master']
 
 jobs:
   pytestmin:
@@ -18,18 +21,17 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        python-version: ["3.8"]
+        python-version: ["3.9"]
     env:
-      DISPLAY: ':99.0'
       OS: ${{ matrix.os }}
       PYTHON: ${{ matrix.python-version }}
 
     steps:
-    - uses: actions/checkout@v3.3.0
+    - uses: actions/checkout@v3.5.3
       with:
         submodules: true
-    - name: setup ubuntu-latest xvfb
-      uses: ./.github/actions/setup-ubuntu-latest-xvfb
+        # we need full history with tags for the version number
+        fetch-depth: '0'
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4.3.1
       with:

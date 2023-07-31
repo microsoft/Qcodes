@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import unittest
-from typing import Optional
+
+from qcodes.instrument import Instrument
 
 """
 This module defines:
@@ -28,7 +31,8 @@ Using `DriverTestCase` is pretty easy:
 
 class DriverTestCase(unittest.TestCase):
     # override this in a subclass
-    driver = None  # type: Optional[type]
+    driver: type[Instrument] | None = None
+    instrument: Instrument
 
     @classmethod
     def setUpClass(cls):
@@ -60,7 +64,7 @@ class DriverTestCase(unittest.TestCase):
         cls.instrument = instances[-1]
 
 
-def test_instruments(verbosity=1):
+def test_instruments(verbosity=1) -> None:
     """
     Discover available instruments and test them all
     Unlike test_instrument, this does NOT reload tests prior to running them
@@ -70,14 +74,14 @@ def test_instruments(verbosity=1):
     import qcodes
     import qcodes.instrument_drivers as qcdrivers
 
-    driver_path = qcdrivers.__path__[0]
+    driver_path = list(qcdrivers.__path__)[0]
     suite = unittest.defaultTestLoader.discover(
-        driver_path, top_level_dir=qcodes.__path__[0]
+        driver_path, top_level_dir=list(qcodes.__path__)[0]
     )
     unittest.TextTestRunner(verbosity=verbosity).run(suite)
 
 
-def test_instrument(instrument_testcase, verbosity=2):
+def test_instrument(instrument_testcase, verbosity=2) -> None:
     """
     Runs one instrument testcase
     Reloads the test case before running it

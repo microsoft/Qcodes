@@ -6,6 +6,7 @@ from pathlib import Path
 from unittest.mock import PropertyMock, mock_open
 
 import jsonschema
+import jsonschema.exceptions
 import pytest
 
 import qcodes
@@ -191,18 +192,16 @@ def _make_mock_config(mocker):
     yield load_config
 
 
-def test_missing_config_file(config):
+def test_missing_config_file(config) -> None:
     with pytest.raises(FileNotFoundError):
         config.load_config("./missing.json")
 
 
-@pytest.mark.skipif(Path.cwd() == Path.home(),
-                    reason="This test requires that "
-                           "working dir is different from homedir.")
-def test_default_config_files(
-        config,
-        load_config
-):
+@pytest.mark.skipif(
+    Path.cwd() == Path.home(),
+    reason="This test requires that " "working dir is different from homedir.",
+)
+def test_default_config_files(config, load_config) -> None:
     load_config.side_effect = partial(side_effect, GOOD_CONFIG_MAP)
     # don't try to load custom schemas
     config.schema_cwd_file_name = None
@@ -216,7 +215,7 @@ def test_default_config_files(
 @pytest.mark.skipif(Path.cwd() == Path.home(),
                     reason="This test requires that "
                            "working dir is different from homedir.")
-def test_bad_config_files(config, load_config):
+def test_bad_config_files(config, load_config) -> None:
 
     load_config.side_effect = partial(side_effect, BAD_CONFIG_MAP)
     # don't try to load custom schemas
@@ -231,7 +230,7 @@ def test_bad_config_files(config, load_config):
 @pytest.mark.skipif(Path.cwd() == Path.home(),
                     reason="This test requires that "
                            "working dir is different from homedir.")
-def test_user_schema(config, load_config, mocker):
+def test_user_schema(config, load_config, mocker) -> None:
     mocker.patch("builtins.open", mock_open(read_data=USER_SCHEMA))
     load_config.side_effect = partial(side_effect, GOOD_CONFIG_MAP)
     config.defaults, _ = config.load_default()
@@ -239,7 +238,7 @@ def test_user_schema(config, load_config, mocker):
     assert config == CONFIG
 
 
-def test_bad_user_schema(config, load_config, mocker):
+def test_bad_user_schema(config, load_config, mocker) -> None:
     mocker.patch("builtins.open", mock_open(read_data=USER_SCHEMA))
     load_config.side_effect = partial(side_effect, BAD_CONFIG_MAP)
     with pytest.raises(jsonschema.exceptions.ValidationError):
@@ -247,7 +246,7 @@ def test_bad_user_schema(config, load_config, mocker):
         config.update_config()
 
 
-def test_update_user_config(config, mocker):
+def test_update_user_config(config, mocker) -> None:
 
     myconfig = mocker.patch.object(
         Config,
@@ -261,7 +260,7 @@ def test_update_user_config(config, mocker):
     assert config.current_config == UPDATED_CONFIG
 
 
-def test_update_and_validate_user_config(config, mocker):
+def test_update_and_validate_user_config(config, mocker) -> None:
 
     myconfig = mocker.patch.object(
         Config,
@@ -282,7 +281,7 @@ def test_update_and_validate_user_config(config, mocker):
 
 
 @pytest.mark.usefixtures("default_config")
-def test_update_from_path(path_to_config_file_on_disk):
+def test_update_from_path(path_to_config_file_on_disk) -> None:
     cfg = qcodes.config
 
     # check that the default is still the default
@@ -300,7 +299,7 @@ def test_update_from_path(path_to_config_file_on_disk):
     assert cfg.current_config_path == expected_path
 
 
-def test_repr():
+def test_repr() -> None:
     cfg = qcodes.config
     rep = cfg.__repr__()
 
@@ -312,7 +311,7 @@ def test_repr():
 
 
 @pytest.mark.usefixtures("default_config")
-def test_add_and_describe():
+def test_add_and_describe() -> None:
     """
     Test that a key can be added and described
     """

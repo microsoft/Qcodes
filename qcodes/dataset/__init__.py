@@ -21,6 +21,7 @@ from .dond.do_0d import do0d
 from .dond.do_1d import do1d
 from .dond.do_2d import do2d
 from .dond.do_nd import dond
+from .dond.do_nd_utils import BreakConditionInterrupt
 from .dond.sweeps import AbstractSweep, ArraySweep, LinSweep, LogSweep, TogetherSweep
 from .experiment_container import (
     experiments,
@@ -32,6 +33,7 @@ from .experiment_container import (
 )
 from .experiment_settings import get_default_experiment_id, reset_default_experiment_id
 from .export_config import get_data_export_path
+from .guid_helpers import guids_from_dbs, guids_from_dir, guids_from_list_str
 from .legacy_import import import_dat_file
 from .measurements import Measurement
 from .plotting import plot_by_id, plot_dataset
@@ -52,6 +54,7 @@ from .threading import (
 __all__ = [
     "AbstractSweep",
     "ArraySweep",
+    "BreakConditionInterrupt",
     "ConnectionPlus",
     "DataSetProtocol",
     "DataSetType",
@@ -59,13 +62,13 @@ __all__ = [
     "LinSweep",
     "LogSweep",
     "Measurement",
-    "TogetherSweep",
     "ParamSpec",
     "ParamSpecTree",
     "RunDescriber",
     "SQLiteSettings",
     "SequentialParamsCaller",
     "ThreadPoolParamsCaller",
+    "TogetherSweep",
     "call_params_threaded",
     "connect",
     "do0d",
@@ -77,6 +80,9 @@ __all__ = [
     "get_data_export_path",
     "get_default_experiment_id",
     "get_guids_by_run_spec",
+    "guids_from_dbs",
+    "guids_from_dir",
+    "guids_from_list_str",
     "import_dat_file",
     "initialise_database",
     "initialise_or_create_database_at",

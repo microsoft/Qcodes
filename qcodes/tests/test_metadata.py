@@ -1,6 +1,11 @@
+from __future__ import annotations
+
+from typing import Any
+
 import pytest
 
 from qcodes.metadatable import Metadatable
+from qcodes.metadatable.metadatable_base import Snapshot
 from qcodes.utils import diff_param_values
 
 
@@ -13,11 +18,11 @@ class HasSnapshotBase(Metadatable):
 class HasSnapshot(Metadatable):
     # Users shouldn't do this... but we'll test its behavior
     # for completeness
-    def snapshot(self, update=False):
-        return {'fruit': 'kiwi'}
+    def snapshot(self, update: bool | None = False) -> Snapshot:  # type: ignore[misc]
+        return {"fruit": "kiwi"}
 
 
-DATASETLEFT = {
+DATASETLEFT: dict[str, dict[str, dict[str, Any]]] = {
     "station": {
         "parameters": {
             "apple": {
@@ -41,7 +46,7 @@ DATASETLEFT = {
         }
     }
 }
-DATASETRIGHT = {
+DATASETRIGHT: dict[str, dict[str, dict[str, Any]]] = {
     "station": {
         "parameters": {
             "apple": {
@@ -71,44 +76,43 @@ DATASETRIGHT = {
 }
 
 
-def test_load():
+def test_load() -> None:
     m = Metadatable()
     assert m.metadata == {}
-    m.load_metadata({1: 2, 3: 4})
-    assert m.metadata == {1: 2, 3: 4}
-    m.load_metadata({1: 5})
-    assert m.metadata == {1: 5, 3: 4}
+    m.load_metadata({"1": 2, "3": 4})
+    assert m.metadata == {"1": 2, "3": 4}
+    m.load_metadata({"1": 5})
+    assert m.metadata == {"1": 5, "3": 4}
 
 
-def test_init():
+def test_init() -> None:
     with pytest.raises(TypeError):
-        Metadatable(metadata={2: 3}, not_metadata={4: 5})
+        Metadatable(metadata={"2": 3}, not_metadata={4: 5})  # type: ignore[call-arg]
 
-    m = Metadatable(metadata={2: 3})
-    assert m.metadata == {2: 3}
+    m = Metadatable(metadata={"2": 3})
+    assert m.metadata == {"2": 3}
 
 
-def test_snapshot():
-    m = Metadatable(metadata={6: 7})
+def test_snapshot() -> None:
+    m = Metadatable(metadata={"6": 7})
     assert m.snapshot_base() == {}
-    assert m.snapshot() == {'metadata': {6: 7}}
-    del m.metadata[6]
+    assert m.snapshot() == {"metadata": {"6": 7}}
+    del m.metadata["6"]
     assert m.snapshot() == {}
 
-    sb = HasSnapshotBase(metadata={7: 8})
-    assert sb.snapshot_base() == {'cheese': 'gruyere'}
-    assert sb.snapshot() == \
-           {'cheese': 'gruyere', 'metadata': {7: 8}}
-    del sb.metadata[7]
+    sb = HasSnapshotBase(metadata={"7": 8})
+    assert sb.snapshot_base() == {"cheese": "gruyere"}
+    assert sb.snapshot() == {"cheese": "gruyere", "metadata": {"7": 8}}
+    del sb.metadata["7"]
     assert sb.snapshot() == sb.snapshot_base()
 
-    s = HasSnapshot(metadata={8: 9})
+    s = HasSnapshot(metadata={"8": 9})
     assert s.snapshot() == {'fruit': 'kiwi'}
     assert s.snapshot_base() == {}
-    assert s.metadata == {8: 9}
+    assert s.metadata == {"8": 9}
 
 
-def test_dataset_diff():
+def test_dataset_diff() -> None:
     diff = diff_param_values(DATASETLEFT, DATASETRIGHT)
     assert diff.changed == {
             "apple": ("orange", "grape"),
@@ -123,7 +127,7 @@ def test_dataset_diff():
         }
 
 
-def test_station_diff():
+def test_station_diff() -> None:
     left = DATASETLEFT["station"]
     right = DATASETRIGHT["station"]
 
@@ -141,7 +145,7 @@ def test_station_diff():
         }
 
 
-def test_instrument_diff():
+def test_instrument_diff() -> None:
     left = DATASETLEFT["station"]["instruments"]["another"]
     right = DATASETRIGHT["station"]["instruments"]["another"]
 

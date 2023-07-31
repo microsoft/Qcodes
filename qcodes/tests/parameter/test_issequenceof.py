@@ -1,10 +1,10 @@
-from typing import Any, List, Tuple
+from typing import Any
 
 import pytest
 
 from qcodes.parameters.sequence_helpers import is_sequence_of
 
-simple_good: List[Tuple[Any, ...]] = [
+simple_good: list[tuple[Any, ...]] = [
     # empty lists pass without even checking that we provided a
     # valid type spec
     ([], None),
@@ -20,7 +20,7 @@ simple_good: List[Tuple[Any, ...]] = [
 
 
 @pytest.mark.parametrize("args", simple_good)
-def test_simple_good(args):
+def test_simple_good(args) -> None:
     assert is_sequence_of(*args)
 
 
@@ -28,17 +28,17 @@ simple_bad = [(1,), (1, int), ([1, 2.0], int), ([1, 2], float), ([1, 2], (float,
 
 
 @pytest.mark.parametrize("args", simple_bad)
-def test_simple_bad(args):
+def test_simple_bad(args) -> None:
     assert not is_sequence_of(*args)
     # second arg, if provided, must be a type or tuple of types
     # failing this doesn't return False, it raises an error
 
 
-def test_examples_raises():
+def test_examples_raises() -> None:
     with pytest.raises(TypeError):
-        is_sequence_of([1], 1)
+        is_sequence_of([1], 1)  # type: ignore[arg-type]
     with pytest.raises(TypeError):
-        is_sequence_of([1], (1, 2))
+        is_sequence_of([1], (1, 2))  # type: ignore[arg-type]
 
 
 good_depth = [
@@ -51,7 +51,7 @@ good_depth = [
 
 
 @pytest.mark.parametrize("args", good_depth)
-def test_depth_good(args):
+def test_depth_good(args) -> None:
     assert is_sequence_of(*args)
 
 
@@ -59,7 +59,7 @@ bad_depth = [([1], int, 2), ([[1]], int, 1), ([[1]], float, 2)]
 
 
 @pytest.mark.parametrize("args", bad_depth)
-def test_depth_bad(args):
+def test_depth_bad(args) -> None:
     assert not is_sequence_of(*args)
 
 
@@ -77,7 +77,7 @@ good_shapes = [
 
 
 @pytest.mark.parametrize("args", good_shapes)
-def test_shape_good(args):
+def test_shape_good(args) -> None:
     obj, types, shape = args
     assert is_sequence_of(obj, types, shape=shape)
 
@@ -93,12 +93,12 @@ bad_shapes = [
 
 
 @pytest.mark.parametrize("args", bad_shapes)
-def test_shape_bad(args):
+def test_shape_bad(args) -> None:
     obj, types, shape = args
     assert not is_sequence_of(obj, types, shape=shape)
 
 
-def test_shape_depth():
+def test_shape_depth() -> None:
     # there's no reason to provide both shape and depth, but
     # we allow it if they are self-consistent
     with pytest.raises(ValueError):

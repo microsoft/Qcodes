@@ -73,12 +73,11 @@ def version_0_objects():
        paramtype=hst.lists(
            elements=hst.sampled_from(['numeric', 'array', 'text']),
            min_size=6, max_size=6))
-def test_creation(name, sp1, sp2, inff1, inff2, paramtype):
-    invalid_types = ['np.array', 'ndarray', 'lala', '', Number,
-                     ndarray, 0, None]
+def test_creation(name, sp1, sp2, inff1, inff2, paramtype) -> None:
+    invalid_types = ("np.array", "ndarray", "lala", "", Number, ndarray, 0, None)
     for inv_type in invalid_types:
         with pytest.raises(ValueError):
-            ParamSpec(name, inv_type)
+            ParamSpec(name, inv_type)  # type: ignore[arg-type]
 
     if not inff1.isidentifier():
         inff1 = 'inff1'
@@ -110,7 +109,7 @@ def test_creation(name, sp1, sp2, inff1, inff2, paramtype):
 
 
 @given(name=hst.text(min_size=1))
-def test_repr(name):
+def test_repr(name) -> None:
     okay_types = ['array', 'numeric', 'text']
 
     for okt in okay_types:
@@ -132,7 +131,7 @@ alphabet = "".join(chr(i) for i in range(ord("a"), ord("z")))
     name2=hst.text(min_size=4, max_size=100, alphabet=alphabet),
     name3=hst.text(min_size=4, max_size=100, alphabet=alphabet)
 )
-def test_depends_on(name1, name2, name3):
+def test_depends_on(name1, name2, name3) -> None:
     ps2 = ParamSpec(name2, "numeric")
     ps3 = ParamSpec(name3, "numeric")
 
@@ -152,7 +151,7 @@ def test_depends_on(name1, name2, name3):
     name2=hst.text(min_size=4, max_size=100, alphabet=alphabet),
     name3=hst.text(min_size=4, max_size=100, alphabet=alphabet)
 )
-def test_inferred_from(name1, name2, name3):
+def test_inferred_from(name1, name2, name3) -> None:
     ps2 = ParamSpec(name2, "numeric")
     ps3 = ParamSpec(name3, "numeric")
 
@@ -172,7 +171,7 @@ def test_inferred_from(name1, name2, name3):
     name1=hst.text(min_size=4, max_size=100, alphabet=alphabet),
     name2=hst.text(min_size=4, max_size=100, alphabet=alphabet)
 )
-def test_copy(name1, name2):
+def test_copy(name1, name2) -> None:
     ps_indep = ParamSpec(name1, "numeric")
     ps = ParamSpec(name2, "numeric", depends_on=[ps_indep, 'other_param'])
     ps_copy = ps.copy()
@@ -202,7 +201,7 @@ def test_copy(name1, name2):
     assert hash(ps_copy) != hash(ps)
 
 
-def test_convert_to_dict():
+def test_convert_to_dict() -> None:
     p1 = ParamSpec('p1', 'numeric', 'paramspec one', 'no unit',
                    depends_on=['some', 'thing'], inferred_from=['bab', 'bob'])
 
@@ -216,14 +215,14 @@ def test_convert_to_dict():
     assert ser['inferred_from'] == p1._inferred_from
 
 
-def test_from_dict(version_0_dicts, version_0_objects):
+def test_from_dict(version_0_dicts, version_0_objects) -> None:
     for sdict, ps in zip(version_0_dicts, version_0_objects):
         deps = ParamSpec._from_dict(sdict)
         assert ps == deps
 
 
 @given(paramspecs=hst.lists(valid_paramspec_kwargs, min_size=2, max_size=2))
-def test_hash(paramspecs):
+def test_hash(paramspecs) -> None:
     p1 = ParamSpec(**paramspecs[0])
     p2 = ParamSpec(**paramspecs[1])
 
@@ -250,7 +249,8 @@ def test_hash(paramspecs):
        add_to_2_dep=hst.booleans(),
        )
 def test_hash_with_deferred_and_inferred_as_paramspecs(
-        paramspecs, add_to_1_inf, add_to_1_dep, add_to_2_inf, add_to_2_dep):
+    paramspecs, add_to_1_inf, add_to_1_dep, add_to_2_inf, add_to_2_dep
+) -> None:
     """
     Test that hashing works if 'inferred_from' and/or 'depends_on' contain
     actual ParamSpec instances and not just strings.
@@ -288,7 +288,7 @@ def test_hash_with_deferred_and_inferred_as_paramspecs(
 
 
 @given(paramspecs=hst.lists(valid_paramspec_kwargs, min_size=1, max_size=1))
-def test_base_version(paramspecs):
+def test_base_version(paramspecs) -> None:
 
     kwargs = paramspecs[0]
 
@@ -301,7 +301,7 @@ def test_base_version(paramspecs):
     assert ps.base_version() == ps_base
 
 
-def test_not_eq_for_list_attr():
+def test_not_eq_for_list_attr() -> None:
     """
     test that two paramspecs that differ only
     in list attrs are different
@@ -316,7 +316,7 @@ def test_not_eq_for_list_attr():
     assert p1 != p2
 
 
-def test_not_eq_for_str_attr():
+def test_not_eq_for_str_attr() -> None:
     """
     test that two paramspecs that differ only
     in str attrs are different
@@ -333,7 +333,7 @@ def test_not_eq_for_str_attr():
     assert p1 != p2
 
 
-def test_not_eq_non_paramspec():
+def test_not_eq_non_paramspec() -> None:
     """
     test that two paramspecs that differ only
     in str attrs are different

@@ -2,12 +2,14 @@
 A helper module containing a class to keep track of vectors in different
 coordinate systems.
 """
+from __future__ import annotations
 
-
-from typing import Any, List, Literal, Optional, Sequence, Type, TypeVar, Union
+from collections.abc import Sequence
+from typing import Any, Literal, TypeVar, Union
 
 import numpy as np
 
+AllCoordsType = tuple[float, float, float, float, float, float, float]
 NormOrder = Union[None, float, Literal["fro"], Literal["nuc"]]
 T = TypeVar("T", bound="FieldVector")
 
@@ -24,14 +26,16 @@ class FieldVector:
     attributes = ["x", "y", "z", "r", "theta", "phi", "rho"]
     repr_format = "cartesian"
 
-    def __init__(self,
-                 x: Optional[float] = None,
-                 y: Optional[float] = None,
-                 z: Optional[float] = None,
-                 r: Optional[float] = None,
-                 theta: Optional[float] = None,
-                 phi: Optional[float] = None,
-                 rho: Optional[float] = None):
+    def __init__(
+        self,
+        x: float | None = None,
+        y: float | None = None,
+        z: float | None = None,
+        r: float | None = None,
+        theta: float | None = None,
+        phi: float | None = None,
+        rho: float | None = None,
+    ):
         """
         Args:
             x: represents the norm of the projection
@@ -60,7 +64,7 @@ class FieldVector:
 
         self._compute_unknowns()
 
-    def _set_attribute_value(self, attr_name: str, value: Optional[float]) -> None:
+    def _set_attribute_value(self, attr_name: str, value: float | None) -> None:
         if value is None:
             return
 
@@ -76,20 +80,21 @@ class FieldVector:
                 )
 
     def _set_attribute_values(
-        self, attr_names: Sequence[str], values: Sequence[Optional[float]]
+        self, attr_names: Sequence[str], values: Sequence[float | None]
     ) -> None:
         for attr_name, value in zip(attr_names, values):
             self._set_attribute_value(attr_name, value)
 
-    def __getnewargs__(self):
+    def __getnewargs__(self) -> tuple[float | None, float | None, float | None]:
         return self.x, self.y, self.z
 
     @staticmethod
-    def _cartesian_to_other(x, y, z):
+    def _cartesian_to_other(
+        x: float | None, y: float | None, z: float | None
+    ) -> AllCoordsType | None:
         """Convert a cartesian set of coordinates to values of interest."""
-        if any([i is None for i in [x, y, z]]):
+        if x is None or y is None or z is None:
             return None
-
         phi = np.arctan2(y, x)
         rho = np.sqrt(x ** 2 + y ** 2)
         r = np.sqrt(x ** 2 + y ** 2 + z ** 2)
@@ -101,11 +106,12 @@ class FieldVector:
         return x, y, z, r, theta, phi, rho
 
     @staticmethod
-    def _spherical_to_other(r, theta, phi):
+    def _spherical_to_other(
+        r: float | None, theta: float | None, phi: float | None
+    ) -> AllCoordsType | None:
         """Convert from spherical to other representations."""
-        if any([i is None for i in [r, theta, phi]]):
+        if r is None or theta is None or phi is None:
             return None
-
         z = r * np.cos(theta)
         x = r * np.sin(theta) * np.cos(phi)
         y = r * np.sin(theta) * np.sin(phi)
@@ -114,11 +120,12 @@ class FieldVector:
         return x, y, z, r, theta, phi, rho
 
     @staticmethod
-    def _cylindrical_to_other(phi, rho, z):
+    def _cylindrical_to_other(
+        phi: float | None, rho: float | None, z: float | None
+    ) -> AllCoordsType | None:
         """Convert from cylindrical to other representations."""
-        if any([i is None for i in [phi, rho, z]]):
+        if phi is None or rho is None or z is None:
             return None
-
         x = rho * np.cos(phi)
         y = rho * np.sin(phi)
         r = np.sqrt(rho ** 2 + z ** 2)
@@ -230,7 +237,7 @@ class FieldVector:
 
         self._compute_unknowns()
 
-    def get_components(self, *names: str):
+    def get_components(self, *names: str) -> list[float]:
         """Get field components by name."""
 
         def convert_angle_to_degrees(name: str, value: float) -> float:
@@ -246,7 +253,7 @@ class FieldVector:
 
         return components
 
-    def is_equal(self, other: "FieldVector") -> bool:
+    def is_equal(self, other: FieldVector) -> bool:
         """
         Returns ``True`` if ``other`` is equivalent to ``self``, ``False`` otherwise.
         """
@@ -264,7 +271,7 @@ class FieldVector:
     def __setitem__(self, component: str, value: float) -> None:
         self.set_component(**{component: value})
 
-    def __mul__(self, other: Any) -> "FieldVector":
+    def __mul__(self, other: Any) -> FieldVector:
         if not isinstance(other, (float, int)):
             return NotImplemented
 
@@ -273,22 +280,22 @@ class FieldVector:
             for component in 'xyz'
         })
 
-    def __rmul__(self, other: Any) -> "FieldVector":
+    def __rmul__(self, other: Any) -> FieldVector:
         if not isinstance(other, (int, float)):
             return NotImplemented
 
         return self * other
 
-    def __truediv__(self, other: Any) -> "FieldVector":
+    def __truediv__(self, other: Any) -> FieldVector:
         if not isinstance(other, (int, float)):
             return NotImplemented
 
         return self * (1.0 / other)
 
-    def __neg__(self) -> "FieldVector":
+    def __neg__(self) -> FieldVector:
         return -1 * self
 
-    def __add__(self, other: Any) -> "FieldVector":
+    def __add__(self, other: Any) -> FieldVector:
         if not isinstance(other, FieldVector):
             return NotImplemented
 
@@ -297,7 +304,7 @@ class FieldVector:
             for component in 'xyz'
         })
 
-    def __sub__(self, other: Any) -> "FieldVector":
+    def __sub__(self, other: Any) -> FieldVector:
         if not isinstance(other, FieldVector):
             return NotImplemented
 
@@ -321,39 +328,41 @@ class FieldVector:
 
         return float(np.linalg.norm([self.x, self.y, self.z], ord=ord))
 
-    def distance(self, other,
-                 ord: NormOrder = 2  # pylint: disable=redefined-builtin
-                 ) -> float:
+    def distance(
+        self,
+        other: FieldVector,
+        ord: NormOrder = 2,  # pylint: disable=redefined-builtin
+    ) -> float:
         return (self - other).norm(ord=ord)
 
     @property
-    def x(self) -> Optional[float]:
+    def x(self) -> float | None:
         return self._x
 
     @property
-    def y(self) -> Optional[float]:
+    def y(self) -> float | None:
         return self._y
 
     @property
-    def z(self) -> Optional[float]:
+    def z(self) -> float | None:
         return self._z
 
     @property
-    def rho(self) -> Optional[float]:
+    def rho(self) -> float | None:
         return self._rho
 
     @property
-    def theta(self) -> Optional[float]:
+    def theta(self) -> float | None:
         if self._theta is None:
             return None
         return float(np.degrees(self._theta))
 
     @property
-    def r(self) -> Optional[float]:
+    def r(self) -> float | None:
         return self._r
 
     @property
-    def phi(self) -> Optional[float]:
+    def phi(self) -> float | None:
         if self._phi is None:
             return None
         return float(np.degrees(self._phi))
@@ -385,7 +394,7 @@ class FieldVector:
         return np.array([self.x, self.y, self.z, 1])
 
     @classmethod
-    def from_homogeneous(cls: Type[T], hvec: np.ndarray) -> T:
+    def from_homogeneous(cls: type[T], hvec: np.ndarray) -> T:
         # Homogeneous coordinates define an equivalence relation
         #     [x / s, y / s, z / s, 1] == [x, y, z, s].
         # More generally,

@@ -1,11 +1,13 @@
+from collections.abc import Generator
+
 import pytest
 
 from qcodes.parameters import ManualParameter, ScaledParameter
 from qcodes.tests.instrument_mocks import DummyInstrument
 
 
-@pytest.fixture()
-def instrument():
+@pytest.fixture(name="instrument")
+def _make_instrument() -> Generator[DummyInstrument, None, None]:
     instrument = DummyInstrument('dummy')
     try:
         target_name = 'target_parameter'
@@ -19,7 +21,7 @@ def instrument():
             get_cmd=None,
             set_cmd=None
         )
-        instrument.scaler = ScaledParameter(
+        instrument.scaler = ScaledParameter(  # type: ignore[attr-defined]
             instrument.target_parameter,
             division=1
         )
@@ -28,12 +30,12 @@ def instrument():
         instrument.close()
 
 
-def test_constructor(instrument):
+def test_constructor(instrument: DummyInstrument) -> None:
     # Test the behaviour of the constructor
 
     # Require a wrapped parameter
     with pytest.raises(TypeError):
-        ScaledParameter()
+        ScaledParameter()  # type: ignore[call-arg]
 
     # Require a scaling factor
     with pytest.raises(ValueError):
@@ -44,7 +46,7 @@ def test_constructor(instrument):
         ScaledParameter(instrument.target_parameter, division=1, gain=1)
 
 
-def test_namelabel(instrument):
+def test_namelabel(instrument: DummyInstrument) -> None:
     # Test handling of name and label
 
     # Test correct inheritance
@@ -60,7 +62,7 @@ def test_namelabel(instrument):
     assert scaler2.label == scaled_label
 
 
-def test_unit(instrument):
+def test_unit(instrument: DummyInstrument) -> None:
     # Test handling of the units
 
     # Check if the unit is correctly inherited
@@ -78,7 +80,7 @@ def test_unit(instrument):
     assert scaler2.unit == 'K'
 
 
-def test_metadata(instrument):
+def test_metadata(instrument: DummyInstrument) -> None:
     # Test the metadata
 
     test_gain = 3
@@ -107,12 +109,12 @@ def test_metadata(instrument):
     assert snap['metadata']['wrapped_parameter'] == instrument.target_parameter.name
 
 
-def test_wrapped_parameter(instrument):
+def test_wrapped_parameter(instrument: DummyInstrument) -> None:
     # Test if the target parameter is correctly inherited
     assert instrument.scaler.wrapped_parameter == instrument.target_parameter
 
 
-def test_divider(instrument):
+def test_divider(instrument) -> None:
     test_division = 10
     test_value = 5
 
@@ -124,7 +126,7 @@ def test_divider(instrument):
     assert instrument.scaler.role == ScaledParameter.Role.DIVISION
 
 
-def test_multiplier(instrument):
+def test_multiplier(instrument: DummyInstrument) -> None:
     test_multiplier = 10
     test_value = 5
 
@@ -138,7 +140,7 @@ def test_multiplier(instrument):
 
 
 
-def test_variable_gain(instrument):
+def test_variable_gain(instrument: DummyInstrument) -> None:
     test_value = 5
 
     initial_gain = 2

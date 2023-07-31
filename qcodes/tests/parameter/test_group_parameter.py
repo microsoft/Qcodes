@@ -1,6 +1,6 @@
 import re
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 
 import pytest
 
@@ -65,7 +65,7 @@ class Dummy(Instrument):
         return ",".join(str(i) for i in [self._a, self._b])
 
 
-def test_sanity():
+def test_sanity() -> None:
     """
     Test that we can individually address parameters "a" and "b", which belong
     to the same group.
@@ -86,19 +86,20 @@ def test_sanity():
     assert dummy.b() == 10
 
 
-def test_raise_on_get_set_cmd():
+def test_raise_on_get_set_cmd() -> None:
 
     for arg in ["set_cmd", "get_cmd"]:
         kwarg = {arg: ""}
 
         with pytest.raises(ValueError) as e:
-            GroupParameter(name="a", **kwarg)
+            GroupParameter(name="a", **kwarg)  # type: ignore[arg-type]
 
-        assert str(e.value) == "A GroupParameter does not use 'set_cmd' or " \
-                               "'get_cmd' kwarg"
+        assert (
+            str(e.value) == "A GroupParameter does not use 'set_cmd' or 'get_cmd' kwarg"
+        )
 
 
-def test_raises_on_get_set_without_group():
+def test_raises_on_get_set_without_group() -> None:
     param = GroupParameter(name='b')
 
     with pytest.raises(RuntimeError) as e:
@@ -110,7 +111,7 @@ def test_raises_on_get_set_without_group():
     assert str(e.value) == "('Trying to set Group value but no group defined', 'setting b to 1')"
 
 
-def test_raises_runtime_error_on_update_if_get_cmd_is_none():
+def test_raises_runtime_error_on_update_if_get_cmd_is_none() -> None:
     dummy = Dummy("dummy", get_cmd=None)
     msg = ("Cannot update values in the group with "
            "parameters - dummy_a, dummy_b since it "
@@ -118,15 +119,15 @@ def test_raises_runtime_error_on_update_if_get_cmd_is_none():
     with pytest.raises(RuntimeError, match=msg):
         dummy.group.update()
 
-def test_raises_runtime_error_if_set_parameters_called_with_empty_dict():
+def test_raises_runtime_error_if_set_parameters_called_with_empty_dict() -> None:
     dummy = Dummy("dummy")
-    parameters_dict = dict()
+    parameters_dict: dict[str, Any] = {}
     msg = ("Provide at least one group parameter and its value to be set.")
 
     with pytest.raises(RuntimeError, match=msg):
         dummy.group.set_parameters(parameters_dict)
 
-def test_set_parameters_called_for_one_parameter():
+def test_set_parameters_called_for_one_parameter() -> None:
     dummy = Dummy("dummy")
     parameters_dict = {"a": 7}
 
@@ -134,7 +135,8 @@ def test_set_parameters_called_for_one_parameter():
     assert dummy.a() == 7
     assert dummy.b() == 0
 
-def test_set_parameters_called_for_more_than_one_parameters():
+
+def test_set_parameters_called_for_more_than_one_parameters() -> None:
     dummy = Dummy("dummy")
     parameters_dict = {"a": 10, "b": 57}
 
@@ -142,7 +144,8 @@ def test_set_parameters_called_for_more_than_one_parameters():
     assert dummy.a() == 10
     assert dummy.b() == 57
 
-def test_set_parameters_when_parameter_value_not_equal_to_raw_value():
+
+def test_set_parameters_when_parameter_value_not_equal_to_raw_value() -> None:
     dummy = Dummy("dummy", scale_a=10)
     parameters_dict = {"a": 7}
 
@@ -151,7 +154,8 @@ def test_set_parameters_when_parameter_value_not_equal_to_raw_value():
     assert dummy.a.cache.raw_value == 70
     assert dummy.a() == 7
 
-def test_initial_values():
+
+def test_initial_values() -> None:
     initial_a = 42
     initial_b = 43
     dummy = Dummy("dummy", initial_a=initial_a, initial_b=initial_b)
@@ -160,15 +164,15 @@ def test_initial_values():
     assert dummy.b() == initial_b
 
 
-def test_raise_on_not_all_initial_values():
+def test_raise_on_not_all_initial_values() -> None:
     expected_err_msg = (r'Either none or all of the parameters in a group '
                         r'should have an initial value. Found initial values '
                         r'for \[.*\] but not for \[.*\].')
     with pytest.raises(ValueError, match=expected_err_msg):
-        dummy = Dummy("dummy", initial_a=42)
+        Dummy("dummy", initial_a=42)
 
 
-def test_update_group_parameter_reflected_in_cache_of_all_params():
+def test_update_group_parameter_reflected_in_cache_of_all_params() -> None:
     dummy = Dummy("dummy")
     group = dummy.a.group
 
@@ -181,6 +185,7 @@ def test_update_group_parameter_reflected_in_cache_of_all_params():
     group.update()
     after = datetime.now()
 
+    assert dummy.a.cache.timestamp is not None
     assert before <= dummy.a.cache.timestamp
     assert after >= dummy.a.cache.timestamp
 
@@ -191,7 +196,7 @@ def test_update_group_parameter_reflected_in_cache_of_all_params():
     assert dummy.b.cache.get(get_if_invalid=False) == 0
 
 
-def test_get_group_param_updates_cache_of_other_param():
+def test_get_group_param_updates_cache_of_other_param() -> None:
     dummy = Dummy("dummy")
 
     assert dummy.a.cache.timestamp is None
@@ -203,6 +208,7 @@ def test_get_group_param_updates_cache_of_other_param():
     assert dummy.a.get() == 0
     after = datetime.now()
 
+    assert dummy.a.cache.timestamp is not None
     assert before <= dummy.a.cache.timestamp
     assert after >= dummy.a.cache.timestamp
 
@@ -213,7 +219,7 @@ def test_get_group_param_updates_cache_of_other_param():
     assert dummy.b.cache.get(get_if_invalid=False) == 0
 
 
-def test_set_group_param_updates_cache_of_other_param():
+def test_set_group_param_updates_cache_of_other_param() -> None:
     dummy = Dummy("dummy")
 
     assert dummy.a.cache.timestamp is None
@@ -225,6 +231,7 @@ def test_set_group_param_updates_cache_of_other_param():
     dummy.a.set(10)
     after = datetime.now()
 
+    assert dummy.a.cache.timestamp is not None
     assert before <= dummy.a.cache.timestamp
     assert after >= dummy.a.cache.timestamp
 
@@ -235,7 +242,7 @@ def test_set_group_param_updates_cache_of_other_param():
     assert dummy.b.cache.get(get_if_invalid=False) == 0
 
 
-def test_group_param_scale_is_handled():
+def test_group_param_scale_is_handled() -> None:
     dummy = Dummy("dummy", scale_a=10, initial_a=1, initial_b=5)
 
     assert dummy.a.cache.get(get_if_invalid=False) == 1

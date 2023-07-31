@@ -7,16 +7,16 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
 from copy import deepcopy
-from typing import Any, Dict, Tuple, Type
+from typing import Any
 
 import numpy as np
 
 from .param_spec import ParamSpec, ParamSpecBase
 from .versioning.rundescribertypes import InterDependencies_Dict
 
-ParamSpecTree = Dict[ParamSpecBase, Tuple[ParamSpecBase, ...]]
-ParamNameTree = Dict[str, Tuple[str, ...]]
-ErrorTuple = Tuple[Type[Exception], str]
+ParamSpecTree = dict[ParamSpecBase, tuple[ParamSpecBase, ...]]
+ParamNameTree = dict[str, tuple[str, ...]]
+ErrorTuple = tuple[type[Exception], str]
 
 
 class DependencyError(Exception):

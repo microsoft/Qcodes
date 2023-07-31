@@ -1,11 +1,12 @@
 import logging
 
 import pytest
+from pytest import FixtureRequest, LogCaptureFixture
 
 from qcodes.instrument_drivers.tektronix.Keithley_s46 import S46, LockAcquisitionError
 
 
-def test_aliases_dict():
+def test_aliases_dict() -> None:
     """
     Test the class attribute 'aliases' which maps channel aliases
     (e.g. A1, B2, etc) to channel numbers.
@@ -52,7 +53,7 @@ def s46_four():
         driver.close()
 
 
-def test_runtime_error_on_bad_init(request):
+def test_runtime_error_on_bad_init(request: FixtureRequest) -> None:
     """
     If we initialize the driver from an instrument state with more then one
     channel per relay closed, raise a runtime error. An instrument can come to
@@ -71,7 +72,7 @@ def test_runtime_error_on_bad_init(request):
         )
 
 
-def test_query_close_once_at_init(caplog):
+def test_query_close_once_at_init(caplog: LogCaptureFixture) -> None:
     """
     Test that, during initialisation, we query the closed channels only once
     """
@@ -85,7 +86,7 @@ def test_query_close_once_at_init(caplog):
         inst.close()
 
 
-def test_init_six(s46_six, caplog):
+def test_init_six(s46_six: S46, caplog: LogCaptureFixture) -> None:
     """
     Test that the six channel instrument initializes correctly.
     """
@@ -107,7 +108,7 @@ def test_init_six(s46_six, caplog):
         assert s46_six.C1._lock._locked_by is None
 
 
-def test_init_four(s46_four):
+def test_init_four(s46_four: S46) -> None:
     """
     Test that the six channel instrument initializes correctly.
     """
@@ -125,7 +126,7 @@ def test_init_four(s46_four):
             assert not hasattr(s46_four, alias)
 
 
-def test_channel_number_invariance(s46_four, s46_six):
+def test_channel_number_invariance(s46_four: S46, s46_six: S46) -> None:
     """
     Regardless of the channel layout (that is, number of channels per relay),
     channel aliases should represent the same channel. See also page 2-5 of the
@@ -138,7 +139,7 @@ def test_channel_number_invariance(s46_four, s46_six):
             assert channel_four.channel_number == channel_six.channel_number
 
 
-def test_locking_mechanism(s46_six):
+def test_locking_mechanism(s46_six: S46) -> None:
     """
     1) Test that the lock acquisition error is raised if we try to close
     more then once channel per replay
@@ -171,7 +172,7 @@ def test_locking_mechanism(s46_six):
     s46_six.C2("close")
 
 
-def test_is_closed(s46_six):
+def test_is_closed(s46_six: S46) -> None:
     """
     Test the `is_closed` public method
     """

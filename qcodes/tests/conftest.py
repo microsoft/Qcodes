@@ -4,8 +4,9 @@ import copy
 import gc
 import os
 import sys
+from collections.abc import Generator
 from pathlib import Path
-from typing import TYPE_CHECKING, Generator
+from typing import TYPE_CHECKING
 
 import pytest
 from hypothesis import settings
@@ -17,6 +18,7 @@ from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.experiment_container import Experiment, new_experiment
+from qcodes.station import Station
 
 settings.register_profile("ci", deadline=1000)
 
@@ -203,3 +205,11 @@ def _make_standalone_parameters_dataset(
     )
     dataset.mark_completed()
     yield dataset
+
+
+@pytest.fixture(name="set_default_station_to_none")
+def _make_set_default_station_to_none():
+    """Makes sure that after startup and teardown there is no default station"""
+    Station.default = None
+    yield
+    Station.default = None

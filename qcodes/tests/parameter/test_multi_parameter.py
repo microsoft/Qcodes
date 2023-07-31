@@ -1,28 +1,30 @@
+from typing import Any
+
 import pytest
 
-from qcodes.parameters import MultiParameter
+from qcodes.parameters import MultiParameter, ParamRawDataType
 
 from .conftest import blank_instruments, named_instrument
 
 
 class SimpleMultiParam(MultiParameter):
-    def __init__(self, return_val, *args, **kwargs):
+    def __init__(self, return_val: Any, *args: Any, **kwargs: Any):
         self._return_val = return_val
         self._get_count = 0
         super().__init__(*args, **kwargs)
 
-    def get_raw(self):
+    def get_raw(self) -> ParamRawDataType:
         self._get_count += 1
         return self._return_val
 
 
 class SettableMulti(SimpleMultiParam):
-    def set_raw(self, value):
+    def set_raw(self, value: ParamRawDataType) -> None:
         print("Calling set")
         self._return_val = value
 
 
-def test_default_attributes():
+def test_default_attributes() -> None:
     name = 'mixed_dimensions'
     names = ('0D', '1D', '2D')
     shapes = ((), (3,), (2, 2))
@@ -56,6 +58,7 @@ def test_default_attributes():
     assert 'value' not in snap
     assert 'raw_value' not in snap
 
+    assert p.__doc__ is not None
     assert name in p.__doc__
 
     # only in simple parameters
@@ -63,7 +66,7 @@ def test_default_attributes():
     assert not hasattr(p, 'unit')
 
 
-def test_explicit_attributes():
+def test_explicit_attributes() -> None:
     name = 'mixed_dimensions'
     names = ('0D', '1D', '2D')
     shapes = ((), (3,), (2, 2))
@@ -113,11 +116,12 @@ def test_explicit_attributes():
         assert snap[k] == v
     assert snap['ts'] is not None
 
+    assert p.__doc__ is not None
     assert name in p.__doc__
     assert docstring in p.__doc__
 
 
-def test_has_set_get():
+def test_has_set_get() -> None:
     name = 'mixed_dimensions'
     names = ['0D', '1D', '2D']
     shapes = ((), (3,), (2, 2))
@@ -157,7 +161,7 @@ def test_has_set_get():
     assert p.get() == value_to_set
 
 
-def test_full_name_s():
+def test_full_name_s() -> None:
     name = 'mixed_dimensions'
     names = ('0D', '1D', '2D')
     setpoint_names = ((),
@@ -168,20 +172,29 @@ def test_full_name_s():
 
     # three cases where only name gets used for full_name
     for instrument in blank_instruments:
-        p = SimpleMultiParam([0, [1, 2, 3], [[4, 5], [6, 7]]],
-                             name, names, shapes,
-                             setpoint_names=setpoint_names)
-        p._instrument = instrument
+        p = SimpleMultiParam(
+            [0, [1, 2, 3], [[4, 5], [6, 7]]],
+            name,
+            names,
+            shapes,
+            setpoint_names=setpoint_names,
+        )
+        p._instrument = instrument  # type: ignore[assignment]
         assert str(p) == name
         assert p.full_names == names
         assert p.setpoint_full_names == \
                          ((), ('setpoints_1D',), ('setpoints_2D_1', None))
 
     # and finally an instrument that really has a name
-    p = SimpleMultiParam([0, [1, 2, 3], [[4, 5], [6, 7]]],
-                         name, names, shapes, setpoint_names=setpoint_names)
-    p._instrument = named_instrument
-    assert str(p) == 'astro_mixed_dimensions'
+    p = SimpleMultiParam(
+        [0, [1, 2, 3], [[4, 5], [6, 7]]],
+        name,
+        names,
+        shapes,
+        setpoint_names=setpoint_names,
+    )
+    p._instrument = named_instrument  # type: ignore[assignment]
+    assert str(p) == "astro_mixed_dimensions"
 
     assert p.full_names == ('astro_0D', 'astro_1D', 'astro_2D')
     assert p.setpoint_full_names == \
@@ -198,6 +211,6 @@ def test_full_name_s():
      'setpoint_names': (None, ('index',))},
     {'names': ('a', 'b'), 'shapes': ((3,), ()),
      'setpoint_labels': (None, None, None)}])
-def test_constructor_errors(constructor):
+def test_constructor_errors(constructor: dict) -> None:
     with pytest.raises(ValueError):
         SimpleMultiParam([1, 2, 3], 'p', **constructor)

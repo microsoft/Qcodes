@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import Callable, List, Optional, Tuple, Union
+from typing import Callable, Optional, Union
 
 from qcodes import validators
 from qcodes.instrument import InstrumentChannel, VisaInstrument
@@ -84,9 +84,7 @@ class Keysight34934A(KeysightSwitchMatrixSubModule):
         self.write(f'SYSTem:MODule:ROW:PROTection {self.slot}, {mode}')
 
     def to_channel_list(
-            self,
-            paths: List[Tuple[int, int]],
-            wiring_config: Optional[str] = ''
+        self, paths: list[tuple[int, int]], wiring_config: Optional[str] = ""
     ) -> str:
         """
         convert the (row, column) pair to a 4-digit channel number 'sxxx', where

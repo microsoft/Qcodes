@@ -9,6 +9,7 @@ import pytest
 
 import qcodes as qc
 import qcodes.logger as logger
+from qcodes.instrument import Instrument
 from qcodes.logger.log_analysis import capture_dataframe
 
 TEST_LOG_MESSAGE = 'test log message'
@@ -47,7 +48,7 @@ def awg5208():
 def model372():
     from qcodes.tests.drivers.test_lakeshore import Model_372_Mock
 
-    logger.LOGGING_SEPARATOR = ' - '
+    logger.logger.LOGGING_SEPARATOR = " - "
 
     logger.start_logger()
 
@@ -69,35 +70,31 @@ def model372():
 def AMI430_3D():
     import numpy as np
 
-    from qcodes.instrument.ip_to_visa import AMI430_VISA
-    from qcodes.instrument_drivers.american_magnetics.AMI430 import AMI430_3D
+    from qcodes.instrument_drivers.american_magnetics import AMIModel430, AMIModel4303D
 
-    mag_x = AMI430_VISA(
+    mag_x = AMIModel430(
         "x",
         address="GPIB::1::INSTR",
         pyvisa_sim_file="AMI430.yaml",
         terminator="\n",
-        port=1,
     )
-    mag_y = AMI430_VISA(
+    mag_y = AMIModel430(
         "y",
         address="GPIB::2::INSTR",
         pyvisa_sim_file="AMI430.yaml",
         terminator="\n",
-        port=1,
     )
-    mag_z = AMI430_VISA(
+    mag_z = AMIModel430(
         "z",
         address="GPIB::3::INSTR",
         pyvisa_sim_file="AMI430.yaml",
         terminator="\n",
-        port=1,
     )
     field_limit = [
         lambda x, y, z: x == 0 and y == 0 and z < 3,
         lambda x, y, z: np.linalg.norm([x, y, z]) < 2
     ]
-    driver = AMI430_3D("AMI430_3D", mag_x, mag_y, mag_z, field_limit)
+    driver = AMIModel4303D("AMI430_3D", mag_x, mag_y, mag_z, field_limit)
     try:
         yield driver, mag_x, mag_y, mag_z
     finally:
@@ -107,7 +104,7 @@ def AMI430_3D():
         mag_z.close()
 
 
-def test_get_log_file_name():
+def test_get_log_file_name() -> None:
     fp = logger.logger.get_log_file_name().split(os.sep)
     assert str(os.getpid()) in fp[-1]
     assert logger.logger.PYTHON_LOG_NAME in fp[-1]
@@ -116,7 +113,7 @@ def test_get_log_file_name():
 
 
 @pytest.mark.usefixtures("remove_root_handlers")
-def test_start_logger():
+def test_start_logger() -> None:
     # remove all Handlers
     logger.start_logger()
     assert isinstance(logger.get_console_handler(), logging.Handler)
@@ -124,14 +121,18 @@ def test_start_logger():
 
     console_level = logger.get_level_code(qc.config.logger.console_level)
     file_level = logger.get_level_code(qc.config.logger.file_level)
-    assert logger.get_console_handler().level == console_level
-    assert logger.get_file_handler().level == file_level
+    console_handler = logger.get_console_handler()
+    assert console_handler is not None
+    assert console_handler.level == console_level
+    file_handler = logger.get_file_handler()
+    assert file_handler is not None
+    assert file_handler.level == file_level
 
     assert logging.getLogger().level == logger.get_level_code('DEBUG')
 
 
 @pytest.mark.usefixtures("remove_root_handlers")
-def test_start_logger_twice():
+def test_start_logger_twice() -> None:
     logger.start_logger()
     logger.start_logger()
     handlers = logging.getLogger().handlers
@@ -142,7 +143,7 @@ def test_start_logger_twice():
 
 
 @pytest.mark.usefixtures("remove_root_handlers")
-def test_set_level_without_starting_raises():
+def test_set_level_without_starting_raises() -> None:
     with pytest.raises(RuntimeError):
         with logger.console_level('DEBUG'):
             pass
@@ -152,7 +153,7 @@ def test_set_level_without_starting_raises():
 
 
 @pytest.mark.usefixtures("remove_root_handlers")
-def test_handler_level():
+def test_handler_level() -> None:
     with logger.LogCapture(level=logging.INFO) as logs:
         logging.debug(TEST_LOG_MESSAGE)
     assert logs.value == ''
@@ -166,7 +167,7 @@ def test_handler_level():
 
 
 @pytest.mark.usefixtures("remove_root_handlers")
-def test_filter_instrument(AMI430_3D):
+def test_filter_instrument(AMI430_3D) -> None:
 
     driver, mag_x, mag_y, mag_z = AMI430_3D
 
@@ -178,9 +179,9 @@ def test_filter_instrument(AMI430_3D):
         with logger.filter_instrument(mag_x, handler=logs.string_handler):
             driver.cartesian((0, 0, 1))
     for line in logs.value.splitlines():
-        assert '[x(AMI430_VISA)]' in line
-        assert '[y(AMI430_VISA)]' not in line
-        assert '[z(AMI430_VISA)]' not in line
+        assert "[x(AMIModel430)]" in line
+        assert "[y(AMIModel430)]" not in line
+        assert "[z(AMIModel430)]" not in line
 
     # filter multiple instruments
     driver.cartesian((0, 0, 0))
@@ -191,9 +192,9 @@ def test_filter_instrument(AMI430_3D):
     any_x = False
     any_y = False
     for line in logs.value.splitlines():
-        has_x = '[x(AMI430_VISA)]' in line
-        has_y = '[y(AMI430_VISA)]' in line
-        has_z = '[z(AMI430_VISA)]' in line
+        has_x = "[x(AMIModel430)]" in line
+        has_y = "[y(AMIModel430)]" in line
+        has_z = "[z(AMIModel430)]" in line
 
         assert has_x or has_y
         assert not has_z
@@ -205,7 +206,7 @@ def test_filter_instrument(AMI430_3D):
 
 
 @pytest.mark.usefixtures("remove_root_handlers")
-def test_filter_without_started_logger_raises(AMI430_3D):
+def test_filter_without_started_logger_raises(AMI430_3D) -> None:
 
     driver, mag_x, mag_y, mag_z = AMI430_3D
 
@@ -217,7 +218,7 @@ def test_filter_without_started_logger_raises(AMI430_3D):
 
 
 @pytest.mark.usefixtures("remove_root_handlers")
-def test_capture_dataframe():
+def test_capture_dataframe() -> None:
     root_logger = logging.getLogger()
     with capture_dataframe() as (_, cb):
         root_logger.debug(TEST_LOG_MESSAGE)
@@ -227,7 +228,7 @@ def test_capture_dataframe():
 
 
 @pytest.mark.usefixtures("remove_root_handlers")
-def test_channels(model372):
+def test_channels(model372) -> None:
     """
     Test that messages logged in a channel are propagated to the
     main instrument.
@@ -244,41 +245,44 @@ def test_channels(model372):
     # reset without capturing
     inst.sample_heater.set_range_from_temperature(1)
     # rerun with instrument filter
-    with logger.LogCapture(level=logging.DEBUG) as logs_filtered,\
-            logger.filter_instrument(inst,
-                                     handler=logs_filtered.string_handler):
+    with logger.LogCapture(
+        level=logging.DEBUG
+    ) as logs_filtered, logger.filter_instrument(
+        inst, handler=logs_filtered.string_handler
+    ):
         inst.sample_heater.set_range_from_temperature(0.1)
 
-    logs_filtered = [l for l in logs_filtered.value.splitlines()
-                        if '[lakeshore' in l]
-    logs_unfiltered = [l for l in logs_unfiltered.value.splitlines()
-                        if '[lakeshore' in l]
+    logs_filtered_2 = [
+        log for log in logs_filtered.value.splitlines() if "[lakeshore" in log
+    ]
+    logs_unfiltered_2 = [
+        log for log in logs_unfiltered.value.splitlines() if "[lakeshore" in log
+    ]
 
-    for f, u in zip(logs_filtered, logs_unfiltered):
+    for f, u in zip(logs_filtered_2, logs_unfiltered_2):
         assert f == u
 
 
 @pytest.mark.usefixtures("remove_root_handlers")
-def test_channels_nomessages(model372):
+def test_channels_nomessages(model372) -> None:
     """
     Test that messages logged in a channel are not propagated to
     any instrument.
     """
     inst = model372
     # test with wrong instrument
-    mock = qc.Instrument('mock')
+    mock = Instrument("mock")
     inst.sample_heater.set_range_from_temperature(1)
     with logger.LogCapture(level=logging.DEBUG) as logs,\
             logger.filter_instrument(mock, handler=logs.string_handler):
         inst.sample_heater.set_range_from_temperature(0.1)
-    logs = [l for l in logs.value.splitlines()
-            if '[lakeshore' in l]
-    assert len(logs) == 0
+    logs_2 = [log for log in logs.value.splitlines() if "[lakeshore" in log]
+    assert len(logs_2) == 0
     mock.close()
 
 
 @pytest.mark.usefixtures("remove_root_handlers", "awg5208")
-def test_instrument_connect_message():
+def test_instrument_connect_message() -> None:
     """
     Test that the connect_message method logs as expected
 
@@ -303,7 +307,7 @@ def test_instrument_connect_message():
 
 
 @pytest.mark.usefixtures("remove_root_handlers")
-def test_installation_info_logging():
+def test_installation_info_logging() -> None:
     """
     Test that installation information is logged upon starting the logging
     """

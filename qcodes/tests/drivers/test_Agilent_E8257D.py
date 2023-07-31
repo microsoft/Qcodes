@@ -16,12 +16,12 @@ class TestAgilentE8257D(DriverTestCase):
         super().setUpClass()
         cls.instrument.off()  # Not a test but a safety measure
 
-    def test_firmware_version(self):
+    def test_firmware_version(self) -> None:
         v = self.instrument.IDN.get()
         self.assertEqual(v["vendor"], "Agilent Technologies")
         self.assertEqual(v["model"], "E8257D")
 
-    def test_on_off(self):
+    def test_on_off(self) -> None:
         self.instrument.off()
         self.assertEqual(self.instrument.status.get(), "Off")
 
@@ -42,7 +42,7 @@ class TestAgilentE8257D(DriverTestCase):
         with self.assertRaises(ValueError):
             self.instrument.status.set("on24")
 
-    def test_frequency(self):
+    def test_frequency(self) -> None:
         with self.assertRaises(ValueError):
             self.instrument.frequency.set(32e9)
         with self.assertRaises(ValueError):
@@ -60,7 +60,7 @@ class TestAgilentE8257D(DriverTestCase):
         # leave the setup in the initial state
         self.instrument.frequency.set(cur_f)
 
-    def test_power(self):
+    def test_power(self) -> None:
         with self.assertRaises(ValueError):
             self.instrument.power.set(-150)
         with self.assertRaises(ValueError):
@@ -78,7 +78,7 @@ class TestAgilentE8257D(DriverTestCase):
         # leave the setup in the initial state
         self.instrument.power.set(cur_val)
 
-    def test_phase(self):
+    def test_phase(self) -> None:
         with self.assertRaises(ValueError):
             self.instrument.phase.set(-250)
         with self.assertRaises(ValueError):

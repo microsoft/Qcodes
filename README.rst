@@ -52,6 +52,19 @@ Go to the directory ``docs`` and
 This generate a webpage, index.html, in ``docs/_build/html`` with the
 rendered html.
 
+QCoDeS Loop
+===========
+
+The modules ``qcodes.data``, ``qcodes.plots``, ``qcodes.actions``,
+``qcodes.loops``, ``qcodes.measure``, ``qcodes.extensions.slack``
+and ``qcodes.utils.magic`` that were part of QCoDeS until version 0.37.0.
+have been moved into an independent package called qcodes_loop.
+Please see it's `repository <https://github.com/QCoDeS/Qcodes_loop/>`_ and
+`documentation <https://qcodes.github.io/Qcodes_loop/>`_ for more information.
+
+For the time being it is possible to automatically install the qcodes_loop
+package when installing qcodes by executing ``pip install qcodes[loop]``.
+
 Code of Conduct
 ===============
 
@@ -74,7 +87,7 @@ reports, contributing code, style, and testing.
 License
 =======
 
-See `License <https://github.com/QCoDeS/Qcodes/tree/master/LICENSE.rst>`__.
+See `License <https://github.com/QCoDeS/Qcodes/tree/master/LICENSE>`__.
 
 .. |Build Status Github| image:: https://github.com/QCoDeS/Qcodes/workflows/Run%20mypy%20and%20pytest/badge.svg
     :target: https://github.com/QCoDeS/Qcodes/actions?query=workflow%3A%22Run+mypy+and+pytest%22

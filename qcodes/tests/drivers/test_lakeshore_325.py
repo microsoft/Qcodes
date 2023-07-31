@@ -1,5 +1,3 @@
-from typing import List
-
 import hypothesis.strategies as st
 from hypothesis import given
 
@@ -19,7 +17,7 @@ from qcodes.instrument_drivers.Lakeshore import (
         sorted  # type: ignore[arg-type]
     )
 )
-def test_decode_sensor_status(list_of_codes):
+def test_decode_sensor_status(list_of_codes) -> None:
     """
     The sensor status is one of the status codes, or a sum thereof. Multiple
     status are possible as they are not necessarily mutually exclusive.

@@ -1,7 +1,10 @@
 """
 Test suite for DelegateParameter
 """
-from typing import cast
+from __future__ import annotations
+
+from collections.abc import Generator
+from typing import Any, Callable, Literal, cast
 
 import hypothesis.strategies as hst
 import pytest
@@ -16,38 +19,40 @@ from .conftest import BetterGettableParam
 # pylint: disable=redefined-outer-name
 
 
-@pytest.fixture()
-def numeric_val():
+@pytest.fixture(name="numeric_val")
+def _make_numeric_val() -> Generator[int, None, None]:
     yield 1
 
 
-@pytest.fixture()
-def simple_param(numeric_val):
+@pytest.fixture(name="simple_param")
+def _make_simple_param(numeric_val: int) -> Generator[Parameter, None, None]:
     yield Parameter('testparam', set_cmd=None, get_cmd=None,
                     scale=2, offset=17,
                     label='Test Parameter', unit='V',
                     initial_value=numeric_val)
 
+class ObservableParam(Parameter):
+    def __init__(self, *args: Any, **kwargs: Any):
+        self.instr_val = None
+        super().__init__(*args, **kwargs)
+
+    def set_raw(self, value: ParamRawDataType) -> None:  # pylint: disable=method-hidden
+        self.instr_val = value
+
+    def get_raw(self) -> ParamRawDataType:  # pylint: disable=method-hidden
+        return self.instr_val
+
+    def get_instr_val(self) -> ParamRawDataType:
+        return self.instr_val
+
 
 @pytest.fixture(params=[True, False])
-def make_observable_parameter(request):
-    def make_parameter(*args, override_getset: bool = True, **kwargs):
-        class ObservableParam(Parameter):
-            def __init__(self, *args, **kwargs):
-                self.instr_val = None
-                super().__init__(*args, **kwargs)
-
-            def set_raw(  # pylint: disable=method-hidden
-                    self, value: ParamRawDataType) -> None:
-                self.instr_val = value
-
-            def get_raw(  # pylint: disable=method-hidden
-                    self) -> ParamRawDataType:
-                return self.instr_val
-
-            def get_instr_val(self):
-                return self.instr_val
-
+def make_observable_parameter(
+    request: pytest.FixtureRequest,
+) -> Generator[Callable[..., ObservableParam], None, None]:
+    def make_parameter(
+        *args: Any, override_getset: bool = True, **kwargs: Any
+    ) -> ObservableParam:
         if request.param:
             if not override_getset:
                 pytest.skip()
@@ -55,41 +60,43 @@ def make_observable_parameter(request):
         else:
             val = None
 
-            def set_cmd(value):
+            def set_cmd(value: Any) -> None:
                 nonlocal val
                 val = value
 
-            def get_cmd():
+            def get_cmd() -> Any:
                 nonlocal val
                 return val
 
             p = Parameter(*args, **kwargs,  # type: ignore[misc]
                           set_cmd=set_cmd, get_cmd=get_cmd)
             param = cast(ObservableParam, p)
-            param.get_instr_val = get_cmd  # type: ignore[assignment]
+            param.get_instr_val = get_cmd  # type: ignore[method-assign]
         return param
     yield make_parameter
 
 
-def test_observable_parameter(make_observable_parameter, numeric_val):
-    p = make_observable_parameter('testparam')
+def test_observable_parameter(
+    make_observable_parameter: Callable[..., ObservableParam], numeric_val: int
+) -> None:
+    p = make_observable_parameter("testparam")
     p(numeric_val)
     assert p.get_instr_val() == numeric_val
 
 
-def test_observable_parameter_initial_value(make_observable_parameter,
-                                            numeric_val):
-    t = make_observable_parameter(
-        'observable_parameter', initial_value=numeric_val)
+def test_observable_parameter_initial_value(
+    make_observable_parameter: Callable[..., ObservableParam], numeric_val: int
+) -> None:
+    t = make_observable_parameter("observable_parameter", initial_value=numeric_val)
     assert t.get_instr_val() == numeric_val
 
 
-def test_same_value(simple_param):
+def test_same_value(simple_param: Parameter) -> None:
     d = DelegateParameter('test_delegate_parameter', simple_param)
     assert d() == simple_param()
 
 
-def test_same_label_and_unit_on_init(simple_param):
+def test_same_label_and_unit_on_init(simple_param: Parameter) -> None:
     """
     Test that the label and unit get used from source parameter if not
     specified otherwise.
@@ -99,14 +106,14 @@ def test_same_label_and_unit_on_init(simple_param):
     assert d.unit == simple_param.unit
 
 
-def test_overwritten_unit_on_init(simple_param):
+def test_overwritten_unit_on_init(simple_param: Parameter) -> None:
     d = DelegateParameter('test_delegate_parameter', simple_param, unit='Ohm')
     assert d.label == simple_param.label
     assert not d.unit == simple_param.unit
     assert d.unit == 'Ohm'
 
 
-def test_overwritten_label_on_init(simple_param):
+def test_overwritten_label_on_init(simple_param: Parameter) -> None:
     d = DelegateParameter('test_delegate_parameter', simple_param,
                           label='Physical parameter')
     assert d.unit == simple_param.unit
@@ -114,7 +121,7 @@ def test_overwritten_label_on_init(simple_param):
     assert d.label == 'Physical parameter'
 
 
-def test_get_set_raises(simple_param):
+def test_get_set_raises(simple_param: Parameter) -> None:
     """
     Test that providing a get/set_cmd kwarg raises an error.
     """
@@ -124,7 +131,7 @@ def test_get_set_raises(simple_param):
         assert str(e.value).startswith('\'It is not allowed to set')
 
 
-def test_scaling(simple_param, numeric_val):
+def test_scaling(simple_param: Parameter, numeric_val: int) -> None:
     scale = 5
     offset = 3
     d = DelegateParameter(
@@ -137,7 +144,9 @@ def test_scaling(simple_param, numeric_val):
     assert simple_param() == numeric_val * scale + offset
 
 
-def test_scaling_delegate_initial_value(simple_param, numeric_val):
+def test_scaling_delegate_initial_value(
+    simple_param: Parameter, numeric_val: int
+) -> None:
     scale = 5
     offset = 3
     DelegateParameter(
@@ -147,7 +156,7 @@ def test_scaling_delegate_initial_value(simple_param, numeric_val):
     assert simple_param() == numeric_val * scale + offset
 
 
-def test_scaling_initial_value(simple_param, numeric_val):
+def test_scaling_initial_value(simple_param: Parameter) -> None:
     scale = 5
     offset = 3
     d = DelegateParameter(
@@ -155,7 +164,7 @@ def test_scaling_initial_value(simple_param, numeric_val):
     assert d() == (simple_param() - offset) / scale
 
 
-def test_snapshot():
+def test_snapshot() -> None:
     p = Parameter('testparam', set_cmd=None, get_cmd=None,
                   offset=1, scale=2, initial_value=1)
     d = DelegateParameter('test_delegate_parameter', p, offset=3, scale=5,
@@ -168,7 +177,7 @@ def test_snapshot():
     assert source_snapshot['value'] == 13
 
 
-def test_set_source_cache_changes_delegate_cache(simple_param):
+def test_set_source_cache_changes_delegate_cache(simple_param: Parameter) -> None:
     """ Setting the cached value of the source parameter changes the
     delegate parameter cache accordingly.
 
@@ -182,7 +191,7 @@ def test_set_source_cache_changes_delegate_cache(simple_param):
     assert d.cache.get() == (new_source_value - offset) / scale
 
 
-def test_set_source_cache_changes_delegate_get(simple_param):
+def test_set_source_cache_changes_delegate_get(simple_param: Parameter) -> None:
     """ When the delegate parameter's ``get`` is called, the new
     value of the source propagates.
 
@@ -197,7 +206,7 @@ def test_set_source_cache_changes_delegate_get(simple_param):
     assert d.get() == (new_source_value - offset) / scale
 
 
-def test_set_delegate_cache_changes_source_cache(simple_param):
+def test_set_delegate_cache_changes_source_cache(simple_param: Parameter) -> None:
     offset = 4
     scale = 5
     d = DelegateParameter('d', simple_param, offset=offset, scale=scale)
@@ -208,7 +217,7 @@ def test_set_delegate_cache_changes_source_cache(simple_param):
     assert simple_param.cache.get() == (new_delegate_value * scale + offset)
 
 
-def test_set_delegate_cache_with_raw_value(simple_param):
+def test_set_delegate_cache_with_raw_value(simple_param: Parameter) -> None:
     offset = 4
     scale = 5
     d = DelegateParameter('d', simple_param, offset=offset, scale=scale)
@@ -221,7 +230,8 @@ def test_set_delegate_cache_with_raw_value(simple_param):
 
 
 def test_instrument_val_invariant_under_delegate_cache_set(
-        make_observable_parameter, numeric_val):
+    make_observable_parameter: Callable[..., ObservableParam], numeric_val: int
+) -> None:
     """
     Setting the cached value of the source parameter changes the delegate
     parameter. But it has no impact on the instrument value.
@@ -234,14 +244,16 @@ def test_instrument_val_invariant_under_delegate_cache_set(
     assert t.get_instr_val() == initial_value
 
 
-def test_delegate_cache_pristine_if_not_set():
+def test_delegate_cache_pristine_if_not_set() -> None:
     p = Parameter('test')
     d = DelegateParameter('delegate', p)
     gotten_delegate_cache = d.cache.get(get_if_invalid=False)
     assert gotten_delegate_cache is None
 
 
-def test_delegate_get_updates_cache(make_observable_parameter, numeric_val):
+def test_delegate_get_updates_cache(
+    make_observable_parameter: Callable[..., ObservableParam], numeric_val: int
+) -> None:
     initial_value = numeric_val
     t = make_observable_parameter(
         'observable_parameter', initial_value=initial_value)
@@ -252,7 +264,7 @@ def test_delegate_get_updates_cache(make_observable_parameter, numeric_val):
     assert t.get_instr_val() == initial_value
 
 
-def test_delegate_parameter_get_and_snapshot_with_none_source():
+def test_delegate_parameter_get_and_snapshot_with_none_source() -> None:
     """
     Test that a delegate parameter returns None on get and snapshot if
     the source has a value of None and an offset or scale is used.
@@ -270,14 +282,15 @@ def test_delegate_parameter_get_and_snapshot_with_none_source():
     assert delegate_param.get() is None
     assert delegate_param.snapshot()['value'] is None
 
-    assert delegate_param.cache._parameter.source.cache is none_param.cache
+    parameter = delegate_param.cache._parameter  # type: ignore[attr-defined]
+    assert parameter.source.cache is none_param.cache
     delegate_param.source = source_param
     assert delegate_param.get() == 1
     assert delegate_param.snapshot()['value'] == 1
-    assert delegate_param.cache._parameter.source.cache is source_param.cache
+    assert parameter.source.cache is source_param.cache
 
 
-def test_raw_value_scaling(make_observable_parameter):
+def test_raw_value_scaling() -> None:
     """
     The :attr:`raw_value` will be deprecated soon,
     so other tests should not use it.
@@ -296,7 +309,7 @@ def test_raw_value_scaling(make_observable_parameter):
     assert d.raw_value == p()
 
 
-def test_setting_initial_value_delegate_parameter():
+def test_setting_initial_value_delegate_parameter() -> None:
     value = 10
     p = Parameter('testparam', set_cmd=None, get_cmd=None)
     d = DelegateParameter('test_delegate_parameter', p,
@@ -305,7 +318,7 @@ def test_setting_initial_value_delegate_parameter():
     assert d.cache.get(get_if_invalid=False) == value
 
 
-def test_setting_initial_cache_delegate_parameter():
+def test_setting_initial_cache_delegate_parameter() -> None:
     value = 10
     p = Parameter('testparam', set_cmd=None, get_cmd=None)
     d = DelegateParameter('test_delegate_parameter', p,
@@ -314,26 +327,26 @@ def test_setting_initial_cache_delegate_parameter():
     assert d.cache.get(get_if_invalid=False) == value
 
 
-def test_delegate_parameter_with_none_source_works_as_expected():
+def test_delegate_parameter_with_none_source_works_as_expected() -> None:
     delegate_param = DelegateParameter(name='delegate', source=None,
                                        scale=2, offset=1)
     _assert_none_source_is_correct(delegate_param)
 
 
-@given(hst.floats(allow_nan=False, allow_infinity=False),
-       hst.floats(allow_nan=False, allow_infinity=False).filter(lambda x: x != 0),
-       hst.floats(allow_nan=False, allow_infinity=False))
-def test_delegate_parameter_with_changed_source_snapshot_matches_value(value,
-                                                                       scale,
-                                                                       offset):
-    delegate_param = DelegateParameter(name="delegate",
-                                       source=None,
-                                       scale=scale,
-                                       offset=offset)
-    source_parameter = Parameter(name="source",
-                                 get_cmd=None,
-                                 set_cmd=None,
-                                 initial_value=value)
+@given(
+    hst.floats(allow_nan=False, allow_infinity=False),
+    hst.floats(allow_nan=False, allow_infinity=False).filter(lambda x: x != 0),
+    hst.floats(allow_nan=False, allow_infinity=False),
+)
+def test_delegate_parameter_with_changed_source_snapshot_matches_value(
+    value: float, scale: float, offset: float
+) -> None:
+    delegate_param = DelegateParameter(
+        name="delegate", source=None, scale=scale, offset=offset
+    )
+    source_parameter = Parameter(
+        name="source", get_cmd=None, set_cmd=None, initial_value=value
+    )
     _assert_none_source_is_correct(delegate_param)
     delegate_param.source = source_parameter
     calc_value = (value - offset) / scale
@@ -353,7 +366,7 @@ def test_delegate_parameter_with_changed_source_snapshot_matches_value(value,
     _assert_delegate_cache_none_source(delegate_param)
 
 
-def _assert_none_source_is_correct(delegate_param):
+def _assert_none_source_is_correct(delegate_param: DelegateParameter) -> None:
     with pytest.raises(TypeError):
         delegate_param.get()
     with pytest.raises(TypeError):
@@ -367,7 +380,7 @@ def _assert_none_source_is_correct(delegate_param):
     assert snapshot == updated_snapshot
 
 
-def _assert_delegate_cache_none_source(delegate_param):
+def _assert_delegate_cache_none_source(delegate_param: DelegateParameter) -> None:
     with pytest.raises(TypeError):
         delegate_param.cache.set(1)
     with pytest.raises(TypeError):
@@ -381,9 +394,13 @@ def _assert_delegate_cache_none_source(delegate_param):
 @pytest.mark.parametrize("snapshot_value", [True, False])
 @pytest.mark.parametrize("gettable,get_cmd", [(True, None), (False, False)])
 @pytest.mark.parametrize("settable,set_cmd", [(True, None), (False, False)])
-def test_gettable_settable_snapshotget_delegate_parameter(gettable, get_cmd,
-                                                          settable, set_cmd,
-                                                          snapshot_value):
+def test_gettable_settable_snapshotget_delegate_parameter(
+    gettable: bool,
+    get_cmd: Literal[False] | None,
+    settable: bool,
+    set_cmd: Literal[False] | None,
+    snapshot_value: bool,
+) -> None:
     """
     Test that gettable, settable and snapshot_get are correctly reflected
     in the DelegateParameter
@@ -399,9 +416,13 @@ def test_gettable_settable_snapshotget_delegate_parameter(gettable, get_cmd,
 @pytest.mark.parametrize("snapshot_value", [True, False])
 @pytest.mark.parametrize("gettable,get_cmd", [(True, None), (False, False)])
 @pytest.mark.parametrize("settable,set_cmd", [(True, None), (False, False)])
-def test_gettable_settable_snapshotget_delegate_parameter_2(gettable, get_cmd,
-                                                            settable, set_cmd,
-                                                            snapshot_value):
+def test_gettable_settable_snapshotget_delegate_parameter_2(
+    gettable: bool,
+    get_cmd: Literal[False] | None,
+    settable: bool,
+    set_cmd: Literal[False] | None,
+    snapshot_value: bool,
+) -> None:
     """
     Test that gettable/settable and snapshot_get are updated correctly
     when source changes
@@ -415,7 +436,7 @@ def test_gettable_settable_snapshotget_delegate_parameter_2(gettable, get_cmd,
     assert delegate_param._snapshot_value is snapshot_value
 
 
-def test_initial_value_and_none_source_raises():
+def test_initial_value_and_none_source_raises() -> None:
     with pytest.raises(KeyError, match="It is not allowed to supply"
                                        " 'initial_value' or"
                                        " 'initial_cache_value'"):
@@ -426,7 +447,7 @@ def test_initial_value_and_none_source_raises():
         DelegateParameter("delegate", source=None, initial_cache_value=1)
 
 
-def test_delegate_parameter_change_source_reflected_in_label_and_unit():
+def test_delegate_parameter_change_source_reflected_in_label_and_unit() -> None:
     delegate_param = DelegateParameter("delegate", source=None)
     source_param_1 = Parameter("source1", label="source 1", unit="unit1")
     source_param_2 = Parameter("source2", label="source 2", unit="unit2")
@@ -444,7 +465,7 @@ def test_delegate_parameter_change_source_reflected_in_label_and_unit():
     assert delegate_param.unit == ""
 
 
-def test_delegate_parameter_fixed_label_unit_unchanged():
+def test_delegate_parameter_fixed_label_unit_unchanged() -> None:
     delegate_param = DelegateParameter("delegate",
                                        label="delegatelabel",
                                        unit="delegateunit",
@@ -465,7 +486,7 @@ def test_delegate_parameter_fixed_label_unit_unchanged():
     assert delegate_param.unit == "delegateunit"
 
 
-def test_cache_invalidation():
+def test_cache_invalidation() -> None:
     value = 10
     p = BetterGettableParam('testparam', set_cmd=None, get_cmd=None)
     d = DelegateParameter('test_delegate_parameter', p,
@@ -489,7 +510,7 @@ def test_cache_invalidation():
     assert p.cache.valid is True
 
 
-def test_cache_no_source():
+def test_cache_no_source() -> None:
     d = DelegateParameter('test_delegate_parameter', source=None)
 
     assert d.cache.valid is False
@@ -505,7 +526,7 @@ def test_cache_no_source():
     d.cache.invalidate()
 
 
-def test_underlying_instrument_property_for_delegate_parameter():
+def test_underlying_instrument_property_for_delegate_parameter() -> None:
     p = BetterGettableParam('testparam', set_cmd=None, get_cmd=None)
     d = DelegateParameter('delegate_parameter_with_source', p)
 
@@ -515,7 +536,7 @@ def test_underlying_instrument_property_for_delegate_parameter():
     assert d.underlying_instrument is None
 
 
-def test_value_validation():
+def test_value_validation() -> None:
     source_param = Parameter("source", set_cmd=None, get_cmd=None)
     delegate_param = DelegateParameter("delegate", source=source_param)
 
@@ -540,7 +561,7 @@ def test_value_validation():
         delegate_param.validate(11)
 
 
-def test_value_validation_with_offset_and_scale():
+def test_value_validation_with_offset_and_scale() -> None:
     source_param = Parameter(
         "source", set_cmd=None, get_cmd=None, vals=vals.Numbers(-5, 5)
     )

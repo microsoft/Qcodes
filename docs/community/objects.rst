@@ -3,36 +3,6 @@ Object Hierarchy
 
 .. todo:: make sure it is updated and easy to read.
 
-Rough linkages:
----------------
-
-In **bold** the containing class creates this object. In *italics* the
-container just holds this object (or class) as a default for derivatives
-to use. Normal text shows the container includes and uses of this object.
-
--  Station
--  Instrument: IPInstrument, VisaInstrument, MockInstrument
-
-   -  **Parameter**
-   -  Validator: Anything, Strings, Numbers, Ints, Enum, MultiType
-   -  **SweepValues**: SweepFixedValues, AdaptiveSweep
-   -  Function
-   -  Validator
-
--  **Monitor**
--  *actions*
--  DataManager
--  **DataServer**
--  :ref:`loops_api`
--  actions: Parameter, Task, Wait, (Active)Loop
--  **ActiveLoop**
-
-   -  **DataSet**
-   -  **DataArray**
-   -  **Formatter**: GNUPlotFormat
-   -  **DiskIO** (may become subclass of IOManager?)
-   -  **FormatLocation** (a location\_provider)
-
 Station
 -------
 

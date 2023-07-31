@@ -15,14 +15,14 @@ def awg():
     awg_sim.close()
 
 
-def test_init_awg(awg):
+def test_init_awg(awg) -> None:
 
     idn_dict = awg.IDN()
 
     assert idn_dict['vendor'] == 'QCoDeS'
 
 
-def test_channel_resolution_docstring(awg):
+def test_channel_resolution_docstring(awg) -> None:
 
     expected_docstring = ("12 bit resolution allows for four "
                           "markers, 13 bit resolution "

@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, Any
 
-from qcodes.metadatable import Metadatable
+from qcodes.metadatable import MetadatableWithName
 from qcodes.validators import Validator, validate_all
 
 from .command import Command
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from qcodes.instrument import InstrumentBase
 
 
-class Function(Metadatable):
+class Function(MetadatableWithName):
     """
     Defines a function  that an instrument can execute.
 
@@ -170,3 +170,44 @@ class Function(Metadatable):
         Returns (list): __doc__, _args, and _arg_count get proxied
         """
         return ["__doc__", "_args", "_arg_count"]
+
+    @property
+    def short_name(self) -> str:
+        """
+        Name excluding name of any instrument that this function may be
+        bound to.
+        """
+        return self.name
+
+    @property
+    def full_name(self) -> str:
+        """
+        Name of the function including the name of the instrument and
+        submodule that the function may be bound to. The names are separated
+        by underscores, like this: ``instrument_submodule_function``.
+        """
+        return "_".join(self.name_parts)
+
+    @property
+    def name_parts(self) -> list[str]:
+        """
+        List of the parts that make up the full name of this function
+        """
+        if self.instrument is not None:
+            name_parts = getattr(self.instrument, "name_parts", [])
+            if name_parts == []:
+                # add fallback for the case where someone has bound
+                # the function to something that is not an instrument
+                # but perhaps it has a name anyway?
+                name = getattr(self.instrument, "name", None)
+                if name is not None:
+                    name_parts = [name]
+        else:
+            name_parts = []
+
+        name_parts.append(self.short_name)
+        return name_parts
+
+    @property
+    def instrument(self) -> InstrumentBase | None:
+        return self._instrument

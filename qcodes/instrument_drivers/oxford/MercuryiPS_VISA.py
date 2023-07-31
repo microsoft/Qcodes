@@ -1,7 +1,7 @@
 import logging
 import time
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Union, cast
+from typing import Any, Callable, Optional, Union, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -351,8 +351,7 @@ class OxfordMercuryiPS(VisaInstrument):
         self.GRPY.field_ramp_rate(rate.y)
         self.GRPZ.field_ramp_rate(rate.z)
 
-    def _get_measured(self, coordinates: List[str]) -> Union[float,
-                                                             List[float]]:
+    def _get_measured(self, coordinates: list[str]) -> Union[float, list[float]]:
         """
         Get the measured value of a coordinate. Measures all three fields
         and computes whatever coordinate we asked for.
@@ -402,7 +401,7 @@ class OxfordMercuryiPS(VisaInstrument):
         for coord in 'xyz':
             self._set_target(coord, field[coord])
 
-    def _idn_getter(self) -> Dict[str, str]:
+    def _idn_getter(self) -> dict[str, str]:
         """
         Parse the raw non-SCPI compliant IDN string into an IDN dict
 
@@ -530,7 +529,7 @@ class OxfordMercuryiPS(VisaInstrument):
 
         meas_vals = self._get_measured(['x', 'y', 'z'])
         # we asked for three coordinates, so we know that we got a list
-        meas_vals = cast(List[float], meas_vals)
+        meas_vals = cast(list[float], meas_vals)
 
         for cur, worker in zip(meas_vals, self.submodules.values()):
             if not isinstance(worker, OxfordMercuryWorkerPS):

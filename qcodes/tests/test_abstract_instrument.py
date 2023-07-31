@@ -1,6 +1,7 @@
 from typing import Any
 
 import pytest
+from pytest import FixtureRequest
 
 from qcodes.instrument import ChannelList, Instrument, InstrumentBase, InstrumentChannel
 
@@ -159,7 +160,7 @@ def _driver():
     drvr.close()
 
 
-def test_sanity(driver):
+def test_sanity(driver) -> None:
     """
     If all abstract parameters are implemented, we should be able
     to instantiate the instrument
@@ -168,7 +169,7 @@ def test_sanity(driver):
     assert driver.voltage() == 0.1
 
 
-def test_not_implemented_error():
+def test_not_implemented_error() -> None:
     """
     If not all abstract parameters are implemented, we should see
     an exception
@@ -180,7 +181,7 @@ def test_not_implemented_error():
     assert not VoltageSourceNotImplemented.instances()
 
 
-def test_unit_value_error():
+def test_unit_value_error() -> None:
     """
     Units should match between subclasses and base classes
     """
@@ -188,7 +189,7 @@ def test_unit_value_error():
         VoltageSourceBadUnit("abstract_instrument_driver_3")
 
 
-def test_unit_value_error_does_not_register_instrument():
+def test_unit_value_error_does_not_register_instrument() -> None:
     """
     Units should match between subclasses and base classes
     """
@@ -197,7 +198,7 @@ def test_unit_value_error_does_not_register_instrument():
     assert not VoltageSourceBadUnit.instances()
 
 
-def test_exception_in_init():
+def test_exception_in_init() -> None:
     """
     Verify that if the instrument raises in init it is not registered as an instance
     """
@@ -212,7 +213,7 @@ def test_exception_in_init():
     instance.close()
 
 
-def test_abstract_channel_raises():
+def test_abstract_channel_raises() -> None:
     """
     Creating an instrument with a channel with abstract parameters should raise
     """
@@ -222,7 +223,7 @@ def test_abstract_channel_raises():
         VoltageAbstractChannelSource("abstract_instrument_driver_7")
 
 
-def test_non_abstract_channel_does_not_raises(request):
+def test_non_abstract_channel_does_not_raises(request: FixtureRequest) -> None:
     """
     Creating an instrument with a channel that implements the interface.
     This should not raise
@@ -231,7 +232,7 @@ def test_non_abstract_channel_does_not_raises(request):
     request.addfinalizer(source.close)
 
 
-def test_abstract_channellist_raises():
+def test_abstract_channellist_raises() -> None:
     """
     Creating an instrument with a channel (in a ChannelList)
     with abstract parameters should raise
@@ -242,7 +243,7 @@ def test_abstract_channellist_raises():
         VoltageAbstractChannelListSource("abstract_instrument_driver_9")
 
 
-def test_non_abstract_channellist_does_not_raises(request):
+def test_non_abstract_channellist_does_not_raises(request: FixtureRequest) -> None:
     """
     Creating an instrument with a ChannelList that contains a
     channel that implements the interface. This should not raise

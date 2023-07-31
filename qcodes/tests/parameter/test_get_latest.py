@@ -1,5 +1,6 @@
 import time
 from datetime import datetime, timedelta
+from typing import Any
 
 import pytest
 
@@ -8,7 +9,7 @@ from qcodes.parameters import Parameter, ParameterBase
 from .conftest import BetterGettableParam
 
 
-def test_get_latest():
+def test_get_latest() -> None:
     time_resolution = time.get_clock_info('time').resolution
     sleep_delta = 2 * time_resolution
 
@@ -22,16 +23,20 @@ def test_get_latest():
 
     # Check we return last set value, with the correct timestamp
     assert local_parameter.get_latest() == 1
-    assert before_set < local_parameter.get_latest.get_timestamp() < after_set
+    get_timestamp = local_parameter.get_latest.get_timestamp()
+    assert get_timestamp is not None
+    assert before_set < get_timestamp < after_set
 
     # Check that updating the value updates the timestamp
     time.sleep(sleep_delta)
     local_parameter.set(2)
+    get_timestamp = local_parameter.get_latest.get_timestamp()
+    assert get_timestamp is not None
     assert local_parameter.get_latest() == 2
-    assert local_parameter.get_latest.get_timestamp() > after_set
+    assert get_timestamp > after_set
 
 
-def test_get_latest_raw_value():
+def test_get_latest_raw_value() -> None:
     # To have a simple distinction between raw value and value of the
     # parameter lets create a parameter with an offset
     p = Parameter('p', set_cmd=None, get_cmd=None, offset=42)
@@ -50,7 +55,7 @@ def test_get_latest_raw_value():
     assert p.get_latest.get_raw_value() == 3 + 42
 
 
-def test_get_latest_unknown():
+def test_get_latest_unknown() -> None:
     """
     Test that get latest on a parameter that has not been acquired will
     trigger a get
@@ -60,8 +65,8 @@ def test_get_latest_unknown():
                                           get_cmd=None)
     # fake a parameter that has a value but never been get/set to mock
     # an instrument.
-    local_parameter.cache._value = value
-    local_parameter.cache._raw_value = value
+    local_parameter.cache._value = value  # type: ignore[attr-defined]
+    local_parameter.cache._raw_value = value  # type: ignore[attr-defined]
     assert local_parameter.get_latest.get_timestamp() is None
     before_get = datetime.now()
     assert local_parameter._get_count == 0
@@ -69,14 +74,15 @@ def test_get_latest_unknown():
     assert local_parameter._get_count == 1
     # calling get_latest above will call get since TS is None
     # and the TS will therefore no longer be None
-    assert local_parameter.get_latest.get_timestamp() is not None
-    assert local_parameter.get_latest.get_timestamp() >= before_get
+    get_timestamp = local_parameter.get_latest.get_timestamp()
+    assert get_timestamp is not None
+    assert get_timestamp >= before_get
     # calling get_latest now will not trigger get
     assert local_parameter.get_latest() == value
     assert local_parameter._get_count == 1
 
 
-def test_get_latest_known():
+def test_get_latest_known() -> None:
     """
     Test that get latest on a parameter that has a known value will not
     trigger a get
@@ -98,7 +104,7 @@ def test_get_latest_known():
     assert local_parameter.get_latest.get_timestamp() == set_time
 
 
-def test_get_latest_no_get():
+def test_get_latest_no_get() -> None:
     """
     Test that get_latest on a parameter that does not have get is handled
     correctly.
@@ -122,7 +128,7 @@ def test_get_latest_no_get():
     assert local_parameter2.get_latest() == value
 
 
-def test_max_val_age():
+def test_max_val_age() -> None:
     value = 1
     start = datetime.now()
     local_parameter = BetterGettableParam('test_param',
@@ -141,10 +147,12 @@ def test_max_val_age():
     assert local_parameter.get_latest.get_timestamp() == set_time
     assert local_parameter.get_latest() == value
     assert local_parameter._get_count == 1
-    assert local_parameter.get_latest.get_timestamp() >= start
+    new_get_time_stamp = local_parameter.get_latest.get_timestamp()
+    assert new_get_time_stamp is not None
+    assert new_get_time_stamp >= start
 
 
-def test_no_get_max_val_age():
+def test_no_get_max_val_age() -> None:
     """
     Test that get_latest on a parameter with max_val_age set and
     no get cmd raises correctly.
@@ -159,9 +167,9 @@ def test_no_get_max_val_age():
     # could be added in a subclass. Here we create a subclass that does add a
     # get command and also does not implement the check for max_val_age
     class LocalParameter(ParameterBase):
-        def __init__(self, *args, **kwargs):
+        def __init__(self, *args: Any, **kwargs: Any):
             super().__init__(*args, **kwargs)
-            self.set_raw = lambda x: x
+            self.set_raw = lambda x: x  # type: ignore[method-assign]
             self.set = self._wrap_set(self.set_raw)
 
     localparameter = LocalParameter('test_param',

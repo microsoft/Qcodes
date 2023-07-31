@@ -1,5 +1,3 @@
-import warnings
-
 from qcodes.extensions.installation import register_station_schema_with_vscode
 
 # todo enable warning once new api is in release

@@ -5,10 +5,10 @@ from qcodes.utils import attribute_set_to
 
 
 class X:
-    y = 0
+    y: object = 0
 
 
-def test_attribute_set_to_value():
+def test_attribute_set_to_value() -> None:
     """Test setting attribute to a value"""
     x = X()
     x.y = 1
@@ -21,7 +21,7 @@ def test_attribute_set_to_value():
     assert 1 == x.y
 
 
-def test_attribute_set_to_object():
+def test_attribute_set_to_object() -> None:
     """Test setting attribute to an object"""
     x = X()
     original_object = X()

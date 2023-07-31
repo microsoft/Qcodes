@@ -8,9 +8,6 @@ from qcodes.parameters import ManualParameter
 from qcodes.station import Station
 from qcodes.tests.instrument_mocks import DummyInstrument
 
-# pylint: disable=unused-import
-from qcodes.tests.test_station import set_default_station_to_none
-
 
 @pytest.fixture  # scope is "function" per default
 def dac():
@@ -27,9 +24,10 @@ def dmm():
 
 
 @pytest.mark.parametrize("pass_station", (True, False))
-@pytest.mark.usefixtures('set_default_station_to_none')
-def test_station_snapshot_during_measurement(experiment, dac, dmm,
-                                             pass_station):
+@pytest.mark.usefixtures("set_default_station_to_none")
+def test_station_snapshot_during_measurement(
+    experiment, dac, dmm, pass_station
+) -> None:
     station = Station()
     station.add_component(dac)
     station.add_component(dmm, 'renamed_dmm')
@@ -51,16 +49,18 @@ def test_station_snapshot_during_measurement(experiment, dac, dmm,
         data_saver.add_result((dac.ch1, 7), (dmm.v1, 5))
 
     # 1. Test `get_metadata('snapshot')` method
-
-    json_snapshot_from_dataset = data_saver.dataset.get_metadata('snapshot')
+    # this is not part of the DatasetProtocol interface
+    # but we test it anyway
+    json_snapshot_from_dataset = data_saver.dataset.get_metadata("snapshot")  # type: ignore[attr-defined]
     snapshot_from_dataset = json.loads(json_snapshot_from_dataset)
 
     expected_snapshot = {'station': snapshot_of_station}
     assert expected_snapshot == snapshot_from_dataset
 
     # 2. Test `snapshot_raw` property
-
-    assert json_snapshot_from_dataset == data_saver.dataset.snapshot_raw
+    # this is not part of the DatasetProtocol interface
+    # but we test it anyway
+    assert json_snapshot_from_dataset == data_saver.dataset.snapshot_raw  # type: ignore[attr-defined]
 
     # 3. Test `snapshot` property
 
@@ -68,7 +68,7 @@ def test_station_snapshot_during_measurement(experiment, dac, dmm,
 
 
 @pytest.mark.usefixtures('set_default_station_to_none')
-def test_snapshot_creation_for_types_not_supported_by_builtin_json(experiment):
+def test_snapshot_creation_for_types_not_supported_by_builtin_json(experiment) -> None:
     """
     Test that `Measurement`/`Runner`/`DataSaver` infrastructure
     successfully dumps station snapshots in JSON format in cases when the
@@ -94,6 +94,7 @@ def test_snapshot_creation_for_types_not_supported_by_builtin_json(experiment):
         pass
 
     snapshot = data_saver.dataset.snapshot
+    assert snapshot is not None
 
     assert 5 == snapshot['station']['parameters']['p_np_int32']['value']
     assert 5 == snapshot['station']['parameters']['p_np_int32']['raw_value']

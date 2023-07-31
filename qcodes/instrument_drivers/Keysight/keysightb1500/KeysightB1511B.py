@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, List, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from .constants import IMeasRange, IOutputRange
 from .KeysightB1517A import KeysightB1517A
@@ -29,34 +29,36 @@ class KeysightB1511B(KeysightB1517A):
         **kwargs: Any
     ):
         super().__init__(parent, name, slot_nr, **kwargs)
-        self._valid_i_measure_ranges: List[IMeasRange] = [IMeasRange.AUTO,
-                                                          IMeasRange.MIN_1nA,
-                                                          IMeasRange.MIN_10nA,
-                                                          IMeasRange.MIN_100nA,
-                                                          IMeasRange.MIN_1uA,
-                                                          IMeasRange.MIN_10uA,
-                                                          IMeasRange.MIN_100uA,
-                                                          IMeasRange.MIN_1mA,
-                                                          IMeasRange.MIN_10mA,
-                                                          IMeasRange.MIN_100mA,
-                                                          IMeasRange.FIX_1nA,
-                                                          IMeasRange.FIX_10nA,
-                                                          IMeasRange.FIX_100nA,
-                                                          IMeasRange.FIX_1uA,
-                                                          IMeasRange.FIX_10uA,
-                                                          IMeasRange.FIX_100uA,
-                                                          IMeasRange.FIX_1mA,
-                                                          IMeasRange.FIX_10mA,
-                                                          IMeasRange.FIX_100mA]
-        self._asu_valid_i_measure_ranges: List[IMeasRange] = [
+        self._valid_i_measure_ranges: list[IMeasRange] = [
+            IMeasRange.AUTO,
+            IMeasRange.MIN_1nA,
+            IMeasRange.MIN_10nA,
+            IMeasRange.MIN_100nA,
+            IMeasRange.MIN_1uA,
+            IMeasRange.MIN_10uA,
+            IMeasRange.MIN_100uA,
+            IMeasRange.MIN_1mA,
+            IMeasRange.MIN_10mA,
+            IMeasRange.MIN_100mA,
+            IMeasRange.FIX_1nA,
+            IMeasRange.FIX_10nA,
+            IMeasRange.FIX_100nA,
+            IMeasRange.FIX_1uA,
+            IMeasRange.FIX_10uA,
+            IMeasRange.FIX_100uA,
+            IMeasRange.FIX_1mA,
+            IMeasRange.FIX_10mA,
+            IMeasRange.FIX_100mA,
+        ]
+        self._asu_valid_i_measure_ranges: list[IMeasRange] = [
             IMeasRange.MIN_1pA, IMeasRange.MIN_10pA, IMeasRange.MIN_100pA,
             IMeasRange.FIX_1pA, IMeasRange.FIX_10pA, IMeasRange.FIX_100pA]
-        self._valid_i_output_ranges: List[IOutputRange] = [
+        self._valid_i_output_ranges: list[IOutputRange] = [
             IOutputRange.AUTO, IOutputRange.MIN_1nA, IOutputRange.MIN_10nA,
             IOutputRange.MIN_100nA, IOutputRange.MIN_1uA,
             IOutputRange.MIN_10uA, IOutputRange.MIN_100uA,
             IOutputRange.MIN_1mA, IOutputRange.MIN_10mA, IOutputRange.MIN_100mA]
-        self._asu_valid_i_output_ranges: List[IOutputRange] = [
+        self._asu_valid_i_output_ranges: list[IOutputRange] = [
             IOutputRange.MIN_1pA, IOutputRange.MIN_10pA, IOutputRange.MIN_100pA]
 
         self.asu_present = False

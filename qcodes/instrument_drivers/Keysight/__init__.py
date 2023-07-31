@@ -1,3 +1,4 @@
+from ._Keysight_N5232B import KeysightN5232B
 from .Infiniium import (
     KeysightInfiniium,
     KeysightInfiniiumBoundMeasurement,
@@ -32,6 +33,7 @@ from .Keysight_N5173B import KeysightN5173B
 from .Keysight_N5183B import KeysightN5183B
 from .Keysight_N5222B import KeysightN5222B
 from .Keysight_N5230C import KeysightN5230C
+from .Keysight_N5245A import KeysightN5245A
 from .Keysight_N6705B import KeysightN6705B, KeysightN6705BChannel
 from .Keysight_N9030B import (
     KeysightN9030B,
@@ -103,6 +105,8 @@ __all__ = [
     "KeysightN5183B",
     "KeysightN5222B",
     "KeysightN5230C",
+    "KeysightN5232B",
+    "KeysightN5245A",
     "KeysightN6705B",
     "KeysightN6705BChannel",
     "KeysightN9030B",

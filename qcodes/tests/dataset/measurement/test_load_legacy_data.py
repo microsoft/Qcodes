@@ -8,7 +8,7 @@ from qcodes.dataset.data_set import DataSet
 
 
 @pytest.mark.usefixtures("experiment")
-def test_load_legacy_files_2d():
+def test_load_legacy_files_2d() -> None:
     full_location = (
         Path(__file__).parent.parent
         / "fixtures"
@@ -31,7 +31,9 @@ def test_load_legacy_files_2d():
         assert parameter.unit == expected_units[i]
         assert parameter.depends_on == expected_depends_on[i]
         assert parameter.type == "numeric"
-    snapshot = json.loads(data.get_metadata("snapshot"))
+    snapshot_str = data.get_metadata("snapshot")
+    assert isinstance(snapshot_str, str)
+    snapshot = json.loads(snapshot_str)
     assert sorted(list(snapshot.keys())) == [
         "__class__",
         "arrays",
@@ -44,7 +46,7 @@ def test_load_legacy_files_2d():
 
 
 @pytest.mark.usefixtures("experiment")
-def test_load_legacy_files_1d():
+def test_load_legacy_files_1d() -> None:
     full_location = (
         Path(__file__).parent.parent
         / "fixtures"
@@ -67,7 +69,9 @@ def test_load_legacy_files_1d():
         assert parameter.unit == expected_units[i]
         assert parameter.depends_on == expected_depends_on[i]
         assert parameter.type == "numeric"
-    snapshot = json.loads(data.get_metadata("snapshot"))
+    snapshot_str = data.get_metadata("snapshot")
+    assert isinstance(snapshot_str, str)
+    snapshot = json.loads(snapshot_str)
     assert sorted(list(snapshot.keys())) == [
         "__class__",
         "arrays",
@@ -80,7 +84,7 @@ def test_load_legacy_files_1d():
 
 
 @pytest.mark.usefixtures("experiment")
-def test_load_legacy_files_1d_pathlib_path():
+def test_load_legacy_files_1d_pathlib_path() -> None:
     full_location = (
         Path(__file__).parent.parent
         / "fixtures"
@@ -103,7 +107,9 @@ def test_load_legacy_files_1d_pathlib_path():
         assert parameter.unit == expected_units[i]
         assert parameter.depends_on == expected_depends_on[i]
         assert parameter.type == "numeric"
-    snapshot = json.loads(data.get_metadata("snapshot"))
+    snapshot_str = data.get_metadata("snapshot")
+    assert isinstance(snapshot_str, str)
+    snapshot = json.loads(snapshot_str)
     assert sorted(list(snapshot.keys())) == [
         "__class__",
         "arrays",

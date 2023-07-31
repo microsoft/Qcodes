@@ -6,9 +6,10 @@
 import logging
 import time
 from collections import namedtuple
+from collections.abc import Sequence
 from enum import Enum
 from functools import partial
-from typing import Any, Dict, Optional, Sequence, Tuple, Union
+from typing import Any, Optional, Union
 
 import pyvisa
 import pyvisa.constants
@@ -142,7 +143,7 @@ class QDacChannel(InstrumentChannel):
             self,
             update: Optional[bool] = False,
             params_to_skip_update: Optional[Sequence[str]] = None
-    ) -> Dict[Any, Any]:
+    ) -> dict[Any, Any]:
         update_currents = self._parent._update_currents and update
         if update and not self._parent._get_status_performed:
             self._parent._update_cache(update_currents=update_currents)
@@ -169,7 +170,7 @@ class QDacMultiChannelParameter(MultiChannelInstrumentParameter):
                  **kwargs: Any):
         super().__init__(channels, param_name, *args, **kwargs)
 
-    def get_raw(self) -> Tuple[ParamRawDataType, ...]:
+    def get_raw(self) -> tuple[ParamRawDataType, ...]:
         """
         Return a tuple containing the data from each of the channels in the
         list.
@@ -314,14 +315,14 @@ class QDac(VisaInstrument):
         synchronization outputs.
         """
         # Assigned slopes. Entries will eventually be {chan: slope}
-        self._slopes:  Dict[int, Union[str, float]] = {}
+        self._slopes: dict[int, Union[str, float]] = {}
         # Function generators and triggers (used in ramping)
         self._fgs = set(range(1, 9))
-        self._assigned_fgs: Dict[int, Generator] = {}  # {chan: fg}
+        self._assigned_fgs: dict[int, Generator] = {}  # {chan: fg}
         self._trigs = set(range(1, 10))
-        self._assigned_triggers: Dict[int, int] = {}  # {fg: trigger}
+        self._assigned_triggers: dict[int, int] = {}  # {fg: trigger}
         # Sync channels
-        self._syncoutputs: Dict[int, int] = {}  # {chan: syncoutput}
+        self._syncoutputs: dict[int, int] = {}  # {chan: syncoutput}
 
     def _load_state(self) -> None:
         """
@@ -427,7 +428,7 @@ class QDac(VisaInstrument):
             self,
             update: Optional[bool] = False,
             params_to_skip_update: Optional[Sequence[str]] = None
-    ) -> Dict[Any, Any]:
+    ) -> dict[Any, Any]:
         update_currents = self._update_currents and update is True
         if update:
             self._update_cache(update_currents=update_currents)
@@ -741,7 +742,9 @@ class QDac(VisaInstrument):
         for chan, slope in sorted(self._slopes.items()):
             print(f'Channel {chan}, slope: {slope} (V/s)')
 
-    def _get_minmax_outputvoltage(self, channel: int, vrange_int: int) -> Dict[str, float]:
+    def _get_minmax_outputvoltage(
+        self, channel: int, vrange_int: int
+    ) -> dict[str, float]:
         """
         Returns a dictionary of the calibrated Min and Max output
         voltages of 'channel' for the voltage given range (0,1) given by
@@ -816,10 +819,8 @@ class QDac(VisaInstrument):
         """
         self.write('version')
         fw_str = self._write_response
-        if ((not ("Unrecognized command" in fw_str))
-                and ("Software Version: " in fw_str)):
-            fw_version = float(
-                self._write_response.replace("Software Version: ", ""))
+        if ("Unrecognized command" not in fw_str) and ("Software Version: " in fw_str):
+            fw_version = float(self._write_response.replace("Software Version: ", ""))
         else:
             fw_version = 0.0
         return fw_version
@@ -1026,7 +1027,7 @@ class QDac(VisaInstrument):
             if chan not in range(1, self.num_chans+1):
                 raise ValueError(
                         f'Channel number must be 1-{self.num_chans}.')
-            if not (chan in self._assigned_fgs):
+            if chan not in self._assigned_fgs:
                 self._get_functiongenerator(chan)
 
         # Voltage validation

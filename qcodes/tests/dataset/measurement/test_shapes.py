@@ -2,16 +2,20 @@ import logging
 
 import hypothesis.strategies as hst
 import numpy as np
+import pytest
 from hypothesis import HealthCheck, example, given, settings
+from pytest import LogCaptureFixture
 
 from qcodes.dataset.measurements import Measurement
 
 
+@pytest.mark.usefixtures("default_config")
 @given(n_points=hst.integers(min_value=1, max_value=100))
 @example(n_points=5)
 @settings(deadline=None, suppress_health_check=(HealthCheck.function_scoped_fixture,))
-def test_datasaver_1d(experiment, DAC, DMM, caplog,
-                      n_points):
+def test_datasaver_1d(
+    experiment, DAC, DMM, caplog: LogCaptureFixture, n_points
+) -> None:
     meas = Measurement()
     meas.register_parameter(DAC.ch1)
     meas.register_parameter(DMM.v1, setpoints=(DAC.ch1,))
@@ -58,12 +62,14 @@ def test_datasaver_1d(experiment, DAC, DMM, caplog,
                                                           n_points_expected))
 
 
+@pytest.mark.usefixtures("default_config")
 @settings(deadline=None, suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(n_points_1=hst.integers(min_value=1, max_value=50),
        n_points_2=hst.integers(min_value=1, max_value=50))
 @example(n_points_1=5, n_points_2=10)
-def test_datasaver_2d(experiment, DAC, DMM, caplog,
-                      n_points_1, n_points_2):
+def test_datasaver_2d(
+    experiment, DAC, DMM, caplog: LogCaptureFixture, n_points_1, n_points_2
+) -> None:
     meas = Measurement()
     meas.register_parameter(DAC.ch1)
     meas.register_parameter(DAC.ch2)

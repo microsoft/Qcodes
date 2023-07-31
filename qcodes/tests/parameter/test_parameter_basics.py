@@ -11,12 +11,12 @@ from .conftest import (
 )
 
 
-def test_no_name():
+def test_no_name() -> None:
     with pytest.raises(TypeError):
-        Parameter()
+        Parameter()  # type: ignore[call-arg]
 
 
-def test_default_attributes():
+def test_default_attributes() -> None:
     # Test the default attributes, providing only a name
     name = 'repetitions'
     p = GettableParam(name, vals=vals.Numbers())
@@ -31,6 +31,7 @@ def test_default_attributes():
         p.validate('not a number')
 
     # docstring exists, even without providing one explicitly
+    assert p.__doc__ is not None
     assert name in p.__doc__
 
     # test snapshot_get by looking at _get_count
@@ -51,7 +52,7 @@ def test_default_attributes():
     assert snap['ts'] is not None
 
 
-def test_explicit_attributes():
+def test_explicit_attributes() -> None:
     # Test the explicit attributes, providing everything we can
     name = 'volt'
     label = 'Voltage'
@@ -73,6 +74,7 @@ def test_explicit_attributes():
     with pytest.raises(TypeError):
         p.validate('not a number')
 
+    assert p.__doc__ is not None
     assert name in p.__doc__
     assert docstring in p.__doc__
 
@@ -100,7 +102,7 @@ def test_explicit_attributes():
         assert not hasattr(p, attr)
 
 
-def test_has_set_get():
+def test_has_set_get() -> None:
     # Create parameter that has no set_cmd, and get_cmd returns last value
     gettable_parameter = Parameter('one', set_cmd=False, get_cmd=None)
     assert hasattr(gettable_parameter, 'get')
@@ -135,20 +137,20 @@ def test_has_set_get():
     assert settable_gettable_parameter() == 22
 
 
-def test_str_representation():
+def test_str_representation() -> None:
     # three cases where only name gets used for full_name
     for instrument in blank_instruments:
         p = Parameter(name='fred')
-        p._instrument = instrument
+        p._instrument = instrument  # type: ignore[assignment]
         assert str(p) == 'fred'
 
     # and finally an instrument that really has a name
     p = Parameter(name='wilma')
-    p._instrument = named_instrument
+    p._instrument = named_instrument  # type: ignore[assignment]
     assert str(p) == 'astro_wilma'
 
 
-def test_bad_name():
+def test_bad_name() -> None:
     with pytest.raises(ValueError):
         Parameter('p with space')
     with pytest.raises(ValueError):
@@ -157,11 +159,11 @@ def test_bad_name():
         Parameter('1')
 
 
-def test_set_via_function():
+def test_set_via_function() -> None:
     # not a use case we want to promote, but it's there...
     p = Parameter('test', get_cmd=None, set_cmd=None)
 
-    def doubler(x):
+    def doubler(x: float) -> None:
         p.set(x * 2)
 
     f = Function('f', call_cmd=doubler, args=[vals.Numbers(-10, 10)])
@@ -172,30 +174,32 @@ def test_set_via_function():
         f(20)
 
 
-def test_unknown_args_to_baseparameter_raises():
+def test_unknown_args_to_baseparameter_raises() -> None:
     """
     Passing an unknown kwarg to ParameterBase should trigger a TypeError
     """
     with pytest.raises(TypeError):
-        _ = ParameterBase(name="Foo", instrument=None, snapshotable=False)
+        _ = ParameterBase(
+            name="Foo", instrument=None, snapshotable=False  # type: ignore[call-arg]
+        )
 
 
-def test_underlying_instrument_for_virtual_parameter():
-    p = GettableParam('base_param', vals=vals.Numbers())
-    p._instrument = named_instrument
-    vp = VirtualParameter('test_param', param=p)
+def test_underlying_instrument_for_virtual_parameter() -> None:
+    p = GettableParam("base_param", vals=vals.Numbers())
+    p._instrument = named_instrument  # type: ignore[assignment]
+    vp = VirtualParameter("test_param", param=p)
 
-    assert vp.underlying_instrument is named_instrument
+    assert vp.underlying_instrument is named_instrument  # type: ignore[comparison-overlap]
 
 
-def test_get_cmd_str_no_instrument_raises():
+def test_get_cmd_str_no_instrument_raises() -> None:
     with pytest.raises(
         TypeError, match="Cannot use a str get_cmd without binding to an instrument."
     ):
         Parameter(name="test", instrument=None, get_cmd="get_me")
 
 
-def test_set_cmd_str_no_instrument_raises():
+def test_set_cmd_str_no_instrument_raises() -> None:
     with pytest.raises(
         TypeError, match="Cannot use a str set_cmd without binding to an instrument."
     ):

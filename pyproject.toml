@@ -1,7 +1,6 @@
 [build-system]
 requires = [
     "setuptools >= 61.2",
-    "wheel >= 0.29.0",
     "versioningit ~= 2.0.1",
 ]
 build-backend = 'setuptools.build_meta'
@@ -15,44 +14,42 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Topic :: Scientific/Engineering",
 ]
 license = {text = "MIT"}
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 dependencies = [
     "broadbean>=0.9.1",
     "h5netcdf>=0.10.0,!=0.14.0",
     # see https://github.com/h5netcdf/h5netcdf/issues/154
     "h5py>=3.0.0",
     "importlib-metadata>=4.4; python_version < '3.10'",
-    "importlib-resources>=2.0.0; python_version < '3.9'",
     "ipywidgets>=7.5.0,<9.0.0",
-    "jsonschema>=3.0.0",
-    "lazy_loader>=0.1",
-    "matplotlib>=3.3.0",
+    "ipykernel>=6.0.0", # implicitly required by ipywidgets >=8.0.5
+    "jsonschema>=4.9.0",
+    "matplotlib>=3.3.3",
     "numpy>=1.21.0",
     "opencensus>=0.7.10",
     "opencensus-ext-azure>=1.0.4, <2.0.0",
     "packaging>=20.0",
-    "pandas>=1.0.0",
+    "pandas>=1.1.3",
     "pyvisa>=1.11.0, <1.14.0",
     "ruamel.yaml>=0.16.0,!=0.16.6",
     "tabulate>=0.8.0",
-    "typing_extensions>=4.0.0",
+    "typing_extensions>=4.1.1",
     "tqdm>=4.32.2",
     "uncertainties>=3.1.4",
     "versioningit>=2.0.1",
-    "websockets>=9.0",
-    "wrapt>=1.10.4",
+    "websockets>=9.1",
+    "wrapt>=1.13.2",
     "xarray>=0.18.0",
     # transitive dependencies. We list these explicitly to",
     # ensure that we always use versions that do not have",
     # known security vulnerabilities",
-    "ipython>=7.31.1,!=8.0.0",
+    "ipython>=8.10.0",
     "pillow>=9.0.0",
     "rsa>=4.7",
 ]
@@ -72,48 +69,50 @@ Changelog = "https://qcodes.github.io/Qcodes/changes/index.html"
 
 [project.optional-dependencies]
 qtplot = ["pyqtgraph>=0.11.0"]
+# can be removed once deprecated pyqtgraph module is removed
 slack = ["slack-sdk>=3.4.2"]
+# can be removed once deprecated slack are removed
 zurichinstruments = ["zhinst-qcodes>=0.3"]
+loop = ["qcodes_loop>=0.1.1"]
 test = [
     "coverage[toml]>=6.0.0",
     "deepdiff>=5.0.2",
     "hypothesis>=5.49.0",
-    "lxml>=4.4.1",
+    "lxml>=4.6.0",
     "lxml-stubs>=0.4.0",
     "mypy>=0.971",
     "pandas-stubs>=1.2.0.1",
-    "pytest>=6.1.0",
+    "pytest>=6.2.0",
     "pytest-asyncio>=0.19.0",
     "pytest-cov>=3.0.0",
     "pytest-mock>=3.0.0",
     "pytest-rerunfailures>=10.0",
     "pytest-xdist>=2.0.0",
-    "pyqtgraph>=0.11.0", # pyqtgraph tests
-    "PyQt5>=5.15.0", # pyqtgraph tests
     "PyVisa-sim>=0.4.0",
-    "slack-sdk>=3.4.2", # needed to typecheck slack extension
+    "slack-sdk>=3.4.2", # can be dropped when deprecated slack ext is deleted
     "sphinx>=4.5.0",  # sphinx extension tests
     "types-jsonschema>=4.16.0",
     "types_requests>=0.1.8",
     "types-setuptools>=57.0.0",
     "types-tabulate>=0.1.0",
     "types-tqdm>=4.64.6",
+    "types_pywin32>=305.0.0.7",
+    "qcodes_loop>=0.1.1",
+    "zhinst.qcodes>=0.5", # typecheck zhinst driver alias
 ]
 docs = [
     "autodocsumm>=0.2.9",
     "nbsphinx>=0.8.9",
-    "PyQt5>=5.15.0", # pyqtgraph examples
-    "pyqtgraph>=0.11.0", # pyqtgraph examples
     "PyVisa-sim>=0.4.0",
-    "sphinx>=4.5.0",
-    "sphinx-favicon>=0.2",
+    "sphinx>=6.2.0",
+    "sphinx-favicon>=1.0",
     "sphinx-issues>=3.0.1",
     "sphinx-jsonschema>=1.19.1",
     "sphinx-rtd-theme>=1.0.0",
     "sphinxcontrib-towncrier>=0.3.0a0",
     "towncrier>=22.8.0",
     "scipy>=1.7.0", # examples using scipy
-    "slack-sdk>=3.4.2", # slack example notebook
+    "qcodes_loop>=0.1.1", # legacy dataset import examples
 ]
 
 [project.scripts]
@@ -176,19 +175,18 @@ strict_concatenate = true
 
 [[tool.mypy.overrides]]
 module = [
-    "qcodes.actions.*",
-    "qcodes.data.*",
+    "qcodes.tests.*",
     "qcodes.instrument.mockers.ami430",
     "qcodes.instrument_drivers.Harvard.*",
     "qcodes.instrument_drivers.Keysight.keysightb1500.message_builder.*",
+    # deprecated non typed modules
+    "qcodes.actions.*",
+    "qcodes.data.*",
     "qcodes.loops",
-    "qcodes.math_utils.*",
     "qcodes.measure",
     "qcodes.plots.*",
-    "qcodes.tests.*",
     "qcodes.utils.magic",
     "qcodes.extensions.slack",
-
 ]
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
@@ -201,38 +199,28 @@ module = [
     "clr",
     "deepdiff",
     "gclib",
-    "IPython.*",
     "ipywidgets",
-    "h5py",
     "h5netcdf",
-    "hickle",
-    "lomentum.tools",
     "matplotlib.*",
     "mcl_RF_Switch_Controller64",
     "mcl_RF_Switch_Controller_NET45",
     "opencensus.ext.azure.*",
-    "pythoncom",
-    "pyqtgraph.*",
     "pywinusb.*",
+    "pyqtgraph.*", # can be droped once deprecated plots module is deleted
     "ruamel",
     "spyder.utils.site",
     "spyder_kernels.customize",
     "System.IO",
     "uncertainties",
-    "win32com.*",
-    "win32con",
-    "win32gui",
     "wrapt",
-    "zhinst.qcodes",
 ]
 ignore_missing_imports = true
 
 [tool.pyright]
 include = ["qcodes"]
 ignore = [
-    "qcodes/tests",
-    "qcodes/instrument_drivers/zurich_instruments",
     "qcodes/instrument_drivers/Harvard/Decadac.py",
+    # deprecated non typed modules
     "qcodes/actions.py",
     "qcodes/data",
     "qcodes/loops.py",
@@ -258,6 +246,67 @@ filterwarnings = [
     "ignore:distutils Version classes are deprecated:DeprecationWarning",
     "ignore:SelectableGroups dict interface is deprecated:DeprecationWarning"
 ]
+
+[tool.ruff]
+# Enable Pyflakes `E` and `F` codes by default.
+select = ["E", "F", "PT025"]
+# darker will fix this as code is
+# reformatted when it is changed.
+ignore = ["E501"]
+
+[tool.ruff.per-file-ignores]
+# deprecated modules left
+# for backwards compatibility
+"qcodes/actions.py" = ["F401"]
+"qcodes/data/__init__.py" = ["F401"]
+"qcodes/data/data_array.py" = ["F401"]
+"qcodes/data/data_set.py" = ["F401"]
+"qcodes/data/format.py" = ["F401"]
+"qcodes/data/gnuplot_format.py" = ["F401"]
+"qcodes/data/hdf5_format.py" = ["F401"]
+"qcodes/data/hdf5_format_hickle.py" = ["F401"]
+"qcodes/data/io.py" = ["F401"]
+"qcodes/data/location.py" = ["F401"]
+"qcodes/plots/pyqtgraph.py" = ["F401"]
+"qcodes/plots/qcmatplotlib.py" = ["F401"]
+"qcodes/loops.py" = ["F401"]
+"qcodes/measure.py" = ["F401"]
+"qcodes/plots/base.py" = ["F401"]
+"qcodes/plots/colors.py" = ["F401"]
+"qcodes/utils/validators.py" = ["F401"]
+"qcodes/utils/threading.py" = ["F401"]
+"qcodes/utils/qt_helpers.py" = ["F401"]
+"qcodes/utils/plotting.py" = ["F401"]
+"qcodes/utils/metadata.py" = ["F401"]
+"qcodes/utils/magic.py" = ["F401"]
+"qcodes/utils/helpers.py" = ["F401"]
+"qcodes/extensions/slack.py" = ["F401"]
+"qcodes/instrument_drivers/AimTTi/AimTTi_PL601P_channels.py" = ["F401"]
+"qcodes/instrument_drivers/tektronix/Keithley_6500.py" = ["F401"]
+"qcodes/instrument_drivers/tektronix/Keithley_2600_channels.py" = ["F401"]
+"qcodes/instrument_drivers/tektronix/Keithley_2450.py" = ["F401"]
+"qcodes/instrument_drivers/tektronix/keithley_7510.py" = ["F401"]
+"qcodes/instrument_drivers/signal_hound/USB_SA124B.py" = ["F401"]
+"qcodes/instrument_drivers/rohde_schwarz/RTE1000.py" = ["F401"]
+"qcodes/instrument_drivers/rigol/DS4000.py" = ["F401"]
+"qcodes/instrument_drivers/rigol/DG4000.py" = ["F401"]
+"qcodes/instrument_drivers/rigol/DP832.py" = ["F401"]
+"qcodes/instrument_drivers/rigol/DP831.py" = ["F401"]
+"qcodes/instrument_drivers/rigol/DP821.py" = ["F401"]
+"qcodes/instrument_drivers/rigol/DS1074Z.py" = ["F401"]
+"qcodes/instrument_drivers/rigol/DG1062.py" = ["F401"]
+"qcodes/instrument_drivers/devices.py" = ["F401"]
+"qcodes/instrument_drivers/basel/sp983c_remote.py" = ["F401"]
+"qcodes/instrument_drivers/Lakeshore/Model_325.py" = ["F401"]
+"qcodes/instrument_drivers/Lakeshore/Model_336.py" = ["F401"]
+"qcodes/instrument_drivers/Lakeshore/Model_372.py" = ["F401"]
+"qcodes/instrument_drivers/Minicircuits/RUDAT_13G_90.py" = ["F401"]
+"qcodes/instrument_drivers/HP/HP8133A.py" = ["F401"]
+"qcodes/instrument_drivers/HP/HP8753D.py" = ["F401"]
+"qcodes/instrument_drivers/Keysight/N9030B.py" = ["F401"]
+
+"qcodes/instrument_drivers/Keysight/KtM960x.py" = ["F405"]
+"qcodes/instrument_drivers/Keysight/KtMAwg.py" = ["F405"]
 
 [tool.towncrier]
 package = "qcodes"

@@ -1,4 +1,5 @@
-from typing import Any, List, Sequence, Tuple
+from collections.abc import Sequence
+from typing import Any
 
 from qcodes import validators as vals
 from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
@@ -6,13 +7,13 @@ from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
 
 class RigolDP8xxChannel(InstrumentChannel):
     def __init__(
-            self,
-            parent: "_RigolDP8xx",
-            name: str,
-            channel: int,
-            ch_range: Tuple[float, float],
-            ovp_range: Tuple[float, float],
-            ocp_range: Tuple[float, float]
+        self,
+        parent: "_RigolDP8xx",
+        name: str,
+        channel: int,
+        ch_range: tuple[float, float],
+        ovp_range: tuple[float, float],
+        ocp_range: tuple[float, float],
     ):
         super().__init__(parent, name)
 
@@ -22,7 +23,9 @@ class RigolDP8xxChannel(InstrumentChannel):
         self.ocp_range = ocp_range
 
         select_cmd = f":INSTrument:NSELect {channel};"
-        strstrip = lambda s: str(s).strip()
+
+        def strstrip(s: str) -> str:
+            return str(s).strip()
 
         self.add_parameter("set_voltage",
                            label='Target voltage output',
@@ -125,15 +128,13 @@ class _RigolDP8xx(VisaInstrument):
     """
 
     def __init__(
-            self,
-            name: str,
-            address: str,
-            channels_ranges: Sequence[Tuple[float, float]],
-            ovp_ranges: Tuple[Sequence[Tuple[float, float]],
-                              Sequence[Tuple[float, float]]],
-            ocp_ranges: Tuple[Sequence[Tuple[float, float]],
-                              Sequence[Tuple[float, float]]],
-            **kwargs: Any
+        self,
+        name: str,
+        address: str,
+        channels_ranges: Sequence[tuple[float, float]],
+        ovp_ranges: tuple[Sequence[tuple[float, float]], Sequence[tuple[float, float]]],
+        ocp_ranges: tuple[Sequence[tuple[float, float]], Sequence[tuple[float, float]]],
+        **kwargs: Any,
     ):
         super().__init__(name, address, **kwargs)
 
@@ -164,7 +165,7 @@ class _RigolDP8xx(VisaInstrument):
 
         self.connect_message()
 
-    def installed_options(self) -> List[str]:
+    def installed_options(self) -> list[str]:
         """Return the installed options"""
 
         opt = self.ask("*OPT?")

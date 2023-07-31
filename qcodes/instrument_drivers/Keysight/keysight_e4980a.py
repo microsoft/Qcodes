@@ -1,4 +1,5 @@
-from typing import Any, Sequence, Tuple, Union, cast
+from collections.abc import Sequence
+from typing import Any, Union, cast
 
 from packaging import version
 from pyvisa.errors import VisaIOError
@@ -36,30 +37,28 @@ class KeysightE4980AMeasurementPair(MultiParameter):
         >>> data.get()
         (1.2, 3.4)
     """
-    value: Tuple[float, float] = (0., 0.)
 
-    def __init__(self,
-                 name: str,
-                 names: Sequence[str],
-                 units: Sequence[str],
-                 **kwargs: Any):
-        super().__init__(name=name,
-                         names=names,
-                         shapes=((), ()),
-                         units=units,
-                         setpoints=((), ()),
-                         **kwargs)
-        self.__dict__.update(
-            {names[0]: 0,
-             names[1]: 0}
+    value: tuple[float, float] = (0.0, 0.0)
+
+    def __init__(
+        self, name: str, names: Sequence[str], units: Sequence[str], **kwargs: Any
+    ):
+        super().__init__(
+            name=name,
+            names=names,
+            shapes=((), ()),
+            units=units,
+            setpoints=((), ()),
+            **kwargs,
         )
+        self.__dict__.update({names[0]: 0, names[1]: 0})
 
-    def set_raw(self, value: Tuple[float, float]) -> None:
+    def set_raw(self, value: tuple[float, float]) -> None:
         self.value = value
         setattr(self, self.names[0], value[0])
         setattr(self, self.names[1], value[1])
 
-    def get_raw(self) -> Tuple[ParamRawDataType, ...]:
+    def get_raw(self) -> tuple[ParamRawDataType, ...]:
         return self.value
 
 
@@ -475,7 +474,7 @@ class KeysightE4980A(VisaInstrument):
             self.voltage_level.snapshot_exclude = True
             self.current_level.snapshot_exclude = False
 
-    def _options(self) -> Tuple[str, ...]:
+    def _options(self) -> tuple[str, ...]:
         """
         Returns installed options numbers. Combinations of different installed
         options are possible. Two of the possible options are Power/DC Bias

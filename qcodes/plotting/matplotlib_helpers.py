@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import copy
 import logging
-from typing import TYPE_CHECKING, Any, Literal, Tuple, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 if TYPE_CHECKING:
     import matplotlib
@@ -106,7 +106,7 @@ def apply_color_scale_limits(
                 + str(apply_color_scale_limits.__doc__)
             )
         else:
-            data_lim = cast(Tuple[float, float], tuple(sorted(data_lim)))
+            data_lim = cast(tuple[float, float], tuple(sorted(data_lim)))
     # if `None` is provided in the new limits don't change this limit
     vlim = [new or old for new, old in zip(new_lim, colorbar.mappable.get_clim())]
     # sort limits in case they were given in a wrong order
@@ -226,7 +226,7 @@ def auto_color_scale_from_config(
         color_under = qcodes.config.plotting.auto_color_scale.color_under
     if cutoff_percentile is None:
         cutoff_percentile = cast(
-            Tuple[float, float],
+            tuple[float, float],
             tuple(qcodes.config.plotting.auto_color_scale.cutoff_percentile),
         )
 

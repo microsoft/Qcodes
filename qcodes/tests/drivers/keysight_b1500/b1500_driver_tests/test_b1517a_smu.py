@@ -25,15 +25,17 @@ def _make_smu(mainframe):
     yield smu
 
 
-def test_snapshot():
+def test_snapshot() -> None:
     from qcodes.instrument.base import InstrumentBase
 
     # We need to use `InstrumentBase` (not a bare mock) in order for
     # `snapshot` methods call resolution to work out
     mainframe = InstrumentBase(name='mainframe')
-    mainframe.write = MagicMock()
+    mainframe.write = MagicMock()  # type: ignore[attr-defined]
     slot_nr = 1
-    smu = KeysightB1517A(parent=mainframe, name="B1517A", slot_nr=slot_nr)
+    smu = KeysightB1517A(
+        parent=mainframe, name="B1517A", slot_nr=slot_nr  # type: ignore[arg-type]
+    )
 
     smu.use_high_speed_adc()
     smu.source_config(output_range=VOutputRange.AUTO)
@@ -57,7 +59,7 @@ def test_snapshot():
 
 
 @pytest.mark.filterwarnings("ignore:The function <measure_config>")
-def test_measure_config(smu):
+def test_measure_config(smu) -> None:
     smu.measure_config(VMeasRange.AUTO)
     s = smu.snapshot()
 
@@ -83,20 +85,20 @@ def test_measure_config(smu):
     assert s['_measure_config']['i_measure_range'] == 0
 
 
-def test_v_measure_range_config_raises_type_error(smu):
+def test_v_measure_range_config_raises_type_error(smu) -> None:
     msg = re.escape("Expected valid voltage measurement range, got 42.")
 
     with pytest.raises(TypeError, match=msg):
         smu.v_measure_range_config(v_measure_range=42)
 
 
-def test_v_measure_range_config_raises_invalid_range_error(smu):
+def test_v_measure_range_config_raises_invalid_range_error(smu) -> None:
     msg = re.escape("15000 voltage measurement range")
     with pytest.raises(RuntimeError, match=msg):
         smu.v_measure_range_config(VMeasRange.MIN_1500V)
 
 
-def test_v_measure_range_config_sets_range_correctly(smu):
+def test_v_measure_range_config_sets_range_correctly(smu) -> None:
     smu.v_measure_range_config(v_measure_range=VMeasRange.MIN_0V5)
     s = smu.snapshot()
 
@@ -104,7 +106,7 @@ def test_v_measure_range_config_sets_range_correctly(smu):
     assert s['_measure_config']['v_measure_range'] == 5
 
 
-def test_getting_voltage_after_calling_v_measure_range_config(smu):
+def test_getting_voltage_after_calling_v_measure_range_config(smu) -> None:
     mainframe = smu.parent
     mainframe.ask.return_value = "NAV-000.002E-01\r"
 
@@ -118,20 +120,20 @@ def test_getting_voltage_after_calling_v_measure_range_config(smu):
     assert s
 
 
-def test_i_measure_range_config_raises_type_error(smu):
+def test_i_measure_range_config_raises_type_error(smu) -> None:
     msg = re.escape("Expected valid current measurement range, got 99.")
 
     with pytest.raises(TypeError, match=msg):
         smu.i_measure_range_config(i_measure_range=99)
 
 
-def test_i_measure_range_config_raises_invalid_range_error(smu):
+def test_i_measure_range_config_raises_invalid_range_error(smu) -> None:
     msg = re.escape("-23 current measurement range")
     with pytest.raises(RuntimeError, match=msg):
         smu.i_measure_range_config(IMeasRange.FIX_40A)
 
 
-def test_i_measure_range_config_sets_range_correctly(smu):
+def test_i_measure_range_config_sets_range_correctly(smu) -> None:
     smu.i_measure_range_config(i_measure_range=IMeasRange.MIN_1nA)
     s = smu.snapshot()
 
@@ -139,7 +141,7 @@ def test_i_measure_range_config_sets_range_correctly(smu):
     assert s['_measure_config']['i_measure_range'] == 11
 
 
-def test_getting_current_after_calling_i_measure_range_config(smu):
+def test_getting_current_after_calling_i_measure_range_config(smu) -> None:
     mainframe = smu.parent
     mainframe.ask.return_value = "NAI+000.005E-06\r"
 
@@ -153,19 +155,19 @@ def test_getting_current_after_calling_i_measure_range_config(smu):
     assert s
 
 
-def test_force_invalid_voltage_output_range(smu):
+def test_force_invalid_voltage_output_range(smu) -> None:
     msg = re.escape("Invalid Source Voltage Output Range")
     with pytest.raises(RuntimeError, match=msg):
         smu.source_config(VOutputRange.MIN_1500V)
 
 
-def test_force_invalid_current_output_range(smu):
+def test_force_invalid_current_output_range(smu) -> None:
     msg = re.escape("Invalid Source Current Output Range")
     with pytest.raises(RuntimeError, match=msg):
         smu.source_config(IOutputRange.MIN_20A)
 
 
-def test_force_voltage_with_autorange(smu):
+def test_force_voltage_with_autorange(smu) -> None:
     mainframe = smu.parent
 
     smu.source_config(output_range=VOutputRange.AUTO)
@@ -174,7 +176,7 @@ def test_force_voltage_with_autorange(smu):
     mainframe.write.assert_called_once_with('DV 1,0,10')
 
 
-def test_force_voltage_autorange_and_compliance(smu):
+def test_force_voltage_autorange_and_compliance(smu) -> None:
     mainframe = smu.parent
 
     smu.source_config(output_range=VOutputRange.AUTO,
@@ -186,7 +188,7 @@ def test_force_voltage_autorange_and_compliance(smu):
     mainframe.write.assert_called_once_with('DV 1,0,20,1e-06,0,15')
 
 
-def test_new_source_config_should_invalidate_old_source_config(smu):
+def test_new_source_config_should_invalidate_old_source_config(smu) -> None:
     mainframe = smu.parent
 
     smu.source_config(output_range=VOutputRange.AUTO,
@@ -200,7 +202,7 @@ def test_new_source_config_should_invalidate_old_source_config(smu):
     mainframe.write.assert_called_once_with('DV 1,0,20')
 
 
-def test_unconfigured_source_defaults_to_autorange_v(smu):
+def test_unconfigured_source_defaults_to_autorange_v(smu) -> None:
     mainframe = smu.parent
 
     smu.voltage(10)
@@ -208,7 +210,7 @@ def test_unconfigured_source_defaults_to_autorange_v(smu):
     mainframe.write.assert_called_once_with('DV 1,0,10')
 
 
-def test_unconfigured_source_defaults_to_autorange_i(smu):
+def test_unconfigured_source_defaults_to_autorange_i(smu) -> None:
     mainframe = smu.parent
 
     smu.current(0.2)
@@ -216,7 +218,7 @@ def test_unconfigured_source_defaults_to_autorange_i(smu):
     mainframe.write.assert_called_once_with('DI 1,0,0.2')
 
 
-def test_force_current_with_autorange(smu):
+def test_force_current_with_autorange(smu) -> None:
     mainframe = smu.parent
 
     smu.source_config(output_range=IOutputRange.AUTO)
@@ -225,7 +227,7 @@ def test_force_current_with_autorange(smu):
     mainframe.write.assert_called_once_with('DI 1,0,0.1')
 
 
-def test_raise_warning_output_range_mismatches_output_command(smu):
+def test_raise_warning_output_range_mismatches_output_command(smu) -> None:
     smu.source_config(output_range=VOutputRange.AUTO)
     msg = re.escape("Asking to force current, but source_config contains a "
                     "voltage output range")
@@ -239,7 +241,7 @@ def test_raise_warning_output_range_mismatches_output_command(smu):
         smu.voltage(0.1)
 
 
-def test_measure_current(smu):
+def test_measure_current(smu) -> None:
     mainframe = smu.parent
     mainframe.ask.return_value = "NAI+000.005E-06\r"
 
@@ -249,7 +251,7 @@ def test_measure_current(smu):
     assert smu.current.measurement_status == constants.MeasurementStatus.N
 
 
-def test_measure_voltage(smu):
+def test_measure_voltage(smu) -> None:
     mainframe = smu.parent
     mainframe.ask.return_value = "NAV+000.123E-06\r"
 
@@ -262,7 +264,7 @@ def test_measure_voltage(smu):
     assert s
 
 
-def test_measure_current_shows_compliance_hit(smu):
+def test_measure_current_shows_compliance_hit(smu) -> None:
     mainframe = smu.parent
     mainframe.ask.return_value = "CAI+000.123E-06\r"
 
@@ -272,7 +274,7 @@ def test_measure_current_shows_compliance_hit(smu):
     assert smu.current.measurement_status == constants.MeasurementStatus.C
 
 
-def test_measured_voltage_with_V_status_returns_nan(smu):
+def test_measured_voltage_with_V_status_returns_nan(smu) -> None:
     mainframe = smu.parent
     mainframe.ask.return_value = "VAV+199.999E+99\r"
 
@@ -282,7 +284,7 @@ def test_measured_voltage_with_V_status_returns_nan(smu):
     assert smu.voltage.measurement_status == constants.MeasurementStatus.V
 
 
-def test_some_voltage_sourcing_and_current_measurement(smu):
+def test_some_voltage_sourcing_and_current_measurement(smu) -> None:
     mainframe = smu.parent
 
     smu.source_config(output_range=VOutputRange.MIN_0V5, compliance=1e-9)
@@ -300,7 +302,7 @@ def test_some_voltage_sourcing_and_current_measurement(smu):
     assert smu.current.measurement_status == constants.MeasurementStatus.N
 
 
-def test_use_high_resolution_adc(smu):
+def test_use_high_resolution_adc(smu) -> None:
     mainframe = smu.parent
 
     smu.use_high_resolution_adc()
@@ -308,7 +310,7 @@ def test_use_high_resolution_adc(smu):
     mainframe.write.assert_called_once_with('AAD 1,1')
 
 
-def test_use_high_speed_adc(smu):
+def test_use_high_speed_adc(smu) -> None:
     mainframe = smu.parent
 
     smu.use_high_speed_adc()
@@ -316,12 +318,12 @@ def test_use_high_speed_adc(smu):
     mainframe.write.assert_called_once_with('AAD 1,0')
 
 
-def test_measurement_mode_at_init(smu):
+def test_measurement_mode_at_init(smu) -> None:
     mode_at_init = smu.measurement_mode()
     assert mode_at_init == MM.Mode.SPOT
 
 
-def test_measurement_mode_to_enum_value(smu):
+def test_measurement_mode_to_enum_value(smu) -> None:
     mainframe = smu.parent
 
     smu.measurement_mode(MM.Mode.SAMPLING)
@@ -331,7 +333,7 @@ def test_measurement_mode_to_enum_value(smu):
     assert new_mode == MM.Mode.SAMPLING
 
 
-def test_measurement_mode_to_int_value(smu):
+def test_measurement_mode_to_int_value(smu) -> None:
     mainframe = smu.parent
 
     smu.measurement_mode(10)
@@ -341,7 +343,7 @@ def test_measurement_mode_to_int_value(smu):
     assert new_mode == MM.Mode.SAMPLING
 
 
-def test_setting_timing_parameters(smu):
+def test_setting_timing_parameters(smu) -> None:
     mainframe = smu.parent
 
     smu.timing_parameters(0.0, 0.42, 32)
@@ -353,7 +355,7 @@ def test_setting_timing_parameters(smu):
     mainframe.write.assert_called_once_with('MT 0.0,0.42,32,0.02')
 
 
-def test_set_average_samples_for_high_speed_adc(smu):
+def test_set_average_samples_for_high_speed_adc(smu) -> None:
     mainframe = smu.parent
 
     smu.set_average_samples_for_high_speed_adc(131, 2)
@@ -366,7 +368,7 @@ def test_set_average_samples_for_high_speed_adc(smu):
 
 
 
-def test_measurement_operation_mode(smu):
+def test_measurement_operation_mode(smu) -> None:
     mainframe = smu.parent
 
     smu.measurement_operation_mode(constants.CMM.Mode.COMPLIANCE_SIDE)
@@ -380,7 +382,7 @@ def test_measurement_operation_mode(smu):
                          constants.CMM.Mode.COMPLIANCE_SIDE)]
 
 
-def test_current_measurement_range(smu):
+def test_current_measurement_range(smu) -> None:
     mainframe = smu.parent
 
     smu.current_measurement_range(constants.IMeasRange.FIX_1A)
@@ -394,7 +396,7 @@ def test_current_measurement_range(smu):
                          constants.IMeasRange.FIX_1A)]
 
 
-def test_get_sweep_mode_range_start_end_steps(smu):
+def test_get_sweep_mode_range_start_end_steps(smu) -> None:
     mainframe = smu.parent
     mainframe.ask.return_value = 'WV1,1,50,+3.0E+00,-3.0E+00,201'
 
@@ -418,7 +420,8 @@ def test_get_sweep_mode_range_start_end_steps(smu):
     current_compliance = smu.iv_sweep.current_compliance()
     assert current_compliance is None
 
-def test_iv_sweep_delay(smu):
+
+def test_iv_sweep_delay(smu) -> None:
     mainframe = smu.root_instrument
 
     smu.iv_sweep.hold_time(43.12)
@@ -434,7 +437,7 @@ def test_iv_sweep_delay(smu):
                                       call("WT 43.12,34.01,0.01,0.1,15.4")])
 
 
-def test_iv_sweep_mode_start_end_steps_compliance(smu):
+def test_iv_sweep_mode_start_end_steps_compliance(smu) -> None:
     mainframe = smu.parent
 
     smu.iv_sweep.sweep_mode(constants.SweepMode.LINEAR_TWO_WAY)
@@ -455,7 +458,7 @@ def test_iv_sweep_mode_start_end_steps_compliance(smu):
                                      )
 
 
-def test_set_sweep_auto_abort(smu):
+def test_set_sweep_auto_abort(smu) -> None:
     mainframe = smu.parent
 
     smu.iv_sweep.sweep_auto_abort(constants.Abort.ENABLED)
@@ -463,7 +466,7 @@ def test_set_sweep_auto_abort(smu):
     mainframe.write.assert_called_once_with("WM 2")
 
 
-def test_get_sweep_auto_abort(smu):
+def test_get_sweep_auto_abort(smu) -> None:
     mainframe = smu.parent
 
     mainframe.ask.return_value = "WM2,2;WT1.0,0.0,0.0,0.0,0.0;"
@@ -471,7 +474,7 @@ def test_get_sweep_auto_abort(smu):
     assert condition == constants.Abort.ENABLED
 
 
-def test_set_post_sweep_voltage_cond(smu):
+def test_set_post_sweep_voltage_cond(smu) -> None:
     mainframe = smu.parent
     mainframe.ask.return_value = "WM2,2;WT1.0,0.0,0.0,0.0,0.0"
     smu.iv_sweep.post_sweep_voltage_condition(constants.WMDCV.Post.STOP)
@@ -479,7 +482,7 @@ def test_set_post_sweep_voltage_cond(smu):
     mainframe.write.assert_called_once_with("WM 2,2")
 
 
-def test_get_post_sweep_voltage_cond(smu):
+def test_get_post_sweep_voltage_cond(smu) -> None:
     mainframe = smu.parent
 
     mainframe.ask.return_value = "WM2,2;WT1.0,0.0,0.0,0.0,0.0"

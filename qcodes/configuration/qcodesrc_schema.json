@@ -279,7 +279,7 @@
                 "GUID_type": {
                     "type": "string",
                     "enum": ["explicit_sample", "random_sample"],
-                    "default": "explicit_sample",
+                    "default": "random_sample",
                     "description": "Type of GUID to use. Currently possible to chose between an explicitly assigned 'Sample identification code' and a random string as the first part of the GUID."
                 },
                 "location": {
@@ -362,6 +362,11 @@
                         "enum": ["captured_run_id", "guid", "exp_name", "sample_name", "name", "captured_counter"]
                     },
                     "default": ["captured_run_id", "guid"]
+                },
+                "in_memory_cache": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Should the data be cached in memory as it is measured. Useful to disable for large datasets to save on memory consumption."
                 }
             },
             "description": "Settings related to the DataSet and Measurement Context manager",

@@ -1,7 +1,7 @@
 from qcodes.utils import partial_with_docstring
 
 
-def test_partial_with_docstring():
+def test_partial_with_docstring() -> None:
     def f():
         pass
 
@@ -10,7 +10,7 @@ def test_partial_with_docstring():
     assert g.__doc__ == docstring
 
 
-def test_partial_with_docstring_pass_args():
+def test_partial_with_docstring_pass_args() -> None:
     """
     When one uses partial to bind the last argument
     it should be possible to provide arguments before
@@ -28,7 +28,7 @@ def test_partial_with_docstring_pass_args():
     assert g(2) == 3
 
 
-def test_partial_with_docstring_returns_value():
+def test_partial_with_docstring_returns_value() -> None:
     def f(a: int, b: int):
         return a + b
 

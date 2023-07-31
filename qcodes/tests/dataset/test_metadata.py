@@ -1,18 +1,15 @@
-import pytest
-
-
-def test_get_metadata_from_dataset(dataset):
+def test_get_metadata_from_dataset(dataset) -> None:
     dataset.add_metadata('something', 123)
     something = dataset.get_metadata('something')
     assert 123 == something
 
 
-def test_get_nonexisting_metadata(dataset):
+def test_get_nonexisting_metadata(dataset) -> None:
     data = dataset.get_metadata("something")
     assert data is None
 
 
-def test_get_metadata_lower_upper_case(dataset):
+def test_get_metadata_lower_upper_case(dataset) -> None:
     dataset.add_metadata("something", 123)
 
     something_lower = dataset.metadata.get("something", "didnt find lowercase")

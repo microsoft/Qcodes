@@ -1,15 +1,19 @@
+from __future__ import annotations
+
 import time
 from datetime import datetime, timedelta
+from typing import Any, Literal
 
 import pytest
 
 import qcodes.validators as vals
 from qcodes.parameters import Parameter, ParameterBase
+from qcodes.tests.instrument_mocks import DummyChannelInstrument
 
 from .conftest import NOT_PASSED, BetterGettableParam, SettableParam
 
 
-def test_get_from_cache_does_not_trigger_real_get_if_get_if_invalid_false():
+def test_get_from_cache_does_not_trigger_real_get_if_get_if_invalid_false() -> None:
     """
     assert that calling get on the cache with get_if_invalid=False does
     not trigger a get of the parameter when parameter
@@ -24,7 +28,7 @@ def test_get_from_cache_does_not_trigger_real_get_if_get_if_invalid_false():
     assert param._get_count == 1
 
 
-def test_initial_set_with_without_cache():
+def test_initial_set_with_without_cache() -> None:
     value = 43
     # setting the initial value triggers a set
     param1 = SettableParam(name="param", initial_value=value)
@@ -36,13 +40,13 @@ def test_initial_set_with_without_cache():
     assert param2.cache.get(get_if_invalid=False) == value
 
 
-def test_set_initial_and_initial_cache_raises():
+def test_set_initial_and_initial_cache_raises() -> None:
     with pytest.raises(SyntaxError,
                        match="`initial_value` and `initial_cache_value`"):
         Parameter(name="param", initial_value=1, initial_cache_value=2)
 
 
-def test_get_cache():
+def test_get_cache() -> None:
     time_resolution = time.get_clock_info('time').resolution
     sleep_delta = 2 * time_resolution
 
@@ -56,16 +60,20 @@ def test_get_cache():
 
     # Check we return last set value, with the correct timestamp
     assert local_parameter.cache.get() == 1
-    assert before_set < local_parameter.cache.timestamp < after_set
+    before_timestamp = local_parameter.cache.timestamp
+    assert before_timestamp is not None
+    assert before_set < before_timestamp < after_set
 
     # Check that updating the value updates the timestamp
     time.sleep(sleep_delta)
     local_parameter.set(2)
     assert local_parameter.cache.get() == 2
-    assert local_parameter.cache.timestamp > after_set
+    after_timestamp = local_parameter.cache.timestamp
+    assert after_timestamp is not None
+    assert after_timestamp > after_set
 
 
-def test_get_cache_raw_value():
+def test_get_cache_raw_value() -> None:
     # To have a simple distinction between raw value and value of the
     # parameter lets create a parameter with an offset
     p = Parameter('p', set_cmd=None, get_cmd=None, offset=42)
@@ -82,7 +90,7 @@ def test_get_cache_raw_value():
     assert p.cache.raw_value == 3 + 42
 
 
-def test_get_cache_unknown():
+def test_get_cache_unknown() -> None:
     """
     Test that cache get on a parameter that has not been acquired will
     trigger a get
@@ -92,8 +100,8 @@ def test_get_cache_unknown():
                                           get_cmd=None)
     # fake a parameter that has a value but never been get/set to mock
     # an instrument.
-    local_parameter.cache._value = value
-    local_parameter.cache._raw_value = value
+    local_parameter.cache._value = value  # type: ignore[attr-defined]
+    local_parameter.cache._raw_value = value  # type: ignore[attr-defined]
     assert local_parameter.cache.timestamp is None
     before_get = datetime.now()
     assert local_parameter._get_count == 0
@@ -108,7 +116,7 @@ def test_get_cache_unknown():
     assert local_parameter._get_count == 1
 
 
-def test_get_cache_known():
+def test_get_cache_known() -> None:
     """
     Test that cache.get on a parameter that has a known value will not
     trigger a get
@@ -130,7 +138,7 @@ def test_get_cache_known():
     assert local_parameter.cache.timestamp == set_time
 
 
-def test_get_cache_no_get():
+def test_get_cache_no_get() -> None:
     """
     Test that cache.get on a parameter that does not have get is handled
     correctly.
@@ -154,7 +162,7 @@ def test_get_cache_no_get():
     assert local_parameter2.cache.get() == value
 
 
-def test_set_raw_value_on_cache():
+def test_set_raw_value_on_cache() -> None:
     value = 1
     scale = 10
     local_parameter = BetterGettableParam('test_param',
@@ -165,11 +173,13 @@ def test_set_raw_value_on_cache():
     after = datetime.now()
     assert local_parameter.cache.get(get_if_invalid=False) == value
     assert local_parameter.cache.raw_value == value * scale
-    assert local_parameter.cache.timestamp >= before
-    assert local_parameter.cache.timestamp <= after
+    timestamp = local_parameter.cache.timestamp
+    assert timestamp is not None
+    assert timestamp >= before
+    assert timestamp <= after
 
 
-def test_max_val_age():
+def test_max_val_age() -> None:
     value = 1
     start = datetime.now()
     local_parameter = BetterGettableParam('test_param',
@@ -188,10 +198,12 @@ def test_max_val_age():
     assert local_parameter.cache.timestamp == set_time
     assert local_parameter.cache.get() == value
     assert local_parameter._get_count == 1
-    assert local_parameter.cache.timestamp >= start
+    timestamp = local_parameter.cache.timestamp
+    assert timestamp is not None
+    assert timestamp >= start
 
 
-def test_no_get_max_val_age():
+def test_no_get_max_val_age() -> None:
     """
     Test that cache.get on a parameter with max_val_age set and
     no get cmd raises correctly.
@@ -203,7 +215,9 @@ def test_no_get_max_val_age():
                       max_val_age=1, initial_value=value)
 
 
-def test_no_get_max_val_age_runtime_error(get_if_invalid):
+def test_no_get_max_val_age_runtime_error(
+    get_if_invalid: bool | Literal["NOT_PASSED"],
+) -> None:
     """
     ParameterBase does not have a check on creation time that
     no get_cmd is mixed with max_val_age since get_cmd could be added
@@ -213,9 +227,9 @@ def test_no_get_max_val_age_runtime_error(get_if_invalid):
     value = 1
 
     class LocalParameter(ParameterBase):
-        def __init__(self, *args, **kwargs):
+        def __init__(self, *args: Any, **kwargs: Any):
             super().__init__(*args, **kwargs)
-            self.set_raw = lambda x: x
+            self.set_raw = lambda x: x  # type: ignore[method-assign]
             self.set = self._wrap_set(self.set_raw)
 
     local_parameter = LocalParameter('test_param',
@@ -236,7 +250,9 @@ def test_no_get_max_val_age_runtime_error(get_if_invalid):
         assert local_parameter.cache.get(get_if_invalid=get_if_invalid) == 1
 
 
-def test_no_get_timestamp_none_runtime_error(get_if_invalid):
+def test_no_get_timestamp_none_runtime_error(
+    get_if_invalid: bool | Literal["NOT_PASSED"],
+) -> None:
     """
     Test that a parameter that has never been
     set, cannot be get and does not support
@@ -254,16 +270,16 @@ def test_no_get_timestamp_none_runtime_error(get_if_invalid):
         assert local_parameter.cache.get(get_if_invalid=get_if_invalid) is None
 
 
-def test_latest_dictionary_gets_updated_upon_set_of_memory_parameter():
-    p = Parameter('p', set_cmd=None, get_cmd=None)
-    assert p.cache._value is None
-    assert p.cache._raw_value is None
+def test_latest_dictionary_gets_updated_upon_set_of_memory_parameter() -> None:
+    p = Parameter("p", set_cmd=None, get_cmd=None)
+    assert p.cache._value is None  # type: ignore[attr-defined]
+    assert p.cache.raw_value is None
     assert p.cache.timestamp is None
 
     p(42)
 
-    assert p.cache._value == 42
-    assert p.cache._raw_value == 42
+    assert p.cache._value == 42  # type: ignore[attr-defined]
+    assert p.cache.raw_value == 42
     assert p.cache.timestamp is not None
 
 
@@ -299,7 +315,9 @@ _P = Parameter
         'with_scale_and_offset',
     )
 )
-def test_set_latest_works_for_plain_memory_parameter(p, value, raw_value):
+def test_set_latest_works_for_plain_memory_parameter(
+    p: Parameter, value: str | int, raw_value: str | int
+) -> None:
     # Set latest value of the parameter
     p.cache.set(value)
 
@@ -308,8 +326,8 @@ def test_set_latest_works_for_plain_memory_parameter(p, value, raw_value):
     assert p.raw_value == raw_value
 
     # Assert latest value and raw_value via private attributes for strictness
-    assert p.cache._value == value
-    assert p.cache._raw_value == raw_value
+    assert p.cache._value == value  # type: ignore[attr-defined]
+    assert p.cache.raw_value == raw_value
 
     # Now let's get the value of the parameter to ensure that the value that
     # is set above gets picked up from the `_latest` dictionary (due to
@@ -329,11 +347,11 @@ def test_set_latest_works_for_plain_memory_parameter(p, value, raw_value):
     assert p.raw_value == raw_value
 
     # Assert latest value and raw_value via private attributes for strictness
-    assert p.cache._value == value
-    assert p.cache._raw_value == raw_value
+    assert p.cache._value == value  # type: ignore[attr-defined]
+    assert p.cache.raw_value == raw_value
 
 
-def test_get_from_cache_marked_invalid():
+def test_get_from_cache_marked_invalid() -> None:
     param = BetterGettableParam(name="param")
     param.get()
     assert param._get_count == 1
@@ -360,8 +378,10 @@ def test_get_from_cache_marked_invalid():
     assert param._get_count == 2
 
 
-def test_marking_invalid_via_instrument(dummy_instrument):
-    def _assert_cache_status(valid: bool):
+def test_marking_invalid_via_instrument(
+    dummy_instrument: DummyChannelInstrument,
+) -> None:
+    def _assert_cache_status(valid: bool) -> None:
         for param in dummy_instrument.parameters.values():
             assert param.cache.valid is valid, param.full_name
 

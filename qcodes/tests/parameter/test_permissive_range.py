@@ -23,13 +23,13 @@ good_args = [
 
 
 @pytest.mark.parametrize("args", bad_args)
-def test_bad_calls(args):
+def test_bad_calls(args) -> None:
     with pytest.raises(Exception):
         permissive_range(*args)
 
 
 @pytest.mark.parametrize("args,result", good_args)
-def test_good_calls(args, result):
+def test_good_calls(args, result) -> None:
     # TODO(giulioungaretti)
     # not sure what we are testing here.
     # in python 1.0 and 1 are actually the same

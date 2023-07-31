@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import ast
 import gc
+from collections.abc import Iterable
 from pathlib import Path
 from sqlite3 import DatabaseError
-from typing import Dict, Iterable, List, Optional, Tuple, Union, cast
+from typing import cast
 
 from qcodes.dataset.data_set import get_guids_by_run_spec
 from qcodes.dataset.guids import validate_guid_format
@@ -112,5 +113,5 @@ def guids_from_list_str(s: str) -> tuple[str, ...] | None:
     if not all(isinstance(e, ast.Str) for e in parsed.elts):
         return None
 
-    str_elts = cast(Tuple[ast.Str, ...], tuple(parsed.elts))
+    str_elts = cast(tuple[ast.Str, ...], tuple(parsed.elts))
     return tuple(s.s for s in str_elts)

@@ -27,7 +27,6 @@ from ipywidgets import (
 )
 from ruamel.yaml import YAML
 
-import qcodes
 from qcodes.dataset import experiments, initialise_or_create_database_at, plot_dataset
 from qcodes.dataset.data_set_protocol import DataSetProtocol
 

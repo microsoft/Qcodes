@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 import xarray as xr
+from pytest import LogCaptureFixture
 
 import qcodes
 from qcodes.dataset import get_data_export_path, load_from_netcdf, new_data_set
@@ -122,7 +123,7 @@ def _make_mock_dataset_inverted_coords(experiment):
 
 
 @pytest.mark.usefixtures('experiment')
-def test_write_data_to_text_file_save(tmp_path_factory):
+def test_write_data_to_text_file_save(tmp_path_factory) -> None:
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", 'numeric')
     yparam = ParamSpecBase("y", 'numeric')
@@ -141,7 +142,9 @@ def test_write_data_to_text_file_save(tmp_path_factory):
         assert f.readlines() == ['0.0\t1.0\n']
 
 
-def test_write_data_to_text_file_save_multi_keys(tmp_path_factory, mock_dataset):
+def test_write_data_to_text_file_save_multi_keys(
+    tmp_path_factory, mock_dataset
+) -> None:
     tmp_path = tmp_path_factory.mktemp("data_to_text_file_save_multi_keys")
     path = str(tmp_path)
     mock_dataset.write_data_to_text_file(path=path)
@@ -152,7 +155,9 @@ def test_write_data_to_text_file_save_multi_keys(tmp_path_factory, mock_dataset)
         assert f.readlines() == ['0.0\t2.0\n']
 
 
-def test_write_data_to_text_file_save_single_file(tmp_path_factory, mock_dataset):
+def test_write_data_to_text_file_save_single_file(
+    tmp_path_factory, mock_dataset
+) -> None:
     tmp_path = tmp_path_factory.mktemp("to_text_file_save_single_file")
     path = str(tmp_path)
     mock_dataset.write_data_to_text_file(path=path, single_file=True,
@@ -163,7 +168,7 @@ def test_write_data_to_text_file_save_single_file(tmp_path_factory, mock_dataset
 
 
 @pytest.mark.usefixtures('experiment')
-def test_write_data_to_text_file_length_exception(tmp_path):
+def test_write_data_to_text_file_length_exception(tmp_path) -> None:
     dataset = new_data_set("dataset")
     xparam = ParamSpecBase("x", 'numeric')
     yparam = ParamSpecBase("y", 'numeric')
@@ -187,14 +192,14 @@ def test_write_data_to_text_file_length_exception(tmp_path):
                                         single_file_name='yz')
 
 
-def test_write_data_to_text_file_name_exception(tmp_path, mock_dataset):
+def test_write_data_to_text_file_name_exception(tmp_path, mock_dataset) -> None:
     temp_dir = str(tmp_path)
     with pytest.raises(Exception, match='desired file name'):
         mock_dataset.write_data_to_text_file(path=temp_dir, single_file=True,
                                              single_file_name=None)
 
 
-def test_export_csv(tmp_path_factory, mock_dataset, caplog):
+def test_export_csv(tmp_path_factory, mock_dataset, caplog: LogCaptureFixture) -> None:
     tmp_path = tmp_path_factory.mktemp("export_csv")
     path = str(tmp_path)
     with caplog.at_level(logging.INFO):
@@ -202,6 +207,7 @@ def test_export_csv(tmp_path_factory, mock_dataset, caplog):
 
     assert "Executing on_export callback log_exported_ds" in caplog.messages
     assert any("Dataset has been exported to" in mes for mes in caplog.messages)
+    assert any("this was triggered manually" in mes for mes in caplog.messages)
 
     mock_dataset.add_metadata("metadata_added_after_export", 69)
 
@@ -213,7 +219,9 @@ def test_export_csv(tmp_path_factory, mock_dataset, caplog):
         assert f.readlines() == ['0.0\t1.0\t2.0\n']
 
 
-def test_export_netcdf(tmp_path_factory, mock_dataset, caplog):
+def test_export_netcdf(
+    tmp_path_factory, mock_dataset, caplog: LogCaptureFixture
+) -> None:
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
     path = str(tmp_path)
     with caplog.at_level(logging.INFO):
@@ -221,6 +229,7 @@ def test_export_netcdf(tmp_path_factory, mock_dataset, caplog):
 
     assert "Executing on_export callback log_exported_ds" in caplog.messages
     assert any("Dataset has been exported to" in mes for mes in caplog.messages)
+    assert any("this was triggered manually" in mes for mes in caplog.messages)
 
     mock_dataset.add_metadata("metadata_added_after_export", 69)
 
@@ -230,7 +239,7 @@ def test_export_netcdf(tmp_path_factory, mock_dataset, caplog):
     ds = xr.open_dataset(file_path)
     df = ds.to_dataframe()
     assert df.index.name == "x"
-    assert df.index.values.tolist() == [0.]
+    assert df.index.values.tolist() == [0.0]
     assert df.y.values.tolist() == [1.0]
     assert df.z.values.tolist() == [2.0]
     expected_attrs = mock_dataset.metadata.copy()
@@ -241,7 +250,7 @@ def test_export_netcdf(tmp_path_factory, mock_dataset, caplog):
     assert mock_dataset.export_info.export_paths["nc"] == file_path
 
 
-def test_export_netcdf_default_dir(tmp_path_factory, mock_dataset):
+def test_export_netcdf_default_dir(tmp_path_factory, mock_dataset) -> None:
     qcodes.config.dataset.export_path = "{db_location}"
     mock_dataset.export(export_type="netcdf", prefix="qcodes_")
     export_path = Path(mock_dataset.export_info.export_paths["nc"])
@@ -256,7 +265,7 @@ def test_export_netcdf_default_dir(tmp_path_factory, mock_dataset):
     assert exported_dir == get_data_export_path()
 
 
-def test_export_netcdf_csv(tmp_path_factory, mock_dataset):
+def test_export_netcdf_csv(tmp_path_factory, mock_dataset) -> None:
 
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
     path = str(tmp_path)
@@ -297,7 +306,7 @@ def test_export_netcdf_csv(tmp_path_factory, mock_dataset):
     assert loaded_new_xr_ds.attrs["metadata_added_after_export_2"] == 696
 
 
-def test_export_netcdf_complex_data(tmp_path_factory, mock_dataset_complex):
+def test_export_netcdf_complex_data(tmp_path_factory, mock_dataset_complex) -> None:
 
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
     path = str(tmp_path)
@@ -315,7 +324,10 @@ def test_export_netcdf_complex_data(tmp_path_factory, mock_dataset_complex):
     assert df.y.values.tolist() == [1.0 + 1j]
 
 
-def test_export_no_or_nonexistent_type_specified(tmp_path_factory, mock_dataset):
+@pytest.mark.usefixtures("default_config")
+def test_export_no_or_nonexistent_type_specified(
+    tmp_path_factory, mock_dataset
+) -> None:
     with pytest.raises(ValueError, match="No data export type specified"):
         mock_dataset.export()
 
@@ -323,7 +335,7 @@ def test_export_no_or_nonexistent_type_specified(tmp_path_factory, mock_dataset)
         mock_dataset.export(export_type="foo")
 
 
-def test_export_from_config(tmp_path_factory, mock_dataset, mocker):
+def test_export_from_config(tmp_path_factory, mock_dataset, mocker) -> None:
     tmp_path = tmp_path_factory.mktemp("export_from_config")
     path = str(tmp_path)
     mock_type = mocker.patch("qcodes.dataset.data_set_protocol.get_data_export_type")
@@ -336,7 +348,9 @@ def test_export_from_config(tmp_path_factory, mock_dataset, mocker):
     ]
 
 
-def test_export_from_config_set_name_elements(tmp_path_factory, mock_dataset, mocker):
+def test_export_from_config_set_name_elements(
+    tmp_path_factory, mock_dataset, mocker
+) -> None:
     tmp_path = tmp_path_factory.mktemp("export_from_config")
     path = str(tmp_path)
     mock_type = mocker.patch("qcodes.dataset.data_set_protocol.get_data_export_type")
@@ -359,7 +373,7 @@ def test_export_from_config_set_name_elements(tmp_path_factory, mock_dataset, mo
     ]
 
 
-def test_same_setpoint_warning_for_df_and_xarray(different_setpoint_dataset):
+def test_same_setpoint_warning_for_df_and_xarray(different_setpoint_dataset) -> None:
 
     warning_message = (
         "Independent parameter setpoints are not equal. "
@@ -379,7 +393,7 @@ def test_same_setpoint_warning_for_df_and_xarray(different_setpoint_dataset):
         different_setpoint_dataset.cache.to_xarray_dataset()
 
 
-def test_export_to_xarray_dataset_empty_ds(mock_empty_dataset):
+def test_export_to_xarray_dataset_empty_ds(mock_empty_dataset) -> None:
     ds = mock_empty_dataset.to_xarray_dataset()
     assert len(ds) == 2
     assert len(ds.coords) == 1
@@ -387,7 +401,7 @@ def test_export_to_xarray_dataset_empty_ds(mock_empty_dataset):
     _assert_xarray_metadata_is_as_expected(ds, mock_empty_dataset)
 
 
-def test_export_to_xarray_dataarray_empty_ds(mock_empty_dataset):
+def test_export_to_xarray_dataarray_empty_ds(mock_empty_dataset) -> None:
     dad = mock_empty_dataset.to_xarray_dataarray_dict()
     assert len(dad) == 2
     assert len(dad["y"].coords) == 1
@@ -396,7 +410,7 @@ def test_export_to_xarray_dataarray_empty_ds(mock_empty_dataset):
     assert "x" in dad["z"].coords
 
 
-def test_export_to_xarray(mock_dataset):
+def test_export_to_xarray(mock_dataset) -> None:
     ds = mock_dataset.to_xarray_dataset()
     assert len(ds) == 2
     assert "index" not in ds.coords
@@ -404,7 +418,9 @@ def test_export_to_xarray(mock_dataset):
     _assert_xarray_metadata_is_as_expected(ds, mock_dataset)
 
 
-def test_export_to_xarray_non_unique_dependent_parameter(mock_dataset_nonunique):
+def test_export_to_xarray_non_unique_dependent_parameter(
+    mock_dataset_nonunique,
+) -> None:
     """When x (the dependent parameter) contains non unique values it cannot be used
     as coordinates in xarray so check that we fall back to using an index"""
     ds = mock_dataset_nonunique.to_xarray_dataset()
@@ -417,7 +433,7 @@ def test_export_to_xarray_non_unique_dependent_parameter(mock_dataset_nonunique)
         assert "snapshot" not in ds[array_name].attrs.keys()
 
 
-def test_export_to_xarray_extra_metadata(mock_dataset):
+def test_export_to_xarray_extra_metadata(mock_dataset) -> None:
     mock_dataset.add_metadata("mytag", "somestring")
     mock_dataset.add_metadata("myothertag", 1)
     ds = mock_dataset.to_xarray_dataset()
@@ -428,7 +444,7 @@ def test_export_to_xarray_extra_metadata(mock_dataset):
         assert "snapshot" not in ds[array_name].attrs.keys()
 
 
-def test_export_to_xarray_ds_dict_extra_metadata(mock_dataset):
+def test_export_to_xarray_ds_dict_extra_metadata(mock_dataset) -> None:
     mock_dataset.add_metadata("mytag", "somestring")
     mock_dataset.add_metadata("myothertag", 1)
     da_dict = mock_dataset.to_xarray_dataarray_dict()
@@ -437,7 +453,7 @@ def test_export_to_xarray_ds_dict_extra_metadata(mock_dataset):
         _assert_xarray_metadata_is_as_expected(datarray, mock_dataset)
 
 
-def test_export_to_xarray_extra_metadata_can_be_stored(mock_dataset, tmp_path):
+def test_export_to_xarray_extra_metadata_can_be_stored(mock_dataset, tmp_path) -> None:
 
     nt_metadata = {
         "foo": {
@@ -474,7 +490,7 @@ def test_export_to_xarray_extra_metadata_can_be_stored(mock_dataset, tmp_path):
     assert loaded_data.attrs == data_as_xarray.attrs
 
 
-def test_to_xarray_ds_paramspec_metadata_is_preserved(mock_dataset_label_unit):
+def test_to_xarray_ds_paramspec_metadata_is_preserved(mock_dataset_label_unit) -> None:
     xr_ds = mock_dataset_label_unit.to_xarray_dataset()
     assert len(xr_ds.dims) == 1
     for param_name in xr_ds.dims:
@@ -487,7 +503,9 @@ def test_to_xarray_ds_paramspec_metadata_is_preserved(mock_dataset_label_unit):
         )
 
 
-def test_to_xarray_da_dict_paramspec_metadata_is_preserved(mock_dataset_label_unit):
+def test_to_xarray_da_dict_paramspec_metadata_is_preserved(
+    mock_dataset_label_unit,
+) -> None:
     xr_das = mock_dataset_label_unit.to_xarray_dataarray_dict()
 
     for outer_param_name, xr_da in xr_das.items():
@@ -504,7 +522,7 @@ def test_to_xarray_da_dict_paramspec_metadata_is_preserved(mock_dataset_label_un
 
 def test_inverted_coords_perserved_on_netcdf_roundtrip(
     tmp_path_factory, mock_dataset_inverted_coords
-):
+) -> None:
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
     path = str(tmp_path)
     mock_dataset_inverted_coords.export(

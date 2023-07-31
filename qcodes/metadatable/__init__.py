@@ -1,3 +1,3 @@
-from .metadatable_base import Metadatable
+from .metadatable_base import Metadatable, MetadatableWithName
 
-__all__ = ["Metadatable"]
+__all__ = ["Metadatable", "MetadatableWithName"]

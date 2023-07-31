@@ -1,22 +1,19 @@
 import logging
-from collections.abc import Sequence
+from collections.abc import Generator, Sequence
 
 import hypothesis.strategies as hst
 import numpy as np
 import pytest
 from hypothesis import HealthCheck, given, settings
-from numpy.testing import assert_allclose, assert_array_equal
+from numpy.testing import assert_array_equal
+from pytest import LogCaptureFixture
 
-from qcodes.data.location import FormatLocation
 from qcodes.instrument import ChannelList, ChannelTuple, Instrument, InstrumentChannel
-from qcodes.loops import Loop
-from qcodes.parameters import Parameter
 from qcodes.tests.instrument_mocks import DummyChannel, DummyChannelInstrument
-from qcodes.validators import Numbers
 
 
 @pytest.fixture(scope='function', name='dci')
-def _make_dci():
+def _make_dci() -> Generator[DummyChannelInstrument, None, None]:
 
     dci = DummyChannelInstrument(name='dci')
     try:
@@ -26,7 +23,7 @@ def _make_dci():
 
 
 @pytest.fixture(scope="function", name="dci_with_list")
-def _make_dci_with_list():
+def _make_dci_with_list() -> Generator[Instrument, None, None]:
     for i in range(10):
         pass
 
@@ -45,7 +42,7 @@ def _make_dci_with_list():
 
 
 @pytest.fixture(scope="function", name="empty_instrument")
-def _make_empty_instrument():
+def _make_empty_instrument() -> Generator[Instrument, None, None]:
 
     instr = Instrument(name="dci")
 
@@ -59,18 +56,18 @@ class EmptyChannel(InstrumentChannel):
     pass
 
 
-def test_instrument_channel_label():
+def test_instrument_channel_label() -> None:
     dci = DummyChannelInstrument(name="dci_with_labels", label="Instrument Label")
     channel = DummyChannel(dci, "A_with_label", "A_wl", label="A with f@ncy label")
     dci.add_submodule("A_with_label", channel)
-    channel = EmptyChannel(dci, "B_with_label", label="B with f@ncy label")
-    dci.add_submodule("B_with_label", channel)
+    channel_2 = EmptyChannel(dci, "B_with_label", label="B with f@ncy label")
+    dci.add_submodule("B_with_label", channel_2)
     assert dci.label == "Instrument Label"
     assert dci.A_with_label.label == "A with f@ncy label"
     assert dci.B_with_label.label == "B with f@ncy label"
 
 
-def test_channels_call_function(dci, caplog):
+def test_channels_call_function(dci, caplog: LogCaptureFixture) -> None:
     """
     Test that dci.channels.some_function() calls
     some_function on each of the channels
@@ -84,7 +81,7 @@ def test_channels_call_function(dci, caplog):
         assert mssgs == names
 
 
-def test_channels_get(dci):
+def test_channels_get(dci) -> None:
 
     temperatures = dci.channels.temperature.get()
     assert len(temperatures) == 6
@@ -92,7 +89,7 @@ def test_channels_get(dci):
 
 @settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(value=hst.floats(0, 300), channel=hst.integers(0, 3))
-def test_channel_access_is_identical(dci, value, channel):
+def test_channel_access_is_identical(dci, value, channel) -> None:
     channel_to_label = {0: 'A', 1: 'B', 2: 'C', 3: "D"}
     label = channel_to_label[channel]
     channel_via_label = getattr(dci, label)
@@ -119,27 +116,29 @@ def test_channel_access_is_identical(dci, value, channel):
     # as this is a multi parameter that currently does not support set.
 
 
-def test_invalid_channel_type_raises(empty_instrument):
+def test_invalid_channel_type_raises(empty_instrument: Instrument) -> None:
 
     with pytest.raises(
         ValueError,
         match="ChannelTuple can only hold instances of type InstrumentChannel",
     ):
-        ChannelList(parent=empty_instrument, name="empty", chan_type=int)
+        ChannelList(
+            parent=empty_instrument, name="empty", chan_type=int  # type: ignore[type-var]
+        )
 
 
-def test_invalid_multichan_type_raises(empty_instrument):
+def test_invalid_multichan_type_raises(empty_instrument: Instrument) -> None:
 
     with pytest.raises(ValueError, match="multichan_paramclass must be a"):
         ChannelList(
             parent=empty_instrument,
             name="empty",
             chan_type=DummyChannel,
-            multichan_paramclass=int,
+            multichan_paramclass=int,  # type: ignore[arg-type]
         )
 
 
-def test_wrong_chan_type_raises(empty_instrument):
+def test_wrong_chan_type_raises(empty_instrument) -> None:
     with pytest.raises(TypeError, match="All items in this ChannelTuple must be of"):
         ChannelList(
             parent=empty_instrument,
@@ -149,10 +148,10 @@ def test_wrong_chan_type_raises(empty_instrument):
         )
 
 
-def test_append_channel(dci_with_list):
+def test_append_channel(dci_with_list) -> None:
     n_channels_pre = len(dci_with_list.channels)
     n_channels_post = n_channels_pre + 1
-    chan_num = 11
+    chan_num = "11"
     name = f"Chan{chan_num}"
 
     channel = DummyChannel(dci_with_list, name, chan_num)
@@ -170,7 +169,7 @@ def test_append_channel(dci_with_list):
     assert len(dci_with_list.channels) == n_channels_post
 
 
-def test_append_channel_wrong_type_raises(dci_with_list):
+def test_append_channel_wrong_type_raises(dci_with_list) -> None:
     n_channels = len(dci_with_list.channels)
 
     channel = EmptyChannel(dci_with_list, "foo")
@@ -180,7 +179,7 @@ def test_append_channel_wrong_type_raises(dci_with_list):
     assert len(dci_with_list.channels) == n_channels
 
 
-def test_extend_channels_from_generator(dci_with_list):
+def test_extend_channels_from_generator(dci_with_list) -> None:
     n_channels = len(dci_with_list.channels)
     names = ("foo", "bar", "foobar")
     channels = (DummyChannel(dci_with_list, "Chan" + name, name) for name in names)
@@ -189,7 +188,7 @@ def test_extend_channels_from_generator(dci_with_list):
     assert len(dci_with_list.channels) == n_channels + len(names)
 
 
-def test_extend_channels_from_tuple(dci_with_list):
+def test_extend_channels_from_tuple(dci_with_list) -> None:
     n_channels = len(dci_with_list.channels)
     names = ("foo", "bar", "foobar")
     channels = tuple(DummyChannel(dci_with_list, "Chan" + name, name) for name in names)
@@ -198,7 +197,7 @@ def test_extend_channels_from_tuple(dci_with_list):
     assert len(dci_with_list.channels) == n_channels + len(names)
 
 
-def test_extend_wrong_type_raises(dci_with_list):
+def test_extend_wrong_type_raises(dci_with_list) -> None:
     names = ("foo", "bar", "foobar")
     channels = tuple(EmptyChannel(dci_with_list, "Chan" + name) for name in names)
     with pytest.raises(
@@ -207,7 +206,7 @@ def test_extend_wrong_type_raises(dci_with_list):
         dci_with_list.channels.extend(channels)
 
 
-def test_extend_locked_list_raises(dci_with_list):
+def test_extend_locked_list_raises(dci_with_list) -> None:
     dci_with_list.channels.lock()
     names = ("foo", "bar", "foobar")
     channels = tuple(EmptyChannel(dci_with_list, "Chan" + name) for name in names)
@@ -215,7 +214,7 @@ def test_extend_locked_list_raises(dci_with_list):
         dci_with_list.channels.extend(channels)
 
 
-def test_extend_then_remove(dci_with_list):
+def test_extend_then_remove(dci_with_list) -> None:
     n_channels = len(dci_with_list.channels)
     names = ("foo", "bar", "foobar")
     channels = [DummyChannel(dci_with_list, "Chan" + name, name) for name in names]
@@ -228,7 +227,7 @@ def test_extend_then_remove(dci_with_list):
     assert len(dci_with_list.channels) == n_channels + len(names) - 1
 
 
-def test_insert_channel(dci_with_list):
+def test_insert_channel(dci_with_list) -> None:
     n_channels_pre = len(dci_with_list.channels)
     name = "foo"
     channel = DummyChannel(dci_with_list, "Chan" + name, name)
@@ -250,18 +249,18 @@ def test_insert_channel(dci_with_list):
     assert len(dci_with_list.channels._channel_mapping) == n_channels_post
 
 
-def test_insert_channel_wrong_type_raises(dci_with_list):
+def test_insert_channel_wrong_type_raises(dci_with_list) -> None:
     with pytest.raises(TypeError, match="All items in a channel list"):
         dci_with_list.channels.insert(1, EmptyChannel(parent=dci_with_list, name="foo"))
 
 
-def test_add_none_channel_tuple_to_channel_tuple_raises(dci):
+def test_add_none_channel_tuple_to_channel_tuple_raises(dci) -> None:
 
     with pytest.raises(TypeError, match="Can't add objects of type"):
         _ = dci.channels + [1]
 
 
-def test_add_channel_tuples_of_different_types_raises(dci):
+def test_add_channel_tuples_of_different_types_raises(dci) -> None:
 
     extra_channels = [EmptyChannel(dci, f"chan{i}") for i in range(10)]
     extra_channel_list = ChannelList(
@@ -276,56 +275,56 @@ def test_add_channel_tuples_of_different_types_raises(dci):
         _ = dci.channels + extra_channel_list
 
 
-def test_add_channel_tuples_from_different_parents(dci, dci_with_list):
+def test_add_channel_tuples_from_different_parents(dci, dci_with_list) -> None:
 
     with pytest.raises(ValueError, match="Can only add channels from the same"):
         _ = dci.channels + dci_with_list.channels
 
 
-def test_chan_tuple_repr(dci):
+def test_chan_tuple_repr(dci) -> None:
 
     dci_repr = repr(dci.channels)
     assert dci_repr.startswith("ChannelTuple")
 
 
-def test_chan_list_repr(dci_with_list):
+def test_chan_list_repr(dci_with_list) -> None:
 
     dci_repr = repr(dci_with_list.channels)
     assert dci_repr.startswith("ChannelList")
 
 
-def test_channel_tuple_get_validator(dci):
+def test_channel_tuple_get_validator(dci) -> None:
 
     validator = dci.channels.get_validator()
     for chan in dci.channels:
         validator.validate(chan)
 
 
-def test_channel_list_get_validator(dci_with_list):
+def test_channel_list_get_validator(dci_with_list) -> None:
     dci_with_list.channels.lock()
     validator = dci_with_list.channels.get_validator()
     for chan in dci_with_list.channels:
         validator.validate(chan)
 
 
-def test_channel_list_get_validator_not_locked_raised(dci_with_list):
+def test_channel_list_get_validator_not_locked_raised(dci_with_list) -> None:
     with pytest.raises(AttributeError, match="Cannot create a validator"):
         dci_with_list.channels.get_validator()
 
 
-def test_channel_tuple_index(dci):
+def test_channel_tuple_index(dci) -> None:
 
     for i, chan in enumerate(dci.channels):
         assert dci.channels.index(chan) == i
 
 
-def test_channel_tuple_snapshot(dci):
+def test_channel_tuple_snapshot(dci) -> None:
     snapshot = dci.channels.snapshot()
     assert snapshot["snapshotable"] is False
     assert len(snapshot.keys()) == 2
 
 
-def test_channel_tuple_snapshot_enabled(empty_instrument):
+def test_channel_tuple_snapshot_enabled(empty_instrument) -> None:
 
     channels = ChannelList(
         empty_instrument, "ListElem", DummyChannel, snapshotable=True
@@ -341,7 +340,7 @@ def test_channel_tuple_snapshot_enabled(empty_instrument):
     assert "channels" in snapshot.keys()
 
 
-def test_channel_tuple_dir(dci):
+def test_channel_tuple_dir(dci) -> None:
 
     dir_list = dir(dci.channels)
 
@@ -352,13 +351,13 @@ def test_channel_tuple_dir(dci):
         assert param.short_name in dir_list
 
 
-def test_clear_channels(dci_with_list):
+def test_clear_channels(dci_with_list) -> None:
     channels = dci_with_list.channels
     channels.clear()
     assert len(channels) == 0
 
 
-def test_clear_locked_channels(dci_with_list):
+def test_clear_locked_channels(dci_with_list) -> None:
     channels = dci_with_list.channels
     original_length = len(channels)
     channels.lock()
@@ -367,7 +366,7 @@ def test_clear_locked_channels(dci_with_list):
     assert len(channels) == original_length
 
 
-def test_remove_channel(dci_with_list):
+def test_remove_channel(dci_with_list) -> None:
     channels = dci_with_list.channels
     chan_a = dci_with_list.A
     original_length = len(channels.temperature())
@@ -378,7 +377,7 @@ def test_remove_channel(dci_with_list):
     assert len(channels.temperature()) == original_length-1
 
 
-def test_remove_locked_channel(dci_with_list):
+def test_remove_locked_channel(dci_with_list) -> None:
     channels = dci_with_list.channels
     chan_a = dci_with_list.A
     channels.lock()
@@ -386,14 +385,14 @@ def test_remove_locked_channel(dci_with_list):
         channels.remove(chan_a)
 
 
-def test_channel_list_lock_twice(dci_with_list):
+def test_channel_list_lock_twice(dci_with_list) -> None:
     channels = dci_with_list.channels
     channels.lock()
     # locking twice should be a no op
     channels.lock()
 
 
-def test_remove_tupled_channel(dci_with_list):
+def test_remove_tupled_channel(dci_with_list) -> None:
     channel_tuple = tuple(
         DummyChannel(dci_with_list, f"Chan{C}", C)
         for C in ("A", "B", "C", "D", "E", "F")
@@ -406,13 +405,14 @@ def test_remove_tupled_channel(dci_with_list):
         snapshotable=False,
     )
     chan_a = channels.ChanA
+    assert isinstance(chan_a, DummyChannel)
     with pytest.raises(AttributeError):
         channels.remove(chan_a)
 
 
 @settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(setpoints=hst.lists(hst.floats(0, 300), min_size=4, max_size=4))
-def test_combine_channels(dci, setpoints):
+def test_combine_channels(dci, setpoints) -> None:
     assert len(dci.channels) == 6
 
     mychannels = dci.channels[0:2] + dci.channels[4:]
@@ -433,7 +433,7 @@ def test_combine_channels(dci, setpoints):
 @settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(start=hst.integers(-8, 7), stop=hst.integers(-8, 7),
        step=hst.integers(1, 7))
-def test_access_channels_by_slice(dci, start, stop, step):
+def test_access_channels_by_slice(dci, start, stop, step) -> None:
     names = ('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H')
     channels = tuple(DummyChannel(dci,
                                   'Chan'+name, name) for name in names)
@@ -450,7 +450,7 @@ def test_access_channels_by_slice(dci, start, stop, step):
 
 @settings(suppress_health_check=(HealthCheck.function_scoped_fixture,), deadline=1000)
 @given(myindexs=hst.lists(elements=hst.integers(-8, 7), min_size=1))
-def test_access_channels_by_tuple(dci, myindexs):
+def test_access_channels_by_tuple(dci, myindexs) -> None:
     names = ('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H')
     mytuple = tuple(myindexs)
     channels = tuple(DummyChannel(dci,
@@ -463,13 +463,13 @@ def test_access_channels_by_tuple(dci, myindexs):
         assert chan.name == f"dci_Chan{names[chanindex]}"
 
 
-def test_access_channels_by_name_empty_raises(dci):
+def test_access_channels_by_name_empty_raises(dci) -> None:
     # todo this should raise a less generic error type
     with pytest.raises(Exception, match="one or more names must be given"):
         dci.channels.get_channel_by_name()
 
 
-def test_delete_from_channel_list(dci_with_list):
+def test_delete_from_channel_list(dci_with_list) -> None:
     n_channels = len(dci_with_list.channels)
     chan0 = dci_with_list.channels[0]
     del dci_with_list.channels[0]
@@ -496,13 +496,13 @@ def test_delete_from_channel_list(dci_with_list):
     assert len(dci_with_list.channels) == n_channels - 3
 
 
-def test_set_element_by_int(dci_with_list):
+def test_set_element_by_int(dci_with_list) -> None:
 
     dci_with_list.channels[0] = dci_with_list.channels[1]
     assert dci_with_list.channels[0] is dci_with_list.channels[1]
 
 
-def test_set_element_by_slice(dci_with_list):
+def test_set_element_by_slice(dci_with_list) -> None:
     foo = DummyChannel(dci_with_list, name="foo", channel="foo")
     bar = DummyChannel(dci_with_list, name="bar", channel="bar")
     dci_with_list.channels[0:2] = [foo, bar]
@@ -517,7 +517,7 @@ def test_set_element_by_slice(dci_with_list):
     )
 
 
-def test_set_element_locked_raises(dci_with_list):
+def test_set_element_locked_raises(dci_with_list) -> None:
 
     dci_with_list.channels.lock()
 
@@ -530,7 +530,7 @@ def test_set_element_locked_raises(dci_with_list):
 
 @settings(suppress_health_check=(HealthCheck.function_scoped_fixture,), deadline=1000)
 @given(myindexs=hst.lists(elements=hst.integers(0, 7), min_size=2))
-def test_access_channels_by_name(dci, myindexs):
+def test_access_channels_by_name(dci, myindexs) -> None:
     names = ("A", "B", "C", "D", "E", "F", "G", "H")
     channels = tuple(DummyChannel(dci, "Chan" + name, name) for name in names)
     chlist = ChannelList(dci, "channels", DummyChannel, channels)
@@ -541,7 +541,7 @@ def test_access_channels_by_name(dci, myindexs):
         assert chan.name == f'dci_Chan{names[chanindex]}'
 
 
-def test_channels_contain(dci):
+def test_channels_contain(dci) -> None:
     names = ("A", "B", "C", "D", "E", "F", "G", "H")
     channels = tuple(DummyChannel(dci, "Chan" + name, name) for name in names)
     chlist = ChannelList(dci, "channels", DummyChannel, channels)
@@ -549,7 +549,7 @@ def test_channels_contain(dci):
         assert chan in chlist
 
 
-def test_channels_reverse(dci):
+def test_channels_reverse(dci) -> None:
     names = ("A", "B", "C", "D", "E", "F", "G", "H")
     channels = tuple(DummyChannel(dci, name, name) for name in names)
     chlist = ChannelList(dci, "channels", DummyChannel, channels)
@@ -558,7 +558,7 @@ def test_channels_reverse(dci):
         assert chan.short_name == name
 
 
-def test_channels_count(dci):
+def test_channels_count(dci) -> None:
     names = ("A", "B", "C", "D", "E", "F", "G", "H")
     channels = tuple(DummyChannel(dci, name, name) for name in names)
     chlist = ChannelList(dci, "channels", DummyChannel, channels)
@@ -567,7 +567,7 @@ def test_channels_count(dci):
         assert chlist.count(channel) == 1
 
 
-def test_channels_is_sequence(dci):
+def test_channels_is_sequence(dci) -> None:
     names = ("A", "B", "C", "D", "E", "F", "G", "H")
     channels = tuple(DummyChannel(dci, name, name) for name in names)
     chlist = ChannelList(dci, "channels", DummyChannel, channels)
@@ -576,7 +576,7 @@ def test_channels_is_sequence(dci):
     assert issubclass(ChannelList, Sequence)
 
 
-def test_names(dci):
+def test_names(dci) -> None:
     ex_inst_name = 'dci'
     for channel in dci.channels:
         sub_channel = DummyChannel(channel, 'subchannel', 'subchannel')
@@ -607,7 +607,7 @@ def test_names(dci):
         assert chan.temperature.name_parts == [ex_inst_name, ex_chan_name,
                                                ex_param_name]
 
-        ex_subchan_name = f"subchannel"
+        ex_subchan_name = "subchannel"
         ex_subchan_full_name = f"{ex_chan_full_name}_{ex_subchan_name}"
 
         assert chan.somesubchannel.short_name == ex_subchan_name
@@ -625,191 +625,7 @@ def test_names(dci):
                [ex_inst_name, ex_chan_name, ex_subchan_name, ex_param_name]
 
 
-def test_loop_simple(dci):
-    loc_fmt = 'data/{date}/#{counter}_{name}_{date}_{time}'
-    rcd = {'name': 'loopSimple'}
-    loc_provider = FormatLocation(fmt=loc_fmt, record=rcd)
-    loop = Loop(dci.channels[0].temperature.sweep(0, 300, 10),
-                0.001).each(dci.A.temperature)
-    data = loop.run(location=loc_provider)
-    assert_array_equal(data.dci_ChanA_temperature_set.ndarray,
-                       data.dci_ChanA_temperature.ndarray)
-
-
-def test_loop_measure_all_channels(dci):
-    p1 = Parameter(name='p1', vals=Numbers(-10, 10), get_cmd=None,
-                   set_cmd=None)
-    loc_fmt = 'data/{date}/#{counter}_{name}_{date}_{time}'
-    rcd = {'name': 'allChannels'}
-    loc_provider = FormatLocation(fmt=loc_fmt, record=rcd)
-    loop = Loop(p1.sweep(-10, 10, 1), 1e-6).\
-        each(dci.channels.temperature)
-    data = loop.run(location=loc_provider)
-    assert data.p1_set.ndarray.shape == (21, )
-    assert len(data.arrays) == 7
-    for chan in ['A', 'B', 'C', 'D', 'E', 'F']:
-        assert getattr(
-            data,
-            f'dci_Chan{chan}_temperature'
-        ).ndarray.shape == (21,)
-
-
-def test_loop_measure_channels_individually(dci):
-    p1 = Parameter(name='p1', vals=Numbers(-10, 10), get_cmd=None,
-                   set_cmd=None)
-    loc_fmt = 'data/{date}/#{counter}_{name}_{date}_{time}'
-    rcd = {'name': 'channelsIndividually'}
-    loc_provider = FormatLocation(fmt=loc_fmt, record=rcd)
-    loop = Loop(p1.sweep(-10, 10, 1), 1e-6).each(dci.
-                                                 channels[0].temperature,
-                                                 dci.
-                                                 channels[1].temperature,
-                                                 dci.
-                                                 channels[2].temperature,
-                                                 dci.
-                                                 channels[3].temperature)
-    data = loop.run(location=loc_provider)
-    assert data.p1_set.ndarray.shape == (21, )
-    for chan in ['A', 'B', 'C', 'D']:
-        assert getattr(
-            data, f'dci_Chan{chan}_temperature'
-        ).ndarray.shape == (21,)
-
-
-@given(values=hst.lists(hst.floats(0, 300), min_size=4, max_size=4))
-@settings(max_examples=10, deadline=None, suppress_health_check=(HealthCheck.function_scoped_fixture,))
-def test_loop_measure_channels_by_name(dci, values):
-    p1 = Parameter(name='p1', vals=Numbers(-10, 10), get_cmd=None,
-                   set_cmd=None)
-    for i in range(4):
-        dci.channels[i].temperature(values[i])
-    loc_fmt = 'data/{date}/#{counter}_{name}_{date}_{time}'
-    rcd = {'name': 'channelsByName'}
-    loc_provider = FormatLocation(fmt=loc_fmt, record=rcd)
-    loop = Loop(p1.sweep(-10, 10, 1), 1e-6).each(
-        dci.A.temperature,
-        dci.B.temperature,
-        dci.C.temperature,
-        dci.D.temperature
-    )
-    data = loop.run(location=loc_provider)
-    assert data.p1_set.ndarray.shape == (21, )
-    for i, chan in enumerate(['A', 'B', 'C', 'D']):
-        assert getattr(
-            data, f'dci_Chan{chan}_temperature'
-        ).ndarray.shape == (21,)
-        assert getattr(
-            data, f'dci_Chan{chan}_temperature'
-        ).ndarray.max() == values[i]
-        assert getattr(
-            data, f'dci_Chan{chan}_temperature'
-        ).ndarray.min() == values[i]
-
-
-@given(loop_channels=hst.lists(hst.integers(0, 3), min_size=2, max_size=2,
-                               unique=True),
-       measure_channel=hst.integers(0, 3))
-@settings(max_examples=10, deadline=800,
-          suppress_health_check=(HealthCheck.function_scoped_fixture,))
-def test_nested_loop_over_channels(dci, loop_channels, measure_channel):
-    channel_to_label = {0: 'A', 1: 'B', 2: 'C', 3: "D"}
-    loc_fmt = 'data/{date}/#{counter}_{name}_{date}_{time}'
-    rcd = {'name': 'nestedLoopOverChannels'}
-    loc_provider = FormatLocation(fmt=loc_fmt, record=rcd)
-    loop = Loop(dci.channels[loop_channels[0]].temperature.
-                sweep(0, 10, 0.5))
-    loop = loop.loop(dci.channels[loop_channels[1]].temperature.
-                     sweep(50, 51, 0.1))
-    loop = loop.each(dci.channels[measure_channel].temperature)
-    data = loop.run(location=loc_provider)
-
-    assert getattr(
-        data,
-        f'dci_Chan{channel_to_label[loop_channels[0]]}_temperature_set'
-    ).ndarray.shape == (21,)
-    assert getattr(
-        data,
-        f'dci_Chan{channel_to_label[loop_channels[1]]}_temperature_set'
-    ).ndarray.shape == (21, 11,)
-    assert getattr(
-        data,
-        f'dci_Chan{channel_to_label[measure_channel]}_temperature'
-    ).ndarray.shape == (21, 11)
-
-    assert_array_equal(getattr(
-        data,
-        f'dci_Chan{channel_to_label[loop_channels[0]]}_temperature_set'
-    ).ndarray, np.arange(0, 10.1, 0.5))
-
-    expected_array = np.repeat(np.arange(50, 51.01, 0.1).reshape(1, 11),
-                               21, axis=0)
-    array = getattr(
-        data,
-        f'dci_Chan{channel_to_label[loop_channels[1]]}_temperature_set'
-    ).ndarray
-    assert_allclose(array, expected_array)
-
-
-def test_loop_slicing_multiparameter_raises(dci):
-    with pytest.raises(NotImplementedError):
-        loop = Loop(dci.A.temperature.sweep(0, 10, 1), 0.1)
-        loop.each(dci.channels[0:2].dummy_multi_parameter).run()
-
-
-def test_loop_multiparameter_by_name(dci):
-    loc_fmt = 'data/{date}/#{counter}_{name}_{date}_{time}'
-    rcd = {'name': 'multiParamByName'}
-    loc_provider = FormatLocation(fmt=loc_fmt, record=rcd)
-    loop = Loop(dci.A.temperature.sweep(0, 10, 1), 0.1)
-    data = loop.each(dci.A.dummy_multi_parameter)\
-        .run(location=loc_provider)
-    _verify_multiparam_data(data)
-    assert 'multi_setpoint_param_this_setpoint_set' in data.arrays.keys()
-
-
-def test_loop_multiparameter_by_index(dci):
-    loc_fmt = 'data/{date}/#{counter}_{name}_{date}_{time}'
-    rcd = {'name': 'loopByIndex'}
-    loc_provider = FormatLocation(fmt=loc_fmt, record=rcd)
-    loop = Loop(dci.channels[0].temperature.sweep(0, 10, 1),
-                0.1)
-    data = loop.each(dci.A.dummy_multi_parameter)\
-        .run(location=loc_provider)
-    _verify_multiparam_data(data)
-
-
-def test_loop_slicing_arrayparameter(dci):
-    loc_fmt = 'data/{date}/#{counter}_{name}_{date}_{time}'
-    rcd = {'name': 'loopSlicing'}
-    loc_provider = FormatLocation(fmt=loc_fmt, record=rcd)
-    loop = Loop(dci.A.temperature.sweep(0, 10, 1), 0.1)
-    data = loop.each(dci.channels[0:2].dummy_array_parameter)\
-        .run(location=loc_provider)
-    _verify_array_data(data, channels=('A', 'B'))
-
-
-def test_loop_arrayparameter_by_name(dci):
-    loc_fmt = 'data/{date}/#{counter}_{name}_{date}_{time}'
-    rcd = {'name': 'arrayParamByName'}
-    loc_provider = FormatLocation(fmt=loc_fmt, record=rcd)
-    loop = Loop(dci.A.temperature.sweep(0, 10, 1), 0.1)
-    data = loop.each(dci.A.dummy_array_parameter)\
-        .run(location=loc_provider)
-    _verify_array_data(data)
-
-
-def test_loop_arrayparameter_by_index(dci):
-    loc_fmt = 'data/{date}/#{counter}_{name}_{date}_{time}'
-    rcd = {'name': 'arrayParamByIndex'}
-    loc_provider = FormatLocation(fmt=loc_fmt, record=rcd)
-    loop = Loop(dci.channels[0].temperature.sweep(0, 10, 1),
-                0.1)
-    data = loop.each(dci.A.dummy_array_parameter)\
-        .run(location=loc_provider)
-    _verify_array_data(data)
-
-
-def test_root_instrument(dci):
+def test_root_instrument(dci) -> None:
     assert dci.root_instrument is dci
     for channel in dci.channels:
         assert channel.root_instrument is dci
@@ -817,7 +633,7 @@ def test_root_instrument(dci):
             assert parameter.root_instrument is dci
 
 
-def test_get_attr_on_empty_channellist_works_as_expected(empty_instrument):
+def test_get_attr_on_empty_channellist_works_as_expected(empty_instrument) -> None:
     channels = ChannelTuple(empty_instrument, "channels", chan_type=DummyChannel)
     empty_instrument.add_submodule("channels", channels)
 
@@ -827,12 +643,12 @@ def test_get_attr_on_empty_channellist_works_as_expected(empty_instrument):
         _ = empty_instrument.channels.temperature
 
 
-def test_channel_tuple_call_method_basic_test(dci):
+def test_channel_tuple_call_method_basic_test(dci) -> None:
     result = dci.channels.turn_on()
     assert result is None
 
 
-def test_channel_tuple_call_method_called_as_expected(dci, mocker):
+def test_channel_tuple_call_method_called_as_expected(dci, mocker) -> None:
 
     for channel in dci.channels:
         channel.turn_on = mocker.MagicMock(return_value=1)
@@ -842,6 +658,11 @@ def test_channel_tuple_call_method_called_as_expected(dci, mocker):
     assert result is None
     for channel in dci.channels:
         channel.turn_on.assert_called_with("bar")
+
+
+def test_channel_tuple_names(dci: DummyChannelInstrument) -> None:
+    assert dci.channels.short_name == "TempSensors"
+    assert dci.channels.full_name == "dci_TempSensors"
 
 
 def _verify_multiparam_data(data):

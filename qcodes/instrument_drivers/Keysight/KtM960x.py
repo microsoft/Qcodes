@@ -1,6 +1,6 @@
 import ctypes
 from functools import partial
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Optional
 
 import qcodes.validators as vals
 from qcodes.instrument import Instrument
@@ -10,7 +10,7 @@ from qcodes.parameters import (
     create_on_off_val_mapping,
 )
 
-from .KtM960xDefs import *
+from .KtM960xDefs import *  # noqa F403
 
 
 class Measure(MultiParameter):
@@ -25,7 +25,7 @@ class Measure(MultiParameter):
                          docstring="param that returns measurement values")
         self.instrument: "KeysightM960x"
 
-    def get_raw(self) -> Tuple[ParamRawDataType, ...]:
+    def get_raw(self) -> tuple[ParamRawDataType, ...]:
         return self.instrument._measure()
 
 
@@ -138,10 +138,10 @@ class KeysightM960x(Instrument):
         if status:
             raise SystemError(f"connection to device failed! error: {status}")
 
-    def get_idn(self) -> Dict[str, Optional[str]]:
+    def get_idn(self) -> dict[str, Optional[str]]:
         """generates the ``*IDN`` dictionary for qcodes"""
 
-        id_dict: Dict[str, Optional[str]] = {
+        id_dict: dict[str, Optional[str]] = {
             'firmware': self._get_firmware_revision(),
             'model': self._get_model(),
             'serial': self._get_serial_number(),
@@ -152,7 +152,7 @@ class KeysightM960x(Instrument):
         }
         return id_dict
 
-    def _measure(self) -> Tuple[ParamRawDataType, ...]:
+    def _measure(self) -> tuple[ParamRawDataType, ...]:
 
         # Setup the output
         self._set_vi_int(KTM960X_ATTR_OUTPUT_PRIORITY_MODE,
@@ -188,7 +188,7 @@ class KeysightM960x(Instrument):
         return v[0], v[1], v[2], v[3], v[4], v[5]
 
     # Query the driver for errors
-    def get_errors(self) -> Dict[int, str]:
+    def get_errors(self) -> dict[int, str]:
         error_code = ctypes.c_int(-1)
         error_message = ctypes.create_string_buffer(256)
         error_dict = dict()

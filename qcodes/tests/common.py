@@ -4,30 +4,19 @@ import copy
 import cProfile
 import os
 import tempfile
+from collections.abc import Generator, Mapping, Sequence
 from contextlib import contextmanager
 from functools import wraps
 from pathlib import Path
 from time import sleep
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    Generator,
-    Hashable,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    TypeVar,
-)
+from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
 import pytest
 from typing_extensions import ParamSpec
 
 import qcodes
 from qcodes.configuration import Config, DotDict
-from qcodes.metadatable import Metadatable
+from qcodes.metadatable import MetadatableWithName
 from qcodes.utils import deprecate
 
 if TYPE_CHECKING:
@@ -166,14 +155,13 @@ def skip_if_no_fixtures(dbname: str | Path) -> None:
         )
 
 
-class DumyPar(Metadatable):
+class DummyComponent(MetadatableWithName):
 
-    """Docstring for DumyPar. """
+    """Docstring for DummyComponent."""
 
     def __init__(self, name: str):
         super().__init__()
         self.name = name
-        self.full_name = name
 
     def __str__(self) -> str:
         return self.full_name
@@ -181,6 +169,14 @@ class DumyPar(Metadatable):
     def set(self, value: float) -> float:
         value = value * 2
         return value
+
+    @property
+    def short_name(self) -> str:
+        return self.name
+
+    @property
+    def full_name(self) -> str:
+        return self.full_name
 
 
 @deprecate(reason="Unused internally", alternative="default_config fixture")
@@ -251,8 +247,8 @@ def reset_config_on_exit() -> Generator[None, None, None]:
 
 
 def compare_dictionaries(
-    dict_1: dict[Hashable, Any],
-    dict_2: dict[Hashable, Any],
+    dict_1: Mapping[Any, Any],
+    dict_2: Mapping[Any, Any],
     dict_1_name: str | None = "d1",
     dict_2_name: str | None = "d2",
     path: str = "",

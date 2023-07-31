@@ -7,17 +7,9 @@ instruments.
 
 import collections.abc
 import logging
+from collections.abc import Iterator, MutableMapping, Sequence
 from contextlib import contextmanager
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Iterator,
-    MutableMapping,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 from .logger import LevelType, get_console_handler, handler_level
 
@@ -41,8 +33,10 @@ class InstrumentLoggerAdapter(logging.LoggerAdapter):
         >>> LoggerAdapter(log, {'instrument': self.full_name})
 
     """
-    def process(self, msg: str, kwargs: MutableMapping[str, Any]) -> \
-            Tuple[str, MutableMapping[str, Any]]:
+
+    def process(
+        self, msg: str, kwargs: MutableMapping[str, Any]
+    ) -> tuple[str, MutableMapping[str, Any]]:
         """
         Returns the message and the kwargs for the handlers.
         """

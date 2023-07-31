@@ -18,4 +18,4 @@ class KeysightP9374A(N52xx.PNAxBase):
             **kwargs
         )
 
-        options = self.get_options()
+        self.get_options()

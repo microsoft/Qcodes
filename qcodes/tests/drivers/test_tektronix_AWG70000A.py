@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import zipfile
 from io import BytesIO, StringIO
@@ -8,6 +10,7 @@ import pytest
 from broadbean.sequence import InvalidForgedSequenceError
 from hypothesis import given, settings
 from lxml import etree
+from pytest import LogCaptureFixture
 
 import qcodes.tests.drivers.auxiliary_files as auxfiles
 from qcodes.instrument_drivers.tektronix.AWG70000A import AWG70000A
@@ -101,7 +104,7 @@ def _make_forged_sequence():
     return seq
 
 
-def test_init_awg2(awg2):
+def test_init_awg2(awg2) -> None:
 
     idn_dict = awg2.IDN()
 
@@ -110,7 +113,7 @@ def test_init_awg2(awg2):
 
 @settings(deadline=2500, max_examples=7)
 @given(N=hst.integers(1, 100))
-def test_SML_successful_generation_vary_length(N):
+def test_SML_successful_generation_vary_length(N) -> None:
 
     tw = [0]*N
     nreps = [1]*N
@@ -131,7 +134,7 @@ def test_SML_successful_generation_vary_length(N):
 
 @given(num_samples=hst.integers(min_value=2400),
        markers_included=hst.booleans())
-def test_WFMXHeader_succesful(num_samples, markers_included):
+def test_WFMXHeader_succesful(num_samples, markers_included) -> None:
 
     xmlstr = AWG70000A._makeWFMXFileHeader(num_samples, markers_included)
     etree.parse(StringIO(xmlstr))
@@ -139,19 +142,19 @@ def test_WFMXHeader_succesful(num_samples, markers_included):
 
 @given(num_samples=hst.integers(max_value=2399),
        markers_included=hst.booleans())
-def test_WFMXHeader_failing(num_samples, markers_included):
+def test_WFMXHeader_failing(num_samples, markers_included) -> None:
     with pytest.raises(ValueError):
         AWG70000A._makeWFMXFileHeader(num_samples, markers_included)
 
 
-def test_seqxfilefromfs_failing(forged_sequence):
+def test_seqxfilefromfs_failing(forged_sequence) -> None:
 
     # typing convenience
     make_seqx = AWG70000A.make_SEQX_from_forged_sequence
 
     # TODO: the number of channels is defined in the
     # forged_sequence fixture but used here
-    chan_map = {n: n for n in range(1, 4)}
+    chan_map: dict[int | str, int] = {n: n for n in range(1, 4)}
 
     # the input dict (first argument) is not a valid forged
     # sequence dict
@@ -165,9 +168,12 @@ def test_seqxfilefromfs_failing(forged_sequence):
 
     # wrong channel mapping keys
     with pytest.raises(ValueError):
-        make_seqx(forged_sequence, [1, 1, 1],
-                  seqname='dummyname',
-                  channel_mapping={1: None, 3: None})
+        make_seqx(
+            forged_sequence,
+            [1, 1, 1],
+            seqname="dummyname",
+            channel_mapping={1: None, 3: None},  # type: ignore[dict-item]
+        )
 
     # wrong channel mapping values
     with pytest.raises(ValueError):
@@ -176,7 +182,7 @@ def test_seqxfilefromfs_failing(forged_sequence):
                   channel_mapping={1: 10, 2: 8, 3: -1})
 
 
-def test_seqxfilefromfs_warns(forged_sequence, caplog):
+def test_seqxfilefromfs_warns(forged_sequence, caplog: LogCaptureFixture) -> None:
     """
     Test that a warning is logged when waveform is clipped
     """
@@ -191,7 +197,7 @@ def test_seqxfilefromfs_warns(forged_sequence, caplog):
         assert "Waveform exceeds specified channel range" in message
 
 
-def test_seqxfile_from_fs(forged_sequence):
+def test_seqxfile_from_fs(forged_sequence) -> None:
 
     # typing convenience
     make_seqx = AWG70000A.make_SEQX_from_forged_sequence
@@ -227,7 +233,7 @@ def test_seqxfile_from_fs(forged_sequence):
 # TODO: Add some failing tests for inproper input
 
 
-def test_makeSEQXFile(awg2, random_wfm_m1_m2_package):
+def test_makeSEQXFile(awg2, random_wfm_m1_m2_package) -> None:
     """
     Test that this function works (for some input)
     """
@@ -246,6 +252,6 @@ def test_makeSEQXFile(awg2, random_wfm_m1_m2_package):
     amplitudes = [0.5]*chans
     seqname = "testseq"
 
-    seqxfile = awg2.makeSEQXFile(trig_waits, nreps, event_jumps,
-                                 event_jump_to, go_to, wfms,
-                                 amplitudes, seqname)
+    awg2.makeSEQXFile(
+        trig_waits, nreps, event_jumps, event_jump_to, go_to, wfms, amplitudes, seqname
+    )

@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import logging
 import time
+from collections.abc import Generator, Sequence
 from functools import partial
-from typing import Any, Generator, Sequence, Union
+from typing import Any
 
 import numpy as np
 

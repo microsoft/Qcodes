@@ -17,7 +17,7 @@ from __future__ import annotations
 import logging
 import sys
 from functools import wraps
-from typing import Callable
+from typing import Protocol
 
 import numpy as np
 from tqdm import tqdm
@@ -36,9 +36,17 @@ log = logging.getLogger(__name__)
 
 
 # INFRASTRUCTURE FOR UPGRADE FUNCTIONS
+# use a Protocol to type optional arguments
+# see https://mypy.readthedocs.io/en/stable/protocols.html#callback-protocols
+class TUpgraderFunction(Protocol):
 
+    def __call__(self, conn: ConnectionPlus, show_progress_bar: bool = True) -> None:
+        ...
 
-TUpgraderFunction = Callable[[ConnectionPlus, bool], None]
+    @property
+    def __name__(self) -> str:
+        ...
+
 
 # Functions decorated as 'upgrader' are inserted into this dict
 # The newest database version is thus determined by the number of upgrades
@@ -57,7 +65,6 @@ def _get_no_of_runs(conn: ConnectionPlus) -> int:
     no_of_runs = one(atomic_transaction(conn, no_of_runs_query), "max(run_id)")
     no_of_runs = no_of_runs or 0
     return no_of_runs
-
 
 def upgrader(func: TUpgraderFunction) -> TUpgraderFunction:
     """
@@ -328,7 +335,7 @@ def perform_db_upgrade_6_to_7(
                 sql = "ALTER TABLE runs ADD COLUMN captured_counter"
                 transaction(conn, sql)
 
-                sql = f"""
+                sql = """
                         UPDATE runs
                         SET captured_run_id = run_id,
                             captured_counter = result_counter

@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import numpy as np
 
@@ -75,7 +75,7 @@ class BaselSP983a(VisaInstrument):
             parameter_class=DelegateParameter,
         )
 
-    def get_idn(self) -> Dict[str, Optional[str]]:
+    def get_idn(self) -> dict[str, Optional[str]]:
         vendor = "Physics Basel"
         model = "SP 983A"
         serial = None

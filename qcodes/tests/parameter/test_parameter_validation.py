@@ -7,13 +7,14 @@ from qcodes.parameters import Parameter
 from .conftest import BookkeepingValidator
 
 
-def test_number_of_validations():
+def test_number_of_validations() -> None:
     p = Parameter('p', set_cmd=None, initial_value=0,
                   vals=BookkeepingValidator())
     # in the set wrapper the final value is validated
     # and then subsequently each step is validated.
     # in this case there is one step so the final value
     # is validated twice.
+    assert isinstance(p.vals, BookkeepingValidator)
     assert p.vals.values_validated == [0, 0]
 
     p.step = 1
@@ -21,9 +22,10 @@ def test_number_of_validations():
     assert p.vals.values_validated == [0, 0, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 
-def test_number_of_validations_for_set_cache():
+def test_number_of_validations_for_set_cache() -> None:
     p = Parameter('p', set_cmd=None,
                   vals=BookkeepingValidator())
+    assert isinstance(p.vals, BookkeepingValidator)
     assert p.vals.values_validated == []
 
     p.cache.set(1)
@@ -37,12 +39,12 @@ def test_number_of_validations_for_set_cache():
     assert p.vals.values_validated == [1, 4, 10]
 
 
-def test_bad_validator():
+def test_bad_validator() -> None:
     with pytest.raises(TypeError):
-        Parameter('p', vals=[1, 2, 3])
+        Parameter("p", vals=[1, 2, 3])  # type:ignore[arg-type]
 
 
-def test_setting_int_with_float():
+def test_setting_int_with_float() -> None:
     parameter = Parameter(name='foobar', set_cmd=None, get_cmd=None,
                           set_parser=lambda x: int(round(x)),
                           vals=vals.PermissiveInts(0))
@@ -56,7 +58,7 @@ def test_setting_int_with_float():
         assert isinstance(a, int)
 
 
-def test_setting_int_with_float_not_close():
+def test_setting_int_with_float_not_close() -> None:
     parameter = Parameter(name='foobar', set_cmd=None, get_cmd=None,
                           set_parser=lambda x: int(round(x)),
                           vals=vals.PermissiveInts(0))

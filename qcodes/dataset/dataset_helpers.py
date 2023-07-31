@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from qcodes.dataset.data_set_protocol import DataSetProtocol
-from qcodes.dataset.descriptions.versioning.converters import new_to_old
 from qcodes.dataset.linked_datasets.links import links_to_str
 from qcodes.dataset.sqlite.connection import ConnectionPlus
 from qcodes.dataset.sqlite.queries import (
@@ -16,13 +15,13 @@ def _add_run_to_runs_table(
     target_conn: ConnectionPlus,
     target_exp_id: int,
     create_run_table: bool = True,
-) -> str | None:
+) -> tuple[int, int, str | None]:
     metadata = dataset.metadata
     snapshot_raw = dataset._snapshot_raw
     captured_run_id = dataset.captured_run_id
     captured_counter = dataset.captured_counter
     parent_dataset_links = links_to_str(dataset.parent_dataset_links)
-    _, target_run_id, target_table_name = create_run(
+    target_counter, target_run_id, target_table_name = create_run(
         target_conn,
         target_exp_id,
         name=dataset.name,
@@ -42,4 +41,4 @@ def _add_run_to_runs_table(
         dataset.run_timestamp_raw,
         dataset.completed_timestamp_raw,
     )
-    return target_table_name
+    return target_counter, target_run_id, target_table_name
