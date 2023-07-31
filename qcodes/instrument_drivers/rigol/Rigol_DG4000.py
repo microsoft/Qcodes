@@ -1,5 +1,6 @@
+from collections.abc import Sequence
 from functools import partial
-from typing import Any, List, Sequence, Union
+from typing import Any, Union
 
 import numpy as np
 
@@ -52,7 +53,7 @@ def parse_single_output(i: int, s: str) -> Union[float, str]:
     return parse_string_output(parts[i])
 
 
-def parse_multiple_outputs(s: str) -> List[Union[float, str]]:
+def parse_multiple_outputs(s: str) -> list[Union[float, str]]:
     """Parse an output such as 'sin,1.5,0,2' and return a parsed array"""
     parts = clean_string(s).split(",")
 

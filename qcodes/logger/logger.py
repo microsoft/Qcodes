@@ -15,11 +15,12 @@ import os
 import platform
 import sys
 from collections import OrderedDict
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from copy import copy
 from datetime import datetime
 from types import TracebackType
-from typing import TYPE_CHECKING, Dict, Iterator, Optional, Sequence, Type, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 if TYPE_CHECKING:
     from opencensus.ext.azure.common.protocol import Envelope
@@ -66,15 +67,21 @@ telemetry_handler: Optional["AzureLogHandler"] = None
 
 _opencensus_filter = logging.Filter(name="opencensus")
 _urllib3_connection_filter = logging.Filter(name="urllib3.connection")
+_azure_monitor_opentelemetry_exporter_filter = logging.Filter(
+    name="azure.monitor.opentelemetry.exporter"
+)
 
 
-def filter_out_telemetry_log_records(record: logging.LogRecord) -> int:
+def filter_out_telemetry_log_records(record: logging.LogRecord) -> bool:
     """
     here we filter any message that is likely to be thrown from
-    opencensus so it is not shown in the user console
+    opencensus/opentelemetry so it is not shown in the user console
     """
-    return (not _opencensus_filter.filter(record)
-            and not _urllib3_connection_filter.filter(record))
+    return (
+        not _opencensus_filter.filter(record)
+        and not _urllib3_connection_filter.filter(record)
+        and not _azure_monitor_opentelemetry_exporter_filter
+    )
 
 
 def get_formatter() -> logging.Formatter:
@@ -208,7 +215,7 @@ def _create_telemetry_handler() -> "AzureLogHandler":
         AzureLogHandler records
         """
 
-        def __init__(self, custom_dimensions: Dict[str, str]):
+        def __init__(self, custom_dimensions: dict[str, str]):
             super().__init__()
             self.custom_dimensions = custom_dimensions
 
@@ -490,10 +497,12 @@ class LogCapture:
         self.logger.addHandler(self.string_handler)
         return self
 
-    def __exit__(self,
-                 exception_type: Optional[Type[BaseException]],
-                 exception_value: Optional[BaseException],
-                 traceback: Optional[TracebackType]) -> None:
+    def __exit__(
+        self,
+        exception_type: Optional[type[BaseException]],
+        exception_value: Optional[BaseException],
+        traceback: Optional[TracebackType],
+    ) -> None:
         self.logger.removeHandler(self.string_handler)
         self.value = self.log_capture.getvalue()
         self.log_capture.close()

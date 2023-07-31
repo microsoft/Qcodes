@@ -31,7 +31,7 @@ def curve_file():
     yield io.StringIO(curve_file_content)
 
 
-def test_file_parser(curve_file):
+def test_file_parser(curve_file) -> None:
     file_data = _read_curve_file(curve_file)
 
     assert list(file_data.keys()) == ["metadata", "data"]
@@ -52,7 +52,7 @@ def test_file_parser(curve_file):
     }
 
 
-def test_sanitise_data(curve_file):
+def test_sanitise_data(curve_file) -> None:
 
     file_data = _read_curve_file(curve_file)
     data_dict = _get_sanitize_data(file_data)

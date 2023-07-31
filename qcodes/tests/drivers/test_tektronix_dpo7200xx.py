@@ -23,7 +23,7 @@ def tektronix_dpo():
 @pytest.mark.xfail(
     condition=sys.platform == "win32", reason="Time resolution is too low on windows"
 )
-def test_adjust_timer(tektronix_dpo):
+def test_adjust_timer(tektronix_dpo) -> None:
     """
     After adjusting the type of the measurement or the source of the
     measurement, we need wait at least 0.1 seconds
@@ -53,7 +53,7 @@ def test_adjust_timer(tektronix_dpo):
     # measurements slightly sooner then 'minimum_adjustment_time'
 
 
-def test_measurements_return_float(tektronix_dpo):
+def test_measurements_return_float(tektronix_dpo) -> None:
     amplitude = tektronix_dpo.measurement[0].amplitude()
     assert isinstance(amplitude, float)
 
@@ -61,6 +61,6 @@ def test_measurements_return_float(tektronix_dpo):
     assert isinstance(mean_amplitude, float)
 
 
-def test_measurement_sets_state(tektronix_dpo):
+def test_measurement_sets_state(tektronix_dpo) -> None:
     tektronix_dpo.measurement[1].frequency()
     assert tektronix_dpo.measurement[1].state() == 1

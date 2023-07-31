@@ -1,6 +1,6 @@
 import logging
 from functools import partial
-from typing import Any, Optional, Tuple
+from typing import Any, Optional
 
 import numpy as np
 
@@ -29,7 +29,12 @@ class FixedFrequencyTraceIQ(MultiParameter):
     """
 
     def __init__(
-        self, name: str, instrument: "RohdeSchwarzZNBChannel", npts: int, bandwidth: int
+        self,
+        name: str,
+        instrument: "RohdeSchwarzZNBChannel",
+        npts: int,
+        bandwidth: int,
+        **kwargs: Any,
     ) -> None:
         super().__init__(
             name,
@@ -44,6 +49,7 @@ class FixedFrequencyTraceIQ(MultiParameter):
             setpoint_units=(("s",), ("s",)),
             setpoint_labels=(("time",), ("time",)),
             shapes=((npts,), (npts,),),
+            **kwargs,
         )
         self.set_cw_sweep(npts, bandwidth)
 
@@ -68,7 +74,7 @@ class FixedFrequencyTraceIQ(MultiParameter):
         self.setpoints = ((t,), (t,))
         self.shapes = ((npts,), (npts,))
 
-    def get_raw(self) -> Tuple[np.ndarray, np.ndarray]:
+    def get_raw(self) -> tuple[np.ndarray, np.ndarray]:
         """
         Gets the raw real and imaginary part of the data. If parameter
         `cw_check_sweep_first` is set to `True` then at the cost of a few ms
@@ -95,7 +101,9 @@ class FixedFrequencyPointIQ(MultiParameter):
         instrument: instrument the parameter belongs to
     """
 
-    def __init__(self, name: str, instrument: "RohdeSchwarzZNBChannel") -> None:
+    def __init__(
+        self, name: str, instrument: "RohdeSchwarzZNBChannel", **kwargs: Any
+    ) -> None:
         super().__init__(
             name,
             instrument=instrument,
@@ -104,9 +112,10 @@ class FixedFrequencyPointIQ(MultiParameter):
             units=("", ""),
             setpoints=((), (),),
             shapes=((), (),),
+            **kwargs,
         )
 
-    def get_raw(self) -> Tuple[float, float]:
+    def get_raw(self) -> tuple[float, float]:
         """
         Gets the mean of the raw real and imaginary part of the data. If
         parameter `cw_check_sweep_first` is set to `True` then at the cost of a
@@ -131,7 +140,9 @@ class FixedFrequencyPointMagPhase(MultiParameter):
         instrument: instrument the parameter belongs to
     """
 
-    def __init__(self, name: str, instrument: "RohdeSchwarzZNBChannel") -> None:
+    def __init__(
+        self, name: str, instrument: "RohdeSchwarzZNBChannel", **kwargs: Any
+    ) -> None:
         super().__init__(
             name,
             instrument=instrument,
@@ -143,9 +154,10 @@ class FixedFrequencyPointMagPhase(MultiParameter):
             units=("", "rad"),
             setpoints=((), (),),
             shapes=((), (),),
+            **kwargs,
         )
 
-    def get_raw(self) -> Tuple[float, ...]:
+    def get_raw(self) -> tuple[float, ...]:
         """
         Gets the magnitude and phase of the mean of the raw real and imaginary
         part of the data. If the parameter `cw_check_sweep_first` is set to
@@ -171,6 +183,7 @@ class FrequencySweepMagPhase(MultiParameter):
         stop: float,
         npts: int,
         channel: int,
+        **kwargs: Any,
     ) -> None:
         super().__init__(
             name,
@@ -191,6 +204,7 @@ class FrequencySweepMagPhase(MultiParameter):
                 (f"{instrument.short_name}_frequency",),
             ),
             shapes=((npts,), (npts,),),
+            **kwargs,
         )
         self.set_sweep(start, stop, npts)
         self._channel = channel
@@ -202,7 +216,7 @@ class FrequencySweepMagPhase(MultiParameter):
         self.setpoints = ((f,), (f,))
         self.shapes = ((npts,), (npts,))
 
-    def get_raw(self) -> Tuple[ParamRawDataType, ...]:
+    def get_raw(self) -> tuple[ParamRawDataType, ...]:
         assert isinstance(self.instrument, RohdeSchwarzZNBChannel)
         with self.instrument.format.set_to("Complex"):
             data = self.instrument._get_sweep_data(force_polar=True)
@@ -223,6 +237,7 @@ class FrequencySweepDBPhase(MultiParameter):
         stop: float,
         npts: int,
         channel: int,
+        **kwargs: Any,
     ) -> None:
         super().__init__(
             name,
@@ -243,6 +258,7 @@ class FrequencySweepDBPhase(MultiParameter):
                 (f"{instrument.short_name}_frequency",),
             ),
             shapes=((npts,), (npts,),),
+            **kwargs,
         )
         self.set_sweep(start, stop, npts)
         self._channel = channel
@@ -254,7 +270,7 @@ class FrequencySweepDBPhase(MultiParameter):
         self.setpoints = ((f,), (f,))
         self.shapes = ((npts,), (npts,))
 
-    def get_raw(self) -> Tuple[ParamRawDataType, ...]:
+    def get_raw(self) -> tuple[ParamRawDataType, ...]:
         assert isinstance(self.instrument, RohdeSchwarzZNBChannel)
         with self.instrument.format.set_to("Complex"):
             data = self.instrument._get_sweep_data(force_polar=True)
@@ -288,6 +304,7 @@ class FrequencySweep(ArrayParameter):
         stop: float,
         npts: int,
         channel: int,
+        **kwargs: Any,
     ) -> None:
         super().__init__(
             name,
@@ -298,6 +315,7 @@ class FrequencySweep(ArrayParameter):
             setpoint_units=("Hz",),
             setpoint_labels=(f"{instrument.short_name} frequency",),
             setpoint_names=(f"{instrument.short_name}_frequency",),
+            **kwargs,
         )
         self.set_sweep(start, stop, npts)
         self._channel = channel
@@ -344,12 +362,9 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
             existing_trace_to_bind_to: Name of an existing trace on the VNA.
                 If supplied try to bind to an existing trace with this name
                 rather than creating a new trace.
-
         """
         n = channel
         self._instrument_channel = channel
-        # Additional wait when adjusting instrument timeout to sweep time.
-        self._additional_wait = 1
 
         if vna_parameter is None:
             vna_parameter = name
@@ -812,8 +827,8 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
                     data_format_command = "SDAT"
                 else:
                     data_format_command = "FDAT"
-                timeout = self.sweep_time() + self._additional_wait
-                with self.root_instrument.timeout.set_to(timeout):
+
+                with self.root_instrument.timeout.set_to(self._get_timeout()):
                     # instrument averages over its last 'avg' number of sweeps
                     # need to ensure averaged result is returned
                     for _ in range(self.avg()):
@@ -903,15 +918,14 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
         # Cache the sweep time so it is up to date when setting timeouts
         self.sweep_time()
 
-    def _get_cw_data(self) -> Tuple[np.ndarray, np.ndarray]:
+    def _get_cw_data(self) -> tuple[np.ndarray, np.ndarray]:
         # Make the checking optional such that we can do super fast sweeps as
         # well, skipping the overhead of the other commands.
         if self.cw_check_sweep_first():
             self._check_cw_sweep()
 
         with self.status.set_to(1):
-            timeout = self.sweep_time.cache.get() + self._additional_wait
-            with self.root_instrument.timeout.set_to(timeout):
+            with self.root_instrument.timeout.set_to(self._get_timeout()):
                 self.write(f"INIT{self._instrument_channel}:IMM; *WAI")
                 data_str = self.ask(f"CALC{self._instrument_channel}:DATA? "
                                     f"SDAT")
@@ -920,6 +934,11 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
             q = data[1::2]
 
         return i, q
+
+    def _get_timeout(self) -> float:
+        timeout = self.root_instrument.timeout() or float("+inf")
+        timeout = max(self.sweep_time.cache.get() * 1.5, timeout)
+        return timeout
 
 
 ZNBChannel = RohdeSchwarzZNBChannel

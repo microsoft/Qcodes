@@ -729,7 +729,7 @@ class RohdeSchwarzRTO1000(VisaInstrument):
 
     def is_triggered(self) -> bool:
         wait_trigger_mask = 0b01000
-        return bool(self.status_operation() & wait_trigger_mask) == False
+        return bool(self.status_operation() & wait_trigger_mask) is False
 
     def is_running(self) -> bool:
         measuring_mask = 0b10000

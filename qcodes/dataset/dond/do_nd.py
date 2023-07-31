@@ -3,9 +3,10 @@ from __future__ import annotations
 import itertools
 import logging
 import time
+from collections.abc import Mapping, Sequence
 from contextlib import ExitStack
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Callable, Mapping, Sequence, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Union, cast
 
 import numpy as np
 from tqdm.auto import tqdm
@@ -15,11 +16,11 @@ from qcodes import config
 from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
 from qcodes.dataset.dond.do_nd_utils import (
     BreakConditionInterrupt,
-    catch_interrupts,
     _handle_plotting,
     _register_actions,
     _register_parameters,
     _set_write_period,
+    catch_interrupts,
 )
 from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.measurements import Measurement
@@ -85,7 +86,7 @@ class _Sweeper:
     ) -> tuple[tuple[tuple[SweepVarType, ...] | SweepVarType, ...], ...]:
         sweeps = tuple(sweep.get_setpoints() for sweep in self._sweeps)
         return cast(
-            Tuple[Tuple[Union[Tuple[SweepVarType, ...], SweepVarType], ...], ...],
+            tuple[tuple[Union[tuple[SweepVarType, ...], SweepVarType], ...], ...],
             tuple(itertools.product(*sweeps)),
         )
 
@@ -232,9 +233,9 @@ class _Sweeper:
         return tuple(parameter_set_events)
 
     def __len__(self) -> int:
-        return int(np.product(self.shape))
+        return int(np.prod(self.shape))
 
-    def __iter__(self) -> "_Sweeper":
+    def __iter__(self) -> _Sweeper:
         return self
 
     def __next__(self) -> tuple[ParameterSetEvent, ...]:
@@ -578,6 +579,7 @@ def dond(
     log_info: str | None = None,
     break_condition: BreakConditionT | None = None,
     dataset_dependencies: Mapping[str, Sequence[ParamMeasT]] | None = None,
+    in_memory_cache: bool | None = None,
 ) -> AxesTupleListWithDataSet | MultiAxesTupleListWithDataSet:
     """
     Perform n-dimentional scan from slowest (first) to the fastest (last), to
@@ -643,6 +645,11 @@ def dond(
             measurement names to Sequence of Parameters. Note that a dataset must
             depend on at least one parameter from each dimension but can depend
             on one or more parameters from a dimension sweeped with a TogetherSweep.
+        in_memory_cache:
+            Should a cache of the data be kept available in memory for faster
+            plotting and exporting. Useful to disable if the data is very large
+            in order to save on memory consumption.
+            If ``None``, the value for this will be read from ``qcodesrc.json`` config file.
 
     Returns:
         A tuple of QCoDeS DataSet, Matplotlib axis, Matplotlib colorbar. If
@@ -696,20 +703,22 @@ def dond(
     )
 
     datasavers = []
-    interrupted: Callable[
+    interrupted: Callable[  # noqa E731
         [], KeyboardInterrupt | BreakConditionInterrupt | None
     ] = lambda: None
     try:
         with catch_interrupts() as interrupted, ExitStack() as stack, params_meas_caller as call_params_meas:
             datasavers = [
-                stack.enter_context(group.measurement_cxt.run())
+                stack.enter_context(
+                    group.measurement_cxt.run(in_memory_cache=in_memory_cache)
+                )
                 for group in measurements.groups
             ]
             additional_setpoints_data = process_params_meas(additional_setpoints)
             for set_events in tqdm(sweeper, disable=not show_progress):
                 LOG.debug("Processing set events: %s", set_events)
                 results: dict[ParameterBase, Any] = {}
-                for set_event in set_events:
+                for set_event in set_events:  # pyright: ignore[reportGeneralTypeIssues]
                     if set_event.should_set:
                         set_event.parameter(set_event.new_value)
                         for act in set_event.actions:

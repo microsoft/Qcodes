@@ -13,7 +13,7 @@ from qcodes.validators import (
 from .conftest import AClass, a_func
 
 
-def test_good_or():
+def test_good_or() -> None:
     # combiner == 'OR'
     m = MultiType(Strings(2, 4), Ints(10, 1000))
 
@@ -30,7 +30,7 @@ def test_good_or():
     assert not MultiType(Strings(), Enum(1, 2)).is_numeric
 
 
-def test_good_and():
+def test_good_and() -> None:
     # combiner == 'AND'
     m = MultiType(
         Numbers(min_value=2e-3, max_value=5e4),
@@ -42,7 +42,7 @@ def test_good_and():
         m.validate(v)
 
     # in py True == 1, so valid in this construction
-    for v in [
+    for vv in [
         0,
         0.001,
         50000.1,
@@ -59,7 +59,7 @@ def test_good_and():
         False,
     ]:
         with pytest.raises(ValueError):
-            m.validate(v)
+            m.validate(vv)
 
     assert (
         repr(m)
@@ -69,22 +69,22 @@ def test_good_and():
     assert not MultiType(Strings(), Enum(1, 2), combiner="AND").is_numeric
 
 
-def test_bad():
+def test_bad() -> None:
     # combiner == 'OR'
     for args in [[], [1], [Strings(), True]]:
         with pytest.raises(TypeError):
-            MultiType(*args)
+            MultiType(*args)  # type: ignore[misc]
     # combiner == 'OR'
     for args in [[], [1], [Strings(), True]]:
         with pytest.raises(TypeError):
-            MultiType(*args, combiner="OR")
+            MultiType(*args, combiner="OR")  # type: ignore[misc]
     # combiner == 'AND'
     for args in [[], [1], [Strings(), True]]:
         with pytest.raises(TypeError):
-            MultiType(*args, combiner="AND")
+            MultiType(*args, combiner="AND")  # type: ignore[misc]
 
 
-def test_valid_values():
+def test_valid_values() -> None:
     # combiner == 'OR'
     ms = [MultiType(Strings(2, 4), Ints(10, 32)),
           MultiType(Ints(), Lists(Ints())),

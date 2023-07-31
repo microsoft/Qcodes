@@ -3,11 +3,11 @@ These are the basic black box tests for the doNd functions.
 """
 import hypothesis.strategies as hst
 import matplotlib
+import matplotlib.axes
 import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 from hypothesis import HealthCheck, given, settings
-from numpy.testing import assert_array_equal
 
 from qcodes import config
 from qcodes.dataset import do2d, new_experiment
@@ -25,7 +25,7 @@ from qcodes.tests.instrument_mocks import (
 @pytest.mark.parametrize(
     "sweep, columns", [(False, False), (False, True), (True, False), (True, True)]
 )
-def test_do2d(_param, _param_complex, _param_set, _param_set_2, sweep, columns):
+def test_do2d(_param, _param_complex, _param_set, _param_set_2, sweep, columns) -> None:
 
     start_p1 = 0
     stop_p1 = 1
@@ -58,7 +58,7 @@ def test_do2d(_param, _param_complex, _param_set, _param_set_2, sweep, columns):
 @pytest.mark.usefixtures("plot_close", "experiment")
 @pytest.mark.parametrize("plot", [None, True, False])
 @pytest.mark.parametrize("plot_config", [None, True, False])
-def test_do2d_plot(_param_set, _param_set_2, _param, plot, plot_config):
+def test_do2d_plot(_param_set, _param_set_2, _param, plot, plot_config) -> None:
 
     if plot_config is not None:
         config.dataset.dond_plot = plot_config
@@ -96,7 +96,7 @@ def test_do2d_plot(_param_set, _param_set_2, _param, plot, plot_config):
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-def test_do2d_output_type(_param, _param_complex, _param_set, _param_set_2):
+def test_do2d_output_type(_param, _param_complex, _param_set, _param_set_2) -> None:
 
     start_p1 = 0
     stop_p1 = 0.5
@@ -126,7 +126,7 @@ def test_do2d_output_type(_param, _param_complex, _param_set, _param_set_2):
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-def test_do2d_output_data(_param, _param_complex, _param_set, _param_set_2):
+def test_do2d_output_data(_param, _param_complex, _param_set, _param_set_2) -> None:
 
     start_p1 = 0
     stop_p1 = 0.5
@@ -154,9 +154,12 @@ def test_do2d_output_data(_param, _param_complex, _param_set, _param_set_2):
     )
     data = exp[0]
 
-    assert data.parameters == (
-        f"{_param_set.name},{_param_set_2.name}," f"{_param.name},{_param_complex.name}"
-    )
+    assert set(data.description.interdeps.names) == {
+        _param.name,
+        _param_complex.name,
+        _param_set.name,
+        _param_set_2.name,
+    }
     loaded_data = data.get_parameter_data()
     expected_data_1 = np.ones(25).reshape(num_points_p1, num_points_p2)
 
@@ -209,7 +212,7 @@ def test_do2d_verify_shape(
     num_points_p1,
     num_points_p2,
     n_points_pws,
-):
+) -> None:
     arrayparam = ArraySetPointParam(name="arrayparam")
     multiparam = multiparamtype(name="multiparam")
     paramwsetpoints = dummyinstrument.A.dummy_parameter_with_setpoints
@@ -266,13 +269,15 @@ def test_do2d_verify_shape(
 
     data = ds.get_parameter_data()
 
-    for name, data in data.items():
-        for param_data in data.values():
+    for name, data_inner in data.items():
+        for param_data in data_inner.values():
             assert param_data.shape == expected_shapes[name]
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-def test_do2d_additional_setpoints(_param, _param_complex, _param_set, _param_set_2):
+def test_do2d_additional_setpoints(
+    _param, _param_complex, _param_set, _param_set_2
+) -> None:
     additional_setpoints = [
         Parameter(f"additional_setter_parameter_{i}", set_cmd=None, get_cmd=None)
         for i in range(2)
@@ -318,7 +323,7 @@ def test_do2d_additional_setpoints(_param, _param_complex, _param_set, _param_se
 @pytest.mark.usefixtures("experiment")
 def test_do2d_additional_setpoints_shape(
     _param, _param_complex, _param_set, _param_set_2, num_points_p1, num_points_p2
-):
+) -> None:
     arrayparam = ArraySetPointParam(name="arrayparam")
     array_shape = arrayparam.shape
     additional_setpoints = [
@@ -363,7 +368,7 @@ def test_do2d_additional_setpoints_shape(
     assert results[0].description.shapes == expected_shapes
 
 
-def test_do2d_explicit_experiment(_param_set, _param_set_2, _param, experiment):
+def test_do2d_explicit_experiment(_param_set, _param_set_2, _param, experiment) -> None:
     start_p1 = 0
     stop_p1 = 0.5
     num_points_p1 = 5
@@ -427,7 +432,7 @@ def test_do2d_explicit_experiment(_param_set, _param_set_2, _param, experiment):
 
 
 @pytest.mark.usefixtures("experiment")
-def test_do2d_explicit_name(_param_set, _param_set_2, _param):
+def test_do2d_explicit_name(_param_set, _param_set_2, _param) -> None:
     start_p1 = 0
     stop_p1 = 0.5
     num_points_p1 = 5

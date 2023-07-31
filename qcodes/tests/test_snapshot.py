@@ -3,17 +3,24 @@ Test module for snapshots of instruments and parameters
 """
 
 import pytest
+from pytest import FixtureRequest
 
 from qcodes.tests.instrument_mocks import SnapShotTestInstrument
 
 
-@pytest.mark.parametrize("params,params_to_skip",
-                         [(['v1', 'v2', 'v3', 'v4'], ['v1']),
-                          (['v1', 'v2', 'v3', 'v4'], ['v2']),
-                          (['v1', 'v2', 'v3', 'v4'], ['v3']),
-                          (['v1', 'v2', 'v3', 'v4'], ['v4']),
-                          (['v1', 'v2', 'v3', 'v4'], [])])
-def test_snapshot_skip_params_update(request, params, params_to_skip):
+@pytest.mark.parametrize(
+    "params,params_to_skip",
+    [
+        (["v1", "v2", "v3", "v4"], ["v1"]),
+        (["v1", "v2", "v3", "v4"], ["v2"]),
+        (["v1", "v2", "v3", "v4"], ["v3"]),
+        (["v1", "v2", "v3", "v4"], ["v4"]),
+        (["v1", "v2", "v3", "v4"], []),
+    ],
+)
+def test_snapshot_skip_params_update(
+    request: FixtureRequest, params, params_to_skip
+) -> None:
     """
     Test that params_to_skip_update works as expected, in particular that only
     the parameters given by that variable are skipped.
@@ -44,15 +51,21 @@ def test_snapshot_skip_params_update(request, params, params_to_skip):
     assert list(inst._get_calls.values()) == expected_list
 
 
-@pytest.mark.parametrize("params,params_to_exclude",
-                         [(['v1', 'v2', 'v3', 'v4'], ['v1']),
-                          (['v1', 'v2', 'v3', 'v4'], ['v2']),
-                          (['v1', 'v2', 'v3', 'v4'], ['v3']),
-                          (['v1', 'v2', 'v3', 'v4'], ['v4']),
-                          (['v1', 'v2', 'v3', 'v4'], ['v4']),
-                          (['v1', 'v2', 'v3', 'v4'], ['v1', 'v2']),
-                          (['v1', 'v2', 'v3', 'v4'], [])])
-def test_snapshot_exclude_params(request, params, params_to_exclude):
+@pytest.mark.parametrize(
+    "params,params_to_exclude",
+    [
+        (["v1", "v2", "v3", "v4"], ["v1"]),
+        (["v1", "v2", "v3", "v4"], ["v2"]),
+        (["v1", "v2", "v3", "v4"], ["v3"]),
+        (["v1", "v2", "v3", "v4"], ["v4"]),
+        (["v1", "v2", "v3", "v4"], ["v4"]),
+        (["v1", "v2", "v3", "v4"], ["v1", "v2"]),
+        (["v1", "v2", "v3", "v4"], []),
+    ],
+)
+def test_snapshot_exclude_params(
+    request: FixtureRequest, params, params_to_exclude
+) -> None:
     """
     Test that params_to_exclude works as expected, in particular that only
     the parameters given by that variable are excluded from the snapshot.

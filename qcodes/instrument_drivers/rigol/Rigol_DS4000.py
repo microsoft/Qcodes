@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import re
 import time
@@ -23,7 +25,7 @@ class ScopeArray(ArrayParameter):
     def __init__(
         self,
         name: str,
-        instrument: "RigolDS4000Channel",
+        instrument: RigolDS4000Channel,
         channel: int,
         raw: bool = False,
     ):
@@ -178,7 +180,9 @@ class ScopeArray(ArrayParameter):
                 "yreference",
             ],
         )
-        conv = lambda x: int(x) if x.isdigit() else float(x)
+
+        def conv(x: str) -> float:
+            return int(x) if x.isdigit() else float(x)
 
         preamble_raw = self.instrument.ask(":WAVeform:PREamble?")
         preamble_num = [conv(x) for x in preamble_raw.strip().split(",")]
@@ -186,7 +190,7 @@ class ScopeArray(ArrayParameter):
 
 
 class RigolDS4000Channel(InstrumentChannel):
-    def __init__(self, parent: "RigolDS4000", name: str, channel: int):
+    def __init__(self, parent: RigolDS4000, name: str, channel: int):
         super().__init__(parent, name)
 
         self.add_parameter(

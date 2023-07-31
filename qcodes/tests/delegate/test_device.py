@@ -7,7 +7,7 @@ from qcodes.dataset import Measurement
 from qcodes.tests.instrument_mocks import DummyChannel, MockCustomChannel
 
 
-def test_device(station, chip_config, dac, lockin):
+def test_device(station, chip_config, dac, lockin) -> None:
     assert os.path.exists(chip_config)
     station.load_config_file(chip_config)
     chip = station.load_MockChip_123(station=station)
@@ -26,7 +26,7 @@ def test_device(station, chip_config, dac, lockin):
 
 
 @pytest.mark.usefixtures("experiment")
-def test_device_meas(station, chip):
+def test_device_meas(station, chip) -> None:
     meas = Measurement(station=station)
     device = chip.device1
     meas.register_parameter(device.gate)
@@ -43,7 +43,7 @@ def test_device_meas(station, chip):
             datasaver.dataset.to_pandas_dataframe_dict()["device1_drain"]) == 10
 
 
-def test_device_with_channels(chip, station):
+def test_device_with_channels(chip, station) -> None:
     device = chip.channel_device
 
     assert device.gate_1 == station.dac.ch01
@@ -63,7 +63,7 @@ def test_device_with_channels(chip, station):
     assert device.readout() == 30
 
 
-def test_device_with_custom_channels(chip, station):
+def test_device_with_custom_channels(chip, station) -> None:
     device = chip.channel_device_custom
 
     assert device.gate_1._dac_channel == station.dac.ch01
@@ -75,7 +75,7 @@ def test_device_with_custom_channels(chip, station):
     assert isinstance(device.fast_gate, DummyChannel)
 
 
-def test_chip_definition(chip_config_typo, station):
+def test_chip_definition(chip_config_typo, station) -> None:
     station.load_config_file(chip_config_typo)
     with pytest.raises(KeyError):
         _ = station.load_MockChip_123(station=station)

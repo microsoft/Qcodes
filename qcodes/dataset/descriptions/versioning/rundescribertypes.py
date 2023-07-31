@@ -15,7 +15,7 @@ interdependencies_, which is an instance of InterDependencies_
 """
 from __future__ import annotations
 
-from typing import Dict, Optional, Tuple, Union
+from typing import Union
 
 from typing_extensions import TypedDict
 
@@ -33,7 +33,7 @@ class InterDependencies_Dict(TypedDict):
     standalones: list[str]
 
 
-Shapes = Dict[str, Tuple[int, ...]]
+Shapes = dict[str, tuple[int, ...]]
 
 
 class RunDescriberV0Dict(TypedDict):

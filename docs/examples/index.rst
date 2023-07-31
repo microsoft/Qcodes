@@ -68,14 +68,3 @@ Logging
     :glob:
 
     logging/*
-
-
-Legacy examples
----------------
-
-.. include:: legacy/readme.txt
-
-.. toctree::
-    :glob:
-
-    legacy/*

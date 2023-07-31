@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator, Sequence
 from copy import deepcopy
-from typing import TYPE_CHECKING, Any, List, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 
@@ -79,7 +79,7 @@ def make_sweep(
         )
 
     output_list = np.linspace(start, stop, num=num_steps).tolist()
-    return cast(List[float], output_list)
+    return cast(list[float], output_list)
 
 
 class SweepValues(Metadatable):

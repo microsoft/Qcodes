@@ -23,7 +23,7 @@ def _make_c2():
     yield c2
 
 
-def test_errors(c0, c1, c2):
+def test_errors(c0, c1, c2) -> None:
 
     # only complete 3-part slices are valid
     with pytest.raises(TypeError):
@@ -37,13 +37,13 @@ def test_errors(c0, c1, c2):
 
     # fails if the parameter has no setter
     with pytest.raises(TypeError):
-        c2[0:0.1:0.01]
+        c2[0:0.1:0.01]  # type: ignore[misc]
 
     # validates every step value against the parameter's Validator
     with pytest.raises(ValueError):
         c0[5:15:1]
     with pytest.raises(ValueError):
-        c0[5.0:15.0:1.0]
+        c0[5.0:15.0:1.0]  # type: ignore[misc]
     with pytest.raises(ValueError):
         c0[-12]
     with pytest.raises(ValueError):
@@ -53,7 +53,7 @@ def test_errors(c0, c1, c2):
 
     # cannot combine SweepValues for different parameters
     with pytest.raises(TypeError):
-        c0[0.1] + c1[0.2]
+        _ = c0[0.1] + c1[0.2]
 
     # improper use of extend
     with pytest.raises(TypeError):
@@ -64,7 +64,7 @@ def test_errors(c0, c1, c2):
         c0[0.1].get
 
 
-def test_valid(c0):
+def test_valid(c0) -> None:
 
     c0_sv = c0[1]
     # setter gets mapped
@@ -73,10 +73,10 @@ def test_valid(c0):
     assert list(c0_sv) == [1]
     assert c0_sv[0] == 1
     assert 1 in c0_sv
-    assert not (2 in c0_sv)
+    assert 2 not in c0_sv
 
     # in-place and copying addition
-    c0_sv += c0[1.5:1.8:0.1]
+    c0_sv += c0[1.5:1.8:0.1]  # type: ignore[misc]
     c0_sv2 = c0_sv + c0[2]
     assert list(c0_sv) == [1, 1.5, 1.6, 1.7]
     assert list(c0_sv2) == [1, 1.5, 1.6, 1.7, 2]
@@ -110,28 +110,21 @@ def test_valid(c0):
     c0_sv7 = c0_sv6.copy()
     assert list(c0_sv6) == [1, 3, 4]
     assert list(c0_sv7) == [1, 3, 4]
-    assert not (c0_sv6 is c0_sv7)
+    assert c0_sv6 is not c0_sv7
 
 
-def test_base():
+def test_base() -> None:
     p = Parameter('p', get_cmd=None, set_cmd=None)
     with pytest.raises(NotImplementedError):
         iter(SweepValues(p))
 
 
-def test_snapshot(c0):
+def test_snapshot(c0) -> None:
+    assert c0[0].snapshot() == {"parameter": c0.snapshot(), "values": [{"item": 0}]}
 
-    assert c0[0].snapshot() == {
-        'parameter': c0.snapshot(),
-        'values': [{'item': 0}]
-    }
-
-    assert c0[0:5:0.3].snapshot()['values'] == [{
-        'first': 0,
-        'last': 4.8,
-        'num': 17,
-        'type': 'linear'
-    }]
+    assert c0[0:5:0.3].snapshot()["values"] == [  # type: ignore[misc]
+        {"first": 0, "last": 4.8, "num": 17, "type": "linear"}
+    ]
 
     sv = c0.sweep(start=2, stop=4, num=5)
     assert sv.snapshot()['values'] == [{
@@ -164,7 +157,7 @@ def test_snapshot(c0):
         ]
 
 
-def test_repr(c0):
+def test_repr(c0) -> None:
     sv = c0[0]
     assert repr(sv) == (
         f"<qcodes.parameters.sweep_values.SweepFixedValues: c0 at {id(sv)}>"

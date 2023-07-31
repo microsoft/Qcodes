@@ -138,6 +138,9 @@ class DataSetInMem(BaseDataSet):
     def write_metadata_to_db(self, path_to_db: str | Path | None = None) -> None:
         from .experiment_container import load_or_create_experiment
 
+        if path_to_db is None:
+            path_to_db = self.path_to_db
+
         if self._dataset_is_in_runs_table(path_to_db=path_to_db):
             return
         if isinstance(path_to_db, Path):
@@ -153,7 +156,12 @@ class DataSetInMem(BaseDataSet):
                     sample_name=self.sample_name,
                     load_last_duplicate=True,
                 )
-                _add_run_to_runs_table(self, aconn, exp.exp_id, create_run_table=False)
+                counter, run_id, _ = _add_run_to_runs_table(
+                    self, aconn, exp.exp_id, create_run_table=False
+                )
+            self._exp_id = exp.exp_id
+            self._run_id = run_id
+            self._counter = counter
             self._path_to_db = conn.path_to_dbfile
 
     @classmethod

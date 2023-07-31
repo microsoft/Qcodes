@@ -1,3 +1,5 @@
+from typing import Any, NoReturn
+
 import pytest
 
 from qcodes.parameters.command import Command, NoCommandError
@@ -7,39 +9,41 @@ class CustomError(Exception):
     pass
 
 
-def test_bad_calls():
+def test_bad_calls() -> None:
     with pytest.raises(TypeError):
-        Command()
+        Command()  # type: ignore[call-arg]
 
     with pytest.raises(TypeError):
-        Command(cmd='')
+        Command(cmd="")  # type: ignore[call-arg]
 
     with pytest.raises(TypeError):
-        Command(0, '', output_parser=lambda: 1)
+        Command(0, "", output_parser=lambda: 1)  # type: ignore[arg-type, misc]
 
     with pytest.raises(TypeError):
         Command(1, '', input_parser=lambda: 1)
 
     with pytest.raises(TypeError):
-        Command(0, cmd='', exec_str='not a function')
+        Command(0, cmd="", exec_str="not a function")  # type: ignore[arg-type]
 
     with pytest.raises(TypeError):
-        Command(0, cmd=lambda: 1, no_cmd_function='not a function')
+        Command(
+            0, cmd=lambda: 1, no_cmd_function="not a function"  # type: ignore[arg-type]
+        )
 
 
-def test_no_cmd():
+def test_no_cmd() -> None:
     with pytest.raises(NoCommandError):
         Command(0)
 
-    def no_cmd_function():
+    def no_cmd_function() -> NoReturn:
         raise CustomError('no command')
 
-    no_cmd = Command(0, no_cmd_function=no_cmd_function)
+    no_cmd: Command[Any, Any] = Command(0, no_cmd_function=no_cmd_function)
     with pytest.raises(CustomError):
         no_cmd()
 
 
-def test_cmd_str():
+def test_cmd_str() -> None:
     def f_now(x):
         return x + ' now'
 
@@ -53,17 +57,16 @@ def test_cmd_str():
         return b, a
 
     # basic exec_str
-    cmd = Command(0, 'pickles', exec_str=f_now)
-    assert cmd() == 'pickles now'
+    cmd: Command[Any, Any] = Command(0, "pickles", exec_str=f_now)
+    assert cmd() == "pickles now"
 
     # with output parsing
     cmd = Command(0, 'blue', exec_str=f_now, output_parser=upper)
     assert cmd() == 'BLUE NOW'
 
     # parameter insertion
-    cmd = Command(3, '{} is {:.2f}% better than {}', exec_str=f_now)
-    assert cmd('ice cream', 56.2, 'cake') == \
-                     'ice cream is 56.20% better than cake now'
+    cmd = Command(3, "{} is {:.2f}% better than {}", exec_str=f_now)
+    assert cmd("ice cream", 56.2, "cake") == "ice cream is 56.20% better than cake now"
     with pytest.raises(ValueError):
         cmd('cake', 'a whole lot', 'pie')
 
@@ -89,11 +92,11 @@ def test_cmd_str():
     assert cmd('I', 'you') == 'YOU AND I NOW'
 
 
-def test_cmd_function():
-    def myexp(a, b):
+def test_cmd_function_1() -> None:
+    def myexp(a: float, b: float) -> float:
         return a ** b
 
-    cmd = Command(2, myexp)
+    cmd: Command[float, float] = Command(2, myexp)
     assert cmd(10, 3) == 1000
 
     with pytest.raises(TypeError):
@@ -103,13 +106,24 @@ def test_cmd_function():
     cmd = Command(2, myexp, output_parser=lambda x: 5 * x)
     assert cmd(10, 3) == 5000
 
+
+def test_cmd_function_2() -> None:
+    def myexp(a: float, b: float) -> float:
+        return a**b
+
     # input parsing
-    cmd = Command(1, abs, input_parser=lambda x: x + 1)
+    cmd: Command[float, float] = Command(
+        1, abs, input_parser=lambda x: x + 1
+    )  # pyright: ignore
     assert cmd(-10) == 9
 
     # input *and* output parsing
-    cmd = Command(1, abs, input_parser=lambda x: x + 2,
-                  output_parser=lambda x: 3 * x)
+    cmd = Command(
+        1,
+        abs,
+        input_parser=lambda x: x + 2,
+        output_parser=lambda y: 3 * y,  # pyright: ignore
+    )
     assert cmd(-6) == 12
 
     # multi-input parsing, no output parsing

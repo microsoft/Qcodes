@@ -1,14 +1,8 @@
 import os
-import sys
+
+# files added to stdlib in 3.9
+from importlib.resources import files
 from pathlib import Path
-
-if sys.version_info >= (3, 9):
-    # files added to stdlib in 3.9
-    from importlib.resources import files
-else:
-    # 3.8 and earlier
-    from importlib_resources import files
-
 
 QCODES_USER_PATH_ENV = "QCODES_USER_PATH"
 

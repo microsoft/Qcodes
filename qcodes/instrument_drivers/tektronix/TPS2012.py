@@ -1,7 +1,7 @@
 import binascii
 import logging
 from functools import partial
-from typing import Any, Tuple
+from typing import Any
 
 import numpy as np
 from pyvisa.errors import VisaIOError
@@ -58,7 +58,7 @@ class ScopeArray(ArrayParameter):
         )
         self.channel = channel
 
-    def calc_set_points(self) -> Tuple[np.ndarray, int]:
+    def calc_set_points(self) -> tuple[np.ndarray, int]:
         assert isinstance(self.instrument, TektronixTPS2012Channel)
         message = self.instrument.ask('WFMPre?')
         preamble = self._preambleparser(message)
@@ -171,9 +171,8 @@ class ScopeArray(ArrayParameter):
         return outdict
 
     def _curveparameterparser(
-            self,
-            waveform: str
-            ) -> Tuple[np.ndarray, np.ndarray, int]:
+        self, waveform: str
+    ) -> tuple[np.ndarray, np.ndarray, int]:
         """
         The parser for the curve parameter. Note that WAVFrm? is equivalent
         to WFMPre?; CURVe?

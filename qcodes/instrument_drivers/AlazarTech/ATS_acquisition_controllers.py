@@ -1,9 +1,9 @@
 import math
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Optional
 
 import numpy as np
 
-from .ATS import AcquisitionController, OutputType
+from .ATS import AcquisitionController
 
 
 # DFT AcquisitionController
@@ -33,7 +33,7 @@ class DemodulationAcquisitionController(AcquisitionController[float]):
             demodulation_frequency: float,
             **kwargs: Any):
         self.demodulation_frequency = demodulation_frequency
-        self.acquisitionkwargs: Dict[str, Any] = {}
+        self.acquisitionkwargs: dict[str, Any] = {}
         self.samples_per_record = 0
         self.records_per_buffer = 0
         self.buffers_per_acquisition = 0
@@ -131,7 +131,7 @@ class DemodulationAcquisitionController(AcquisitionController[float]):
         if self.number_of_channels == 2:
             # fit channel A and channel B
             res1 = self.fit(recordA)
-            res2 = self.fit(recordB)
+            self.fit(recordB)
             #return [alazar.signal_to_volt(1, res1[0] + 127.5),
             #        alazar.signal_to_volt(2, res2[0] + 127.5),
             #        res1[1], res2[1],
@@ -140,7 +140,7 @@ class DemodulationAcquisitionController(AcquisitionController[float]):
         else:
             raise Exception("Could not find CHANNEL_B during data extraction")
 
-    def fit(self, buf: np.ndarray) -> Tuple[float, float]:
+    def fit(self, buf: np.ndarray) -> tuple[float, float]:
         """
         the DFT is implemented in this method
         :param buf: buffer to perform the transform on

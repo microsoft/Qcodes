@@ -22,7 +22,7 @@ fixturepath = os.sep.join(qcodes.tests.dataset.__file__.split(os.sep)[:-1])
 fixturepath = os.path.join(fixturepath, 'fixtures')
 
 
-def test_version_4a_bugfix():
+def test_version_4a_bugfix() -> None:
     v4fixpath = os.path.join(fixturepath, 'db_files', 'version4a')
 
     dbname_old = os.path.join(v4fixpath, 'some_runs.db')
@@ -50,7 +50,7 @@ def test_version_4a_bugfix():
         assert dd['runs_fixed'] == 0
 
 
-def test_version_4a_bugfix_raises():
+def test_version_4a_bugfix_raises() -> None:
 
     v3fixpath = os.path.join(fixturepath, 'db_files', 'version3')
     dbname_old = os.path.join(v3fixpath, 'some_runs_without_run_description.db')
@@ -62,7 +62,7 @@ def test_version_4a_bugfix_raises():
             fix_version_4a_run_description_bug(conn)
 
 
-def test_fix_wrong_run_descriptions():
+def test_fix_wrong_run_descriptions() -> None:
     v3fixpath = os.path.join(fixturepath, 'db_files', 'version3')
 
     dbname_old = os.path.join(v3fixpath, 'some_runs_without_run_description.db')
@@ -101,7 +101,7 @@ def test_fix_wrong_run_descriptions():
         assert desc == empty_description
 
 
-def test_fix_wrong_run_descriptions_raises():
+def test_fix_wrong_run_descriptions_raises() -> None:
 
     v4fixpath = os.path.join(fixturepath, 'db_files', 'version4a')
 

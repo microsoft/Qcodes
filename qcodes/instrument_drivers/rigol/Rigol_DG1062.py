@@ -1,6 +1,6 @@
 import logging
 from functools import partial
-from typing import Any, Dict, List, Union, cast
+from typing import Any, Union, cast
 
 from qcodes import validators as vals
 from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
@@ -250,7 +250,7 @@ class RigolDG1062Channel(InstrumentChannel):
         """
         self._set_waveform_params(**kwargs)
 
-    def current_waveform(self) -> Dict[Any, Any]:
+    def current_waveform(self) -> dict[Any, Any]:
         """Public interface to get the current waveform"""
         return self._get_waveform_params()
 
@@ -262,7 +262,7 @@ class RigolDG1062Channel(InstrumentChannel):
         params_dict = self._get_waveform_params()
         return params_dict.get(param, None)
 
-    def _get_waveform_params(self) -> Dict[Any, Any]:
+    def _get_waveform_params(self) -> dict[Any, Any]:
         """
         Get all the parameters of the current waveform and
         """
@@ -277,7 +277,7 @@ class RigolDG1062Channel(InstrumentChannel):
         parts = waveform_str.strip('"').split(",")
 
         current_waveform = self.waveform_translate[parts[0]]
-        param_vals: List[Union[str, float]] = [current_waveform]
+        param_vals: list[Union[str, float]] = [current_waveform]
         param_vals += [to_float(i) for i in parts[1:]]
         param_names = ["waveform"] + self.waveform_params[current_waveform]
         params_dict = dict(zip(param_names, param_vals))
@@ -304,7 +304,7 @@ class RigolDG1062Channel(InstrumentChannel):
         """
         Apply a waveform with values given in a dictionary.
         """
-        if not "waveform" in params_dict:
+        if "waveform" not in params_dict:
             raise ValueError("At least 'waveform' argument needed")
 
         waveform = str(params_dict["waveform"])

@@ -2,19 +2,13 @@
 Provides validators for different types of values. Validator validates if the
 value belongs to the given type and is in the provided range.
 """
-import collections.abc
-import math
+from __future__ import annotations
 
-# rename on import since this file implements its own classes
-# with these names.
-from typing import Any
-from typing import Callable as TCallable
-from typing import Dict as TDict
-from typing import Generic, Hashable
-from typing import List as TList
-from typing import Literal, Optional
-from typing import Sequence as TSequence
-from typing import Set, Tuple, TypeVar, Union, cast
+import math
+import typing
+from collections import abc
+from collections.abc import Hashable
+from typing import Any, Generic, Literal, Optional, TypeVar, Union, cast
 
 import numpy as np
 
@@ -22,11 +16,11 @@ BIGSTRING = 1000000000
 BIGINT = int(1e18)
 
 numbertypes = Union[float, int, np.floating, np.integer]
-shape_type = Union[int, TCallable[[], int]]
-shape_tuple_type = Optional[Tuple[shape_type, ...]]
+shape_type = Union[int, typing.Callable[[], int]]
+shape_tuple_type = Optional[tuple[shape_type, ...]]
 
 
-def validate_all(*args: Tuple["Validator[Any]", Any], context: str = "") -> None:
+def validate_all(*args: tuple[Validator[Any], Any], context: str = "") -> None:
     """
     Takes a list of (validator, value) couplets and tests whether they are
     all valid, raising ValueError otherwise.
@@ -43,8 +37,8 @@ def validate_all(*args: Tuple["Validator[Any]", Any], context: str = "") -> None
 
 
 def range_str(
-    min_val: Optional[Union[float, "np.floating[Any]", "np.integer[Any]"]],
-    max_val: Optional[Union[float, "np.floating[Any]", "np.integer[Any]"]],
+    min_val: float | np.floating[Any] | np.integer[Any] | None,
+    max_val: float | np.floating[Any] | np.integer[Any] | None,
     name: str,
 ) -> str:
     """
@@ -102,14 +96,14 @@ class Validator(Generic[T]):
     implementation of getting valid values.
     """
 
-    _valid_values: Tuple[T, ...] = ()
+    _valid_values: tuple[T, ...] = ()
     is_numeric = False  # is this a numeric type (so it can be swept)?
 
     def validate(self, value: T, context: str = "") -> None:
         raise NotImplementedError
 
     @property
-    def valid_values(self) -> Tuple[T, ...]:
+    def valid_values(self) -> tuple[T, ...]:
         return self._valid_values
 
 
@@ -157,7 +151,7 @@ class Nothing(Validator[Any]):
         self._reason = reason
 
 
-class Bool(Validator[bool]):
+class Bool(Validator[Union[bool, np.bool_]]):
     """
     Requires a boolean.
     """
@@ -165,7 +159,7 @@ class Bool(Validator[bool]):
     def __init__(self) -> None:
         self._valid_values = (True, False)
 
-    def validate(self, value: bool, context: str = "") -> None:
+    def validate(self, value: bool | np.bool_, context: str = "") -> None:
         """
         Validates if bool else raises error.
 
@@ -320,7 +314,7 @@ class Numbers(Validator[numbertypes]):
         return float(self._max_value)
 
 
-class Ints(Validator[Union[int, "np.integer[Any]"]]):
+class Ints(Validator[Union[int, "np.integer[Any]", bool]]):
     """
     Requires an integer.
     Optional parameters min_value and max_value, enforce
@@ -415,7 +409,7 @@ class PermissiveInts(Ints):
         Raises:
             TypeError: If not an int or close to it.
         """
-        castvalue: Union[int, "np.integer[Any]"]
+        castvalue: int | np.integer[Any]
         if isinstance(value, (float, np.floating)):
             intrepr = int(np.round(value))
             remainder = np.abs(value - intrepr)
@@ -443,7 +437,7 @@ class ComplexNumbers(Validator[Union[complex, "np.complexfloating[Any,Any]"]]):
         self._valid_values = ((1 + 1j),)
 
     def validate(
-        self, value: Union[complex, "np.complexfloating[Any,Any]"], context: str = ""
+        self, value: complex | np.complexfloating[Any, Any], context: str = ""
     ) -> None:
         """
         Validates if complex number else raises error.
@@ -475,7 +469,7 @@ class Enum(Validator[Hashable]):
         TypeError: If no value provided
     """
 
-    def __init__(self, *values: Optional[Hashable]) -> None:
+    def __init__(self, *values: Hashable | None) -> None:
         if not len(values):
             raise TypeError("Enum needs at least one value")
 
@@ -503,7 +497,7 @@ class Enum(Validator[Hashable]):
         return f"<Enum: {repr(self._values)}>"
 
     @property
-    def values(self) -> Set[Hashable]:
+    def values(self) -> set[Hashable]:
         return self._values.copy()
 
 
@@ -514,7 +508,7 @@ class OnOff(Validator[str]):
 
     def __init__(self) -> None:
         self._validator = Enum("on", "off")
-        self._valid_values = cast(Tuple[str, ...], self._validator._valid_values)
+        self._valid_values = cast(tuple[str, ...], self._validator._valid_values)
 
     def validate(self, value: str, context: str = "") -> None:
         self._validator.validate(value, context)
@@ -542,7 +536,7 @@ class Multiples(Ints):
         self._divisor = divisor
         self._valid_values = (divisor,)
 
-    def validate(self, value: Union[int, "np.integer[Any]"], context: str = "") -> None:
+    def validate(self, value: int | np.integer[Any], context: str = "") -> None:
         """
         Validates if the value is a integer multiple of divisor else raises
         error.
@@ -592,7 +586,7 @@ class PermissiveMultiples(Validator[numbertypes]):
     """
 
     def __init__(self, divisor: numbertypes, precision: float = 1e-9) -> None:
-        self._mulval: Optional[Multiples] = None
+        self._mulval: Multiples | None = None
         self._precision = precision
         self._numval = Numbers()
         self.divisor = divisor
@@ -710,7 +704,7 @@ class MultiType(Validator[Any]):
         )
 
     def validate(self, value: Any, context: str = "") -> None:
-        args: TList[str] = []
+        args: list[str] = []
         for v in self._validators:
             try:
                 v.validate(value, context)
@@ -735,7 +729,7 @@ class MultiType(Validator[Any]):
         return self._combiner
 
     @property
-    def validators(self) -> Tuple[Validator[Any], ...]:
+    def validators(self) -> tuple[Validator[Any], ...]:
         return self._validators
 
 
@@ -823,10 +817,10 @@ class Arrays(Validator[np.ndarray]):
 
     def __init__(
         self,
-        min_value: Optional[numbertypes] = None,
-        max_value: Optional[numbertypes] = None,
-        shape: Optional[TSequence[shape_type]] = None,
-        valid_types: Optional[TSequence[type]] = None,
+        min_value: numbertypes | None = None,
+        max_value: numbertypes | None = None,
+        shape: abc.Sequence[shape_type] | None = None,
+        valid_types: abc.Sequence[type] | None = None,
     ) -> None:
 
         if valid_types is not None:
@@ -913,7 +907,7 @@ class Arrays(Validator[np.ndarray]):
             if not valuesok:
                 raise TypeError("max_value must be bigger than min_value")
 
-        if not isinstance(shape, collections.abc.Sequence) and shape is not None:
+        if not isinstance(shape, abc.Sequence) and shape is not None:
             raise ValueError(
                 f"Shape must be a sequence (List, Tuple ...) " f"got a {type(shape)}"
             )
@@ -922,7 +916,7 @@ class Arrays(Validator[np.ndarray]):
             self._shape = tuple(shape)
 
     @property
-    def valid_values(self) -> Tuple[np.ndarray]:
+    def valid_values(self) -> tuple[np.ndarray]:
         valid_type = self.valid_types[0]
         if valid_type == np.integer:
             valid_type = np.int32
@@ -943,7 +937,7 @@ class Arrays(Validator[np.ndarray]):
         return self._shape
 
     @property
-    def shape(self) -> Optional[Tuple[int, ...]]:
+    def shape(self) -> tuple[int, ...] | None:
         if self._shape is None:
             return None
         shape_array = []
@@ -1014,15 +1008,15 @@ class Arrays(Validator[np.ndarray]):
         )
 
     @property
-    def min_value(self) -> Optional[float]:
+    def min_value(self) -> float | None:
         return float(self._min_value) if self._min_value is not None else None
 
     @property
-    def max_value(self) -> Optional[float]:
+    def max_value(self) -> float | None:
         return float(self._max_value) if self._max_value is not None else None
 
 
-class Lists(Validator[TList[Any]]):
+class Lists(Validator[list[T]]):
     """
     Validator for lists
 
@@ -1030,7 +1024,7 @@ class Lists(Validator[TList[Any]]):
         elt_validator: Used to validate the individual elements of the list.
     """
 
-    def __init__(self, elt_validator: Validator[Any] = Anything()) -> None:
+    def __init__(self, elt_validator: Validator[T] = Anything()) -> None:
         self._elt_validator = elt_validator
         self._valid_values = ([vval for vval in elt_validator._valid_values],)
 
@@ -1039,7 +1033,7 @@ class Lists(Validator[TList[Any]]):
         msg += self._elt_validator.__repr__() + ">"
         return msg
 
-    def validate(self, value: TList[Anything], context: str = "") -> None:
+    def validate(self, value: list[T], context: str = "") -> None:
         """
         Validate if list else raises error.
 
@@ -1062,7 +1056,7 @@ class Lists(Validator[TList[Any]]):
         return self._elt_validator
 
 
-class Sequence(Validator[TSequence[Any]]):
+class Sequence(Validator[typing.Sequence[Any]]):
     """
     Validator for Sequences.
 
@@ -1076,7 +1070,7 @@ class Sequence(Validator[TSequence[Any]]):
     def __init__(
         self,
         elt_validator: Validator[Any] = Anything(),
-        length: Optional[int] = None,
+        length: int | None = None,
         require_sorted: bool = False,
     ) -> None:
         self._elt_validator = elt_validator
@@ -1091,7 +1085,7 @@ class Sequence(Validator[TSequence[Any]]):
         msg += self._elt_validator.__repr__() + ">"
         return msg
 
-    def validate(self, value: TSequence[Any], context: str = "") -> None:
+    def validate(self, value: abc.Sequence[Any], context: str = "") -> None:
         """
         Validates if sequence else raise typeerror.
 
@@ -1103,7 +1097,7 @@ class Sequence(Validator[TSequence[Any]]):
             TypeError: If not a sequence.
             ValueError: If not of given length or if not sorted.
         """
-        if not isinstance(value, collections.abc.Sequence):
+        if not isinstance(value, abc.Sequence):
             raise TypeError(f"{repr(value)} is not a sequence; {context}")
         if self._length and not len(value) == self._length:
             raise ValueError(
@@ -1121,7 +1115,7 @@ class Sequence(Validator[TSequence[Any]]):
         return self._elt_validator
 
     @property
-    def length(self) -> Optional[int]:
+    def length(self) -> int | None:
         return self._length
 
     @property
@@ -1129,7 +1123,7 @@ class Sequence(Validator[TSequence[Any]]):
         return self._require_sorted
 
 
-class Callable(Validator[TCallable[..., Any]]):
+class Callable(Validator[typing.Callable[..., Any]]):
     """
     Validator for callables such as functions.
     """
@@ -1137,7 +1131,7 @@ class Callable(Validator[TCallable[..., Any]]):
     def __init__(self) -> None:
         self._valid_values = (lambda: 0,)
 
-    def validate(self, value: TCallable[..., Any], context: str = "") -> None:
+    def validate(self, value: abc.Callable[..., Any], context: str = "") -> None:
         """
         Validates if callable else raise typeerror.
 
@@ -1155,12 +1149,12 @@ class Callable(Validator[TCallable[..., Any]]):
         return "<Callable>"
 
 
-class Dict(Validator[TDict[Hashable, Any]]):
+class Dict(Validator[dict[Hashable, Any]]):
     """
     Validator for dictionaries.
     """
 
-    def __init__(self, allowed_keys: Optional[TSequence[Hashable]] = None) -> None:
+    def __init__(self, allowed_keys: abc.Sequence[Hashable] | None = None) -> None:
         """
         Validator for dictionary keys
 
@@ -1170,7 +1164,7 @@ class Dict(Validator[TDict[Hashable, Any]]):
         self._allowed_keys = allowed_keys
         self._valid_values = ({0: 1},)
 
-    def validate(self, value: TDict[Hashable, Any], context: str = "") -> None:
+    def validate(self, value: dict[Hashable, Any], context: str = "") -> None:
         """
         Validates dictionary keys else raise typeerror.
 
@@ -1201,9 +1195,9 @@ class Dict(Validator[TDict[Hashable, Any]]):
             return f"<Dict {self._allowed_keys}>"
 
     @property
-    def allowed_keys(self) -> Optional[TSequence[Hashable]]:
+    def allowed_keys(self) -> abc.Sequence[Hashable] | None:
         return self._allowed_keys
 
     @allowed_keys.setter
-    def allowed_keys(self, keys: Optional[TSequence[Hashable]]) -> None:
+    def allowed_keys(self, keys: abc.Sequence[Hashable] | None) -> None:
         self._allowed_keys = keys

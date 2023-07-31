@@ -12,21 +12,10 @@ else:
 import logging
 import os
 import warnings
-from collections.abc import Mapping, Sized
+from collections.abc import Mapping, Sequence
 from enum import Enum
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    List,
-    Protocol,
-    Sequence,
-    Tuple,
-    Union,
-    runtime_checkable,
-)
+from typing import TYPE_CHECKING, Any, Callable, Protocol, Union, runtime_checkable
 
 import numpy as np
 from typing_extensions import TypeAlias
@@ -69,14 +58,14 @@ scalar_res_types: TypeAlias = Union[
     str, complex, np.integer, np.floating, np.complexfloating
 ]
 values_type: TypeAlias = Union[scalar_res_types, np.ndarray, Sequence[scalar_res_types]]
-res_type: TypeAlias = Tuple[Union["ParameterBase", str], values_type]
+res_type: TypeAlias = tuple[Union["ParameterBase", str], values_type]
 setpoints_type: TypeAlias = Sequence[Union[str, "ParameterBase"]]
-SPECS: TypeAlias = List[ParamSpec]
+SPECS: TypeAlias = list[ParamSpec]
 # Transition period type: SpecsOrInterDeps. We will allow both as input to
 # the DataSet constructor for a while, then deprecate SPECS and finally remove
 # the ParamSpec class
 SpecsOrInterDeps: TypeAlias = Union[SPECS, InterDependencies_]
-ParameterData: TypeAlias = Dict[str, Dict[str, np.ndarray]]
+ParameterData: TypeAlias = dict[str, dict[str, np.ndarray]]
 
 LOG = logging.getLogger(__name__)
 
@@ -232,6 +221,7 @@ class DataSetProtocol(Protocol):
         export_type: DataExportType | str | None = None,
         path: str | None = None,
         prefix: str | None = None,
+        automatic_export: bool = False,
     ) -> None:
         ...
 
@@ -312,6 +302,9 @@ class DataSetProtocol(Protocol):
     def __len__(self) -> int:
         ...
 
+    def the_same_dataset_as(self, other: DataSetProtocol) -> bool:
+        ...
+
 
 class BaseDataSet(DataSetProtocol, Protocol):
 
@@ -358,6 +351,7 @@ class BaseDataSet(DataSetProtocol, Protocol):
         export_type: DataExportType | str | None = None,
         path: str | Path | None = None,
         prefix: str | None = None,
+        automatic_export: bool = False,
     ) -> None:
         """Export data to disk with file name `{prefix}{name_elements}.{ext}`.
         Name elements are names of dataset object attributes that are taken
@@ -395,7 +389,10 @@ class BaseDataSet(DataSetProtocol, Protocol):
             )
 
         export_path = self._export_data(
-            export_type=parsed_export_type, path=path, prefix=prefix
+            export_type=parsed_export_type,
+            path=path,
+            prefix=prefix,
+            automatic_export=automatic_export,
         )
         export_info = self.export_info
         if export_path is not None:
@@ -410,6 +407,7 @@ class BaseDataSet(DataSetProtocol, Protocol):
         export_type: DataExportType,
         path: Path | None = None,
         prefix: str | None = None,
+        automatic_export: bool = False,
     ) -> Path | None:
         """Export data to disk with file name `{prefix}{name_elements}.{ext}`.
         Name elements are names of dataset object attributes that are taken
@@ -452,7 +450,7 @@ class BaseDataSet(DataSetProtocol, Protocol):
             try:
                 export_callback_function = export_callback.load()
                 LOG.info("Executing on_export callback %s", export_callback.name)
-                export_callback_function(export_path)
+                export_callback_function(export_path, automatic_export=automatic_export)
             except Exception:
                 LOG.exception("Exception during export callback function")
 

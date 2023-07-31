@@ -1,4 +1,6 @@
-from typing import Any, Dict, Mapping, Optional, Sequence
+from abc import abstractmethod
+from collections.abc import Mapping, Sequence
+from typing import Any, Optional, final
 
 from qcodes.utils import deep_update
 
@@ -11,12 +13,12 @@ from qcodes.utils import deep_update
 #     typing.NamedTuple and @dataclass.
 #     As those become more widely available, the weakness of this
 #     type constraint will become less of an issue.
-Snapshot = Dict[str, Any]
+Snapshot = dict[str, Any]
 
 
 class Metadatable:
     def __init__(self, metadata: Optional[Mapping[str, Any]] = None):
-        self.metadata: Dict[str, Any] = {}
+        self.metadata: dict[str, Any] = {}
         self.load_metadata(metadata or {})
 
     def load_metadata(self, metadata: Mapping[str, Any]) -> None:
@@ -28,6 +30,7 @@ class Metadatable:
         """
         deep_update(self.metadata, metadata)
 
+    @final
     def snapshot(self, update: Optional[bool] = False) -> Snapshot:
         """
         Decorate a snapshot dictionary with metadata.
@@ -57,3 +60,24 @@ class Metadatable:
         Override this with the primary information for a subclass.
         """
         return {}
+
+
+class MetadatableWithName(Metadatable):
+    """Add short_name and full_name properties to Metadatable.
+    This is used as a base class for all components in QCoDeS that
+    are members of a station to ensure that they have a name and
+    consistent interface."""
+
+    @property
+    @abstractmethod
+    def short_name(self) -> str:
+        """
+        Name excluding name of any parent that this object is bound to.
+        """
+
+    @property
+    @abstractmethod
+    def full_name(self) -> str:
+        """
+        Name including name of any parent that this object is bound to separated by '_'.
+        """

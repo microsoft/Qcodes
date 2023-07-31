@@ -1,10 +1,11 @@
 import re
 import textwrap
 from collections import defaultdict
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from collections.abc import Sequence
+from typing import Any, Optional, Union
 
 from qcodes.instrument import VisaInstrument
-from qcodes.parameters import MultiParameter, Parameter, create_on_off_val_mapping
+from qcodes.parameters import MultiParameter, create_on_off_val_mapping
 
 from . import constants
 from .KeysightB1500_module import (
@@ -32,9 +33,9 @@ class KeysightB1500(VisaInstrument):
 
     def __init__(self, name: str, address: str, **kwargs: Any):
         super().__init__(name, address, terminator="\r\n", **kwargs)
-        self.by_slot: Dict[constants.SlotNr, B1500Module] = {}
-        self.by_channel: Dict[constants.ChNr, B1500Module] = {}
-        self.by_kind: Dict[constants.ModuleKind, List[B1500Module]] = defaultdict(list)
+        self.by_slot: dict[constants.SlotNr, B1500Module] = {}
+        self.by_channel: dict[constants.ChNr, B1500Module] = {}
+        self.by_kind: dict[constants.ModuleKind, list[B1500Module]] = defaultdict(list)
 
         self._find_modules()
 
@@ -374,8 +375,7 @@ class KeysightB1500(VisaInstrument):
         msg = MessageBuilder().mm(mode=mode, channels=channels).message
         self.write(msg)
 
-    def get_measurement_mode(self) -> Dict[str, Union[constants.MM.Mode,
-                                                      List[int]]]:
+    def get_measurement_mode(self) -> dict[str, Union[constants.MM.Mode, list[int]]]:
         """
         This method gets the measurement mode(MM) and the channels used
         for measurements. It outputs a dictionary with 'mode' and
@@ -389,14 +389,15 @@ class KeysightB1500(VisaInstrument):
         if not match:
             raise ValueError('Measurement Mode (MM) not found.')
 
-        out_dict: Dict[str, Union[constants.MM.Mode, List[int]]] = {}
+        out_dict: dict[str, Union[constants.MM.Mode, list[int]]] = {}
         resp_dict = match.groupdict()
         out_dict['mode'] = constants.MM.Mode(int(resp_dict['mode']))
         out_dict['channels'] = list(map(int, resp_dict['channels'].split(',')))
         return out_dict
 
-    def get_response_format_and_mode(self) -> \
-            Dict[str, Union[constants.FMT.Format, constants.FMT.Mode]]:
+    def get_response_format_and_mode(
+        self,
+    ) -> dict[str, Union[constants.FMT.Format, constants.FMT.Mode]]:
         """
         This method queries the the data output format and mode.
         """
@@ -409,8 +410,7 @@ class KeysightB1500(VisaInstrument):
         if not match:
             raise ValueError('Measurement Mode (FMT) not found.')
 
-        out_dict: Dict[str, Union[constants.FMT.Format, constants.FMT.Mode]] \
-            = {}
+        out_dict: dict[str, Union[constants.FMT.Format, constants.FMT.Mode]] = {}
         resp_dict = match.groupdict()
         out_dict['format'] = constants.FMT.Format(int(resp_dict[
                                                           'format']))
@@ -574,7 +574,7 @@ class IVSweepMeasurement(MultiParameter, StatusMixin):
         self.setpoint_labels = ((label,),) * n_names
         self.setpoint_units = ((unit,),) * n_names
 
-    def get_raw(self) -> Tuple[Tuple[float, ...], ...]:
+    def get_raw(self) -> tuple[tuple[float, ...], ...]:
         measurement_mode = self.instrument.get_measurement_mode()
         channels = measurement_mode['channels']
         n_channels = len(channels)

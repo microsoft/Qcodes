@@ -1,18 +1,23 @@
 name: Lint with Darker
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - 'master'
+      - 'release/*'
+  pull_request:
 
 jobs:
   lint-with-darker:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3.3.0
+      - uses: actions/checkout@v3.5.3
         with:
           fetch-depth: 0
       - uses: actions/setup-python@v4
         with:
           python-version: "3.11"
-      - uses: akaihola/darker@1.6.1
+      - uses: akaihola/darker@1.7.2
         with:
           options: "--check --diff"
           src: "./qcodes"

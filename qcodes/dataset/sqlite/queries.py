@@ -11,7 +11,7 @@ import unicodedata
 import warnings
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from itertools import zip_longest
-from typing import Any, List, cast
+from typing import Any, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -25,7 +25,7 @@ from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning import serialization as serial
 from qcodes.dataset.descriptions.versioning import v0
 from qcodes.dataset.descriptions.versioning.converters import new_to_old, old_to_new
-from qcodes.dataset.guids import generate_guid, parse_guid
+from qcodes.dataset.guids import build_guid_from_components, parse_guid
 from qcodes.dataset.sqlite.connection import (
     ConnectionPlus,
     atomic,
@@ -588,7 +588,7 @@ def get_parameter_tree_values(
     # Create the base sql query
     columns = [toplevel_param_name] + list(other_param_names)
     sql = f"""
-           SELECT {','.join(columns)} FROM "{result_table_name}"
+           SELECT "{'","'.join(columns)}" FROM "{result_table_name}"
            WHERE {toplevel_param_name} IS NOT NULL
            LIMIT ? OFFSET ?
            """
@@ -678,7 +678,7 @@ def get_setpoints(
     c = atomic_transaction(conn, sql)
     setpoint_names_temp = many_many(c, 'parameter')
     setpoint_names = [spn[0] for spn in setpoint_names_temp]
-    setpoint_names = cast(List[str], setpoint_names)
+    setpoint_names = cast(list[str], setpoint_names)
 
     # get the actual setpoint data
     output: dict[str, list[tuple[Any, ...]]] = {}
@@ -1481,7 +1481,7 @@ def _get_parameters(conn: ConnectionPlus, run_id: int) -> list[ParamSpec]:
         A list of param specs for this run
     """
 
-    sql = f"""
+    sql = """
     SELECT parameter FROM layouts
     WHERE run_id = ?
     """
@@ -1506,7 +1506,7 @@ def _get_paramspec(conn: ConnectionPlus,
     """
 
     # get table name
-    sql = f"""
+    sql = """
     SELECT result_table_name FROM runs
     WHERE run_id = ?
     """
@@ -1527,7 +1527,7 @@ def _get_paramspec(conn: ConnectionPlus,
 
     # get everything else
 
-    sql = f"""
+    sql = """
     SELECT layout_id, run_id, parameter, label, unit, inferred_from FROM layouts
     WHERE parameter = ? and run_id = ?
     """
@@ -1550,7 +1550,7 @@ def _get_paramspec(conn: ConnectionPlus,
         ax_nums: list[int] = [dp[1] for dp in deps]
         depends_on = []
         for _, dp in sorted(zip(ax_nums, dps)):
-            sql = f"""
+            sql = """
             SELECT parameter FROM layouts
             WHERE layout_id = ?
             """
@@ -1682,7 +1682,7 @@ def add_parameter(
                 insert_column(conn, formatted_name, p.name, p.type)
             p_names.append(p.name)
         # get old parameters column from run table
-        sql = f"""
+        sql = """
         SELECT parameters FROM runs
         WHERE run_id=?
         """
@@ -2119,7 +2119,7 @@ def update_GUIDs(conn: ConnectionPlus) -> None:
                     'the GUIDs.')
         return
 
-    query = f"select MAX(run_id) from runs"
+    query = "select MAX(run_id) from runs"
     c = atomic_transaction(conn, query)
     no_of_runs = c.fetchall()[0][0]
 
@@ -2141,11 +2141,9 @@ def update_GUIDs(conn: ConnectionPlus) -> None:
     def _both_zero(
         run_id: int, conn: ConnectionPlus, guid_comps: dict[str, Any]
     ) -> None:
-        guid_str = generate_guid(
-            timeint=guid_comps["time"], sampleint=guid_comps["sample"]
-        )
+        guid_str = build_guid_from_components(guid_comps)
         with atomic(conn) as conn:
-            sql = f"""
+            sql = """
                    UPDATE runs
                    SET guid = ?
                    WHERE run_id = ?
@@ -2168,11 +2166,14 @@ def update_GUIDs(conn: ConnectionPlus) -> None:
         guid_str = get_guid_from_run_id(conn, run_id)
         assert guid_str is not None
         guid_comps = parse_guid(guid_str)
-        loc = guid_comps['location']
-        ws = guid_comps['work_station']
+        old_loc = guid_comps["location"]
+        old_ws = guid_comps["work_station"]
+
+        guid_comps["location"] = location
+        guid_comps["work_station"] = work_station
 
         log.info(f'Updating run number {run_id}...')
-        actions[(loc == 0, ws == 0)](run_id, conn, guid_comps)
+        actions[(old_loc == 0, old_ws == 0)](run_id, conn, guid_comps)
 
 
 def remove_trigger(conn: ConnectionPlus, trigger_id: str) -> None:

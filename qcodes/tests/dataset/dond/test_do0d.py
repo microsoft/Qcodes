@@ -1,5 +1,6 @@
 import hypothesis.strategies as hst
 import matplotlib
+import matplotlib.axes
 import numpy as np
 import pytest
 from hypothesis import HealthCheck, given, settings
@@ -20,7 +21,7 @@ from qcodes.tests.instrument_mocks import (
 @pytest.mark.parametrize("period", [None, 1])
 @pytest.mark.parametrize("plot", [None, True, False])
 @pytest.mark.parametrize("plot_config", [None, True, False])
-def test_do0d_with_real_parameter(period, plot, plot_config):
+def test_do0d_with_real_parameter(period, plot, plot_config) -> None:
     arrayparam = ArraySetPointParam(name="arrayparam")
 
     if plot_config is not None:
@@ -38,7 +39,7 @@ def test_do0d_with_real_parameter(period, plot, plot_config):
 @pytest.mark.parametrize(
     "period, plot", [(None, True), (None, False), (1, True), (1, False)]
 )
-def test_do0d_with_complex_parameter(_param_complex, period, plot):
+def test_do0d_with_complex_parameter(_param_complex, period, plot) -> None:
     do0d(_param_complex, write_period=period, do_plot=plot)
 
 
@@ -46,7 +47,7 @@ def test_do0d_with_complex_parameter(_param_complex, period, plot):
 @pytest.mark.parametrize(
     "period, plot", [(None, True), (None, False), (1, True), (1, False)]
 )
-def test_do0d_with_a_callable(_param_callable, period, plot):
+def test_do0d_with_a_callable(_param_callable, period, plot) -> None:
     do0d(_param_callable, write_period=period, do_plot=plot)
 
 
@@ -54,7 +55,7 @@ def test_do0d_with_a_callable(_param_callable, period, plot):
 @pytest.mark.parametrize(
     "period, plot", [(None, True), (None, False), (1, True), (1, False)]
 )
-def test_do0d_with_2_parameters(_param, _param_complex, period, plot):
+def test_do0d_with_2_parameters(_param, _param_complex, period, plot) -> None:
     do0d(_param, _param_complex, write_period=period, do_plot=plot)
 
 
@@ -64,33 +65,33 @@ def test_do0d_with_2_parameters(_param, _param_complex, period, plot):
 )
 def test_do0d_with_parameter_and_a_callable(
     _param_complex, _param_callable, period, plot
-):
+) -> None:
     do0d(_param_callable, _param_complex, write_period=period, do_plot=plot)
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-def test_do0d_output_type_real_parameter(_param):
+def test_do0d_output_type_real_parameter(_param) -> None:
     data = do0d(_param)
     assert isinstance(data[0], DataSet) is True
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-def test_do0d_output_type_complex_parameter(_param_complex):
+def test_do0d_output_type_complex_parameter(_param_complex) -> None:
     data_complex = do0d(_param_complex)
     assert isinstance(data_complex[0], DataSet) is True
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-def test_do0d_output_type_callable(_param_callable):
+def test_do0d_output_type_callable(_param_callable) -> None:
     data_func = do0d(_param_callable)
     assert isinstance(data_func[0], DataSet) is True
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-def test_do0d_output_data(_param):
+def test_do0d_output_data(_param) -> None:
     exp = do0d(_param)
     data = exp[0]
-    assert data.parameters == _param.name
+    assert data.description.interdeps.names == (_param.name,)
     loaded_data = data.get_parameter_data()["simple_parameter"]["simple_parameter"]
     assert loaded_data == np.array([_param.get()])
 
@@ -104,7 +105,7 @@ def test_do0d_output_data(_param):
 @settings(deadline=None, suppress_health_check=(HealthCheck.function_scoped_fixture,))
 def test_do0d_verify_shape(
     _param, _param_complex, multiparamtype, dummyinstrument, n_points_pws
-):
+) -> None:
     arrayparam = ArraySetPointParam(name="arrayparam")
     multiparam = multiparamtype(name="multiparam")
     paramwsetpoints = dummyinstrument.A.dummy_parameter_with_setpoints
@@ -130,13 +131,13 @@ def test_do0d_verify_shape(
 
     data = ds.get_parameter_data()
 
-    for name, data in data.items():
-        for param_data in data.values():
+    for name, data_inner in data.items():
+        for param_data in data_inner.values():
             assert param_data.shape == expected_shapes[name]
 
 
 @pytest.mark.usefixtures("experiment")
-def test_do0d_parameter_with_array_vals():
+def test_do0d_parameter_with_array_vals() -> None:
     param = ArrayshapedParam(
         name="paramwitharrayval", vals=validators.Arrays(shape=(10,))
     )
@@ -145,7 +146,7 @@ def test_do0d_parameter_with_array_vals():
     assert results[0].description.shapes == expected_shapes
 
 
-def test_do0d_explicit_experiment(_param, experiment):
+def test_do0d_explicit_experiment(_param, experiment) -> None:
     experiment_2 = new_experiment("new-exp", "no-sample")
 
     data1 = do0d(_param, do_plot=False, exp=experiment)
@@ -158,13 +159,13 @@ def test_do0d_explicit_experiment(_param, experiment):
 
 
 @pytest.mark.usefixtures("experiment")
-def test_do0d_explicit_name(_param):
+def test_do0d_explicit_name(_param) -> None:
     data1 = do0d(_param, do_plot=False, measurement_name="my measurement")
     assert data1[0].name == "my measurement"
 
 
 @pytest.mark.usefixtures("experiment")
-def test_do0d_parameter_with_setpoints_2d(dummyinstrument):
+def test_do0d_parameter_with_setpoints_2d(dummyinstrument) -> None:
     dummyinstrument.A.dummy_start(0)
     dummyinstrument.A.dummy_stop(10)
     dummyinstrument.A.dummy_n_points(10)
@@ -181,7 +182,7 @@ def test_do0d_parameter_with_setpoints_2d(dummyinstrument):
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
-def test_dond_0d_output_type(_param, _param_complex, _param_callable):
+def test_dond_0d_output_type(_param, _param_complex, _param_callable) -> None:
     data_1 = do0d(_param)
     assert isinstance(data_1[0], DataSet) is True
 

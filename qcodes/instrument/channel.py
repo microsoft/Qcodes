@@ -2,10 +2,10 @@
 from __future__ import annotations
 
 import sys
-from collections.abc import Callable, Iterable, Iterator
-from typing import Any, List, MutableSequence, Sequence, TypeVar, Union, cast, overload
+from collections.abc import Callable, Iterable, Iterator, MutableSequence, Sequence
+from typing import Any, TypeVar, Union, cast, overload
 
-from qcodes.metadatable import Metadatable
+from qcodes.metadatable import MetadatableWithName
 from qcodes.parameters import (
     ArrayParameter,
     MultiChannelInstrumentParameter,
@@ -90,7 +90,7 @@ class InstrumentChannel(InstrumentModule):
 T = TypeVar("T", bound="ChannelTuple")
 
 
-class ChannelTuple(Metadatable, Sequence[InstrumentModuleType]):
+class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
     """
     Container for channelized parameters that allows for sweeps over
     all channels, as well as addressing of individual channels.
@@ -273,6 +273,34 @@ class ChannelTuple(Metadatable, Sequence[InstrumentModuleType]):
             snapshotable=self._snapshotable,
         )
 
+    @property
+    def short_name(self) -> str:
+        return self._name
+
+    @property
+    def full_name(self) -> str:
+        return "_".join(self.name_parts)
+
+    @property
+    def name_parts(self) -> list[str]:
+        """
+        List of the parts that make up the full name of this function
+        """
+        if self._parent is not None:
+            name_parts = getattr(self._parent, "name_parts", [])
+            if name_parts == []:
+                # add fallback for the case where someone has bound
+                # the function to something that is not an instrument
+                # but perhaps it has a name anyway?
+                name = getattr(self._parent, "name", None)
+                if name is not None:
+                    name_parts = [name]
+        else:
+            name_parts = []
+
+        name_parts.append(self.short_name)
+        return name_parts
+
     def index(
         self, obj: InstrumentModuleType, start: int = 0, stop: int = sys.maxsize
     ) -> int:
@@ -422,14 +450,14 @@ class ChannelTuple(Metadatable, Sequence[InstrumentModuleType]):
                 "Slicing is currently not " "supported for MultiParameters"
             )
         parameters = cast(
-            List[Union[Parameter, ArrayParameter]],
+            list[Union[Parameter, ArrayParameter]],
             [chan.parameters[name] for chan in self._channels],
         )
         names = tuple(f"{chan.name}_{name}" for chan in self._channels)
         labels = tuple(parameter.label for parameter in parameters)
         units = tuple(parameter.unit for parameter in parameters)
         if isinstance(parameters[0], ArrayParameter):
-            arrayparameters = cast(List[ArrayParameter], parameters)
+            arrayparameters = cast(list[ArrayParameter], parameters)
             shapes = tuple(parameter.shape for parameter in arrayparameters)
             if arrayparameters[0].setpoints:
                 setpoints = tuple(parameter.setpoints for parameter in arrayparameters)

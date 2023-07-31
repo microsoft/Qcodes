@@ -5,6 +5,7 @@ from contextlib import contextmanager
 from copy import deepcopy
 
 import pytest
+from pytest import LogCaptureFixture
 
 import qcodes as qc
 import qcodes.dataset.descriptions.versioning.serialization as serial
@@ -20,6 +21,7 @@ from qcodes.dataset import (
     new_data_set,
     new_experiment,
 )
+from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
@@ -76,14 +78,14 @@ LATEST_VERSION_ARG = -1
 
 
 @pytest.mark.parametrize('ver', VERSIONS + (LATEST_VERSION_ARG,))
-def test_connect_upgrades_user_version(ver):
+def test_connect_upgrades_user_version(ver) -> None:
     expected_version = ver if ver != LATEST_VERSION_ARG else LATEST_VERSION
     conn = connect(':memory:', version=ver)
     assert expected_version == get_user_version(conn)
 
 
 @pytest.mark.parametrize('version', VERSIONS + (LATEST_VERSION_ARG,))
-def test_tables_exist(empty_temp_db, version):
+def test_tables_exist(empty_temp_db, version) -> None:
     conn = connect(
         qc.config["core"]["db_location"], qc.config["core"]["db_debug"], version=version
     )
@@ -100,7 +102,7 @@ def test_tables_exist(empty_temp_db, version):
     conn.close()
 
 
-def test_initialise_database_at_for_nonexisting_db(tmp_path):
+def test_initialise_database_at_for_nonexisting_db(tmp_path) -> None:
     db_location = str(tmp_path / 'temp.db')
     assert not os.path.exists(db_location)
 
@@ -110,7 +112,7 @@ def test_initialise_database_at_for_nonexisting_db(tmp_path):
     assert qc.config["core"]["db_location"] == db_location
 
 
-def test_initialise_database_at_for_nonexisting_db_pathlib_path(tmp_path):
+def test_initialise_database_at_for_nonexisting_db_pathlib_path(tmp_path) -> None:
     db_location = tmp_path / "temp.db"
     assert not db_location.exists()
 
@@ -120,7 +122,7 @@ def test_initialise_database_at_for_nonexisting_db_pathlib_path(tmp_path):
     assert qc.config["core"]["db_location"] == str(db_location)
 
 
-def test_initialise_database_at_for_existing_db(tmp_path):
+def test_initialise_database_at_for_existing_db(tmp_path) -> None:
     # Define DB location
     db_location = str(tmp_path / 'temp.db')
     assert not os.path.exists(db_location)
@@ -141,7 +143,7 @@ def test_initialise_database_at_for_existing_db(tmp_path):
     assert qc.config["core"]["db_location"] == db_location
 
 
-def test_perform_actual_upgrade_0_to_1():
+def test_perform_actual_upgrade_0_to_1() -> None:
     # we cannot use the empty_temp_db, since that has already called connect
     # and is therefore latest version already
 
@@ -169,7 +171,7 @@ def test_perform_actual_upgrade_0_to_1():
         assert len(c.fetchall()) == 0
 
 
-def test_perform_actual_upgrade_1_to_2():
+def test_perform_actual_upgrade_1_to_2() -> None:
 
     v1fixpath = os.path.join(fixturepath, 'db_files', 'version1')
 
@@ -197,7 +199,7 @@ def test_perform_actual_upgrade_1_to_2():
         assert len(c.fetchall()) == 2
 
 
-def test_perform_actual_upgrade_2_to_3_empty():
+def test_perform_actual_upgrade_2_to_3_empty() -> None:
 
     v2fixpath = os.path.join(fixturepath, 'db_files', 'version2')
 
@@ -224,7 +226,7 @@ def test_perform_actual_upgrade_2_to_3_empty():
         assert len(c.fetchall()) == 0
 
 
-def test_perform_actual_upgrade_2_to_3_empty_runs():
+def test_perform_actual_upgrade_2_to_3_empty_runs() -> None:
 
     v2fixpath = os.path.join(fixturepath, 'db_files', 'version2')
 
@@ -237,7 +239,7 @@ def test_perform_actual_upgrade_2_to_3_empty_runs():
         perform_db_upgrade_2_to_3(conn)
 
 
-def test_perform_actual_upgrade_2_to_3_some_runs():
+def test_perform_actual_upgrade_2_to_3_some_runs() -> None:
 
     v2fixpath = os.path.join(fixturepath, 'db_files', 'version2')
 
@@ -258,7 +260,7 @@ def test_perform_actual_upgrade_2_to_3_some_runs():
 
         # retrieve the json string and recreate the object
 
-        sql = f"""
+        sql = """
               SELECT run_description
               FROM runs
               WHERE run_id == 1
@@ -324,7 +326,7 @@ def test_perform_actual_upgrade_2_to_3_some_runs():
         assert p5.unit == "unit 5"
 
 
-def test_perform_upgrade_v2_v3_to_v4_fixes():
+def test_perform_upgrade_v2_v3_to_v4_fixes() -> None:
     """
     Test that a db that was upgraded from v2 to v3 with a buggy
     version will be corrected when upgraded to v4.
@@ -340,7 +342,7 @@ def test_perform_upgrade_v2_v3_to_v4_fixes():
 
         assert get_user_version(conn) == 3
 
-        sql = f"""
+        sql = """
               SELECT run_description
               FROM runs
               WHERE run_id == 1
@@ -468,7 +470,7 @@ def test_perform_upgrade_v2_v3_to_v4_fixes():
         assert p5.unit == "unit 5"
 
 
-def test_perform_upgrade_v3_to_v4():
+def test_perform_upgrade_v3_to_v4() -> None:
     """
     Test that a db upgrade from v2 to v4 works correctly.
     """
@@ -483,7 +485,7 @@ def test_perform_upgrade_v3_to_v4():
 
         assert get_user_version(conn) == 3
 
-        sql = f"""
+        sql = """
               SELECT run_description
               FROM runs
               WHERE run_id == 1
@@ -549,8 +551,8 @@ def test_perform_upgrade_v3_to_v4():
         assert p5.unit == "unit 5"
 
 
-@pytest.mark.usefixtures("empty_temp_db")
-def test_update_existing_guids(caplog):
+@pytest.mark.usefixtures("default_config", "empty_temp_db")
+def test_update_existing_guids(caplog: LogCaptureFixture) -> None:
 
     old_loc = 101
     old_ws = 1200
@@ -636,7 +638,7 @@ def _assert_loc_station(ds, expected_loc, expected_station):
                          ['empty',
                           'with_runs_but_no_snapshots',
                           'with_runs_and_snapshots'])
-def test_perform_actual_upgrade_4_to_5(db_file):
+def test_perform_actual_upgrade_4_to_5(db_file) -> None:
     v4fixpath = os.path.join(fixturepath, 'db_files', 'version4')
 
     db_file += '.db'
@@ -658,7 +660,7 @@ def test_perform_actual_upgrade_4_to_5(db_file):
         assert is_column_in_table(conn, 'runs', 'snapshot')
 
 
-def test_perform_actual_upgrade_5_to_6():
+def test_perform_actual_upgrade_5_to_6() -> None:
     fixpath = os.path.join(fixturepath, 'db_files', 'version5')
 
     db_file = 'empty.db'
@@ -692,7 +694,7 @@ def test_perform_actual_upgrade_5_to_6():
             assert desc._version == 3
 
 
-def test_perform_upgrade_6_7():
+def test_perform_upgrade_6_7() -> None:
     fixpath = os.path.join(fixturepath, 'db_files', 'version6')
 
     db_file = 'empty.db'
@@ -705,7 +707,7 @@ def test_perform_upgrade_6_7():
         assert get_user_version(conn) == 7
 
 
-def test_perform_actual_upgrade_6_to_7():
+def test_perform_actual_upgrade_6_to_7() -> None:
 
     fixpath = os.path.join(fixturepath, 'db_files', 'version6')
 
@@ -736,6 +738,7 @@ def test_perform_actual_upgrade_6_to_7():
             ds1 = load_by_id(run_id, conn)
             ds2 = load_by_run_spec(captured_run_id=run_id, conn=conn)
 
+            assert isinstance(ds1, DataSet)
             assert ds1.the_same_dataset_as(ds2)
 
             assert ds1.run_id == run_id
@@ -748,6 +751,7 @@ def test_perform_actual_upgrade_6_to_7():
             ds1 = load_by_counter(counter, exp_id, conn)
             ds2 = load_by_run_spec(captured_counter=counter, conn=conn)
 
+            assert isinstance(ds1, DataSet)
             assert ds1.the_same_dataset_as(ds2)
             assert ds1.counter == counter
             assert ds1.counter == ds1.captured_counter
@@ -755,7 +759,7 @@ def test_perform_actual_upgrade_6_to_7():
             assert ds2.counter == ds2.captured_counter
 
 
-def test_perform_actual_upgrade_6_to_newest_add_new_data():
+def test_perform_actual_upgrade_6_to_newest_add_new_data() -> None:
     """
     Insert new runs on top of existing runs upgraded and verify that they
     get the correct captured_run_id and captured_counter
@@ -819,6 +823,7 @@ def test_perform_actual_upgrade_6_to_newest_add_new_data():
             ds1 = load_by_id(run_id, conn)
             ds2 = load_by_run_spec(captured_run_id=run_id, conn=conn)
 
+            assert isinstance(ds1, DataSet)
             assert ds1.the_same_dataset_as(ds2)
 
             assert ds1.run_id == run_id
@@ -842,6 +847,7 @@ def test_perform_actual_upgrade_6_to_newest_add_new_data():
                                    experiment_name='some-exp',
                                    conn=conn)
 
+            assert isinstance(ds1, DataSet)
             assert ds1.the_same_dataset_as(ds2)
             assert ds1.counter == counter
             assert ds1.counter == ds1.captured_counter
@@ -852,7 +858,7 @@ def test_perform_actual_upgrade_6_to_newest_add_new_data():
 @pytest.mark.parametrize('db_file',
                          ['empty',
                           'some_runs'])
-def test_perform_actual_upgrade_7_to_8(db_file):
+def test_perform_actual_upgrade_7_to_8(db_file) -> None:
     v7fixpath = os.path.join(fixturepath, 'db_files', 'version7')
 
     db_file += '.db'
@@ -868,7 +874,7 @@ def test_perform_actual_upgrade_7_to_8(db_file):
 
 
 @pytest.mark.usefixtures("empty_temp_db")
-def test_cannot_connect_to_newer_db():
+def test_cannot_connect_to_newer_db() -> None:
     conn = connect(qc.config["core"]["db_location"],
                    qc.config["core"]["db_debug"])
     current_version = get_user_version(conn)
@@ -881,12 +887,12 @@ def test_cannot_connect_to_newer_db():
                        qc.config["core"]["db_debug"])
 
 
-def test_latest_available_version():
+def test_latest_available_version() -> None:
     assert _latest_available_version() == 9
 
 
 @pytest.mark.parametrize("version", VERSIONS[:-1])
-def test_getting_db_version(version):
+def test_getting_db_version(version) -> None:
 
     fixpath = os.path.join(fixturepath, 'db_files', f'version{version}')
 
@@ -903,7 +909,7 @@ def test_getting_db_version(version):
 @pytest.mark.parametrize('db_file',
                          ['empty',
                           'some_runs'])
-def test_perform_actual_upgrade_8_to_9(db_file):
+def test_perform_actual_upgrade_8_to_9(db_file) -> None:
     v8fixpath = os.path.join(fixturepath, 'db_files', 'version8')
 
     db_file += '.db'

@@ -3,7 +3,7 @@ import pytest
 from .common import error_caused_by
 
 
-def test_error_caused_by_simple():
+def test_error_caused_by_simple() -> None:
     """
     Test that `error_caused_by` will only match the root error and not
     the error raised. For errors raised directly from other errors
@@ -16,7 +16,7 @@ def test_error_caused_by_simple():
     assert not error_caused_by(execinfo, "KeyError: foo")
 
 
-def test_error_caused_by_try_catch():
+def test_error_caused_by_try_catch() -> None:
     """
     Test that `error_caused_by` will only match the root error and not
     the error raised for errors. For errors reraised in a try except chain.
@@ -31,7 +31,7 @@ def test_error_caused_by_try_catch():
     assert not error_caused_by(execinfo, "KeyError: foo")
 
 
-def test_error_caused_by_3_level():
+def test_error_caused_by_3_level() -> None:
     """
     Test that error caused by does not match the middle element in a chain
     of 3 exceptions

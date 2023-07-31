@@ -21,11 +21,11 @@ from qcodes.dataset.dond.do_nd_utils import (
     MeasInterruptT,
     MultiAxesTupleListWithDataSet,
     ParamMeasT,
-    catch_interrupts,
     _handle_plotting,
     _register_actions,
     _register_parameters,
     _set_write_period,
+    catch_interrupts,
 )
 from qcodes.dataset.dond.sweeps import AbstractSweep, ArraySweep, LinSweep, LogSweep
 from qcodes.dataset.plotting import plot_and_save_image as plot

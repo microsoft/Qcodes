@@ -16,7 +16,7 @@ def driver():
     rigol.close()
 
 
-def test_initialize(driver):
+def test_initialize(driver) -> None:
     """
     Test that simple initialisation works
     """
@@ -24,32 +24,32 @@ def test_initialize(driver):
     assert idn_dict['vendor'] == 'QCoDeS'
 
 
-def test_gets_correct_waveform_xorigin(driver):
+def test_gets_correct_waveform_xorigin(driver) -> None:
     assert driver.waveform_xorigin() == 0
 
 
-def test_gets_correct_waveform_xincrem(driver):
+def test_gets_correct_waveform_xincrem(driver) -> None:
     assert driver.waveform_xincrem() == 0.1
 
 
-def test_sets_correct_waveform_npoints(driver):
+def test_sets_correct_waveform_npoints(driver) -> None:
     driver.waveform_npoints(1000)
     assert driver.waveform_npoints() == 1000
 
 
-def test_gets_correct_waveform_yorigin(driver):
+def test_gets_correct_waveform_yorigin(driver) -> None:
     assert driver.waveform_yorigin() == 0
 
 
-def test_gets_correct_waveform_yincrem(driver):
+def test_gets_correct_waveform_yincrem(driver) -> None:
     assert driver.waveform_yincrem() == 0.1
 
 
-def test_gets_correct_waveform_yref(driver):
+def test_gets_correct_waveform_yref(driver) -> None:
     assert driver.waveform_yref() == 0
 
 
-def test_sets_correct_trigger_mode(driver):
+def test_sets_correct_trigger_mode(driver) -> None:
     driver.trigger_mode('edge')
     assert driver.trigger_mode() == "edge"
     driver.trigger_mode('pattern')
@@ -60,7 +60,7 @@ def test_sets_correct_trigger_mode(driver):
     assert driver.trigger_mode() == "video"
 
 
-def test_get_data_source(driver):
+def test_get_data_source(driver) -> None:
     driver.data_source('ch1')
     assert driver.data_source() == "ch1"
     driver.data_source('ch2')

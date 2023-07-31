@@ -1,7 +1,7 @@
 # Test some subscription scenarios
 import logging
 from numbers import Number
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Union
 
 import pytest
 from numpy import ndarray
@@ -14,7 +14,7 @@ from qcodes.tests.common import retry_until_does_not_throw
 
 log = logging.getLogger(__name__)
 
-VALUE = Union[str, Number, List[Any], ndarray, bool]
+VALUE = Union[str, Number, list[Any], ndarray, bool]
 
 
 class MockSubscriber():
@@ -31,16 +31,18 @@ class MockSubscriber():
         self.lg = lg
         self.ds = ds
 
-    def __call__(self, results: List[Tuple[VALUE]],
-                 length: int, state: Dict[Any, Any]) -> None:
-        log.debug(f'got log {self.lg} and dataset {self.ds.completed}.')
+    def __call__(
+        self, results: list[tuple[VALUE]], length: int, state: dict[Any, Any]
+    ) -> None:
+        log.debug(f"got log {self.lg} and dataset {self.ds.completed}.")
         state[length] = results
 
 
-def config_subscriber_factory(ds, l):
+def config_subscriber_factory(ds, log):
     def config_subscriber(results, length, state):
         state[length] = results
-        log.debug(f'got log {l} and dataset {ds.completed}.')
+        log.debug(f"got log {log} and dataset {ds.completed}.")
+
     return config_subscriber
 
 
@@ -51,16 +53,14 @@ def basic_subscriber():
     state
     """
 
-    def subscriber(results: List[Tuple[VALUE]], length: int,
-                   state: Dict) -> None:
+    def subscriber(results: list[tuple[VALUE]], length: int, state: dict) -> None:
         state[length] = results
 
     return subscriber
 
 
-@pytest.mark.usefixtures("default_config")
 @pytest.fixture(name="working_subscriber_config")
-def _make_working_subscriber_config(tmp_path):
+def _make_working_subscriber_config(tmp_path, default_config):
     # This string represents the config file in the home directory:
     config = """
     {
@@ -88,9 +88,8 @@ def _make_working_subscriber_config(tmp_path):
     yield
 
 
-@pytest.mark.usefixtures("default_config")
 @pytest.fixture(name="broken_subscriber_config")
-def _make_broken_subscriber_config(tmp_path):
+def _make_broken_subscriber_config(tmp_path, default_config):
     # This string represents the config file in the home directory:
     config = """
     {
@@ -121,7 +120,7 @@ def _make_broken_subscriber_config(tmp_path):
 
 @pytest.mark.flaky(reruns=5)
 @pytest.mark.serial
-def test_basic_subscription(dataset, basic_subscriber):
+def test_basic_subscription(dataset, basic_subscriber) -> None:
     xparam = ParamSpecBase(name='x',
                            paramtype='numeric',
                            label='x parameter',
@@ -167,7 +166,7 @@ def test_basic_subscription(dataset, basic_subscriber):
 
 
 @pytest.mark.usefixtures("working_subscriber_config")
-def test_subscription_from_config(dataset, basic_subscriber):
+def test_subscription_from_config(dataset, basic_subscriber) -> None:
     """
     This test is similar to `test_basic_subscription`, with the only
     difference that another subscriber from a config file is added.
@@ -205,11 +204,11 @@ def test_subscription_from_config(dataset, basic_subscriber):
 
 
 @pytest.mark.usefixtures("broken_subscriber_config")
-def test_subscription_from_config_wrong_name(dataset):
+def test_subscription_from_config_wrong_name(dataset) -> None:
     """
     This test checks that an exception is thrown if a wrong name for a
     subscriber is passed
     """
     assert "test_subscriber" not in qcodes.config.subscription.subscribers
     with pytest.raises(RuntimeError):
-        sub_id_c = dataset.subscribe_from_config("test_subscriber")
+        dataset.subscribe_from_config("test_subscriber")

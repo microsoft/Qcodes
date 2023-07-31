@@ -1,5 +1,6 @@
+from collections.abc import Sequence
 from types import TracebackType
-from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Type, Union, cast
+from typing import Any, Optional, Union, cast
 
 import numpy as np
 
@@ -20,7 +21,7 @@ class DataArray7510(MultiParameter):
     Data class when user selected more than one field for data output.
     """
 
-    _data: Tuple[Tuple[Any, ...], ...] = ((), ())
+    _data: tuple[tuple[Any, ...], ...] = ((), ())
 
     def __init__(
         self,
@@ -39,7 +40,7 @@ class DataArray7510(MultiParameter):
         for param_name in self.names:
             self.__dict__.update({param_name: []})
 
-    def get_raw(self) -> Optional[Tuple[ParamRawDataType, ...]]:
+    def get_raw(self) -> Optional[tuple[ParamRawDataType, ...]]:
         return self._data
 
 
@@ -232,10 +233,10 @@ class Keithley7510Buffer(InstrumentChannel):
             " once and stops",
         )
 
-    def _from_name_to_scpi(self, element_names: List[str]) -> List[str]:
+    def _from_name_to_scpi(self, element_names: list[str]) -> list[str]:
         return [self.buffer_elements[element] for element in element_names]
 
-    def _from_scpi_to_name(self, element_scpis: List[str]) -> List[str]:
+    def _from_scpi_to_name(self, element_scpis: list[str]) -> list[str]:
         if element_scpis is None:
             return []
         return [self.inverted_buffer_elements[element] for element in element_scpis]
@@ -257,14 +258,14 @@ class Keithley7510Buffer(InstrumentChannel):
 
     def __exit__(
         self,
-        exception_type: Optional[Type[BaseException]],
+        exception_type: Optional[type[BaseException]],
         value: Optional[BaseException],
         traceback: Optional[TracebackType],
     ) -> None:
         self.delete()
 
     @property
-    def available_elements(self) -> Set[str]:
+    def available_elements(self) -> set[str]:
         return set(self.buffer_elements.keys())
 
     @property
@@ -529,7 +530,7 @@ class Keithley7510Sense(InstrumentChannel):
 
         self.add_parameter(
             "auto_zero_once",
-            set_cmd=f":SENSe:AZERo:ONCE",
+            set_cmd=":SENSe:AZERo:ONCE",
             docstring="Cause the instrument to refresh the reference and "
             "zero measurements once",
         )
@@ -588,7 +589,7 @@ class Keithley7510DigitizeSense(InstrumentChannel):
     The Digitize sense module of the Keithley 7510 DMM.
     """
 
-    function_modes: Dict[str, Dict[str, Any]] = {
+    function_modes: dict[str, dict[str, Any]] = {
         "None": {"name": '"NONE"', "unit": "", "range_vals": None},
         "voltage": {
             "name": '"VOLT"',

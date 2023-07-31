@@ -13,24 +13,14 @@ import os
 import pkgutil
 import warnings
 from collections import deque
+from collections.abc import Iterable, Sequence
 from contextlib import suppress
 from copy import copy, deepcopy
 from functools import partial
 from io import StringIO
 from pathlib import Path
 from types import ModuleType
-from typing import (
-    IO,
-    Any,
-    AnyStr,
-    Dict,
-    Iterable,
-    NoReturn,
-    Sequence,
-    Union,
-    cast,
-    overload,
-)
+from typing import IO, Any, AnyStr, NoReturn, Union, cast, overload
 
 import jsonschema
 import jsonschema.exceptions
@@ -40,7 +30,7 @@ import qcodes.instrument_drivers
 from qcodes import validators
 from qcodes.instrument.base import Instrument, InstrumentBase
 from qcodes.instrument.channel import ChannelTuple
-from qcodes.metadatable import Metadatable
+from qcodes.metadatable import Metadatable, MetadatableWithName
 from qcodes.monitor.monitor import Monitor
 from qcodes.parameters import (
     DelegateParameter,
@@ -93,7 +83,7 @@ class ValidationWarning(Warning):
     pass
 
 
-class StationConfig(Dict[Any, Any]):
+class StationConfig(dict[Any, Any]):
     def snapshot(self, update: bool = True) -> StationConfig:
         return self
 
@@ -139,7 +129,7 @@ class Station(Metadatable, DelegateAttributes):
 
     def __init__(
         self,
-        *components: Metadatable,
+        *components: MetadatableWithName,
         config_file: str | Sequence[str] | None = None,
         use_monitor: bool | None = None,
         default: bool = True,
@@ -157,7 +147,7 @@ class Station(Metadatable, DelegateAttributes):
         if default:
             Station.default = self
 
-        self.components: dict[str, Metadatable] = {}
+        self.components: dict[str, MetadatableWithName] = {}
         for item in components:
             self.add_component(item, update_snapshot=update_snapshot)
 
@@ -234,7 +224,7 @@ class Station(Metadatable, DelegateAttributes):
 
     def add_component(
         self,
-        component: Metadatable,
+        component: MetadatableWithName,
         name: str | None = None,
         update_snapshot: bool = True,
     ) -> str:
@@ -255,7 +245,7 @@ class Station(Metadatable, DelegateAttributes):
             if not (isinstance(component, Parameter)
                     and component.snapshot_exclude):
                 component.snapshot(update=update_snapshot)
-        except:
+        except Exception:
             pass
         if name is None:
             name = getattr(component, "name", f"component{len(self.components)}")
@@ -267,7 +257,7 @@ class Station(Metadatable, DelegateAttributes):
         self.components[namestr] = component
         return namestr
 
-    def remove_component(self, name: str) -> Metadatable | None:
+    def remove_component(self, name: str) -> MetadatableWithName | None:
         """
         Remove a component with a given name from this Station.
 
@@ -289,6 +279,60 @@ class Station(Metadatable, DelegateAttributes):
                 raise KeyError(f'Component {name} is not part of the station')
             else:
                 raise e
+
+    def get_component(self, full_name: str) -> MetadatableWithName:
+        """
+        Get a (sub)component with a given name from this Station.
+        The name may be of a component that is a sub-component of another
+        component, e.g. a parameter on an instrument, an instrument module
+        or an top-level instrument.
+
+        Args:
+            full_name: Name of the component.
+
+        Returns:
+            The component with the given name.
+
+        Raises:
+            KeyError: If a component with the given name is not part of this
+                station.
+        """
+
+        def find_component(
+            potential_top_level_name: str, remaining_name_parts: list[str]
+        ) -> tuple[MetadatableWithName, list[str]]:
+            toplevel_component = self.components.get(potential_top_level_name, None)
+            if toplevel_component is not None:
+                return toplevel_component, remaining_name_parts
+            else:
+                if len(remaining_name_parts) < 1:
+                    raise KeyError(f"Component {full_name} is not part of the station")
+                extra = remaining_name_parts.pop()
+                new_potential_name = f"{potential_top_level_name}_{extra}"
+                return find_component(new_potential_name, remaining_name_parts)
+
+        name_parts = full_name.split("_")
+        name_parts.reverse()
+
+        potential_top_level_name = name_parts.pop()
+        toplevel_component, remaining_name_parts = find_component(
+            potential_top_level_name, name_parts
+        )
+        if len(remaining_name_parts) == 0:
+            return toplevel_component
+
+        remaining_name_parts.reverse()
+        remaining_name = "_".join(remaining_name_parts)
+
+        if isinstance(toplevel_component, InstrumentBase):
+            component = toplevel_component.get_component(remaining_name)
+        else:
+            raise KeyError(
+                f"Found component {toplevel_component} but this has no "
+                f"sub-component {remaining_name}."
+            )
+
+        return component
 
     # station['someitem'] and station.someitem are both
     # shortcuts to station.components['someitem']
@@ -470,7 +514,7 @@ class Station(Metadatable, DelegateAttributes):
         loaded configuration file.
 
         Args:
-            identifier: The identfying string that is looked up in the yaml
+            identifier: The identifying string that is looked up in the yaml
                 configuration file, which identifies the instrument to be added.
             revive_instance: If ``True``, try to return an instrument with the
                 specified name instead of closing it and creating a new one.
@@ -509,12 +553,12 @@ class Station(Metadatable, DelegateAttributes):
             init_kwargs['address'] = instr_cfg['address']
         if 'port' in instr_cfg:
             init_kwargs['port'] = instr_cfg['port']
-        # make explicitly passed arguments overide the ones from the config
+        # make explicitly passed arguments override the ones from the config
         # file.
         # We are mutating the dict below
         # so make a copy to ensure that any changes
         # does not leek into the station config object
-        # specifically we may be passing non pickleable
+        # specifically we may be passing non picklable
         # instrument instances via kwargs
         instr_kwargs = deepcopy(init_kwargs)
         instr_kwargs.update(kwargs)
@@ -612,15 +656,17 @@ class Station(Metadatable, DelegateAttributes):
                     # when everything else has been set up
                     pass
                 else:
-                    log.warning(f'Attribute {attr} not recognized when '
-                                f'instatiating parameter \"{parameter.name}\"')
-            if 'initial_value' in options:
-                parameter.set(options['initial_value'])
+                    log.warning(
+                        f"Attribute {attr} not recognized when "
+                        f'instantiating parameter "{parameter.name}"'
+                    )
+            if "initial_value" in options:
+                parameter.set(options["initial_value"])
 
         def add_parameter_from_dict(
             instr: InstrumentBase, name: str, options: dict[str, Any]
         ) -> None:
-            # keep the original dictionray intact for snapshot
+            # keep the original dictionary intact for snapshot
             options = copy(options)
             param_type: type = ParameterBase
             kwargs = {}
@@ -751,7 +797,7 @@ def update_config_schema(
         additional_instrument_modules: python modules that contain
             :class:`qcodes.instrument.base.InstrumentBase` definitions
             (and subclasses thereof) to be included as
-            values for instrument definition in th station definition
+            values for instrument definition in the station definition
             yaml files.
 
     """
@@ -788,14 +834,20 @@ def update_config_schema(
             json.dump(data, f, indent=4)
 
     additional_instrument_modules = additional_instrument_modules or []
+    instrument_modules: set[ModuleType] = set(
+        [qcodes.instrument_drivers] + additional_instrument_modules
+    )
+
+    instrument_names = tuple(
+        itertools.chain.from_iterable(
+            instrument_names_from_module(m) for m in instrument_modules
+        )
+    )
+
     update_schema_file(
         template_path=SCHEMA_TEMPLATE_PATH,
         output_path=SCHEMA_PATH,
-        instrument_names=tuple(itertools.chain.from_iterable(
-            instrument_names_from_module(m)
-            for m in set(
-                [qcodes.instrument_drivers] + additional_instrument_modules)
-        ))
+        instrument_names=instrument_names,
     )
 
 

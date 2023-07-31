@@ -1,7 +1,7 @@
 import itertools
 import textwrap
 import warnings
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Optional, Union
 
 import qcodes.validators as vals
 from qcodes.instrument import VisaInstrument
@@ -137,7 +137,7 @@ class Keithley3706A(VisaInstrument):
             )
         if val in forbidden_channels.split(","):
             warnings.warn(
-                "You are attempting to close channels that are " "forbidden to close.",
+                "You are attempting to close channels that are forbidden to close.",
                 UserWarning,
                 2,
             )
@@ -165,10 +165,13 @@ class Keithley3706A(VisaInstrument):
                 interlock_state = [
                     state for state in states if state["slot_no"] == slot
                 ][0]
-                if interlock_state["state"] == "Interlock is disengaged":
+                if (
+                    interlock_state["state"]
+                    == "Interlocks 1 and 2 are disengaged on the card"
+                ):
                     warnings.warn(
-                        f"The hardware interlock in Slot "
-                        f'{interlock_state["slot_no"]} is disengaged. '
+                        f"The hardware interlocks in Slot "
+                        f'{interlock_state["slot_no"]} are disengaged. '
                         f"The analog backplane relay {channel} "
                         "cannot be energized.",
                         UserWarning,
@@ -256,7 +259,7 @@ class Keithley3706A(VisaInstrument):
     def _set_gpib_address(self, val: int) -> None:
         self.write(f"gpib.address = {val}")
 
-    def get_closed_channels(self, val: str) -> Optional[List[str]]:
+    def get_closed_channels(self, val: str) -> Optional[list[str]]:
         """
         Queries for the closed channels.
 
@@ -353,7 +356,7 @@ class Keithley3706A(VisaInstrument):
             )
         self.write(f"channel.setdelay('{val}', {delay_time})")
 
-    def get_delay(self, val: str) -> List[float]:
+    def get_delay(self, val: str) -> list[float]:
         """
         Queries for the delay times.
 
@@ -395,10 +398,10 @@ class Keithley3706A(VisaInstrument):
         plane_specifiers = backplane.split(",")
         val_specifiers = val.split(",")
         for element in states:
-            if element["state"] == "Interlock is disengaged":
+            if element["state"] == "Interlocks 1 and 2 are disengaged on the card":
                 warnings.warn(
-                    f"The hardware interlock in Slot "
-                    f'{element["slot_no"]} is disengaged. '
+                    f"The hardware interlocks in Slot "
+                    f'{element["slot_no"]} are disengaged. '
                     "The corresponding analog backplane relays "
                     "cannot be energized.",
                     UserWarning,
@@ -449,7 +452,7 @@ class Keithley3706A(VisaInstrument):
             )
         return self.ask(f"channel.getbackplane('{val}')")
 
-    def _get_slot_ids(self) -> List[str]:
+    def _get_slot_ids(self) -> list[str]:
         """
         Returns the slot ids of the installed cards.
         """
@@ -457,7 +460,7 @@ class Keithley3706A(VisaInstrument):
         slot_id = [f"{card['slot_no']}" for card in cards]
         return slot_id
 
-    def _get_slot_names(self) -> List[str]:
+    def _get_slot_names(self) -> list[str]:
         """
         Returns the names of the slots as "slotX",
         where "X" is the slot id.
@@ -466,7 +469,7 @@ class Keithley3706A(VisaInstrument):
         slot_names = [f"slot{x}" for x in slot_id]
         return slot_names
 
-    def _get_number_of_rows(self) -> List[int]:
+    def _get_number_of_rows(self) -> list[int]:
         """
         Returns the total number of rows of the installed cards.
         """
@@ -476,7 +479,7 @@ class Keithley3706A(VisaInstrument):
         ]
         return total_number_of_rows
 
-    def _get_number_of_columns(self) -> List[int]:
+    def _get_number_of_columns(self) -> list[int]:
         """
         Returns the total number of columns of the installed cards.
         """
@@ -486,7 +489,7 @@ class Keithley3706A(VisaInstrument):
         ]
         return total_number_of_columns
 
-    def _get_rows(self) -> List[List[str]]:
+    def _get_rows(self) -> list[list[str]]:
         """
         Returns the elements of each row.
         """
@@ -497,7 +500,7 @@ class Keithley3706A(VisaInstrument):
             row_list.append(rows_in_each_slot)
         return row_list
 
-    def _get_columns(self) -> List[List[str]]:
+    def _get_columns(self) -> list[list[str]]:
         """
         Returns the elements of each column.
         """
@@ -513,7 +516,7 @@ class Keithley3706A(VisaInstrument):
             column_list.append(columns_in_each_slot)
         return column_list
 
-    def _get_channel_ranges(self) -> List[str]:
+    def _get_channel_ranges(self) -> list[str]:
         """
         A helper function that gets two channel names from the available
         channels list and join them via a colon to define a channel range.
@@ -525,7 +528,7 @@ class Keithley3706A(VisaInstrument):
                 range_list.append(":".join(element))
         return range_list
 
-    def get_channels(self) -> List[str]:
+    def get_channels(self) -> list[str]:
         """
         This function returns the name of the matrix channels.
         User can call this function to see the names of the available
@@ -543,7 +546,7 @@ class Keithley3706A(VisaInstrument):
                 matrix_channels.append("".join(element))
         return matrix_channels
 
-    def get_channels_by_slot(self, slot_no: int) -> List[str]:
+    def get_channels_by_slot(self, slot_no: int) -> list[str]:
         """
         Returns the channel names of a given slot.
 
@@ -563,7 +566,7 @@ class Keithley3706A(VisaInstrument):
             matrix_channels_by_slot.append("".join(element))
         return matrix_channels_by_slot
 
-    def get_analog_backplane_specifiers(self) -> List[str]:
+    def get_analog_backplane_specifiers(self) -> list[str]:
         """
         Returns a list of comma separated strings representing available analog
         backplane relays. This function should not be mixed with the
@@ -581,8 +584,8 @@ class Keithley3706A(VisaInstrument):
         return analog_backplane_relays
 
     def _connect_or_disconnect_row_to_columns(
-        self, action: str, slot_id: int, row_id: int, columns: List[int]
-    ) -> List[str]:
+        self, action: str, slot_id: int, row_id: int, columns: list[int]
+    ) -> list[str]:
         """
         A private function that connects or (disconnects) given columns
         to (from) a row of a slot and opens (closes) the formed channels.
@@ -617,8 +620,8 @@ class Keithley3706A(VisaInstrument):
         return channels_to_connect_or_disconnect
 
     def _connect_or_disconnect_column_to_rows(
-        self, action: str, slot_id: int, column_id: int, rows: List[int]
-    ) -> List[str]:
+        self, action: str, slot_id: int, column_id: int, rows: list[int]
+    ) -> list[str]:
         """
         A private function that connects (disconnects) given rows
         to (from) a column of a slot and opens (closes) the formed channels.
@@ -652,8 +655,8 @@ class Keithley3706A(VisaInstrument):
         return channels_to_connect_or_disconnect
 
     def connect_row_to_columns(
-        self, slot_id: int, row_id: int, columns: List[int]
-    ) -> List[str]:
+        self, slot_id: int, row_id: int, columns: list[int]
+    ) -> list[str]:
         """
         A convenient function that connects given columns to a row of a
         slot and opens the formed channels.
@@ -671,8 +674,8 @@ class Keithley3706A(VisaInstrument):
         )
 
     def disconnect_row_from_columns(
-        self, slot_id: int, row_id: int, columns: List[int]
-    ) -> List[str]:
+        self, slot_id: int, row_id: int, columns: list[int]
+    ) -> list[str]:
         """
         A convenient function that disconnects given columns to a row of a
         slot and closes the formed channels.
@@ -690,8 +693,8 @@ class Keithley3706A(VisaInstrument):
         )
 
     def connect_column_to_rows(
-        self, slot_id: int, column_id: int, rows: List[int]
-    ) -> List[str]:
+        self, slot_id: int, column_id: int, rows: list[int]
+    ) -> list[str]:
         """
         A convenient function that connects given rows to a column of a
         slot and opens the formed channels.
@@ -709,8 +712,8 @@ class Keithley3706A(VisaInstrument):
         )
 
     def disconnect_column_from_rows(
-        self, slot_id: int, column_id: int, rows: List[int]
-    ) -> List[str]:
+        self, slot_id: int, column_id: int, rows: list[int]
+    ) -> list[str]:
         """
         A convenient function that disconnects given rows to a column of a
         slot and closes the formed channels.
@@ -727,7 +730,7 @@ class Keithley3706A(VisaInstrument):
             "disconnect", slot_id, column_id, rows
         )
 
-    def get_idn(self) -> Dict[str, Optional[str]]:
+    def get_idn(self) -> dict[str, Optional[str]]:
         """
         Overwrites the generic QCoDeS get IDN method. Returns
         a dictionary including the vendor, model, serial number and
@@ -737,7 +740,7 @@ class Keithley3706A(VisaInstrument):
         vendor, model, serial, firmware = map(str.strip, idnstr.split(","))
         model = model[6:]
 
-        idn: Dict[str, Optional[str]] = {
+        idn: dict[str, Optional[str]] = {
             "vendor": vendor,
             "model": model,
             "serial": serial,
@@ -745,13 +748,13 @@ class Keithley3706A(VisaInstrument):
         }
         return idn
 
-    def get_switch_cards(self) -> Tuple[Dict[str, str], ...]:
+    def get_switch_cards(self) -> tuple[dict[str, str], ...]:
         """
         Returns a list of dictionaries listing the properties of the installed
         switch cards including the slot number tha it is installed, model,
         firmware version and serial number.
         """
-        switch_cards: List[Dict[str, str]] = []
+        switch_cards: list[dict[str, str]] = []
         for i in range(1, 7):
             scard = self.ask(f"slot[{i}].idn")
             if scard != "Empty Slot":
@@ -766,7 +769,7 @@ class Keithley3706A(VisaInstrument):
                 switch_cards.append(sdict)
         return tuple(switch_cards)
 
-    def get_available_memory(self) -> Dict[str, Optional[str]]:
+    def get_available_memory(self) -> dict[str, Optional[str]]:
         """
         Returns the amount of memory that is currently available for
         storing scripts, configurations and channel patterns.
@@ -776,7 +779,7 @@ class Keithley3706A(VisaInstrument):
             str.strip, memstring.split(",")
         )
 
-        memory_available: Dict[str, Optional[str]] = {
+        memory_available: dict[str, Optional[str]] = {
             "System Memory  (%)": system_memory,
             "Script Memory  (%)": script_memory,
             "Pattern Memory (%)": pattern_memory,
@@ -784,7 +787,7 @@ class Keithley3706A(VisaInstrument):
         }
         return memory_available
 
-    def get_interlock_state(self) -> Tuple[Dict[str, str], ...]:
+    def get_interlock_state(self) -> tuple[dict[str, str], ...]:
         """
         A function that collects the interlock status of the installed cards.
         The channel relays can continue to operate even if the interlock
@@ -793,15 +796,28 @@ class Keithley3706A(VisaInstrument):
         cannot be energized.
         """
         slot_id = self._get_slot_ids()
-        interlock_status = {0: "Interlock is disengaged", 1: "Interlock is engaged"}
-        states: List[Dict[str, str]] = []
+        interlock_status = {
+            None: (
+                "No card is installed or the installed card does "
+                "not support interlocks"
+            ),
+            0: "Interlocks 1 and 2 are disengaged on the card",
+            1: "Interlock 1 is engaged, interlock 2 (if it exists) is disengaged",
+            2: "Interlock 2 in engaged, interlock 1 is disengaged",
+            3: "Both interlock 1 and 2 are engaged",
+        }
+        states: list[dict[str, str]] = []
         for i in slot_id:
             state = self.get_interlock_state_by_slot(i)
             states.append({"slot_no": i, "state": interlock_status[state]})
         return tuple(states)
 
-    def get_interlock_state_by_slot(self, slot: Union[str, int]) -> int:
-        return int(float(self.ask(f"slot[{int(slot)}].interlock.state")))
+    def get_interlock_state_by_slot(self, slot: Union[str, int]) -> Union[int, None]:
+        state = self.ask(f"slot[{int(slot)}].interlock.state")
+        if state == "nil":
+            return None
+        else:
+            return int(float(state))
 
     def get_ip_address(self) -> str:
         """
@@ -828,7 +844,7 @@ class Keithley3706A(VisaInstrument):
         if val is not None:
             self.write(f"setup.save('{val}')")
         else:
-            self.write(f"setup.save()")
+            self.write("setup.save()")
 
     def load_setup(self, val: Union[int, str]) -> None:
         """

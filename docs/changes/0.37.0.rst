@@ -1,0 +1,59 @@
+QCoDeS 0.37.0 (2023-01-26)
+==========================
+
+Breaking Changes:
+-----------------
+
+- ``InstrumentBase.ancestors`` now returns a tuple of ancestors
+  to the current Instrument, InstrumentChannel or InstrumentModule and not a list.
+
+  ``dond ``, ``do1d`` etc. now returns tuples of Matplotlib axes and colorbars
+  when plotting and not lists. (:pr:`4894`)
+- Datasets are now exported to a folder next to the database by default rather then to the users home folder.
+  Note that if you had specifically configured this in a local config file this should be updated too for the
+  change to take effect. (:pr:`4899`)
+- DriverTestCase has been moved from `qcodes.instrument_drivers.test` to `qcodes.tests.driver_test_case`. (:pr:`4922`)
+- `qcodes.instrument_drivers.VoltageDivider` and `qcodes.instrument_drivers.devices.VoltageDivider` has
+  been deprecated. Its functionality is better implemented in `qcodes.parameters.DelegateParameter` which
+  is also significantly better tested and more general. (:pr:`4923`)
+- The QDevil QDAC 1 driver has been migrated to qcodes_contrib_drivers and is included from version
+  0.18.0. The driver in QCoDeS is deprecated and will be removed in a future release. (:pr:`4932`)
+- Remove deprecated Mercury iPS driver
+  ``qcodes.instrument_drivers.oxford.mercuryiPS.MercuryiPS``,
+  use ``qcodes.instrument_drivers.oxford.OxfordMercuryiPS``
+  instead. (:pr:`4936`)
+
+
+Improved:
+---------
+
+- When a dataset is exported an optional user supplied entry point is called. See
+  `here <../examples/DataSet/Exporting-data-to-other-file-formats.html#Automatically-post-process-exported-datasets.>`__
+  for more details. (:pr:`4857`)
+- PyVISA ``1.13`` is now supported. (:pr:`4895`)
+- ``validate`` method of ``DelegateParameter`` now also validates the given value
+  against the validator of the source parameter (if source parameter is present). (:pr:`4870`)
+- The dataset logic has been updated to ensure that if you set an already completed
+  dataset as completed the completion timestamp will not be updated. (:pr:`4876`)
+- Update the pyqtgraph plot backend for upstream changes in pyqtgraph. (:pr:`4886`)
+- QcoDeS is now typechecked with Pyright in addition to mypy. This should give a significantly
+  better user experience when working in VS Code. (:pr:`4938`)
+
+
+Improved Drivers:
+-----------------
+
+- The Minicircuits USB SPDT driver now supports running with the more modern version of the driver DLL `mcl_RF_Switch_Controller_NET45.dll` (:pr:`4623`)
+- Two parameters are added to the `Keysight.N51x1` class, conditioned on it having the 'UNW' option:
+      1. Having the pulse modulation status on or off.
+      2. Setting it to 'internal' or 'external'.
+
+  From the Keysight manual:
+      1. This command enables or disables pulse modulation for the selected path.
+      2. This command sets the source of the pulse modulation. (:pr:`4840`)
+
+
+Under the hood:
+---------------
+
+- Improve performance of parameter validator. (:pr:`4887`)

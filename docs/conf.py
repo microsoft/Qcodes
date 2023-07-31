@@ -25,7 +25,7 @@ from importlib import reload
 # before qcodes imports pyplot and automatically
 # sets the backend
 import matplotlib
-import sphinx_rtd_theme
+import sphinx_rtd_theme  # noqa F401
 from packaging.version import parse
 
 # setting the metaclass will cause sphinx
@@ -45,7 +45,7 @@ reload(qcodes.instrument.ip)
 reload(qcodes.instrument.visa)
 reload(qcodes.instrument)
 
-import qcodes
+import qcodes  # noqa F402
 
 matplotlib.use('Agg')
 
@@ -78,7 +78,7 @@ extensions = [
     "sphinxcontrib.towncrier",
     "autodocsumm",
     "sphinx_issues",
-    "sphinx-favicon",
+    "sphinx_favicon",
 ]
 
 # include special __xxx__ that DO have a docstring

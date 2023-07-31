@@ -10,24 +10,13 @@ import io
 import logging
 import traceback as tb_module
 import warnings
+from collections.abc import Mapping, MutableMapping, MutableSequence, Sequence
 from copy import deepcopy
 from inspect import signature
 from numbers import Number
 from time import perf_counter
 from types import TracebackType
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Mapping,
-    MutableMapping,
-    MutableSequence,
-    Sequence,
-    Tuple,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union, cast
 
 import numpy as np
 
@@ -48,7 +37,6 @@ from qcodes.dataset.descriptions.dependencies import (
     InterDependencies_,
 )
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
-from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.export_config import get_data_export_automatic
@@ -71,10 +59,10 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 
-ActionType = Tuple[Callable[..., Any], Sequence[Any]]
-SubscriberType = Tuple[Callable[..., Any],
-                       Union[MutableSequence[Any],
-                             MutableMapping[Any, Any]]]
+ActionType = tuple[Callable[..., Any], Sequence[Any]]
+SubscriberType = tuple[
+    Callable[..., Any], Union[MutableSequence[Any], MutableMapping[Any, Any]]
+]
 
 
 class ParameterTypeError(Exception):
@@ -447,11 +435,13 @@ class DataSaver:
         allowed_kinds = {'numeric': 'iuf', 'text': 'SU', 'array': 'iufcSUmM',
                          'complex': 'c'}
 
-        for ps, vals in results_dict.items():
-                if vals.dtype.kind not in allowed_kinds[ps.type]:
-                    raise ValueError(f'Parameter {ps.name} is of type '
-                                     f'"{ps.type}", but got a result of '
-                                     f'type {vals.dtype} ({vals}).')
+        for ps, values in results_dict.items():
+            if values.dtype.kind not in allowed_kinds[ps.type]:
+                raise ValueError(
+                    f"Parameter {ps.name} is of type "
+                    f'"{ps.type}", but got a result of '
+                    f"type {values.dtype} ({values})."
+                )
 
     def flush_data_to_database(self, block: bool = False) -> None:
         """
@@ -469,7 +459,7 @@ class DataSaver:
         """Export data at end of measurement as per export_type
         specification in "dataset" section of qcodes config
         """
-        self.dataset.export()
+        self.dataset.export(automatic_export=True)
 
     @property
     def run_id(self) -> int:
@@ -510,9 +500,12 @@ class Runner:
         extra_log_info: str = "",
         write_in_background: bool = False,
         shapes: Shapes | None = None,
-        in_memory_cache: bool = True,
+        in_memory_cache: bool | None = None,
         dataset_class: DataSetType = DataSetType.DataSet,
     ) -> None:
+        if in_memory_cache is None:
+            in_memory_cache = qc.config.dataset.in_memory_cache
+            in_memory_cache = cast(bool, in_memory_cache)
 
         self._dataset_class = dataset_class
         self.write_period = self._calculate_write_period(write_in_background,
@@ -559,8 +552,6 @@ class Runner:
 
         for func, args in self.enteractions:
             func(*args)
-
-        dataset_class: type[DataSetProtocol]
 
         # next set up the "datasaver"
         if self.experiment is not None:
@@ -1226,7 +1217,7 @@ class Measurement:
     def run(
         self,
         write_in_background: bool | None = None,
-        in_memory_cache: bool = True,
+        in_memory_cache: bool | None = True,
         dataset_class: DataSetType = DataSetType.DataSet,
     ) -> Runner:
         """

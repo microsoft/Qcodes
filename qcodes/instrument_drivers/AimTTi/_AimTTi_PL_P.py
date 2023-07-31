@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from qcodes import validators as vals
 from qcodes.instrument import ChannelList, Instrument, InstrumentChannel, VisaInstrument
@@ -176,7 +176,7 @@ class AimTTiChannel(InstrumentChannel):
         A bound function that saves the output setup to the internal
         store specified by the numbers 0-9.
         """
-        if not slot in self.set_up_store_slots:
+        if slot not in self.set_up_store_slots:
             raise RuntimeError("Slote number should be an integer between" "0 adn 9.")
 
         channel_id = self.channel
@@ -187,7 +187,7 @@ class AimTTiChannel(InstrumentChannel):
         A bound function that loadss the output setup from the internal
         store specified by the numbers 0-9.
         """
-        if not slot in self.set_up_store_slots:
+        if slot not in self.set_up_store_slots:
             raise RuntimeError("Slote number should be an integer between" "0 adn 9.")
 
         channel_id = self.channel
@@ -199,7 +199,7 @@ class AimTTiChannel(InstrumentChannel):
         """
         Sets the current meter measurement averaging on and off.
         """
-        if not val in [0, 1]:
+        if val not in [0, 1]:
             raise RuntimeError(
                 "To 'turn on' and 'turn off' the averaging, "
                 "use '1' and '0', respectively."
@@ -214,6 +214,16 @@ class AimTTi(VisaInstrument):
     Tested with Aim TTi PL601-P equipped with a single output channel.
     """
 
+    _numOutputChannels = {
+        "PL068-P": 1,
+        "PL155-P": 1,
+        "PL303-P": 1,
+        "PL601-P": 1,
+        "PL303QMD-P": 2,
+        "PL303QMT-P": 3,
+        "QL355TP": 3,
+    }
+
     def __init__(self, name: str, address: str, **kwargs: Any) -> None:
         """
         Args:
@@ -226,19 +236,10 @@ class AimTTi(VisaInstrument):
 
         _model = self.get_idn()["model"]
 
-        _numOutputChannels = {
-            "PL068-P": 1,
-            "PL155-P": 1,
-            "PL303-P": 1,
-            "PL601-P": 1,
-            "PL303QMD-P": 2,
-            "PL303QMT-P": 3,
-        }
-
-        if (not _model in _numOutputChannels.keys()) or (_model is None):
+        if (_model not in self._numOutputChannels.keys()) or (_model is None):
             raise NotKnownModel("Unknown model, connection cannot be " "established.")
 
-        self.numOfChannels = _numOutputChannels[_model]
+        self.numOfChannels = self._numOutputChannels[_model]
         for i in range(1, self.numOfChannels + 1):
             channel = AimTTiChannel(self, f"ch{i}", i)
             channels.append(channel)
@@ -249,7 +250,7 @@ class AimTTi(VisaInstrument):
 
     # Interface Management
 
-    def get_idn(self) -> Dict[str, Optional[str]]:
+    def get_idn(self) -> dict[str, Optional[str]]:
         """
         Returns the instrument identification including vendor, model, serial
         number and the firmware.
@@ -257,7 +258,7 @@ class AimTTi(VisaInstrument):
         IDNstr = self.ask_raw("*IDN?")
         vendor, model, serial, firmware = map(str.strip, IDNstr.split(","))
 
-        IDN: Dict[str, Optional[str]] = {
+        IDN: dict[str, Optional[str]] = {
             "vendor": vendor,
             "model": model,
             "serial": serial,
@@ -303,7 +304,7 @@ class AimTTi(VisaInstrument):
         Go to local mode until the next remote command is recieved. This
         function does not release any active interface lock.
         """
-        self.write(f"LOCAL")
+        self.write("LOCAL")
 
     def is_interface_locked(self) -> int:
         """

@@ -4,11 +4,12 @@ import gc
 import os
 import shutil
 import tempfile
+from collections.abc import Generator, Iterator
 from contextlib import contextmanager
-from typing import Generator, Iterator
 
 import numpy as np
 import pytest
+from pytest import FixtureRequest
 
 import qcodes as qc
 from qcodes.dataset.data_set import DataSet
@@ -147,7 +148,7 @@ def _make_scalar_dataset(dataset):
 @pytest.fixture(
     name="scalar_datasets_parameterized", params=((3, 10**3), (5, 10**3), (10, 50))
 )
-def _make_scalar_datasets_parameterized(dataset, request):
+def _make_scalar_datasets_parameterized(dataset, request: FixtureRequest):
     n_params = request.param[0]
     n_rows = request.param[1]
     params_indep = [ParamSpecBase(f'param_{i}',
@@ -196,7 +197,7 @@ def scalar_dataset_with_nulls(dataset):
 
 @pytest.fixture(scope="function",
                 params=["array", "numeric"])
-def array_dataset(experiment, request):
+def array_dataset(experiment, request: FixtureRequest):
     meas = Measurement()
     param = ArraySetPointParam()
     meas.register_parameter(param, paramtype=request.param)
@@ -212,7 +213,7 @@ def array_dataset(experiment, request):
 
 @pytest.fixture(scope="function",
                 params=["array", "numeric"])
-def array_dataset_with_nulls(experiment, request):
+def array_dataset_with_nulls(experiment, request: FixtureRequest):
     """
     A dataset where two arrays are measured, one as a function
     of two other (setpoint) arrays, the other as a function of just one
@@ -245,7 +246,7 @@ def array_dataset_with_nulls(experiment, request):
 
 @pytest.fixture(scope="function",
                 params=["array", "numeric"])
-def multi_dataset(experiment, request):
+def multi_dataset(experiment, request: FixtureRequest):
     meas = Measurement()
     param = Multi2DSetPointParam()
 
@@ -262,7 +263,7 @@ def multi_dataset(experiment, request):
 
 @pytest.fixture(scope="function",
                 params=["array"])
-def different_setpoint_dataset(experiment, request):
+def different_setpoint_dataset(experiment, request: FixtureRequest):
     meas = Measurement()
     param = Multi2DSetPointParam2Sizes()
 
@@ -349,7 +350,7 @@ def array_in_scalar_dataset_unrolled(experiment):
 
 @pytest.fixture(scope="function",
                 params=["array", "numeric"])
-def array_in_str_dataset(experiment, request):
+def array_in_str_dataset(experiment, request: FixtureRequest):
     meas = Measurement()
     scalar_param = Parameter('textparam', set_cmd=None)
     param = ArraySetPointParam()

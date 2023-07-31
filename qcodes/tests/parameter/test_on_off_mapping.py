@@ -1,15 +1,17 @@
+from __future__ import annotations
+
 import pytest
 
 from qcodes.parameters import create_on_off_val_mapping, invert_val_mapping
 
 
-def test_values_of_mapping_are_only_the_given_two():
+def test_values_of_mapping_are_only_the_given_two() -> None:
     val_mapping = create_on_off_val_mapping(on_val="666", off_val="000")
     values_set = set(list(val_mapping.values()))
     assert values_set == {"000", "666"}
 
 
-def test_its_inverse_maps_only_to_booleans():
+def test_its_inverse_maps_only_to_booleans() -> None:
     inverse = invert_val_mapping(create_on_off_val_mapping(on_val="666", off_val="000"))
 
     assert inverse == {"666": True, "000": False}
@@ -18,7 +20,9 @@ def test_its_inverse_maps_only_to_booleans():
 @pytest.mark.parametrize(
     ("on_val", "off_val"), ((1, 0), (1.0, 0.0), ("1", "0"), (True, False))
 )
-def test_create_on_off_val_mapping_for(on_val, off_val):
+def test_create_on_off_val_mapping_for(
+    on_val: str | float | bool, off_val: str | float | bool
+) -> None:
     """
     Explicitly test ``create_on_off_val_mapping`` function
     by covering some of the edge cases of ``on_val`` and ``off_val``
@@ -31,14 +35,16 @@ def test_create_on_off_val_mapping_for(on_val, off_val):
     assert on_val in values_list
     assert off_val in values_list
 
-    assert val_mapping[1] is on_val
+    # this does not type check. However, hash(1) == hash(True)
+    # so 1/0 behaves like True and False at runtime
+    assert val_mapping[1] is on_val  # type: ignore[index]
     assert val_mapping[True] is on_val
     assert val_mapping["1"] is on_val
     assert val_mapping["ON"] is on_val
     assert val_mapping["On"] is on_val
     assert val_mapping["on"] is on_val
 
-    assert val_mapping[0] is off_val
+    assert val_mapping[0] is off_val  # type: ignore[index]
     assert val_mapping[False] is off_val
     assert val_mapping["0"] is off_val
     assert val_mapping["OFF"] is off_val

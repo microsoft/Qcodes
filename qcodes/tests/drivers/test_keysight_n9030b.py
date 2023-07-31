@@ -26,14 +26,14 @@ def _activate_log_plot_measurement(driver):
     yield driver.pn
 
 
-def test_idn(driver):
+def test_idn(driver) -> None:
     assert {'firmware': '0.1',
             'model': 'N9030B',
             'serial': '1000',
             'vendor': 'Keysight Technologies'} == driver.IDN()
 
 
-def test_swept_sa_setup(sa):
+def test_swept_sa_setup(sa) -> None:
     assert isinstance(sa, SpectrumAnalyzerMode)
 
     sa.setup_swept_sa_sweep(123, 11e3, 501)
@@ -45,7 +45,7 @@ def test_swept_sa_setup(sa):
     assert sa.npts() == 501
 
 
-def test_log_plot_setup(pn):
+def test_log_plot_setup(pn) -> None:
     assert isinstance(pn, PhaseNoiseMode)
 
     pn.setup_log_plot_sweep(1000, 1e7, 10001)

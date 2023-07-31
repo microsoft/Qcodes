@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple, Union
+from typing import Union
 
 import hypothesis.strategies as hst
 import numpy as np
@@ -12,12 +12,12 @@ from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.sqlite.connection import atomic_transaction
 from qcodes.tests.common import retry_until_does_not_throw
 
-VALUE = Union[str, float, List, np.ndarray, bool]
+VALUE = Union[str, float, list, np.ndarray, bool]
 
 
 @pytest.mark.usefixtures("experiment")
 @pytest.mark.parametrize("bg_writing", [True, False])
-def test_nested_measurement_basic(DAC, DMM, bg_writing):
+def test_nested_measurement_basic(DAC, DMM, bg_writing) -> None:
     meas1 = Measurement()
     meas1.register_parameter(DAC.ch1)
     meas1.register_parameter(DMM.v1, setpoints=(DAC.ch1,))
@@ -53,7 +53,7 @@ def test_nested_measurement_basic(DAC, DMM, bg_writing):
 
 @pytest.mark.usefixtures("experiment")
 @pytest.mark.parametrize("bg_writing", [True, False])
-def test_nested_measurement(bg_writing):
+def test_nested_measurement(bg_writing) -> None:
     meas1 = Measurement()
     meas1.register_custom_parameter('foo1')
     meas1.register_custom_parameter('bar1', setpoints=('foo1',))
@@ -90,11 +90,14 @@ def test_nested_measurement(bg_writing):
 @pytest.mark.usefixtures("experiment")
 @pytest.mark.parametrize("bg_writing", [True, False])
 @settings(deadline=None, max_examples=25)
-@given(outer_len=hst.integers(min_value=1, max_value=100),
-       inner_len1=hst.integers(min_value=1, max_value=1000),
-       inner_len2=hst.integers(min_value=1, max_value=1000))
-def test_nested_measurement_array(bg_writing, outer_len, inner_len1,
-                                  inner_len2):
+@given(
+    outer_len=hst.integers(min_value=1, max_value=100),
+    inner_len1=hst.integers(min_value=1, max_value=1000),
+    inner_len2=hst.integers(min_value=1, max_value=1000),
+)
+def test_nested_measurement_array(
+    bg_writing, outer_len, inner_len1, inner_len2
+) -> None:
     meas1 = Measurement()
     meas1.register_custom_parameter('foo1', paramtype='numeric')
     meas1.register_custom_parameter('bar1spt', paramtype='array')
@@ -159,8 +162,7 @@ def basic_subscriber():
     state
     """
 
-    def subscriber(results: List[Tuple[VALUE]], length: int,
-                   state: Dict) -> None:
+    def subscriber(results: list[tuple[VALUE]], length: int, state: dict) -> None:
         state[length] = results
 
     return subscriber
@@ -168,7 +170,7 @@ def basic_subscriber():
 
 @pytest.mark.flaky(reruns=5)
 @pytest.mark.serial
-def test_subscription_on_dual_datasets(experiment, basic_subscriber):
+def test_subscription_on_dual_datasets(experiment, basic_subscriber) -> None:
     xparam = ParamSpecBase(name='x',
                            paramtype='numeric',
                            label='x parameter',

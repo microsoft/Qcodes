@@ -1,17 +1,9 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
-from typing import (
-    TYPE_CHECKING,
-    Callable,
-    Iterator,
-    List,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-)
+from typing import TYPE_CHECKING, Callable, Optional, Union
 
 if TYPE_CHECKING:
     import matplotlib.axes
@@ -32,19 +24,19 @@ BreakConditionT = Callable[[], bool]
 
 ParamMeasT = Union[ParameterBase, Callable[[], None]]
 
-AxesTuple = Tuple["matplotlib.axes.Axes", "matplotlib.colorbar.Colorbar"]
-AxesTupleList = Tuple[
-    List["matplotlib.axes.Axes"], List[Optional["matplotlib.colorbar.Colorbar"]]
+AxesTuple = tuple["matplotlib.axes.Axes", "matplotlib.colorbar.Colorbar"]
+AxesTupleList = tuple[
+    list["matplotlib.axes.Axes"], list[Optional["matplotlib.colorbar.Colorbar"]]
 ]
-AxesTupleListWithDataSet = Tuple[
+AxesTupleListWithDataSet = tuple[
     DataSetProtocol,
-    Tuple[Optional["matplotlib.axes.Axes"], ...],
-    Tuple[Optional["matplotlib.colorbar.Colorbar"], ...],
+    tuple[Optional["matplotlib.axes.Axes"], ...],
+    tuple[Optional["matplotlib.colorbar.Colorbar"], ...],
 ]
-MultiAxesTupleListWithDataSet = Tuple[
-    Tuple[DataSetProtocol, ...],
-    Tuple[Tuple["matplotlib.axes.Axes", ...], ...],
-    Tuple[Tuple[Optional["matplotlib.colorbar.Colorbar"], ...], ...],
+MultiAxesTupleListWithDataSet = tuple[
+    tuple[DataSetProtocol, ...],
+    tuple[tuple["matplotlib.axes.Axes", ...], ...],
+    tuple[tuple[Optional["matplotlib.colorbar.Colorbar"], ...], ...],
 ]
 
 

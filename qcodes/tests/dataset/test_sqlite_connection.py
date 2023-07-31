@@ -43,7 +43,7 @@ def conn_plus_is_idle(conn: ConnectionPlus, isolation=None):
     return True
 
 
-def test_connection_plus():
+def test_connection_plus() -> None:
     sqlite_conn = sqlite3.connect(':memory:')
     conn_plus = ConnectionPlus(sqlite_conn)
 
@@ -58,7 +58,7 @@ def test_connection_plus():
         ConnectionPlus(conn_plus)
 
 
-def test_make_connection_plus_from_sqlite3_connection():
+def test_make_connection_plus_from_sqlite3_connection() -> None:
     conn = sqlite3.connect(':memory:')
     conn_plus = make_connection_plus_from(conn)
 
@@ -68,7 +68,7 @@ def test_make_connection_plus_from_sqlite3_connection():
     assert conn_plus is not conn
 
 
-def test_make_connection_plus_from_connecton_plus():
+def test_make_connection_plus_from_connecton_plus() -> None:
     conn = ConnectionPlus(sqlite3.connect(':memory:'))
     conn_plus = make_connection_plus_from(conn)
 
@@ -78,13 +78,13 @@ def test_make_connection_plus_from_connecton_plus():
     assert conn_plus is conn
 
 
-def test_atomic():
+def test_atomic() -> None:
     sqlite_conn = sqlite3.connect(':memory:')
 
     match_str = re.escape('atomic context manager only accepts ConnectionPlus '
                           'database connection objects.')
     with pytest.raises(ValueError, match=match_str):
-        with atomic(sqlite_conn):
+        with atomic(sqlite_conn):  # type: ignore[arg-type]
             pass
 
     conn_plus = ConnectionPlus(sqlite_conn)
@@ -108,7 +108,7 @@ def test_atomic():
     assert atomic_in_progress is atomic_conn.atomic_in_progress
 
 
-def test_atomic_with_exception():
+def test_atomic_with_exception() -> None:
     sqlite_conn = sqlite3.connect(':memory:')
     conn_plus = ConnectionPlus(sqlite_conn)
 
@@ -127,7 +127,7 @@ def test_atomic_with_exception():
     assert 25 == sqlite_conn.execute('PRAGMA user_version').fetchall()[0][0]
 
 
-def test_atomic_on_outmost_connection_that_is_in_transaction():
+def test_atomic_on_outmost_connection_that_is_in_transaction() -> None:
     conn = ConnectionPlus(sqlite3.connect(':memory:'))
 
     conn.execute('BEGIN')
@@ -142,7 +142,7 @@ def test_atomic_on_outmost_connection_that_is_in_transaction():
 
 
 @pytest.mark.parametrize('in_transaction', (True, False))
-def test_atomic_on_connection_plus_that_is_in_progress(in_transaction):
+def test_atomic_on_connection_plus_that_is_in_progress(in_transaction) -> None:
     sqlite_conn = sqlite3.connect(':memory:')
     conn_plus = ConnectionPlus(sqlite_conn)
 
@@ -175,7 +175,7 @@ def test_atomic_on_connection_plus_that_is_in_progress(in_transaction):
     assert in_transaction is atomic_conn.in_transaction
 
 
-def test_two_nested_atomics():
+def test_two_nested_atomics() -> None:
     sqlite_conn = sqlite3.connect(':memory:')
     conn_plus = ConnectionPlus(sqlite_conn)
 
@@ -210,7 +210,8 @@ def test_two_nested_atomics():
                          argvalues=(make_connection_plus_from, ConnectionPlus),
                          ids=('make_connection_plus_from', 'ConnectionPlus'))
 def test_that_use_of_atomic_commits_only_at_outermost_context(
-        tmp_path, create_conn_plus):
+    tmp_path, create_conn_plus
+) -> None:
     """
     This test tests the behavior of `ConnectionPlus` that is created from
     `sqlite3.Connection` with respect to `atomic` context manager and commits.
@@ -297,7 +298,7 @@ def test_that_use_of_atomic_commits_only_at_outermost_context(
     assert 3 == len(control_conn.execute(get_all_runs).fetchall())
 
 
-def test_atomic_transaction(tmp_path):
+def test_atomic_transaction(tmp_path) -> None:
     """Test that atomic_transaction works for ConnectionPlus"""
     dbfile = str(tmp_path / 'temp.db')
 
@@ -313,7 +314,7 @@ def test_atomic_transaction(tmp_path):
     assert sql_create_table in ctrl_conn.execute(sql_table_exists).fetchall()[0]
 
 
-def test_atomic_transaction_on_sqlite3_connection_raises(tmp_path):
+def test_atomic_transaction_on_sqlite3_connection_raises(tmp_path) -> None:
     """Test that atomic_transaction does not work for sqlite3.Connection"""
     dbfile = str(tmp_path / 'temp.db')
 
@@ -323,10 +324,10 @@ def test_atomic_transaction_on_sqlite3_connection_raises(tmp_path):
                           'database connection objects.')
 
     with pytest.raises(ValueError, match=match_str):
-        atomic_transaction(conn, 'whatever sql query')
+        atomic_transaction(conn, "whatever sql query")  # type: ignore[arg-type]
 
 
-def test_connect():
+def test_connect() -> None:
     conn = connect(':memory:')
 
     assert isinstance(conn, sqlite3.Connection)

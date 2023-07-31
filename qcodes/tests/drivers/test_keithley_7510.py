@@ -20,7 +20,7 @@ def dmm_7510_driver():
         inst.close()
 
 
-def test_get_idn(dmm_7510_driver):
+def test_get_idn(dmm_7510_driver) -> None:
     assert dmm_7510_driver.IDN() == {
         'vendor': 'KEITHLEY INSTRUMENTS',
         'model': 'DMM7510',
@@ -29,7 +29,7 @@ def test_get_idn(dmm_7510_driver):
     }
 
 
-def test_change_sense_function(dmm_7510_driver):
+def test_change_sense_function(dmm_7510_driver) -> None:
     """
     Measurement should be the same as the sense function, e.g., only voltage
     measurement is allowed when the sense function is "voltage".
@@ -49,7 +49,7 @@ def test_change_sense_function(dmm_7510_driver):
     st.sampled_from((0.1, 1, 10, 100, 1000)),
     st.floats(0.01, 10)
 )
-def test_set_range_and_nplc(dmm_7510_driver, upper_limit, nplc):
+def test_set_range_and_nplc(dmm_7510_driver, upper_limit, nplc) -> None:
     """
     Test the ability of setting range and nplc value for sense function.
     "Voltage" is used as an example.

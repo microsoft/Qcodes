@@ -9,9 +9,11 @@ jobs:
   deploy:
 
     runs-on: ubuntu-latest
-
+    environment: pypi-release-env
+    permissions:
+      id-token: write
     steps:
-    - uses: actions/checkout@v3.3.0
+    - uses: actions/checkout@v3.5.3
     - name: Set up Python
       uses: actions/setup-python@v4.3.1
       with:
@@ -23,9 +25,5 @@ jobs:
         python -m build
     - name: Install Twine
       run: pip install twine
-    - name: Publish
-      env:
-        TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
-        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-      run: |
-        twine upload dist/*
+    - name: Publish to pypi
+      uses: pypa/gh-action-pypi-publish@release/v1

@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from qcodes.instrument import Instrument, InstrumentChannel, VisaInstrument
 
@@ -64,7 +64,7 @@ N6705BChannel = KeysightN6705BChannel
 class KeysightN6705B(VisaInstrument):
     def __init__(self, name: str, address: str, **kwargs: Any) -> None:
         super().__init__(name, address, terminator="\n", **kwargs)
-        self.channels: List[KeysightN6705BChannel] = []
+        self.channels: list[KeysightN6705BChannel] = []
         for ch_num in [1, 2, 3, 4]:
             ch_name = f"ch{ch_num}"
             channel = KeysightN6705BChannel(self, ch_name, ch_num)
@@ -73,11 +73,15 @@ class KeysightN6705B(VisaInstrument):
 
         self.connect_message()
 
-    def get_idn(self) -> Dict[str, Optional[str]]:
-        IDNstr = self.ask_raw('*IDN?')
-        vendor, model, serial, firmware = map(str.strip, IDNstr.split(','))
-        IDN: Dict[str, Optional[str]] = {'vendor': vendor, 'model': model,
-                                         'serial': serial, 'firmware': firmware}
+    def get_idn(self) -> dict[str, Optional[str]]:
+        IDNstr = self.ask_raw("*IDN?")
+        vendor, model, serial, firmware = map(str.strip, IDNstr.split(","))
+        IDN: dict[str, Optional[str]] = {
+            "vendor": vendor,
+            "model": model,
+            "serial": serial,
+            "firmware": firmware,
+        }
         return IDN
 
 

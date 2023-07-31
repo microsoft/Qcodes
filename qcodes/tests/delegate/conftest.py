@@ -3,7 +3,7 @@ import pathlib
 
 import pytest
 
-import qcodes as qc
+from qcodes.station import Station
 from qcodes.tests.instrument_mocks import MockDAC, MockField, MockLockin
 
 PARENT_DIR = pathlib.Path(__file__).parent.absolute()
@@ -29,7 +29,7 @@ def lockin():
 
 @pytest.fixture(scope="function")
 def station(dac, lockin, field_x):
-    _station = qc.Station()
+    _station = Station()
     _station.add_component(dac)
     _station.add_component(lockin)
     _station.add_component(field_x)

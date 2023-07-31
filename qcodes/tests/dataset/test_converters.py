@@ -1,4 +1,4 @@
-from deepdiff import DeepDiff
+from deepdiff import DeepDiff  # pyright: ignore[reportMissingTypeStubs]
 
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning.converters import (
@@ -21,7 +21,7 @@ from qcodes.dataset.descriptions.versioning.serialization import from_dict_to_cu
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
 
 
-def test_convert_v0_to_newer(some_paramspecs):
+def test_convert_v0_to_newer(some_paramspecs) -> None:
     pgroup1 = some_paramspecs[1]
 
     interdeps = InterDependencies(pgroup1['ps1'],
@@ -37,7 +37,7 @@ def test_convert_v0_to_newer(some_paramspecs):
     _assert_dicts_are_related_as_expected(v0, v1, v2)
 
 
-def test_convert_v1(some_interdeps):
+def test_convert_v1(some_interdeps) -> None:
     interdeps_ = some_interdeps[0]
 
     v1 = RunDescriberV1Dict(interdependencies=interdeps_._to_dict(),
@@ -47,7 +47,7 @@ def test_convert_v1(some_interdeps):
     _assert_dicts_are_related_as_expected(v0, v1, v2)
 
 
-def test_convert_v2(some_interdeps):
+def test_convert_v2(some_interdeps) -> None:
     interdeps_ = some_interdeps[0]
     interdeps = new_to_old(interdeps_)
 
@@ -74,7 +74,7 @@ def _assert_dicts_are_related_as_expected(v0, v1, v2):
     assert len(v2) == 3
 
 
-def test_construct_current_rundescriber_from_v0(some_paramspecs):
+def test_construct_current_rundescriber_from_v0(some_paramspecs) -> None:
 
     pgroup1 = some_paramspecs[1]
 
@@ -100,7 +100,7 @@ def test_construct_current_rundescriber_from_v0(some_paramspecs):
                     ignore_order=True) == {}
 
 
-def test_construct_current_rundescriber_from_v1(some_interdeps):
+def test_construct_current_rundescriber_from_v1(some_interdeps) -> None:
     interdeps_ = some_interdeps[0]
     interdeps = new_to_old(interdeps_)
 
@@ -119,7 +119,7 @@ def test_construct_current_rundescriber_from_v1(some_interdeps):
     assert rds_upgraded._to_dict() == expected_v3_dict
 
 
-def test_construct_current_rundescriber_from_v2(some_interdeps):
+def test_construct_current_rundescriber_from_v2(some_interdeps) -> None:
     interdeps_ = some_interdeps[0]
     interdeps = new_to_old(interdeps_)
 
@@ -140,7 +140,7 @@ def test_construct_current_rundescriber_from_v2(some_interdeps):
     assert rds_upgraded._to_dict() == expected_v3_dict
 
 
-def test_construct_current_rundescriber_from_v3(some_interdeps):
+def test_construct_current_rundescriber_from_v3(some_interdeps) -> None:
     interdeps_ = some_interdeps[0]
     interdeps = new_to_old(interdeps_)
 
@@ -154,19 +154,21 @@ def test_construct_current_rundescriber_from_v3(some_interdeps):
     assert rds_upgraded._to_dict() == v3
 
 
-def test_construct_current_rundescriber_from_fake_v4(some_interdeps):
+def test_construct_current_rundescriber_from_fake_v4(some_interdeps) -> None:
     interdeps_ = some_interdeps[0]
     interdeps = new_to_old(interdeps_)
 
-    v4 = RunDescriberV3Dict(interdependencies=interdeps._to_dict(),
-                            interdependencies_=interdeps_._to_dict(),
-                            version=4,
-                            shapes=None)
-    v4['foobar'] = {"foo": ["bar"]}
+    v4 = RunDescriberV3Dict(
+        interdependencies=interdeps._to_dict(),
+        interdependencies_=interdeps_._to_dict(),
+        version=4,
+        shapes=None,
+    )
+    v4["foobar"] = {"foo": ["bar"]}  # type: ignore[typeddict-unknown-key]
     rds1 = RunDescriber._from_dict(v4)
     rds_upgraded = from_dict_to_current(v4)
     v3 = v4.copy()
-    v3.pop('foobar')
-    v3['version'] = 3
+    v3.pop("foobar")  # type: ignore[typeddict-item]
+    v3["version"] = 3
     assert rds1._to_dict() == v3
     assert rds_upgraded._to_dict() == v3

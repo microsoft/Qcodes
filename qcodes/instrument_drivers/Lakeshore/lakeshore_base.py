@@ -1,6 +1,7 @@
 import time
 from bisect import bisect
-from typing import Any, ClassVar, Dict, List, Optional, Sequence
+from collections.abc import Sequence
+from typing import Any, ClassVar, Optional
 
 import numpy as np
 
@@ -26,10 +27,10 @@ class BaseOutput(InstrumentChannel):
             hence it will have three parameters to set it up: 'P', 'I', and 'D'
     """
 
-    MODES: ClassVar[Dict[str, int]] = {}
-    RANGES: ClassVar[Dict[str, int]] = {}
+    MODES: ClassVar[dict[str, int]] = {}
+    RANGES: ClassVar[dict[str, int]] = {}
 
-    _input_channel_parameter_kwargs: ClassVar[Dict[str, Any]] = {}
+    _input_channel_parameter_kwargs: ClassVar[dict[str, Any]] = {}
 
     def __init__(
             self,
@@ -39,8 +40,7 @@ class BaseOutput(InstrumentChannel):
             has_pid: bool = True):
         super().__init__(parent, output_name)
 
-        self.INVERSE_RANGES: Dict[int, str] = {
-            v: k for k, v in self.RANGES.items()}
+        self.INVERSE_RANGES: dict[int, str] = {v: k for k, v in self.RANGES.items()}
 
         self._has_pid = has_pid
         self._output_index = output_index
@@ -122,16 +122,20 @@ class BaseOutput(InstrumentChannel):
                            get_cmd=f'HTR? {output_index}',
                            set_cmd=False)
 
-        self.add_parameter('setpoint',
-                           label='Setpoint value (in sensor units)',
-                           docstring='The value of the setpoint in the '
-                                     'preferred units of the control loop '
-                                     'sensor (which is set via '
-                                     '`input_channel` parameter)',
-                           vals=vals.Numbers(0, 400),
-                           get_parser=float,
-                           set_cmd=f'SETP {output_index}, {{}}',
-                           get_cmd=f'SETP? {output_index}')
+        self.add_parameter(
+            "setpoint",
+            label="Setpoint value (in sensor units)",
+            docstring="The value of the setpoint in the "
+            "preferred units of the control loop "
+            "sensor (which is set via "
+            "`input_channel` parameter)",
+            vals=vals.Numbers(
+                -273.15, 400
+            ),  # union of [0..400]K and [-273.15..126.85]degC
+            get_parser=float,
+            set_cmd=f"SETP {output_index}, {{}}",
+            get_cmd=f"SETP? {output_index}",
+        )
 
         # Additional non-Visa parameters
 
@@ -338,7 +342,7 @@ class BaseSensorChannel(InstrumentChannel):
 
     # A dictionary of sensor statuses that assigns a string representation of
     # the status to a status bit weighting (e.g. {4: 'VMIX OVL'})
-    SENSOR_STATUSES: ClassVar[Dict[int, str]] = {}
+    SENSOR_STATUSES: ClassVar[dict[int, str]] = {}
 
     def __init__(
             self,
@@ -403,10 +407,7 @@ class BaseSensorChannel(InstrumentChannel):
         return ", ".join(self.SENSOR_STATUSES[k] for k in codes)
 
     @staticmethod
-    def _get_sum_terms(
-            available_terms: Sequence[int],
-            number: int
-    ) -> List[int]:
+    def _get_sum_terms(available_terms: Sequence[int], number: int) -> list[int]:
         """
         Returns a list of terms which make the given number when summed up
 
@@ -426,7 +427,7 @@ class BaseSensorChannel(InstrumentChannel):
         >>> get_sum_terms(terms, 96)
         ... [64, 32]  # This is correct because 96=64+32
         """
-        terms_in_number: List[int] = []
+        terms_in_number: list[int] = []
 
         # Sort the list of available_terms from largest to smallest
         terms_left = np.sort(available_terms)[::-1]
@@ -478,16 +479,18 @@ class LakeshoreBase(VisaInstrument):
     # is used in instrument commands as values. For example, if channel called
     # "B" is referred to in instrument commands as '2', then this dictionary
     # will contain {'B': '2'} entry.
-    channel_name_command: Dict[str, str] = {}
+    channel_name_command: dict[str, str] = {}
 
-    input_channel_parameter_values_to_channel_name_on_instrument: Dict[Any, str]
+    input_channel_parameter_values_to_channel_name_on_instrument: dict[Any, str]
 
-    def __init__(self,
-                 name: str,
-                 address: str,
-                 terminator: str = '\r\n',
-                 **kwargs: Any
-                 ) -> None:
+    def __init__(
+        self,
+        name: str,
+        address: str,
+        terminator: str = "\r\n",
+        print_connect_message: bool = True,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(name, address, terminator=terminator, **kwargs)
 
         # Allow access to channels either by referring to the channel name
@@ -506,4 +509,7 @@ class LakeshoreBase(VisaInstrument):
             self.add_submodule(name, channel)
         self.add_submodule("channels", channels.to_channel_tuple())
 
-        self.connect_message()
+        # on Model335 we need to change serial port settings
+        # before we can communicate
+        if print_connect_message:
+            self.connect_message()

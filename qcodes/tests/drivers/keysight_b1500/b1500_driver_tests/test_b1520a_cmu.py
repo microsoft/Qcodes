@@ -21,7 +21,7 @@ def _make_cmu(mainframe):
     yield cmu
 
 
-def test_force_dc_voltage(cmu):
+def test_force_dc_voltage(cmu) -> None:
     mainframe = cmu.parent
 
     cmu.voltage_dc(10)
@@ -29,7 +29,7 @@ def test_force_dc_voltage(cmu):
     mainframe.write.assert_called_once_with('DCV 3,10')
 
 
-def test_force_ac_voltage(cmu):
+def test_force_ac_voltage(cmu) -> None:
     mainframe = cmu.parent
 
     cmu.voltage_ac(0.1)
@@ -37,7 +37,7 @@ def test_force_ac_voltage(cmu):
     mainframe.write.assert_called_once_with('ACV 3,0.1')
 
 
-def test_set_ac_frequency(cmu):
+def test_set_ac_frequency(cmu) -> None:
     mainframe = cmu.parent
 
     cmu.frequency(100e3)
@@ -45,7 +45,7 @@ def test_set_ac_frequency(cmu):
     mainframe.write.assert_called_once_with('FC 3,100000.0')
 
 
-def test_get_dc_voltage(cmu):
+def test_get_dc_voltage(cmu) -> None:
     mainframe = cmu.parent
     mainframe.ask.return_value = 'DCV3,0.000;ACV3,0.0;FC3,1000.000'
     response = cmu.voltage_dc()
@@ -62,7 +62,7 @@ def test_get_dc_voltage(cmu):
     assert response == 13.051
 
 
-def test_get_ac_voltage(cmu):
+def test_get_ac_voltage(cmu) -> None:
     mainframe = cmu.parent
     mainframe.ask.return_value = 'DCV3,0.000;ACV3,0.000;FC3,1000.000'
     response = cmu.voltage_ac()
@@ -79,7 +79,7 @@ def test_get_ac_voltage(cmu):
     assert response == 3.045
 
 
-def test_get_frequency(cmu):
+def test_get_frequency(cmu) -> None:
     mainframe = cmu.parent
     mainframe.ask.return_value = 'DCV3,0.000;ACV3,0.000;FC3,100000.000'
     response = cmu.frequency()
@@ -96,7 +96,7 @@ def test_get_frequency(cmu):
     assert response == 1540.40
 
 
-def test_get_capacitance(cmu):
+def test_get_capacitance(cmu) -> None:
     mainframe = cmu.parent
 
     mainframe.ask.return_value = "NCC-1.45713E-06,NCD-3.05845E-03"
@@ -109,7 +109,7 @@ def test_get_capacitance(cmu):
     assert pytest.approx((-1.55713E-06, -3.15845E-03)) == cmu.capacitance()
 
 
-def test_raise_error_on_unsupported_result_format(cmu):
+def test_raise_error_on_unsupported_result_format(cmu) -> None:
     mainframe = cmu.parent
 
     mainframe.ask.return_value = "NCR-1.1234E-03,NCX-4.5677E-03,NCV+0.14235E-03"
@@ -118,7 +118,7 @@ def test_raise_error_on_unsupported_result_format(cmu):
         cmu.capacitance()
 
 
-def test_ranging_mode(cmu):
+def test_ranging_mode(cmu) -> None:
     mainframe = cmu.parent
 
     cmu.ranging_mode(constants.RangingMode.AUTO)
@@ -126,7 +126,7 @@ def test_ranging_mode(cmu):
     mainframe.write.assert_called_once_with('RC 3,0')
 
 
-def test_set_sweep_auto_abort(cmu):
+def test_set_sweep_auto_abort(cmu) -> None:
     mainframe = cmu.parent
 
     cmu.cv_sweep.sweep_auto_abort(constants.Abort.ENABLED)
@@ -134,7 +134,7 @@ def test_set_sweep_auto_abort(cmu):
     mainframe.write.assert_called_once_with("WMDCV 2")
 
 
-def test_get_sweep_auto_abort(cmu):
+def test_get_sweep_auto_abort(cmu) -> None:
     mainframe = cmu.parent
 
     mainframe.ask.return_value = "WMDCV2,2;WTDCV1.0,0.0,0.0,0.0,0.0"
@@ -142,7 +142,7 @@ def test_get_sweep_auto_abort(cmu):
     assert condition == constants.Abort.ENABLED
 
 
-def test_set_post_sweep_voltage_cond(cmu):
+def test_set_post_sweep_voltage_cond(cmu) -> None:
     mainframe = cmu.parent
     mainframe.ask.return_value = "WMDCV2,2;WTDCV1.0,0.0,0.0,0.0,0.0"
     cmu.cv_sweep.post_sweep_voltage_condition.set(constants.WMDCV.Post.STOP)
@@ -150,7 +150,7 @@ def test_set_post_sweep_voltage_cond(cmu):
     mainframe.write.assert_called_once_with("WMDCV 2,2")
 
 
-def test_get_post_sweep_voltage_cond(cmu):
+def test_get_post_sweep_voltage_cond(cmu) -> None:
     mainframe = cmu.parent
 
     mainframe.ask.return_value = "WMDCV2,2;WTDCV1.0,0.0,0.0,0.0,0.0"
@@ -166,7 +166,7 @@ def test_get_post_sweep_voltage_cond(cmu):
         cmu.cv_sweep.post_sweep_voltage_condition()
 
 
-def test_cv_sweep_delay(cmu):
+def test_cv_sweep_delay(cmu) -> None:
     mainframe = cmu.root_instrument
 
     mainframe.ask.return_value = "WTDCV0.0,0.0,0.0,0.0,0.0"
@@ -178,7 +178,7 @@ def test_cv_sweep_delay(cmu):
                                       call("WTDCV 1.0,1.0,0.0,0.0,0.0")])
 
 
-def test_cmu_sweep_steps(cmu):
+def test_cmu_sweep_steps(cmu) -> None:
     mainframe = cmu.root_instrument
     mainframe.ask.return_value = "WDCV3,1,0.0,0.0,1"
     cmu.cv_sweep.sweep_start(2.0)
@@ -188,7 +188,7 @@ def test_cmu_sweep_steps(cmu):
                                       call("WDCV 3,1,2.0,4.0,1")])
 
 
-def test_cv_sweep_voltages(cmu):
+def test_cv_sweep_voltages(cmu) -> None:
 
     mainframe = cmu.root_instrument
 
@@ -207,7 +207,7 @@ def test_cv_sweep_voltages(cmu):
                                        voltages)])
 
 
-def test_sweep_modes(cmu):
+def test_sweep_modes(cmu) -> None:
 
     mainframe = cmu.root_instrument
 
@@ -227,7 +227,7 @@ def test_sweep_modes(cmu):
     assert all([a == b for a, b in zip((-1.0, 0.0, 1.0, 0.0, -1.0), voltages)])
 
 
-def test_run_sweep(cmu):
+def test_run_sweep(cmu) -> None:
     mainframe = cmu.root_instrument
 
     start = -1.0
@@ -259,7 +259,7 @@ def test_run_sweep(cmu):
 
 
 
-def test_phase_compensation_mode(cmu):
+def test_phase_compensation_mode(cmu) -> None:
     mainframe = cmu.parent
 
     cmu.phase_compensation_mode(constants.ADJ.Mode.MANUAL)
@@ -269,7 +269,7 @@ def test_phase_compensation_mode(cmu):
     assert constants.ADJ.Mode.MANUAL == cmu.phase_compensation_mode()
 
 
-def test_phase_compensation(cmu):
+def test_phase_compensation(cmu) -> None:
     mainframe = cmu.parent
 
     mainframe.ask.return_value = 0
@@ -281,7 +281,7 @@ def test_phase_compensation(cmu):
     assert response == constants.ADJQuery.Response.PASSED
 
 
-def test_phase_compensation_with_mode(cmu):
+def test_phase_compensation_with_mode(cmu) -> None:
     mainframe = cmu.parent
 
     mainframe.ask.return_value = 0
@@ -293,7 +293,7 @@ def test_phase_compensation_with_mode(cmu):
     assert response == constants.ADJQuery.Response.PASSED
 
 
-def test_enable_correction(cmu):
+def test_enable_correction(cmu) -> None:
     mainframe = cmu.parent
 
     cmu.correction.enable(constants.CalibrationType.OPEN)
@@ -310,7 +310,7 @@ def test_enable_correction(cmu):
     mainframe.write.assert_called_once_with('CORRST 3,3,1')
 
 
-def test_disable_correction(cmu):
+def test_disable_correction(cmu) -> None:
     mainframe = cmu.parent
 
     cmu.correction.disable(constants.CalibrationType.OPEN)
@@ -327,7 +327,7 @@ def test_disable_correction(cmu):
     mainframe.write.assert_called_once_with('CORRST 3,3,0')
 
 
-def test_correction_is_enabled(cmu):
+def test_correction_is_enabled(cmu) -> None:
     mainframe = cmu.parent
 
     mainframe.ask.return_value = '1'
@@ -336,7 +336,7 @@ def test_correction_is_enabled(cmu):
     assert response == constants.CORRST.Response.ON
 
 
-def test_correction_set_reference_values(cmu):
+def test_correction_set_reference_values(cmu) -> None:
     mainframe = cmu.parent
 
     cmu.correction.set_reference_values(
@@ -347,7 +347,7 @@ def test_correction_set_reference_values(cmu):
     mainframe.write.assert_called_once_with('DCORR 3,1,100,1,2')
 
 
-def test_correction_get_reference_values(cmu):
+def test_correction_get_reference_values(cmu) -> None:
     mainframe = cmu.parent
 
     mainframe.ask.return_value = '100,0.001,2'
@@ -356,7 +356,7 @@ def test_correction_get_reference_values(cmu):
         constants.CalibrationType.OPEN)
 
 
-def test_clear_and_set_default_frequency_list_for_correction(cmu):
+def test_clear_and_set_default_frequency_list_for_correction(cmu) -> None:
     mainframe = cmu.parent
 
     cmu.correction.frequency_list.clear_and_set_default()
@@ -364,7 +364,7 @@ def test_clear_and_set_default_frequency_list_for_correction(cmu):
     mainframe.write.assert_called_once_with('CLCORR 3,2')
 
 
-def test_clear_frequency_list_for_correction(cmu):
+def test_clear_frequency_list_for_correction(cmu) -> None:
     mainframe = cmu.parent
 
     cmu.correction.frequency_list.clear()
@@ -372,7 +372,7 @@ def test_clear_frequency_list_for_correction(cmu):
     mainframe.write.assert_called_once_with('CLCORR 3,1')
 
 
-def test_add_frequency_for_correction(cmu):
+def test_add_frequency_for_correction(cmu) -> None:
     mainframe = cmu.parent
 
     cmu.correction.frequency_list.add(1000)
@@ -380,7 +380,7 @@ def test_add_frequency_for_correction(cmu):
     mainframe.write.assert_called_once_with('CORRL 3,1000')
 
 
-def test_query_from_frequency_list_for_correction(cmu):
+def test_query_from_frequency_list_for_correction(cmu) -> None:
     mainframe = cmu.parent
 
     mainframe.ask.return_value = '25'
@@ -389,7 +389,7 @@ def test_query_from_frequency_list_for_correction(cmu):
     mainframe.ask.assert_called_once_with('CORRL? 3')
 
 
-def test_query_at_index_from_frequency_list_for_correction(cmu):
+def test_query_at_index_from_frequency_list_for_correction(cmu) -> None:
     mainframe = cmu.parent
 
     mainframe.ask.return_value = '1234.567'
@@ -399,7 +399,7 @@ def test_query_at_index_from_frequency_list_for_correction(cmu):
     mainframe.ask.assert_called_once_with('CORRL? 3,0')
 
 
-def test_perform_correction(cmu):
+def test_perform_correction(cmu) -> None:
     mainframe = cmu.parent
 
     mainframe.ask.return_value = 0
@@ -409,7 +409,7 @@ def test_perform_correction(cmu):
     assert constants.CORR.Response.SUCCESSFUL == response
 
 
-def test_perform_and_enable_correction(cmu):
+def test_perform_and_enable_correction(cmu) -> None:
     mainframe = cmu.parent
 
     mainframe.ask.side_effect = [
@@ -427,7 +427,7 @@ def test_perform_and_enable_correction(cmu):
     assert response == expected_response
 
 
-def test_abort(cmu):
+def test_abort(cmu) -> None:
     mainframe = cmu.parent
 
     cmu.abort()

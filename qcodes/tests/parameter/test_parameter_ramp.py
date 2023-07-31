@@ -4,6 +4,7 @@ import hypothesis.strategies as hst
 import numpy as np
 import pytest
 from hypothesis import given, settings
+from pytest import LogCaptureFixture
 
 from qcodes.parameters import Parameter
 from qcodes.validators import Numbers
@@ -11,7 +12,7 @@ from qcodes.validators import Numbers
 from .conftest import MemoryParameter
 
 
-def test_step_ramp(caplog):
+def test_step_ramp(caplog: LogCaptureFixture) -> None:
     p = MemoryParameter(name='test_step')
     p(42)
     assert p.set_values == [42]
@@ -40,7 +41,7 @@ def test_step_ramp(caplog):
 
 @given(scale=hst.integers(1, 100),
        value=hst.floats(min_value=1e-9, max_value=10))
-def test_ramp_scaled(scale, value):
+def test_ramp_scaled(scale, value) -> None:
     start_point = 0.0
     p = MemoryParameter(name='p', scale=scale,
                         initial_value=start_point)
@@ -66,8 +67,8 @@ def test_ramp_scaled(scale, value):
     # scaling happens when setting them
     expected_steps = np.linspace(first_step+p.step,
                                  second_step,90)
-    np.testing.assert_allclose(p.get_ramp_values(second_step, p.step),
-                               expected_steps)
+    actual_steps = p.get_ramp_values(second_step, p.step)
+    np.testing.assert_allclose(np.array(actual_steps), expected_steps)
     p.set(10)
     np.testing.assert_allclose(np.array(p.set_values),
                                np.linspace(0.0*scale, 10*scale, 101))
@@ -77,7 +78,7 @@ def test_ramp_scaled(scale, value):
 
 
 @given(value=hst.floats(min_value=1e-9, max_value=10))
-def test_ramp_parser(value):
+def test_ramp_parser(value) -> None:
     start_point = 0.0
     p = MemoryParameter(name='p',
                         set_parser=lambda x: -x,
@@ -107,8 +108,8 @@ def test_ramp_parser(value):
     # scaling happens when setting them
     expected_steps = np.linspace((first_step+p.step),
                                  second_step,90)
-    np.testing.assert_allclose(p.get_ramp_values(second_step, p.step),
-                               expected_steps)
+    actual_steps = p.get_ramp_values(second_step, p.step)
+    np.testing.assert_allclose(np.array(actual_steps), expected_steps)
     p.set(second_step)
     np.testing.assert_allclose(np.array(p.set_values),
                                np.linspace(-start_point, -second_step, 101))
@@ -120,7 +121,7 @@ def test_ramp_parser(value):
 @given(scale=hst.integers(1, 100),
        value=hst.floats(min_value=1e-9, max_value=10))
 @settings(deadline=None)
-def test_ramp_parsed_scaled(scale, value):
+def test_ramp_parsed_scaled(scale, value) -> None:
     start_point = 0.0
     p = MemoryParameter(name='p',
                         scale=scale,
@@ -143,8 +144,8 @@ def test_ramp_parsed_scaled(scale, value):
     np.testing.assert_allclose(np.array(p.set_values), expected_raw_steps)
     assert p.raw_value == - scale * first_step
     expected_steps = np.linspace(first_step+p.step, second_step, 90)
-    np.testing.assert_allclose(p.get_ramp_values(10, p.step),
-                               expected_steps)
+    actual_steps = p.get_ramp_values(10, p.step)
+    np.testing.assert_allclose(np.array(actual_steps), expected_steps)
     p.set(second_step)
     np.testing.assert_allclose(np.array(p.set_values),
                                np.linspace(-start_point*scale,
@@ -154,7 +155,7 @@ def test_ramp_parsed_scaled(scale, value):
     assert p.raw_value == -scale * value
 
 
-def test_stepping_from_invalid_starting_point():
+def test_stepping_from_invalid_starting_point() -> None:
 
     the_value = -10
 

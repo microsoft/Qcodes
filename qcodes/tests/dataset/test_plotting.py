@@ -1,10 +1,9 @@
-from typing import List
-
 import numpy as np
 import pytest
 from hypothesis import HealthCheck, assume, example, given, settings
 from hypothesis.strategies import data, floats, just, lists, one_of, sampled_from, text
 from matplotlib.collections import QuadMesh
+from pytest import FixtureRequest
 
 import qcodes as qc
 from qcodes.dataset.data_export import DSPlotData
@@ -53,8 +52,9 @@ class TerminateLoopException(Exception):
     * 10 ** (-3 + min(list(_ENGINEERING_PREFIXES.keys()))),
 )
 @settings(suppress_health_check=[HealthCheck.too_slow])
-def test_rescaled_ticks_and_units(scale, unit,
-                                  param_name, param_label, data_strategy):
+def test_rescaled_ticks_and_units(
+    scale, unit, param_name, param_label, data_strategy
+) -> None:
     if isinstance(data_strategy, np.ndarray):
         # No need to generate data, because it is being passed
         data_array = data_strategy
@@ -79,11 +79,12 @@ def test_rescaled_ticks_and_units(scale, unit,
         # be larger than the lowest value within the scale of interest)
         assume((scale_lower_bound < np.abs(data_array_not_nans)).any())
 
-    data_dict = {
-        'name': param_name,
-        'label': param_label,
-        'unit': unit,
-        'data': data_array
+    data_dict: DSPlotData = {
+        "name": param_name,
+        "label": param_label,
+        "unit": unit,
+        "data": data_array,
+        "shape": None,
     }
 
     ticks_formatter, label = _make_rescaled_ticks_and_units(data_dict)
@@ -111,7 +112,7 @@ def test_rescaled_ticks_and_units(scale, unit,
         assert '2.12346' == ticks_formatter(2.123456789 / (10 ** (-scale)))
 
 
-def test_plot_by_id_line_and_heatmap(experiment, request):
+def test_plot_by_id_line_and_heatmap(experiment, request: FixtureRequest) -> None:
     """
     Test that line plots and heatmaps can be plotted together
     """
@@ -142,7 +143,9 @@ def test_plot_by_id_line_and_heatmap(experiment, request):
 
 @pytest.mark.parametrize("nan_setpoints", [True, False])
 @pytest.mark.parametrize("shifted", [True, False])
-def test_plot_dataset_2d_shaped(experiment, request, nan_setpoints, shifted):
+def test_plot_dataset_2d_shaped(
+    experiment, request: FixtureRequest, nan_setpoints, shifted
+) -> None:
     """
     Test plotting of preshaped data on a grid that may or may not be shifted
     with and without nans in the set points.
@@ -215,7 +218,7 @@ def test_plot_dataset_2d_shaped(experiment, request, nan_setpoints, shifted):
         assert ylims[1] < 11
 
 
-def test_appropriate_kwargs():
+def test_appropriate_kwargs() -> None:
 
     kwargs = {'cmap': 'bone'}
     check = kwargs.copy()
@@ -247,7 +250,7 @@ def test_appropriate_kwargs():
 
 def test__complex_to_real_preparser_complex_toplevel_param() -> None:
 
-    data_in: List[List[DSPlotData]] = [
+    data_in: list[list[DSPlotData]] = [
         [
             {
                 "data": np.array([0, 1, 2]),
@@ -315,7 +318,7 @@ def test__complex_to_real_preparser_complex_toplevel_param() -> None:
 
 def test__complex_to_real_preparser_complex_setpoint() -> None:
 
-    data_in: List[List[DSPlotData]] = [
+    data_in: list[list[DSPlotData]] = [
         [
             {
                 "data": np.array([0 + 0j, 1 + 2j, -1 + 1j]),
