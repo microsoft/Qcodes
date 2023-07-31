@@ -243,7 +243,9 @@ markers = "serial"
 filterwarnings = [
     "ignore:The distutils package is deprecated and slated for removal in Python 3.12:DeprecationWarning",
     "ignore:distutils Version classes are deprecated:DeprecationWarning",
-    "ignore:SelectableGroups dict interface is deprecated:DeprecationWarning"
+    "ignore:SelectableGroups dict interface is deprecated:DeprecationWarning",
+    'ignore:Deprecated call to `pkg_resources\.declare_namespace:DeprecationWarning',
+    'ignore:pkg_resources is deprecated as an API',
 ]
 
 [tool.ruff]
