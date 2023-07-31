@@ -13,11 +13,11 @@ from qcodes import config
 from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
 from qcodes.dataset.dond.do_nd_utils import (
     BreakConditionInterrupt,
-    catch_interrupts,
     _handle_plotting,
     _register_actions,
     _register_parameters,
     _set_write_period,
+    catch_interrupts,
 )
 from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.measurements import Measurement

@@ -1,8 +1,10 @@
 from __future__ import annotations
+
 import time
+from collections.abc import Generator, Sequence
 from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass
-from typing import Any, Generator, List, Sequence, Callable
+from typing import Any, Callable, List
 
 from qcodes.dataset.dond.do_nd import _Sweeper
 from qcodes.dataset.dond.do_nd_utils import ParamMeasT, catch_interrupts
@@ -22,8 +24,8 @@ class DataSetDefinition:
 
 def setup_measurement_instances(
     dataset_definitions: Sequence[DataSetDefinition], experiment: Experiment
-) -> List[Measurement]:
-    measurements: List[Measurement] = []
+) -> list[Measurement]:
+    measurements: list[Measurement] = []
     for ds_def in dataset_definitions:
         meas = Measurement(name=ds_def.name, exp=experiment)
         for param in ds_def.independent:
@@ -112,7 +114,7 @@ class LinSweeper(LinSweep):
         self._setpoints = self.get_setpoints()
         self._iter_index = 0
 
-    def __iter__(self) -> "LinSweeper":
+    def __iter__(self) -> LinSweeper:
         return self
 
     def __next__(self) -> float:

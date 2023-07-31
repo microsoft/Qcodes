@@ -1,20 +1,21 @@
-import pytest
 import gc
-import numpy as np
-from pathlib import Path
 from functools import partial
 from itertools import product
-import qcodes as qc
-from qcodes.dataset import connect, Measurement, LinSweep, TogetherSweep
-from qcodes.validators import Arrays
+from pathlib import Path
 
-from qcodes.parameters import Parameter, ParameterWithSetpoints
+import numpy as np
+import pytest
+
+import qcodes as qc
+from qcodes.dataset import LinSweep, Measurement, TogetherSweep, connect
 from qcodes.dataset.measurement_extensions import (
+    DataSetDefinition,
+    LinSweeper,
     datasaver_builder,
     dond_core,
-    LinSweeper,
-    DataSetDefinition,
 )
+from qcodes.parameters import Parameter, ParameterWithSetpoints
+from qcodes.validators import Arrays
 
 
 @pytest.fixture
