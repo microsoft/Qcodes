@@ -43,7 +43,6 @@ class OxfordTriton(IPInstrument):
         self._heater_range_curr = [0.316, 1, 3.16, 10, 31.6, 100]
         self._control_channel = 5
         self.pump_label_dict = {'TURB1': 'Turbo 1',
-                                'FB': 'Forepump',
                                 'COMP': 'Compressor'}
 
         self.add_parameter(name='time',
@@ -433,7 +432,7 @@ class OxfordTriton(IPInstrument):
         return super()._recv().rstrip()
 
     def _add_pump_state(self) -> None:
-        self.pumps = set(['TURB1', 'FB', 'COMP'])
+        self.pumps = set(['TURB1', 'COMP'])
         for pump in self.pumps:
             self.add_parameter(name=pump.lower() + '_state',
                                label=self.pump_label_dict[pump] + ' state',
@@ -446,13 +445,12 @@ class OxfordTriton(IPInstrument):
         self.write(f'SET:DEV:{pump}:PUMP:SIG:STATE:{state}')
     
     def _add_pump_speed(self) -> None:
-        for pump in self.pumps:
-            self.add_parameter(name=pump.lower() + '_speed',
-                               label=self.pump_label_dict[pump] + ' speed',
-                               unit='Hz',
-                               get_cmd='READ:DEV:%s:PUMP:SIG:SPD' % pump,
-                               get_parser=self._get_parser_pump_speed,
-            )
+        self.add_parameter(name= 'turb1_speed',
+                            label=self.pump_label_dict['TURB1'] + ' speed',
+                            unit='Hz',
+                            get_cmd='READ:DEV:TURB1:PUMP:SIG:SPD',
+                            get_parser=self._get_parser_pump_speed,
+        )
     
     def _get_parser_pump_speed(self, msg: str) -> Optional[float]:
         if 'NOT_FOUND' in msg:
