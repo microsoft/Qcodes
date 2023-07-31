@@ -407,9 +407,11 @@ def test_instrumentbase_metadata() -> None:
 
 
 @pytest.mark.parametrize("cls", [(InstrumentBase), (Instrument)])
-def test_instrument_label(cls) -> None:
+def test_instrument_label(cls, request: FixtureRequest) -> None:
     """Instrument uses nicely formatted label if available."""
     instrument = cls(name="name")
+    if isinstance(cls, type(Instrument)):
+        request.addfinalizer(instrument.close)
     assert instrument.label == "name"
 
     random_ascii = "~!@#$%^&*()_-+=`{}[];'\":,./<>?|\\ äöüß"
@@ -418,6 +420,8 @@ def test_instrument_label(cls) -> None:
 
     label = "Nicely-formatted label"
     instrument = cls(name="name1", label=label)
+    if isinstance(cls, type(Instrument)):
+        request.addfinalizer(instrument.close)
     assert instrument.label == label
 
 
