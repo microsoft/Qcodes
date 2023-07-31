@@ -70,7 +70,7 @@ def model372():
 def AMI430_3D():
     import numpy as np
 
-    from qcodes.instrument_drivers.american_magnetics import AMIModel4303D, AMIModel430
+    from qcodes.instrument_drivers.american_magnetics import AMIModel430, AMIModel4303D
 
     mag_x = AMIModel430(
         "x",
@@ -179,9 +179,9 @@ def test_filter_instrument(AMI430_3D) -> None:
         with logger.filter_instrument(mag_x, handler=logs.string_handler):
             driver.cartesian((0, 0, 1))
     for line in logs.value.splitlines():
-        assert '[x(AMIModel430)]' in line
-        assert '[y(AMIModel430)]' not in line
-        assert '[z(AMIModel430)]' not in line
+        assert "[x(AMIModel430)]" in line
+        assert "[y(AMIModel430)]" not in line
+        assert "[z(AMIModel430)]" not in line
 
     # filter multiple instruments
     driver.cartesian((0, 0, 0))
@@ -192,9 +192,9 @@ def test_filter_instrument(AMI430_3D) -> None:
     any_x = False
     any_y = False
     for line in logs.value.splitlines():
-        has_x = '[x(AMIModel430)]' in line
-        has_y = '[y(AMIModel430)]' in line
-        has_z = '[z(AMIModel430)]' in line
+        has_x = "[x(AMIModel430)]" in line
+        has_y = "[y(AMIModel430)]" in line
+        has_z = "[z(AMIModel430)]" in line
 
         assert has_x or has_y
         assert not has_z
