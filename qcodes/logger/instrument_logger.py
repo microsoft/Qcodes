@@ -30,7 +30,7 @@ class InstrumentLoggerAdapter(logging.LoggerAdapter):
     The context data gets stored in the `extra` dictionary as a property of the
     Adapter. It is filled by the ``__init__`` method::
 
-        >>> LoggerAdapter(log, {'instrument': self.full_name})
+        >>> LoggerAdapter(log, {'instrument': instrument_instance})
 
     """
 
@@ -40,11 +40,16 @@ class InstrumentLoggerAdapter(logging.LoggerAdapter):
         """
         Returns the message and the kwargs for the handlers.
         """
-        kwargs['extra'] = self.extra
         assert self.extra is not None
         inst = self.extra['instrument']
+        kwargs["extra"] = {}
+        kwargs["extra"]["instrument_name"] = str(getattr(inst, "full_name", ""))
+        kwargs["extra"]["instrument_type"] = str(type(inst))
         full_name = getattr(inst, "full_name", None)
-        return f"[{full_name}({type(inst).__name__})] {msg}", kwargs
+        kwargs["extra"]["instrument_name"] = full_name
+        instr_type = str(type(inst).__name__)
+        kwargs["extra"]["instrument_type"] = instr_type
+        return f"[{full_name}({instr_type})] {msg}", kwargs
 
 
 class InstrumentFilter(logging.Filter):
@@ -54,27 +59,28 @@ class InstrumentFilter(logging.Filter):
     properties as specified in the `extra` dictionary which is a property of
     the adapter.
 
-    Here the ``instrument`` property gets used to reject records that don't
+    Here the ``instrument_name`` property gets used to reject records that don't
     originate from the list of instruments that has been passed to the
     ``__init__`` method.
     """
     def __init__(self, instruments: Union['InstrumentBase',
                                           Sequence['InstrumentBase']]):
-        # This local import is necessary to avoid a circular import dependency.
-        # The alternative is to merge this module with the instrument.base,
-        # which is also not favorable.
         super().__init__()
         if not isinstance(instruments, collections.abc.Sequence):
-            instrument_seq: Sequence['InstrumentBase'] = (instruments,)
+            instrument_seq: Sequence["str"] = (instruments.full_name,)
         else:
-            instrument_seq = instruments
+            instrument_seq = [inst.full_name for inst in instruments]
         self.instrument_set = set(instrument_seq)
 
     def filter(self, record: logging.LogRecord) -> bool:
-        inst: Optional["InstrumentBase"] = getattr(record, "instrument", None)
+        inst: Optional["str"] = getattr(record, "instrument_name", None)
         if inst is None:
             return False
-        return not self.instrument_set.isdisjoint(inst.ancestors)
+
+        insrument_match = any(
+            inst.startswith(instrument_name) for instrument_name in self.instrument_set
+        )
+        return insrument_match
 
 
 def get_instrument_logger(instrument_instance: 'InstrumentBase',
