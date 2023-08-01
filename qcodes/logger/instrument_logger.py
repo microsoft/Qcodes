@@ -41,13 +41,14 @@ class InstrumentLoggerAdapter(logging.LoggerAdapter):
         Returns the message and the kwargs for the handlers.
         """
         assert self.extra is not None
-        inst = self.extra['instrument']
-        kwargs["extra"] = {}
-        kwargs["extra"]["instrument_name"] = str(getattr(inst, "full_name", ""))
-        kwargs["extra"]["instrument_type"] = str(type(inst))
+        extra = dict(self.extra)
+        inst = extra.pop("instrument")
+
         full_name = getattr(inst, "full_name", None)
-        kwargs["extra"]["instrument_name"] = full_name
         instr_type = str(type(inst).__name__)
+
+        kwargs["extra"] = extra
+        kwargs["extra"]["instrument_name"] = str(full_name)
         kwargs["extra"]["instrument_type"] = instr_type
         return f"[{full_name}({instr_type})] {msg}", kwargs
 
