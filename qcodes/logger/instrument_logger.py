@@ -67,13 +67,13 @@ class InstrumentFilter(logging.Filter):
                                           Sequence['InstrumentBase']]):
         super().__init__()
         if not isinstance(instruments, collections.abc.Sequence):
-            instrument_seq: Sequence["str"] = (instruments.full_name,)
+            instrument_seq: Sequence[str] = (instruments.full_name,)
         else:
             instrument_seq = [inst.full_name for inst in instruments]
         self.instrument_set = set(instrument_seq)
 
     def filter(self, record: logging.LogRecord) -> bool:
-        inst: Optional["str"] = getattr(record, "instrument_name", None)
+        inst: Optional[str] = getattr(record, "instrument_name", None)
         if inst is None:
             return False
 
