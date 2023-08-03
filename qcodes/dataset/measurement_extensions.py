@@ -17,6 +17,16 @@ from qcodes.parameters.parameter_base import ParameterBase
 
 @dataclass
 class DataSetDefinition:
+    """
+    A specification for the creation of a Dataset or Measurement object
+
+    Attributes:
+        name: The name to be assigned to the Measurement and dataset
+        independent: A sequence of independent parameters in the Measurement and dataset
+        dependent: A sequence of dependent parameters in the Measurement and dataset
+            Note: All dependent parameters will depend on all independent parameters
+    """
+
     name: str
     independent: Sequence[ParameterBase]
     dependent: Sequence[ParameterBase]
@@ -25,6 +35,15 @@ class DataSetDefinition:
 def setup_measurement_instances(
     dataset_definitions: Sequence[DataSetDefinition], experiment: Experiment
 ) -> list[Measurement]:
+    """Creates a set of Measurement instances and registers parameters
+
+    Args:
+        dataset_definitions: A set of DataSetDefinitions to create and register parameters for
+        experiment: The Experiment all Measurement objects will be part of
+
+    Returns:
+        A list of Measurement objects
+    """
     measurements: list[Measurement] = []
     for ds_def in dataset_definitions:
         meas = Measurement(name=ds_def.name, exp=experiment)
@@ -40,6 +59,19 @@ def setup_measurement_instances(
 def datasaver_builder(
     dataset_definitions: Sequence[DataSetDefinition], experiment: Experiment
 ) -> Generator[list[DataSaver], Any, None]:
+    """
+    A utility context manager intended to simplify the creation of datasavers
+
+    The datasaver builder can be used to streamline the creation of multiple datasavers where all
+    dependent parameters depend on all independent parameters.
+
+    Args:
+        dataset_definitions: A set of DataSetDefinitions to create and register parameters for
+        experiment: The Experiment for all datasaver objects
+
+    Yields:
+        A list of generated datasavers with parameters registered
+    """
     measurement_instances = setup_measurement_instances(dataset_definitions, experiment)
     with catch_interrupts() as interrupted, ExitStack() as stack:
         datasavers = [
@@ -48,16 +80,24 @@ def datasaver_builder(
         ]
         try:
             yield datasavers
-        except Exception:
-            raise Exception
+        except Exception as e:
+            raise e
 
 
 def parse_dond_core_args(
     *params: AbstractSweep | TogetherSweep | ParamMeasT | Sequence[ParamMeasT],
 ) -> tuple[list[AbstractSweep], list[ParamMeasT]]:
     """
-    Parse supplied arguments into sweep objects and measurement parameters
-    and their callables.
+    Parse supplied arguments into sweeps and measurement parameters
+
+    Measurement parameters may include Callables which are executed in order
+
+    Args:
+        params: Instances of n sweep classes and m measurement parameters or
+            callables
+
+    Returns:
+
     """
     sweep_instances: list[AbstractSweep] = []
     params_meas: list[ParamMeasT] = []
@@ -80,6 +120,24 @@ def dond_core(
     *params: ParameterBase,
     additional_setpoints: Sequence[ParameterBase] = tuple(),
 ) -> None:
+    """
+    A doNd-like utility function that writes gridded data to the supplied DataSaver
+
+    dond_core accepts AbstractSweep objects and measurement parameters or callables. It executes
+    the specified Sweeps, reads the measurement parameters, and stores the resulting data in the datasaver.
+
+    Args:
+        datasaver: The datasaver to write data to
+        params: Instances of n sweep classes and m measurement parameters,
+            e.g. if linear sweep is considered:
+
+            .. code-block::
+                LinSweep(param_set_1, start_1, stop_1, num_points_1, delay_1), ...,
+                LinSweep(param_set_n, start_n, stop_n, num_points_n, delay_n),
+                param_meas_1, param_meas_2, ..., param_meas_m
+        additional_setpoints: A list of setpoint parameters to be registered in the measurement but
+            not scanned/swept-over.
+    """
     sweep_instances, params_meas = parse_dond_core_args(*params)
     sweeper = _Sweeper(sweep_instances, additional_setpoints)
     for set_events in sweeper:
@@ -109,6 +167,12 @@ def dond_core(
 
 
 class LinSweeper(LinSweep):
+    """
+    An iterable version of the LinSweep class
+
+    Iterations of this object, set the next setpoint and then wait the delay time
+    """
+
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self._setpoints = self.get_setpoints()
