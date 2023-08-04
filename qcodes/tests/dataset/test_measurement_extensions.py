@@ -1,8 +1,10 @@
 import gc
+from collections.abc import Sequence
 from functools import partial
 from itertools import product
 from pathlib import Path
-from typing import Dict, Sequence
+from typing import Dict
+
 import numpy as np
 import pytest
 
@@ -25,7 +27,7 @@ from qcodes.validators import Arrays
 
 
 def assert_dataset_as_expected(
-    dataset, dims_dict: Dict[str, int], data_vars: Sequence[str]
+    dataset, dims_dict: dict[str, int], data_vars: Sequence[str]
 ):
     xr_ds = dataset.to_xarray_dataset()
     assert xr_ds.dims == dims_dict
