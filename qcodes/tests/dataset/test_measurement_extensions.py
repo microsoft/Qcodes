@@ -2,7 +2,7 @@ import gc
 from functools import partial
 from itertools import product
 from pathlib import Path
-
+from typing import Dict, Sequence
 import numpy as np
 import pytest
 
@@ -22,6 +22,14 @@ from qcodes.dataset.measurement_extensions import (
 )
 from qcodes.parameters import Parameter, ParameterWithSetpoints
 from qcodes.validators import Arrays
+
+
+def assert_dataset_as_expected(
+    dataset, dims_dict: Dict[str, int], data_vars: Sequence[str]
+):
+    xr_ds = dataset.to_xarray_dataset()
+    assert xr_ds.dims == dims_dict
+    assert set(xr_ds.data_vars) == set(data_vars)
 
 
 @pytest.fixture
@@ -92,13 +100,14 @@ def test_context(default_params, default_database_and_experiment):
             name="dataset_2", independent=[set1, set2, set3], dependent=[meas2, meas3]
         ),
     ]
-
+    outer_val_range = 5
+    inner_val_range = 5
     with datasaver_builder(dataset_definition, experiment) as datasavers:
-        for val in range(5):
+        for val in range(outer_val_range):
             set1(val)
             meas1_val = meas1()
             datasavers[0].add_result((set1, val), (meas1, meas1_val))
-            for val2, val3 in product(range(5), repeat=2):
+            for val2, val3 in product(range(inner_val_range), repeat=2):
                 set2(val2)
                 set3(val3)
                 meas2_val = meas2()
@@ -111,6 +120,24 @@ def test_context(default_params, default_database_and_experiment):
                     (meas3, meas3_val),
                 )
         datasets = [datasaver.dataset for datasaver in datasavers]
+
+    assert len(datasets) == 2
+    assert_dataset_as_expected(
+        datasets[0],
+        dims_dict={
+            set1.name: outer_val_range,
+        },
+        data_vars=(meas1.name,),
+    )
+    assert_dataset_as_expected(
+        datasets[1],
+        dims_dict={
+            set1.name: outer_val_range,
+            set2.name: inner_val_range,
+            set3.name: inner_val_range,
+        },
+        data_vars=(meas2.name, meas3.name),
+    )
 
 
 def test_dond_core(default_params, default_database_and_experiment):
@@ -128,6 +155,14 @@ def test_dond_core(default_params, default_database_and_experiment):
         dond_core(datasaver, sweep2, meas1)
 
         dataset = datasaver.dataset
+
+    assert_dataset_as_expected(
+        dataset,
+        dims_dict={
+            set1.name: 111,
+        },
+        data_vars=(meas1.name,),
+    )
 
 
 def test_dond_core_and_context(default_params, default_database_and_experiment):
@@ -150,6 +185,18 @@ def test_dond_core_and_context(default_params, default_database_and_experiment):
             dond_core(datasavers[1], sweep2, meas1, meas3, additional_setpoints=(set1,))
         datasets = [datasaver.dataset for datasaver in datasavers]
 
+    assert len(datasets) == 2
+    assert_dataset_as_expected(
+        datasets[0],
+        dims_dict={set1.name: 11, set2.name: 11},
+        data_vars=(meas1.name, meas2.name),
+    )
+    assert_dataset_as_expected(
+        datasets[1],
+        dims_dict={set1.name: 11, set3.name: 11},
+        data_vars=(meas1.name, meas3.name),
+    )
+
 
 def test_linsweeper(default_params, default_database_and_experiment):
     experiment = default_database_and_experiment
@@ -164,9 +211,15 @@ def test_linsweeper(default_params, default_database_and_experiment):
         for _ in LinSweeper(set1, 0, 10, 11, 0.001):
             sweep1 = LinSweep(set2, 0, 10, 11, 0.001)
             dond_core(datasavers[0], sweep1, meas1, meas2, additional_setpoints=(set1,))
-            dond_core(datasavers[0], sweep1, meas1, meas2, additional_setpoints=(set1,))
 
         datasets = [datasaver.dataset for datasaver in datasavers]
+
+    assert len(datasets) == 1
+    assert_dataset_as_expected(
+        datasets[0],
+        dims_dict={set1.name: 11, set2.name: 11},
+        data_vars=(meas1.name, meas2.name),
+    )
 
 
 def test_context_with_pws(pws_params, default_database_and_experiment):
@@ -178,6 +231,16 @@ def test_context_with_pws(pws_params, default_database_and_experiment):
             dond_core(datasavers[0], pws1, additional_setpoints=(set1,))
 
         datasets = [datasaver.dataset for datasaver in datasavers]
+
+    assert len(datasets) == 1
+    assert_dataset_as_expected(
+        datasets[0],
+        dims_dict={
+            set1.name: 11,
+            pws1.setpoints[0].name: pws1.setpoints[0].vals.shape[0],
+        },
+        data_vars=(pws1.name,),
+    )
 
 
 def test_dond_core_with_callables(
@@ -200,7 +263,15 @@ def test_dond_core_with_callables(
         dond_core(datasaver, sweep2, internal_callable, meas1)
 
         dataset = datasaver.dataset
+
     assert internal_callable.call_count == 11 + 100
+    assert_dataset_as_expected(
+        dataset,
+        dims_dict={
+            set1.name: 111,
+        },
+        data_vars=(meas1.name,),
+    )
 
 
 def test_dond_core_fails_with_together_sweeps(
@@ -224,7 +295,7 @@ def test_dond_core_fails_with_together_sweeps(
                 ),  # pyright: ignore [reportGeneralTypeIssues]
                 meas1,
             )
-            dataset = datasaver.dataset
+            _ = datasaver.dataset
 
 
 def test_dond_core_fails_with_groups(default_params, default_database_and_experiment):
@@ -245,4 +316,4 @@ def test_dond_core_fails_with_groups(default_params, default_database_and_experi
                 [meas1],  # pyright: ignore [reportGeneralTypeIssues]
                 [meas2],  # pyright: ignore [reportGeneralTypeIssues]
             )
-            dataset = datasaver.dataset
+            _ = datasaver.dataset
