@@ -47,6 +47,13 @@ reload(qcodes.instrument)
 
 import qcodes  # noqa F402
 
+# sphinx 6.2 -> 7.1 produces a warning
+# Debugger warning: It seems that frozen modules are being used, which may
+# make the debugger miss breakpoints. Please pass -Xfrozen_modules=off
+# to python to disable frozen modules.
+# Since we are not debugging we disable it here
+os.environ["PYDEVD_DISABLE_FILE_VALIDATION"] = "1"
+
 matplotlib.use('Agg')
 
 sys.path.insert(0, os.path.abspath('..'))
