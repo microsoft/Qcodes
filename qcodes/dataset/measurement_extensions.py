@@ -4,7 +4,7 @@ import time
 from collections.abc import Generator, Sequence
 from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass
-from typing import Any, Callable, List
+from typing import Any, Callable, Union
 
 from qcodes.dataset.dond.do_nd import _Sweeper
 from qcodes.dataset.dond.do_nd_utils import ParamMeasT, catch_interrupts
@@ -117,7 +117,7 @@ def parse_dond_core_args(
 
 def dond_core(
     datasaver: DataSaver,
-    *params: ParameterBase,
+    *params: Union[AbstractSweep, ParamMeasT],
     additional_setpoints: Sequence[ParameterBase] = tuple(),
 ) -> None:
     """

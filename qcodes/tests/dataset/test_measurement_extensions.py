@@ -6,8 +6,14 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-import qcodes as qc
-from qcodes.dataset import LinSweep, Measurement, TogetherSweep, connect
+from qcodes.dataset import (
+    LinSweep,
+    Measurement,
+    TogetherSweep,
+    connect,
+    initialise_or_create_database_at,
+    load_or_create_experiment,
+)
 from qcodes.dataset.measurement_extensions import (
     DataSetDefinition,
     LinSweeper,
@@ -69,8 +75,8 @@ def pws_params(default_params):
 @pytest.fixture
 def default_database_and_experiment(tmp_path):
     db_path = Path(tmp_path) / "context_tests.db"
-    qc.initialise_or_create_database_at(db_path)
-    experiment = qc.load_or_create_experiment("context_tests")
+    initialise_or_create_database_at(db_path)
+    experiment = load_or_create_experiment("context_tests")
     yield experiment
     conn = connect(db_path)
     conn.close()
@@ -211,7 +217,13 @@ def test_dond_core_fails_with_together_sweeps(
             sweep1 = LinSweep(set1, 0, 5, 11, 0.001)
             sweep2 = LinSweep(set2, 10, 20, 11, 0.001)
 
-            dond_core(datasaver, TogetherSweep(sweep1, sweep2), meas1)
+            dond_core(
+                datasaver,
+                TogetherSweep(
+                    sweep1, sweep2
+                ),  # pyright: ignore [reportGeneralTypeIssues]
+                meas1,
+            )
             dataset = datasaver.dataset
 
 
@@ -227,5 +239,10 @@ def test_dond_core_fails_with_groups(default_params, default_database_and_experi
     ):
         with core_test_measurement.run() as datasaver:
             sweep1 = LinSweep(set1, 0, 5, 11, 0.001)
-            dond_core(datasaver, sweep1, [meas1], [meas2])
+            dond_core(
+                datasaver,
+                sweep1,
+                [meas1],  # pyright: ignore [reportGeneralTypeIssues]
+                [meas2],  # pyright: ignore [reportGeneralTypeIssues]
+            )
             dataset = datasaver.dataset
