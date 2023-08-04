@@ -117,7 +117,7 @@ def parse_dond_core_args(
 
 def dond_core(
     datasaver: DataSaver,
-    *params: Union[AbstractSweep, ParamMeasT],
+    *params: AbstractSweep | ParamMeasT,
     additional_setpoints: Sequence[ParameterBase] = tuple(),
 ) -> None:
     """
