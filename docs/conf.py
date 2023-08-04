@@ -17,7 +17,6 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
-import sys
 from abc import ABCMeta
 from importlib import reload
 
@@ -55,8 +54,6 @@ import qcodes  # noqa F402
 os.environ["PYDEVD_DISABLE_FILE_VALIDATION"] = "1"
 
 matplotlib.use('Agg')
-
-sys.path.insert(0, os.path.abspath('..'))
 
 # -- General configuration ------------------------------------------------
 
