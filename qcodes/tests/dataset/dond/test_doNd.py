@@ -1104,7 +1104,7 @@ def test_dond_together_sweep_sweeper(_param_set, _param_set_2, _param) -> None:
     )
 
     for output, setpoint_1, setpoint_2 in zip(
-        sweeper, sweep_1.get_setpoints(), sweep_2.get_setpoints()  # type: ignore[call-overload]
+        sweeper, sweep_1.get_setpoints(), sweep_2.get_setpoints() 
     ):
         assert output[0].parameter == sweep_1.param
         assert output[0].new_value == setpoint_1

@@ -110,14 +110,14 @@ def parse_dond_core_args(
             raise ValueError("dond_core does not support multiple datasets")
         elif isinstance(par, ParameterBase) and par.gettable:
             params_meas.append(par)
-        elif isinstance(par, Callable):
+        elif isinstance(par, Callable):  # type: ignore [arg-type]
             params_meas.append(par)
     return sweep_instances, params_meas
 
 
 def dond_core(
     datasaver: DataSaver,
-    *params: AbstractSweep | ParamMeasT,
+    *params: Union[AbstractSweep, ParamMeasT],
     additional_setpoints: Sequence[ParameterBase] = tuple(),
 ) -> None:
     """
