@@ -4,7 +4,7 @@ import time
 from collections.abc import Generator, Sequence
 from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass
-from typing import Any, Callable, Union
+from typing import Any, Callable
 
 from qcodes.dataset.dond.do_nd import _Sweeper
 from qcodes.dataset.dond.do_nd_utils import ParamMeasT, catch_interrupts
@@ -73,7 +73,7 @@ def datasaver_builder(
         A list of generated datasavers with parameters registered
     """
     measurement_instances = setup_measurement_instances(dataset_definitions, experiment)
-    with catch_interrupts() as interrupted, ExitStack() as stack:
+    with catch_interrupts() as _, ExitStack() as stack:
         datasavers = [
             stack.enter_context(measurement.run())
             for measurement in measurement_instances

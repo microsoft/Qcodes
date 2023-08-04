@@ -68,7 +68,7 @@ def pws_params(default_params):
         get_cmd=get_pws_results,
         vals=Arrays(shape=(sweep_points,)),
     )
-    set1, set2, set3, meas1, meas2, meas3 = default_params
+    set1, _, _, _, _, _ = default_params
     return pws1, set1
 
 
@@ -115,7 +115,7 @@ def test_context(default_params, default_database_and_experiment):
 
 def test_dond_core(default_params, default_database_and_experiment):
     experiment = default_database_and_experiment
-    set1, set2, set3, meas1, meas2, meas3 = default_params
+    set1, _, _, meas1, _, _ = default_params
 
     core_test_measurement = Measurement(name="core_test_1", exp=experiment)
     core_test_measurement.register_parameter(set1)
@@ -153,7 +153,7 @@ def test_dond_core_and_context(default_params, default_database_and_experiment):
 
 def test_linsweeper(default_params, default_database_and_experiment):
     experiment = default_database_and_experiment
-    set1, set2, set3, meas1, meas2, meas3 = default_params
+    set1, set2, _, meas1, meas2, _ = default_params
 
     dataset_definition = [
         DataSetDefinition(
@@ -184,7 +184,7 @@ def test_dond_core_with_callables(
     default_params, default_database_and_experiment, mocker
 ):
     experiment = default_database_and_experiment
-    set1, set2, set3, meas1, meas2, meas3 = default_params
+    set1, _, _, meas1, _, _ = default_params
 
     core_test_measurement = Measurement(name="core_test_1", exp=experiment)
     core_test_measurement.register_parameter(set1)
@@ -207,7 +207,7 @@ def test_dond_core_fails_with_together_sweeps(
     default_params, default_database_and_experiment
 ):
     experiment = default_database_and_experiment
-    set1, set2, set3, meas1, meas2, meas3 = default_params
+    set1, set2, _, meas1, _, _ = default_params
 
     core_test_measurement = Measurement(name="core_test_1", exp=experiment)
     core_test_measurement.register_parameter(set1)
@@ -229,7 +229,7 @@ def test_dond_core_fails_with_together_sweeps(
 
 def test_dond_core_fails_with_groups(default_params, default_database_and_experiment):
     experiment = default_database_and_experiment
-    set1, set2, set3, meas1, meas2, meas3 = default_params
+    set1, _, _, meas1, meas2, _ = default_params
 
     core_test_measurement = Measurement(name="core_test_1", exp=experiment)
     core_test_measurement.register_parameter(set1)
