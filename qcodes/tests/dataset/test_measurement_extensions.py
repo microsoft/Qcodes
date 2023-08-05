@@ -3,7 +3,6 @@ from collections.abc import Sequence
 from functools import partial
 from itertools import product
 from pathlib import Path
-from typing import Dict
 
 import numpy as np
 import pytest
@@ -34,8 +33,8 @@ def assert_dataset_as_expected(
     assert set(xr_ds.data_vars) == set(data_vars)
 
 
-@pytest.fixture
-def default_params():
+@pytest.fixture(name="default_params")
+def default_params_():
     set1 = Parameter("set1", get_cmd=None, set_cmd=None, initial_value=0)
     set2 = Parameter("set2", get_cmd=None, set_cmd=None, initial_value=0)
     set3 = Parameter("set3", get_cmd=None, set_cmd=None, initial_value=0)
@@ -56,8 +55,8 @@ def default_params():
     return set1, set2, set3, meas1, meas2, meas3
 
 
-@pytest.fixture
-def pws_params(default_params):
+@pytest.fixture(name="pws_params")
+def pws_params_(default_params):
     sweep_start = 0
     sweep_stop = 10
     sweep_points = 11
@@ -82,8 +81,8 @@ def pws_params(default_params):
     return pws1, set1
 
 
-@pytest.fixture
-def default_database_and_experiment(tmp_path):
+@pytest.fixture(name="default_database_and_experiment")
+def default_database_and_experiment_(tmp_path):
     db_path = Path(tmp_path) / "context_tests.db"
     initialise_or_create_database_at(db_path)
     experiment = load_or_create_experiment("context_tests")

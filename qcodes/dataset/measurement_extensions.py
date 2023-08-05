@@ -159,9 +159,8 @@ def dond_core(
         for meas_param, value in meas_value_pair:
             results[meas_param] = value
 
-        filtered_results_list = [(param, value) for param, value in results.items()]
         datasaver.add_result(
-            *filtered_results_list,
+            *list(results.items()),
             *additional_setpoints_data,
         )
 
