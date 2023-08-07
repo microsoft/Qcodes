@@ -36,6 +36,12 @@ from .export_config import get_data_export_path
 from .guid_helpers import guids_from_dbs, guids_from_dir, guids_from_list_str
 from .legacy_import import import_dat_file
 from .measurements import Measurement
+from .measurement_extensions import (
+    dond_core,
+    datasaver_builder,
+    DataSetDefinition,
+    LinSweeper,
+)
 from .plotting import plot_by_id, plot_dataset
 from .sqlite.connection import ConnectionPlus
 from .sqlite.database import (
@@ -71,10 +77,13 @@ __all__ = [
     "TogetherSweep",
     "call_params_threaded",
     "connect",
+    "datasaver_builder",
+    "DataSetDefinition",
     "do0d",
     "do1d",
     "do2d",
     "dond",
+    "dond_core",
     "experiments",
     "extract_runs_into_db",
     "get_data_export_path",
@@ -87,6 +96,7 @@ __all__ = [
     "initialise_database",
     "initialise_or_create_database_at",
     "initialised_database_at",
+    "LinSweeper",
     "load_by_counter",
     "load_by_guid",
     "load_by_id",
