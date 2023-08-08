@@ -129,10 +129,12 @@ def dond_core(
         params: Instances of n sweep classes and m measurement parameters,
             e.g. if linear sweep is considered:
 
-            .. code-block::
+            .. code-block:: python
+
                 LinSweep(param_set_1, start_1, stop_1, num_points_1, delay_1), ...,
                 LinSweep(param_set_n, start_n, stop_n, num_points_n, delay_n),
                 param_meas_1, param_meas_2, ..., param_meas_m
+
         additional_setpoints: A list of setpoint parameters to be registered in the measurement but
             not scanned/swept-over.
     """
