@@ -19,17 +19,15 @@ from qcodes.parameters.parameter_base import ParameterBase
 class DataSetDefinition:
     """
     A specification for the creation of a Dataset or Measurement object
-
-    Attributes:
-        name: The name to be assigned to the Measurement and dataset
-        independent: A sequence of independent parameters in the Measurement and dataset
-        dependent: A sequence of dependent parameters in the Measurement and dataset
-            Note: All dependent parameters will depend on all independent parameters
     """
 
     name: str
+    """The name to be assigned to the Measurement and dataset"""
     independent: Sequence[ParameterBase]
+    """A sequence of independent parameters in the Measurement and dataset"""
     dependent: Sequence[ParameterBase]
+    """A sequence of dependent parameters in the Measurement and dataset
+    Note: All dependent parameters will depend on all independent parameters"""
 
 
 def setup_measurement_instances(
