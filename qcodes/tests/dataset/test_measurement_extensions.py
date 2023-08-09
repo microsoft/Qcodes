@@ -19,7 +19,7 @@ from qcodes.dataset.measurement_extensions import (
     DataSetDefinition,
     LinSweeper,
     datasaver_builder,
-    dond_core,
+    dond_into,
 )
 from qcodes.parameters import Parameter, ParameterWithSetpoints
 from qcodes.validators import Arrays
@@ -141,7 +141,7 @@ def test_context(default_params, default_database_and_experiment):
     )
 
 
-def test_dond_core(default_params, default_database_and_experiment):
+def test_dond_into(default_params, default_database_and_experiment):
     experiment = default_database_and_experiment
     set1, _, _, meas1, _, _ = default_params
 
@@ -150,10 +150,10 @@ def test_dond_core(default_params, default_database_and_experiment):
     core_test_measurement.register_parameter(meas1, setpoints=[set1])
     with core_test_measurement.run() as datasaver:
         sweep1 = LinSweep(set1, 0, 5, 11, 0.001)
-        dond_core(datasaver, sweep1, meas1)
+        dond_into(datasaver, sweep1, meas1)
 
         sweep2 = LinSweep(set1, 10, 20, 100, 0.001)
-        dond_core(datasaver, sweep2, meas1)
+        dond_into(datasaver, sweep2, meas1)
 
         dataset = datasaver.dataset
 
@@ -166,7 +166,7 @@ def test_dond_core(default_params, default_database_and_experiment):
     )
 
 
-def test_dond_core_and_context(default_params, default_database_and_experiment):
+def test_dond_into_and_context(default_params, default_database_and_experiment):
     experiment = default_database_and_experiment
     set1, set2, set3, meas1, meas2, meas3 = default_params
 
@@ -182,8 +182,8 @@ def test_dond_core_and_context(default_params, default_database_and_experiment):
         for _ in LinSweeper(set1, 0, 10, 11, 0.001):
             sweep1 = LinSweep(set2, 0, 10, 11, 0.001)
             sweep2 = LinSweep(set3, -10, 0, 11, 0.001)
-            dond_core(datasavers[0], sweep1, meas1, meas2, additional_setpoints=(set1,))
-            dond_core(datasavers[1], sweep2, meas1, meas3, additional_setpoints=(set1,))
+            dond_into(datasavers[0], sweep1, meas1, meas2, additional_setpoints=(set1,))
+            dond_into(datasavers[1], sweep2, meas1, meas3, additional_setpoints=(set1,))
         datasets = [datasaver.dataset for datasaver in datasavers]
 
     assert len(datasets) == 2
@@ -211,7 +211,7 @@ def test_linsweeper(default_params, default_database_and_experiment):
     with datasaver_builder(dataset_definition, experiment) as datasavers:
         for _ in LinSweeper(set1, 0, 10, 11, 0.001):
             sweep1 = LinSweep(set2, 0, 10, 11, 0.001)
-            dond_core(datasavers[0], sweep1, meas1, meas2, additional_setpoints=(set1,))
+            dond_into(datasavers[0], sweep1, meas1, meas2, additional_setpoints=(set1,))
 
         datasets = [datasaver.dataset for datasaver in datasavers]
 
@@ -229,7 +229,7 @@ def test_context_with_pws(pws_params, default_database_and_experiment):
     dataset_definition = [DataSetDefinition("dataset_1", [set1], [pws1])]
     with datasaver_builder(dataset_definition, experiment) as datasavers:
         for _ in LinSweeper(set1, 0, 10, 11, 0.001):
-            dond_core(datasavers[0], pws1, additional_setpoints=(set1,))
+            dond_into(datasavers[0], pws1, additional_setpoints=(set1,))
 
         datasets = [datasaver.dataset for datasaver in datasavers]
 
@@ -244,7 +244,7 @@ def test_context_with_pws(pws_params, default_database_and_experiment):
     )
 
 
-def test_dond_core_with_callables(
+def test_dond_into_with_callables(
     default_params, default_database_and_experiment, mocker
 ):
     experiment = default_database_and_experiment
@@ -258,10 +258,10 @@ def test_dond_core_with_callables(
 
     with core_test_measurement.run() as datasaver:
         sweep1 = LinSweep(set1, 0, 5, 11, 0.001)
-        dond_core(datasaver, sweep1, internal_callable, meas1)
+        dond_into(datasaver, sweep1, internal_callable, meas1)
 
         sweep2 = LinSweep(set1, 10, 20, 100, 0.001)
-        dond_core(datasaver, sweep2, internal_callable, meas1)
+        dond_into(datasaver, sweep2, internal_callable, meas1)
 
         dataset = datasaver.dataset
 
@@ -275,7 +275,7 @@ def test_dond_core_with_callables(
     )
 
 
-def test_dond_core_fails_with_together_sweeps(
+def test_dond_into_fails_with_together_sweeps(
     default_params, default_database_and_experiment
 ):
     experiment = default_database_and_experiment
@@ -284,12 +284,12 @@ def test_dond_core_fails_with_together_sweeps(
     core_test_measurement = Measurement(name="core_test_1", exp=experiment)
     core_test_measurement.register_parameter(set1)
     core_test_measurement.register_parameter(meas1, setpoints=[set1])
-    with pytest.raises(ValueError, match="dond_core does not support TogetherSweeps"):
+    with pytest.raises(ValueError, match="dond_into does not support TogetherSweeps"):
         with core_test_measurement.run() as datasaver:
             sweep1 = LinSweep(set1, 0, 5, 11, 0.001)
             sweep2 = LinSweep(set2, 10, 20, 11, 0.001)
 
-            dond_core(
+            dond_into(
                 datasaver,
                 TogetherSweep(
                     sweep1, sweep2
@@ -299,7 +299,7 @@ def test_dond_core_fails_with_together_sweeps(
             _ = datasaver.dataset
 
 
-def test_dond_core_fails_with_groups(default_params, default_database_and_experiment):
+def test_dond_into_fails_with_groups(default_params, default_database_and_experiment):
     experiment = default_database_and_experiment
     set1, _, _, meas1, meas2, _ = default_params
 
@@ -307,11 +307,11 @@ def test_dond_core_fails_with_groups(default_params, default_database_and_experi
     core_test_measurement.register_parameter(set1)
     core_test_measurement.register_parameter(meas1, setpoints=[set1])
     with pytest.raises(
-        ValueError, match="dond_core does not support multiple datasets"
+        ValueError, match="dond_into does not support multiple datasets"
     ):
         with core_test_measurement.run() as datasaver:
             sweep1 = LinSweep(set1, 0, 5, 11, 0.001)
-            dond_core(
+            dond_into(
                 datasaver,
                 sweep1,
                 [meas1],  # pyright: ignore [reportGeneralTypeIssues]

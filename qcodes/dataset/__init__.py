@@ -39,7 +39,7 @@ from .measurement_extensions import (
     DataSetDefinition,
     LinSweeper,
     datasaver_builder,
-    dond_core,
+    dond_into,
 )
 from .measurements import Measurement
 from .plotting import plot_by_id, plot_dataset
@@ -83,7 +83,7 @@ __all__ = [
     "do1d",
     "do2d",
     "dond",
-    "dond_core",
+    "dond_into",
     "experiments",
     "extract_runs_into_db",
     "get_data_export_path",

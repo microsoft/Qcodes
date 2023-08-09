@@ -82,7 +82,7 @@ def datasaver_builder(
             raise e
 
 
-def parse_dond_core_args(
+def parse_dond_into_args(
     *params: AbstractSweep | TogetherSweep | ParamMeasT | Sequence[ParamMeasT],
 ) -> tuple[list[AbstractSweep], list[ParamMeasT]]:
     """
@@ -103,9 +103,9 @@ def parse_dond_core_args(
         if isinstance(par, AbstractSweep):
             sweep_instances.append(par)
         elif isinstance(par, TogetherSweep):
-            raise ValueError("dond_core does not support TogetherSweeps")
+            raise ValueError( dond_into does not support TogetherSweeps")
         elif isinstance(par, Sequence):
-            raise ValueError("dond_core does not support multiple datasets")
+            raise ValueError( dond_into does not support multiple datasets")
         elif isinstance(par, ParameterBase) and par.gettable:
             params_meas.append(par)
         elif isinstance(par, Callable):  # type: ignore [arg-type]
@@ -113,7 +113,7 @@ def parse_dond_core_args(
     return sweep_instances, params_meas
 
 
-def dond_core(
+def dond_into(
     datasaver: DataSaver,
     *params: AbstractSweep | ParamMeasT,
     additional_setpoints: Sequence[ParameterBase] = tuple(),
@@ -121,7 +121,7 @@ def dond_core(
     """
     A doNd-like utility function that writes gridded data to the supplied DataSaver
 
-    dond_core accepts AbstractSweep objects and measurement parameters or callables. It executes
+    dond_into accepts AbstractSweep objects and measurement parameters or callables. It executes
     the specified Sweeps, reads the measurement parameters, and stores the resulting data in the datasaver.
 
     Args:
@@ -138,7 +138,7 @@ def dond_core(
         additional_setpoints: A list of setpoint parameters to be registered in the measurement but
             not scanned/swept-over.
     """
-    sweep_instances, params_meas = parse_dond_core_args(*params)
+    sweep_instances, params_meas = parse_dond_into_args(*params)
     sweeper = _Sweeper(sweep_instances, additional_setpoints)
     for set_events in sweeper:
         results: dict[ParameterBase, Any] = {}
