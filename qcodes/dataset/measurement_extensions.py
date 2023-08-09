@@ -103,9 +103,9 @@ def parse_dond_into_args(
         if isinstance(par, AbstractSweep):
             sweep_instances.append(par)
         elif isinstance(par, TogetherSweep):
-            raise ValueError( dond_into does not support TogetherSweeps")
+            raise ValueError("dond_into does not support TogetherSweeps")
         elif isinstance(par, Sequence):
-            raise ValueError( dond_into does not support multiple datasets")
+            raise ValueError("dond_into does not support multiple datasets")
         elif isinstance(par, ParameterBase) and par.gettable:
             params_meas.append(par)
         elif isinstance(par, Callable):  # type: ignore [arg-type]
